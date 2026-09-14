@@ -2,7 +2,7 @@
  * Funds: a named party whose liability is its shares, whose equity is zero, and whose investors can
  * ask for their money back — which is the second door into the forced seller.
  *
- * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
+ * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b Hedge Funds A3 Hedge Funds D5 Hedge Funds D5.a XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
  *
  * WHY IT IS HERE (XI-2). A price falls; somebody must sell into the fall; the sale makes the fall
  * worse. Without a party that MUST sell, a price shock is absorbed by nobody and dissipates, and
@@ -120,6 +120,7 @@ import {
   type Mandate,
   mandateFor,
   type MandateTerms,
+  mayWrite,
   openMandate,
   payingThisPeriod,
   livingPools,
@@ -185,17 +186,21 @@ export const fundKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['solvency'],
   /**
-   * F2, item 9.2: WHETHER A POOL MAY BE LEVERED IS ITS MANDATE'S, and `MandateTerms.leverage` is
-   * where it is said. Every mandate this world draws says `false`, so no pool here borrows, and
-   * this says the same thing while that is true.
+   * F2, §28 B1, item 13.2: THE SHAPE IS GONE. This said `false` — no pool anywhere may ever be
+   * levered — which is a fact about this world's mandates stated as a fact about a category, and it
+   * is what 13h claimed to have built hedge funds on.
    *
-   * It is a SHAPE with a scheduled death and not a property of the category: as a fact about the
-   * KIND it said no pool anywhere may ever be levered, which is what 13h claimed to have built
-   * hedge funds on. What replaces it is the credit decision asking the pool's own mandate, and
-   * that door is item 13.2's — it is not opened here because no mandate in this world answers
-   * `true` yet, and a door nobody answers is `A-67` again.
+   * A pool MAY be levered; whether a given one may is `MandateTerms.leverage`, agreed between that
+   * pool and its manager, and there is a mandate in this world that says `true` now. The kind says
+   * only that the category is capable of it, which is what a kind is for.
+   *
+   * LEVERAGE IS STILL A FACT ABOUT A LOAN AND NOT A PROPERTY OF THE POOL (B1): this permits and it
+   * never supplies. What actually lends to a levered pool is a prime broker (13.3) and a bank whose
+   * request channel can hear a party that is not a firm (17.9), and until one of those exists a
+   * mandate that permits borrowing is a permission nobody has acted on — a real state, said here
+   * rather than hidden behind a `false` that means something else.
    */
-  borrows: false,
+  borrows: true,
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
   // is the money that leaves first, and it leaves because it chose to (`bankChoices`, bank.ts).
   depositClass: 'wholesale',
@@ -686,6 +691,59 @@ function mayEnter(ctx: MechanismContext, m: Mandate, who: PartyId): boolean {
   );
 }
 
+/**
+ * §28 A3 (item 13.2): THE PERFORMANCE FEE, and the asymmetry that makes it a reason for risk-taking.
+ *
+ * The manager takes a share of what a share of the pool GAINED over the highest value it has ever
+ * been worth at a charge. A loss is not shared and it is not refunded — and because the high-water
+ * mark does not fall, the manager earns nothing at all until the pool is back above where it last
+ * charged. Nothing states that asymmetry; it is what a high-water mark IS, and a manager that has
+ * just lost money therefore has a reason to take more risk rather than less, which is the clause.
+ *
+ * LAW 19: THE HIGH-WATER MARK IS NOT STORED. It is the NAV at the last charge, read off the event
+ * that recorded that payment — a fact about a real payment between two named parties, not a running
+ * maximum anybody keeps. A pool that has never charged one has never been above anything, so the
+ * mark is the unit its shares were first counted in, which is where it started.
+ *
+ * It goes through `payFee`, so there is ONE payment convention for what a pool owes its manager
+ * (Appendix B): the instruction goes to the wire whole and a pool short of the money has a refused
+ * payment, never a smaller fee.
+ */
+function chargePerformance(
+  ctx: MechanismContext,
+  m: Mandate,
+  share: Instrument,
+  opening: PerPiece,
+): void {
+  if (m.performanceFee <= 0) return;
+  const now = ctx.valuation.markPerUnit(share.id, ctx.period);
+  const mark = highWater(ctx, String(m.pool), opening);
+  const gain = minus(now, mark, 'what a share gained over the last charge');
+  if (gain <= 0) return;
+  const owed = ctx.registry.payable(
+    scale(valueAt(gain, share.issued, 'what the pool gained'), m.performanceFee, "the manager's share"),
+  );
+  if (owed <= 0) return;
+  payFee(ctx, m, owed);
+  ctx.record(
+    'fund.performanceFee',
+    [m.pool, m.manager],
+    // A3: the NEW high-water mark is this NAV, and it is published because the next charge is
+    // measured from it — a number nobody could read would be a mark nobody could check.
+    { fund: m.pool, manager: m.manager, perShare: now, was: mark, gain, amount: owed },
+    true,
+  );
+}
+
+/** A3, Law 19: the NAV at this pool's last performance charge, or where its shares started. */
+function highWater(ctx: MechanismContext, fund: string, opening: PerPiece): PerPiece {
+  const said = ctx.journal.lastOf('fund.performanceFee', fund);
+  if (said === undefined) return opening;
+  const was = said.data['perShare'];
+  // Item 16: a published level re-entering the type system through its own door.
+  return typeof was === 'number' ? asPerPiece(was, 'the NAV at its last charge') : opening;
+}
+
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
@@ -698,6 +756,11 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
   if (share.issued > 0) payFee(ctx, m, feeAccrued(ctx, m, share));
+  // §28 A3 (item 13.2): AND THE SECOND FEE, on the gain, after the first one has been taken — which
+  // is what "a performance fee" is measured on. It reads the NAV, charges what it charges, and the
+  // NAV is read AGAIN below: both fees are real payments out of the book, so the number everybody
+  // transacts at is the one left after them.
+  if (share.issued > 0) chargePerformance(ctx, m, share, opening);
   const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
   b.struck[String(fundId)] = perShare;
   // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
@@ -1024,7 +1087,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   const manager = e.manager as PartyId;
   for (const [id, kind, name] of [
     [manager, FUND_MANAGER, e.managerName],
-    [fund, FUND, nameOf({ ...e, house: e.bank })],
+    [fund, FUND, nameOf({ ...e, house: e.managerName })],
   ] as const) {
     if (ctx.parties.has(id)) continue;
     ctx.enter({
@@ -1076,7 +1139,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   });
   ctx.openMarket({
     id: market,
-    name: `${nameOf({ ...e, house: e.bank })} shares`,
+    name: `${nameOf({ ...e, house: e.managerName })} shares`,
     instrument: share,
     ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
@@ -1085,7 +1148,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   // module that owns it runs it itself (Clearing B2).
   ctx.openVenue({
     id: inKindVenue(e.fund),
-    name: `${nameOf({ ...e, house: e.bank })} creations and redemptions`,
+    name: `${nameOf({ ...e, house: e.managerName })} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
@@ -1867,7 +1930,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   const bank = ctx.parties.get(e.bank as PartyId);
   const region = ctx.registry.region(bank.region);
   for (const [id, kind, name] of [
-    [e.fund, FUND, nameOf({ ...e, house: e.bank })],
+    [e.fund, FUND, nameOf({ ...e, house: e.managerName })],
     [e.manager, FUND_MANAGER, e.managerName],
   ] as const) {
     // Seed B2, Law 4: ONE PARTY, NAMED ONCE. A manager runs more than one fund — that is what a
@@ -1900,7 +1963,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   });
   ctx.openMarket({
     id: market,
-    name: `${nameOf({ ...e, house: e.bank })} shares`,
+    name: `${nameOf({ ...e, house: e.managerName })} shares`,
     instrument: share,
     ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
@@ -1910,7 +1973,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   // it runs it itself (Clearing B2).
   ctx.openVenue({
     id: inKindVenue(e.fund),
-    name: `${nameOf({ ...e, house: e.bank })} creations and redemptions`,
+    name: `${nameOf({ ...e, house: e.managerName })} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
@@ -2244,7 +2307,9 @@ export function funds(
         partyKind: FUND,
         mayTrade: (view: ParticipantView, kind): boolean => {
           const m = mandateFor(view);
-          return m.some && m.value.mayWrite.includes(String(kind));
+          // §28 A4 (item 13.2): and a WIDE mandate says yes to a class this world has not written
+          // yet, which is what "unrestricted" has to mean if it is to stay true.
+          return m.some && mayWrite(m.value.mayWrite, String(kind));
         },
       },
     ],
@@ -2255,7 +2320,7 @@ export function funds(
     seed(ctx: SeedContext): void {
       for (const d of decls) {
         for (const [id, kind, name] of [
-          [d.fund, FUND, nameOf({ ...d, house: d.bank })],
+          [d.fund, FUND, nameOf({ ...d, house: d.managerName })],
           [d.manager, FUND_MANAGER, d.managerName],
         ] as const) {
           ctx.parties.add({
@@ -2288,7 +2353,7 @@ export function funds(
         // that owns it runs it itself rather than the solver.
         const venue: VenueDecl = {
           id: fundVenue(d.fund),
-          name: `${nameOf({ ...d, house: d.bank })} subscriptions and redemptions`,
+          name: `${nameOf({ ...d, house: d.managerName })} subscriptions and redemptions`,
           clearedBy: 'funds',
           unit: SHARES,
           ccy,

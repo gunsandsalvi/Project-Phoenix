@@ -161,6 +161,7 @@ import {
   drawTrackers,
   drawFunds,
   drawManagers,
+  drawStrategies,
   type FundDecl,
   type ManagerDecl,
 } from '../mechanisms/funds/data.js';
@@ -2203,6 +2204,13 @@ export function foundationDraw(
   const names = bankRows.map((b) => b.bank);
   const listed = drawListed(firmRows, bankRows, seed);
   const pools = drawFunds(bankRows, seed);
+  /**
+   * §28 A1, A4, B1 (item 13.2): THE STRATEGY HOUSE, and it is drawn beside the long-only pools
+   * because it is the same object. What makes its three pools hedge funds is four terms of their
+   * mandates — a wide blueprint, `mayWrite: 'anything'`, `leverage`, and a performance fee — and
+   * there is no hedge-fund party kind anywhere in this world.
+   */
+  const strategies = drawStrategies(bankRows, seed);
   // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
   // declares it. The seed is where the two meet, because it is the only place that may know both.
   const trackers = drawTrackers(
@@ -2238,11 +2246,11 @@ export function foundationDraw(
     banks: bankRows,
     firms: firmRows,
     listed,
-    funds: pools,
+    funds: [...pools, ...strategies],
     trackers,
     // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
     // index house is a manager like any other and competes for the same people.
-    managers: drawManagers([...pools, ...trackers], seed),
+    managers: drawManagers([...pools, ...strategies, ...trackers], seed),
   };
 }
 

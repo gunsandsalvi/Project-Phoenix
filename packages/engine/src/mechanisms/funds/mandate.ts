@@ -2,7 +2,7 @@
  * THE MANDATE: what a pool may hold, how you get in and out, what its manager charges for running
  * it, and whether it is being wound up. The object this whole sector is built on.
  *
- * @spec Fund Shares A4 Fund Shares B3 Fund Shares F3 Fund Shares G1 Fund Shares G1.a Fund Shares G1.b Indices C2 XI-8 Law 2 Law 4 Law 15
+ * @spec Fund Shares A4 Fund Shares B3 Fund Shares F3 Fund Shares G1 Fund Shares G1.a Fund Shares G1.b Hedge Funds A3 Hedge Funds A4 Hedge Funds B1 Indices C2 XI-8 Law 2 Law 4 Law 15
  *
  * Item 10e.4: it was inside `index.ts`, which was fine while the module's only reader was the
  * module's own phases. The MANAGER reads it too — its book of business is the mandates it holds,
@@ -68,6 +68,29 @@ export type Liquidity =
    */
   | { readonly how: 'listed' };
 
+/**
+ * A3, A4, §28 A4 (item 13.2): WHAT A POOL MAY TAKE A POSITION IN — a list of contract kinds, or the
+ * word for a mandate that does not restrict it.
+ *
+ * IT IS A PERMISSION AND NOT A BAND, which is why `[]` means NOTHING here while an empty band in a
+ * blueprint means the blueprint says nothing about that dimension. The two conventions look
+ * opposite and are not: a blueprint band CONSTRAINS a universe of things that already exist ("this
+ * pool may hold assets of these classes"), so silence is no constraint; this GRANTS an ability
+ * ("this pool may write contracts"), so silence is no grant. A money fund does not write
+ * derivatives, and `[]` saying so out loud is what lets the derivative layer speak for a pool at
+ * all (`B-14`, item 9.7).
+ *
+ * `'anything'` is §28's WIDE MANDATE — long, short, levered, many markets — and it is a word rather
+ * than a list of every class this world happens to have, because a list would be the enumeration of
+ * the world that item 10e deleted from `mayHold`: it goes stale the day somebody writes a tenth
+ * class, and a mandate its investors agreed was unrestricted would silently stop being one.
+ */
+export type MayWrite = 'anything' | readonly string[];
+
+/** A3, `B-14`: whether this mandate lets its pool take a position in a contract of this kind. */
+export const mayWrite = (m: MayWrite, kind: string): boolean =>
+  m === 'anything' || m.includes(kind);
+
 export interface MandateTerms extends AgreementTerms {
   readonly kind: typeof MANDATE;
   /**
@@ -113,7 +136,7 @@ export interface MandateTerms extends AgreementTerms {
    * WIDE mandate — long, short, levered, many markets — is §28's hedge fund, and this is the term
    * that makes it one.
    */
-  readonly mayWrite: readonly string[];
+  readonly mayWrite: MayWrite;
   /**
    * B1, F2, XI-3: whether this pool may be levered — and `false` is a real term of a mandate and
    * not an absence. A levered pool borrows from a NAMED lender, which is what makes its leverage a
@@ -186,6 +209,19 @@ export interface MandateTerms extends AgreementTerms {
    * never bars the way OUT — a holder that stops clearing the line still owns what it bought.
    */
   readonly offeredPublicly: boolean;
+  /**
+   * §28 A3 (item 13.2): THE SECOND FEE, and the asymmetric one — the share of a GAIN the manager
+   * takes, over the highest value a share of this pool has ever been worth at a charge.
+   *
+   * *"The asymmetry of that second fee is a reason for risk-taking"*, and the asymmetry is not a
+   * rule written anywhere: it falls out of the high-water mark. A gain is shared; a loss is not,
+   * and it is not refunded either — so the manager earns nothing at all until the pool is back
+   * above where it last charged, and a manager that has just lost money has a reason to take more
+   * risk rather than less. That is the mechanism the clause is about.
+   *
+   * Zero for every long-only pool this world opens with, which is a real term and not an absence.
+   */
+  readonly performanceFee: Ratio;
 }
 
 /**
@@ -226,6 +262,9 @@ export interface Product {
   readonly buffer: Ratio;
   readonly requiredYieldPerAnnum: Ratio;
   readonly offeredPublicly: boolean;
+  readonly mayWrite: MayWrite;
+  readonly leverage: boolean;
+  readonly performanceFee: Ratio;
 }
 
 export function openMandate(
@@ -242,8 +281,6 @@ export function openMandate(
   const terms: MandateTerms = {
     kind: MANDATE,
     ...product,
-    mayWrite: [],
-    leverage: false,
     // A pool is opened to be run, not to be closed. Notice is something a manager gives later.
     windingUp: false,
   };
@@ -278,6 +315,12 @@ export function productOf(d: FundDecl, ccy: CurrencyCode): Product {
     feePerAnnum: asRatio(d.fee, 'what its manager charges it per annum'),
     buffer: asRatio(d.buffer, 'the share of its book it keeps in cash'),
     requiredYieldPerAnnum: asRatio(d.requiredYield, 'what its investors require of it per annum'),
+    // A3, §28 A4 (item 13.2): what it may take a position in, and whether it may be levered. Both
+    // used to be written HERE, the same for every mandate in every world — a fact about the world's
+    // data stated as a fact about the shape of an agreement.
+    mayWrite: d.mayWrite,
+    leverage: d.leverage,
+    performanceFee: asRatio(d.performanceFee, 'the share of a gain its manager takes'),
   };
 }
 

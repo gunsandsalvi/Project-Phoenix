@@ -8440,3 +8440,81 @@ Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `c
 `check:existence` green. Tests written and not run — `test/nav-contracts.test.ts` asserts the
 identity on the read itself rather than through a world, because the property has to hold before
 there is a party that can break it.
+
+---
+
+## Item 13.2 — a hedge fund is four terms of a mandate, and there is no hedge-fund party kind
+
+The owner's correction is what made this small: *"everything is a fund. An HF runs funds, same as
+PE."* So §28 is not a sector to build. It is a house running pools whose mandates say four things a
+long-only pool's does not:
+
+| term | what it means | what it cost to build |
+|---|---|---|
+| a WIDE blueprint | what the strategy is about, and a macro one states nothing at all | nothing — 10e's language already says it |
+| `mayWrite: 'anything'` | §28 A4's wide mandate, and the door into every contract book | a word, not a list |
+| `leverage: true` | a PERMISSION, and it never supplies (B1) | a term, and a shape off a kind profile |
+| a PERFORMANCE FEE | A3's asymmetric second fee | the one genuinely new mechanism here |
+
+**`mayWrite` and `leverage` came off `openMandate`**, where they were hard-coded `[]` and `false`
+for every mandate in every world — a fact about this world's data stated as a fact about the shape
+of an agreement.
+
+**`'anything'` is a word and not a list of the nine classes this world happens to have.** A list is
+the enumeration of the world item 10e deleted from `mayHold`: it goes stale the day somebody writes
+a tenth class, and a mandate its investors agreed was unrestricted would silently stop being one.
+The asymmetry with a blueprint band — where `[]` means "says nothing" and so admits anything — is
+real and worth stating: **a band CONSTRAINS a universe that already exists, so silence is no
+constraint; `mayWrite` GRANTS an ability, so silence is no grant.**
+
+**`fundKind.borrows` no longer says `false`.** It was a SHAPE that said no pool anywhere may ever be
+levered — a fact about this world's mandates wearing a category's clothes, and the thing 13h claimed
+to have built hedge funds on. The kind now says only that the category is capable of it, and whether
+a given pool may is its mandate's. **Leverage still PERMITS without supplying** (B1: a fact about a
+loan, never a property of the fund): the lender is a prime broker (13.3) and a bank whose request
+channel can hear a party that is not a firm (17.9), and until one exists this is a permission nobody
+has acted on — a real state, said out loud rather than hidden behind a `false` that meant something
+else.
+
+**The performance fee, and the asymmetry is not a rule anywhere.** The manager takes a share of what
+a share GAINED over the highest value it has been worth at a charge. A loss is not shared and not
+refunded, and because the high-water mark does not fall the manager earns nothing until the pool is
+back above where it last charged. That is what a high-water mark IS, and it is why a manager that
+has just lost money has a reason to take more risk rather than less — A3's *"the asymmetry of that
+second fee is a reason for risk-taking"*, falling out rather than being asserted.
+
+**Law 19: the mark is not stored.** It is the NAV at the last charge, read off the event that
+recorded that payment — a fact about a real payment between two named parties, not a running maximum
+anybody keeps. A pool that has never charged one has never been above anything, so the mark is the
+unit its shares were first counted in. Both fees go through `payFee`, so there is one payment
+convention for what a pool owes its manager.
+
+**Three strategies under one house** — equity, credit, macro — because a house with one product has
+no book of business to spread its people over (10e.4), and because each is a BLUEPRINT rather than a
+mechanism, which is the whole of what 10e's language bought here. The macro one is the test of that
+language: it states no class band and no currency, which is how "unrestricted" stays true when this
+world grows an asset class nobody has written yet.
+
+**Their investors WAIT.** `semiLiquid` with a quarterly window is D5.a's notice period, *"a real
+contractual term with real consequences for who gets out"* — and it is why a shock reaches this
+vehicle later than it reaches a money fund.
+
+**A pool is named for its HOUSE, not its bank.** `nameOf` read `d.bank` while every pool in this
+world was bank-sponsored; a strategy house is sponsored by nobody, and the bank is where its account
+is — a fact about its cash, not about the product (Law 9).
+
+**WHAT IS NOT HERE, and it is 13.2b.** §28 C1 says a hedge fund is *"the natural home of the
+speculative side of every derivative book"*. The door is open — a pool is spoken for in every
+contract book, its wide mandate says yes, and 13.6 made sure the NAV can see what comes through it —
+but **the only reason any class knows how to post is a HEDGER's**: `futureOrders` sells against a
+book it holds, and a party with no such book posts nothing. The fix is not a kind branch inside a
+class: `DerivativeClassDecl` gains a second reason, answered by the class out of the party's own
+OUTLOOK (§46, built), and a bank with a view speculates too. Nine class modules, so it is its own
+step — and the item's own warning is the thing to read first: the reason must be a view that can
+widen against it, never an arbitrage it cannot lose.
+
+§28 goes 0 MET to **5 MET, 3 PARTIAL, 16 MISSING**, and **Hedge Funds is no longer an absent
+sector** — four down to three (Prime Brokerage, Private Equity, Polity).
+
+Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

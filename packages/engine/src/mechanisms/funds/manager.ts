@@ -418,6 +418,13 @@ export function launchToMake(
         // mandate to a wider audience would be a different product, and it would be competing for
         // savers who were never on the other side of the fee it just undercut.
         offeredPublicly: rival.offeredPublicly,
+        // §28 A4, B1 (item 13.2): and the PERMISSIONS, which are part of the product too. A manager
+        // copying a levered strategy is opening a levered fund, and one copying a long-only pool is
+        // not — the permissions are what its investors agreed to, so an entrant that widened them
+        // would be selling a different thing under the fee it just undercut.
+        mayWrite: rival.mayWrite,
+        leverage: rival.leverage,
+        performanceFee: rival.performanceFee,
       },
       rival: rival.pool,
       expects: smallest,

@@ -1,7 +1,7 @@
 /**
  * The funds this world has, and what each one may hold.
  *
- * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares F3 Equity C2.c Seed A3 Seed B1 Law 2 Law 15
+ * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares F3 Hedge Funds A1 Hedge Funds A3 Hedge Funds A4 Hedge Funds B1 Hedge Funds C1 Hedge Funds D5 Hedge Funds D5.a Equity C2.c Seed A3 Seed B1 Law 2 Law 15
  *
  * Data only (Law 15). A MANDATE is what a fund may hold and how long it may hold it for, and it is
  * a real constraint on what the fund buys rather than a label on it (A4): the module never posts an
@@ -12,7 +12,7 @@ import { paramId } from '../../core/ids.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import type { Blueprint } from '../../registry/blueprint.js';
-import type { Liquidity } from './mandate.js';
+import type { Liquidity, MayWrite } from './mandate.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -40,6 +40,25 @@ export interface FundDecl {
   readonly ownCurrencyOnly: boolean;
   /** G1: how its investors get in and out, which is what decides if it can be forced to sell. */
   readonly liquidity: Liquidity;
+  /**
+   * A3, §28 A4 (item 13.2): WHAT IT MAY TAKE A POSITION IN. `[]` is a real term — a money fund does
+   * not write derivatives — and `'anything'` is §28's wide mandate.
+   */
+  readonly mayWrite: MayWrite;
+  /**
+   * B1, F2, XI-3, §28 B1 (item 13.2): WHETHER IT MAY BE LEVERED. `false` is a real term of a
+   * mandate and not an absence; `true` is what makes one a hedge fund's. A levered pool borrows
+   * from a NAMED lender, which is what makes its leverage a fact about a loan and never a property
+   * of the pool — so this permits, and it never supplies.
+   */
+  readonly leverage: boolean;
+  /**
+   * §28 A3 (item 13.2): THE SHARE OF A GAIN THE MANAGER TAKES, over the highest value a share of
+   * this pool has ever been worth at a charge. Zero for everything that is not a hedge fund, and
+   * *"the asymmetry of that second fee is a reason for risk-taking"* — it is paid on the way up and
+   * never refunded on the way down.
+   */
+  readonly performanceFee: number;
   /**
    * Item 10e.6: WHO MAY GET IN AT ALL. `true` is offered to the public and anybody may subscribe;
    * `false` asks an entrant to clear the accredited-investor line, which is a POLICY a regulator
@@ -149,6 +168,10 @@ export interface Named {
 }
 
 export function nameOf(d: Named): string {
+  // Law 9, item 13.2: THE HOUSE IS THE MANAGER, not the bank the pool banks at. A market names a
+  // fund for whoever runs it; the bank is where its account is, which is a fact about its cash and
+  // not about the product. It read `d.bank` while every pool in this world was sponsored by one —
+  // and a hedge fund is sponsored by nobody, so the field was about to name the wrong party.
   if (d.tracks !== undefined) return `${d.house} ${d.tracks} tracker`;
   const what = d.blueprint.classes;
   const short = d.blueprint.duration?.to !== undefined && d.blueprint.duration.to <= 1;
@@ -256,6 +279,15 @@ export function drawTrackers(
      * the class a share is, and the one read that separates a public company from a private one.
      * The index picks the lines inside that; the mandate is what bounds it.
      */
+    /**
+     * A3, B1, §28 A3, A4, B1 (item 13.2): WHAT EVERY LONG-ONLY POOL THIS WORLD OPENS WITH SAYS.
+     * It writes no contracts, it may not be levered, and its manager takes no share of a gain.
+     * All three are TERMS its investors agreed to, and a hedge fund is the mandate that says
+     * otherwise — which is the whole of what makes one (§28, and there is no hedge-fund party kind).
+     */
+    mayWrite: [],
+    leverage: false,
+    performanceFee: 0,
     blueprint: { classes: ['residual'], currencies: [], listed: true },
     ownCurrencyOnly: true,
     // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
@@ -325,6 +357,120 @@ export const CREDIT_SPREAD: Spread = {
   high: 0.055,
   why: 'Fund Shares D2.a: what a credit fund\u2019s investors require of it per annum, which is what it will pay for a company\u2019s paper. Its investor is taking credit and duration rather than choosing against a deposit, so it requires several times what a money fund\u2019s investor does \u2014 and the SPREAD between two of them is what makes a corporate book have two bidders at different levels instead of one number everybody shares.',
 };
+
+/**
+ * §28 A1, A3, A4, B1, C1, D5.a (item 13.2): THE STRATEGIES — and there is no hedge-fund party kind.
+ *
+ * *"Everything is a fund. An HF runs funds, same as PE"* (the owner). So a hedge fund house is a
+ * MANAGER like any other, and what makes its pools hedge funds is four terms of their mandates and
+ * nothing else:
+ *
+ *  - a WIDE blueprint — what the strategy is about, and a macro one states no class band at all;
+ *  - `mayWrite: 'anything'` — §28 A4's wide mandate, which is what makes it *"the natural home of
+ *    the speculative side of every derivative book"* (C1);
+ *  - `leverage: true` — a PERMISSION, and it never supplies: what lends to it is a prime broker
+ *    (13.3), and until there is one this is a permission nobody has acted on (B1);
+ *  - a PERFORMANCE FEE — the asymmetric second fee (A3), which is the reason for risk-taking.
+ *
+ * AND ITS INVESTORS WAIT. `semiLiquid` with a quarterly window is D5.a's notice period, *"a real
+ * contractual term with real consequences for who gets out"* — the queue is the mechanism, what it
+ * costs the holders who stayed is C4.a, and it is the whole reason a shock reaches this vehicle
+ * LATER than it reaches a money fund.
+ *
+ * THREE STRATEGIES UNDER ONE HOUSE, because a house with one product has no book of business to
+ * spread its people over (item 10e.4) and because *"HFs exist in multiple strategies"* — and each is
+ * a BLUEPRINT rather than a mechanism, which is the whole of what 10e's language bought here.
+ */
+export interface StrategyDecl {
+  readonly id: string;
+  readonly what: Blueprint;
+  readonly why: string;
+}
+
+export const STRATEGIES: readonly StrategyDecl[] = [
+  {
+    id: 'equity',
+    // C1, C2: listed shares, which is the one class whose price this world clears in a session
+    // every period — so a view about one can be wrong in public, every week.
+    what: { classes: ['residual'], currencies: [], listed: true },
+    why: '§28 C1, C2: long and short listed equity. Its reason is a view about what a line is worth against what the book says, and the SHORT half needs a borrow (item 9.4), which is what makes it a position somebody can lose rather than a free arbitrage (Appendix B).',
+  },
+  {
+    id: 'credit',
+    what: { classes: ['corporate', 'structured'], currencies: [] },
+    why: '§28 C1, C3: long and short corporate credit. It is the other side of every issue items 10, 10b and 10c brought to market, and the liquidity premium C3 says it is PAID to hold is the one a forced seller pays (XI-2).',
+  },
+  {
+    id: 'macro',
+    // A4: a wide mandate states NO class band and NO currency — which in the blueprint language is
+    // silence, and silence is what "unrestricted" has to be if it is to stay true when this world
+    // grows an asset class nobody has written yet.
+    what: { classes: [], currencies: [] },
+    why: '§28 A4, C1: macro — any class, any money, and its reason is a view about a rate, a currency or a level rather than about a name. It is the mandate the blueprint language describes by saying NOTHING, which is what makes it the test of that language.',
+  },
+];
+
+/** D5.a: periods between the windows a strategy's investors may get out at. A quarter. */
+export const STRATEGY_WINDOW = 13;
+
+export const STRATEGY_SPREAD: Readonly<Record<'fee' | 'performance' | 'buffer', Spread>> = {
+  fee: {
+    low: 0.01,
+    high: 0.022,
+    why: '§28 A3: what a strategy house charges on assets per annum. Several times a long-only manager’s, because what it is selling is not access to a market but a view — and it is the half of its income that arrives whether the view was right or not, which is why the OTHER half is what the clause is about.',
+  },
+  performance: {
+    low: 0.1,
+    high: 0.25,
+    why: '§28 A3: the share of a gain over the high-water mark. *"The asymmetry of that second fee is a reason for risk-taking"* — it is paid on the way up and never refunded on the way down, so a manager that has just lost money earns nothing until it is back above where it last charged. The SPREAD is what makes two houses two businesses: one that takes a quarter of every gain has a reason to swing that one taking a tenth does not.',
+  },
+  buffer: {
+    low: 0.02,
+    high: 0.1,
+    why: '§28 D5, Fund Shares C2.a: what a strategy keeps in cash. LESS than a long-only pool’s, because its investors cannot ask for their money back until a window opens (D5.a) — so it can afford to be more fully invested, which is also why a redemption window arriving in a bad market is the second forced-seller channel D5 names.',
+  },
+};
+
+/**
+ * §28 A1, A3, F3 (item 13.2): the strategy house this world opens with, and its three pools.
+ *
+ * It banks at the largest bank that sponsors anything, which is where a fund of this size would
+ * bank — and that is ALL the bank is to it: it sponsors nothing, names nothing, and the pools are
+ * named for the HOUSE that runs them (Law 9).
+ */
+export function drawStrategies(
+  banks: readonly { readonly bank: string; readonly size: number }[],
+  seed: string,
+): readonly FundDecl[] {
+  const at = banks.find((b) => b.size >= SPONSOR_SIZE);
+  if (at === undefined) return [];
+  const rng = prng(seed, 'strategies');
+  return STRATEGIES.map((strategy) => ({
+    fund: `fund.strategy.${strategy.id}`,
+    manager: 'manager.strategy',
+    managerName: 'Meridian Partners',
+    bank: at.bank,
+    blueprint: strategy.what,
+    // A4: a strategy takes a view wherever it finds one, and a macro one says so by stating no
+    // currency band at all. A single-currency hedge fund would be a hedge fund with a term its
+    // investors did not agree to.
+    ownCurrencyOnly: false,
+    // A4, C1: THE WIDE MANDATE. It is what makes this the speculative side of every contract book.
+    mayWrite: 'anything',
+    // B1: a permission, and nothing here supplies it. A prime broker does (13.3).
+    leverage: true,
+    performanceFee: between(rng, STRATEGY_SPREAD.performance),
+    // D5.a: a notice period, which is a real contractual term with real consequences for who gets
+    // out — and the reason a shock reaches this vehicle later than it reaches a money fund.
+    liquidity: { how: 'semiLiquid', everyPeriods: STRATEGY_WINDOW },
+    // A1: its investors are institutions and the wealthiest households, never the public.
+    offeredPublicly: false,
+    buffer: between(rng, STRATEGY_SPREAD.buffer),
+    fee: between(rng, STRATEGY_SPREAD.fee),
+    requiredYield: between(rng, CREDIT_SPREAD),
+    why: strategy.why,
+  }));
+}
 
 /**
  * F3, Labour A2, item 10e.4: THE HOUSES THAT RUN THE POOLS — a manager is a business, and what it
@@ -452,6 +598,9 @@ export function drawFunds(
     if (b.size < SPONSOR_SIZE) continue;
     out.push({
       fund: `fund.money.${b.bank}`,
+      mayWrite: [],
+      leverage: false,
+      performanceFee: 0,
       manager: houseOf(b.bank),
       managerName: houseName(b.bank),
       bank: b.bank,
@@ -508,6 +657,9 @@ export function drawFunds(
     if (b.size < WIDE_SPONSOR_SIZE) continue;
     out.push({
       fund: `fund.credit.${b.bank}`,
+      mayWrite: [],
+      leverage: false,
+      performanceFee: 0,
       // F3: the SAME HOUSE that runs the money fund at this bank. A credit fund is a second product
       // on the same shelf — different mandate, same people, same fee income — which is what lets a
       // manager carry a small product on a large one and what makes losing one survivable.
@@ -549,6 +701,9 @@ export function drawFunds(
   if (sponsor !== undefined) {
     out.push({
       fund: `fund.physical.${sponsor.bank}`,
+      mayWrite: [],
+      leverage: false,
+      performanceFee: 0,
       // F3, item 10e.4: the same house again, and its third product.
       manager: houseOf(sponsor.bank),
       managerName: houseName(sponsor.bank),

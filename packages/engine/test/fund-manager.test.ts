@@ -15,7 +15,13 @@
  *  - two products are the same product when their BLUEPRINTS say the same thing, never their names.
  */
 import { describe, expect, it } from 'vitest';
-import { drawFunds, drawManagers, drawTrackers, nameOf } from '../src/mechanisms/funds/data.js';
+import {
+  drawFunds,
+  drawManagers,
+  drawStrategies,
+  drawTrackers,
+  nameOf,
+} from '../src/mechanisms/funds/data.js';
 import { sameProduct } from '../src/mechanisms/funds/manager.js';
 import { holdsThings } from '../src/mechanisms/funds/things.js';
 import { admits } from '../src/registry/blueprint.js';
@@ -141,6 +147,45 @@ describe('who may get in', () => {
       // whose shares are listed cannot ask anything of whoever ends up with one.
       expect(t.offeredPublicly).toBe(true);
     }
+  });
+});
+
+describe('what makes a pool a hedge fund', () => {
+  it('is four terms of its mandate and nothing else', () => {
+    const strategies = drawStrategies(BANKS, 'a-seed');
+    expect(strategies.length).toBeGreaterThan(1);
+    for (const s of strategies) {
+      // §28 A4: a WIDE mandate, said with a word rather than a list of every class this world
+      // happens to have — a list goes stale the day somebody writes a tenth.
+      expect(s.mayWrite).toBe('anything');
+      // §28 B1: a PERMISSION. Nothing here supplies it; a prime broker does (13.3).
+      expect(s.leverage).toBe(true);
+      // §28 A3: the asymmetric second fee, and two houses would take different shares of a gain.
+      expect(s.performanceFee).toBeGreaterThan(0);
+      // §28 D5.a: a notice period, which is what makes a shock reach this vehicle LATER.
+      expect(s.liquidity.how).toBe('semiLiquid');
+      // §28 A1: never offered to the public.
+      expect(s.offeredPublicly).toBe(false);
+    }
+    // All three under ONE house: a strategy house with one product has no book of business.
+    expect(new Set(strategies.map((s) => s.manager)).size).toBe(1);
+    // And every long-only pool this world opens with says the opposite of all four.
+    for (const p of drawFunds(BANKS, 'a-seed')) {
+      expect(p.mayWrite).toEqual([]);
+      expect(p.leverage).toBe(false);
+      expect(p.performanceFee).toBe(0);
+    }
+  });
+
+  it('says a macro mandate by saying NOTHING, which is the test of the language', () => {
+    const macro = drawStrategies(BANKS, 'a-seed').find((s) => s.blueprint.classes.length === 0);
+    expect(macro).toBeDefined();
+    if (macro === undefined) return;
+    // A4: no class band, no currency band — unrestricted, and it stays unrestricted when this world
+    // grows an asset class nobody has written yet. That is what a band-based language buys.
+    expect(macro.blueprint.currencies).toEqual([]);
+    expect(macro.blueprint.duration).toBeUndefined();
+    expect(macro.ownCurrencyOnly).toBe(false);
   });
 });
 

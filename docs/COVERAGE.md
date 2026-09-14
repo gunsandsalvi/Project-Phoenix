@@ -956,17 +956,17 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Hedge Funds A1` | MISSING |  |
-| `Hedge Funds A2` | MISSING |  |
-| `Hedge Funds A3` | MISSING |  |
-| `Hedge Funds A4` | MISSING |  |
-| `Hedge Funds A5` | MISSING |  |
-| `Hedge Funds B1` | MISSING |  |
+| `Hedge Funds A1` | MET | packages/engine/src/mechanisms/funds/data.ts, packages/engine/src/mechanisms/funds/index.ts (item 13.2: a named party with a register and an account, whose investors hold a redeemable share count — and there is NO hedge-fund party kind. It is a pool with a manager, like every other vehicle here, and what makes it one is four terms of its mandate: a wide blueprint, `mayWrite: 'anything'`, `leverage`, and a performance fee) |
+| `Hedge Funds A2` | MET | packages/engine/src/mechanisms/funds/index.ts (its investors' capital IS its shares — `fundShareKind` with `owes: 'value'`, so the claim follows the book and the pool's own equity stays at zero — and a share count is what they redeem) |
+| `Hedge Funds A3` | MET | packages/engine/src/mechanisms/funds/index.ts (`chargePerformance`), packages/engine/src/mechanisms/funds/mandate.ts (item 13.2: a separate manager, a management fee on assets, and a PERFORMANCE FEE on the gain over the highest value a share has been worth at a charge. The asymmetry is not a rule written anywhere — it is what a high-water mark IS: a gain is shared, a loss is not shared and not refunded, and because the mark does not fall the manager earns nothing until the pool is back above where it last charged, which is exactly the reason for risk-taking the clause names. Law 19: the mark is not stored — it is the NAV at the last charge, read off the event that recorded that payment) |
+| `Hedge Funds A4` | MET | packages/engine/src/mechanisms/funds/mandate.ts, packages/engine/src/mechanisms/funds/data.ts (item 13.2: the WIDE mandate. `mayWrite: 'anything'` is a word and not a list of every class this world happens to have — a list would go stale the day somebody writes a tenth, and a mandate its investors agreed was unrestricted would silently stop being one. The blueprint is wide the same way: a macro strategy states NO class band and NO currency, which in the blueprint language is silence) |
+| `Hedge Funds A5` | MET | packages/engine/src/mechanisms/funds/nav.ts (marked at cleared prices at every ask, and a holding nothing has ever priced makes the read FAIL rather than be guessed at; item 13.6: and the contract book is marked with it, because a book read out of holdings alone stops at the register's edge) |
+| `Hedge Funds B1` | PARTIAL | packages/engine/src/mechanisms/funds/mandate.ts, packages/engine/src/mechanisms/funds/index.ts (item 13.2: `MandateTerms.leverage` is the PERMISSION, agreed between a pool and its manager, and `fundKind.borrows` no longer says `false` for the whole category — which was a fact about this world's mandates stated as a fact about a kind). What is missing is the LENDER: leverage is a fact about a loan and this permits without supplying. A prime broker is item 13.3; a bank can already price a pool's credit (`publishQuotes` walks every kind that borrows) and cannot yet hear its request, which is 17.9 |
 | `Hedge Funds B2` | MISSING |  |
 | `Hedge Funds B3` | MISSING |  |
 | `Hedge Funds B4` | MISSING |  |
 | `Hedge Funds B5` | MISSING |  |
-| `Hedge Funds C1` | MISSING |  |
+| `Hedge Funds C1` | PARTIAL | packages/engine/src/mechanisms/derivative-layer/index.ts, packages/engine/src/mechanisms/funds/index.ts (item 13.2: a pool IS spoken for in every contract book — `FUND` is on the layer's list and `mayTrade` asks its mandate — and a wide mandate now says yes, so the door §28 C1 needs is open and the NAV can see what comes through it (13.6)). What it POSTS is still the class's own `orders`, which is a HEDGER's reason: a position against a book it holds. The speculative side needs a class to turn a party's own OUTLOOK into a position (§46 is built and every class would implement it), which is item 6's other half and its own step |
 | `Hedge Funds C2` | MISSING |  |
 | `Hedge Funds C3` | MISSING |  |
 | `Hedge Funds C4` | MISSING |  |
@@ -974,7 +974,7 @@ of these findings has been positioned into an item yet.
 | `Hedge Funds D2` | MISSING |  |
 | `Hedge Funds D3` | MISSING |  |
 | `Hedge Funds D4` | MISSING |  |
-| `Hedge Funds D5` | MISSING |  |
+| `Hedge Funds D5` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (redemptions arrive together and are met out of the buffer or by selling, which is the second forced-seller channel; D5.a: a NOTICE PERIOD is a real term — a strategy's investors may only get out when a window opens, what does not fit is QUEUED at the NAV it struck when it asked, and what a late sale costs falls on the holders who stayed (C4.a)). What is not built is the LEVERED half of D1–D4: a margin call is item 13.3's |
 | `Hedge Funds D6` | MISSING |  |
 | `Hedge Funds D7` | MISSING |  |
 | `Hedge Funds E1` | MISSING |  |
