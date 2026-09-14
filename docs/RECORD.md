@@ -5742,3 +5742,100 @@ settled".
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. The engine suite is still not run — the owner's instruction stands until the plan is done.
+
+---
+
+## Item 2, stage 2c — three rates that were not rates
+
+Each of the three is a number standing where a RATE belongs that was never a rate — a funding share,
+a level times a width, a constant — and in each one the comment beside it already described the
+number that should have been there. That is the shape of this stage: nothing here was unknown, it
+was written down and then not built.
+
+**`A-44` — the saver's comparison.** `households.liquidityPremium` is declared *"per annum OVER WHAT
+A DEPOSIT RETURNS"* and was read as the bare 0.005, so `fundOrders`' test `p.offered < required`
+compared a fund's offer against a constant. A cell subscribed to a fund offering 0.006 while its own
+bank's board paid it 0.02. This was harmless when `portfolio.ts` was written and its header still
+said why — *"a deposit … returns nothing at all here, because paying for deposits is a decision a
+bank has not been given yet (worklist 11)"* — but worklist 11 landed: `money-market/deposits.ts:
+payDepositInterest` settles a real money leg every period for every holder of a bank's money whose
+kind has a deposit class, at the rate that bank published on its board. The saving decision had not
+moved with it. `households/bank.ts:ownDepositRate` is the read — its own bank's board for its own
+deposit class, the same `board()` the switching decision already used — and `required` is that plus
+the premium. Zero where it has no deposit class or its bank has published no board is the rate
+itself and not a default: what pays it nothing is what it is being paid.
+
+Two stale comments went with it (Law 16): the header above, and a claim in both files that `required`
+is *"what it posts DOWN from its own opinion"*, which it never was — the paper bid is the outlook
+less the party's own error (§46 B3) and `required` never entered it.
+
+That last is this stage's own finding, **`E-12`**, positioned at item 21: what a household requires
+reaches the fund comparison and not the paper bid, so a rise in the deposit board makes a money fund
+less attractive to a saver and does nothing at all to what it will pay for a bill. D5.a names
+*"paper bought directly"* explicitly, so half the substitution is missing. It is written down and
+placed, not chased.
+
+**`A-58` — what a bank will pay for a note.** `securitisation:priceFor` was
+`1 − (owed/(owed+equity))²`: the debt share of the BIDDER's own funding, squared, with the variable
+named `cost` and the docstring describing a discount read off *"what it actually pays for money"*.
+It had no periodicity (Law 8 — the note's tenor appeared nowhere), no relation to any rate this
+world produces (a bank funded 90% by deposits bid 0.19 per unit of face on a SENIOR tranche; one
+funded 50/50 bid 0.75), and no dependence on the pool at all, so two vehicles with completely
+different loan books got the same bid from the same bank. `owedIn` was the wrong quantity even as a
+leverage measure: it is what falls due in that money this period less what the bank holds of it — a
+funding gap, not liabilities.
+
+It is a bond price now. `poolSchedule` is what the pool promises: every row's own dated cash flows,
+each scaled by how much of that row is in the pool, added up by date, divided by the pool's face — a
+pass-through pays what the borrowers pay, and the schedule is read off the instruments rather than
+forecast (Law 17, Law 19). `priceFor` discounts it with the same `priceAt` the money funds use, at
+`costOfFundsIn` — a read of the bidder's own published `bank.costOfFunds` event, its home `perAnnum`
+or the named `alsoIn` row for the deal's money. A bank that has published no funding cost, or a pool
+that promises nothing, returns `Missing` and does not bid: a refusal is an answer (Law 1), not a zero.
+
+The offer is passed to the bidder. That is not a hole in Observer A4: an offer is described to
+whoever is asked to bid on it, and what a buyer sees is the rows it is being sold and nothing else
+of the arranger's book.
+
+**What is NOT done, and where it went.** `noteBids` still posts a single point for the bank's whole
+spare cash where Clearing A2 wants a schedule. The ladder that builds one — `levelsBelow`,
+`rungsOver`, `rungsUpTo` — lives in `households/demand.ts`, and a module never imports a module;
+duplicating it would be Law 4. So it moves to the kernel, into `clearing/`, whose A2 that file
+already cites. That is a kernel change, so it is INSERTED at its dependency position rather than
+done here (Law 10): step **2.19**, where `A-32` opens the same function anyway. `ARCHITECTURE.md`
+goes in that commit.
+
+**`A-65` — the option premium, and it was the worst arithmetic in the model.**
+`expected × confidence` is a LEVEL times a WIDTH. `confidence` is `width(surprises)`, money per unit
+of the underlying — every other reader in the engine uses it that way, subtracting it from a price
+or multiplying units by it — and `expected` is money per unit too, so the product is money² per
+unit², posted as a price into a book whose tick is a cent. Every premium in this world was therefore
+proportional to the SQUARE of the underlying's price level: an option on a line at 100 with 1%
+surprises quoted 100 — the whole value of the underlying — and the same 1% on a line at 1 quoted
+0.01. The comment directly above the line said the right term (*"its own outlook's CONFIDENCE and
+not its level"*) and the code multiplied by the level anyway.
+
+And the premium did not depend on the strike, the right or the expiry: `mine` was built from the
+outlook alone, so one party quoted the same number for a deep out-of-the-money call and an
+at-the-money put on the same line in the same session, and the strike ladder `openBooks` builds was
+a set of books every participant priced identically.
+
+`worthToIt` is two terms and the contract's own terms decide both. **Where exercise stands at the
+price this party expects** — `expected − strike` for a call and the other way for a put, the same
+distance `intrinsic` takes at a PRINT, taken here at the party's own outlook. **Plus what it thinks
+the thing moves before this expires** — its own confidence over the root of the time the contract
+runs, which is `impliedMove` read backwards: what that function takes OFF a printed premium is what
+this one puts INTO a quoted one, so the quote and the read of the same book are inverses (Law 4),
+and the expiry enters. Out of the money by more than it thinks the thing moves, it does not quote —
+a decision, exactly like `intrinsic`'s when nobody exercises, and not a floor (Law 6). D7's *"the
+premium is what clears"* is untouched: this is the reservation a party brings, not a model price.
+
+**A third dimensional defect the fix exposed.** `price: mine` posted money per unit of the
+UNDERLYING into a book whose unit is `optionContracts`, while `impliedMove` divides a printed premium
+BY the multiplier to read it back — so the quote and the read of one book were out by the multiplier
+against each other, and the `mine > book` comparison that decides which side a party takes compared
+the two scales directly. It posts per contract now, and the comparison and the balance-sheet room
+calculation use that same number.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. The engine suite is still not run.

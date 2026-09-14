@@ -32,7 +32,9 @@
  * event, exactly, and the audit says so rather than the code assuming it. D4's senior losses are
  * what happens when the junior is not deep enough, and nothing anywhere stops that.
  */
+import { dayNumber, type Civil } from '../../calendar/civil.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
+import { priceAt } from '../../prices/curve.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import {
@@ -49,9 +51,9 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { atMost, div, mul, sub, sum } from '../../core/num.js';
+import { atMost, div, sum } from '../../core/num.js';
 import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
-import { asRatio, heldAsMoney, minus, plus, asPerPiece, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
+import { asRatio, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
@@ -339,10 +341,11 @@ export function arrange(ctx: MechanismContext): void {
     const vehicle = vehicleId(bank.id, book.next);
     // C4: WHO WOULD BUY A NOTE OF IT. Each is asked with its own view and answers out of its own
     // money; none of them sees this bank's book, and none of them has to bid (Observer A4).
+    const schedule = poolSchedule(view, taken, faces, pool);
     const bids: Order[] = [];
     for (const other of ctx.parties.ofKind(BANK)) {
       if (!other.status.alive || other.id === bank.id) continue;
-      bids.push(...noteBids(ctx.participant(other.id), ccy));
+      bids.push(...noteBids(ctx.participant(other.id), ccy, schedule));
     }
     if (bids.length === 0) {
       // A deal nobody would buy a note of is a deal that does not happen, and the bank is exactly
@@ -879,7 +882,12 @@ function pools(): Family {
  * the book produced. There is no spread over anything and no rating-implied level: an unrated world
  * would price these the same way, because the price is what somebody paid.
  */
-export function noteBids(view: ParticipantView, ccy: CurrencyCode): readonly Order[] {
+export function noteBids(
+  view: ParticipantView,
+  ccy: CurrencyCode,
+  /** C4: the pool it is being offered, per unit of face. A buyer asked to bid is told what it pays. */
+  schedule: readonly CashFlow[],
+): readonly Order[] {
   const spare = minus(view.cash(ccy), view.owedIn(ccy), 'what it holds against what falls due');
   if (spare <= 0) return [];
   // F3, C4: AND NO MORE THAN IT WILL HAVE OUT TO ANY ONE NAME. A vehicle is one name — a buyer of
@@ -892,26 +900,111 @@ export function noteBids(view: ParticipantView, ccy: CurrencyCode): readonly Ord
   if (typeof limit !== 'number' || limit <= 0) return [];
   const qty = downTick(atMost(spare, limit, 'what it will have out to one name'));
   if (qty <= 0) return [];
-  return [{ party: view.self.id, side: 'buy', price: priceFor(view, ccy), qty }];
+  const price = priceFor(view, ccy, schedule);
+  if (!price.some) return [];
+  return [{ party: view.self.id, side: 'buy', price: price.value, qty }];
+}
+
+/** Law 8: one day count for discounting what a pool pays, stated once, in the file that does it. */
+const NOTE_DAY_COUNT = 'ACT/ACT';
+
+/**
+ * C3, C4, Law 19: WHAT THE POOL PAYS AND WHEN, per unit of its face.
+ *
+ * A senior note over a pool is a pass-through: what it pays is what the borrowers pay, on the days
+ * they pay it. So the schedule a buyer discounts is the pool's own — every row's cash flows, each
+ * scaled by how much of that row is in the pool, added up by date and divided by the pool's face.
+ * Nothing here is a forecast (Law 17) and nothing is a curve somebody posted: it is the dated
+ * promises the rows already carry, read off the instruments (Law 19).
+ *
+ * Observer A4: this is the OFFER, and an offer is described to whoever is asked to bid on it. It is
+ * not a look inside the arranger's book — a buyer sees the rows it is being sold and nothing else.
+ */
+function poolSchedule(
+  view: ParticipantView,
+  rows: readonly InstrumentId[],
+  faces: readonly Qty[],
+  pool: Qty,
+): readonly CashFlow[] {
+  if (pool <= 0) return [];
+  const on = view.calendar.startOf(view.period);
+  const byDate = new Map<number, { date: Civil; paid: Cash }>();
+  rows.forEach((id, k) => {
+    const face = faces[k];
+    if (face === undefined || face <= 0) return;
+    const i = view.instruments.get(id);
+    for (const f of view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar)) {
+      const paid = valueAt(f.perUnit, face, 'what this row pays on the day');
+      const at = byDate.get(dayNumber(f.date));
+      byDate.set(
+        dayNumber(f.date),
+        at === undefined
+          ? { date: f.date, paid }
+          : { date: at.date, paid: plus(at.paid, paid, 'what the pool pays that day') },
+      );
+    }
+  });
+  return [...byDate.values()].map((v) => ({
+    date: v.date,
+    perUnit: pricedAt(v.paid, pool, 'what a unit of the pool pays'),
+  }));
 }
 
 /**
- * C3, Law 3, Law 19: WHAT IT WILL PAY, per unit of face. A note is worth a discount on its face to
- * a buyer that could have lent the money itself — the discount is what its own money costs it,
- * which it reads off what it actually pays for money and never off a table.
+ * B2, Law 19: WHAT THIS BANK ITSELF PUBLISHED THAT MONEY COSTS IT, per annum, in the deal's money.
+ *
+ * `banks/index.ts:publishCostOfFunds` writes one event per bank per period carrying the blend for
+ * its home money and a named row for every other money it might lend in. This is a read of that —
+ * never a re-derivation of it (Law 19), and never a table.
  */
-function priceFor(view: ParticipantView, ccy: CurrencyCode): PerPiece {
-  const owed = heldAsMoney(view.owedIn(ccy), 'what falls due');
-  const equity = view.equity();
-  if (equity <= 0 || owed <= 0) {
-    // A buyer that owes nothing has nothing to compare a note against, and pays face for it. That
-    // is not a floor: it is what "my money costs me nothing this period" arithmetically comes to.
-    return asPerPiece(1, 'it owes nothing, so its money costs it nothing');
-  }
-  const cost = ratioOf(owed, plus(owed, equity, 'what funds it'), 'what its own money costs it');
-  return asPerPiece(
-    sub(1, mul(cost, cost, 'the discount it wants'), 'what it will pay per unit of face'),
-    'what it will pay per unit of face',
+function costOfFundsIn(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
+  const said = view.lastPublicAbout('bank.costOfFunds', String(view.self.id));
+  if (!said.some) return none<Ratio>();
+  const data = said.value.data;
+  const perAnnum = (row: unknown): Option<Ratio> => {
+    if (typeof row !== 'object' || row === null) return none<Ratio>();
+    const r = (row as Record<string, unknown>)['perAnnum'];
+    // Item 16: a published rate re-enters the type system here, through its dimension's own door.
+    return typeof r === 'number' ? some(asRatio(r, 'what money costs this bank, per annum')) : none<Ratio>();
+  };
+  if (data['ccy'] === ccy) return perAnnum(data);
+  const also = data['alsoIn'];
+  if (typeof also !== 'object' || also === null) return none<Ratio>();
+  return perAnnum((also as Record<string, unknown>)[ccy]);
+}
+
+/**
+ * C3, Law 3, Law 8, Law 19: WHAT IT WILL PAY, per unit of face — the pool's own dated payments
+ * discounted at what this bank's money costs it. A note is worth what its payments are worth to a
+ * buyer that could have lent the money itself, and that is the whole of the comparison.
+ *
+ * A-58: this used to be `1 − (owed/(owed+equity))²` — the DEBT SHARE OF THE BANK'S FUNDING, squared
+ * — with the variable named `cost` and the docstring already describing the number built here. It
+ * had no periodicity (the note's tenor appeared nowhere), no relation to any rate this world
+ * produces (a bank funded 90% by deposits bid 0.19 per unit of face, an 81% discount on a senior
+ * tranche), and no dependence on the pool at all, so two vehicles with completely different loan
+ * books got the same bid from the same bank. `owedIn` was also the wrong quantity even as leverage:
+ * it is what falls due in `ccy` this period less what the bank holds of it, a funding gap.
+ *
+ * `Missing` where the bank has published no funding cost yet or the pool promises nothing: it has
+ * no basis to bid and it does not bid. That is a refusal (Law 1), not a zero.
+ */
+function priceFor(
+  view: ParticipantView,
+  ccy: CurrencyCode,
+  schedule: readonly CashFlow[],
+): Option<PerPiece> {
+  if (schedule.length === 0) return none<PerPiece>();
+  const required = costOfFundsIn(view, ccy);
+  if (!required.some) return none<PerPiece>();
+  return some(
+    priceAt(
+      schedule,
+      required.value,
+      view.calendar.startOf(view.period),
+      NOTE_DAY_COUNT,
+      'what it will pay per unit of face',
+    ),
   );
 }
 

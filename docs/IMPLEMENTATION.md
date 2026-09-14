@@ -323,7 +323,7 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > READ by the module that knows what it asked about.
 >
 > | ~~2b~~ | ~~the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1`~~ (`A-18` closed in 2a.1) — **DONE** | |
-> | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
+> | ~~2c~~ | ~~rates read as levels: `A-44`, `A-58`, `A-65`~~ — **DONE**, and each was a rate that was not one | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
 > | 2e | the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38` | |
 >
@@ -383,12 +383,65 @@ worth of a liability against one household's equity.
 **Not measured.** Per the owner's instruction the suite does not run until the plan is done; the
 gates in use are lint, typecheck, `check:spec`, `check:forbids` and `check:existence`, all green.
 
+### Stage 2c — as built: three rates that were not rates
+
+Each of these three is a number used where a RATE belongs that was never a rate — a share, a level
+times a width, a constant — and in each the comment beside it already described the number that
+should have been there.
+
+**`A-44`, the saver's comparison.** `households.liquidityPremium` is declared *"per annum OVER WHAT
+A DEPOSIT RETURNS"* and was used as the bare 0.005, so a cell subscribed to a money fund offering
+0.006 while its own bank's board paid it 0.02. Deposits pay now — `money-market/deposits.ts:
+payDepositInterest` settles a real money leg every period — and the saving decision had not moved
+with worklist 11. `bank.ts:ownDepositRate` reads its own bank's board for its own deposit class and
+`required` is that plus the premium. Zero where it has no deposit class or its bank has published no
+board is the rate itself, not a default: what pays it nothing is what it is being paid.
+
+**`A-58`, the note price.** `securitisation:priceFor` was `1 − (owed/(owed+equity))²` — the debt
+share of the bidder's own funding, squared, with the variable named `cost`. It had no periodicity,
+no relation to any rate this world produces (a bank funded 90% by deposits bid 0.19 per unit of face
+on a SENIOR tranche), and no dependence on the pool at all, so two vehicles with completely
+different books got the same bid from the same bank. It is a bond price now: `poolSchedule` is what
+the rows promise, by date, per unit of pool face — a pass-through pays what the borrowers pay — and
+`priceFor` discounts it at what this bank itself published that money costs it. The offer is passed
+to the bidder because an offer is described to whoever is asked to bid on it; nobody sees the
+arranger's book (Observer A4).
+
+**`A-65`, the option premium, and it was the worst arithmetic in the model.** `expected ×
+confidence` is a LEVEL times a WIDTH — money² per unit² — posted as a price, so every premium in
+this world was proportional to the SQUARE of the underlying's price: an option on a line at 100 with
+1% surprises quoted 100, the whole value of the underlying. The comment directly above it said the
+right term (*"its own outlook's CONFIDENCE and not its level"*) and the code multiplied by the level
+anyway. Neither the strike, nor the right, nor the expiry entered at all, so one party priced every
+book on a line identically and the strike ladder `openBooks` builds was a set of books nobody could
+tell apart. `worthToIt` is two terms the contract's own terms decide: where exercise stands at the
+price this party expects (the same distance `intrinsic` takes at a print), plus its own confidence
+over the root of the time the contract runs — which is `impliedMove` read backwards, so what that
+function takes OFF a printed premium is what this one puts INTO a quoted one (Law 4). Out of the
+money by more than it thinks the thing moves, it does not quote: a decision, like `intrinsic`'s, and
+not a floor (Law 6).
+
+**And the fix exposed a third dimensional defect in the same function.** `price: mine` posted money
+per unit of the UNDERLYING into a book whose unit is `optionContracts` and whose print `impliedMove`
+divides BY the multiplier — the quote and the read of the same book were out by the multiplier
+against each other. It posts per contract now, and the `mine > book` comparison that decides the
+side goes with it.
+
+**`E-12` is stage 2c's own finding.** A-44 closes the fund half of D5.a's substitution and names the
+paper half as still open: what a household requires reaches `fundOrders` and does NOT reach the
+paper bid, which is its outlook less its own error (§46 B3). So a rise in the deposit board makes a
+money fund less attractive to a saver and does nothing at all to what it will pay for a bill —
+half a transmission, where D5.a says *"paper bought directly"* explicitly. Positioned at item 21.
+
+**Not measured.** The suite does not run until the plan is done; lint, typecheck, `check:spec`,
+`check:forbids` and `check:existence` are green.
+
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
 - [x] 2a.2 `firms`: every recipe coefficient — `hoursPerUnit`, `yieldRate`, `qtyPerUnit`, `unitsPerUnitPerPeriod`, `spoilage` — is a `Ratio`, so what a stock reaches is `over(stock, coefficient)` and what a batch draws is `scale(batch, coefficient)`. Four `asRatio(tech.…)` wrappers deleted as redundant (Law 12). `plannedBatch`, `productiveHours`, `hoursUnderContract` and `areaUnderUse` carry `Qty`; the sales outlook enters as an amount once rather than at each of its three readers.
-- [ ] 2.1 Take the residue in the order the file names it — `banks`, `funds`, `households`, `firms`, `seeds`, then what is left — not by site count. Run `npx tsc --noEmit` after each module; the compiler generates the list.
-- [ ] 2.2 For each site the compiler rejects, decide which of three it is: a DIMENSION that was right and unstated (type it), a DIMENSION that was wrong (that is one of the eighteen — fix it, below), or a TARGET typed with a grid door (switch to `asAmount<'piece'>` + `plus`/`minus`).
+- [x] 2.1 Take the residue in the order the file names it — `banks`, `funds`, `households`, `firms`, `seeds`, then what is left — not by site count. Run `npx tsc --noEmit` after each module; the compiler generates the list. **DONE across 2a.1–2a.12**, in that order. The compiler generated the list at every stage and the count is in the table above.
+- [x] 2.2 For each site the compiler rejects, decide which of three it is: a DIMENSION that was right and unstated (type it), a DIMENSION that was wrong (that is one of the eighteen — fix it, below), or a TARGET typed with a grid door (switch to `asAmount<'piece'>` + `plus`/`minus`). **DONE.** The three answers came up in roughly that proportion; the eighteen are stages 2b–2e and the grid-door cases are named in each stage record.
 - [x] 2.3 **`E-8` is closed.** `dimension: 'price'` now means money per PIECE and `'pricePerUnit'` money per NAMED unit, read through `params.price` and `params.pricePerUnit`. **Six declared levels were all `price` and four of them are stated per named unit** — every goods opening level, the opening wage, the FX opening rate — so the mis-declaration was the majority. `equity.openingShare` and `funds.openingShare` are genuinely per piece and stay. **And a seventh was not a price at all**: `bondFuture.size` is 100,000 units of FACE per contract, no money anywhere in it, declared `price` and read as money-per-piece; it is a `count` now.
 - [x] 2.3a **The split caught a live defect.** The FX opening rate was written as a print — money PIECES per piece — straight from a declaration stated in named units on both sides, while `rateTickFor` beside it has always crossed through `registry.priceOf`. The two agreed only while base and quote shared a subdivision. It crosses at the door now.
 - [x] 2.3b A stale reader stage 1 left behind: `indices.test.ts` read `index.base` with `params.price` after stage 1 re-declared it a `ratio`, which throws at the read. Corrected to `params.ratio`.
@@ -399,9 +452,9 @@ gates in use are lint, typecheck, `check:spec`, `check:forbids` and `check:exist
 
 - [x] 2.6 **A-39** (the largest conservation break in the model). `labour/matching.ts:payFrom` returns a boolean; it computes `share.total` — what actually moved — and throws it away. Return `share.total`. Then `payWages` sets `bill.paid` from it instead of from the unrounded `mul(perMember, row.headcount)`, and `produce.ts` capitalises the money that changed hands. Also: `payFrom` returns `true` when `share.total <= 0`, recording a sub-piece wage as fully paid with no money leg — that branch returns the zero, and the caller books nothing. **DONE**: `payFrom` returns a `Cash` — what the wire moved — and `payWages` adds that to `bill.paid`. A sub-piece wage now returns zero rather than `true`. `produce.ts:wagesThisPeriod` already read `paid`, so what is capitalised into the batch is now the money that changed hands, with no change there (Law 19: one writer, one read).
 - [x] 2.7 **A-68**. `freight/index.ts`, the loading instruction: `costPerUnit: div(add(share, 0, 'the freight'), take, …)` — the `add(x, 0)` is the tell, and the missing term is what the cargo cost. Use `costOfDraw(lots, take)` from `register/register.ts`, which is exported for this read: `costPerUnit = (costOfDraw + share) / take`. `arrive()` is already correct and is the pattern. **DONE**: `cargo()` reads `costOfDraw(held.lots, take)` and `costPerUnit` is what the units cost plus the voyage, over what was loaded. A shipper holding no lots of the line has paid nothing for it and says so.
-- [ ] 2.8 **A-65**. `options/index.ts:optionOrders`: `mul(outlook.expected, outlook.confidence)` is money² per unit². The premium must be built from `confidence` as the WIDTH it is, and must depend on `t.strike`, `t.right` and `t.expiry` — today none of the three appears in `mine`. The reservation is the party's own; D7's "the premium is what clears" stays.
-- [ ] 2.9 **A-58**. `securitisation:priceFor` is `1 − (owed/(owed+equity))²` — a leverage ratio squared called a cost of funds, with no periodicity and no dependence on the pool. Discount the note's own cash flows at the bank's published `FundingCost.perAnnum` (`banks/index.ts:publishCostOfFunds`) with the same `priceAt(flows, required, on, dayCount)` the money funds use. And `noteBids` posts a single point for the whole spare cash — post a schedule (Clearing A2).
-- [ ] 2.10 **A-44**. `HOUSEHOLD_PARAMS.liquidityPremium` is declared `per annum OVER WHAT A DEPOSIT RETURNS` and used as the bare 0.005. Deposits pay now (`money-market/deposits.ts:payDepositInterest`). `portfolio.ts:fundOrders` must compare `p.offered` against `depositRate + premium`, reading the board through `households/bank.ts:board()`.
+- [x] 2.8 **A-65**. `options/index.ts:optionOrders`: `mul(outlook.expected, outlook.confidence)` is money² per unit². The premium must be built from `confidence` as the WIDTH it is, and must depend on `t.strike`, `t.right` and `t.expiry` — today none of the three appears in `mine`. The reservation is the party's own; D7's "the premium is what clears" stays. **DONE.** `worthToIt` replaces `expected × confidence`: the distance exercise would pay AT THE PRICE IT EXPECTS (`expected − strike` for a call, the other way for a put — the same distance `intrinsic` takes at a print), plus its own CONFIDENCE over the root of the time the contract runs, which is `impliedMove` read backwards so the quote and the read are inverses (Law 4). Strike, right and expiry all enter. **And a third defect the fix exposed**: `price: mine` posted money per unit of the UNDERLYING into a book whose unit is contracts and whose print `impliedMove` divides BY the multiplier — out by the multiplier against its own reader. It posts per contract now, and the `mine > book` comparison with it.
+- [x] 2.9 **A-58**. `securitisation:priceFor` is `1 − (owed/(owed+equity))²` — a leverage ratio squared called a cost of funds, with no periodicity and no dependence on the pool. Discount the note's own cash flows at the bank's published `FundingCost.perAnnum` (`banks/index.ts:publishCostOfFunds`) with the same `priceAt(flows, required, on, dayCount)` the money funds use. And `noteBids` posts a single point for the whole spare cash — post a schedule (Clearing A2). **DONE, the price half.** `poolSchedule` builds what the pool pays per unit of face — every row's own dated flows, scaled by how much of that row is in the pool, added by date, over the pool's face — and `priceFor` discounts it at `costOfFundsIn`, a read of the bank's own published `bank.costOfFunds` (home `perAnnum`, or the named `alsoIn` row for the deal's money). A bank that has published no funding cost, or a pool that promises nothing, returns `Missing` and does not bid: a refusal, not a zero. **The schedule half is NOT done and is carried to 2.19**, where `levelsBelow` is opened anyway — see the note there.
+- [x] 2.10 **A-44**. `HOUSEHOLD_PARAMS.liquidityPremium` is declared `per annum OVER WHAT A DEPOSIT RETURNS` and used as the bare 0.005. Deposits pay now (`money-market/deposits.ts:payDepositInterest`). `portfolio.ts:fundOrders` must compare `p.offered` against `depositRate + premium`, reading the board through `households/bank.ts:board()`. **DONE.** `bank.ts:ownDepositRate` is the read — its own bank's board for its own deposit class — and `required` is that plus the premium. **The remainder is `E-12`**: `required` reaches the fund comparison and not the paper bid, which is its outlook less its own error (§46 B3), so a rise in the board still does not make a cell bid lower for a bill. Two stale comments went with it: `portfolio.ts`'s header said a deposit "returns nothing at all here", and both it and `index.ts` claimed `required` was posted down from the opinion, which it never was.
 - [ ] 2.11 **A-47** and **A-50** together. `funds/index.ts:eligible` admits a line on live/kind/tenor with **no currency test**, so every money fund's mandate is every sovereign bill in the world; `ordersOf` then divides one currency by another; `nav.ts:navOf` sums two moneys. Add the currency to the mandate, convert through `ctx.valuation.inMoney` in `navOf` and `holdingsWorth`, and delete `moneyOf` — `ctx.accountOf` is the one writer of which account a party holds a money in.
 - [ ] 2.12 **A-51**. `inMoney` is exported on `MechanismContext.valuation` and called by **no module**. Close it at the reads that walk `holdingsOf`: `funds/nav.ts`, `funds/index.ts:holdingsWorth`, `banks/capital.ts:capitalOf`, `money-market/resolution.ts:valueBook`, `households/consume.ts:wealthOf` and `atRisk` (**A-23**), `equity/index.ts:531`.
 - [ ] 2.13 **A-61**. `central-bank-omo/index.ts:remit` sends to `treasuries[0]` — an insertion-order artefact — in its own money. Use `registry.centralBankOf(ccy)` paired with `treasuryOf(ctx, bank)` (already in `money-market/resolution.ts`) so each treasury owns its own central bank.
@@ -410,15 +463,19 @@ gates in use are lint, typecheck, `check:spec`, `check:forbids` and `check:exist
 - [x] 2.16 **A-1**. `ledger/settlement.ts:reseat` books a TOTAL into the per-member equity account; `issue` and `redeem` wrap in `perMemberOf` and `reseat` does not, nor does the issuer re-mark in the `credit` case. Make `bump` take the total and divide, so there is one door and a new writer cannot forget. **DONE, and not as written.** `bump` could not "take the total" — three of its eight callers hold a PER-MEMBER number (the register's own), and making them multiply would put the rounding back. There are two named doors instead: `bumpPerMember` and `bumpTotal`, and no `bump`, so every existing caller had to say which of the two it held. `perMemberOf` is now reachable only from `bumpTotal`.
 - [ ] 2.17 **A-33**. `world/world.ts:1204 lastOwn` has no period bound. Add one predicate at the four `labour.wages` readers (`firms/decide.ts:wagesDue`, `wageFacing`, `hoursUnderContract`; `firms/index.ts:wagesPromised`), at `firms/invest.ts:quotedRate`, at `treasury/index.ts:lastWageBill`/`wageItFaces`, and at `banks/staff.ts:linesCovered`.
 - [ ] 2.18 **A-38**. `labour/matching.ts:reservation` reads `outlook('income')` — which includes coupons, distributions and (per A-37, closed) sale proceeds. A cell's outside option is what it lives on WITHOUT the job. Read the benefit and the non-labour income separately.
-- [ ] 2.19 **A-32**. `levelsBelow` declares `households.demand.steps` a RESOLUTION and its levels are `opinion × k/steps` — a grid of 5 and a grid of 7 share only the top level, and the grid's BOTTOM is `opinion/steps`, so the count sets how far down the cell bids at all. Either make it invariant under refinement, or re-declare it a SHAPE whose count must fall. Same for `pricesOver` in `consume.ts`.
+- [ ] 2.19 **A-32**, **and `A-58`'s second half with it** — `levelsBelow`/`rungsOver` live in `households/demand.ts`, a module, and `securitisation:noteBids` posts a single point for its whole spare cash where Clearing A2 wants a schedule. It cannot import them (a module never imports a module), and duplicating them is Law 4. So the ladder moves to the kernel — `clearing/`, whose A2 `demand.ts` already cites — and both post through it. **That is a kernel change and this is where it is inserted** (Law 10): it is the dependency position, because A-32 opens the same function. The kernel move and `ARCHITECTURE.md` go in the same commit. `levelsBelow` declares `households.demand.steps` a RESOLUTION and its levels are `opinion × k/steps` — a grid of 5 and a grid of 7 share only the top level, and the grid's BOTTOM is `opinion/steps`, so the count sets how far down the cell bids at all. Either make it invariant under refinement, or re-declare it a SHAPE whose count must fall. Same for `pricesOver` in `consume.ts`.
 - [ ] 2.20 **A-5**. `registry/registry.ts`: `payable(_ccy, amount)`, `cashFor(_ccy, value)`, `deliverable(_unit, qty)` take a unit and ignore it. Drop the parameter, or make it do the conversion it claims. Not both.
 - [ ] 2.21 **A-6**. `goods/index.ts:122-129` declares `minutes per piece of <subUnit>` and holds hours (`TIME_PIECES = 1`, and `registry/grid.ts` says the piece of time is the hour). Correct the unit string. Same stale premise at `labour/index.ts`, whose comment describes a thousandth of an hour.
 - [ ] 2.22 Run `npm run check`. Read what it says and write every new finding into this file under the item that should fix it — do not chase one.
 
 ### Findings this closes (18)
 
-`A-1` `A-5` `A-6` `A-18` `A-19` `A-23` `A-32` `A-33` `A-38` `A-39` `A-44` `A-47` `A-50` `A-51`
-`A-58` `A-61` `A-65` `A-68`, and `E-8`, `E-9`, `E-10`. Bodies in Part 3.
+Done: ~~`A-1`~~ ~~`A-18`~~ ~~`A-19`~~ ~~`A-39`~~ ~~`A-44`~~ ~~`A-65`~~ ~~`A-68`~~, ~~`E-8`~~, and
+`A-58`'s price. Open: `A-5` `A-6` `A-23` `A-32` `A-33` `A-38` `A-47` `A-50` `A-51` `A-58` (its
+schedule) `A-61`, and `E-9`, `E-10`. Bodies in Part 3.
+
+Two came OUT of closing them and are positioned, not chased: **`E-11`** (2a.2, 6) and **`E-12`**
+(21). `A-18`'s `merge` half is item 12. A finding leaves this file only by being placed.
 
 ### Exit
 
@@ -3486,7 +3543,6 @@ option premium, where it is multiplied by the price level instead of used as the
 
 | finding | item | |
 |---|---|---|
-| **A-1** (B) | 2 | `reseat` books an issuer's whole liability against a PER-MEMBER equity account |
 | **A-4** (B) | 4 | a claimed assembly guard on `exposedTo` does not exist |
 | **A-5** (C) | 2 | `payable`, `cashFor` and `deliverable` take a unit and ignore it |
 | **A-6** (C) | 2 | `labourParam` is declared in minutes and holds hours |
@@ -3497,8 +3553,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-13** (B) | 4 | the population identity is checked for households and for nothing else |
 | **A-14** (A) | 4 | that same household check is an identity that cannot fail |
 | **A-17** (A) | 12 | three of XI-15's five weight events never fire, and nobody is ever born |
-| **A-18** (A) | 2, 12 | the fraction of a person is discarded every period |
-| **A-19** (B) | 2 | probate takes in every currency and pays out one |
+| **A-18** (A) | ~~2~~, 12 | the fraction of a person is discarded every period — **the fraction and the whole-cell crossing closed at 2a.1**; `cells.merge`, which removes the micro-cells already there, is item 12 |
 | **A-23** (C) | 2 | `wealthOf` and `atRisk` add currencies |
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
 | **A-25** (C) | 5 | an unpriced physical leg is valued at zero inside an audit family |
@@ -3508,10 +3563,8 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-34** (B) | 5 | a firm with no wage history bids for inputs as if labour were free |
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
 | **A-38** (B) | 2 | a cell's outside option is every kind of money it received |
-| **A-39** (A) | 2 | the wage bill capitalised into inventory is bigger than the wage paid |
 | **A-42** (A) | 4 | two `units` families switch off in any period with a weight event |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
-| **A-44** (B) | 2 | the liquidity premium is declared over a deposit and used as an absolute rate |
 | **A-45** (C) | 5 | a bank that owes nothing has a cost of funds of zero |
 | **A-47** (A) | 2 | a fund's mandate has no currency in it |
 | **A-48** (C) | 4 | `equityIsZero` cannot fail for the reason it says it checks |
@@ -3522,13 +3575,11 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
 | **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
-| **A-58** (A) | 2 | the price a bank will pay for a note is a leverage ratio squared |
+| **A-58** (A) | 2 (2.19) | the price a bank will pay for a note is a leverage ratio squared — **the price closed at 2c**; what is left is that `noteBids` posts a point where Clearing A2 wants a schedule, carried to 2.19 with `A-32` |
 | **A-60** (A) | 3 | no bank makes a market, because no bank employs anybody |
 | **A-61** (A) | 2 | every central bank remits to the same treasury, in its own money |
-| **A-65** (A) | 2 | every option premium is a money-squared number |
 | **A-66** (A) | 6 | eight of nine derivative books can never produce a first print |
 | **A-67** (A) | 9 | nothing ever borrows a security |
-| **A-68** (A) | 2 | loading a cargo writes off what the cargo cost |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
 | **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |
 | **B-2** (A) | 9, 14 | the insurance sector has no seed, no phase and no participant |
@@ -3555,10 +3606,10 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-5** (B) | 15 | the state can only sell ground in the place it sits in |
 | **E-6** (B) | 21 | an acquirer's consideration in a bank resolution is a missing mechanism |
 | **E-7** (B) | 19 | a negative policy rate is real and this world cannot express one |
-| **E-8** (B) | 2 | a declared price does not say which of the two scales it is in |
 | **E-9** (B) | 2 | a dirty price adds two scales |
 | **E-10** (B) | 2 | `Contract.struckAt` means a different dimension per kind — **never indexed before** |
 | **E-11** (B) | 2a.2, 6 | `Outcome.price` is a `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS. `E-10`'s shape at the clearing layer. **Found by the type at stage 2a.1** |
+| **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
 
 ### Findings already closed, and where
 
@@ -3579,6 +3630,9 @@ carries each in full.
 | old item 14, `Process` | `A-21` |
 | old item 17, the local repairs | `A-2`, `A-3`, `A-7`, `A-8`, `A-15`, `A-16`, `A-22`, `A-28`, `A-29`, `A-35`, `A-59`, `B-9`, `B-11`, `B-15`, `C-7` |
 | old item 18 | `C-3` (four central banks, four rates), and `E-1` |
+| item 2, stage 2a | `E-8`; `A-18`'s two ends (its `merge` half is item 12) |
+| item 2, stage 2b | `A-1`, `A-19`, `A-39`, `A-68` |
+| item 2, stage 2c | `A-44` (its paper-bid half is `E-12`), `A-65`; `A-58`'s price (its schedule half is 2.19) |
 
 ### What the reads covered, and what they did not
 

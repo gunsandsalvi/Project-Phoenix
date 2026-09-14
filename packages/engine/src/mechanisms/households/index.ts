@@ -27,6 +27,7 @@ import {
   heldAsMoney,
   minus,
   over,
+  plus,
   scale,
   valueAt,
 } from '../../core/measure.js';
@@ -42,7 +43,7 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
+import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST, ownDepositRate } from './bank.js';
 import { CONSUMPTION, MORTALITY, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
 import { age, die, mortalityParams, probateKind, settleEstates } from './lifecycle.js';
@@ -393,10 +394,22 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     decided.value.spend,
     decided.value.buffer,
   );
-  // D5.a: what it requires of a claim is what its deposit pays it plus what giving up access costs
-  // it. It is what it posts DOWN from its own opinion, and what it compares a fund's offer against
-  // — never what it works the opinion out with (13d).
-  const required = view.params.perAnnum(HOUSEHOLD_PARAMS.liquidityPremium);
+  /**
+   * D5.a, A-44: what it requires of a claim is WHAT ITS DEPOSIT PAYS IT plus what giving up access
+   * costs it, and it is what it compares a fund's offer against. It does NOT reach the paper bid —
+   * that is its outlook less its own error (§46 B3), so a rise in the board does not yet make it
+   * bid lower for a bill. `E-12`.
+   *
+   * The premium is declared `per annum OVER WHAT A DEPOSIT RETURNS` and was used as the bare 0.005,
+   * so a cell subscribed to a fund offering 0.006 while its own bank's board paid 0.02. The
+   * substitution D5.a describes — between a deposit and paper held directly, which is how a rate
+   * reaches a saver at all — ran against a constant.
+   */
+  const required = plus(
+    ownDepositRate(view),
+    view.params.perAnnum(HOUSEHOLD_PARAMS.liquidityPremium),
+    'what it wants before it gives up instant access',
+  );
   // D5, §46 B1 (13d): everywhere its savings could go, in one pass, with what IT thinks each is
   // worth — its own outlook of that line where it has one and the last print where it has not,
   // which is the same ladder it buys a loaf on. What it will not do is work out a price from

@@ -4,16 +4,19 @@
  * @spec Households C2 Households D1 Households D1.a Households D5 Households D5.a Households D6 Equity B1 Equity B3 Equity B6 Equity C2 Equity C2.a Expectations B3 Sovereign E2.f Money A1 XI-13 XI-15 Law 8
  *
  * D5.a: the choice between a deposit and paper bought directly is a real substitution, and it is
- * how a rate reaches a saver. A deposit is a holding of a bank's money — it returns nothing at all
- * here, because paying for deposits is a decision a bank has not been given yet (Banks Funding B1,
- * worklist 11) — so what a household gives up by holding paper instead is access to its money, and
- * what it wants for giving that up is its own liquidity preference. Nothing else enters: it is not
- * offered fund shares pro rata, and it is nobody's residual holder (D6).
+ * how a rate reaches a saver. A DEPOSIT PAYS NOW (`money-market/deposits.ts:payDepositInterest`,
+ * worklist 11), so what a household requires of a claim is what its own bank's board is already
+ * paying it PLUS what giving up instant access costs it — `bank.ts:ownDepositRate` and the
+ * liquidity premium, added in `index.ts:decide` and handed to `fundOrders` here. This file said a
+ * deposit "returns nothing at all here" for as long as that was true and for a while after (A-44).
+ * Nothing else enters: it is not offered fund shares pro rata, and it is nobody's residual holder
+ * (D6).
  *
- * It bids at the price its OWN required yield gives, never at the print: the price it will pay is
- * the one at which the paper returns what it wants, so a line that is dear to it does not fill and
- * a line that is cheap does. What it does not put into paper stays in its account, which is what
- * saving into a deposit is (C2).
+ * It bids at the BOTTOM OF THE RANGE IT THINKS THE PRICE IS IN — its own outlook less how wrong it
+ * has recently been (§46 B3) — never at the print, so a line that is dear to it does not fill and a
+ * line that is cheap does. That price does not yet know what a deposit pays it: what it requires
+ * reaches the fund comparison and not the paper bid, which is `E-12`. What it does not put into
+ * paper stays in its account, which is what saving into a deposit is (C2).
  *
  * It only considers paper that COMES BACK inside its own horizon. Anything longer it would have to
  * sell before maturity at a price nobody can tell it, and what that is worth is the other two

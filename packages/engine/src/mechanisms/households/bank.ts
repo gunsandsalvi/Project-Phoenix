@@ -124,6 +124,24 @@ function stayed(view: ParticipantView): number {
   );
 }
 
+/**
+ * A-44, D5.a: WHAT ITS OWN MONEY IS ALREADY EARNING IT, per annum, on the board of the bank it
+ * banks at. A deposit returned nothing when `portfolio.ts` was written and its header still said
+ * so; `money-market/deposits.ts:payDepositInterest` settles a real money leg on it every period
+ * now, so the saver's comparison has to move with it (worklist 11).
+ *
+ * Zero when its kind has no deposit class or its bank has published no board — not a default but
+ * the rate itself: what pays it nothing is what it is being paid.
+ */
+export function ownDepositRate(view: ParticipantView): Ratio {
+  const self = view.self;
+  const cls = view.registry.partyKind(self.kind).depositClass;
+  const nothing = asRatio(0, 'nothing pays it for its deposit');
+  if (cls === null) return nothing;
+  const rate = board(view, self.bank, cls);
+  return rate.some ? rate.value : nothing;
+}
+
 /** B1.a, E2.a: the rate on a bank's board for this class, which is public because it must be. */
 function board(view: ParticipantView, bank: PartyId, cls: string): Option<Ratio> {
   const said = view.lastPublicAbout('bank.depositRate', String(bank));

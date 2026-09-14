@@ -322,6 +322,61 @@ function params(): ParamDecl[] {
 }
 
 /**
+ * Expectations A3, XI-13, D7, §46's second dimension: WHAT THIS PARTY THINKS OPTIONALITY ON THIS
+ * CONTRACT IS WORTH, per unit of the underlying, and it is never read off this book.
+ *
+ * Two terms, and the contract's own terms decide both:
+ *
+ * **Where exercise stands at the price it expects** (D11) — `expected − strike` for a call and the
+ * other way for a put. It is the same distance `intrinsic` takes at a PRINT, taken here at this
+ * party's own outlook, so a strike far above where it thinks the line is going is worth less to it
+ * than one at the money, and the same party quotes a call and a put on one line differently.
+ *
+ * **What it thinks the thing MOVES before this expires** — its own outlook's CONFIDENCE, which is
+ * the width of its own surprises about the underlying in that underlying's own money, over the root
+ * of the time the contract runs. That is `impliedMove` read backwards: what that function takes off
+ * a printed premium is what this one puts into a quoted one (Law 4), and the expiry enters here.
+ *
+ * A-65: this used to be `expected × confidence` — a LEVEL times a WIDTH, which is money² per unit²,
+ * posted as a price. The comment above it already said the right term ("its own outlook's
+ * CONFIDENCE and not its level") and the code multiplied by the level anyway, so every premium in
+ * this world was proportional to the SQUARE of the underlying's price: an option on a line at 100
+ * with 1% surprises quoted 100, the whole value of the underlying, and the same 1% on a line at 1
+ * quoted 0.01. Neither the strike, nor the right, nor the expiry appeared in it at all, so one
+ * party priced every book on a line identically and the strike ladder was a set of books nobody
+ * could tell apart.
+ *
+ * Zero where it has no outlook, where the contract has already expired, or where the distance is
+ * further below zero than the move it expects — that last is a DECISION and not a floor (Law 6): a
+ * strike it cannot see the price reaching is one it will not pay for, the same answer `intrinsic`
+ * gives when nobody exercises.
+ */
+function worthToIt(view: ParticipantView, t: OptionTerms): PerPiece {
+  const nothing = asPerPiece(0, 'it has no view of what optionality on this is worth');
+  const outlook = view.outlook(about({ on: 'price', instrument: t.underlying }));
+  if (!outlook.some) return nothing;
+  const years = yearFraction(
+    OPTION_DAY_COUNT,
+    view.calendar.startOf(view.period),
+    view.calendar.startOf(t.expiry),
+  );
+  if (!(years > 0)) return nothing;
+  const expected = asPerPiece(outlook.value.expected, 'where it thinks the underlying goes');
+  const strike = asPerPiece(t.strike, 'the level it is struck at');
+  const distance =
+    t.right === 'call'
+      ? minus(expected, strike, 'the price it expects, above the strike')
+      : minus(strike, expected, 'the strike, above the price it expects');
+  const width = scale(
+    asPerPiece(outlook.value.confidence, 'how wide its own surprises about the line have been'),
+    asRatio(Math.sqrt(years), 'over the root of the time this runs'),
+    'what it thinks the thing moves before this expires',
+  );
+  const worth = plus(distance, width, 'what optionality on this contract is worth to it');
+  return worth > 0 ? worth : nothing;
+}
+
+/**
  * Demand with a reason and never a hedge ratio: A HOLDER COVERS WHAT ITS OWN SURPLUS MUST ABSORB.
  *
  * What it holds of the line, at its own print, times what its management refuses to have at risk —
@@ -356,14 +411,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * party with no view of how much the underlying moves has no view of what optionality on it is
    * worth — which is a real answer (D4) and not a gap to fill with somebody else's number.
    */
-  const outlook = view.outlook(about({ on: 'price', instrument: t.underlying }));
-  const moves = outlook.some
-    ? scale(
-        asPerPiece(outlook.value.expected, 'what it thinks the thing is worth'),
-        asRatio(outlook.value.confidence, 'how sure it is'),
-        'what it thinks it moves',
-      )
-    : asPerPiece(0, 'it has no view of how much the thing moves');
+  const moves = worthToIt(view, t);
   const mine =
     moves > 0
       ? plus(moves, scale(moves, aversion, 'what its capital wants'), 'its quote')
@@ -401,20 +449,23 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
           'in contracts',
         )
       : NO_QTY;
-  const price = mine;
+  /**
+   * Law 8, A-65: WHAT A CONTRACT COSTS, because that is what this book quotes. The unit of the
+   * venue is `optionContracts` and `impliedMove` divides a printed premium BY the multiplier to get
+   * back to money per unit of the underlying — so the print is per contract and this posted money
+   * per unit of the underlying, out by the multiplier, into the same book the read comes off.
+   */
+  const price = scale(mine, asRatio(t.multiplier, 'the multiplier'), 'per contract');
   // What it can write comes off its own balance sheet, and that is walked only where the comparison
   // it feeds actually happens: a book that has not printed has nothing for its number to be above.
   const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
   if (at.some && own > 0) {
     const book = at.value.price;
-    const room = view.registry.deliverable(
-      unit,
-      amountOf(own, scale(mine, asRatio(t.multiplier, 'the multiplier'), 'per contract'), 'what it can write'),
-    );
-    if (mine > book) {
+    const room = view.registry.deliverable(unit, amountOf(own, price, 'what it can write'));
+    if (price > book) {
       // It thinks these are dear against what the market last paid: it would rather be the writer.
       want = minus(want, room, 'and what it would write at its own price');
-    } else if (mine < book) {
+    } else if (price < book) {
       want = plus(want, room, 'and what it would buy at its own price');
     }
   }
