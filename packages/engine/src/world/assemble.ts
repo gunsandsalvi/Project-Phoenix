@@ -14,7 +14,7 @@ import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
-import { type Cash, negated } from '../core/measure.js';
+import { asPerMember, type Cash, negated } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
@@ -271,7 +271,8 @@ function stateEquityAsRead(w: World): void {
     // residue, and `opened(0)` charged it the rounding of stating a zero (worklist 13a).
     store.stateEquity(
       p.id,
-      read.value,
+      // XI-15: the sheet it was read off is per member, and so is the account it opens.
+      asPerMember<'money:piece'>(read.value, 'what one member opens with'),
       combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
       w.period,
       w.cycle,

@@ -28,17 +28,11 @@ import {
   ratioOf,
   scale,
   valueAt,
+  heldAsMoney,
 } from '../../core/measure.js';
 import type { PartyId, InstrumentId} from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import {
-  add,
-  atMost,
-  div,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+import { atMost, div, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
@@ -218,14 +212,14 @@ export function quote(
  */
 export interface Room {
   /** What its capital leaves it, as its own module published it. Missing before it has (B1). */
-  readonly capital: Option<number>;
-  readonly appetite: number;
+  readonly capital: Option<Cash>;
+  readonly appetite: Cash;
   /**
    * Banks Funding D4: what its own funding leaves it able to lend. Missing where no funding market
    * has said anything about this bank yet — a world with none has no funding condition to transmit.
    */
-  readonly funding: Option<number>;
-  readonly most: number;
+  readonly funding: Option<Cash>;
+  readonly most: Cash;
   readonly binds: 'capital' | 'appetite' | 'funding' | 'nothing';
 }
 
@@ -241,18 +235,25 @@ export interface Room {
  * publication, which is what a lag IS — the credit decision is taken before this period's session
  * has told anybody anything.
  */
-export function fundingRoom(view: ParticipantView): Option<number> {
+export function fundingRoom(view: ParticipantView): Option<Cash> {
   const said = view.lastOwn('bank.liquidity');
-  if (!said.some) return none<number>();
+  if (!said.some) return none<Cash>();
   const liquid = said.value.data['liquid'];
   const exposed = said.value.data['couldLeave'];
-  if (typeof liquid !== 'number' || typeof exposed !== 'number') return none<number>();
-  return some(sub(liquid, exposed, 'what it can lend and still cover what could leave'));
+  if (typeof liquid !== 'number' || typeof exposed !== 'number') return none<Cash>();
+  // Item 16: its own published liquidity re-enters here — two moneys it said it had and could lose.
+  return some(
+    minus(
+      asCash(liquid, 'what it published it holds liquid'),
+      asCash(exposed, 'what it published could leave'),
+      'what it can lend and still cover what could leave',
+    ),
+  );
 }
 
 /** Which of the three is the constraint: the smallest of them, named so a refusal says why (C3.a). */
 function bindingOf(
-  capital: Option<number>,
+  capital: Option<Cash>,
   appetite: number,
   funding: Option<number>,
 ): Room['binds'] {
@@ -279,13 +280,17 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
   // in a period when the room ran out has none, which is what scarce capital means.
   const byCapital = roomFor(view, LENDING);
   // F3, B2.c: the most it will have out to one name, whatever its capital would allow.
-  const limit = mul(capital, view.params.ratio(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
-  const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');
+  const limit = scale(
+    capital,
+    view.params.ratio(bankParam(decl.bank, 'limitPerBorrower')),
+    'its limit for one name',
+  );
+  const byAppetite = minus(limit, exposureTo(view, borrower), 'room under its limit');
   const byFunding = fundingRoom(view);
   // F3, B2.b: three real constraints and the tightest is the one that binds. A constraint this
   // bank has not published a position for is not a constraint it has (Appendix A), so it is skipped
   // rather than treated as zero.
-  const least = (a: number, b: Option<number>): number =>
+  const least = (a: Cash, b: Option<Cash>): Cash =>
     b.some ? atMost(a, b.value, 'it lends no more than the tightest of its own limits allows') : a;
   const most = least(least(byAppetite, byCapital), byFunding);
   return {
@@ -298,8 +303,8 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
 }
 
 /** F3: what it already has out to this name. */
-export function exposureTo(view: ParticipantView, borrower: PartyId): number {
-  let total = 0;
+export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
+  let total = asCash(0, 'nothing out to this name yet');
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     // F3: EVERYTHING THAT NAME OWES IT, not everything of one kind. A limit that counted only loans
@@ -311,7 +316,13 @@ export function exposureTo(view: ParticipantView, borrower: PartyId): number {
     const units = view.quantity(h.instrument);
     if (units <= 0) continue;
     const mark = view.mark(h.instrument);
-    total = add(total, mark.some ? mul(units, mark.value, 'at its mark') : units, 'exposure to one name');
+    total = plus(
+      total,
+      mark.some
+        ? valueAt(mark.value, units, 'at its mark')
+        : heldAsMoney(units, 'at the face it owes'),
+      'exposure to one name',
+    );
   }
   return total;
 }

@@ -356,7 +356,7 @@ export interface ParticipantView extends KernelReads {
    * falls due is what reached it, not what it was re-marked at (Clearing D4). It is a read of the
    * equity ledger and never a second tally of the same events (Law 4, Law 19).
    */
-  earned(periods: number): number;
+  earned(periods: number): Cash;
   /**
    * Law 7: the same account WITH the walk that produced it. A balance moved once per event since
    * the party was born is not one rounding old, and for a party whose equity is zero by

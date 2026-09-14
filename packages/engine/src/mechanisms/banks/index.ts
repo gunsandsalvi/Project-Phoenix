@@ -28,11 +28,12 @@ import {
   plus,
   type Ratio,
   ratioOf,
+  minus,
   scale,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { asQty, type Qty } from '../../core/tick.js';
+import { asQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -43,7 +44,7 @@ import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
-import { atLeast, atMost, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { atLeast, atMost, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -72,12 +73,7 @@ import {
   setBoard,
   type ReserveMemory,
 } from './treasury.js';
-import {
-  bidsFor,
-  runRaise,
-  subordinatedKind,
-  SUB_PARAMS,
-} from './subordinated.js';
+import { bidsFor, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
 import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
 import { publishLines } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
@@ -115,7 +111,7 @@ export const LENDING_PARAMS = {
 interface Book {
   next: number;
   /** Money B3.a: what the kernel allowed as a drawing this period, waiting to become a row. */
-  draws: { holder: string; issuer: string; ccy: string; amount: number }[];
+  draws: { holder: string; issuer: string; ccy: string; amount: Cash }[];
 }
 
 function book(ctx: MechanismContext): Book {
@@ -413,9 +409,14 @@ function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Cash {
  * request, which is a real thing that happens — that is a REFUSAL to record, not a silently
  * different price. A bank that never says no has no credit standard.
  */
-function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyId, want: number): {
+function shop(
+  rows: readonly BankDecl[],
+  ctx: MechanismContext,
+  borrower: PartyId,
+  want: Cash,
+): {
   readonly best: Quote | undefined;
-  readonly lend: number;
+  readonly lend: Cash;
 } {
   const quoted = quotedFor(ctx, borrower);
   if (quoted === undefined) {
@@ -423,7 +424,7 @@ function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyI
     // which of its OWN constraints stopped it (B2.d) — and it is asked here, where there is a
     // request with an amount on it, because what C3.a makes visible is declined VOLUME.
     refuse(rows, ctx, borrower, want);
-    return { best: undefined, lend: 0 };
+    return { best: undefined, lend: asCash(0, 'nobody would quote this name') };
   }
   const decl = declOf(rows, quoted.bank);
   const bank = ctx.parties.get(quoted.bank);
@@ -434,12 +435,12 @@ function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyI
       { bank: quoted.bank, borrower, asked: want, binds: 'the bank that quoted it has gone' },
       false,
     );
-    return { best: undefined, lend: 0 };
+    return { best: undefined, lend: asCash(0, 'the bank that quoted it has gone') };
   }
   const r = room(ctx.participant(quoted.bank), decl, borrower);
   if (r.most <= 0) {
     refuse(rows, ctx, borrower, want);
-    return { best: undefined, lend: 0 };
+    return { best: undefined, lend: asCash(0, 'it has no room for this name') };
   }
   return {
     best: quoted,
@@ -455,7 +456,7 @@ function refuse(
   rows: readonly BankDecl[],
   ctx: MechanismContext,
   borrower: PartyId,
-  want: number,
+  want: Cash,
 ): void {
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(rows, b.id);
@@ -518,7 +519,7 @@ function write(
   ctx: MechanismContext,
   bank: PartyId,
   borrower: PartyId,
-  wanted: number,
+  wanted: Cash,
   rate: number,
   ccy: CurrencyCode,
   /**
@@ -547,7 +548,12 @@ function write(
    */
   const who = ctx.parties.get(borrower);
   const members = weightOf(who);
-  const share = shareFor(ctx.registry, who, currencyUnit(ccy), div(wanted, members, 'per member'));
+  const share = shareFor(
+    ctx.registry,
+    who,
+    currencyUnit(ccy),
+    over(wanted, asRatio(members, 'the members it has'), 'per member'),
+  );
   const principal = share.total;
   const side = cellSide(who, share.perMember);
   if (principal <= 0) return undefined;
@@ -709,7 +715,12 @@ function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: Overdraf
     );
     return { allow: false };
   }
-  book(ctx).draws.push({ holder: o.holder, issuer: o.issuer, ccy: o.ccy, amount: o.shortfall });
+  book(ctx).draws.push({
+    holder: o.holder,
+    issuer: o.issuer,
+    ccy: o.ccy,
+    amount: asCash(o.shortfall, 'what it is overdrawn by'),
+  });
   return { allow: true };
 }
 
@@ -765,7 +776,7 @@ function bookMoves(): Family {
         const owed = creditorOf((id) => view.register.holdersOf(id), i);
         // A row repaid to the last unit is owed to nobody, and so is one not yet drawn; what the
         // clause says of it is that nothing is outstanding, which is the same comparison.
-        const held = owed.some ? view.register.quantity(owed.value, i.id) : 0;
+        const held = owed.some ? view.register.quantity(owed.value, i.id) : NO_QTY;
         const holding = owed.some ? view.register.holding(owed.value, i.id) : NO_HOLDING;
         // Law 7: `issued` is a running total that carries the dust of every drawing it has taken,
         // and what the lender holds is a sum over the lots those drawings made. The comparison is
@@ -782,7 +793,7 @@ function bookMoves(): Family {
           family: 'flows',
           spec: 'Banks Lending F1.a',
           owner: i.id,
-          size: sub(i.issued, held, 'units not with the lender of record'),
+          size: minus(i.issued, held, 'units not with the lender of record'),
           unit: i.unit,
           period: view.period,
           message: `${i.id}: ${i.issued} outstanding and ${owed.some ? String(owed.value) : 'nobody'}, who is owed it, holds ${held}`,
@@ -829,13 +840,23 @@ function tradingBookIsCapitalised(): Family {
           .filter((x) => x.period === view.period && x.subjects.includes(self));
         const lines = said[said.length - 1]?.data['lines'];
         if (typeof lines !== 'object' || lines === null) continue;
-        const terms: number[] = [];
+        const terms: Cash[] = [];
         for (const [id, row] of Object.entries(lines as Record<string, unknown>)) {
           if (typeof row !== 'object' || row === null) continue;
           const want = (row as Record<string, unknown>)['target'];
           const value = (row as Record<string, unknown>)['worth'];
           if (typeof want !== 'number' || typeof value !== 'number' || value <= want) continue;
-          terms.push(mul(sub(value, want, `${id} above its target`), weight, 'weighted'));
+          terms.push(
+            scale(
+              minus(
+                asCash(value, `what ${id} is worth`),
+                asCash(want, `what ${id} targets`),
+                `${id} above its target`,
+              ),
+              asRatio(weight, 'what this kind weighs'),
+              'weighted',
+            ),
+          );
         }
         const asked = sum(terms);
         // Law 7: both sides are walks over the same holdings at the same marks, so what separates
@@ -858,7 +879,7 @@ function tradingBookIsCapitalised(): Family {
           family: 'accounts',
           spec: 'Dealer Desks F2',
           owner: bank,
-          size: sub(asked.value, rwa, 'weighted assets its dealing book asked for and did not get'),
+          size: minus(asked.value, asCash(rwa, 'what it published'), 'weighted assets its dealing book asked for and did not get'),
           unit: currencyUnit(view.registry.currencyOf(view.parties.get(self).region)),
           period: view.period,
           message: `${bank}: its dealing book weighs ${asked.value} and it published ${rwa} of risk-weighted assets in total`,
@@ -1276,8 +1297,7 @@ function worthToItsLender(
    * anybody tightening anything — which is what a lending standard actually is.
    */
   const owed = ctx.register.heldTotal(i.id).value;
-  const loss = mul(
-    pd,
+  const loss = scale(
     lossGivenDefault(
       i.terms.security,
       (pledged) => {
@@ -1286,10 +1306,16 @@ function worthToItsLender(
       },
       asCash(owed, 'what is owed on this row'),
     ),
+    pd,
     'what it expects to lose per unit',
   );
   // Item 16: par less what it expects to lose, per unit — a PRICE, which is what a mark is.
-  return some(asPerPiece(sub(1, loss, 'what a unit is worth to it'), 'what a unit is worth to it'));
+  return some(
+    asPerPiece(
+      minus(asRatio(1, 'par'), loss, 'what a unit is worth to it'),
+      'what a unit is worth to it',
+    ),
+  );
 }
 
 /**
@@ -1319,8 +1345,10 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const e of [...ctx.journal.ofKind('firms.funding'), ...ctx.journal.ofKind('housing.funding')]) {
     if (e.period !== said) continue;
     const borrower = e.subjects[0];
-    const want = e.data['short'];
-    if (borrower === undefined || typeof want !== 'number' || want <= 0) continue;
+    const asked = e.data['short'];
+    if (borrower === undefined || typeof asked !== 'number' || asked <= 0) continue;
+    // Item 16: what a borrower published it is short of re-enters here, as the money it is.
+    const want = asCash(asked, 'what it published it is short of');
     // A4 (13d): the request may name what it is secured on. A bank reading this does not learn
     // what the thing IS — it learns that there is an instrument it could take and realise, which
     // is the whole of what security means to a lender (Law 15).

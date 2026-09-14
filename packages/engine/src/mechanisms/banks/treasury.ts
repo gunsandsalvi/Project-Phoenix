@@ -23,18 +23,7 @@
  * is how a real treasury sells a liquidity portfolio — through its own desk, whose quote then skews
  * — and it is what keeps one bank showing one face to one market.
  */
-import {
-  asCash,
-  asRatio,
-  type Cash,
-  minus,
-  type PerPiece,
-  type Ratio,
-  plus,
-  ratioOf,
-  scale,
-  valueAt,
-} from '../../core/measure.js';
+import { asAmount, asCash, asRatio, type Cash, heldAsMoney, minus, negated, type PerPiece, plus, type Ratio, ratioOf, scale, valueAt } from '../../core/measure.js';
 import { nextPeriod } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
@@ -42,17 +31,9 @@ import { delivers } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import type { Instrument } from '../../register/instruments.js';
-import { downTick } from '../../core/tick.js';
+import { asQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { paramId, type ParamId } from '../../core/ids.js';
-import {
-  add,
-  atLeast,
-  atMost,
-  div,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+import { atLeast, atMost, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -301,9 +282,9 @@ export function ccyOf(view: ParticipantView): CurrencyCode {
 
 /** The two administered levels, as the central bank last published them (Central Bank B2, C2). */
 export interface SeenCorridor {
-  readonly policy: number;
-  readonly floor: number;
-  readonly ceiling: number;
+  readonly policy: Ratio;
+  readonly floor: Ratio;
+  readonly ceiling: Ratio;
 }
 
 /**
@@ -320,7 +301,11 @@ export function corridorSeen(view: ParticipantView): Option<SeenCorridor> {
   if (typeof policy !== 'number' || typeof floor !== 'number' || typeof ceiling !== 'number') {
     return none<SeenCorridor>();
   }
-  return some({ policy, floor, ceiling });
+  return some({
+    policy: asRatio(policy, 'the policy rate'),
+    floor: asRatio(floor, 'the floor'),
+    ceiling: asRatio(ceiling, 'the ceiling'),
+  });
 }
 
 /** What its own account has done to it lately, and what it holds against the worst of it (C2.a). */
@@ -364,9 +349,9 @@ export function reserveFlow(ctx: MechanismContext, bank: PartyId, ccy: CurrencyC
 /** Money Market A2: where a bank stands after the flows — what it holds, and what it wanted to. */
 export interface TreasuryPosition {
   readonly bank: PartyId;
-  readonly reserves: number;
-  readonly buffer: number;
-  readonly gap: number;
+  readonly reserves: Qty;
+  readonly buffer: Qty;
+  readonly gap: Qty;
 }
 
 /**
@@ -392,25 +377,26 @@ export function worthOfMoney(
   ctx: MechanismContext,
   bank: PartyId,
   c: SeenCorridor,
-  base: number,
-): number {
+  base: Qty,
+): Ratio {
   const short = refusedLastSession(ctx, bank);
   if (short.some && short.value > base) return c.ceiling;
   const memory = ctx.params.periods(bankParam(bank, 'bufferMemory'));
   const from = ctx.period > memory ? ctx.period - memory : 0;
-  const weights: number[] = [];
-  const weighted: number[] = [];
+  const weights: Qty[] = [];
+  const weighted: Qty[] = [];
   for (const e of ctx.journal.ofKind('moneyMarket.print')) {
     if (e.period < from || e.period >= ctx.period || e.data['borrower'] !== bank) continue;
     const rate = e.data['rate'];
     const volume = e.data['volume'];
     if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
-    weights.push(volume);
-    weighted.push(mul(volume, rate, 'what that money cost it'));
+    const took = asAmount<'piece'>(volume, 'what it took');
+    weights.push(took);
+    weighted.push(scale(took, asRatio(rate, 'what it paid for it'), 'what that money cost it'));
   }
   const total = sum(weights).value;
   if (total <= 0) return c.floor;
-  const paid = div(sum(weighted).value, total, 'what its funding has been costing it');
+  const paid = ratioOf(sum(weighted).value, total, 'what its funding has been costing it');
   return atLeast(paid, c.floor, 'it would park at the floor rather than lend below it');
 }
 
@@ -438,7 +424,7 @@ function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number
  * another worked out that the gap had cost it more than moving would (E1). That is not a deposit
  * market: it is a bank that cannot see a rival's board its own depositors can read.
  */
-export function defended(best: Option<number>, own: number, stopAt: number): number {
+export function defended(best: Option<Ratio>, own: Ratio, stopAt: Ratio): Ratio {
   if (!best.some) return own;
   // B1.a, D1: it matches a rival that is paying more, and it stops at what the money is worth to
   // it — past that it funds itself in the market instead and lets the deposit go, which is the
@@ -468,7 +454,7 @@ export function pledgeable(view: ParticipantView): number {
     const mark = view.mark(i.id);
     const free = view.free(i.id);
     if (!mark.some || mark.value <= 0 || free <= 0) continue;
-    terms.push(mul(free, mark.value, 'what it could put up'));
+    terms.push(valueAt(mark.value, free, 'what it could put up'));
   }
   return sum(terms).value;
 }
@@ -481,7 +467,7 @@ export function pledgeable(view: ParticipantView): number {
  * this period falls due before any session could fund it, so a bank borrows today to repay
  * tomorrow, which is what rolling is.
  */
-export function fallsDueNext(view: ParticipantView, ccy: CurrencyCode): number {
+export function fallsDueNext(view: ParticipantView, ccy: CurrencyCode): Cash {
   return dueNext(
     view,
     ccy,
@@ -508,11 +494,11 @@ function dueNext(
   view: ParticipantView,
   ccy: CurrencyCode,
   mine: (i: Instrument) => boolean,
-  units: (i: Instrument) => number,
-): number {
+  units: (i: Instrument) => Qty,
+): Cash {
   const next = view.period + 1;
   const on = view.calendar.startOf(view.period);
-  const terms: number[] = [];
+  const terms: Cash[] = [];
   for (const i of view.instruments.all()) {
     if (!i.status.live || i.ccy !== ccy || !mine(i)) continue;
     const n = units(i);
@@ -522,7 +508,7 @@ function dueNext(
       flows.filter((f) => view.calendar.periodOf(f.date) === next).map((f) => f.perUnit),
     ).value;
     if (perUnit === 0) continue;
-    terms.push(mul(n, perUnit, 'what falls due next period'));
+    terms.push(valueAt(perUnit, n, 'what falls due next period'));
   }
   return sum(terms).value;
 }
@@ -533,8 +519,8 @@ export function positionOf(view: ParticipantView, ccy: CurrencyCode): TreasuryPo
   const said = view.lastOwn('bank.buffer');
   const held =
     said.some && said.value.period === view.period ? said.value.data['buffer'] : undefined;
-  const buffer = typeof held === 'number' ? held : 0;
-  return { bank: view.self.id, reserves, buffer, gap: sub(reserves, buffer, 'its position') };
+  const buffer = typeof held === 'number' ? asQty(held, 'what it keeps back') : NO_QTY;
+  return { bank: view.self.id, reserves, buffer, gap: minus(reserves, buffer, 'its position') };
 }
 
 /**
@@ -554,17 +540,24 @@ export function lenderReservation(
   // that name and what the capital such a claim consumes costs it, both of which it has already
   // published under its own name (Law 4). A bank with no view of the name does not bid at all.
   const own = view.lastOwn('bank.reservation');
-  if (!own.some) return none<number>();
+  if (!own.some) return none<Ratio>();
   const loss = pick(own.value.data['expectedLoss'], borrower);
   const capital = pick(own.value.data['capitalCost'], borrower);
-  if (loss === undefined || capital === undefined) return none<number>();
-  return some(add(c.floor, add(loss, capital, 'what the name costs it'), 'what it wants for it'));
+  if (loss === undefined || capital === undefined) return none<Ratio>();
+  return some(
+    plus(
+      c.floor,
+      plus(loss, capital, 'what the name costs it'),
+      'what it wants for it',
+    ),
+  );
 }
 
-function pick(map: unknown, about: PartyId): number | undefined {
+function pick(map: unknown, about: PartyId): Ratio | undefined {
   if (typeof map !== 'object' || map === null) return undefined;
   const v = (map as Record<string, unknown>)[about];
-  return typeof v === 'number' ? v : undefined;
+  // Item 16: what a bank published about a name re-enters here — a rate per annum, both of them.
+  return typeof v === 'number' ? asRatio(v, `what ${about} costs it`) : undefined;
 }
 
 /**
@@ -595,8 +588,12 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
     // it owes a depositor, and a treasury that could not see it funded itself for the week it could
     // see and closed overdrawn with nothing lent to it (worklist 13b, finding `13b-1`).
     const need = downTick(
-      add(
-        add(-p.gap, fallsDueNext(view, ccy), 'its gap and what falls due'),
+      plus(
+        plus(
+          negated(heldAsMoney(p.gap, 'its position'), 'the other way'),
+          fallsDueNext(view, ccy),
+          'its gap and what falls due',
+        ),
         view.contracts.cashDue(ccy, nextPeriod(view.period)),
         'and what its own book will take',
       ),
@@ -622,7 +619,7 @@ export interface DepositClassSeen {
   readonly id: string;
   readonly insured: boolean;
   /** Banks Capital D4: what the guarantee on this class costs the bank that funds itself with it. */
-  readonly premium: number;
+  readonly premium: Ratio;
 }
 
 /**
@@ -648,7 +645,7 @@ export function classesSeen(ctx: MechanismContext): readonly DepositClassSeen[] 
     const { id, insured, premium } = r as Record<string, unknown>;
     if (typeof id !== 'string' || typeof insured !== 'boolean') continue;
     if (typeof premium !== 'number') continue;
-    out.push({ id, insured, premium });
+    out.push({ id, insured, premium: asRatio(premium, `what the guarantee on ${id} costs`) });
   }
   return out;
 }
@@ -665,7 +662,7 @@ export function setBoard(
   bank: PartyId,
   ccy: CurrencyCode,
   classes: readonly DepositClassSeen[],
-  base: number,
+  base: Qty,
 ): void {
   const seen = corridorSeen(ctx.participant(bank));
   if (!seen.some) return;
@@ -677,7 +674,7 @@ export function setBoard(
   // balance (A1.d, E1), and a bank does not know either number. It used to be subtracted here as
   // though it were a rate, which made the board a function of a cost in a different unit and gave
   // every bank a per-class discount nobody had bid for and nobody had paid.
-  const net = sub(worth, margin, 'what it keeps');
+  const net = minus(worth, margin, 'what it keeps');
   const rates: Record<string, number> = {};
   // A1, Banks Capital D4: AND THE THREE CLASSES ARE NOT ONE RATE, for a cost this bank actually
   // bears. Insured money carries a premium the bank pays the insurer on top of what it pays the
@@ -685,31 +682,33 @@ export function setBoard(
   // less by exactly the premium. That is why retail is paid under wholesale, and it is a real
   // payment out of this bank's account (`insurance.premium`) rather than a stated stickiness.
   for (const cls of classes) {
-    const own = sub(net, cls.premium, `what the guarantee on ${cls.id} costs it`);
+    const own = minus(net, cls.premium, `what the guarantee on ${cls.id} costs it`);
     // D1, D3, Banks Capital D4: AND IT STOPS DEFENDING THIS CLASS AT WHAT THIS CLASS IS WORTH TO
     // IT. The bank's all-in cost of an insured deposit is the rate it pays the depositor PLUS the
     // premium it pays the insurer, so a stopping point of `worth` let it match a rival all the way
     // up to `worth + premium` all-in for money worth `worth` — it paid the guarantee twice, once
     // out of the board and once out of the match. It is the same number the board is struck from,
     // per class, in one place: what the money is worth less what the guarantee on it costs.
-    const stopAt = sub(worth, cls.premium, `what ${cls.id} is worth to it, net of its guarantee`);
+    const stopAt = minus(worth, cls.premium, `what ${cls.id} is worth to it, net of its guarantee`);
     rates[cls.id] = defended(bestRival(ctx, bank, cls.id), own, stopAt);
   }
   ctx.record('bank.depositRate', [bank], { bank, ccy, rates }, true);
 }
 
 /** The keenest board anybody else is showing this class, off what they published (Law 19). */
-function bestRival(ctx: MechanismContext, bank: PartyId, cls: string): Option<number> {
-  let best: number | undefined;
+function bestRival(ctx: MechanismContext, bank: PartyId, cls: string): Option<Ratio> {
+  let best: Ratio | undefined;
   for (const e of ctx.journal.ofKind('bank.depositRate')) {
     if (e.subjects.includes(bank)) continue;
     const rates = e.data['rates'];
     if (typeof rates !== 'object' || rates === null) continue;
     const rate = (rates as Record<string, unknown>)[cls];
     if (typeof rate !== 'number') continue;
-    if (best === undefined || rate > best) best = rate;
+    // Item 16: a rival's board re-enters here — what it is paying for this class, per annum.
+    const paying = asRatio(rate, `what a rival pays on ${cls}`);
+    if (best === undefined || paying > best) best = paying;
   }
-  return best === undefined ? none<number>() : some(best);
+  return best === undefined ? none<Ratio>() : some(best);
 }
 
 /**
@@ -746,8 +745,8 @@ export function publishBuffer(
  * Banks Funding F1: what this bank has issued of its own money and somebody else is holding — its
  * whole deposit base, as one number, read off the instrument rather than summed from a copy.
  */
-export function ownDeposits(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
+export function ownDeposits(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Qty {
   const money = moneyInstrumentId(bank, ccy);
-  if (!ctx.instruments.has(money)) return 0;
-  return sub(ctx.instruments.get(money).issued, ctx.register.quantity(bank, money), 'its base');
+  if (!ctx.instruments.has(money)) return NO_QTY;
+  return subQty(ctx.instruments.get(money).issued, ctx.register.quantity(bank, money), 'its base');
 }

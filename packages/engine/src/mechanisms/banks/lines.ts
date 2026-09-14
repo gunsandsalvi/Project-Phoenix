@@ -27,12 +27,22 @@
  * would price against, and no rival may see it. Its consequence is public — a bank that stops
  * quoting has stopped quoting where everyone can see.
  */
-import { asCash, type Cash } from '../../core/measure.js';
+import {
+  acrossMembers,
+  asCash,
+  heldAsMoney,
+  type Cash,
+  minus,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { add, atLeast, atMost, div, sub } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { atLeast, atMost } from '../../core/num.js';
+import { downTick, NO_QTY, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { LineWeights } from './capital.js';
@@ -44,17 +54,17 @@ export { DEALING, LENDING } from './data.js';
 export interface LineRead {
   readonly line: string;
   /** B1: the risk-weighted capital this line is using, off the same walk the position came from. */
-  readonly capital: number;
+  readonly capital: Cash;
   /** What it did to this bank's equity last period, read off the wire. */
-  readonly earned: number;
+  readonly earned: Cash;
   /** A read, and Missing where a line used no capital: a return on nothing is not a number. */
-  readonly returnOnCapital: Option<number>;
+  readonly returnOnCapital: Option<Ratio>;
   /** D1, XI-4: the most of the bank's capital this line will have standing behind it — its own
    * appetite, drawn per bank per line (`BANK_SPREAD.appetite`). What it asks the treasury for is
    * the distance between that and what it is already using. */
-  readonly appetite: number;
+  readonly appetite: Ratio;
   /** What the treasury allotted it of the room the bank has left. */
-  readonly room: number;
+  readonly room: Qty;
 }
 
 /**
@@ -67,8 +77,8 @@ export function publishLines(
   ccy: CurrencyCode,
   d: BankDecl,
   used: LineWeights,
-  headroom: number,
-  capital: number,
+  headroom: Cash,
+  capital: Cash,
 ): void {
   const earned = earnedByLine(ctx, bank, d);
   const rows = [
@@ -97,8 +107,16 @@ export function publishLines(
      * itself (`13b-7`). The branch that did it was also a branch on a line's id, which is the one
      * Law 15 forbids by name.
      */
-    const wants = sub(mulShare(capital, r.appetite), r.capital, 'the room its appetite leaves');
-    const asks = atLeast(wants, 0, 'a line already past its own appetite is asking for nothing');
+    const wants = minus(
+      scale(capital, r.appetite, 'what its appetite would have it hold'),
+      r.capital,
+      'the room its appetite leaves',
+    );
+    const asks = atLeast(
+      wants,
+      asCash(0, 'a line already past its own appetite is asking for nothing'),
+      'a line already past its own appetite is asking for nothing',
+    );
     // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
     // left can be nothing, and then the line behind stops writing.
     //
@@ -107,8 +125,8 @@ export function publishLines(
     // pieces; a line cannot be given a fraction of a cent to lend, and the treasury keeps whatever
     // the rounding leaves rather than handing it to a line that did not ask for it.
     const give = downTick(atMost(left, asks, 'the room that is left is all the room there is'));
-    allotted.set(r.line, atLeast<number>(give, 0, 'there is no less room to give than none'));
-    left = left - give;
+    allotted.set(r.line, atLeast(give, NO_QTY, 'there is no less room to give than none'));
+    left = minus(left, heldAsMoney(give, 'what this line was allotted'), 'the room it has left');
   }
   ctx.record(
     'bank.lines',
@@ -161,14 +179,14 @@ function roomOf(allotted: ReadonlyMap<string, number>, line: string): number {
   return given;
 }
 
-function row(line: string, capital: number, earned: number, appetite: number): LineRead {
+function row(line: string, capital: Cash, earned: Cash, appetite: Ratio): LineRead {
   return {
     line,
     capital,
     earned,
     appetite,
-    returnOnCapital: capital > 0 ? some(div(earned, capital, `${line} on its capital`)) : none(),
-    room: 0,
+    returnOnCapital: capital > 0 ? some(ratioOf(earned, capital, `${line} on its capital`)) : none(),
+    room: NO_QTY,
   };
 }
 
@@ -177,15 +195,11 @@ function rank(r: LineRead): number {
   return r.returnOnCapital.some ? r.returnOnCapital.value : 0;
 }
 
-function mulShare(capital: number, share: number): number {
-  return capital * share;
-}
-
 interface Earned {
-  readonly lending: number;
-  readonly dealing: number;
+  readonly lending: Cash;
+  readonly dealing: Cash;
   /** Law 2: what neither line claims, named rather than swept into one of them. */
-  readonly unattributed: number;
+  readonly unattributed: Cash;
 }
 
 /**
@@ -194,19 +208,27 @@ interface Earned {
  * party; the instruments its legs moved say whose line it was.
  */
 function earnedByLine(ctx: MechanismContext, bank: PartyId, d: BankDecl): Earned {
-  if (ctx.period === 0) return { lending: 0, dealing: 0, unattributed: 0 };
-  let lending = 0;
-  let dealing = 0;
-  let unattributed = 0;
+  const none_ = (why: string): Cash => asCash(0, why);
+  if (ctx.period === 0) {
+    return { lending: none_('nothing yet'), dealing: none_('nothing yet'), unattributed: none_('nothing yet') };
+  }
+  let lending = none_('nothing lent yet');
+  let dealing = none_('nothing dealt yet');
+  let unattributed = none_('nothing unattributed yet');
   for (const r of ctx.ledger.inPeriod(asPeriod(ctx.period - 1))) {
     if (r.outcome !== 'settled') continue;
-    let delta = 0;
-    for (const e of r.equity) if (e.party === bank) delta = add(delta, e.delta, 'its own equity');
+    // XI-15: a bank is a named party, so what its equity account moved by is what it made.
+    let delta = none_('nothing on this instruction');
+    for (const e of r.equity) {
+      if (e.party === bank) {
+        delta = plus(delta, acrossMembers(e.delta, 1, 'what it made'), 'its own equity');
+      }
+    }
     if (delta === 0) continue;
     const line = lineOf(ctx, bank, d, r.instruction.legs);
-    if (line === LENDING) lending = add(lending, delta, 'what its lending made');
-    else if (line === DEALING) dealing = add(dealing, delta, 'what its dealing made');
-    else unattributed = add(unattributed, delta, 'what neither line claims');
+    if (line === LENDING) lending = plus(lending, delta, 'what its lending made');
+    else if (line === DEALING) dealing = plus(dealing, delta, 'what its dealing made');
+    else unattributed = plus(unattributed, delta, 'what neither line claims');
   }
   return { lending, dealing, unattributed };
 }

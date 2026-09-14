@@ -15,6 +15,7 @@
  * the float where its holders are (B3: a saver holds a claim on a firm's earnings), every bank in
  * every seed opens above the line, at two banks and at twenty.
  */
+import { asRatio, minus } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
 import {
@@ -135,15 +136,17 @@ describe('what a bank pays to keep a class of deposit (Banks Funding D1, Banks C
     // The bank's all-in cost of an insured deposit is the rate plus the premium. A rival showing
     // 0.019 on money worth 0.020 costs this bank 0.021 all-in if it matches, so it does not: it
     // funds itself in the market instead, which is the alternative D1 names.
-    const worth = 0.02;
-    const premium = 0.002;
-    const own = 0.0175;
-    expect(defended(some(0.019), own, worth - premium)).toBe(own);
+    const worth = asRatio(0.02, 'what the money is worth to it');
+    const premium = asRatio(0.002, 'what the guarantee costs it');
+    const own = asRatio(0.0175, 'what it would pay unprompted');
+    const rival = (x: number) => some(asRatio(x, 'what a rival pays'));
+    const netOfGuarantee = minus(worth, premium, 'net of its guarantee');
+    expect(defended(rival(0.019), own, netOfGuarantee)).toBe(own);
     // And it does match inside that point, because a deposit it can fund more cheaply than the
     // market is one it wants (B1.a).
-    expect(defended(some(0.0179), own, worth - premium)).toBe(0.0179);
+    expect(defended(rival(0.0179), own, netOfGuarantee)).toBe(0.0179);
     // An uninsured class has no premium, so its stopping point is what the money is worth (B1.a).
-    expect(defended(some(0.019), own, worth)).toBe(0.019);
+    expect(defended(rival(0.019), own, worth)).toBe(0.019);
   });
 });
 

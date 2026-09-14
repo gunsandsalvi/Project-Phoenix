@@ -41,7 +41,9 @@ import {
 } from '../core/ids.js';
 
 import {
+  acrossMembers,
   asCash,
+  asPerMember,
   asPerPiece,
   asRatio,
   type Cash,
@@ -1290,17 +1292,19 @@ export class World {
       free: (instrument) => this.store.free(party, instrument),
       cash: (ccy) => this.cash(party, ccy),
       equity: () => this.store.equity(party),
-      earned: (periods: number) => {
+      earned: (periods: number): Cash => {
         // The window is inclusive of this period and runs back `periods` of them, or to the epoch
         // where the world is younger than that — a party cannot have taken in anything before it
         // existed, and pretending the window is full would understate what it takes in a period.
         const from = period(this.currentPeriod > periods ? this.currentPeriod - periods : 0);
-        const terms: number[] = [];
+        const terms: Cash[] = [];
         for (const e of this.store.equityEntries(party, from, this.currentPeriod)) {
           // Reporting G2: what an INSTRUCTION did. An entry with no instruction behind it is a mark,
           // and a mark is not money anybody paid (Clearing D4).
           if (e.instruction === undefined) continue;
-          terms.push(e.delta);
+          // XI-15: an equity entry is per member, and what a party TOOK IN is what one of its own
+          // members took in — the same denomination its balance and its account are kept in.
+          terms.push(acrossMembers(e.delta, 1, 'what one member took in'));
         }
         return sum(terms).value;
       },
@@ -1589,7 +1593,13 @@ export class World {
         // Everything from here moves it by a named event (Audit B5.b).
         // Law 7: no arithmetic produced this, so it carries none of it — a party that has just
         // arrived holds nothing and owes nothing, exactly.
-        this.store.stateEquity(party.id, 0, 0, this.currentPeriod, this.currentCycle);
+        this.store.stateEquity(
+          party.id,
+          asPerMember<'money:piece'>(0, 'a party that has just arrived holds nothing'),
+          0,
+          this.currentPeriod,
+          this.currentCycle,
+        );
         this.journal.record(
           this.currentPeriod,
           this.currentCycle,

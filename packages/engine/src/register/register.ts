@@ -20,6 +20,7 @@ import {
   type Cash,
   over,
   type PerPiece,
+  type PerMember,
   valueAt,
 } from '../core/measure.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
@@ -81,7 +82,7 @@ export interface DrawnLot {
 export interface EquityMove {
   readonly party: PartyId;
   /** Per member for a cell, in the party's home currency. */
-  readonly delta: number;
+  readonly delta: PerMember<'money:piece'>;
   readonly cause: string;
   /**
    * Law 7: the magnitude the arithmetic actually passed through, when it is bigger than the move.
@@ -119,7 +120,7 @@ export interface EquityEntry {
   readonly period: Period;
   readonly cycle: Cycle;
   /** Per member for a cell, in the party's home currency — the same number `moveEquity` was given. */
-  readonly delta: number;
+  readonly delta: PerMember<'money:piece'>;
   readonly cause: string;
   readonly instruction?: InstructionId;
 }
@@ -314,7 +315,13 @@ export class Register {
    * simply starts where its own arithmetic left it (`openedFrom`), instead of pretending a number
    * somebody worked out was a number somebody stated.
    */
-  stateEquity(party: PartyId, value: number, dust: number, period: Period, cycle: Cycle): void {
+  stateEquity(
+    party: PartyId,
+    value: PerMember<'money:piece'>,
+    dust: number,
+    period: Period,
+    cycle: Cycle,
+  ): void {
     forbid(
       !this.equityAccount.has(party),
       'Audit B5.b',

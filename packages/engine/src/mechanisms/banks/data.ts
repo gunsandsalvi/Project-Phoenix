@@ -26,6 +26,7 @@
  * has to be restated every time the world changes size, and a number restated to keep a result is a
  * result wearing a preference's name (Law 2).
  */
+import { asRatio, type Ratio } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
@@ -282,12 +283,12 @@ const midpoint = (s: Spread): number => s.low + (s.high - s.low) / 2;
  * zero (Appendix A: missing is missing) — the draw walks the declared lines, so a name that is not
  * in it is a name nothing declared.
  */
-export function appetiteOf(appetite: Readonly<Record<string, number>>, line: string): number {
+export function appetiteOf(appetite: Readonly<Record<string, number>>, line: string): Ratio {
   const share = appetite[line];
   if (share === undefined) {
     throw new Missing('Dealer Desks D1', `no appetite was drawn for the ${line} line`, { line });
   }
-  return share;
+  return asRatio(share, `what the ${line} line's appetite is`);
 }
 
 /** The same read over the spreads, for the draw itself. */

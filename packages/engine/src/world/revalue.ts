@@ -110,7 +110,12 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: h.holder,
       period,
       cycle,
-      delta: scale(delta, toHolder, 'what it did in its holder’s money'),
+      // XI-15: a mark moves a HOLDING, and a cell's holdings are per member — so what a
+      // revaluation does to an equity account is already in that denomination.
+      delta: asPerMember<'money:piece'>(
+        scale(delta, toHolder, 'what it did in its holder’s money'),
+        'what one member’s account moves by',
+      ),
       cause: `revaluation of ${inst.id} in period ${period}`,
       through: scale(through, toHolder, 'what it passed through in its holder’s money'),
     });
@@ -186,7 +191,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: issuer,
       period,
       cycle,
-      delta,
+      delta: asPerMember<'money:piece'>(delta, 'what one member’s account moves by'),
       cause: `revaluation of own liabilities in period ${period}`,
       through: zeroIfNone(issuerThrough.get(issuer)),
     });
@@ -233,10 +238,9 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
         party,
         period,
         cycle,
-        delta: scale(
-          sign === 1 ? delta : negated(delta, 'to this side'),
-          rate,
-          'in its own money',
+        delta: asPerMember<'money:piece'>(
+          scale(sign === 1 ? delta : negated(delta, 'to this side'), rate, 'in its own money'),
+          'what one member’s account moves by',
         ),
         cause: `revaluation of ${c.id} in period ${period}`,
         through: scale(through, rate, 'what the re-marking passed through'),
@@ -412,7 +416,8 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: h.holder,
       period,
       cycle,
-      delta,
+      // XI-15: a foreign position is a HOLDING, and a cell's holdings are per member.
+      delta: asPerMember<'money:piece'>(delta, 'what one member’s account moves by'),
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.
       through: absolute(

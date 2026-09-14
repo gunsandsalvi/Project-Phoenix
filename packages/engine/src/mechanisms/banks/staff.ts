@@ -21,12 +21,12 @@
  * same to make whatever its size — which is a real fact about lending that no parameter could have
  * expressed, and it moves the day the wage moves (Law 19).
  */
-import { asRatio, type Ratio } from '../../core/measure.js';
+import { asRatio, type Ratio , asAmount, asCash, asPerPiece, heldAsMoney, over, type PerPiece, pricedAt, ratioOf, valueAt} from '../../core/measure.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { div, mul, sum } from '../../core/num.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -44,9 +44,9 @@ export const STAFF_PARAMS = {
 export const DEALING = 'dealing';
 
 /** What this bank's own book is: the live loans it holds, and what they come to. */
-function bookOf(view: ParticipantView): { readonly rows: number; readonly principal: number } {
+function bookOf(view: ParticipantView): { readonly rows: number; readonly principal: Qty } {
   let rows = 0;
-  const principal: number[] = [];
+  const principal: Qty[] = [];
   for (const h of view.holdings()) {
     if (!view.instruments.has(h.instrument)) continue;
     const i = view.instruments.get(h.instrument);
@@ -63,10 +63,13 @@ function bookOf(view: ParticipantView): { readonly rows: number; readonly princi
 }
 
 /** C1.d: the hours this bank's book takes to service in a period. A read of its own rows. */
-export function hoursNeeded(view: ParticipantView): number {
-  return mul(
-    bookOf(view).rows,
-    view.params.count(STAFF_PARAMS.hoursPerLoanPeriod),
+export function hoursNeeded(view: ParticipantView): Qty {
+  return asAmount<'piece'>(
+    mul(
+      bookOf(view).rows,
+      view.params.count(STAFF_PARAMS.hoursPerLoanPeriod),
+      'the hours its book takes',
+    ),
     'the hours its book takes',
   );
 }
@@ -76,13 +79,18 @@ export function hoursNeeded(view: ParticipantView): number {
  * its OWN wage bill came to per hour where it has one, and the published going rate where it has
  * not. A bank that has neither has no idea what staff cost and cannot put a cost in its quote.
  */
-export function wageFacing(view: ParticipantView, occupation: string): number | undefined {
+export function wageFacing(view: ParticipantView, occupation: string): PerPiece | undefined {
   const own = view.lastOwn('labour.wages');
   if (own.some) {
     const due = own.value.data['due'];
     const hours = own.value.data['hours'];
     if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
-      return div(due, hours, 'what an hour cost it');
+      // Item 16: its own wage bill re-enters here — what it paid, over the hours it paid for.
+      return pricedAt(
+        asCash(due, 'what its wage bill came to'),
+        asAmount<'piece'>(hours, 'the hours it paid for'),
+        'what an hour cost it',
+      );
     }
   }
   const published = view.lastPublic('labour.goingRate');
@@ -90,7 +98,9 @@ export function wageFacing(view: ParticipantView, occupation: string): number | 
   const rates = published.value.data['wagePerHour'];
   if (typeof rates !== 'object' || rates === null) return undefined;
   const here = (rates as Record<string, unknown>)[`${String(view.self.region)}|${occupation}`];
-  return typeof here === 'number' && here > 0 ? here : undefined;
+  return typeof here === 'number' && here > 0
+    ? asPerPiece(here, 'what an hour cleared at where it is')
+    : undefined;
 }
 
 /**
@@ -109,13 +119,11 @@ export function operatingCostOf(view: ParticipantView): Ratio {
     view.calendar.startOf(periodOf(view.period + 1)),
   );
   if (ofAYear <= 0) return asRatio(0, 'a period of no length costs nothing');
-  const perPeriod = mul(hoursNeeded(view), wage, 'what its staff cost it a period');
-  return asRatio(
-    div(
-      div(perPeriod, ofAYear, 'a year of it'),
-      book.principal,
-      'per unit of the principal it is servicing',
-    ),
+  const perPeriod = valueAt(wage, hoursNeeded(view), 'what its staff cost it a period');
+  return ratioOf(
+    over(perPeriod, asRatio(ofAYear, 'the fraction of a year that was'), 'a year of it'),
+    // A loan's units ARE money, so what servicing costs per unit of principal is a pure rate.
+    heldAsMoney(book.principal, 'the principal it is servicing'),
     'what servicing costs, per unit of principal per annum',
   );
 }
@@ -133,7 +141,7 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (hours <= 0) return [];
   const took = view.earned(1);
   if (took <= 0) return [];
-  const worth = div(took, hours, 'what an hour of this is worth to it');
+  const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: worth, qty: asQty(hours) }];
 }
