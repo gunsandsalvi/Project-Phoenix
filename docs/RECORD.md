@@ -6316,3 +6316,92 @@ decision about §46 B3's shape, not a defect in this function.
 
 Closes `A-25`, `A-30`, `A-34`, `A-45`. Typecheck 0, lint 0, `check:spec`, `check:forbids`,
 `check:existence` green.
+
+---
+
+## Item 6 — the derivative books open
+
+Nine derivative kinds were declared and **not one contract of any class had ever been written**:
+7,510 option sessions all `noDemand`, 3,680 commodity-future sessions all `noDemand`, 60 CDS
+sessions all `noSupply`, the IRS books never run. 58 of COVERAGE's 99 never-reached `MET` marks are
+this layer.
+
+**The cause is one shape, in eight of the nine (`A-66`).** Every class builds a party's order as
+
+```
+target = <its hedging need, from its own book>
+       ± <conviction, IF its own number differs from THIS BOOK'S LAST PRINT>
+order  = target − <what it already has>
+```
+
+Every one of them is careful that the book's own print must not be the LEVEL it posts — several say
+so at length, and one of them names the fixed point explicitly. None noticed that the print is still
+load-bearing for the **direction**. With no print the conviction term drops out, every party is left
+with its hedging need, and a hedging need has ONE SIGN. So the first session is one-sided, never
+crosses, never prints; the next session is the same; and the book is dead for the life of the run.
+
+The one class that worked is the one whose author hit this and built the answer — `fx-derivatives`,
+where a party with nothing to hedge quotes a bid a tick below and an ask a tick above its own carry,
+under the comment *"a book whose members were all hedgers printed one number for ever"*.
+
+That answer is now in all eight. A party with nothing to hedge posts a spread around ITS OWN number,
+sized by what its own balance sheet carries, and the number is its own in every case: the
+underlying's outlook (options), the deliverable's print (bond futures), the spot line (commodity
+futures), the index's own level (index futures), the floating fixing (the IRS), the cash market's
+charge for the credit (the single-name CDS), the weighted average of the constituents' charges (the
+series), and its own funding basis (the cross-currency swap). Never this book's last print.
+
+**`6.2` was worse than a missing side.** `index-futures` had `side: 'sell'` as the only side in the
+file, its docstring naming one true reason — *"A DESK LONG A BOOK OF SHARES SELLS THE INDEX"* — and
+two of the three cases unreachable: `book <= 0` sent a party holding none of the constituents away
+with nothing to say, and `want <= 0` meant a desk short MORE index than its book takes could not buy
+any of it back. All three exist now.
+
+**`6.3` — two classes read their own book's print as a PRECONDITION** and then posted at a multiple
+of it, which is the fixed point at its purest: no print, no orders; a print, and everybody agrees
+with it. The series' own number is built from its constituents (each name's own cash-market charge
+at the series' weights, over the names this party can price — a name whose paper has never printed
+drops out of the numerator and the denominator both). The cross-currency swap's is `ownBasis`: what
+this party pays for one money over what it pays for the other, each measured against that money's own
+published benchmark, read off its own `bank.costOfFunds`. A cross-currency basis is a FUNDING fact —
+a party expensive in dollars and cheap in euros will give up the difference to swap, and one the
+other way round will take it — and that is two sides that are not a parity residual (Appendix B: no
+parity-formula forward; B3.b: a level is a party's own reservation).
+
+**`6.4` — and the mechanism is smaller and truer than the step said.** The plan named eligible
+SECURITIES collateral, to be wired from the repo module. The read of the refusals says otherwise:
+every one of the 31,640 is an FX forward whose two parties hold NEITHER LEG. They hold money — just
+not the book's. `capacityOf` read `view.cash(ccy)` alone, so a member's room was zero exactly when it
+banked in another currency: the gate was not measuring capacity, it was measuring whether the party
+happened to hold the right money.
+
+So the missing mechanism is Currency C4: **a member posts what it HAS.** `capacityOf` values every
+money the member holds in the book's, at the rate in force; `postedOut` builds the legs out of those
+moneys — its own region's first, then the rest in the register's own order, so the choice is stable —
+because a margin line is ALREADY per (poster, holder, money). A house taking euros against a dollar
+exposure holds a real euro claim and carries that FX position like any other holder, which stage 2d's
+`inOwnMoney` books on its own account. Securities collateral is a further mechanism and it is not
+what was standing between this gate and a single admission.
+
+`ParticipantView` gained `inMoney(value, from, to)` beside `inOwnMoney`, for the member deciding what
+it could post against a book in a money it does not hold. An FX rate is a print and prints are
+public, so nothing private is reachable through it.
+
+**`6.5` — `A-69`'s measurement now happens.** `refusedThisPeriod` was documented as *"E4: a standing
+measurement"* and called by nobody, which is worse than its absence: a reader looking for the number
+believes it exists. The layer publishes `derivatives.unmargined` in its own margin phase. Nothing
+raises a limit in response to it (E4: measured, never relieved).
+
+**`E-11` is re-positioned to item 21, not closed.** Its index row said item 6 would close it. Item 6
+does not: `E-10` closed the CONTRACT layer — the level a contract carries is tagged by its kind's own
+`quotedAs` — and every reader of a rate-quoted PRINT now says `asRatio` at its own door, so the
+crossing is named everywhere it happens. What is left is that `Outcome.price` and `Print.price` still
+cannot say it. The solver genuinely need not care (a schedule is size against a level either way, as
+`derivatives.ts` says); the print STORE is where the claim would live. Saying that is better than
+ticking a row the work did not do.
+
+Closes `A-66`, `B-7`, `C-6`, and `A-69`'s `refusedThisPeriod` and `cdsBookOrders` rows. Typecheck 0,
+lint 0, `check:spec`, `check:forbids`, `check:existence` green. **Not measured** — and this is the
+item whose effects the suite will show most, because eight books that have never printed are about
+to, and everything downstream of a first print (`zeroSum` walking a non-empty set, the option-implied
+move §46 A3 needs, the margin gate admitting somebody) becomes measurable for the first time.

@@ -448,6 +448,9 @@ describe('capacity (E1, E2, E4)', () => {
       // taken off a second time, which is what `posted(...) > 0` above makes this a test of. Under
       // the double count the room fell by twice every unit posted, and every book was half the size
       // the mechanism says.
+      // C-6: capacity is now every money the member holds, valued in the book's. This member banks
+      // in one, so the answer is the same number — and that is the point: widening the read did not
+      // move the single-currency case.
       expect(capacityOf(view, USD, buffer)).toBe(cash - cash * buffer);
     }
   });

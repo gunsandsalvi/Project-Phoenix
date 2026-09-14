@@ -229,7 +229,7 @@ function capacity(): ClearingCapacity {
         ctx.registry.cashFor(need.value),
         'what the kind asks for, on the money’s own grid',
       );
-      if (amount > 0) return moveMargin(ctx, party, against, m.ccy, amount);
+      if (amount > 0) return postedOut(ctx, party, against, m.ccy, amount);
       /**
        * G2, Law 8: NO EXPOSURE WITHOUT MARGIN, OR A STATED REASON THERE IS NONE — and here there
        * is one, so it is stated. A requirement of a fraction of a cent is a real requirement that
@@ -713,6 +713,52 @@ export function refusedThisPeriod(ctx: MechanismContext): number {
 }
 
 /**
+ * C-6, D9, C3.a, Currency C4: THE MONEYS A MEMBER ACTUALLY POSTS OUT OF.
+ *
+ * The requirement is in the book's money and the member may hold none of it. A margin line is per
+ * (poster, holder, MONEY), so posting euros against a dollar exposure is a real claim in euros —
+ * what it takes is converting the requirement into each money the member has, and stopping when it
+ * is covered. Its own region's money first, because a member pays out of what it banks in before it
+ * pays out of anything else; then the rest, in the register's own order so the choice is stable.
+ *
+ * `admits` has already cut the trade to what the member's whole book can carry (E2), so this walks
+ * a requirement it can meet — and if a rate moved between the two reads it posts what it can and
+ * the shortfall is a call next period, which is what a call IS (D4).
+ */
+function postedOut(
+  ctx: MechanismContext,
+  poster: PartyId,
+  holder: PartyId,
+  ccy: CurrencyCode,
+  want: Cash,
+): readonly Leg[] {
+  const view = ctx.participant(poster);
+  const home = ctx.registry.currencyOf(ctx.parties.get(poster).region);
+  const monies: CurrencyCode[] = [ccy];
+  if (home !== ccy) monies.push(home);
+  for (const h of view.holdings()) {
+    const i = ctx.instruments.get(h.instrument);
+    if (ctx.registry.instrumentKind(i.kind).pricing !== 'money') continue;
+    if (!monies.includes(i.ccy)) monies.push(i.ccy);
+  }
+  const legs: Leg[] = [];
+  let left = want;
+  for (const money of monies) {
+    if (left <= 0) break;
+    const has = heldAsMoney(view.cash(money), `the ${money} it holds`);
+    if (has <= 0) continue;
+    // What is left of the requirement, in THIS money, against what it has of it.
+    const owedHere = ctx.valuation.inMoney(left, ccy, money, ctx.period);
+    const pays = atMost(owedHere, has, 'it posts what it has of this money');
+    const posted = heldAsMoney(ctx.registry.payable(pays), 'on the money\u2019s own grid');
+    if (posted <= 0) continue;
+    legs.push(...moveMargin(ctx, poster, holder, money, posted));
+    left = minus(left, ctx.valuation.inMoney(posted, money, ccy, ctx.period), 'what is still to post');
+  }
+  return legs;
+}
+
+/**
  * E1, E3: WHAT A MEMBER MAY CARRY — its own liquid cash, less what it keeps back. The observer
  * shows this number and `admits` cuts a trade by it, and there is one of it (Law 4).
  *
@@ -725,7 +771,29 @@ export function refusedThisPeriod(ctx: MechanismContext): number {
  * source, never a second number derived from it).
  */
 export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: Ratio): Cash {
-  const cash = heldAsMoney(view.cash(ccy), 'the money it holds of this');
+  /**
+   * C-6, Currency C4, C4.a: EVERY MONEY IT HOLDS, valued in the book's, at the rate in force.
+   *
+   * This read `view.cash(ccy)` alone, so a member's room was zero exactly when it held none of the
+   * book's own money — and a measured run produced 31,640 admission decisions and 31,640 refusals,
+   * every one of them an FX FORWARD whose two parties hold neither leg. The gate was not measuring
+   * capacity at all: it was measuring whether the party happened to bank in the right currency.
+   *
+   * A member posts what it HAS. `margin()` below builds the legs out of the moneys it actually
+   * holds — a margin line is per (poster, holder, money), so a house taking euros against a dollar
+   * exposure is a real claim in euros and the house carries that FX position like any other holder
+   * (Currency D2, which `inOwnMoney` books on its own account). What a house will not do is take
+   * money nobody has, and that is still refused.
+   */
+  const terms: Cash[] = [];
+  for (const h of view.holdings()) {
+    const i = view.instruments.get(h.instrument);
+    if (view.registry.instrumentKind(i.kind).pricing !== 'money') continue;
+    const held = heldAsMoney(view.cash(i.ccy), `the ${i.ccy} it holds`);
+    if (held <= 0) continue;
+    terms.push(view.inMoney(held, i.ccy, ccy));
+  }
+  const cash = sum(terms).value;
   return minus(cash, scale(cash, buffer, 'what it keeps back'), 'net of what it keeps back');
 }
 

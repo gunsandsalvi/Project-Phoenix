@@ -405,6 +405,12 @@ export interface ParticipantView extends KernelReads {
    * public, so nothing private is reachable by asking (Observer A4).
    */
   inOwnMoney(value: Cash, from: CurrencyCode): Cash;
+  /**
+   * Currency C4, C5: the same read between any two moneys, at the rate in force this period. A
+   * member deciding what it could post against a book quoted in a money it does not hold needs it,
+   * and it is the same public print `inOwnMoney` converts at (Observer A4: nothing private).
+   */
+  inMoney(value: Cash, from: CurrencyCode, to: CurrencyCode): Cash;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */

@@ -183,7 +183,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 | ~~**3**~~ | ~~The gather~~ | 4 | **DONE** but for 3.5 (`A-43`), which item 9 closes. It also found a second global list nobody filtered — see the record |
 | ~~**4**~~ | ~~The families that cannot fail~~ | 9 | **DONE.** Every family that reports green can now report red |
 | ~~**5**~~ | ~~Missing is Missing, carried~~ | 4 | **DONE** |
-| **6** | The derivative books open | 3 | needs **3** (a dealer), and everything in the layer is downstream of a first print |
+| ~~**6**~~ | ~~The derivative books open~~ | 3 | **DONE.** Eight classes gained a second side; the margin gate admits somebody |
 | **7** | The three closed lines | 2 | needs **3**; `dwelling` takes the whole housing module with it |
 | **8** | The securitisation waterfall | 2 | independent; the subtraction has gone the wrong way round since 13e |
 | **9** | The seven private books, and `Mandate` | 5 | the larger half of item 8 of the old file; blocks 13, and `A-43` behind it |
@@ -863,12 +863,12 @@ the comment *"a book whose members were all hedgers printed one number for ever"
 
 ### Steps
 
-- [ ] 6.1 The general fix, per class: a participant **with nothing to hedge** posts two-sided around its own number, exactly as `fx-derivatives` does. Its number is its own — the cash market's charge for this credit, its own curve, its own carry — and **never this book's own last print**, which is the fixed point the single-name CDS already refuses in a comment.
-- [ ] 6.2 `index-futures/futureOrders` has **no buy branch at all**; its docstring is *"A DESK LONG A BOOK OF SHARES SELLS THE INDEX"* — one true reason, and the only one implemented. §46 A3 and XI-13 require two. Add the other side.
-- [ ] 6.3 `cds/cdsIndexOrders` and `fx-derivatives/xccyOrders` read their own book's last print as a **precondition** and then post at a multiple of it. Delete the precondition and give each a maker with its own number, per 6.1.
-- [ ] 6.4 **C-6, and it is a real missing mechanism rather than a bug.** 31,640 margin-admission decisions, 31,640 refusals, all one gate: *no room — the party holds no cash in the book's currency*. `capacityOf(view, ccy, buffer)` is `cash − cash × buffer`, so room is zero exactly when the party holds none of that money, and every one of them is an FX forward whose parties hold neither leg. The missing mechanism is **eligible collateral in another money**, which `money-market/collateral.ts` already implements for repo (`advances`, `valueToLender`, `haircut`). The derivative layer's `admits` asks only about cash. Wire it.
-- [ ] 6.5 `derivative-layer/index.ts:refusedThisPeriod` is documented as *"E4: a standing measurement"* and is called by nobody. Either call it from the layer's audit contribution or delete it — a docstring asserting a measurement that does not happen is worse than the absence (`A-69`).
-- [ ] 6.6 Once a book prints: `zeroSum`, the derivative layer's whole invariant, stops walking a set of size 0. That is part of `B-10` and is why this item is after 4.
+- [x] 6.1 The general fix, per class: a participant **with nothing to hedge** posts two-sided around its own number, exactly as `fx-derivatives` does. Its number is its own — the cash market's charge for this credit, its own curve, its own carry — and **never this book's own last print**, which is the fixed point the single-name CDS already refuses in a comment. **DONE** for all eight: options, bond futures, commodity futures, index futures, the IRS, the single-name CDS, the CDS series and the cross-currency swap. Each party with nothing to hedge posts a bid a tick inside its own number and an ask a tick outside, sized by what its own balance sheet carries. Its number is its own in every case — the underlying's outlook, the deliverable's print, the floating fixing, the cash market's charge for the credit, the index's own level, the party's own funding basis — and never this book's last print.
+- [x] 6.2 `index-futures/futureOrders` has **no buy branch at all**; its docstring is *"A DESK LONG A BOOK OF SHARES SELLS THE INDEX"* — one true reason, and the only one implemented. §46 A3 and XI-13 require two. Add the other side. **DONE**, and it was worse than one missing side: `book <= 0` sent a party holding none of the constituents away with nothing to say, and `want <= 0` meant a desk short MORE index than its book takes could not buy any back either. All three cases exist now.
+- [x] 6.3 `cds/cdsIndexOrders` and `fx-derivatives/xccyOrders` read their own book's last print as a **precondition** and then post at a multiple of it. Delete the precondition and give each a maker with its own number, per 6.1. **DONE.** The series' own number is the weighted average of its constituents' own cash-market charges (`levelFor` per name, at the series' weights, over the names this party can price); the cross-currency swap's is `ownBasis` — what this party pays for one money over the other, each measured against that money's own benchmark, read off its own published cost of funds. A funding fact, not a parity residual (Appendix B: no parity-formula forward).
+- [x] 6.4 **C-6, and it is a real missing mechanism rather than a bug.** 31,640 margin-admission decisions, 31,640 refusals, all one gate: *no room — the party holds no cash in the book's currency*. `capacityOf(view, ccy, buffer)` is `cash − cash × buffer`, so room is zero exactly when the party holds none of that money, and every one of them is an FX forward whose parties hold neither leg. The missing mechanism is **eligible collateral in another money**, which `money-market/collateral.ts` already implements for repo (`advances`, `valueToLender`, `haircut`). The derivative layer's `admits` asks only about cash. Wire it. **DONE, and the mechanism is smaller and truer than the step said.** The step named eligible SECURITIES collateral. The read of the refusals says otherwise: every one of the 31,640 is an FX forward whose parties hold neither leg — they hold money, just not the book's. So the missing mechanism is Currency C4: a member posts what it HAS. `capacityOf` values every money it holds in the book's at the rate in force, and `postedOut` builds the legs out of those moneys — its own region's first, then the rest in the register's order — because a margin line is already per (poster, holder, MONEY). A house taking euros against a dollar exposure holds a real euro claim and carries that FX position like any other holder, which stage 2d's `inOwnMoney` books on its own account. Securities collateral is a further mechanism and is not needed to open the gate.
+- [x] 6.5 `derivative-layer/index.ts:refusedThisPeriod` is documented as *"E4: a standing measurement"* and is called by nobody. Either call it from the layer's audit contribution or delete it — a docstring asserting a measurement that does not happen is worse than the absence (`A-69`). **DONE.** The layer publishes `derivatives.unmargined` in its own margin phase, so E4's standing measurement actually happens. Nothing raises a limit in response to it.
+- [x] 6.6 Once a book prints: `zeroSum`, the derivative layer's whole invariant, stops walking a set of size 0. That is part of `B-10` and is why this item is after 4. **NOT A STEP** — it is the consequence. `zeroSum` walks a non-empty set the moment a book prints, which is what 6.1–6.4 are for. It is measured with the suite.
 
 ### Findings this closes
 
@@ -3761,13 +3761,11 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
 | **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
-| **A-66** (A) | 6 | eight of nine derivative books can never produce a first print |
 | **A-67** (A) | 9 | nothing ever borrows a security |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
 | **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |
 | **B-2** (A) | 9, 14 | the insurance sector has no seed, no phase and no participant |
 | **B-3** (A) | 9 | securities lending is claimed to clear a fee and has no way in |
-| **B-7** (A) | 6 | the derivative layer has never produced a contract |
 | **B-8** (A) | 8 | the securitisation waterfall never allocates a loss |
 | **B-9** (C) | 16 | the four countries: header and section 2 contradict each other |
 | **B-12** (A) | 1 | 99 `MET` marks stand on mechanisms that have never produced anything |
@@ -3777,7 +3775,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **C-2** (—) | 20 | four things this world does every week that the world does not |
 | **C-4** (—) | **0.2, 0.3, and items 10b–19** | the sectors that are not there — **promoted from a finding to the work itself**; its six rows are the absent sectors in Part 0 |
 | **C-5** (—) | 1 | 12,519 declared parameters are never read |
-| **C-6** (—) | 6 | the margin gate: 31,640 admission decisions, 31,640 refusals |
 | **D-1** (A) | 19 | a levy that fails is recorded and then forgotten |
 | **D-2** (B) | 19 | the central bank is a marginal price-setter in the sovereign book |
 | **E-2** (B) | 21 | a `winding` estate is still a household cell to eleven readers |
@@ -3786,8 +3783,8 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-5** (B) | 15 | the state can only sell ground in the place it sits in |
 | **E-6** (B) | 21 | an acquirer's consideration in a bank resolution is a missing mechanism |
 | **E-7** (B) | 19 | a negative policy rate is real and this world cannot express one |
-| **E-11** (B) | 2a.2, 6 | `Outcome.price` is a `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS. `E-10`'s shape at the clearing layer. **Found by the type at stage 2a.1** |
 | **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
+| **E-11** (B) | 21 | `Outcome.price` and `Print.price` are `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS, the cross-currency basis. `E-10` closed the CONTRACT layer (the level a contract carries is tagged by its kind's `quotedAs`) and every reader of a rate-quoted print now says `asRatio` at its own door, so the crossing is named everywhere it happens — what is left is that the STORE still cannot say it. The solver genuinely need not care (a schedule is size against a level either way); the print store is where the claim would live. **Re-positioned from item 6, which did not close it** |
 | **E-13** (C) | 21 | `households/portfolio.ts:ownUncertainty` implements §46 B3's income channel and has NO CALLER — a saver's bid is built from its PRICE outlook's confidence and its income uncertainty reaches nothing. Either wire it or delete it; a mechanism nobody reads is not one. **Found closing `A-30` at item 5** |
 
 ### Findings already closed, and where
@@ -3818,6 +3815,7 @@ carries each in full.
 | item 3, the gather | `A-54`, `A-60`, `B-5`, `B-6` (`A-43` stays for item 9) |
 | item 4, the families | `A-4`, `A-10`, `A-11`, `A-12`, `A-13`, `A-14`, `A-42`, `A-48`, `B-10` |
 | item 5, Missing is Missing | `A-25`, `A-30`, `A-34`, `A-45` |
+| item 6, the derivative books | `A-66`, `B-7`, `C-6`, and `A-69`'s `refusedThisPeriod` and `cdsBookOrders` rows |
 
 ### What the reads covered, and what they did not
 

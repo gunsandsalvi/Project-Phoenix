@@ -1317,6 +1317,7 @@ export class World {
       worth: (instrument, required) => this.worthTo(instrument, required),
       inOwnMoney: (value, from) =>
         this.valuation.inOwnMoney(party, value, from, this.currentPeriod),
+      inMoney: (value, from, to) => this.valuation.inMoney(value, from, to, this.currentPeriod),
       curve: (family) => this.curve(family),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
