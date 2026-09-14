@@ -46,7 +46,7 @@ checked, not assumed.
 | Currency | 24 | 0 | 1 | 0 | 25 |
 | Bond | 14 | 1 | 1 | 0 | 16 |
 | Derivative | 18 | 0 | 0 | **3** | 18 |
-| **Corporate Credit** | **13** | 7 | **42** | 0 | 62 |
+| **Corporate Credit** | **13** | 8 | **41** | 0 | 62 |
 | Sovereign | 40 | 3 | 8 | **3** | 51 |
 | **Short-Term Debt** | **0** | 0 | **19** | 0 | 19 |
 | Equity | 25 | 2 | 10 | 0 | 37 |
@@ -675,7 +675,7 @@ missing, or `OUT OF SCOPE` with a reason. Do not delete a clause to look better.
 - [ ] 17.1 Syndication and bookbuilding: a bank arranging an issue it does not hold all of. **Item 10 brought the paper and left the ARRANGER out**: C1's named underwriter, C6's fee out of the proceeds, C7's risk between commitment and placement, C10's syndicate and C11's basis. Item 10 issues DIRECTLY into the kernel's book, which is C2–C5 in full and C6 without its fee — so this step adds a party to a path that exists rather than building the path. It is also the home of **step 10.1's "worth the fixed cost of an issue"**: that cost IS the underwriter's fee, and item 10 deliberately did not invent a `corporateBond.issuanceCost` to stand in for a party this item creates (Law 2).
 - [ ] 17.1a A2.b: **the target a management is managing towards** — a leverage, a coverage or a rating it wants, approached at its own pace. Item 10 made issuing a DECISION (a firm compares what its bank quoted against what holders require and takes the cheaper), which is A2.c's "never assigned"; what it compares is price against price and not price against a plan. Marked `Corporate Credit A2`/`A2.c` PARTIAL for exactly this.
 - [ ] 17.1b A3.a: **the service is interest PLUS SCHEDULED PRINCIPAL.** `testCovenants` covers a line's coupon against published earnings and nothing else, so an amortising line looks as serviceable as a bullet. One read of the kernel's own `due` schedule, at the one place coverage is computed (Law 4).
-- [ ] 17.2 Facilities: a committed line, with a commitment fee on undrawn headroom (the same noun item 10b.6 needs — build it once).
+- [ ] 17.2 Facilities: a committed line, with a commitment fee on undrawn headroom (the same noun item 10b.6 needs — build it once). **The DRAW half is already built and C9 is marked PARTIAL for it**: `banks/index.ts:lineOf`/`draw` keeps one row per lender per borrower and taps it at the margin it was struck at. What this step adds is the word COMMITTED — a stated limit the bank is obliged to honour, undrawn headroom, the fee on it, and the capital an undrawn line consumes — so a borrower stops being re-underwritten at every draw. Two things found while checking: a SECURED request opens a new row instead of drawing (`write` is called with `onTheLine = security.length === 0`), and `runRequests` computes a fresh quote that `draw` then correctly ignores.
 - [ ] 17.3 Restructuring: placed 13f → 13h, never built. A borrower and its lenders agreeing new terms is an `Agreement` transition, not a new instrument.
 - [ ] 17.4 The covered bond (**M7**): placed 13e → 13f, never built. One of the six.
 - [ ] 17.5 Factoring and receivable pledges: placed 13e → 13f, never built. Two more of the six, and they sit on item 11's small firms, which is why this is after 11.

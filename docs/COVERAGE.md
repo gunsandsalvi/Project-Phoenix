@@ -271,7 +271,7 @@ of these findings has been positioned into an item yet.
 | `Corporate Credit C7` | MISSING |  |
 | `Corporate Credit C7.b` | MISSING |  |
 | `Corporate Credit C8` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (`corporateBondId` names a line by its issuer and its maturity, so there is one per issuer per date: a debut brings a fresh instrument and a return to the same date is a TAP — added face on paper that already prices, cleared in the same solve as its outstanding stock, at its own price and with the issuer's walk-away riding on it) |
-| `Corporate Credit C9` | MISSING |  |
+| `Corporate Credit C9` | PARTIAL | packages/engine/src/mechanisms/banks/index.ts (`lineOf`/`draw`: one row per lender per borrower, found by who is owed it NOW rather than who wrote it; a further request draws on it — more of the same instrument is issued, the outstanding moves and the row does not multiply — at the margin struck when the line was agreed, and a new line opens only when none is live, at the margin the lender quotes now, for a stated term. An overdraft the kernel allowed is a drawing on the same line, not a new loan every week). What is missing is the word COMMITTED: there is no stated limit the bank is obliged to honour, no undrawn headroom, no commitment fee and no capital consumed by an undrawn line, so the borrower is re-underwritten at every draw and can be refused (item 17.2). A SECURED request also opens a new row rather than drawing, because `write` is called with `onTheLine = security.length === 0` |
 | `Corporate Credit C10` | MISSING |  |
 | `Corporate Credit C10.b` | MISSING |  |
 | `Corporate Credit C10.c` | MISSING |  |
