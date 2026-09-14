@@ -1071,8 +1071,21 @@ export class Settlement {
     // trade takes a book down by the price and up by the value in one instruction, and the
     // rounding that leaves behind is the price's, not the difference's.
     const gross = new Map<PartyId, Cash>();
-    const bump = (party: PartyId, delta: Cash, instrument: InstrumentId): void => {
+    const bumpPerMember = (party: PartyId, delta: Cash, instrument: InstrumentId): void => {
       bumpIn(party, delta, this.d.instruments.get(instrument).ccy);
+    };
+    /**
+     * A-1, XI-15: THE ONE DOOR BETWEEN A TOTAL AND AN EQUITY ACCOUNT. Every number a holding
+     * produces is per member and every number an ISSUED line produces is a total, and the two used
+     * to arrive at the same function — so `issue` and `redeem` remembered to divide, and `reseat`
+     * and the issuer's re-mark did not. A cell's estate then took on a million households' worth of
+     * a liability against one household's equity, and the balance-sheet family fired on the estate.
+     *
+     * There is no `bump` any more: a writer names which of the two it is holding, because nothing
+     * in a `Cash` says it.
+     */
+    const bumpTotal = (party: PartyId, total: Cash, instrument: InstrumentId): void => {
+      bumpPerMember(party, perMemberOf(party, total), instrument);
     };
     /**
      * XI-15, Law 8 (13d.1): AN EQUITY ACCOUNT IS PER MEMBER AND AN ISSUED TOTAL IS NOT.
@@ -1084,11 +1097,9 @@ export class Settlement {
      * household's equity. What the issuer's own book moves by is its share of what it issued.
      */
     const perMemberOf = (party: PartyId, amount: Cash): Cash =>
-      // Item 16: THROUGH THE ONE DOOR BETWEEN A TOTAL AND A PER-MEMBER NUMBER, which is the cell's
-      // weight and refuses a cell of nobody — `div` would have answered `Infinity` and carried it
-      // into an equity account. What the type cannot yet say is which of the two a `Qty` in the
-      // register is: for a cell it is per member and for a named party it is the total, and the
-      // register does not know which it is holding. That is A-1's shape, and it survives this type.
+      // Item 16: the division itself, which is the cell's weight and refuses a cell of nobody —
+      // `div` would have answered `Infinity` and carried it into an equity account. What the type
+      // cannot say is which of the two a `Cash` is; `bumpTotal` above is where a writer says it.
       acrossMembers(
         eachMember(
           asTotal<'money:piece'>(amount, 'what the issuer issued'),
@@ -1142,7 +1153,11 @@ export class Settlement {
                 acquired: ins.period,
               },
             ]);
-            bump(op.party, negated(heldAsMoney(op.qty, 'what leaves'), 'what leaves'), op.instrument);
+            bumpPerMember(
+              op.party,
+              negated(heldAsMoney(op.qty, 'what leaves'), 'what leaves'),
+              op.instrument,
+            );
           } else {
             const drawn = this.d.register.debit(op.party, op.instrument, op.qty);
             drawnByOp.set(index, drawn);
@@ -1157,7 +1172,7 @@ export class Settlement {
             ).value;
             // What this party's units of this line cost it, kept for the disposal pairing below.
             sold.set(`${op.party}/${op.instrument}`, carrying);
-            bump(op.party, negated(carrying, 'what it gave up'), op.instrument);
+            bumpPerMember(op.party, negated(carrying, 'what it gave up'), op.instrument);
           }
           deltas.push({
             party: op.party,
@@ -1173,7 +1188,7 @@ export class Settlement {
           if (op.money)
             this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
-          bump(op.party, valueAt(basis, op.qty, 'credit value'), op.instrument);
+          bumpPerMember(op.party, valueAt(basis, op.qty, 'credit value'), op.instrument);
           deltas.push({
             party: op.party,
             instrument: op.instrument,
@@ -1193,7 +1208,7 @@ export class Settlement {
              */
             const inst = this.d.instruments.get(op.instrument);
             if (owesItsValue(this.d.registry.instrumentKind(inst.kind))) {
-              bump(
+              bumpTotal(
                 issuerOf(inst),
                 valueAt(
                   minus(carryingOf(op.fromDebit), basis, 'what the re-mark moved it by'),
@@ -1232,9 +1247,9 @@ export class Settlement {
                 ? carryingOf(op.fromDebit)
                 : op.valuePerUnit
               : asPerPiece(1, 'at what it promised');
-            bump(
+            bumpTotal(
               op.issuer,
-              perMemberOf(op.issuer, negated(valueAt(per, op.qty, 'issue value'), 'what it took on')),
+              negated(valueAt(per, op.qty, 'issue value'), 'what it took on'),
               op.instrument,
             );
           }
@@ -1274,7 +1289,7 @@ export class Settlement {
                   ? asPerPiece(1, 'at what it promised')
                   : op.valuePerUnit
               : asPerPiece(1, 'at what it promised');
-            bump(op.issuer, perMemberOf(op.issuer, valueAt(per, op.qty, 'redeem value')), op.instrument);
+            bumpTotal(op.issuer, valueAt(per, op.qty, 'redeem value'), op.instrument);
           }
           break;
         }
@@ -1324,8 +1339,8 @@ export class Settlement {
                 }),
               ).value;
           this.d.instruments.reseat(op.instrument, op.to);
-          bump(op.from, owed, op.instrument);
-          bump(op.to, negated(owed, 'and onto the new one'), op.instrument);
+          bumpTotal(op.from, owed, op.instrument);
+          bumpTotal(op.to, negated(owed, 'and onto the new one'), op.instrument);
           break;
         }
         case 'writeContract': {

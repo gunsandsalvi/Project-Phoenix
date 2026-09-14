@@ -439,7 +439,16 @@ export function settleEstates(ctx: MechanismContext): void {
     const people = heirs.reduce((t, h) => add(t, h.weight, 'the survivors here'), 0);
     if (people <= 0) continue;
     const view = ctx.participant(office.id);
-    const ccy = ctx.registry.currencyOf(office.region);
+    /**
+     * A-19, 13j: EVERY MONEY THE OFFICE HOLDS. `handToProbate` hands over every money a dead cell
+     * held, and this paid out in the money of the office's own region alone — so a household that
+     * had ever been paid abroad sent that balance here and it never left again. What arrives by
+     * every door leaves by every door.
+     */
+    const monies = new Set<CurrencyCode>([ctx.registry.currencyOf(office.region)]);
+    for (const h of view.holdings()) {
+      if (isMoney(ctx, h.instrument)) monies.add(ctx.instruments.get(h.instrument).ccy);
+    }
     for (const heir of heirs) {
       const legs: Leg[] = [];
       // Two counts of people, so what each heir takes is a pure share of what is here.
@@ -480,8 +489,9 @@ export function settleEstates(ctx: MechanismContext): void {
           toCell: some({ perMember, weight: heir.weight }),
         });
       }
-      const cash = view.cash(ccy);
-      if (cash > 0) {
+      for (const ccy of monies) {
+        const cash = view.cash(ccy);
+        if (cash <= 0) continue;
         const perMember = ctx.registry.payable(
           ccy,
           over(
@@ -490,20 +500,19 @@ export function settleEstates(ctx: MechanismContext): void {
             'each of them gets',
           ),
         );
-        if (perMember > 0) {
-          legs.push({
-            kind: 'money',
-            from: ctx.accountOf(office.id, ccy),
-            to: ctx.accountOf(heir.id, ccy),
-            // Treasury C1, XI-8: an inheritance is a TRANSFER of what somebody already owned, not
-            // something the heir earned. It was taxed as income at the wage rate (A-46).
-            receipt: { of: 'transfer' },
-            ccy,
-            amount: scaleQty(perMember, heir.weight, 'what they get between them'),
-            fromCell: none(),
-            toCell: some({ perMember, weight: heir.weight }),
-          });
-        }
+        if (perMember <= 0) continue;
+        legs.push({
+          kind: 'money',
+          from: ctx.accountOf(office.id, ccy),
+          to: ctx.accountOf(heir.id, ccy),
+          // Treasury C1, XI-8: an inheritance is a TRANSFER of what somebody already owned, not
+          // something the heir earned. It was taxed as income at the wage rate (A-46).
+          receipt: { of: 'transfer' },
+          ccy,
+          amount: scaleQty(perMember, heir.weight, 'what they get between them'),
+          fromCell: none(),
+          toCell: some({ perMember, weight: heir.weight }),
+        });
       }
       if (legs.length === 0) continue;
       const r = ctx.settle({

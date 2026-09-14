@@ -35,12 +35,14 @@
  * costs IT — below which sailing is worse than staying in port.
  */
 import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
+import { costOfDraw } from '../../register/register.js';
 import { instrumentId, marketId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
 import { atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
 import { NO_QTY, type Qty, addQty, asQty, downTick, subQty } from '../../core/tick.js';
 import {
   type PerPiece,
+  asCash,
   asPerPiece,
   asRatio,
   heldAsMoney,
@@ -341,6 +343,29 @@ function cargo(
         'its freight',
       ),
     );
+    /**
+     * A-68, D2: WHAT THE CARGO COST, PLUS THE FREIGHT — and it used to be the freight alone.
+     *
+     * The destroy leg takes the cargo off the shipper's book at its whole carrying value; the
+     * create leg puts it back on at `costPerUnit x take`. With only the freight in that second
+     * number the shipper's equity fell by everything the cargo had cost to buy or to make, at the
+     * moment it was loaded. The tell was `add(share, 0, 'the freight')` — a sum of one term and a
+     * zero, where the second term is what the cargo cost.
+     *
+     * The total over a completed voyage was right (`-C` at loading, `+P - F` at sale), which is why
+     * no conservation family caught it. What was wrong is the module's own subject: A3.a's working
+     * capital. A shipper mid-voyage showed an equity hole the size of its cargo, which `failedWhy`'s
+     * solvency trigger reads and which could kill a merchant on the water, and the arrival booked a
+     * profit equal to the cargo's cost that no trade had produced. `arrive()` was always right —
+     * it carries the transit lot's own basis forward — so the error was entirely here, under a
+     * docstring that said the opposite: *"the destination at what it cost INCLUDING the voyage"*.
+     *
+     * `costOfDraw` is exported from the register for exactly this read (Law 19).
+     */
+    const held = ctx.register.holding(shipper, i.id);
+    const cost = held.some
+      ? costOfDraw(held.value.lots, asQty(take))
+      : asCash(0, 'a shipper with no lots of it has paid nothing for it');
     const r = ctx.settle({
       legs: [
         { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed', fromCell: none() },
@@ -349,7 +374,11 @@ function cargo(
           party: shipper,
           instrument: transit,
           qty: asQty(take),
-          costPerUnit: pricedAt(heldAsMoney(share, 'the freight'), take, 'what the voyage added to a unit'),
+          costPerUnit: pricedAt(
+            plus(cost, heldAsMoney(share, 'the freight'), 'what it cost and what the voyage cost'),
+            take,
+            'what a unit cost delivered',
+          ),
           toCell: none(),
         },
         {

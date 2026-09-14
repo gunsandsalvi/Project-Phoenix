@@ -25,6 +25,7 @@ import {
   type PerPiece,
   asCash,
   asRatio,
+  heldAsMoney,
   plus,
   pricedAt,
   ratioOf,
@@ -439,7 +440,7 @@ export function separate(
   // That is a missing mechanism named, not a payment invented (Part II: MISSING is an answer).
   const trading = ctx.parties.get(row.employer).status.alive;
   const paid =
-    trading && payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`);
+    trading && payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`) > 0;
   /**
    * A-41, XI-8: AND NOW THERE IS SOMEWHERE FOR IT TO RANK. A trading employer that could not pay
    * opened its claim inside `payFrom`; a ceased one never tried, so it opens here. Either way the
@@ -499,7 +500,7 @@ export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
   for (const row of allRows(book)) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
     const perMember = wagePerMember(row);
-    const settled = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
+    const moved = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
     const bill = bills.get(row.employer) ?? {
       due: asCash(0, 'nothing due yet'),
       paid: asCash(0, 'nothing paid yet'),
@@ -511,7 +512,8 @@ export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
     const hours = scaleQty(row.hoursPerMember, row.headcount, 'hours under contract');
     bills.set(row.employer, {
       due: plus(bill.due, total, 'wages due'),
-      paid: plus(bill.paid, settled ? total : asCash(0, 'nothing was paid'), 'wages paid'),
+      // A-39: what the wire moved, never what the arithmetic asked for.
+      paid: plus(bill.paid, moved, 'wages paid'),
       hours: addQty(bill.hours, hours, 'hours'),
       // C2: hours that can make something. Somebody found last period is paid and not yet working.
       productive: addQty(
@@ -527,15 +529,34 @@ export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
   }
 }
 
-/** One payment from a named payer to a named cell, per member (XI-15). Returns whether it settled. */
+/**
+ * One payment from a named payer to a named cell, per member (XI-15).
+ *
+ * A-39, Law 5: WHAT ACTUALLY MOVED, and it used to answer whether anything had.
+ *
+ * This function already knows the number: a wage is paid in whole pieces of the money to each
+ * worker separately, so what leaves the employer is `downTick(perMember) x weight` and never the
+ * raw `perMember x headcount` its caller was booking. Returning a boolean threw that away, and the
+ * caller capitalised the unrounded figure into the batch — so a firm's equity rose by
+ * `(perMember - downTick(perMember)) x headcount` every period, for every row, and NOTHING FELL.
+ * With headcounts in the millions that is thousands of currency units of equity per firm per
+ * period, created out of nothing and compounding through the inventory it was capitalised into.
+ *
+ * Nothing caught it: `firms.productionCosts` compares the production instruction's equity effect
+ * against `firms.started.wages`, and both were `bill.paid` — one number twice, which is A-10 and
+ * A-14's shape. The `accounts` family was satisfied because the WIP carried the invented cost.
+ *
+ * So it returns the money. Zero is a real answer and means exactly what it says: nothing moved.
+ */
 function payFrom(
   ctx: MechanismContext,
   payer: PartyId,
   cell: PartyId,
   perMember: number,
   reason: string,
-): boolean {
-  if (perMember <= 0) return true;
+): Cash {
+  const nothing = asCash(0, 'nothing moved');
+  if (perMember <= 0) return nothing;
   const from = ctx.parties.get(payer);
   const to = ctx.parties.get(cell);
   const ccy = ctx.registry.currencyOf(from.region);
@@ -543,7 +564,9 @@ function payFrom(
   // a count of people and every one of them is paid the same whole number of pieces. What the
   // fraction below one would have been is not paid, because there is no such coin.
   const share = shareFor(ctx.registry, to, currencyUnit(ccy), perMember);
-  if (share.total <= 0) return true;
+  // A per-member wage below one piece of the money pays NOTHING — there is no such coin — and this
+  // used to answer `true`, which is how a wage with no money leg behind it was booked as paid.
+  if (share.total <= 0) return nothing;
   const side = cellSide(to, share.perMember);
   const leg: Leg = {
     kind: 'money',
@@ -559,7 +582,7 @@ function payFrom(
   };
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
   const r = ctx.settle({ legs: [leg], cause: 'transfer', reason });
-  if (r.outcome === 'settled') return true;
+  if (r.outcome === 'settled') return heldAsMoney(share.total, 'what the employer actually paid');
   /**
    * A-41, XI-8, Money E1: AN UNPAID WAGE IS STILL OWED, and until now nothing said so.
    *
@@ -576,7 +599,7 @@ function payFrom(
     what: 'wages in arrears',
     why: reason,
   });
-  return false;
+  return nothing;
 }
 
 /**

@@ -5686,3 +5686,59 @@ Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green, too
 **The engine suite was not run at any point in 2a**: the typing erases, so behaviour cannot change,
 and the one behaviour change made inside it (`A-18`) was named as one where it happened. Stages
 2b–2e are the eighteen findings, which do change behaviour and will be measured.
+
+---
+
+## Item 2, stage 2b — the four conservation breaks
+
+Stage 2a made the eighteen findings visible to the compiler; 2b fixes the four that create or
+destroy value. Unlike 2a these change behaviour, and each is one place where a number was invented
+with nothing falling on the other side.
+
+**`A-39` — the wage bill.** `labour/matching.ts:payFrom` computed what actually left the employer —
+`share.total`, whole pieces of the money to each worker separately — and returned a boolean. The
+caller booked `perMember × headcount`, the unrounded figure, as what the firm had paid, and
+`firms/produce.ts` capitalised that into the batch. A firm's equity rose by
+`(perMember − downTick(perMember)) × headcount` every period, for every row, and nothing fell. With
+headcounts in the millions that compounds through the inventory it was capitalised into. It returns
+`Cash` now. Zero is a real answer and means what it says: a per-member wage below one piece of the
+money pays NOTHING, because there is no such coin, and the employer owes it (`ctx.owes`) rather than
+recording it as paid — that branch used to return `true`. `produce.ts` required no change, because
+it already read the published `paid`; the fix is at the writer, which is where Law 4 puts it.
+
+Nothing caught this: `firms.productionCosts` compares the production instruction's equity effect
+against `firms.started.wages` and both were `bill.paid` — one number checked against itself, which
+is A-10 and A-14's shape — and the `accounts` family was satisfied because the WIP carried the
+invented cost.
+
+**`A-68` — the cargo.** The loading instruction wrote `costPerUnit = share / take`, with an
+`add(share, 0, 'the freight')` sitting where the missing term had been: what the cargo itself cost
+was written off at the quay. It now reads `costOfDraw` off the lots the shipper is drawing from —
+the read `register.ts` exports for exactly this — and a delivered unit carries both what it cost and
+what the voyage cost. `arrive()` was already right and was the pattern.
+
+**`A-19` — probate.** `handToProbate` was widened (13j) to hand over every money a dead cell held,
+because a household can be paid a coupon in a money it does not bank in. `settleEstates`, forty
+lines below, still paid out in one: `currencyOf(office.region)`. Every other money arrived at
+probate and stayed there — the office never trades, has no fails and no other outlet, so the balance
+was permanent and out of the circuit for good, with the accounts family confirming it every period
+because probate is a named holder. The office now builds the same set of monies from its own
+holdings and pays out in each. What arrives by every door leaves by every door.
+
+**`A-1` — the equity door, and the fix is not the one the plan named.** The plan said "make `bump`
+take the total and divide". It cannot: three of `bump`'s eight callers hold the register's own
+PER-MEMBER numbers, and making them multiply would have put A-39's rounding back in a second place.
+So there is no `bump`. There are two named doors — `bumpPerMember` and `bumpTotal` — and deleting
+the old name is what did the work, because every existing caller then had to say which of the two it
+was holding. That confirmed the two the finding named (`reseat`, both sides; the issuer's re-mark in
+the `credit` case, which uses `op.totalQty`) and left `issue` and `redeem` shorter, since
+`bumpTotal` now performs the division each of them was separately remembering to do. `perMemberOf`
+is reachable only from `bumpTotal`. Before this, the day a CELL issued something its estate took on
+a million households' worth of a liability against one household's equity, and the balance-sheet
+family fired on the estate — which is how it was found.
+
+One stale comment removed beside `payFrom` (Law 16): a header still saying it "returns whether it
+settled".
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. The engine suite is still not run — the owner's instruction stands until the plan is done.

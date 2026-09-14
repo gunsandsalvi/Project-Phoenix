@@ -322,7 +322,7 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > over its SUBJECT, so no single `D` is true of that store and the dimension is asserted at each
 > READ by the module that knows what it asked about.
 >
-> | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
+> | ~~2b~~ | ~~the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1`~~ (`A-18` closed in 2a.1) — **DONE** | |
 > | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
 > | 2e | the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38` | |
@@ -349,6 +349,40 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > of every band where it was. Declared `physics` in the ontology register: who is partway through the
 > year in which they cross is this sector's own demography and wants no kernel home.
 
+### Stage 2b — as built: the four conservation breaks
+
+These four are the reason 2a was worth doing: each is a place where value was created or destroyed
+with nothing falling on the other side, and each was invisible to the audit because the number that
+should have contradicted it was the same number read twice (Law 4's shape, A-10 and A-14's).
+
+**`A-39`, the largest.** `payFrom` knew what the wire moved — `share.total`, whole pieces of the
+money to each worker — and returned a boolean. Its caller booked `perMember × headcount`, the
+unrounded figure, as what the firm had paid, and `produce.ts` capitalised that into the batch. A
+firm's equity rose by `(perMember − downTick(perMember)) × headcount` every period, for every row,
+and nothing fell. It returns `Cash` now, and zero is a real answer: a per-member wage below one
+piece of the money pays NOTHING, because there is no such coin, and the employer owes it (`ctx.owes`)
+instead of recording it as paid. `produce.ts` needed no change — it already read `paid`.
+
+**`A-68`.** Loading a cargo wrote `costPerUnit = share / take` with an `add(share, 0)` where the
+missing term had been. What the cargo cost was written off at the quay. It reads `costOfDraw` off
+the lots the shipper is actually drawing from, and the delivered unit carries both.
+
+**`A-19`.** Probate took in every money a dead cell held and paid out in one — the office's own
+region's. Every other money arrived and stayed, on a book with no outlet, for good. The office now
+builds the same set of monies the inbound side builds, from its own holdings, and pays out in each.
+
+**`A-1`, and the fix is not the one the step named.** `bump` could not be made to take a total:
+three of its eight callers hold the register's own per-member numbers, and making those multiply
+would have put A-39's rounding back in a second place. So there is no `bump`. There are two named
+doors — `bumpPerMember` and `bumpTotal` — and removing the old name forced every existing caller to
+say which of the two it was holding. That found the two the step named (`reseat`, twice; the
+issuer's re-mark in `credit`) and left `issue` and `redeem` shorter, since `bumpTotal` now does the
+division they were each remembering to do. A cell's estate had been taking on a million households'
+worth of a liability against one household's equity.
+
+**Not measured.** Per the owner's instruction the suite does not run until the plan is done; the
+gates in use are lint, typecheck, `check:spec`, `check:forbids` and `check:existence`, all green.
+
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
@@ -363,17 +397,17 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 
 ### Steps — the eighteen the type now refuses
 
-- [ ] 2.6 **A-39** (the largest conservation break in the model). `labour/matching.ts:payFrom` returns a boolean; it computes `share.total` — what actually moved — and throws it away. Return `share.total`. Then `payWages` sets `bill.paid` from it instead of from the unrounded `mul(perMember, row.headcount)`, and `produce.ts` capitalises the money that changed hands. Also: `payFrom` returns `true` when `share.total <= 0`, recording a sub-piece wage as fully paid with no money leg — that branch returns the zero, and the caller books nothing.
-- [ ] 2.7 **A-68**. `freight/index.ts`, the loading instruction: `costPerUnit: div(add(share, 0, 'the freight'), take, …)` — the `add(x, 0)` is the tell, and the missing term is what the cargo cost. Use `costOfDraw(lots, take)` from `register/register.ts`, which is exported for this read: `costPerUnit = (costOfDraw + share) / take`. `arrive()` is already correct and is the pattern.
+- [x] 2.6 **A-39** (the largest conservation break in the model). `labour/matching.ts:payFrom` returns a boolean; it computes `share.total` — what actually moved — and throws it away. Return `share.total`. Then `payWages` sets `bill.paid` from it instead of from the unrounded `mul(perMember, row.headcount)`, and `produce.ts` capitalises the money that changed hands. Also: `payFrom` returns `true` when `share.total <= 0`, recording a sub-piece wage as fully paid with no money leg — that branch returns the zero, and the caller books nothing. **DONE**: `payFrom` returns a `Cash` — what the wire moved — and `payWages` adds that to `bill.paid`. A sub-piece wage now returns zero rather than `true`. `produce.ts:wagesThisPeriod` already read `paid`, so what is capitalised into the batch is now the money that changed hands, with no change there (Law 19: one writer, one read).
+- [x] 2.7 **A-68**. `freight/index.ts`, the loading instruction: `costPerUnit: div(add(share, 0, 'the freight'), take, …)` — the `add(x, 0)` is the tell, and the missing term is what the cargo cost. Use `costOfDraw(lots, take)` from `register/register.ts`, which is exported for this read: `costPerUnit = (costOfDraw + share) / take`. `arrive()` is already correct and is the pattern. **DONE**: `cargo()` reads `costOfDraw(held.lots, take)` and `costPerUnit` is what the units cost plus the voyage, over what was loaded. A shipper holding no lots of the line has paid nothing for it and says so.
 - [ ] 2.8 **A-65**. `options/index.ts:optionOrders`: `mul(outlook.expected, outlook.confidence)` is money² per unit². The premium must be built from `confidence` as the WIDTH it is, and must depend on `t.strike`, `t.right` and `t.expiry` — today none of the three appears in `mine`. The reservation is the party's own; D7's "the premium is what clears" stays.
 - [ ] 2.9 **A-58**. `securitisation:priceFor` is `1 − (owed/(owed+equity))²` — a leverage ratio squared called a cost of funds, with no periodicity and no dependence on the pool. Discount the note's own cash flows at the bank's published `FundingCost.perAnnum` (`banks/index.ts:publishCostOfFunds`) with the same `priceAt(flows, required, on, dayCount)` the money funds use. And `noteBids` posts a single point for the whole spare cash — post a schedule (Clearing A2).
 - [ ] 2.10 **A-44**. `HOUSEHOLD_PARAMS.liquidityPremium` is declared `per annum OVER WHAT A DEPOSIT RETURNS` and used as the bare 0.005. Deposits pay now (`money-market/deposits.ts:payDepositInterest`). `portfolio.ts:fundOrders` must compare `p.offered` against `depositRate + premium`, reading the board through `households/bank.ts:board()`.
 - [ ] 2.11 **A-47** and **A-50** together. `funds/index.ts:eligible` admits a line on live/kind/tenor with **no currency test**, so every money fund's mandate is every sovereign bill in the world; `ordersOf` then divides one currency by another; `nav.ts:navOf` sums two moneys. Add the currency to the mandate, convert through `ctx.valuation.inMoney` in `navOf` and `holdingsWorth`, and delete `moneyOf` — `ctx.accountOf` is the one writer of which account a party holds a money in.
 - [ ] 2.12 **A-51**. `inMoney` is exported on `MechanismContext.valuation` and called by **no module**. Close it at the reads that walk `holdingsOf`: `funds/nav.ts`, `funds/index.ts:holdingsWorth`, `banks/capital.ts:capitalOf`, `money-market/resolution.ts:valueBook`, `households/consume.ts:wealthOf` and `atRisk` (**A-23**), `equity/index.ts:531`.
 - [ ] 2.13 **A-61**. `central-bank-omo/index.ts:remit` sends to `treasuries[0]` — an insertion-order artefact — in its own money. Use `registry.centralBankOf(ccy)` paired with `treasuryOf(ctx, bank)` (already in `money-market/resolution.ts`) so each treasury owns its own central bank.
-- [ ] 2.14 **A-18**. `households/lifecycle.ts`, twice: `Math.floor(mul(weightOf(cell), share))` with a comment claiming the fraction "stays where it is until enough of it has accumulated". Nothing accumulates. Add the per-cell remainder the comment describes, carried forward, so `floor` times an event rather than deleting it. Then `crossing >= weightOf(cell)` moves the cell as itself rather than skipping it.
-- [ ] 2.15 **A-19**. `settleEstates` pays out in one currency (`currencyOf(office.region)`) where `handToProbate` takes in every money a dead cell held. Pay out in every money probate holds; a foreign balance there is otherwise permanent.
-- [ ] 2.16 **A-1**. `ledger/settlement.ts:reseat` books a TOTAL into the per-member equity account; `issue` and `redeem` wrap in `perMemberOf` and `reseat` does not, nor does the issuer re-mark in the `credit` case. Make `bump` take the total and divide, so there is one door and a new writer cannot forget.
+- [x] 2.14 **A-18**. `households/lifecycle.ts`, twice: `Math.floor(mul(weightOf(cell), share))` with a comment claiming the fraction "stays where it is until enough of it has accumulated". Nothing accumulates. Add the per-cell remainder the comment describes, carried forward, so `floor` times an event rather than deleting it. Then `crossing >= weightOf(cell)` moves the cell as itself rather than skipping it. **DONE in 2a.1** — `households.waiting`, both ends. Left in place because it is where the step is recorded; the prose above says what was built.
+- [x] 2.15 **A-19**. `settleEstates` pays out in one currency (`currencyOf(office.region)`) where `handToProbate` takes in every money a dead cell held. Pay out in every money probate holds; a foreign balance there is otherwise permanent. **DONE**: the office builds the same `monies` set `handToProbate` builds and pays out in every one of them. What arrives by every door leaves by every door.
+- [x] 2.16 **A-1**. `ledger/settlement.ts:reseat` books a TOTAL into the per-member equity account; `issue` and `redeem` wrap in `perMemberOf` and `reseat` does not, nor does the issuer re-mark in the `credit` case. Make `bump` take the total and divide, so there is one door and a new writer cannot forget. **DONE, and not as written.** `bump` could not "take the total" — three of its eight callers hold a PER-MEMBER number (the register's own), and making them multiply would put the rounding back. There are two named doors instead: `bumpPerMember` and `bumpTotal`, and no `bump`, so every existing caller had to say which of the two it held. `perMemberOf` is now reachable only from `bumpTotal`.
 - [ ] 2.17 **A-33**. `world/world.ts:1204 lastOwn` has no period bound. Add one predicate at the four `labour.wages` readers (`firms/decide.ts:wagesDue`, `wageFacing`, `hoursUnderContract`; `firms/index.ts:wagesPromised`), at `firms/invest.ts:quotedRate`, at `treasury/index.ts:lastWageBill`/`wageItFaces`, and at `banks/staff.ts:linesCovered`.
 - [ ] 2.18 **A-38**. `labour/matching.ts:reservation` reads `outlook('income')` — which includes coupons, distributions and (per A-37, closed) sale proceeds. A cell's outside option is what it lives on WITHOUT the job. Read the benefit and the non-labour income separately.
 - [ ] 2.19 **A-32**. `levelsBelow` declares `households.demand.steps` a RESOLUTION and its levels are `opinion × k/steps` — a grid of 5 and a grid of 7 share only the top level, and the grid's BOTTOM is `opinion/steps`, so the count sets how far down the cell bids at all. Either make it invariant under refinement, or re-declare it a SHAPE whose count must fall. Same for `pricesOver` in `consume.ts`.
