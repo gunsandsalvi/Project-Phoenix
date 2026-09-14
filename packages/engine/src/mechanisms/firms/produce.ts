@@ -24,10 +24,11 @@
  */
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import {
+  type Cash,
+  type Ratio,
   asAmount,
   asCash,
   asRatio,
-  type Cash,
   minus,
   over,
   plus,
@@ -36,7 +37,7 @@ import {
 } from '../../core/measure.js';
 import { finite, material, sub, sum } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
-import { asQty, upTick } from '../../core/tick.js';
+import { NO_QTY, asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -205,8 +206,8 @@ function start(
     cause: 'production',
     reason: `${firm} started ${batch} of ${tech.terms.subUnit}`,
   });
-  const started = record.outcome === 'settled' ? batch : 0;
-  const used = room === null ? none<number>() : utilisation(started, room);
+  const started = record.outcome === 'settled' ? batch : NO_QTY;
+  const used = room === null ? none<Ratio>() : utilisation(started, room);
   ctx.record(
     'firms.started',
     [firm],

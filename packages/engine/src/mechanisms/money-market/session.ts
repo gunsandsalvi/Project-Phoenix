@@ -32,8 +32,19 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
-import { amountOf, type Cash, minus, type Ratio, valueAt , asPerPiece} from '../../core/measure.js';
+import { atMost, sub, sum } from '../../core/num.js';
+import {
+  type Cash,
+  type Ratio,
+  amountOf,
+  asPerPiece,
+  asRatio,
+  minus,
+  over,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { downTick, upTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -115,9 +126,10 @@ export function netReserveFlow(ctx: MechanismContext, bank: PartyId, ccy: Curren
 
 /** The corridor's two levels, which are the policy rate plus what the central bank chose (C3). */
 export interface Corridor {
-  readonly policy: number;
-  readonly floor: number;
-  readonly ceiling: number;
+  /** Three RATES, per annum. A `Ratio` each: a corridor is never a level anybody posts (A-58). */
+  readonly policy: Ratio;
+  readonly floor: Ratio;
+  readonly ceiling: Ratio;
 }
 
 /** What a lender has to place, and what it will take for it. */
@@ -157,7 +169,8 @@ export interface Struck {
   readonly borrower: PartyId;
   /** Law 8: money, as a count of the money's own smallest piece. */
   readonly amount: Qty;
-  readonly rate: number;
+  /** `E-11`: what the book STRUCK, which for this book is a rate and not a level. */
+  readonly rate: Ratio;
   readonly book: BookDecl;
 }
 
@@ -179,7 +192,16 @@ export function strike(
     // offered, and the share below the piece it could actually hand over is not lent.
     const amount = downTick(f.qty);
     if (f.side !== 'sell' || amount <= 0) continue;
-    out.push({ lender: f.party, borrower, amount, rate: outcome.price, book });
+    // `E-11`: THIS BOOK CLEARS A RATE and `Outcome.price` is a `PerPiece` because most books clear
+    // a level. The crossing is named rather than assumed; the finding is that a book cannot say
+    // which of the two its level is.
+    out.push({
+      lender: f.party,
+      borrower,
+      amount,
+      rate: asRatio(outcome.price, 'the rate this book struck'),
+      book,
+    });
   }
   return out;
 }
@@ -293,17 +315,24 @@ export const stillNeeded = (need: number, raised: number): number =>
   need > raised ? sub(need, raised, 'still short') : 0;
 
 /** The rate a book actually struck for a name, for the reads and the publication (B4, C3). */
-export function struckRate(rows: readonly Struck[]): Option<number> {
+export function struckRate(rows: readonly Struck[]): Option<Ratio> {
   const first = rows[0];
-  return first === undefined ? none<number>() : some(first.rate);
+  return first === undefined ? none<Ratio>() : some(first.rate);
 }
 
 /** B6.a: what the two tenors printed, so the gap between them can be read rather than stated. */
-export function averageRate(rows: readonly Struck[]): Option<number> {
-  if (rows.length === 0) return none<number>();
+export function averageRate(rows: readonly Struck[]): Option<Ratio> {
+  if (rows.length === 0) return none<Ratio>();
   const weight = sum(rows.map((r) => r.amount)).value;
-  if (weight <= 0) return none<number>();
-  return some(div(sum(rows.map((r) => mul(r.amount, r.rate, 'weighted'))).value, weight, 'rate'));
+  if (weight <= 0) return none<Ratio>();
+  // Each row's rate weighted by what it lent, over what was lent: a rate out, never an amount.
+  return some(
+    over(
+      sum(rows.map((r) => scale(r.rate, asRatio(r.amount, 'what it lent'), 'weighted'))).value,
+      asRatio(weight, 'what was lent between them'),
+      'rate',
+    ),
+  );
 }
 
 /** Everything a lender could advance to this borrower, most valuable parcel first (C4.b). */
@@ -327,10 +356,10 @@ export function floorBid(cb: PartyId, amount: Qty, corridor: Corridor): readonly
 }
 
 /** The corridor from the policy rate and the two spreads the central bank chose (C3, B3). */
-export function corridorOf(policy: number, floorSpread: number, ceilingSpread: number): Corridor {
+export function corridorOf(policy: Ratio, floorSpread: Ratio, ceilingSpread: Ratio): Corridor {
   return {
     policy,
-    floor: sub(policy, floorSpread, 'the floor'),
-    ceiling: add(policy, ceilingSpread, 'the ceiling'),
+    floor: minus(policy, floorSpread, 'the floor'),
+    ceiling: plus(policy, ceilingSpread, 'the ceiling'),
   };
 }

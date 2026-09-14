@@ -41,18 +41,21 @@ import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
 import {
+  type PerPiece,
+  type Ratio,
+  asAmount,
   asNamed,
   asPerPiece,
   asRatio,
-  over,
-  type Ratio,
   minus,
-  type PerPiece,
+  over,
+  plus,
   pricedAt,
+  ratioOf,
   scale,
   valueAt,
 } from '../core/measure.js';
-import { div, mul, sub, sum, zeroIfNone } from '../core/num.js';
+import { div, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
@@ -263,12 +266,16 @@ export interface SpaceReads {
   readonly registry: Pick<Registry, 'subdivision' | 'pieces'>;
 }
 
-export function spaceFor(reads: SpaceReads, unit: UnitId, pieces: number, perUnit: number): number {
-  const named = div(pieces, reads.registry.subdivision(unit), 'what it holds, in its own named unit');
-  return reads.registry.pieces(
-    plantUnitId(STORAGE),
-    asNamed(mul(named, perUnit, 'the space that takes'), 'the space that takes'),
+export function spaceFor(reads: SpaceReads, unit: UnitId, pieces: Qty, perUnit: Ratio): Qty {
+  const named = asNamed(
+    over(
+      pieces,
+      asRatio(reads.registry.subdivision(unit), 'pieces in a named unit of it'),
+      'what it holds, in its own named unit',
+    ),
+    'what it holds, in its own named unit',
   );
+  return reads.registry.pieces(plantUnitId(STORAGE), scale(named, perUnit, 'the space that takes'));
 }
 
 /**
@@ -352,7 +359,11 @@ export function carriedAfterWear(
     scale(
       basisPerUnit,
       asRatio(
-        div(sub(left, 1, 'periods after this one'), left, 'what is left of its life'),
+        ratioOf(
+          asRatio(sub(left, 1, 'periods after this one'), 'the periods after this one'),
+          asRatio(left, 'the periods it has left'),
+          'what is left of its life',
+        ),
         'what is left of its life',
       ),
       'what it is carried at now',
@@ -471,19 +482,22 @@ export function groundUnderPlant(reads: GroundReads, vintages: readonly HeldVint
     if (kind.landPerUnit === null) continue;
     // Law 8 twice: the register counts PIECES and the ground is declared per NAMED unit, so the
     // conversion happens where the ratio is read — the same correction `areaUnderUse` carries.
-    const units = div(
-      v.units,
-      reads.registry.subdivision(plantUnitId(kind.id)),
+    const units = asNamed(
+      over(
+        v.units,
+        asRatio(reads.registry.subdivision(plantUnitId(kind.id)), 'pieces in a named unit of it'),
+        'the plant it holds, in its own named unit',
+      ),
       'the plant it holds, in its own named unit',
     );
-    terms.push(mul(units, reads.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'));
+    terms.push(scale(units, reads.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'));
   }
   return sum(terms).value;
 }
 
 
 /** A2, A4: the units of one kind of plant this party has in service. */
-export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): number {
+export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): Qty {
   return sum(vintages.filter((v) => v.capitalKind === capitalKind).map((v) => v.units)).value;
 }
 
@@ -540,11 +554,15 @@ export function capacityFrom(
   let scarcest: Capacity | undefined;
   for (const need of needs) {
     if (need.unitsPerUnitPerPeriod <= 0) continue;
-    const held = plantHeld(vintages, need.capitalKind) + zeroIfNone(rented.get(need.capitalKind));
+    const held = plus(
+      plantHeld(vintages, need.capitalKind),
+      asAmount<'piece'>(zeroIfNone(rented.get(need.capitalKind)), 'and what it rented this period'),
+      'the plant it has',
+    );
     // Law 8: what plant it HAS over what one unit of output takes is a count of whole units it can
     // make, and what it can DO rounds down — the fraction above is a unit it cannot start.
     const perPeriod = downTick(
-      div(held, need.unitsPerUnitPerPeriod, 'what this kind of plant lets it make'),
+      over(held, need.unitsPerUnitPerPeriod, 'what this kind of plant lets it make'),
     );
     if (scarcest === undefined || perPeriod < scarcest.perPeriod) {
       scarcest = { perPeriod, binding: need.capitalKind };
@@ -557,9 +575,9 @@ export function capacityFrom(
  * Goods B1.d, D4, Goods G4: utilisation is a READ of the outcome against capacity. It is here so
  * that whoever reports it reports the one derivation; nothing decides anything with it.
  */
-export function utilisation(output: number, capacity: number): Option<number> {
-  if (capacity <= 0) return none<number>();
-  return some(div(output, capacity, 'how much of its capacity it used'));
+export function utilisation(output: Qty, capacity: Qty): Option<Ratio> {
+  if (capacity <= 0) return none<Ratio>();
+  return some(ratioOf(output, capacity, 'how much of its capacity it used'));
 }
 
 /**

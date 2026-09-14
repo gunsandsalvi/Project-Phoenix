@@ -4,6 +4,7 @@
  * @spec Commodities Spot A3 Commodities Spot A4 Commodities Spot D2.a Commodities Spot D3 Capital Programme A2 Capital Programme A4 Clearing A2 Clearing A3 Law 5 Law 6 Law 8
  */
 import { asPerPiece } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {
   GOODS,
@@ -56,12 +57,14 @@ describe('a thing that waits takes room, and the room is declared (A3)', () => {
     expect(isGoodTerms(terms)).toBe(true);
     if (!isGoodTerms(terms) || terms.storagePerUnit === null) return;
     const per = w.params.ratio(terms.storagePerUnit);
-    const pieces = w.registry.subdivision(good.unit);
+    const pieces = asQty(w.registry.subdivision(good.unit));
     // One NAMED unit of the thing takes `per` named units of space, however many pieces each of
     // those is divided into. A conversion that skipped this is out by the ratio of the two
     // subdivisions — a thousand, here — and nothing would say so.
-    expect(spaceFor(w, good.unit, pieces, per)).toBe(spaceFor(w, good.unit, pieces * 1, per));
-    expect(spaceFor(w, good.unit, pieces * 2, per)).toBe(2 * spaceFor(w, good.unit, pieces, per));
+    expect(spaceFor(w, good.unit, pieces, per)).toBe(spaceFor(w, good.unit, asQty(pieces * 1), per));
+    expect(spaceFor(w, good.unit, asQty(pieces * 2), per)).toBe(
+      2 * spaceFor(w, good.unit, pieces, per),
+    );
     // And the per-PIECE ratio is not on any grid: a kilo takes a thousandth of a unit of space,
     // and rounding that to a whole piece makes it nothing and makes room bind nothing.
     expect(spacePerPiece(w, good.unit, per)).toBeGreaterThan(0);

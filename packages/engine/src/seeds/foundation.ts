@@ -175,7 +175,7 @@ import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/in
 import { reporting } from '../mechanisms/reporting/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
-import { roundToNamed, splitOnTick } from '../core/tick.js';
+import { NO_QTY, roundToNamed, splitOnTick } from '../core/tick.js';
 import { displayName } from '../registry/naming.js';
 import { MONEY_PIECES, SHARE_PIECES } from '../registry/grid.js';
 import {
@@ -1912,11 +1912,11 @@ export function foundationSeedFor(
           spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, here), asNamed(finished, 'its stock')), here),
           ...recipeOf(row.subUnit).inputs.map((input) => {
             const line = goodId(input.subUnit, here);
-            if (!ctx.instruments.has(line)) return 0;
+            if (!ctx.instruments.has(line)) return NO_QTY;
             const drawn = scale(starts, asRatio(input.qtyPerUnit, 'what one unit draws of it'), 'what a period of starting draws');
             return spaceOf(ctx, input.subUnit, held(ctx, line, asNamed(drawn, 'what it draws')), here);
           }),
-        ].reduce((a, b) => a + b, 0);
+        ].reduce((a, b) => plus(a, b, 'the room everything here takes'), NO_QTY);
         if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
           const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
           const id = seedVintage(ctx, STORAGE_KIND, here, serviceDate);
@@ -2796,11 +2796,11 @@ export { PAR };
  * their rounding differed by, and a holder short by one unit of space through rounding alone would
  * lose real tonnes at the close for nothing that happened.
  */
-function spaceOf(ctx: SeedContext, subUnit: string, pieces: number, where: RegionId): number {
+function spaceOf(ctx: SeedContext, subUnit: string, pieces: Qty, where: RegionId): Qty {
   const id = goodId(subUnit, where);
-  if (pieces <= 0 || !ctx.instruments.has(id)) return 0;
+  if (pieces <= 0 || !ctx.instruments.has(id)) return NO_QTY;
   const instrument = ctx.instruments.get(id);
   const good = instrument.terms;
-  if (!isGoodTerms(good) || good.storagePerUnit === null) return 0;
+  if (!isGoodTerms(good) || good.storagePerUnit === null) return NO_QTY;
   return spaceFor(ctx, instrument.unit, pieces, ctx.params.ratio(good.storagePerUnit));
 }

@@ -21,7 +21,7 @@ import {
   type PartyId,
   type RegionId,
 } from '../../core/ids.js';
-import { add, atMost, dustOf, material, sum, withinDust } from '../../core/num.js';
+import { atMost, dustOf, material, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick , NO_QTY} from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
@@ -69,13 +69,13 @@ import {
 } from './session.js';
 import { asQty, subQty, type Qty } from '../../core/tick.js';
 import {
+  type Ratio,
   asAmount,
   asRatio,
   heldAsMoney,
   minus,
   over,
   plus,
-  type Ratio,
   valueAt,
 } from '../../core/measure.js';
 import { negQty } from '../../core/tick.js';
@@ -1039,7 +1039,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
     if (book === undefined) continue;
-    const rate = add(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
+    const rate = plus(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
     const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(need, 'what it is short of'));
     const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
     const amount = ctx.registry.payable(

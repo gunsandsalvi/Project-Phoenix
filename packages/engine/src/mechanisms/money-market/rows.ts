@@ -13,7 +13,14 @@
  * B6: the tenor is in the terms, because overnight and term are the same instrument for a different
  * number of days, and A2.a's roll is what happens when the day arrives and the row is not renewed.
  */
-import { asPerPiece, type PerPiece } from '../../core/measure.js';
+import {
+  type PerPiece,
+  type Ratio,
+  asPerPiece,
+  asRatio,
+  plus,
+  scale,
+} from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { type Qty } from '../../core/tick.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
@@ -28,7 +35,6 @@ import {
   type InstrumentKindId,
   type PartyId,
 } from '../../core/ids.js';
-import { add, mul } from '../../core/num.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
@@ -58,7 +64,8 @@ export interface RowTerms extends Terms {
   readonly lender: PartyId;
   readonly borrower: PartyId;
   /** B4: what cleared in the session that struck it, per annum. */
-  readonly rate: number;
+  /** Per annum, struck by the session. A `Ratio`: a rate is never a level (A-44, A-58). */
+  readonly rate: Ratio;
   readonly drawn: Civil;
   readonly maturity: Civil;
   readonly dayCount: DayCount;
@@ -103,9 +110,13 @@ export function rowId(
   return instrumentId(`${what}:${lender}:${borrower}:${n}`);
 }
 
-function interestTo(t: RowTerms, from: Civil, to: Civil): number {
-  return mul(t.rate, yearFraction(t.dayCount, from, to), 'interest');
+/** What a span earns as a SHARE of par: the rate scaled by the fraction of a year it covers. */
+function interestTo(t: RowTerms, from: Civil, to: Civil): Ratio {
+  return scale(t.rate, asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
 }
+
+/** PAR: one unit is one piece of its money. The one place a share of par becomes a level (`E-9`). */
+const PAR: PerPiece = asPerPiece(1, 'par: one unit of this row is one piece of its money');
 
 /**
  * A2.a, B6: INTEREST FALLS DUE WITH THE PRINCIPAL, on the day the row runs out. That is what a
@@ -123,7 +134,7 @@ function dueOn(
   const t = i.terms;
   if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
-  const amountPerUnit = asPerPiece(interestTo(t, t.drawn, t.maturity), 'what one unit earned');
+  const amountPerUnit = scale(PAR, interestTo(t, t.drawn, t.maturity), 'what one unit earned');
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });
   out.push({ kind: 'maturity', date: t.maturity });
   return out;
@@ -137,7 +148,11 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
   return [
     {
       date: t.maturity,
-      perUnit: asPerPiece(add(1, interestTo(t, t.drawn, t.maturity), 'at maturity'), 'a unit pays'),
+      perUnit: plus(
+        PAR,
+        scale(PAR, interestTo(t, t.drawn, t.maturity), 'the interest on it'),
+        'a unit pays its par and its interest at maturity',
+      ),
     },
   ];
 }
