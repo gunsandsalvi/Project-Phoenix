@@ -172,6 +172,9 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
   §42's cells, so there is nowhere for a birth to happen until that sector exists — and the
   promotion out of it (A6.c) is the other half of the same life cycle. Building birth first would
   mean firms appearing directly as named parties, which is the modelling line A6.b forbids.
+- **10e (the asset management sector) before 13**: 13 is the LEVERAGED, speculative slice and its
+  investors are the institutions 10e makes into allocators — a hedge fund funded by nobody is a
+  sector that cannot open. The bulk of the buy side is long-only, and that is 10e.
 - **13 (asset managers) before 11 and 12**: three items have now built things to sell and none has
   built anybody to buy them. A sector of supply added in front of the demand item is a sector whose
   books say `noDemand` — which is an honest outcome and a wasted one, because nothing about the
@@ -182,6 +185,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
+| **10e** | The asset management sector: managers, vehicles, access | — | **inserted** (owner): separates the vehicle, the manager and WHO MAY INVEST, which is what decides whose money reaches which market. The long-only demand side of 10, 10b and 10c |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -210,6 +214,82 @@ ledger of what was done.
 
 ---
 
+## 10e. The asset management sector: managers, vehicles, and who may invest — **inserted**
+
+**Where this came from.** Owner, 2026-09-14, correcting my reading that item 13 was "the demand
+item": *"HFs exist in multiple strategies… and they exist to exploit arbitrages. Institutional
+accounts like pension funds and insurance give them money; then there are asset managers that have
+various single line mandates but also funds (long equity, long credit, long commodity) and they
+manage ETFs (equity, credit, govies, commodities) and MMF; both institutional and retail give them
+money, with retail able to access ETF and MMF, rich retail able to access funds and institutional
+being also able to do mandates."*
+
+**Inserted before 13**, because 13 is the LEVERAGED, speculative slice and this is the bulk: a hedge
+fund's investors are the institutions this item makes into allocators, so building 13 first would
+build a sector funded by nobody.
+
+**Why.** Three things are welded together today and the real sector has them apart.
+
+| | today | what it is |
+|---|---|---|
+| the VEHICLE | a pool with a mandate | right already |
+| the MANAGER | **one per vehicle** | a firm running MANY vehicles |
+| ACCESS | **does not exist** — anybody may subscribe to anything | who may put money into which vehicle |
+
+**ACCESS is the one that decides whose money reaches which market**, and its absence is why every
+book this world has built lately has only bank desks bidding into it. A dealing desk is not demand:
+it makes a market, carries what it cannot place and is bounded by its own balance sheet (Dealer
+Desks D3.b). What absorbs an issue is somebody's SAVINGS, managed by somebody paid to manage them.
+
+**The manager being 1:1 is defended by a comment that is wrong.** `funds/data.ts` says two funds at
+one bank need two managers because *"a shared name would be two funds' fees arriving in one account
+nobody could take apart (Law 4)"*. Each fee is a two-sided flow from a NAMED vehicle to the manager,
+so three vehicles is three attributable flows and there is nothing to take apart. The workaround goes
+with the change.
+
+### The shape
+
+**A VEHICLE is a pool with a mandate, and its TYPE is who may enter it and how.** The mandate itself
+is already the right noun: item 9.2a built `MANDATE` as an agreement `{pool, manager, mayHold,
+mayWrite, leverage}`, and a segregated institutional mandate is exactly that with the pool being the
+institution's own money rather than commingled. One noun, not two — which is a sign the structure is
+right rather than a coincidence.
+
+| vehicle | who may enter | what it is |
+|---|---|---|
+| **MMF** | anybody | short high-grade paper; a deposit substitute (§13 D) |
+| **ETF** | anybody | listed shares, in-kind creation, so NOT a forced seller (§13 E, G1.a) |
+| **FUND** | rich retail and institutions | long-only by asset class: equity, credit, commodity |
+| **MANDATE** | institutions only | a segregated account; the owner keeps the assets |
+
+**ACCESS is a POLICY, and it is the regulator's** (Law 2, owner `parliament`). The
+accredited-investor / professional-client line is a number a regulator sets, not a taste and not a
+technology, which also gives item 19's polity a real channel into this sector. In a world of CELLS
+it is a threshold on a cell's OWN wealth — and a cell straddling it SPLITS (XI-15), which is the
+weight machinery doing its job rather than a rule about an average.
+
+**WHAT THE LONG-ONLY FUNDS ADD is the demand side of everything built this week**: long credit buys
+§7's bonds, §9's paper and XI-11's notes; long equity buys §10's shares; long commodity buys what
+§13c produces. Each is a mandate, and A4 is why that is the whole mechanism — *"a flow into the fund
+becomes a purchase of what the mandate allows"*.
+
+### Steps
+
+- [ ] 10e.1 A manager runs MANY vehicles: one `manager` party with N `fund` parties under it, N fee flows each from its own named vehicle. Delete the comment defending the 1:1 and the draw that implements it.
+- [ ] 10e.2 The vehicle TYPE as declared data on the vehicle, and the access rule as a POLICY parameter owned by `parliament`. No kind branch in any mechanism: who may enter is read off the vehicle's type and the entrant's own wealth (Law 15).
+- [ ] 10e.3 The long-only funds by asset class — **credit, equity, commodity** — each a mandate over the kinds that class names. The credit fund is the one every book built at 10, 10b and 10c is waiting for.
+- [ ] 10e.4 The segregated MANDATE as a vehicle an institution opens: the same `MANDATE` agreement, a pool the institution owns, and a manager paid a fee on it. `insurance` is the institution this world has today; pensions arrive at 14.
+- [ ] 10e.5 Households reach MMF and ETF as they do now; a cell above the threshold also reaches the funds. The flow stays a CONSEQUENCE of the cell's own budget and required return (D5) — access says where its money MAY go, never how much goes there.
+- [ ] 10e.6 COVERAGE re-marked across §13, and the record says which vehicles this world now has and who is in each.
+
+### Exit
+
+A corporate bond issued at item 10 is bought by somebody whose business is holding credit, with money
+a saver gave them; an ETF and an MMF take retail money and a segregated mandate takes an insurer's;
+and one manager's fee income is the sum of what several named vehicles paid it.
+
+---
+
 > **MOVED AHEAD OF 11 AND 12** (owner, 2026-09-14: *"until we have actual asset managers with
 > appetite nothing will get demand"*). Its number is unchanged, because renumbering would break every
 > reference to it; what changed is where it is TAKEN FROM. The dependency argument is that items 10,
@@ -233,6 +313,22 @@ commodity fund, or an index tracker, and the trackers hold nothing.
 **§28 C1 is why this is not an optional sector**: a hedge fund *"is the natural home of the
 speculative side of every derivative book"*. Item 6 gives each book a maker with its own number; this
 gives it a party whose whole reason is to hold the other side.
+
+**ITS STRATEGIES ARE SEVERAL AND ITS INVESTORS ARE INSTITUTIONS** (owner, 2026-09-14): long/short
+equity, long/short credit, macro, futures, commodities — and the money comes from pension funds and
+insurers, which item **10e** turns into allocators. That is the dependency, and it is why 10e goes
+first: a hedge fund funded by nobody is a sector that cannot open.
+
+**AND ITS REASON MUST BE A VIEW, NOT AN ARBITRAGE IT CANNOT LOSE.** The owner's phrasing is that
+hedge funds *"exist to exploit arbitrages"*, and the mechanism has to express that WITHOUT becoming
+what Appendix B forbids — *no free arbitrage, no unlimited arbitrageur*. A party that closes every
+gap by construction deletes the mechanisms it is meant to trade: the net basis never persists (M8),
+the ETF premium stops meaning anything (§13 E3.a, which says explicitly that the gap closes because
+somebody TRADES and *"can persist when they will not"*), and the liquidity premium XI-2's forced
+seller pays has nobody to pay it to but also nobody who can decline. So §28 C1–C4's framing is the
+one to build: relative value, direction, **a liquidity premium it is paid to hold** — a view it puts
+its own and a named lender's money behind, that can widen against it before it comes right, and that
+its lender can cut (B1: *"leverage is a fact about a loan, never a property of the fund"*).
 
 ### Hedge funds (§28)
 

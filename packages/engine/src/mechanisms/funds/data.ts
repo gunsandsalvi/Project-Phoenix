@@ -237,6 +237,45 @@ export function drawEtfs(
  */
 export const MONEY_FUND_SPONSOR_SIZE = 4;
 
+/**
+ * Fund Shares A3, A4, C1.a: THE ASSET MANAGER THAT HOLDS CREDIT, and it is the demand side of every
+ * corporate market this world has.
+ *
+ * A4 says a mandate is *"a real constraint on what it buys, not a label"*, and A3 and A4 together are
+ * why a fund is a TRANSMISSION CHANNEL: a flow into the fund becomes a purchase of what the mandate
+ * allows. Until this existed, **no mandate in this world allowed credit** — every fund drawn was a
+ * money fund holding bills, one commodity fund holding grain, or a tracker holding an index — so a
+ * corporate bond, a piece of commercial paper and a securitisation note could all be brought to a
+ * book whose only bidders were bank dealing desks putting their own capital behind an inventory.
+ *
+ * A DEALING DESK IS NOT DEMAND. It makes a market, carries what it cannot place and is bounded by
+ * its own balance sheet (Dealer Desks D3.b) — it is the intermediary, not the holder. What actually
+ * absorbs a corporate issue is somebody's SAVINGS, managed by somebody paid to manage them, and
+ * that is this: a long-only manager whose investors gave it money to hold credit, whose appetite is
+ * what its investors require of it, and which must find the cash by SELLING when they want it back
+ * (C2.b — the forced-seller channel, and the point).
+ *
+ * It is not a hedge fund (§28) and must not be confused with one: nothing here is levered, nothing
+ * is short, and its reason is not a view about a mispricing. It is the bulk of the buy side, and
+ * the leveraged, speculative slice is a different sector with a different item.
+ */
+export const CREDIT_FUND_SPONSOR_SIZE = 3;
+
+/**
+ * Fund Shares D2.a, Corporate Credit E5: WHAT A CREDIT FUND'S INVESTORS REQUIRE OF IT, per annum.
+ *
+ * A money fund's investor is choosing against a DEPOSIT and requires a little over it (0.2–0.9% in
+ * `FUND_SPREAD`). A credit fund's investor is taking a company's credit and years of duration, and
+ * requires a great deal more for it — which is why this is its own spread and not the same number
+ * read twice. The dispersion between two funds is what gives a corporate book two bidders at
+ * different levels rather than one price everybody agrees on (§46 A3, Corporate Credit A4.b).
+ */
+export const CREDIT_SPREAD: Spread = {
+  low: 0.012,
+  high: 0.055,
+  why: 'Fund Shares D2.a: what a credit fund\u2019s investors require of it per annum, which is what it will pay for a company\u2019s paper. Its investor is taking credit and duration rather than choosing against a deposit, so it requires several times what a money fund\u2019s investor does \u2014 and the SPREAD between two of them is what makes a corporate book have two bidders at different levels instead of one number everybody shares.',
+};
+
 export const FUND_SPREAD: Readonly<Record<'buffer' | 'requiredYield' | 'fee', Spread>> = {
   buffer: {
     low: 0.05,
@@ -297,6 +336,47 @@ export function drawFunds(
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, FUND_SPREAD.requiredYield),
       why: 'Fund Shares D1, D2: a fund of short government paper, which is what a saver holds instead of a deposit. It is the vehicle XI-2 door 2 runs through: a redemption it cannot meet out of its buffer is a sale into the bill market at whatever that market gives.',
+    });
+  }
+  /**
+   * A4, C1.a, Corporate Credit E5: THE CREDIT FUNDS — the buy side of every corporate market here.
+   *
+   * One per bank big enough to sponsor one, drawn like the money funds beside them and differing in
+   * the two things that make it a different business: WHAT IT MAY HOLD (a company's paper rather
+   * than a state's) and HOW LONG (years, because that is how long a company borrows for). Its
+   * buffer, its fee and what its investors require are its own draws, so two credit funds are two
+   * bidders and not one repeated — which is what a book needs to have a shape at all.
+   */
+  for (const b of banks) {
+    if (b.size < CREDIT_FUND_SPONSOR_SIZE) continue;
+    out.push({
+      fund: `fund.credit.${b.bank}`,
+      name: `${b.bank} Credit Fund`,
+      manager: `manager.credit.${b.bank}`,
+      managerName: `North Credit Management ${out.length + 1}`,
+      bank: b.bank,
+      /**
+       * A4: A COMPANY'S PAPER, in the three shapes this world issues it in — a bond (item 10), its
+       * short paper (10b), and a layer of a pool of claims on companies (10c). They are one asset
+       * class to a manager: all three are somebody's promise to pay, priced off what the manager
+       * requires of that name, and a mandate that took the bond and refused the note would be
+       * drawing a line no credit investor draws.
+       *
+       * What is NOT here is as deliberate: no share, no bill, no grain. This fund is not a balanced
+       * fund and does not become one by holding whatever is cheap.
+       */
+      eligible: ['corporate.bond', 'commercial.paper', 'tranche'],
+      /**
+       * D1 inverted: a money fund's mandate is SHORT and that is what makes it a deposit
+       * substitute. This one's is long, because a company borrows for years and somebody has to be
+       * willing to hold that. It is what its investors agreed to have their money tied up for, and
+       * it is why this fund and not the money fund beside it can take a five-year bond.
+       */
+      maxTenorPeriods: 520,
+      buffer: between(rng, FUND_SPREAD.buffer),
+      fee: between(rng, FUND_SPREAD.fee),
+      requiredYield: between(rng, CREDIT_SPREAD),
+      why: 'Fund Shares A3, A4, C1.a: a long-only manager of somebody else\u2019s savings whose mandate is a company\u2019s credit. It is the demand side of \u00a77, \u00a79 and XI-11 \u2014 without it a corporate issue is brought to a book whose only bidders are bank dealing desks, which are the INTERMEDIARY and not the holder. C2.b makes it the second forced seller this world has: a redemption it cannot meet out of its buffer is a sale of a company\u2019s paper into whatever that market gives, which is how a saver wanting their money back reaches an issuer that cannot roll.',
     });
   }
   // Commodities Spot C3 (13c): ONE FUND THAT HOLDS THE THING ITSELF, sponsored by the largest bank
