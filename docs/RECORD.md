@@ -8734,3 +8734,66 @@ rows described work done this year and said in the same breath that the module h
 
 Typecheck 0, lint 0, `check:spec` 217 tags, `check:forbids` 4 over 214 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13.5 — committed capital, and the one payment in this world that is not a budget
+
+§29 A is not about what a private-equity fund buys. It is about how it is FUNDED, and that is the one
+thing here with no analogue anywhere else: **every other payment in this world is bounded by what the
+payer has, and a capital call is not.**
+
+A household spends what it holds. A fund redeems what its cash reaches. A bank lends what its room
+allows. Each of those is a budget and each is correct. A2.b says a call is not one:
+
+> *"A call bounded by the investor's spare cash is not an obligation."*
+
+So the instruction goes to the wire **for the whole amount**. Nothing reads the investor's balance
+first, nothing trims the demand to fit it, nothing pays it in part. An investor that cannot pay gets a
+REFUSED instruction — a recorded failed payment, which is its own cash-failure trigger (Money E1) —
+and that refusal IS the default the clause names.
+
+**The property is an ABSENCE in code, so it is guarded as one.** There is no `atMost` in the call
+path, and a test cannot assert that there isn't. `tools/check-forbids.ts` can: it now refuses
+`atMost`, `atLeast` and `Math.min` anywhere in `commitment.ts`, and **the call path was made one file
+for exactly that reason** — `callCapital` is handed the subscription it needs rather than importing
+it, so the rule has one file to be true of. The guard was proved to bite before it was trusted: a
+probe `atMost` was inserted, the check failed with the clause, and the probe was removed.
+
+This is the fifth silent FORBID, and it is the clearest one yet. A trimmed call **settles, balances
+and prints identically** to an untrimmed one. The only difference is that nobody ever defaults — the
+entire clause evaporates and not a single number moves.
+
+**The rest of §29 A, and none of it needed a new kind of thing:**
+
+- **A1**: a commitment is an agreement between a named investor and the pool, with the INVESTOR as
+  debtor — because what it holds is an obligation to pay money nobody has asked for yet. It is the
+  tenth kind of commitment in this world.
+- **A2**: the pool's door is now CLOSED to ordinary subscription. There is no subscribing to a fund
+  that has been raised, which is what closed-end means and is the other half of why it can never be
+  a forced seller: nobody can put money in either.
+- **A3**: the manager is on committed capital plus CARRY — charged on what was PROMISED rather than
+  on what is invested, which is why a fund that has not deployed still costs its investors something.
+  The carry is the same asymmetric fee 13.2 built, over the same high-water mark.
+- **A5**: the mandate is UNLISTED equity — `listed: false`, the read that separates a private company
+  from a public one, which 10e's blueprint language already had.
+
+**What is NOT here, and I chose to say it rather than widen the mandate to hide it.** This world has
+no unlisted equity: every share in it trades. So a fund with this mandate can buy **nothing**, calls
+its capital and holds it. The alternative was to give it a mandate over LISTED equity — and a
+closed-end fund over listed equity is not private equity, it is a closed-end equity fund with the
+wrong name on it. §29 B is 13.5b, and the analysis is written into that step: `control` already has
+the entire tender, and what makes it a BUYOUT rather than a merger is two things (the target
+survives; the debt is the target's).
+
+**Why the investors committed is not modelled and is not pretended to be.** The commitments are an
+opening condition (Seed A3) — a closed-end fund was raised before it existed, which is what a vintage
+is, and this world opens with banks that have balance sheets on the same terms. The decision to lock
+money up wants a pension with a very long liability (14.1) or a deal pipeline worth funding (13.5b),
+and neither exists. What is built is everything that happens after.
+
+§29 goes 0 MET to **5 MET, 1 PARTIAL, 19 MISSING**, and **Private Equity is no longer an absent
+sector — there is one left in this world, the Polity.**
+
+Typecheck 0, lint 0, `check:spec` 218 tags, `check:forbids` **5** over 215 files, `check:deaths` 4 of
+4, `check:existence` green with Part 0 regenerated. Tests written and not run.

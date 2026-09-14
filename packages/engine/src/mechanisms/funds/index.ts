@@ -2,7 +2,7 @@
  * Funds: a named party whose liability is its shares, whose equity is zero, and whose investors can
  * ask for their money back — which is the second door into the forced seller.
  *
- * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b Hedge Funds A3 Hedge Funds D1 Hedge Funds D2 Hedge Funds D3 Hedge Funds D4 Hedge Funds D5 Hedge Funds D5.a Hedge Funds E3 Prime Brokerage C3 Prime Brokerage D1 XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
+ * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b Hedge Funds A3 Private Equity A1 Private Equity A2 Private Equity A3 Private Equity E2 Hedge Funds D1 Hedge Funds D2 Hedge Funds D3 Hedge Funds D4 Hedge Funds D5 Hedge Funds D5.a Hedge Funds E3 Prime Brokerage C3 Prime Brokerage D1 XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
  *
  * WHY IT IS HERE (XI-2). A price falls; somebody must sell into the fall; the sale makes the fall
  * worse. Without a party that MUST sell, a price shock is absorbed by nobody and dissipates, and
@@ -114,6 +114,7 @@ import {
   type FundDecl,
 } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './inkind.js';
+import { callCapital, COMMITMENT, openCommitments } from './commitment.js';
 import {
   isMandate,
   MANDATE,
@@ -135,6 +136,7 @@ export { holdsThings, thingOrders } from './things.js';
 export * from './manager.js';
 export * from './inkind.js';
 export * from './mandate.js';
+export * from './commitment.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
 
@@ -836,6 +838,7 @@ function calledOn(ctx: MechanismContext, m: Mandate): Qty {
     : NO_QTY;
 }
 
+
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
@@ -892,7 +895,19 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
       // saver whose subscription did not happen has a real fact about its own money (App A).
       // A1, item 10e.6: TWO REASONS A SUBSCRIPTION DOES NOT HAPPEN, and both are refusals with a
       // name on them rather than an order quietly dropped (App A: a refusal is an answer).
-      const why = m.windingUp ? 'windingUp' : mayEnter(ctx, m, o.party) ? undefined : 'notEligible';
+      /**
+       * A1, A2, G1 (item 13.5): AND A CLOSED-END POOL TAKES NOBODY AT ITS DOOR AT ALL. Its capital
+       * is COMMITTED before it exists and drawn when it calls — there is no subscribing to a fund
+       * that has been raised, which is what closed-end MEANS and is the other half of why it can
+       * never be a forced seller (nobody can put money in either).
+       */
+      const why = m.windingUp
+        ? 'windingUp'
+        : m.liquidity.how === 'closed'
+          ? 'committedOnly'
+          : mayEnter(ctx, m, o.party)
+            ? undefined
+            : 'notEligible';
       if (why !== undefined) {
         ctx.record(
           'fund.notSubscribing',
@@ -2309,6 +2324,44 @@ export function funds(
         },
       },
       {
+        /**
+         * A1, A2, Seed A3 (item 13.5): THE COMMITMENTS THIS WORLD WAS RAISED WITH, and the CALLS
+         * that turn them into money. Before the strike, because what a call brings in is cash the
+         * pool has that morning and shares its investors hold at that day's NAV.
+         */
+        name: 'funds.capital',
+        spec: 'Private Equity A1 Private Equity A2 Private Equity A2.b Private Equity A3 Private Equity E2 Seed A3',
+        cycle: 0,
+        anchor: { before: 'funds.strike' },
+        run: (ctx: MechanismContext) => {
+          const opening = ctx.params.price(FUND_PARAMS.openingShare);
+          for (const d of decls) {
+            if (d.commitments === undefined || !ctx.parties.has(d.fund as PartyId)) continue;
+            const pool = ctx.parties.get(d.fund as PartyId);
+            openCommitments(ctx, pool.id, ctx.registry.currencyOf(pool.region), d.commitments);
+          }
+          for (const m of livingPools(ctx)) {
+            // A2, G1: only a CLOSED-END pool has capital to call. Everything else was paid in.
+            if (m.liquidity.how !== 'closed') continue;
+            const ccy = ctx.registry.currencyOf(ctx.parties.get(m.pool).region);
+            const share = ctx.instruments.get(shareLineOf(String(m.pool)));
+            const at = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
+            callCapital(ctx, m.pool, ccy, at, (investor, paid, perShare) => {
+              // A3, Law 4: the ordinary subscription door, so a call and a subscription are issued
+              // at the same NAV by the same code.
+              subscribe(
+                ctx,
+                m,
+                share,
+                investor,
+                downTick(amountOf(paid, perShare, 'shares it is issued for what it paid')),
+                perShare,
+              );
+            });
+          }
+        },
+      },
+      {
         name: 'funds.strike',
         spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
         cycle: 0,
@@ -2419,6 +2472,12 @@ export function funds(
       {
         id: MANDATE,
         what: 'what a pool may hold and whether it may be levered, and which manager runs it',
+      },
+      // Private Equity A1, A2 (item 13.5): the tenth kind of commitment, and the only one in this
+      // world that is an obligation to pay money nobody has asked for yet.
+      {
+        id: COMMITMENT,
+        what: 'what a named investor promised a closed-end fund, and what of it has been called',
       },
     ],
     // Fund Shares A3, `B-14` (item 9.7): WHAT A POOL MAY TAKE A POSITION IN IS ITS MANDATE'S. The

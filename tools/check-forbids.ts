@@ -49,6 +49,13 @@ const FORBIDS: readonly Forbid[] = [
     pattern: /\b(hazard|catastrophe|disaster)(Rate|Probability|Frequency|Severity|PerPeriod)?\s*[:=(]|['"`][a-zA-Z.]*\.(hazard|catastrophe|disaster)[a-zA-Z.]*['"`]/,
   },
   {
+    spec: 'Private Equity A2.b',
+    why:
+      'A CALL BOUNDED BY THE INVESTOR’S SPARE CASH IS NOT AN OBLIGATION. Every other payment in this world is a budget and correctly so — a household spends what it has, a fund redeems what its cash reaches, a bank lends what its room allows — and a capital call is the one that is not. It must go to the wire for the WHOLE amount, so that an investor which cannot pay gets a REFUSED instruction (Money E1), which is the default §29 A2.b names and the only way anybody in this world ever fails one. It breaks in perfect silence: a call trimmed to what the payer happens to hold settles, balances, prints and looks exactly like one that was not — the only difference is that nobody ever defaults, and the entire clause evaporates without a single number moving. `commitment.ts` is therefore the whole call path, handed the subscription it needs rather than importing it, so that this rule has one file to be true of',
+    applies: (p) => p.endsWith(join('mechanisms', 'funds', 'commitment.ts')),
+    pattern: /\batMost\(|\batLeast\(|Math\.(min|max)\(/,
+  },
+  {
     spec: 'Reporting E2, E3',
     why: 'there is no variable in this world called the market’s expectation (§46 A2.b); a party may observe the consensus as one more published statistic, but nothing may read it AS its outlook',
     // The OBSERVER is the one exception and it is the one §45 B2.a names: a surface decides

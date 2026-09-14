@@ -1,7 +1,7 @@
 /**
  * The funds this world has, and what each one may hold.
  *
- * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares F3 Hedge Funds A1 Hedge Funds A3 Hedge Funds A4 Hedge Funds B1 Hedge Funds C1 Hedge Funds D5 Hedge Funds D5.a Equity C2.c Seed A3 Seed B1 Law 2 Law 15
+ * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares F3 Hedge Funds A1 Hedge Funds A3 Hedge Funds A4 Hedge Funds B1 Hedge Funds C1 Hedge Funds D5 Hedge Funds D5.a Private Equity A1 Private Equity A2 Private Equity A3 Private Equity A5 Private Equity B2.a Equity C2.c Seed A3 Seed B1 Law 2 Law 15
  *
  * Data only (Law 15). A MANDATE is what a fund may hold and how long it may hold it for, and it is
  * a real constraint on what the fund buys rather than a label on it (A4): the module never posts an
@@ -103,6 +103,17 @@ export interface FundDecl {
 
   /* ---- HOW THIS WORLD OPENS IT ---- */
 
+  /**
+   * Private Equity A1, A2, Seed A3 (item 13.5): WHO RAISED THIS FUND AND FOR HOW MUCH, present only
+   * for a closed-end vehicle whose capital is COMMITTED rather than paid.
+   *
+   * A closed-end fund was raised before it existed — that is what a vintage is — so the commitments
+   * behind the one this world opens with are an opening condition, the way a bank's balance sheet
+   * is. What is NOT modelled, and is not pretended to be, is WHY each institution committed: that
+   * decision wants a pension with a very long liability (14.1) or a deal pipeline worth funding
+   * (13.5b), and neither is built. What IS built is everything that happens after it committed.
+   */
+  readonly commitments?: Readonly<Record<string, number>>;
   /**
    * Seed A3, G1.a: present when this vehicle's investors come and go IN KIND against a basket —
    * which is a consequence of `liquidity: 'listed'` and never a separate kind of thing.
@@ -487,6 +498,93 @@ export function drawStrategies(
     requiredYield: between(rng, CREDIT_SPREAD),
     why: strategy.why,
   }));
+}
+
+/**
+ * §29 A1-A5 (item 13.5): THE PRIVATE-EQUITY HOUSE, and it is the same object again.
+ *
+ * *"Everything is a fund. An HF runs funds, same as PE"* (the owner). So §29 is not a sector either:
+ * it is a manager whose pools are CLOSED-END over UNLISTED equity, and the four terms that make one
+ * are the same four slots every other vehicle fills in.
+ *
+ *  - `liquidity: 'closed'` — A2: capital is COMMITTED and called, and nobody can demand money back.
+ *    It is the one vehicle in this world that can never be a forced seller, in either direction:
+ *    nothing can be redeemed out of it and nothing can be subscribed into it.
+ *  - a blueprint of UNLISTED equity — `listed: false`, which is the read that separates a private
+ *    company from a public one (item 10e). **This world has no unlisted equity yet**: every share
+ *    here trades, so what a fund with this mandate can buy is nothing, and it holds the money it
+ *    called until §29 B gives it a company to buy (13.5b). That is stated rather than fixed by
+ *    widening the mandate, because a closed-end fund over LISTED equity is not private equity.
+ *  - a PERFORMANCE FEE, which for this vehicle is carry (A3);
+ *  - and it is not levered. B2.a: the debt in a buyout is the TARGET's liability, *"which is why a
+ *    failed buyout kills the firm and not the fund"* — so the fund itself borrows nothing, and
+ *    `leverage: false` is what says so.
+ */
+export const PRIVATE_EQUITY_SPREAD: Readonly<Record<'fee' | 'carry' | 'committed', Spread>> = {
+  fee: {
+    low: 0.015,
+    high: 0.025,
+    why: '\u00a729 A3: what a private-equity manager charges on committed capital per annum. It is charged on what was PROMISED rather than on what is invested, which is why a fund that has not deployed still costs its investors something \u2014 and why the pressure to deploy is real.',
+  },
+  carry: {
+    low: 0.15,
+    high: 0.25,
+    why: '\u00a729 A3, \u00a728 A3: the carry \u2014 the share of a gain the manager takes over the highest value a share has been worth at a charge. The same asymmetric fee a strategy house charges and for the same reason: it is paid on the way up and never refunded on the way down, so a manager that has lost money earns nothing until it is back above where it last charged.',
+  },
+  committed: {
+    low: 40_000_000,
+    high: 140_000_000,
+    why: '\u00a729 A1, Seed A3: what one institution promised the fund this world opens with, in pieces of its money. It is an OPENING CONDITION and not a decision \u2014 a closed-end fund was raised before it existed, which is what a vintage is \u2014 and the SPREAD is what makes two investors two different sizes of obligation when the call comes, which is what decides which of them can meet one.',
+  },
+};
+
+/**
+ * \u00a729 A1, A2, Seed A3 (item 13.5): the house, its fund, and the commitments it was raised on.
+ *
+ * The investors are named by the SEED, because they are parties another module creates and this one
+ * may not name them (`no-cross-module-import`). What they promised is drawn, so two of them are two
+ * different obligations \u2014 and when the call comes, which of them can meet it is a fact about
+ * their own balance sheets and not about this table (A2.b).
+ */
+export function drawPrivateEquity(
+  banks: readonly { readonly bank: string; readonly size: number }[],
+  investors: readonly string[],
+  seed: string,
+): readonly FundDecl[] {
+  const at = banks.find((b) => b.size >= SPONSOR_SIZE);
+  if (at === undefined || investors.length === 0) return [];
+  const rng = prng(seed, 'privateEquity');
+  const commitments: Record<string, number> = {};
+  for (const who of [...investors].sort()) {
+    commitments[who] = Math.round(between(rng, PRIVATE_EQUITY_SPREAD.committed));
+  }
+  return [
+    {
+      fund: 'fund.buyout',
+      manager: 'manager.buyout',
+      managerName: 'Cornerstone Capital',
+      bank: at.bank,
+      // A5: unlisted equity — the class a share is, and the one read that separates a private
+      // company from a public one. Nothing in this world answers it yet, which is 13.5b's.
+      blueprint: { classes: ['residual'], currencies: [], listed: false },
+      ownCurrencyOnly: true,
+      mayWrite: [],
+      // B2.a: the debt in a buyout is the TARGET's, which is why a failed buyout kills the firm and
+      // not the fund. The fund itself borrows nothing.
+      leverage: false,
+      performanceFee: between(rng, PRIVATE_EQUITY_SPREAD.carry),
+      targetLeverage: 1,
+      // A2: committed and called. Nobody gets in at the door and nobody gets out.
+      liquidity: { how: 'closed' },
+      offeredPublicly: false,
+      // A2: it holds no buffer against redemptions because there are none to hold one against.
+      buffer: 0,
+      fee: between(rng, PRIVATE_EQUITY_SPREAD.fee),
+      requiredYield: between(rng, CREDIT_SPREAD),
+      commitments,
+      why: '\u00a729 A1-A5: a closed-end fund over unlisted equity, raised on commitments from named institutions and drawn when it calls. What makes it private equity is four terms of its mandate and nothing else \u2014 there is no private-equity party kind in this world.',
+    },
+  ];
 }
 
 /**

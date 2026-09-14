@@ -134,7 +134,7 @@ import { shortTermDebt } from '../mechanisms/short-term-debt/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
-import { insurers } from '../mechanisms/insurers/index.js';
+import { insurerIdFor, insurers } from '../mechanisms/insurers/index.js';
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
@@ -161,6 +161,7 @@ import {
   drawTrackers,
   drawFunds,
   drawManagers,
+  drawPrivateEquity,
   drawStrategies,
   type FundDecl,
   type ManagerDecl,
@@ -2211,6 +2212,17 @@ export function foundationDraw(
    * there is no hedge-fund party kind anywhere in this world.
    */
   const strategies = drawStrategies(bankRows, seed);
+  /**
+   * §29 A1, A2, Seed A3 (item 13.5): THE BUYOUT FUND AND WHO RAISED IT. The seed is the only place
+   * that may name both — a closed-end fund's investors are parties the insurers module creates, and
+   * the funds module may not say their ids (`no-cross-module-import`). It is the same meeting point
+   * the tracker's index is named at, and for the same reason.
+   */
+  const privateEquity = drawPrivateEquity(
+    bankRows,
+    [...countries].map((c) => String(insurerIdFor(c.region))),
+    seed,
+  );
   // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
   // declares it. The seed is where the two meet, because it is the only place that may know both.
   const trackers = drawTrackers(
@@ -2246,11 +2258,11 @@ export function foundationDraw(
     banks: bankRows,
     firms: firmRows,
     listed,
-    funds: [...pools, ...strategies],
+    funds: [...pools, ...strategies, ...privateEquity],
     trackers,
     // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
     // index house is a manager like any other and competes for the same people.
-    managers: drawManagers([...pools, ...strategies, ...trackers], seed),
+    managers: drawManagers([...pools, ...strategies, ...privateEquity, ...trackers], seed),
   };
 }
 

@@ -985,12 +985,12 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Private Equity A1` | MISSING |  |
-| `Private Equity A2` | MISSING |  |
-| `Private Equity A2.b` | MISSING |  |
-| `Private Equity A3` | MISSING |  |
+| `Private Equity A1` | MET | packages/engine/src/mechanisms/funds/commitment.ts, packages/engine/src/mechanisms/funds/data.ts (item 13.5: committed capital from NAMED investors, on a `funds.commitment` agreement between each of them and the pool — the investor is the debtor, because what it holds is an obligation to pay money nobody has asked for yet. There is no private-equity party kind: §29 is a manager whose pools are closed-end over unlisted equity, which is four terms of a mandate) |
+| `Private Equity A2` | MET | packages/engine/src/mechanisms/funds/commitment.ts (item 13.5: *“capital is committed, not paid — it is called when a deal needs it”*. The commitment carries what was promised and what has been drawn; the call is a real payment from the investor's account, and the pool's door is CLOSED to ordinary subscription because the only way in is a call) |
+| `Private Equity A2.b` | MET | packages/engine/src/mechanisms/funds/commitment.ts, tools/check-forbids.ts (item 13.5, and it is the FORBID the item singled out: *“a call bounded by the investor's spare cash is not an obligation”*. The instruction goes to the wire for the WHOLE amount — nothing reads the investor's balance first, nothing trims the demand to fit it, nothing pays it in part — and an investor that cannot pay gets a REFUSED instruction, which is its own cash-failure trigger (Money E1) and is the default the clause names. **The property is an absence in code and is guarded as one**: `check-forbids` refuses `atMost`, `atLeast` and `Math.min` anywhere in the call path, and the call path is one file for exactly that reason. It breaks in perfect silence otherwise — a trimmed call settles, balances and prints identically, and the only difference is that nobody ever defaults) |
+| `Private Equity A3` | MET | packages/engine/src/mechanisms/funds/commitment.ts, packages/engine/src/mechanisms/funds/data.ts (item 13.5: a manager on committed capital plus CARRY — the fee is charged on what was promised rather than on what is invested, and the carry is the same asymmetric second fee a strategy house takes, over a high-water mark read off the last charge. Shares are issued against what a call actually brought in, at the NAV, through the ordinary subscription door, so a call and a subscription are issued at one price by one writer) |
 | `Private Equity A4` | MISSING |  |
-| `Private Equity A5` | MISSING |  |
+| `Private Equity A5` | PARTIAL | packages/engine/src/mechanisms/funds/data.ts (item 13.5: the mandate is UNLISTED equity — `listed: false`, the read that separates a private company from a public one). *“Acquired firms are held in named vehicles”* is not built, and neither is anything for this mandate to hold: **this world has no unlisted equity**, because every share in it trades. That is §29 B's, which is 13.5b |
 | `Private Equity B1` | MISSING |  |
 | `Private Equity B2` | MISSING |  |
 | `Private Equity B3` | MISSING |  |
@@ -1008,7 +1008,7 @@ of these findings has been positioned into an item yet.
 | `Private Equity D4` | MISSING |  |
 | `Private Equity D5` | MISSING |  |
 | `Private Equity E1` | MISSING |  |
-| `Private Equity E2` | MISSING |  |
+| `Private Equity E2` | MET | packages/engine/src/mechanisms/funds/commitment.ts (item 13.5: *“no capital call not paid from a real balance”* — what settles came out of a named account and went into the pool's, in one instruction; what did not settle moved nothing at all and is recorded as unpaid) |
 | `Private Equity E3` | MISSING |  |
 
 ## Treasury
