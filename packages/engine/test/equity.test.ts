@@ -10,6 +10,7 @@
  * neither of them but what the session made of both.
  */
 import { describe, expect, it } from 'vitest';
+import { DIVIDEND_DECLARED } from '../src/mechanisms/equity/index.js';
 import { asQty } from '../src/core/tick.js';
 import {
   FIRM,
@@ -429,7 +430,7 @@ describe('what the firm does with it (Equity D)', () => {
     expect(Number(one?.data['paid'])).toBeGreaterThan(0);
     expect(Number(one?.data['failedPayments'])).toBe(0);
     // And what it paid is the claim the record date wrote, discharged (XI-8).
-    const claims = w.agreements.all().filter((a) => a.what.startsWith('dividend '));
+    const claims = w.agreements.all().filter((a) => a.terms.kind === DIVIDEND_DECLARED);
     expect(claims.some((a) => a.state === 'discharged')).toBe(true);
   });
 

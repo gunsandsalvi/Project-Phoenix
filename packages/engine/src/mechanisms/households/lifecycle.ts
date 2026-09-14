@@ -41,7 +41,9 @@ import {
 } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { asQty, scaleQty } from '../../core/tick.js';
-import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
+import {
+  agreementKindId, partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import type { FailReason, Leg, Unpaid } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
@@ -51,6 +53,27 @@ import { MORTALITY, type MortalityDecl } from './data.js';
 /** F1.b: what this cohort's members die at, per period. One parameter per cohort (Law 2). */
 export const mortalityParam = (cohort: string): ParamId =>
   paramId(`households.mortality.${cohort}`);
+
+/**
+ * XI-8, Register F2: WHAT AN ESTATE COULD NOT HAND TO PROBATE.
+ *
+ * A cell may only die empty, and a transfer to the probate office that fails leaves the estate
+ * holding what it could not pass on. Before there was anywhere for that to live the alternative was
+ * a throw (A-20): the estate's own money, owed to the office that was to receive it.
+ */
+export const ESTATE_UNDELIVERED = agreementKindId('households.estateUndelivered');
+
+export interface EstateUndelivered extends AgreementTerms {
+  readonly kind: typeof ESTATE_UNDELIVERED;
+  /** Which cell died, which the office needs to know and the successor chain resolves through. */
+  readonly estate: PartyId;
+}
+
+/** Law 4: one writer of the terms of an estate that could not be handed over. */
+export const estateUndelivered = (estate: PartyId): EstateUndelivered => ({
+  kind: ESTATE_UNDELIVERED,
+  estate,
+});
 
 export function mortalityParams(rows: readonly MortalityDecl[] = MORTALITY): readonly {
   readonly id: ParamId;
@@ -397,7 +420,7 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
         creditor: office,
         ccy: u.ccy,
         owed: u.amount,
-        what: 'an estate not yet handed to probate',
+        terms: estateUndelivered(estate),
         why: `the transfer failed: ${u.reason}`,
       });
     }

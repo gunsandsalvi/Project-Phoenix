@@ -9,6 +9,7 @@
  * 65% of everything the world did** (C-2), because a board declared and paid fifty-two times a year.
  */
 import { describe, expect, it } from 'vitest';
+import { DIVIDEND_DECLARED } from '../src/mechanisms/equity/index.js';
 import { period, period as periodOf } from '../src/calendar/calendar.js';
 import { agreementId, currencyCode, instrumentId, partyId } from '../src/core/ids.js';
 import type { InstrumentId, PartyId } from '../src/core/ids.js';
@@ -189,7 +190,7 @@ describe('a declaration, a record date and a payment (D3, D3.a, XI-8)', () => {
 
     // XI-8: between the record date and the payment it is a LIABILITY to named parties, for named
     // amounts — which is what an estate divides if a holder dies before it is paid.
-    const claims = w.agreements.all().filter((a) => a.what.startsWith('dividend '));
+    const claims = w.agreements.all().filter((a) => a.terms.kind === DIVIDEND_DECLARED);
     expect(claims.length).toBeGreaterThan(0);
     for (const a of claims) {
       expect(a.debtor).toBe(issuer);
@@ -221,7 +222,7 @@ describe('a declaration, a record date and a payment (D3, D3.a, XI-8)', () => {
     const onRecord = new Set(
       w.agreements
         .all()
-        .filter((a) => a.what.startsWith('dividend '))
+        .filter((a) => a.terms.kind === DIVIDEND_DECLARED)
         .map((a) => String(a.creditor)),
     );
     expect(onRecord.size).toBeGreaterThan(0);

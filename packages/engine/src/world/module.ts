@@ -27,6 +27,7 @@ import type {
 import type { DerivativeKindProfile, StruckAt } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { NounEntry } from '../registry/nouns.js';
+import type { AgreementKindDecl } from '../register/agreements.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
@@ -376,6 +377,16 @@ export interface SystemModule {
    * money, a reservation and what it will pledge; the lending module strikes the fee against every
    * other need in the same line and writes the loan, because the loan is its instrument.
    */
+  /**
+   * XI-8, Law 15 (item 9.1): THE KINDS OF COMMITMENT THIS MODULE OWNS — an employment, a lease, an
+   * invoice, a stock loan, a covenant, a deal, a mandate, and every arrear a mechanism can leave.
+   *
+   * It is the same declaration `instrumentKinds` and `partyKinds` are, for the same reason: the
+   * kernel holds the row and ranks it in an estate, and only the module that declared the kind
+   * knows what its terms mean. Before it, a kind was a free-text `what` — six spellings of
+   * "in arrears" across six modules, none of which any reader could dispatch on.
+   */
+  readonly agreementKinds?: readonly AgreementKindDecl[];
   readonly borrowNeeds?: readonly {
     readonly partyKind: PartyKindId;
     readonly needs: BorrowNeeds;

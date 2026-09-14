@@ -20,7 +20,9 @@
  */
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { forbid } from '../../core/assert.js';
-import { partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
+import {
+  agreementKindId, partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import { scale } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -240,7 +242,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
           creditor: me,
           ccy,
           owed: due,
-          what: 'a rating fee in arrears',
+          terms: ratingFeeOwed(who),
           why: `${subject} was rated by ${d.assessor} and could not pay for the opinion`,
         });
       }
@@ -248,9 +250,33 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
   }
 }
 
+/**
+ * Ratings B2, XI-8, Money E1: A RATING FEE THE ISSUER COULD NOT PAY.
+ *
+ * `rating.unpaid` was a number in an event and carried nothing: the assessor had no claim, the
+ * issuer's book was not short by it, and an estate dividing either would have found nothing between
+ * them. It is the same shape as an unpaid tax and an unpaid wage and goes through the same door.
+ */
+export const RATING_FEE_OWED = agreementKindId('ratings.feeInArrears');
+
+export interface RatingFeeOwed extends AgreementTerms {
+  readonly kind: typeof RATING_FEE_OWED;
+  /** What was rated: an issuer pays per OPINION, and two opinions are two claims (B2). */
+  readonly subject: PartyId;
+}
+
+/** Law 4: one writer of the terms of an unpaid rating fee. */
+export const ratingFeeOwed = (subject: PartyId): RatingFeeOwed => ({
+  kind: RATING_FEE_OWED,
+  subject,
+});
+
 export function ratings(rows: readonly AssessorDecl[]): SystemModule {
   return {
     id: 'ratings',
+    agreementKinds: [
+      { id: RATING_FEE_OWED, what: 'a fee for an opinion the issuer it was about could not pay' },
+    ],
     nouns: [
       {
         name: 'ratings',

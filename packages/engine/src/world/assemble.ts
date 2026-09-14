@@ -89,6 +89,7 @@ export function assemble(spec: AssemblySpec): World {
     params,
     nouns,
     calendar,
+    agreementKinds: modules.flatMap((m) => m.agreementKinds ?? []),
     families: modules.flatMap((m) => m.families),
   });
   // Audit E2: every capability this assembly declares, named before anything runs, so a sector

@@ -56,7 +56,7 @@ import type { Holding, Register, RegisterReads } from '../register/register.js';
 import type { Voyage } from '../register/voyages.js';
 import type { PartyId as VoyagePartyId, VoyageId } from '../core/ids.js';
 import { assertNever } from '../core/assert.js';
-import type { Agreement, AgreementDecl } from '../register/agreements.js';
+import type { Agreement, AgreementDecl, AgreementReads } from '../register/agreements.js';
 import { none, some } from '../core/option.js';
 import { instrumentId, partyId } from '../core/ids.js';
 
@@ -820,9 +820,16 @@ export interface MechanismContext extends WorldReads {
   owes(decl: AgreementDecl): Agreement;
   /** Part of what was owed has arrived. Paid in full discharges it; short does not (Money E1). */
   paidOn(id: AgreementId, amount: number): Agreement;
-  /** What this party owes that is not an instrument, and what is owed to it (XI-8). */
-  owedBy(party: PartyId): readonly Agreement[];
-  owedTo(party: PartyId): readonly Agreement[];
+  /**
+   * XI-8, Law 15 (item 9.1): THE AGREEMENT STORE, READ-ONLY — what a party owes that is not an
+   * instrument, what is owed to it, every row of one kind, and a kind's own terms.
+   *
+   * It replaces two flat doors, `owedBy` and `owedTo`, which were the only two questions the store
+   * could answer while everything in it was an arrear. A module that declared a KIND needs to read
+   * its own book back, and `ofKind` is how — with `termsOf` narrowing the row to the kind that
+   * declared it, which is a check and never a cast.
+   */
+  readonly agreements: AgreementReads;
   /**
    * M&A A4: one party takes control of another, from now, on a named basis.
    *

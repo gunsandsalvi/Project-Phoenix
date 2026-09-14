@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { currencyCode, partyId } from '../src/core/ids.js';
 import { period } from '../src/calendar/calendar.js';
-import { Agreements } from '../src/register/agreements.js';
+import { Agreements, type AgreementTerms } from '../src/register/agreements.js';
+import { agreementKindId } from '../src/core/ids.js';
+import { LEVY_IN_ARREARS } from '../src/mechanisms/treasury/index.js';
+import { RATING_FEE_OWED } from '../src/mechanisms/ratings/index.js';
 import { assemble, type World } from '../src/index.js';
 import { mergeModules, rigSpec, rigWorld } from './rig.js';
 
@@ -29,25 +32,40 @@ const USD = currencyCode('USD');
 const A = partyId('a');
 const B = partyId('b');
 
+/**
+ * Law 15: a kind of commitment, declared, because the store refuses one that is not. The scale
+ * model declares its own rather than borrowing a module's: what is under test here is the STORE.
+ */
+const TEST_KIND = agreementKindId('test.thing');
+const thing: AgreementTerms = { kind: TEST_KIND };
+const kinds = [{ id: TEST_KIND, what: 'a thing one party owes another, for a test' }];
+
 describe('an agreement: what one party owes another that is not an instrument (XI-8)', () => {
   it('needs two parties and something owed, or it is not one', () => {
-    const book = new Agreements();
+    const book = new Agreements(kinds);
     // Law 5: an agreement with one side is not an agreement.
-    expect(() => book.open({ debtor: A, creditor: A, ccy: USD, owed: 1, what: 'x', why: 'y' }, period(0))).toThrow(
+    expect(() => book.open({ debtor: A, creditor: A, ccy: USD, owed: 1, terms: thing, why: 'y' }, period(0))).toThrow(
       /cannot owe itself/,
     );
-    // Money E1: owing nothing is not owing.
-    expect(() => book.open({ debtor: A, creditor: B, ccy: USD, owed: 0, what: 'x', why: 'y' }, period(0))).toThrow(
-      /owing nothing/,
+    // Law 6: a count of pieces is not negative — a party owing minus five is owed five, which is
+    // the other party's row. Owing NOTHING is a real state since item 9.1: this store holds every
+    // bilateral commitment now, and a performing one with nothing currently due owes exactly zero.
+    expect(() => book.open({ debtor: A, creditor: B, ccy: USD, owed: -1, terms: thing, why: 'y' }, period(0))).toThrow(
+      /an agreement owing -1/,
     );
-    expect(() => book.open({ debtor: A, creditor: B, ccy: USD, owed: 5, what: '', why: 'y' }, period(0))).toThrow(
-      /does not say what it is/,
-    );
+    expect(book.open({ debtor: A, creditor: B, ccy: USD, owed: 0, terms: thing, why: 'y' }, period(0)).owed).toBe(0);
+    // Law 15: and a kind no module declared cannot open at all.
+    expect(() =>
+      book.open(
+        { debtor: A, creditor: B, ccy: USD, owed: 5, terms: { kind: agreementKindId('nobody.owns.this') }, why: 'y' },
+        period(0),
+      ),
+    ).toThrow(/has no declaration registered/);
   });
 
   it('a part payment leaves what is left, and does not discharge (Money E1)', () => {
-    const book = new Agreements();
-    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 100, what: 'tax', why: 'assessed' }, period(0));
+    const book = new Agreements(kinds);
+    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 100, terms: thing, why: 'assessed' }, period(0));
     expect(row.state).toBe('performing');
     const part = book.paid(row.id, 40);
     expect(part.owed).toBe(60);
@@ -60,14 +78,14 @@ describe('an agreement: what one party owes another that is not an instrument (X
   });
 
   it('refuses a payment bigger than what is owed', () => {
-    const book = new Agreements();
-    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, what: 'wages', why: 'w' }, period(0));
+    const book = new Agreements(kinds);
+    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, terms: thing, why: 'w' }, period(0));
     expect(() => book.paid(row.id, 11)).toThrow(/paid against/);
   });
 
   it('a write-off says so rather than quietly becoming a discharge (XI-8)', () => {
-    const book = new Agreements();
-    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, what: 'wages', why: 'w' }, period(0));
+    const book = new Agreements(kinds);
+    const row = book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, terms: thing, why: 'w' }, period(0));
     const dead = book.terminate(row.id);
     expect(dead.state).toBe('terminated');
     // Ten is still owed and nobody is going to pay it. Calling that discharged would say somebody
@@ -76,10 +94,12 @@ describe('an agreement: what one party owes another that is not an instrument (X
   });
 
   it('answers both halves, which is why an estate can divide it', () => {
-    const book = new Agreements();
-    book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, what: 'wages', why: 'w' }, period(0));
-    book.open({ debtor: A, creditor: B, ccy: USD, owed: 20, what: 'tax', why: 't' }, period(0));
+    const book = new Agreements(kinds);
+    book.open({ debtor: A, creditor: B, ccy: USD, owed: 10, terms: thing, why: 'w' }, period(0));
+    book.open({ debtor: A, creditor: B, ccy: USD, owed: 20, terms: thing, why: 't' }, period(0));
     expect(book.owedBy(A).length).toBe(2);
+    // Law 15: and by kind, which is how the module that declared one reads its own book back.
+    expect(book.ofKind(TEST_KIND).length).toBe(2);
     expect(book.owedTo(B).length).toBe(2);
     expect(book.owedBy(B).length).toBe(0);
   });
@@ -94,7 +114,7 @@ describe('what used to evaporate (D-1, A-41)', () => {
      */
     const w = confiscatory('estate', 20);
     for (let i = 0; i < 14; i += 1) w.step();
-    const arrears = w.agreements.all().filter((a) => a.what === 'tax in arrears');
+    const arrears = w.agreements.all().filter((a) => a.terms.kind === LEVY_IN_ARREARS);
     expect(arrears.length).toBeGreaterThan(0);
     for (const a of arrears) {
       // Law 5: two named sides and a size. The debtor is the cell that could not pay and the
@@ -119,7 +139,7 @@ describe('what used to evaporate (D-1, A-41)', () => {
   it('the arrears are on the payer as well, which is what an estate divides (XI-8)', () => {
     const w = confiscatory('estate', 20);
     for (let i = 0; i < 14; i += 1) w.step();
-    const arrears = w.agreements.all().filter((a) => a.what === 'tax in arrears');
+    const arrears = w.agreements.all().filter((a) => a.terms.kind === LEVY_IN_ARREARS);
     expect(arrears.length).toBeGreaterThan(0);
     // Indexed both ways, which is the read an estate needs: what this party owes, by name.
     for (const a of arrears) {
@@ -151,7 +171,7 @@ describe('a fee nobody could pay is a claim somebody holds', () => {
     }));
     const w = assemble({ ...spec, modules: mergeModules(modules, []) });
     for (let i = 0; i < 14; i += 1) w.step();
-    const fees = w.agreements.all().filter((a) => a.what === 'a rating fee in arrears');
+    const fees = w.agreements.all().filter((a) => a.terms.kind === RATING_FEE_OWED);
     expect(fees.length).toBeGreaterThan(0);
     // The number the event says and the claims that now exist are the same money (Law 4).
     const said = w.journal.ofKind('rating.unpaid').reduce((t, e) => t + Number(e.data['due']), 0);

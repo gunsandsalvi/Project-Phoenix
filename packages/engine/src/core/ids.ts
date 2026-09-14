@@ -52,6 +52,8 @@ export type EventId = Brand<number, 'EventId'>;
 export type ContractId = Brand<string, 'ContractId'>;
 /** XI-8, Money E1: a bilateral commitment that is not a tradeable instrument (`register/agreements.ts`). */
 export type AgreementId = Brand<string, 'AgreementId'>;
+/** Law 15: what sort of commitment an agreement is, declared by the module that owns it. */
+export type AgreementKindId = Brand<string, 'AgreementKindId'>;
 /** Equity D3: what a company does to its own claims, with its four dates (`register/corporate.ts`). */
 export type CorporateActionId = Brand<string, 'CorporateActionId'>;
 /** Banks Funding A1.a: a third party standing behind a second (`register/guarantees.ts`). */
@@ -105,6 +107,8 @@ export const curveFamilyId = (s: string): CurveFamilyId =>
   nonEmpty(s, 'CurveFamilyId') as CurveFamilyId;
 export const contractId = (s: string): ContractId => nonEmpty(s, 'ContractId') as ContractId;
 export const agreementId = (s: string): AgreementId => nonEmpty(s, 'AgreementId') as AgreementId;
+export const agreementKindId = (s: string): AgreementKindId =>
+  nonEmpty(s, 'AgreementKindId') as AgreementKindId;
 export const corporateActionId = (s: string): CorporateActionId =>
   nonEmpty(s, 'CorporateActionId') as CorporateActionId;
 export const guaranteeId = (s: string): GuaranteeId => nonEmpty(s, 'GuaranteeId') as GuaranteeId;

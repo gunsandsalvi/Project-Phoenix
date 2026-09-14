@@ -30,7 +30,13 @@
  */
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { agreementId, type AgreementId, type CurrencyCode, type PartyId } from '../core/ids.js';
+import {
+  agreementId,
+  type AgreementId,
+  type AgreementKindId,
+  type CurrencyCode,
+  type PartyId,
+} from '../core/ids.js';
 import { Missing } from '../core/errors.js';
 import { finite } from '../core/num.js';
 
@@ -44,15 +50,47 @@ import { finite } from '../core/num.js';
  */
 export type AgreementState = 'performing' | 'breached' | 'discharged' | 'terminated';
 
+/**
+ * Law 15, item 9.1: WHAT THIS COMMITMENT IS AND WHAT ITS OWN TERMS ARE — the same construction
+ * `Terms` is for an instrument and `Contract['terms']` for a contract, for the same reason.
+ *
+ * Every agreement shares four things: two named parties, a money, what is owed now and a state.
+ * Everything else belongs to the KIND — a wage and a notice period, a rent and a term, a line and a
+ * covenant test, a pool and what a mandate may hold — and only the module that declared the kind
+ * can read it. The kernel narrows nothing and branches on nothing: it holds the row, indexes it,
+ * ranks it in an estate, and hands the terms back to whoever knows what they mean.
+ *
+ * A module extends this with its own interface and its own `kind`, and narrows a row back to it
+ * with its own type predicate — `isWagesOwed(t): t is WagesOwed` — exactly as it does for an
+ * instrument's `Terms` (`isShare`, `isPolicy`, `isRow`). The narrowing belongs to the module that
+ * declared the kind, because only it knows what would make a row really be one.
+ */
+export interface AgreementTerms {
+  readonly kind: AgreementKindId;
+}
+
+/** What a module declares about a kind of agreement, so an undeclared kind cannot be opened. */
+export interface AgreementKindDecl {
+  readonly id: AgreementKindId;
+  /** What a commitment of this kind IS, for a reader and for the estate's report (Law 16). */
+  readonly what: string;
+}
+
 export interface AgreementDecl {
   /** Who owes. Both sides are named: an agreement with one side is not one (Law 5). */
   readonly debtor: PartyId;
   readonly creditor: PartyId;
   readonly ccy: CurrencyCode;
-  /** What is owed now, in the smallest piece of `ccy`. */
+  /**
+   * What is owed NOW, in the smallest piece of `ccy`. Zero is a real answer and not an absence: a
+   * performing employment owes nothing this instant and is still an employment. It became a real
+   * answer at item 9.1, when this store stopped being a book of arrears and became the book of
+   * every bilateral commitment — before that, everything in it was a payment that had failed, and
+   * `owed > 0` was true of all of them by construction.
+   */
   readonly owed: number;
-  /** What kind of commitment this is, in the words its own mechanism uses. */
-  readonly what: string;
+  /** Law 15: what sort of commitment, and everything about it the kernel does not understand. */
+  readonly terms: AgreementTerms;
   /** Why it exists, for a reader (Law 16). */
   readonly why: string;
 }
@@ -67,24 +105,53 @@ export class Agreements {
   private readonly rows = new Map<AgreementId, Agreement>();
   private readonly byDebtor = new Map<PartyId, Set<AgreementId>>();
   private readonly byCreditor = new Map<PartyId, Set<AgreementId>>();
+  private readonly byKind = new Map<AgreementKindId, Set<AgreementId>>();
   private next = 1;
+  /** Law 15: the kinds this world declared. An undeclared kind is refused where it is opened. */
+  private readonly kinds: ReadonlyMap<AgreementKindId, AgreementKindDecl>;
+
+  constructor(kinds: readonly AgreementKindDecl[] = []) {
+    const m = new Map<AgreementKindId, AgreementKindDecl>();
+    for (const k of kinds) {
+      // Law 4: two modules claiming one kind of commitment is two owners of one fact, and the
+      // second would silently decide what the first one's terms mean.
+      forbid(!m.has(k.id), 'Law 4', `agreement kind ${k.id} declared twice`);
+      m.set(k.id, k);
+    }
+    this.kinds = m;
+  }
+
+  /** What a kind of commitment IS, in the words the module that declared it used. */
+  kind(id: AgreementKindId): AgreementKindDecl {
+    const k = this.kinds.get(id);
+    if (k === undefined) {
+      throw new Missing('Law 15', `agreement kind ${id} has no declaration registered`, { id });
+    }
+    return k;
+  }
 
   /**
-   * Money E1, D3: what did not arrive is still owed, by somebody, to somebody.
+   * Money E1, D3, Law 15: a commitment between two named parties, of a declared kind.
    *
-   * It refuses an agreement with one party on both sides and one that owes nothing: neither is a
-   * commitment, and admitting either would let a mechanism record a fact about nobody.
+   * It refuses an agreement with one party on both sides, one owing a negative amount, and one of a
+   * kind no module declared. The first is not a commitment; the second is the other party's row
+   * written backwards; the third is a mechanism naming a category nobody owns (Law 15) — which is
+   * what the free-text `what` let it do, in six different spellings.
    */
   open(decl: AgreementDecl, at: Period): Agreement {
-    forbid(decl.debtor !== decl.creditor, 'Law 5', `${decl.debtor} cannot owe itself: ${decl.what}`);
-    forbid(finite(decl.owed, 'owed') > 0, 'Money E1', `an agreement owing nothing: ${decl.what}`);
-    forbid(decl.what.length > 0, 'Law 16', 'an agreement that does not say what it is');
+    const what = this.kind(decl.terms.kind).what;
+    forbid(decl.debtor !== decl.creditor, 'Law 5', `${decl.debtor} cannot owe itself: ${what}`);
+    // Law 6: what is owed is a count of pieces and a count is not negative. This is arithmetic
+    // impossibility and not a floor — a party owing minus five is owed five, which is the OTHER
+    // row, with the parties the other way round.
+    forbid(finite(decl.owed, 'owed') >= 0, 'Money E1', `an agreement owing ${decl.owed}: ${what}`);
     const id = agreementId(`agreement.${this.next}`);
     this.next += 1;
     const row: Agreement = { ...decl, id, since: at, state: 'performing' };
     this.rows.set(id, Object.freeze(row));
     index(this.byDebtor, decl.debtor, id);
     index(this.byCreditor, decl.creditor, id);
+    index(this.byKind, decl.terms.kind, id);
     return row;
   }
 
@@ -144,14 +211,19 @@ export class Agreements {
     return rowsOf(this.rows, this.byCreditor.get(party));
   }
 
+  /** Every row of one kind — how the module that declared a kind reads its own book back. */
+  ofKind(kind: AgreementKindId): readonly Agreement[] {
+    return rowsOf(this.rows, this.byKind.get(kind));
+  }
+
   all(): readonly Agreement[] {
     return [...this.rows.values()];
   }
 }
 
-function index(ix: Map<PartyId, Set<AgreementId>>, party: PartyId, id: AgreementId): void {
-  const set = ix.get(party);
-  if (set === undefined) ix.set(party, new Set([id]));
+function index<K>(ix: Map<K, Set<AgreementId>>, at: K, id: AgreementId): void {
+  const set = ix.get(at);
+  if (set === undefined) ix.set(at, new Set([id]));
   else set.add(id);
 }
 
@@ -169,13 +241,18 @@ function rowsOf(
 }
 
 /** A real read-only facade: no write is reachable through it, at runtime as well as in the types. */
-export type AgreementReads = Pick<Agreements, 'get' | 'owedBy' | 'owedTo' | 'all'>;
+export type AgreementReads = Pick<
+  Agreements,
+  'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'kind' | 'all'
+>;
 
 export function agreementReads(store: Agreements): AgreementReads {
   return Object.freeze({
     get: (id: AgreementId) => store.get(id),
     owedBy: (party: PartyId) => store.owedBy(party),
     owedTo: (party: PartyId) => store.owedTo(party),
+    ofKind: (kind: AgreementKindId) => store.ofKind(kind),
+    kind: (id: AgreementKindId) => store.kind(id),
     all: () => store.all(),
   });
 }

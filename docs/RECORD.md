@@ -6756,3 +6756,54 @@ is Law 10's "appended rather than inserted" in miniature.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green.
+
+---
+
+## Item 9, third stage — an agreement has a kind and its own terms (`docs/IMPLEMENTATION.md` 9.1a)
+
+**What.** The spine of item 9, inserted at its dependency position (Law 10) because nothing could
+be migrated without it. `Agreement` held `{debtor, creditor, ccy, owed, what, why}` — no room for a
+wage, a trade, a rent, a lien or a waterfall — so "migrate the seven private books" would have meant
+throwing six sevenths of every row away. An agreement now carries a declared `kind` and its own
+`terms`, the same construction `Terms` is for an instrument and `Contract['terms']` for a contract.
+
+**The division.** Four things are the kernel's and are the same for every kind: two named parties, a
+money, what is owed now, a state. Everything else belongs to the kind, and only the module that
+declared it can read it. The kernel holds the row, indexes it by debtor, creditor and kind, and
+ranks it in an estate; it narrows nothing and branches on nothing.
+
+**`what` is deleted, and it was the defect.** It was free text, and six modules wrote six spellings
+of "in arrears" into it. The one reader that had to tell two rows apart did it by comparing a string
+it had built at the other end — `owed.what !== \`dividend ${action.id}\`` — which is A-52's shape
+exactly: a fact recovered from a string, matching nothing the moment either end spelled it
+differently. It is `terms.action !== action.id` now, behind a structural predicate.
+
+**Six kinds, declared where they belong** (`SystemModule.agreementKinds`, the declaration
+`instrumentKinds` and `partyKinds` are): `labour.wagesInArrears` (with the period whose pay did not
+arrive — two periods of arrears are two rows, not one doubled), `labour.severanceInArrears` (with
+what ended the employment; Firm Birth D2.b ranks it), `equity.dividendDeclared` (with the action and
+the line), `households.estateUndelivered`, `ratings.feeInArrears` (with what was rated) and
+`treasury.levyInArrears` (with the period assessed). A kind no module declared cannot open a row:
+the store refuses it where it is opened, the way the registry refuses an unregistered instrument
+kind. Each has one writer of its terms (a typed builder) and a STRUCTURAL type predicate to narrow a
+row back — the idiom `isShare`, `isPolicy` and `isRow` already use, and the one the `no-kind-branch`
+lint rule permits.
+
+**Two consequences, both of them corrections.**
+
+- **`owed` may be ZERO.** The store was built for payments that had FAILED, so `owed > 0` was true
+  of everything in it by construction and the guard said "an agreement owing nothing" was not one.
+  It holds commitments now, and a performing employment owes nothing this instant and is still an
+  employment. What is refused instead is a NEGATIVE amount — arithmetic impossibility and not a
+  floor (Law 6): a party owing minus five is owed five, which is the other row with the parties the
+  other way round.
+- **`MechanismContext.owedBy` and `owedTo` are deleted** and replaced by the read-only store,
+  `ctx.agreements` (Law 12: the fix removes code). They were the only two questions a book of
+  arrears could answer, and a module that declares a kind has to read its own book back — `ofKind`
+  is how. Neither had a caller left in the engine after the equity change.
+
+`ARCHITECTURE.md` §6b carries the decision. The seven books are seven kinds of this one noun and
+`Mandate` is the eighth; `9.1` proper migrates them, one bounded change each.
+
+Typecheck 0, lint 0 (src and tests), `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:existence` green.

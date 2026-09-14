@@ -52,7 +52,14 @@ import type { SystemModule } from '../../world/module.js';
 import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST, ownDepositRate } from './bank.js';
 import { CONSUMPTION, MORTALITY, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
-import { age, die, mortalityParams, probateKind, settleEstates } from './lifecycle.js';
+import {
+  age,
+  die,
+  ESTATE_UNDELIVERED,
+  mortalityParams,
+  probateKind,
+  settleEstates,
+} from './lifecycle.js';
 import {
   cushionForFund,
   fundOrders,
@@ -296,6 +303,9 @@ function publishSectorIncome(ctx: MechanismContext): void {
 export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): SystemModule {
   return {
     id: 'households',
+    agreementKinds: [
+      { id: ESTATE_UNDELIVERED, what: 'what a dead cell\u2019s estate could not hand to probate' },
+    ],
     spec: 'Households, Sovereign E2.f',
     nouns: [
       {

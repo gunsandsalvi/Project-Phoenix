@@ -45,7 +45,16 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { currencyUnit, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
+import {
+  agreementKindId,
+  currencyUnit,
+  paramId,
+  type CorporateActionId,
+  type InstrumentId,
+  type MarketId,
+  type PartyId,
+} from '../../core/ids.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import { combineDust, div, sum, withinDust } from '../../core/num.js';
 import { downTick, type Qty, scaleQty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
@@ -285,7 +294,7 @@ function recordDividends(ctx: MechanismContext): void {
         creditor: holderId,
         ccy: line.ccy,
         owed: share.total,
-        what: `dividend ${action.id}`,
+        terms: dividendOwed(action.id, line.id),
         why: `declared on ${String(line.id)} and payable in ${action.payable}`,
       });
     }
@@ -314,8 +323,12 @@ function payDividend(
 ): void {
   const paid: number[] = [];
   let failed = 0;
-  for (const owed of ctx.owedBy(firm)) {
-    if (owed.what !== `dividend ${action.id}` || owed.state !== 'performing') continue;
+  for (const owed of ctx.agreements.ofKind(DIVIDEND_DECLARED)) {
+    if (owed.debtor !== firm || owed.state !== 'performing') continue;
+    // Law 15: which declaration this claim came from is a FIELD of its terms, asked for as this
+    // kind's terms. It used to be `owed.what !== \`dividend ${action.id}\`` — a string built at one
+    // end and compared at the other, which is A-52's shape and is why the kind exists.
+    if (!isDividendOwed(owed.terms) || owed.terms.action !== action.id) continue;
     const holderId = owed.creditor;
     const holder = ctx.parties.get(holderId);
     /**
@@ -541,9 +554,45 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
  * The module. `rows` is which firms this world listed (Law 15: the data says). A firm that is not
  * in it has no shares at all, which is a real state and not an omission.
  */
+/**
+ * Equity D3, XI-8: WHAT A BOARD DECLARED AND HAS NOT YET PAID.
+ *
+ * A declaration is a commitment: the record date fixes who is owed and the payable date is when it
+ * is due, and between them the holder has a claim whoever it sells the share to (D3). It carries
+ * the ACTION it came from, because a second declaration on the same line is a second claim and the
+ * two are told apart by which action wrote them — it used to be told apart by comparing a free-text
+ * `what` against the string `dividend ${action.id}`, which is a fact recovered from a string (A-52)
+ * and would have matched nothing the moment either side spelled it differently.
+ */
+export const DIVIDEND_DECLARED = agreementKindId('equity.dividendDeclared');
+
+export interface DividendOwed extends AgreementTerms {
+  readonly kind: typeof DIVIDEND_DECLARED;
+  readonly action: CorporateActionId;
+  readonly line: InstrumentId;
+}
+
+/**
+ * Law 15: the module that declared the kind narrows a row back to it, and the test is STRUCTURAL
+ * and not a comparison of kind ids — what makes these terms a declared dividend is that they name
+ * the action that declared it and the line it was declared on.
+ */
+export const isDividendOwed = (t: AgreementTerms): t is DividendOwed =>
+  'action' in t && 'line' in t;
+
+/** Law 4: one writer of the terms of a declared dividend. */
+export const dividendOwed = (action: CorporateActionId, line: InstrumentId): DividendOwed => ({
+  kind: DIVIDEND_DECLARED,
+  action,
+  line,
+});
+
 export function equity(rows: readonly ListedDecl[], seed: string): SystemModule {
   return {
     id: 'equity',
+    agreementKinds: [
+      { id: DIVIDEND_DECLARED, what: 'a dividend a board declared and has not yet paid' },
+    ],
     nouns: [
       {
         name: 'equity',

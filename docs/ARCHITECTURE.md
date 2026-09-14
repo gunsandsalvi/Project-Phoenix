@@ -1142,6 +1142,36 @@ stand-in with no scheduled death is a permanent one). Assembly stamps the owner,
 (Law 4). The count of nouns still in a bag is reported, not hidden (Appendix C): **14 of 19 today** —
 seven `Agreement`, four `View`, two `PublishedStatement`, one `Process`.
 
+### An agreement has a kind and its own terms (item 9.1)
+
+`register/agreements.ts` holds what one party owes another that is not a tradeable instrument. It
+was built for ARREARS — six mechanisms opening a row when a payment failed — and a row carried a
+free-text `what` saying which. Six spellings of "in arrears" across six modules, and the one reader
+that had to tell two rows apart did it by comparing a string it had built at the other end
+(`owed.what !== \`dividend ${action.id}\``), which is A-52's shape and would have matched nothing the
+moment either side was spelled differently.
+
+An `Agreement` now carries a declared `kind` and its own `terms`, the same construction `Terms` is
+for an instrument and `Contract['terms']` for a contract. Four things are the kernel's and are the
+same for every kind — two named parties, a money, what is owed now, a state — and everything else
+belongs to the kind: a wage and a notice period, a rent and a term, a line and a covenant test, a
+pool and what a mandate may hold. The kernel holds the row, indexes it by debtor, creditor and
+kind, and ranks it in an estate; it narrows nothing and branches on nothing. A module declares its
+kinds in `SystemModule.agreementKinds`, exactly as it declares instrument and party kinds, and
+narrows a row back to its own with a STRUCTURAL type predicate (`isDividendOwed`), the idiom
+`isShare`, `isPolicy` and `isRow` already use — the lint rule refuses a comparison of kind ids.
+A kind no module declared cannot open a row at all.
+
+Two consequences. `owed` may be ZERO: the store holds commitments now and not only failures, and a
+performing employment owes nothing this instant and is still an employment — what is refused is a
+NEGATIVE amount, which is the other party's row written backwards. And `MechanismContext.owedBy`
+and `owedTo`, the only two questions a book of arrears could answer, are replaced by the whole
+read-only store (`ctx.agreements`), because a module that declares a kind has to be able to read its
+own book back.
+
+It is the spine of item 9: the seven private books — employment, lease, invoice, stock loan, loan,
+covenant, deal — are seven kinds of this one noun, and `Mandate` is the eighth.
+
 ---
 
 ## 7. Citations in code

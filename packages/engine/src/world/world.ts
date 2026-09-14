@@ -93,7 +93,12 @@ import type { Contract, ContractReads, StruckAt, Underlying } from '../registry/
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
-import { Agreements, agreementReads, type AgreementReads } from '../register/agreements.js';
+import {
+  Agreements,
+  agreementReads,
+  type AgreementKindDecl,
+  type AgreementReads,
+} from '../register/agreements.js';
 import { publishedReads, type PublishedReads } from '../journal/published.js';
 import { ControlRegister, controlReads, type ControlReads } from '../register/control.js';
 import {
@@ -176,6 +181,8 @@ export interface WorldSpec {
   /** Law 15: every store a module keeps, declared. A module cannot open one it did not declare. */
   readonly nouns: OntologyRegister;
   readonly calendar: Calendar;
+  /** XI-8, Law 15: the kinds of commitment the modules declared. An undeclared kind cannot open. */
+  readonly agreementKinds: readonly AgreementKindDecl[];
   /** Audit contributions from modules, merged with the kernel's own. */
   readonly families: readonly Family[];
 }
@@ -222,9 +229,9 @@ export class World {
   /** 13c.1, Freight A3: where what is on its way has got to. */
   private readonly voyageStore = new Voyages();
   /** XI-8: what one party owes another that is not a tradeable instrument (item 8). */
-  private readonly agreementStore = new Agreements();
+  private readonly agreementStore: Agreements;
   /** The read face. `owes` and `paidOn` are the writes and they are on the context (Law 4). */
-  readonly agreements: AgreementReads = agreementReads(this.agreementStore);
+  readonly agreements: AgreementReads;
   /** Reporting A2: the typed read of what companies published. One parse (item 3, Law 4). */
   readonly published: PublishedReads = publishedReads(this.journal);
   /** M&A A4: who controls whom — the relation beside ownership and encumbrance (item 9). */
@@ -346,6 +353,8 @@ export class World {
 
   constructor(spec: WorldSpec) {
     this.seed = spec.seed;
+    this.agreementStore = new Agreements(spec.agreementKinds);
+    this.agreements = agreementReads(this.agreementStore);
     this.registry = spec.registry;
     this.params = spec.params;
     this.nouns = spec.nouns;
@@ -1680,7 +1689,15 @@ export class World {
           this.currentCycle,
           'agreement.opened',
           [row.debtor, row.creditor],
-          { agreement: row.id, debtor: row.debtor, creditor: row.creditor, owed: row.owed, what: row.what },
+          {
+            agreement: row.id,
+            debtor: row.debtor,
+            creditor: row.creditor,
+            owed: row.owed,
+            // Law 15: the KIND is what an event says, and what a kind means is one read away
+            // (`agreements.kind(id).what`). It used to be a free-text `what` the caller wrote.
+            what: row.terms.kind,
+          },
           true,
         );
         return row;
@@ -1697,8 +1714,7 @@ export class World {
         );
         return row;
       },
-      owedBy: (party) => this.agreementStore.owedBy(party),
-      owedTo: (party) => this.agreementStore.owedTo(party),
+      agreements: this.agreements,
       announce: (decl) => {
         const row = this.actionStore.announce(decl, this.currentPeriod);
         this.journal.record(

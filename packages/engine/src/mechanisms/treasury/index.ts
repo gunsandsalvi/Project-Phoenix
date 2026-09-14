@@ -44,6 +44,7 @@ import { period, type Period } from '../../calendar/calendar.js';
 import type { Event } from '../../journal/journal.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
+  agreementKindId,
   currencyUnit,
   instrumentId,
   marketId,
@@ -54,6 +55,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import { addTo, atLeast, atMost, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
@@ -89,6 +91,27 @@ import {
   TENOR_WINDOW_YEARS,
 } from './data.js';
 import { downTick, type Qty, upTick } from '../../core/tick.js';
+
+/**
+ * Treasury B1, XI-8, D-1: A LEVY ASSESSED AND NOT PAID.
+ *
+ * It was written on `treasury.receipts` as `unpaid` and nothing carried it: the cell did not owe it
+ * next period, the treasury did not chase it, and no account anywhere was short by it. A tax that
+ * failed was a hole between two balance sheets that only the journal knew about.
+ */
+export const LEVY_IN_ARREARS = agreementKindId('treasury.levyInArrears');
+
+export interface LevyOwed extends AgreementTerms {
+  readonly kind: typeof LEVY_IN_ARREARS;
+  /** The period it was assessed in: two periods of unpaid tax are two claims, not one doubled. */
+  readonly assessedIn: Period;
+}
+
+/** Law 4: one writer of the terms of an unpaid levy. */
+export const levyOwed = (assessedIn: Period): LevyOwed => ({
+  kind: LEVY_IN_ARREARS,
+  assessedIn,
+});
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
@@ -263,6 +286,7 @@ function gridDate(target: Civil): Civil {
 }
 
 export const treasury: SystemModule = {
+  agreementKinds: [{ id: LEVY_IN_ARREARS, what: 'a levy assessed on a payer that could not pay it' }],
   id: 'treasury',
   spec: 'Treasury, Sovereign A, C, XI-9',
   requires: ['sovereign-instruments', 'sovereign-curve'],
@@ -953,7 +977,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       creditor: id,
       ccy,
       owed: share.total,
-      what: 'tax in arrears',
+      terms: levyOwed(previous),
       why: `assessed in ${previous} and not paid: a levy that fails is a claim the state holds`,
     });
   }

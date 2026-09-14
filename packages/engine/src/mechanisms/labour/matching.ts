@@ -34,10 +34,42 @@ import {
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
 import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { cohortId, currencyUnit } from '../../core/ids.js';
+import { agreementKindId, cohortId, currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
 import { add, atMost, material, sub } from '../../core/num.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import { none, some } from '../../core/option.js';
+
+
+/**
+ * XI-8, Labour B4, Firm Birth D2.b: WHAT AN EMPLOYER OWES A WORKER IT DID NOT PAY.
+ *
+ * Two kinds and not one, because they rank differently and a reader has to be able to tell them
+ * apart: a wage in arrears is this period's pay that did not arrive; severance is what ending the
+ * employment owed, and D2.b ranks it unsecured in the estate. They were one free-text `what` in two
+ * spellings, which nothing could dispatch on.
+ */
+export const WAGES_IN_ARREARS = agreementKindId('labour.wagesInArrears');
+export const SEVERANCE_IN_ARREARS = agreementKindId('labour.severanceInArrears');
+
+export interface WagesOwed extends AgreementTerms {
+  readonly kind: typeof WAGES_IN_ARREARS;
+  /** Which period's pay did not arrive: two periods of arrears are two rows, not one doubled. */
+  readonly forPeriod: Period;
+}
+
+export interface SeveranceOwed extends AgreementTerms {
+  readonly kind: typeof SEVERANCE_IN_ARREARS;
+  /** What ended the employment, which is what the estate's reader needs and the record already has. */
+  readonly cause: string;
+}
+
+/** Law 4: one writer of each kind's terms, so a row of it cannot be assembled two ways. */
+export const wagesOwed = (forPeriod: Period): WagesOwed => ({ kind: WAGES_IN_ARREARS, forPeriod });
+export const severanceOwed = (cause: string): SeveranceOwed => ({
+  kind: SEVERANCE_IN_ARREARS,
+  cause,
+});
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { keyOf, weightOf, type Party } from '../../parties/party.js';
@@ -463,7 +495,7 @@ export function separate(
         creditor: gone,
         ccy,
         owed,
-        what: 'severance in arrears',
+        terms: severanceOwed(cause),
         why: `${row.employer} ceased owing ${cause} severance; Firm Birth D2.b ranks it unsecured`,
       });
     }
@@ -603,7 +635,7 @@ function payFrom(
     creditor: cell,
     ccy,
     owed: share.total,
-    what: 'wages in arrears',
+    terms: wagesOwed(ctx.period),
     why: reason,
   });
   return nothing;

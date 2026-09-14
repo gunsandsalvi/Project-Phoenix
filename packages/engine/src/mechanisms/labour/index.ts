@@ -30,7 +30,15 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { LABOUR_NUMBERS, OCCUPATIONS, type OccupationDecl } from './data.js';
-import { payWages, publishGoingRate, release, runVenue, type LabourParams } from './matching.js';
+import {
+  payWages,
+  publishGoingRate,
+  release,
+  runVenue,
+  SEVERANCE_IN_ARREARS,
+  WAGES_IN_ARREARS,
+  type LabourParams,
+} from './matching.js';
 import { allRows, emptyBook, rowOfWorker, type EmploymentBook } from './register.js';
 
 export * from './data.js';
@@ -330,6 +338,10 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
   const mine = (v: { readonly clearedBy: string }): boolean => v.clearedBy === 'labour';
   return {
     id: 'labour',
+    agreementKinds: [
+      { id: WAGES_IN_ARREARS, what: 'wages a worker earned and was not paid' },
+      { id: SEVERANCE_IN_ARREARS, what: 'severance an ended employment owed and did not pay' },
+    ],
     nouns: [
       {
         name: 'employment',
