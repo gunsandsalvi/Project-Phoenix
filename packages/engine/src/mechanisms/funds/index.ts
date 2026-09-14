@@ -1416,6 +1416,30 @@ function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void
     ccy,
     key: { kind: 'fund', fund: String(pool), share },
   });
+  /**
+   * A3, C1, F3, item 10e.5: THE SEED GOES IN THROUGH THE FRONT DOOR.
+   *
+   * A manager putting its own money into a pool it opened is an INVESTOR SUBSCRIBING: it posts into
+   * the pool's own venue, at the NAV the strike is about to set, and takes the shares it pays for —
+   * the same instruction, the same convention and the same refusal as a household (C1). Nothing is
+   * endowed and nothing is written into the register (Appendix B: no seeded outcome), which is why
+   * a pool a manager opened and a pool this world opened with are the same object.
+   *
+   * It is posted rather than settled here because the NAV is the strike's to set (Law 4), and this
+   * phase runs before it: what the manager says is how many shares it wants, at the unit a pool
+   * with no shares counts them in, and what it actually gets is what its money reached.
+   */
+  const opening = ctx.params.price(FUND_PARAMS.openingShare);
+  const wants = opening > 0 ? downTick(amountOf(launch.seed, opening, 'shares its seed buys')) : NO_QTY;
+  if (wants > 0) {
+    ctx.post(fundVenue(String(pool)), {
+      party: manager,
+      side: 'buy',
+      // C1: nobody names a price at this door. Everybody who asks transacts at the NAV.
+      price: 'market',
+      qty: wants,
+    });
+  }
   ctx.record(
     'fund.launched',
     [pool, manager],
@@ -1423,6 +1447,9 @@ function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void
       fund: pool,
       manager,
       name,
+      // A3: what the house put in of its own, which is the whole of its exposure to this pool.
+      seed: launch.seed,
+      seedShares: wants,
       // Law 3, F3: the two numbers the decision was taken on, both of them somebody else's — what a
       // rival of this product has actually gathered, and what this manager will charge to undercut
       // the cheapest of them.

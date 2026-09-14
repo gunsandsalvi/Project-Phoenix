@@ -8221,3 +8221,43 @@ module's only reader was its own phases. The manager reads it too, and a file bo
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files,
 `check:deaths` 4 of 4, `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e.5 — seed money, and the only way a pool reaches a balance sheet
+
+*"Nothing sits on the balance sheet unless the entity decides to put in their own seed money"* (the
+owner). A manager now puts its own money into a pool it opens, and it is the whole of what it can
+lose from that pool: the holders own the assets and bear their losses (A3), so a house's exposure is
+the seed it chose plus the fee income it stops earning — which is why *"an HF doesn't go bankrupt
+because a fund does bad by itself"*.
+
+**HOW MUCH is the launch decision read backwards.** The book at which this pool's own fee covers what
+a pool costs it — below that the manager is running the product at a loss until savers arrive, and
+above it there is no reason to tie up more of its own money. And **never its payroll**: what it can
+put in is what it holds over what its people cost it for the pools it runs plus the one it is
+opening. That is not a bound (Law 6) — a business does not spend money its staff are owed, and one
+that did would meet its wage bill with a refusal at the wire next period.
+
+**It goes in through the front door.** The manager POSTS into the pool's own venue and the strike
+settles it at the NAV like any other subscription (C1) — same instruction, same convention, same
+refusal as a household's. Nothing is endowed and nothing is written into the register (Appendix B:
+no seeded outcome), which is why a pool a manager opened and a pool this world opened with are the
+same object. It comes back the same way: a wind-down puts every holder on the redemption queue and
+the manager is one of them, at whatever the sales realised.
+
+**What is NOT built, and it is placed as 10e.5b rather than left implicit.** The step said *"raised
+by issuing its own equity or debt"*, and a house here seeds out of the fee income it has. The reason
+is worth recording because half of it already exists: `publishQuotes` walks every party whose KIND
+borrows and `fundManagerKind.borrows` is `true`, so **a credit quote is already published under a
+manager's own name every period**, priced off its own risk by whichever bank is keenest. What stops
+it borrowing is one step further on — `runRequests` reads `firms.funding` and `housing.funding`, two
+named event kinds where there should be one, which is a kind branch wearing a list's clothes and
+which no third borrower can join without making it three. The fix (one published kind meaning *"a
+named party said what it is short of"*) also has to be made by `corporate-bond` and
+`short-term-debt`, which read `firms.funding` to decide whether a firm should come to market
+instead. That is a change to the bank's request channel and two issuance modules, and the seed does
+not need it.
+
+Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and updated, not run.

@@ -114,6 +114,20 @@ describe('a name is derived from what the pool does', () => {
   });
 });
 
+describe('what the seed is, and what it is not', () => {
+  it('is a subscription and never an endowment', () => {
+    // A3, C1, item 10e.5: the assertion that matters is structural and is made in the module rather
+    // than here — `openPool` POSTS into the pool's own venue and the strike settles it like any
+    // other subscription, so there is no path by which units reach a pool without an instruction.
+    // What this test can hold is the shape of the decision: what a house puts in is bounded by what
+    // it HOLDS, never by a share of anything, and a house with nothing to spare puts in nothing.
+    const pools = drawFunds(BANKS, 'a-seed');
+    // Every pool this world OPENS with has no seed at all: they are an opening condition, and the
+    // seed is what a manager does when it opens one itself (Seed A3).
+    expect(pools.every((p) => !('seed' in p))).toBe(true);
+  });
+});
+
 describe('the empty blueprint', () => {
   it('is a mandate over EVERYTHING and never a mandate over things', () => {
     // `[].every(...)` is true, so the case has to be said out loud rather than fallen into: a macro

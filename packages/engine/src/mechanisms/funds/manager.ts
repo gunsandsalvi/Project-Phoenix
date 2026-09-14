@@ -48,7 +48,9 @@ import {
   asCash,
   asRatio,
   type Cash,
+  heldAsMoney,
   minus,
+  over,
   type PerPiece,
   pricedAt,
   type Ratio,
@@ -196,23 +198,67 @@ function netAssetsOf(ctx: MechanismContext, pool: PartyId): Option<Cash> {
  * another party's register (Observer A4). Two sources, one arithmetic: the alternative is the same
  * fee computed two ways, which is what Law 4 hunts.
  */
-export function feeOn(ctx: { readonly calendar: MechanismContext['calendar']; readonly period: MechanismContext['period'] }, assets: Cash, perAnnum: Ratio): Cash {
+export function feeOn(ctx: Clock, assets: Cash, perAnnum: Ratio): Cash {
+  return scale(assets, perPeriod(ctx, perAnnum), 'the fee a book of this size pays');
+}
+
+/** Just enough of a period to say what fraction of a year it is. */
+interface Clock {
+  readonly calendar: MechanismContext['calendar'];
+  readonly period: MechanismContext['period'];
+}
+
+/** Law 8: a rate quoted per annum, as the rate this period actually is. One writer of that too. */
+function perPeriod(ctx: Clock, perAnnum: Ratio): Ratio {
   return scale(
-    assets,
-    scale(
-      perAnnum,
-      asRatio(
-        yearFraction(
-          FEE_DAY_COUNT,
-          ctx.calendar.startOf(ctx.period),
-          ctx.calendar.endOf(ctx.period),
-        ),
-        'this period of a year',
-      ),
+    perAnnum,
+    asRatio(
+      yearFraction(FEE_DAY_COUNT, ctx.calendar.startOf(ctx.period), ctx.calendar.endOf(ctx.period)),
       'this period of a year',
     ),
-    'the fee a book of this size pays',
+    'this period of a year',
   );
+}
+
+/**
+ * F3, A3, item 10e.5: SEED MONEY — what a manager puts into a pool it opens, out of its OWN money.
+ *
+ * *"Nothing sits on the balance sheet unless the entity decides to put in their own seed money"*
+ * (the owner). This is the only way a pool's assets ever touch a manager's balance sheet, and it is
+ * therefore the whole of what a manager can lose from a pool going wrong — that, and the fee income
+ * it stops earning. It gets the seed back the way every other holder does: through the redemption
+ * queue, at whatever the wind-down realises (`queueEverybody`), which is what makes it a real stake
+ * and not an accounting entry.
+ *
+ * HOW MUCH. The book at which this pool's own fee covers what a pool costs it — the number the
+ * launch decision was taken on, read backwards. Below that the manager is running the product at a
+ * loss until savers arrive, and above it there is no reason to tie up more of its own money. It is
+ * a REASON with numbers on both sides and not an allocation: nothing tells it to seed a share of
+ * anything.
+ *
+ * AND NEVER ITS PAYROLL. What it can put in is what it holds over what its own people cost it for
+ * the period — the pools it runs plus the one it is opening. That is not a bound (Law 6): a business
+ * does not spend the money its staff are owed, and a manager that did would be meeting its wage bill
+ * with a refusal at the wire next period.
+ */
+export function seedFor(ctx: Clock, view: ParticipantView, fee: Ratio, cost: Cash): Cash {
+  const rate = perPeriod(ctx, fee);
+  if (rate <= 0) return asCash(0, 'a pool that charges nothing is never worth seeding');
+  // The book whose fee comes to what a pool costs: what the manager would have to see in it for the
+  // product to pay for itself from the day it opens.
+  const needs = over(cost, rate, 'the book at which its fee covers what the pool costs it');
+  const held = heldAsMoney(
+    view.cash(view.registry.currencyOf(view.self.region)),
+    'the money it holds',
+  );
+  const payroll = scale(
+    cost,
+    asRatio(poolsRun(view).length + 1, 'the pools it will be running'),
+    'what its own people cost it this period',
+  );
+  const spare = minus(held, payroll, 'what its own payroll does not need');
+  if (spare <= 0) return asCash(0, 'a house whose money its people are owed seeds nothing');
+  return atMost(needs, spare, 'it cannot put in money it has not got');
 }
 
 /**
@@ -306,6 +352,8 @@ export interface Launch {
   readonly rival: PartyId;
   readonly expects: Cash;
   readonly earns: Cash;
+  /** A3, item 10e.5: what the manager puts in of its own — the only way a pool reaches its books. */
+  readonly seed: Cash;
 }
 
 export function launchToMake(
@@ -369,6 +417,10 @@ export function launchToMake(
       rival: rival.pool,
       expects: smallest,
       earns,
+      // F3, A3: and what it will put in of its own. It is decided WITH the launch because it is
+      // part of the same decision — how much of its own money a house is willing to have in a
+      // product it is opening is not a separate question from whether to open it.
+      seed: seedFor(ctx, view, fee, cost),
     };
   }
   return best === undefined ? none<Launch>() : some(best);
