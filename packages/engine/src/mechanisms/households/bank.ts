@@ -21,10 +21,11 @@
  * market. A fund sees its own session refuse the bank the same evening (§13); a firm sees the
  * window drawn; a household reads the number the bank published afterwards.
  */
+import { NO_QTY, type Qty, subQty, asQty } from '../../core/tick.js';
+import { asRatio, heldAsMoney, minus, scale, type Ratio } from '../../core/measure.js';
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { currencyUnit, moneyInstrumentId, paramId, type PartyId } from '../../core/ids.js';
-import { mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK } from '../../registry/profiles.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -51,7 +52,7 @@ export function householdChoosesBank(view: ParticipantView): Option<BankChoice> 
     return said.some && said.value.data['belowRequirement'] === true;
   };
 
-  let best: { bank: PartyId; rate: number } | undefined;
+  let best: { bank: PartyId; rate: Ratio } | undefined;
   for (const b of view.parties.ofKind(BANK)) {
     if (b.id === self.bank || b.region !== self.region || !b.status.alive || shaky(b.id)) continue;
     const rate = board(view, b.id, cls);
@@ -71,12 +72,12 @@ export function householdChoosesBank(view: ParticipantView): Option<BankChoice> 
 
   const own = board(view, self.bank, cls);
   if (!own.some) return none();
-  const gap = sub(best.rate, own.value, 'what it would gain');
+  const gap = minus(best.rate, own.value, 'what it would gain');
   if (gap <= 0) return none();
   const cost = view.params.amount(HOUSEHOLD_SWITCHING_COST, currencyUnit(ccy));
-  const foregone = mul(
-    balance,
-    mul(gap, stayed(view), 'over the time it has stayed'),
+  const foregone = scale(
+    heldAsMoney(balance, 'the balance it keeps there'),
+    scale(gap, asRatio(stayed(view), 'the time it has stayed'), 'over the time it has stayed'),
     'what staying cost it',
   );
   return foregone > cost
@@ -89,8 +90,8 @@ function uninsured(
   view: ParticipantView,
   ccy: string,
   cls: string,
-  balance: number,
-): number {
+  balance: Qty,
+): Qty {
   const said = view.lastPublic('deposit.classes');
   if (!said.some) return balance;
   const classes = said.value.data['classes'];
@@ -103,7 +104,8 @@ function uninsured(
   if (row?.insured !== true) return balance;
   const limit = (limits as Record<string, unknown>)[ccy];
   if (typeof limit !== 'number') return balance;
-  return balance < limit ? 0 : sub(balance, limit, 'what nobody insures');
+  const insured = asQty(limit, 'what the guarantee covers');
+  return balance < insured ? NO_QTY : subQty(balance, insured, 'what nobody insures');
 }
 
 /**
@@ -123,11 +125,12 @@ function stayed(view: ParticipantView): number {
 }
 
 /** B1.a, E2.a: the rate on a bank's board for this class, which is public because it must be. */
-function board(view: ParticipantView, bank: PartyId, cls: string): Option<number> {
+function board(view: ParticipantView, bank: PartyId, cls: string): Option<Ratio> {
   const said = view.lastPublicAbout('bank.depositRate', String(bank));
-  if (!said.some) return none<number>();
+  if (!said.some) return none<Ratio>();
   const rates = said.value.data['rates'];
-  if (typeof rates !== 'object' || rates === null) return none<number>();
+  if (typeof rates !== 'object' || rates === null) return none<Ratio>();
   const rate = (rates as Record<string, unknown>)[cls];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: a bank's published board re-enters here — what it pays on this class, per annum.
+  return typeof rate === 'number' ? some(asRatio(rate, `what it pays on ${cls}`)) : none<Ratio>();
 }

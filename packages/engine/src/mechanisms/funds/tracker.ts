@@ -20,10 +20,21 @@
  * print. Nothing is remembered between periods, so a fund that was rationed last session simply
  * comes back with the same difference to close.
  */
+import {
+  absolute,
+  amountOf,
+  type Cash,
+  heldAsMoney,
+  minus,
+  type PerPiece,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { InstrumentId } from '../../core/ids.js';
-import { atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
+import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { EtfDecl } from './data.js';
@@ -59,10 +70,12 @@ export function trackerOrders(
   if (own === undefined) return [];
   const target = targetUnits(view, basket, own.weight);
   if (target === undefined) return [];
-  const difference = sub(target, held, 'what it is away from its own mandate');
+  const difference = minus(target, held, 'what it is away from its own mandate');
   // Law 7: a difference below what one session could have made is not a rebalance, it is the
   // rounding of the last one. `material` is the same test every other order in this world takes.
-  if (!material(Math.abs(difference), 2, atLeast(target, held, 'the larger of the two is what the difference is measured against'))) return [];
+  const away = absolute(difference, 'how far it is away');
+  const against = atLeast(target, held, 'the larger of the two is what the difference is measured against');
+  if (!material(away, 2, against)) return [];
   // C2, Appendix B: AT WHAT THE LINE IS WORTH. A tracker does not decide a price — it pays what the
   // market last said and takes what the market last said — but it does not pay ANYTHING either: an
   // order with no level on the buy side is a buyer of last resort, and one of those in a thin book
@@ -74,11 +87,15 @@ export function trackerOrders(
     // Law 6: and never more than its own cash buys. A fund holding a book and no money is not a
     // bidder for anything — that is arithmetic, not a limit, and a bid it could not have paid for
     // is a trade that fails to settle every session and a level nobody pays.
-    const affordable = div(view.cash(view.registry.currencyOf(view.self.region)), price, 'what its cash buys');
+    const affordable = amountOf(
+      heldAsMoney(view.cash(view.registry.currencyOf(view.self.region)), 'the money it holds'),
+      price,
+      'what its cash buys',
+    );
     const qty = downTick(atMost(difference, affordable, 'it buys with the money it has'));
     return qty > 0 ? [{ party: view.self.id, side: 'buy', price, qty }] : [];
   }
-  const wants = downTick(-difference);
+  const wants = downTick(absolute(difference, 'what it is over by'));
   const qty: Qty = atMost(wants, held, 'it cannot sell what it does not hold');
   return qty > 0 ? [{ party: view.self.id, side: 'sell', price, qty }] : [];
 }
@@ -91,9 +108,9 @@ export function trackerOrders(
  */
 function priced(
   view: ParticipantView,
-  basket: readonly { readonly instrument: InstrumentId; readonly weight: number }[],
-): readonly { instrument: InstrumentId; weight: number; price: number }[] {
-  const out: { instrument: InstrumentId; weight: number; price: number }[] = [];
+  basket: readonly { readonly instrument: InstrumentId; readonly weight: Qty }[],
+): readonly { instrument: InstrumentId; weight: Qty; price: PerPiece }[] {
+  const out: { instrument: InstrumentId; weight: Qty; price: PerPiece }[] = [];
   for (const c of basket) {
     const p = view.print(c.instrument);
     if (!p.some || p.value.price <= 0) continue;
@@ -110,24 +127,26 @@ function priced(
  */
 function targetUnits(
   view: ParticipantView,
-  basket: readonly { readonly instrument: InstrumentId; readonly price: number; readonly weight: number }[],
-  weight: number,
-): number | undefined {
-  const cost = sum(basket.map((c) => mul(c.weight, c.price, 'what one basket costs'))).value;
+  basket: readonly { readonly instrument: InstrumentId; readonly price: PerPiece; readonly weight: Qty }[],
+  weight: Qty,
+): Qty | undefined {
+  const cost = sum(basket.map((c) => valueAt(c.price, c.weight, 'what one basket costs'))).value;
   if (cost <= 0) return undefined;
   const worth = bookValue(view, basket);
   if (worth <= 0) return undefined;
-  const baskets = div(worth, cost, 'how many of the index basket it can hold');
-  return mul(baskets, weight, 'units of this line that comes to');
+  const baskets = ratioOf(worth, cost, 'how many of the index basket it can hold');
+  return scale(weight, baskets, 'units of this line that comes to');
 }
 
 /** What the fund has to put to work: what it holds of the basket, at the same prints, plus its cash. */
 function bookValue(
   view: ParticipantView,
-  basket: readonly { readonly instrument: InstrumentId; readonly price: number }[],
-): number {
-  const terms = basket.map((c) => mul(view.quantity(c.instrument), c.price, 'what it holds of this'));
+  basket: readonly { readonly instrument: InstrumentId; readonly price: PerPiece }[],
+): Cash {
+  const terms = basket.map((c) =>
+    valueAt(c.price, view.quantity(c.instrument), 'what it holds of this'),
+  );
   const ccy = view.registry.currencyOf(view.self.region);
-  terms.push(view.cash(ccy));
+  terms.push(heldAsMoney(view.cash(ccy), 'and the money it holds'));
   return sum(terms).value;
 }

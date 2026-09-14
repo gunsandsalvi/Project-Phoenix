@@ -28,13 +28,14 @@ import {
   minus,
   over,
   scale,
+  valueAt,
 } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
 import { marketId, paramId, type MarketId, type PartyId } from '../../core/ids.js';
-import { addTo, combineDust, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -72,7 +73,7 @@ export {
   shortForSpending,
   sparePerMember,
 } from './portfolio.js';
-import { asQty, scaleQty } from '../../core/tick.js';
+import { asQty, scaleQty, type Qty } from '../../core/tick.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -183,15 +184,21 @@ function consumptionIsBought(): Family {
       const cells = new Set(view.parties.ofKind(HOUSEHOLD).map((p) => p.id));
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled') continue;
-        const bought = new Map<PartyId, number>();
-        const paid = new Map<PartyId, number>();
+        const bought = new Map<PartyId, Cash>();
+        const paid = new Map<PartyId, Qty>();
         for (const leg of r.instruction.legs) {
           if (isAssetLeg(leg) && cells.has(leg.to)) {
             const physical = view.registry.instrumentKind(
               view.instruments.get(leg.instrument).kind,
             ).physical;
             if (physical !== true) continue;
-            addTo(bought, leg.to, mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took'));
+            addTo(
+              bought,
+              leg.to,
+              leg.pricePerUnit.some
+                ? valueAt(leg.pricePerUnit.value, leg.qty, 'what it took')
+                : asCash(0, 'a leg with no price on it moved nothing anybody paid for'),
+            );
           } else if (isMoneyLeg(leg) && cells.has(leg.from.holder)) {
             addTo(paid, leg.from.holder, leg.amount);
           }
@@ -199,7 +206,7 @@ function consumptionIsBought(): Family {
         for (const [cell, value] of bought) {
           // A cell that took units and paid nothing paid nothing: absence of a payment is zero
           // money, which is the one place absence becomes a number (core/num.ts).
-          const money = sum([zeroIfNone(paid.get(cell))]);
+          const money = sum([heldAsMoney(zeroIfNone(paid.get(cell)), 'what it paid')]);
           const took = sum([value]);
           // Law 8: what it paid is what the goods came to ROUNDED TO REAL MONEY — a whole number of
           // pieces for each of its members (core/tick.ts). The comparison is therefore entitled to
@@ -212,7 +219,7 @@ function consumptionIsBought(): Family {
             family: 'flows',
             spec: 'Households C5',
             owner: cell,
-            size: sub(took.value, money.value, 'goods against money'),
+            size: minus(took.value, money.value, 'goods against money'),
             unit: view.registry.currencyOf(who.region),
             period: view.period,
             message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,

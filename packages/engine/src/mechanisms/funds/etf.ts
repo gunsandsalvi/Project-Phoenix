@@ -31,11 +31,13 @@ import {
   type Ratio,
   ratioOf,
   scale,
+  minus,
+  over,
 } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { scaleQty, type Qty } from '../../core/tick.js';
 import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { div, material, mul, sub, sum } from '../../core/num.js';
+import { material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { CellSide, Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
@@ -131,10 +133,15 @@ function onGrid(
   ctx: MechanismContext,
   holder: Party,
   instrument: InstrumentId,
-  total: number,
+  total: Qty,
 ): { readonly perMember: Qty; readonly total: Qty } {
   const unit = ctx.instruments.get(instrument).unit;
-  return shareFor(ctx.registry, holder, unit, div(total, weightOf(holder), 'per member'));
+  return shareFor(
+    ctx.registry,
+    holder,
+    unit,
+    over(total, asRatio(weightOf(holder), 'the members it has'), 'per member'),
+  );
 }
 
 /**
@@ -153,7 +160,7 @@ export function create(
   d: EtfDecl,
   share: InstrumentId,
   party: PartyId,
-  wanted: number,
+  wanted: Qty,
 ): boolean {
   const basket = basketOf(ctx, d, share);
   if (basket.length === 0 || wanted <= 0) return false;
@@ -222,7 +229,7 @@ export function redeemInKind(
   d: EtfDecl,
   share: InstrumentId,
   party: PartyId,
-  wanted: number,
+  wanted: Qty,
 ): boolean {
   const basket = basketOf(ctx, d, share);
   if (basket.length === 0 || wanted <= 0) return false;
@@ -232,12 +239,17 @@ export function redeemInKind(
   const back = onGrid(ctx, holder, share, wanted);
   const shares = back.total;
   if (shares <= 0) return false;
-  const held = mul(ctx.register.free(party, share), weight, 'shares it can give back');
+  const held = scaleQty(ctx.register.free(party, share), weight, 'shares it can give back');
   if (held < shares) return false;
   const legs: Leg[] = [];
   const taken: Cash[] = [];
   for (const line of basket) {
-    const got = onGrid(ctx, holder, line.instrument, mul(shares, line.perShare, 'units of this line'));
+    const got = onGrid(
+      ctx,
+      holder,
+      line.instrument,
+      scale(shares, line.perShare, 'units of this line'),
+    );
     const units = got.total;
     if (!material(units, 2, units)) return false;
     if (ctx.register.free(d.fund as PartyId, line.instrument) < units) return false;
@@ -296,9 +308,11 @@ function cellOf(
  * about liquidity: it says the parties who could turn one value into the other would not, and why
  * they would not is their own limits and their own costs (Dealer Desks D1-D3).
  */
-export function premiumOf(print: Option<number>, nav: number): Option<number> {
+export function premiumOf(print: Option<PerPiece>, nav: PerPiece): Option<Ratio> {
   if (!print.some || nav <= 0) return none();
-  return some(div(sub(print.value, nav, 'what the market pays over the book'), nav, 'as a share of it'));
+  return some(
+    ratioOf(minus(print.value, nav, 'what the market pays over the book'), nav, 'as a share of it'),
+  );
 }
 
 /** The period a read is about, so a stale print is visibly a stale premium (Clearing E4). */

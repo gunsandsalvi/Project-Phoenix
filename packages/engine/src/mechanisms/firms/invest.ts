@@ -90,13 +90,13 @@ export interface Project {
   /** The most it would pay for the plant that makes one more unit a period. */
   readonly worthPerUnitOfCapacity: number;
   /** What the market is asking for that plant. */
-  readonly askedPerUnitOfCapacity: number;
+  readonly askedPerUnitOfCapacity: PerPiece;
   /** C2, B2: what the whole of it would cost, at what it is bidding. */
-  readonly spend: number;
+  readonly spend: Cash;
   /** B2.a: what it can pay for out of what it has. The rest is the programme it must fund. */
-  readonly funded: number;
+  readonly funded: Cash;
   /** Firm E4.a: what it wants to spend and cannot yet, which is what it raises money into. */
-  readonly programme: number;
+  readonly programme: Cash;
   readonly orders: readonly PlannedOrder[];
 }
 

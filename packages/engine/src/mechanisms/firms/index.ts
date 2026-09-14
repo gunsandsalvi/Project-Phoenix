@@ -19,11 +19,21 @@
  * WHAT IT CANNOT DO is decide differently because of what it makes (F4, Law 15). There is one
  * decision function, and the industry is data: a recipe, a lead time, a yield and an occupation.
  */
+import {
+  acrossMembers,
+  asCash,
+  type PerMember,
+  type Cash,
+  heldAsMoney,
+  minus,
+  plus,
+  valueAt,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId } from '../../core/ids.js';
-import { add, combineDust, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
+import { combineDust, dustOf, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -77,7 +87,7 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      const moved = new Map<PartyId, number[]>();
+      const moved = new Map<PartyId, PerMember<'money:piece'>[]>();
       // Law 7: the dust of this comparison is the dust of the arithmetic that produced it — a walk
       // over the lots each leg drew from, inside settlement, and then a sum over the legs. What is
       // visible here is the legs and what they cost, and that is what the tolerance is derived from.
@@ -96,7 +106,9 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           // value, so the equity effect is nearly nothing and the magnitude behind it is the whole
           // batch — read off the create legs, which say what a unit cost (Goods E1).
           const carried = sum(
-            r.instruction.legs.map((l) => (isCreateLeg(l) ? Math.abs(mul(l.qty, l.costPerUnit, 'batch value')) : 0)),
+            r.instruction.legs.map((l) =>
+              isCreateLeg(l) ? Math.abs(valueAt(l.costPerUnit, l.qty, 'batch value')) : 0,
+            ),
           ).value;
           walked.set(e.party, {
             terms: walk.terms + r.instruction.legs.length + r.deltas.length,
@@ -113,9 +125,12 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           .ofKind('firms.started')
           .filter((e) => e.period === view.period && e.subjects.includes(firm))
           .map((e) => e.data['wages'])
-          .filter((w): w is number => typeof w === 'number');
+          .filter((w): w is number => typeof w === 'number')
+          // Item 16: what a firm published it capitalised re-enters here, as the money it is.
+          .map((w) => asCash(w, 'what it capitalised into the batch'));
         const wages = sum(capitalised);
-        const effect = sum(deltas);
+        // XI-15: a firm is a named party, so what its equity moved by is what it made.
+        const effect = sum(deltas.map((d) => acrossMembers(d, 1, 'what it made')));
         const walk = walked.get(firm) ?? { terms: 0, magnitude: 0 };
         const dust =
           combineDust(effect, wages) +
@@ -125,7 +140,7 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           family: 'flows',
           spec: 'Goods F5.b',
           owner: firm,
-          size: sub(effect.value, wages.value, 'value production moved'),
+          size: minus(effect.value, wages.value, 'value production moved'),
           unit: view.registry.currencyOf(view.parties.get(firm).region),
           period: view.period,
           message: `${firm}: its line moved ${effect.value} of value and the period paid ${wages.value} into it`,
@@ -375,22 +390,22 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   // PROGRAMME. What it wants to spend on plant and cannot pay for out of what it holds is part of
   // what it is short of, so a bank lends against a programme and a share issue is raised into one —
   // and a firm with no programme is short of nothing on that account and raises nothing.
-  const programme = p.project === null ? 0 : p.project.programme;
-  const owed = add(
-    add(buying, wagesPromised(view), 'what it is about to have to pay'),
+  const programme = p.project === null ? asCash(0, 'it has no programme') : p.project.programme;
+  const owed = plus(
+    plus(buying, wagesPromised(view), 'what it is about to have to pay'),
     programme,
     'and what it wants to build',
   );
-  const short = sub(owed, view.cash(ccy), 'what it is short of');
+  const short = minus(owed, heldAsMoney(view.cash(ccy), 'the money it holds'), 'what it is short of');
   ctx.record('firms.funding', [view.self.id], { short, owed, programme, ccy }, false);
 }
 
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */
-function wagesPromised(view: ParticipantView): number {
+function wagesPromised(view: ParticipantView): Cash {
   const own = view.lastOwn('labour.wages');
-  if (!own.some) return 0;
+  if (!own.some) return asCash(0, 'it has promised nobody anything');
   const due = own.value.data['due'];
-  return typeof due === 'number' ? due : 0;
+  return typeof due === 'number' ? asCash(due, 'what its last wage bill came to') : asCash(0, 'nothing');
 }
 
 /** The orders as the data they are, so the party's own participant can read them back. */

@@ -23,7 +23,7 @@
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
-import { asCash, type Cash , pricedAt} from '../../core/measure.js';
+import { asCash, type Cash , pricedAt, asRatio, scale} from '../../core/measure.js';
 import { div, finite, material, mul, sub, sum } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { asQty, upTick } from '../../core/tick.js';
@@ -258,7 +258,7 @@ function yieldBatch(
   );
   const finished = ctx.registry.deliverable(
     ctx.instruments.get(good).unit,
-    mul(due, survived, 'what came off the line'),
+    scale(due, asRatio(survived, 'what the line left of it'), 'what came off the line'),
   );
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({

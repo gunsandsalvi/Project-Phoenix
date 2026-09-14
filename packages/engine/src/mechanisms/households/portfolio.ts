@@ -31,6 +31,7 @@ import {
   plus,
   scale,
   valueAt,
+  over,
 } from '../../core/measure.js';
 import { nextPeriod, period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
@@ -238,10 +239,13 @@ export function ownUncertainty(view: ParticipantView): number {
     view.calendar.startOf(view.period),
     view.calendar.startOf(nextPeriod(view.period)),
   );
-  if (year <= 0) return 0;
-  return div(
-    div(income.value.confidence, income.value.expected, 'how wrong its income has been'),
-    year,
+  if (year <= 0) return asRatio(0, 'a period of no length says nothing');
+  return over(
+    asRatio(
+      div(income.value.confidence, income.value.expected, 'how wrong its income has been'),
+      'how wrong its income has been',
+    ),
+    asRatio(year, 'the fraction of a year that was'),
     'per annum',
   );
 }

@@ -34,7 +34,7 @@ import { assertNever } from '../../core/assert.js';
 import { add, div, mul, sub } from '../../core/num.js';
 import { asRatio, heldAsMoney, over, scale } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, scaleQty } from '../../core/tick.js';
 import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
 import type { FailReason, Leg, Unpaid } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
@@ -243,7 +243,7 @@ function handToProbate(
       to,
       instrument: h.instrument,
       // XI-15: the register holds per MEMBER, and what moves is what all of them held between them.
-      qty: asQty(mul(perMember, weight, 'what they held between them')),
+      qty: scaleQty(perMember, weight, 'what they held between them'),
       pricePerUnit: print.some ? some(print.value.price) : none(),
       accruedPerUnit: none(),
       fromCell: some({ perMember, weight }),
@@ -254,7 +254,7 @@ function handToProbate(
   for (const ccy of monies) {
     const perMember = view.cash(ccy);
     if (perMember <= 0) continue;
-    const amount = mul(perMember, weight, 'the money they had between them');
+    const amount = scaleQty(perMember, weight, 'the money they had between them');
     cash.push({ ccy, amount });
     legs.push({
       kind: 'money',
@@ -377,7 +377,11 @@ export function settleEstates(ctx: MechanismContext): void {
          */
         const perMember = ctx.registry.deliverable(
           unit,
-          div(mul(held, share, 'this cell share'), heir.weight, 'each of them gets'),
+          over(
+            scale(held, share, 'this cell share'),
+            asRatio(heir.weight, 'the members it has'),
+            'each of them gets',
+          ),
         );
         if (perMember <= 0) continue;
         const print = view.print(h.instrument);
@@ -386,7 +390,7 @@ export function settleEstates(ctx: MechanismContext): void {
           from: office.id,
           to: heir.id,
           instrument: h.instrument,
-          qty: asQty(mul(perMember, heir.weight, 'what they get between them')),
+          qty: scaleQty(perMember, heir.weight, 'what they get between them'),
           pricePerUnit: print.some ? some(print.value.price) : none(),
           accruedPerUnit: none(),
           fromCell: none(),
@@ -412,7 +416,7 @@ export function settleEstates(ctx: MechanismContext): void {
             // something the heir earned. It was taxed as income at the wage rate (A-46).
             receipt: { of: 'transfer' },
             ccy,
-            amount: asQty(mul(perMember, heir.weight, 'what they get between them')),
+            amount: scaleQty(perMember, heir.weight, 'what they get between them'),
             fromCell: none(),
             toCell: some({ perMember, weight: heir.weight }),
           });

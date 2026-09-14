@@ -61,20 +61,17 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
+import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import {
-  add,
-  addTo,
-  atMost,
-  div,
-  dustOf,
-  material,
-  mul,
-  sub,
-  sum,
-  withinDust,
-  zeroIfNone,
-} from '../../core/num.js';
-import { asQty, downTick, NO_QTY, scaleQty, subQty, upTick, type Qty } from '../../core/tick.js';
+  addQty,
+  asQty,
+  downTick,
+  NO_QTY,
+  scaleQty,
+  subQty,
+  upTick,
+  type Qty,
+} from '../../core/tick.js';
 
 /** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
 const ONE_PIECE = asQty(1);
@@ -528,7 +525,7 @@ function redeem(
         { fund: d.fund, holder, sharesPerMember: sharesNow, perShare },
         false,
       );
-      return sub(asked, sharesNow, 'what is left to pay');
+      return subQty(asked, sharesNow, 'what is left to pay');
     }
   }
   return asked;
@@ -583,7 +580,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
     // than quietly queued for ever.
     const asked = ctx.registry.deliverable(
       share.unit,
-      div(o.qty, weightOf(ctx.parties.get(o.party)), 'shares per member'),
+      over(o.qty, asRatio(weightOf(ctx.parties.get(o.party)), 'the members it has'), 'shares per member'),
     );
     if (asked <= 0) continue;
     if (o.side === 'buy') {
@@ -596,7 +593,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       const already = sum(
         b.queued.filter((q) => q.fund === d.fund && q.holder === o.party).map((q) => q.sharesPerMember),
       ).value;
-      const room = sub(held, already, 'shares it has not already asked back');
+      const room = subQty(held, already, 'shares it has not already asked back');
       const taking = atMost(asked, room, 'it cannot ask back shares it has already asked back');
       if (taking <= 0) continue;
       // C2.b: the request goes on the book under its own name at the NAV of the day it asked. What
@@ -868,13 +865,17 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
  * not a size anybody chose, and the proportions are what makes them the holders they said they
  * would be.
  */
-function launchSize(ctx: MechanismContext, e: EtfDecl): number {
-  let full: number | undefined;
+function launchSize(ctx: MechanismContext, e: EtfDecl): Qty {
+  let full: Qty | undefined;
   for (const [holder, slice] of launchers(ctx, e)) {
-    const reaches = div(couldCreate(ctx, e, holder), slice, 'the launch its slice reaches');
+    const reaches = over(
+      couldCreate(ctx, e, holder),
+      asRatio(slice, 'its declared slice'),
+      'the launch its slice reaches',
+    );
     if (full === undefined || reaches < full) full = reaches;
   }
-  if (full === undefined) return 0;
+  if (full === undefined) return NO_QTY;
   return full;
 }
 
@@ -899,21 +900,21 @@ function firstCreation(
   ctx: MechanismContext,
   e: EtfDecl,
   share: InstrumentId,
-  full: number,
-): number {
-  let made = 0;
+  full: Qty,
+): Qty {
+  let made = NO_QTY;
   for (const [holder, slice] of launchers(ctx, e)) {
-    const wanted = downTick(mul(full, slice, "this holder's slice of the launch"));
+    const wanted = downTick(scale(full, asRatio(slice, "this holder's slice"), "this holder's slice of the launch"));
     if (wanted <= 0) continue;
-    if (create(ctx, e, share, holder, wanted)) made = add(made, wanted, 'shares created');
+    if (create(ctx, e, share, holder, wanted)) made = addQty(made, wanted, 'shares created');
   }
   return made;
 }
 
 /** E3: the most shares this party could create out of what it actually holds, line by line. */
-function couldCreate(ctx: MechanismContext, e: EtfDecl, party: PartyId): number {
+function couldCreate(ctx: MechanismContext, e: EtfDecl, party: PartyId): Qty {
   const weight = weightOf(ctx.parties.get(party));
-  let most: number | undefined;
+  let most: Qty | undefined;
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
@@ -929,7 +930,7 @@ function couldCreate(ctx: MechanismContext, e: EtfDecl, party: PartyId): number 
   }
   // A basket naming no line this world has is not a basket, and nothing backs a share of it. That
   // is a COUNT of shares it could create and not a missing number (Appendix A).
-  if (most === undefined) return 0;
+  if (most === undefined) return NO_QTY;
   return most;
 }
 
@@ -1089,7 +1090,7 @@ function readEtf(ctx: MechanismContext, d: EtfDecl): void {
     ? ctx.valuation.markPerUnit(share.id, ctx.period)
     : basketValue(basket);
   const print = ctx.prices.latest(share.id, ctx.period);
-  const premium = premiumOf(print.some ? some(print.value.price) : none<number>(), nav);
+  const premium = premiumOf(print.some ? some(print.value.price) : none<PerPiece>(), nav);
   ctx.record(
     'etf.struck',
     [d.fund, share.id],
@@ -1144,11 +1145,15 @@ function ordersOf(
     if (!worth.some) return [];
     const total = holdingsWorth(view);
     if (total <= 0) return [];
-    const fraction = div(shortfall, total, 'the share of its book it must raise');
+    const fraction = ratioOf(
+      asCash(shortfall, 'what it published it is short of'),
+      total,
+      'the share of its book it must raise',
+    );
     // Law 8: a share of a holding is a fraction of a unit, and a unit is what there is. It rounds
     // UP because this is a redemption it has to MEET — selling all but a fraction of what covers it
     // leaves the investor short — and it can never be more than what it holds.
-    const wants = fraction >= 1 ? units : upTick(mul(units, fraction, 'units it must sell'));
+    const wants = fraction >= 1 ? units : upTick(scale(units, fraction, 'units it must sell'));
     const qty = atMost(wants, units, 'there are no more units of it than there are');
     if (!material(qty, 2, units)) return [];
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
@@ -1189,8 +1194,8 @@ function ordersOf(
 }
 
 /** What everything it holds is worth, at the last marks — the base a pro-rata sale is struck on. */
-function holdingsWorth(view: ParticipantView): number {
-  const terms: number[] = [];
+function holdingsWorth(view: ParticipantView): Cash {
+  const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
@@ -1393,14 +1398,18 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   // Law 19, E3.a: HOW BIG THE LAUNCH IS, read off the lines it tracks rather than stated
   // (`EtfDecl.launchShare`). A share of the fund is `perShare` of each line, so what each line can
   // back is its own float over that, and the SMALLEST of them is as far as all of them reach.
-  const backs: number[] = [];
+  const backs: Qty[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     backs.push(
-      div(
-        mul(ctx.instruments.get(id).issued, e.launchShare, 'the share of this line it holds'),
-        perShare,
+      over(
+        scale(
+          ctx.instruments.get(id).issued,
+          asRatio(e.launchShare, 'the share of this line it holds'),
+          'the share of this line it holds',
+        ),
+        asRatio(perShare, 'what one share draws of it'),
         'the shares of the fund this line backs',
       ),
     );
@@ -1412,7 +1421,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   const full = downTick(backs.reduce((a, b) => atMost(b, a, 'the launch reaches as far as the shortest line backs it')));
   if (full <= 0) return;
   const taken = holders.map(([, share]) =>
-    downTick(mul(full, share, "this holder's slice of the launch")),
+    downTick(scale(full, asRatio(share, "this holder's slice"), "this holder's slice of the launch")),
   );
   const launched = sum(taken).value;
   if (launched <= 0) return;
@@ -1431,7 +1440,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     const units = outOfTheFloat(
       ctx,
       id,
-      mul(perShare, launched, 'units of this line the launch takes'),
+      scale(launched, asRatio(perShare, 'what one share draws of it'), 'units of this line the launch takes'),
       e.fund as PartyId,
     );
     if (units <= 0) return;
@@ -1485,7 +1494,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
 function outOfTheFloat(
   ctx: SeedContext,
   id: InstrumentId,
-  wanted: number,
+  wanted: Qty,
   fund: PartyId,
 ): Qty {
   const outstanding = ctx.instruments.get(id).issued;
@@ -1496,7 +1505,11 @@ function outOfTheFloat(
     const weight = weightOf(ctx.parties.get(holder));
     const mine = ctx.register.quantity(holder, id);
     const perMember = downTick(
-      div(mul(mine, wanted, 'its share of what the launch takes'), outstanding, 'per member'),
+      over(
+        scale(wanted, ratioOf(mine, outstanding, 'its share of the line'), 'its share of what the launch takes'),
+        asRatio(1, 'and a holder holds per member already'),
+        'per member',
+      ),
     );
     if (perMember <= 0) continue;
     ctx.register.debit(holder, id, perMember);

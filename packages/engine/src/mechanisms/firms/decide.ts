@@ -37,6 +37,8 @@ import {
   plus,
   scale,
   valueAt,
+  asAmount,
+  pricedAt,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
@@ -239,21 +241,30 @@ export function venueOf(view: ParticipantView, line: FirmDecl): VenueDecl | unde
  * what it actually pays; a firm employing nobody has none of its own and faces what the market
  * published (Labour D1.c, Expectations A2.a) — and one that has neither cannot cost a unit at all.
  */
-function wageFacing(view: ParticipantView, venue: VenueDecl): Option<number> {
+function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
   const own = view.lastOwn('labour.wages');
   if (own.some) {
     const due = own.value.data['due'];
     const hours = own.value.data['hours'];
     if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
-      return some(div(due, hours, 'own wage per hour'));
+      return some(
+        pricedAt(
+          asCash(due, 'what its wage bill came to'),
+          asAmount<'piece'>(hours, 'the hours it paid for'),
+          'own wage per hour',
+        ),
+      );
     }
   }
   const published = view.lastPublic('labour.goingRate');
-  if (!published.some) return none<number>();
+  if (!published.some) return none<PerPiece>();
   const rates = published.value.data['wagePerHour'];
-  if (typeof rates !== 'object' || rates === null) return none<number>();
+  if (typeof rates !== 'object' || rates === null) return none<PerPiece>();
   const rate = (rates as Record<string, unknown>)[venue.id];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: the going rate re-enters here — what an hour cleared at where this firm is.
+  return typeof rate === 'number'
+    ? some(asPerPiece(rate, 'what an hour cleared at'))
+    : none<PerPiece>();
 }
 
 /**
@@ -376,7 +387,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const price = expectedPrice(view, output);
   const selling = sellSchedule(view, tech, price);
   const venue = venueOf(view, line);
-  const wage = venue === undefined ? none<number>() : wageFacing(view, venue);
+  const wage = venue === undefined ? none<PerPiece>() : wageFacing(view, venue);
   const inputPrices = tech.inputs.map((i) => expectedPrice(view, i.instrument));
   const sales = view.outlook(about({ on: 'sold', instrument: output }));
   if (!price.some || !sales.some || inputPrices.some((p) => !p.some)) {
@@ -430,11 +441,15 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     ? some(
         div(
           add(
-            add(inputCost, mul(tech.hoursPerUnit, wage.value, 'wages per unit'), 'inputs and wages'),
+            plus(
+              inputCost,
+              scale(wage.value, asRatio(tech.hoursPerUnit, 'the hours a unit takes'), 'wages per unit'),
+              'inputs and wages',
+            ),
             capitalCharge,
             'and what its plant wears out by',
           ),
-          tech.yieldRate,
+          asRatio(tech.yieldRate, 'what survives the line'),
           'cost per unit finished',
         ),
       )
@@ -483,7 +498,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
                 'the output it makes possible',
               ),
               scale(
-                asPerPiece(wage.some ? wage.value : 0, 'what an hour costs it'),
+                wage.some ? wage.value : asPerPiece(0, 'what an hour costs it'),
                 asRatio(tech.hoursPerUnit, 'the hours one takes'),
                 'its wages',
               ),

@@ -33,6 +33,7 @@
  * by its own surprises about that price — so a cell that has seen prices move bids across a wider
  * range than one that has not.
  */
+import { scaleQty } from '../../core/tick.js';
 import {
   absolute,
   asAmount,
@@ -305,19 +306,15 @@ export function demandOf(
   }
   const out: DemandStep[] = [];
   for (const l of lines) {
-    const qty = add(
-      mul(l.row.neededPerMember, needScale, 'of what it must have'),
-      mul(l.row.wantedPerMember, wantScale, 'of what it wants on top'),
+    const qty = plus(
+      scale(asAmount<'piece'>(l.row.neededPerMember, 'what it must have'), needScale, 'of what it must have'),
+      scale(asAmount<'piece'>(l.row.wantedPerMember, 'what it wants on top'), wantScale, 'of what it wants on top'),
       'what one member takes this period',
     );
     if (qty <= 0) continue;
     // C4: what it set aside is what the units cost it INCLUDING the tax; what reaches the seller is
     // that less the tax, and that is the money the curve is drawn against.
-    const set = valueAt(
-      l.perUnit,
-      asAmount<'piece'>(qty, 'what it takes of this line'),
-      'what it set aside for this line',
-    );
+    const set = valueAt(l.perUnit, qty, 'what it set aside for this line');
     const net = over(
       set,
       asRatio(add(1, p.consumptionTax, 'with the tax it will owe on it'), 'one and the tax'),
@@ -329,7 +326,7 @@ export function demandOf(
         market: l.market,
         instrument: l.instrument,
         price: r.price,
-        qty: mul(r.qty, self.weight, 'what the cell asks for'),
+        qty: scaleQty(r.qty, self.weight, 'what the cell asks for'),
       });
     }
   }

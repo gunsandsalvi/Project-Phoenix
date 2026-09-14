@@ -19,7 +19,7 @@
  * (Goods A1 — nobody issued it and nobody owes it). A mandate of paper is a money fund's and this
  * never speaks for one (Law 4, Law 15).
  */
-import { div, mul, sub } from '../../core/num.js';
+import { amountOf, asPerPiece, asRatio, heldAsMoney, minus, scale } from '../../core/measure.js';
 import { downTick } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -55,18 +55,32 @@ export function physicalOrders(
   const expected = view.outlook(about({ on: 'price', instrument: m.instrument }));
   if (!expected.some) return [];
   const spoilage = view.params.ratio(i.terms.spoilage);
-  const survives = sub(expected.value.expected, mul(expected.value.expected, spoilage, 'what perishes'), 'what a piece is worth to it at the end of the wait');
+  const expects = asPerPiece(expected.value.expected, 'what it expects a piece to fetch');
+  const survives = minus(
+    expects,
+    scale(expects, spoilage, 'what perishes'),
+    'what a piece is worth to it at the end of the wait',
+  );
   const rate = storageRateIn(view, i.terms.region);
   const carry =
     i.terms.storagePerUnit === null || rate === undefined
-      ? 0
-      : mul(rate, spacePerPiece(view, i.unit, view.params.ratio(i.terms.storagePerUnit)), 'the room for a period');
-  const most = sub(survives, carry, 'the most it will pay and still be better off waiting');
+      ? asPerPiece(0, 'a thing nobody stores costs nothing to keep')
+      : scale(
+          rate,
+          asRatio(
+            spacePerPiece(view, i.unit, view.params.ratio(i.terms.storagePerUnit)),
+            'the room a piece takes',
+          ),
+          'the room for a period',
+        );
+  const most = minus(survives, carry, 'the most it will pay and still be better off waiting');
   if (most <= 0) return [];
   // Law 6: it bids for what its OWN CASH reaches at that level and no more. Not a limit anybody set
   // — it is a quantity it has, in the way that selling units nobody holds is not a thing to do.
   const ccy = view.registry.currencyOf(view.self.region);
-  const qty = downTick(div(view.cash(ccy), most, 'pieces its own cash reaches'));
+  const qty = downTick(
+    amountOf(heldAsMoney(view.cash(ccy), 'the money it holds'), most, 'pieces its own cash reaches'),
+  );
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: most, qty }];
 }
