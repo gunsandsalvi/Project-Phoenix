@@ -7546,9 +7546,15 @@ same read the IRS floating leg uses — so it is a cleared rate and not a posted
 
 **And the reaction is the one item 10 already built.** When a borrower outgrows its bank the bank
 stops increasing the line, and the REFUSAL is what pushes the issuer into the public market. That is
-`issueBonds`'s second reason (*"its bank will not lend it enough at any price"*), and this correction
-is why it is a reason at all rather than a special case of the first: a firm does not always reach a
-market because the market is cheaper. Sometimes it reaches it because it was told no.
+`issueBonds`'s second reason (*"its bank will not lend it enough at any price"*).
+
+**It is an ADDITION and not a replacement, and the first draft of this entry got that wrong.** A firm
+reaches the market for SEVERAL reasons and the price comparison is a real one (owner: *"it reaches
+the market for multiple reasons, don't delete it"*). Two are built; at least three more are real and
+unbuilt — TENOR (a bank lends a year; a bond runs five), SIZE beyond any single lender's appetite,
+and diversifying the funding so that one lender's retreat is not the end of it. Each has its own read
+and none is a special case of another, which is exactly why `issueBonds` must keep taking reasons
+rather than collapsing to the sharpest one.
 
 **The FORBID this makes explicit, and it already holds.** No bank loan reaches a party outside the
 banking system. `LOAN` declares `market: none()` and `pricing: 'carriedAtCost'`, so a loan cannot be
@@ -7559,5 +7565,73 @@ guards it as an audit family, with the design question named: "the banking syste
 kinds, and enumerating it inside the family is the kind branch Law 15 forbids, so it belongs on the
 party kind as declared data and carries an `ARCHITECTURE.md` change with it.
 
-`docs/WORKLIST.md`'s **M9** note said the leveraged loan index waits on "the loan market". There is
-no loan market to wait for; it waits on 17.0's note, and the note is corrected to say so.
+**There IS a leveraged loan market, and the first draft of this entry denied it.** `docs/WORKLIST.md`'s
+**M9** note says the leveraged loan index waits on the loan market, and it is right: the leveraged
+loan market is a SECURITIES market, which is what 17.0's floating-rate note trades in, and item 10's
+issuance path already opens one per line. What does not exist, and must not be built, is a market in
+BANK loans.
+
+---
+
+## Three more owner corrections, and the third one names a cause the other two were symptoms of
+
+**1. A firm reaches the market for several reasons, and the price comparison is one of them.** The
+previous entry demoted it to a special case of the refusal. Wrong: `issueBonds` has two reasons
+because they ARE two, and at least three more are real and unbuilt — tenor (a bank lends a year;
+`banks/index.ts` sets `maturity: drawn.y + 1`, and a bond runs five), size beyond any single lender's
+appetite, and diversifying the funding so one lender's retreat is not the end of it. None is a
+special case of another, which is why that function must keep taking reasons rather than collapsing
+to the sharpest one.
+
+**2. There IS a leveraged loan market**, and the previous entry denied it. It is a SECURITIES market
+— which is exactly the point of the correction that a leveraged loan is a security — and item 10's
+path already opens one per line. What does not exist, and must not be built, is a market in BANK
+loans.
+
+**3. "Roll the bank bonds mechanism the same way corp bonds work. There shouldn't be 3 different
+mechanisms."** This is the one that names a cause. The question that led to it was why a bank's
+subordinated debt has no price, and the honest answer turned out not to be "it needs a secondary
+market" — it is that `banks/subordinated.ts` **is a private copy of the issuance machinery the kernel
+already has**, and the missing price is one of four things the copy drifted into:
+
+```
+:185  raiseVenue(bank)          a venue of its own
+:234  ctx.openVenue({...})      opened by the module
+:246  clear(ctx.posted(venue))  the module calls the solver ITSELF
+:255  asRatio(outcome.price)    the book clears a RATE, not a price  (E-11)
+:300  let id = subId(bank, 1)   ONE INSTRUMENT PER LENDER
+:313  ctx.issue({... market: none() })   and so: no price
+```
+
+The second of those is the worst and I had not seen it: `subId(bank, n)` advances per FILL, so a bank
+that raises from three investors ends up with **three instruments carrying the same promise** — the
+exact opposite of Law 9 and of what item 10 established one commit ago. A second name for one promise
+is one promise written twice (Law 4).
+
+So **10d is a deletion**, not an addition: the venue, the `clear` call, the per-lender line and the
+hand-rolled instruction all go, and the price, the single name and one of `E-11`'s five rate-quoted
+books go with them (Law 12: a cause has one fix and it removes code). It needs nothing new — item
+10's path opens a market per line, and `publishReservations` already makes every live bank an obligor
+*"whether or not it has paper outstanding right now"*, so the holders' schedules are published
+already.
+
+**And the correction applies FORWARD, which is why 10b.0 now exists.** Commercial paper is the next
+thing this world issues. A new module writing its own venue would put the third mechanism back the
+week after 10d deleted it, so the step that says otherwise is written before the module is.
+
+**4. Securitisation is for any non-tradable claim (10c).** `saleable` gates on `isLoan` — a kind
+branch Law 15 forbids — and `arrange` starts a deal only on a capital shortfall, so investor demand
+can never pull one. What "not tradable" IS needs no list and no branch: `pricing ===
+'carriedAtCost'` (no market exists for it) AND `liabilityOfIssuer` (a named party owes it). The two
+together are the definition of securitisable and that is not a coincidence — if it had a market the
+bank would sell it, and if nobody owed it there would be no payments to tranche. Inventory drops out
+on its own (*"A tonne is nobody's promise"*); the invoice comes in, which is most of what 17.5's
+factoring wanted. A maturity-mismatch test was proposed and **withdrawn**: `poolSchedule` cuts the
+notes against the pool's own aggregated flows, so a pool of one-week rows makes one-week notes and
+the mismatch is not expressible.
+
+**What the other two `carriedAtCost` families turned out to be, checked rather than assumed.**
+`derivative-layer`'s three are margin posted, default-fund contributions and close-out claims — not
+derivatives, which are contracts and ARE marked by their class; you cannot sell your margin balance
+at a clearing house. `money-market`'s two are `INTERBANK` and `REPO`, bilateral rows you unwind or
+let mature, not money market FUNDS, whose shares are correctly `derived`. Both tags stand.
