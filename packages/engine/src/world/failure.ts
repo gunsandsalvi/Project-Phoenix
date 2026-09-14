@@ -50,10 +50,19 @@ export function failedWhy(ctx: MechanismContext, view: ParticipantView): string 
     }
   }
   if (can.includes('solvency')) {
-    // Law 7: the equity account is a walk, and what it may call nothing is what that walk has cost
-    // it in rounding. A party whose equity is ZERO by construction — a fund (Fund Shares A3) — sits
-    // at the dust either side of it every period, and a test that called that insolvency would kill
-    // one every week. It is the same tolerance the accounts family compares it against (Law 4).
+    /**
+     * Law 7: the equity account is a walk, and what it may call nothing is what that walk has cost
+     * it in rounding. A party whose equity is ZERO by construction — a fund (Fund Shares A3) — sits
+     * at the dust either side of it every period, and a test that called that insolvency would kill
+     * one every week. It is the same tolerance the accounts family compares it against (Law 4).
+     *
+     * ITEM 13.4: AND A LEVERED POOL IS NO LONGER ALWAYS AT THAT DUST. Its equity was zero by
+     * construction however far underwater it went, because its share liability absorbed every loss
+     * — so this test could never fire for one, and §28 E3's *"no fund that cannot fail"* was not
+     * true of any fund in this world. A share cannot be worth less than nothing (`nav.ts`: a
+     * limited liability), so a pool whose book no longer covers what it owes has a REAL negative
+     * here, and dies of it like anything else. Nothing was added to make that happen.
+     */
     const walk = view.equityWalk();
     if (
       walk.value < 0 &&

@@ -2,7 +2,7 @@
  * Funds: a named party whose liability is its shares, whose equity is zero, and whose investors can
  * ask for their money back — which is the second door into the forced seller.
  *
- * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b Hedge Funds A3 Hedge Funds D5 Hedge Funds D5.a XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
+ * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b Hedge Funds A3 Hedge Funds D1 Hedge Funds D2 Hedge Funds D3 Hedge Funds D4 Hedge Funds D5 Hedge Funds D5.a Hedge Funds E3 Prime Brokerage C3 Prime Brokerage D1 XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
  *
  * WHY IT IS HERE (XI-2). A price falls; somebody must sell into the fall; the sale makes the fall
  * worse. Without a party that MUST sell, a price shock is absorbed by nobody and dissipates, and
@@ -786,6 +786,40 @@ function askToDraw(ctx: MechanismContext, m: Mandate, ccy: CurrencyCode): void {
   ctx.record('prime.wanted', [m.pool], { fund: m.pool, wants, target, book, cash }, false);
 }
 
+/**
+ * Prime Brokerage C3, D1, Hedge Funds D1-D4, XI-2 (item 13.4): WHAT ITS BROKER CALLED AND IT COULD
+ * NOT PAY — and this one line is the whole of the contagion loop.
+ *
+ * *"The client fails a call → the broker closes the positions, selling collateral at market prices
+ * → the liquidation moves prices, which can margin-call other clients."* Nothing here closes
+ * positions and nothing writes a contagion step (D4.a forbids one). What happens is that an unmet
+ * call joins the redemptions on the list of things this pool must find money for — and the pool
+ * already knows what to do with that list: it publishes it as its shortfall, and its own orders sell
+ * across its book, pro rata, AT WHATEVER THE MARKET GIVES (C2.b, XI-2).
+ *
+ * §15 D1 says the BROKER closes the positions and here the POOL sells them, and the difference is
+ * worth naming: in this world the pool is the registered holder, so a sale by it is a real transfer
+ * and a sale by its broker would be somebody moving units it does not hold (Register B2). It is not
+ * a choice the pool has — `ordersOf` sells whenever there is a shortfall — so it is a forced sale
+ * either way, and it is forced by the same mechanism a redemption is.
+ *
+ * THEN THE LOOP CLOSES BY ITSELF. The sale is a print; the print is what every other levered pool's
+ * book is marked at; a lower mark is a smaller portfolio; a smaller portfolio against the same loan
+ * is a negative line; a negative line is a call. Nobody wrote any of that.
+ *
+ * A call older than the period before is one this pool has since met, or a broker that has stopped
+ * looking — the broker re-calls every period it is over the line, so the last one is the current one.
+ */
+function calledOn(ctx: MechanismContext, m: Mandate): Qty {
+  const said = ctx.journal.lastOf('prime.call', String(m.pool));
+  if (said === undefined || said.period + 1 < ctx.period) return NO_QTY;
+  const unmet = said.data['unmet'];
+  // Item 16: what its broker published it still owes, re-entering as the money it is.
+  return typeof unmet === 'number' && unmet > 0
+    ? ctx.registry.payable(asCash(unmet, 'what its broker called and it could not pay'))
+    : NO_QTY;
+}
+
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
@@ -904,7 +938,7 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   }
   payQueue(ctx, b, m);
   askToDraw(ctx, m, ccy);
-  const owed = owedOn(ctx, b, m);
+  const owed = addQty(owedOn(ctx, b, m), calledOn(ctx, m), 'everything it must find money for');
   const cash = ctx.register.quantity(
     fundId,
     moneyInstrumentId(ctx.accountOf(fundId, ccy).issuer, ccy),
@@ -948,8 +982,16 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
               previous.value,
               'per share it returned',
             ),
-      // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
-      // so the decision and the schedule are one decision (Law 4).
+      /**
+       * C2.a, Prime Brokerage C3, XI-2: WHAT IT MUST FIND, AND WHAT IT HAS SPARE. Its orders read
+       * these and nothing else, so the decision and the schedule are one decision (Law 4).
+       *
+       * Item 13.4: and there are TWO things on the first list now — what its redeemers are owed, and
+       * what its broker called and it could not pay. They are one number here on purpose: a pool
+       * that must find money sells across its book at whatever the market gives, and it does not
+       * matter to that sale which creditor is waiting. That is also why adding margin to this world
+       * needed no forced-seller mechanism of its own.
+       */
       shortfall: owed,
       spare: subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
       oldestMark: oldest,
@@ -1849,7 +1891,19 @@ function equityIsZero(): Family {
           size: walk.value,
           unit: view.registry.currencyOf(p.region),
           period: view.period,
-          message: `${p.id} has equity of ${walk.value}: a fund with equity has mislaid somebody's money`,
+          /**
+           * A3, Hedge Funds E3 (item 13.4): THE SIGN SAYS WHICH DEFECT IT IS, and they are two
+           * different ones. Equity ABOVE zero is a fund holding something its holders' claims do
+           * not account for — it has mislaid somebody's money. Equity BELOW zero is a fund whose
+           * book no longer covers what it owes: its shares are worth nothing and its CREDITORS are
+           * short, which is insolvency and which the failure test will act on this period. Both are
+           * findings; reporting them under one sentence would say the wrong thing about half of
+           * them (Law 16).
+           */
+          message:
+            walk.value > 0
+              ? `${p.id} has equity of ${walk.value}: a fund with equity has mislaid somebody's money`
+              : `${p.id} is short by ${-walk.value}: its book no longer covers what it owes, so its creditors are impaired and its shares are worth nothing`,
         });
       }
       return out;

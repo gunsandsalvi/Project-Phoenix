@@ -1,7 +1,7 @@
 /**
  * Net asset value: what a fund's book comes to, divided by the claims on it.
  *
- * @spec Fund Shares A2 Fund Shares A3 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B4 Fund Shares D4 Derivative X1 Derivative D1 XI-6 Law 4 Law 19
+ * @spec Fund Shares A2 Fund Shares A3 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B4 Fund Shares D4 Hedge Funds E3 Derivative X1 Derivative D1 XI-3 XI-6 Law 4 Law 6 Law 19
  *
  * B1: assets at market minus liabilities, over shares outstanding, READ EVERY TIME. There is no NAV
  * series anywhere in this module and nothing stores one: the number below is computed from the
@@ -27,6 +27,7 @@ import type { Period } from '../../calendar/calendar.js';
 import { Unpriced } from '../../core/errors.js';
 import type { PartyId } from '../../core/ids.js';
 import {
+  asCash,
   type Cash,
   minus,
   negated,
@@ -34,7 +35,7 @@ import {
   pricedAt,
   valueAt,
 } from '../../core/measure.js';
-import { sum } from '../../core/num.js';
+import { atLeast, sum } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { DerivedReads } from '../../registry/kinds.js';
@@ -123,10 +124,35 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
   const a = sum(assets);
   const l = sum(owed);
   const net = minus(a.value, l.value, 'what the fund is worth');
+  /**
+   * A3, Bond N13.a, Hedge Funds E3 (item 13.4): A SHARE RANKS BEHIND EVERYTHING ELSE THE FUND OWES
+   * AND TAKES WHAT IS LEFT — and what is left of a book that does not cover its senior claims is
+   * NOTHING, not a negative amount.
+   *
+   * IT IS NOT A FLOOR AND THE DIFFERENCE MATTERS (Law 6). A negative share value is a claim that its
+   * HOLDERS OWE THE FUND MONEY, and nothing in this world ever established that: a share is a
+   * limited liability, which is a fact about the instrument and not a rule about the number. The
+   * `ranking` this kind already declares says so in words — *"a pro-rata share of what is left of
+   * the fund once anything else it owes is paid"* — and this is that sentence as arithmetic.
+   *
+   * AND IT IS WHAT MAKES A LEVERED POOL ABLE TO FAIL, which is the whole of §28 E3. While the claim
+   * could go negative, the share liability absorbed every loss exactly: assets minus the loan minus
+   * (assets minus the loan) is zero, so the pool's EQUITY ACCOUNT stayed at zero however far
+   * underwater it went, the solvency trigger could never fire, and *"a vehicle that absorbs losses
+   * indefinitely is the buyer of last resort in a different costume"*. With the claim honest, the
+   * account does not net: assets less senior claims is a real negative, the pool is insolvent, its
+   * estate opens, and its broker eats the shortfall (Prime Brokerage D2, XI-3's fund row). Nothing
+   * was written to make that happen — it stopped being prevented.
+   */
+  const forShares = atLeast(
+    net,
+    asCash(0, 'a book that does not cover its senior claims leaves the shares nothing'),
+    'a share is a limited liability: its holder is not liable to the fund beyond it',
+  );
   return {
     // B1: money over the claims on it, which is what a price IS — and `pricedAt` is the only way
     // to make one out of a payment and a count (item 16).
-    perShare: pricedAt(net, shares, 'net asset value per share'),
+    perShare: pricedAt(forShares, shares, 'net asset value per share'),
     assets: a.value,
     owed: l.value,
     shares,

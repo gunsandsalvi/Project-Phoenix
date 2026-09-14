@@ -8594,3 +8594,74 @@ zero. The mechanism is built and correct; whether this world exercises it is a m
 
 Typecheck 0, lint 0, `check:spec` 216 tags, `check:forbids` 4 over 213 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13.4 — the loop, and both changes were REMOVALS of something preventing it
+
+The step said the chain D1→D4 *"must fall out of the parts. Do not write a contagion step."* It does,
+and nothing was written to transmit anything. What it took was two removals.
+
+**1. An unmet call joins what the pool must find money for.** One line in `strike`: the shortfall a
+pool publishes is its redemptions AND what its broker called and it could not pay. The pool already
+sells across its book pro rata at whatever the market gives when it has a shortfall (C2.b, XI-2), so
+the forced sale needed no mechanism of its own — and the loop then closes by itself:
+
+> the sale is a print → the print is what every other levered pool is marked at → a lower mark is a
+> smaller portfolio → a smaller portfolio against the same loan is a negative line → a negative line
+> is a call
+
+Nobody wrote any of that. **D4.a forbids a contagion parameter and there is none**, because there is
+nothing for one to do.
+
+§15 D1 says the BROKER closes the positions and here the POOL sells them, which is worth naming
+rather than glossing: in this world the pool is the registered holder, so a sale by it is a real
+transfer and a sale by its broker would be somebody moving units it does not hold (Register B2). It
+is forced either way — nothing in the pool chooses.
+
+**2. A SHARE CANNOT BE WORTH LESS THAN NOTHING, and this is the one that mattered.**
+
+While the share claim could go negative, a fund's liability absorbed every loss EXACTLY: assets, less
+the loan, less (assets less the loan), is zero. So a levered pool's equity account stayed at zero
+however far underwater it went, `failedWhy`'s solvency test could never fire for one, and §28 E3's
+*"no fund that cannot fail — a vehicle that absorbs losses indefinitely is the buyer of last resort
+in a different costume"* was true of **every fund in this world**. The losses went somewhere nobody
+was looking: into a share price below zero, which is a claim that its HOLDERS OWE THE FUND MONEY.
+
+**It is not a floor** (Law 6), and the difference is the whole point. A share is a limited liability —
+a fact about the instrument, and one the kind's own `ranking` already stated in words: *"a pro-rata
+share of what is left of the fund once anything else it owes is paid"*. `navOf` now says that
+sentence as arithmetic. What is left of a book that does not cover its senior claims is nothing, and
+the difference is the CREDITORS' loss rather than the holders' debt.
+
+With the claim honest, everything else arrived on its own: the equity account stops netting, the
+solvency trigger fires, the estate opens, and the broker is a creditor of the pool like any other —
+which is §15 D2's *"the shortfall hits the broker's capital"* and XI-3's fund row (*"its equity is
+gone; its broker eats the shortfall"*). **Nothing was added to make that happen. It stopped being
+prevented.**
+
+**Two stale things the change exposed and fixed.** `failedWhy`'s comment said a fund *"sits at the
+dust either side of zero every period"* — written when no pool could be levered, and a defect the
+moment one could (Law 16). And `equityIsZero` reported every non-zero equity as *"a fund with equity
+has mislaid somebody's money"*, which is the wrong sentence for half the cases now: **the sign says
+which defect it is** — above zero it has mislaid money, below zero its creditors are impaired.
+
+**Placed rather than done, both with the analysis:**
+
+- **13.4b, the MEASUREMENT** the step asks for: one fund's loss reaching another's margin call, the
+  path traceable party by party. Every link is already a named pair on an event — `prime.line` →
+  `prime.call` → `fund.struck` → a print → the next `prime.line` — so the path is traceable by
+  construction; whether it actually propagates in this world is a measurement of the assembled world
+  (Law 11), and it goes with 23.0a.
+- **`E-24` moved from 13.4 to 17.2.** This step turned out to need nothing of it: what it builds is
+  what happens when a client CANNOT pay, and that answer is the same whatever demanded the money.
+  What E-24 wants is a line that does not fall due while the commitment stands, which is a COMMITTED
+  FACILITY — and it needs a kernel door that does not exist (`restate` amends an agreement's terms;
+  nothing amends an instrument's), worth opening once for every revolving line rather than for this
+  one.
+
+§15 goes 12 MET to **16 MET, 3 PARTIAL, 5 MISSING**; §28 goes 5 MET to **12 MET, 3 PARTIAL, 9
+MISSING**.
+
+Typecheck 0, lint 0, `check:spec` 216 tags, `check:forbids` 4 over 213 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.
