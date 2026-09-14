@@ -226,7 +226,8 @@ claimed to have built hedge funds on.
 - [x] 9.1c **Lease.** `Lease`/`LeaseBook` → agreements of kind `housing.tenancy`; housing keeps no state slot at all. **DONE** — `docs/RECORD.md`.
 - [x] 9.1d **Invoice — and it was NOT an `Agreement`.** The `invoices` book was a MIRROR of the register: an invoice is an instrument and already has a kernel home. Deleted; the ageing reads the register. **DONE** — `docs/RECORD.md`.
 - [x] 9.1e **Stock loan.** `StockLoan[]` → agreements of kind `securitiesLending.stockLoan`; the module keeps no state slot. **DONE** — `docs/RECORD.md`.
-- [ ] 9.1 Migrate the rest, one bounded change each (Law 14 — seven in one commit is what the old item refused, correctly): loan, covenant, deal.
+- [x] 9.1f **Covenant — and it was NOT an `Agreement` either.** A bond is an instrument and the agreement store is what holds the owing that is not a security; the covenant is a TERM of it and already lives on it. The slot held a memo the journal already says. Deleted. **DONE** — `docs/RECORD.md`.
+- [ ] 9.1 Migrate the rest, one bounded change each (Law 14 — seven in one commit is what the old item refused, correctly): loan, deal.
 - [ ] 9.2 `Mandate` as a kind of agreement. `fundManagerKind` — a party whose only behaviour is answering where it banks — is deleted; the management fee stops being the placeholder that admits *"no manager competes for the mandate"*, because two managers can now bid for one.
 - [ ] 9.6 **A-43** lands here (it was item 3's step 3.5, deliberately left open for this one): with the employment book in the kernel, `households` declares a `venueParticipant` that can see who is already employed, and `labour/matching.ts:supply` deletes.
 - [ ] 9.7 **B-14** is unpositioned in the old file and lands here: whether a fund should hold contracts at all is `Fund Shares A3`'s question, and `TRADES_CONTRACTS` is still `[BANK, FIRM]`. A mandate says what a pool may hold; that is the answer.

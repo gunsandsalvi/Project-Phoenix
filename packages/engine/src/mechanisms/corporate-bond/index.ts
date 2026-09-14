@@ -181,15 +181,19 @@ export const corporateBond: InstrumentKindProfile = {
  * not a rule.
  */
 export function testCovenants(ctx: MechanismContext): void {
-  const book = state(ctx);
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isCorporateBond(i.terms)) continue;
     const t = i.terms;
     // Reporting A2: the last accounts it published, through the kernel's one typed read (item 3).
     const said = ctx.published.lastStatement(t.issuer);
     if (said === undefined) continue;
-    if (book.tested[String(i.id)] === said.quarter) continue;
-    book.tested[String(i.id)] = said.quarter;
+    // Law 4, Law 19 (item 9.1): ONE BREACH PER LINE PER SET OF ACCOUNTS, and what has already been
+    // said is read from where it was said. This module kept a private `tested` memo of which line
+    // it had looked at against which quarter — a second copy of a fact the journal already holds,
+    // which is the mirror Law 19 is about. The TEST is a read of one published report and of the
+    // terms, so it is pure and costs nothing to repeat; the only thing that must not happen twice
+    // is the EVENT, and the journal is the one writer of what has been announced.
+    if (alreadySaid(ctx, i.id, said.quarter)) continue;
     const broke: string[] = [];
     // B2: how much it owes against what it holds. A firm with no assets has no ratio that means
     // anything and has breached, which is what the worst case IS rather than a number pushed back.
@@ -222,12 +226,12 @@ export function testCovenants(ctx: MechanismContext): void {
   }
 }
 
-interface Book {
-  /** Law 4: one test per line per set of accounts. A covenant is not breached twice on one report. */
-  readonly tested: Record<string, string>;
+/** Whether this line's breach on these accounts has already been announced (Law 19: read it). */
+function alreadySaid(ctx: MechanismContext, bond: InstrumentId, quarter: string): boolean {
+  return ctx.journal
+    .forSubject('covenant.breached', String(bond))
+    .some((e) => e.data['quarter'] === quarter);
 }
-
-const state = (ctx: MechanismContext): Book => ctx.state<Book>('covenants', () => ({ tested: {} }));
 
 /**
  * B3, N13.a: every live line says where it ranks and what it promised. A bond whose ranking nobody
@@ -264,17 +268,11 @@ function paper(): Family {
 export function corporateBondModule(): SystemModule {
   return {
     id: 'corporate-bond',
-    nouns: [
-      {
-        name: 'covenants',
-        kind: 'noun',
-        holds:
-          'which covenant of which line has been tested against which set of accounts',
-        why:
-          'a covenant is a TERM of an agreement, and a test of one is that agreement performing or in breach. With no agreement to be a term of, the test is a private note and a breach reaches nobody.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
-      },
-    ],
+    // XI-8, item 9.1: NO NOUNS, and the `covenants` slot was NOT an `Agreement` waiting for a
+    // home. A corporate bond is an INSTRUMENT — it has holders and it trades — and the agreement
+    // store is explicitly what holds the owing that is NOT a security, so a bond must not become
+    // one. The covenant is a TERM of that instrument and already lives on it; what the slot held
+    // was a memo of which line had been tested against which quarter, which the journal says.
     spec: 'Corporate Credit',
     requires: ['firms', 'reporting'],
     instrumentKinds: [corporateBond],

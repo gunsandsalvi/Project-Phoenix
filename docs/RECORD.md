@@ -6937,3 +6937,35 @@ being settled, and a failed return ends it too.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. Three books left: loan, covenant, deal.
+
+---
+
+## Item 9, eighth stage — the covenant memo was a mirror too (9.1f)
+
+**What.** The fifth of the seven, and **the second one the plan's text was wrong about.**
+`corporate-bond`'s `covenants` slot was declared a placeholder for `Agreement`, and its `why` argued
+the case: *"a covenant is a TERM of an agreement, and a test of one is that agreement performing or
+in breach. With no agreement to be a term of, the test is a private note and a breach reaches
+nobody."*
+
+The first half is right and the conclusion does not follow. **A corporate bond must not become an
+agreement**: it is an INSTRUMENT — it has holders, an issued amount and a market — and
+`register/agreements.ts` says in as many words what it is for, *"the register holds what is OWNED;
+this holds what is OWED where the owing is not a security"*. The covenant is a term of that
+instrument and it already lives on it, in `CorporateBondTerms.covenants`, where the test reads it.
+
+**What the slot actually held was `tested: Record<line, quarter>`** — a memo of which line had
+already been looked at against which set of accounts, so a breach is not announced twice. That is a
+second copy of a fact the journal already holds, which is the mirror Law 19 names, and it is
+replaced by the read: `journal.forSubject('covenant.breached', bond)` against the quarter.
+
+The difference that falls out is the honest one. The old memo was written for every line it LOOKED
+at, breach or not, so a passing line was marked as "tested" and never looked at again on those
+accounts. The test is a read of one published report and the instrument's own terms — pure, and
+free to repeat — so what must not happen twice is the EVENT and not the test. A line that passes is
+re-read every period and produces nothing, which is what a VERIFY does.
+
+`corporateBondModule` declares no nouns now.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. Two books left: the loan and the deal.
