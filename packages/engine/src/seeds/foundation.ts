@@ -156,6 +156,8 @@ import { lifeParam, spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawEquity, equityLineOf, type EquityDecl } from '../mechanisms/equity/data.js';
+import { drawSmallBusiness, SMALL_PER_NAMED, type SmallFirmDecl } from '../mechanisms/small-business/data.js';
+import { smallBusiness } from '../mechanisms/small-business/index.js';
 import { FUND, funds } from '../mechanisms/funds/index.js';
 import {
   drawTrackers,
@@ -2190,6 +2192,12 @@ export interface FoundationDraw {
    * them are public is one field of the row rather than which rows there are.
    */
   readonly equities: readonly EquityDecl[];
+  /**
+   * §42 A2, A6 (item 11): THE SMALL-BUSINESS TIER, cut into cells. It is drawn beside the named
+   * firms because it is the same draw seen at a different resolution: how many businesses there
+   * are, where they are, who they bank with, and how unequal they are in size.
+   */
+  readonly small: readonly SmallFirmDecl[];
   readonly funds: readonly FundDecl[];
   readonly trackers: readonly FundDecl[];
   /**
@@ -2209,6 +2217,19 @@ export function foundationDraw(
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
   const equities = drawEquity(firmRows, bankRows, seed);
+  /**
+   * §42 A2, A5, A6, Seed B1.a (item 11): THE SMALL-BUSINESS TIER. Its lines are the ones whose
+   * output is made where it is bought — a haircut, a meal, an hour of a plumber's time — because
+   * that is what the small tier of a real economy overwhelmingly IS, and it is a READ of the goods
+   * table rather than a second list of lines (Law 19). How many of them there are is this world's
+   * named firms times a multiple, so the sector scales with the world and not with this file.
+   */
+  const small = drawSmallBusiness(
+    GOODS.filter((g) => g.output === 'capacity').map((g) => g.subUnit),
+    bankRows,
+    firmRows.length * SMALL_PER_NAMED,
+    seed,
+  );
   const pools = drawFunds(bankRows, seed);
   /**
    * §28 A1, A4, B1 (item 13.2): THE STRATEGY HOUSE, and it is drawn beside the long-only pools
@@ -2266,6 +2287,7 @@ export function foundationDraw(
     banks: bankRows,
     firms: firmRows,
     equities,
+    small,
     funds: [...pools, ...strategies, ...privateEquity],
     trackers,
     // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
@@ -2686,6 +2708,13 @@ export function foundationSpec(
       capitalProgramme([...CAPITAL_KINDS, STORAGE_KIND, VESSEL_KIND]),
       labour(),
       firms(drew.firms),
+      /**
+       * §42 A1, A5, A6 (item 11): THE TIER BELOW THE NAMED FIRMS. After `firms` and `banks`,
+       * because a small firm banks with one of this world's banks and sells to one of its firms,
+       * and the seed is where the three meet — the sector's cells are keyed on a bank by NAME, and
+       * the module that owns them may not import the module that owns a bank.
+       */
+      smallBusiness(drew.small),
       households(),
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).

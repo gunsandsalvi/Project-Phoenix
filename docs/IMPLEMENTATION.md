@@ -82,7 +82,7 @@ checked, not assumed.
 | Labour | 23 | 1 | 3 | 0 | 27 |
 | **Housing** | **6** | 1 | **19** | **3** | 26 |
 | Households | 20 | 4 | 9 | 0 | 33 |
-| **Small-Business Pools** | **2** | 0 | **26** | 0 | 28 |
+| **Small-Business Pools** | **4** | 3 | **21** | 0 | 28 |
 | **Cross-Border** | **6** | 2 | **18** | 0 | 26 |
 | Ratings | 16 | 3 | 4 | 0 | 23 |
 | Reporting | 32 | 5 | 1 | 0 | 38 |
@@ -317,10 +317,10 @@ causes no defaults, and the entire credit content of the sector is gone"*).
 
 ### Steps
 
-- [ ] 11.1 The module skeleton: `requires: ['firms', 'banks', 'trade-credit']`. Kinds, profiles, units, params, phases anchored at `corporateActions | markets | revaluation`, participants per party kind, audit contributions, a seed contribution. Every clause cited with `@spec`.
-- [ ] 11.2 The party kind: a firm cell. `representation: 'cell'`, `fails: ['cash','solvency']`, `borrows: true`, an `objective` (item 15 of the old file requires one), and a key whose dimensions are **region** and **bank** (A6.a) — never its lender, which is a register row.
-- [ ] 11.3 Per-member state: what it holds, what it owes, its cash flow, its leverage and its coverage. **`integrate(f)` and never a mean** (XI-15). A partial event splits the cell.
-- [ ] 11.4 The seed draw: a distribution of sizes, sectors and regions — **A3's distribution is the point**, so the draw must produce dispersion and the test must show a mean-preserving spread changing the count of defaults (A2.a). No representative small firm.
+- [x] **11.1 DONE.** The module skeleton: `requires: ['firms', 'banks', 'trade-credit']`. Kinds, profiles, units, params, phases anchored at `corporateActions | markets | revaluation`, participants per party kind, audit contributions, a seed contribution. Every clause cited with `@spec`. **`PRODUCING_KINDS` in `registry/profiles.ts` is how the sector is reached**: every module that used to walk `ofKind(FIRM)` to find this world's businesses reads that row, so a mechanism gains the tier by a registry row rather than by branching on a kind id (Law 15). Nothing reads it yet — the modules move over in 11.5–11.7, each with the behaviour it turns on.
+- [x] **11.2 DONE.** The party kind: a firm cell. `representation: 'cell'`, `fails: ['cash','solvency']`, `borrows: true`, an `objective` (item 15 of the old file requires one), and a key whose dimensions are **region** and **bank** (A6.a) — never its lender, which is a register row.
+- [ ] 11.3 **Its DRAWN state is done at 11.4** (size, line, bank, region, weight — declared per cell in the parameter register). What is left is the state that MOVES: what it holds, what it owes, its cash flow, its leverage and its coverage, all of which are outcomes of 11.5–11.8 rather than things to declare. Per-member state: what it holds, what it owes, its cash flow, its leverage and its coverage. **`integrate(f)` and never a mean** (XI-15). A partial event splits the cell.
+- [x] **11.4 DONE.** The seed draw: a distribution of sizes, sectors and regions — **A3's distribution is the point**, so the draw must produce dispersion and the test must show a mean-preserving spread changing the count of defaults (A2.a). No representative small firm.
 - [ ] 11.5 They sell and buy (A4): wire them into the goods markets as both sides, and into `trade-credit`'s `termsOffered` as buyers — which is where **A-63**'s "a household gets thirty days on its bread" was fixed by asking what kind of party the buyer is; a small firm is the party that SHOULD get terms.
 - [ ] 11.6 They employ (A4): a `venueParticipant` into the labour venue — which item 3 made reachable.
 - [ ] 11.7 The loans (B1, B2): a row per (lender, cell) through item 9's agreement, with a rate the bank **quoted** (Banks Lending C3.a — one rate per loan, what was quoted), a term, an amortisation, and security on the firm's assets.

@@ -64,6 +64,7 @@ export * from './mechanisms/merchants/index.js';
 export * from './mechanisms/trade-credit/index.js';
 export * from './mechanisms/securitisation/index.js';
 export * from './mechanisms/securities-lending/index.js';
+export * from './mechanisms/small-business/index.js';
 export * from './mechanisms/corporate-bond/index.js';
 export * from './mechanisms/short-term-debt/index.js';
 export * from './mechanisms/short-term-debt/paper.js';

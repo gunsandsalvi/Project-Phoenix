@@ -9501,3 +9501,78 @@ Plan completion 92.9%; requirement coverage **65.4%** (896 MET of 1371), from 64
 
 Typecheck 0, lint 0, `check:spec` 220 tags, `check:forbids` 6 over 217 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 11.1–11.4 — the sector exists, and it is a distribution
+
+§42 was **2 of 28 MET and both were the generic cell kernel**: `A6` cited `parties/party.ts`
+(cells exist) and `E5` cited `world/cells.ts` (a weight is a count). Nothing in sixty thousand lines
+was a small firm, and the one mention of the sector was a comment in `firms/data.ts`.
+
+What that cost is not its own 28 clauses. **A5.a says small firms are the sector where a credit
+tightening bites first and hardest**, and without them a tightening has nowhere to bite: every
+borrower in this world is large enough to reach a bond market. §36 A4 calls this *"the tier that
+lives on"* trade credit, so eleven of Trade Credit's clauses are missing partly because the tier
+below them does not exist.
+
+### A small firm is a firm, and that decided the kind
+
+A1 says it outright, and the plan's own words were *"not a new kind of thing; a firm with a weight."*
+It is nevertheless a second KIND, and the reason is mechanical: a kind states how it is represented
+(`PartyKindProfile.representation`) and cannot be both named and a cell.
+
+What that costs is one name. What it buys is **A6.b**: *"a weight of one is a named firm, so the
+boundary between this sector and Corporate Credit's is not a modelling line but a SIZE"* — and A6.c
+promotes a cell across it. **Two kinds that can name each other is what a promotion needs**; one kind
+with two representations is not a thing a registry can say.
+
+So `SMALL_FIRM` is in `registry/profiles.ts`, for the reason `FUND` is: a name a module that does not
+own the kind still has to be able to say. Beside it is **`PRODUCING_KINDS`** — the list every module
+that asks *who are the firms in this world* walks — so a mechanism gains the tier by reading a
+registry row rather than by branching on a kind id (Law 15). Nothing reads it yet; the modules move
+over in 11.5–11.7, each with the behaviour it turns on.
+
+### A6.a decided the data model, and it forced a third dimension
+
+*"Every relationship that must be named is either a dimension of the cell's key or a register row,
+never an attribute averaged inside it."* The key is **region, bank and LINE**.
+
+The third is a data change A6.a explicitly permits (*"lifting a row into the key is a data change"*)
+and it is **forced**: a cell is homogeneous, so a cell whose members were in different lines would
+have a cost base, a customer and a labour venue that were averages over lines — A2.a one level down.
+
+The **LENDER is not in it**, and a test says so. A lender is a loan row per (lender, cell), and
+lifting it into the key is exactly the relationship the model would then be unable to name.
+
+And the REGION is read off the BANK rather than drawn beside it: *a cell lives where its bank books*
+is the same sentence the households seed makes about where this world's people are, and two
+statements of one fact is how they come to disagree (Law 4).
+
+### A2.a is the clause the item turns on, and it is what the test asserts
+
+*"No representative small firm. Default is a threshold event; with one average firm a mean-preserving
+spread causes no defaults, and the entire credit content of the sector is gone."*
+
+Nothing about any one cell is written down. What is stated is the WIDTH — a tail, and a **fatter one
+than the named sector's**, because the small tier is where the distance between the biggest member
+and the median is greatest: the firm about to be promoted out of it and the one person with a van are
+both in here. One population per key, cut into cells, each drawing its own size, **so the dispersion
+is within a key and not only across keys**.
+
+The test asserts the dispersion rather than the draw, deliberately: a flat draw would satisfy every
+other clause in §42 and remove the sector's whole credit content without failing anything.
+
+### What it does NOT do, said in the module rather than implied
+
+The sector exists and **does nothing**. It declares no phases and no participants, because a module
+with phases that ran and did nothing is the *"built on paper and dead in the world"* state Part 0
+exists to find. It sells and buys on trade credit (11.5), employs (11.6), borrows from a named lender
+on its own row (11.7), defaults from its own cash flow (11.8) and is promoted when it outgrows A5
+(11.10) — five steps, each naming what it turns on, and the COVERAGE rows say which verb is missing
+rather than reading as done.
+
+§42 goes **2 MET to 4 MET, 3 PARTIAL** of 28, and it is no longer an absent sector.
+
+Typecheck 0, lint 0, `check:spec` 222 tags, `check:forbids` 6 over 219 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.
