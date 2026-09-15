@@ -9576,3 +9576,41 @@ rather than reading as done.
 
 Typecheck 0, lint 0, `check:spec` 222 tags, `check:forbids` 6 over 219 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+## Review 2026-09-15 — the world did not open, and the plan is rewritten
+
+A full adversarial review of `docs/` against the engine, on the owner's instruction: every document
+read in full, every claim checked at its file and line, one rig world assembled and stepped once.
+The outcome is `docs/IMPLEMENTATION.md`, rewritten from the ground up as the one ordered list.
+
+**What it found, in one line each** (Part 0 of the plan has the evidence):
+
+- `rigWorld()` throws at assembly and has since item 10b (2026-09-14): nine successive blockers
+  from four closed items (`shortTermDebt.line` declared `shape` with a death; `smallFirm` with no
+  bank choice; `funds.manager` anchored to a phase declared after it; `paper.backstop` at the wrong
+  cycle; the small-business seed running before the banks exist; the kernel's single cell-key
+  schema refusing a second cell population; a manager party added once per pool; a subordinated
+  raise throwing on a name nobody has priced; a fractional staff quantity at period 23). Items
+  10b–11.4 were closed on a world that could not be built; their measurements are void.
+- With the blockers patched (and the patches discarded), the rig clears one or two of ~340
+  sessions a period for six periods and then none; parties grow 44 → 302 in twenty periods
+  because cells split every period and `cells.merge` has no caller.
+- The policy rate has no writer but its declaration; a negative rate is inexpressible; the OMO desk
+  posts market orders to a written holding path; five party kinds are immortal; no household can
+  borrow (`housing/index.ts:571`) or fail; no arrears exist; the opening states 22 prices, a yield
+  and three shares; three numbering systems and two completion figures disagree; 98 coverage rows
+  cite a finding that does not exist; 21 test files name drawn parties.
+- Discipline that holds: no bounds outside `core`, no `?? 0`, no kind branches, no module imports,
+  all `@spec` tags resolve, the silent FORBIDs hold, typecheck and lint green.
+
+**What changed.** `docs/IMPLEMENTATION.md` is the plan: item **0** (the world opens, with
+`check:opens` as a standing guard), **0a** (phase resolution after collection), **0b** (the cell key
+on the party kind), **0c** (one truth in the documents), **0d** (the overdue suite run, triaged),
+**0e** (Part 3, the optimisation campaign with a resolution ladder as its gate), then the carried
+items with **12a** (households borrow, owe and fail; arrears), **18a** (a rate rule, negative rates,
+the desk posts a schedule) and **22a** (the opening is not an equilibrium) inserted at their
+dependency positions. No engine code was changed by the review.
+
+**Tests run**: `npm run typecheck`, `npm run lint`, `check:spec`, `check:forbids`, `check:deaths`,
+`check:existence` (all green); one smoke assembly of the rig (throws; see above); one profile of
+the patched rig over 20 periods (Part 3 §3.1). The suite was not run: it cannot be until item 0.
