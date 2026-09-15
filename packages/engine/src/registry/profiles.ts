@@ -81,21 +81,21 @@ export const FUND_MANAGER = partyKindId('fundManager');
  * **not a modelling line but a SIZE** — a weight of one IS a named firm — so the two kinds have to
  * be able to name each other for a cell to be promoted across (A6.c).
  *
- * `PRODUCING_KINDS` below is the list every module that asks "who are the firms in this world"
- * walks, so a mechanism gains the sector by reading a registry row rather than by branching on a
- * kind id (Law 15).
+ * `PRODUCING_KINDS` below is the list a module asks when it wants this world's BUSINESSES rather
+ * than its named companies. Today nobody asks it: the five `ofKind(FIRM)` walks left are about
+ * things only a named company has — accounts to publish, a bond to issue, its own line — and a
+ * cell of small firms has none of them (11.0a). The list stands for the reader 11.0c brings, the
+ * labour venue's employers, which a small firm is.
  */
 export const SMALL_FIRM = partyKindId('smallFirm');
 
 /**
  * §42 A1, A4, Law 15: THE KINDS THAT ARE FIRMS — they sell, they employ, they buy on trade credit
  * and they can fail, and which of them is a cell is a fact about its representation and not about
- * what it does.
- *
- * Every module that used to walk `ofKind(FIRM)` to find this world's businesses walks this instead.
- * It is registry DATA in the sense Law 15 means — a list a reader can see, extended by adding a row
- * — and it is the alternative to eleven modules each deciding for themselves whether a small firm
- * counts as a firm, which is how a sector comes to exist in the register and in nobody's mechanism.
+ * what it does. It is registry DATA in the sense Law 15 means — a list a reader can see, extended
+ * by adding a row — and it is the alternative to eleven modules each deciding for themselves
+ * whether a small firm counts as a firm. It has no reader yet (see above), and saying that it had
+ * was the stale claim 11.0a found.
  */
 export const PRODUCING_KINDS: readonly PartyKindId[] = [FIRM, SMALL_FIRM];
 

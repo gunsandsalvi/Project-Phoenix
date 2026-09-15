@@ -200,6 +200,13 @@ export interface Needs {
   readonly dealsIn?: string;
   /** How many of them it needs. An interdealer market takes two (E3). */
   readonly dealers?: number;
+  /**
+   * Goods A2, 11.0a: LINES THIS WORLD MUST MAKE — a firm in each named sub-unit. A small firm in
+   * `power` buys coal, and a rig of twelve firms over sixty-two lines has drawn no mine as often
+   * as not; a test about a buyer of coal asks for a world with a seller of it (Seed B1.a: what
+   * moves is a count).
+   */
+  readonly makes?: readonly string[];
 }
 
 /** What a world has to BE to show the thing a test is about: how many banks and how many firms. */
@@ -230,7 +237,8 @@ export function rigShapeFor(seed: string, need: Needs): RigShape {
     const shortOfFirmThings =
       d.equities.filter((r) => r.listed).length < (need.listed ?? 0) ||
       d.funds.length < (need.funds ?? 0) ||
-      d.trackers.length < (need.trackers ?? 0);
+      d.trackers.length < (need.trackers ?? 0) ||
+      (need.makes ?? []).some((subUnit) => firmsIn(d, subUnit).length === 0);
     if (!shortOfDealers && !shortOfFirmThings) return { banks, firms };
     if (shortOfDealers) banks += RIG_BANKS;
     if (shortOfFirmThings) firms *= 2;

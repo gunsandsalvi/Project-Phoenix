@@ -394,10 +394,15 @@ function cargo(
     if (take <= 0) continue;
     // E2: the hulls this cargo needs, and never more than the carrier has free. One hull's worth
     // of cargo takes one hull, which is what a hold IS.
+    // Register D5.a, 11.0a: THE HULLS IT HAS FREE NOW, read off the register at the pledge and not
+    // off the count taken when the session opened — a carrier loading two cargoes in one session
+    // pledged the same hull twice, and the second pledge was refused. Nothing shipped abroad in
+    // an opens run until the small firms bid for flour across the water, so it never showed.
+    const freeHulls = ctx.register.free(carrier, hulls.hull);
     const need = asQty(
       atMost(
         Math.ceil(take / ctx.params.count(HOLD_UNITS)),
-        hulls.hulls,
+        freeHulls,
         'a carrier commits the hulls it has',
       ),
     );
@@ -467,7 +472,10 @@ function cargo(
           freight: share,
         },
       ],
-      cause: 'trade',
+      // Commodities Spot F1, 11.0a: a good becomes a good IN TRANSIT — units are made, not traded — and
+      // settlement admits a `create` only under the cause that makes units. No cargo had ever been
+      // loaded in an opens run until the small firms bid for flour abroad.
+      cause: 'production',
       reason: `${shipper} ships ${take} of ${i.terms.subUnit} to ${to} with ${carrier}`,
     });
     if (r.outcome !== 'settled') continue;
@@ -554,7 +562,8 @@ function arrive(ctx: MechanismContext): void {
         },
         { kind: 'voyage', act: 'land', voyage: v.id },
       ],
-      cause: 'corporateAction',
+      // Commodities Spot F1: and back the other way at the quay — the same transformation, landed.
+      cause: 'production',
       reason: `${units} of ${i.terms.subUnit} arrives in ${to}`,
     });
     if (r.outcome !== 'settled') continue;
@@ -630,8 +639,10 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         name: FREIGHT_SAIL,
         spec: 'Freight A3 Freight B4 Freight D4',
         anchor: { before: 'corporateActions' },
-        reads: [],
-        writes: [],
+        // B4: a voyage stands in the weather, which the environment published (Clearing F1.a: a
+        // phase says what it reads). No voyage had ever sailed in an opens run before 11.0a.
+        reads: [{ kind: 'event', name: 'environment.state', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: FREIGHT_SAIL }],
         run: (ctx: MechanismContext): void => {
           sail(ctx, ctx.params.ratio(windHardnessParam(VESSEL)));
         },

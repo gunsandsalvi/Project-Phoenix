@@ -10709,3 +10709,43 @@ walks the records, because it is a check per instruction and there is nothing to
 The remaining readers on 0g.2's list are module walks the third-rung profile does not name (no
 family or module walk above three per cent), so they stay listed and are taken when a profile
 names them rather than as churn (Law 18: gate on behaviour, and on a number).
+
+## Item 11.0a — A small firm makes and sells
+
+**The sector does something.** A cell of small firms makes its line out of its members' hours — one
+person and a van, so no wage leaves it for them — at the recipe the good declares, from the inputs
+it holds; bids for the next batch's inputs at what each is worth to it (the output at the price it
+expects, less the other inputs, the arithmetic a named firm runs with no wage term) and with the
+money it has; and offers what it made at whatever the book gives, because a service cannot be held.
+The decision is taken before the labour venue meets, the batch is started after wages are paid, and
+the sell is read off the register when the market asks. The seed opens each cell with one period
+of its inputs at the opening print, the foundation's own statement for a named firm.
+
+**Two things the step named that it does not do.** A drawn productivity per cell would be a second
+dispersion beside size (Law 2) over a party that is many firms; the recipe is the technology. And
+`ordersFrom` is not shared with the firms module, because a module never imports a module; what
+is shared is the one public read both needed — `registry/expectation.ts expectedPriceOf`, own
+outlook else the tape — and the firms' and households' own copies of it are a Law 4 finding.
+
+**What the test found about the rig.** A rig of twelve firms has drawn no mine as often as not, so
+`rigFor` gained `makes: ['coalRaw']`; and in the world that has one, the mine never starts —
+`bound: labour`, no unit cost, no stock at the seed — so no input line trades and the small firms
+live off their opening stock. That is the named firms' condition and is positioned at 12b.3.
+`PRODUCING_KINDS` claimed every module walked it; none does, and the comment says so.
+
+**Three build stops in freight, reached for the first time.** The small firms of one country bid
+for flour across the water, and a merchant shipped it — the first cargo ever loaded in an opens
+run. Loading and landing create the good in transit under causes settlement refuses for a
+`create` (Commodities Spot F1: units are produced); both are the transformation a batch is and
+carry `production` now. A carrier loading two cargoes in one session pledged the same hull twice,
+because the free count was taken when the session opened; the pledge reads the register. And the
+sail phase read the weather and wrote its own event without declaring either (Clearing F1.a).
+All three are fixed at the site and none is this item's mechanism.
+
+**Measured, not chased.** With the sector live the first rung ends the year with 63 small firms of
+144 and 26 cells of 37: cells that cannot buy inputs run out of cash and fail, which is XI-3 doing
+what it says (`fails: ['cash', 'solvency']`) in a rig whose upstream lines never trade. Where they
+go — an estate for a cell — is 11.0e's.
+
+**Checks.** `check:opens` green on both worlds; the freight, small-business, lattice, ladder and
+household tests green; lint, typecheck, `check:spec`, `check:forbids`, `check:deaths` green.

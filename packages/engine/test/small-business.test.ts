@@ -9,8 +9,8 @@
  * satisfy every other clause and remove the credit content of §42 without failing anything.
  */
 import { describe, expect, it } from 'vitest';
-import { SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness, smallBusiness } from '../src/index.js';
-import { rigDraw, rigWorld } from './rig.js';
+import { SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness } from '../src/index.js';
+import { rigDraw, rigFor, rigWorld } from './rig.js';
 
 describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () => {
   it('opens with small firms in it, each a cell standing for a count of them', () => {
@@ -68,14 +68,24 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     expect(SMALL_PER_NAMED).toBeGreaterThan(1);
   });
 
-  it('declares what it does NOT do yet, rather than an empty phase that reads as done', () => {
-    const m = smallBusiness([]);
-    // 11.5–11.10: it sells, employs, borrows, defaults and is promoted, and each is a step. A
-    // module with phases that ran and did nothing would be the "built on paper and dead in the
-    // world" state this plan exists to find.
-    expect(m.phases).toEqual([]);
-    expect(m.participants).toEqual([]);
-    expect(m.partyKinds.map((k) => String(k.id))).toEqual(['smallFirm']);
+  it('makes its line out of its members\u2019 hours and what it holds, and sells what it made (A1, 11.0a)', () => {
+    // A small firm in `power` burns coal it buys from a mine, and a rig of twelve firms has drawn
+    // no mine as often as not: the test asks for a world that has one (Seed B1.a).
+    const { world: w } = rigFor('sb-makes', { makes: ['coalRaw'] });
+    for (let i = 0; i < 8; i += 1) w.step();
+    const made = w.journal.ofKind('smallBusiness.produced').filter((e) => e.data['settled'] === true);
+    expect(made.length).toBeGreaterThan(0);
+    // A1: "small firms are firms" — what it made reached a buyer through a cleared book, as an
+    // asset leg from a small-firm cell in a settled instruction with money coming back.
+    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
+    let sold = 0;
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'settled') continue;
+      for (const leg of r.instruction.legs) {
+        if (leg.kind === 'asset' && cells.has(String(leg.from))) sold += 1;
+      }
+    }
+    expect(sold).toBeGreaterThan(0);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {

@@ -39,8 +39,18 @@ import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
+import { DECIDED, decide, marketsOf, ordersIn, produce } from './profile.js';
+import type { MechanismContext } from '../../world/context.js';
+import type { MarketDecl } from '../../clearing/market.js';
+import type { Order } from '../../clearing/solver.js';
+import type { MarketId } from '../../core/ids.js';
 import { bandOf } from '../../registry/lattice.js';
-import { currencyUnit } from '../../core/ids.js';
+import { currencyUnit, unitId } from '../../core/ids.js';
+import { goodId, goodTerms } from '../../registry/physical.js';
+import { PEOPLE_PARAMS } from '../../registry/registry.js';
+
+/** Law 8: an hour is the labour venue's unit, and a member's hours are counted in it. */
+const HOURS = unitId('hours');
 import { asCash, asRatio, over, scale } from '../../core/measure.js';
 import { sum } from '../../core/num.js';
 import type { PartyId } from '../../core/ids.js';
@@ -207,7 +217,15 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
      * The seed below adds nothing, so nothing here needs it; when item 0b turns that seed back on,
      * this module is DECLARED AFTER the seed rather than declaring it a requirement in place.
      */
-    requires: ['firms', 'banks'],
+    requires: ['firms', 'banks', 'goods', 'expectations', 'labour'],
+    nouns: [
+      {
+        name: DECIDED,
+        kind: 'working',
+        holds: 'the batch each cell will start and the input bids it decided, and the period it decided them in',
+        why: 'it is how this module gets from its decide phase to its produce phase and its own orders (0e\u2032.4); nothing outside it has an opinion about a batch nobody has started.',
+      },
+    ],
     instrumentKinds: [],
     partyKinds: [
       {
@@ -255,12 +273,44 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
      */
     bankChoices: [{ partyKind: SMALL_FIRM, chooses: smallFirmChoosesBank }],
     /**
-     * Item 11.5–11.10: it has none YET, and the module says so rather than declaring an empty one
-     * that reads as done. What it sells, what it employs, what it borrows and what it defaults on
-     * are four steps, and each arrives with the phase that runs it.
+     * 11.0a: IT MAKES AND IT SELLS. The decision is taken before the labour venue meets, like a
+     * named firm's; the batch is started after wages are paid, like a named firm's line; and what
+     * was made is offered when the market asks, because a service cannot be held (`profile.ts`).
      */
-    phases: [],
-    participants: [],
+    phases: [
+      {
+        name: 'smallBusiness.decide',
+        spec: 'Small-Business Pools A1 Goods B1 Labour C1',
+        anchor: { before: 'labour.match' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'smallBusiness.plan' }],
+        run: (ctx: MechanismContext): void => {
+          for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
+            if (p.status.alive) decide(ctx, p.id);
+          }
+        },
+      },
+      {
+        name: 'smallBusiness.produce',
+        spec: 'Small-Business Pools A1 Goods B5 Goods E1',
+        anchor: { after: 'labour.pay' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'smallBusiness.produced' }],
+        run: (ctx: MechanismContext): void => {
+          for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
+            if (p.status.alive) produce(ctx, p.id);
+          }
+        },
+      },
+    ],
+    participants: [
+      {
+        partyKind: SMALL_FIRM,
+        // Law 18: the books it is in are its own line's and the inputs it decided to bid for.
+        markets: (view: ParticipantView): readonly MarketId[] => marketsOf(view),
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => ordersIn(view, m.id),
+      },
+    ],
     families: [],
     /**
      * A6, A6.a, XI-15, Seed B1.a, 0f.9: THE SECTOR OPENS, ONE CELL PER OCCUPIED KEY.
@@ -328,6 +378,30 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
           key: cellKeyOf(String(pool.bank), pool.line, pool.region),
           status: { alive: true, standing: 'good' },
         });
+        /**
+         * Seed D1, Goods A2 (11.0a): AND ONE PERIOD OF WHAT ITS LINE DRAWS, so its first batch is
+         * not waiting on a market session — the same statement the foundation makes for a named
+         * firm, sized the same way: what a period of starting draws of each input, off the good's
+         * own recipe (Law 19), at the level the market opened at. A line whose input this world
+         * does not make opens with none of it, which is a real state and not a default.
+         */
+        const output = goodId(pool.line, pool.region);
+        if (ctx.instruments.has(output)) {
+          const recipe = goodTerms(ctx.instruments.get(output)).recipe;
+          const hours = ctx.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS);
+          const perMemberBatch = over(hours, ctx.params.ratio(recipe.labourHoursPerUnit), 'what one member can start');
+          for (const input of recipe.inputs) {
+            const line = goodId(input.subUnit, pool.region);
+            if (!ctx.instruments.has(line)) continue;
+            const opened = ctx.prices.latest(line, ctx.period);
+            if (!opened.some) continue;
+            const drawn = ctx.registry.deliverable(
+              scale(perMemberBatch, ctx.params.ratio(input.qtyPerUnit), 'what a period of starting draws'),
+            );
+            if (drawn <= 0) continue;
+            ctx.endowUnits(id, line, drawn, opened.value.price);
+          }
+        }
         // Seed C4: what its members hold between them, stated per member as every endowment is.
         ctx.endowMoney(
           id,
