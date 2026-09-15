@@ -40,11 +40,13 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
-import { addDays } from '../../calendar/civil.js';
+import { addDays, addMonths } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import {
   agreementKindId,
   currencyCode,
+  instrumentId,
+  partyId,
   marketId,
   moneyInstrumentId,
   paramId,
@@ -77,6 +79,7 @@ import {
   type PaperTerms,
 } from './paper.js';
 import { fundingPublishedBy } from '../../registry/funding.js';
+import { LOAN, type LoanTerms } from '../../registry/credit.js';
 
 export const PAPER_PARAMS = {
   /** A1.b: how long paper runs for. Weeks to months — a convention of the market, stated with it. */
@@ -89,6 +92,8 @@ export const PAPER_PARAMS = {
   commitmentFee: paramId('shortTermDebt.commitmentFee'),
   /** B4: how big the line an issuer opens with is, against its own book. A PLACEHOLDER (17.2). */
   line: paramId('shortTermDebt.line'),
+  /** B4 (12a.7): how long a drawing on the line runs for. A convention of the facility. */
+  lineMonths: paramId('shortTermDebt.lineMonths'),
 };
 
 /** A2.a: the convention this world's short paper is quoted on, stated because it is material. */
@@ -519,14 +524,35 @@ export interface BackstopTerms extends AgreementTerms {
   readonly kind: typeof BACKSTOP;
   /** The most the issuer may draw. The bank's own decision when it agreed to the line. */
   readonly limit: Cash;
-  /** What it has drawn of that, which is the part it pays interest rather than a fee on. */
-  readonly drawn: Cash;
   /** B4: what the undrawn headroom costs per annum, struck when the line was agreed. */
   readonly fee: Ratio;
+  /**
+   * 12a.7: what a DRAWING costs per annum — the rate the bank quoted the name when it committed
+   * the line. What has been drawn is not a term: it is the outstanding of the loan row the drawing
+   * wrote (`drawnOn`), read off the register (Law 19) — a number kept here beside it was a mirror.
+   */
+  readonly rate: Ratio;
 }
 
 export const isBackstop = (t: AgreementTerms): t is BackstopTerms =>
-  'limit' in t && 'drawn' in t && 'fee' in t;
+  'limit' in t && 'fee' in t && 'rate' in t;
+
+/**
+ * 12a.7, Banks Lending A1, F1.a: THE ROW A DRAWING IS. A backstop drawn is a loan — the bank's
+ * money created against a claim on the issuer, at the line's rate, with a maturity — and it is
+ * ONE row per line, drawn on again and again (Corporate Credit C9), named so a reader sees whose
+ * it is and what it stands behind.
+ */
+function backstopLoanId(bank: PartyId, issuer: PartyId): InstrumentId {
+  return instrumentId(`loan:${String(bank)}:${String(issuer)}:backstop`);
+}
+
+/** Law 19: what the issuer has drawn on this line — the outstanding of its row, or nothing yet. */
+function drawnOn(ctx: MechanismContext, row: Agreement): Cash {
+  const id = backstopLoanId(row.creditor, row.debtor);
+  if (!ctx.instruments.has(id) || !ctx.instruments.get(id).status.live) return asCash(0, 'it has drawn nothing');
+  return heldAsMoney(ctx.register.heldTotal(id).value, 'what it has drawn and not repaid');
+}
 
 /**
  * B4: AN ISSUER KEEPS A BACKSTOP, and it is granted by a named bank rather than stated by the world.
@@ -561,31 +587,40 @@ function openLines(ctx: MechanismContext): readonly Agreement[] {
 export function grantBackstops(ctx: MechanismContext): void {
   const held = new Set<string>();
   for (const row of openLines(ctx)) held.add(String(row.debtor));
-  for (const kind of [FIRM, BANK]) {
-    for (const p of ctx.parties.ofKind(kind)) {
-      if (!p.status.alive || held.has(String(p.id))) continue;
-      const ccy = ctx.registry.currencyOf(p.region);
-      const bank = ctx.accountOf(p.id, ccy).issuer;
-      // A bank banks at its central bank for reserves, and a line to yourself is not a backstop.
-      if (bank === p.id) continue;
-      const book = ctx.participant(p.id).equity();
-      if (book <= 0) continue;
-      const terms: BackstopTerms = {
-        kind: BACKSTOP,
-        limit: scale(book, ctx.params.ratio(PAPER_PARAMS.line), 'the line it was granted'),
-        drawn: asCash(0, 'it has drawn nothing'),
-        fee: ctx.params.perAnnum(PAPER_PARAMS.commitmentFee),
-      };
-      if (terms.limit <= 0) continue;
-      ctx.owes({
-        debtor: p.id,
-        creditor: bank,
-        ccy,
-        owed: 0,
-        terms,
-        why: `${String(bank)} commits a line to ${String(p.id)} against its short paper`,
-      });
-    }
+  // 12a.7: A LINE IS ARRANGED WITH THE PAPER, not handed to every firm in the world. The issuers
+  // are the ones that offered paper this period (this module's own event); an issuer that has a
+  // line keeps it, and one that has none gets one from its bank the first time it comes to the
+  // market — at the rate that bank quoted the name this period. A name nobody quoted has no
+  // lender behind its paper, and that is the refusal (Corporate Credit C3.a), not a line at nothing.
+  for (const e of ctx.journal.ofKindIn('paper.offered', ctx.period)) {
+    const issuer = e.subjects[0];
+    if (issuer === undefined || held.has(issuer)) continue;
+    const p = ctx.parties.get(partyId(issuer));
+    if (!p.status.alive) continue;
+    held.add(issuer);
+    const ccy = ctx.registry.currencyOf(p.region);
+    const bank = ctx.accountOf(p.id, ccy).issuer;
+    // A bank banks at its central bank for reserves, and a line to yourself is not a backstop.
+    if (bank === p.id) continue;
+    const quote = creditQuoteThisPeriod(ctx.journal, String(p.id), ctx.period);
+    if (!quote.some) continue;
+    const book = ctx.participant(p.id).equity();
+    if (book <= 0) continue;
+    const terms: BackstopTerms = {
+      kind: BACKSTOP,
+      limit: scale(book, ctx.params.ratio(PAPER_PARAMS.line), 'the line it was granted'),
+      fee: ctx.params.perAnnum(PAPER_PARAMS.commitmentFee),
+      rate: quote.value.rate,
+    };
+    if (terms.limit <= 0) continue;
+    ctx.owes({
+      debtor: p.id,
+      creditor: bank,
+      ccy,
+      owed: 0,
+      terms,
+      why: `${String(bank)} commits a line to ${String(p.id)} against its short paper`,
+    });
   }
 }
 
@@ -598,7 +633,7 @@ export function chargeBackstops(ctx: MechanismContext): void {
   for (const row of openLines(ctx)) {
     const t = row.terms;
     if (!isBackstop(t)) continue;
-    const undrawn = minus(t.limit, t.drawn, 'the headroom it is paying to keep open');
+    const undrawn = minus(t.limit, drawnOn(ctx, row), 'the headroom it is paying to keep open');
     if (undrawn <= 0) continue;
     // Law 8: the fee is quoted per annum and falls per period, so it is placed on the calendar by
     // the calendar and not by a count anybody wrote down (Money G3.a).
@@ -655,28 +690,58 @@ export function drawBackstops(ctx: MechanismContext): void {
     // B4: it may draw what it agreed and not a penny more. That is not a bound on an outcome — it
     // is the size of the promise somebody made it, and an issuer short of more than its line is
     // exactly the issuer that fails (Law 6).
-    const room = minus(t.limit, t.drawn, 'what is left of the line');
+    const room = minus(t.limit, drawnOn(ctx, row), 'what is left of the line');
     const take = downTick(atMost(short, room, 'it may draw what it agreed and no more'));
     if (take <= 0) continue;
-    ctx.settle({
+    // 12a.7, Banks Lending A1, B1: A DRAWING IS A LOAN ROW ON BOTH BOOKS — the bank's money
+    // created into the issuer's account against a claim on the issuer, at the line's rate, with a
+    // maturity; the kernel presents its interest and its maturity like any loan's. It was a
+    // transfer and a number in the terms: money the bank had paid away with nothing on its book to
+    // show for it, and a `drawn` nobody could read off a register (Law 19, Law 5).
+    const id = backstopLoanId(row.creditor, row.debtor);
+    if (!ctx.instruments.has(id) || !ctx.instruments.get(id).status.live) {
+      const drawn = ctx.calendar.startOf(ctx.period);
+      const terms: LoanTerms = {
+        kind: LOAN,
+        originator: row.creditor,
+        borrower: row.debtor,
+        rate: t.rate,
+        drawn,
+        maturity: addMonths(drawn, ctx.params.months(PAPER_PARAMS.lineMonths)),
+        dayCount: 'ACT/365F',
+        // Corporate Credit C9: a line is drawn and repaid at the borrower's option and falls due once.
+        amortising: false,
+        security: [],
+      };
+      ctx.issue({ id, kind: LOAN, issuer: some(row.debtor), ccy: row.ccy, terms, market: none() });
+    }
+    const r = ctx.settle({
       legs: [
         {
+          kind: 'asset',
+          from: row.debtor,
+          to: row.creditor,
+          instrument: id,
+          qty: asQty(take, 'what it drew, in pieces of the row'),
+          pricePerUnit: some(asPerPiece(1, 'at what it promised')),
+          accruedPerUnit: none(),
+        },
+        {
           kind: 'money',
-          from: ctx.accountOf(row.creditor, row.ccy),
+          from: { holder: row.creditor, issuer: row.creditor },
           to: ctx.accountOf(row.debtor, row.ccy),
           ccy: row.ccy,
           amount: take,
         },
       ],
-      cause: 'transfer',
+      cause: 'issuance',
       reason: `${String(row.debtor)} draws its backstop to meet maturing paper`,
     });
-    const drawn: BackstopTerms = { ...t, drawn: plus(t.drawn, asCash(take, 'what it drew'), 'drawn') };
-    ctx.restate(row.id, drawn);
+    if (r.outcome !== 'settled') continue;
     ctx.record(
       'backstop.drawn',
-      [row.debtor, row.creditor],
-      { issuer: row.debtor, bank: row.creditor, drew: take, owing, limit: t.limit },
+      [row.debtor, row.creditor, id],
+      { issuer: row.debtor, bank: row.creditor, loan: id, drew: take, owing, limit: t.limit },
       true,
     );
   }
@@ -808,6 +873,15 @@ export function shortTermDebt(): SystemModule {
         why: 'Short-Term Debt B4: how big a line an issuer is GRANTED, as a share of its own book. A committed facility is GRANTED, priced and re-sized by a lender out of its own view of the borrower and its own capital \u2014 that is Corporate Credit C9, and this world cannot yet take the decision (item 17.3 builds it, and `banks/index.ts:draw` already has the drawing half). So this is a SHAPE with a scheduled death and not a number anybody believes. Everything else about the line IS decided: whether the issuer has one at all, what the fee takes out of its account every period, and whether it draws. When 17.3 lands, the lender sets the limit and this number is deleted in the same change.',
       },
       {
+        id: PAPER_PARAMS.lineMonths,
+        value: 12,
+        unit: 'months',
+        dimension: 'months',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: 'Short-Term Debt B4 (12a.7): how long a drawing on a committed line runs for. A convention of the facility — a backstop is written for a year and the drawing matures with it — stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a). It is not a forecast of how long the issuer needs the money: the row is repaid at its option (Corporate Credit C9) and falls due once.',
+      },
+      {
         id: PAPER_PARAMS.memory,
         value: 26,
         unit: 'periods',
@@ -842,10 +916,12 @@ export function shortTermDebt(): SystemModule {
         ],
         writes: [{ kind: 'event', name: 'paper.offered' }],
         run: (ctx: MechanismContext): void => {
-          // B4 before B1: an issuer that has no line gets one before it needs it, because a
-          // backstop arranged after the book declined is not a backstop.
-          grantBackstops(ctx);
+          // B4 with B1 (12a.7): an issuer that comes to the market gets its line with the paper,
+          // periods before the maturity it is drawn to meet — a backstop arranged after the book
+          // declined is not a backstop, and one handed to every firm that never issued was a free
+          // option nobody had asked for.
           issuePaper(ctx);
+          grantBackstops(ctx);
         },
       },
       {

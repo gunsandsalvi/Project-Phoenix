@@ -11350,3 +11350,27 @@ measured that G1 means exclusion follows a default, not a shortfall — correcte
 keeps bringing paper; a foreign-money miss is a default, no estate, and it is excluded while the
 row stands); the treasury, estate and credit-events suites at their 12a.5 reds (17, none new);
 `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+
+## Item 12a.7 — A backstop drawn is a loan row
+
+A draw on a committed line was a transfer and a number: the bank paid money away with nothing on
+its book to show for it, and what the issuer had drawn lived in the agreement's terms where no
+register could read it. Now a drawing is a loan row on both books — the credit registry's kind,
+issued by the issuer, held by the committing bank for what it lent, at the rate the bank quoted
+the name when it committed the line, maturing a year out (`shortTermDebt.lineMonths`, a
+convention of the facility), repaid at the issuer's option and drawn on again; the kernel
+presents its interest and its maturity like any loan's. What is drawn is the row's outstanding,
+read off the register; the fee falls on the headroom above it. A line is arranged WITH the paper:
+an issuer gets one the period it first offers paper, from its bank, at that bank's quote of the
+name that period — a name nobody quoted has no lender behind its paper — and nobody else gets one.
+
+**Measured.** In the scale model every paper issuer is in an estate before its paper matures, so
+the draw is never reached there; `backstop.test.ts` builds the line, the paper and the run out of
+the doors any module has and lets the module draw — one row, the bank holding it for what it lent,
+the par paid out of it, no default. The equity the period-nine issuers read at `paper.issue` is
+exactly nothing, and they are the ones that die by period twenty-one: a finding for the credit
+view that sizes the line (17.0), written under 12a.7.
+
+**Checks.** `backstop.test.ts` green (two); `short-term-debt.test.ts` green (nine); the estate,
+securitisation and bank-capital suites at their reds of 12a.6 (none new); `check:opens` green;
+lint, typecheck, spec, forbids, deaths green.
