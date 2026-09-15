@@ -109,6 +109,16 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     expect(drawn).toBeGreaterThan(0);
   });
 
+  it('asks its bank for what a period of trading needs beyond what it has (A5, Corporate Credit A1, 11.0e)', () => {
+    const { world: w } = rigFor('sb-borrows', { makes: ['coalRaw'] });
+    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
+    for (let i = 0; i < 4; i += 1) w.step();
+    // A5: bank-dependent — the ask goes through the one door every borrower uses, under the
+    // cell's own name, and a bank reads it next period. Whether one lends is the lender's.
+    const asked = w.journal.ofKind('credit.request').filter((e) => e.subjects.some((s) => cells.has(s)));
+    expect(asked.length).toBeGreaterThan(0);
+  });
+
   it('draws nothing where there is nothing to draw from (App A)', () => {
     expect(drawSmallBusiness([], [{ bank: 'bank.a', size: 1 }], 100, 's')).toEqual([]);
     expect(drawSmallBusiness(['bakery'], [], 100, 's')).toEqual([]);

@@ -295,7 +295,12 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         anchor: { before: 'labour.match' },
         // Labour C2 (11.0c): the hours it has under contract are its last wage bill (Clearing F1.a).
         reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
-        writes: [{ kind: 'event', name: 'smallBusiness.plan' }],
+        // A5, Corporate Credit A1 (11.0e): what a period of trading needs beyond what it has, asked
+        // of its bank through the one door every borrower uses.
+        writes: [
+          { kind: 'event', name: 'smallBusiness.plan' },
+          { kind: 'event', name: 'credit.request' },
+        ],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
             if (p.status.alive) decide(ctx, p.id);

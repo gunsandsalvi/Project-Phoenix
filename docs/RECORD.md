@@ -10818,3 +10818,24 @@ by period five, most of them merged rather than dead.
 
 **Checks.** `check:opens` green on both worlds; the small-business tests green; lint, typecheck,
 `check:spec`, `check:forbids` green.
+
+## Item 11.0e — Borrow and default
+
+What a period of trading at its own scale needs beyond what it holds, a cell of small firms asks
+its bank for through the one door every borrower uses, unsecured: a service line has no plant to
+pledge. The bank reads the ask next period and decides, and the banks module already lends to a
+cell (13d built the drawing per member; 0f made it totals). The first rung ends the year with 71
+small firms of 144 against 65 without credit, which is A5's dependence measured rather than
+asserted. Default is the kernel's: a coupon a cell cannot pay fails at settlement, the cell fails
+on cash and goes to its estate (XI-8).
+
+**Not built, and said so.** The step named the failed MEMBERS moving to the estate while the rest
+trade on. With holdings as totals a cell fails as one; a loan and a miss that are per member are
+12a's arrears design, and that is where it sits (12a.1, 12a.5).
+
+**Found with it, fixed in the kernel.** `owedIn` summed a coupon due as a rate times a face, never
+put on the money's grid, and the first cell to owe a coupon read a position that was not a count
+of anything (Law 8). A coupon due is `payable` now, which is what will be paid.
+
+**Checks.** `check:opens` green on both worlds; the eight small-business tests green; lint,
+typecheck, `check:spec`, `check:forbids`, `check:deaths` green.

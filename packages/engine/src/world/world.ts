@@ -52,7 +52,7 @@ import {
   plus,
   valueAt,
   type Ratio,
-  scale, asAmount, eachMember, asTotal } from '../core/measure.js';
+  scale, eachMember, asTotal } from '../core/measure.js';
 import { finite, addTo, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -2706,9 +2706,12 @@ export class World {
         const at = period(this.currentPeriod + ahead);
         for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar, this.registry)) {
           if (action.kind === 'coupon') {
+            // Law 8 (11.0e): a coupon is paid in whole pieces of the money, and what is owed is
+            // what will be paid. It came off the grid here — a rate times a face — and the first
+            // cell to owe one read a position that was not a count of anything.
             owed = plus(
               owed,
-              asAmount<'piece'>(valueAt(action.amountPerUnit, inst.issued, 'a coupon it owes'), 'a coupon it owes'),
+              this.registry.payable(valueAt(action.amountPerUnit, inst.issued, 'a coupon it owes')),
               'owed',
             );
           } else owed = plus(owed, inst.issued, 'a line it must repay');

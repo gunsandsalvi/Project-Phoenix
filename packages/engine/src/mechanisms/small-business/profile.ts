@@ -221,6 +221,17 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
   }
   slot.orders = orders;
   postForHours(ctx, view, l, price.value, priced, wanted);
+  /**
+   * A5, A5.a, Corporate Credit A1 (11.0e): IT IS BANK-DEPENDENT, AND THIS IS THE DEPENDENCE. What a
+   * period of trading at its own scale needs beyond what it holds, it asks its bank for — through
+   * the one door every borrower uses, unsecured, because a service line has no plant to pledge. The
+   * bank reads the ask next period and decides; a cell nobody lends to trades on what it has, which
+   * is where a tightening bites first and hardest (A5.a). Default is the kernel's: a coupon it
+   * cannot pay is a missed payment like any other, and a cell that cannot cover what fell due
+   * fails on cash and goes to its estate (XI-8).
+   */
+  const shortOfTrading = ctx.registry.payable(minus(slot.keeps, cash, 'what a period of trading needs beyond what it has'));
+  if (shortOfTrading > 0) ctx.request(cell, { ccy, short: heldAsMoney(shortOfTrading, 'what it asks its bank for') });
   ctx.record(
     'smallBusiness.plan',
     [cell],
