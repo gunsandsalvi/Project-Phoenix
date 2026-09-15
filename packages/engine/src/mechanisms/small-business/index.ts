@@ -38,7 +38,11 @@ import type { BankChoice } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
-import { smallParam, type SmallFirmDecl } from './data.js';
+import type { SmallFirmDecl } from './data.js';
+import { bandOf } from '../../registry/lattice.js';
+import { currencyUnit } from '../../core/ids.js';
+import { asCash, asRatio, over, scale } from '../../core/measure.js';
+import { sum } from '../../core/num.js';
 import type { PartyId } from '../../core/ids.js';
 import type { LatticeDecl, LatticeReads } from '../../registry/lattice.js';
 import { none, some } from '../../core/option.js';
@@ -57,18 +61,31 @@ export * from './data.js';
  */
 export const SMALL_FIRM_SWITCHING_COST = paramId('smallBusiness.switchingCost');
 
+/**
+ * A3, Seed C4, 0f.9: WHAT THE SMALLEST FIRM IN A LINE OPENS WITH, in its own money. A firm's drawn
+ * size is a multiple of this, and what it holds is what puts it in a band of its key. It is a
+ * PLACEHOLDER: item 12.1 founds a small firm out of a household's own cash, after which what one
+ * opens with is what its founder put in and nothing reads this again.
+ */
+export const SMALL_OPENING_CASH = paramId('smallBusiness.opening.cash');
+
 export const smallFirmChoosesBank = (view: ParticipantView): Option<BankChoice> =>
   banksAwayFromTrouble(view, SMALL_FIRM_SWITCHING_COST, 'moneyMarket.window');
 
-/**
- * A3, XI-14: what each cell is like, declared under its own name so the register prints the
- * distribution rather than hiding it inside a draw.
- *
- * It is a PREFERENCE in the register's sense — a fact about this firm that nothing else decides —
- * and it is drawn per cell rather than stated per cell, which is what A2.a is about.
- */
-function paramsOf(rows: readonly SmallFirmDecl[]): ParamDecl[] {
+/** The register: the lattice's edges, what moving costs, and what the smallest firm opens with. */
+function paramsOf(): ParamDecl[] {
   return [
+    {
+      id: SMALL_OPENING_CASH,
+      value: 20,
+      denominated: 'money' as const,
+      unit: 'of its own money, per firm at size one',
+      dimension: 'amount' as const,
+      kind: 'placeholder' as const,
+      standsInFor: { mechanism: 'Small-Business Pools A6, Firm Birth', item: '12.1' },
+      owner: 'model' as const,
+      why: 'Small-Business Pools A3, Seed C4 (0f.9): what the smallest firm in a line opens with; a firm of drawn size s opens with s times this. It stands in for the founding capital a household puts in at item 12.1, and dies there. Sized so that the sector\u2019s drawn tail lands across the size bands of its lattice rather than all in one, which is the resolution 0f.10 tests.',
+    },
     {
       id: paramId('smallBusiness.lattice.size.1'),
       value: 5,
@@ -117,15 +134,6 @@ function paramsOf(rows: readonly SmallFirmDecl[]): ParamDecl[] {
       owner: 'model' as const,
       why: 'Banks Funding A1.b, A1.d, E1: what it costs one small firm to move the account its takings land in. Smaller than a named firm\u2019s (250) because there is less to redirect and fewer counterparties to tell, and far smaller than a fund\u2019s, which moves more money in one go than this tier holds. It is weighed against the money it would lose if its bank failed \u2014 nothing insures a business balance (E4), so that is the whole of it.',
     },
-    ...rows.map((r) => ({
-      id: smallParam(r.cell, 'size'),
-      value: r.size,
-      unit: 'multiple of the smallest firm in its line',
-      dimension: 'ratio' as const,
-      kind: 'preference' as const,
-      owner: 'model' as const,
-      why: r.why,
-    })),
   ];
 }
 
@@ -136,10 +144,10 @@ function paramsOf(rows: readonly SmallFirmDecl[]): ParamDecl[] {
  * is the same sentence the households seed makes about where this world's people are, and a second
  * statement of it beside the draw is how the two come to disagree (Law 4, Law 19).
  */
-export const cellKeyOf = (r: SmallFirmDecl, region: RegionId): Readonly<Record<string, string>> => ({
+export const cellKeyOf = (bank: string, line: string, region: RegionId): Readonly<Record<string, string>> => ({
   region: String(region),
-  bank: r.bank,
-  line: r.line,
+  bank,
+  line,
 });
 
 /** 0f.3: the edges a small-firm lattice bands on — RESOLUTION, tested by invariance (0f.10). */
@@ -228,15 +236,18 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         /** A5: bank-dependent. It borrows, and it is too small for the bond market (B1, 11.7). */
         borrows: true,
         /**
-         * Banks Funding A1: many, small and operationally sticky — a small firm's account is where
-         * its takings land and where its wages go out, which is a different deposit from a saver's.
+         * Banks Funding A1, A1.b: OPERATIONAL money — a small firm's account is where its takings
+         * land and where its wages go out, which is a different deposit from a saver's, and it is
+         * the class a named firm's account is in (A1.b: "fewer, larger, operational"). It said
+         * `operational`, which no class declares, and nothing noticed until 0f.9 gave the sector
+         * money to hold: the first bank to pay its board threw (Banks Funding A1, `classOf`).
          */
-        depositClass: 'operational',
+        depositClass: 'corporate',
       },
     ],
     curveFamilies: [],
     units: [],
-    params: paramsOf(rows),
+    params: paramsOf(),
     /**
      * Banks Funding E1: A MODULE THAT DECLARES A DEPOSITOR SAYS HOW IT LEAVES, or the world does
      * not open — which is what stopped it (item 0, stop 2). A small firm's account is operational
@@ -252,34 +263,84 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     participants: [],
     families: [],
     /**
-     * A6, A6.a, XI-15, Seed B1.a: THE SECTOR OPENS, one cell per (region, bank, line).
+     * A6, A6.a, XI-15, Seed B1.a, 0f.9: THE SECTOR OPENS, ONE CELL PER OCCUPIED KEY.
      *
-     * It was off between item 0 and item 0b, and the reason was the kernel's: one list of key
-     * dimensions for the whole world meant this world keyed on `cohort`, which a small firm has
-     * not got, and a small firm keys on its `line`, which the world did not list — so every party
-     * this seed added was refused both ways at once (item 0, stop 6). The key belongs to the KIND
-     * now, and a population of firms and a population of people are cut as each of them is.
+     * Every drawn firm opens with its size times what the smallest opens with, and that puts it in
+     * a SIZE BAND of its lattice (0f.3). The firms of one (bank, line) that fall in one band are one
+     * cell, with their count as its weight and what they hold between them as its holding; a band
+     * nobody drew into is a cell that does not exist. The seed states the key's seeded dimensions
+     * only; the kernel reads the bands off the holdings at the seal and places the cell, and the
+     * band it reads is the one the members were cut by, because a mean of values in an interval is
+     * in the interval.
+     *
+     * It was `CELLS_PER_KEY` cells of one drawn size each (item 11.4), which put the dispersion in
+     * a count of cells rather than in the population, and gave two cells to one key.
      */
     seed(ctx: SeedContext): void {
+      interface Pool {
+        readonly bank: PartyId;
+        readonly line: string;
+        readonly region: RegionId;
+        readonly band: string;
+        count: number;
+        cash: number;
+      }
+      const pools = new Map<string, Pool>();
       for (const r of rows) {
         const bank = ctx.parties.get(partyId(r.bank));
+        const ccy = ctx.registry.currencyOf(bank.region);
+        const unit = currencyUnit(ccy);
+        const edges = SMALL_FIRM_EDGES.size.map((e) => ctx.params.amount(e, unit));
+        // Law 8: what one firm opens with is a whole number of pieces of its money.
+        const opens = ctx.registry.payable(
+          scale(
+            asCash(ctx.params.amount(SMALL_OPENING_CASH, unit), 'what the smallest opens with'),
+            asRatio(r.size, 'how big it is beside the smallest'),
+            'what a firm of this size opens with',
+          ),
+        );
+        const band = bandOf(edges, opens);
+        const key = `${r.bank}|${r.line}|${band}`;
+        const pool = pools.get(key);
+        if (pool === undefined) {
+          pools.set(key, { bank: bank.id, line: r.line, region: bank.region, band, count: 1, cash: opens });
+        } else {
+          pool.count += 1;
+          pool.cash = sum([pool.cash, opens]).value;
+        }
+      }
+      for (const pool of pools.values()) {
+        const id = partyId(`sb.${String(pool.bank)}.${pool.line}.${pool.band}`);
         ctx.parties.add({
-          id: partyId(r.cell),
+          id,
           kind: SMALL_FIRM,
           representation: 'cell',
           // Law 4, Law 19: a cell lives where its bank books, read off the bank rather than drawn
           // beside it — the same sentence the households seed makes about where the people are.
-          region: bank.region,
+          region: pool.region,
           // Law 9: a market names a small firm by what it does and where, because that is all
           // anybody outside it knows about one — and a cell of them is that, with a count.
-          name: `${String(r.weight)} ${r.line} firms at ${r.bank}`,
-          bank: bank.id,
+          name: `${String(pool.count)} ${pool.line} firms at ${String(pool.bank)}`,
+          bank: pool.bank,
           // XI-15: how many real firms this party IS. A count, and the five events are the only
           // things that may move it (E5).
-          weight: r.weight,
-          key: cellKeyOf(r, bank.region),
+          weight: pool.count,
+          key: cellKeyOf(String(pool.bank), pool.line, pool.region),
           status: { alive: true, standing: 'good' },
         });
+        // Seed C4: what its members hold between them, stated per member as every endowment is.
+        ctx.endowMoney(
+          id,
+          ctx.registry.currencyOf(pool.region),
+          asCash(
+            over(
+              asCash(pool.cash, 'what its members opened with between them'),
+              asRatio(pool.count, 'the firms in it'),
+              'what one of them opens with',
+            ),
+            'what one member opens with',
+          ),
+        );
       }
     },
   };

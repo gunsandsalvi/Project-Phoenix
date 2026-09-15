@@ -9,7 +9,7 @@
  * satisfy every other clause and remove the credit content of §42 without failing anything.
  */
 import { describe, expect, it } from 'vitest';
-import { CELLS_PER_KEY, SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness, smallBusiness } from '../src/index.js';
+import { SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness, smallBusiness } from '../src/index.js';
 import { rigDraw, rigWorld } from './rig.js';
 
 describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () => {
@@ -31,8 +31,11 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     for (const c of w.parties.ofKind(SMALL_FIRM)) {
       if (c.representation !== 'cell') continue;
       // A6.a: region and bank are dimensions of the key; the line is a third, and it is forced —
-      // a cell whose members were in different lines would have an averaged cost base.
-      expect(Object.keys(c.key).sort()).toEqual(['bank', 'line', 'region']);
+      // a cell whose members were in different lines would have an averaged cost base. 0f.3: the
+      // rest of the key is the lattice's — its age and its bands — placed by the kernel at the seal.
+      for (const dim of ['bank', 'line', 'region', 'age', 'size', 'leverage']) {
+        expect(Object.keys(c.key), dim).toContain(dim);
+      }
       // And the LENDER is not one of them: a lender is a loan row per (lender, cell), and lifting
       // it into the key is the relationship the model would then be unable to name.
       expect(Object.keys(c.key)).not.toContain('lender');
@@ -44,7 +47,7 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
   it('is a DISTRIBUTION and not an average (A2.a — the clause the item turns on)', () => {
     const drew = rigDraw('sb');
     const sizes = drew.small.map((r) => r.size);
-    expect(sizes.length).toBeGreaterThan(CELLS_PER_KEY);
+    expect(sizes.length).toBeGreaterThan(1);
     // A2.a: no representative small firm. A mean-preserving spread has to be able to move the count
     // of defaults, which it cannot if every member is the same size.
     expect(Math.max(...sizes)).toBeGreaterThan(Math.min(...sizes) * 2);
@@ -58,7 +61,7 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
 
   it('scales with the world and states no count of its own (Seed B1.a)', () => {
     const drew = rigDraw('sb');
-    const total = drew.small.reduce((t, r) => t + r.weight, 0);
+    const total = drew.small.length;
     // The sector is this world's named firms times a multiple, so a bigger world has more corner
     // shops. A count written in the module would have made it a fixed size the seed grew away from.
     expect(total).toBeGreaterThan(drew.firms.length);

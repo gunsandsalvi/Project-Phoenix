@@ -10529,3 +10529,38 @@ and 13d.1's missed-payment drift is measurable → 13f (not measured, Law 11).
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green.
+
+## Item 0f.8 (repositioned) and 0f.9 — One cell per key, from the draws
+
+**0f.8 was an item wearing a step's number.** The small-firm profile as written was every verb of
+§42 — produce, sell, employ, buy on terms, invest, draw, borrow, default, promote — for a module
+that has `phases: []` and `participants: []`; items 11 and 12.4 both sat "on 0f.8", which is the
+sector's item hiding inside the lattice's. Law 10: it is INSERTED at its dependency position as
+11.0, in sub-steps sized on the day each is taken, and the record says where. 0f owns the
+representation of a population, and for small firms that is 0f.3, 0f.4 and this step.
+
+**0f.9 — households.** One cell per (cohort, bank). `seed.households.cellsPerKey` and
+`splitPopulation` are gone: how finely a population is cut is the lattice's resolution — its band
+edges — and a count of cells per key was a second resolution that put two cells on one key, which
+is what 0d measured as 299 `units` findings.
+
+**0f.9 — small firms.** `drawSmallBusiness` draws one size per FIRM, so the dispersion A2.a asks
+for is in the population and not in a count of cells. The module's own seed opens each firm with
+`smallBusiness.opening.cash` (a PLACEHOLDER that dies at 12.1, when a founder puts the money in)
+times its size, cuts the firms of one (bank, line) by the size band that puts them in, and adds one
+cell per occupied key — the count as its weight, what they hold between them endowed per member.
+The band the kernel reads at the seal is the band the members were cut by, because a mean of
+values in an interval is in the interval. `CELLS_PER_KEY`, `split` and the per-cell
+`smallBusiness.size.*` parameters are deleted: the register prints what the register holds.
+`SMALL_PER_NAMED` stays beside `BANK_COUNT` and `FIRM_COUNT` — three draw-time counts of one class,
+each an outcome at item 12.
+
+**A build stop, fixed at the cause.** The small-firm kind banked as `operational`, a deposit class
+nothing declares; nothing noticed for as long as the sector held nothing. The first board paid
+threw at `classOf`, and the class is `corporate` (Banks Funding A1.b). Two tests followed the seed:
+`equity.test.ts` named two cells of one key and now names the same cohort at two banks;
+`resolution/cells.test.ts` measured invariance to a resolution that no longer exists and is
+deleted — its purpose is 0f.10's.
+
+**Checks.** `check:opens` green on both worlds; the lattice, small-business and household-profile
+tests green; lint, typecheck, `check:spec`, `check:forbids`, `check:deaths` green.

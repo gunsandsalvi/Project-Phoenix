@@ -565,8 +565,9 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
     // The one thing that differs between the two cells is what has happened to their incomes. A
     // cell that has been surprised wants more for holding a claim that promises it nothing (§46 B3),
     // so it wants to pay less for it — and the disagreement is what gives the book two sides.
-    const steady = 'hh.working.bank.a.0';
-    const jolted = 'hh.working.bank.a.1';
+    // 0f.9: one cell per key, so two histories are two keys — the same cohort at two banks.
+    const steady = 'hh.working.bank.a';
+    const jolted = 'hh.working.bank.b';
     const w = saversWorld('equity', [
       // The second cell is paid something it was not expecting, and it remembers being surprised.
       // Law 8: a real payment, so a whole number of cents to every member of the cell.

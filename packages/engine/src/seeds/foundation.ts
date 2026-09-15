@@ -588,7 +588,6 @@ const OPENING_WAGE = asPerNamedUnit(40, 'what an hour of work opens at');
 const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
 
 const P = {
-  cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerCohort: paramId('seed.households.membersPerCohort'),
   debtPeriods: paramId('seed.sovereign.debtPeriods'),
   householdDebtShare: paramId('seed.sovereign.householdShare'),
@@ -758,15 +757,6 @@ export function foundationSeedFor(
         kind: 'shape',
         owner: 'model',
         why: "Treasury D4.b, Seed E2: how much of the central bank's money the treasury opens holding, with the banks holding the rest as reserves. It is a share and not an amount because the amount is not free: every unit of central-bank money was issued to buy the paper above, so what is stated is how it is divided and never how much of it there is. The mechanism that replaces it is the treasury's own funding programme, which decides its balance from period one.",
-      },
-      {
-        id: P.cellsPerKey,
-        value: 2,
-        unit: 'count',
-        dimension: 'count',
-        kind: 'resolution',
-        owner: 'model',
-        why: 'XI-15: how many cells stand for each (region, cohort, bank) population; change it and the answer must not move.',
       },
       {
         id: P.membersPerCohort,
@@ -968,13 +958,16 @@ export function foundationSeedFor(
       //
       // What they are unequal in is still an outcome from the first period on: who was hired, at what
       // wage, and what each of them made of it. What is endowed is the stock they start from.
-      // XI-15, Law 2: THE POPULATION IS A PROPERTY OF THE WORLD AND NOT OF ITS BANKS. What is stated
-      // is how many people a cohort stands for; how many cells they are cut into is one resolution
-      // (`cellsPerKey`) and how many banks they are spread over is another (`banks.count`), and
-      // neither may change how many people there are. Stating it per (cohort, bank) key meant a world
-      // with a fourth bank had a third more people in it, which is the count of banks answering a
-      // question about the population.
-      const cells = positiveCount(ctx.params.count(P.cellsPerKey), 'cellsPerKey');
+      // XI-15, Law 2: THE POPULATION IS A PROPERTY OF THE WORLD AND NOT OF ITS BANKS. What is
+      // stated is how many people a cohort stands for; how many banks they are spread over is a
+      // resolution (`banks.count`), and it may not change how many people there are. Stating it
+      // per (cohort, bank) key meant a world with a fourth bank had a third more people in it,
+      // which is the count of banks answering a question about the population.
+      //
+      // 0f.9: ONE CELL PER KEY. How finely the population is cut is the LATTICE's resolution now
+      // (its band edges, 0f.3), not a count of cells per key: two cells that differ on no
+      // dimension are two cells for one key, which is what 0d measured as 299 `units` findings.
+      // The kernel places every seeded cell on the rest of its lattice at the seal.
       const members = positiveCount(ctx.params.count(P.membersPerCohort), 'membersPerCohort');
       for (const cohort of ctx.registry.cohorts) {
         // Seed B4: and they are spread across the banks IN PROPORTION TO SIZE, so a bigger bank has
@@ -989,16 +982,14 @@ export function foundationSeedFor(
           members,
           banks.map((b) => b.size),
         );
-        const weights = banks.flatMap((bank, at) =>
-          splitPopulation(zeroIfNone(perBank[at]), cells).map((weight, n) => ({ bank, weight, n })),
-        );
-        weights.forEach(({ bank, weight, n }) => {
+        banks.forEach((bank, at) => {
+          const weight = zeroIfNone(perBank[at]);
           if (weight <= 0) return;
           const cell: CellParty = {
-            id: partyId(`hh.${cohort.id}.${bank.id}.${n}`),
+            id: partyId(`hh.${cohort.id}.${bank.id}`),
             kind: HOUSEHOLD,
             region: bank.region,
-            name: `Households ${cohort.name} at ${bank.id} #${n}`,
+            name: `Households ${cohort.name} at ${bank.id}`,
             bank: bank.id,
             representation: 'cell',
             status: { alive: true, standing: 'good' },
@@ -2157,15 +2148,6 @@ function openingOf(opening: ReadonlyMap<string, PerNamedUnit>, id: string): PerN
   const p = opening.get(id);
   if (p === undefined) throw new Missing('Seed C4', `no opening price for ${id}`, { id });
   return p;
-}
-
-/** Split a population into `cells` whole counts that sum to it exactly (Appendix A: a weight is a count). */
-function splitPopulation(population: number, cells: number): number[] {
-  const base = Math.floor(population / cells);
-  const remainder = population - base * cells;
-  const out: number[] = [];
-  for (let i = 0; i < cells; i += 1) out.push(base + (i < remainder ? 1 : 0));
-  return out;
 }
 
 /**

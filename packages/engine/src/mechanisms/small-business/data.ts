@@ -20,7 +20,6 @@
  * members were in different lines would have a cost base, a customer and a labour venue that were
  * averages over lines, which is A2.a one level down.
  */
-import { paramId, type ParamId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { drawSize, type Tail } from '../../rng/spread.js';
 
@@ -41,17 +40,6 @@ import { drawSize, type Tail } from '../../rng/spread.js';
 export const SMALL_PER_NAMED = 12;
 
 /**
- * XI-15, A2: HOW MANY CELLS STAND FOR ONE (region, bank, line) POPULATION — a RESOLUTION, and the
- * one place the sector's dispersion has room to live.
- *
- * A cell is homogeneous, so a key served by ONE cell is a key with one size of firm in it, which is
- * A2.a exactly: a mean-preserving spread over a population of one moves nothing. Cut the same
- * population into several and each draws its own size, so the key has a distribution across it and
- * a threshold has something to bite unevenly. Change it and the answer must not move.
- */
-export const CELLS_PER_KEY = 4;
-
-/**
  * A2, A2.a, A3, Seed B4: HOW UNEQUAL THE SECTOR IS — the same long tail a named line has, because
  * it is the same fact about business: a few that are nearly large enough to leave (A6.c) and a very
  * long tail of one person and a van.
@@ -65,14 +53,13 @@ export const SMALL_SIZE: Tail = {
   why: 'Small-Business Pools A2, A2.a, A3: how big one small firm is beside the smallest in its line. A tail and never a width, and a FATTER tail than the named sector’s (1.2), because the small tier is where the distance between the biggest member and the median is greatest — the firm about to be promoted out of it (A6.c) and the one person with a van are both in here. Losses depend on the distribution of size, leverage and coverage and not on the mean (A3), so this is the thing a threshold event is measured against; flatten it and every cell defaults together or none does, which is the sector with its credit content removed.',
 };
 
-/** XI-14: a cell's own drawn numbers are declared under its own name, never written as literals. */
-export const smallParam = (cell: string, what: string): ParamId =>
-  paramId(`smallBusiness.${what}.${cell}`);
-
-/** A6, A6.a: one cell — a named party, a weight, and the three things its members all share. */
+/**
+ * A6, A6.a, 0f.9: ONE FIRM as drawn — who it banks with, what it does, and how big it is. It is
+ * not a cell: the cells are what the LATTICE makes of these draws at the seed (`index.ts seed`),
+ * one per occupied key, and a firm's size puts it in a band of that key. Nothing about any one of
+ * them is stated; the width is (A2.a).
+ */
 export interface SmallFirmDecl {
-  /** Law 9: its id. A cell is named for its key, because its key is what it IS (XI-15). */
-  readonly cell: string;
   /**
    * A6.a: a dimension of the key. Who it banks with — and A5, because that is who lends to it.
    *
@@ -84,11 +71,8 @@ export interface SmallFirmDecl {
   readonly bank: string;
   /** A6.a: a dimension of the key, and forced by homogeneity: what line of business it is in. */
   readonly line: string;
-  /** XI-15: how many real firms this cell IS. A count, never a share. */
-  readonly weight: number;
-  /** A3: how big one of its members is, beside the smallest in its line. Drawn (A2.a). */
+  /** A3: how big it is, beside the smallest in its line. Drawn (A2.a). */
   readonly size: number;
-  readonly why: string;
 }
 
 /**
@@ -118,29 +102,13 @@ export function drawSmallBusiness(
     const here = Math.round((population * bank.size) / total / lines.length);
     if (here <= 0) continue;
     for (const line of lines) {
-      for (const [n, weight] of split(here, CELLS_PER_KEY).entries()) {
-        if (weight <= 0) continue;
-        const size = drawSize(rng, SMALL_SIZE);
-        out.push({
-          cell: `sb.${bank.bank}.${line}.${String(n)}`,
-          bank: bank.bank,
-          line,
-          weight,
-          size,
-          why: `Small-Business Pools A2, A3, Seed B1.a: ${String(weight)} firms in ${line} banking with ${bank.bank}, each ${size.toFixed(2)} times the smallest in the line. Drawn from the sector's own tail; nothing about it is stated one cell at a time.`,
-        });
+      // 0f.9: EVERY FIRM DRAWS ITS OWN SIZE. The dispersion A2.a needs is within a key, and it is
+      // the draw that gives it: the lattice's size bands then cut one population into the cells
+      // that differ, and a band with nobody in it is a cell that does not exist.
+      for (let n = 0; n < here; n += 1) {
+        out.push({ bank: bank.bank, line, size: drawSize(rng, SMALL_SIZE) });
       }
     }
   }
   return out;
-}
-
-/**
- * XI-15, Appendix A: a population cut into whole counts that sum to it exactly. A weight is a count
- * of firms and the odd firm is in a named cell, never a fraction anywhere.
- */
-function split(population: number, cells: number): number[] {
-  const each = Math.floor(population / cells);
-  const over = population - each * cells;
-  return Array.from({ length: cells }, (_, n) => each + (n < over ? 1 : 0));
 }

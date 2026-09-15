@@ -181,18 +181,7 @@ function spreadWorld(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('households');
   const modules = spec.modules
     .map((m) => (m.id === 'firms' || m.id === 'equity' || m.id === 'dealers' ? quiet(m) : m))
-    .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, rigDraw('households').managers) : m))
-    .map((m) =>
-      m.id === 'seed.foundation' ||
-      m.id === 'seed.funding'
-        ? {
-            ...m,
-            params: m.params.map((p) =>
-              p.id === 'seed.households.cellsPerKey' ? { ...p, value: 12 } : p,
-            ),
-          }
-        : m,
-    );
+    .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, rigDraw('households').managers) : m));
   return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
