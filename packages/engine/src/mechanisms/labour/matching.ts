@@ -34,7 +34,7 @@ import { clear, isCleared, type Cleared, type Order } from '../../clearing/solve
 import type { VenueDecl } from '../../clearing/venue.js';
 import { agreementKindId, cohortId } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, material, sub } from '../../core/num.js';
+import { add, atMost, sub } from '../../core/num.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 
 
@@ -58,7 +58,8 @@ export const severanceOwed = (cause: string): SeveranceOwed => ({
   cause,
 });
 import type { Leg } from '../../ledger/instruction.js';
-import { keyOf, weightOf, type Party, gridPerMember } from '../../parties/party.js';
+import { none, some } from '../../core/option.js';
+import { keyOf, weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
   EMPLOYMENT,
@@ -67,7 +68,7 @@ import {
   type EmploymentRow,
   type EmploymentTerms,
 } from '../../register/employment.js';
-import { addQty, asQty, negQty, scaleQty, subQty } from '../../core/tick.js';
+import { asQty, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
@@ -95,6 +96,8 @@ function termsOf(row: EmploymentRow): EmploymentTerms {
     productiveFrom: row.productiveFrom,
     notice: row.notice,
     headcount: row.headcount,
+    leaving: row.leaving,
+    ends: row.ends,
   };
 }
 
@@ -103,7 +106,8 @@ export interface LabourParams {
   readonly hoursPerMember: Qty;
   readonly retirementAge: number;
   readonly hiringLagPeriods: number;
-  readonly severancePeriods: number;
+  /** C3: the periods of pay a separation runs for before it ends — the cost of a firing. */
+  readonly noticePeriods: number;
   /**
    * A3.b, XI-10 (13d): periods a person who CHANGES TRADE takes to become productive in the new
    * one, on top of the ordinary hiring lag. It is what moving between occupations costs, and it is
@@ -188,23 +192,21 @@ export function runVenue(
   const occupation = v.key['occupation'];
   const region = v.key['region'];
   if (occupation === undefined || region === undefined) return;
+  // C3, C5, D1 (12b.2): THE VENUE MATCHES NET CHANGES. An employer posts the change it wants —
+  // a bid for more hours, or fewer hours as a cut — and the venue never reads its rows against its
+  // posting to work out which (`netChange` in the register is the one read every employer makes).
+  // A cut is a SELL from a party that does not sell its time — an employer, not a worker cell —
+  // and it is given notice once, in the round its posting was made for.
   const bids: Order[] = [];
   for (const posting of ctx.posted(v.id)) {
-    if (posting.side !== 'buy' || posting.price === 'market') continue;
-    const held = ctx.employment.hoursAt(posting.party, occupation, region as RegionId);
-    const gap = subQty(posting.qty, held, 'employment gap');
-    if (!material(gap, 2, addQty(posting.qty, held, 'employment'))) continue;
-    // Both sides of this subtraction are counts of hours — what it posted and what it employs —
-    // so the gap is one too, and nothing was rounded to get it.
-    if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: asQty(gap, 'the hours it is short') });
-    // C3, C4: the employer wants fewer hours than it has under contract, so it separates the
-    // difference and pays for doing it. It is the employer's decision; this is the mechanism.
-    // C3: and only once. An employer posts its desired employment for the period, so the round
-    // that follows it is the same posting still being filled — separating twice against one
-    // posting would be paying severance for a decision it took once.
-    else if (round === 'trade') {
-      shed(ctx, book, posting.party, occupation, region as RegionId, negQty(gap, 'the hours it is over'), p);
+    if (posting.qty <= 0) continue;
+    if (posting.side === 'buy') {
+      if (posting.price === 'market') continue;
+      bids.push(posting);
+      continue;
     }
+    if (participates(ctx, ctx.parties.get(posting.party), p.retirementAge)) continue;
+    if (round === 'trade') giveNotice(ctx, posting.party, occupation, region as RegionId, posting.qty);
   }
   const offers = eligible(ctx, book, v, occupation, region as RegionId, p, round);
   // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
@@ -351,9 +353,11 @@ function hire(
         'and what teaching them takes',
       ),
     ),
-    // C3 (12b.1): the notice the job carries — the periods of pay a separation owes (12b.2 runs it).
-    notice: p.severancePeriods,
+    // C3 (12b.2): the notice the job carries — the periods of pay a separation runs for.
+    notice: p.noticePeriods,
     headcount: weightOf(ctx.parties.get(hired)),
+    leaving: 0,
+    ends: none<Period>(),
   };
   const row = employmentOf(
     ctx.owes({
@@ -391,37 +395,50 @@ function hire(
  * redundancy convention and what this has always done. The comment said "oldest row first" and the
  * code has never done that: one of the two was wrong (Law 16) and it was the comment.
  */
-function shed(
+/**
+ * C3 (12b.2): A CUT IS NOTICE GIVEN. The employer wants fewer hours than it will have, so the most
+ * recently hired are told the day their job ends — the row is restated to say how many are leaving
+ * and when, and nobody moves: they are paid through the notice, which is what a firing costs, and
+ * separated when it runs out (`endNotices`). A row already wholly under notice is not cut again.
+ */
+function giveNotice(
   ctx: MechanismContext,
-  book: SkillBook,
   employer: PartyId,
   occupation: string,
   region: RegionId,
   hours: Qty,
-  p: LabourParams,
 ): void {
   let left = hours;
-  const rows = ctx.employment.at(employer, occupation, region);
-  for (const row of rows) {
+  for (const row of ctx.employment.at(employer, occupation, region)) {
     if (left <= 0) break;
-    const members = Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate'));
+    const standing = sub(row.headcount, row.leaving, 'the people not yet under notice');
+    if (standing <= 0) continue;
+    const members = atMost(Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate')), standing, 'the row employs no more than it employs');
     if (members <= 0) break;
-    const taken = atMost(members, row.headcount, 'the row employs no more than it employs');
-    separate(ctx, book, row, taken, `${employer} cut its hours`, p);
-    left = subQty(left, scaleQty(row.hoursPerMember, taken, 'hours shed'), 'hours left to shed');
+    const ends = row.ends.some ? row.ends.value : periodOf(add(ctx.period, row.notice, 'when the notice runs out'));
+    const given: EmploymentTerms = { ...termsOf(row), leaving: add(row.leaving, members, 'under notice'), ends: some(ends) };
+    ctx.restate(row.id, given);
+    ctx.record(
+      'labour.notice',
+      [row.employer, row.worker],
+      { row: row.id, employer: row.employer, worker: row.worker, occupation, members, ends, cause: `${employer} cut its hours` },
+      true,
+    );
+    left = subQty(left, scaleQty(row.hoursPerMember, members, 'hours given notice'), 'hours left to cut');
   }
 }
 
-/**
- * C4, Firm Birth D4.a: an employer that has ceased releases its workers AT ONCE, and it does it
- * through the same separation path as any other separation — never by a headcount going down
- * somewhere, which is the shape the clause forbids. What triggers it is the party store itself:
- * the row names an employer that is dead, whatever killed it and whoever is winding it up.
- */
-export function release(ctx: MechanismContext, book: SkillBook, p: LabourParams): void {
+/** C3 (12b.2): the notice ran out — the people it was given to are separated, paid to the end. */
+export function endNotices(ctx: MechanismContext, book: SkillBook): void {
+  for (const row of ctx.employment.ending(periodOf(ctx.period + 1))) {
+    separate(ctx, book, row, row.leaving, 'its notice ran out');
+  }
+}
+
+export function release(ctx: MechanismContext, book: SkillBook): void {
   for (const row of ctx.employment.all()) {
     if (ctx.parties.get(row.employer).status.alive) continue;
-    separate(ctx, book, row, row.headcount, `${row.employer} ceased`, p);
+    separate(ctx, book, row, row.headcount, `${row.employer} ceased`);
   }
 }
 
@@ -436,7 +453,6 @@ export function separate(
   row: EmploymentRow,
   members: number,
   cause: string,
-  p: LabourParams,
 ): void {
   if (members <= 0) return;
   const whole = members >= row.headcount;
@@ -456,34 +472,33 @@ export function separate(
     // A4.c, Law 15: part of the cell left, so the row's terms changed and the commitment did not.
     // It used to be `row.headcount = ...` on a mutable object in a private book; the kernel's row
     // is frozen, and a change of terms is an event with its own record (item 9.1).
-    const fewer: EmploymentTerms = { ...termsOf(row), headcount: sub(row.headcount, members, 'headcount after separation') };
+    // 12b.2: the people leaving were under notice, so the notice they were under is spent with them.
+    const leaving = sub(row.leaving, atMost(members, row.leaving, 'no more leave than were under notice'), 'still under notice');
+    const fewer: EmploymentTerms = {
+      ...termsOf(row),
+      headcount: sub(row.headcount, members, 'headcount after separation'),
+      leaving,
+      ends: leaving > 0 ? row.ends : none<Period>(),
+    };
     ctx.restate(row.id, fewer);
   }
   // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
   book.skill[gone] = row.occupation;
-  const perMember = scale(
-    wagePerMember(row),
-    asRatio(p.severancePeriods, 'the periods of it'),
-    'severance per member',
-  );
-  // C3, XI-8: severance is a cost the employer pays — while there is an employer to pay it. One
-  // that has ceased owes it to the claimants on its estate, and Firm Birth D2.b says a claim like
-  // that RANKS with the other unsecured ones and is paid in the distribution, not in cash at the
-  // door: a liquidator does not borrow to settle a claim it is winding up. There is no instrument
-  // for it to rank AS until trade payables exist (worklist 13), so it is recorded owed and unpaid.
-  // That is a missing mechanism named, not a payment invented (Part II: MISSING is an answer).
+  // C3, C4, XI-8 (12b.2): WHAT A SEPARATION COSTS IS THE NOTICE, paid as wages while it runs. An
+  // employer that is trading has paid it by the time the row ends, and owes nothing at the door.
+  // One that has CEASED released its people at once (C4) and owes them the notice it could not
+  // run: Firm Birth D2.b says a claim like that RANKS with the other unsecured ones and is paid in
+  // the distribution, not in cash at the door — a liquidator does not borrow to settle a claim it
+  // is winding up. It is recorded owed and unpaid, per member, for the notice the row carried.
   const trading = ctx.parties.get(row.employer).status.alive;
-  const paid =
-    trading && payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`) > 0;
-  /**
-   * A-41, XI-8: AND NOW THERE IS SOMEWHERE FOR IT TO RANK. A trading employer that could not pay
-   * opened its claim inside `payFrom`; a ceased one never tried, so it opens here. Either way the
-   * worker is a named creditor of the employer for what it was owed and did not get, which is the
-   * fact `severanceRanking: 0` used to deny for exactly the case that needed it most.
-   */
+  const perMember = trading
+    ? asCash(0, 'paid through the notice')
+    : scale(wagePerMember(row), asRatio(row.notice, 'the periods of notice it could not run'), 'notice owed per member');
+  const paid = false;
   if (!trading && perMember > 0) {
     const ccy = ctx.registry.currencyOf(ctx.parties.get(row.employer).region);
-    const owed = gridPerMember(ctx.registry, ctx.parties.get(gone), perMember).total;
+    // A4.b: owed to the people on the row, not to the whole standing cell they were re-keyed onto.
+    const owed = ctx.registry.deliverable(perMember) * members;
     if (owed > 0) {
       ctx.owes({
         debtor: row.employer,
@@ -491,7 +506,7 @@ export function separate(
         ccy,
         owed,
         terms: severanceOwed(cause),
-        why: `${row.employer} ceased owing ${cause} severance; Firm Birth D2.b ranks it unsecured`,
+        why: `${row.employer} ceased owing ${cause} notice; Firm Birth D2.b ranks it unsecured`,
       });
     }
   }
@@ -505,12 +520,12 @@ export function separate(
       occupation: row.occupation,
       members,
       cause,
-      severancePerMember: perMember,
+      noticeOwedPerMember: perMember,
       severancePaid: paid,
       // What is owed, per member. It said 0 whenever the employer was still trading — including
       // when its payment had just failed — which recorded "nothing owed" about a worker who worked
       // and was not paid. What is unpaid is owed, and the agreement above is where it ranks.
-      severanceRanking: paid ? 0 : perMember,
+      severanceRanking: perMember,
     },
     true,
   );
@@ -536,7 +551,7 @@ export function separate(
 export function payWages(ctx: MechanismContext): void {
   for (const row of ctx.employment.all()) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
-    payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, wagePerMember(row), `wages from ${row.employer}`);
+    payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, wagePerMember(row), row.headcount, `wages from ${row.employer}`);
   }
 }
 
@@ -545,17 +560,21 @@ function payFrom(
   payer: PartyId,
   cell: PartyId,
   perMember: number,
+  /** A4.b, E1 (12b.2): THE PEOPLE ON THE ROW — how many of the cell this employer pays. */
+  members: number,
   reason: string,
 ): Cash {
   const nothing = asCash(0, 'nothing moved');
-  if (perMember <= 0) return nothing;
+  if (perMember <= 0 || members <= 0) return nothing;
   const from = ctx.parties.get(payer);
-  const to = ctx.parties.get(cell);
   const ccy = ctx.registry.currencyOf(from.region);
-  // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the cell is
+  // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the row is
   // a count of people and every one of them is paid the same whole number of pieces. What the
-  // fraction below one would have been is not paid, because there is no such coin.
-  const share = gridPerMember(ctx.registry, to, perMember);
+  // fraction below one would have been is not paid, because there is no such coin. It is the ROW'S
+  // headcount and not the cell's weight (12b.2): the standing cell of the employed key holds every
+  // employer's people at once (0f.4), and a wage paid to the whole of it paid another employer's
+  // staff — twenty-one times the bill in the labour scale model.
+  const share = { perMember: ctx.registry.deliverable(perMember), total: asQty(ctx.registry.deliverable(perMember) * members, 'the wage of the people on the row') };
   // A per-member wage below one piece of the money pays NOTHING — there is no such coin — and this
   // used to answer `true`, which is how a wage with no money leg behind it was booked as paid.
   if (share.total <= 0) return nothing;

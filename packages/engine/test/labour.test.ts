@@ -450,36 +450,47 @@ describe('the contract (Labour D2, C3)', () => {
     expect(typeof print[print.length - 1]?.data['wagePerHour']).toBe('number');
   });
 
-  it('costs the employer severance when it sheds hours it no longer wants (C3)', () => {
+  it('gives notice when it cuts hours it no longer wants, pays through it, and ends it (C3, 12b.2)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
         ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(10) });
       }
-      // It wants half the hours it has: the difference is a separation, and it pays for it.
+      // C5, 12b.2: it posts the CHANGE it wants — half the hours it has go, as a cut given notice.
       if (ctx.period === 4) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(5) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'sell', price: 'market', qty: hours(5) });
       }
     });
     w.step();
     w.step();
     w.step();
-    const before = w.cash(FIRM_1, USD);
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    const ev = w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1));
-    expect(ev).toHaveLength(1);
-    expect(ev[0]?.data['members']).toBe(5);
+    // Notice is given, to the people leaving, with the day it ends: the row says so, nobody moves.
+    const given = w.journal.ofKind('labour.notice').filter((e) => e.subjects.includes(FIRM_1));
+    expect(given).toHaveLength(1);
+    expect(given[0]?.data['members']).toBe(5);
+    expect(given[0]?.data['ends']).toBe(8);
+    expect(rows(w)[0]?.leaving).toBe(5);
+    expect(rows(w)[0]?.headcount).toBe(10);
+    expect(w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1))).toHaveLength(0);
+    // C3: the cost of the firing is the notice — all ten are paid through it, out of its account.
     const struck = rows(w)[0]?.wagePerHour ?? 0;
-    const severancePerMember = 4 * hours(1) * struck;
-    paidTheSame(Number(ev[0]?.data['severancePerMember']), severancePerMember);
-    // The wage bill halved and the severance was paid on top, out of the same account. It is read
-    // off the wire rather than off the balance, because the balance moves for its own reasons too
-    // — what its bank pays it, what it pays in tax on that — and none of those is this clause.
-    const wageBill = 5 * hours(1) * struck;
-    // Ten roundings: five people paid a wage and five paid severance, each to their own piece.
-    paidTheSame(paidBy(w, FIRM_1, r.period), wageBill + severancePerMember * 5, 10);
-    expect(before).toBeGreaterThan(w.cash(FIRM_1, USD));
+    const wageBill = 10 * hours(1) * struck;
+    paidTheSame(paidBy(w, FIRM_1, r.period), wageBill, 10);
+    for (const at of [5, 6, 7]) {
+      const s = w.step();
+      expect(s.period).toBe(at);
+      paidTheSame(paidBy(w, FIRM_1, at), wageBill, 10);
+    }
+    // And when it runs out, the five are separated with nothing more owed: paid to the end.
+    const ended = w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1));
+    expect(ended).toHaveLength(1);
+    expect(ended[0]?.data['members']).toBe(5);
+    expect(ended[0]?.data['noticeOwedPerMember']).toBe(0);
     expect(rows(w)[0]?.headcount).toBe(5);
+    expect(rows(w)[0]?.leaving).toBe(0);
+    const after = w.step();
+    paidTheSame(paidBy(w, FIRM_1, after.period), 5 * hours(1) * struck, 5);
   });
 });
 

@@ -25,7 +25,8 @@ import type { Period } from '../calendar/calendar.js';
 import { agreementKindId, type AgreementId, type PartyId, type RegionId } from '../core/ids.js';
 import { asRatio, type Cash, over, type PerPiece, scale, valueAt, plus, asCash } from '../core/measure.js';
 import { sum } from '../core/num.js';
-import { addQty, NO_QTY, type Qty, scaleQty } from '../core/tick.js';
+import { addQty, NO_QTY, type Qty, scaleQty, subQty } from '../core/tick.js';
+import type { Option } from '../core/option.js';
 import type { Agreement, AgreementKindDecl, AgreementTerms, Agreements } from './agreements.js';
 
 /** Labour A4, XI-10: one employment RELATIONSHIP, and it is a kind of agreement like the rest. */
@@ -47,12 +48,21 @@ export interface EmploymentTerms extends AgreementTerms {
   /** C2: the period from which the person is productive — finding a job is not starting it. */
   readonly productiveFrom: Period;
   /**
-   * C3 (12b.1, run at 12b.2): the NOTICE the job carries — the periods of wages a separation owes
-   * before it ends. A term of the contract, struck at the match like the wage.
+   * C3 (12b.2): the NOTICE the job carries — the periods of wages a separation runs for before it
+   * ends. A term of the contract, struck at the match like the wage: firing has a cost, and this
+   * is the cost, paid as wages to the people leaving for work the employer no longer wants.
    */
   readonly notice: number;
   /** A4.b: the whole worker cell's weight, always an integer count of people. */
   readonly headcount: number;
+  /**
+   * C3 (12b.2): HOW MANY OF THEM ARE UNDER NOTICE, and the first period they are not paid for. A
+   * cut restates the row rather than moving anybody: the people leaving are paid through the
+   * notice, and on the day it runs out they are separated (XI-15: their own key then). Nobody
+   * under notice is none, which is what a job that nobody has cut says.
+   */
+  readonly leaving: number;
+  readonly ends: Option<Period>;
 }
 
 /**
@@ -126,8 +136,13 @@ export interface EmploymentReads {
   inTrade(occupation: string, region: RegionId): readonly EmploymentRow[];
   /** Every live row, as a list taken now. */
   all(): readonly EmploymentRow[];
-  /** Hours an employer has under contract in one occupation and region. */
+  /**
+   * C3, C5 (12b.2): the hours an employer will HAVE in one occupation and region — under contract
+   * and not under notice. It is what an employer's posting is a change against.
+   */
   hoursAt(employer: PartyId, occupation: string, region: RegionId): Qty;
+  /** C3 (12b.2): the rows whose notice has run out by the start of `at` — to be ended. */
+  ending(at: Period): readonly EmploymentRow[];
   /**
    * D1.c: the going rate is the employment-weighted average of what is actually paid — a read over
    * the rows, never a series anybody writes. An occupation nobody is employed in has no going rate.
@@ -142,6 +157,33 @@ export interface EmploymentReads {
 }
 
 const live = (a: Agreement): boolean => a.state === 'performing' || a.state === 'breached';
+
+/** C3, C5 (12b.2): the hours these rows will keep in one trade and place — not the ones under notice. */
+export function standingHours(rows: readonly EmploymentRow[], occupation: string, region: RegionId): Qty {
+  return sum(
+    rows
+      .filter((r) => r.occupation === occupation && r.region === region)
+      .map((r) => scaleQty(r.hoursPerMember, r.headcount - r.leaving, 'hours it will keep')),
+  ).value;
+}
+
+/**
+ * C3, C5, D1 (12b.2): THE VENUE MATCHES NET CHANGES. An employer posts the CHANGE it wants against
+ * what it will have — more hours is a bid, fewer is a cut given notice — and the venue never reads
+ * an employer's hours against its own rows to work out which. What it wants and what it has are
+ * both the employer's; the difference is one read, here, for every employer (Law 4).
+ */
+export function netChange(
+  rows: readonly EmploymentRow[],
+  occupation: string,
+  region: RegionId,
+  wanted: Qty,
+): { readonly side: 'buy' | 'sell'; readonly qty: Qty } | undefined {
+  const has = standingHours(rows, occupation, region);
+  if (wanted > has) return { side: 'buy', qty: subQty(wanted, has, 'the hours it is short') };
+  if (wanted < has) return { side: 'sell', qty: subQty(has, wanted, 'the hours it is over') };
+  return undefined;
+}
 
 export function employmentReads(
   store: Pick<Agreements, 'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'byDebtorAndKind'>,
@@ -164,7 +206,8 @@ export function employmentReads(
     inTrade,
     all,
     hoursAt: (employer: PartyId, occupation: string, region: RegionId): Qty =>
-      sum(at(employer, occupation, region).map((r) => scaleQty(r.hoursPerMember, r.headcount, 'hours under contract'))).value,
+      standingHours(at(employer, occupation, region), occupation, region),
+    ending: (at: Period): readonly EmploymentRow[] => all().filter((r) => r.ends.some && r.ends.value <= at),
     goingRate: (occupation: string, region: RegionId): PerPiece | undefined => {
       const rows = inTrade(occupation, region);
       const heads = sum(rows.map((r) => r.headcount));

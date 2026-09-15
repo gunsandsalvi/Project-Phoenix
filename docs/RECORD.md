@@ -11451,3 +11451,35 @@ firms, small-business, control, households, treasury and banks suites (31 red of
 
 **Checks.** `labour.test.ts` at its five reds (12b.3's); `check:opens` green; lint, typecheck,
 spec, forbids, deaths green; `docs/ARCHITECTURE.md` carries the structural decision.
+
+## Item 12b.2 — The venue matches net changes, and a cut is notice given
+
+An employer posted the employment it wanted and the labour venue read its rows against the posting
+to work out whether that was a hire or a cut — the venue deciding what the employer meant. Now the
+employer posts the CHANGE against what it will have, through one read every employer makes
+(`netChange` in the register): more hours is a bid at the wage it offers, fewer is a sell the venue
+reads as a cut, nothing is a withdrawn vacancy (C5). Firms, small firms, a bank's two desks, a fund
+manager and the treasury all post the same way.
+
+A cut gives notice (C3). The row is restated to say how many are leaving and the period the notice
+ends; nobody moves; the wage runs to the end because `payWages` reads the row; and when it runs
+out `labour.release` separates the leavers with nothing more owed — paid to the end is the cost of
+the firing. The lump severance is gone. An employer that has CEASED releases its people at once
+(C4) and owes them the notice it could not run, as the unsecured claim on its estate.
+
+**Found and fixed on the way (Law 5, A4.b).** `payFrom` paid a wage to every member of the worker
+CELL rather than to the people on the ROW. The standing cell of the employed key holds every
+employer's staff of that region, cohort and bank at once, so a firm with a row of ten paid two
+hundred and ten — the treasury's hires in the same cell — twenty-one times its bill in the labour
+scale model, every period. The wage is the row's headcount now. The `sb-found` world that threw in
+period six at 12a.8 runs: that bill was this.
+
+**Findings.** The merged cell itself is 12b.2a, inserted: the employed key must name the employer
+so a cell is one row, which is what A4.c's findings in the labour tests are. With wages paid to the
+row the treasury misses twelve coupons in period 52 of the `tsy-g` scale model (XI-9), re-measured
+at 12b.6.
+
+**Checks.** `labour.test.ts` at its five reds (A4.c's, 12b.2a); the notice test green with the audit
+gate lifted (ten paid through four periods of notice, five separated with nothing owed, five paid
+after); `check:opens` green; lint, typecheck, spec, forbids, deaths green; 41 red of 88 across the
+world, firms, small-business, control, households, treasury, banks and funds suites, from 42.

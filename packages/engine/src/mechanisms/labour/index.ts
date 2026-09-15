@@ -32,6 +32,7 @@ import type { SystemModule } from '../../world/module.js';
 import { LABOUR_NUMBERS, OCCUPATIONS, type OccupationDecl } from './data.js';
 import {
   emptySkills,
+  endNotices,
   payWages,
   publishGoingRate,
   release,
@@ -64,7 +65,7 @@ function numbers(ctx: MechanismContext): LabourParams {
     hoursPerMember: ctx.params.amount(LABOUR_PARAMS.hoursPerMember, HOURS),
     retirementAge: ctx.params.years(LABOUR_PARAMS.retirementAge),
     hiringLagPeriods: ctx.params.periods(LABOUR_PARAMS.hiringLag),
-    severancePeriods: ctx.params.periods(LABOUR_PARAMS.severance),
+    noticePeriods: ctx.params.periods(LABOUR_PARAMS.severance),
     retrainingPeriods: ctx.params.periods(LABOUR_PARAMS.retraining),
   };
 }
@@ -106,7 +107,7 @@ function paramsOf(): ParamDecl[] {
       dimension: 'periods',
       kind: 'policy',
       owner: 'parliament',
-      why: 'Labour C3: what a firing costs, paid to the person separated. It is the cost that makes a firm hold labour through a soft patch and shed it when it is sure, and the asymmetry with hiring is where the employment cycle comes from. A pair of adjustment speeds is not this.',
+      why: 'Labour C3 (12b.2): the NOTICE a job carries — the periods a separation runs for with wages due before it ends, which is what a firing costs. It is the cost that makes a firm hold labour through a soft patch and shed it when it is sure, and the asymmetry with hiring is where the employment cycle comes from. A pair of adjustment speeds is not this.',
     },
     {
       id: LABOUR_PARAMS.retraining,
@@ -376,6 +377,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         writes: [
           { kind: 'event', name: 'labour.goingRate' },
           { kind: 'event', name: 'labour.hire' },
+          { kind: 'event', name: 'labour.notice' },
           { kind: 'event', name: 'labour.print' },
           { kind: 'event', name: 'labour.separation' },
         ],
@@ -429,7 +431,9 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         reads: [],
         writes: [{ kind: 'event', name: 'labour.separation' }],
         run: (ctx: MechanismContext) => {
-          release(ctx, bookOf(ctx), numbers(ctx));
+          release(ctx, bookOf(ctx));
+          // C3 (12b.2): and the notices that ran out this period end here, paid to the end.
+          endNotices(ctx, bookOf(ctx));
         },
       },
     ],

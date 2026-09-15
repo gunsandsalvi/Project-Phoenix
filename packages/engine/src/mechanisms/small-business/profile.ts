@@ -47,6 +47,7 @@ import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type Pla
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
 import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
+import { netChange } from '../../register/employment.js';
 import { findVenue } from '../../clearing/venue.js';
 import { addQty } from '../../core/tick.js';
 import { agreementKindId, type AgreementId } from '../../core/ids.js';
@@ -384,13 +385,18 @@ function postForHours(
       'beyond its members',
     ),
   );
+  // Labour C3, C5 (12b.2): it posts the CHANGE against what it will have — a bid for more, or a
+  // cut given notice. Wanting nobody, or hours worth nothing to it, is the cut of all it has.
   const wantsNobody = wanted <= 0 || perHour <= 0;
-  ctx.post(venue.id, {
-    party: view.self.id,
-    side: 'buy',
-    price: wantsNobody ? 0 : perHour,
-    qty: wantsNobody ? NO_QTY : wanted,
-  });
+  const change = netChange(view.employs(), occupation, view.self.region, wantsNobody ? NO_QTY : wanted);
+  if (change !== undefined) {
+    ctx.post(venue.id, {
+      party: view.self.id,
+      side: change.side,
+      price: change.side === 'buy' ? perHour : 'market',
+      qty: change.qty,
+    });
+  }
 }
 
 /** Goods B5, E1: the batch, started — inputs drawn at what they cost, output created at that cost. */

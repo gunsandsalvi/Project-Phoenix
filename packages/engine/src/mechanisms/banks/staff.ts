@@ -43,6 +43,7 @@ import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { ownPayroll, payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
+import { netChange } from '../../register/employment.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { processesItRan } from '../../registry/notices.js';
 
@@ -159,7 +160,11 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
    */
   const want = downTick(hours);
   if (want <= 0) return [];
-  return [{ party: view.self.id, side: 'buy', price: worth, qty: asQty(want) }];
+  // Labour C3, C5 (12b.2): the CHANGE against what it will have — more at what an hour is worth
+  // to it, or fewer as a cut given notice.
+  const change = netChange(view.employs(), BANKING, view.self.region, asQty(want));
+  if (change === undefined) return [];
+  return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
 }
 
 /** The venue this bank's staff are hired in, or none because this world has no such trade. */
@@ -272,5 +277,7 @@ export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonl
   if (took <= 0) return [];
   const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
-  return [{ party: view.self.id, side: 'buy', price: worth, qty: hours }];
+  const change = netChange(view.employs(), ADVISORY, view.self.region, hours);
+  if (change === undefined) return [];
+  return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
 }

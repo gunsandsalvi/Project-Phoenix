@@ -42,6 +42,7 @@ import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { committedTo, DECIDED, marketsIn, nothingDecided, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { ownPayroll } from '../../registry/wages.js';
+import { netChange } from '../../register/employment.js';
 import { publishExpectation, runLine } from './produce.js';
 import { REGISTER, bearFirms, lineOfFirm } from './born.js';
 import { NO_QTY } from '../../core/tick.js';
@@ -367,17 +368,18 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
   }
   const venue = venueOf(view, line);
   if (venue !== undefined) {
-    // Labour D1, C5: a posting is the employment it wants, at the wage it offers. A firm whose
-    // output no longer covers what it takes to make wants nobody, and what it posts is an empty
-    // opening: there is no wage on hours nobody is offered, and the labour module reads the hours
-    // it wants against the hours it has and sheds the difference at its own cost (Labour C3).
-    const wantsNobody = p.hours <= 0;
-    ctx.post(venue.id, {
-      party: firm,
-      side: 'buy',
-      price: wantsNobody ? 0 : p.wageBid,
-      qty: wantsNobody ? NO_QTY : p.hours,
-    });
+    // Labour D1, C3, C5 (12b.2): a posting is the CHANGE it wants — more hours at the wage it
+    // offers, or fewer, which is a cut given notice at its own cost. A firm whose output no longer
+    // covers what it takes to make wants nobody, and what it posts is the cut of all it has.
+    const change = netChange(view.employs(), venue.key['occupation'] ?? '', view.self.region, p.hours);
+    if (change !== undefined) {
+      ctx.post(venue.id, {
+        party: firm,
+        side: change.side,
+        price: change.side === 'buy' ? p.wageBid : 'market',
+        qty: change.qty,
+      });
+    }
   }
   slot.batch = p.batch;
   publishFunding(ctx, view, p);
