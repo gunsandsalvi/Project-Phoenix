@@ -272,6 +272,10 @@ export class Registry {
      * a bank in a region), so `region` is in every key. The rest is the kind's own business.
      */
     for (const k of this.partyKinds.values()) {
+      // XI-3 (12a.6): an exception to "nothing is immortal" is named or it is not a kind.
+      if ((k.fails ?? []).length === 0 && k.cannotFail === undefined) {
+        throw new InvalidRegistry('XI-3', `party kind ${k.id} fails on nothing and does not say why`);
+      }
       if (k.representation !== 'cell') {
         if (k.lattice !== undefined) {
           throw new InvalidRegistry(

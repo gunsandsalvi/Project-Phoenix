@@ -28,6 +28,7 @@ import { period, type Period } from '../../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { unpaid, type Failed } from '../../ledger/instruction.js';
 import type { MechanismContext } from '../../world/context.js';
+import { sovereignIn } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 
 /**
@@ -62,6 +63,10 @@ function inDefaultOfPayment(ctx: MechanismContext, cycle: number): void {
     if (f.reason.kind !== 'overdraftRefused') continue;
     for (const owed of unpaid(f)) {
       if (owed.payer !== f.reason.party) continue;
+      // Sovereign G1, Treasury D3 (12a.6): the state short in its own money has not DEFAULTED — it
+      // did not pay, the row stands (Money E1), and the name for it is a shortfall, never a credit
+      // event. In a money it does not issue it is a payer like any other (G2).
+      if (sovereignIn(ctx, owed.payer, owed.ccy)) continue;
       ctx.record(
         'credit.default',
         [owed.payer, owed.payee],

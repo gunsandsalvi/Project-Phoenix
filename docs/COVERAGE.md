@@ -357,17 +357,17 @@ measurement is taken there is nothing to name.
 | `Sovereign E2` | PARTIAL | banks hold for the liquidity buffer, the central bank for policy and households directly out of what they save (packages/engine/src/mechanisms/households/portfolio.ts); funds arrive at worklist 8 and foreign holders at 12 |
 | `Sovereign E3` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
 | `Sovereign E4` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
-| `Sovereign E5` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign E5` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts; packages/engine/src/mechanisms/banks/capital.ts `riskWeightOf` (12a.6: the state's paper is the zero-weighted asset in the money the state is `sovereignIn`, and weighs what any exposure does in a money it does not issue) |
 | `Sovereign F1` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign F2` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign F3` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign F4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Sovereign F5` | MET | packages/engine/src/mechanisms/treasury/index.ts |
-| `Sovereign G1` | MISSING |  |
-| `Sovereign G2` | MISSING |  |
-| `Sovereign G3` | PARTIAL | packages/engine/src/mechanisms/sovereign-instruments/index.ts states both halves — there is no estate (the claim is a negotiated exchange, nothing seizable) and a missed payment on one line does not accelerate the others. The negotiation itself is an exchange offer with holdouts (G4, worklist 13f) |
+| `Sovereign G1` | MET | packages/engine/src/world/failure.ts `sovereignIn`, `failedWhy` (12a.6: the state short in its own money does not fail — the kernel's failure test skips every money the party is sovereign in), packages/engine/src/mechanisms/credit-events/index.ts (and it is not a default: no credit event is recorded for a sovereign payer in its own money; the miss is `treasury.shortfall`, Treasury D3, and the row stands, Money E1). That the failure mode is then INFLATION is Part XII's to measure |
+| `Sovereign G2` | MET | packages/engine/src/registry/profiles.ts (12a.6: the treasury kind fails on cash), packages/engine/src/world/failure.ts (in a money it does not issue an arrear it cannot cover is a failure like anybody's), packages/engine/src/mechanisms/treasury/index.ts (`treasury.defaulted`, with the kernel's reason) |
+| `Sovereign G3` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts states both halves — there is no estate (the claim is a negotiated exchange, nothing seizable) and a missed payment on one line does not accelerate the others. The negotiation itself is an exchange offer with holdouts (G4, worklist 13f); 12a.6: the treasury module `resolves` its own kind, so the estate opens nothing for a sovereign — what it owes stays owed on the rows, and the negotiation (G4) is the exchange offer's item |
 | `Sovereign G4` | MISSING |  |
-| `Sovereign G5` | MISSING |  |
+| `Sovereign G5` | MET | packages/engine/src/mechanisms/treasury/index.ts `runProgramme`, `arrearsStanding` (12a.6: while an arrear of its own in a money it does not issue stands, it announces no auction and says so — `treasury.excluded` names the rows; the programme still publishes what it needs). The rating's first real consumer is 12's |
 | `Sovereign H1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H2` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |

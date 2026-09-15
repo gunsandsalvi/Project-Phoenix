@@ -94,6 +94,7 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     // oversight: it cannot run out of what it alone issues (§31 A1.a), and a loss reduces its
     // equity without ending it — the deferred asset is a row the treasury may make good (§31 E4).
     fails: [],
+    cannotFail: '§31 A1.a, E4: it cannot run out of what it alone issues, and a loss is a deferred asset the treasury may make good, not an end',
     // §31 A1.a: it is the other side of everybody's borrowing, and it does not have a bank.
     borrows: false,
     buysOnTerms: false,
@@ -140,9 +141,11 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
       overdraft: 'aCreditDecision',
     },
   },
-  // Sovereign G1: in its own money the failure mode is inflation, not default. A treasury that
-  // cannot pay does not pay, and that is a real recorded state (Treasury D3) — it does not end it.
-  // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
+  // Sovereign G1, G2 (12a.6): in its own money the failure mode is inflation, not default — a
+  // treasury that cannot pay does not pay, and that is a real recorded state (Treasury D3) that does
+  // not end it. In a money it cannot create a default is real, and it fails on cash there: the kind
+  // says cash, and WHICH money is the read (`sovereignIn`: `sovereign` and the currency of where it
+  // is), never a second kind. There is no estate for it (G3): its own module resolves it.
   // Treasury D3, Central Bank E2: it banks at the central bank, and that is not a choice it revisits.
   {
     id: TREASURY,
@@ -150,7 +153,7 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     /** item 15: a DUTY, and duties are not interests — it has no residual and nobody to enrich. */
     objective: 'itsOffice',
     moneyIssuer: null,
-    fails: [],
+    fails: ['cash'],
     borrows: true,
     // Measured (11.0b): the state was the one buyer taking terms in the scale model; procurement pays in arrears.
     buysOnTerms: true,

@@ -35,6 +35,7 @@ import {
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
+import { sovereignIn } from '../../world/failure.js';
 import { isLoan } from './loan.js';
 import { subordinatedOf } from './subordinated.js';
 
@@ -111,15 +112,18 @@ export interface CapitalRules {
 }
 
 /**
- * B1.a, Sovereign E5, XI-3: what one unit of this asset weighs. A claim on a party that cannot
- * fail, in the money that party issues, is the zero-weighted asset; everything else weighs what the
- * rule says an ordinary exposure weighs. A holding that is nobody's liability — a good, a share —
- * is not a claim on anybody at all and weighs the same as an exposure that can go wrong, because it
- * can.
+ * B1.a, Sovereign E5, XI-3: what one unit of this asset weighs. A claim on the state behind the
+ * money it is in (`sovereignIn`: the treasury in its own money, which cannot default there —
+ * Sovereign G1), or on a party that cannot fail at all in the money it issues (the central bank),
+ * is the zero-weighted asset; everything else weighs what the rule says an ordinary exposure
+ * weighs — the same treasury's paper in a money it does not issue included (G2; 12a.6). A holding
+ * that is nobody's liability — a good, a share — is not a claim on anybody at all and weighs the
+ * same as an exposure that can go wrong, because it can.
  */
 export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: CapitalRules): Ratio {
   if (!i.issuer.some) return rules.weight;
   const issuer = ctx.parties.get(ctx.parties.resolve(i.issuer.value).id);
+  if (sovereignIn(ctx, issuer.id, i.ccy)) return rules.sovereignWeight;
   const canFail = ctx.registry.partyKind(issuer.kind).fails ?? [];
   if (canFail.length > 0) return rules.weight;
   return ctx.registry.currencyOf(issuer.region) === i.ccy ? rules.sovereignWeight : rules.weight;

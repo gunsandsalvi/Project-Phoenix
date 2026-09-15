@@ -501,6 +501,13 @@ export interface PartyKindProfile {
    */
   readonly fails?: readonly ('cash' | 'solvency')[];
   /**
+   * XI-3 (12a.6): A KIND THAT FAILS ON NOTHING SAYS WHY, with the clause. "Nothing is immortal" needs
+   * its exceptions NAMED rather than left out, and an empty `fails` with nothing beside it is exactly
+   * an exception left out — the registry refuses the kind. A treasury is no longer one: it fails on
+   * cash in a money it does not issue (Sovereign G2), and its own money is the read, not the kind.
+   */
+  readonly cannotFail?: string;
+  /**
    * Banks Lending A1, C3, XI-8: whether anybody can lend to a party of this kind at all. A going
    * concern can borrow, and whether it does is a bank's credit decision; a party whose whole
    * business is being wound up cannot, because there is nobody left to sign and nothing to repay

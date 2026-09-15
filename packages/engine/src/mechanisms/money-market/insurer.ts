@@ -50,6 +50,7 @@ export const insurerKind: PartyKindProfile = {
   // XI-3: neither trigger can fire on it. It holds cash and owes nothing until a bank fails, and
   // what happens when its fund is short is D5's purse rather than its own death.
   fails: [],
+  cannotFail: 'XI-3, Banks Capital D5: it owes nothing until a bank fails, and when its fund is short what pays is the purse behind it, not its death',
   // Banks Lending A1: nobody lends to it. What stands behind it is the state, not a creditor.
   borrows: false,
   buysOnTerms: false,

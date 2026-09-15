@@ -917,8 +917,9 @@ function payInterest(
  * A-57, C4.a, XI-3, XI-8: A VEHICLE WHOSE POOL HAS RUN OFF WINDS UP, AND ITS RESIDUAL HAS A HOLDER.
  *
  * Nothing ceased a vehicle: `fails: ['cash','solvency']` will not fire on a party with positive
- * equity, the kind has no owner and no distribution, and `distribute` removed a deal only when the
- * vehicle had ALREADY ceased. So a run-off deal sat on the book for ever holding whatever was left,
+ * equity that has paid every coupon (since 12a.1 a senior coupon it could not fund is an arrear it
+ * issued, and THAT is what `cash` fires on), the kind has no owner and no distribution, and
+ * `distribute` removed a deal only when the vehicle had ALREADY ceased. So a run-off deal sat on the book for ever holding whatever was left,
  * which is Appendix B's residual with no holder wearing a party's name.
  *
  * The arranger keeps the bottom (C4.a) — it holds the junior, which is the equity of the deal — so

@@ -64,7 +64,9 @@ import { weightOf, type CellParty, gridPerMember } from '../../parties/party.js'
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { issuedBy } from '../../register/instruments.js';
+import { issuedBy, type Instrument } from '../../register/instruments.js';
+import { isArrear } from '../../register/arrears.js';
+import { failedWhy, sovereignIn } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
@@ -428,6 +430,8 @@ export const treasury: SystemModule = {
       writes: [
         { kind: 'event', name: 'auction.announced' },
         { kind: 'event', name: 'treasury.programme' },
+        { kind: 'event', name: 'treasury.excluded' },
+        { kind: 'event', name: 'treasury.defaulted' },
       ],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
@@ -500,6 +504,10 @@ export const treasury: SystemModule = {
     },
   ],
   families: [allotmentReconciles()],
+  // Sovereign G3 (12a.6): THERE IS NO ESTATE for a sovereign — nothing to seize. A treasury that
+  // fails in a money it does not issue is resolved here: it is named in default, it is out of the
+  // market while the row stands (G5), and what it owes stays owed. The exchange offer (G4) is 17.
+  resolves: [TREASURY],
 };
 
 /**
@@ -585,7 +593,20 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
       ? over(need, asRatio(auctions, 'the auctions it will hold'), 'auction size')
       : asCash(0, 'a treasury that needs nothing sells nothing');
 
-  const planned = isAuctionPeriod && size > 0 ? announce(ctx, id, ccy, size, on) : none<string>();
+  // Sovereign G2, G3, G5 (12a.6): a treasury IN DEFAULT is EXCLUDED FROM THE MARKET, not
+  // liquidated — there is no estate and nothing to seize. A default is a miss in a money it does
+  // not issue (G2); in its own the miss is a shortfall (G1, Treasury D3) and it keeps funding
+  // itself. While such an arrear stands it brings nothing: the rows it owes are read off the
+  // register (Law 19), and what it still needs is on the programme for everybody to see. This
+  // module is what resolves it — by saying so, and by standing out.
+  const standing = arrearsStanding(ctx, id);
+  const excluded = standing.length > 0;
+  if (excluded) {
+    ctx.record('treasury.excluded', [id], { arrears: standing.map((a) => ({ instrument: a.id, ccy: a.ccy, owed: a.issued })) }, true);
+    const why = failedWhy(ctx, ctx.participant(id));
+    if (why !== undefined) ctx.record('treasury.defaulted', [id], { why }, true);
+  }
+  const planned = isAuctionPeriod && size > 0 && !excluded ? announce(ctx, id, ccy, size, on) : none<string>();
   // Law 15, 0e′.4: what it needs goes in this treasury's own working store, which is what its own
   // buy-in reads back this period. The event below is the PUBLIC programme (C1.a) — the whole point
   // of it is that everybody can see it — and it is written from the same number.
@@ -609,6 +630,11 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
     },
     true,
   );
+}
+
+/** Money E1, Sovereign G2 (12a.6): the arrears this treasury has not paid in a money it does not issue. */
+function arrearsStanding(ctx: MechanismContext, id: PartyId): readonly Instrument[] {
+  return [...ctx.instruments.issuedBy(id)].filter((i) => i.status.live && isArrear(i) && !sovereignIn(ctx, id, i.ccy));
 }
 
 /** Sovereign C1: announce a size on a line, at a walk-away the curve gives it (C5). */

@@ -255,6 +255,7 @@ export const probateKind: PartyKindProfile = {
   // It is not a firm and it cannot fail: it owes nobody. What it holds it owes to the living, and
   // that is not a liability anybody can call — it is an estate in the course of being divided.
   fails: [],
+  cannotFail: 'XI-3, XI-8, Households F1.b: it owes nobody; what it holds is the estate of the dead in the course of being divided, and nobody can call that',
   borrows: false,
   buysOnTerms: false,
   // Banks Funding E1: it does not CHOOSE a bank and it never moves — it banks where the family it

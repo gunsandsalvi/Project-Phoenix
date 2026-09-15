@@ -94,6 +94,7 @@ export const estateKind: PartyKindProfile = {
   terminal: true,
   // An estate does not fail: it is what failure resolves into.
   fails: [],
+  cannotFail: 'XI-3, XI-8: it is what failure resolves into; what it owes it pays by the waterfall out of what it holds, and the rest is the loss of whoever held the claim',
   // Banks Lending A1, C3: and nobody lends to it. Its whole business is being wound up — there is
   // nobody left to sign and no future income to repay out of, so a bank asked for an overdraft by
   // one declines, which is the credit decision Money B3.a wants and the refusal B3.c records.

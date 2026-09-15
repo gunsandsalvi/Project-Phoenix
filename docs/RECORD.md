@@ -11320,3 +11320,33 @@ employment register gives it.
 its people are in probate marked defaulted, the reason names the miss); the mortgage, arrears,
 formation and mobility tests green (16); the households suite's nine reds are the nine of 12a.4;
 `check:opens` green; lint, typecheck green.
+
+## Item 12a.6 — The state fails only in a money it does not issue
+
+A treasury could not fail at all: its kind said so, and XI-3's exception for it was the whole of
+the kind. Now it fails on cash like anybody, and WHICH money is a read, not a kind: the kernel's
+failure test walks every money the party has live arrears in and skips the one it is sovereign in
+— the kind borrows on the state's credit and the money is the one of where it sits. In its own
+money a miss is a shortfall (Treasury D3), the row stands (Money E1) and no credit event is
+recorded for it (G1); in a money it does not issue it is a default (G2), the treasury module says
+so with the kernel's reason, no estate opens (G3: it resolves its own kind), and it is out of the
+market while the row stands — no auction is announced, and the rows are named every period (G5).
+
+**A kind that fails on nothing now says why.** `cannotFail` carries the clause, and the registry
+refuses a kind with an empty `fails` and nothing beside it: the central bank, probate, the deposit
+insurer and the estate name theirs. A securitisation vehicle's senior coupon it cannot fund has
+been an arrear since 12a.1, so `cash` already fires on it; the comment that said otherwise is
+fixed.
+
+**Found and fixed on the way (Law 4).** A bank's risk weight read "cannot fail" off the kind's
+`fails` list, so the moment the treasury could fail anywhere its own paper weighed as an ordinary
+exposure — every bank in the scale model raised capital against its bills from period two and the
+treasury ran dry by period thirty. The weight now reads `sovereignIn` for the paper's own money
+(Sovereign E5); the same treasury's foreign-money paper weighs what any exposure does (G2). A
+first cut excluded the treasury on a DOMESTIC arrear too, and twelve missed coupons in the year
+measured that G1 means exclusion follows a default, not a shortfall — corrected before commit.
+
+**Checks.** `treasury-default.test.ts` green (two: a domestic miss is no default, no estate, and it
+keeps bringing paper; a foreign-money miss is a default, no estate, and it is excluded while the
+row stands); the treasury, estate and credit-events suites at their 12a.5 reds (17, none new);
+`check:opens` green; lint, typecheck, spec, forbids, deaths green.

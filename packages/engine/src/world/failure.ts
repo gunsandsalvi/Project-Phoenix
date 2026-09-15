@@ -15,7 +15,7 @@
  * and liabilities past its assets. The two have different triggers and different remedies, and
  * whichever fired is named in the reason so the resolution can say which one it was.
  */
-import type { CurrencyCode } from '../core/ids.js';
+import type { CurrencyCode, PartyId } from '../core/ids.js';
 import { sum, withinDust } from '../core/num.js';
 import { isArrear } from '../register/arrears.js';
 import type { MechanismContext, ParticipantView } from './context.js';
@@ -36,6 +36,26 @@ export function stillOwed(view: ParticipantView, ccy: CurrencyCode): number {
   return sum(terms).value;
 }
 
+/** Money E1 (12a.6): the monies this party has live arrears in, each once. */
+function owedIn(view: ParticipantView): readonly CurrencyCode[] {
+  const out: CurrencyCode[] = [];
+  for (const i of view.instruments.issuedBy(view.self.id)) {
+    if (i.status.live && isArrear(i) && !out.includes(i.ccy)) out.push(i.ccy);
+  }
+  return out;
+}
+
+/**
+ * Sovereign A1, G1 (12a.6): WHETHER THIS PARTY IS THE STATE BEHIND THIS MONEY — its kind borrows on
+ * the state's credit (`sovereign`) and the money is the one of where it sits. A miss in that money
+ * is a shortfall (Treasury D3) and never a default; it is asked here, once, and read by the kernel's
+ * failure test and by the credit events alike (Law 4).
+ */
+export function sovereignIn(ctx: MechanismContext, party: PartyId, ccy: CurrencyCode): boolean {
+  const p = ctx.parties.get(party);
+  return ctx.registry.partyKind(p.kind).sovereign === true && ctx.registry.currencyOf(p.region) === ccy;
+}
+
 /**
  * XI-3, C1.a: the reason this party has failed, or nothing. A kind that names neither trigger cannot
  * die, which is how XI-3's two exceptions — the central bank, and a treasury in its own money — are
@@ -45,11 +65,16 @@ export function stillOwed(view: ParticipantView, ccy: CurrencyCode): number {
 
 export function failedWhy(ctx: MechanismContext, view: ParticipantView): string | undefined {
   const can = ctx.registry.partyKind(view.self.kind).fails ?? [];
-  const ccy = ctx.registry.currencyOf(view.self.region);
   if (can.includes('cash')) {
-    const owed = stillOwed(view, ccy);
-    if (owed > 0 && owed > view.cash(ccy)) {
-      return `it could not pay ${owed} that fell due and still cannot`;
+    // 12a.6: IN EVERY MONEY IT OWES ARREARS IN — except one it issues (Sovereign G1: in its own
+    // money a treasury that cannot pay does not pay, and the failure mode is inflation, not
+    // default; G2: in a foreign money it can genuinely default).
+    for (const ccy of owedIn(view)) {
+      if (sovereignIn(ctx, view.self.id, ccy)) continue;
+      const owed = stillOwed(view, ccy);
+      if (owed > 0 && owed > view.cash(ccy)) {
+        return `it could not pay ${owed} ${ccy} that fell due and still cannot`;
+      }
     }
   }
   if (can.includes('solvency')) {
