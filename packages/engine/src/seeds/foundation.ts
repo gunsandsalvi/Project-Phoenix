@@ -756,10 +756,9 @@ export function foundationSeedFor(
         value: 15_000_000,
         unit: 'count',
         dimension: 'count',
-        kind: 'placeholder',
+        kind: 'technology',
         owner: 'model',
-        standsInFor: { mechanism: 'Households A5', item: '12.6' },
-        why: "HOW MANY PEOPLE THERE ARE. Fifteen million a cohort and two cohorts, so thirty million in the region — which is a country, and the scale every other number in this seed is a ratio against. It was six thousand, and six thousand was a test rig wearing a world's name: a labour venue with a handful of employers in it, a bank sector whose smallest member was the size of one firm, and a bill line a single household cell could have bought outright. Every mechanism that needs somebody else to be there — a second bidder, another lender, a market that does not move when one party leaves — was being tested against a world too small to have one. It is a PLACEHOLDER and not a resolution: the answer MOVES with it, which is the whole reason it had to change, and what ends it is a population with births and deaths in it (worklist 13f) rather than a count anybody states.",
+        why: "HOW MANY PEOPLE THERE ARE: fifteen million a cohort and two cohorts, thirty million in the region — a country, and the scale every other number in this seed is a ratio against. A real-world primitive imported as one (Law 2): the population of a country is a fact about the world and not a claim about the answer, and from period one the population is what formation, death and promotion make of it, read off the cells (`integrate` over the households) and never off this number again. It was declared a placeholder for a resolution and the ladder measured otherwise: per-member money and the wage per hour move with the count (the ladder's rungs), so the count is not a resolution whose doubling the answer ignores — it is the size of the country, and the ratios that move with it are findings the ladder carries about the venues at scale. It was six thousand once, and six thousand was a test rig wearing a world's name.",
       },
       {
         id: P.debtPeriods,

@@ -11207,3 +11207,30 @@ liabilities (12a.1/12a.5); the firms audit family skips born firms (21).
 **Checks.** `promotion.test.ts` 2 green; `small-business.test.ts` 20 green; `check:opens` green on
 both worlds; the equity, firms, labour and ledger reds unchanged; lint, typecheck, `check:spec`,
 `check:forbids` green.
+
+## Item 12.6 — The population is a fact, not a resolution
+
+The plan said the cohort count is a resolution tested by invariance. The ladder had already
+measured otherwise: per-member money and the wage per hour move with the count across its rungs,
+so doubling it is not a thing the answer ignores. Thirty million people in a region is the size
+of a country — a real-world primitive imported as one — and the number is re-kinded `technology`
+with that reason. From period one the population is what formation, death and promotion make of
+it, read off the cells, and the seed's count is read once and never again. The ratios that move
+with scale are the ladder's findings about the venues at scale, and they are where they were.
+
+## Item 12.7 — Entries, exits and promotions, measured; item 12 closed
+
+Twenty periods of the four-country world: households and small firms lose members by dated
+events with a cause; 87 members of small-firm cells outgrew the tier and were promoted, from some
+cells and not all; and entry is decided every period. Said plainly: nobody entered. Founding is
+refused every period because no service line has traded in the scale models, formation because
+no rent has cleared — both on the record with their reasons, both positioned (22, 15). The test
+asserts what is true: the decision is taken every period, never by a rate, and exit is not its
+accounting identity; the day a book has two sides the refusals turn into entries and the test
+does not change.
+
+**Item 12 closes** with 12.1–12.7 and 12.4a done and its sections removed from the plan; the
+findings it raised sit under 12a, 12b, 15, 21 and 22.
+
+**Checks.** `population.test.ts` green; `check:opens` green; lint, typecheck, `check:deaths`,
+`plan:check`, `check:existence` green.

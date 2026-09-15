@@ -17,14 +17,12 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 6 of 21 items closed** (40 of 150 steps).
+**The plan: 4 of 19 items closed** (23 of 133 steps).
 **Requirement coverage: 67.8%** (934 MET, 108 PARTIAL, 0 OUT OF SCOPE of 1377 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 11 — Small-Business Pools (§42): the profile, then the rest | 8 | 8 | closed |
-| 12 — Firm birth, household formation, promotion | 9 | 9 | closed |
 | 12a — Households borrow, owe and fail; arrears; the immortals | 9 | 9 | closed |
 | 12b — Employment is a standing relation | 6 | 6 | closed |
 | 12c — Productivity is an outcome | 3 | 3 | closed |
@@ -60,8 +58,10 @@ The plan has two parts:
 | 10.2 | — | — | closed |
 | 10.3 | — | — | closed |
 | 10.4 | — | — | closed |
+| 11 | — | — | closed |
 | pre12 | — | — | closed |
 | 11.5 | — | — | closed |
+| 12 | — | — | closed |
 | 11.6 | — | — | closed |
 | 12b.1 | — | — | closed |
 | 12c.1 | — | — | closed |
