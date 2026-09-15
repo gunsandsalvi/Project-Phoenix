@@ -43,7 +43,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { currencyUnit } from '../../core/ids.js';
 import type { CashFlow, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Terms, Instrument } from '../../register/instruments.js';
-import { FIRM } from '../../registry/profiles.js';
+import { FIRM, SMALL_FIRM } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule, TermsSale } from '../../world/module.js';
 
@@ -160,6 +160,9 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
   if (ctx.instruments.get(sold).issuer.some) return none<InstrumentId>();
   const both = ctx.parties.get(seller).status.alive && ctx.parties.get(buyer).status.alive;
   if (!both) return none<InstrumentId>();
+  // A3, Households C1.d, Law 15 (11.0b): terms are for buyers of a kind that takes them, which the
+  // registry says; a household pays for a loaf with money it has, whatever its seller thinks of it.
+  if (!ctx.registry.partyKind(ctx.parties.get(buyer).kind).buysOnTerms) return none<InstrumentId>();
   // B5, Corporate Credit A4: the seller's own record of this buyer. A missed payment it was a side
   // of is something it saw; what other sellers saw is theirs.
   if (letDown(ctx, seller, buyer)) return none<InstrumentId>();
@@ -267,7 +270,13 @@ export function tradeCredit(): SystemModule {
     participants: [],
     // A3, B5: exactly one module answers what a firm ships on, and it is the one that owns firms'
     // judgements of each other. The kernel writes the leg; this decides what goes in it.
-    termsOffered: [{ partyKind: FIRM, decide: shipsOnTerms }],
+    // §36 A4, 11.0b: AND A SMALL FIRM SHIPS ON TERMS TOO — the same judgement of the same record,
+    // because a corner shop's supplier and a corner shop are both firms (§42 A1), and the row a
+    // cell writes to a cell is the trade credit the tier lives on.
+    termsOffered: [
+      { partyKind: FIRM, decide: shipsOnTerms },
+      { partyKind: SMALL_FIRM, decide: shipsOnTerms },
+    ],
     families: [],
   };
 }

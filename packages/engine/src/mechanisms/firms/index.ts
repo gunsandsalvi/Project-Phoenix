@@ -198,6 +198,8 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         moneyIssuer: null,
         fails: ['cash', 'solvency'],
         borrows: true,
+        // Trade Credit A3: a firm pays its supplier on the trade's terms.
+        buysOnTerms: true,
         depositClass: 'corporate',
       },
     ],

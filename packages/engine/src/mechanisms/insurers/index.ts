@@ -125,6 +125,7 @@ export const insuranceKind: PartyKindProfile = {
    */
   fails: ['cash', 'solvency'],
   borrows: true,
+  buysOnTerms: false,
   depositClass: null,
 };
 

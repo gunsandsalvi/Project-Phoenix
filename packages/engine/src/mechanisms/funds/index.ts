@@ -218,6 +218,7 @@ export const fundKind: PartyKindProfile = {
    * rather than hidden behind a `false` that means something else.
    */
   borrows: true,
+  buysOnTerms: false,
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
   // is the money that leaves first, and it leaves because it chose to (`bankChoices`, bank.ts).
   depositClass: 'wholesale',
@@ -239,6 +240,7 @@ export const fundManagerKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['cash', 'solvency'],
   borrows: true,
+  buysOnTerms: false,
   // A1.c: it runs the money and it banks like the money it runs.
   depositClass: 'wholesale',
 };

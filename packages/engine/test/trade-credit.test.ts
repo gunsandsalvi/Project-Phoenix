@@ -4,7 +4,7 @@
  * @spec Trade Credit A1 Trade Credit A2 Trade Credit A3 Trade Credit B3 Trade Credit C4 Trade Credit D4 Trade Credit E1 Trade Credit E2 Firm Birth D2.b Law 4 Law 5 Law 15
  */
 import { describe, expect, it } from 'vitest';
-import { displayName, paramId } from '../src/index.js';
+import { FIRM, HOUSEHOLD, SMALL_FIRM, displayName, paramId } from '../src/index.js';
 import { INVOICE, invoiceTerms, isInvoice } from '../src/mechanisms/trade-credit/index.js';
 import { rigWorld } from './rig.js';
 
@@ -27,9 +27,10 @@ describe('an invoice is ONE row (Trade Credit A1, Law 4)', () => {
       if (row.issuer.some) expect(String(row.issuer.value)).toBe(String(t.buyer));
       expect(String(t.seller)).not.toBe(String(t.buyer));
       const holders = w.register.holdersOf(row.id);
-      // E2: every receivable has a holder, and it is the seller.
+      // E2: every receivable has a holder, and it is the seller — or, once the seller has ceased,
+      // whoever succeeded to its book (Register F2: every reference resolves to the successor).
       expect(holders.length).toBeGreaterThan(0);
-      for (const h of holders) expect(String(h)).toBe(String(t.seller));
+      for (const h of holders) expect(String(h)).toBe(String(w.parties.resolve(t.seller).id));
     }
   });
 
@@ -110,6 +111,21 @@ describe('how long a buyer has is the ONE declared number (Trade Credit A3, Law 
       expect(id).not.toContain('rate');
       expect(id).not.toContain('loss');
       expect(id).not.toContain('default');
+    }
+  });
+});
+
+describe('terms are for buyers of a kind that takes them (Trade Credit A3, Households C1.d, 11.0b)', () => {
+  it('is declared on the kind: firms and small firms take terms, a household pays with money it has', () => {
+    const w = rigWorld('credit-kinds');
+    expect(w.registry.partyKind(FIRM).buysOnTerms).toBe(true);
+    expect(w.registry.partyKind(SMALL_FIRM).buysOnTerms).toBe(true);
+    expect(w.registry.partyKind(HOUSEHOLD).buysOnTerms).toBe(false);
+    for (let i = 0; i < 6; i += 1) w.step();
+    for (const row of invoices(w)) {
+      const t = invoiceTerms(row);
+      // C1.d: no invoice names a household as the buyer, whatever its seller thought of it.
+      expect(w.registry.partyKind(w.parties.get(t.buyer).kind).buysOnTerms).toBe(true);
     }
   });
 });

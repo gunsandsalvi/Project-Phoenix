@@ -138,6 +138,7 @@ const houseKind: PartyKindProfile = {
   // C5: nobody lends to it. Its resources are the four lines of the waterfall, they are
   // enumerable, and a lender behind them would be the guarantor of last resort C5 forbids.
   borrows: false,
+  buysOnTerms: false,
   depositClass: null,
   terminal: false,
 };

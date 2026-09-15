@@ -10749,3 +10749,25 @@ go — an estate for a cell — is 11.0e's.
 
 **Checks.** `check:opens` green on both worlds; the freight, small-business, lattice, ladder and
 household tests green; lint, typecheck, `check:spec`, `check:forbids`, `check:deaths` green.
+
+## Item 11.0b — Inputs on terms
+
+**Who takes terms is a fact about the kind.** `PartyKindProfile.buysOnTerms` is declared on every
+kind: firms and small firms say yes (§36 A4: the tier that lives on trade credit), and so does the
+treasury, because the measurement said it was the one buyer that ever took terms in the scale
+model; households say no (C1.d: a loaf is paid for with money it has), and so do estates, pools,
+houses, insurers and the rest, which buy nothing that ships. The seller's judgement of the buyer
+(`shipsOnTerms`) is now taken among those kinds only, where before it judged every buyer and the
+registry said nothing. And the trade-credit module answers for small-firm sellers as it does for
+named ones — one decision, one record, because a corner shop and its supplier are both firms.
+
+**One test read too literally.** The invoice test named the seller as the holder of its own
+receivable; with the sector live the seller had ceased by period three and its estate held the
+row, which is what Register F2 says happens. The test resolves the seller through its successor.
+
+**Measured, not chased.** No small firm takes an invoice in the rig, because no input line trades
+there (the named mines never start: 12b.3). The mechanism is the same one a named firm runs, and
+it is measured where a named firm's is.
+
+**Checks.** `check:opens` green on both worlds; the trade-credit and small-business tests green;
+lint, typecheck, `check:spec`, `check:forbids` green.

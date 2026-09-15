@@ -688,6 +688,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         moneyIssuer: null,
         fails: [],
         borrows: false,
+        buysOnTerms: false,
         depositClass: 'retail',
       },
     ],

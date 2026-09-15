@@ -71,6 +71,7 @@ const moverKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['cash', 'solvency'],
   borrows: false,
+  buysOnTerms: false,
   depositClass: null,
   terminal: false,
 };

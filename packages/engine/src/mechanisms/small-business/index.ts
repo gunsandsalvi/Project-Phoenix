@@ -253,6 +253,8 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         fails: ['cash', 'solvency'],
         /** A5: bank-dependent. It borrows, and it is too small for the bond market (B1, 11.7). */
         borrows: true,
+        // §36 A4: the tier that lives on trade credit.
+        buysOnTerms: true,
         /**
          * Banks Funding A1, A1.b: OPERATIONAL money — a small firm's account is where its takings
          * land and where its wages go out, which is a different deposit from a saver's, and it is

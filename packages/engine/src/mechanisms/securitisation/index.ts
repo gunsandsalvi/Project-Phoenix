@@ -136,6 +136,7 @@ export const vehicleKind: PartyKindProfile = {
    */
   fails: ['cash', 'solvency'],
   borrows: false,
+  buysOnTerms: false,
   // Banks Funding E1: it does not shop for a bank. It banks where its arranger banks, because that
   // is who set it up, and it is over when the pool is.
   depositClass: null,

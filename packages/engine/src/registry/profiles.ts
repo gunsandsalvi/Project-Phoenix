@@ -112,6 +112,7 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     fails: [],
     // §31 A1.a: it is the other side of everybody's borrowing, and it does not have a bank.
     borrows: false,
+    buysOnTerms: false,
     // Its own money is what everybody else's deposit is made of; nobody's deposit base holds it.
     depositClass: null,
     moneyIssuer: {
@@ -143,6 +144,7 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     fails: ['cash', 'solvency'],
     // Banks Funding: it borrows constantly — deposits, the interbank market, the window (11).
     borrows: true,
+    buysOnTerms: false,
     // Banks Funding A1.c: what a bank holds AT ANOTHER BANK is wholesale money — few, very large,
     // and in the market all day. Its own account is at the central bank because that is what
     // settling in central bank money IS (Money C2.a), so no module gives it a reason to move it.
@@ -166,6 +168,8 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     moneyIssuer: null,
     fails: [],
     borrows: true,
+    // Measured (11.0b): the state was the one buyer taking terms in the scale model; procurement pays in arrears.
+    buysOnTerms: true,
     depositClass: null,
     sovereign: true,
   },

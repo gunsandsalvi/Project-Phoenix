@@ -44,6 +44,7 @@ export const assessorKind: PartyKindProfile = {
   fails: ['cash', 'solvency'],
   moneyIssuer: null,
   borrows: true,
+  buysOnTerms: false,
   // Banks Funding A1.b: a small business that banks where it transacts.
   depositClass: 'corporate',
 };

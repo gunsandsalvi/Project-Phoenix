@@ -251,6 +251,7 @@ export const probateKind: PartyKindProfile = {
   // that is not a liability anybody can call — it is an estate in the course of being divided.
   fails: [],
   borrows: false,
+  buysOnTerms: false,
   // Banks Funding E1: it does not CHOOSE a bank and it never moves — it banks where the family it
   // is winding up banked, which is what its own id says. A depositor that shops around is a
   // depositor with a decision to take, and probate has none: it is an estate in the course of

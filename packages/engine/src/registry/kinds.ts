@@ -503,6 +503,15 @@ export interface PartyKindProfile {
    */
   readonly borrows: boolean;
   /**
+   * Trade Credit A3, A4, Households C1.d, Law 15 (11.0b): WHETHER A BUYER OF THIS KIND IS SHIPPED
+   * ON TERMS AT ALL. A firm pays its supplier in thirty days and a small firm is the tier that
+   * lives on that (§36 A4); a household pays for a loaf with money it has, because nobody lends it
+   * for one (C1.d), and a fund or an assessor buys nothing that ships. The seller's judgement of
+   * the buyer (`shipsOnTerms`) is taken among the kinds this says yes for; before it, the seller
+   * judged every buyer, and the only one that ever took terms in the scale model was the state.
+   */
+  readonly buysOnTerms: boolean;
+  /**
    * Banks Funding A1, A1.d: WHICH KIND OF DEPOSITOR a party of this kind is, or null for one that
    * is nobody's deposit base. It is a fact about the kind — many and small, fewer and operational,
    * few and very large — so it is declared with the kind and the funding market asks the profile
