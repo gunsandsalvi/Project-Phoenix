@@ -48,6 +48,13 @@ export interface LoanTerms extends Terms {
   readonly drawn: Civil;
   readonly maturity: Civil;
   readonly dayCount: DayCount;
+  /**
+   * Bond F3, Small-Business Pools B1, Housing C2 (11.2): bullet at maturity, or a schedule. A
+   * term loan repays its principal straight-line over the periods it has left, so the borrower
+   * pays interest AND principal every period; a line is drawn and repaid at the borrower's option
+   * and falls due once. Which it is, is a term struck at origination like the rate.
+   */
+  readonly amortising: boolean;
   /** A4: what it is secured on, which is nothing for an unsecured loan — stated either way. */
   readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
 }

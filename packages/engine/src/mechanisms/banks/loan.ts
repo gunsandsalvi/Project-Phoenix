@@ -13,7 +13,7 @@
  * lender of record, a borrower and its own terms. There is no book number anywhere; a bank's book
  * is the sum of the rows it holds, and that is a read.
  */
-import { asPerPiece, asRatio, plus, scale, type PerPiece, type Ratio } from '../../core/measure.js';
+import { asPerPiece, asRatio, minus, plus, scale, type PerPiece, type Ratio } from '../../core/measure.js';
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -107,8 +107,22 @@ export const loanKind: InstrumentKindProfile = {
     const out: DueAction[] = [];
     const amountPerUnit = scale(PAR, interestTo(t, from, to), 'the interest one unit earned');
     if (amountPerUnit > 0) out.push({ kind: 'coupon', date: to, amountPerUnit });
-    // A bullet: the principal falls due once, on the day the terms say (A2).
-    if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
+    const matures = cal.periodOf(t.maturity);
+    // F3 (11.2): an amortiser repays a slice of what is outstanding every period it has left —
+    // one over the periods to and including the maturity, read off the calendar each time, so a
+    // further drawing on the row is repaid over the same remaining term and nothing stores a
+    // schedule (Law 19). The interest above is on what was outstanding through the period; the
+    // slice goes after it on the same day.
+    if (t.amortising && matures > period) {
+      out.push({
+        kind: 'amortisation',
+        date: to,
+        unitsPerUnit: asRatio(1 / (matures - period + 1), 'the slice of what is left'),
+      });
+    }
+    // A bullet: the principal falls due once, on the day the terms say (A2); an amortiser's last
+    // slice is whatever is left.
+    if (matures === period) out.push({ kind: 'maturity', date: t.maturity });
     return out.sort((a, b) => compareCivil(a.date, b.date));
   },
   // Interest is settled every period it accrues, so nothing is ever outstanding between payments.
@@ -118,19 +132,27 @@ export const loanKind: InstrumentKindProfile = {
     const t = i.terms;
     const out: CashFlow[] = [];
     let from = compareCivil(t.drawn, after) > 0 ? t.drawn : after;
+    const matures = cal.periodOf(t.maturity);
+    // F3 (11.2): what is left of ONE unit after the slices an amortiser has repaid; a bullet keeps
+    // the whole of it to the end.
+    let left = PAR;
     for (let p = cal.periodOf(from); ; p = next(p)) {
       const end = cal.startOf(next(p));
       const to = compareCivil(t.maturity, end) < 0 ? t.maturity : end;
       if (compareCivil(from, to) >= 0) break;
-      const coupon = scale(PAR, interestTo(t, from, to), 'what a unit earned over the span');
+      const coupon = scale(left, interestTo(t, from, to), 'what is left of a unit earned over the span');
       const last = compareCivil(to, t.maturity) === 0;
+      const slice = t.amortising && !last
+        ? scale(left, asRatio(1 / (matures - p + 1), 'the slice of what is left'), 'the principal repaid on the day')
+        : asPerPiece(0, 'no principal until the end');
       // Item 16: what ONE unit pays on that day, which is money per piece — the par it redeems at
       // is one of them, and the coupon is the rest.
       out.push({
         date: to,
-        perUnit: last ? plus(coupon, PAR, 'the last one returns the principal too') : coupon,
+        perUnit: last ? plus(coupon, left, 'the last one returns what is left too') : plus(coupon, slice, 'interest and the slice'),
       });
       if (last) break;
+      left = minus(left, slice, 'what is left after the slice');
       from = to;
     }
     return out;

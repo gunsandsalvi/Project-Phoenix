@@ -10894,3 +10894,40 @@ under 11.2 and 12a.4.
 
 **Checks.** `check:opens`, `check:existence`, `plan:check` green. Nothing in the engine changed
 in this close.
+
+## Item 11.2 — Loans: the bank of the key, and the amortiser
+
+**The bank of the key.** A cell keyed on a bank is bank-dependent in the spec's sense (A5, A6.a):
+the lattice put its bank in its key, and `publishQuotes` now reads that dimension — a cell keyed on
+a bank is quoted by that bank and by nobody else; a population keyed on no bank, and every named
+borrower, is quoted by every bank that issues its money as before. A structural read of the
+lattice, not a kind. Test: every quote a never-moved cell received in the scale model names the
+bank of its key.
+
+**The amortiser.** `DueAction` gains `amortisation` — the slice of every holding the issuer
+redeems at par on the date, a fraction of what is outstanding and never an amount, so the row's
+units stay the one writer of what there is to repay. The loan kind's `due` puts one on every
+period an amortising row has left: one over the periods to and including the maturity, read off the
+calendar each time, so a further drawing on the row is repaid over the same remaining term and
+nothing stores a schedule. The kernel's `redeem` takes the slice in whole pieces of the
+instrument; the maturity takes what is left. `owedIn` counts the slice in what a borrower has to
+find, and the row's own `cashFlows` carry the same schedule, so a yield derived from them is a
+yield on what will actually be paid. Which rows amortise is a term struck at origination like the
+rate: a row written against a pledge is a term loan and amortises (the mortgage pays interest and
+principal, Housing C2), an unsecured ask is a line drawn and repaid at the borrower's option (C9)
+and falls due once. Test: a secured ask's row falls by exactly the money the slice moved, the
+unsecured one does not move, and the row's flows sum to more than par.
+
+**Said plainly.** A small firm's working-capital ask is unsecured, so today a cell's row is a
+line: the amortiser reaches a cell with its first secured row (11.2a's plant loan, 12a.4's
+mortgage). §42 B1 is marked MET on the mechanism and UNMEASURED on that.
+
+**Found, positioned.** A cell quoted by its bank and moved the same period has next period's row
+written by the bank it left (17.0). `test/loans.test.ts` carries seven reds that predate this
+item and are identical without it; each is written under 17.0 with what it says, and the
+`units` family's "smallFirm cells stand for −51 people more than the weight events account for" is
+E5's own family and sits under 11.5.
+
+**Checks.** `check:opens` green on both worlds; `loans.test.ts` 8 green and 7 pre-existing reds
+unchanged; `small-business.test.ts` 8 green; lint, typecheck, `check:spec`, `check:forbids`,
+`check:deaths` green.

@@ -749,6 +749,11 @@ function write(
     // day is a leap day and stopped the world the first time a loan was drawn on one (item 0).
     maturity: addMonths(drawn, ctx.params.months(LENDING_PARAMS.loanMonths)),
     dayCount: 'ACT/365F',
+    // Bond F3, Small-Business Pools B1, Housing C2 (11.2): a TERM LOAN — one written against what
+    // the borrower pledged — repays its principal every period it has left; a LINE is drawn and
+    // repaid at the borrower's option (C9) and falls due once. It is the same fact as `onTheLine`
+    // seen from the borrower's side, and it is struck here, at origination, like the rate.
+    amortising: !onTheLine,
     // A4: what the request named, and nothing is inferred. It was always empty until 13d gave this
     // world a thing a bank could take and realise; a request that names none is still unsecured,
     // and that is a statement rather than an absence.
@@ -1754,6 +1759,15 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
     for (const b of ctx.parties.ofKind(BANK)) {
       const decl = declOf(rows, b.id);
       if (decl === undefined || !b.status.alive || b.id === p.id) continue;
+      /**
+       * Small-Business Pools A5, A6.a, XI-15 (11.2): A CELL IS BANK-DEPENDENT, and its bank is a
+       * dimension of its key — the lattice said so when it keyed the population on it. The bank
+       * that quotes such a borrower is that bank; the rest of the world does not know its name
+       * (Law 1: the firm with one account gets one quote, and a tightening at its bank reaches it
+       * with nowhere else to go, A5.a). A population keyed on no bank is quoted by every bank
+       * that issues its money, like a named borrower.
+       */
+      if (p.representation === 'cell' && 'bank' in p.key && p.key['bank'] !== String(b.id)) continue;
       /**
        * Money A1, B1, B1.a, XI-12: A BANK LENDS ITS OWN MONEY INTO EXISTENCE, so a bank that issues
        * no pounds cannot write a pound loan — the drawing leg has its own account on the paying

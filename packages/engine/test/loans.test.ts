@@ -71,6 +71,42 @@ function asksFor(amount: number, at = 1): SystemModule {
   };
 }
 
+/**
+ * A borrower that names what it would secure the loan on: the first live line it holds that is
+ * not money, for all of it. What the thing IS the bank does not learn (A4); that it is pledged is
+ * what makes the row a term loan rather than a line (Bond F3, 11.2).
+ */
+function asksSecured(amount: number, at = 1): SystemModule {
+  return {
+    ...asksFor(amount, at),
+    id: 'test.asksSecured',
+    phases: [
+      {
+        name: 'test.askSecured',
+        spec: 'Banks Lending A4',
+        anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'credit.request' }],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          const pledge = ctx.register
+            .holdingsOf(BORROWER)
+            .find((h) => {
+              const i = ctx.instruments.get(h.instrument);
+              return i.status.live && ctx.registry.instrumentKind(i.kind).pricing !== 'money';
+            });
+          if (pledge === undefined) throw new Error('the rig gave the borrower nothing to pledge');
+          ctx.request(BORROWER, {
+            ccy: USD,
+            short: asCash(amount, 'what it is short of'),
+            security: [{ instrument: pledge.instrument, qty: ctx.register.quantity(BORROWER, pledge.instrument) }],
+          });
+        },
+      },
+    ],
+  };
+}
+
 /** Spends more than it holds, so its bank has to decide (Money B3.a). */
 /**
  * A payment BIGGER THAN THE ACCOUNT, sized to what the payer's own bank has said it will have out
@@ -424,6 +460,50 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
       .filter((e) => e.subjects.includes(String(row.id)));
     expect(marks.length).toBeGreaterThan(0);
     expect(Number(marks[0]?.data['deltaPerMember'])).toBeLessThan(0);
+  });
+});
+
+describe('repaying it (Bond F3, Banks Lending F2, Small-Business Pools B1, 11.2)', () => {
+  it('a term loan repays a slice of its principal every period, and a line falls due once', () => {
+    const term = world([asksSecured(phx(20_000))]);
+    const line = world([asksFor(phx(20_000))]);
+    for (const w of [term, line]) {
+      w.step();
+      w.step();
+    }
+    const termRow = loans(term)[0];
+    const lineRow = loans(line)[0];
+    expect(termRow).toBeDefined();
+    expect(lineRow).toBeDefined();
+    if (termRow === undefined || lineRow === undefined) return;
+    const termAt = termRow.issued;
+    const lineAt = lineRow.issued;
+    const before = term.cash(BORROWER, USD);
+    for (const w of [term, line]) w.step();
+    // F3: the slice was paid in money, and what is outstanding fell by exactly it — never a
+    // number written on the row (Law 4: the outstanding IS the units).
+    const termNow = loans(term)[0]?.issued;
+    expect(termNow).toBeDefined();
+    if (termNow === undefined) return;
+    expect(termNow).toBeLessThan(termAt);
+    const repaid = term.ledger
+      .all()
+      .filter((r) => r.outcome === 'settled' && r.instruction.cause === 'maturity' && r.instruction.reason.startsWith('amortisation'));
+    expect(repaid.length).toBe(1);
+    expect(termAt - termNow).toBe(repaid[0]?.instruction.legs.find((l) => l.kind === 'money')?.amount);
+    // The borrower's cash moved by the slice and the interest on what was outstanding (F2), and by
+    // nothing else the row did; a week of deposit interest is its own bank's doing.
+    expect(term.cash(BORROWER, USD)).toBeLessThan(before + paidTo(term, BORROWER, 'coupon'));
+    // A line is drawn and repaid at the borrower's option: nothing came off it.
+    expect(loans(line)[0]?.issued).toBe(lineAt);
+    const rows = term.instruments.all().filter((i) => i.kind === LOAN);
+    expect(rows[0] !== undefined && isLoan(rows[0].terms) && rows[0].terms.amortising).toBe(true);
+    // Bond D2: what the row promises after today derives from the same schedule — the sum of the
+    // principal in its remaining flows is what is left of a unit.
+    const flows = rows[0] === undefined ? [] : loanKind.cashFlows(rows[0], term.calendar.startOf(term.period), term.calendar, term.registry);
+    expect(flows.length).toBeGreaterThan(1);
+    const promised = flows.reduce((t, f) => t + f.perUnit, 0);
+    expect(promised).toBeGreaterThan(1);
   });
 });
 

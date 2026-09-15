@@ -302,7 +302,7 @@ measurement is taken there is nothing to name.
 | `Corporate Credit E9` | MISSING |  |
 | `Corporate Credit F1` | MISSING |  |
 | `Corporate Credit F2` | MISSING |  |
-| `Corporate Credit F3` | MISSING |  |
+| `Corporate Credit F3` | MET | packages/engine/src/registry/kinds.ts `DueAction`, packages/engine/src/world/actions.ts `redeem`, packages/engine/src/mechanisms/banks/loan.ts (11.2: bullet at maturity, or a slice of what is outstanding on each period's date for an amortiser — the kind's own due action, redeemed at par by the kernel in whole pieces, the last slice being the maturity; the row's own cash flows carry the same schedule) |
 | `Corporate Credit F4` | MISSING |  |
 | `Corporate Credit F5` | MISSING |  |
 | `Corporate Credit F6` | MISSING |  |
@@ -1391,7 +1391,7 @@ measurement is taken there is nothing to name.
 | `Housing B4.a` | MISSING |  |
 | `Housing B5` | MET | packages/engine/src/mechanisms/housing/index.ts (the owner lets above what letting WEARS it — the dwelling's own spoilage against the dwelling's own cleared price — and the tenant pays up to what it has, because the alternative is nowhere to live) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Housing C1` | PARTIAL | packages/engine/src/mechanisms/housing/index.ts — a mortgage is a secured loan row with a REAL LIEN placed every period up to what is still owed, so the register itself refuses to let the roof be sold out from under the loan. It is a LANDLORD's for now: a household's waits on a borrower that misses going on accruing while nothing moves on its own book (13f) |
-| `Housing C2` | MISSING |  |
+| `Housing C2` | MET | packages/engine/src/mechanisms/banks/loan.ts, packages/engine/src/registry/credit.ts (11.2: a mortgage is a secured row and every secured row is a term loan — a rate struck at origination, a term placed by date, and a straight-line amortisation of what is outstanding over the periods it has left, so the borrower pays interest AND principal every period; the fixed rate is the one the bank quoted, a floating one is 17.0's) |
 | `Housing C3` | MISSING |  |
 | `Housing C4` | MET | packages/engine/src/mechanisms/housing/index.ts (foreclosure releases the lien and moves the dwellings to the lender at what the market last said; the lender then sells into the same session everybody else does, so the recovery is what it FETCHED) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Housing C5` | MET | packages/engine/src/mechanisms/banks/quote.ts `lossGivenDefault`, packages/engine/src/mechanisms/banks/index.ts (13d: the lender's standard is a READ of what stands behind the claim at the market's own price — what it would lose is the part the security does not cover. No loan-to-value limit, no recovery rate, and no constant anywhere: what moves the standard is the PRICE of the thing pledged, so a bank lending against a falling thing requires more of every borrower without anybody tightening anything) |
@@ -1462,7 +1462,7 @@ measurement is taken there is nothing to name.
 | `Small-Business Pools A6.a` | MET | packages/engine/src/mechanisms/small-business/index.ts `SMALL_FIRM_LATTICE`, packages/engine/src/registry/lattice.ts (0f.3: the dimensions belong to the KIND's lattice — region, bank, line, age, and bands on size and leverage — so a population of firms and a population of people are cut as each of them is; the lender is a loan row per (lender, cell), never a dimension) |
 | `Small-Business Pools A6.b` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/lattice.ts (XI-15: a weight of one is a named party; a small firm's size is a drawn number banded by the lattice's edges, so the boundary between this sector and the named one is a size and it moves with the draw) |
 | `Small-Business Pools A6.c` | PARTIAL | packages/engine/src/world/cells.ts `reKeyCell`, packages/engine/src/world/world.ts (0f.4: promotion is a weight event with a cause — `crossed an edge` — and it fires when a cell's band moves; what it makes is a cell on the lattice, never a named `FIRM`, because nothing births a named firm after the seed: 12.1, 12.4; 11.0f says so) |
-| `Small-Business Pools B1` | MISSING |  |
+| `Small-Business Pools B1` | MET | packages/engine/src/mechanisms/banks/index.ts, packages/engine/src/mechanisms/banks/loan.ts, packages/engine/src/registry/credit.ts (11.2: a loan row per (lender, cell), from the bank of the cell's key — the only bank that quotes a cell keyed on one — with a rate struck at origination, a term placed by date and an amortisation: a term loan repays a slice of what is outstanding every period it has left, read off the calendar, and a line falls due once. The slice is a due action the kernel redeems in whole pieces) — **UNMEASURED** on the schedule for a cell: a small firm's working-capital ask is unsecured and so a line; the amortiser is measured on a named borrower's secured row (`test/loans.test.ts`) and reaches a cell with its first secured row (11.2a plant, 12a.4) |
 | `Small-Business Pools B2` | MISSING |  |
 | `Small-Business Pools B3` | MISSING |  |
 | `Small-Business Pools B4` | MISSING |  |

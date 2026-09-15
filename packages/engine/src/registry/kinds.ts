@@ -95,6 +95,13 @@ export interface CashFlow {
 /** What an instrument's terms say falls due in a period (Register E1, E2). */
 export type DueAction =
   | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: PerPiece }
+  /**
+   * Bond F3, Banks Lending F2 (11.2): principal repaid ON A SCHEDULE. The fraction of every
+   * holding the issuer redeems at par on the date, so an amortiser is redeemed one slice at a time
+   * and the maturity takes what is left. It is a fraction of what is outstanding and not an
+   * amount, because the row's outstanding is the one writer of what there is to repay (Law 4).
+   */
+  | { readonly kind: 'amortisation'; readonly date: Civil; readonly unitsPerUnit: Ratio }
   | { readonly kind: 'maturity'; readonly date: Civil };
 
 /**

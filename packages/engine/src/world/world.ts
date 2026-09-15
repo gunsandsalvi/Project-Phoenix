@@ -52,7 +52,7 @@ import {
   plus,
   valueAt,
   type Ratio,
-  scale, eachMember, asTotal } from '../core/measure.js';
+  scale, eachMember, asTotal, heldAsMoney } from '../core/measure.js';
 import { finite, addTo, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -2712,6 +2712,13 @@ export class World {
             owed = plus(
               owed,
               this.registry.payable(valueAt(action.amountPerUnit, inst.issued, 'a coupon it owes')),
+              'owed',
+            );
+          } else if (action.kind === 'amortisation') {
+            // Bond F3 (11.2): the slice of what is outstanding, in whole pieces, as it will be paid.
+            owed = plus(
+              owed,
+              this.registry.payable(heldAsMoney(scale(inst.issued, action.unitsPerUnit, 'the slice it repays'), 'a line is its money')),
               'owed',
             );
           } else owed = plus(owed, inst.issued, 'a line it must repay');

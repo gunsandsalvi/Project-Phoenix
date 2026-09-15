@@ -117,6 +117,19 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     // cell's own name, and a bank reads it next period. Whether one lends is the lender's.
     const asked = w.journal.ofKind('credit.request').filter((e) => e.subjects.some((s) => cells.has(s)));
     expect(asked.length).toBeGreaterThan(0);
+    // A5, A6.a (11.2): bank-dependent means ITS bank — the one in its key — is the one that
+    // quotes it, whatever another bank would have said.
+    // A cell that moved its deposits (`deposit.moved`) is keyed on its new bank and was quoted by
+    // its old one before it went; the cells that never moved are the clean read.
+    const moved = new Set(w.journal.ofKind('deposit.moved').flatMap((e) => e.subjects.map(String)));
+    const quoted = w.journal
+      .ofKind('credit.quoted')
+      .filter((e) => e.subjects.some((s) => cells.has(s) && !moved.has(s)));
+    expect(quoted.length).toBeGreaterThan(0);
+    for (const q of quoted) {
+      const cell = w.parties.get(q.subjects[0] as never);
+      expect(cell.representation === 'cell' && cell.key['bank']).toBe(q.data['bank']);
+    }
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {

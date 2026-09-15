@@ -12,9 +12,9 @@
  *
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
-import { type PerPiece, valueAt, asPerPiece } from '../core/measure.js';
+import { type PerPiece, type Ratio, valueAt, asPerPiece, scale } from '../core/measure.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
-import { negQty } from '../core/tick.js';
+import { downTick, negQty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
 import { type CurrencyCode, type PartyId } from '../core/ids.js';
@@ -26,7 +26,7 @@ import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
 import type { AccountResolver } from '../clearing/market.js';
-import { none, some } from '../core/option.js';
+import { none, type Option, some } from '../core/option.js';
 
 export interface ActionDeps {
   readonly calendar: Calendar;
@@ -49,8 +49,11 @@ export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps)
         case 'coupon':
           payToHolders(i, action.amountPerUnit, `coupon on ${i.id}`, period, cycle, d);
           break;
+        case 'amortisation':
+          redeem(i, period, cycle, d, some(action.unitsPerUnit));
+          break;
         case 'maturity':
-          redeem(i, period, cycle, d);
+          redeem(i, period, cycle, d, none<Ratio>());
           break;
         default:
           assertNever(action, 'DueAction');
@@ -195,17 +198,29 @@ function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: Ac
       { issuer, instrument: other.id, because: defaultedOn.id },
       true,
     );
-    redeem(other, period, cycle, d);
+    redeem(other, period, cycle, d, none<Ratio>());
   }
   passDepth -= 1;
   if (passDepth === 0) called.clear();
 }
 
-function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
+/**
+ * Register E2: the issuer pays par and the units cease. At maturity the whole holding; on an
+ * amortisation date (Bond F3, 11.2) the slice the terms say, in whole pieces of the instrument —
+ * the register counts pieces, and a slice below one is not yet due (Law 8).
+ */
+function redeem(
+  i: Instrument,
+  period: Period,
+  cycle: Cycle,
+  d: ActionDeps,
+  slice: Option<Ratio>,
+): void {
   for (const holderId of [...d.register.holdersOf(i.id)]) {
     if (issuedBy(i, holderId)) continue;
     // 0f.1: the register holds the TOTAL, and the redemption moves the total.
-    const units = d.register.quantity(holderId, i.id);
+    const held = d.register.quantity(holderId, i.id);
+    const units = slice.some ? downTick(scale(held, slice.value, 'the slice that falls due')) : held;
     if (units <= 0) continue;
     // N10: par is money, so the units and the cash are on the same grid by construction.
     const legs: Leg[] = [
@@ -228,7 +243,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
       },
     ];
     const record = d.settlement.settle(
-      { legs, cause: 'maturity', reason: `maturity of ${i.id} to ${holderId}` },
+      { legs, cause: 'maturity', reason: `${slice.some ? 'amortisation' : 'maturity'} of ${i.id} to ${holderId}` },
       period,
       cycle,
     );
