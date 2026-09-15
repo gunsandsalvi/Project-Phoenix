@@ -871,6 +871,9 @@ export function securitiesLending(): SystemModule {
     agreementKinds: [
       {
         id: STOCK_LOAN,
+        // XI-8: paper lent is paper owed back. The obligation to return it is a debt in kind and
+        // survives either side, which is what keeps the borrow from becoming a naked short (C1).
+        binds: 'whoeverSucceeds',
         what: 'a named borrower holding a named lender\u2019s paper against collateral, for a fee',
       },
     ],

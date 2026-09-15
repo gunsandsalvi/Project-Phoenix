@@ -12,9 +12,12 @@ import {
   coverPrice,
   gapOf,
   insurers,
+  isPolicy,
   presentValueOf,
+  runCover,
   wantsDuration,
 } from '../src/index.js';
+import { asQty } from '../src/core/tick.js';
 import { rigWorld } from './rig.js';
 
 describe('the liability is a SCHEDULE, which is the whole clause (B1, B2.b)', () => {
@@ -80,8 +83,18 @@ describe('falling rates raise the liability (B2, B2.a, D2)', () => {
       expect(id).not.toContain('discount');
       expect(id).not.toContain('lossratio');
     }
-    // And the module states no numbers at all: what it charges and what it owes are both outcomes.
-    expect(insurers().params).toEqual([]);
+    /**
+     * Law 3, Law 2: WHAT IT CHARGES AND WHAT IT OWES ARE OUTCOMES, and the only number this module
+     * states is a CONVENTION of the contract — how long a unit of cover runs for. This asserted
+     * that it stated none at all, which stopped being true when B1 gave the policy a term, so it
+     * was a stale assertion about a module that had moved (Law 16). What it means is asserted
+     * instead: every number here is technology, and none of them is a price, a rate or a ratio.
+     */
+    for (const d of insurers().params) {
+      expect(d.kind, `${d.id} is not technology`).toBe('technology');
+      expect(d.dimension, `${d.id} is a rate or a share, which is a price`).not.toBe('perAnnum');
+      expect(d.dimension, `${d.id} is a rate or a share, which is a price`).not.toBe('ratio');
+    }
   });
 });
 
@@ -115,5 +128,42 @@ describe('what it charges is its own experience and its own capital (A4.b)', () 
     const long = [{ date: { y: 2045, m: 1, d: 1 }, perUnit: asPerPiece(1, 'what a unit pays') }];
     expect(wantsDuration(long, { y: 2030, m: 1, d: 1 })).toBe(true);
     expect(wantsDuration(long, { y: 2050, m: 1, d: 1 })).toBe(false);
+  });
+});
+
+describe('a fill is a policy, and both legs settle (A4.a, Law 5, Clearing D2)', () => {
+  it('issues the cover to the buyer and takes the premium, in one instruction', () => {
+    const w = rigWorld('cover');
+    w.step();
+    const ctx = w.mechanismContext('test');
+    const ccy = [...w.registry.currencies.keys()][0];
+    expect(ccy).not.toBe(undefined);
+    if (ccy === undefined) return;
+    const insurer = w.parties.ofKind(INSURANCE).find((p) => p.status.alive);
+    const buyer = w.parties.all().find((p) => String(p.id).startsWith('firm.') && p.status.alive);
+    expect(insurer, 'the seed opened an insurer').not.toBe(undefined);
+    expect(buyer, 'the world has a firm that could buy cover').not.toBe(undefined);
+    if (insurer === undefined || buyer === undefined) return;
+    /**
+     * The BUY side is item 14's — a firm that stands in a physical fact and would rather not — so
+     * until it exists no live session of this venue clears and the settling half of A4.a is
+     * reachable only from here. The orders are the test's; everything after them is the module's.
+     */
+    runCover(ctx, ccy, [
+      { party: insurer.id, side: 'sell', price: asPerPiece(5, 'what it will write cover at'), qty: asQty(100) },
+      { party: buyer.id, side: 'buy', price: asPerPiece(9, 'what it will pay'), qty: asQty(10) },
+    ]);
+    const cleared = w.journal.ofKindIn('cover.cleared', w.period);
+    expect(cleared.length, 'the session recorded what it struck').toBe(1);
+    expect(cleared[0]?.data['written'], 'one policy was written').toBe(1);
+    // B1, Register B3: the cover is a claim ON the insurer, so the insurer ISSUED it and the buyer
+    // HOLDS it. Both halves are asserted, because a world where only one is true is the defect.
+    const issued = w.instruments.issuedBy(insurer.id).filter((i) => isPolicy(i.terms));
+    expect(issued.length).toBe(1);
+    expect(Number(issued[0]?.issued)).toBe(10);
+    const held = w.register
+      .holdingsOf(buyer.id)
+      .filter((h) => String(h.instrument) === String(issued[0]?.id));
+    expect(held.length, 'the buyer holds the cover it bought').toBe(1);
   });
 });

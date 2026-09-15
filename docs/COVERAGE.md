@@ -44,7 +44,7 @@ of these findings has been positioned into an item yet.
 | `Money E1` | MET | packages/engine/src/ledger/settlement.ts (a payer that cannot pay does not pay, and nothing half-settles), packages/engine/src/mechanisms/credit-events/index.ts (and there is a named thing it then IS: in default of payment, publicly, with the payee and the amount that did not arrive), packages/engine/src/register/agreements.ts (and what did not arrive is STILL OWED, by a named party to a named party, until it is paid, written off or divided by an estate — before this the claim evaporated and four mechanisms wrote the loss of it into an event). What that state then costs it — a lender's reaction, a rating, its death — arrives with lending (worklist 6) and the estate (worklist 7) |
 | `Money E2` | MET | packages/engine/src/ledger/ledger.ts, packages/engine/src/ledger/settlement.ts |
 | `Money E3` | MET | packages/engine/src/ledger/settlement.ts |
-| `Money E4` | MET | packages/engine/src/ledger/settlement.ts (a leg naming a ceased party throws at the site), packages/engine/src/mechanisms/estate/index.ts (and its estate assumes what it issued, so a holder's claim names somebody who exists) |
+| `Money E4` | MET | packages/engine/src/ledger/settlement.ts (a leg naming a ceased party throws at the site), packages/engine/src/mechanisms/estate/index.ts (and its estate assumes what it issued, so a holder's claim names somebody who exists), packages/engine/src/world/succession.ts (and what it OWED moves with it, so the fee on a commitment is not addressed to somebody who is gone) |
 | `Money F1` | MISSING |  |
 | `Money F1.a` | MISSING |  |
 | `Money F2` | MISSING |  |
@@ -85,7 +85,7 @@ of these findings has been positioned into an item yet.
 | `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs, and the split has its door (item 9). The driver that ISSUES the other two — a board buying its own shares back, a board selling new ones — arrives with corporate control (worklist 13g), which is where item 11 placed raising equity and restricting distributions |
 | `Register E5` | PARTIAL | every register event so far moves money, so the clause holds by having no exceptions to explain. The exceptions arrive with the corporate-action driver (worklist 13g): a split moves quantities and no money, and what it must then record is the why-not. Measuring the VERIFY over a window is Part XII (worklist 16) |
 | `Register F1` | MET | packages/engine/src/register/instruments.ts |
-| `Register F2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/parties/party.ts |
+| `Register F2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/parties/party.ts, packages/engine/src/world/succession.ts (every live agreement row naming the ceased party moves to its successor or ends there, per the kind's own `binds`), packages/engine/src/register/agreements.ts |
 | `Register F3` | MET | packages/engine/src/audit/families/flows.ts |
 
 ## Clearing
@@ -1319,7 +1319,7 @@ of these findings has been positioned into an item yet.
 |---|---|---|
 | `Freight A1` | MET | packages/engine/src/mechanisms/freight/index.ts (a service: moving a quantity from one place to another over a time; the leg is read off the map, packages/engine/src/registry/geography.ts) |
 | `Freight A2` | MET | packages/engine/src/mechanisms/freight/index.ts (bought by a named shipper from a named carrier, at a price, in a currency) |
-| `Freight A3` | MET | packages/engine/src/register/voyages.ts (a voyage is a row with a position; the cargo is on the shipper’s own book the whole way — A3.a’s working capital) |
+| `Freight A3` | MET | packages/engine/src/register/voyages.ts (a voyage is a row with a position; the cargo is on the shipper’s own book the whole way — A3.a’s working capital), packages/engine/src/mechanisms/freight/index.ts (and the place it is at while it is neither here nor there is an instrument the seed opens, one per portable good per leg) |
 | `Freight A4` | MET | packages/engine/src/registry/geography.ts (legsBetween: every leg is a different length over different ground, so capacity on one is not capacity on another — the four declared route numbers are deleted) |
 | `Freight B1` | MET | packages/engine/src/mechanisms/freight/index.ts (a carrier is a named FIRM owning hulls, which are plant with a life) |
 | `Freight B2` | MET | packages/engine/src/mechanisms/freight/index.ts (roomOf: what a carrier offers is the hulls it has FREE — a hull on a voyage is liened and the register refuses to move encumbered units) |

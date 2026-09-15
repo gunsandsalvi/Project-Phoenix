@@ -38,7 +38,7 @@ import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
-import { asQty, type Qty } from '../../core/tick.js';
+import { downTick, asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -143,9 +143,22 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (hours <= 0) return [];
   const took = view.earned(1);
   if (took <= 0) return [];
+  // What an hour of this is worth to it: what the book took in over the hours the book actually
+  // takes. That read is exact and stays exact — it is a price, and prices have their own grid.
   const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
-  return [{ party: view.self.id, side: 'buy', price: worth, qty: asQty(hours) }];
+  /**
+   * Law 8, item 0 (stop 9): AN HOUR IS THE PIECE, so what it BIDS FOR is whole hours.
+   *
+   * `hoursNeeded` is a technology (0.6 of an hour a row) times a count of rows, so a book of two
+   * rows takes 1.2 hours — and `asQty` refused it, which stopped the world at period 23 the first
+   * time a bank's book was an odd size. The fraction below an hour is not an order that went
+   * missing: it is a quantity no venue trades (ARCHITECTURE 4.11a), and a bank whose whole book
+   * takes less than an hour hires nobody for it, which is what it means to employ people.
+   */
+  const want = downTick(hours);
+  if (want <= 0) return [];
+  return [{ party: view.self.id, side: 'buy', price: worth, qty: asQty(want) }];
 }
 
 /** The venue this bank's staff are hired in, or none because this world has no such trade. */

@@ -96,7 +96,7 @@ function auctioneer(
             market: GOV_MARKET,
             issuer: TREASURY_US,
             size,
-            reservation,
+            reservation: some(reservation),
             allotment: 'uniformPrice',
           });
         },
@@ -259,7 +259,7 @@ describe('a line with no price (XI-6)', () => {
               market: BILL_MARKET,
               issuer: TREASURY_US,
               size: q(100),
-              reservation: 0.99,
+              reservation: some(0.99),
               allotment: 'uniformPrice',
             });
           },

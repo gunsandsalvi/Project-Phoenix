@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ParamRegister,
+  currencyUnit,
   paramId,
   type ParamDecl,
 } from '../src/index.js';
@@ -105,6 +106,37 @@ describe('what the foundation world declares (XI-14)', () => {
   });
 });
 
+describe('a money amount says it is money, and is a count of pieces (Law 8, XI-14)', () => {
+  it('is read in this world money and comes back a whole number of them', () => {
+    const w = rigWorld('params');
+    const ccy = [...w.registry.currencies.keys()][0];
+    expect(ccy, 'the rig has a money to measure against').not.toBe(undefined);
+    if (ccy === undefined) return;
+    const unit = currencyUnit(ccy);
+    /**
+     * `denominated: true` said a number was an amount of SOMETHING and could not say of what, so a
+     * money constant and an hours constant were the same declaration and nothing could tell them
+     * apart. `insuranceLimit` sat at 100 through every run of this world — a deposit guarantee two
+     * orders of magnitude under the balance it guaranteed, which left every retail deposit
+     * uninsured and inverted Banks Funding E4.a, the clause that says a run is wholesale FIRST.
+     *
+     * Declared, the class is checkable: every money amount is an amount of THIS world's money, and
+     * what comes back is a count of its indivisible pieces — positive, and on the grid, because a
+     * number of pieces that is not a whole number of them is not a number of pieces (Law 8).
+     */
+    const money = w.params.all().filter((d) => d.denominated === 'money');
+    expect(money.length, 'the engine declares money amounts to check').toBeGreaterThan(0);
+    for (const d of money) {
+      const pieces = Number(w.params.amount(d.id, unit));
+      expect(pieces, `${d.id} is a money amount of nothing`).toBeGreaterThan(0);
+      expect(pieces % 1, `${d.id} is ${pieces} pieces, which is not a whole number of them`).toBe(0);
+    }
+    // And a time amount is not money: reading one in a money unit is a different number, so the two
+    // are kept apart here the way the four durations are (Law 8).
+    expect(w.params.all().some((d) => d.denominated === 'time')).toBe(true);
+  });
+});
+
 describe('a declared unit is checked, not commented (Law 8, XI-14)', () => {
   it('refuses a read that names a different dimension from the declaration', () => {
     // `unit` was a free string nothing read back: the constructor checked it was non-empty and
@@ -135,7 +167,7 @@ describe('a declared unit is checked, not commented (Law 8, XI-14)', () => {
   it('still refuses a declared AMOUNT to every one of them: it is read with amount()', () => {
     const id = paramId('test.number');
     const r = new ParamRegister([
-      decl({ dimension: 'amount', denominated: true, unit: 'of its own money', value: 10 }),
+      decl({ dimension: 'amount', denominated: 'money', unit: 'of its own money', value: 10 }),
     ]);
     expect(() => r.count(id)).toThrow(/read it with amount/);
   });

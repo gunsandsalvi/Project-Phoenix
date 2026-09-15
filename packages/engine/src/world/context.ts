@@ -165,6 +165,20 @@ export interface DerivativeClassDecl {
 }
 
 export interface KernelReads {
+  /**
+   * Sovereign A1, D3, Law 15: THE CURVE EVERY OTHER SPREAD IN THIS MONEY IS A SPREAD OVER, and
+   * whose paper it is made of.
+   *
+   * A state borrows on the state's own credit and its central bank issues the money its debt is
+   * in, so its curve is the one a credit spread, a swap spread or a net basis is measured against.
+   * It is a read of two things this world already declares — the curve families it has, and which
+   * party kinds borrow on a state's credit (`PartyKindProfile.sovereign`) — and never a party
+   * anybody names: a class holding `treasury.us` is right in one world and wrong in the next.
+   *
+   * Nothing when a money has no sovereign issuer with a curve of its own, which is the honest
+   * answer and is what a spread against nothing should be.
+   */
+  sovereignCurveIn(ccy: CurrencyCode): Option<CurveFamilyDecl>;
   readonly period: Period;
   readonly cycle: Cycle;
   readonly calendar: Calendar;
@@ -706,20 +720,24 @@ export interface WorldReads extends KernelReads {
   readonly voyages: VoyagesRead;
   curve(family: CurveFamilyId): CurveRead;
   index(id: string): Option<IndexRead>;
+
   /**
-   * Sovereign A1, D3, Law 15: THE CURVE EVERY OTHER SPREAD IN THIS MONEY IS A SPREAD OVER, and
-   * whose paper it is made of.
+   * Corporate Credit E5, E5.d, Banks Capital C2.a: WHAT THE MARKET LAST SAID IT REQUIRES OF A NAME,
+   * per annum — the keenest of the requirements published about it, from the last period anybody
+   * published one.
    *
-   * A state borrows on the state's own credit and its central bank issues the money its debt is
-   * in, so its curve is the one a credit spread, a swap spread or a net basis is measured against.
-   * It is a read of two things this world already declares — the curve families it has, and which
-   * party kinds borrow on a state's credit (`PartyKindProfile.sovereign`) — and never a party
-   * anybody names: a class holding `treasury.us` is right in one world and wrong in the next.
+   * It is what a coupon is struck against wherever an issuer opens a line (a subordinated layer, a
+   * corporate bond, a firm with no bank quote to compare against), and it was written out THREE
+   * TIMES, each copy scanning THIS period's reservations (Law 4). That made the answer depend on
+   * phase order rather than on what was said: `banks.raise` runs before `lending.write` publishes
+   * any, so the first raise of the world threw `Missing [Banks Capital C2]` and the run stopped
+   * there (item 0, stop 8). A coupon is struck against what somebody SAID, and what they said
+   * stands until they say something else (N5.a).
    *
-   * Nothing when a money has no sovereign issuer with a curve of its own, which is the honest
-   * answer and is what a spread against nothing should be.
+   * Nothing for a name nobody has ever priced — which is an answer (App A) and not a zero: an
+   * issuer no holder has put a number on has no book to come to, and the caller says so.
    */
-  sovereignCurveIn(ccy: CurrencyCode): Option<CurveFamilyDecl>;
+  requiredOf(issuer: PartyId): Option<Ratio>;
 }
 
 /**

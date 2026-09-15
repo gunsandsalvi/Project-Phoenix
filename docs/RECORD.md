@@ -9705,3 +9705,87 @@ verdict, macro gaps, large optimisations, the population lattice) are folded int
 0f respectively. Order fixed: 0 → 0a (phases by reads/writes) → 0b → 0c → 0d → 0e (questions) →
 0f (the lattice, subsuming the cell remake) → 0g (fast, after the register's cell half is final) →
 sectors. Doc checks green; no engine code changed.
+
+## Item 0 — The world opens
+
+**What.** The assembled world now steps. `check:opens` runs the rig for 30 periods and the
+four-country world for 12, asserting only that neither throws, and is the first thing `npm run
+check` does. Twenty-three separate stops were removed, each at its cause: nine found by assembling,
+eight by reading, six by stepping — every one of the last six hidden behind the one before it.
+
+**Why.** Every mechanism test passed while the assembled world died in period 2. The suite tested
+each module against a rig built for it, so nothing ever asked the only question that matters first:
+does the thing run. Item 0 asks it, and the answer is now a check rather than a session.
+
+**The stops, and what each fix deleted.** Declarations: `shortTermDebt.line` became a placeholder
+naming Corporate Credit C9; `small-business` declared the bank choice its depositor kind owes
+(Banks Funding E1) and dropped `seed.foundation` from its requires. Phases: `funds.strike` moved
+above the two phases anchored to it, `paper.backstop` before the maturity it funds, `reporting.
+publish` after the revaluation it reports (Clearing F1.a), both research phases onto their anchor's
+cycle (Money E3). Reads: `WorldReads.requiredOf` reads the keenest yield published for a name and
+deleted three private scans of the same journal; `firms/invest.ts` reads its own last quote, then
+the sovereign curve, and the recency gate is gone. Arithmetic: staff hours, tender fills and primary
+reservations are all on their own grid, and `PrimaryOffer.reservation` is an `Option` so a seller
+with no reservation is a market sell rather than an order silently dropped. Writers: a listed fund's
+share line has one writer, not two (`share.etf.us already exists`).
+
+**Succession, which was missing.** An agreement row named a party after it had ceased, so the first
+fee charged on one was an instruction addressed to nobody (Money E4). Register F2 says every
+reference resolves to the estate or the successor, and the register kept that promise for what a
+party HELD and nothing for what it OWED. `world/succession.ts` moves every live row at all three
+cease sites. WHICH rows move is the kind's own answer: `AgreementKindDecl.binds` is
+`'whoeverSucceeds'` for a debt — what an estate divides — or `'aGoingConcern'` for a relationship an
+estate cannot perform, so a mandate ends with its pool while the wage it owed passes on. The kernel
+branches on nothing (Law 15) and fourteen modules keep no liveness check of their own (Law 4).
+
+**Two prices that were not prices.** A cash investor bid for paper it had issued itself and the
+solver refused the crossing fill (Clearing A2); a bank quoted and wrote a loan in a money it issues
+none of (Money A1) — a loan is the bank's own money lent into existence, so that instruction had no
+paying account. A bank now quotes where it issues, and lending across a currency waits for XI-12.
+
+**Cargo, which had never loaded.** No `good.<x>.transit.<a>.<b>` instrument existed anywhere, so
+every voyage stopped at the `has` check and `freight.loaded` had never fired in any run. The freight
+seed opens one per portable good per leg, carrying the origin line's terms with `portable: false`.
+It still does not load, and now says why: on `us.1 → us.2` the keenest shipper bids 0.029 and the
+only carrier asks 11.39. The session record carries the best bid and ask so that is read, not
+guessed. The gap is 13i's — only one region has production.
+
+**A silent regression, the second time.** Giving `small-business` `requires: seed.foundation` dragged
+the assembly sort and put `freight` behind the foundation seed; the hull block then ran before the
+carriers existed and the world opened with no merchant fleet. It threw nothing and was found only by
+asking why no leg had a carrier. `land()`'s comment records the same failure once before. The rule
+is now stated where it can be broken: a module that needs the seed is DECLARED after it.
+
+**A rule made a check.** `ParamDecl.denominated` was `true` — an amount of something, with no way to
+say of what — so a money constant and an hours constant were one declaration. `insuranceLimit` sat
+at 100 through every run of this world, a deposit guarantee two orders under the balance it
+guaranteed, which left every retail deposit uninsured and inverted Banks Funding E4.a. It is now
+`'money' | 'time'`, and `test/params.test.ts` checks every money amount is a positive whole number
+of this world's pieces.
+
+**The census.** Rig, 30 periods: 61 parties and 219 markets at the seal, 439 parties by period 30;
+180–450 ms a period; 1–7 sessions clear a period against ~500 that report `noDemand`; 7 loans in
+period 1, 2 in period 2, 12 in period 3, then almost none. Abroad, 20 periods: 175 parties and 589
+markets at the seal, 1,147 by period 20; 0.9–3.0 s a period. Cargo 0 in both.
+
+**What it found and did not fix**, each positioned in `docs/IMPLEMENTATION.md` item 0: the freight
+gap and the three legs with no bid (13i); the loan that stops after period 3 (17, 12a); an insurer
+with no claims history that cannot quote its first policy (14); households that open with $1.13 to
+$22 a member because a bank's assets and its depositor count are drawn independently (22a);
+`shareFor`'s unread `unit` parameter (0g); a backstop granted to every solvent name every period
+with no decision behind it (17.3).
+
+**The suite.** `npm run check:opens` is green on both worlds, which is item 0's exit. The full suite
+is 200 red of 857 and was redder before: on the thirteen files nearest these edits it went from 59
+failed / 16 passed to 32 failed / 45 passed, and nothing went from green to red — tests that used to
+abort at the first throw now reach their assertions. Triaging the 200 is item 0d, where the
+measurement is written; none of them is chased here (Law 11).
+
+**Deviations from the step list, and why.** 0.3 is two mechanisms and not one — collapsing the rate
+and the trouble would delete Banks Funding B1.a. 0.5's `cycle: 2` contradicts `before:
+corporateActions`. 0.8b's journal line is impossible from a venue participant. 0.11 belongs to
+`freight`, not `goods`: the legs are freight's knowledge and a module never imports another. 0.12's
+stop does not exist — an `asset` leg from the issuer already expands to an issuance — and the test
+the step asked for proves it. 0.15's "within two orders of the opening deposit" is not a true rule
+of this world, and why is the finding above. 0.16's third fallback would read another party's
+private state (Observer A4).

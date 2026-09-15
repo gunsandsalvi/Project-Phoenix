@@ -200,7 +200,7 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
       market: plan.market.value,
       issuer: firm,
       size: plan.issue,
-      reservation: plan.reservation,
+      reservation: some(plan.reservation),
       allotment: 'uniformPrice',
     });
   }
@@ -604,7 +604,12 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
   return {
     id: 'equity',
     agreementKinds: [
-      { id: DIVIDEND_DECLARED, what: 'a dividend a board declared and has not yet paid' },
+      {
+        id: DIVIDEND_DECLARED,
+        what: 'a dividend a board declared and has not yet paid',
+        // Equity E4, XI-8: declared is owed, and whoever succeeds the payer owes it.
+        binds: 'whoeverSucceeds',
+      },
     ],
     nouns: [
       {

@@ -53,7 +53,7 @@ import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { Missing } from '../../core/errors.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide } from '../../ledger/settlement.js';
+import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import type { Instrument } from '../../register/instruments.js';
 import { asQty } from '../../core/tick.js';
 import type { Violation, Family } from '../../audit/audit.js';
@@ -525,18 +525,43 @@ function settleTender(
   price: PerPiece,
 ): void {
   const paid: Qty[] = [];
+  const unfilled: { readonly holder: string; readonly wanted: Qty; readonly filled: Qty }[] = [];
   let bought = NO_QTY;
   for (const f of fills) {
     if (f.side !== 'sell') continue;
-    const units = downTick(f.qty);
-    if (units <= 0) continue;
-    const cash = downTick(valueAt(price, units, 'what it pays for them'));
-    if (cash <= 0) continue;
     const seller = ctx.parties.get(f.party);
-    // XI-15: a cell is a population and what it hands over is struck PER MEMBER, because a member is
-    // a real holder with a real account and cannot part with a fraction of a share.
-    const shareSide = cellSide(seller, asQty(units / weightOf(seller), 'its shares per member'));
-    const cashSide = cellSide(seller, asQty(cash / weightOf(seller), 'its cash per member'));
+    /**
+     * XI-15, Law 8: A CELL IS A POPULATION AND WHAT IT HANDS OVER IS STRUCK PER MEMBER, because a
+     * member is a real holder with a real account and cannot part with a fraction of a share or be
+     * paid a fraction of the smallest piece of its money.
+     *
+     * So the fill is cut to the grain of the cell it came from FIRST, and both legs are that
+     * per-member figure times the weight. It used to divide the fill by the weight and hand the
+     * quotient to `asQty`, which refuses a fraction — so a tender that struck against a cell whose
+     * weight did not divide the fill exactly STOPPED THE RUN (item 0, stop 13) rather than buying
+     * the shares that were there.
+     *
+     * What the cut drops is not demand left unmet somewhere: those shares simply stay where they
+     * were, and the tender bought fewer of them and says so.
+     */
+    const share = shareFor(
+      ctx.registry,
+      seller,
+      ctx.instruments.get(bid.line).unit,
+      downTick(f.qty) / weightOf(seller),
+    );
+    const units = share.total;
+    const perMember = ctx.registry.payable(valueAt(price, share.perMember, 'what a member is paid'));
+    const cash = totalFor(seller, perMember);
+    if (units <= 0 || cash <= 0) {
+      unfilled.push({ holder: String(f.party), wanted: f.qty, filled: NO_QTY });
+      continue;
+    }
+    if (units < downTick(f.qty)) {
+      unfilled.push({ holder: String(f.party), wanted: f.qty, filled: units });
+    }
+    const shareSide = cellSide(seller, share.perMember);
+    const cashSide = cellSide(seller, perMember);
     const legs: Leg[] = [
       {
         kind: 'asset',
@@ -567,6 +592,13 @@ function settleTender(
     if (r.outcome !== 'settled') continue;
     paid.push(cash);
     bought = addQty(bought, units, 'bought');
+  }
+  // A2, Part II: WHAT THE BOOK STRUCK AND THE HOLDERS COULD NOT DELIVER. A tender that bought less
+  // than it cleared is the ordinary consequence of a cell's grain, and it is the difference between
+  // a majority won and a majority missed — so it is measured rather than left in the gap between
+  // `control.acquired` and the session's own volume.
+  if (unfilled.length > 0) {
+    ctx.record('tender.unfilled', [bid.buyer, bid.target, bid.line], { by: unfilled }, true);
   }
   if (bought <= 0) return;
   ctx.record(

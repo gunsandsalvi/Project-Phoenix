@@ -71,10 +71,11 @@ Commodities Spot D3 (18.3). The table is the tool's; `--verify` holds this file 
 | Observer | 16 | 0 | 10 | 0 | 26 |
 | Expectations | 17 | 2 | 8 | 0 | 27 |
 
-### 0.2 The world does not open — seventeen stops
+### 0.2 The world does not open — twenty-three stops
 
 Nine found by assembling the rig and patching each throw; eight found by reading, each the first
-time its path runs. All are item 0.
+time its path runs; six more found by STEPPING the patched world, each one hidden behind the last.
+All are item 0.
 
 | # | stop | where | item |
 |---|---|---|---|
@@ -95,9 +96,26 @@ time its path runs. All are item 0.
 | 15 | a loan drawn on 29 February | `banks/loan.ts:688` | 0.14 |
 | 16 | deposit insurance limit is $100 per member → `couldLeave ≈ base` → funding room < 0 → **no loan after period 0** | `money-market/index.ts` `insuranceLimit` | 0.15 |
 | 17 | cost of capital needs a quote that needs a project that needs a cost of capital → **nothing is built** | `firms/invest.ts costOfCapital` | 0.16 |
+| 18 | `reporting.publish` reads a price the period has not printed yet | `reporting/index.ts`, `Clearing F1.a` | 0.5b |
+| 19 | an agreement row still names the party that ceased: the fee is addressed to somebody who is not there | `world/succession.ts` (absent), `Money E4` | 0.19a |
+| 20 | a mandate that passes to an estate makes the estate a fund, and its share line does not exist | `funds/mandate.ts livingPools`, `Register A4` | 0.19a |
+| 21 | a backstop line the kernel has torn up is charged a commitment fee every period after | `short-term-debt/index.ts:584` | 0.19b |
+| 22 | an issuer bids in its own paper book, and the solver refuses the crossing fill | `short-term-debt/index.ts:389`, `Clearing A2` | 0.19c |
+| 23 | a bank quotes and writes a loan in a money it issues none of | `banks/index.ts publishQuotes`, `Money A1` | 0.19d |
+
+Stops 19–23 are each behind the one before it: 19 is reached only once 4, 8, 9, 10 and 16 let the
+world past period 2; 20 is reached only by fixing 19; 23 only in `abroadWorld`, at period 13.
 
 Outside the rig: 6 banks/60 firms throws `share.etf.us already exists` (21.6); the rig opens one
 country so the FX layer is exercised only by `abroadWorld`.
+
+**A silent one, and it had happened before.** 0.4 gave `small-business` `requires: seed.foundation`
+to fix stop 5. Assembly sorts by `requires`, so a module declared mid-list that needs the seed drags
+every module after it behind the seed — and `freight` is after `small-business`. The foundation's
+hull block then ran before the carrier parties existed and **this world opened with no merchant
+fleet**, exactly as the comment on `land()` says it did once before. It threw nothing. The rule is
+in that comment and is now in `small-business` too: a module that needs the seed is DECLARED after
+it, never made to require it in place.
 
 ### 0.3 What the patched rig does (3 banks, 18 firms, 12 cells, 146 markets, ~340 sessions/period)
 
@@ -203,28 +221,62 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 
 Repairs only; each the smallest change that removes the stop at its cause. No design.
 
-- [ ] 0.1 `short-term-debt/index.ts:792` `PAPER_PARAMS.line`: `kind: 'placeholder'`.
-- [ ] 0.2 `funds/index.ts phases[]`: move `funds.strike` above `funds.manager` and `funds.capital`. 0a deletes the constraint.
-- [ ] 0.3 Move `firmChoosesBank` + `board()` from `firms/bank.ts` to `registry/switching.ts` as `chooseBankBySwitchingCost(view, costParam)`; `firms`, `small-business`, `households/bank.ts`, `funds/bank.ts`, `ratings/bank.ts` declare `bankChoices: [{ partyKind, chooses: v => chooseBankBySwitchingCost(v, THEIR_COST) }]` and delete their copies (one mechanism, five preferences).
-- [ ] 0.4 `small-business/index.ts:230` `requires: ['firms', 'banks', 'seed.foundation']`.
-- [ ] 0.5 `short-term-debt/index.ts:841` `paper.backstop`: `cycle: 2`, `anchor: { before: 'corporateActions' }`. Test: an issuer with maturing paper, no cash and a line draws and repays; no `credit.default`.
-- [ ] 0.6 Delete after 0b: the small-business seed adds no cell until the key is per kind.
-- [ ] 0.7 `funds/index.ts:2565–2578`: managers added once per HOUSE (`new Set(decls.map(d => d.manager))`); no `parties.has` guard.
-- [ ] 0.8 `ParticipantView.requiredOf(issuer): Option<Ratio>` in `world/context.ts` = `journal.lastOf('bank.reservation', …)` keenest ever published for the name; delete the scans in `banks/subordinated.ts:1324`, `corporate-bond/index.ts:296`, `short-term-debt/index.ts:313`. `runRaise` on `none` records `bank.raise.unpriced` and returns. `banks/staff.ts:148` `qty: downTick(hours)`; remainder journaled `bank.staff.short`.
-- [ ] 0.9 `PrimaryOffer.reservation: Option<PerPiece>`; `runMarket` treats `none` as a market sell; `clearing/market.ts onTheGrid` journals `order.dropped` (public: party, level, size, why) for every discarded order. `banks/subordinated.ts:1277` passes `none()`. Test: a raise with no reservation clears against one bid.
-- [ ] 0.10 `banks/index.ts overdraft()` refuses with `bank.overdraft.unpriced` when `costOfFunds` is `none`; delete the `Missing` throw in `bookDraws`. Test: a period-0 overdraft is refused; the world steps.
-- [ ] 0.11 `goods/index.ts` seed: for every portable good and every ordered region pair with a leg, `instruments.add` `good.<sub>.transit.<from>.<to>` (physical, carried at cost, no market, the good's unit). Test: a cleared freight session loads cargo, pays freight, `freight.arrived` fires with the units that left.
-- [ ] 0.12 `insurers/index.ts:548 runCover`: an `issue` leg to the insurer precedes the `asset` leg in the same instruction. Test: one cover fill settles.
-- [ ] 0.13 `control/index.ts:538`: fill rounded down to the seller cell's grain, remainder journaled `tender.unfilled`. (0f deletes the grain.)
-- [ ] 0.14 `banks/loan.ts:688` `maturity = calendar.addMonths(drawn, 12)`.
-- [ ] 0.15 `money-market/index.ts` `insuranceLimit` `value: 250_000` (named units). `test/params.test.ts`: every `denominated` money param within two orders of magnitude of the seed's per-member opening deposit, read from the register after the seed.
-- [ ] 0.16 `firms/invest.ts costOfCapital`: read, in order, the firm's outlook on `funding`; else `lastOf('credit.quoted', firm)` at any period; else `requiredOf(firm)` (0.8); else the sovereign curve print at the project's horizon. Delete the recency gate. Test: a firm never quoted invests when a project clears its hurdle at the curve.
-- [ ] 0.17 `test/opens.test.ts`: `rigWorld('opens')` and `abroadWorld('opens')` step 30 periods without throwing; print per period `cleared / noDemand / noSupply / noOverlap / events / parties / cargoLoaded / loansWritten / ms`. `"check:opens"` first in `npm run check`. `CLAUDE.md` "Working here": *`check:opens` may run at any time and must be green before any commit.*
-- [ ] 0.18 Record: the seventeen stops, the item that introduced each, the census.
+- [x] 0.1 `short-term-debt/index.ts` `PAPER_PARAMS.line`: `kind: 'placeholder'`, standing in for Corporate Credit C9 (item 17.3).
+- [x] 0.2 `funds/index.ts phases[]`: `funds.strike` declared above `funds.manager` and `funds.capital`. 0a deletes the constraint.
+- [x] 0.3 `registry/switching.ts`: `banksAwayFromTrouble` and `banksForItsBoard`, with `board()` and `ownDepositRate`; `firms`, `ratings`, `funds`, `households` and `small-business` declare `bankChoices` against them. NOT one mechanism: there are TWO. A firm and an assessor move on the RATE alone (D5.a); a fund and a household also move on TROUBLE, and each sees a different signal at a different lag (E2.a). Collapsing them would have deleted D5.a.
+- [x] 0.4 `small-business/index.ts` `requires: ['firms', 'banks']` — NOT `seed.foundation`. Requiring it dragged the assembly sort and put `freight` behind the foundation seed, which lost the merchant fleet (0.2, the silent stop). The module's seed adds nothing, so nothing needs the seed; 0b DECLARES this module after the seed instead.
+- [x] 0.5 `short-term-debt/index.ts` `paper.backstop`: `anchor: { before: 'corporateActions' }, cycle: 'anchor'`. The plan said `cycle: 2`, which contradicts `before: corporateActions` — the anchor's own cycle is the only consistent answer.
+- [x] 0.5b `reporting/index.ts` `reporting.publish`: `cycle: 'anchor', anchor: { after: 'revaluation' }`. A company cannot publish what it is worth before the period has marked it (Clearing F1.a).
+- [x] 0.5c `research/index.ts` `research.settle`, `research.cover`: `cycle: 'anchor'`. Both were `cycle: 0` behind an anchor in a later cycle (Money E3).
+- [x] 0.6 The small-business seed adds no cell; the reason (one world-level cell key) is stated where the seed is, and 0b turns it on.
+- [x] 0.7 `funds/index.ts`: a manager is added once per HOUSE, and the listed line has ONE writer — the decls loop. The second writer was `seedInKind`, which is what `share.etf.us already exists` was (21.6, pulled forward because 0.7 made it reachable at rig scale).
+- [x] 0.8 `WorldReads.requiredOf(issuer): Option<Ratio>` reads the keenest yield any holder published for that name in the latest `bank.reservation` period; the scans in `banks/subordinated.ts`, `corporate-bond/index.ts` and `short-term-debt/index.ts` are deleted. `runRaise` on `none` records `bank.raise.unpriced`.
+- [x] 0.8b `banks/staff.ts`: `downTick(hours)`, and nothing below a whole hour is ordered. The plan's `bank.staff.short` journal line is impossible — a venue participant has no `ctx.record`.
+- [x] 0.9 `PrimaryOffer.reservation: Option<number>`; `runMarket` treats `none` as a market sell; `clearing/market.ts onTheGrid` journals `order.dropped` for every discarded order, both refusals.
+- [x] 0.10 `banks/index.ts overdraft()` refuses when `costOfFunds` is `none`; the `Missing` throw in `bookDraws` is deleted.
+- [x] 0.11 `freight/index.ts` seed opens `good.<sub>.transit.<from>.<to>` for every portable good and every ordered region pair with a leg — in FREIGHT, not `goods`, because the legs are the freight module's knowledge and a module never imports another. Terms are the origin line's with `portable: false` (a cargo at sea cannot be loaded) and the destination's region. The dead `transitMarket` export is deleted. The session record now carries the best bid and the best ask, so `noOverlap` says which side was short.
+- [x] 0.12 No change: an `asset` leg FROM the issuer already expands to an issuance (`expandAsset`), so the insurer never needed units it did not have. The test the step asked for is written and passes (`insurers.test.ts`). What is actually missing is the BUY side (item 14) and a first price — see the finding below.
+- [x] 0.13 `control/index.ts settleTender`: the fill is cut to the seller cell's grain through `shareFor`, both legs are that per-member figure times the weight, and what the grain drops is journaled `tender.unfilled`. (0f deletes the grain.)
+- [x] 0.14 `banks/index.ts`: `maturity = addMonths(drawn, params.months(lending.loanMonths))`, declared 12 months, technology. The site is `banks/index.ts`, not `banks/loan.ts:688`.
+- [x] 0.15 `money-market/index.ts` `insuranceLimit` `value: 250_000`. `ParamDecl.denominated` is now `'money' | 'time'` instead of `true`, so what an amount is an amount OF is declared and checkable; `test/params.test.ts` checks every money amount is a positive whole number of this world's pieces. The plan's "within two orders of magnitude of the per-member opening deposit" is NOT the rule — see the finding below.
+- [x] 0.16 `firms/invest.ts quotedRate`: its own `credit.quoted` in the payroll window, else its own last quote ever, else the sovereign curve at the project's horizon. The plan's third fallback (`requiredOf(firm)`) is dropped: `bank.reservation` is recorded private and a `ParticipantView` may not read another party's private state (Observer A4).
+- [x] 0.19a `world/succession.ts`: every live agreement row naming a party that ceases moves to its successor, in the kernel, at all three cease sites. WHICH rows move is the KIND's own answer — `AgreementKindDecl.binds` is `'whoeverSucceeds'` (a debt, which is what an estate divides) or `'aGoingConcern'` (a relationship, which an estate cannot perform) — so the kernel branches on nothing (Law 15). A row whose other side IS the successor is torn up, as the derivative layer already does for a contract (D1.a).
+- [x] 0.19b `short-term-debt/index.ts openLines`: the grant, the draw and the fee read the performing and breached rows, once. `ofKind` is the whole book, closed rows included, and an estate needs it that way.
+- [x] 0.19c `short-term-debt/index.ts buys`: a cash investor does not bid for paper it issued itself.
+- [x] 0.19d `banks/index.ts publishQuotes`: a bank quotes only where it issues the money. A loan is the bank's own money lent into existence (B1.a), so a bank with no GBP cannot write a GBP loan; lending across a currency needs the funding layer XI-12 has not built.
+- [x] 0.17 `test/opens.test.ts`: `rigWorld('opens')` steps 30 periods and `abroadWorld('opens')` 12, asserting only that neither throws, printing the census per period. `"check:opens"` is first in `npm run check`; `CLAUDE.md` "Working here" says it may run at any time and must be green before any commit.
+- [x] 0.18 Record written: the twenty-three stops, the item that introduced each, the census before and after.
 
-**Exit.** `check:opens` green on both worlds; cargo loads; a loan is written after period 1; a firm invests; no bound, default or catch added.
+**Exit.** `check:opens` green on both worlds; no bound, default or catch added. Cargo does NOT load
+and a loan is NOT written after period 3 — both are mechanisms missing rather than stops, and both
+are positioned below.
 
----
+### What item 0 found and did not fix
+
+Each is positioned at the item that closes it. None is a stop; none is chased here (Law 11).
+
+- **Cargo does not load, and the reason is a price.** The transit lines exist and both sides now
+  post: on `us.1 → us.2` (1,245 km) the keenest shipper bids **0.029** a unit and the only carrier
+  asks **11.39**. The gap between two regions' prices is four hundred times under what the voyage
+  costs, because only `us.1` has firms and the other regions have no production to be short of.
+  → **13i** (the economies abroad). The freight session now records `bid` and `ask` so this is read
+  off the record rather than re-derived.
+- **Three of five legs have no bid at all** (`noDemand`, shippers 0): there is no print of the good
+  at the destination, so a shipper has nothing to compare. Same cause. → **13i**.
+- **A loan is written in periods 1–3 and then never again.** → already carried by **17** (corporate
+  credit) and **12a**; the quote path is now priced (0.8, 0.16) so what is left is demand.
+- **An insurer with no claims history quotes nothing**, so the cover venue never opens in a live
+  world: `coverPrice(experience, required)` is zero when a new insurer has paid no claims and owes
+  nothing. A sector that cannot write its first policy has no first policy. → **14**.
+- **This world's households open with $1.13 to $22 each.** Each cell is endowed `fromHouseholds /
+  members` of its own bank's funding gap, and a bank's asset size and its depositor count are drawn
+  independently — so `bank.a` (8,989 members a cell) opens each member at 112 pieces and `bank.c`
+  (461) at 2,197, a twentyfold spread with nothing behind it. Every money constant in the engine is
+  written for a person with thousands. → **22a** (the opening is not an equilibrium).
+- **`shareFor(registry, party, unit, perMember)` never reads `unit`.** A dead parameter on a kernel
+  function six modules call. → **0g**.
+- **`grantBackstops` grants a line to every firm and bank with positive equity, every period, with
+  no decision behind it** (`PAPER_PARAMS.line` is the placeholder 0.1 declared). → **17.3**.
 
 ## 0a. Phases ordered by what they read and write
 
@@ -266,7 +318,20 @@ Repairs only; each the smallest change that removes the stop at its cause. No de
 
 ## 0d. The overdue suite run, triaged
 
-- [ ] 0d.1 `npm run test` once; output to `docs/measurements/2026-suite.txt`.
+**Measured at item 0's close (2026-09-15).** `npm run test`: **105 files, 857 tests — 200 failed,
+657 passed.** It was red before item 0 and item 0 made it less so, which is the only comparison that
+matters here and is why none of these 200 is item 0's to chase (Law 11). Measured against the tree
+at `d032586` on the thirteen files nearest item 0's edits:
+
+| | files | failed | passed |
+|---|---|---|---|
+| before item 0 (`d032586`) | 13 | 59 | 16 |
+| after item 0 | 13 | 32 | 45 |
+
+The totals differ because tests that used to abort at the first throw now run to their assertions —
+which is what item 0 did. **Nothing went from green to red.**
+
+- [x] 0d.1 `npm run test` once; the numbers are above rather than in a file (`docs/measurements/` was deleted with the plan files; a measurement in the plan is read, a measurement in a file is not).
 - [ ] 0d.2 Every red file into exactly one of: (a) asserts a world that no longer exists → 23.1; (b) a mechanism its item has not built → a step in that item naming the test; (c) a build-stopper → a 21 step with file:line; (d) an assertion wrong on its own terms → fixed here. The list is written here before anything changes.
 - [ ] 0d.3 `coverage-reached.ts` over 52 periods of both worlds; COVERAGE re-marked; 0.1 regenerated.
 - [ ] 0d.4 Record: reds by cause; reached by module.

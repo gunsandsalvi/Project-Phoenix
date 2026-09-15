@@ -258,9 +258,24 @@ export function reporting(seed: string): SystemModule {
     phases: [
       {
         name: 'reporting.publish',
-        spec: 'Reporting A1 Reporting A3 Reporting A4',
-        cycle: 0,
-        anchor: { after: 'corporateActions' },
+        spec: 'Reporting A1 Reporting A3 Reporting A4 Clearing F1.a',
+        /**
+         * A1, A4, Clearing F1.a, item 0 (stop 18): A BALANCE SHEET IS STRUCK AT A CLOSE, so it is
+         * published after the marks are taken and not before the session that makes them.
+         *
+         * It ran after `corporateActions`, which is the top of the period: the statement asks what
+         * every holding is worth (`balanceSheet`), and a line whose market had not yet sat this
+         * period had no mark to give — `NotYetProduced [Clearing F1.a] cp:firm.7:2026-07-06 has no
+         * print for period 20`, and the run stopped the first time a company's quarter closed while
+         * it held one. F1.a says the fix for that is the ORDER, and ARCHITECTURE 4.8 says where: a
+         * read AT MARKS belongs after revaluation, which is the moment the marks are final.
+         *
+         * What reads the report — the covenant test, research, guidance, control — reads it with
+         * the lag publishing has, which is what B2.a asks for anyway: a covenant a lender could
+         * test before the accounts were struck is not a covenant.
+         */
+        cycle: 'anchor',
+        anchor: { after: 'revaluation' },
         run: (ctx: MechanismContext): void => {
           publish(seed, ctx);
         },

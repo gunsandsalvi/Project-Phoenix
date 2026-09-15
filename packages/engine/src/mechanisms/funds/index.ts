@@ -41,6 +41,7 @@ import {
   type InstrumentId,
   type MarketId,
   type PartyId,
+  type PartyKindId,
   type VenueId,
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -351,7 +352,7 @@ function paramsOf(managers: readonly ManagerDecl[]): ParamDecl[] {
     {
       id: FUND_SWITCHING_COST,
       value: 900,
-      denominated: true,
+      denominated: 'money',
       unit: 'of the money the account is in, per move',
       dimension: 'amount',
       kind: 'preference',
@@ -361,7 +362,7 @@ function paramsOf(managers: readonly ManagerDecl[]): ParamDecl[] {
     {
       id: FUND_PARAMS.accreditedWealth,
       value: ACCREDITED_WEALTH,
-      denominated: true,
+      denominated: 'money',
       unit: 'of the money the entrant is in, per member',
       dimension: 'amount',
       kind: 'policy',
@@ -2074,41 +2075,22 @@ function totalAsked(view: AuditView, data: Record<string, unknown>): number {
  * the seed states (A3): what nobody may state is what its shares are worth from then on, which is
  * why its market opens at the basket it holds and is repriced by its first session (C4.a).
  */
+/**
+ * Seed A3, Law 4, item 0 (stop 7's successor): THE SEED OF A VEHICLE THAT OPENS ALREADY LAUNCHED —
+ * its session, its creation door and the basket somebody actually put in.
+ *
+ * It used to add the FUND, its MANAGER and its SHARE LINE as well, all of which the seed above has
+ * already added: the party adds were guarded by `parties.has` and the line add was not, so the
+ * first ETF this reached stopped the world with `share.etf.us already exists`. It never had, only
+ * because a manager running two vehicles threw one line earlier (stop 7). Two writers of one fact,
+ * and the seed above is the one: it is where every pool's party, line, mandate and subscription
+ * door are made. What a LISTED line has beyond those is a market, and it names it there.
+ */
 function seedInKind(ctx: SeedContext, e: FundDecl): void {
   const bank = ctx.parties.get(e.bank as PartyId);
   const region = ctx.registry.region(bank.region);
-  for (const [id, kind, name] of [
-    [e.fund, FUND, nameOf({ ...e, house: e.managerName })],
-    [e.manager, FUND_MANAGER, e.managerName],
-  ] as const) {
-    // Seed B2, Law 4: ONE PARTY, NAMED ONCE. A manager runs more than one fund — that is what a
-    // fund manager IS — so the second vehicle it launches finds it already here and does not make
-    // a second one. The FUND is its own party either way: two funds are two balance sheets.
-    if (ctx.parties.has(id as PartyId)) continue;
-    ctx.parties.add({
-      id: id as PartyId,
-      kind,
-      region: region.id,
-      name,
-      bank: bank.id,
-      representation: 'named',
-      status: { alive: true, standing: 'good' },
-    });
-  }
   const share = shareLineOf(e.fund);
   const market = listedMarketOf(e.fund);
-  const terms: FundShareTerms = { kind: FUND_SHARE, fund: e.fund as PartyId };
-  ctx.instruments.add({
-    id: share,
-    kind: FUND_SHARE,
-    issuer: some(e.fund as PartyId),
-    ccy: ctx.registry.currencyOf(region.id),
-    terms,
-    // E1: its shares TRADE, which is the whole of what makes it an exchange-traded fund. It is the
-    // same claim on the same kind of book as any other fund's; what is different is that there is
-    // a session in it, so it has a cleared price as well as a book value (E2).
-    market: some(market),
-  });
   ctx.openMarket({
     id: market,
     name: `${nameOf({ ...e, house: e.managerName })} shares`,
@@ -2283,6 +2265,9 @@ export function funds(
    * LIQUIDITY TERM, which is the fact that decides it, and not off the launch data beside it.
    */
   const listed = decls.filter((d) => d.liquidity.how === 'listed');
+  /** E3.a: the vehicles the SEED launches — the ones whose index has a level from period zero. */
+  const seedsInKind = (d: FundDecl): boolean =>
+    d.liquidity.how === 'listed' && inKindOf(d).seeded;
   const state = emptyBook();
   // The observer sees the book as the data it is; the slot holds this very object (Law 4).
   const book = (ctx: MechanismContext): Book => ctx.state<Book>('funds', () => state);
@@ -2319,6 +2304,22 @@ export function funds(
     units: [],
     params: paramsOf(managers),
     phases: [
+      // Item 0 (stop 3): `funds.strike` is declared FIRST because the two phases below anchor
+      // BEFORE it and `World.addPhase` resolves an anchor at insertion — a phase cannot be
+      // anchored to one the list has not got yet. Item 0a resolves anchors after every module
+      // is collected and this order stops mattering.
+      {
+        name: 'funds.strike',
+        spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
+        cycle: 0,
+        // After the households have decided, because what they decided is posted into the venue
+        // this phase reads; before the markets, because what it cannot pay is what it must sell.
+        anchor: { after: 'households.decide' },
+        run: (ctx: MechanismContext) => {
+          const b = book(ctx);
+          for (const m of livingPools(ctx)) strike(ctx, b, m);
+        },
+      },
       {
         /**
          * F3, Labour A2, Seed A3, item 10e.4: THE MANAGER'S OWN PERIOD - what it closed, and what
@@ -2369,18 +2370,6 @@ export function funds(
               );
             });
           }
-        },
-      },
-      {
-        name: 'funds.strike',
-        spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
-        cycle: 0,
-        // After the households have decided, because what they decided is posted into the venue
-        // this phase reads; before the markets, because what it cannot pay is what it must sell.
-        anchor: { after: 'households.decide' },
-        run: (ctx: MechanismContext) => {
-          const b = book(ctx);
-          for (const m of livingPools(ctx)) strike(ctx, b, m);
         },
       },
       {
@@ -2482,12 +2471,18 @@ export function funds(
       {
         id: MANDATE,
         what: 'what a pool may hold and whether it may be levered, and which manager runs it',
+        // A4, XI-8: a mandate is an instruction to RUN a pool. A pool that ceased into its estate
+        // is being realised and not run, and an estate holding a live mandate would be a fund.
+        binds: 'aGoingConcern',
       },
       // Private Equity A1, A2 (item 13.5): the tenth kind of commitment, and the only one in this
       // world that is an obligation to pay money nobody has asked for yet.
       {
         id: COMMITMENT,
         what: 'what a named investor promised a closed-end fund, and what of it has been called',
+        // Private Equity A2, XI-8: what is promised and uncalled is not owed yet, and calling it
+        // from an estate would have a liquidation subscribing for shares. It ends with either side.
+        binds: 'aGoingConcern',
       },
     ],
     // Fund Shares A3, `B-14` (item 9.7): WHAT A POOL MAY TAKE A POSITION IN IS ITS MANDATE'S. The
@@ -2563,21 +2558,31 @@ export function funds(
       { partyKind: FUND_MANAGER, chooses: fundChoosesBank },
     ],
     seed(ctx: SeedContext): void {
+      const enter = (id: string, kind: PartyKindId, name: string, bank: string): void => {
+        ctx.parties.add({
+          id: id as PartyId,
+          kind,
+          region: ctx.registry.region(ctx.parties.get(bank as PartyId).region).id,
+          name,
+          bank: bank as PartyId,
+          representation: 'named',
+          status: { alive: true, standing: 'good' },
+        });
+      };
+      /**
+       * Seed B2, F3, item 0 (stop 7): A HOUSE IS ONE PARTY HOWEVER MANY POOLS IT RUNS.
+       *
+       * Item 10e consolidated the houses to one per bank and this went on adding a manager per
+       * POOL, so the second pool of a house re-added a party that was already there and the
+       * register refused it. A house enters once, at the bank of the first pool that names it;
+       * the pools enter one each. No `parties.has` guard: a duplicate id in the DRAW is a defect
+       * and the throw is what reports it.
+       */
+      const houses = new Map<string, FundDecl>();
+      for (const d of decls) if (!houses.has(d.manager)) houses.set(d.manager, d);
+      for (const [manager, d] of houses) enter(manager, FUND_MANAGER, d.managerName, d.bank);
       for (const d of decls) {
-        for (const [id, kind, name] of [
-          [d.fund, FUND, nameOf({ ...d, house: d.managerName })],
-          [d.manager, FUND_MANAGER, d.managerName],
-        ] as const) {
-          ctx.parties.add({
-            id: id as PartyId,
-            kind,
-            region: ctx.registry.region(ctx.parties.get(d.bank as PartyId).region).id,
-            name,
-            bank: d.bank as PartyId,
-            representation: 'named',
-            status: { alive: true, standing: 'good' },
-          });
-        }
+        enter(d.fund, FUND, nameOf({ ...d, house: d.managerName }), d.bank);
         const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
         // A4, F3, XI-8: THE MANDATE THIS POOL WAS SET UP UNDER. A fund that exists at period zero
         // was set up by somebody, on terms, and a seed states an opening STOCK (Seed A3) — so the
@@ -2591,7 +2596,10 @@ export function funds(
           issuer: some(d.fund as PartyId),
           ccy,
           terms,
-          market: none(),
+          // E1, E2: a pool's claim is redeemed at its own door and does not trade, so it names no
+          // market — unless it opens already LISTED, and then the session `seedInKind` opens below
+          // is the market it names. One writer of the line, here (Law 4).
+          market: seedsInKind(d) ? some(listedMarketOf(d.fund)) : none(),
         });
         // Clearing B2: the venue where its investors ask. It is not a market and it does not clear
         // — everybody who asks transacts at the same NAV (C1, C2) — which is exactly why the module
@@ -2611,7 +2619,7 @@ export function funds(
         ctx.openVenue(venue);
       }
       // E3.a: only the vehicle whose index the seed can see; the rest are a phase's.
-      for (const e of listed) if (inKindOf(e).seeded) seedInKind(ctx, e);
+      for (const e of listed) if (seedsInKind(e)) seedInKind(ctx, e);
     },
   };
 }

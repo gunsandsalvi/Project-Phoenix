@@ -30,14 +30,32 @@
  * and each names what it turns on.
  */
 import type { RegionId } from '../../core/ids.js';
-import { partyId } from '../../core/ids.js';
+import { paramId } from '../../core/ids.js';
+import type { Option } from '../../core/option.js';
+import { banksAwayFromTrouble } from '../../registry/switching.js';
+import type { ParticipantView } from '../../world/context.js';
+import type { BankChoice } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
-import type { SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { smallParam, type SmallFirmDecl } from './data.js';
 
 export * from './data.js';
+
+/**
+ * Banks Funding A1.b, A1.d, E1: WHAT IT COSTS ONE SMALL FIRM TO MOVE ITS ACCOUNT, once.
+ *
+ * A5 says this tier is bank-dependent, and A1.b says why that account is operational money: it is
+ * where the takings land and the wages go out. So a small firm banks the way a named firm does —
+ * it does not chase a board, and what moves it is the whole uninsured balance against the cost of
+ * moving — and the decision is the one every depositor in this world takes
+ * (`registry/switching.ts`). What is this sector's own is the COST, and it is the smallest of the
+ * five: a firm with one account and a dozen counterparties has less to redirect than a named one.
+ */
+export const SMALL_FIRM_SWITCHING_COST = paramId('smallBusiness.switchingCost');
+
+export const smallFirmChoosesBank = (view: ParticipantView): Option<BankChoice> =>
+  banksAwayFromTrouble(view, SMALL_FIRM_SWITCHING_COST, 'moneyMarket.window');
 
 /**
  * A3, XI-14: what each cell is like, declared under its own name so the register prints the
@@ -47,15 +65,27 @@ export * from './data.js';
  * and it is drawn per cell rather than stated per cell, which is what A2.a is about.
  */
 function paramsOf(rows: readonly SmallFirmDecl[]): ParamDecl[] {
-  return rows.map((r) => ({
-    id: smallParam(r.cell, 'size'),
-    value: r.size,
-    unit: 'multiple of the smallest firm in its line',
-    dimension: 'ratio',
-    kind: 'preference' as const,
-    owner: 'model' as const,
-    why: r.why,
-  }));
+  return [
+    {
+      id: SMALL_FIRM_SWITCHING_COST,
+      value: 60,
+      denominated: 'money' as const,
+      unit: 'of the money the account is in, per move',
+      dimension: 'amount' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: 'Banks Funding A1.b, A1.d, E1: what it costs one small firm to move the account its takings land in. Smaller than a named firm\u2019s (250) because there is less to redirect and fewer counterparties to tell, and far smaller than a fund\u2019s, which moves more money in one go than this tier holds. It is weighed against the money it would lose if its bank failed \u2014 nothing insures a business balance (E4), so that is the whole of it.',
+    },
+    ...rows.map((r) => ({
+      id: smallParam(r.cell, 'size'),
+      value: r.size,
+      unit: 'multiple of the smallest firm in its line',
+      dimension: 'ratio' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: r.why,
+    })),
+  ];
 }
 
 /**
@@ -76,8 +106,16 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     id: 'small-business',
     spec: 'Small-Business Pools',
     /**
-     * A1, A4, A5: it sells to and buys from named firms, it banks and it borrows. The seed makes
-     * the parties, so it runs after the banks and the firms this sector is connected to exist.
+     * A1, A4, A5: it sells to and buys from named firms, it banks and it borrows, so the banks and
+     * the firms this sector is connected to have to be there before it.
+     *
+     * NOT `seed.foundation`, and the reason is the one `land()` is declared after the seed for:
+     * assembly sorts by `requires`, so a module declared in the middle of the list that needs the
+     * seed DRAGS THE SORT and takes every module after it along. Requiring it here pulled `freight`
+     * behind the foundation, the foundation's hull block ran before the carrier parties existed,
+     * and this world opened with no merchant fleet at all — the second time that has happened.
+     * The seed below adds nothing, so nothing here needs it; when item 0b turns that seed back on,
+     * this module is DECLARED AFTER the seed rather than declaring it a requirement in place.
      */
     requires: ['firms', 'banks'],
     instrumentKinds: [],
@@ -111,6 +149,12 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     units: [],
     params: paramsOf(rows),
     /**
+     * Banks Funding E1: A MODULE THAT DECLARES A DEPOSITOR SAYS HOW IT LEAVES, or the world does
+     * not open — which is what stopped it (item 0, stop 2). A small firm's account is operational
+     * money and it goes where a named firm's goes, for the same reason and on its own cost.
+     */
+    bankChoices: [{ partyKind: SMALL_FIRM, chooses: smallFirmChoosesBank }],
+    /**
      * Item 11.5–11.10: it has none YET, and the module says so rather than declaring an empty one
      * that reads as done. What it sells, what it employs, what it borrows and what it defaults on
      * are four steps, and each arrives with the phase that runs it.
@@ -118,25 +162,19 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     phases: [],
     participants: [],
     families: [],
-    seed(ctx: SeedContext): void {
-      for (const r of rows) {
-        const bank = ctx.parties.get(partyId(r.bank));
-        ctx.parties.add({
-          id: partyId(r.cell),
-          kind: SMALL_FIRM,
-          representation: 'cell',
-          region: bank.region,
-          // Law 9: a market names a small firm by what it does and where, because that is all
-          // anybody outside it knows about one — and a cell of them is that, with a count.
-          name: `${String(r.weight)} ${r.line} firms at ${r.bank}`,
-          bank: bank.id,
-          // XI-15: how many real firms this party IS. A count, and the five events are the only
-          // things that may move it (E5).
-          weight: r.weight,
-          key: cellKeyOf(r, bank.region),
-          status: { alive: true, standing: 'good' },
-        });
-      }
+    /**
+     * A6, XI-15, item 0 (stop 6): IT ADDS NO CELL YET, AND THE REASON IS THE KERNEL'S.
+     *
+     * `registry.cellKey` is ONE list of dimensions for the whole world and `cellKeyFaults` refuses
+     * any cell that lacks one of them or carries one it does not list. This world keys on cohort,
+     * which a small firm has not got, and a small firm is keyed on its line, which the registry
+     * does not list — so every party this seed added was refused and the world stopped here.
+     *
+     * The draw above is real and stays; what is missing is a key per party KIND, which is item 0b.
+     * It turns this seed on in the same change, and item 11 gives the cells something to do.
+     */
+    seed(): void {
+      return;
     },
   };
 }

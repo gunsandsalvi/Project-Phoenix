@@ -47,6 +47,17 @@ export interface PlaceholderDeath {
   readonly item: string;
 }
 
+/**
+ * Law 8: WHAT A DECLARED AMOUNT IS AN AMOUNT OF — the half the unit's free text says and nothing
+ * can read. `dimension: 'amount'` says only that the reader names the unit; this says which KIND of
+ * unit a reader may name, so a number meant as dollars can be measured against this world's dollars.
+ */
+export type Denomination =
+  /** An amount of whatever money the party reading it deals in: a cost, a limit, a transfer. */
+  | 'money'
+  /** An amount of somebody's time: hours a person has, hours a venue takes. */
+  | 'time';
+
 /** Law 8: the closed vocabulary a declared number's unit belongs to. */
 export type Dimension =
   /** A count of periods of this world's calendar. */
@@ -124,8 +135,16 @@ export interface ParamDecl {
    * pieces that unit is counted in. So a declared amount MOVES WITH THE WORLD'S RESOLUTION instead
    * of being restated against it at every site — which is what makes `resolution.pieceShift` an
    * invariance and not a rescaling of half the world.
+   *
+   * WHAT IT IS AN AMOUNT OF is declared here, and it is the half `denominated: true` could not say.
+   * A money amount and a time amount are the same field with the same dimension, so nothing could
+   * ask whether a number said to be dollars was a plausible number of dollars — and `insuranceLimit`
+   * sat at 100 through every run of this world, a deposit guarantee two thousand times smaller than
+   * the deposit it guaranteed, with every household's balance uninsured and the wholesale-first run
+   * of Banks Funding E4.a inverted. Declared, it is a CHECK (`test/params.test.ts`): every money
+   * amount is measured against what this world's seed actually put in an account.
    */
-  readonly denominated?: true;
+  readonly denominated?: Denomination;
   readonly kind: ParamKind;
   readonly owner: ParamOwner;
   /** Why the value is what it is (Law 16: a comment says what the artefact cannot). */
@@ -232,7 +251,7 @@ export class ParamRegister {
    */
   private read(id: ParamId, expected: Dimension): number {
     const d = this.decl(id);
-    if (d.denominated === true) {
+    if (d.denominated !== undefined) {
       throw new InvalidRegistry(
         'Law 8',
         `parameter ${id} is an amount of something: read it with amount(), naming the unit`,
@@ -330,7 +349,7 @@ export class ParamRegister {
      * of anything — `denominated` is the declaration that says which, and the check below is the
      * runtime half of what `Ratio` says in the type. A-44 and A-58 are both this mistake.
      */
-    if (d.denominated !== true) {
+    if (d.denominated === undefined) {
       throw new InvalidRegistry(
         'Law 8',
         `parameter ${id} is declared in "${d.unit}", which is not an amount of ${unit}`,

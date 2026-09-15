@@ -38,7 +38,9 @@ const B = partyId('b');
  */
 const TEST_KIND = agreementKindId('test.thing');
 const thing: AgreementTerms = { kind: TEST_KIND };
-const kinds = [{ id: TEST_KIND, what: 'a thing one party owes another, for a test' }];
+const kinds = [
+  { id: TEST_KIND, what: 'a thing one party owes another, for a test', binds: 'whoeverSucceeds' as const },
+];
 
 describe('an agreement: what one party owes another that is not an instrument (XI-8)', () => {
   it('needs two parties and something owed, or it is not one', () => {

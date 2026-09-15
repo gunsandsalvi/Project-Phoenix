@@ -74,6 +74,23 @@ export interface AgreementKindDecl {
   readonly id: AgreementKindId;
   /** What a commitment of this kind IS, for a reader and for the estate's report (Law 16). */
   readonly what: string;
+  /**
+   * Register F2, XI-8, Law 15: WHO A COMMITMENT OF THIS KIND STILL BINDS once the party that made
+   * it has ceased — the one question a succession has to answer, asked of the kind rather than
+   * branched on by the kernel.
+   *
+   * `whoeverSucceeds` is a DEBT: what is owed is owed, and it passes to whoever succeeded the name.
+   * That is what an estate divides, and a wage, a levy, a declared dividend and a rating fee are
+   * each one of these.
+   *
+   * `aGoingConcern` is a RELATIONSHIP: a commitment to keep DOING something — running a pool,
+   * employing a worker, standing behind a line, holding a client's book. A bank whose book an
+   * acquirer bought keeps every one of them, because that is what buying a book IS. An estate keeps
+   * none: it is where the chain of successors ends and its office is to realise what is there, not
+   * to run it (XI-8), so a relationship that reaches one ends there with what it still owed
+   * recorded as the write-off it is.
+   */
+  readonly binds: 'whoeverSucceeds' | 'aGoingConcern';
 }
 
 export interface AgreementDecl {
@@ -223,6 +240,29 @@ export class Agreements {
     return next;
   }
 
+  /**
+   * Register F2, XI-8: THE NAME ON ONE SIDE CEASED AND ITS SUCCESSOR IS ON THE ROW NOW.
+   *
+   * A commitment does not end because the party that made it ended. A line a bank committed, a wage
+   * a worker is owed, a mandate a manager runs: each passes to whoever succeeded the name, which is
+   * what a succession IS, and until it did, every module holding such a row was addressing an
+   * instruction to somebody who is not there (Money E4). The row keeps its id, its terms and its
+   * date — only one name changes — so what the successor owes is the same commitment, not a new one.
+   *
+   * It refuses a party that is not on the row, and a move that would leave one party on both sides:
+   * a debt to yourself is not a commitment, and the caller ends that row instead.
+   */
+  succeed(id: AgreementId, was: PartyId, now: PartyId): Agreement {
+    const row = this.get(id);
+    const onDebtor = row.debtor === was;
+    forbid(onDebtor || row.creditor === was, 'Register F2', `${was} is not a party to ${id}`);
+    const next: Agreement = onDebtor ? { ...row, debtor: now } : { ...row, creditor: now };
+    forbid(next.debtor !== next.creditor, 'Law 5', `${id} would leave ${now} owing itself`);
+    this.rows.set(id, Object.freeze(next));
+    reindex(onDebtor ? this.byDebtor : this.byCreditor, was, now, id);
+    return next;
+  }
+
   /** What this party owes that is not an instrument — the question an estate has to ask (XI-8). */
   owedBy(party: PartyId): readonly Agreement[] {
     return rowsOf(this.rows, this.byDebtor.get(party));
@@ -247,6 +287,16 @@ function index<K>(ix: Map<K, Set<AgreementId>>, at: K, id: AgreementId): void {
   const set = ix.get(at);
   if (set === undefined) ix.set(at, new Set([id]));
   else set.add(id);
+}
+
+function reindex(
+  ix: Map<PartyId, Set<AgreementId>>,
+  was: PartyId,
+  now: PartyId,
+  id: AgreementId,
+): void {
+  ix.get(was)?.delete(id);
+  index(ix, now, id);
 }
 
 function rowsOf(

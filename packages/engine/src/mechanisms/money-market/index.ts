@@ -706,13 +706,13 @@ function paramsOf(): ParamDecl[] {
     },
     {
       id: MM_PARAMS.insuranceLimit,
-      value: 100,
-      denominated: true,
+      value: 250_000,
+      denominated: 'money',
       unit: 'of the money it is a deposit in, per member',
       dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
-      why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from worklist 14.',
+      why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from item 19. IT WAS 100, AND A `denominated` VALUE IS IN NAMED UNITS: a hundred dollars a member, against an opening balance thousands of times that, so practically nothing in this world was insured. Every bank then read its whole deposit base as money that could leave (C2), wanted more liquid paper than its own balance sheet, and had negative funding room from the first period a liquidity line was published — so no bank lent to anybody after period 0, nothing was quoted, no firm could cost capital and nothing was ever built (item 0, stop 16). A quarter of a million is what the real guarantee is written at, and `test/params.test.ts` now holds every denominated number against what a member actually holds.',
     },
     {
       id: INSURER_PARAMS.premium,

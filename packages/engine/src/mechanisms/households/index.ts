@@ -156,7 +156,7 @@ function paramsOf(): ParamDecl[] {
     {
       id: HOUSEHOLD_SWITCHING_COST,
       value: 40,
-      denominated: true,
+      denominated: 'money',
       unit: 'of the money the account is in, per move, per member',
       dimension: 'amount',
       kind: 'preference',
@@ -374,7 +374,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
   return {
     id: 'households',
     agreementKinds: [
-      { id: ESTATE_UNDELIVERED, what: 'what a dead cell\u2019s estate could not hand to probate' },
+      {
+        id: ESTATE_UNDELIVERED,
+        what: 'what a dead cell\u2019s estate could not hand to probate',
+        // XI-8: undelivered is owed. It is the residual that must have a holder, so it passes.
+        binds: 'whoeverSucceeds',
+      },
     ],
     spec: 'Households, Sovereign E2.f',
     nouns: [

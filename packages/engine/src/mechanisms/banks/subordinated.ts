@@ -47,7 +47,7 @@ import {
 } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
-import { some } from '../../core/option.js';
+import { none, some } from '../../core/option.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
@@ -241,7 +241,21 @@ export function runRaise(
   const id = subId(bank, maturity);
   const standing = ctx.instruments.has(id) ? ctx.instruments.get(id) : undefined;
   if (standing !== undefined && !standing.status.live) return;
-  if (standing === undefined) openLine(ctx, bank, ccy, id, drawn, maturity);
+  if (standing === undefined) {
+    /**
+     * C2, E5, item 0 (stop 8): A NAME NOBODY HAS EVER PRICED DOES NOT OPEN A LAYER.
+     *
+     * A coupon is struck against what a holder SAID it requires (N5.a), so a bank no holder has
+     * put a number on has nothing to strike one against — and that is a refusal, recorded, not a
+     * throw that stops the world and not a rate this module would have to invent (Law 3, App A).
+     */
+    const rate = ctx.requiredOf(bank);
+    if (!rate.some) {
+      ctx.record('bank.raise.unpriced', [bank], { bank, wanted: want, ccy }, true);
+      return;
+    }
+    openLine(ctx, bank, ccy, id, drawn, maturity, rate.value);
+  }
   const inst = ctx.instruments.get(id);
   if (!inst.market.some) {
     throw new Missing('Clearing D1', `${id} names no market`, { instrument: id });
@@ -250,8 +264,9 @@ export function runRaise(
     market: inst.market.value,
     issuer: bank,
     size: want,
-    // Clearing C3: no level. Zero is not a floor — it is the absence of one.
-    reservation: 0,
+    // C3, C5: NO LEVEL. It takes what the book gives it, and that is `none` rather than a zero —
+    // a level of zero is a limit the grid drops, which is how no raise ever entered a book at all.
+    reservation: none<number>(),
     allotment: 'uniformPrice',
   });
   ctx.record(
@@ -270,13 +285,14 @@ function openLine(
   id: InstrumentId,
   drawn: Civil,
   maturity: Civil,
+  rate: Ratio,
 ): void {
   const terms: SubTerms = {
     kind: SUBORDINATED,
     issuer: bank,
     // A2.a: what it promises on it, struck at issuance like any coupon (N5.a). It is the rate the
-    // market last required of this name, which is what the book would start at.
-    rate: requiredOf(ctx, bank),
+    // market last required of this name, which is what the book would start at (E5, `requiredOf`).
+    rate,
     drawn,
     maturity,
     dayCount: 'ACT/365F',
@@ -292,25 +308,4 @@ function openLine(
   });
 }
 
-/**
- * E5, A2.a: WHAT THE MARKET LAST SAID IT REQUIRES OF THIS NAME, which is what a coupon on a new
- * layer is struck against — the same construction a treasury and a corporate issuer both use, and
- * for the same reason: a coupon is a payment the ISSUER promises, so it is struck against what
- * somebody said they want rather than against what the auction is going to do (Law 3).
- */
-function requiredOf(ctx: MechanismContext, bank: PartyId): Ratio {
-  let keenest: number | undefined;
-  for (const e of ctx.journal.ofKindIn('bank.reservation', ctx.period)) {
-    const required = e.data['required'];
-    if (typeof required !== 'object' || required === null) continue;
-    const mine = (required as Record<string, unknown>)[String(bank)];
-    if (typeof mine !== 'number') continue;
-    if (keenest === undefined || mine < keenest) keenest = mine;
-  }
-  if (keenest === undefined) {
-    throw new Missing('Banks Capital C2', `nobody has published what they require of ${bank}`, {
-      bank,
-    });
-  }
-  return asRatio(keenest, 'what the keenest holder requires of this name');
-}
+

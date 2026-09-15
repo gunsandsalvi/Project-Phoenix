@@ -14,8 +14,10 @@ import { positiveCount } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellParty, Parties, WeightEventKind } from '../parties/party.js';
 import type { Register } from '../register/register.js';
+import { succeedAgreements, type SuccessionDeps } from './succession.js';
 
-export interface CellDeps {
+/** Register F2: a cell is a party, so what it owed moves with it when it ceases (`succession`). */
+export interface CellDeps extends SuccessionDeps {
   readonly parties: Parties;
   readonly register: Register;
   readonly journal: Journal;
@@ -100,6 +102,7 @@ export function mergeCells(
     cause,
   });
   d.parties.cease(b, period, a);
+  succeedAgreements(b, a, period, cycle, d);
   d.journal.record(
     period,
     cycle,
@@ -255,6 +258,7 @@ export function dieCell(
     true,
   );
   d.parties.cease(cell, period, successor);
+  succeedAgreements(cell, successor, period, cycle, d);
 }
 
 function nextSplitId(c: CellParty, parties: Parties): PartyId {

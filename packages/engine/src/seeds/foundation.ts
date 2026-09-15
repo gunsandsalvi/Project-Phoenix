@@ -833,7 +833,7 @@ export function foundationSeedFor(
         why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision, after which what anybody holds abroad is an outcome of what it bought and sold. It pointed at 13h, which closed without one; what a central bank's reserves are MADE of is a cross-border question and item 16.6 is where it is answered.",
         standsInFor: {
           mechanism: 'Central Bank F4',
-          item: '16.6',
+          item: '16.7',
         },
       },
       ...openingPrices(),

@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run check:deaths && npm run check:existence && npm run plan:check",
+    "check": "npm run check:opens && npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run check:deaths && npm run check:existence && npm run plan:check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -30,7 +30,8 @@
     "e2e": "playwright test",
     "check:forbids": "tsx tools/check-forbids.ts",
     "check:deaths": "tsx tools/check-deaths.ts",
-    "check:existence": "tsx tools/coverage-existence.ts --verify"
+    "check:existence": "tsx tools/coverage-existence.ts --verify",
+    "check:opens": "vitest run packages/engine/test/opens.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

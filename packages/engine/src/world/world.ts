@@ -115,7 +115,8 @@ import { classify, type Classified } from '../registry/universe.js';
 import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
+import { type CellDeps, dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
+import { succeedAgreements } from './succession.js';
 import type { Subject,
   Borrowing,
   ContractsRead,
@@ -1510,6 +1511,7 @@ export class World {
         this.valuation.inOwnMoney(party, value, from, this.currentPeriod),
       inMoney: (value, from, to) => this.valuation.inMoney(value, from, to, this.currentPeriod),
       curve: (family) => this.curve(family),
+      sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
       publicEvents: (last) => this.journal.visibleTo(party, last),
@@ -1683,7 +1685,42 @@ export class World {
       curve: (family) => this.curve(family),
       index: (id) => this.index(id),
       sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
+      requiredOf: (issuer) => this.requiredOf(issuer),
     };
+  }
+
+  /**
+   * Corporate Credit E5, E5.d, Banks Capital C2.a: THE KEENEST REQUIREMENT PUBLISHED ABOUT A NAME,
+   * per annum, from the last period anybody published one.
+   *
+   * It was written out three times — in `banks/subordinated.ts`, `corporate-bond/index.ts` and
+   * `short-term-debt/index.ts` — and each copy scanned THIS period's reservations, so the answer
+   * depended on phase order rather than on what was said: `banks.raise` runs before anything
+   * publishes one, and the first raise of the world threw (item 0, stop 8). A coupon is struck
+   * against what a holder SAID, and what it said stands until it says something else (Bond N5.a).
+   *
+   * One backward walk that stops at the end of the last period that said anything about this name.
+   * Nothing for a name nobody has ever priced: an issuer no holder has put a number on has no book
+   * to come to, and that is an answer rather than a zero (App A).
+   */
+  requiredOf(issuer: PartyId): Option<Ratio> {
+    const events = this.journal.ofKind('bank.reservation');
+    let at: Period | undefined;
+    let keenest: number | undefined;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const e = events[i];
+      if (e === undefined) continue;
+      if (at !== undefined && e.period !== at) break;
+      const required = e.data['required'];
+      if (typeof required !== 'object' || required === null) continue;
+      const mine = (required as Record<string, unknown>)[String(issuer)];
+      if (typeof mine !== 'number') continue;
+      at = e.period;
+      if (keenest === undefined || mine < keenest) keenest = mine;
+    }
+    return keenest === undefined
+      ? none<Ratio>()
+      : some(asRatio(keenest, 'what the keenest holder requires of this name'));
   }
 
   /**
@@ -1749,7 +1786,13 @@ export class World {
   }
 
   private buildMechanismContext(owner: string): MechanismContext {
-    const cellDeps = { parties: this.parties, register: this.store, journal: this.journal };
+    const cellDeps: CellDeps = {
+      parties: this.parties,
+      registry: this.registry,
+      register: this.store,
+      journal: this.journal,
+      agreements: this.agreementStore,
+    };
     return {
       period: this.currentPeriod,
       cycle: this.currentCycle,
@@ -1827,6 +1870,7 @@ export class World {
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
       sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
+      requiredOf: (issuer) => this.requiredOf(issuer),
       // XI-8, Firm Birth E1: somebody arrives after the seed. It is journalled, because a party
       // appearing is an event anybody watching the world should see.
       enter: (party) => {
@@ -2112,6 +2156,12 @@ export class World {
           { successor },
           true,
         );
+        succeedAgreements(party, successor, this.currentPeriod, this.currentCycle, {
+          parties: this.parties,
+          registry: this.registry,
+          agreements: this.agreementStore,
+          journal: this.journal,
+        });
       },
       record: (kind, subjects, data, isPublic) =>
         this.journal.record(this.currentPeriod, this.currentCycle, kind, subjects, data, isPublic),

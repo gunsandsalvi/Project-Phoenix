@@ -721,7 +721,13 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
   return {
     id: 'housing',
     agreementKinds: [
-      { id: TENANCY, what: 'a named tenant renting dwellings from a named landlord, at a rent' },
+      {
+        id: TENANCY,
+        what: 'a named tenant renting dwellings from a named landlord, at a rent',
+        // XI-8: a tenancy runs with the dwelling, so a landlord's successor that holds it is the
+        // landlord now. An estate sells the dwelling instead, and the tenancy ends at that sale.
+        binds: 'aGoingConcern',
+      },
     ],
     // XI-8, item 9.1: NO NOUNS. The tenancies were this module's private book and are agreements
     // now; there is no `ctx.state` slot left here at all, which is what a migration looks like when

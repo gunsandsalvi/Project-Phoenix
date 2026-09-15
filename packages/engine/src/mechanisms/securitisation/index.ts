@@ -1451,6 +1451,9 @@ export function securitisation(): SystemModule {
     agreementKinds: [
       {
         id: DEAL,
+        // XI-8: the deal is a relationship between a live arranger and a live vehicle. An acquirer
+        // that took the arranger's book took its deals; an estate services nothing.
+        binds: 'aGoingConcern',
         what: 'a vehicle and the arranger that cut it, and which rows left the arranger\u2019s book',
       },
     ],

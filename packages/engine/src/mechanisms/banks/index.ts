@@ -40,7 +40,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { civil } from '../../calendar/civil.js';
+import { addMonths } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId, partyId } from '../../core/ids.js';
@@ -114,6 +114,8 @@ export const LENDING_PARAMS = {
   sovereignWeight: paramId('regulation.riskWeight.sovereign'),
   leverageRatio: paramId('regulation.leverageRatio'),
   hoursPerLoanPeriod: STAFF_PARAMS.hoursPerLoanPeriod,
+  /** A2: how long a loan runs for, in MONTHS, because that is what the calendar places (Law 8). */
+  loanMonths: paramId('lending.loanMonths'),
 } as const;
 
 /** What a bank was asked for, by whom, and what it said (C3.a: a decline is an answer). */
@@ -746,8 +748,10 @@ function write(
     borrower,
     rate,
     drawn,
-    // A2: a year, placed by date like every other maturity in this world (Money G3.a).
-    maturity: civil(drawn.y + 1, drawn.m, drawn.d),
+    // A2: a year, placed by date like every other maturity in this world (Money G3.a). It is the
+    // calendar's own month arithmetic and not `civil(y + 1, m, d)`, which is not a date when the
+    // day is a leap day and stopped the world the first time a loan was drawn on one (item 0).
+    maturity: addMonths(drawn, ctx.params.months(LENDING_PARAMS.loanMonths)),
     dayCount: 'ACT/365F',
     // A4: what the request named, and nothing is inferred. It was always empty until 13d gave this
     // world a thing a bank could take and realise; a request that names none is still unsecured,
@@ -878,7 +882,17 @@ function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: Overdraf
   // C1.d). The kind says so and the bank reads it (Law 15); the refusal is the answer, recorded.
   const borrows = ctx.registry.partyKind(ctx.parties.get(o.holder).kind).borrows;
   const r = room(view, decl, o.holder);
-  if (!borrows || r.most < o.shortfall) {
+  /**
+   * B3.a, item 0 (stop 12): AND A BANK THAT CANNOT COST ITS OWN FUNDING DOES NOT ALLOW ONE.
+   *
+   * What prices the row is this bank's own cost of funds, and in the opening period it has none —
+   * it has paid for nothing yet. `bookDraws` used to discover that at the CLOSE, after the drawing
+   * had been allowed and the payment made, and threw; so any overdraft in period 0 stopped the
+   * world. The decision belongs where the decision is: a lender that cannot price a drawing
+   * refuses it, which is an answer (C3.a) and leaves the payment to fail as B3.c says it should.
+   */
+  const priced = costOfFunds(ctx, o.issuer, o.ccy).perAnnum.some;
+  if (!borrows || !priced || r.most < o.shortfall) {
     ctx.record(
       'credit.declined',
       [o.issuer, o.holder],
@@ -886,7 +900,11 @@ function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: Overdraf
         bank: o.issuer,
         borrower: o.holder,
         asked: o.shortfall,
-        binds: borrows ? r.binds : 'nobody lends to a party of this kind',
+        binds: !borrows
+          ? 'nobody lends to a party of this kind'
+          : !priced
+            ? 'it cannot cost its own funding'
+            : r.binds,
         overdraft: true,
       },
       false,
@@ -923,14 +941,11 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
      * money. An unpriced drawing is a defect in the money issuer that allowed it, and it says so
      * rather than inventing a rate.
      */
+    // A-45, B3.a: whoever allowed the drawing writes the row that prices it, and `overdraft` above
+    // does not allow one it cannot price — so the cost is there. The throw that used to stand here
+    // was the same fact asserted twice, one phase too late (item 0, stop 12).
     const funds = costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum;
-    if (!funds.some) {
-      throw new Missing(
-        'Money B3.a',
-        `${bank} allowed ${d.holder} an overdraft and cannot cost its own funding to price it`,
-        { bank: String(bank), ccy: d.ccy },
-      );
-    }
+    if (!funds.some) continue;
     const q = quote(view, decl, d.holder as PartyId, regulationOf(view), funds.value, seenDefaults(ctx));
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
     write(ctx, bank, d.holder as PartyId, d.amount, q.rate, d.ccy as CurrencyCode, true);
@@ -1124,6 +1139,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
   agreementKinds: [
     {
       id: PRIME,
+      // A1, XI-8: an acquirer that bought the book took the clients with it, which is what buying
+      // a book is. An estate finances nobody (Banks Lending A1) and the relationship ends.
+      binds: 'aGoingConcern',
       what: 'a bank holds a client\u2019s book, decides what it requires against it, and finances the rest',
     },
   ],
@@ -1131,6 +1149,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
   curveFamilies: [],
   units: [],
   params: [
+    {
+      id: LENDING_PARAMS.loanMonths,
+      value: 12,
+      unit: 'months',
+      dimension: 'months',
+      kind: 'technology',
+      owner: 'standardSetter',
+      why: 'Banks Lending A2: how long a loan runs for. A convention of the market rather than a choice this world takes each time — a year is what a commercial facility is written for — and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It is not a forecast of how long the borrower needs the money; what it needs is what it asked for.',
+    },
     {
       id: LENDING_PARAMS.capitalRatio,
       value: 0.08,
@@ -1668,6 +1695,17 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
     for (const b of ctx.parties.ofKind(BANK)) {
       const decl = declOf(rows, b.id);
       if (decl === undefined || !b.status.alive || b.id === p.id) continue;
+      /**
+       * Money A1, B1, B1.a, XI-12: A BANK LENDS ITS OWN MONEY INTO EXISTENCE, so a bank that issues
+       * no pounds cannot write a pound loan — the drawing leg has its own account on the paying
+       * side and there is no such account (item 0, stop 21).
+       *
+       * Lending across a currency is a real business and a different one: the lender funds itself
+       * in the borrower's money first, which is the currency layer (XI-12) and is not built. Until
+       * it is, a bank quotes where it issues, and a borrower in a money none of this world's banks
+       * issue gets no quote — which is the honest answer and the one C3 wants recorded.
+       */
+      if (!ctx.instruments.has(moneyInstrumentId(b.id, ccy))) continue;
       const view = ctx.participant(b.id);
       const reg = regulationOf(view);
       const r = room(view, decl, p.id);

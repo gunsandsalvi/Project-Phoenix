@@ -286,7 +286,14 @@ function gridDate(target: Civil): Civil {
 }
 
 export const treasury: SystemModule = {
-  agreementKinds: [{ id: LEVY_IN_ARREARS, what: 'a levy assessed on a payer that could not pay it' }],
+  agreementKinds: [
+    {
+      id: LEVY_IN_ARREARS,
+      what: 'a levy assessed on a payer that could not pay it',
+      // Sovereign C, XI-8: a tax assessed and unpaid is a debt, and it follows the payer's name.
+      binds: 'whoeverSucceeds',
+    },
+  ],
   id: 'treasury',
   spec: 'Treasury, Sovereign A, C, XI-9',
   requires: ['sovereign-instruments', 'sovereign-curve'],
@@ -334,7 +341,7 @@ export const treasury: SystemModule = {
     {
       id: TREASURY_PARAMS.transfers,
       value: 12,
-      denominated: true,
+      denominated: 'money',
       unit: 'of its own money, per member per period',
       dimension: 'amount',
       kind: 'policy',
@@ -344,7 +351,7 @@ export const treasury: SystemModule = {
     {
       id: TREASURY_PARAMS.publicService,
       value: 7000,
-      denominated: true,
+      denominated: 'time',
       unit: 'of the venue own time, per period',
       dimension: 'amount',
       kind: 'policy',
@@ -354,7 +361,7 @@ export const treasury: SystemModule = {
     {
       id: TREASURY_PARAMS.purchases,
       value: 30_000,
-      denominated: true,
+      denominated: 'money',
       unit: 'of its own money, per period',
       dimension: 'amount',
       kind: 'policy',
@@ -647,7 +654,7 @@ function announce(
     market: marketOf(ctx, instrument),
     issuer: id,
     size: units,
-    reservation,
+    reservation: some(reservation),
     allotment: 'uniformPrice',
   });
   // C3: the announcement. What is brought, and what the dealership asks of the dealers who carry it

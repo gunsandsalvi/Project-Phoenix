@@ -166,9 +166,14 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
 
 - Toolchain: TypeScript strict, npm workspaces (`packages/engine`, `packages/app`), Vitest,
   fast-check, ESLint (custom rules in `tools/eslint-rules`), Vite, Capacitor for Android.
-- Run `npm run check` (lint + typecheck + tests + spec citations + plan progress) at the END OF A
-  MODULE, not mid-item. All green or the module is not done. Lint and typecheck are cheap and can
-  run whenever; the suite is a measurement and measurements come last (Law 11).
+- Run `npm run check` (opens + lint + typecheck + tests + spec citations + plan progress) at the END
+  OF A MODULE, not mid-item. All green or the module is not done. Lint and typecheck are cheap and
+  can run whenever; the suite is a measurement and measurements come last (Law 11).
+- **`npm run check:opens` may run at any time and must be green before any commit.** It steps the
+  rig thirty periods and the four-country world twelve, and asserts only that neither THROWS — so it
+  is not a measurement and Law 11 does not hold it back. Every mechanism test passed for months
+  while the assembled world stopped in period 2, twenty-one times over; this is the check that was
+  missing, and it prints the census each run rather than asserting a number.
 - **A test never names a party.** This world's banks, firms, listings and funds are DRAWN (Seed
   B1.a): `firm.4` is not "the big farm", it is whatever the draw made it. A test asks the draw for
   a mill, a dealer, a listed line (`packages/engine/test/rig.ts`), and builds a SCALE MODEL of the

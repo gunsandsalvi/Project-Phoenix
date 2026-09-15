@@ -506,7 +506,11 @@ export function research(seed: string): SystemModule {
         // would be surprised by nothing, every time.
         name: 'research.settle',
         spec: 'Reporting F1',
-        cycle: 0,
+        // Item 0 (stop 18): it takes the cycle of the phase it is anchored to, because what it
+        // reads is what that phase wrote. `reporting.publish` moved to the close of the period
+        // (a balance sheet is struck at one) and a cycle stated here would have pinned this to
+        // the top of it — which is the anchor design item 0a deletes.
+        cycle: 'anchor',
         anchor: { after: 'reporting.publish' },
         run: (ctx: MechanismContext): void => {
           settle(ctx);
@@ -515,7 +519,8 @@ export function research(seed: string): SystemModule {
       {
         name: 'research.cover',
         spec: 'Reporting C1 Reporting C4 Reporting D1 Reporting D2',
-        cycle: 0,
+        // It follows the surprise it is anchored to, and takes its cycle (item 0, stop 18).
+        cycle: 'anchor',
         anchor: { after: 'research.settle' },
         run: (ctx: MechanismContext): void => {
           cover(seed, ctx);

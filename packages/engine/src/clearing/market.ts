@@ -171,8 +171,16 @@ export interface PrimaryOffer {
   readonly issuer: PartyId;
   /** Law 8: whole units offered this session. An issuer brings pieces, like anybody else. */
   readonly size: Qty;
-  /** The least the issuer will accept per unit; below it the paper is withdrawn (C7). */
-  readonly reservation: number;
+  /**
+   * C5, C7: the least the issuer will accept per unit; below it the paper is withdrawn.
+   *
+   * NONE where the issuer names no level and takes what the book gives it — which is a real answer
+   * and not a level of zero. It was `0`, and `onTheGrid` drops a level at or below nothing (rightly:
+   * a price of zero is the absence of one, XI-6), so a bank raising capital `reservation: 0` never
+   * entered its own book and every raise this world attempted reported `noSupply` while the record
+   * said it had offered (item 0, stop 11).
+   */
+  readonly reservation: Option<number>;
   /** C2: every winner pays the stop-out. */
   readonly allotment: 'uniformPrice';
 }
@@ -309,7 +317,11 @@ interface Trade {
  * meaning per side: the most a buyer will pay, the least a seller will accept. So the direction is
  * read off the side and is not a choice anybody gets to make differently.
  */
-function onTheGrid(orders: readonly Order[], tick: number): Order[] {
+function onTheGrid(
+  orders: readonly Order[],
+  tick: number,
+  dropped: (o: Order, why: string) => void,
+): Order[] {
   const out: Order[] = [];
   for (const o of orders) {
     // Law 8, Clearing A2: AND A SIZE BELOW ONE PIECE IS NOT A SIZE. A reservation for less than the
@@ -320,7 +332,10 @@ function onTheGrid(orders: readonly Order[], tick: number): Order[] {
     // same rule: what a book can hold is whole pieces at whole ticks, and a rule applied in one
     // place cannot be forgotten in another (Law 4). Rounding it UP is what must not happen — that
     // posts a size its owner never asked for.
-    if (o.qty <= 0) continue;
+    if (o.qty <= 0) {
+      dropped(o, 'a size below one piece of the thing is not a size');
+      continue;
+    }
     if (o.price === 'market') {
       out.push(o);
       continue;
@@ -334,7 +349,10 @@ function onTheGrid(orders: readonly Order[], tick: number): Order[] {
     // It must not be POSTED at zero, which is what this did: a bill printed at nothing, and the
     // first read that divided by that price threw `yield of ust.bill.2026-06-15 is Infinity`. A
     // price of zero is not a cheap price, it is the absence of one (XI-6).
-    if (level <= 0) continue;
+    if (level <= 0) {
+      dropped(o, 'a limit below the smallest increment this market quotes is not a limit');
+      continue;
+    }
     out.push({ ...o, price: level });
   }
   return out;
@@ -364,7 +382,9 @@ export function runMarket(
     orders.push({
       party: offer.value.issuer,
       side: 'sell',
-      price: offer.value.reservation,
+      // C5, C7: its walk-away, or `market` where it named none — an issuer that will take what the
+      // book gives it is a seller at the market, which is what it is saying.
+      price: offer.value.reservation.some ? offer.value.reservation.value : 'market',
       qty: offer.value.size,
     });
   }
@@ -380,7 +400,23 @@ export function runMarket(
   // decision — a limit means the most a buyer will pay or the least a seller will accept, so the
   // side it was posted on says which way the grid takes it, and the kernel is honouring what the
   // poster promised rather than choosing on its behalf.
-  const book = onTheGrid(orders, deps.tickOf(m));
+  /**
+   * Clearing C4.b, Law 1, item 0 (stop 11): AND A DECISION THAT DOES NOT REACH THE BOOK SAYS SO.
+   *
+   * Both refusals above are right — a size below a piece and a limit below a tick are not orders —
+   * but they used to be silent, so a party that had decided something and been dropped looked
+   * exactly like a party that decided nothing. A refusal is an answer and is recorded as one.
+   */
+  const book = onTheGrid(orders, deps.tickOf(m), (o, why) => {
+    deps.journal.record(
+      period,
+      cycle,
+      'order.dropped',
+      [String(m.id), String(o.party)],
+      { market: m.id, party: o.party, side: o.side, price: o.price, qty: o.qty, why },
+      true,
+    );
+  });
   // Sovereign C2: a session carrying an offer is an auction, and its stated allotment is the
   // stop-out. Without one the venue is an open book and the sellers compete.
   const outcome = clear(book, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');

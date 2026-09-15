@@ -36,7 +36,7 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { costOfDraw } from '../../register/register.js';
-import { instrumentId, marketId, partyId } from '../../core/ids.js';
+import { instrumentId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
 import { atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
 import { NO_QTY, type Qty, addQty, asQty, downTick, subQty } from '../../core/tick.js';
@@ -68,6 +68,7 @@ import {
 import {
   goodId,
   isGoodTerms,
+  type GoodTerms,
   vintagesHeld,
   wearPerPlantUnit,
   windHardnessParam,
@@ -212,6 +213,60 @@ function shippers(
   return out;
 }
 
+/**
+ * A3, C6: THE PLACE A CARGO IS WHILE IT IS NEITHER HERE NOR THERE, opened once per good and leg.
+ *
+ * `cargo()` moves a shipment out of the origin line and into one of these; `arrive()` moves it out
+ * again into the destination line, carrying its own basis. Without them the destroy-and-create that
+ * loading IS had nowhere to put the cargo, so every voyage in this world stopped at the `has`
+ * check and nothing was ever loaded — which is why `freight.loaded` had never fired.
+ *
+ * IT IS THE GOOD'S OWN TERMS, read off the line it came from (Law 19) rather than rebuilt here,
+ * with ONE fact changed: it cannot be loaded. A cargo at sea is not cargo a hull can take on, and
+ * `portable: false` is that fact in the one place every reader already asks it — the shipper's own
+ * offer, a merchant's book, a futures line's deliverable. The region it carries is the one it is
+ * CONSIGNED to, because that is what it becomes when it lands, and its money is the SHIPPER'S: what
+ * a lot of it cost is what the cargo cost plus the freight, and both were paid at the origin.
+ *
+ * Nobody trades it (`market: none()`), so it is carried at cost like every other unpriced line, and
+ * it spoils at sea because it is the same instrument KIND as the good and `perish` walks holdings.
+ */
+function openTransit(ctx: SeedContext): void {
+  const places = [...ctx.registry.regions.keys()];
+  const paths = legsBetween(ctx.registry.geography, ctx.params, VESSEL, places);
+  for (const from of places) {
+    for (const to of places) {
+      if (from === to || !paths.has(legKey(from, to))) continue;
+      for (const i of ctx.instruments.all()) {
+        const here = i.terms;
+        if (!isGoodTerms(here) || here.region !== from || !here.portable) continue;
+        const id = inTransit(here.subUnit, from, to);
+        if (ctx.instruments.has(id)) continue;
+        const terms: GoodTerms = { ...here, region: to, portable: false };
+        ctx.instruments.add({
+          id,
+          kind: i.kind,
+          // A1: nobody issued a tonne of grain at sea either.
+          issuer: none(),
+          ccy: ctx.registry.currencyOf(from),
+          terms,
+          market: none(),
+        });
+      }
+    }
+  }
+}
+
+/** The keenest price on one side of a session, or nothing because nobody stood on it. */
+function best(orders: readonly Order[], side: 'buy' | 'sell'): number | undefined {
+  let out: number | undefined;
+  for (const o of orders) {
+    if (o.side !== side || typeof o.price !== 'number') continue;
+    if (out === undefined || (side === 'buy' ? o.price > out : o.price < out)) out = o.price;
+  }
+  return out;
+}
+
 /** C1, D1: the session on one leg. One solver, one print, like every other market. */
 function session(
   ctx: MechanismContext,
@@ -247,6 +302,12 @@ function session(
   orders.push(...shippers(ctx, have, to));
   if (orders.length === 0) return;
   const outcome = clear(orders, 'proRata', 'sellersCompete');
+  // D1, Part II: WHAT THE TWO SIDES SAID, not only how many said it. A leg that does not clear
+  // because the gap between two places is under what the voyage costs is a different world from one
+  // where nobody offered, and `noOverlap` alone cannot tell them apart — which is the first thing
+  // anybody reading a world with no freight in it asks.
+  const bid = best(orders, 'buy');
+  const ask = best(orders, 'sell');
   said.set(legKey(from, to), {
     from,
     to,
@@ -255,6 +316,8 @@ function session(
     outcome: outcome.kind,
     shippers: orders.filter((o) => o.side === 'buy').length,
     carriers: orders.filter((o) => o.side === 'sell').length,
+    ...(bid === undefined ? {} : { bid }),
+    ...(ask === undefined ? {} : { ask }),
     ...(isCleared(outcome) ? { rate: outcome.price, moved: outcome.volume } : {}),
   });
   if (!isCleared(outcome)) return;
@@ -560,6 +623,7 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
           representation: 'named',
         });
       }
+      openTransit(ctx);
     },
     phases: [
       {
@@ -604,5 +668,4 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
   };
 }
 
-export const transitMarket = (subUnit: string, from: RegionId, to: RegionId): string =>
-  String(marketId(`mkt.transit.${subUnit}.${from}.${to}`));
+

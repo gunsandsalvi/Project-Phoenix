@@ -293,19 +293,8 @@ function shortOf(
  * system, and a second composition assembled here out of the private terms beside it would be this
  * module pricing a bank's book against a belief that bank does not hold (Law 4).
  */
-function wouldHold(ctx: MechanismContext, issuer: PartyId): Option<Ratio> {
-  let keenest: number | undefined;
-  for (const e of ctx.journal.ofKindIn('bank.reservation', ctx.period)) {
-    const required = e.data['required'];
-    if (typeof required !== 'object' || required === null) continue;
-    const mine = (required as Record<string, unknown>)[String(issuer)];
-    if (typeof mine !== 'number') continue;
-    if (keenest === undefined || mine < keenest) keenest = mine;
-  }
-  return keenest === undefined
-    ? none<Ratio>()
-    : some(asRatio(keenest, 'what the keenest holder requires of this name'));
-}
+const wouldHold = (ctx: MechanismContext, issuer: PartyId): Option<Ratio> =>
+  ctx.requiredOf(issuer);
 
 /** Banks Lending C3.a: the keenest quote this firm was given, and how much that bank will lend. */
 function quotedTo(
@@ -400,7 +389,7 @@ function place(
     market: marketOf(ctx, id),
     issuer,
     size: units,
-    reservation: walkAway,
+    reservation: some(walkAway),
     allotment: 'uniformPrice',
   });
   // C2.b, Clearing C4: the announcement, and the two prices it compared — so a reader can see which of B1's two

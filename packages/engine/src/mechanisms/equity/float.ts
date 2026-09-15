@@ -212,7 +212,7 @@ export function float(ctx: MechanismContext, f: Flotation): void {
     market,
     issuer: f.firm,
     size: f.size,
-    reservation: f.reservation,
+    reservation: some(f.reservation),
     allotment: 'uniformPrice',
   });
   ctx.record(

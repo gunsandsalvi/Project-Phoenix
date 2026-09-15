@@ -201,7 +201,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
       {
         id: FIRM_SWITCHING_COST,
         value: 250,
-        denominated: true as const,
+        denominated: 'money' as const,
         unit: 'of the money the account is in, per move',
         dimension: 'amount',
         kind: 'preference' as const,

@@ -35,6 +35,7 @@
  * what the market is asking for the plant that makes one.
  */
 import { payrollSince } from './decide.js';
+import { firmParam } from './data.js';
 import {
   amountOf,
   asCash,
@@ -148,17 +149,58 @@ export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
  * coupon on debt already outstanding. XI-4 names that average as the way this joint is deleted.
  */
 function quotedRate(view: ParticipantView): Option<Ratio> {
-  // A-33: AT THE MARGIN means NOW, and `lastOwn` answers from any period ever — so this was the
-  // last quote the firm was ever given, carried into its cost of capital for ever after. A bank
-  // quotes when it quotes; a firm nobody has quoted lately has no marginal cost of debt, which is
-  // Missing and not the rate it got once.
+  /**
+   * B1.b, E5, item 0 (stop 17): WHAT BORROWING WOULD COST IT, from the keenest thing anybody has
+   * said about it — and a firm nobody has quoted LATELY is not a firm nobody has priced.
+   *
+   * It read only its own `credit.quoted` from the last payroll window, and a bank quotes a firm
+   * when the firm ASKS: a firm forms no borrow need until it has a project, and it can have no
+   * project without a cost of capital to test it against. So nothing was ever built, in any run,
+   * for a reason that was a circle and not an economy.
+   *
+   * The circle is cut by reading what does not depend on the firm having already asked, in the
+   * order of how close each is to what borrowing would actually cost it NOW:
+   *
+   *   1. the quote it was given in this window — the marginal cost of debt, and the best answer;
+   *   2. the last quote it was ever given, stale, and later in the list because it is;
+   *   3. the sovereign curve its own money borrows at, which is the rate with no spread in it.
+   *
+   * The third is the floor of the three and is honest as one: a firm that reads it knows only what
+   * money costs the state, and its own hurdle (Firm A3) is what stands between that and a project
+   * going ahead. What is NOT here is what BANKS privately require of the name — that is real
+   * (Corporate Credit E5) and `ctx.requiredOf` reads it where an ISSUER opens a line, but it is
+   * recorded private and a party's own view may not see another party's private state (Observer
+   * A4). What is NOT here either is a number nobody said (Law 3).
+   */
   const own = view.lastOwnSince('credit.quoted', payrollSince(view.period));
-  if (!own.some) return none<Ratio>();
-  const rate = own.value.data['rate'];
-  // Item 16: a rate re-entering from what was published under this firm's name.
-  return typeof rate === 'number'
-    ? some(asRatio(rate, 'what it was quoted, per annum'))
-    : none<Ratio>();
+  const quoted = own.some ? own : view.lastOwn('credit.quoted');
+  if (quoted.some) {
+    const rate = quoted.value.data['rate'];
+    // Item 16: a rate re-entering from what was published under this firm's name.
+    if (typeof rate === 'number') return some(asRatio(rate, 'what it was quoted, per annum'));
+  }
+  return sovereignRate(view);
+}
+
+/**
+ * B1.b, Sovereign D3: what the state that issues its money borrows at, over the life of what it is
+ * deciding about — the one rate in this world that is a read for every party, and the least any of
+ * them could borrow at. It is a curve point and never a level anybody wrote (Law 3).
+ */
+function sovereignRate(view: ParticipantView): Option<Ratio> {
+  const family = view.sovereignCurveIn(view.registry.currencyOf(view.self.region));
+  if (!family.some) return none<Ratio>();
+  // B1.d, Law 8: at the tenor of the decision, which is this management's own horizon — in years,
+  // because that is what a curve is read at, and the calendar does the crossing.
+  const horizon = view.params.periods(firmParam(view.self.id, 'horizon'));
+  const years = yearFraction(
+    'ACT/365F',
+    view.calendar.startOf(view.period),
+    view.calendar.startOf(period(view.period + horizon)),
+  );
+  if (years <= 0) return none<Ratio>();
+  const at = view.curve(family.value.id).at(years);
+  return at.yield.some ? some(asRatio(at.yield.value, 'what the state borrows at')) : none<Ratio>();
 }
 
 /** Firm C2: what this firm owes — the liabilities it has issued, at what is outstanding. */

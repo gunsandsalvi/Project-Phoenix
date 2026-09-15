@@ -17,12 +17,12 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**Plan completion: 59.1%** (52 of 88 planned steps across 51 items; a closed item's steps are in docs/RECORD.md).
+**Plan completion: 62.1%** (59 of 95 planned steps across 51 items; a closed item's steps are in docs/RECORD.md).
 **Requirement coverage: 65.5%** (899 MET, 105 PARTIAL, 0 OUT OF SCOPE of 1372 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0 — The world opens | 18 | 18 | closed |
+| 0 — The world opens | 25 | 25 | closed |
 | 1 | — | — | closed |
 | 2 | — | — | closed |
 | 2a | — | — | closed |

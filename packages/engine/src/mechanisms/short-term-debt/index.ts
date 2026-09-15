@@ -64,7 +64,7 @@ import type { EventKind } from '../../journal/journal.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import type { AgreementTerms } from '../../register/agreements.js';
+import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import {
@@ -279,7 +279,7 @@ function place(
     market: marketOf(ctx, id),
     issuer,
     size: units,
-    reservation: walkAway,
+    reservation: some(walkAway),
     allotment: 'uniformPrice',
   });
   ctx.record(
@@ -310,17 +310,9 @@ function costOfBorrowing(ctx: MechanismContext, issuer: PartyId): Option<Ratio> 
     const r = quoted.data['rate'];
     if (typeof r === 'number') return some(asRatio(r, 'what its bank quoted it'));
   }
-  let keenest: number | undefined;
-  for (const e of ctx.journal.ofKindIn('bank.reservation', ctx.period)) {
-    const required = e.data['required'];
-    if (typeof required !== 'object' || required === null) continue;
-    const mine = (required as Record<string, unknown>)[String(issuer)];
-    if (typeof mine !== 'number') continue;
-    if (keenest === undefined || mine < keenest) keenest = mine;
-  }
-  return keenest === undefined
-    ? none<Ratio>()
-    : some(asRatio(keenest, 'the least anybody requires of this name'));
+  // Corporate Credit E5: failing a quote of its own, the least anybody said they require of the
+  // name. One read, on the kernel, because three modules asked it and each scanned for itself.
+  return ctx.requiredOf(issuer);
 }
 
 /**
@@ -398,6 +390,14 @@ function buys(view: ParticipantView, market: MarketDecl): readonly Order[] {
   const line = lineIn(view, market);
   if (!line.some) return [];
   const { issuer, terms } = line.value;
+  /**
+   * C1, Clearing A2, Law 5: A NAME DOES NOT LEND TO ITSELF. Every cash investor kind was asked
+   * about every paper book, its own issue included, so an issuer with spare cash bid for the paper
+   * it was selling in the same session — and the solver refused the crossing fill at the site
+   * (item 0, stop 20). Retiring your own paper early is a real act and a different one: it is a
+   * buyback against the holder who has it, not a bid into your own primary book.
+   */
+  if (issuer === view.self.id) return [];
   // C3: a name it has seen fail is a name it does not lend to, whatever the price. This is the
   // clause that makes an issuer lose funding BEFORE it loses solvency — a buyer needs no insolvency
   // to refuse, only a reason to doubt, and a public failure is the plainest reason there is.
@@ -552,9 +552,26 @@ export const isBackstop = (t: AgreementTerms): t is BackstopTerms =>
  * C9, which this world cannot yet decide (item 17.2). Until then the line is sized off the issuer's
  * own book, declared as a SHAPE with a scheduled death and not as a fact anybody believes.
  */
+/**
+ * B2, XI-8, Register F2: THE LINES THAT ARE STILL LINES — performing or breached, never a row that
+ * has been discharged or torn up.
+ *
+ * `ofKind` is the whole book and an estate has to be able to read the closed rows, so the filter
+ * belongs at every read that acts on one. Without it this module charged a commitment fee every
+ * period on lines the kernel had already ended with the party that made them (item 0, stop 19): a
+ * firm that ceased into its estate in period 9 was invoiced in period 10, and settlement refused
+ * the instruction because the payer was not there (Money E4). Read once, so the grant, the draw and
+ * the fee cannot disagree about which lines exist (Law 4).
+ */
+function openLines(ctx: MechanismContext): readonly Agreement[] {
+  return ctx.agreements
+    .ofKind(BACKSTOP)
+    .filter((a) => a.state === 'performing' || a.state === 'breached');
+}
+
 export function grantBackstops(ctx: MechanismContext): void {
   const held = new Set<string>();
-  for (const row of ctx.agreements.ofKind(BACKSTOP)) held.add(String(row.debtor));
+  for (const row of openLines(ctx)) held.add(String(row.debtor));
   for (const kind of [FIRM, BANK]) {
     for (const p of ctx.parties.ofKind(kind)) {
       if (!p.status.alive || held.has(String(p.id))) continue;
@@ -589,7 +606,7 @@ export function grantBackstops(ctx: MechanismContext): void {
  * which is what makes holding one a decision rather than a free good.
  */
 export function chargeBackstops(ctx: MechanismContext): void {
-  for (const row of ctx.agreements.ofKind(BACKSTOP)) {
+  for (const row of openLines(ctx)) {
     const t = row.terms;
     if (!isBackstop(t)) continue;
     const undrawn = minus(t.limit, t.drawn, 'the headroom it is paying to keep open');
@@ -637,7 +654,7 @@ export function chargeBackstops(ctx: MechanismContext): void {
  * line the issuer has. There is no fourth path and no buyer of last resort (Appendix B).
  */
 export function drawBackstops(ctx: MechanismContext): void {
-  for (const row of ctx.agreements.ofKind(BACKSTOP)) {
+  for (const row of openLines(ctx)) {
     const t = row.terms;
     if (!isBackstop(t)) continue;
     const owing = maturingIn(ctx, row.debtor, ctx.period);
@@ -763,7 +780,13 @@ export function shortTermDebt(): SystemModule {
     curveFamilies: [],
     units: [{ id: PAPER_PAR, name: 'units of par', perUnit: MONEY_PIECES }],
     agreementKinds: [
-      { id: BACKSTOP, what: 'a committed line an issuer may draw, and pays for whether it draws or not' },
+      {
+        id: BACKSTOP,
+        what: 'a committed line an issuer may draw, and pays for whether it draws or not',
+        // B2, XI-8: a line is a promise to lend on demand, and an estate lends nothing (Banks
+        // Lending A1). An acquirer that bought the committing bank's book stands behind it.
+        binds: 'aGoingConcern',
+      },
     ],
     params: [
       {
@@ -789,13 +812,15 @@ export function shortTermDebt(): SystemModule {
         value: 0.1,
         unit: 'share of the issuer\u2019s own opening book',
         dimension: 'ratio',
-        kind: 'shape',
+        // Law 2: a shape that names the item which kills it IS a placeholder, and the register says
+        // so — it refused the world at assembly for as long as this said `shape` (item 0, stop 1).
+        kind: 'placeholder',
         owner: 'model',
         standsInFor: {
           mechanism: 'Corporate Credit C9',
-          item: '17.2',
+          item: '17.3',
         },
-        why: 'Short-Term Debt B4: how big a line an issuer is GRANTED, as a share of its own book. A committed facility is GRANTED, priced and re-sized by a lender out of its own view of the borrower and its own capital \u2014 that is Corporate Credit C9, and this world cannot yet take the decision (item 17.2 builds it, and `banks/index.ts:draw` already has the drawing half). So this is a SHAPE with a scheduled death and not a number anybody believes. Everything else about the line IS decided: whether the issuer has one at all, what the fee takes out of its account every period, and whether it draws. When 17.2 lands, the lender sets the limit and this number is deleted in the same change.',
+        why: 'Short-Term Debt B4: how big a line an issuer is GRANTED, as a share of its own book. A committed facility is GRANTED, priced and re-sized by a lender out of its own view of the borrower and its own capital \u2014 that is Corporate Credit C9, and this world cannot yet take the decision (item 17.3 builds it, and `banks/index.ts:draw` already has the drawing half). So this is a SHAPE with a scheduled death and not a number anybody believes. Everything else about the line IS decided: whether the issuer has one at all, what the fee takes out of its account every period, and whether it draws. When 17.3 lands, the lender sets the limit and this number is deleted in the same change.',
       },
       {
         id: PAPER_PARAMS.memory,
@@ -836,9 +861,15 @@ export function shortTermDebt(): SystemModule {
       {
         name: 'paper.backstop',
         spec: 'Short-Term Debt B3.b Short-Term Debt B4',
-        // After the session: whether the book lent again is what decides whether the line is drawn,
-        // and the fee falls whether it was or not.
-        anchor: { after: 'markets' },
+        /**
+         * B3.b, item 0 (stop 4): BEFORE THE MATURITY IT IS DRAWN TO MEET.
+         *
+         * It ran `after: markets`, and the kernel presents a maturity in `corporateActions` — which
+         * is the first phase of the period. So the paper failed, `defaultOn` fired and `accelerates`
+         * carried it to every other line the issuer had, and the draw arrived afterwards to fund a
+         * repayment that had already failed. A backstop drawn after the default is not a backstop.
+         */
+        anchor: { before: 'corporateActions' },
         cycle: 'anchor',
         run: (ctx: MechanismContext): void => {
           drawBackstops(ctx);

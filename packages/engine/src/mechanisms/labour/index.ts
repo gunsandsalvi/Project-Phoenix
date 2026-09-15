@@ -80,7 +80,7 @@ function paramsOf(): ParamDecl[] {
     {
       id: LABOUR_PARAMS.hoursPerMember,
       value: LABOUR_NUMBERS.hoursPerMember,
-      denominated: true,
+      denominated: 'time',
       unit: 'of somebody own time, per person per period',
       dimension: 'amount',
       kind: 'technology',
@@ -363,9 +363,24 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
   return {
     id: 'labour',
     agreementKinds: [
-      { id: EMPLOYMENT, what: 'a named worker working for a named firm, at a wage, in a trade' },
-      { id: WAGES_IN_ARREARS, what: 'wages a worker earned and was not paid' },
-      { id: SEVERANCE_IN_ARREARS, what: 'severance an ended employment owed and did not pay' },
+      {
+        id: EMPLOYMENT,
+        what: 'a named worker working for a named firm, at a wage, in a trade',
+        // XI-8: a job is somebody's to do. An acquirer that bought the book employs the staff;
+        // an estate has no work to give and the employment ends with the employer.
+        binds: 'aGoingConcern',
+      },
+      {
+        id: WAGES_IN_ARREARS,
+        what: 'wages a worker earned and was not paid',
+        // XI-8: earned and unpaid is a debt, and an estate ranks it with the others.
+        binds: 'whoeverSucceeds',
+      },
+      {
+        id: SEVERANCE_IN_ARREARS,
+        what: 'severance an ended employment owed and did not pay',
+        binds: 'whoeverSucceeds',
+      },
     ],
     nouns: [
       {
