@@ -24,8 +24,7 @@ import {
 } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { Forbidden, InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
-import {
-  contractId,
+import { contractId,
   type CurrencyCode,
   type CurveFamilyId,
   type DerivativeKindId,
@@ -38,8 +37,7 @@ import {
   type PartyId,
   type PartyKindId,
   type VenueId,
-  fxPairId,
-} from '../core/ids.js';
+  fxPairId, currencyUnit } from '../core/ids.js';
 
 import {
   acrossMembers,
@@ -70,7 +68,7 @@ import {
 } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import { Journal, type EventKind } from '../journal/journal.js';
+import { Journal, type EventKind, type Event } from '../journal/journal.js';
 import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
@@ -154,6 +152,8 @@ import { refuseLateReads } from './order.js';
 export const CREDIT_REQUEST = 'credit.request';
 import { asQty, NO_QTY, type Qty } from '../core/tick.js';
 import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
+import { bandOf, UNREAD, type LatticeReads } from '../registry/lattice.js';
+import { about } from './context.js';
 
 
 
@@ -1449,6 +1449,64 @@ export class World {
         throw new Unpriced('Ratings A2.a', `${party} assesses from state and is shown no prices`);
       },
     });
+  }
+
+  /**
+   * XI-15, 0f.3: EVERY CELL ON ITS LATTICE, once, before the seal. The seed says where a cell is,
+   * where it banks, its cohort or its line; what its people hold, whether they work, whether they
+   * have defaulted, are READ — off the register and the opening record — and become the rest of
+   * its key. A dimension whose quantity cannot be read yet (no outlook, no history) is `unread`,
+   * which is a real state and not a default. From here on a key moves only by the five events and
+   * the crossings the kernel reads at the close of revaluation (0f.4).
+   */
+  placeCellsOnLattice(): void {
+    forbid(!this.sealed, 'Seed A2', 'cells are placed on the lattice before the seal, not after');
+    const reads: LatticeReads = {
+      cashPerMember: (cell, ccy) =>
+        eachMember(
+          asTotal<'money:piece'>(this.cash(cell, ccy), 'what is in its account'),
+          weightOf(this.parties.get(cell)),
+          'what one member has in it',
+        ),
+      perMember: (cell, instrument) => this.register.perMember(cell, instrument),
+      holdingsOf: (cell) => this.register.holdingsOf(cell),
+      worthPerMember: (cell, instrument) => {
+        const w = this.valuation.worthOf(cell, instrument, this.currentPeriod);
+        if (!w.some) return none<number>();
+        return some(w.value.value / weightOf(this.parties.get(cell)));
+      },
+      expectedIncome: (cell) => {
+        const o = this.participantView(cell).outlook(about({ on: 'income' }));
+        return o.some ? some(o.value.expected) : none<number>();
+      },
+      lastEvent: (kind, subject) => {
+        const e = this.journal.lastOf(kind as EventKind, String(subject));
+        return e === undefined ? none<Event>() : some(e);
+      },
+      homeCurrency: (cell) => this.registry.currencyOf(this.parties.get(cell).region),
+      period: this.currentPeriod,
+    };
+    for (const p of this.parties.all()) {
+      if (p.representation !== 'cell') continue;
+      const lattice = this.registry.partyKind(p.kind).lattice;
+      if (lattice === undefined) continue;
+      const key: Record<string, string> = { ...p.key };
+      for (const d of lattice.categorical) {
+        if (key[d.dim] === undefined && d.opening !== undefined) key[d.dim] = d.opening(reads, p.id);
+      }
+      for (const b of lattice.banded) {
+        const q = b.quantity(reads, p.id);
+        // Law 8: an edge declared as an amount of money is read in the cell's own money unit; every
+        // other edge is a ratio. The declaration says which, so nothing here guesses.
+        const edges = b.edges.map((e) =>
+          this.params.decl(e).denominated === undefined
+            ? this.params.ratio(e)
+            : this.params.amount(e, currencyUnit(reads.homeCurrency(p.id))),
+        );
+        key[b.dim] = q.some ? bandOf(edges, q.value) : UNREAD;
+      }
+      this.parties.place(p.id, key);
+    }
   }
 
   private buildParticipantView(party: PartyId): ParticipantView {

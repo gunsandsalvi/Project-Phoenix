@@ -25,7 +25,7 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
-import type { CellKeyDimension } from './registry.js';
+import type { LatticeDecl } from './lattice.js';
 import type { Cash, PerNamedUnit, PerPiece, Ratio } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
 import type { Namer } from './naming.js';
@@ -468,8 +468,10 @@ export interface PartyKindProfile {
    * item 0's sixth stop was every cell the small-business seed tried to add.
    *
    * Present for a cell kind and absent for a named one; the registry refuses either the other way.
+   * 0f.3: it is the kind's LATTICE (`registry/lattice.ts`) — its categorical dimensions and its
+   * banded ones with their edges — and the key is every dimension of it.
    */
-  readonly cellKey?: readonly CellKeyDimension[];
+  readonly lattice?: LatticeDecl;
   /**
    * Item 15: what a party of this kind is FOR. Required, so a kind cannot be added without saying
    * — which is the whole of what this buys: the compiler asks the question at every new kind.

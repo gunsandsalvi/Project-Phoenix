@@ -48,6 +48,7 @@ import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } fro
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
+import type { LatticeDecl, LatticeReads } from '../../registry/lattice.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -94,6 +95,94 @@ import { shortfallOf, strikesPublished } from '../../registry/funding.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
+/** 0f.3: the edges a household lattice bands on — RESOLUTION, each tested by invariance (0f.10). */
+export const HOUSEHOLD_EDGES = {
+  liquidWeeks: [paramId('households.lattice.liquidWeeks.1'), paramId('households.lattice.liquidWeeks.2'), paramId('households.lattice.liquidWeeks.3')],
+  illiquid: [paramId('households.lattice.illiquid.1'), paramId('households.lattice.illiquid.2')],
+  leverage: [paramId('households.lattice.leverage.1'), paramId('households.lattice.leverage.2')],
+  spell: [paramId('households.lattice.spell.1'), paramId('households.lattice.spell.2')],
+  tenure: [paramId('households.lattice.tenure.1')],
+} as const;
+
+/**
+ * XI-15, A2.e, A2.f, 0f.3: THE LATTICE A POPULATION OF HOUSEHOLDS LIVES ON. Categorical: where it
+ * is, where it banks, its cohort, whether its people work, and whether they have defaulted — each
+ * owned by the one event that moves it. Banded: what a member holds liquid in weeks of what it
+ * expects to earn (Deaton 1991, Carroll 1997: the buffer-stock is a threshold on this), what it
+ * holds that it cannot spend this week, how levered it is, and how long its people have been out
+ * of work (Mortensen–Pissarides 1994). The edges are RESOLUTION, not a claim about the answer.
+ */
+export const HOUSEHOLD_LATTICE: LatticeDecl = {
+  kind: HOUSEHOLD,
+  categorical: [
+    { dim: 'region', movedBy: 'entry', why: 'a member is a real person with a real account, and an account is in a region' },
+    { dim: 'bank', movedBy: 'bank.choice', why: 'a deposit is a claim on a NAMED issuer; two cells at two banks hold two instruments (Money A1)' },
+    { dim: 'cohort', movedBy: 'households.lifecycle', why: 'people age, and a cell whose members were not all in one cohort could not be aged as one' },
+    {
+      dim: 'employment',
+      movedBy: 'labour.hire',
+      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('labour.hire', cell).some ? 'employed' : 'unemployed'),
+      why: 'a wage is the one receipt a job pays; a cell with jobs and a cell without face different weeks (Labour A3.a)',
+    },
+    {
+      dim: 'credit',
+      movedBy: 'credit.default',
+      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('credit.default', cell).some ? 'defaulted' : 'clean'),
+      why: 'a lender reads the record (Corporate Credit E5); a cell that has defaulted and one that has not are two borrowers',
+    },
+  ],
+  banded: [
+    {
+      dim: 'liquidWeeks',
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> => {
+        const income = reads.expectedIncome(cell);
+        if (!income.some || income.value <= 0) return none<number>();
+        return some(reads.cashPerMember(cell, reads.homeCurrency(cell)) / income.value);
+      },
+      edges: HOUSEHOLD_EDGES.liquidWeeks,
+      why: 'Deaton 1991, Carroll 1997: consumption is a threshold rule on liquid wealth in weeks of expected income',
+    },
+    {
+      dim: 'illiquid',
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> => {
+        let worth = 0;
+        let any = false;
+        for (const h of reads.holdingsOf(cell)) {
+          const w = reads.worthPerMember(cell, h.instrument);
+          if (!w.some) continue;
+          any = true;
+          worth += w.value;
+        }
+        return any ? some(worth) : none<number>();
+      },
+      edges: HOUSEHOLD_EDGES.illiquid,
+      why: 'Kaplan–Violante 2014: liquid and illiquid wealth give different marginal propensities, and a cell holding both is not one household',
+    },
+    {
+      dim: 'tenure',
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> => {
+        const dwellings = reads.holdingsOf(cell).filter((h) => String(h.instrument).startsWith('good.dwelling.'));
+        if (dwellings.length === 0) return some(0);
+        return some(dwellings.reduce((t, h) => t + reads.perMember(cell, h.instrument), 0));
+      },
+      edges: HOUSEHOLD_EDGES.tenure,
+      why: 'Housing D3, Mian–Sufi 2011: an owner and a renter face a shock through different channels',
+    },
+    {
+      dim: 'spell',
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> => {
+        const parted = reads.lastEvent('labour.separation', cell);
+        const hired = reads.lastEvent('labour.hire', cell);
+        if (!parted.some) return none<number>();
+        if (hired.some && hired.value.period >= parted.value.period) return some(0);
+        return some(reads.period - parted.value.period);
+      },
+      edges: HOUSEHOLD_EDGES.spell,
+      why: 'Kroft–Lange–Notowidigdo 2013: the length of a spell changes what a person is offered and will take',
+    },
+  ],
+};
+
 export const HOUSEHOLD_PARAMS = {
   patience: paramId('households.patience'),
   buffer: paramId('households.buffer.periods'),
@@ -135,6 +224,99 @@ export const CONSUMPTION_TAX = paramId('treasury.tax.consumption');
 
 function paramsOf(): ParamDecl[] {
   return [
+
+    {
+      id: paramId('households.lattice.liquidWeeks.1'),
+      value: 4,
+      unit: 'weeks of expected income',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on liquidWeeks. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.liquidWeeks.2'),
+      value: 13,
+      unit: 'weeks of expected income',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on liquidWeeks. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.liquidWeeks.3'),
+      value: 52,
+      unit: 'weeks of expected income',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on liquidWeeks. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.leverage.1'),
+      value: 0.5,
+      unit: 'ratio of debt to what it holds',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on leverage. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.leverage.2'),
+      value: 1,
+      unit: 'ratio of debt to what it holds',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on leverage. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.spell.1'),
+      value: 4,
+      unit: 'periods out of work',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on spell. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.spell.2'),
+      value: 26,
+      unit: 'periods out of work',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the household lattice on spell. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('households.lattice.tenure.1'),
+      value: 1,
+      unit: 'dwellings per member',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: 'Housing D3, 0f.3: the boundary between a member that owns a dwelling and one that does not; a count boundary, declared here so that it is one number in one place.',
+    },
+    {
+      id: paramId('households.lattice.illiquid.1'),
+      value: 1,
+      unit: 'weeks of expected income, in money',
+      dimension: 'amount' as const,
+      denominated: 'money' as const,
+      kind: 'resolution' as const,
+      owner: 'model' as const,
+      why: '0f.3: the first edge of the illiquid-wealth band, stated in money because the read is money; a resolution, tested by invariance (0f.10).',
+    },
+    {
+      id: paramId('households.lattice.illiquid.2'),
+      value: 10,
+      unit: 'in money',
+      dimension: 'amount' as const,
+      denominated: 'money' as const,
+      kind: 'resolution' as const,
+      owner: 'model' as const,
+      why: '0f.3: the second edge of the illiquid-wealth band; a resolution, tested by invariance (0f.10).',
+    },
     {
       id: HOUSEHOLD_PARAMS.patience,
       value: 6,
@@ -458,7 +640,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
          * claim on a NAMED issuer — two cells at two banks hold two different instruments, and
          * merging them would net a claim on one bank against a claim on another (Money A1).
          */
-        cellKey: ['region', 'cohort', 'bank'],
+        lattice: HOUSEHOLD_LATTICE,
         moneyIssuer: null,
         fails: [],
         borrows: false,

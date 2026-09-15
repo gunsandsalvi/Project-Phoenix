@@ -39,6 +39,9 @@ import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
 import { smallParam, type SmallFirmDecl } from './data.js';
+import type { PartyId } from '../../core/ids.js';
+import type { LatticeDecl, LatticeReads } from '../../registry/lattice.js';
+import { none, some } from '../../core/option.js';
 
 export * from './data.js';
 
@@ -66,6 +69,44 @@ export const smallFirmChoosesBank = (view: ParticipantView): Option<BankChoice> 
  */
 function paramsOf(rows: readonly SmallFirmDecl[]): ParamDecl[] {
   return [
+    {
+      id: paramId('smallBusiness.lattice.size.1'),
+      value: 5,
+      unit: "members' cash, in money",
+      dimension: 'amount',
+      denominated: 'money',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the small-firm lattice on size. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('smallBusiness.lattice.size.2'),
+      value: 50,
+      unit: "members' cash, in money",
+      dimension: 'amount',
+      denominated: 'money',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the small-firm lattice on size. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('smallBusiness.lattice.leverage.1'),
+      value: 0.5,
+      unit: 'ratio of debt to what it holds',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the small-firm lattice on leverage. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
+    {
+      id: paramId('smallBusiness.lattice.leverage.2'),
+      value: 1,
+      unit: 'ratio of debt to what it holds',
+      dimension: 'ratio',
+      kind: 'resolution',
+      owner: 'model',
+      why: '0f.3, XI-15: an edge of the small-firm lattice on leverage. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
+    },
     {
       id: SMALL_FIRM_SWITCHING_COST,
       value: 60,
@@ -101,6 +142,47 @@ export const cellKeyOf = (r: SmallFirmDecl, region: RegionId): Readonly<Record<s
   line: r.line,
 });
 
+/** 0f.3: the edges a small-firm lattice bands on — RESOLUTION, tested by invariance (0f.10). */
+export const SMALL_FIRM_EDGES = {
+  size: [paramId('smallBusiness.lattice.size.1'), paramId('smallBusiness.lattice.size.2')],
+  leverage: [paramId('smallBusiness.lattice.leverage.1'), paramId('smallBusiness.lattice.leverage.2')],
+} as const;
+
+/**
+ * A6.a, XI-15, 0f.3: THE LATTICE A POPULATION OF SMALL FIRMS LIVES ON. Where it is, where it
+ * banks, what it does, and how old it is (Hopenhayn 1992: selection is by age); banded on its
+ * size and its leverage (Stiglitz–Weiss 1981, Petersen–Rajan 1994: a lender rations by both).
+ */
+export const SMALL_FIRM_LATTICE: LatticeDecl = {
+  kind: SMALL_FIRM,
+  categorical: [
+    { dim: 'region', movedBy: 'entry', why: 'a firm is somewhere, and its bank books there' },
+    { dim: 'bank', movedBy: 'bank.choice', why: 'a small firm is bank-dependent (A5); its bank is who it borrows from' },
+    { dim: 'line', movedBy: 'entry', why: 'a mill and a haulier face different prices for different things; a cell that mixed them would decide at an average' },
+    {
+      dim: 'age',
+      movedBy: 'entry',
+      opening: (): string => 'opening',
+      why: 'Hopenhayn 1992, Axtell 2001: exit is by age and size together; a firm placed at the opening has no age yet, which is a real state',
+    },
+  ],
+  banded: [
+    {
+      dim: 'size',
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> =>
+        some(reads.cashPerMember(cell, reads.homeCurrency(cell))),
+      edges: SMALL_FIRM_EDGES.size,
+      why: 'Melitz 2003, Axtell 2001: the size distribution is the state, and a bank rations by it',
+    },
+    {
+      dim: 'leverage',
+      quantity: (): Option<number> => none<number>(),
+      edges: SMALL_FIRM_EDGES.leverage,
+      why: 'Stiglitz–Weiss 1981: rationing is by leverage; the read is a debt over what it holds and is unread until it has borrowed (0f.8)',
+    },
+  ],
+};
+
 export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
   return {
     id: 'small-business',
@@ -135,7 +217,7 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
          * mill and a haulier face different prices for different things, and a cell that mixed them
          * would be a decision taken at an average (Appendix B).
          */
-        cellKey: ['region', 'bank', 'line'],
+        lattice: SMALL_FIRM_LATTICE,
         moneyIssuer: null,
         /**
          * A1, XI-3: *"they can fail"*, and on both — it runs out of money (B3's threshold is its

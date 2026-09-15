@@ -14,7 +14,8 @@ import type { Period } from '../calendar/calendar.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import { cohortId, type PartyId, type PartyKindId, regionId, type RegionId } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
-import type { CellKeyDimension, Registry } from '../registry/registry.js';
+import type { CheckableDimension, Registry } from '../registry/registry.js';
+import { latticeDimensions } from '../registry/lattice.js';
 
 /**
  * XI-3, §25 C, XI-8, XI-1: THE STATES BETWEEN ALIVE AND DEAD.
@@ -56,10 +57,10 @@ export const inGoodStanding = (s: PartyStatus): boolean => s.alive && s.standing
  * never a change to a mechanism. A key shaped as an interface made that claim false — it said
  * region, cohort and bank in the kernel, and a world that wanted a fourth had to change this file.
  */
-export type CellKey = Readonly<Partial<Record<CellKeyDimension, string>>>;
+export type CellKey = Readonly<Record<string, string>>;
 
 /** XI-15: what one declared dimension of a cell's key says. Absent means the world does not key on it. */
-export function keyOf(p: CellParty, dim: CellKeyDimension): string {
+export function keyOf(p: CellParty, dim: string): string {
   const v = p.key[dim];
   if (v === undefined) {
     throw new Missing('XI-15', `cell ${p.id} has no ${dim}: this world does not key cells on it`, {
@@ -86,17 +87,10 @@ interface KeyDimensionTerms {
  * cells on is registry data; what each one means is here, so adding one is a row in the registry
  * and an entry in this table, and never a branch in a mechanism.
  */
-const KEY_DIMENSIONS: Readonly<Record<CellKeyDimension, KeyDimensionTerms>> = {
+const KEY_DIMENSIONS: Readonly<Record<CheckableDimension, KeyDimensionTerms>> = {
   region: { alsoOn: (p) => p.region, declared: (r, v) => r.regions.has(regionId(v)) },
   cohort: { declared: (r, v) => r.cohorts.some((c) => c.id === cohortId(v)) },
   bank: { alsoOn: (p) => p.bank },
-  /**
-   * §42 A6.a: WHAT THE FIRM DOES, for a population of firms. There is nothing the registry can
-   * check it against — a line is a good's sub-unit and the goods a world has are its own — so this
-   * dimension has neither `alsoOn` nor `declared`, which is the honest statement of a key that
-   * carries a fact about the members and not a reference to something the world declares.
-   */
-  line: {},
 };
 
 /**
@@ -105,19 +99,28 @@ const KEY_DIMENSIONS: Readonly<Record<CellKeyDimension, KeyDimensionTerms>> = {
  * finding — because `add` is not the only writer of a party (`bankAt` rewrites the key) and a rule
  * enforced at one door and nowhere after it is a rule that holds until something else writes.
  */
-export function cellKeyFaults(registry: Registry, p: CellParty): readonly string[] {
+export function cellKeyFaults(
+  registry: Registry,
+  p: CellParty,
+  scope: 'seeded' | 'all' = 'all',
+): readonly string[] {
   const faults: string[] = [];
   // XI-15: THE KIND'S dimensions, not the world's. Two kinds of cell are two populations and
   // nothing says they are cut the same way (item 0, stop 6).
-  const on = keyDimensionsOf(registry, p.kind);
-  const declared = new Set<string>(on);
+  const on = scope === 'all' ? keyDimensionsOf(registry, p.kind) : seededDimensionsOf(registry, p.kind);
+  // A key may carry any dimension the LATTICE has — a split-off cell carries all of them — and
+  // must carry the ones this scope requires.
+  const declared = new Set<string>(keyDimensionsOf(registry, p.kind));
   for (const dim of on) {
     const value = p.key[dim];
     if (value === undefined) {
       faults.push(`cell ${p.id} has no ${dim}, and this world keys its cells on ${dim}`);
       continue;
     }
-    const terms = KEY_DIMENSIONS[dim];
+    // 0f.3: a dimension the kernel can check is checked; every other one is the kind's own fact
+    // — a line, a band, a tenure — and there is nothing to check it against.
+    const terms = (KEY_DIMENSIONS as Readonly<Record<string, KeyDimensionTerms | undefined>>)[dim];
+    if (terms === undefined) continue;
     const also = terms.alsoOn?.(p);
     if (also !== undefined && also !== value) {
       faults.push(`cell ${p.id} keys on ${dim} ${value} but is ${also}`);
@@ -142,20 +145,29 @@ function rekey(
   registry: Registry,
   kind: PartyKindId,
   key: CellKey,
-  dim: CellKeyDimension,
+  dim: string,
   value: string,
 ): CellKey {
   if (!keyDimensionsOf(registry, kind).includes(dim)) return key;
   return { ...key, [dim]: value };
 }
 
-/** XI-15: what stratifies a population of this kind. A kind that is one party has none. */
-export function keyDimensionsOf(registry: Registry, kind: PartyKindId): readonly CellKeyDimension[] {
-  const on = registry.partyKind(kind).cellKey;
-  if (on === undefined) {
-    throw new Forbidden('XI-15', `${kind} is one named party and has no cell key`, { kind });
+/** 0f.3: the dimensions a seed must supply itself — categorical, with no `opening` read. */
+export function seededDimensionsOf(registry: Registry, kind: PartyKindId): readonly string[] {
+  const l = registry.partyKind(kind).lattice;
+  if (l === undefined) {
+    throw new Forbidden('XI-15', `${kind} is one named party and has no lattice`, { kind });
   }
-  return on;
+  return l.categorical.filter((d) => d.opening === undefined).map((d) => d.dim);
+}
+
+/** XI-15: what stratifies a population of this kind. A kind that is one party has none. */
+export function keyDimensionsOf(registry: Registry, kind: PartyKindId): readonly string[] {
+  const l = registry.partyKind(kind).lattice;
+  if (l === undefined) {
+    throw new Forbidden('XI-15', `${kind} is one named party and has no lattice`, { kind });
+  }
+  return latticeDimensions(l);
 }
 
 interface PartyBase {
@@ -232,7 +244,9 @@ export class Parties {
     this.registry.region(p.region);
     if (p.representation === 'cell') {
       positiveCount(p.weight, `weight of ${p.id}`);
-      const faults = cellKeyFaults(this.registry, p);
+      // 0f.3: a seeded cell carries what the seed knows; the lattice's derived dimensions are placed
+      // at the seal (`place`), which checks the whole key.
+      const faults = cellKeyFaults(this.registry, p, 'seeded');
       forbid(faults.length === 0, 'XI-15', faults.join('; '), { id: p.id });
     }
     this.map.set(p.id, Object.freeze({ ...p }));
@@ -363,6 +377,20 @@ export class Parties {
    * identical, so a cell either moves or it does not — half a cell moving is a SPLIT, and then the
    * new cell moves, which is the five weight events doing exactly what they are for.
    */
+  /**
+   * XI-15, 0f.3: PLACE A CELL ON ITS LATTICE, at the seal and never after. The seed supplies the
+   * dimensions it knows — region, bank, cohort, line — and the kernel reads the rest off the
+   * opening record and the cell's own state; this is the one write of a key outside the five
+   * weight events, and it happens before the world has moved.
+   */
+  place(id: PartyId, key: CellKey): void {
+    const p = this.cell(id);
+    const next: CellParty = Object.freeze({ ...p, key });
+    const faults = cellKeyFaults(this.registry, next);
+    if (faults.length > 0) throw new Forbidden('XI-15', faults.join('; '), { id, key });
+    this.map.set(id, next);
+  }
+
   rebank(id: PartyId, to: PartyId): void {
     const p = this.get(id);
     forbid(p.status.alive, 'Banks Funding E1', `${id} has ceased and banks nowhere`);

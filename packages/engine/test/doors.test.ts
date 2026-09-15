@@ -735,7 +735,7 @@ describe('a cell is keyed on what its KIND declares, and on nothing else (XI-15)
     const w = world();
     const base = someCell(w);
     const cells = w.parties.all().filter((p): p is CellParty => p.representation === 'cell');
-    const other = cells.find((c) => c.key.cohort !== base.key.cohort);
+    const other = cells.find((c) => c.key['cohort'] !== base.key['cohort']);
     if (other === undefined) throw new Error('the rig drew one cohort');
     // Here they are two populations, because THIS kind stratifies on cohort.
     expect(w.parties.sameKey(base, other)).toBe(false);
@@ -763,13 +763,13 @@ describe('a cell is keyed on what its KIND declares, and on nothing else (XI-15)
     // cell kind answers for itself and no two of them have to agree.
     expect(kinds.length).toBeGreaterThan(0);
     for (const k of kinds) {
-      expect(k.cellKey, `${k.id} is a population and says nothing stratifies it`).not.toBe(undefined);
-      expect(k.cellKey).toContain('region');
+      expect(k.lattice, `${k.id} is a population and says nothing stratifies it`).not.toBe(undefined);
+      expect(k.lattice?.categorical.map((d) => d.dim)).toContain('region');
     }
     // XI-15: and a named kind declares none, because one party is not a population.
     for (const k of w.registry.partyKinds.values()) {
       if (k.representation === 'cell') continue;
-      expect(k.cellKey, `${k.id} is one named party and declares a cell key`).toBe(undefined);
+      expect(k.lattice, `${k.id} is one named party and declares a lattice`).toBe(undefined);
     }
   });
 

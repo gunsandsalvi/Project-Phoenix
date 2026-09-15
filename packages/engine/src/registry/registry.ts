@@ -8,6 +8,7 @@
  * level). References to parties (a currency's central bank, a cell's bank) are validated when the
  * world is built, because parties are state, not data.
  */
+import { latticeDimensions } from './lattice.js';
 import { InvalidRegistry, Missing } from '../core/errors.js';
 import {
   asPerNamedUnit,
@@ -137,7 +138,9 @@ export const PEOPLE_PARAMS = {
  * added, both ways at once, and a second cell population could not exist at all. The dimensions are
  * still declared here; `PartyKindProfile.cellKey` says which of them a kind is stratified on.
  */
-export type CellKeyDimension = 'region' | 'cohort' | 'bank' | 'line';
+export type CellKeyDimension = string;
+/** The dimensions the kernel can CHECK against something it declares; every other dimension is the kind's own fact. */
+export type CheckableDimension = 'region' | 'cohort' | 'bank';
 
 export interface RegistryData {
   readonly currencies: readonly CurrencyDecl[];
@@ -270,23 +273,32 @@ export class Registry {
      */
     for (const k of this.partyKinds.values()) {
       if (k.representation !== 'cell') {
-        if (k.cellKey !== undefined) {
+        if (k.lattice !== undefined) {
           throw new InvalidRegistry(
             'XI-15',
-            `party kind ${k.id} is one named party and declares a cell key`,
+            `party kind ${k.id} is one named party and declares a lattice`,
           );
         }
         continue;
       }
-      if (k.cellKey === undefined || k.cellKey.length === 0) {
+      const l = k.lattice;
+      if (l === undefined || l.categorical.length === 0) {
         throw new InvalidRegistry('XI-15', `party kind ${k.id} is a population and says nothing stratifies it`);
       }
-      const dims = new Set(k.cellKey);
-      if (dims.size !== k.cellKey.length) {
-        throw new InvalidRegistry('XI-15', `party kind ${k.id} repeats a cell key dimension`);
+      if (l.kind !== k.id) {
+        throw new InvalidRegistry('XI-15', `party kind ${k.id} declares the lattice of ${l.kind}`);
       }
-      if (!dims.has('region')) {
+      const dims = latticeDimensions(l);
+      if (new Set(dims).size !== dims.length) {
+        throw new InvalidRegistry('XI-15', `party kind ${k.id} repeats a lattice dimension`);
+      }
+      if (!dims.includes('region')) {
         throw new InvalidRegistry('XI-15', `party kind ${k.id} keys its cells on no region`);
+      }
+      for (const b of l.banded) {
+        if (b.edges.length === 0) {
+          throw new InvalidRegistry('XI-15', `${k.id}.${b.dim} is banded on no edges`);
+        }
       }
     }
     if (!this.instrumentKinds.has('money' as InstrumentKindId)) {

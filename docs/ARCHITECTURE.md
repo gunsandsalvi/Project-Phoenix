@@ -983,6 +983,22 @@ throws rather than answering in the wrong number. The register is therefore buil
 out of one list of declarations: once with no units, which can answer only `resolution.pieceShift`,
 and once against the registry that number built.
 
+#### The lattice (XI-15, 0f.3)
+
+A cell's identity is its **key on a declared lattice** (`registry/lattice.ts`). A kind that is a
+population declares its lattice on its profile (`PartyKindProfile.lattice`): **categorical**
+dimensions — a fact with a name, each owned by the one event that moves it (`movedBy`) — and
+**banded** dimensions — a quantity read per member off the cell's own state against edges that are
+RESOLUTION parameters, one edge per parameter with its own `why`. The dimension names are data; the
+kernel checks the three it can check against something it declares (region, cohort, bank) and takes
+every other as the kind's own fact. The seed supplies the dimensions it knows; at the seal the
+kernel places every cell on the rest (`World.placeCellsOnLattice`): a categorical dimension the seed
+did not supply is READ off the opening record (no hire is unemployed, no default is a clean record),
+a band is read off the register, and a quantity that cannot be read yet — a band on expected income
+before any outlook exists — is `unread`, a real state and not a default. From the seal a key moves
+only by the five weight events and by the crossings the kernel reads at the close of revaluation
+(0f.4).
+
 ### 4.10a What a module knows between periods, and within one
 
 A module's own register — employment rows, a book of invoices, a party's outlooks — lives in a state

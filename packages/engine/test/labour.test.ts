@@ -501,7 +501,7 @@ describe('who is in the workforce (Labour B3, B5)', () => {
     // B3: nobody out of the workforce holds a job.
     for (const row of allRows(w)) {
       const cell = w.parties.get(row.worker);
-      expect(cell.representation === 'cell' && cell.key.cohort).toBe('working');
+      expect(cell.representation === 'cell' && cell.key['cohort']).toBe('working');
     }
     // B5: every member of every household cell is in exactly one of the three states.
     const people = w.parties

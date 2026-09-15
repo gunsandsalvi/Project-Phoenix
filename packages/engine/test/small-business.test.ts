@@ -37,7 +37,7 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
       // it into the key is the relationship the model would then be unable to name.
       expect(Object.keys(c.key)).not.toContain('lender');
       // A cell lives where its bank books, and there is one statement of that (Law 4, Law 19).
-      expect(c.key.region).toBe(String(w.parties.get(c.bank).region));
+      expect(c.key['region']).toBe(String(w.parties.get(c.bank).region));
     }
   });
 

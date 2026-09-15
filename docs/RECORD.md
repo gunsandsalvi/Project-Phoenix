@@ -10412,3 +10412,30 @@ the total; the fx and asset trade builders put cash on the money's own grain.
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green. Exit measured: `commonGrain`, `shareFor`, `sameState` gone from `src` (three comments name
 them as what was deleted).
+
+## Item 0f.3 — The lattice
+
+**Stratification is data.** `registry/lattice.ts` declares what makes one cell a different cell:
+categorical dimensions each owned by the one event that moves them, and banded dimensions read per
+member against RESOLUTION edges, one parameter per edge with its `why`. `PartyKindProfile.cellKey`
+(0b) — four names in a closed union — is `lattice`, the same idea with the quantities and the events
+that make a dimension a dimension. The kernel checks the three dimensions it can check against
+something it declares and takes every other as the kind's own fact; a key's dimension names are
+strings, not a union the kernel has to grow.
+
+**Households** live on region, bank, cohort, employment (moved by a hire), credit record (moved by
+a default), and bands on liquid wealth in weeks of expected income (Deaton, Carroll), illiquid wealth
+(Kaplan–Violante), tenure in dwellings per member (Mian–Sufi), and spell length since the last
+separation (Kroft–Lange–Notowidigdo). **Small firms** live on region, bank, line, age, and bands on
+size and leverage (Hopenhayn, Axtell, Stiglitz–Weiss). Every edge is a resolution and 0f.10's test
+is what makes that claim true or false.
+
+**Placed at the seal, read, not assumed.** The seed supplies what it knows; `placeCellsOnLattice`
+reads the rest: employment off whether a hire was ever recorded, credit off whether a default was,
+each band off the register and the edges. A band whose quantity cannot be read — weeks of expected
+income before anybody has an outlook — is `unread`, which is a real state. `Parties.place` is the one
+write of a key outside the five weight events and it runs before the world has moved. A cell
+`add`ed later — a split, a promotion — carries the whole key and is checked on all of it.
+
+**Checks.** `check:opens` green on both worlds; `test/lattice.test.ts` (three tests) green; lint,
+typecheck, `check:spec`, `check:forbids` green.

@@ -121,14 +121,14 @@ function payer(spreadShare: number): SystemModule {
           if (!ctx.parties.get(PAYER).status.alive) return;
           const cells = ctx.parties
             .ofKind(HOUSEHOLD)
-            .filter((p): p is CellParty => p.representation === 'cell' && p.status.alive && p.key.bank === BANK_A);
+            .filter((p): p is CellParty => p.representation === 'cell' && p.status.alive && p.key['bank'] === BANK_A);
           cells.forEach((cell) => {
             // Which side of the spread a cell is on is a fact about the cell — its cohort — so a
             // cell that splits when some of its members take a job stays on the same side of it,
             // and the two runs pay the same money to the same people either way.
             // Law 8: it pays real money, so each member is paid a whole number of the smallest
             // piece of it — and what the payer hands over is that times the count of them.
-            const paid = cell.key.cohort === 'working' ? base + off : base - off;
+            const paid = cell.key['cohort'] === 'working' ? base + off : base - off;
             if (paid <= 0) return;
             ctx.settle({
               legs: [

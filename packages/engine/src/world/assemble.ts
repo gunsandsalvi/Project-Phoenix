@@ -156,6 +156,7 @@ export function assemble(spec: AssemblySpec): World {
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);
+  world.placeCellsOnLattice();
   stateEquityAsRead(world);
   world.seal();
   return world;
