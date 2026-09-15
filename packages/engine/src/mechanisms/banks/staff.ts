@@ -44,6 +44,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { ownPayroll, payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
+import { expectedEarningsOf } from '../../registry/expectation.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { processesItRan } from '../../registry/notices.js';
 
@@ -143,11 +144,12 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (venue.key['region'] !== String(view.self.region)) return [];
   const hours = hoursNeeded(view);
   if (hours <= 0) return [];
-  const took = view.earned(1);
-  if (took <= 0) return [];
-  // What an hour of this is worth to it: what the book took in over the hours the book actually
-  // takes. That read is exact and stays exact — it is a price, and prices have their own grid.
-  const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
+  // §46, Labour C1 (12b.3): what an hour of this is worth to it — what it EXPECTS to make over
+  // the hours the book takes, its own outlook and not last week's equity moves. That read is
+  // exact and stays exact — it is a price, and prices have their own grid.
+  const took = expectedEarningsOf(view);
+  if (!took.some || took.value <= 0) return [];
+  const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   /**
    * Law 8, item 0 (stop 9): AN HOUR IS THE PIECE, so what it BIDS FOR is whole hours.
@@ -273,9 +275,9 @@ export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonl
   const per = view.params.count(STAFF_PARAMS.hoursPerProcess);
   const hours = asQty(scale(asAmount<'piece'>(per, 'the hours one takes'), asRatio(ran.value, 'the ones it ran'), 'the hours they took'));
   if (hours <= 0) return [];
-  const took = view.earned(1);
-  if (took <= 0) return [];
-  const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
+  const took = expectedEarningsOf(view);
+  if (!took.some || took.value <= 0) return [];
+  const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   const change = netChange(view.employs(), ADVISORY, view.self.region, hours);
   if (change === undefined) return [];

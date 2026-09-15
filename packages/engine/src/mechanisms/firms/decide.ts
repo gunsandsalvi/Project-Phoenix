@@ -165,8 +165,6 @@ export interface Planned {
   readonly carry: number;
 }
 
-/** The pure one. Named so a `Ratio` is never built out of a bare literal (`core/` owns the digits). */
-const ONE: Ratio = asRatio(1, 'one');
 
 /** The numbers a line's own technology states, read from the good's terms (Goods A2). */
 interface Technology {
@@ -336,28 +334,18 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<Per
   if (material(atMarket, 2, stock)) {
     out.push({ market, side: 'sell', price: 'market', qty: atMarket });
   }
-  const rest = subQty(stock, atMarket, 'what it can hold');
-  if (price.some && material(rest, 2, stock)) {
-    out.push({
-      market,
-      side: 'sell',
-      // Commodities Spot B4: WHAT HOLDING IT IS WORTH — what it expects to get, less the part that
-      // will not survive the wait, less WHAT THE WAIT COSTS. The carry is not a number anybody
-      // wrote down: it is the rate the room cleared at this period (13c), read off the session's
-      // own print, so a world where room is scarce is a world where holding is dear and more of
-      // every stock comes to market. A world with no session that cleared has no rate to read, and
-      // then the reservation is what it always was — which is an answer and not a zero.
-      price: minus(
-        scale(
-          price.value,
-          minus(ONE, tech.spoilage, 'what survives'),
-          'the value of holding',
-        ),
-        carryPerPiece(view, tech),
-        'less what the wait costs it',
-      ),
-      qty: rest,
-    });
+  // F15, Goods B5 (12b.3): THE ASK IS ITS COST, NEVER ITS OUTLOOK. What it expects to get is what
+  // it bids for an hour against (C1); what it will let a piece go for is what the piece cost it,
+  // lot by lot off the register (Law 19) — the reservation the book clears above or does not. It
+  // was what it expected to fetch less spoilage less carry, a price level made out of a belief,
+  // and a firm whose belief ran ahead of the market asked the market to agree with it.
+  let held = subQty(stock, atMarket, 'what it can hold');
+  for (const lot of lotsOf(view, output)) {
+    if (held <= 0) break;
+    const qty = atMost(lot.qty, held, 'no more than it can hold');
+    if (!material(qty, 2, stock)) continue;
+    out.push({ market, side: 'sell', price: lot.basisPerUnit, qty });
+    held = subQty(held, qty, 'what is left to ask for');
   }
   return out;
 }
@@ -367,6 +355,12 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<Per
  * for. Nothing for a line nobody stores in bulk, and nothing where no room changed hands — in both
  * cases because there is no such cost, not because a number was missing (Appendix A).
  */
+/** Law 19: the lots of its own output it holds, as the register carries them — what each cost. */
+function lotsOf(view: ParticipantView, output: InstrumentId): readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[] {
+  const held = view.holdings().find((h) => h.instrument === output);
+  return held === undefined ? [] : held.lots.filter((l) => l.qty > 0);
+}
+
 function carryPerPiece(view: ParticipantView, tech: Technology): PerPiece {
   const per = tech.terms.storagePerUnit;
   if (per === null) return asPerPiece(0, 'a good that needs no cover costs nothing to keep');

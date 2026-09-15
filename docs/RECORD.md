@@ -11505,3 +11505,28 @@ red of 88, from 41; the treasury's twelve missed coupons of 12b.2 are gone.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `lattice.test.ts`
 at its one red (a basket, not a key).
+
+## Item 12b.3 — A wage bid is from an outlook, and an ask is a cost
+
+A bank's desk and a fund's manager bid an hour against `earned(1)` — last period's equity moves
+by instructions — and one good week at a bank became a wage of sixty-seven billion an hour. They
+bid against their own outlook on their EARNINGS now (§46: formed adaptively from what the book
+made, at their own memory), which is what an employer weighs an hour against. A price a party
+watches and did not trade at this period reaches it as the venue's print (A2.a: one more thing
+observed, never the outlook itself), so a seller that sat out a week is not a seller that saw
+nothing. And a firm's sell reservation is its COST — what each lot cost it, off the register —
+never what it expects to fetch: the ask that came from an outlook was a price level made out of a
+belief, asking the market to agree with it (F15). What it expects to fetch bids for hours and
+sizes batches, and nothing else.
+
+**Measured.** The banking venue prints 43 million an hour at period 4 of the `sb-found` scale
+model and falls to 13 million by period 8. Six `small-business` scale models throw in period 4:
+with asks at cost, a machinery maker asks 0.616 a piece where the print had been 630,879, a fuel
+line's gap takes thirty-nine million pieces of it, and `capacityFrom` counts a capacity of 9.7e15
+pieces a period, which `downTick` refuses past 2^53. The price level that belief was holding up is
+12d.1's; a count of pieces past 2^53 is a grid and is 21.1's. Both are written there.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `labour.test.ts` at
+its five reds, `expectations.test.ts` at its two (the baseline's); 44 red of 88 across the world,
+firms, small-business, control, households, treasury, banks and funds suites, from 38 — the six are
+the throw above.

@@ -85,7 +85,7 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
  * Nothing here is anybody else's: every one of these is read off a leg this party was a side of, or
  * off an effect on its own equity account. A party sees its own fills, not the book (A2, D1).
  */
-function observations(ctx: MechanismContext): Map<string, { value: number; unit: string }> {
+function observations(ctx: MechanismContext, held: Book): Map<string, { value: number; unit: string }> {
   const out = new Map<string, { value: number; unit: string }>();
   const income = new Map<PartyId, number[]>();
   const quantities = new Map<string, { instrument: InstrumentId; party: PartyId; amounts: number[] }>();
@@ -169,6 +169,22 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
     if (!ctx.parties.has(party)) continue;
     const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);
     out.set(`${party}|earnings`, { value: sum(deltas).value, unit: ccy });
+  }
+  // A2, Labour D1 (12b.3): A PRICE IT WATCHES AND DID NOT TRADE AT THIS PERIOD reaches it as the
+  // venue's print — public information, one more thing observed. A firm's outlook on its own sell
+  // price is formed from its fills AND from what the market printed on the weeks it sold nothing,
+  // so a seller that sat out is not a seller that saw nothing. Only what it already watches: the
+  // first observation is its own fill, and a print of a thing it never traded is not its concern.
+  for (const [party, forParty] of Object.entries(held)) {
+    if (!ctx.parties.has(party as PartyId)) continue;
+    for (const variable of Object.keys(forParty)) {
+      if (!variable.startsWith('price.') || out.has(`${party}|${variable}`)) continue;
+      const instrument = variable.slice('price.'.length) as InstrumentId;
+      if (!ctx.instruments.has(instrument)) continue;
+      const print = ctx.prices.read(instrument, ctx.period);
+      if (!print.some) continue;
+      out.set(`${party}|${variable}`, { value: print.value.price, unit: ctx.instruments.get(instrument).ccy });
+    }
   }
   return out;
 }
@@ -267,11 +283,15 @@ export const expectations: SystemModule = {
       name: 'expectations.score',
       spec: 'Expectations B2 Expectations B2.a Expectations B3',
       anchor: { after: 'revaluation' },
-      reads: [{ kind: 'event', name: 'revaluation', of: 'anyPeriod' }],
+      reads: [
+        { kind: 'event', name: 'revaluation', of: 'anyPeriod' },
+        // 12b.3: the period's prints, for the prices a party watches and did not trade at.
+        { kind: 'print', of: 'thisPeriod' },
+      ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {
         const held = book(ctx);
-        for (const [key, seen] of observations(ctx)) {
+        for (const [key, seen] of observations(ctx, held)) {
           const [party, variable] = key.split('|');
           if (party === undefined || variable === undefined) continue;
           if (!ctx.parties.has(party as PartyId)) continue;

@@ -63,6 +63,7 @@ import { asQty, type Qty } from '../../core/tick.js';
 import type { Blueprint } from '../../registry/blueprint.js';
 import { wageFacing } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
+import { expectedEarningsOf } from '../../registry/expectation.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { isMandate, type Mandate, mandateOf, type Product } from './mandate.js';
 
@@ -138,9 +139,10 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (venue.key['region'] !== String(view.self.region)) return [];
   const hours = hoursNeeded(view);
   if (hours <= 0) return [];
-  const took = view.earned(1);
-  if (took <= 0) return [];
-  const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
+  // §46, Labour C1 (12b.3): its own outlook on what it makes, not last week's equity moves.
+  const took = expectedEarningsOf(view);
+  if (!took.some || took.value <= 0) return [];
+  const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   // Labour C3, C5 (12b.2): the change against what it will have; fewer is a cut given notice.
   const change = netChange(view.employs(), INVESTING, view.self.region, asQty(hours));
