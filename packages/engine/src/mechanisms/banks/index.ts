@@ -820,7 +820,11 @@ function draw(
   ccy: CurrencyCode,
 ): InstrumentId | undefined {
   if (!isLoan(line.terms)) return undefined;
-  const { borrower } = line.terms;
+  // Register F2, XI-15 (11.1): WHOEVER OWES THE LINE NOW. The terms name who signed it; a cell
+  // that merged onto another (its bank moved) or a firm whose estate took its book is succeeded,
+  // and the row was reseated onto the successor. The first cell to draw on a line it inherited
+  // addressed a party that had ceased, and settlement refused it (Money E4).
+  const borrower = ctx.parties.resolve(line.terms.borrower).id;
   // D4: the money comes from whoever is owed the line now, which is whoever holds it (Law 19). A
   // line nobody is owed is a line nobody can be drawn on.
   const owed = creditorOf((id) => ctx.register.holdersOf(id), line);
