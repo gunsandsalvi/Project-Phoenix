@@ -70,9 +70,9 @@ The plan has two parts:
 | 13n — Firm birth: somebody starts one | — | — | open (no item file) |
 | 13o — Asset managers with strategies: hedge funds, prime brokerage, the trades nobody puts on | — | — | open (no item file) |
 | 14 — The polity | 14 | 0 | open (plan elsewhere) |
-| [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
-| [16 — Measure](plan/16-measure.md) | 20 | 0 | open |
-| [17 — The app and the APK](plan/17-app-apk.md) | 12 | 0 | open |
+| 15 — The recipe | 6 | 0 | open (plan elsewhere) |
+| 16 — Measure | 20 | 0 | open (plan elsewhere) |
+| 17 — The app and the APK | 12 | 0 | open (plan elsewhere) |
 <!-- progress:end -->
 
 ---
