@@ -25,6 +25,7 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
+import type { CellKeyDimension } from './registry.js';
 import type { Cash, PerNamedUnit, PerPiece, Ratio } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
 import type { Namer } from './naming.js';
@@ -455,6 +456,19 @@ export type Objective =
 export interface PartyKindProfile {
   readonly id: PartyKindId;
   readonly representation: Representation;
+  /**
+   * XI-15: WHAT STRATIFIES A POPULATION OF THIS KIND — declared by the kind, because two kinds of
+   * cell are two populations and nothing says they are cut the same way.
+   *
+   * A household is where it lives, when it was born and where it banks; a small firm is where it
+   * is, where it banks and what LINE it is in, and has no cohort at all. One list for the whole
+   * world made those two mutually exclusive: `cellKeyFaults` refused a household for carrying no
+   * `line` and a small firm for carrying one, so this world could hold exactly one population and
+   * item 0's sixth stop was every cell the small-business seed tried to add.
+   *
+   * Present for a cell kind and absent for a named one; the registry refuses either the other way.
+   */
+  readonly cellKey?: readonly CellKeyDimension[];
   /**
    * Item 15: what a party of this kind is FOR. Required, so a kind cannot be added without saying
    * — which is the whole of what this buys: the compiler asks the question at every new kind.

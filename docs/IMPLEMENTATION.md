@@ -328,11 +328,19 @@ green on both worlds.
 
 ## 0b. The cell key belongs to the party kind
 
-- [ ] 0b.1 `PartyKindProfile.cellKey: readonly CellKeyDimension[]` for `representation: 'cell'` kinds; the registry throws if a named kind declares one or a cell kind none. Household dimensions declared in `households/index.ts`; `SMALL_FIRM` declares `['region', 'bank', 'line']`.
-- [ ] 0b.2 Delete `RegistryData.cellKey`; `cellKeyFaults` and `Parties.sameKey` read the kind; `sameKey` across kinds is false; every `registry.cellKey` read (`grep -rn "\.cellKey" src`) goes through the kind; `cells.reKey` checks against it.
-- [ ] 0b.3 Tests: two cell kinds keyed differently assemble; a household cell carrying `line` is refused; delete 0.6.
+- [x] 0b.1 `PartyKindProfile.cellKey?: readonly CellKeyDimension[]`; the registry refuses a cell kind that declares none and a named kind that declares one, a repeated dimension, and a key without `region`. `HOUSEHOLD` declares `['region', 'cohort', 'bank']`; `SMALL_FIRM` declares `['region', 'bank', 'line']`; `CellKeyDimension` gains `line`, whose terms are empty because a line is a good's sub-unit and there is nothing in the registry to check it against.
+- [x] 0b.2 `RegistryData.cellKey` and `Registry.cellKey` deleted; `cellKeyFaults`, `rekey` and `Parties.sameKey` read the kind through `keyDimensionsOf`; `sameKey` across kinds is false, because a household and a small firm in one region at one bank are not the same people.
+- [x] 0b.3 `test/doors.test.ts`: re-stratification is a change to ONE KIND's list; every cell kind declares a key containing `region` and every named kind declares none; two kinds never merge. The small-business seed is on, and `smallBusiness` is DECLARED after `foundationSeedFor` rather than requiring it — its cells are keyed on a bank the foundation makes, and requiring the seed drags the sort (item 0's silent stop).
 
-**Exit.** Item 11's seed adds its cells; households unchanged.
+**Exit.** Both worlds open with two cell populations: 12 household cells (40,000 members) and 144
+small-firm cells. `test/small-business.test.ts` is green. Households unchanged.
+
+### What 0b found and did not fix
+
+- **The 144 small-firm cells each have weight 1, and they share keys three at a time**
+  (`sb.bank.a.power.0`, `.1`, `.2` are one key). A cell of one firm is a named party with a count
+  stapled to it, and three cells on one key are a population cut by nothing. `drawSmallBusiness`
+  cuts the sector before it knows what a key is. → **0f** (one live cell per key).
 
 ---
 

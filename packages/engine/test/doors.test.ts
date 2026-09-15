@@ -12,6 +12,7 @@ import {
   BANK_A,
   BANK_B,
   FIRM,
+  type PartyKindId,
   InvalidRegistry,
   USD,
   assemble,
@@ -671,15 +672,22 @@ describe('the delivery check is exact, because a quantity is a count of pieces (
 });
 
 /**
- * XI-15 says the cell key is registry DATA: "at any time the cell key is what the registry declares
- * it to be, and lifting a relationship from a row into the key is a data change and a
- * re-stratification event, never a change to a mechanism." That was false while `CellKey` named
- * region, cohort and bank in the kernel and `Parties.add` checked all three unconditionally — a
- * world wanting a fourth dimension had to change a kernel type, which is the opposite of the claim.
+ * XI-15 says the cell key is DATA: "at any time the cell key is what the registry declares it to
+ * be, and lifting a relationship from a row into the key is a data change and a re-stratification
+ * event, never a change to a mechanism." That was false while `CellKey` named region, cohort and
+ * bank in the kernel and `Parties.add` checked all three unconditionally.
+ *
+ * It is the KIND's now (item 0b), because one list for the whole world made two populations
+ * mutually exclusive: a household carries no `line` and a small firm no `cohort`, so whichever of
+ * them was declared second was refused for every cell it added — item 0's sixth stop.
  */
-describe('a cell is keyed on what the registry declares, and on nothing else (XI-15)', () => {
-  /** The same world in every respect but the dimensions it keys its cells on. */
-  function restratified(r: Registry, cellKey: readonly CellKeyDimension[]): Registry {
+describe('a cell is keyed on what its KIND declares, and on nothing else (XI-15)', () => {
+  /** The same world in every respect but the dimensions it keys ONE KIND's cells on. */
+  function restratified(
+    r: Registry,
+    kind: PartyKindId,
+    cellKey: readonly CellKeyDimension[],
+  ): Registry {
     return new Registry(
       {
         currencies: [...r.currencies.values()],
@@ -688,10 +696,9 @@ describe('a cell is keyed on what the registry declares, and on nothing else (XI
         regions: [...r.regions.values()],
         units: [...r.units.values()],
         cohorts: r.cohorts,
-        cellKey,
         lotFlow: r.lotFlow,
         instrumentKinds: [...r.instrumentKinds.values()],
-        partyKinds: [...r.partyKinds.values()],
+        partyKinds: [...r.partyKinds.values()].map((k) => (k.id === kind ? { ...k, cellKey } : k)),
         derivativeKinds: [...r.derivativeKinds.values()],
         curveFamilies: [...r.curveFamilies.values()],
       },
@@ -729,28 +736,54 @@ describe('a cell is keyed on what the registry declares, and on nothing else (XI
     );
   });
 
-  it('is a DATA change: a world keyed on region alone holds one population where this one holds three', () => {
+  it('is a DATA change: a kind keyed on region alone holds one population where this one holds three', () => {
     const w = world();
     const base = someCell(w);
     const cells = w.parties.all().filter((p): p is CellParty => p.representation === 'cell');
     const other = cells.find((c) => c.key.cohort !== base.key.cohort);
     if (other === undefined) throw new Error('the rig drew one cohort');
-    // Here they are two populations, because THIS world stratifies on cohort.
+    // Here they are two populations, because THIS kind stratifies on cohort.
     expect(w.parties.sameKey(base, other)).toBe(false);
 
-    // There they are one, and no mechanism changed: only the registry's list did. The cells carry
-    // exactly the dimensions that world declares, which is what a re-stratification is.
-    const thin = new Parties(restratified(w.registry, ['region']));
+    // There they are one, and no mechanism changed: only the kind's list did. The cells carry
+    // exactly the dimensions that kind declares, which is what a re-stratification is.
+    const thin = new Parties(restratified(w.registry, base.kind, ['region']));
     const a: CellParty = { ...base, id: partyId('cell.a'), key: { region: base.region } };
     const b: CellParty = { ...other, id: partyId('cell.b'), key: { region: other.region } };
     thin.add(a);
     thin.add(b);
     expect(thin.sameKey(a, b)).toBe(true);
 
-    // And a cell carrying the dimensions THIS world declares is refused there, because a key with
+    // And a cell carrying the dimensions THIS kind declares is refused there, because a key with
     // a dimension nobody declared is a relationship the model cannot name (XI-15).
     expect(() => {
       thin.add({ ...base, id: partyId('cell.c') });
     }).toThrow(/does not key cells on/);
+  });
+
+  it('lets two kinds of cell be cut differently, which is what one list made impossible', () => {
+    const w = world();
+    const kinds = [...w.registry.partyKinds.values()].filter((k) => k.representation === 'cell');
+    // The rig carries households; item 11 adds the small firms. Whichever this world has, each
+    // cell kind answers for itself and no two of them have to agree.
+    expect(kinds.length).toBeGreaterThan(0);
+    for (const k of kinds) {
+      expect(k.cellKey, `${k.id} is a population and says nothing stratifies it`).not.toBe(undefined);
+      expect(k.cellKey).toContain('region');
+    }
+    // XI-15: and a named kind declares none, because one party is not a population.
+    for (const k of w.registry.partyKinds.values()) {
+      if (k.representation === 'cell') continue;
+      expect(k.cellKey, `${k.id} is one named party and declares a cell key`).toBe(undefined);
+    }
+  });
+
+  it('never merges two kinds of cell, whatever their keys agree on (XI-15)', () => {
+    const w = world();
+    const base = someCell(w);
+    // A household and a small firm in one region at one bank are not the same people. `sameKey`
+    // answering yes would be a weight that counts two things.
+    const asAnother: CellParty = { ...base, id: partyId('cell.other'), kind: FIRM };
+    expect(w.parties.sameKey(base, asAnother)).toBe(false);
   });
 });

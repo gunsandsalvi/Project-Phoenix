@@ -127,8 +127,17 @@ export const PEOPLE_PARAMS = {
   retirementAge: paramId('labour.retirementAge'),
 } as const;
 
-/** The cell key dimensions are registry data (XI-15): lifting a relationship into the key is a data change. */
-export type CellKeyDimension = 'region' | 'cohort' | 'bank';
+/**
+ * XI-15: the dimensions a cell can be stratified on. Data, because lifting a relationship into a
+ * key is a data change — but WHICH of them a kind keys on belongs to the KIND, not to the world.
+ *
+ * It was one list for every cell in the world, and item 0's sixth stop is what that cost: this
+ * world keys households on `cohort`, a small firm has no cohort, a small firm keys on the `line` it
+ * is in and no household is in one — so `cellKeyFaults` refused every cell the small-business seed
+ * added, both ways at once, and a second cell population could not exist at all. The dimensions are
+ * still declared here; `PartyKindProfile.cellKey` says which of them a kind is stratified on.
+ */
+export type CellKeyDimension = 'region' | 'cohort' | 'bank' | 'line';
 
 export interface RegistryData {
   readonly currencies: readonly CurrencyDecl[];
@@ -138,7 +147,6 @@ export interface RegistryData {
   readonly geography: GeographyDecl;
   readonly units: readonly UnitDecl[];
   readonly cohorts: readonly CohortDecl[];
-  readonly cellKey: readonly CellKeyDimension[];
   /** The stated, consistently applied lot-flow assumption for securities (Register D4). */
   readonly lotFlow: LotFlow;
   /** The kind profiles the kernel and the assembled modules register (Law 15). */
@@ -165,7 +173,6 @@ export class Registry {
   readonly geography: GeographyDecl;
   readonly units: ReadonlyMap<UnitId, UnitDecl>;
   readonly cohorts: readonly CohortDecl[];
-  readonly cellKey: readonly CellKeyDimension[];
   readonly lotFlow: LotFlow;
   readonly curveFamilies: ReadonlyMap<CurveFamilyId, CurveFamilyDecl>;
   readonly instrumentKinds: ReadonlyMap<InstrumentKindId, InstrumentKindProfile>;
@@ -198,7 +205,6 @@ export class Registry {
     this.geography = data.geography;
     this.units = unique(data.units, (u) => u.id, 'unit');
     this.cohorts = [...data.cohorts];
-    this.cellKey = [...data.cellKey];
     this.lotFlow = data.lotFlow;
     this.instrumentKinds = unique(data.instrumentKinds, (k) => k.id, 'instrument kind');
     this.partyKinds = unique(data.partyKinds, (k) => k.id, 'party kind');
@@ -253,11 +259,36 @@ export class Registry {
         throw new InvalidRegistry('Households F1.a', 'cohorts must be in ascending age order');
       }
     }
-    const dims = new Set(this.cellKey);
-    if (dims.size !== this.cellKey.length) {
-      throw new InvalidRegistry('XI-15', 'cell key dimension repeated');
+    /**
+     * XI-15: a KIND that is a population says what stratifies it, and a kind that is one party says
+     * nothing. Checked here, once per kind, so a world cannot assemble with a cell nobody can
+     * compare — `sameKey` walks the kind's dimensions and an empty list would merge two populations
+     * that differ in everything.
+     *
+     * Every cell is SOMEWHERE (a member is a real person with a real account, and an account is at
+     * a bank in a region), so `region` is in every key. The rest is the kind's own business.
+     */
+    for (const k of this.partyKinds.values()) {
+      if (k.representation !== 'cell') {
+        if (k.cellKey !== undefined) {
+          throw new InvalidRegistry(
+            'XI-15',
+            `party kind ${k.id} is one named party and declares a cell key`,
+          );
+        }
+        continue;
+      }
+      if (k.cellKey === undefined || k.cellKey.length === 0) {
+        throw new InvalidRegistry('XI-15', `party kind ${k.id} is a population and says nothing stratifies it`);
+      }
+      const dims = new Set(k.cellKey);
+      if (dims.size !== k.cellKey.length) {
+        throw new InvalidRegistry('XI-15', `party kind ${k.id} repeats a cell key dimension`);
+      }
+      if (!dims.has('region')) {
+        throw new InvalidRegistry('XI-15', `party kind ${k.id} keys its cells on no region`);
+      }
     }
-    if (!dims.has('region')) throw new InvalidRegistry('XI-15', 'the cell key must include region');
     if (!this.instrumentKinds.has('money' as InstrumentKindId)) {
       throw new InvalidRegistry('Money D2', 'the money instrument kind must be registered');
     }

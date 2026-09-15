@@ -30,10 +30,10 @@
  * and each names what it turns on.
  */
 import type { RegionId } from '../../core/ids.js';
-import { paramId } from '../../core/ids.js';
+import { paramId, partyId } from '../../core/ids.js';
 import type { Option } from '../../core/option.js';
 import { banksAwayFromTrouble } from '../../registry/switching.js';
-import type { ParticipantView } from '../../world/context.js';
+import type { ParticipantView, SeedContext } from '../../world/context.js';
 import type { BankChoice } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
@@ -129,6 +129,13 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         objective: 'theResidual',
         id: SMALL_FIRM,
         representation: 'cell',
+        /**
+         * A6.a, XI-15: WHERE IT IS, WHERE IT BANKS AND WHAT IT DOES — and no cohort, because a firm
+         * has no age at which it retires. The LINE is what makes a population of them a sector: a
+         * mill and a haulier face different prices for different things, and a cell that mixed them
+         * would be a decision taken at an average (Appendix B).
+         */
+        cellKey: ['region', 'bank', 'line'],
         moneyIssuer: null,
         /**
          * A1, XI-3: *"they can fail"*, and on both — it runs out of money (B3's threshold is its
@@ -163,18 +170,35 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     participants: [],
     families: [],
     /**
-     * A6, XI-15, item 0 (stop 6): IT ADDS NO CELL YET, AND THE REASON IS THE KERNEL'S.
+     * A6, A6.a, XI-15, Seed B1.a: THE SECTOR OPENS, one cell per (region, bank, line).
      *
-     * `registry.cellKey` is ONE list of dimensions for the whole world and `cellKeyFaults` refuses
-     * any cell that lacks one of them or carries one it does not list. This world keys on cohort,
-     * which a small firm has not got, and a small firm is keyed on its line, which the registry
-     * does not list — so every party this seed added was refused and the world stopped here.
-     *
-     * The draw above is real and stays; what is missing is a key per party KIND, which is item 0b.
-     * It turns this seed on in the same change, and item 11 gives the cells something to do.
+     * It was off between item 0 and item 0b, and the reason was the kernel's: one list of key
+     * dimensions for the whole world meant this world keyed on `cohort`, which a small firm has
+     * not got, and a small firm keys on its `line`, which the world did not list — so every party
+     * this seed added was refused both ways at once (item 0, stop 6). The key belongs to the KIND
+     * now, and a population of firms and a population of people are cut as each of them is.
      */
-    seed(): void {
-      return;
+    seed(ctx: SeedContext): void {
+      for (const r of rows) {
+        const bank = ctx.parties.get(partyId(r.bank));
+        ctx.parties.add({
+          id: partyId(r.cell),
+          kind: SMALL_FIRM,
+          representation: 'cell',
+          // Law 4, Law 19: a cell lives where its bank books, read off the bank rather than drawn
+          // beside it — the same sentence the households seed makes about where the people are.
+          region: bank.region,
+          // Law 9: a market names a small firm by what it does and where, because that is all
+          // anybody outside it knows about one — and a cell of them is that, with a count.
+          name: `${String(r.weight)} ${r.line} firms at ${r.bank}`,
+          bank: bank.id,
+          // XI-15: how many real firms this party IS. A count, and the five events are the only
+          // things that may move it (E5).
+          weight: r.weight,
+          key: cellKeyOf(r, bank.region),
+          status: { alive: true, standing: 'good' },
+        });
+      }
     },
   };
 }

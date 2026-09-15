@@ -421,6 +421,15 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         objective: 'itsMembers',
         id: HOUSEHOLD,
         representation: 'cell',
+        /**
+         * XI-15, F1.a: WHERE THESE PEOPLE LIVE, WHEN THEY WERE BORN AND WHERE THEY BANK.
+         *
+         * The cohort is this sector's own: people age, and a cell whose members are not all in one
+         * cohort could not be aged as one (`lifecycle`). The bank is here because a deposit is a
+         * claim on a NAMED issuer — two cells at two banks hold two different instruments, and
+         * merging them would net a claim on one bank against a claim on another (Money A1).
+         */
+        cellKey: ['region', 'cohort', 'bank'],
         moneyIssuer: null,
         fails: [],
         borrows: false,

@@ -2618,7 +2618,6 @@ export function foundationSpec(
         { id: cohortId('working'), name: 'working age', fromAge: 18 },
         { id: cohortId('retired'), name: 'retired', fromAge: 65 },
       ],
-      cellKey: ['region', 'cohort', 'bank'],
       lotFlow: 'FIFO',
       curveFamilies: [],
     },
@@ -2708,13 +2707,6 @@ export function foundationSpec(
       capitalProgramme([...CAPITAL_KINDS, STORAGE_KIND, VESSEL_KIND]),
       labour(),
       firms(drew.firms),
-      /**
-       * §42 A1, A5, A6 (item 11): THE TIER BELOW THE NAMED FIRMS. After `firms` and `banks`,
-       * because a small firm banks with one of this world's banks and sells to one of its firms,
-       * and the seed is where the three meet — the sector's cells are keyed on a bank by NAME, and
-       * the module that owns them may not import the module that owns a bank.
-       */
-      smallBusiness(drew.small),
       households(),
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).
@@ -2883,6 +2875,14 @@ export function foundationSpec(
        * after the seed.
        */
       land(),
+      /**
+       * §42 A1, A5, A6 (items 11, 0b): THE TIER BELOW THE NAMED FIRMS, and it is DECLARED HERE for
+       * the reason `land()` is: its seed reads the BANK each cell is keyed on, and the banks are
+       * parties the foundation makes. Requiring `seed.foundation` instead would drag the sort and
+       * take every module declared after it along — which is how this world lost its merchant
+       * fleet once already (item 0). A module that needs the seed is declared after it.
+       */
+      smallBusiness(drew.small),
       foundationFundingFor(drew.banks),
     ],
   };

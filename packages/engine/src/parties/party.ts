@@ -89,6 +89,13 @@ const KEY_DIMENSIONS: Readonly<Record<CellKeyDimension, KeyDimensionTerms>> = {
   region: { alsoOn: (p) => p.region, declared: (r, v) => r.regions.has(regionId(v)) },
   cohort: { declared: (r, v) => r.cohorts.some((c) => c.id === cohortId(v)) },
   bank: { alsoOn: (p) => p.bank },
+  /**
+   * §42 A6.a: WHAT THE FIRM DOES, for a population of firms. There is nothing the registry can
+   * check it against — a line is a good's sub-unit and the goods a world has are its own — so this
+   * dimension has neither `alsoOn` nor `declared`, which is the honest statement of a key that
+   * carries a fact about the members and not a reference to something the world declares.
+   */
+  line: {},
 };
 
 /**
@@ -99,8 +106,11 @@ const KEY_DIMENSIONS: Readonly<Record<CellKeyDimension, KeyDimensionTerms>> = {
  */
 export function cellKeyFaults(registry: Registry, p: CellParty): readonly string[] {
   const faults: string[] = [];
-  const declared = new Set<string>(registry.cellKey);
-  for (const dim of registry.cellKey) {
+  // XI-15: THE KIND'S dimensions, not the world's. Two kinds of cell are two populations and
+  // nothing says they are cut the same way (item 0, stop 6).
+  const on = keyDimensionsOf(registry, p.kind);
+  const declared = new Set<string>(on);
+  for (const dim of on) {
     const value = p.key[dim];
     if (value === undefined) {
       faults.push(`cell ${p.id} has no ${dim}, and this world keys its cells on ${dim}`);
@@ -127,9 +137,24 @@ export function cellKeyFaults(registry: Registry, p: CellParty): readonly string
  * XI-15: change one dimension of a key, and only where this world keys on it. A world that does
  * not stratify on where a cell banks does not acquire the dimension because a cell moved bank.
  */
-function rekey(registry: Registry, key: CellKey, dim: CellKeyDimension, value: string): CellKey {
-  if (!registry.cellKey.includes(dim)) return key;
+function rekey(
+  registry: Registry,
+  kind: PartyKindId,
+  key: CellKey,
+  dim: CellKeyDimension,
+  value: string,
+): CellKey {
+  if (!keyDimensionsOf(registry, kind).includes(dim)) return key;
   return { ...key, [dim]: value };
+}
+
+/** XI-15: what stratifies a population of this kind. A kind that is one party has none. */
+export function keyDimensionsOf(registry: Registry, kind: PartyKindId): readonly CellKeyDimension[] {
+  const on = registry.partyKind(kind).cellKey;
+  if (on === undefined) {
+    throw new Forbidden('XI-15', `${kind} is one named party and has no cell key`, { kind });
+  }
+  return on;
 }
 
 interface PartyBase {
@@ -225,7 +250,11 @@ export class Parties {
    * merge two populations that differ on the thing it stratified them by.
    */
   sameKey(a: CellParty, b: CellParty): boolean {
-    return this.registry.cellKey.every((dim) => a.key[dim] === b.key[dim]);
+    // XI-15: two cells of DIFFERENT KINDS are two populations and never one, whatever their keys
+    // happen to agree on — a household and a small firm in one region banking at one bank are not
+    // the same people, and merging them would be a weight that counts two things.
+    if (a.kind !== b.kind) return false;
+    return keyDimensionsOf(this.registry, a.kind).every((dim) => a.key[dim] === b.key[dim]);
   }
 
   get(id: PartyId): Party {
@@ -348,7 +377,7 @@ export class Parties {
       id,
       Object.freeze(
         p.representation === 'cell'
-          ? { ...p, bank: to, key: rekey(this.registry, p.key, 'bank', to) }
+          ? { ...p, bank: to, key: rekey(this.registry, p.kind, p.key, 'bank', to) }
           : { ...p, bank: to },
       ),
     );

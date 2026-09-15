@@ -9855,3 +9855,46 @@ citations, forbids, deaths, existence green. `test/phases.test.ts` is seven new 
 the anchor's, a late reader is named with both positions, a need nothing writes is refused, a
 history read stands anywhere, a price read before the session is refused, an undeclared read throws
 at the site, a declared one does not.
+
+## Item 0b — The cell key belongs to the party kind
+
+**What.** `PartyKindProfile.cellKey` says what stratifies a population of that kind.
+`RegistryData.cellKey` and `Registry.cellKey` are deleted. `cellKeyFaults`, `rekey` and
+`Parties.sameKey` read the kind; `sameKey` across two kinds is false. The small-business seed is on,
+and this world now holds two cell populations: 12 household cells standing for 40,000 people, and
+144 small-firm cells.
+
+**Why.** One list of key dimensions for the whole world made two populations mutually exclusive. A
+household has no line of business and a small firm has no cohort, so `cellKeyFaults` refused a
+household for carrying no `line` and a small firm for carrying one — both ways at once, whichever
+kind was declared second. Item 0's sixth stop was every cell the small-business seed tried to add,
+and the seed was turned off to get the world open. It is on again and nothing about a household
+changed.
+
+**What each kind says.** A household is `region, cohort, bank`: people age, so a cell whose members
+were in two cohorts could not be aged as one; and a deposit is a claim on a NAMED issuer, so two
+cells at two banks hold two different instruments and merging them would net a claim on one bank
+against a claim on another. A small firm is `region, bank, line` and has no cohort, because a firm
+has no age at which it retires. `CellKeyDimension` gains `line`, whose terms are empty — a line is a
+good's sub-unit and the registry has nothing to check it against, which is the honest statement of a
+key that carries a fact about the members rather than a reference.
+
+**And two kinds never merge.** `sameKey` answers false across kinds before it looks at a dimension.
+A household and a small firm in one region banking at one bank are not the same people, and a merge
+would be a weight that counts two things.
+
+**Declared after the seed, not requiring it.** The sector's cells are keyed on a bank by name, and
+the banks are parties the foundation seed makes. Requiring `seed.foundation` is what dragged the
+assembly sort in item 0 and lost this world its merchant fleet, so `smallBusiness` is declared after
+`foundationSeedFor` exactly as `land()` is — which is the rule that comment has carried since the
+first time it happened.
+
+**Found and not fixed.** The 144 small-firm cells each have weight 1 and share keys three at a time:
+`sb.bank.a.power.0`, `.1` and `.2` are one key. A cell of one firm is a named party with a count
+stapled to it, and three cells on one key are a population cut by nothing — `drawSmallBusiness` cuts
+the sector before it knows what a key is. Positioned at **0f** (one live cell per key).
+
+**Checks.** `check:opens` green on both worlds; `test/small-business.test.ts` green, all six. On the
+three suite files nearest this change: 13 failed / 23 passed before, 12 failed / 26 passed after —
+one fixed, two added, none broken. Lint, typecheck, spec citations, forbids, deaths, existence and
+plan green.
