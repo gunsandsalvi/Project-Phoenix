@@ -29,7 +29,7 @@
  * instruction is a recorded state nobody wanted.
  */
 import { amountOf, asAmount, asPerPiece, asRatio, type Cash, heldAsMoney, minus, over, type PerPiece, pricedAt, type Ratio, scale, valueAt } from '../../core/measure.js';
-import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
+import type { InstrumentId, MarketId, PartyId, RegionId } from '../../core/ids.js';
 import { paramId, unitId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { none, type Option, some } from '../../core/option.js';
@@ -50,6 +50,7 @@ import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
 import { findVenue } from '../../clearing/venue.js';
 import { addQty } from '../../core/tick.js';
 import { agreementKindId, type AgreementId } from '../../core/ids.js';
+import type { AgreementTerms } from '../../register/agreements.js';
 import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
 
 /** The name of the store a cell's decision waits in between its phases (a `working` noun). */
@@ -137,7 +138,12 @@ export interface Line {
 export function lineOf(view: ParticipantView): Option<Line> {
   const self = view.self;
   if (self.representation !== 'cell') return none<Line>();
-  const output = goodId(keyOf(self, 'line'), self.region);
+  return lineIn(view, keyOf(self, 'line'), self.region);
+}
+
+/** A2, Goods A2 (12.1): the line by name and region, for whoever asks — a founder reads it too. */
+export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params'>, subUnit: string, region: RegionId): Option<Line> {
+  const output = goodId(subUnit, region);
   if (!view.instruments.has(output)) return none<Line>();
   const terms = goodTerms(view.instruments.get(output));
   return some({
@@ -483,6 +489,20 @@ export function ordersIn(view: ParticipantView, market: MarketId): readonly Orde
 
 /** The commitment that names a small-firm cell's owner. */
 export const OWNERSHIP = agreementKindId('smallBusiness.ownership');
+
+/**
+ * A6.a, Firm Birth A2 (12.1): WHO OWNS IT AND HOW MANY OF THEM RUN ONE — the owners' members who
+ * are in a firm. A firm has a person in it, and that person's hours are the firm's (11.0a); a
+ * member who runs one cannot found another, and the row is where that fact lives (Law 4).
+ */
+export interface OwnershipTerms extends AgreementTerms {
+  readonly kind: typeof OWNERSHIP;
+  readonly members: number;
+}
+/** Asked only of rows read `ofKind(OWNERSHIP)`: what it tests is that the count is on the row. */
+export function isOwnership(t: AgreementTerms): t is OwnershipTerms {
+  return typeof (t as { members?: unknown }).members === 'number';
+}
 
 /** A6.a: the row that names this cell's owner, read off the kernel's book of commitments by its kind. */
 export function ownerOf(ctx: MechanismContext, cell: PartyId): Option<{ readonly row: AgreementId; readonly owner: PartyId }> {

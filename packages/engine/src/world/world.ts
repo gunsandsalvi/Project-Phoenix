@@ -115,6 +115,7 @@ import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { type CellDeps, ceaseCell, dieCell, mergeCells, reKeyCell, weightEvent } from './cells.js';
+import type { CellParty } from '../parties/party.js';
 import { succeedAgreements } from './succession.js';
 import type { Subject,
   Borrowing,
@@ -1575,11 +1576,21 @@ export class World {
 
   placeCellsOnLattice(): void {
     forbid(!this.sealed, 'Seed A2', 'cells are placed on the lattice before the seal, not after');
-    const reads = this.latticeReads();
     for (const p of this.parties.all()) {
-      if (p.representation !== 'cell') continue;
+      if (p.representation === 'cell') this.placeCell(p);
+    }
+  }
+
+  /**
+   * XI-15, 0f.3: ONE CELL IS PLACED ON ITS KIND'S LATTICE — the seed's cells at the seal, and a
+   * cell that enters after it (Firm Birth A1, 12.1) the moment it arrives. The seeded dimensions
+   * are what the writer knew; the derived ones are read off the cell's holdings here.
+   */
+  private placeCell(p: CellParty): void {
+    const reads = this.latticeReads();
+    {
       const lattice = this.registry.partyKind(p.kind).lattice;
-      if (lattice === undefined) continue;
+      if (lattice === undefined) return;
       const key: Record<string, string> = { ...p.key };
       for (const d of lattice.categorical) {
         if (key[d.dim] === undefined && d.opening !== undefined) key[d.dim] = d.opening(reads, p.id);
@@ -2125,6 +2136,20 @@ export class World {
       enter: (party) => {
         forbid(this.sealed, 'Seed A2', 'a party enters a world that has begun');
         this.parties.add(party);
+        if (party.representation === 'cell') {
+          // XI-15, Firm Birth A1 (12.1): A CELL THAT ARRIVES IS AN ENTRY OF ALL ITS MEMBERS — the
+          // one weight event that brings people into a population — and it is placed on its
+          // kind's lattice the moment it exists, as the seed's cells are at the seal.
+          this.placeCell(party);
+          this.journal.record(
+            this.currentPeriod,
+            this.currentCycle,
+            'weight',
+            [party.id],
+            { kind: 'entry', members: party.weight, before: 0, after: party.weight, cause: 'entered' },
+            true,
+          );
+        }
         // Seed C1's rule, applied wherever a party begins: its equity is the READ of what it holds
         // against what it owes, and a party that has just arrived holds nothing and owes nothing.
         // Everything from here moves it by a named event (Audit B5.b).
@@ -2142,7 +2167,7 @@ export class World {
           this.currentCycle,
           'party.entered',
           [party.id],
-          { party: party.id, kind: party.kind, name: party.name },
+          { party: party.id, kind: party.kind, name: party.name, ...(party.representation === 'cell' ? { weight: party.weight } : {}) },
           true,
         );
       },

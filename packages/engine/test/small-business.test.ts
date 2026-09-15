@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   CAPITAL_KINDS,
+  HOUSEHOLD,
   SMALL_FIRM,
   about,
   capacityFrom,
@@ -308,6 +309,100 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     // A bid where there is a gap, and none where there is not: the two sides of one rule.
     if (shortOfPlant.length === 0) expect(bids).toHaveLength(0);
     else expect(bids.length).toBeGreaterThan(0);
+  });
+
+  it('is founded for a reason, or refused for one (Firm Birth A1, A2, A4, A4.a, E4, 12.1)', () => {
+    const { world: w } = rigFor('sb-found', { makes: ['coalRaw'] });
+    for (let i = 0; i < 6; i += 1) w.step();
+    const founded = w.journal.ofKind('smallBusiness.founded');
+    const refused = w.journal.ofKind('smallBusiness.notFounded');
+    // A4.a: entry is a consequence and never a rate — every period a household with money spare
+    // either founds or is told why not, and both are on the record with their reason.
+    expect(founded.length + refused.length).toBeGreaterThan(0);
+    for (const e of refused) {
+      expect(w.parties.get(e.subjects[0] as never).kind).toBe(HOUSEHOLD);
+      expect(typeof e.data['why']).toBe('string');
+    }
+    for (const e of founded) {
+      // A2: funded out of a named account, in one instruction; A1, XI-15: the members entered.
+      const firms = e.data['firms'];
+      expect(typeof firms === 'number' && Number.isInteger(firms) && firms > 0).toBe(true);
+      const moved = w.ledger
+        .inPeriod(e.period)
+        .some((r) => r.outcome === 'settled' && r.instruction.reason.startsWith(`${String(e.subjects[0])} founds`));
+      expect(moved).toBe(true);
+      const entered = w.journal
+        .ofKindIn('weight', e.period)
+        .some((x) => x.data['kind'] === 'entry' && x.data['members'] === firms && x.subjects.includes(e.data['cell'] as never));
+      expect(entered).toBe(true);
+    }
+  });
+
+  it('enters the world as a cell, placed on its lattice, and the population accounts for it (Firm Birth A1, XI-15, 12.1)', () => {
+    const arrived: string[] = [];
+    const probe: SystemModule = {
+      id: 'test.enter',
+      spec: 'Firm Birth A1',
+      requires: ['small-business'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.enter',
+          spec: 'Firm Birth A1',
+          anchor: { after: 'corporateActions' },
+          reads: [],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            if (ctx.period !== 2) return;
+            const like = ctx.parties.ofKind(SMALL_FIRM).find((p) => p.representation === 'cell' && p.status.alive);
+            if (like?.representation !== 'cell') return;
+            const id = `${String(like.id)}.entered` as never;
+            ctx.enter({
+              id,
+              kind: SMALL_FIRM,
+              representation: 'cell',
+              region: like.region,
+              name: 'three firms that arrived',
+              bank: like.bank,
+              weight: 3,
+              key: { region: like.key['region'] ?? '', bank: like.key['bank'] ?? '', line: like.key['line'] ?? '' },
+              status: { alive: true, standing: 'good' },
+            });
+            arrived.push(String(id));
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const { banks, firms } = rigFor('sb-enter', { makes: ['coalRaw'] });
+    const spec = rigSpec('sb-enter', banks, firms);
+    const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
+    const before = w.parties.ofKind(SMALL_FIRM).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
+    const unitsReds: string[] = [];
+    for (let i = 0; i < 4; i += 1) {
+      const r = w.step();
+      for (const f of r.audit.families) for (const v of f.violations) if (v.family === 'units' && v.owner === String(SMALL_FIRM)) unitsReds.push(v.message);
+    }
+    expect(arrived).toHaveLength(1);
+    const cell = w.parties.get(arrived[0] as never);
+    expect(cell.representation === 'cell' && cell.weight).toBe(3);
+    // Placed: its key carries the lattice's banded dimensions, not only the three the writer knew.
+    expect(cell.representation === 'cell' && Object.keys(cell.key).length).toBeGreaterThan(3);
+    // XI-15: the arrival is an entry event, and the units family has nothing to say about it.
+    expect(w.journal.ofKind('weight').some((e) => e.data['kind'] === 'entry' && e.subjects.includes(arrived[0] as never))).toBe(true);
+    expect(unitsReds).toEqual([]);
+    const now = w.parties.ofKind(SMALL_FIRM).filter((p) => p.status.alive).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
+    const byEvents = w.journal
+      .ofKind('weight')
+      .filter((e) => w.parties.get(e.subjects[0] as never).kind === SMALL_FIRM)
+      .filter((e) => typeof e.data['after'] === 'number' && typeof e.data['before'] === 'number')
+      .reduce((t, e) => t + ((e.data['after'] as number) - (e.data['before'] as number)), 0);
+    expect(now - before).toBe(byEvents);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {

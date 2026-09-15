@@ -1187,12 +1187,14 @@ measurement is taken there is nothing to name.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Firm Birth A1` | MISSING |  |
-| `Firm Birth A2` | MISSING |  |
-| `Firm Birth A2.a` | MISSING |  |
-| `Firm Birth A3` | MISSING |  |
-| `Firm Birth A4` | MISSING |  |
-| `Firm Birth A5` | MISSING |  |
+| `Firm Birth A1` | MET | packages/engine/src/mechanisms/small-business/found.ts, packages/engine/src/world/world.ts `enter` (12.1: a new party with a new name enters mid-run — a cell of small firms, placed on its lattice the moment it exists, its arrival an `entry` weight event; or the new members enter the live cell of their key by the same event) |
+| `Firm Birth A2` | MET | packages/engine/src/mechanisms/small-business/found.ts (12.1: funded by the founders — a household cell — out of their own account, in one instruction, and they hold the ownership row that counts the members who run one) |
+| `Firm Birth A2.a` | MET | packages/engine/src/mechanisms/small-business/found.ts, packages/engine/src/mechanisms/small-business/profile.ts (12.1: the new firms arrive with the founders' money and nothing else; their plant is BOUGHT by the cell's own project out of it (11.2a.2), never endowed) |
+| `Firm Birth A3` | MET | packages/engine/src/mechanisms/small-business/found.ts, packages/engine/src/world/world.ts `enter` (12.1: a party that has just arrived holds nothing and owes nothing — its equity is stated as exactly that — and what it then holds is the founders' capital against the row that says whose it is) |
+| `Firm Birth A4` | MET | packages/engine/src/mechanisms/small-business/found.ts (12.1: a household founds when a line's return on what it costs to start — a member's period of trading less the founder's own hours at the region's wage — clears what it requires of a claim, its plan's own number; and no more firms than the demand the book did not meet at the last print supports, which is what a traded print now carries (`unmetAt`)) — **UNMEASURED**: no service line has traded in the scale model, so every household is refused with that reason and none has founded |
+| `Firm Birth A5` | PARTIAL | packages/engine/src/mechanisms/small-business/found.ts (12.1: an entrant is limited to the demand the incumbents left unmet and its supply reaches the same book next period, which is what changes the price they face; what is not built is the entrant's effect on an already-met book — at a cell's resolution that is the per-member position of 12a) |
+| `Firm Birth A4.a` | MET | packages/engine/src/mechanisms/small-business/found.ts (12.1: there is no birth rate — a household that founds nothing is refused with the reason, on the record, every period it had money spare) |
+| `Firm Birth A4.b` | MET | packages/engine/src/mechanisms/small-business/found.ts (12.1: how many firms is what its spare reaches at the starting cost, one per member not already running one, never a share of anything) |
 | `Firm Birth B1` | MISSING |  |
 | `Firm Birth B2` | MISSING |  |
 | `Firm Birth B3` | MISSING |  |
@@ -1481,7 +1483,7 @@ measurement is taken there is nothing to name.
 | `Small-Business Pools E1` | MET | packages/engine/test/small-business.test.ts, packages/engine/src/mechanisms/securitisation/index.ts audit family `names` (11.5: every row a vehicle holds is a claim a named party owes, asserted over the scale model and guarded by the audit) |
 | `Small-Business Pools E2` | MET | packages/engine/test/small-business.test.ts (11.5: every live tranche has a holder with units) |
 | `Small-Business Pools E3` | MET | packages/engine/test/small-business.test.ts (11.5: every deal names a vehicle that is a party holding the rows, and the arranger holds none of them) |
-| `Small-Business Pools E4` | MET | packages/engine/test/small-business.test.ts (11.5: over twenty periods the population is not what it opened at, and the change is exactly the sum of the dated weight events; entry is 12.1 and exit is here, so neither is the identity of the other) |
+| `Small-Business Pools E4` | MET | packages/engine/test/small-business.test.ts (11.5: over twenty periods the population is not what it opened at, and the change is exactly the sum of the dated weight events; entry (12.1, `found.ts`) and exit are two mechanisms with two reasons, so neither is the identity of the other) |
 | `Small-Business Pools E5` | MET | packages/engine/src/audit/families/units.ts, packages/engine/src/world/cells.ts `ceaseCell`, packages/engine/test/small-business.test.ts (11.5: a weight is an integer count moved by five named events, each with a cause and a period, and the family that guards it is silent on this kind in every period — it fired every time a cell failed, because the kernel's `cease` recorded no death for a cell's members; fixed at cause) |
 | `Small-Business Pools E6` | MET | packages/engine/test/small-business.test.ts (11.5: every impairment names the row's obligor and every write-down names the holder of the layer it landed on; no loss is struck against a pool) |
 

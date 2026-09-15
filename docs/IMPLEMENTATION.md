@@ -63,7 +63,7 @@ and neither is yet a MET a run has confirmed.
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
-| Firm Birth | 7 | 6 | 12 | 0 | 25 |
+| Firm Birth | 12 | 7 | 6 | **1** | 25 |
 | M&A | 13 | 0 | 9 | **7** | 22 |
 | Trade Credit | 8 | 3 | 11 | 0 | 22 |
 | Goods | 27 | 2 | 10 | 0 | 39 |
@@ -276,7 +276,7 @@ The representation is 0f's (cells on the lattice, one per key, holdings as total
 
 ## 12. Firm birth, household formation, promotion
 
-- [ ] 12.1 `small-business/found.ts`, phase `smallBusiness.found` (reads `firms.decide` writes): a household cell whose liquid wealth above its buffer clears the line's published starting cost (a read of the line's cost base) and whose outlook on the line's margin clears its required return founds `n` firms (integer): one instruction — founders' cash out, the new members' ownership row in. A refusal journaled `smallBusiness.notFounded` with the reason.
+- [x] 12.1 `small-business/found.ts`, phase `smallBusiness.found` (reads `firms.decide` writes): a household cell whose liquid wealth above its buffer clears the line's published starting cost (a read of the line's cost base) and whose outlook on the line's margin clears its required return founds `n` firms (integer): one instruction — founders' cash out, the new members' ownership row in. A refusal journaled `smallBusiness.notFounded` with the reason. **Done:** `found.ts`, phase `smallBusiness.found` after `households.decide`. The kernel's `enter` takes a cell now and places it on its lattice, its arrival an `entry` weight event (E5's family reads it). The household publishes `requiredPerAnnum` on its plan. **Found by the measurement, built:** the first cut founded 38 million security firms in one period — the return test had no labour in it and every member of a cell decides alike, so a cell founded with all of itself, every period. Three mechanisms, none a bound: the founder's own hours at the region's printed wage come off the contribution (Firm A3); a firm has a person in it, so a household founds one per member not already running one, counted on the ownership row's terms (`OwnershipTerms.members`); and no more firms than the demand the book left unmet at the last print — which a traded print now carries (`demandAtPrice`, `supplyAtPrice`; `unmetAt` in the price store). **Measured, not chased:** NO SERVICE LINE HAS EVER TRADED in the scale model — every small-firm line's print is stale from period 0, `noDemand` for security, wholesale, professional, repair, personal care, media, design, teaching, care, waste (nobody buys them) and `noSupply` for power, transport, logistics, facilities, telecoms, IT (nobody offers) — so every household is refused with that reason and none founds; the sector sells nothing there and lives off its opening stock. Demand side positioned at 22 (the recipe: the basket and the overheads name no service), supply side at 12b.3. **Findings, positioned:** a founder's hours are still offered in the labour venue by its household (12b, employment as a standing relation); a cell founds with all its members or none (12a.1/12a.5).
 - [ ] 12.2 Formation (Households A5): members of cohort `k` whose own income clears the printed rent move to cohort 0 by `cells.weight(cohort0Cell, 'entry', n, 'formed')`. No rate.
 - [ ] 12.3 Mortality as TECHNOLOGY per five-year band (an imported real-world primitive, declared with its source); `die` moves members by it, dated.
 - [ ] 12.4 Promotion fires in a 52-period run (0f.8); the promoted member's pieces become a named `FIRM`'s holdings.
@@ -304,7 +304,7 @@ The representation is 0f's (cells on the lattice, one per key, holdings as total
 
 - [ ] 12b.1 One employment register (noun `labour.employment`, home `register/employment.ts`): employer, employee cell, hours, wage, since, notice. Delete `labour/register.ts`, `banks/staff.ts`'s `staff` map, the `labour.wages` tally; wages are instructions that READ it; `view.employs()`.
 - [ ] 12b.2 The venue matches NET changes: an employer posts the change it wants; a separation runs `notice` periods with wages due, then ends (Labour C3).
-- [ ] 12b.3 A wage bid is from the employer's outlook on its revenue (§46), not `earned(1)`; the firm's ask is from its outlook on its own sell price formed from fills and the venue print, its cost the reservation (F15).
+- [ ] 12b.3 A wage bid is from the employer's outlook on its revenue (§46), not `earned(1)`; the firm's ask is from its outlook on its own sell price formed from fills and the venue print, its cost the reservation (F15). **And (12.1):** power, transport, logistics, facilities, telecoms and IT print `noSupply` from period 0 in the scale model — the small firms in them never offer, because their inputs never trade there.
 - [ ] 12b.4 `labour/matching.ts match` in whole hour-pieces; the remainder is unsold hours journaled `noDemand`; the labour print read for the reader's own region (`treasury/index.ts wageItFaces(region)`).
 - [ ] 12b.5 Research analysts are `analysis`-trade staff hired in the venue; `research/index.ts pay()` deleted.
 - [ ] 12b.6 Test: a bank with one bad period keeps its desk; a separation pays notice; one register answers who works where.
@@ -468,7 +468,7 @@ Each when its file is open for another item; file:line and the change.
 
 - [ ] 22.1 A line may declare more than one recipe (technology, data); the firm picks by its own cost read.
 - [ ] 22.2 A recipe declares a batch; a vintage declares an upkeep per period (technology); a line below batch stops.
-- [ ] 22.3 Goods A2 as specified.
+- [ ] 22.3 Goods A2 as specified. **Finding (12.1):** no service line has a buyer in the scale model — every capacity line's print is stale from period 0 with `noDemand` (the households' basket and the firms' overheads name no service) — so the small-firm tier sells nothing there and nothing can be founded; the demand for services is the recipe's and the basket's to state.
 
 ---
 

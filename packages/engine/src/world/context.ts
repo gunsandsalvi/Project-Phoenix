@@ -47,7 +47,7 @@ import type { Process, ProcessDecl, ProcessReads, ProcessState } from '../regist
 import type { Objective } from '../registry/kinds.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
-import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
+import type { Standing, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveFamilyDecl, CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
@@ -967,7 +967,7 @@ export interface MechanismContext extends WorldReads {
    * something died; a firm is born because somebody funded it (worklist 13g). The seed states who
    * is there at the start and nothing else may — this is how anybody arrives after that.
    */
-  enter(party: NamedParty): void;
+  enter(party: Party): void;
   /**
    * Register E4, E5, Equity D4: restate the count of a line. Every holding's quantity is multiplied
    * and its basis per unit divided, every price ever printed is re-denominated, and the issued

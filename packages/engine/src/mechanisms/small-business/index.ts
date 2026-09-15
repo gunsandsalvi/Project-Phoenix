@@ -37,8 +37,10 @@ import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
-import { DECIDED, OWNERSHIP, SMALL_FIRM_TERMS, TERMS, decide, draw, marketsOf, ordersIn, produce } from './profile.js';
+import { DECIDED, OWNERSHIP, SMALL_FIRM_TERMS, TERMS, decide, draw, marketsOf, ordersIn, produce, type OwnershipTerms } from './profile.js';
+const ownershipOf = (members: number): OwnershipTerms => ({ kind: OWNERSHIP, members });
 export { lineOf } from './profile.js';
+import { found } from './found.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { keyOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -94,10 +96,9 @@ function paramsOf(): ParamDecl[] {
       denominated: 'money' as const,
       unit: 'of its own money, per firm at size one',
       dimension: 'amount' as const,
-      kind: 'placeholder' as const,
-      standsInFor: { mechanism: 'Small-Business Pools A6, Firm Birth', item: '12.1' },
+      kind: 'shape' as const,
       owner: 'model' as const,
-      why: 'Small-Business Pools A3, Seed C4 (0f.9): what the smallest firm in a line opens with; a firm of drawn size s opens with s times this. It stands in for the founding capital a household puts in at item 12.1, and dies there. Sized so that the sector\u2019s drawn tail lands across the size bands of its lattice rather than all in one, which is the resolution 0f.10 tests.',
+      why: 'Small-Business Pools A3, Seed C4 (0f.9, 12.1): what the smallest firm in a line OPENS with at the seed; a firm of drawn size s opens with s times this. An opening condition and a SHAPE: from period one a firm\u2019s capital is what its founders put in (`found.ts`) and what it retained, and nothing reads this again. Sized so that the sector\u2019s drawn tail lands across the size bands of its lattice rather than all in one, which is the resolution 0f.10 tests.',
     },
     {
       id: paramId('smallBusiness.lattice.size.1'),
@@ -241,6 +242,8 @@ export const SMALL_FIRM_LATTICE: LatticeDecl = {
 };
 
 export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
+  /** A4 (12.1): the lines a founder can enter — the sector's, read off the draw (Law 19). */
+  const lines = [...new Set(rows.map((r) => r.line))];
   return {
     id: 'small-business',
     spec: 'Small-Business Pools',
@@ -354,6 +357,26 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
             if (p.status.alive) decide(ctx, p.id);
           }
+        },
+      },
+      {
+        name: 'smallBusiness.found',
+        spec: 'Firm Birth A1 Firm Birth A2 Firm Birth A4 Firm Birth A4.a Small-Business Pools E4',
+        // Firm Birth A4 (12.1): after the households have decided — what a cell has spare and what
+        // it requires are on its plan of this period — and before the session the new firms will
+        // bid in next period.
+        anchor: { after: 'households.decide' },
+        // Firm A3 (12.1): and the wage its region printed, which prices the founder's own hours.
+        reads: [
+          { kind: 'event', name: 'households.plan', of: 'anyPeriod' },
+          { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'smallBusiness.founded' },
+          { kind: 'event', name: 'smallBusiness.notFounded' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          found(ctx, lines);
         },
       },
       {
@@ -541,7 +564,7 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
             creditor: owners.id,
             ccy: ctx.registry.currencyOf(pool.region),
             owed: 0,
-            terms: { kind: OWNERSHIP },
+            terms: ownershipOf(pool.count),
             why: `${String(owners.id)} owns the ${String(pool.count)} ${pool.line} firms at ${String(pool.bank)}`,
           });
         }

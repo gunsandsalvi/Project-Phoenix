@@ -233,7 +233,7 @@ describe('the doors that let something through without looking (item 13b.1)', ()
               ccy: currencyCode('USD'),
               period: period(at),
               price: asPerPiece(at + 1, 'a level under test'),
-              provenance: { kind: 'traded', qty: 1, trades: 1 },
+              provenance: { kind: 'traded', qty: 1, trades: 1, demandAtPrice: 1, supplyAtPrice: 1 },
             });
           }
           const history = store.history(line);

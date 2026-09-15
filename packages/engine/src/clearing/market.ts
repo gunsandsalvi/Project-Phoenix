@@ -460,7 +460,13 @@ export function runMarket(
         period,
         price: outcome.price,
         ccy: m.ccy,
-        provenance: { kind: 'traded', qty: settledVolume, trades: trades.length - failed },
+        provenance: {
+          kind: 'traded',
+          qty: settledVolume,
+          trades: trades.length - failed,
+          demandAtPrice: outcome.demandAtPrice,
+          supplyAtPrice: outcome.supplyAtPrice,
+        },
       });
       deps.journal.record(
         period,

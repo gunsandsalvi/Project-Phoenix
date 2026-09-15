@@ -18,7 +18,18 @@ import { type Option, none, some } from '../core/option.js';
 export type Provenance =
   /** Seed C4: an opening condition, the first clearing's input, not a permanent mark. */
   | { readonly kind: 'opening' }
-  | { readonly kind: 'traded'; readonly qty: number; readonly trades: number }
+  /**
+   * Clearing A2, Firm Birth A4 (12.1): AND WHAT MET AT THAT PRICE — the demand and the supply the
+   * book showed there, so what went unmet is a read of the print and not a number anybody keeps.
+   * An entrant enters where demand is not being met, and this is where that is written.
+   */
+  | {
+      readonly kind: 'traded';
+      readonly qty: number;
+      readonly trades: number;
+      readonly demandAtPrice: number;
+      readonly supplyAtPrice: number;
+    }
   /** E4: no trades this period; the last traded (or opening) print carried, marked stale. */
   | { readonly kind: 'stale'; readonly from: Period; readonly reason: StaleReason }
   | { readonly kind: 'interpolated' }
@@ -55,6 +66,16 @@ export interface Print {
  * one it was carried from when it is stale (E4). How old a mark is belongs with the print, so no
  * reader has to take the provenance apart itself.
  */
+/**
+ * Clearing A2, Firm Birth A4 (12.1): what the book wanted at the print and did not get, in units.
+ * Only a print the session struck carries it; a carried one says nothing about today's book.
+ */
+export function unmetAt(p: Print): Option<number> {
+  return p.provenance.kind === 'traded'
+    ? some(p.provenance.demandAtPrice - p.provenance.qty)
+    : none<number>();
+}
+
 export function struckIn(p: Print): Period {
   return p.provenance.kind === 'stale' ? p.provenance.from : p.period;
 }

@@ -11054,3 +11054,41 @@ assertion is the one that turns. §42 B2 is MET: a cell's row is secured on what
 
 **Checks.** `small-business.test.ts` 18 green; `loans.test.ts` 8 green and 7 pre-existing reds;
 `check:opens` green; lint, typecheck, `check:spec` green.
+
+## Item 12.1 — Firm birth into the small-firm tier
+
+**The mechanism.** A household cell with money spare above its buffer — its own plan's number —
+founds firms in the line whose return on what it costs to start is highest of those that clear
+what it requires of a claim, its plan's number too. The starting cost is a member's period of
+trading: the inputs at the prices the founder sees and the whole machine that batch takes. One
+instruction moves the founders' money out of their own account and into the firms'; the new
+members enter the live cell of their key by an `entry` event, or a cell that did not exist enters
+the world with them — the kernel's `enter` takes a cell now and places it on its lattice the
+moment it exists; and the founders hold the ownership row, which counts the members who run one.
+A refusal is on the record with its reason, every period a household had money spare.
+
+**Found by the measurement, built.** The first cut founded thirty-eight million security firms
+in one period: the return test had no labour in it, so a line that paid anything paid infinitely
+on a starting cost of a dollar; and every member of a cell decides alike, so a cell founded with
+the whole of itself, and again the next period. What was missing was mechanism, not a bound:
+the founder's own hours at the region's printed wage come off what a period brings (Firm A3: a
+line nobody leaves a job for is a line nobody founds); a firm has a person in it, so a household
+founds one per member not already running one, and the count lives on the ownership row; and an
+entrant enters where demand is not being met (A4) — no more firms than the demand the book left
+unmet at the last print, which a traded print now carries (`demandAtPrice`, `supplyAtPrice`) and
+the price store reads (`unmetAt`), a kernel read and not a number anybody keeps.
+
+**Measured, not chased.** No service line has ever traded in the scale model. Every small-firm
+line's print is stale from period 0 — `noDemand` for ten of them (nobody buys a security guard,
+a lesson or a haircut: the basket and the overheads name no service) and `noSupply` for six (the
+small firms in them never offer, because their inputs never trade there). So every household is
+refused with that reason and none founds; the mechanism is complete and its measurement waits on
+a book with two sides. The demand side is positioned at 22 (the recipe) and the supply side at
+12b.3; a founder's hours still offered by its household at 12b; a cell founding all-or-none at
+12a.1/12a.5.
+
+**Coverage.** Firm Birth A1, A2, A2.a, A3, A4 (UNMEASURED), A4.a, A4.b MET; A5 PARTIAL. The
+opening-cash placeholder that died here is a SHAPE now: an opening condition, read once.
+
+**Checks.** `small-business.test.ts` 20 green (founded-or-refused; a cell enters and the
+population accounts for it); `core.test.ts` green; `check:opens` green; lint, typecheck green.

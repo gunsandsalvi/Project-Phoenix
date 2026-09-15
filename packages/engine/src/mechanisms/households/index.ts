@@ -969,6 +969,9 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       budgetPerMember: decided.value.budget,
       wealthPerMember: decided.value.wealth,
       expectedIncome: decided.value.expected,
+      // D5.a, Firm Birth A4 (12.1): what it requires of a claim, per annum — the number a founder
+      // measures a line's margin against. Published, because the module that founds is not this one.
+      requiredPerAnnum: required,
       // C1.d: its budget bound it. A2.g counts these, and a mean-preserving spread moves cells
       // across the threshold while the weighted mean of what they were paid does not move.
       constrained: decided.value.constrained,
