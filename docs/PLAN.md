@@ -8,71 +8,71 @@ The plan has two parts:
 
 - **This file**: what we are building, the rules, the architecture, the contracts, the method, and
   the progress figure. It changes rarely.
-- **`docs/plan/<item>.md`**: one file per worklist item with the detailed implementation of that
-  item, when one has been written. **An item's file is deleted when the item closes** (its outcome
-  moves to `docs/RECORD.md`), so the plan directory holds only what is still to be built — and not
+- **`docs/IMPLEMENTATION.md`**: the one ordered list of open items with their steps. **An item's
+  section is deleted when the item closes** (its outcome moves to `docs/RECORD.md`), so the file
+  holds only what is still to be built — and not
   all of that: six of the nine open items have no file, 13k–13o because their reasoning is the
   worklist row and nothing more, and 14 because its plan is `docs/IMPLEMENTATION.md` item 18. The progress
   figure below counts the steps in those files and takes each item's STATE from the worklist's own
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**Plan completion: 92.9%** (678 of 730 steps across 51 items).
+**Plan completion: 59.1%** (52 of 88 planned steps across 51 items; a closed item's steps are in docs/RECORD.md).
 **Requirement coverage: 65.5%** (899 MET, 105 PARTIAL, 0 OUT OF SCOPE of 1372 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0 — Foundation | 8 | 8 | closed |
-| 1 — Money and settlement, one calendar | 7 | 7 | closed |
-| 2 — Register, clearing, cells, DvP, value, parameters | 12 | 12 | closed |
-| 2a — Kernel/module boundary | 9 | 9 | closed |
-| 3 — The sovereign's funding constraint | 26 | 26 | closed |
-| 4 — Firms, goods, labour, households, outlooks | 34 | 34 | closed |
-| 4a — A line is more than one firm, and firms differ in cost | 9 | 9 | closed |
-| 5 — A loss is an event | 13 | 13 | closed |
-| 6 — Loans are rows | 16 | 16 | closed |
-| 7 — Forced seller, nothing immortal, the estate | 15 | 15 | closed |
-| 8 — Redeemable claims | 12 | 12 | closed |
-| 9 — Equity and dealers | 24 | 24 | closed |
-| 10.1 — The kernel asks a kind what a LOT is carried at | — | — | closed (no item file) |
-| 10 — The cost of capital | 16 | 16 | closed |
-| 10.2 — Every unit has a smallest piece | — | — | closed (no item file) |
-| 10.3 — A quantity is a whole number of indivisible pieces | 15 | 15 | closed |
-| 10.4 — What a lot is carried at, after the marks are taken | — | — | closed (no item file) |
-| 11 — Money market, corridor, bank capital | 32 | 32 | closed |
-| pre12 — The guards that keep the documents true | 16 | 16 | closed |
-| 11.5 — The banking system opens meeting its own liquidity standard | 9 | 9 | closed |
-| 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
-| 11.6 — The module contract: kinds where their behaviour is, markets a participant is in | 7 | 7 | closed |
-| 12a — Reporting and estimates | 26 | 26 | closed |
-| 12b — The balance sheet that takes one step out of true | 6 | 6 | closed |
-| 12b.1 — A price has a smallest piece | 9 | 9 | closed |
-| 12c — The equity book walks away | 5 | 5 | closed |
-| 12c.1 — The suite that got slower every period | 5 | 5 | closed |
-| 12d — The tests catch up with the world | 8 | 8 | closed |
-| 13a — The derivative layer | 17 | 17 | closed |
-| 13b — The derivative classes | 37 | 37 | closed |
-| 13b.1 — The checks that do not check | 17 | 17 | closed |
-| 13c — Commodities and freight | 16 | 16 | closed |
-| 13c.1 — The map, and the things that move on it | 17 | 17 | closed |
-| 13c.2 — The rest of the economy: services, distribution and retail | 11 | 11 | closed |
-| 13d.1 — A cell's key carries its age, its tenure and its wealth | 12 | 12 | closed |
-| 13d — Labour mobility, housing, household life cycle | 26 | 26 | closed |
-| 13e — Trade credit, small-business pools, securitisation | 20 | 20 | closed |
-| 13f — Corporate credit, short-term debt, lending and financing | 38 | 38 | closed |
-| 13g — Corporate development: where a firm builds, what it buys, and what it is in | 24 | 24 | closed |
-| 13h — Insurers, hedge funds, private equity | 37 | 37 | closed |
-| 13i — Cross-border | 21 | 21 | closed |
-| 13j — The other three countries are economies | 14 | 14 | closed |
-| 13k — Periodicity: what does not happen every week | — | — | open (no item file) |
-| 13l — Four central banks, four policy rates | — | — | closed (no item file) |
-| 13m — The built environment: land that gets dearer, commercial property, and ports | — | — | open (no item file) |
-| 13n — Firm birth: somebody starts one | — | — | open (no item file) |
-| 13o — Asset managers with strategies: hedge funds, prime brokerage, the trades nobody puts on | — | — | open (no item file) |
-| 14 — The polity | 14 | 0 | open (plan elsewhere) |
-| 15 — The recipe | 6 | 0 | open (plan elsewhere) |
-| 16 — Measure | 20 | 0 | open (plan elsewhere) |
-| 17 — The app and the APK | 12 | 0 | open (plan elsewhere) |
+| 0 — The world opens | 18 | 18 | closed |
+| 1 | — | — | closed |
+| 2 | — | — | closed |
+| 2a | — | — | closed |
+| 3 | — | — | closed |
+| 4 | — | — | closed |
+| 4a | — | — | closed |
+| 5 | — | — | closed |
+| 6 | — | — | closed |
+| 7 | — | — | closed |
+| 8 | — | — | closed |
+| 9 | — | — | closed |
+| 10.1 | — | — | closed |
+| 10 | — | — | closed |
+| 10.2 | — | — | closed |
+| 10.3 | — | — | closed |
+| 10.4 | — | — | closed |
+| 11 — Small-Business Pools (§42), the rest | 5 | 5 | closed |
+| pre12 | — | — | closed |
+| 11.5 | — | — | closed |
+| 12 — Firm birth, household formation, promotion | 7 | 7 | closed |
+| 11.6 | — | — | closed |
+| 12a — Households borrow, owe and fail; arrears; the immortals | 9 | 9 | closed |
+| 12b — Employment is a standing relation | 6 | 6 | closed |
+| 12b.1 | — | — | closed |
+| 12c — Productivity is an outcome | 3 | 3 | closed |
+| 12c.1 | — | — | closed |
+| 12d — Observation | 4 | 4 | closed |
+| 13a | — | — | closed |
+| 13b | — | — | closed |
+| 13b.1 | — | — | closed |
+| 13c.1 | — | — | closed |
+| 13c.2 | — | — | closed |
+| 13c | — | — | closed |
+| 13d.1 | — | — | closed |
+| 13d | — | — | closed |
+| 13e | — | — | closed |
+| 13f | — | — | closed |
+| 13g | — | — | closed |
+| 13h | — | — | closed |
+| 13i | — | — | closed |
+| 13j | — | — | closed |
+| 13k | — | — | open (no plan section) |
+| 13l | — | — | closed |
+| 13m | — | — | open (no plan section) |
+| 13n | — | — | open (no plan section) |
+| 13o | — | — | open (no plan section) |
+| 14 — Insurers and pensions (§27) | 8 | 0 | open |
+| 15 — Housing and land, the rest | 7 | 0 | open |
+| 16 — Cross-border, the rest | 9 | 0 | open |
+| 17 — Corporate credit, the rest | 12 | 0 | open |
 <!-- progress:end -->
 
 ---
@@ -119,8 +119,8 @@ CLAUDE.md                    the rules digest (in context every session)
 docs/spec/PROJECT_PHOENIX.md the specification (the authority)
 docs/ARCHITECTURE.md         every implementation decision, with the clause it derives from
 docs/PLAN.md                 this file
-docs/plan/<item>.md          the open items, in detail (deleted when closed)
-docs/plan/manifest.json      every item with its step count (for the progress figure)
+docs/IMPLEMENTATION.md       the open items, in detail (a section is deleted when its item closes)
+docs/FINDINGS.md             the review's findings, each positioned in an item
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
@@ -163,7 +163,7 @@ Commands: `npm install`; `npm run check` (lint, typecheck, tests, spec citations
 
 1. Every REASON, VERIFY and FORBID row in `docs/COVERAGE.md` is MET, or OUT OF SCOPE with a stated
    reason. No MISSING and no PARTIAL rows remain.
-2. Every item in `docs/plan/manifest.json` is closed (its file deleted, its record written).
+2. Every item in `docs/IMPLEMENTATION.md` is closed (its section deleted, its record written).
 3. The parameter register reports **zero placeholders**; every remaining shape has a `why` that
    justifies it and its count has only fallen across the record.
 4. All nine audit families are built and hold to dust over the long run with shocks (Part XII's run
@@ -333,7 +333,7 @@ assembly refuses otherwise. Section 8 is the canonical map.
 6. Write the audit contribution: the identities the system makes checkable.
 7. Tests in this order: profiles; one phase on a small assembled world; a year-long green run; property
    tests for any solver or allocation; a determinism test if randomness is drawn.
-8. Cite, re-mark COVERAGE, write the record, delete the item file, update the manifest, commit.
+8. Cite, re-mark COVERAGE, write the record, delete the item section, commit.
 
 ### 4.2 How to replace a system
 
@@ -388,10 +388,10 @@ Do not skip steps; do not reorder them.
 > writer. Those are the mechanism refusing to be built wrong. Fix what is impossible; write down what
 > is merely improbable, because improbable is usually a model that is not finished.
 
-1. **Open.** Take the first open item in `docs/WORKLIST.md`. Open `docs/plan/<item>.md`. Read the
+1. **Open.** Take the first open item in `docs/WORKLIST.md`. Open its section in `docs/IMPLEMENTATION.md`. Read the
    spec sections it lists in full, and the ARCHITECTURE sections it touches.
 2. **Confirm the split.** The item file has sub-items and a step checklist. If the world that has
-   arrived makes a step wrong, change the file (and the manifest's step count) and say why in the
+   arrived makes a step wrong, change the section and say why in the
    record when the item closes. Do not silently skip a step.
 3. **Coverage first.** Mark the rows the sub-item will meet; PARTIAL what it will not.
 4. **Profiles and params.** Declare before use. Every literal is a decision.
@@ -411,7 +411,7 @@ Do not skip steps; do not reorder them.
     one-sided flow, a fact with two writers. Those are fixed where they are, because the engine
     will not run past them — and they are written down too.
 11. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
-    the item file; leave its manifest row with its step count; set the worklist row to done — THAT
+    the item section; set the worklist row to done — THAT
     is what closes an item, and `plan:progress` reads it, so a deleted plan file is not a second way
     of saying so; **position every finding in `docs/IMPLEMENTATION.md`** — into the item that should fix it,
     or as an inserted item of its own, with the record saying where each landed; commit with a
@@ -631,5 +631,5 @@ pass a VERIFY · measure mid-build · leave a TODO.
 
 ## 13. The items
 
-The detailed implementation of each open item is in `docs/plan/`. The progress table at the top
-links to them. Items 0, 1, 2 and 2a are closed; their outcomes are in `docs/RECORD.md`.
+The detailed implementation of each open item is in `docs/IMPLEMENTATION.md`; the progress table
+at the top counts its steps. Items 0, 1, 2 and 2a are closed; their outcomes are in `docs/RECORD.md`.

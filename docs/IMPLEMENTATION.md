@@ -1,7 +1,7 @@
 # Project Phoenix — the implementation
 
 > The one ordered list of what is left (Law 10). Rewritten 2026-09-15 from a full read of every
-> engine source file and every document; findings are in `docs/measurements/2026-09-15-review-findings.md`
+> engine source file and every document; findings are in `docs/FINDINGS.md`
 > and each is positioned in Part 3. **Take the first open item. Tick steps as they close. When an
 > item closes, delete its section and write `docs/RECORD.md`; re-mark `docs/COVERAGE.md` in the same
 > commit.** A step names a file, the change and the test. *Delete* names the read that replaces it.
@@ -252,7 +252,7 @@ Repairs only; each the smallest change that removes the stop at its cause. No de
 
 ## 0c. One truth in the documents; the guards that bite
 
-- [ ] 0c.1 `docs/WORKLIST.md` rows 13k–17 → one row per Part 1 item (same ids, `open`, pointing here); `docs/plan/manifest.json` and `tools/plan-progress.ts` count THIS file's ticked steps; `docs/PLAN.md` progress = *"N of M items closed; check:existence: X MET / Y PARTIAL / Z MISSING / W absent"*, nothing else.
+- [ ] 0c.1 `docs/WORKLIST.md` rows 13k–17 → one row per Part 1 item (same ids, `open`, pointing here); `tools/plan-progress.ts` counts THIS file's ticked steps (done); `docs/PLAN.md` progress = *"N of M items closed; check:existence: X MET / Y PARTIAL / Z MISSING / W absent"*, nothing else.
 - [ ] 0c.2 `docs/COVERAGE.md`: delete the `B-1 to B-8 and B-12` sentence; every `NEVER REACHED` → `UNMEASURED`; `tools/coverage-reached.ts`: a module that produced a public event of its own kind in a 52-period run is REACHED (used at 0d.3).
 - [ ] 0c.3 `docs/RECORD.md`: prepend to entries 10b–11.4, 13c, 13d, 13e, 13h, 13m: *closed on a world that did not assemble or on a mechanism found unreachable (Part 0); measurements void; re-verified at 0d.*
 - [ ] 0c.4 `docs/ARCHITECTURE.md`: `check:opens`; the phase dataflow (0a); the per-kind key (0b); the lattice (0f, written when 0f closes); the observer's read-only contract; `Cash` erases the currency (until 16.0).
@@ -592,7 +592,7 @@ Each when its file is open for another item; file:line and the change.
 
 ## Part 3 — The index
 
-Finding ids are those of `docs/measurements/2026-09-15-review-findings.md`.
+Finding ids are those of `docs/FINDINGS.md`.
 
 | findings | item |
 |---|---|

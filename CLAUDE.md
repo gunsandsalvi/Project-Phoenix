@@ -174,9 +174,9 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   a mill, a dealer, a listed line (`packages/engine/test/rig.ts`), and builds a SCALE MODEL of the
   world rather than the world — same modules, same laws, fewer of each.
 - Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
-  contract, the canonical period) and the item's own file `docs/plan/<item>.md` (design, steps,
-  tests, exit criteria, guard) before writing code. Tick the item's steps (`- [x]`) as they close;
-  run `npm run plan:progress` to recount the completion figure; delete the item file when the item
+  contract, the canonical period) and the item's own section in `docs/IMPLEMENTATION.md` (design, steps,
+  tests, exit) before writing code. Tick the item's steps (`- [x]`) as they close;
+  run `npm run plan:progress` to recount the completion figure; delete the section when the item
   closes. One item, one commit. Write the RECORD entry and re-mark COVERAGE in the same commit.
 - **BUILD FORWARD. EVERY BUG GOES IN `docs/IMPLEMENTATION.md`. TESTS RUN AT THE END OF A MODULE.**
   The three rules the owner set, and they override the instinct to stop and fix:
@@ -196,7 +196,7 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   are — and written down too. Fix what is impossible; record what is merely improbable.
 
   When the item closes, every finding in that file is POSITIONED — moved into the
-  `docs/plan/<item>.md` of the item that should fix it, or inserted as its own item at its
+  `docs/IMPLEMENTATION.md` section of the item that should fix it, or inserted as its own item at its
   dependency position — and the record says where each landed. A finding leaves that file only by
   being placed. THERE IS ONE SUCH FILE AND IT STAYS: it was three (`BUGS.md`, `SWEEP.md`,
   `VERIFY.md`), one per sweep, and what that bought was one defect written three times under three

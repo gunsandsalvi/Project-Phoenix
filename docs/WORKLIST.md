@@ -12,12 +12,9 @@ and `docs/COVERAGE.md` is re-marked, all in one commit (Law 14).
 > fixed on the spot is a violation that stops the build — an impossible quantity, a one-sided flow,
 > a fact with two writers — because the engine will not run past it. See `docs/PLAN.md` §5.
 
-The order follows Part XIII. An open item's detailed implementation is in `docs/plan/<item>.md` when
-one has been written; the file is deleted when the item closes, and `npm run plan:progress` recounts
-the figure in `docs/PLAN.md` from those files and **from the state column here**, which is the one
-place an item's state is written. Six of the nine open items have no file in `docs/plan/`: 13k–13o
-were inserted from a sweep with their reasoning in the row below and nothing more, and **item 14's
-plan is `docs/IMPLEMENTATION.md` item 18**, where it was folded in with the two findings it carries. Item 13
+The order follows Part XIII. An open item's detailed implementation is its section in `docs/IMPLEMENTATION.md`;
+`npm run plan:progress` recounts the figure in `docs/PLAN.md` from those sections and **from the state column
+here**, which is the one place an item's state is written. Item 13
 was split into 13a–13i when the plan was written in full; the split and its order are stated in each
 file's "Read first".
 
