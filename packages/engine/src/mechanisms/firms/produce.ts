@@ -61,7 +61,7 @@ import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
 function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
-  const settled = payrollSettledIn(ctx.journal, String(firm), ctx.period);
+  const settled = payrollSettledIn(ctx, firm, ctx.period);
   return settled.some ? settled.value.paid : asCash(0, 'it employed nobody this period');
 }
 
@@ -75,7 +75,7 @@ function plannedBatch(view: ParticipantView): Qty {
 
 /** Labour C2, Goods B1.c: the hours it has that can make something, this period. */
 function productiveHours(ctx: MechanismContext, firm: PartyId): Qty {
-  const settled = payrollSettledIn(ctx.journal, String(firm), ctx.period);
+  const settled = payrollSettledIn(ctx, firm, ctx.period);
   return settled.some
     ? settled.value.productive
     : asAmount<'piece'>(0, 'a firm that employed nobody has no hours');

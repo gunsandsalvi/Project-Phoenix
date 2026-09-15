@@ -26,6 +26,7 @@ export * from './parties/party.js';
 export * from './register/instruments.js';
 export * from './register/register.js';
 export * from './register/agreements.js';
+export * from './register/employment.js';
 export * from './register/control.js';
 export * from './register/guarantees.js';
 export * from './register/processes.js';

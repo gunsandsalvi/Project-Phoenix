@@ -90,7 +90,7 @@ describe('a deal has four shapes and one mechanism (M&A A4, A5, Equity E3, §29 
       expect(w.parties.has(partyId(target))).toBe(true);
       expect(w.parties.get(partyId(target)).status.alive).toBe(true);
       // And the buyer never paid anybody a wage: that is the test, and it is not a kind.
-      expect(w.journal.lastOf('labour.wages', String(e.data['buyer']))).toBeUndefined();
+      expect(w.employment.everEmployed(String(e.data['buyer']) as never)).toBe(false);
     }
     for (const e of w.journal.ofKind('control.combined')) {
       if (e.data['combined'] !== true) continue;

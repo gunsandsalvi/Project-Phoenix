@@ -1335,6 +1335,30 @@ own book back.
 It is the spine of item 9: the seven private books — employment, lease, invoice, stock loan, loan,
 covenant, deal — are seven kinds of this one noun, and `Mandate` is the eighth.
 
+### The employment register has one home, and wages read it (item 12b.1)
+
+`register/employment.ts` is where the noun lives. The rows were already the kernel's — agreements
+of kind `labour.employment`, indexed by debtor, creditor and kind, succeeded when a party ceases —
+but the READS over them were a labour module's private book: an index in a `WeakMap`, the wage
+bill, the going rate and the headcount, reachable by nobody else. So every other reader of "what
+does this party pay its people" — a bank staffing its desks, a firm costing a batch, the treasury
+posting public service, a small firm's own wage bill — read a TALLY the labour module published once
+a period (`labour.wages`: hours, due, paid, productive, headcount per employer): a stored aggregate
+of the register, re-derived every period and left standing when the rows changed (Law 19, Appendix
+B: no stored aggregate), declared as a read by eight phases across four modules.
+
+Now the kernel declares the kind at assembly (beside the arrear), `register/employment.ts` holds
+the terms — occupation, region, wage per hour, hours per member, `since`, `productiveFrom`,
+`notice`, headcount — and `EmploymentReads` answers every question a mechanism has: the one row a
+worker cell holds, an employer's rows, the rows at a trade and place, the hours under contract, the
+going rate, the headcount employed, an employer's payroll, whether it ever employed anybody. They
+are on `ctx.employment` for a phase and `view.employs()` for a participant, built at the read from
+the store's own indexes. Wages are instructions that read it: `payWages` walks the rows and settles
+one leg each; what is DUE is the row's and what was PAID is the ledger's (`payrollSettledIn` walks
+the period's settled wage legs). The labour module keeps the one thing that is not a fact about a
+row — the trade each cell can work in, noun `skill` — and the `labour.wagesInArrears` agreement it
+wrote beside settlement's arrear on a failed wage is gone (Law 4: one debt, one writer).
+
 ### An agreement can carry the whole PRODUCT, and then a roster becomes an outcome (item 10e.4)
 
 `MandateTerms` carries what a pool may hold, how its investors get in and out, whether it tracks

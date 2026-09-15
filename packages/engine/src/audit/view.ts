@@ -4,6 +4,7 @@
  *
  * @spec Audit A1 Audit C4
  */
+import type { EmploymentReads } from '../register/employment.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { VoyagesRead } from '../world/context.js';
 import type { InstrumentId, PartyId } from '../core/ids.js';
@@ -75,6 +76,8 @@ export interface AuditView {
    * answer rather than the audit reading the world (Audit A1.a).
    */
   readonly agreements: AgreementReads;
+  /** Labour A4 (12b.1): the employment register's reads, for the families that count who works where. */
+  readonly employment: EmploymentReads;
   /**
    * Indices E3, D5: the index rules this world declares, and what each of them reads as. Both, so a
    * check can put the level against the constituents that made it — which is the one thing an index

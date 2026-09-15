@@ -290,7 +290,6 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         anchor: { after: 'labour.pay' },
         reads: [
           { kind: 'event', name: 'environment.state', of: 'anyPeriod' },
-          { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
         ],
         writes: [{ kind: 'event', name: 'firms.produced' }],
         run: (ctx: MechanismContext) => {

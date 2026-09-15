@@ -62,6 +62,7 @@ import type {
   AgreementReads,
   AgreementTerms,
 } from '../register/agreements.js';
+import type { EmploymentReads, EmploymentRow } from '../register/employment.js';
 import { none, some } from '../core/option.js';
 import { instrumentId, partyId } from '../core/ids.js';
 
@@ -609,6 +610,12 @@ export interface ParticipantView extends KernelReads {
    * for it here instead, so the bound is in the question and a new reader cannot forget it.
    */
   lastOwnSince(kind: EventKind, since: Period): Option<Event>;
+  /**
+   * Labour E1, F1, Observer A4 (12b.1): THE PEOPLE IT EMPLOYS — its own live rows of the employment
+   * register, and nobody else's. What its payroll is, is a read over these; it was a tally the
+   * labour module published (`labour.wages`) and every employer read back a copy of its own rows.
+   */
+  employs(): readonly EmploymentRow[];
   /** Derivative Layer C1, G3, Observer A4: its own side of the contract store, and no wider read. */
   readonly contracts: OwnContracts;
   /** A random stream that is this party's own, deterministic in (seed, party, period). */
@@ -1036,6 +1043,13 @@ export interface MechanismContext extends WorldReads {
    * declared it, which is a check and never a cast.
    */
   readonly agreements: AgreementReads;
+  /**
+   * Labour A4, XI-10 (12b.1): THE EMPLOYMENT REGISTER, READ-ONLY — who works where, for how many
+   * hours, at what wage, since when, on what notice; an employer's payroll, a trade's going rate,
+   * the headcount employed. One set of reads over the kernel's rows, so no module keeps an index
+   * of its own and no module publishes a tally for the others to read (Law 4, Law 19).
+   */
+  readonly employment: EmploymentReads;
   /**
    * M&A A4: one party takes control of another, from now, on a named basis.
    *

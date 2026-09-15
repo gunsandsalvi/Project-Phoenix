@@ -117,6 +117,7 @@ import { accountResolver, runCorporateActions } from './actions.js';
 import { type CellDeps, ceaseCell, dieCell, mergeCells, promoteCell, reKeyCell, weightEvent } from './cells.js';
 import type { CellParty } from '../parties/party.js';
 import { succeedAgreements } from './succession.js';
+import { employmentReads, type EmploymentReads } from '../register/employment.js';
 import type { Subject,
   Borrowing,
   ContractsRead,
@@ -250,6 +251,8 @@ export class World {
   private readonly agreementStore: Agreements;
   /** The read face. `owes` and `paidOn` are the writes and they are on the context (Law 4). */
   readonly agreements: AgreementReads;
+  /** Labour A4, XI-10 (12b.1): the employment register's reads, over the same rows. */
+  readonly employment: EmploymentReads;
   /** Reporting A2: the typed read of what companies published. One parse (item 3, Law 4). */
   readonly published: PublishedReads = publishedReads(this.journal);
   /** M&A A4: who controls whom — the relation beside ownership and encumbrance (item 9). */
@@ -367,6 +370,7 @@ export class World {
     this.seed = spec.seed;
     this.agreementStore = new Agreements(spec.agreementKinds);
     this.agreements = agreementReads(this.agreementStore);
+    this.employment = employmentReads(this.agreementStore);
     this.registry = spec.registry;
     this.params = spec.params;
     this.nouns = spec.nouns;
@@ -1726,6 +1730,8 @@ export class World {
         ...this.agreementStore.owedBy(party),
         ...this.agreementStore.owedTo(party),
       ],
+      // Labour E1, F1 (12b.1): its own rows of the employment register — the one place its payroll is.
+      employs: () => this.employment.by(party),
       // Fund Shares A3: the module that owns this party's kind answers, and a kind nobody answers
       // for may trade anything — the absence of a rule is not a prohibition.
       mayTrade: (kind: DerivativeKindId): boolean => {
@@ -2250,6 +2256,7 @@ export class World {
         return row;
       },
       agreements: this.agreements,
+      employment: this.employment,
       announce: (decl) => {
         const row = this.actionStore.announce(decl, this.currentPeriod);
         this.journal.record(
@@ -2609,6 +2616,7 @@ export class World {
       register: this.register,
       contracts: this.contracts,
       agreements: this.agreements,
+      employment: this.employment,
       voyages: this.voyages,
       prices: this.prices,
       valuation: this.valuation,

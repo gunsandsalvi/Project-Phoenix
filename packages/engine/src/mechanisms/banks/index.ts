@@ -1468,7 +1468,6 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
         { kind: 'event', name: 'fund.listedStruck', of: 'anyPeriod' },
         { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
-        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
         { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
         { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
         { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },

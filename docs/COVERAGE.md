@@ -1354,7 +1354,7 @@ measurement is taken there is nothing to name.
 | `Labour A2` | MET | packages/engine/src/mechanisms/labour/index.ts (the venue prices hours in the money of its region) |
 | `Labour A3` | MET | packages/engine/src/mechanisms/labour/data.ts, packages/engine/src/mechanisms/labour/index.ts (one venue per region and occupation; a trade is what a seeker looks for. 13c.2 took it to thirty-eight trades across twenty-odd sectors: a nurse out of work is not a bricklayer's vacancy filled) |
 | `Labour A3.b` | MET | packages/engine/src/mechanisms/labour/matching.ts (13d: two rounds of ONE matching function — every seeker offers in the trade it has, then the ones nobody took offer in the trades they have not. Who moves is whoever the first round left over, and what it costs is TIME: a mover is productive after the hiring lag AND a quarter of retraining, so the employer pays weeks of wages for work it does not yet get. There is no flow rate between occupations anywhere) |
-| `Labour A4` | MET | packages/engine/src/mechanisms/labour/register.ts (a relationship with a firm, a worker, a wage and a start date) |
+| `Labour A4` | MET | packages/engine/src/register/employment.ts (a relationship with a firm, a worker, a wage and a start date); 12b.1: the register has ONE home — `register/employment.ts`: the kind, its terms (employer, worker cell, hours, wage, since, notice, headcount) and every read over the rows, on `ctx.employment` and `view.employs()`; the labour module's private index is gone |
 | `Labour B1` | MET | packages/engine/src/mechanisms/households/index.ts:willWork (a cell will not work below its own outside option, AND it does not offer into a trade paying less than it lives on — the going rate is public, so being out of the workforce is a decision with the wage in it and employers bidding up bring the discouraged back). It is the HOUSEHOLD's decision, posted through `gather`, since item 9.6 |
 | `Labour B2` | MET | packages/engine/src/mechanisms/labour/matching.ts (supply is the cells weights times the hours a person has) |
 | `Labour B3` | MET | packages/engine/src/mechanisms/labour/index.ts (employed, unemployed or inactive, one state each, read from the rows and the cohort) |
@@ -1371,11 +1371,11 @@ measurement is taken there is nothing to name.
 | `Labour D3` | MET | packages/engine/src/mechanisms/labour/matching.ts (whole people are matched from a queue of seekers; hours that do not make a person are no hire) |
 | `Labour D4` | MISSING |  |
 | `Labour D5` | MISSING |  |
-| `Labour E1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage reaches the household cell every period) |
+| `Labour E1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage reaches the household cell every period); 12b.1: wages are instructions that READ the register — one leg per row — and what an employer paid is the ledger's (`registry/wages.ts payrollSettledIn`); the `labour.wages` tally every employer read its own payroll off is gone |
 | `Labour E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the wage is in what a unit costs and therefore in what the firm will make and offer) |
 | `Labour E3` | MET | packages/engine/src/mechanisms/treasury/index.ts (the income base is what named payers actually paid a household, wages included, remitted out of the household's own account) |
 | `Labour E4` | MISSING |  |
-| `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named employer that exists), packages/engine/src/mechanisms/treasury/index.ts (the state employs on the same rows, in the same venue, and its wage leaves its own account like anybody else's) |
+| `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named employer that exists), packages/engine/src/mechanisms/treasury/index.ts (the state employs on the same rows, in the same venue, and its wage leaves its own account like anybody else's); 12b.1: an employer's rows are `view.employs()`, the one read of who works for it |
 | `Labour F2` | MET | packages/engine/src/mechanisms/labour/index.ts (headcount is a count of people and never exceeds the population) |
 | `Labour F3` | MET | packages/engine/src/mechanisms/labour/index.ts (unemployment is a read of the cells with no row; no rate exists anywhere) |
 

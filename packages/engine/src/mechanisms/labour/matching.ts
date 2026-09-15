@@ -26,7 +26,6 @@ import {
   asCash,
   asRatio,
   heldAsMoney,
-  plus,
   ratioOf,
   scale,
 } from '../../core/measure.js';
@@ -47,23 +46,13 @@ import type { AgreementTerms } from '../../register/agreements.js';
  * employment owed, and D2.b ranks it unsecured in the estate. They were one free-text `what` in two
  * spellings, which nothing could dispatch on.
  */
-export const WAGES_IN_ARREARS = agreementKindId('labour.wagesInArrears');
 export const SEVERANCE_IN_ARREARS = agreementKindId('labour.severanceInArrears');
-
-export interface WagesOwed extends AgreementTerms {
-  readonly kind: typeof WAGES_IN_ARREARS;
-  /** Which period's pay did not arrive: two periods of arrears are two rows, not one doubled. */
-  readonly forPeriod: Period;
-}
 
 export interface SeveranceOwed extends AgreementTerms {
   readonly kind: typeof SEVERANCE_IN_ARREARS;
-  /** What ended the employment, which is what the estate's reader needs and the record already has. */
   readonly cause: string;
 }
 
-/** Law 4: one writer of each kind's terms, so a row of it cannot be assembled two ways. */
-export const wagesOwed = (forPeriod: Period): WagesOwed => ({ kind: WAGES_IN_ARREARS, forPeriod });
 export const severanceOwed = (cause: string): SeveranceOwed => ({
   kind: SEVERANCE_IN_ARREARS,
   cause,
@@ -72,23 +61,43 @@ import type { Leg } from '../../ledger/instruction.js';
 import { keyOf, weightOf, type Party, gridPerMember } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
-  allRows,
-  enter,
-  leave,
-  rowsAt,
-  employed,
-  goingRate,
-  hoursAt,
-  rowOfWorker,
+  EMPLOYMENT,
+  employmentOf,
   wagePerMember,
-  type EmploymentBook,
   type EmploymentRow,
-  restate,
-} from './register.js';
-import { addQty, asQty, negQty, NO_QTY, scaleQty, subQty } from '../../core/tick.js';
+  type EmploymentTerms,
+} from '../../register/employment.js';
+import { addQty, asQty, negQty, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
+/**
+ * XI-10 (12b.1): WHAT THIS MODULE KNOWS — the occupation each cell can work in, which is the job it
+ * last held. A person with no history can enter any occupation, at the bottom (A3.b); one with a
+ * trade looks for that trade. The EMPLOYMENTS are the kernel's (`register/employment.ts`); this is
+ * the one thing about a worker the register does not carry, because it is not a fact about a row.
+ */
+export interface SkillBook {
+  skill: Record<string, string>;
+}
+
+export const emptySkills = (): SkillBook => ({ skill: {} });
+
+/** A4, XI-8: the terms of a row as the kernel holds them, for a restatement that changes one. */
+function termsOf(row: EmploymentRow): EmploymentTerms {
+  return {
+    kind: EMPLOYMENT,
+    occupation: row.occupation,
+    region: row.region,
+    wagePerHour: row.wagePerHour,
+    hoursPerMember: row.hoursPerMember,
+    since: row.since,
+    productiveFrom: row.productiveFrom,
+    notice: row.notice,
+    headcount: row.headcount,
+  };
+}
+
 export interface LabourParams {
   /** Law 8: whole hours, as the venue counts somebody's time. A wage is never struck for part of one. */
   readonly hoursPerMember: Qty;
@@ -143,7 +152,7 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
  */
 function eligible(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   v: VenueDecl,
   occupation: string,
   region: RegionId,
@@ -155,7 +164,7 @@ function eligible(
     if (offer.side !== 'sell' || offer.price === 'market' || offer.qty <= 0) continue;
     const cell = ctx.parties.get(offer.party);
     if (!participates(ctx, cell, p.retirementAge) || cell.region !== region) continue;
-    if (rowOfWorker(ctx, book, cell.id) !== undefined) continue;
+    if (ctx.employment.ofWorker(cell.id) !== undefined) continue;
     const skill = book.skill[cell.id];
     const hasTrade = skill === undefined || skill === occupation;
     if (round === 'trade' && !hasTrade) continue;
@@ -171,7 +180,7 @@ function eligible(
  */
 export function runVenue(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   v: VenueDecl,
   p: LabourParams,
   round: Round = 'trade',
@@ -182,7 +191,7 @@ export function runVenue(
   const bids: Order[] = [];
   for (const posting of ctx.posted(v.id)) {
     if (posting.side !== 'buy' || posting.price === 'market') continue;
-    const held = hoursAt(ctx, book, posting.party, occupation, region as RegionId);
+    const held = ctx.employment.hoursAt(posting.party, occupation, region as RegionId);
     const gap = subQty(posting.qty, held, 'employment gap');
     if (!material(gap, 2, addQty(posting.qty, held, 'employment'))) continue;
     // Both sides of this subtraction are counts of hours — what it posted and what it employs —
@@ -269,7 +278,7 @@ function marginalBid(outcome: Cleared): PerPiece | undefined {
 
 function match(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   outcome: Cleared,
   offers: readonly Order[],
   /** D1: the lowest allotted bid, which is what every match is struck at. */
@@ -308,7 +317,7 @@ function match(
 /** A4.b, A4.c: a hire moves a whole number of people, and part of a cell splits off first. */
 function hire(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   employer: PartyId,
   worker: PartyId,
   members: number,
@@ -323,14 +332,15 @@ function hire(
   const hired = ctx.cells.reKey(worker, members, { employment: 'employed' }, `hired by ${employer}`);
   // XI-8: the row IS the commitment, so the kernel writes it and gives it its identity — there is
   // no `book.next` any more, and no employment id this module invented (item 9.1).
-  const row = enter(ctx, book, {
-    employer,
-    worker: hired,
+  // An employment owes NOTHING the instant it is struck: the wage falls due at the end of the
+  // period and is paid then, and a wage that does not arrive is the employer's arrear (Money E1).
+  const terms: EmploymentTerms = {
+    kind: EMPLOYMENT,
     occupation,
     region,
     wagePerHour,
     hoursPerMember: p.hoursPerMember,
-    start: ctx.period,
+    since: ctx.period,
     // C2: finding somebody is not having them; the person is productive after the hiring lag —
     // and after the retraining on top of it when they are changing trade (A3.b). That is what
     // mobility costs, it costs the EMPLOYER, and it is weeks of wages for work it does not get.
@@ -341,8 +351,20 @@ function hire(
         'and what teaching them takes',
       ),
     ),
+    // C3 (12b.1): the notice the job carries — the periods of pay a separation owes (12b.2 runs it).
+    notice: p.severancePeriods,
     headcount: weightOf(ctx.parties.get(hired)),
-  });
+  };
+  const row = employmentOf(
+    ctx.owes({
+      debtor: employer,
+      creditor: hired,
+      ccy: ctx.registry.currencyOf(region),
+      owed: 0,
+      terms,
+      why: `${hired} works for ${employer} as a ${occupation}`,
+    }),
+  );
   book.skill[hired] = occupation;
   ctx.record(
     'labour.hire',
@@ -371,7 +393,7 @@ function hire(
  */
 function shed(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   employer: PartyId,
   occupation: string,
   region: RegionId,
@@ -379,7 +401,7 @@ function shed(
   p: LabourParams,
 ): void {
   let left = hours;
-  const rows = [...rowsAt(ctx, book, employer, occupation, region)].sort((a, b) => b.start - a.start);
+  const rows = ctx.employment.at(employer, occupation, region);
   for (const row of rows) {
     if (left <= 0) break;
     const members = Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate'));
@@ -396,8 +418,8 @@ function shed(
  * somewhere, which is the shape the clause forbids. What triggers it is the party store itself:
  * the row names an employer that is dead, whatever killed it and whoever is winding it up.
  */
-export function release(ctx: MechanismContext, book: EmploymentBook, p: LabourParams): void {
-  for (const row of allRows(ctx, book)) {
+export function release(ctx: MechanismContext, book: SkillBook, p: LabourParams): void {
+  for (const row of ctx.employment.all()) {
     if (ctx.parties.get(row.employer).status.alive) continue;
     separate(ctx, book, row, row.headcount, `${row.employer} ceased`, p);
   }
@@ -410,7 +432,7 @@ export function release(ctx: MechanismContext, book: EmploymentBook, p: LabourPa
  */
 export function separate(
   ctx: MechanismContext,
-  book: EmploymentBook,
+  book: SkillBook,
   row: EmploymentRow,
   members: number,
   cause: string,
@@ -426,12 +448,16 @@ export function separate(
   const worker = ctx.parties.resolve(row.worker).id;
   const gone = ctx.cells.reKey(worker, members, { employment: 'unemployed' }, cause);
   if (whole) {
-    leave(ctx, book, row, cause);
+    // XI-8: TERMINATED and not discharged — the commitment ended by its own terms, and the row
+    // stays in the kernel's book saying so. A job that vanished would leave a severance nothing
+    // could be a severance FROM.
+    ctx.endAgreement(row.id, cause);
   } else {
     // A4.c, Law 15: part of the cell left, so the row's terms changed and the commitment did not.
     // It used to be `row.headcount = ...` on a mutable object in a private book; the kernel's row
     // is frozen, and a change of terms is an event with its own record (item 9.1).
-    restate(ctx, book, row, { headcount: sub(row.headcount, members, 'headcount after separation') });
+    const fewer: EmploymentTerms = { ...termsOf(row), headcount: sub(row.headcount, members, 'headcount after separation') };
+    ctx.restate(row.id, fewer);
   }
   // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
   book.skill[gone] = row.occupation;
@@ -500,62 +526,20 @@ export function separate(
  * A wage that did not settle is a real state (Money E1): the employer had no money, the worker was
  * not paid, and the difference between what was due and what was paid says so.
  */
-export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
-  const bills = new Map<
-    PartyId,
-    { due: Cash; paid: Cash; hours: Qty; productive: Qty; headcount: number }
-  >();
-  for (const row of allRows(ctx, book)) {
+/**
+ * E1, F1 (12b.1): WAGES ARE INSTRUCTIONS THAT READ THE REGISTER. One money leg per row, from the
+ * employer's account to the worker cell's, for what the row says; what was PAID is the ledger's
+ * and what is DUE is the row's, and nothing is tallied beside either. It wrote one `labour.wages`
+ * event per employer — hours, due, paid, productive, headcount — and every other employer read its
+ * own payroll back off that copy (Law 19, Law 4).
+ */
+export function payWages(ctx: MechanismContext): void {
+  for (const row of ctx.employment.all()) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
-    const perMember = wagePerMember(row);
-    const moved = payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, perMember, `wages from ${row.employer}`);
-    const bill = bills.get(row.employer) ?? {
-      due: asCash(0, 'nothing due yet'),
-      paid: asCash(0, 'nothing paid yet'),
-      hours: NO_QTY,
-      productive: NO_QTY,
-      headcount: 0,
-    };
-    const total = scale(perMember, asRatio(row.headcount, 'the people on it'), 'wage bill');
-    const hours = scaleQty(row.hoursPerMember, row.headcount, 'hours under contract');
-    bills.set(row.employer, {
-      due: plus(bill.due, total, 'wages due'),
-      // A-39: what the wire moved, never what the arithmetic asked for.
-      paid: plus(bill.paid, moved, 'wages paid'),
-      hours: addQty(bill.hours, hours, 'hours'),
-      // C2: hours that can make something. Somebody found last period is paid and not yet working.
-      productive: addQty(
-        bill.productive,
-        row.productiveFrom <= ctx.period ? hours : NO_QTY,
-        'productive hours',
-      ),
-      headcount: add(bill.headcount, row.headcount, 'headcount'),
-    });
-  }
-  for (const [employer, bill] of bills) {
-    ctx.record('labour.wages', [employer], { ...bill }, false);
+    payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, wagePerMember(row), `wages from ${row.employer}`);
   }
 }
 
-/**
- * One payment from a named payer to a named cell, per member (XI-15).
- *
- * A-39, Law 5: WHAT ACTUALLY MOVED, and it used to answer whether anything had.
- *
- * This function already knows the number: a wage is paid in whole pieces of the money to each
- * worker separately, so what leaves the employer is `downTick(perMember) x weight` and never the
- * raw `perMember x headcount` its caller was booking. Returning a boolean threw that away, and the
- * caller capitalised the unrounded figure into the batch — so a firm's equity rose by
- * `(perMember - downTick(perMember)) x headcount` every period, for every row, and NOTHING FELL.
- * With headcounts in the millions that is thousands of currency units of equity per firm per
- * period, created out of nothing and compounding through the inventory it was capitalised into.
- *
- * Nothing caught it: `firms.productionCosts` compares the production instruction's equity effect
- * against `firms.started.wages`, and both were `bill.paid` — one number twice, which is A-10 and
- * A-14's shape. The `accounts` family was satisfied because the WIP carried the invented cost.
- *
- * So it returns the money. Zero is a real answer and means exactly what it says: nothing moved.
- */
 function payFrom(
   ctx: MechanismContext,
   payer: PartyId,
@@ -586,24 +570,10 @@ function payFrom(
     amount: share.total,
   };
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
+  // The row it then owes is the ARREAR settlement writes in the same pass (Money E1, 12a.1); the
+  // `labour.wagesInArrears` agreement this wrote beside it was the same debt twice (Law 4).
   const r = ctx.settle({ legs: [leg], cause: 'transfer', reason });
   if (r.outcome === 'settled') return heldAsMoney(share.total, 'what the employer actually paid');
-  /**
-   * A-41, XI-8, Money E1: AN UNPAID WAGE IS STILL OWED, and until now nothing said so.
-   *
-   * Settlement recorded that the employer could not pay and the story ended there: no obligation
-   * anywhere, no claim in the estate if the employer then died, and `shed`'s record saying nothing
-   * was owed. A worker who was not paid is a creditor of the employer like any other, and this is
-   * where that fact lives.
-   */
-  ctx.owes({
-    debtor: payer,
-    creditor: cell,
-    ccy,
-    owed: share.total,
-    terms: wagesOwed(ctx.period),
-    why: reason,
-  });
   return nothing;
 }
 
@@ -614,7 +584,6 @@ function payFrom(
  */
 export function publishGoingRate(
   ctx: MechanismContext,
-  book: EmploymentBook,
   venues: readonly VenueDecl[],
   now: Period,
 ): void {
@@ -624,14 +593,14 @@ export function publishGoingRate(
     const occupation = v.key['occupation'];
     const region = v.key['region'];
     if (occupation === undefined || region === undefined) continue;
-    const rate = goingRate(ctx, book, occupation, region as RegionId);
+    const rate = ctx.employment.goingRate(occupation, region as RegionId);
     if (rate !== undefined) rows[v.id] = rate;
   }
   if (Object.keys(rows).length === 0) return;
   ctx.record(
     'labour.goingRate',
     [],
-    { of: now - 1, wagePerHour: rows, employed: employed(ctx, book) },
+    { of: now - 1, wagePerHour: rows, employed: ctx.employment.employed() },
     true,
   );
 }

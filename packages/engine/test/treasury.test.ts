@@ -119,17 +119,13 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
   it('employs people on rows like any employer, and the wage leaves its own account', () => {
     const w = rigWorld('tsy-f');
     for (let i = 0; i < 12; i += 1) w.step();
-    const rows = Object.values(
-      (w.stateSlots()['labour/employment'] as { rows: Record<string, EmploymentRow> }).rows,
-    );
-    const public_ = rows.filter((r) => r.employer === TREASURY_US);
+    // 12b.1: its rows, off the kernel's employment register.
+    const public_: readonly EmploymentRow[] = w.employment.by(TREASURY_US);
     // Labour F1: the state is an employer, not a payer of a mandate number to a cohort.
     expect(public_.length).toBeGreaterThan(0);
     expect(public_.every((r) => r.headcount > 0 && r.wagePerHour > 0)).toBe(true);
     // What it pays is what its own rows say, and it leaves its account by name.
-    const bill = w.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(TREASURY_US));
-    const last = bill[bill.length - 1];
-    expect(Number(last?.data['paid'])).toBeGreaterThan(0);
+    expect(w.employment.payrollOf(TREASURY_US, w.period).due).toBeGreaterThan(0);
     const account = moneyInstrumentId(w.parties.get(TREASURY_US).bank, USD);
     const workers = new Set(public_.map((r) => r.worker));
     const paid = w.ledger

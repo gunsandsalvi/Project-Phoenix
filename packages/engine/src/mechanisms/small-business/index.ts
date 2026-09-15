@@ -346,7 +346,6 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         // Labour C2 (11.0c): the hours it has under contract are its last wage bill (Clearing F1.a).
         // Capital Programme B1.b (11.2a.2): and what its bank last quoted it is what its money costs.
         reads: [
-          { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
         ],
         // A5, Corporate Credit A1 (11.0e): what a period of trading needs beyond what it has, asked
@@ -387,7 +386,7 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         // After the session that turned what it made into money, and after wages went out: what
         // is left above what its next decision has committed is the owners'.
         anchor: { after: 'markets' },
-        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
+        reads: [],
         writes: [{ kind: 'event', name: 'smallBusiness.drawn' }],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
@@ -455,7 +454,7 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         anchor: { after: 'labour.pay' },
         // Labour C2, Goods B5: the payroll that settled this period — the hours that can make
         // something, and what they cost — is the labour module's own event (Clearing F1.a).
-        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
+        reads: [],
         writes: [{ kind: 'event', name: 'smallBusiness.produced' }],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {

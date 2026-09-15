@@ -645,7 +645,7 @@ function settleTender(
  * that position permanently and this module never has to know what a pool of money is.
  */
 function couldRunIt(ctx: MechanismContext, buyer: PartyId): boolean {
-  return hasEverMetAPayroll(ctx.journal, String(buyer));
+  return hasEverMetAPayroll(ctx, buyer);
 }
 
 /**

@@ -11425,3 +11425,29 @@ reads nothing) and 21.2 (the bank refused at the window). Coverage 68.3%.
 
 **Checks.** `agreement.test.ts` green (six), `mortgage.test.ts` green (four), `arrears.test.ts`
 green (two); `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+
+## Item 12b.1 — The employment register has one home
+
+The rows were the kernel's and the reads were not: who works where, for how many hours, at what
+wage, since when, was indexed and summed inside the labour module, and every other employer read
+its own payroll off a tally that module published once a period. The tally was a stored aggregate
+of the register (Appendix B), re-derived every period and left standing when the rows changed —
+which is how a firm that shed its last worker went on covering the payroll of nobody (0e′) — and
+eight phases across four modules declared it as a read.
+
+`register/employment.ts` is the noun's home now: the kind, declared by the kernel at assembly
+beside the arrear; the terms — occupation, region, wage per hour, hours per member, since,
+productive from, notice, headcount; and every read over the rows, on `ctx.employment` and
+`view.employs()`. Wages are instructions that read it, one leg per row; what is due is the row's
+and what was paid is the ledger's. The labour module keeps the trade each cell can work in (noun
+`skill`) and nothing that is a copy of a row; `labour/register.ts` and the `labour.wages` tally are
+deleted, and so is the `labour.wagesInArrears` agreement written beside settlement's arrear on a
+failed wage — the same debt twice (Law 4). `banks/staff.ts` had no staff map left to delete: it
+read the tally, and reads the register.
+
+**Measured.** Three tests that were red are green — a buyout buyer that never met a payroll, a
+small-firm cell's wage bill, the state's own payroll — and nothing new is red across the world,
+firms, small-business, control, households, treasury and banks suites (31 red of 76, from 34).
+
+**Checks.** `labour.test.ts` at its five reds (12b.3's); `check:opens` green; lint, typecheck,
+spec, forbids, deaths green; `docs/ARCHITECTURE.md` carries the structural decision.

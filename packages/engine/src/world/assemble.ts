@@ -30,6 +30,7 @@ import { type ParamDecl, ParamRegister } from '../registry/params.js';
 import { type NounDecl, OntologyRegister } from '../registry/nouns.js';
 import { KERNEL_PARTY_KINDS, moneyKind } from '../registry/profiles.js';
 import { arrearKind } from '../register/arrears.js';
+import { employmentKind } from '../register/employment.js';
 import { Registry, type RegistryData } from '../registry/registry.js';
 import type { SeedContext } from './context.js';
 import type { SystemModule } from './module.js';
@@ -92,7 +93,9 @@ export function assemble(spec: AssemblySpec): World {
     params,
     nouns,
     calendar,
-    agreementKinds: modules.flatMap((m) => m.agreementKinds ?? []),
+    // Labour A4, XI-10 (12b.1): the employment is the kernel's kind, read by everybody through
+    // `ctx.employment` — declared here beside the arrear rather than by the module that matches it.
+    agreementKinds: [employmentKind, ...modules.flatMap((m) => m.agreementKinds ?? [])],
     families: modules.flatMap((m) => m.families),
   });
   // Audit E2: every capability this assembly declares, named before anything runs, so a sector

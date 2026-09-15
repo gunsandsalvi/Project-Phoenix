@@ -275,7 +275,7 @@ describe('a hire (Labour A4, XI-10)', () => {
     expect(worker?.representation).toBe('cell');
     expect(worker?.representation === 'cell' ? worker.weight : 0).toBe(3);
     // C2: paid from the start, productive after the lag — finding somebody is not having them.
-    expect(row !== undefined && row.productiveFrom > row.start).toBe(true);
+    expect(row !== undefined && row.productiveFrom > row.since).toBe(true);
     const ev = w.journal.ofKind('labour.hire').filter((e) => e.subjects.includes(FIRM_1));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);

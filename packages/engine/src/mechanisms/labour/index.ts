@@ -31,25 +31,19 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { LABOUR_NUMBERS, OCCUPATIONS, type OccupationDecl } from './data.js';
 import {
+  emptySkills,
   payWages,
   publishGoingRate,
   release,
   runVenue,
   SEVERANCE_IN_ARREARS,
-  WAGES_IN_ARREARS,
   type LabourParams,
+  type SkillBook,
 } from './matching.js';
-import {
-  EMPLOYMENT,
-  emptyBook,
-  employmentOf,
-  type EmploymentBook,
-  type EmploymentRow,
-} from './register.js';
+import { EMPLOYMENT, employmentOf, type EmploymentRow } from '../../register/employment.js';
 import type { AuditView } from '../../audit/view.js';
 
 export * from './data.js';
-export * from './register.js';
 
 export const HOURS = unitId('hours');
 
@@ -250,29 +244,9 @@ function workforceIdentity(): Family {
       if (stray.value > 0) {
         v('Labour F2', 'workforce', stray.value, `rows employ people in a region with no population`);
       }
-      /**
-       * A-14, A4.a, F2: AND WHAT THIS MODULE ACTED ON, against what its own register says.
-       *
-       * `payWages` writes one `labour.wages` event per employer it actually billed, and it bills off
-       * the same rows — but it SKIPS an employer that has ceased, and `labour.release` is what is
-       * supposed to have taken those rows out before the audit runs. So the two counts agree in a
-       * world where release did its job and disagree by exactly the rows it left behind. That is a
-       * second reading of employment from a different store, which is what B5 was supposed to be.
-       */
-      const rows = sum([...rowsHere.values()]);
-      const billed = sum(
-        view.journal
-          .ofKindIn('labour.wages', view.period)
-          .map((e) => (typeof e.data['headcount'] === 'number' ? e.data['headcount'] : 0)),
-      );
-      if (rows.value !== billed.value) {
-        v(
-          'Labour A4.a',
-          'workforce',
-          rows.value - billed.value,
-          `the employment book carries ${rows.value} people and ${billed.value} were billed for this period`,
-        );
-      }
+      // A-14, A4.a, F2 (12b.1): the second reading of employment this compared the rows against —
+      // the headcount each employer was billed for, off the `labour.wages` tally — is gone with
+      // the tally; wages are instructions that read the rows, so there is one reading.
       return out;
     },
   };
@@ -355,27 +329,17 @@ function wageIsABid(): Family {
 }
 
 export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): SystemModule {
-  const book = emptyBook();
-  // The observer sees the register as the data it is; the slot holds this very object.
-  const bookOf = (ctx: MechanismContext): EmploymentBook =>
-    ctx.state<EmploymentBook>('employment', () => book);
+  const skills = emptySkills();
+  // The observer sees the book as the data it is; the slot holds this very object.
+  const bookOf = (ctx: MechanismContext): SkillBook => ctx.state<SkillBook>('skill', () => skills);
   const mine = (v: { readonly clearedBy: string }): boolean => v.clearedBy === 'labour';
   return {
     id: 'labour',
+    // Labour A4, XI-10 (12b.1): the EMPLOYMENT is the kernel's kind now (`register/employment.ts`),
+    // and an unpaid wage is the arrear settlement writes (Money E1, 12a.1) — neither is this
+    // module's to declare. What is left is severance a ceased employer owes, which no instruction
+    // ever failed for: nothing was attempted, and the claim ranks unsecured in its estate.
     agreementKinds: [
-      {
-        id: EMPLOYMENT,
-        what: 'a named worker working for a named firm, at a wage, in a trade',
-        // XI-8: a job is somebody's to do. An acquirer that bought the book employs the staff;
-        // an estate has no work to give and the employment ends with the employer.
-        binds: 'aGoingConcern',
-      },
-      {
-        id: WAGES_IN_ARREARS,
-        what: 'wages a worker earned and was not paid',
-        // XI-8: earned and unpaid is a debt, and an estate ranks it with the others.
-        binds: 'whoeverSucceeds',
-      },
       {
         id: SEVERANCE_IN_ARREARS,
         what: 'severance an ended employment owed and did not pay',
@@ -384,12 +348,12 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     ],
     nouns: [
       {
-        name: 'employment',
+        name: 'skill',
         kind: 'physics',
         holds:
           'the trade each household cell can work in, which is the job it last held',
         why:
-          'the EMPLOYMENTS moved to the kernel at item 9.1b and are agreements of kind `labour.employment`; the index over them is a traversal and wants no kernel home (Observer E3). What is left is the SKILL, and it was declared a placeholder for a `View` — which it is not (item 9.9b): a trade is not an opinion about anything, and no module but this one asks. It is not derivable from the employment history either, and the case that says so is `separate`: when part of a cell leaves, the leaver is a NEW cell holding no row, and “an unemployed baker looks for baking” (A3) is exactly the fact that would be lost. XI-10 — who can do what, and what it costs to change — is this module’s subject matter, so the trade lives here by right.',
+          'the EMPLOYMENTS moved to the kernel at item 9.1b and are agreements of kind `labour.employment`, and at 12b.1 the reads over them — the index, the payroll, the going rate, the headcount — moved there too (`register/employment.ts`, `ctx.employment`, `view.employs()`), so nothing here is a copy of a row. What is left is the SKILL, and it was declared a placeholder for a `View` — which it is not (item 9.9b): a trade is not an opinion about anything, and no module but this one asks. It is not derivable from the employment history either, and the case that says so is `separate`: when part of a cell leaves, the leaver is a NEW cell holding no row, and “an unemployed baker looks for baking” (A3) is exactly the fact that would be lost. XI-10 — who can do what, and what it costs to change — is this module’s subject matter, so the trade lives here by right.',
       },
     ],
     spec: 'Labour, XI-10',
@@ -419,7 +383,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
           const b = bookOf(ctx);
           const p = numbers(ctx);
           const venues = ctx.venues.filter(mine);
-          publishGoingRate(ctx, b, venues, ctx.period);
+          publishGoingRate(ctx, venues, ctx.period);
           /**
            * Clearing B2, Law 4, B-6: ASK THE VENUE'S OWN PARTICIPANTS FOR THEIR SCHEDULES.
            *
@@ -448,9 +412,10 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         spec: 'Labour E1 Labour E2 Labour F1',
         anchor: { after: 'markets' },
         reads: [],
-        writes: [{ kind: 'event', name: 'labour.wages' }],
+        // 12b.1: it writes no tally. What is due is the register's and what was paid is the ledger's.
+        writes: [],
         run: (ctx: MechanismContext) => {
-          payWages(ctx, bookOf(ctx));
+          payWages(ctx);
         },
       },
       {

@@ -389,7 +389,7 @@ describe('the period loop', () => {
     // hired and paid, and households bought the finished good from a named seller.
     expect(w.journal.ofKind('firms.started').length).toBeGreaterThan(0);
     expect(w.journal.ofKind('labour.hire').length).toBeGreaterThan(0);
-    expect(w.journal.ofKind('labour.wages').length).toBeGreaterThan(0);
+    expect(w.ledger.all().some((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'wage'))).toBe(true);
     // A GOOD, not any asset: this counted sovereign paper until item 4a, so it passed while the
     // households were buying no food at all. What it is for is the last link of the chain.
     const cells = new Set(w.parties.ofKind(HOUSEHOLD).map((p) => p.id));
@@ -689,7 +689,7 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
     // A4: the inspector's product is the whole of it — the employment rows, the inventories a
     // module tracks, the outlook book. Derived at the read; the engine never reads it back (E3).
     expect(inspector.state).not.toBeNull();
-    expect(Object.keys(inspector.state ?? {})).toContain('labour/employment');
+    expect(Object.keys(inspector.state ?? {})).toContain('labour/skill');
     expect(inspector.outlooks.length).toBeGreaterThan(0);
     // XI-14: every number that shapes behaviour is declared, and the placeholders name their death.
     expect(inspector.params.placeholders.every((x) => x.item.length > 0)).toBe(true);

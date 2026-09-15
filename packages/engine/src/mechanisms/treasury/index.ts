@@ -208,7 +208,7 @@ function mandatePerPeriod(ctx: MechanismContext, id: PartyId): Cash {
 
 /** What its own payroll came to last time it was paid, read from its own record (Law 19). */
 function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
-  const own = ownPayrollOf(ctx.journal, String(id), ctx.period);
+  const own = ownPayrollOf(ctx, id, ctx.period);
   return own.some ? own.value.due : asCash(0, 'a treasury that has published no payroll');
 }
 
@@ -221,7 +221,7 @@ function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
  */
 function wageItFaces(ctx: MechanismContext, id: PartyId): PerPiece | undefined {
   const region = ctx.parties.get(id).region;
-  const facing = wageFacingParty(ctx.journal, String(id), ctx.period, region);
+  const facing = wageFacingParty(ctx, id, ctx.period, region);
   return facing.some ? facing.value : undefined;
 }
 
@@ -397,7 +397,6 @@ export const treasury: SystemModule = {
       spec: 'Treasury D1 Treasury D4 Sovereign A2 Sovereign C1',
       anchor: { after: 'corporateActions' },
       reads: [
-        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
         { kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' },
       ],
       writes: [
@@ -423,7 +422,6 @@ export const treasury: SystemModule = {
       reads: [
         { kind: 'event', name: 'auction.result', of: 'anyPeriod' },
         { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
-        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
         { kind: 'event', name: 'treasury.programme', of: 'anyPeriod' },
         { kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' },
       ],
@@ -442,7 +440,6 @@ export const treasury: SystemModule = {
       anchor: { before: 'labour.match' },
       reads: [
         { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
-        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
       ],
       writes: [],
       run: (ctx: MechanismContext): void => {

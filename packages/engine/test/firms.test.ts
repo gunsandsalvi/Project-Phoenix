@@ -112,6 +112,13 @@ function last(w: World, kind: EventKind, subject: string): Event | undefined {
   return list[list.length - 1];
 }
 
+/** 12b.1: the settled instructions in which this party paid a wage (Law 19: the ledger, not a tally). */
+function wagesPaidBy(w: World, who: string) {
+  return w.ledger
+    .all()
+    .filter((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'wage' && String(l.from.holder) === who));
+}
+
 describe('what a firm decides (Firm E1, E2, E6)', () => {
   it('decides nothing about making or employing until it has sold something (Goods B1)', () => {
     const w = grainWorld();
@@ -240,10 +247,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     }
     // A period in which it paid a wage bill and started no batch: the cost stands where it fell,
     // in the period it was incurred, and nothing was capitalised into anything.
-    const idlePeriods = w.journal
-      .ofKind('labour.wages')
-      .filter((e) => e.subjects.includes(FIRM_1) && Number(e.data['paid']) > 0)
-      .map((e) => e.period)
+    const idlePeriods = [...new Set(wagesPaidBy(w, FIRM_1).map((r) => r.instruction.period))]
       .filter((at) => !events(w, 'firms.started', FIRM_1).some((e) => e.period === at));
     expect(idlePeriods.length).toBeGreaterThan(0);
     for (const at of idlePeriods) {
@@ -280,10 +284,12 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     expect(started).toBeLessThan(planned);
     // B5.b: the line's whole cost for the period lands on the batch it managed to start, so a
     // throttled period IS a higher unit cost — which is what running a line below its rate does.
-    const wageBill = w.journal
-      .ofKind('labour.wages')
-      .find((e) => e.period === throttled?.period && e.subjects.includes(mill));
-    expect(wages).toBe(wageBill?.data['paid']);
+    // 12b.1: what it paid is what the wire moved — every settled wage leg out of its account.
+    const wageBill = wagesPaidBy(w, mill)
+      .filter((r) => r.instruction.period === throttled?.period)
+      .flatMap((r) => r.instruction.legs)
+      .reduce((t, l) => t + (l.kind === 'money' && l.receipt?.of === 'wage' && String(l.from.holder) === mill ? l.amount : 0), 0);
+    expect(wages).toBe(wageBill);
     expect(cost / started).toBeGreaterThan(cost / planned);
   });
 });

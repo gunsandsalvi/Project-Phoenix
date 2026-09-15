@@ -404,7 +404,7 @@ export function produce(ctx: MechanismContext, cell: PartyId): void {
   // Labour C2: what can be started NOW is bounded by the hours actually paid for this period —
   // its members' and what its payroll settled — and by what it decided; a hire found this period
   // is paid and not yet working, and that is a real shortage rather than a plan gone wrong.
-  const settled = payrollSettledIn(ctx.journal, String(cell), ctx.period);
+  const settled = payrollSettledIn(ctx, cell, ctx.period);
   const hoursNow = addQty(ownHours(view), settled.some ? settled.value.productive : NO_QTY, 'the hours it has');
   const batch = atMost(slot.batch, canStart(view, l, hoursNow), 'it starts what its hours and its stock reach');
   if (batch <= 0) return;

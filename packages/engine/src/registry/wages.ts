@@ -22,91 +22,62 @@
  * a zero (App A).
  */
 import { period as periodOf, type Period } from '../calendar/calendar.js';
-import { asAmount, asCash, asPerPiece, type Cash, type PerPiece, pricedAt } from '../core/measure.js';
-import type { Qty } from '../core/tick.js';
-import type { RegionId, VenueId } from '../core/ids.js';
+import { asCash, asPerPiece, asRatio, type Cash, heldAsMoney, type PerPiece, plus, pricedAt, scale } from '../core/measure.js';
+import { addQty, NO_QTY, type Qty, scaleQty } from '../core/tick.js';
+import type { PartyId, RegionId, VenueId } from '../core/ids.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
+import type { SettlementRecord } from '../ledger/instruction.js';
+import { type EmploymentReads, type EmploymentRow, wagePerMember } from '../register/employment.js';
 
-/** What the labour module publishes about a payroll, and about what an hour cleared at. */
-const OWN_PAYROLL = 'labour.wages';
 const GOING_RATE = 'labour.goingRate';
 const PRINTED_WAGE = 'labour.print';
 
-/** The narrow door: a party's own last event of a kind, and the last public one. */
+/**
+ * 12b.1: WHAT A PARTY PAYS ITS PEOPLE IS ITS ROWS. `ownPayroll` was a read of the `labour.wages`
+ * tally the labour module published once a period — hours, due, paid, productive, headcount per
+ * employer — a stored aggregate of the register re-derived every period (Appendix B) and left
+ * standing when the rows changed. It is the register now (`view.employs()`, `ctx.employment`), and
+ * what was PAID is the ledger's.
+ */
 export interface WageReads {
-  lastOwnSince(kind: string, since: Period): Option<Event>;
   lastPublic(kind: string): Option<Event>;
+  employs(): readonly EmploymentRow[];
 }
 
-/**
- * A-33, Law 8: THE PERIOD A WAGE BILL IS STILL CURRENT IN.
- *
- * `labour.pay` settles in cycle 2, so a reader in an earlier cycle of period p means the bill of
- * p−1 and one after it means p's own; either is current. Anything OLDER belongs to an employer that
- * has employed nobody since — `payWages` writes an event only for an employer with rows — and
- * reading it as current is how a firm that shed its last worker went on force-selling stock to
- * cover a payroll of nobody for the rest of the run (A-60).
- */
 export function payrollSince(at: Period): Period {
   return at > 0 ? periodOf(at - 1) : at;
 }
 
-/** What a party's own last wage bill came to, and over how many hours. */
 export interface OwnPayroll {
-  /** Labour C2: the hours it has UNDER CONTRACT — with a hiring lag, the hours that can work now. */
   readonly hours: Qty;
-  /** Labour D1: what that bill came to, which is what it is committed to pay out. */
   readonly due: Cash;
 }
 
-/**
- * Labour C2, D1, Law 4, Law 19: A PARTY'S OWN LAST PAYROLL, extracted ONCE.
- *
- * Five call sites in three modules used to reach for `labour.wages` themselves and pull `hours` or
- * `due` out of its data — five copies of one extraction, each with its own idea of what a missing
- * field meant. The kinds a module may not name are named here (`phoenix/no-cross-module-event-read`),
- * and so is what the fields mean when they are read back.
- *
- * A party with no bill since `payrollSince` has employed nobody since, and that is NOTHING rather
- * than a zero (App A): a caller that wants a zero says so at its own site and says why.
- */
-export function ownPayroll(reads: WageReads, at: Period): Option<OwnPayroll> {
-  const own = reads.lastOwnSince(OWN_PAYROLL, payrollSince(at));
-  if (!own.some) return none<OwnPayroll>();
-  const hours = own.value.data['hours'];
-  const due = own.value.data['due'];
-  if (typeof hours !== 'number' || typeof due !== 'number') return none<OwnPayroll>();
-  // Item 16: a published number re-enters the type system here, through the dimension's own door.
-  return some({
-    hours: asAmount<'piece'>(hours, 'the hours it paid for'),
-    due: asCash(due, 'what its wage bill came to'),
-  });
+/** E1: what its rows say it has under contract and owes for it — nothing when it employs nobody. */
+export function ownPayroll(reads: Pick<WageReads, 'employs'>, at: Period): Option<OwnPayroll> {
+  const rows = reads.employs();
+  if (rows.length === 0) return none<OwnPayroll>();
+  let hours = NO_QTY;
+  let due = asCash(0, 'nothing due yet');
+  for (const r of rows) {
+    if (r.since > at) continue;
+    hours = addQty(hours, scaleQty(r.hoursPerMember, r.headcount, 'hours under contract'), 'hours');
+    due = plus(due, scale(wagePerMember(r), asRatio(r.headcount, 'the people on it'), 'wage bill'), 'wages due');
+  }
+  return some({ hours, due });
 }
 
-/**
- * D1.c, E2: what an hour costs the party asking, in the venue it would hire in. Its own wage bill
- * over its own hours where it has one; what that venue last cleared at where it has not; and
- * NOTHING where it has neither, which is an employer that has never met a wage.
- */
 export function wageFacing(reads: WageReads, at: Period, venue: VenueId): Option<PerPiece> {
   const own = ownPayroll(reads, at);
   if (own.some && own.value.hours > 0) {
-    // Item 16: its own wage bill re-enters here — what it paid, over the hours it paid for.
-    return some(pricedAt(own.value.due, own.value.hours, 'what an hour cost it'));
+    // Item 16: its own wage bill re-enters here — what it owes, over the hours it owes it for.
+    return some(pricedAt(own.value.due, own.value.hours, 'what an hour costs it'));
   }
   return goingRateIn(reads, venue);
 }
 
-/**
- * Labour D1.c: WHAT A TRADE ACTUALLY PAYS, published every period and public to everybody.
- *
- * Keyed by the VENUE, because that is what `publishGoingRate` writes. One region's trade is one
- * venue, so the venue IS the (region, occupation) an employer would hire in and a cell would offer
- * its members' hours into. A trade NOBODY is employed in has no going rate, which is nothing rather
- * than a zero — and is how a new trade gets its first worker at all.
- */
-export function goingRateIn(reads: WageReads, venue: VenueId): Option<PerPiece> {
+export function goingRateIn(reads: Pick<WageReads, 'lastPublic'>, venue: VenueId): Option<PerPiece> {
   const published = reads.lastPublic(GOING_RATE);
   if (!published.some) return none<PerPiece>();
   const rates = published.value.data['wagePerHour'];
@@ -119,44 +90,26 @@ export function goingRateIn(reads: WageReads, venue: VenueId): Option<PerPiece> 
 }
 
 /* --------------------------------------------------------------------------------------------
- * THE SAME QUESTIONS, ASKED ABOUT A NAMED PARTY.
- *
- * A participant asks about itself and gets `ownPayroll`. A phase asks about a party it is running
- * for and has only the journal, so it asked the wire directly — and the treasury module ended up
- * with its own `currentPayroll`, its own `payrollSince`, and its own `wageFacing`, which is the
- * THIRD copy of the formula this file exists to hold (Law 4). These are that same read with the
- * other door: what a phase has is a journal, so the journal is what they take.
+ * THE SAME READS FOR A PHASE, ABOUT A NAMED PARTY
  * ------------------------------------------------------------------------------------------ */
 
-/** The phase-scoped door: the wire, asked about a named party or a named kind. */
 export interface PartyWageReads {
-  forSubject(kind: string, subject: string): readonly Event[];
   ofKind(kind: string): readonly Event[];
-  lastOf(kind: string, subject: string): Event | undefined;
 }
 
-/** Labour C2, D1, A-33: a named party's own last payroll, if it is still current. */
-export function ownPayrollOf(reads: PartyWageReads, who: string, at: Period): Option<OwnPayroll> {
-  const events = reads.forSubject(OWN_PAYROLL, who);
-  const last = events[events.length - 1];
-  if (last === undefined || last.period < payrollSince(at)) return none<OwnPayroll>();
-  const hours = last.data['hours'];
-  const due = last.data['due'];
-  if (typeof hours !== 'number' || typeof due !== 'number') return none<OwnPayroll>();
-  // Item 16: a published number re-enters the type system here, through the dimension's own door.
-  return some({
-    hours: asAmount<'piece'>(hours, 'the hours it paid for'),
-    due: asCash(due, 'what its wage bill came to'),
-  });
+/** The doors a phase has: the register for the rows, the ledger for what moved, the wire for prints. */
+export interface PayrollReads {
+  readonly employment: Pick<EmploymentReads, 'payrollOf' | 'everEmployed'>;
+  readonly journal: PartyWageReads;
+  readonly ledger: { inPeriod(period: Period): readonly SettlementRecord[] };
 }
 
-/**
- * Labour E2, Expectations A2.a: what the labour venue LAST PRINTED where a party is.
- *
- * Region-scoped, because an hour is hired in a place: a state reading the last print anywhere was
- * reading another country's wage whenever that country printed later, which is a wage in the wrong
- * money as often as not (0e′.1). A region that has never printed has nothing, which is a refusal.
- */
+export function ownPayrollOf(reads: Pick<PayrollReads, 'employment'>, who: PartyId, at: Period): Option<OwnPayroll> {
+  const p = reads.employment.payrollOf(who, at);
+  if (p.headcount === 0) return none<OwnPayroll>();
+  return some({ hours: p.hours, due: p.due });
+}
+
 export function wagePrintedIn(reads: PartyWageReads, region: RegionId): Option<PerPiece> {
   let last: PerPiece | undefined;
   for (const e of reads.ofKind(PRINTED_WAGE)) {
@@ -168,52 +121,43 @@ export function wagePrintedIn(reads: PartyWageReads, region: RegionId): Option<P
   return last === undefined ? none<PerPiece>() : some(last);
 }
 
-/** D1.c, E2: `wageFacing` for a party a phase names — its own bill first, its region's print after. */
 export function wageFacingParty(
-  reads: PartyWageReads,
-  who: string,
+  reads: Pick<PayrollReads, 'employment' | 'journal'>,
+  who: PartyId,
   at: Period,
   region: RegionId,
 ): Option<PerPiece> {
   const own = ownPayrollOf(reads, who, at);
   if (own.some && own.value.hours > 0) {
-    return some(pricedAt(own.value.due, own.value.hours, 'what an hour cost it'));
+    return some(pricedAt(own.value.due, own.value.hours, 'what an hour costs it'));
   }
-  return wagePrintedIn(reads, region);
+  return wagePrintedIn(reads.journal, region);
 }
 
-/** What a payroll SETTLED to this period: what went out, and the hours that can make something. */
 export interface PayrollSettled {
   readonly paid: Cash;
   readonly productive: Qty;
 }
 
 /**
- * Labour C2, Goods B1.c: the payroll a named party actually PAID in a period — a different fact
- * from what it owes, and the one a firm making something this period runs on.
+ * E1, Law 19: WHAT IT PAID ITS PEOPLE THIS PERIOD is what the wire moved — every settled wage leg
+ * out of its own account — and the hours that can make something are the rows' (C2).
  */
-export function payrollSettledIn(
-  reads: PartyWageReads,
-  who: string,
-  at: Period,
-): Option<PayrollSettled> {
-  const events = reads.forSubject(OWN_PAYROLL, who).filter((e) => e.period === at);
-  const last = events[events.length - 1];
-  if (last === undefined) return none<PayrollSettled>();
-  const paid = last.data['paid'];
-  const productive = last.data['productive'];
-  if (typeof paid !== 'number' || typeof productive !== 'number') return none<PayrollSettled>();
-  // Item 16: two published numbers re-enter the type system here, through their own doors.
-  return some({
-    paid: asCash(paid, 'what it paid its people'),
-    productive: asAmount<'piece'>(productive, 'the hours that can make something'),
-  });
+export function payrollSettledIn(reads: PayrollReads, who: PartyId, at: Period): Option<PayrollSettled> {
+  const p = reads.employment.payrollOf(who, at);
+  if (p.headcount === 0) return none<PayrollSettled>();
+  let paid = asCash(0, 'nothing paid yet');
+  for (const r of reads.ledger.inPeriod(at)) {
+    if (r.outcome !== 'settled') continue;
+    for (const l of r.instruction.legs) {
+      if (l.kind !== 'money' || l.receipt?.of !== 'wage' || l.from.holder !== who) continue;
+      paid = plus(paid, heldAsMoney(l.amount, 'a wage it paid'), 'wages paid');
+    }
+  }
+  return some({ paid, productive: p.productive });
 }
 
-/**
- * §35 A4, §29 A5: WHETHER A PARTY HAS EVER MET A PAYROLL — the whole test of whether it could run
- * a business rather than merely own one. A fact off the wire, not a label (Law 15).
- */
-export function hasEverMetAPayroll(reads: PartyWageReads, who: string): boolean {
-  return reads.lastOf(OWN_PAYROLL, who) !== undefined;
+/** Whether this party has ever employed anybody: a row of its in the register, live or ended. */
+export function hasEverMetAPayroll(reads: Pick<PayrollReads, 'employment'>, who: PartyId): boolean {
+  return reads.employment.everEmployed(who);
 }
