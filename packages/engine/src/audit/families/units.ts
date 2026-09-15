@@ -37,16 +37,8 @@ export function unitsFamily(memory: AuditMemory): Family {
       // what was used up. The two records are independent — the instrument's issued total and the
       // legs that said why units appeared or left — so a unit conjured or lost shows here.
       if (memory.period !== undefined && memory.period !== view.period) {
-        const made = new Map<string, number[]>();
-        for (const r of view.ledger.inPeriod(view.period)) {
-          if (r.outcome !== 'settled') continue;
-          for (const leg of r.instruction.legs) {
-            if (leg.kind !== 'create' && leg.kind !== 'destroy') continue;
-            const list = made.get(leg.instrument) ?? [];
-            list.push(leg.kind === 'create' ? leg.qty : negQty(leg.qty, 'what left the world'));
-            made.set(leg.instrument, list);
-          }
-        }
+        // 0g.2: what was made and used up, indexed by the ledger as each record was appended.
+        const made = view.ledger.deltasIn(view.period).made;
         for (const i of view.instruments.all()) {
           if (view.registry.instrumentKind(i.kind).physical !== true) continue;
           const before = zeroIfNone(memory.issued.get(i.id));

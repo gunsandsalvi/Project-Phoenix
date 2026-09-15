@@ -29,18 +29,13 @@ export function flowsFamily(memory: AuditMemory): Family {
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
       if (memory.period === undefined || memory.period === view.period) return out;
+      // 0g.2: the period's deltas, indexed by the ledger as each record was appended (Law 19: the
+      // record itself, arranged; never a copy this family keeps). Copied into working maps here
+      // because the weight events below add to the holding side.
+      const indexed = view.ledger.deltasIn(view.period);
       const holdingDeltas = new Map<string, Qty[]>();
-      const issuedDeltas = new Map<string, Qty[]>();
-      for (const r of view.ledger.inPeriod(view.period)) {
-        if (r.outcome !== 'settled') continue;
-        for (const d of r.deltas) {
-          const map = d.target === 'holding' ? holdingDeltas : issuedDeltas;
-          const key = d.target === 'holding' ? holdingKey(d.party, d.instrument) : d.instrument;
-          const list = map.get(key) ?? [];
-          list.push(d.qty);
-          map.set(key, list);
-        }
-      }
+      for (const [key, list] of indexed.holding) holdingDeltas.set(key, [...list]);
+      const issuedDeltas = indexed.issued;
       // Register E4, E5, Equity D4: a SPLIT restates the unit a line is counted in. No units
       // changed hands and no money moved — the event says so — so the identity is not "what the
       // legs did" but "what the legs did to a balance that was restated first". The ratio is on

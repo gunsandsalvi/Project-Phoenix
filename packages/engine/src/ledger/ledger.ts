@@ -5,8 +5,31 @@
  * @spec Money D1 Money D1.a Money D1.b Money E1 Money E2 Money E2.a Register C3.b
  */
 import type { Period } from '../calendar/calendar.js';
-import type { InstructionId } from '../core/ids.js';
+import type { InstructionId, InstrumentId } from '../core/ids.js';
+import type { Qty } from '../core/tick.js';
+import { negQty } from '../core/tick.js';
 import { subjectsOf, type Failed, type SettlementRecord } from './instruction.js';
+
+/**
+ * 0g.2, Law 18: WHAT A PERIOD'S SETTLED RECORDS DID, indexed as they are appended. The audit
+ * families used to rebuild these three maps from the period's records every period, each family
+ * its own walk (`flows`, `money`, `units`); they are the same deltas under a second arrangement,
+ * written by the one writer that appends the record, so there is nothing to go stale (Law 4).
+ */
+export interface PeriodDeltas {
+  /** Holding deltas by `holder|instrument`, in the order they settled. */
+  readonly holding: ReadonlyMap<string, readonly Qty[]>;
+  /** Issued deltas by instrument, in the order they settled. */
+  readonly issued: ReadonlyMap<InstrumentId, readonly Qty[]>;
+  /** Units created (+) and destroyed (−) by instrument, off the `create`/`destroy` legs. */
+  readonly made: ReadonlyMap<InstrumentId, readonly Qty[]>;
+}
+
+interface MutableDeltas {
+  readonly holding: Map<string, Qty[]>;
+  readonly issued: Map<InstrumentId, Qty[]>;
+  readonly made: Map<InstrumentId, Qty[]>;
+}
 
 export class Ledger {
   private readonly records: SettlementRecord[] = [];
@@ -24,6 +47,8 @@ export class Ledger {
    * Only the failures are indexed: they are the ones a party reads back, and they are rare.
    */
   private readonly failedBy = new Map<string, Failed[]>();
+  /** 0g.2: the period's deltas, written at `append`. */
+  private readonly deltasBy = new Map<Period, MutableDeltas>();
   private next = 1;
 
   /** The next instruction number; settlement stamps it on the instruction it is about to apply. */
@@ -40,7 +65,33 @@ export class Ledger {
     const list = this.byPeriod.get(at);
     if (list === undefined) this.byPeriod.set(at, [r]);
     else list.push(r);
-    if (r.outcome !== 'failed') return;
+    if (r.outcome === 'settled') {
+      let d = this.deltasBy.get(at);
+      if (d === undefined) {
+        d = { holding: new Map(), issued: new Map(), made: new Map() };
+        this.deltasBy.set(at, d);
+      }
+      for (const delta of r.deltas) {
+        if (delta.target === 'holding') {
+          const key = `${delta.party}|${delta.instrument}`;
+          const list = d.holding.get(key);
+          if (list === undefined) d.holding.set(key, [delta.qty]);
+          else list.push(delta.qty);
+        } else {
+          const list = d.issued.get(delta.instrument);
+          if (list === undefined) d.issued.set(delta.instrument, [delta.qty]);
+          else list.push(delta.qty);
+        }
+      }
+      for (const leg of r.instruction.legs) {
+        if (leg.kind !== 'create' && leg.kind !== 'destroy') continue;
+        const signed = leg.kind === 'create' ? leg.qty : negQty(leg.qty, 'what left the world');
+        const list = d.made.get(leg.instrument);
+        if (list === undefined) d.made.set(leg.instrument, [signed]);
+        else list.push(signed);
+      }
+      return;
+    }
     for (const who of subjectsOf(r.instruction)) {
       const mine = this.failedBy.get(who);
       if (mine === undefined) this.failedBy.set(who, [r]);
@@ -71,10 +122,16 @@ export class Ledger {
     return this.byPeriod.get(period) ?? EMPTY;
   }
 
+  /** 0g.2: what the period's settled records did, by holding, by issued line and by unit made. */
+  deltasIn(period: Period): PeriodDeltas {
+    return this.deltasBy.get(period) ?? NO_DELTAS;
+  }
+
   get length(): number {
     return this.records.length;
   }
 }
 
 const EMPTY: readonly SettlementRecord[] = Object.freeze([]);
+const NO_DELTAS: PeriodDeltas = Object.freeze({ holding: new Map(), issued: new Map(), made: new Map() });
 const EMPTY_FAILED: readonly Failed[] = Object.freeze([]);

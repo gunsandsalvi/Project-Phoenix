@@ -70,13 +70,8 @@ export function moneyFamily(memory: AuditMemory): Family {
         for (const id of moneyInstruments) {
           const before = zeroIfNone(memory.issued.get(id));
           const now = view.instruments.get(id).issued;
-          const legs: number[] = [];
-          for (const r of view.ledger.inPeriod(view.period)) {
-            if (r.outcome !== 'settled') continue;
-            for (const d of r.deltas)
-              if (d.instrument === id && d.target === 'issued') legs.push(d.qty);
-          }
-          const s = sum(legs);
+          // 0g.2: the period's issued deltas, indexed by the ledger as they were appended.
+          const s = sum(view.ledger.deltasIn(view.period).issued.get(id) ?? []);
           const change = sum([now, negQty(before, 'the other way')]);
           // Law 7: `issued` is a running total moved once per creation and once per destruction,
           // so the comparison is a carried balance and not two readings (see carriedDust).

@@ -57,7 +57,7 @@ export interface AuditView {
     Valuation,
     'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
-  readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
+  readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length' | 'deltasIn'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
   readonly markets: readonly MarketDecl[];
   /**

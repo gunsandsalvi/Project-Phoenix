@@ -10697,3 +10697,15 @@ the cell's own `DECIDED` working store, and the venue reads them. A cell with no
 still costs its basket and still offers its hours for what feeds its people, so the ladder's first
 rung is byte-identical (events, sessions, money per member, the going rate) at 94 ms a period
 from 98. The rest of 0g.5's sites stay listed; this was the one the profile named.
+
+## Item 0g.2a — The period's deltas, indexed where the record is appended
+
+Three kernel families rebuilt the same maps from a period's settled records every period — holding
+deltas by holder and line, issued deltas by line, units made and used up — each with its own walk.
+The ledger writes those maps as it appends each record, the one writer of the record, and the
+families read them (`Ledger.deltasIn`). The money family's per-instruction netting (C2.c) still
+walks the records, because it is a check per instruction and there is nothing to index. First rung
+94 → 88 ms a period, everything else byte-identical; third rung at eight periods 931 ms from 992.
+The remaining readers on 0g.2's list are module walks the third-rung profile does not name (no
+family or module walk above three per cent), so they stay listed and are taken when a profile
+names them rather than as churn (Law 18: gate on behaviour, and on a number).
