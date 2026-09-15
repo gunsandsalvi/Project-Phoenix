@@ -90,6 +90,19 @@ import {
 import { downTick, type Qty, upTick } from '../../core/tick.js';
 import { ownPayrollOf, wageFacingParty } from '../../registry/wages.js';
 
+/** The name of the store a treasury's programme phase leaves its need in (declared in the nouns). */
+export const PROGRAMME = 'treasury.programme.need';
+
+/** Sovereign D1, Law 8: what this treasury needs this period, and the period it reckoned it in. */
+export interface ProgrammeNeed {
+  at: Period | undefined;
+  /** Negative is what it has OVER, which is what it can buy its own paper back with (D4.b). */
+  need: number;
+}
+
+/** An empty slot: a treasury that has published no programme this period has no period and no need. */
+export const nothingNeeded = (): ProgrammeNeed => ({ at: undefined, need: 0 });
+
 /**
  * Treasury B1, XI-8, D-1: A LEVY ASSESSED AND NOT PAID.
  *
@@ -265,6 +278,15 @@ export const treasury: SystemModule = {
     },
   ],
   id: 'treasury',
+  nouns: [
+    {
+      name: PROGRAMME,
+      kind: 'working',
+      holds: 'what each treasury reckoned it needs this period, and the period it reckoned it in',
+      why:
+        'it is how this module gets from its programme phase to its own buy-in within one period (0e\u2032.4). What the WORLD reads is the published `treasury.programme`, which is still written and is the whole point of C1.a; this is the same number the same treasury reads about itself, and it was its own public event read back by its writer in the period it wrote it.',
+    },
+  ],
   spec: 'Treasury, Sovereign A, C, XI-9',
   requires: ['sovereign-instruments', 'sovereign-curve'],
   instrumentKinds: [],
@@ -565,6 +587,12 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
       : asCash(0, 'a treasury that needs nothing sells nothing');
 
   const planned = isAuctionPeriod && size > 0 ? announce(ctx, id, ccy, size, on) : none<string>();
+  // Law 15, 0e′.4: what it needs goes in this treasury's own working store, which is what its own
+  // buy-in reads back this period. The event below is the PUBLIC programme (C1.a) — the whole point
+  // of it is that everybody can see it — and it is written from the same number.
+  const slot = ctx.workingOf(id, PROGRAMME, nothingNeeded);
+  slot.at = ctx.period;
+  slot.need = need;
   ctx.record(
     'treasury.programme',
     [id],
@@ -1068,11 +1096,11 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
  */
 function sparePerProgramme(view: ParticipantView): Cash {
   const nothing = asCash(0, 'a treasury that needs what it has');
-  const published = view.lastPublic('treasury.programme');
-  if (!published.some || published.value.period !== view.period) return nothing;
-  if (!published.value.subjects.includes(view.self.id)) return nothing;
-  const need = published.value.data['need'];
-  if (typeof need !== 'number' || need >= 0) return nothing;
+  const said = view.working(PROGRAMME, nothingNeeded);
+  if (said.at !== view.period) return nothing;
+  const need = said.need;
+  // A need that is not negative is a treasury that needs what it has, and it buys nothing in.
+  if (need >= 0) return nothing;
   const ccy = view.registry.currencyOf(view.self.region);
   const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
   return atMost(asCash(-need, 'what it does not need'), cash, 'it repays out of the money it has');

@@ -22,6 +22,7 @@
  * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
+import type { Period } from '../../calendar/calendar.js';
 import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
@@ -131,6 +132,27 @@ import {
 import { navOf } from './nav.js';
 import { corridorPublished } from '../../registry/banking.js';
 import { primeCallOn, primeLineOf } from '../../registry/notices.js';
+
+/** The name of the store a pool's strike phase leaves its position in (declared in the nouns). */
+export const STRUCK = 'funds.struck';
+
+/**
+ * Law 8: WHERE THIS POOL STOOD AT ITS OWN STRIKE, and in which period. Its `orders` reads this and
+ * nothing else: what it owes redeemers and could not pay (C4 — a pool in that position is a forced
+ * seller) and what it has over its buffer to put to work.
+ */
+interface StruckSlot {
+  at: Period | undefined;
+  shortfall: Cash;
+  spare: Cash;
+}
+
+/** An empty slot: a pool that has not struck this period has no period, no shortfall and no spare. */
+export const nothingStruck = (): StruckSlot => ({
+  at: undefined,
+  shortfall: asCash(0, 'it owes nobody'),
+  spare: asCash(0, 'it has nothing spare'),
+});
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
@@ -984,6 +1006,14 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
     ),
   );
   const offer = offeredYield(ctx, m);
+  const spare = subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes');
+  // Law 15, 0e′.4: where it stands goes in this pool's own working store, which is what its
+  // `orders` reads back. The event below is the PUBLIC strike — a manager, an insurer, a saver and
+  // a control bidder all price against it — and it is written from the same two numbers.
+  const slot = ctx.workingOf(fundId, STRUCK, nothingStruck);
+  slot.at = ctx.period;
+  slot.shortfall = asCash(owed, 'what it published it is short of');
+  slot.spare = asCash(spare, 'what it published it has spare');
   ctx.record(
     'fund.struck',
     [fundId],
@@ -1021,7 +1051,7 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
        * needed no forced-seller mechanism of its own.
        */
       shortfall: owed,
-      spare: subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
+      spare,
       oldestMark: oldest,
       // D2, D2.a: what it offers a saver — what the paper its mandate lets it hold is yielding,
       // less what its manager takes. A fund with no curve to read publishes NO OFFER, and the key
@@ -1761,13 +1791,10 @@ function ordersOf(
   mandate: Mandate,
   m: MarketDecl,
 ): readonly Order[] {
-  const own = view.lastOwnSince('fund.struck', view.period);
-  if (!own.some) return [];
-  const shortfall = own.value.data['shortfall'];
-  const saidSpare = own.value.data['spare'];
-  if (typeof shortfall !== 'number' || typeof saidSpare !== 'number') return [];
-  // Item 16: money re-entering from what this fund published, at the read that knows what it is.
-  const spare = asCash(saidSpare, 'what it published it has spare');
+  const struck = view.working(STRUCK, nothingStruck);
+  if (struck.at !== view.period) return [];
+  const shortfall = struck.shortfall;
+  const spare = struck.spare;
   const i = view.instruments.get(m.instrument);
   if (shortfall > 0) {
     // Clearing C1.b, Treasury D3.a: in a primary market the seller is the ISSUER. A holder with
@@ -2273,6 +2300,14 @@ export function funds(
   return {
     id: 'funds',
     nouns: [
+      {
+        name: STRUCK,
+        kind: 'working',
+        holds:
+          'where each pool stood at its own strike this period — what it owes redeemers and could not pay, and what it has over its buffer',
+        why:
+          'it is how this module gets from its strike phase to its own `orders`, and nothing outside it needs a pool\u2019s position to decide anything — what the WORLD prices against is the strike itself, which is still published (0e\u2032.4). It was the pool\u2019s own `fund.struck` event read back by its writer in the same period, with two moneys going out through `unknown` and back.',
+      },
       {
         name: 'funds',
         kind: 'working',

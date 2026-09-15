@@ -19,12 +19,36 @@
  */
 import { amountOf, asRatio, minus, ratioOf, scale } from '../../core/measure.js';
 import { pairOf, type MarketDecl } from '../../clearing/market.js';
-import type { CurrencyCode } from '../../core/ids.js';
-import { downTick } from '../../core/tick.js';
+import type { CurrencyCode, MarketId } from '../../core/ids.js';
+import { downTick, type Qty } from '../../core/tick.js';
+import type { Period } from '../../calendar/calendar.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { FxDeskDecl } from './data.js';
 import { fxParam } from './data.js';
+
+/** The name of the store a desk's arbitrage phase leaves its trip in, declared in the module's nouns. */
+export const ARBITRAGE = 'spotFx.arbitrage';
+
+/** One leg of the round trip, in the book it is for. A size and no level (Law 3). */
+export interface ArbitrageLeg {
+  readonly market: MarketId;
+  readonly side: 'buy' | 'sell';
+  readonly qty: Qty;
+}
+
+/**
+ * Law 8: THE TRIP THIS DESK DECIDED ON, AND IN WHICH PERIOD. A trip from last period is not a trip
+ * to post now, which is what `lastOwnSince(..., view.period)` was saying while the journal stood in
+ * for this store.
+ */
+export interface PlannedTrip {
+  at: Period | undefined;
+  legs: readonly ArbitrageLeg[];
+}
+
+/** An empty slot: a desk that found no gap this period has no period and no legs. */
+export const nothingPlanned = (): PlannedTrip => ({ at: undefined, legs: [] });
 
 /** Three pairs that close on themselves: A/B, B/C and A/C, with the markets that trade them. */
 export interface Triangle {
@@ -123,6 +147,17 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       // three books would be a participant that is not one, and the arbitrage would stop being a
       // trade somebody made (Law 3).
       const forward = gap > 0;
+      const legs: readonly ArbitrageLeg[] = [
+        { market: t.ab.id, side: forward ? 'sell' : 'buy', qty: size },
+        { market: t.bc.id, side: forward ? 'sell' : 'buy', qty: size },
+        { market: t.ac.id, side: forward ? 'buy' : 'sell', qty: size },
+      ];
+      // Law 15, 0e′.4: what it will do goes in this desk's own working store, which is what its
+      // `orders` reads back when each of the three sessions asks it. The event is the PUBLIC record
+      // of the trip it decided on; it is written from the same legs and never read back here.
+      const slot = ctx.workingOf(bank.id, ARBITRAGE, nothingPlanned);
+      slot.at = ctx.period;
+      slot.legs = legs;
       ctx.record(
         'fx.arbitrage',
         [bank.id],
@@ -136,11 +171,7 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
           gap,
           cost,
           size,
-          legs: [
-            { market: t.ab.id, side: forward ? 'sell' : 'buy', qty: size },
-            { market: t.bc.id, side: forward ? 'sell' : 'buy', qty: size },
-            { market: t.ac.id, side: forward ? 'buy' : 'sell', qty: size },
-          ],
+          legs,
         },
         true,
       );

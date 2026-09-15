@@ -24,7 +24,7 @@
  * — and it is what keeps one bank showing one face to one market.
  */
 import { asAmount, asCash, asRatio, type Cash, heldAsMoney, minus, negated, type PerPiece, plus, type Ratio, ratioOf, scale, valueAt } from '../../core/measure.js';
-import { nextPeriod, period } from '../../calendar/calendar.js';
+import { nextPeriod, period, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import { delivers } from '../../clearing/market.js';
@@ -506,12 +506,22 @@ function dueNext(
 /** Money Market A2: where this bank stands after the flows, as it reckons it itself. */
 export function positionOf(view: ParticipantView, ccy: CurrencyCode): TreasuryPosition {
   const reserves = view.cash(ccy);
-  const said = view.lastOwn('bank.buffer');
-  const held =
-    said.some && said.value.period === view.period ? said.value.data['buffer'] : undefined;
-  const buffer = typeof held === 'number' ? asQty(held, 'what it keeps back') : NO_QTY;
+  const said = view.working(KEPT_BACK, nothingKeptBack);
+  const buffer = said.at === view.period ? said.buffer : NO_QTY;
   return { bank: view.self.id, reserves, buffer, gap: minus(reserves, buffer, 'its position') };
 }
+
+/** The name of the store a bank's buffer phase leaves what it keeps back in (declared in nouns). */
+export const KEPT_BACK = 'banks.keptBack';
+
+/** C2.a, Law 8: what this bank keeps back against a bad week, and the period it reckoned it in. */
+export interface KeptBack {
+  at: Period | undefined;
+  buffer: Qty;
+}
+
+/** An empty slot: a bank that has not reckoned this period has no period and keeps nothing back. */
+export const nothingKeptBack = (): KeptBack => ({ at: undefined, buffer: NO_QTY });
 
 /**
  * B5.a, C1: what a lender will accept. Its alternative is the floor — it can always park there —
@@ -688,6 +698,13 @@ function bestRival(ctx: MechanismContext, bank: PartyId, cls: string): Option<Ra
  */
 export function publishBuffer(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): void {
   const move = reserveFlow(ctx, bank, ccy);
+  const keptBack = bufferOf(ctx, bank, move);
+  // Law 15, 0e′.4: what it keeps back goes in this bank's own working store, which is what its own
+  // `positionOf` reads back this period. The event below is the PUBLIC buffer — the overnight book
+  // and the paper issuers both price against it — and it is written from the same number.
+  const slot = ctx.workingOf(bank, KEPT_BACK, nothingKeptBack);
+  slot.at = ctx.period;
+  slot.buffer = asQty(keptBack, 'what it keeps back');
   ctx.record(
     'bank.buffer',
     [bank],
@@ -695,7 +712,7 @@ export function publishBuffer(ctx: MechanismContext, bank: PartyId, ccy: Currenc
       bank,
       ccy,
       move,
-      buffer: bufferOf(ctx, bank, move),
+      buffer: keptBack,
       reserves: ctx.register.quantity(
         bank,
         moneyInstrumentId(ctx.registry.centralBankOf(ccy), ccy),

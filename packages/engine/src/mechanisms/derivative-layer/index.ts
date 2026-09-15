@@ -68,6 +68,30 @@ import {
 } from './margin.js';
 import { fundLineId, houseSheet, inFund, membersOf, runWaterfall, trueUpFund } from './house.js';
 
+/** The name of the store the margin phase leaves its unmet calls in (declared in the nouns). */
+export const UNMET = 'derivatives.unmet';
+
+/** D4, Law 8: the pairs whose call went unmet, and the period they went unmet in. */
+interface UnmetCalls {
+  at: Period | undefined;
+  pairs: Set<string>;
+}
+
+/**
+ * D4: WHOSE CALL WENT UNMET THIS PERIOD. It is one phase telling the next, within one period — the
+ * call was issued, the payment was attempted, and whether it settled is a fact the margin phase
+ * knows and the close-out phase needs. It read the period's own `margin.call` events back to
+ * recover it (0e′.4); this is the store, cleared the moment the period turns.
+ */
+function unmetCalls(ctx: MechanismContext): Set<string> {
+  const held = ctx.state<UnmetCalls>(UNMET, () => ({ at: undefined, pairs: new Set() }));
+  if (held.at !== ctx.period) {
+    held.at = ctx.period;
+    held.pairs = new Set();
+  }
+  return held.pairs;
+}
+
 export * from './kinds.js';
 export * from './margin.js';
 export * from './house.js';
@@ -331,6 +355,12 @@ function marginCalls(ctx: MechanismContext): void {
         }
         if (by > 0) {
           const call = callOn(ctx, side, pair.other, pair.ccy);
+          // Law 15, 0e′.4: whose call went unmet goes in this module's own working store, which is
+          // what `resolveContracts` reads a phase later. The event below is the PUBLIC record of the
+          // call; it is written from the same outcome and never read back here.
+          if (r.outcome !== 'settled') {
+            unmetCalls(ctx).add(`${String(side)}|${String(pair.other)}`);
+          }
           ctx.record(
             'margin.call',
             [side, pair.other],
@@ -431,11 +461,7 @@ function resolveContracts(ctx: MechanismContext): void {
   // D4: A MARGIN CALL MUST BE MET OR THE POSITION IS CLOSED OUT. Whose calls went unmet is read off
   // what this period's calls said (Law 19) — the call was issued, the payment was attempted, and
   // whether it settled is a fact the event carries rather than one re-derived here.
-  const unmet = new Set<string>();
-  for (const e of ctx.journal.ofKind('margin.call')) {
-    if (e.period !== ctx.period || e.data['met'] === true) continue;
-    unmet.add(`${String(e.data['poster'])}|${String(e.data['holder'])}`);
-  }
+  const unmet = unmetCalls(ctx);
   for (const c of ctx.contracts.open_()) {
     const deadSide = [c.a, c.b].find((p) => !ctx.parties.get(p).status.alive);
     if (deadSide !== undefined) {
@@ -807,6 +833,15 @@ export function derivativeLayer(
 ): SystemModule {
   return {
   id: 'derivative-layer',
+  nouns: [
+    {
+      name: UNMET,
+      kind: 'working',
+      holds: 'the counterparty pairs whose margin call went unmet this period',
+      why:
+        'it is one phase telling the next, within one period: the margin phase knows whether a call settled and the close-out phase needs it (0e\u2032.4). It read the period\u2019s own `margin.call` events back to recover it, which is the journal standing in for a store. The events stay as the public record of every call.',
+    },
+  ],
   spec: 'Derivative Layer, Derivative contract',
   // The estate is what a default resolves into (XI-8) and the money market is where a member finds
   // the cash a call asks for; credit events are what an underlying of that shape reads. And the

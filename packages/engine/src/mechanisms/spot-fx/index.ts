@@ -35,6 +35,7 @@ import { arbitrage } from './arbitrage.js';
 import { arbitrageOrders, dealerOrders, needOrders } from './participants.js';
 import { triangularConsistency } from './family.js';
 import { revaluationAddsUp } from '../../audit/families/currency.js';
+import { ARBITRAGE } from './arbitrage.js';
 
 export * from './data.js';
 export { triangles, type Triangle } from './arbitrage.js';
@@ -72,6 +73,15 @@ export function spotFx(rows: readonly FxDeskDecl[]): SystemModule {
   const byName = new Map(rows.map((r) => [r.bank, r]));
   return {
     id: 'spot-fx',
+    nouns: [
+      {
+        name: ARBITRAGE,
+        kind: 'working',
+        holds: 'the round trip each desk decided on this period, and the period it decided it in',
+        why:
+          'it is how this module gets from its arbitrage phase to its own `orders` in each of the three books, and nothing outside it has an opinion about a trip nobody has posted yet (0e\u2032.4). It was the desk\u2019s own `fx.arbitrage` event read back by its writer in the same period, with the three legs going out through `unknown[]` and back. The event stays as the public record of the trip; this is the decision.',
+      },
+    ],
     spec: 'Spot FX, Currency',
     // Its dealers are banks with their own capital and their own limits, and a party's reason to be
     // here is what it owes — which the money market and the banks module put into the world.

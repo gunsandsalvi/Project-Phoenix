@@ -20,7 +20,7 @@ import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode } from '../../core/ids.js';
 import { atMost } from '../../core/num.js';
-import { asQty, downTick, negQty, NO_QTY, type Qty } from '../../core/tick.js';
+import { downTick, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import {
   absolute,
   type Amount,
@@ -34,6 +34,7 @@ import {
 import type { ParticipantView } from '../../world/context.js';
 import type { FxDeskDecl } from './data.js';
 import { fxParam } from './data.js';
+import { ARBITRAGE, nothingPlanned } from './arbitrage.js';
 
 /**
  * B1, B2: what a party brings to a pair because of what it owes and what it holds.
@@ -234,23 +235,12 @@ function least(a: Amount<'piece'>, b: Amount<'piece'>): Qty {
  * where the rate should be, and nobody decides that (Law 3).
  */
 export function arbitrageOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const said = view.lastOwnSince('fx.arbitrage', view.period);
-  if (!said.some) return [];
-  const legs = said.value.data['legs'];
-  if (!Array.isArray(legs)) return [];
+  const planned = view.working(ARBITRAGE, nothingPlanned);
+  if (planned.at !== view.period) return [];
   const out: Order[] = [];
-  for (const row of legs as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const leg = row as { market?: unknown; side?: unknown; qty?: unknown };
-    if (leg.market !== m.id) continue;
-    if (leg.side !== 'buy' && leg.side !== 'sell') continue;
-    if (typeof leg.qty !== 'number' || leg.qty <= 0) continue;
-    out.push({
-      party: view.self.id,
-      side: leg.side,
-      price: 'market',
-      qty: asQty(leg.qty, `${view.self.id}'s arbitrage leg`),
-    });
+  for (const leg of planned.legs) {
+    if (leg.market !== m.id || leg.qty <= 0) continue;
+    out.push({ party: view.self.id, side: leg.side, price: 'market', qty: leg.qty });
   }
   return out;
 }

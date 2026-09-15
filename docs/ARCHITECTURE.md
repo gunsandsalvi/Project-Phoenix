@@ -1215,8 +1215,12 @@ of three things it is — `noun` (a thing this economy has, which the kernel sho
 private by right). A `noun` is a placeholder and must name the plan item that gives it a kernel home,
 the same guard `ParamRegister` puts on a placeholder number and for the same reason (Law 2: a
 stand-in with no scheduled death is a permanent one). Assembly stamps the owner, never the module
-(Law 4). The count of nouns still in a bag is reported, not hidden (Appendix C): **14 of 19 today** —
-seven `Agreement`, four `View`, two `PublishedStatement`, one `Process`.
+(Law 4). The count of nouns still in a bag is reported, not hidden (Appendix C): **14 homeless
+today** — seven `Agreement`, four `View`, two `PublishedStatement`, one `Process`. The denominator
+moved at 0e′.4 and the numerator did not: nine `working` stores were declared where nine modules had
+been using their own JOURNAL to get from one of their own phases to the next (`working` count 9 →
+18). None of them is homeless — a plan nobody has acted on is not a kernel noun — so what the figure
+says is that the register now SEES nine stores it could not see before.
 
 ### An agreement has a kind and its own terms (item 9.1)
 

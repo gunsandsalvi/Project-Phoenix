@@ -98,6 +98,8 @@ import {
 } from './quote.js';
 import { creditDefaults } from '../../registry/banking.js';
 import { paperOfferedIn } from '../../registry/notices.js';
+import { ALLOTTED } from './lines.js';
+import { KEPT_BACK } from './treasury.js';
 
 export * from './data.js';
 export { DEALING, LENDING, roomFor } from './lines.js';
@@ -1113,6 +1115,20 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
   return {
   id: 'banks',
   nouns: [
+    {
+      name: ALLOTTED,
+      kind: 'working',
+      holds: 'what each of a bank\u2019s lending lines was allotted this period, and the period it was allotted in',
+      why:
+        'it is how this module gets from its allotment phase to the line that spends the room, and nothing outside it has an opinion about a room nobody has lent out of yet (0e\u2032.4). It was the bank\u2019s own `bank.lines` event read back by its writer in the same period, with every line walking the whole row list out of `unknown[]` to find itself. The event stays as the record of the allotment.',
+    },
+    {
+      name: KEPT_BACK,
+      kind: 'working',
+      holds: 'what each bank reckoned it keeps back against a bad week, and the period it reckoned it in',
+      why:
+        'it is how this module gets from its buffer phase to its own treasury\u2019s reading of where it stands, within one period (0e\u2032.4). What the WORLD prices against is the published `bank.buffer`, which is still written and still read across modules through `registry/banking.ts`; this is the same number the same bank reads about itself in the period it reckoned it.',
+    },
     {
       name: 'book',
       kind: 'working',

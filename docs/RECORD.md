@@ -10273,3 +10273,39 @@ never read back by its writer.
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green. Same-period read-backs 25 → 20; 0e′.4b–4d carry the rest.
+
+## Item 0e′.4b–4d — Nine stores, and a count that was wrong twice
+
+**The step said eight. The first measurement said 25. It was 11.** The step's list came from five
+findings; a classifier over the whole tree found 25 modules reading back an event they wrote in the
+same period, and working through them showed the classifier counting two things that are not
+defects. A module reading back an event of a period STRICTLY BEFORE this one is remembering a
+public fact — `bank.capitalPlan`, the buffer's own memory window, `credit.quoted`,
+`cds.index.settled` — which is Law 19 working. An AUDIT FAMILY reading the public record is what an
+audit IS: `tradingBookIsCapitalised` and `securitisation C6` cross-check one module's publications
+against another's on purpose, and handing them the module's own store would be checking a derivation
+against itself and passing whatever it did.
+
+**Converted (with 4a's two, nine stores):** `firms.plan`, `households.plan`, `fx.arbitrage`,
+`equity.plan`, `fund.struck`, `bank.lines`, `bank.buffer`, `treasury.programme`, `margin.call`.
+Each is now a declared `working` noun, each event is written FROM the store and never read back by
+its writer, and four `unknown[]` order parsers are deleted. `bank.lines`'s `roomFor` also stops
+walking every row of its bank's allotment to find its own line.
+
+**The door grew where the measurement pushed it.** `view.working` first resolved its owner from the
+participant being evaluated. `runLine` broke that — a module's own phase handing its own party's
+view to its own store — so the owner also resolves from the running phase. Then `whatItMustBorrow`
+broke it again: a QUESTION is answered by a named module through a view, and the kernel knew the
+owner and was not saying. All eight answer sites now run as their answering module. That is the
+same fact three times: the owner of a read is whoever the kernel asked, and the kernel always knows.
+
+**What is left and is not a defect:** `securitisation` ×2 (audit) and `banks:credit.written` —
+`publishStandard` aggregates the period's own writes into a public count and volume, a read of
+events that already happened, causing nothing (Observer A5). A log read as a log.
+
+**Counts.** `working` nouns 9 → 18; homeless unchanged at 14, because none of these is a kernel
+noun — a plan nobody has acted on is not a thing the world has. `ARCHITECTURE.md` and `CLAUDE.md`
+both carried "14 of 19" and both are corrected.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green.

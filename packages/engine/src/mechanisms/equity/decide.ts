@@ -19,6 +19,7 @@
  * The book value is not a price and never becomes one (B3): it is the firm's own reservation, which
  * is what a participant brings to a market (Clearing B2). The market can refuse it (D1.c).
  */
+import type { Period } from '../../calendar/calendar.js';
 import { amountOf, asPerPiece, asRatio, negated, over, pricedAt, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { material } from '../../core/num.js';
@@ -26,6 +27,30 @@ import { none, some, type Option } from '../../core/option.js';
 import type { Order } from '../../clearing/solver.js';
 import type { ParticipantView } from '../../world/context.js';
 import { downTick, NO_QTY, type Qty, upTick } from '../../core/tick.js';
+
+/** The name of the store a firm's equity decide phase leaves its plan in (declared in the nouns). */
+export const EQUITY_PLAN = 'equity.decided';
+
+/**
+ * Law 8: WHAT THIS FIRM DECIDED ABOUT ITS OWN SHARES, and in which period. A plan from last period
+ * is not a bid to post now, which is what `lastOwnSince(..., view.period)` was saying while the
+ * journal stood in for this store.
+ */
+export interface DecidedThisPeriod {
+  at: Period | undefined;
+  line: InstrumentId | undefined;
+  /** D2: the shares it is bidding for, to cancel. Nothing where it is buying none back. */
+  buyback: Qty;
+  bookPerShare: number;
+}
+
+/** An empty slot: a firm that has decided nothing has no period, no line and no bid. */
+export const nothingDecided = (): DecidedThisPeriod => ({
+  at: undefined,
+  line: undefined,
+  buyback: NO_QTY,
+  bookPerShare: 0,
+});
 
 /** What the firm decided about its own line this period, in the terms the orders are posted in. */
 export interface EquityPlan {

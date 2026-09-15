@@ -831,7 +831,10 @@ export class World {
         `${kind} says an overdraft at it is a credit decision and nobody takes it`,
       );
     }
-    return (o) => this.askedByTheKernel(() => held.fn(this.mechanismContext(held.owner), o));
+    return (o) =>
+      this.askedByTheKernel(() =>
+        this.asParticipantOf(held.owner, () => held.fn(this.mechanismContext(held.owner), o)),
+      );
   }
 
   private markOf(instrument: InstrumentId, at: Period): Option<PerPiece> {
@@ -860,7 +863,9 @@ export class World {
      */
     const held = this.answers.answer<Valuer>(QUESTIONS.whatALotIsWorth, String(i.kind));
     if (held === undefined) return none<PerPiece>();
-    return this.askedByTheKernel(() => held.fn(this.mechanismContext(held.owner), i, at));
+    return this.askedByTheKernel(() =>
+      this.asParticipantOf(held.owner, () => held.fn(this.mechanismContext(held.owner), i, at)),
+    );
   }
 
   // ---- contracts (Derivative X1: the second register) ------------------------------------------
@@ -1289,7 +1294,9 @@ export class World {
       if (chooser === undefined) continue;
       for (const party of this.parties.ofKind(kind as PartyKindId)) {
         if (!party.status.alive) continue;
-        const going = chooser.fn(this.participantView(party.id));
+        const going = this.asParticipantOf(chooser.owner, () =>
+          chooser.fn(this.participantView(party.id)),
+        );
         if (going.some) this.moveBank(party.id, going.value.to, going.value.reason);
       }
     }
@@ -1319,7 +1326,9 @@ export class World {
       if (asker === undefined) continue;
       for (const party of this.parties.ofKind(kind as PartyKindId)) {
         if (!party.status.alive) continue;
-        const wants = asker.fn(this.participantView(party.id));
+        const wants = this.asParticipantOf(asker.owner, () =>
+          asker.fn(this.participantView(party.id)),
+        );
         this.reachTally.produced(
           'borrowNeeds',
           declId(asker.owner, kind as PartyKindId),
@@ -1558,7 +1567,10 @@ export class World {
           QUESTIONS.whatItMayTrade,
           String(this.parties.get(party).kind),
         );
-        return held === undefined || held.fn(this.participantView(party), kind);
+        return (
+          held === undefined ||
+          this.asParticipantOf(held.owner, () => held.fn(this.participantView(party), kind))
+        );
       },
       /**
        * Hedge Funds B1, Fund Shares F2 (item 13.3): the KIND says whether a thing of this sort can
@@ -1574,7 +1586,10 @@ export class World {
           QUESTIONS.whetherItMayBorrow,
           String(kind),
         );
-        return held === undefined || held.fn(this.participantView(party));
+        return (
+          held === undefined ||
+          this.asParticipantOf(held.owner, () => held.fn(this.participantView(party)))
+        );
       },
       /**
        * Hedge Funds C1, Fund Shares A3 (item 13.2b): what this party has behind a position it takes
@@ -1589,7 +1604,7 @@ export class World {
         );
         return held === undefined
           ? this.store.equity(party)
-          : held.fn(this.participantView(party));
+          : this.asParticipantOf(held.owner, () => held.fn(this.participantView(party)));
       },
       contracts: {
         mine: () => this.contractStore.openOf(party),
@@ -2891,7 +2906,9 @@ export class World {
           String(this.parties.get(sale.seller).kind),
         );
         if (decider === undefined) return none<InstrumentId>();
-        return decider.fn(this.mechanismContext(decider.owner), sale);
+        return this.asParticipantOf(decider.owner, () =>
+          decider.fn(this.mechanismContext(decider.owner), sale),
+        );
       },
       kinds: {
         contract: {

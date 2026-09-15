@@ -80,7 +80,7 @@ import {
   equityMarketOf,
   type EquityDecl,
 } from './data.js';
-import { buybackOrder, decideEquity, dividendFor, type EquityPlan } from './decide.js';
+import { buybackOrder, decideEquity, dividendFor, EQUITY_PLAN, nothingDecided, type EquityPlan } from './decide.js';
 import { floatations } from './float.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
@@ -204,6 +204,14 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
       allotment: 'uniformPrice',
     });
   }
+  // Law 15, 0e′.4: the bid goes in this firm's own working store, which is what its `markets` and
+  // `orders` read back. The event below is the record of what it decided; it is written from the
+  // same plan and never read back by this module.
+  const slot = ctx.workingOf(firm, EQUITY_PLAN, nothingDecided);
+  slot.at = ctx.period;
+  slot.line = line.id;
+  slot.buyback = asQty(plan.buyback, 'the shares it bids for');
+  slot.bookPerShare = plan.bookPerShare;
   ctx.record(
     'equity.plan',
     [firm, line.id],
@@ -633,6 +641,14 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
     ],
     nouns: [
       {
+        name: EQUITY_PLAN,
+        kind: 'working',
+        holds:
+          'what each firm decided about its own shares this period — the line, the shares it bids to cancel, and its book per share',
+        why:
+          'it is how this module gets from its decide phase to its own `markets` and `orders`, and nothing outside it has an opinion about a bid nobody has posted yet (0e\u2032.4). It was a PRIVATE `equity.plan` event read back by its own writer in the same period; the event stays as the record of the decision, and the door that says a size is a COUNT now sits at the WRITE.',
+      },
+      {
         name: 'equity',
         kind: 'working',
         holds:
@@ -721,25 +737,17 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         // twenty-five seconds a period cost. It is a TRAVERSAL and nothing else: the answer below
         // already returns nothing for any other book, so the same firms post the same orders.
         markets: (view: ParticipantView): readonly MarketId[] => {
-          const own = view.lastOwnSince('equity.plan', view.period);
-          if (!own.some) return [];
+          const decided = view.working(EQUITY_PLAN, nothingDecided);
           // D2, §29 C5: the ONE order it has is a bid for its own shares, so a period in which it
           // is not buying any is a period in which it is in no book at all — and a private company
           // is never buying any, because there is no book to buy them in.
-          const buyback = own.value.data['buyback'];
-          if (typeof buyback !== 'number' || buyback <= 0) return [];
+          if (decided.at !== view.period || decided.buyback <= 0) return [];
           return [equityMarketOf(view.self.id)];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          const own = view.lastOwnSince('equity.plan', view.period);
-          if (!own.some) return [];
-          if (own.value.data['line'] !== m.instrument) return [];
-          const buyback = own.value.data['buyback'];
-          const bookPerShare = own.value.data['bookPerShare'];
-          if (typeof buyback !== 'number' || typeof bookPerShare !== 'number') return [];
-          // Law 19: read back from the firm's own published plan, through the one door that says a
-          // size is a count of pieces — and that throws if what it published was not.
-          return buybackOrder(view.self.id, asQty(buyback, 'the shares it bids for'), bookPerShare);
+          const decided = view.working(EQUITY_PLAN, nothingDecided);
+          if (decided.at !== view.period || decided.line !== m.instrument) return [];
+          return buybackOrder(view.self.id, decided.buyback, decided.bookPerShare);
         },
       },
     ],

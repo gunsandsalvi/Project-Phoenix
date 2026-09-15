@@ -27,6 +27,7 @@
  * would price against, and no rival may see it. Its consequence is public — a bank that stops
  * quoting has stopped quoting where everyone can see.
  */
+import type { Period } from '../../calendar/calendar.js';
 import {
   acrossMembers,
   asCash,
@@ -128,6 +129,12 @@ export function publishLines(
     allotted.set(r.line, atLeast(give, NO_QTY, 'there is no less room to give than none'));
     left = minus(left, heldAsMoney(give, 'what this line was allotted'), 'the room it has left');
   }
+  // Law 15, 0e′.4: what each line was allotted goes in this bank's own working store, which is what
+  // the line itself reads back. The event below is the record of the allotment; it is written from
+  // the same map and never read back by this module.
+  const slot = ctx.workingOf(bank, ALLOTTED, nothingAllotted);
+  slot.at = ctx.period;
+  slot.room = new Map(rows.map((r) => [r.line, asCash(roomOf(allotted, r.line), `the room ${r.line} was allotted`)]));
   ctx.record(
     'bank.lines',
     [bank],
@@ -151,22 +158,29 @@ export function publishLines(
   );
 }
 
-/** What this line was allotted, as the line itself reads it back (Law 19: never derived twice). */
+/** The name of the store a bank's allotment phase leaves each line's room in (declared in nouns). */
+export const ALLOTTED = 'banks.allotted';
+
+/** Law 8: what each of this bank's lines was allotted, and in which period. */
+export interface Allotted {
+  at: Period | undefined;
+  room: ReadonlyMap<string, Cash>;
+}
+
+/** An empty slot: a bank that has allotted nothing this period has no period and no rooms. */
+export const nothingAllotted = (): Allotted => ({ at: undefined, room: new Map() });
+
+/**
+ * What this line was allotted, as the line itself reads it back (Law 19: never derived twice).
+ *
+ * It read the bank's own `bank.lines` EVENT of this period and walked its rows out of `unknown[]`
+ * to find its own — a store wearing a log's clothes, and a linear scan per line (0e′.4).
+ */
 export function roomFor(view: ParticipantView, line: string): Option<Cash> {
-  const said = view.lastOwnSince('bank.lines', view.period);
-  if (!said.some) return none<Cash>();
-  const lines = said.value.data['lines'];
-  if (!Array.isArray(lines)) return none<Cash>();
-  for (const r of lines) {
-    if (typeof r !== 'object' || r === null) continue;
-    const row = r as { line?: unknown; room?: unknown };
-    // Item 16: what this bank PUBLISHED about its own lines re-enters as money here, at the read
-    // that knows what it is — the same door every other published number comes back through.
-    if (row.line === line && typeof row.room === 'number') {
-      return some(asCash(row.room, `the room ${line} was allotted`));
-    }
-  }
-  return none<Cash>();
+  const said = view.working(ALLOTTED, nothingAllotted);
+  if (said.at !== view.period) return none<Cash>();
+  const room = said.room.get(line);
+  return room === undefined ? none<Cash>() : some(room);
 }
 
 function roomOf(allotted: ReadonlyMap<string, number>, line: string): number {
