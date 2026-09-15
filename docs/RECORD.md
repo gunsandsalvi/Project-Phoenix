@@ -10309,3 +10309,32 @@ both carried "14 of 19" and both are corrected.
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green.
+
+## Item 0e′.5–.6 — The observer imports no module; the item closes
+
+**Four imports, three doors.** `observer.ts` reached into four modules: two data tables and two
+functions. The tables (`OCCUPATIONS`, `OCCUPATION_OF`) are DATA and live in `registry/occupations.ts`
+now (Law 15); the labour and firms modules read the same rows from there. The functions are answers
+to two world-scoped questions — `whatTheConsensusIs`, `whatIsHedged` — declared by the research and
+fx-derivatives modules through `SystemModule.measures` and registered by the one assembly walk that
+registers every other answer. Their result types moved beside the questions, so the observer names
+the shape of what it is shown without naming who computes it. A world assembled without either
+module shows no consensus and no hedges, which is the truthful surface rather than a zero.
+
+**The rule is a check.** `phoenix/no-cross-module-import` now covers `src/observer/`; it was shown
+to fire on a module import there and to be silent on the clean file. The first widening caught
+`seeds/foundation.ts`, which the rule had always exempted because a seed assembles modules and sits
+directly under `seeds/`; the exemption is restated in the rule with its reason.
+
+**The item closes.** `check:forbids` reports no module reading another's event by name (52 → 0) and
+no module reading back a same-period event of its own that is not an audit or an aggregate of what
+already happened. ARCHITECTURE 4.9b carries the three-door rule and the observer's place under it;
+4.10a carries the journal-is-a-log rule and the working-store door. Of the nine findings the step
+named, five closed here and four are WITHDRAWN on measurement — CD5, RP10, IN2, MM13 — each with
+its reason in the Part 3 index; a finding leaves the file only by being placed, and "not a defect,
+and here is the measurement" is a placement.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green; `plan:progress` recounted. The full suite was not run for this item — the owner's rule is
+that it runs at the end of a module, and the four sector items 0f–0g and 11 onward are what this
+block was clearing the ground for.

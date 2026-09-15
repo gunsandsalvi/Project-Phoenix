@@ -32,7 +32,8 @@ import {
   xccyLineOf,
   xccyMarketOf,
 } from './data.js';
-import { overnightRate } from './participants.js';
+import { hedgedResidual, overnightRate } from './participants.js';
+import { QUESTIONS } from '../../registry/questions.js';
 
 export * from './contract.js';
 export * from './data.js';
@@ -174,6 +175,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
 export function fxDerivatives(house: (ccy: CurrencyCode) => PartyId): SystemModule {
   return {
     id: 'fx-derivatives',
+    measures: [{ question: QUESTIONS.whatIsHedged, fn: hedgedResidual }],
     spec: 'FX Forwards',
     requires: ['derivative-layer', 'spot-fx', 'money-market', 'indices'],
     instrumentKinds: [],

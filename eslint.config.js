@@ -97,6 +97,11 @@ export default tseslint.config(
     rules: { 'phoenix/no-kind-branch': 'error', 'phoenix/no-cross-module-import': 'error' },
   },
   {
+    // OB5: the observer may import no module (0e′.5).
+    files: ['packages/engine/src/observer/**/*.ts'],
+    rules: { 'phoenix/no-cross-module-import': 'error' },
+  },
+  {
     // A seed states endowments: its numbers are the seed's, declared in its param list.
     files: ['packages/engine/src/seeds/**/*.ts'],
     rules: { 'phoenix/no-magic-numbers': 'off' },

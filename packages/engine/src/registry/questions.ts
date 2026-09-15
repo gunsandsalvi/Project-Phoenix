@@ -22,6 +22,8 @@
  * declaration and a read, not a method on the world.
  */
 import { InvalidRegistry } from '../core/errors.js';
+import type { Cash } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
 
 /**
  * What the answer is ABOUT. A question scoped to a kind has one answer per kind; a `world` question
@@ -121,6 +123,29 @@ export class Answers {
  * absence is a STATE the seal can refuse — nobody says what this pool may trade — while a registry
  * has as many entries as modules put in it and an empty one is emptiness, not a gap.
  */
+/**
+ * Reporting E1, Observer A5: what `whatTheConsensusIs` answers. It lives beside the question so the
+ * observer, which may import no module (OB5), can name the shape of what it is shown.
+ */
+export interface ConsensusRead {
+  readonly count: number;
+  readonly mean: Cash;
+  /** C3, E1: how far apart they are, which is the read that says the disagreement is real. */
+  readonly spread: Cash;
+  /** §45 A5: the period the oldest estimate in it was published in, so a reader can see its age. */
+  readonly oldest: number;
+}
+
+/** Currency D1, B1, B2, E4: what `whatIsHedged` answers — the position, the hedge, the difference. */
+export interface HedgedResidual {
+  /** What it is short of the BASE money — positive short, negative holding one. */
+  readonly exposure: Qty;
+  /** What it has already fixed forward in this pair, signed by the side it is on. */
+  readonly covered: Qty;
+  /** E4: the difference, and it is shown rather than netted away. */
+  readonly residual: Qty;
+}
+
 export const QUESTIONS = {
   /** §46 A2, XI-16: what a party EXPECTS, formed from its own history and nobody else's. */
   whatItExpects: {
@@ -129,6 +154,25 @@ export const QUESTIONS = {
     required: () => false,
     spec: 'Expectations A2',
     why: 'two providers would be two outlooks for one party, and it would act on whichever was asked',
+  },
+  /**
+   * Reporting E1, Observer A5: WHAT THE DESKS BETWEEN THEM SAY A COMPANY MAKES. A measure the
+   * observer shows and never a price; the research module answers because the estimates are its.
+   */
+  whatTheConsensusIs: {
+    name: 'whatTheConsensusIs',
+    scope: 'world',
+    required: () => false,
+    spec: 'Reporting E1',
+    why: 'the observer may import no module (OB5), so a measure it shows is asked of the module that owns the facts it is made of',
+  },
+  /** Currency E4: what a party is short of a money, what it fixed forward, and the difference. */
+  whatIsHedged: {
+    name: 'whatIsHedged',
+    scope: 'world',
+    required: () => false,
+    spec: 'Currency E4',
+    why: 'the observer may import no module (OB5); the hedge and the exposure are the fx-derivatives module\u2019s two objects, and it says how far one covers the other',
   },
   /** XI-6: what a lot of a kind with no market is worth. */
   whatALotIsWorth: {

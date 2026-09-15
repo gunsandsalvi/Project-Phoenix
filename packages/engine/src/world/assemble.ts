@@ -147,6 +147,7 @@ export function assemble(spec: AssemblySpec): World {
       world.answer(QUESTIONS.whetherItMayBorrow, String(d.partyKind), m.id, d.mayBorrow);
     }
     for (const k of m.resolves ?? []) world.answer(QUESTIONS.whoResolvesIt, String(k), m.id, k);
+    for (const x of m.measures ?? []) world.answer(x.question, 'world', m.id, x.fn);
     for (const v of m.marks ?? []) {
       world.answer(QUESTIONS.whatALotIsWorth, String(v.instrumentKind), m.id, v.value);
     }

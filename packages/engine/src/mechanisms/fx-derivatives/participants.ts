@@ -44,6 +44,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { isFxForward, isXccy } from './contract.js';
 import { costOfFundsIn } from '../../registry/banking.js';
 import { fixingOf } from '../../registry/notices.js';
+import type { HedgedResidual } from '../../registry/questions.js';
 
 /** The overnight fixing this money's own book published, or nothing (D3.a: no fixing, no rate). */
 export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
@@ -263,14 +264,7 @@ export function basisOf(
  * The difference is the basis and the imperfection, and the only honest thing to do with it is
  * show it.
  */
-export interface HedgedResidual {
-  /** D1, B1, B2: what it is short of the BASE money — positive short, negative holding one. */
-  readonly exposure: Qty;
-  /** What it has already fixed forward in this pair, signed by the side it is on. */
-  readonly covered: Qty;
-  /** E4: the difference, and it is shown rather than netted away. */
-  readonly residual: Qty;
-}
+export type { HedgedResidual } from '../../registry/questions.js';
 
 export function hedgedResidual(
   view: ParticipantView,

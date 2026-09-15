@@ -30,6 +30,9 @@ import { prng } from '../../rng/prng.js';
 import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
 import { asQty, splitOnTick } from '../../core/tick.js';
 import { atLeast, zeroIfNone } from '../../core/num.js';
+import { OCCUPATION_OF } from '../../registry/occupations.js';
+
+export { OCCUPATION_OF };
 
 export interface FirmDecl {
   /** The named party (Firm A1). It banks somewhere, and the wage and the invoices leave that account. */
@@ -126,79 +129,6 @@ export const FIRM_SPREAD: FirmDispersion = {
  * changing it but the world having that many.
  */
 export const FIRM_COUNT = 9000;
-
-/**
- * A2, Labour A3: which trade each line employs, which is the venue its firms post their openings
- * in. One row per good this world makes, and nothing branches on which (Law 15).
- */
-export const OCCUPATION_OF: Readonly<Record<string, string>> = {
-  grain: 'field',
-  livestock: 'herding',
-  timberLog: 'forestry',
-  ironOre: 'mining',
-  coalRaw: 'mining',
-  crude: 'drilling',
-  limestoneRaw: 'quarrying',
-  bauxite: 'mining',
-  power: 'generation',
-  fuel: 'refining',
-  steel: 'smelting',
-  aluminium: 'smelting',
-  lumber: 'sawing',
-  cement: 'kiln',
-  chemicals: 'chemistry',
-  fertiliser: 'chemistry',
-  medicine: 'pharmacy',
-  flour: 'mill',
-  meat: 'butchery',
-  wool: 'textile',
-  cloth: 'textile',
-  clothing: 'garment',
-  glass: 'glassmaking',
-  plastic: 'moulding',
-  rubber: 'moulding',
-  paper: 'papermaking',
-  bread: 'bakery',
-  concrete: 'concreting',
-  machine: 'works',
-  vessel: 'shipyard',
-  vehicle: 'assembly',
-  electronics: 'electronics',
-  appliance: 'electronics',
-  furniture: 'joinery',
-  packaging: 'converting',
-  building: 'building',
-  dwelling: 'building',
-  // 13c.2: the trades of the lines that cannot be put in a box.
-  care: 'clinical',
-  teaching: 'teaching',
-  hospitality: 'catering',
-  telecoms: 'telecoms',
-  itServices: 'software',
-  professional: 'professional',
-  design: 'design',
-  media: 'media',
-  transport: 'driving',
-  repair: 'maintenance',
-  facilities: 'facilities',
-  personalCare: 'grooming',
-  entertainment: 'entertainment',
-  security: 'security',
-  waste: 'sanitation',
-  logistics: 'warehousing',
-  wholesale: 'wholesale',
-  // 13c.2: the shop. One trade for all nine lines of it — shop work is shop work, and a world
-  // that made a fishmonger a different trade from a greengrocer would be inventing a labour market.
-  retailAppliance: 'retail',
-  retailBread: 'retail',
-  retailClothing: 'retail',
-  retailElectronics: 'retail',
-  retailFuel: 'retail',
-  retailFurniture: 'retail',
-  retailMeat: 'retail',
-  retailMedicine: 'retail',
-  retailVehicle: 'retail',
-};
 
 /**
  * Law 9: the name a market would use. A generated world has generated names, and they are built the

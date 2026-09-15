@@ -9,6 +9,7 @@
  * reference to a kernel store: everything it reads and writes goes through the contexts in
  * world/context.ts. Replacing a system is replacing its module.
  */
+import type { QuestionDecl } from '../registry/questions.js';
 import type { Qty } from '../core/tick.js';
 import type { Cash, PerPiece } from '../core/measure.js';
 import type { Family } from '../audit/audit.js';
@@ -384,6 +385,13 @@ export interface SystemModule {
    * a party that never observed a variable has no outlook of it).
    */
   readonly outlooks?: OutlookProvider;
+  /**
+   * Observer A5, OB5 (0e′.5): A MEASURE THE OBSERVER SHOWS, answered by the module that owns the facts
+   * it is made of. The observer imports no module; it asks a world-scoped question through the one
+   * door (`registry/questions.ts`) and the module that declares the answer here is the one writer.
+   * The function's type is the asker's business, as with every other answer.
+   */
+  readonly measures?: readonly { readonly question: QuestionDecl; readonly fn: unknown }[];
   /** XI-6: what a lot of a kind with no market is worth. Exactly one module answers per kind. */
   readonly marks?: readonly { readonly instrumentKind: InstrumentKindId; readonly value: Valuer }[];
   /**

@@ -21,14 +21,15 @@ import {
 import { formatCivil } from '../calendar/civil.js';
 import { asContractMarket, contractOf, pairOf } from '../clearing/market.js';
 import { add } from '../core/num.js';
+import { none, type Option } from '../core/option.js';
+import type { ParticipantView } from '../world/context.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
 import { placeAt, tilesOf } from '../registry/geography.js';
 import { goodId, isGoodTerms } from '../registry/physical.js';
 import { isCreateLeg } from '../ledger/instruction.js';
 import type { PublishedStatement } from '../journal/published.js';
-import { OCCUPATION_OF } from '../mechanisms/firms/data.js';
-import { OCCUPATIONS } from '../mechanisms/labour/data.js';
+import { OCCUPATION_OF, OCCUPATIONS } from '../registry/occupations.js';
 import { tileReached } from '../register/voyages.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
@@ -37,8 +38,7 @@ import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
 import type { Event, EventKind } from '../journal/journal.js';
-import { consensusOf } from '../mechanisms/research/index.js';
-import { hedgedResidual } from '../mechanisms/fx-derivatives/index.js';
+import { QUESTIONS, type ConsensusRead, type HedgedResidual } from '../registry/questions.js';
 
 /** A4: an inspector's full view and a participant's partial view are different products. */
 export type Scope =
@@ -996,15 +996,17 @@ function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly Hedg
     const before = moved.get(key);
     moved.set(key, before === undefined ? delta : add(before, delta, 'what the rate did'));
   }
+  // OB5: the observer imports no module. What is hedged is the fx-derivatives module's answer to a
+  // world question, and a world with no such module shows no hedges rather than a guessed zero.
+  const hedged = w.answers.answer<
+    (view: ParticipantView, base: CurrencyCode, quote: CurrencyCode) => HedgedResidual
+  >(QUESTIONS.whatIsHedged, 'world');
+  if (hedged === undefined) return [];
   const out: HedgeView[] = [];
   for (const p of w.parties.alive()) {
     if (!visible(p.id)) continue;
     for (const pair of pairs) {
-      const parts = hedgedResidual(
-        w.participantView(p.id),
-        pair.base as CurrencyCode,
-        pair.quote as CurrencyCode,
-      );
+      const parts = hedged.fn(w.participantView(p.id), pair.base as CurrencyCode, pair.quote as CurrencyCode);
       // A party with nothing in this pair and nothing fixed in it is not in it: showing a row of
       // zeroes for every party against every pair would bury the ones that mean something.
       if (parts.exposure === 0 && parts.covered === 0) continue;
@@ -1162,6 +1164,10 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
    */
   const latest = new Map<string, PublishedStatement>();
   for (const said of w.published.statements()) latest.set(String(said.company), said);
+  // OB5: the consensus is the research module's answer to a world question, asked once.
+  const consensus = w.answers.answer<
+    (reads: { readonly journal: Pick<World['journal'], 'ofKind'> }, company: PartyId) => Option<ConsensusRead>
+  >(QUESTIONS.whatTheConsensusIs, 'world');
   const out: StatementsView[] = [];
   for (const [company, report] of latest) {
     const guidance = w.published.lastGuidance(partyId(company));
@@ -1173,7 +1179,7 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
         period: e.period,
       });
     }
-    const read = consensusOf(w, partyId(company));
+    const read = consensus === undefined ? none<ConsensusRead>() : consensus.fn(w, partyId(company));
     out.push({
       company,
       quarter: report.quarter,

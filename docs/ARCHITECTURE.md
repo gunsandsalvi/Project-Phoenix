@@ -795,6 +795,38 @@ are state — the issuer's name, a region's name — and hands them to the kind'
 the profile composes the name from its own terms (Law 9). A claim demands an issuer and throws
 without one; a physical thing has none and is named by what it is and where it trades.
 
+#### What a module knows of another module (0e, 0e′)
+
+**Nothing, by name.** A module never imports a sibling (`phoenix/no-cross-module-import`), never
+names a sibling's event kind (`tools/check-forbids.ts`, a FORBID since 0e′.3 — its ratchet closed
+52 pairs across 31 kinds and is now an empty set), and never reads a sibling's store. What it may
+know of another system comes through exactly three doors, and which door is decided by what the
+fact IS:
+
+- **A read of a public fact is a registry read.** What a market published, a bank said about
+  itself, a firm said it is short of, an assessor graded: `registry/wages.ts`, `registry/banking.ts`,
+  `registry/funding.ts`, `registry/notices.ts`, `registry/physical.ts`, `registry/switching.ts`.
+  The registry names the event kind and does the fetch; a caller passes a party or a party's door
+  (a narrow `Reads` interface, never a whole view) and gets the fact back in its own dimension. The
+  extraction is written once. It was written twice or three times before, every time, and the
+  copies had drifted apart on which key a rate was published under, which country's wage a state
+  read, and which half of a funding gap a channel funded (0e′.1–0e′.3).
+- **A behaviour the kernel needs from a module is a question** (`registry/questions.ts`, 0e): the
+  module that owns the party or the instrument declares the answer, exactly one may, and a kind
+  that needs one and has none refuses to seal. A question is asked BY the kernel — an overdraft
+  decision, a valuation, an outlook, a measure the observer shows (`SystemModule.measures`,
+  0e′.5) — and is never how one module reads another.
+- **A request is an event with one kind and a kernel stamp** (`ctx.request` / `ctx.requests`, 0e):
+  what a borrower is short of is published once, under one kind, with the party and the period
+  stamped by the kernel, and a lender reads one thing.
+
+**The observer is under the same rule and has no sibling of its own.** It imports the kernel and the
+registry and no module (`phoenix/no-cross-module-import` covers `src/observer/`); a measure it
+shows that only a module can compute — the desks' consensus on a company, what a party has hedged
+in a pair — is that module's answer to a world-scoped question, and a world assembled without the
+module shows no such measure rather than a guessed one. The occupation tables it once reached into
+two modules for are `registry/occupations.ts`, which is where data lives (Law 15).
+
 ### 4.9c The capital programme, and where the investment decision lives (Capital Programme, XI-4)
 
 **Plant is a dated VINTAGE, and a vintage is an instrument** (A6): its own kind, physical, issued by
@@ -951,14 +983,35 @@ throws rather than answering in the wrong number. The register is therefore buil
 out of one list of declarations: once with no units, which can answer only `resolution.pieceShift`,
 and once against the registry that number built.
 
-### 4.10a What a module knows between periods
+### 4.10a What a module knows between periods, and within one
 
 A module's own register — employment rows, a book of invoices, a party's outlooks — lives in a state
-slot (`ctx.state(name, initial)`), keyed by the module that owns it and snapshotted by the observer
-as the data it is. Two rules keep it honest: a slot is never a second copy of what a kernel store
-already holds, and a module that must also **audit** its own register builds the object once, per
-world, and hands the same object to its phases and to its audit contribution — one book, one writer
-(Law 4). That is why `goods()` and `labour()` are factories: a module with a memory is this world's.
+slot (`ctx.state(name, initial)`), keyed by the module that owns it, declared in `registry/nouns.ts`
+as `noun | working | physics` or it does not open, and snapshotted by the observer as the data it
+is. Two rules keep it honest: a slot is never a second copy of what a kernel store already holds,
+and a module that must also **audit** its own register builds the object once, per world, and hands
+the same object to its phases and to its audit contribution — one book, one writer (Law 4). That is
+why `goods()` and `labour()` are factories: a module with a memory is this world's.
+
+**The journal is a LOG, never a store** (0e′.4). A module that reads back an event it wrote in the
+SAME period is using the log to get from one of its own phases to the next — a `working` store with
+no declaration, invisible to the ontology register and to the phase-order check, and every field
+comes back through `unknown`. Nine of those were found and each is a declared `working` store now:
+a firm's plan, a cell's orders, a desk's arbitrage trip, a firm's buyback, a pool's strike position,
+a bank's line allotment and its buffer, a treasury's need, the derivative layer's unmet calls. The
+event stays in every case — it is the public record of the decision, written FROM the store, once,
+and never read back by its writer. Two reads of one's own events are NOT this defect and stay: a
+read of a strictly EARLIER period is a module remembering a public fact (Law 19), and an AUDIT
+FAMILY reading the public record is what an audit is — handing it the module's store would check a
+derivation against itself.
+
+**A participant reaches its party's working store through `ParticipantView.working(name,
+initial)`; a phase writes it through `MechanismContext.workingOf(party, name, initial)`.** They are
+the two ends of one `Map<PartyId, T>` under (owner, name). The owner is whoever the kernel asked —
+the participant it is evaluating, the phase that is running, or the module answering a question —
+and the kernel always knows, so a read outside all three has no owner and throws. A participant
+gets its OWN party's entry and never the map, so a firm cannot read another firm's plan: private by
+construction (Observer A4), the property `blindView` already has for prices.
 
 ### 4.11 Events and the observer surface (§45)
 

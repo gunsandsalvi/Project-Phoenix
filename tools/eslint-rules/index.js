@@ -247,7 +247,7 @@ const noCrossModuleImport = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'A mechanism or seed module imports only the kernel, never a sibling module',
+      description: 'A mechanism, seed or observer file imports only the kernel, never a module',
     },
     schema: [],
     messages: {
@@ -259,9 +259,15 @@ const noCrossModuleImport = {
   },
   create(context) {
     const file = context.filename.replace(/\\/g, '/');
+    // OB5 (0e′.5): the OBSERVER is under the same rule with no sibling of its own — it imports the
+    // kernel and the registry and no module at all, because a surface that reaches into a module
+    // is a surface that changes with it, and it reached into four before this line existed.
+    // A file directly under `seeds/` is a SEED and it assembles modules, so it is not under the
+    // rule; a module is a directory. The observer is a directory of its own kind.
     const m = /\/src\/(mechanisms|seeds)\/([^/]+)\//.exec(file);
-    if (m === null) return {};
-    const own = `${m[1]}/${m[2]}`;
+    const observer = /\/src\/observer\//.test(file);
+    if (m === null && !observer) return {};
+    const own = m === null ? 'observer' : `${m[1]}/${m[2]}`;
     // The importing file's own directory, so a relative specifier can be walked against it. The
     // rule used to strip the leading `../`s and test the remainder for a `mechanisms/` prefix —
     // which is true of exactly one spelling nobody writes. `'../goods/index.js'` became

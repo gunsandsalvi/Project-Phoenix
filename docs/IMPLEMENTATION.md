@@ -197,7 +197,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 0c | One truth in the documents; the guards that bite | before any item closes on the new plan |
 | 0d | The overdue suite run, triaged | the measurement eleven modules owed |
 | 0e | Questions, not hooks | the module contract every sector item after it uses |
-| 0e′ | Stores, not events; and the observer imports nothing | the same subject; before 0f, because the lattice declares stores |
+| 0e′ | Stores, not events; and the observer imports nothing — **done** | the same subject; before 0f, because the lattice declares stores |
 | 0f | The population lattice (cells hold totals) | the representation every mass sector stands on; must precede the columnar state |
 | 0g | The core made fast | after 0f (the register's cell half is final); a year in minutes before anything is measured at scale |
 | 11 | Small-Business Pools | on 0f |
@@ -518,35 +518,6 @@ the coupling cannot grow; every borrower asks the same way.
 
 ---
 
-## 0e′. Stores, not events; and the observer imports nothing
-
-Inserted here, after 0e and before 0f, because it is the same subject and the same measurement: 0e
-made a question a declaration and stopped the coupling growing; this removes the 51 pairs that are
-left and the journal-as-database behind them. It is before 0f because the lattice declares stores,
-and what a store IS has to be settled first.
-
-- [x] 0e′.1 The remaining cross-module reads become registry reads that do their own fetching, on the `registry/switching.ts` pattern (a narrow `Reads` interface, not a `MechanismContext`): the wage a place pays (`labour.print`, `labour.goingRate`, `labour.wages` → `registry/wages.ts`), the rented room (`commodities.leased` → `registry/physical.ts`), the environment condition (`environment.state` → `registry/environment.ts`). Each pair deleted from the ratchet's baseline in the same change.
-- [x] 0e′.2 The bank's own publications (`bank.buffer`, `bank.capital`, `bank.costOfFunds`, `bank.depositRate`, `bank.dealing`, `bank.reservation`, `bank.liquidity`, `deposit.classes`, `moneyMarket.print`, `moneyMarket.refused`, `centralBank.corridor`, `credit.quoted`, `credit.default`) are what a lender or a saver READS ABOUT A BANK: one registry read per fact, keyed by bank, over the public record. 24 of the remaining pairs.
-- [x] 0e′.3 The rest are reads, not questions (the step's premise was wrong — see the record): `prime.wanted`/`prime.call`/`prime.line` (what a broker's client wants), `fund.struck`/`fund.listedStruck` (what a pool is worth), `advisory.ran`/`advisory.quoted`, `auction.announced`, `bond.offered`, `estate.closed`, `housing.shortfall`, `index.benchmark`, `rating.action`, `commodities.leased`.
-- [x] 0e′.4 The journal is a LOG, not a store. **The step's list of eight was written from five findings; the first measurement said 25 and the true count was 11** (measured 0e′.3; the classifier is `SAME-PERIOD` in the run below). A module reading back an event of a LATER period than the one it wrote is remembering a public fact and that is Law 19 working — 17 of those, and they stay. A module reading back an event **it wrote in the same period** is using the log to get from one of its own phases to the next, which is a `working` store with no declaration, invisible to `registry/nouns.ts` and to the phase-order check. Those are the ones below — and see 0e′.4b–4d for why 25 was itself an over-count:
-
-  - [x] 0e′.4a `firms.plan` (index.ts ×2, produce.ts) and `households.plan` (index.ts ×2). The kernel door was built first and is inserted ahead of this step as **0e′.4⁰**: `ParticipantView.working(name, initial)` and `MechanismContext.workingOf(party, name, initial)`, one store per (owner, party, name), the owner resolved from the participant the kernel is evaluating or from the phase that is running. A participant reads its OWN party's entry and cannot reach another's, so Observer A4 holds by construction. Both plans are now declared `working` nouns and four `unknown[]` parsers are gone.
-  - [x] 0e′.4b–4d, and **the count of 25 was wrong too** — it was 11, and the classifier that said 25 was counting two things that are not defects. A module reading back an event of a period STRICTLY BEFORE this one is remembering a public fact (`bank.capitalPlan`, `movesOf`'s window, `credit.quoted`, `cds.index.settled`). An AUDIT FAMILY reading the public record is what an audit IS: `tradingBookIsCapitalised` and `securitisation C6` cross-check one module's publications against another's on purpose, and giving them the module's own store would be checking a derivation against itself.
-
-    Converted: `fx.arbitrage`, `equity.plan` ×2, `fund.struck`, `bank.lines`, `bank.buffer`, `treasury.programme`, `margin.call`. Nine `working` stores declared in all (with 4a's two), and four `unknown[]` order parsers deleted.
-
-    What is LEFT and is not a defect: `securitisation` ×2 (audit), and `banks:credit.written` — `publishStandard` aggregates the period's own `credit.written` into a public count and volume, which is a read of events that already happened, causing nothing (Observer A5). A log read as a log.
-
-  Each becomes a declared `working` store in `registry/nouns.ts` (they are how one module gets from one of its phases to the next, which is exactly what `working` is for — not `noun`, because nothing else in the world has an opinion about a plan that has not been acted on). The event stays: it is written from the store, once, publicly, and never read back by its writer. `registry/nouns.ts` recounted.
-  **`cds.index.settled` is NOT one of them** (CD5 named it): the read is cross-period and the site argues its own case correctly — the journal already says which weights a contract has paid, and a store would be the second copy Law 4 forbids. The finding is withdrawn, not moved.
-- [ ] 0e′.5 Observer imports no module: `research consensusOf` and `fx-derivatives hedgedResidual` become registered `measures`; `OCCUPATION_OF`/`OCCUPATIONS` move to the registry (OB5).
-- [ ] 0e′.6 ARCHITECTURE 4.9b and 4.10a rewritten. Test: the ratchet's baseline is empty.
-
-**Exit.** `check:forbids` reports no module reading another module's event by name; no module keeps
-a fact in the journal that it reads back.
-
----
-
 ## 0f. The population lattice
 
 Replaces XI-15 as implemented (per-member holdings, split on every partial event, merge on
@@ -863,7 +834,9 @@ Finding ids are those of `docs/FINDINGS.md`.
 | C13 | 0b |
 | D1–D16, E-25, K9, A7, W6, FR7, CD8, S3, SB2, FR5, CO5, EN3, A5 | 0c |
 | C-1 | 0d |
-| BK4, CO4, OB5, H7, H9, RP10, CD5, FD3, IN2, MM13, BK31, W6, A7 | 0e |
+| BK4, CO4, W6, A7 | 0e |
+| OB5, H7, H9, FD3, BK31 | 0e′ (closed: the observer imports no module; the plans, the strike and the bank's allotment are `working` stores) |
+| RP10, CD5, IN2, MM13 | 0e′ — **withdrawn on measurement**: none is a same-period read-back. CD5 is cross-period and argues its own case; RP10, IN2 and MM13 read their own events of earlier periods or as an aggregate of what already happened (Observer A5), which is a log read as a log |
 | R2, M3, W5, H2, F7, H3, A1, MM11, HO10, GD1, H5, H1, H4, H6, SB1, SB2, SB3, TC5, DESIGN-1, C3 (promotion) | 0f |
 | C12, D8, A3, A4, A6, R1, R3, R4, K5, K11, V2, W2, W3, W7, G1–G4, G7, G8, G11, F1, F2, F11, GD4, CP1, BK2, BK10, BK14, BK15, BK17–BK20, BK32, MM1–MM5, FD1–FD3, FD5, FD8, FD9, FD12, EQ1, EQ2, EQ8, EQ9, EQ13, EQ17, RP1–RP3, RP5, RP9, EX1, DL1–DL3, DL10, CD1, CD2, CD4, IX1–IX5, SL1, SL5, SZ2–SZ5, ST5, TC1, TC2, IN7, IN9, HO3–HO5, MR1, MR2, FR1, FR8, CO1, SC1, SC2, OM3–OM5, OB1–OB4, OB7, OB8, WK3–WK15, K1, M5 | 0g |
 | SZ1 (currency), 11.x | 11 |

@@ -44,6 +44,7 @@ import { estimateFrom, seenOf } from './estimate.js';
 import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
 import { wagePrintedIn } from '../../registry/wages.js';
 import { linesQuoted } from '../../registry/banking.js';
+import { QUESTIONS, type ConsensusRead } from '../../registry/questions.js';
 
 export * from './data.js';
 export * from './estimate.js';
@@ -314,14 +315,7 @@ function settle(ctx: MechanismContext): void {
 }
 
 /** E1: what the estimates that exist come to, with how stale the oldest of them is. */
-export interface ConsensusRead {
-  readonly count: number;
-  readonly mean: Cash;
-  /** C3, E1: how far apart they are, which is the read that says the disagreement is real. */
-  readonly spread: Cash;
-  /** §45 A5: the period the oldest estimate in it was published in, so a reader can see its age. */
-  readonly oldest: number;
-}
+export type { ConsensusRead } from '../../registry/questions.js';
 
 /**
  * E1, E3: THE CONSENSUS IS A READ, computed from the estimates that exist at the moment of reading
@@ -470,6 +464,7 @@ export function research(seed: string): SystemModule {
   forbid(seed.length > 0, 'Seed A5', 'a research desk is drawn from the world seed');
   return {
     id: 'research',
+    measures: [{ question: QUESTIONS.whatTheConsensusIs, fn: consensusOf }],
     nouns: [
       {
         name: 'research',
