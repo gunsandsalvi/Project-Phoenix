@@ -15,7 +15,6 @@
  * and liabilities past its assets. The two have different triggers and different remedies, and
  * whichever fired is named in the reason so the resolution can say which one it was.
  */
-import type { Period } from '../calendar/calendar.js';
 import type { CurrencyCode } from '../core/ids.js';
 import { sum, withinDust } from '../core/num.js';
 import { isArrear } from '../register/arrears.js';

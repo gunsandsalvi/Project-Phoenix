@@ -63,6 +63,7 @@ import { keyOf, weightOf, gridPerMember } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
 import { creditorOf, isLoan } from '../../registry/credit.js';
+import { creditDefaults } from '../../registry/banking.js';
 import { isTenancy, type TenancyTerms as PublicTenancyTerms } from '../../registry/funding.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -639,19 +640,29 @@ function charge(ctx: MechanismContext): void {
  * the loss lands where the loan is (Appendix B: no fixed recovery).
  */
 function foreclose(ctx: MechanismContext): void {
+  // C4, XI-1 (12a.4): A LENDER FORECLOSES ON A DEFAULT — a payment on the row that fell due and was
+  // not made, which the kernel records against the instrument — and never on the borrower being
+  // gone. It read "not alive" as "failed", and a household cell that moved bank is not alive and
+  // is succeeded: its dwelling would have been foreclosed on for having moved (Register F2).
+  const defaulted = new Set<string>();
+  for (const e of creditDefaults(ctx.journal)) {
+    const on = e.data['instrument'];
+    if (typeof on === 'string') defaulted.add(on);
+  }
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isLoan(i.terms)) continue;
     const t = i.terms;
     if (!t.security.some((sec) => String(sec.instrument).startsWith(`good.${DWELLING}.`))) continue;
-    const borrower = ctx.parties.get(t.borrower);
-    if (borrower.status.alive) continue;
+    if (!defaulted.has(String(i.id))) continue;
+    // Register F2: the borrower as it is now — its estate, if it failed; the cell it joined, if it moved.
+    const borrower = ctx.parties.resolve(t.borrower);
     const id = goodId(DWELLING, borrower.region);
     if (!ctx.instruments.has(id)) continue;
     const print = ctx.prices.latest(id, ctx.period);
     if (!print.some) continue;
     // Law 19: the liens are the register's own, read where they live. What the lender may take is
     // exactly what was bound to it and never a quantity worked out from the loan.
-    const holding = ctx.register.holding(t.borrower, id);
+    const holding = ctx.register.holding(borrower.id, id);
     if (!holding.some) continue;
     // C5, XI-11: the proceeds go to whoever is owed the row now, not to whoever wrote it.
     const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
@@ -661,10 +672,10 @@ function foreclose(ctx: MechanismContext): void {
     for (const lien of liens) {
       const settled = ctx.settle({
         legs: [
-          { kind: 'release', pledgor: t.borrower, beneficiary: lender, instrument: id, lien: lien.id },
+          { kind: 'release', pledgor: borrower.id, beneficiary: lender, instrument: id, lien: lien.id },
           {
             kind: 'asset',
-            from: t.borrower,
+            from: borrower.id,
             to: lender,
             instrument: id,
             qty: lien.qty,
@@ -782,7 +793,8 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         name: 'housing.foreclose',
         spec: 'Housing C4 Housing C4.a XI-2',
         anchor: { after: 'revaluation' },
-        reads: [],
+        // XI-1 (12a.4): a default on the row is what a lender forecloses on.
+        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
         writes: [],
         run: foreclose,
       },

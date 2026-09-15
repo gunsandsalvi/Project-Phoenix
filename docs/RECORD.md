@@ -11272,3 +11272,23 @@ written no more; it stands only for a hand-over that failed for another reason.
 
 **Checks.** `arrears.test.ts`, `mobility.test.ts`, `trade-credit.test.ts` green; `check:opens`
 green; lint, typecheck green.
+
+## Item 12a.4 — A cell asks for a mortgage every period it is short of roofs
+
+The guard the step named had moved: it was `homeBid`'s "one mortgage at a time", which at a cell
+of twenty thousand households read as one roof for all of them, ever, once one had a row — so
+every cell was short of a roof every period for the life of a run. It is gone. A cell short of
+roofs asks its bank every period for what its people's spare does not reach, on a schedule,
+secured on what the loan would buy; a mortgage is a row per (lender, cell) in totals. A lender
+forecloses on a DEFAULT recorded on the row — the kernel's own event, read through the banking
+registry — and never on the borrower being gone: a cell that moved bank is succeeded, not failed,
+and its dwelling stays where it lives (the 11.1 finding closed); the legs name the borrower as it
+is now.
+
+**Measured.** Twelve periods of the scale model: household cells ask every period and are
+declined on appetite every time — no bank quotes a household name — so no mortgage is written
+and three cells stay short of a roof, from every cell every period. The ask is the households';
+the answer is the credit view's (17.0), where the haircut on the print also lives.
+
+**Checks.** `mortgage.test.ts` green; the household, housing, formation, mobility and arrears
+tests unchanged; `check:opens` green; lint, typecheck green.

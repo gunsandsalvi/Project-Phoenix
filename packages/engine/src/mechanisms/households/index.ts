@@ -1045,17 +1045,19 @@ function homeBid(
   const cost = valueAt(level, short, 'what the roofs it is short of would cost');
   const have = scale(spare, asRatio(weight, 'its members'), 'what the cell has spare between them');
   if (cost > have) {
-    // C3: one mortgage at a time — a cell already carrying one is paying that down, not asking.
-    if (view.owedIn(ccy) + view.cash(ccy) <= 0) {
-      const gap = minus(cost, have, 'what its spare does not reach');
-      ctx.request(view.self.id, {
-        ccy,
-        short: gap,
-        security: [{ instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) }],
-        // Housing C2: a mortgage is paid down, interest and principal.
-        repays: 'onSchedule',
-      });
-    }
+    // Housing C1, XI-15 (12a.4): A MORTGAGE IS A ROW PER (LENDER, CELL) IN TOTALS, and a cell asks
+    // for what its people's spare does not reach every period it is short of roofs. It asked only
+    // while it owed nothing at all — "one mortgage at a time", read at a cell of twenty thousand
+    // households as one roof for all of them, ever — and every cell was short of a roof every
+    // period for the life of the run (`housing.shortfall`). Whether the bank lends is the bank's.
+    const gap = minus(cost, have, 'what its spare does not reach');
+    ctx.request(view.self.id, {
+      ccy,
+      short: gap,
+      security: [{ instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) }],
+      // Housing C2: a mortgage is paid down, interest and principal.
+      repays: 'onSchedule',
+    });
   }
   if (spare <= 0) return nothing;
   // Law 8, XI-15: whole pieces, per member, and DOWN — what its money actually reaches.
