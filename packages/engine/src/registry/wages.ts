@@ -95,16 +95,26 @@ export function wageFacing(reads: WageReads, at: Period, venue: VenueId): Option
     // Item 16: its own wage bill re-enters here — what it paid, over the hours it paid for.
     return some(pricedAt(own.value.due, own.value.hours, 'what an hour cost it'));
   }
+  return goingRateIn(reads, venue);
+}
+
+/**
+ * Labour D1.c: WHAT A TRADE ACTUALLY PAYS, published every period and public to everybody.
+ *
+ * Keyed by the VENUE, because that is what `publishGoingRate` writes. One region's trade is one
+ * venue, so the venue IS the (region, occupation) an employer would hire in and a cell would offer
+ * its members' hours into. A trade NOBODY is employed in has no going rate, which is nothing rather
+ * than a zero — and is how a new trade gets its first worker at all.
+ */
+export function goingRateIn(reads: WageReads, venue: VenueId): Option<PerPiece> {
   const published = reads.lastPublic(GOING_RATE);
   if (!published.some) return none<PerPiece>();
   const rates = published.value.data['wagePerHour'];
   if (typeof rates !== 'object' || rates === null) return none<PerPiece>();
-  // Law 4: keyed by the VENUE, because that is what `publishGoingRate` writes. One region's trade
-  // is one venue, so the venue IS the (region, occupation) this employer would hire in.
   const rate = (rates as Record<string, unknown>)[String(venue)];
-  // Item 16: the going rate re-enters here — what an hour cleared at where this employer is.
+  // Item 16: the going rate re-enters here — what an hour cleared at in that trade, in that place.
   return typeof rate === 'number' && rate > 0
-    ? some(asPerPiece(rate, 'what an hour cleared at where it is'))
+    ? some(asPerPiece(rate, 'what an hour cleared at there'))
     : none<PerPiece>();
 }
 

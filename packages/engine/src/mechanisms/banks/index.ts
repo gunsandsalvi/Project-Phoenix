@@ -96,6 +96,7 @@ import {
   type Quote,
   type Regulation,
 } from './quote.js';
+import { creditDefaults } from '../../registry/banking.js';
 
 export * from './data.js';
 export { DEALING, LENDING, roomFor } from './lines.js';
@@ -304,7 +305,7 @@ function mustRaise(rows: readonly BankDecl[], ctx: MechanismContext, bank: Party
 
 /** C1.b: every default anybody published — public, so every bank saw them (Expectations A2). */
 function seenDefaults(ctx: MechanismContext): readonly Event[] {
-  return ctx.journal.ofKind('credit.default');
+  return creditDefaults(ctx.journal);
 }
 
 function declOf(rows: readonly BankDecl[], bank: PartyId): BankDecl | undefined {

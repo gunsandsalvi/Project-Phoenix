@@ -64,6 +64,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
 import { hasEverMetAPayroll } from '../../registry/wages.js';
+import { costOfMoneyQuotedTo, namesQuotedIn } from '../../registry/banking.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -159,10 +160,8 @@ function worthAt(
  * rather than walking every quote the world has ever published back to the beginning.
  */
 function costOfMoneyOf(ctx: MechanismContext, who: PartyId): Option<Ratio> {
-  const quoted = ctx.journal.lastOf('credit.quoted', who);
-  const rate = quoted?.data['rate'];
-  // Item 16: what a bank quoted it re-enters here — a rate per annum on what it would borrow.
-  if (typeof rate === 'number') return some(asRatio(rate, 'what a bank quoted it'));
+  const quoted = costOfMoneyQuotedTo(ctx.journal, String(who));
+  if (quoted.some) return quoted;
   const struck = ctx.journal.lastOf('fund.struck', who);
   const requires = struck?.data['requires'];
   return typeof requires === 'number'
@@ -898,12 +897,14 @@ export function equityLines(ctx: MechanismContext): readonly Instrument[] {
  */
 function couldBuy(ctx: MechanismContext): readonly PartyId[] {
   const out = new Set<PartyId>();
-  for (const kind of ['credit.quoted', 'fund.struck'] as const) {
-    for (const e of ctx.journal.ofKindIn(kind, ctx.period)) {
-      for (const named of e.subjects) {
-        const who = partyId(named);
-        if (ctx.parties.has(who)) out.add(who);
-      }
+  const published = [
+    ...namesQuotedIn(ctx.journal, ctx.period),
+    ...ctx.journal.ofKindIn('fund.struck', ctx.period),
+  ];
+  for (const e of published) {
+    for (const named of e.subjects) {
+      const who = partyId(named);
+      if (ctx.parties.has(who)) out.add(who);
     }
   }
   return [...out];

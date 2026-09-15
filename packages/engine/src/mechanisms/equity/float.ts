@@ -49,6 +49,7 @@ import { displayName } from '../../registry/naming.js';
 import { material } from '../../core/num.js';
 import type { MechanismContext } from '../../world/context.js';
 import { equityLineOf, equityMarketOf, type EquityDecl } from './data.js';
+import { creditQuoteThisPeriod } from '../../registry/banking.js';
 
 /** What a firm published it is short of for the thing it wants to build, and the money it is in. */
 interface Need {
@@ -76,14 +77,11 @@ function quotedTo(
   ctx: MechanismContext,
   firm: PartyId,
 ): Option<{ readonly rate: Ratio; readonly most: Cash }> {
-  const said = ctx.journal.lastOf('credit.quoted', String(firm));
-  if (said?.period !== ctx.period) return none();
-  const rate = said.data['rate'];
-  const most = said.data['most'];
-  if (typeof rate !== 'number' || typeof most !== 'number') return none();
+  const said = creditQuoteThisPeriod(ctx.journal, String(firm), ctx.period);
+  if (!said.some) return none();
   return some({
-    rate: asRatio(rate, 'what its bank quoted it'),
-    most: asCash(most, 'what that bank will lend it'),
+    rate: said.value.rate,
+    most: asCash(said.value.most, 'what that bank will lend it'),
   });
 }
 

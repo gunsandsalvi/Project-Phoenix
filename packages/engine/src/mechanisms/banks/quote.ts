@@ -38,6 +38,7 @@ import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
 import { LENDING, roomFor } from './lines.js';
+import { couldLeave, liquidHeld } from '../../registry/banking.js';
 
 /** C1: the four terms, kept apart so a reader can see which one moved (B2.d, XI-4). */
 export interface Quote {
@@ -239,16 +240,14 @@ export interface Room {
  * has told anybody anything.
  */
 export function fundingRoom(view: ParticipantView): Option<Cash> {
-  const said = view.lastOwn('bank.liquidity');
-  if (!said.some) return none<Cash>();
-  const liquid = said.value.data['liquid'];
-  const exposed = said.value.data['couldLeave'];
-  if (typeof liquid !== 'number' || typeof exposed !== 'number') return none<Cash>();
+  const liquid = liquidHeld(view);
+  const exposed = couldLeave(view);
+  if (!liquid.some || !exposed.some) return none<Cash>();
   // Item 16: its own published liquidity re-enters here — two moneys it said it had and could lose.
   return some(
     minus(
-      asCash(liquid, 'what it published it holds liquid'),
-      asCash(exposed, 'what it published could leave'),
+      asCash(liquid.value, 'what it published it holds liquid'),
+      asCash(exposed.value, 'what it published could leave'),
       'what it can lend and still cover what could leave',
     ),
   );

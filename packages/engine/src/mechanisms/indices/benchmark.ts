@@ -24,6 +24,7 @@ import type { CurrencyCode } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext } from '../../world/context.js';
+import { overnightPrints } from '../../registry/banking.js';
 
 /** What one overnight book did this period, in one currency. */
 export interface Benchmark {
@@ -51,21 +52,17 @@ export function benchmark(
 ): Option<Benchmark> {
   const weighted: Cash[] = [];
   const volumes: Qty[] = [];
-  for (const e of ctx.journal.ofKind('moneyMarket.print')) {
-    if (e.period !== ctx.period) continue;
-    if (e.data['ccy'] !== ccy || e.data['tenor'] !== 'overnight') continue;
-    if (e.data['secured'] !== secured) continue;
-    const rate = e.data['rate'];
-    const volume = e.data['volume'];
-    if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
+  for (const e of overnightPrints(ctx.journal)) {
+    if (e.period !== ctx.period || e.ccy !== ccy || e.tenor !== 'overnight') continue;
+    if (e.secured !== secured || e.volume <= 0) continue;
     weighted.push(
       valueAt(
-        asPerPiece(rate, 'what this borrower paid'),
-        asAmount<'piece'>(volume, 'for what it took'),
+        asPerPiece(e.rate, 'what this borrower paid'),
+        asAmount<'piece'>(e.volume, 'for what it took'),
         'what this borrower paid, for what it took',
       ),
     );
-    volumes.push(asAmount<'piece'>(volume, 'what it took'));
+    volumes.push(asAmount<'piece'>(e.volume, 'what it took'));
   }
   const volume = sum(volumes).value;
   if (volume <= 0) return none<Benchmark>();

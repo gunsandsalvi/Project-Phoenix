@@ -23,6 +23,7 @@
  * the book says no; it does not own a book, and a module that cleared its own would be the third
  * issuance mechanism this world is in the middle of deleting (item 10d).
  */
+import { boardPosted, bufferOf, creditQuoteThisPeriod } from '../../registry/banking.js';
 import {
   amountOf,
   asCash,
@@ -185,12 +186,10 @@ function firmNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
  * the issuer B1 describes — a dated need, and somewhere else to ask.
  */
 function bankNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
-  const said = ctx.journal.lastOf('bank.buffer', String(issuer));
-  if (said?.period !== ctx.period) return none();
-  const buffer = said.data['buffer'];
-  const ccy = said.data['ccy'];
-  if (typeof buffer !== 'number' || typeof ccy !== 'string') return none();
-  const money = currencyCode(ccy);
+  const said = bufferOf(ctx.journal, String(issuer), ctx.period);
+  if (!said.some) return none();
+  const buffer = said.value.buffer;
+  const money = currencyCode(said.value.ccy);
   const held = ctx.register.quantity(
     issuer,
     moneyInstrumentId(ctx.registry.centralBankOf(money), money),
@@ -305,11 +304,8 @@ function place(
  * it, or failing that the least any holder said it requires of the name (Corporate Credit E5).
  */
 function costOfBorrowing(ctx: MechanismContext, issuer: PartyId): Option<Ratio> {
-  const quoted = ctx.journal.lastOf('credit.quoted', String(issuer));
-  if (quoted?.period === ctx.period) {
-    const r = quoted.data['rate'];
-    if (typeof r === 'number') return some(asRatio(r, 'what its bank quoted it'));
-  }
+  const quoted = creditQuoteThisPeriod(ctx.journal, String(issuer), ctx.period);
+  if (quoted.some) return some(quoted.value.rate);
   // Corporate Credit E5: failing a quote of its own, the least anybody said they require of the
   // name. One read, on the kernel, because three modules asked it and each scanned for itself.
   return ctx.requiredOf(issuer);
@@ -439,12 +435,7 @@ function onDeposit(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
   let best: number | undefined;
   for (const bank of view.parties.ofKind(BANK)) {
     if (!bank.status.alive) continue;
-    const said = view.lastPublicAbout('bank.depositRate', String(bank.id));
-    if (!said.some || said.value.period !== view.period || said.value.data['ccy'] !== ccy) continue;
-    const rates = said.value.data['rates'];
-    if (typeof rates !== 'object' || rates === null) continue;
-    for (const paid of Object.values(rates as Record<string, unknown>)) {
-      if (typeof paid !== 'number') continue;
+    for (const paid of boardPosted(view, String(bank.id), view.period, ccy)) {
       if (best === undefined || paid > best) best = paid;
     }
   }

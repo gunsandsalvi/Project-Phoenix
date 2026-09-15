@@ -43,6 +43,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import { estimateFrom, seenOf } from './estimate.js';
 import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
 import { wagePrintedIn } from '../../registry/wages.js';
+import { linesQuoted } from '../../registry/banking.js';
 
 export * from './data.js';
 export * from './estimate.js';
@@ -130,11 +131,7 @@ function needsTheView(ctx: MechanismContext, bank: PartyId, company: PartyId): b
   }
   // Or it MAKES A MARKET in the line (§26), which is read off what its own desk published about
   // itself (Law 19) rather than asked of the dealing module, which this one may not import.
-  const said = view.lastOwn('bank.dealing');
-  if (!said.some) return false;
-  const lines = said.value.data['lines'];
-  if (typeof lines !== 'object' || lines === null) return false;
-  for (const id of Object.keys(lines)) {
+  for (const id of linesQuoted(view)) {
     const issuer = view.instruments.get(id as never).issuer;
     if (issuer.some && issuer.value === company) return true;
   }

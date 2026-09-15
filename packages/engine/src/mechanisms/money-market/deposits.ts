@@ -63,6 +63,7 @@ import { weightOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
 import { classOf, type DepositClassDecl } from './data.js';
+import { depositRateFor } from '../../registry/banking.js';
 
 /** One day count for what a bank pays on money, stated once (Law 8: a rate has a period). */
 const DEPOSIT_DAY_COUNT = 'ACT/365F';
@@ -271,14 +272,5 @@ export function liquidityMetric(liquid: Cash, couldLeave: Cash): Option<Ratio> {
  * it is one public number and not two private ones (Law 4).
  */
 export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Option<Ratio> {
-  const said = ctx.journal.forSubject('bank.depositRate', bank);
-  const last = said[said.length - 1];
-  if (last === undefined) return none<Ratio>();
-  const rates = last.data['rates'];
-  if (typeof rates !== 'object' || rates === null) return none<Ratio>();
-  const rate = (rates as Record<string, unknown>)[cls];
-  // Item 16: a published rate re-enters the type system here, through its dimension's own door.
-  return typeof rate === 'number'
-    ? some(asRatio(rate, 'what this bank announced for this class'))
-    : none<Ratio>();
+  return depositRateFor(ctx.journal, String(bank), cls);
 }

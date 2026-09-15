@@ -89,6 +89,7 @@ export {
   sparePerMember,
 } from './portfolio.js';
 import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
+import { goingRateIn } from '../../registry/wages.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -359,14 +360,8 @@ function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
    * back. A trade NOBODY is employed in has no going rate and nothing to be discouraged by, which is
    * how a new trade gets its first worker at all.
    */
-  const said = view.lastPublic('labour.goingRate');
-  if (said.some) {
-    const rates = said.value.data['wagePerHour'];
-    const going = typeof rates === 'object' && rates !== null
-      ? (rates as Record<string, unknown>)[String(venue.id)]
-      : undefined;
-    if (typeof going === 'number' && going < mine) return [];
-  }
+  const going = goingRateIn(view, venue.id);
+  if (going.some && going.value < mine) return [];
   return [{ party: self.id, side: 'sell', price: mine, qty: hours }];
 }
 

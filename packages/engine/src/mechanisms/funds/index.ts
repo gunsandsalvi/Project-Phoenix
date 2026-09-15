@@ -129,6 +129,7 @@ import {
   redeemable,
 } from './mandate.js';
 import { navOf } from './nav.js';
+import { corridorPublished } from '../../registry/banking.js';
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
@@ -1443,11 +1444,8 @@ function placeSpareCash(ctx: MechanismContext, m: Mandate): void {
 
 /** B5.a: what the central bank pays for cash it takes in, read off what it declared (C1). */
 function floorRate(ctx: MechanismContext): Option<number> {
-  const said = ctx.journal.ofKind('centralBank.corridor');
-  const last = said[said.length - 1];
-  if (last === undefined) return none<number>();
-  const floor = last.data['floor'];
-  return typeof floor === 'number' ? some(floor) : none<number>();
+  const said = corridorPublished(ctx.journal);
+  return said.some ? some(said.value.floor as number) : none<number>();
 }
 
 /**

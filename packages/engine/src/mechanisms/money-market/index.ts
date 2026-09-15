@@ -79,6 +79,7 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import { negQty } from '../../core/tick.js';
+import { buffersPublished } from '../../registry/banking.js';
 
 export * from './data.js';
 export * from './rows.js';
@@ -245,19 +246,11 @@ interface Standing {
 
 function standings(ctx: MechanismContext): Map<PartyId, Standing> {
   const out = new Map<PartyId, Standing>();
-  for (const e of ctx.journal.ofKind('bank.buffer')) {
-    if (e.period !== ctx.period) continue;
-    const { bank, reserves, buffer } = e.data;
-    if (typeof bank !== 'string' || typeof reserves !== 'number' || typeof buffer !== 'number') {
-      continue;
-    }
-    // Item 16: what a bank published about its own account re-enters here, in the pieces it holds.
-    const held = asQty(reserves, 'what it published it holds');
-    const kept = asQty(buffer, 'what it published it keeps back');
+  for (const [bank, said] of buffersPublished(ctx.journal, ctx.period)) {
     out.set(partyId(bank), {
-      reserves: held,
-      buffer: kept,
-      gap: subQty(held, kept, 'its position'),
+      reserves: said.reserves,
+      buffer: said.buffer,
+      gap: subQty(said.reserves, said.buffer, 'its position'),
     });
   }
   return out;

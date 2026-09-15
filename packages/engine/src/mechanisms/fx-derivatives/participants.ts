@@ -42,6 +42,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isFxForward, isXccy } from './contract.js';
+import { costOfFundsIn } from '../../registry/banking.js';
 
 /** The overnight fixing this money's own book published, or nothing (D3.a: no fixing, no rate). */
 export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
@@ -177,19 +178,7 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
  * two sides are banks.
  */
 function ownBasis(view: ParticipantView, base: CurrencyCode, quote: CurrencyCode): Option<Ratio> {
-  const said = view.lastPublicAbout('bank.costOfFunds', String(view.self.id));
-  if (!said.some) return none<Ratio>();
-  const data = said.value.data;
-  const costIn = (ccy: CurrencyCode): Option<Ratio> => {
-    const row = data['ccy'] === ccy ? data : undefined;
-    const also = data['alsoIn'];
-    const named =
-      row ?? (typeof also === 'object' && also !== null ? (also as Record<string, unknown>)[ccy] : undefined);
-    if (typeof named !== 'object' || named === null) return none<Ratio>();
-    const r = (named as Record<string, unknown>)['perAnnum'];
-    // Item 16: a published rate re-enters here, through its dimension's own door.
-    return typeof r === 'number' ? some(asRatio(r, `what ${ccy} costs it`)) : none<Ratio>();
-  };
+  const costIn = (ccy: CurrencyCode): Option<Ratio> => costOfFundsIn(view, String(view.self.id), ccy);
   const over = (ccy: CurrencyCode): Option<Ratio> => {
     const own = costIn(ccy);
     const market = overnightRate(view, ccy);

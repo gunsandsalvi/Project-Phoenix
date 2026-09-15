@@ -61,6 +61,7 @@ import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../..
 import type { PlannedOrder } from './decide.js';
 import { downTick, subQty, upTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
+import { ownCostOfMoney } from '../../registry/banking.js';
 
 /** B1.b: what money costs this firm at the margin, now, and what it is made of. */
 export interface CostOfCapital {
@@ -172,13 +173,8 @@ function quotedRate(view: ParticipantView): Option<Ratio> {
    * recorded private and a party's own view may not see another party's private state (Observer
    * A4). What is NOT here either is a number nobody said (Law 3).
    */
-  const own = view.lastOwnSince('credit.quoted', payrollSince(view.period));
-  const quoted = own.some ? own : view.lastOwn('credit.quoted');
-  if (quoted.some) {
-    const rate = quoted.value.data['rate'];
-    // Item 16: a rate re-entering from what was published under this firm's name.
-    if (typeof rate === 'number') return some(asRatio(rate, 'what it was quoted, per annum'));
-  }
+  const quoted = ownCostOfMoney(view, payrollSince(view.period));
+  if (quoted.some) return quoted;
   return sovereignRate(view);
 }
 

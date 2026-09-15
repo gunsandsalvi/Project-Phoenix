@@ -10187,3 +10187,31 @@ have caught a second copy three times, and this is the fourth.
 seven closed rows deleted (`banks|control|firms|treasury:labour.wages`,
 `research|treasury:labour.print`, `firms:commodities.leased`). Lint and typecheck green;
 `output-kind.test.ts` moved to the new `rentedRoom` door and its seven tests pass.
+
+## Item 0e′.2 — What a bank publishes about itself, read in one place
+
+**`registry/banking.ts`**, on the shape 0e′.1 settled: the kind names live in the registry and the
+registry does the fetch. A bank computes its own economics once and publishes them under its own
+name — what a money costs it, what capital it has spare and what it will have out to one name, what
+it keeps back, the board it is offering, what it requires of a name, the lines its desk quotes, what
+it can pay with. Eleven other modules price against those facts and none of them may import the
+module that writes them, so each reached for the EVENT and unpacked the fields itself.
+
+**Two more second copies, found the same way.** `bank.costOfFunds`'s `alsoIn` walk was written in
+`securitisation` and again in `fx-derivatives`. `bank.reservation`'s `required` map was unpacked in
+`banks/treasury.ts` and again in `money-market/collateral.ts` — one bank's own credit view read by
+two formulas. And `quotedTo` (the keenest quote a name was given, and how much that bank will lend)
+was the SAME FUNCTION UNDER THE SAME NAME in `equity/float.ts` and `corporate-bond/index.ts`. Three
+finds in one pass, and none of them was being looked for: they surface because moving a fetch makes
+you put the two callers side by side.
+
+**Twenty-two pairs closed.** `bank.buffer` ×2, `bank.capital`, `bank.costOfFunds` ×2, `bank.dealing`,
+`bank.depositRate` ×2, `bank.liquidity`, `bank.reservation`, `deposit.classes`,
+`centralBank.corridor` ×2, `moneyMarket.print` ×2, `moneyMarket.refused`, `credit.quoted` ×5,
+`credit.default`. With `households:labour.goingRate` (0e′.1's family, closed here by extracting
+`goingRateIn` — a third copy of the venue-keyed lookup) that is 43 → 21.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck and `check:spec` green.
+`money-market`, `short-term-debt` and `securitisation` were run against a worktree at the parent
+commit and carry the same 18 reds and 22 greens before and after, so nothing there went from green
+to red. The suite itself runs at the end of the module (Law 11), not here.

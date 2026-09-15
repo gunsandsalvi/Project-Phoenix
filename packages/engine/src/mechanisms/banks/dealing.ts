@@ -63,6 +63,7 @@ import { downTick, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 import { NO_QTY } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
+import { liquidHeld, refusedOvernight } from '../../registry/banking.js';
 
 /**
  * D1, XI-4: its own appetite, and what its treasury allotted it to GROW BY. A line's limit is what
@@ -121,10 +122,9 @@ export function bookValue(
 
 /** Banks Funding C1: what this bank could pay with, as the bank itself last published it (F4). */
 function liquidOf(view: ParticipantView, ccy: CurrencyCode): Cash {
-  const said = view.lastOwn('bank.liquidity');
-  const liquid = said.some ? said.value.data['liquid'] : undefined;
-  return typeof liquid === 'number' && liquid > 0
-    ? asCash(liquid, 'what it published it could pay with')
+  const said = liquidHeld(view);
+  return said.some && said.value > 0
+    ? asCash(said.value, 'what it published it could pay with')
     : asCash(view.cash(ccy), 'what is in the account');
 }
 
@@ -506,14 +506,11 @@ export function dealingOrders(
  * by what it actually holds, which is not a clamp but the arithmetic of a delivery (Law 6).
  */
 function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty {
-  const said = view.lastOwn('moneyMarket.refused');
+  const said = refusedOvernight(view);
   if (!said.some || said.value.period + 1 !== view.period) return NO_QTY;
-  const saidShort = said.value.data['short'];
-  const saidBuffer = said.value.data['buffer'];
-  if (typeof saidShort !== 'number' || typeof saidBuffer !== 'number') return NO_QTY;
   const owed = minus(
-    asCash(saidShort, 'what the session refused it'),
-    asCash(saidBuffer, 'the cushion inside it'),
+    asCash(said.value.short, 'what the session refused it'),
+    asCash(said.value.buffer, 'the cushion inside it'),
     'what it cannot pay, once the cushion is gone',
   );
   if (owed <= 0) return NO_QTY;

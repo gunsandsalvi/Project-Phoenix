@@ -73,6 +73,7 @@ import { FIRM } from '../../registry/profiles.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { creditQuoteThisPeriod } from '../../registry/banking.js';
 
 export const CORPORATE_BOND = instrumentKindId('corporate.bond');
 
@@ -301,14 +302,11 @@ function quotedTo(
   ctx: MechanismContext,
   firm: PartyId,
 ): Option<{ readonly rate: Ratio; readonly most: Cash }> {
-  const said = ctx.journal.lastOf('credit.quoted', String(firm));
-  if (said?.period !== ctx.period) return none();
-  const quoted = said.data['rate'];
-  const most = said.data['most'];
-  if (typeof quoted !== 'number' || typeof most !== 'number') return none();
+  const said = creditQuoteThisPeriod(ctx.journal, String(firm), ctx.period);
+  if (!said.some) return none();
   return some({
-    rate: asRatio(quoted, 'what its bank quoted it'),
-    most: asCash(most, 'what that bank will lend it'),
+    rate: said.value.rate,
+    most: asCash(said.value.most, 'what that bank will lend it'),
   });
 }
 

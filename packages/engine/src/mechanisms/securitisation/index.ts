@@ -69,6 +69,7 @@ import type { Violation } from '../../audit/audit.js';
 import type { Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { capitalPublished, costOfFundsIn as fundingCostIn, limitPerName } from '../../registry/banking.js';
 
 export const VEHICLE = partyKindId('vehicle');
 export const TRANCHE = instrumentKindId('tranche');
@@ -409,16 +410,8 @@ function carryingOf(view: ParticipantView, rows: readonly Instrument[]): Option<
  * threshold (Law 6).
  */
 function shortBy(view: ParticipantView): Qty {
-  const published = view.lastPublicAbout('bank.capital', String(view.self.id));
-  if (!published.some) return NO_QTY;
-  const d = published.value.data;
-  const headroom = d['headroom'];
-  const perUnit = d['minWeighted'];
-  const binds = d['binds'];
-  if (typeof headroom !== 'number' || typeof perUnit !== 'number' || typeof binds !== 'string') {
-    return NO_QTY;
-  }
-  return faceToShed({ headroom, minWeighted: perUnit, binds });
+  const published = capitalPublished(view, String(view.self.id));
+  return published.some ? faceToShed(published.value) : NO_QTY;
 }
 
 /**
@@ -1318,10 +1311,9 @@ export function noteBids(
   // its notes is exposed to that pool and to nothing else — so the limit a bank already publishes
   // for every name it funds is the limit here too. It is read off the wire rather than restated,
   // because a bank's limit is a bank's fact and there is one writer of it (Law 4, Law 19).
-  const published = view.lastPublicAbout('bank.capital', String(view.self.id));
+  const published = limitPerName(view, String(view.self.id));
   if (!published.some) return [];
-  const limit = published.value.data['limitPerName'];
-  if (typeof limit !== 'number' || limit <= 0) return [];
+  const limit = published.value;
   const price = priceFor(view, ccy, schedule);
   if (!price.some) return [];
   /**
@@ -1395,19 +1387,7 @@ function poolSchedule(
  * never a re-derivation of it (Law 19), and never a table.
  */
 function costOfFundsIn(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
-  const said = view.lastPublicAbout('bank.costOfFunds', String(view.self.id));
-  if (!said.some) return none<Ratio>();
-  const data = said.value.data;
-  const perAnnum = (row: unknown): Option<Ratio> => {
-    if (typeof row !== 'object' || row === null) return none<Ratio>();
-    const r = (row as Record<string, unknown>)['perAnnum'];
-    // Item 16: a published rate re-enters the type system here, through its dimension's own door.
-    return typeof r === 'number' ? some(asRatio(r, 'what money costs this bank, per annum')) : none<Ratio>();
-  };
-  if (data['ccy'] === ccy) return perAnnum(data);
-  const also = data['alsoIn'];
-  if (typeof also !== 'object' || also === null) return none<Ratio>();
-  return perAnnum((also as Record<string, unknown>)[ccy]);
+  return fundingCostIn(view, String(view.self.id), ccy);
 }
 
 /**

@@ -36,6 +36,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
+import { requiredOf as requiredYield } from '../../registry/banking.js';
 
 /** One day count for what a lender advances, stated once by the module that asks the question. */
 export const COLLATERAL_DAY_COUNT: DayCount = 'ACT/ACT';
@@ -55,16 +56,8 @@ export function eligible(view: ParticipantView, i: Instrument, on: Civil): boole
  * would be the bank securing its lending against a belief it does not hold.
  */
 export function requiredOf(view: ParticipantView, issuer: PartyId): Option<number> {
-  return published(view, 'required', issuer);
-}
-
-function published(view: ParticipantView, key: string, about: PartyId): Option<number> {
-  const own = view.lastOwn('bank.reservation');
-  if (!own.some) return none<number>();
-  const map = own.value.data[key];
-  if (typeof map !== 'object' || map === null) return none<number>();
-  const rate = (map as Record<string, unknown>)[about];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  const said = requiredYield(view, String(issuer));
+  return said.some ? some(said.value as number) : none<number>();
 }
 
 /** B3.b: what one unit of this paper is worth to this lender — its own yield, that paper's flows. */

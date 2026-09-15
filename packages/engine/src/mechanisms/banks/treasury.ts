@@ -24,7 +24,7 @@
  * — and it is what keeps one bank showing one face to one market.
  */
 import { asAmount, asCash, asRatio, type Cash, heldAsMoney, minus, negated, type PerPiece, plus, type Ratio, ratioOf, scale, valueAt } from '../../core/measure.js';
-import { nextPeriod } from '../../calendar/calendar.js';
+import { nextPeriod, period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import { delivers } from '../../clearing/market.js';
@@ -38,6 +38,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
+import { bufferHeld, capitalCostOn, corridorSeenBy, couldLeave as exposedToLeaving, depositClassesSeen, expectedLossOn, overnightPrints, refusedOvernightIn, requiredOf } from '../../registry/banking.js';
 
 /** C2: the coverage a bank must hold against what could leave. A rule, and somebody wrote it. */
 export const P_COVERAGE: ParamId = paramId('regulation.liquidityCoverage');
@@ -65,15 +66,13 @@ export interface LiquidityPlan {
  * it holds what it was given until it has watched its own account for a period.
  */
 export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<LiquidityPlan> {
-  const said = view.lastOwn('bank.liquidity');
-  if (!said.some) return none<LiquidityPlan>();
-  const saidLeave = said.value.data['couldLeave'];
-  const saidBuffer = said.value.data['buffer'];
-  if (typeof saidLeave !== 'number' || typeof saidBuffer !== 'number') return none<LiquidityPlan>();
+  const saidLeave = exposedToLeaving(view);
+  const saidBuffer = bufferHeld(view);
+  if (!saidLeave.some || !saidBuffer.some) return none<LiquidityPlan>();
   // Item 16: a number re-entering from what this bank PUBLISHED is money again here, at the read
   // that knows what it is, and it cannot be added to a level or a ratio from here on.
-  const couldLeave = asCash(saidLeave, 'what a bad week would ask it for');
-  const buffer = asCash(saidBuffer, 'what it holds in the account');
+  const couldLeave = asCash(saidLeave.value, 'what a bad week would ask it for');
+  const buffer = asCash(saidBuffer.value, 'what it holds in the account');
   const wanted = scale(
     couldLeave,
     plus(view.params.ratio(P_COVERAGE), cushion, 'the rule and its own cushion'),
@@ -229,12 +228,8 @@ export function liquidityTargets(
  * against a belief it does not hold.
  */
 export function requiredYieldOf(view: ParticipantView, issuer: PartyId): Option<number> {
-  const own = view.lastOwn('bank.reservation');
-  if (!own.some) return none<number>();
-  const required = own.value.data['required'];
-  if (typeof required !== 'object' || required === null) return none<number>();
-  const rate = (required as Record<string, unknown>)[issuer];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  const said = requiredOf(view, String(issuer));
+  return said.some ? some(said.value as number) : none<number>();
 }
 
 /**
@@ -295,17 +290,7 @@ export interface SeenCorridor {
  * this morning. That is a real lag: a board does not change in the hour a policy rate does.
  */
 export function corridorSeen(view: ParticipantView): Option<SeenCorridor> {
-  const said = view.lastPublic('centralBank.corridor');
-  if (!said.some) return none<SeenCorridor>();
-  const { policy, floor, ceiling } = said.value.data;
-  if (typeof policy !== 'number' || typeof floor !== 'number' || typeof ceiling !== 'number') {
-    return none<SeenCorridor>();
-  }
-  return some({
-    policy: asRatio(policy, 'the policy rate'),
-    floor: asRatio(floor, 'the floor'),
-    ceiling: asRatio(ceiling, 'the ceiling'),
-  });
+  return corridorSeenBy(view);
 }
 
 /** What its own account has done to it lately, and what it holds against the worst of it (C2.a). */
@@ -399,14 +384,11 @@ export function worthOfMoney(
   const from = ctx.period > memory ? ctx.period - memory : 0;
   const weights: Qty[] = [];
   const weighted: Qty[] = [];
-  for (const e of ctx.journal.ofKind('moneyMarket.print')) {
-    if (e.period < from || e.period >= ctx.period || e.data['borrower'] !== bank) continue;
-    const rate = e.data['rate'];
-    const volume = e.data['volume'];
-    if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
-    const took = asAmount<'piece'>(volume, 'what it took');
+  for (const e of overnightPrints(ctx.journal)) {
+    if (e.period < from || e.period >= ctx.period || e.borrower !== bank || e.volume <= 0) continue;
+    const took = asAmount<'piece'>(e.volume, 'what it took');
     weights.push(took);
-    weighted.push(scale(took, asRatio(rate, 'what it paid for it'), 'what that money cost it'));
+    weighted.push(scale(took, asRatio(e.rate, 'what it paid for it'), 'what that money cost it'));
   }
   const total = sum(weights).value;
   if (total <= 0) return c.floor;
@@ -420,13 +402,7 @@ export function worthOfMoney(
  */
 function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number> {
   if (ctx.period === 0) return none<number>();
-  const last = ctx.period - 1;
-  for (const e of ctx.journal.ofKind('moneyMarket.refused')) {
-    if (e.period !== last || !e.subjects.includes(bank)) continue;
-    const short = e.data['short'];
-    if (typeof short === 'number') return some(short);
-  }
-  return none<number>();
+  return refusedOvernightIn(ctx.journal, String(bank), period(ctx.period - 1));
 }
 
 /**
@@ -553,26 +529,18 @@ export function lenderReservation(
   // B2: unsecured prices the NAME, out of this bank's own credit model — what it expects to lose on
   // that name and what the capital such a claim consumes costs it, both of which it has already
   // published under its own name (Law 4). A bank with no view of the name does not bid at all.
-  const own = view.lastOwn('bank.reservation');
-  if (!own.some) return none<Ratio>();
-  const loss = pick(own.value.data['expectedLoss'], borrower);
-  const capital = pick(own.value.data['capitalCost'], borrower);
-  if (loss === undefined || capital === undefined) return none<Ratio>();
+  const loss = expectedLossOn(view, String(borrower));
+  const capital = capitalCostOn(view, String(borrower));
+  if (!loss.some || !capital.some) return none<Ratio>();
   return some(
     plus(
       c.floor,
-      plus(loss, capital, 'what the name costs it'),
+      plus(loss.value, capital.value, 'what the name costs it'),
       'what it wants for it',
     ),
   );
 }
 
-function pick(map: unknown, about: PartyId): Ratio | undefined {
-  if (typeof map !== 'object' || map === null) return undefined;
-  const v = (map as Record<string, unknown>)[about];
-  // Item 16: what a bank published about a name re-enters here — a rate per annum, both of them.
-  return typeof v === 'number' ? asRatio(v, `what ${about} costs it`) : undefined;
-}
 
 /**
  * Money Market A3, B1, B4, C4.a: WHAT THIS BANK POSTS IN ONE BOOK OF ONE SESSION.
@@ -649,19 +617,7 @@ export interface DepositClassSeen {
  * the bank knows is what its own base has done, which is the contested share below.
  */
 export function classesSeen(ctx: MechanismContext): readonly DepositClassSeen[] {
-  const said = ctx.journal.ofKind('deposit.classes');
-  const last = said[said.length - 1];
-  const rows = last?.data['classes'];
-  if (!Array.isArray(rows)) return [];
-  const out: DepositClassSeen[] = [];
-  for (const r of rows) {
-    if (typeof r !== 'object' || r === null) continue;
-    const { id, insured, premium } = r as Record<string, unknown>;
-    if (typeof id !== 'string' || typeof insured !== 'boolean') continue;
-    if (typeof premium !== 'number') continue;
-    out.push({ id, insured, premium: asRatio(premium, `what the guarantee on ${id} costs`) });
-  }
-  return out;
+  return depositClassesSeen(ctx.journal);
 }
 
 /**
