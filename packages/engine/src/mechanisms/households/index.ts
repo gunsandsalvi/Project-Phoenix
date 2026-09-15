@@ -471,8 +471,9 @@ function consumptionIsBought(): Family {
           // the arithmetic's dust and to half a piece per member on top, and to nothing else: that
           // is the granularity of the money itself, derived here rather than allowed as a band.
           const who = view.parties.get(cell);
-          const grain = weightOf(who);
-          if (withinDust(took.value, money.value, combineDust(took, money) + grain / 2)) continue;
+          // 0f.6: derived dust only. The half-piece-per-member band was the old representation's —
+          // goods are bought and paid for in whole pieces of the total now (Law 7).
+          if (withinDust(took.value, money.value, combineDust(took, money))) continue;
           out.push({
             family: 'flows',
             spec: 'Households C5',

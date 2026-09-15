@@ -713,7 +713,8 @@ export class Register {
    * two cells' totals summed to the old one by construction. With totals in the lots the same
    * conservation has to be MADE, and it is made here, once, for every kind of holding at once.
    */
-  moveShare(from: PartyId, to: PartyId, members: number, weight: number): void {
+  moveShare(from: PartyId, to: PartyId, members: number, weight: number): ReadonlyMap<InstrumentId, Qty> {
+    const movedByInstrument = new Map<InstrumentId, Qty>();
     forbid(
       !this.byHolder.has(to),
       'XI-15',
@@ -749,6 +750,7 @@ export class Register {
           dst.set(inst, { holder: to, instrument: inst, lots, liens });
           this.index(inst).add(to);
           const arrived = lots.reduce((t, l) => t + l.qty, 0);
+          if (arrived > 0) movedByInstrument.set(inst, asQty(arrived, 'what moved'));
           if (this.moneyAccount.has(moneyKey(from, inst))) {
             const key = moneyKey(to, inst);
             this.moneyAccount.set(key, opened(arrived, key));
@@ -771,6 +773,7 @@ export class Register {
     }
     const revalued = this.revaluationAccount.get(from);
     if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
+    return movedByInstrument;
   }
 
 
@@ -787,12 +790,15 @@ export class Register {
    * compare and no reason to refuse: two cells with one key are the same people, and the design
    * says at most one live cell per key (0f). `sameState` is deleted with the representation.
    */
-  merge(into: PartyId, from: PartyId, intoWeight: number, fromWeight: number): void {
+  merge(into: PartyId, from: PartyId, intoWeight: number, fromWeight: number): ReadonlyMap<InstrumentId, Qty> {
     forbid(into !== from, 'XI-15', 'a cell cannot merge with itself');
+    const absorbed = new Map<InstrumentId, Qty>();
     const m = this.byHolder.get(from);
     if (m !== undefined) {
       for (const [inst, h] of m) {
         const target = this.mutable(into, inst);
+        const came = h.lots.reduce((t, l) => t + l.qty, 0);
+        if (came !== 0) absorbed.set(inst, asQty(came, 'what came with the merge'));
         // Money D2: a money holding is ONE lot — a balance — so two balances add into one; any
         // other holding keeps every lot, with its own basis and date, because nothing is averaged.
         const mine = target.lots[0];
@@ -836,6 +842,7 @@ export class Register {
     this.equityAccount.delete(from);
     this.equityLedger.delete(from);
     this.revaluationAccount.delete(from);
+    return absorbed;
   }
 
 

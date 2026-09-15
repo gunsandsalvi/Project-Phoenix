@@ -10469,3 +10469,24 @@ period 24 once cells held totals; a line is called once per pass, which is what 
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green.
+
+## Item 0f.5–0f.6 — What survives a weight, and how the audit reads it
+
+**0f.5 was half wrong, and the measurement says which half.** Every site that scaled a HOLDING
+READ by the weight was deleted at 0f.1, because the world could not open otherwise. What survives
+is a count of people, a per-member RULE times the count, or a total read per member — the
+arithmetic of a population, not a second representation. The step closes with that classification
+and one named default gone: a good with no charge journals no charge, not a charge of nothing.
+
+**0f.6.** The `units` family's seat check already keys on the whole lattice key, so the invariant
+is one live cell per key as declared. The household `consumptionIsBought` check loses its
+half-a-piece-per-member band: goods are bought and paid for in whole pieces of the total now, and
+the tolerance is derived dust only (Law 7). The `flows` family assumed a split COPIED the parent's
+book and measured the child from it; under `moveShare` and `merge` holdings move between cells with
+no leg, so the weight event now carries what moved per instrument and the family reads it as the
+explanation on both sides (Law 19: the record, never an inferred copy). The mover lost it, the
+destination gained it, a cell that merged away is skipped, and everything else is measured like any
+holding.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green.

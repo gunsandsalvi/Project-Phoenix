@@ -48,7 +48,7 @@ export function mergeCells(
    * the run so nothing persisted, but the order was backwards and it costs nothing to put right:
    * ask, apply, journal.
    */
-  d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight);
+  const moved = d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight);
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -70,6 +70,7 @@ export function mergeCells(
       from: b,
       members: cb.weight,
       cause,
+      moved: Object.fromEntries(moved),
     },
     true,
   );
@@ -158,7 +159,7 @@ export function reKeyCell(
     key: { ...c.key, ...key },
   };
   d.parties.add(fresh);
-  d.register.moveShare(cell, id, members, c.weight);
+  const moved = d.register.moveShare(cell, id, members, c.weight);
   d.parties.applyWeight({
     kind: 'promotion',
     party: cell,
@@ -172,7 +173,9 @@ export function reKeyCell(
     cycle,
     'weight',
     [cell, id],
-    { kind: 'promotion', from: cell, to: id, members, key, cause },
+    // 0f.6: WHAT MOVED, per instrument, so the flows family reads it as a leg's worth of
+    // explanation on both sides rather than inferring a copy (Law 19).
+    { kind: 'promotion', from: cell, to: id, members, key, cause, moved: Object.fromEntries(moved) },
     true,
   );
   return id;

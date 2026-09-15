@@ -173,7 +173,8 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
       {
         unitsPerMember: perMember,
         rate,
-        chargePerMember: charge === undefined ? 0 : charge.delta,
+        // 0f.5, App A: no charge is no charge, not a charge of nothing.
+        chargePerMember: charge === undefined ? null : charge.delta,
       },
       false,
     );

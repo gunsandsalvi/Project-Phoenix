@@ -18,6 +18,7 @@ import { carriedDust, moveDust, mul, sum, withinDust, zeroIfNone } from '../../c
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
 import type { AuditView } from '../view.js';
+import { asQty, negQty } from '../../core/tick.js';
 
 export function flowsFamily(memory: AuditMemory): Family {
   return {
@@ -62,24 +63,6 @@ export function flowsFamily(memory: AuditMemory): Family {
           mul(ratioOf(instrument), ratio, 'the restatement this period'),
         );
       }
-
-      /**
-       * XI-15, Audit C3: THE ONE CELL WHOSE BOOK REALLY DID APPEAR OR VANISH, and no other.
-       *
-       * Every quantity compared here is PER MEMBER, so a weight event that only changes how many
-       * members there are changes nothing this family is looking at: an entry and a death are
-       * checked exactly like any other period. THREE of the five copy a book without an
-       * instruction — a split gives the NEW cell its parent's per-member state, a merge forgets the
-       * absorbed one, and since 13d.1 a PROMOTION is a split that changes the key, which gives the
-       * new cell the same book for the same reason — and it is those cells, named on the event
-       * itself, that have a holding with no leg behind it.
-       *
-       * It used to exempt every SUBJECT of every weight event, which is both cells of a split or a
-       * merge and the cell itself for the other three — so a household cell that gained a member
-       * had Money D3 switched off across every line it held, for that period, and households are
-       * cells whose weights move constantly (item 13b.1). C3 says every family runs the same checks
-       * every period.
-       */
       /**
        * A-11: AND A COPIED BOOK IS COMPARED AGAINST THE BOOK IT WAS COPIED FROM.
        *
@@ -95,21 +78,34 @@ export function flowsFamily(memory: AuditMemory): Family {
        * A MERGE is the one that really vanishes: the absorbed cell's book is forgotten with no
        * instruction behind it, so that holder — and only that holder — is still exempt.
        */
-      const openedFrom = new Map<string, string>();
+      // XI-15, 0f.6: A WEIGHT EVENT MOVES HOLDINGS WITH NO LEG — a share of every lot goes with the
+      // members that moved, and a merge brings a cell's whole book into the one it joins. The event
+      // says what moved, per instrument, and that is read here as the explanation on both sides:
+      // the mover lost it and the destination gained it. A cell that merged away has no book to
+      // measure and is skipped; everything else is measured like any holding (Law 19: the record,
+      // never an inferred copy).
       const vanished = new Set<string>();
       for (const e of view.journal.inPeriod(view.period)) {
         if (e.kind !== 'weight') continue;
         const kind = e.data['kind'];
         const to = e.data['to'];
         const from = e.data['from'];
-        // 13d.1: a promotion that names a cell it moved people TO is a re-key, and the new cell's
-        // book was copied rather than settled. One that names none is an ordinary weight change.
-        if ((kind === 'split' || kind === 'promotion') && typeof to === 'string') {
-          if (typeof from === 'string') openedFrom.set(to, from);
-          // A split whose event does not name the parent has no book to be measured against, and
-          // saying so is better than measuring it against nothing (Missing is Missing).
-          else vanished.add(to);
-        } else if (kind === 'merge' && typeof from === 'string') vanished.add(from);
+        const moved = e.data['moved'];
+        if (kind === 'merge' && typeof from === 'string') vanished.add(from);
+        if (typeof moved !== 'object' || moved === null) continue;
+        for (const [instrument, qty] of Object.entries(moved as Record<string, unknown>)) {
+          if (typeof qty !== 'number') continue;
+          if (typeof to === 'string') {
+            const list = holdingDeltas.get(holdingKey(to as never, instrument as never)) ?? [];
+            list.push(asQty(qty, 'what arrived with the members'));
+            holdingDeltas.set(holdingKey(to as never, instrument as never), list);
+          }
+          if (typeof from === 'string' && kind !== 'merge') {
+            const list = holdingDeltas.get(holdingKey(from as never, instrument as never)) ?? [];
+            list.push(negQty(asQty(qty, 'what left with the members'), 'what left'));
+            holdingDeltas.set(holdingKey(from as never, instrument as never), list);
+          }
+        }
       }
 
       const keys = new Set<string>([...memory.holdings.keys(), ...holdingDeltas.keys()]);
@@ -125,11 +121,7 @@ export function flowsFamily(memory: AuditMemory): Family {
         // A cell opened by a split starts from its PARENT's remembered book, per member, because
         // that is exactly what it was given. Its own remembered entry does not exist — it did not
         // exist last period — and using it would measure the whole copy as unexplained.
-        const parent = openedFrom.get(holder);
-        const remembered =
-          parent === undefined
-            ? memory.holdings.get(key)
-            : memory.holdings.get(holdingKey(parent as never, instrument as never));
+        const remembered = memory.holdings.get(key);
         const before = scale(
           zeroIfNone<Qty>(remembered?.qty),
           asRatio(ratioOf(instrument), 'restated by the split'),
@@ -150,7 +142,7 @@ export function flowsFamily(memory: AuditMemory): Family {
             size: minus(change.value, legs.value, 'what moved with no leg behind it'),
             unit: view.instruments.get(instrument as never).unit,
             period: view.period,
-            message: `${holder}/${instrument} moved ${change.value} per member but instructions sum to ${legs.value}`,
+            message: `${holder}/${instrument} moved ${change.value} but instructions and weight events sum to ${legs.value}`,
           });
         }
       }
