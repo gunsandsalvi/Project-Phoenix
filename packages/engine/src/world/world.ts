@@ -719,6 +719,72 @@ export class World {
   }
 
   /**
+   * Law 4, Observer A4: WHOSE PARTICIPANT IS BEING EVALUATED. A participant callback gets a view
+   * and no context, so `view.working` has to resolve its owner from somewhere; this is the same
+   * construction `running` is for a phase, and the kernel sets it where it makes the call.
+   *
+   * No `finally` around it, for `askedByTheKernel`'s reason (ARCHITECTURE §5): a participant that
+   * throws stops the run at its site, so there is nothing after it for a leaked owner to affect.
+   */
+  private evaluating: string | undefined;
+
+  private asParticipantOf<T>(owner: string | undefined, ask: () => T): T {
+    const was = this.evaluating;
+    this.evaluating = owner ?? 'kernel';
+    const out = ask();
+    this.evaluating = was;
+    return out;
+  }
+
+  /**
+   * Law 15, Observer A4: ONE PARTY'S ENTRY IN ITS MODULE'S OWN WORKING STORE.
+   *
+   * The slot holds a `Map` keyed by party and the module's phases write the whole of it through
+   * `ctx.state` — one store, one writer (Law 4). What a participant gets is its OWN party's entry
+   * and never the map, so a firm cannot read another firm's plan: private by construction rather
+   * than by discipline, which is the same property `blindView` has for prices.
+   */
+  /**
+   * Law 4: WHOSE STORE `view.working` MEANS. A participant says so by being the one the kernel is
+   * evaluating; a phase says so by being the one running. A module's own phase asking its own
+   * party's view is the same module either way, which is the point — `runLine` hands a firm's view
+   * to the same store the firm's `orders` reads, and neither of them names the other's module.
+   *
+   * Outside both there is no owner to resolve, and a store with no owner is the bag the ontology
+   * register exists to close (Law 15).
+   */
+  private workingFor<T extends object>(party: PartyId, name: string, initial: () => T): T {
+    const owner = this.evaluating ?? this.running?.owner;
+    if (owner === undefined) {
+      throw new Forbidden(
+        'Law 15',
+        `${name} was asked for outside a phase and outside a participant, so it has no owner`,
+        { store: name, party },
+      );
+    }
+    return this.slotFor(owner, party, name, initial);
+  }
+
+  /**
+   * The same store, from the phase side. A module's phase writes every party's entry and its own
+   * participants read one each, through this one construction — so what a participant finds is
+   * exactly what the phase left, and neither side can invent a shape the other does not expect.
+   */
+  private slotFor<T extends object>(
+    owner: string,
+    party: PartyId,
+    name: string,
+    initial: () => T,
+  ): T {
+    const byParty = this.slot<Map<PartyId, T>>(owner, name, () => new Map<PartyId, T>());
+    const held = byParty.get(party);
+    if (held !== undefined) return held;
+    const made = initial();
+    byParty.set(party, made);
+    return made;
+  }
+
+  /**
    * Every module's state, for the observer: a copy taken through JSON, so looking at it changes
    * nothing (Observer E3) and a slot that cannot be described as data is a slot holding something
    * it should not.
@@ -1083,7 +1149,9 @@ export class World {
       for (const party of this.parties.ofKind(p.partyKind)) {
         // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
         if (!party.status.alive) continue;
-        const posted = p.orders(this.participantView(party.id), decl);
+        const posted = this.asParticipantOf(p.owner, () =>
+          p.orders(this.participantView(party.id), decl),
+        );
         this.reachTally.produced(
           'venueParticipant',
           declId(p.owner ?? 'kernel', p.partyKind),
@@ -1383,6 +1451,8 @@ export class World {
       registry: this.registry,
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      working: <T extends object>(name: string, initial: () => T): T =>
+        this.workingFor<T>(party, name, initial),
       published: this.published,
       control: this.control,
       actions: this.actions,
@@ -1856,6 +1926,8 @@ export class World {
       voyages: this.voyages,
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
       state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
+      workingOf: <T extends object>(party: PartyId, name: string, initial: () => T): T =>
+        this.slotFor(owner, party, name, initial),
       participant: (party) => this.participantView(party),
       accountOf: (party, ccy) => this.accountOf(party, ccy),
       settle: (draft) => this.settlement.settle(draft, this.currentPeriod, this.currentCycle),
@@ -2731,7 +2803,8 @@ export class World {
       byMarket = new Map<MarketId, PartyId[]>();
       for (const party of this.parties.ofKind(decl.partyKind)) {
         if (!party.status.alive) continue;
-        for (const id of naming(this.participantView(party.id))) {
+        const named = this.asParticipantOf(decl.owner, () => naming(this.participantView(party.id)));
+        for (const id of named) {
           const already = byMarket.get(id);
           if (already === undefined) byMarket.set(id, [party.id]);
           else already.push(party.id);
@@ -2762,7 +2835,9 @@ export class World {
         // would be an instruction addressed to somebody who is not there. What it held is its
         // estate's now, and the estate posts its own orders under its own name (XI-8).
         if (!party.status.alive) continue;
-        const posted = decl.orders(this.participantView(party.id), m);
+        const posted = this.asParticipantOf(decl.owner, () =>
+          decl.orders(this.participantView(party.id), m),
+        );
         this.reachTally.produced(
           'participant',
           declId(decl.owner ?? 'kernel', decl.partyKind, decl.in),

@@ -10243,3 +10243,33 @@ added back, because the registry read is the fix. Four passes closed it — `wag
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec` and `check:forbids`
 green. The suite runs at the end of the module (Law 11).
+
+## Item 0e′.4a — A plan is a store, and the kernel has a door for one
+
+**The door, built first.** A participant is handed a `ParticipantView` and nothing else — no
+`MechanismContext`, so no `ctx.state` — so the only place a decide phase could leave something for
+its own `markets` and `orders` to pick up was the journal. `firms.plan` and `households.plan` are
+both recorded PRIVATE and were read back by their own writer in the same period: a store wearing a
+log's clothes, undeclared, invisible to `registry/nouns.ts` and to the phase-order check.
+
+`ParticipantView.working(name, initial)` and `MechanismContext.workingOf(party, name, initial)` are
+the two ends of one store, `Map<PartyId, T>` under (owner, name). The owner is resolved the way
+`declared` resolves a phase's: from the participant the kernel is currently evaluating, or failing
+that from the phase that is running — a module's own phase handing its own party's view to its own
+store is the same module either way. Outside both there is no owner and it throws. A participant
+gets its OWN party's entry and never the map, so a firm cannot read another firm's plan: private by
+construction, which is the property `blindView` already has for prices.
+
+**Four parsers deleted.** `marketsIn` and `ordersFrom` existed twice — once in `firms/decide.ts`,
+once in `households/index.ts` — and each took `orders` back out of the event as `unknown[]`,
+re-checked every field, and DROPPED any order that did not survive the round trip. The orders never
+leave the type system now. The households pair moved the `asQty` door from the read to the WRITE,
+where the module knows what it decided; at the read it was checking a number that had already been
+through `unknown`, which is where a size that was not a count went missing quietly.
+
+**The events stay.** Both are the record of a decision and the tests read them; what changed is
+that nothing reads them back to act on. That is the step's rule: written from the store, once, and
+never read back by its writer.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green. Same-period read-backs 25 → 20; 0e′.4b–4d carry the rest.

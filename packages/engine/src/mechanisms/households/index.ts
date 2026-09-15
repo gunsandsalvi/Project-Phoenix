@@ -40,10 +40,10 @@ import {
 } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
-import type { Order } from '../../clearing/solver.js';
+import type { Order, OrderPrice } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { period } from '../../calendar/calendar.js';
-import { instrumentId, marketId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
+import { period, type Period } from '../../calendar/calendar.js';
+import { instrumentId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
 import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
@@ -104,6 +104,31 @@ export const HOUSEHOLD_PARAMS = {
   /** D5, Housing E1: what a cell puts towards a home it needs and does not own (item 7b). */
   toAHome: paramId('households.toAHome'),
 } as const;
+
+/** The name of the store a cell's spend phase leaves its plan in, declared in the module's nouns. */
+export const DECIDED = 'households.decided';
+
+/** One order this cell decided to post, in the types it decided it in. */
+interface PlannedOrder {
+  readonly market: MarketId;
+  readonly side: 'buy' | 'sell';
+  /** XI-2: a cell selling because it needs the money names no price. Everything else is a level. */
+  readonly price: OrderPrice;
+  readonly qty: Qty;
+}
+
+/**
+ * Law 8: WHAT THIS CELL DECIDED, AND IN WHICH PERIOD. The period is part of the fact: a plan from
+ * last period is not a plan to post now, which is what `lastOwnSince(..., view.period)` was saying
+ * while the journal stood in for this store.
+ */
+interface DecidedThisPeriod {
+  at: Period | undefined;
+  orders: readonly PlannedOrder[];
+}
+
+/** An empty slot: a cell that has not decided this period has no period and no orders. */
+export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [] });
 
 /** Treasury C1: the rate a household pays on what it buys, which it must find on top of the price. */
 export const CONSUMPTION_TAX = paramId('treasury.tax.consumption');
@@ -380,6 +405,14 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     spec: 'Households, Sovereign E2.f',
     nouns: [
       {
+        name: DECIDED,
+        kind: 'working',
+        holds:
+          'the orders each cell decided to post this period, and the period it decided them in',
+        why:
+          'it is how this module gets from its spend phase to its own `markets` and `orders`, and nothing outside it has an opinion about an order nobody has posted yet (0e\u2032.4). It was a PRIVATE `households.plan` event read back by its own writer in the same period, with every order going out through `unknown[]` and back and any that did not survive the round trip dropped in silence. The event stays as the record of what the cell decided; this is the decision, and the door that says a size is a COUNT now sits at the WRITE.',
+      },
+      {
         name: 'households.waiting',
         kind: 'physics',
         holds:
@@ -488,14 +521,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         // in has 261 markets, and asking it about every one of them was four fifths of what a
         // period cost.
         markets: (view: ParticipantView): readonly MarketId[] => {
-          const own = view.lastOwnSince('households.plan', view.period);
-          if (!own.some) return [];
-          return marketsIn(own.value.data['orders']);
+          const decided = view.working(DECIDED, nothingDecided);
+          return decided.at === view.period ? marketsIn(decided) : [];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          const own = view.lastOwnSince('households.plan', view.period);
-          if (!own.some) return [];
-          return ordersFrom(own.value.data['orders'], m.id, view.self.id);
+          const decided = view.working(DECIDED, nothingDecided);
+          return decided.at === view.period ? ordersFrom(decided, m.id, view.self.id) : [];
         },
       },
     ],
@@ -632,6 +663,36 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       qty: scaleQty(o.sharesPerMember, weightOf(self), 'shares the cell asks about'),
     });
   }
+  // Law 15, 0e′.4: the orders go in this cell's own working store, which is what its `markets` and
+  // `orders` read back. The event below is the record of what it decided; it is written from the
+  // same orders and never read back by this module.
+  const decided_orders: readonly PlannedOrder[] = [
+    ...goods.map((g) => ({
+      market: g.market,
+      side: 'buy' as const,
+      price: g.price,
+      qty: asQty(g.qty, `${String(cell)}'s posted size in ${String(g.market)}`),
+    })),
+    ...(home.some ? [home.value.order] : []),
+    ...paperOrders.map((b) => ({
+      market: b.market,
+      side: 'buy' as const,
+      price: b.price,
+      qty: asQty(b.qty, `${String(cell)}'s posted size in ${String(b.market)}`),
+    })),
+    // Law 8: a size is a COUNT of pieces, and the door that says so is here, at the WRITE — the
+    // one place that knows what it decided. It used to be at the read, after a round trip through
+    // the event's `unknown`, which is where a size that was not a count went missing quietly.
+    ...shareOrders(view, shares, budgetFor, short, p.steps).map((o) => ({
+      market: o.market,
+      side: o.side,
+      price: o.price,
+      qty: asQty(o.qty, `${String(cell)}'s posted size in ${String(o.market)}`),
+    })),
+  ];
+  const slot = ctx.workingOf(cell, DECIDED, nothingDecided);
+  slot.at = ctx.period;
+  slot.orders = decided_orders;
   ctx.record(
     'households.plan',
     [cell],
@@ -661,17 +722,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       // C2: what it does not spend and does not put into paper is saved where it already is.
       // D5, item 7b: what it put towards a home, and nothing when it owns what its people live in.
       toAHomePerMember: home.some ? home.value.committedPerMember : asCash(0, 'it owns its home'),
-      orders: [
-        ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
-        ...(home.some ? [home.value.order] : []),
-        ...paperOrders.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
-        ...shareOrders(view, shares, budgetFor, short, p.steps).map((o) => ({
-          market: o.market,
-          side: o.side,
-          price: o.price,
-          qty: o.qty,
-        })),
-      ],
+      orders: decided_orders,
     },
     false,
   );
@@ -740,35 +791,26 @@ function goodMarketOf(view: ParticipantView, instrument: InstrumentId): MarketId
   return i.market.some ? i.market.value : undefined;
 }
 
-/** The orders this cell decided on, read back from its own plan (Law 4: one decision, one writer). */
-function marketsIn(rows: unknown): MarketId[] {
-  if (!Array.isArray(rows)) return [];
-  const out = new Set<string>();
-  for (const row of rows as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const id = (row as Record<string, unknown>)['market'];
-    if (typeof id === 'string') out.add(id);
-  }
-  return [...out].map((id) => marketId(id));
+/**
+ * Law 15, Law 4: WHAT THIS CELL DECIDED, kept where a decision belongs.
+ *
+ * These two took the cell's own `households.plan` EVENT's `orders` back out as `unknown[]` and
+ * re-checked every field, dropping any order that did not survive the round trip. The event is
+ * recorded PRIVATE and was read back by its own writer in the same period, which is a store
+ * wearing a log's clothes (0e′.4). `ParticipantView.working` is the store, so the orders never
+ * leave the type system and both parsers are gone.
+ */
+function marketsIn(decided: DecidedThisPeriod): MarketId[] {
+  const out = new Set<MarketId>();
+  for (const o of decided.orders) out.add(o.market);
+  return [...out];
 }
 
-function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
-  if (!Array.isArray(rows)) return [];
+function ordersFrom(decided: DecidedThisPeriod, market: MarketId, self: PartyId): Order[] {
   const out: Order[] = [];
-  for (const row of rows as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const o = row as Record<string, unknown>;
-    const price = o['price'];
-    const qty = o['qty'];
-    const side = o['side'];
-    if (o['market'] !== market || (side !== 'buy' && side !== 'sell')) continue;
-    // XI-2: a cell selling because it needs the money names no price. Everything else it posts is
-    // a level of its own, and a level is a number.
-    if (price !== 'market' && typeof price !== 'number') continue;
-    if (typeof qty !== 'number' || qty <= 0) continue;
-    // Law 19: read back from what this cell published, through the one door that says a size is a
-    // count of pieces — and that throws if what it published was not (core/tick.ts).
-    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size in ${market} at ${price}`) });
+  for (const o of decided.orders) {
+    if (o.market !== market) continue;
+    out.push({ party: self, side: o.side, price: o.price, qty: o.qty });
   }
   return out;
 }

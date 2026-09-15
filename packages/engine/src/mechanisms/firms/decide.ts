@@ -42,13 +42,12 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
-import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
+import type { MarketId, PartyId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
-import type { Event } from '../../journal/journal.js';
 import type { ParticipantView } from '../../world/context.js';
 import {
   goodId,
@@ -82,8 +81,9 @@ import {
   type Project,
 } from './invest.js';
 import { downTick, upTick } from '../../core/tick.js';
-import { NO_QTY, asQty, subQty, toTick, type Qty } from '../../core/tick.js';
+import { NO_QTY, subQty, toTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
+import type { Period } from '../../calendar/calendar.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
 export interface PlannedOrder {
@@ -92,6 +92,28 @@ export interface PlannedOrder {
   readonly price: OrderPrice;
   readonly qty: Qty;
 }
+
+/** The name of the store a firm's decide phase leaves its plan in, declared in the module's nouns. */
+export const DECIDED = 'firms.decided';
+
+/**
+ * Law 8: WHAT THIS FIRM DECIDED, AND IN WHICH PERIOD. The period is part of the fact: a plan from
+ * last period is not a plan to post now, which is what `lastOwnSince(..., view.period)` was saying
+ * when the journal was standing in for this store. A firm that has decided nothing has `at`
+ * MISSING rather than a period it never decided in.
+ */
+export interface DecidedThisPeriod {
+  at: Period | undefined;
+  batch: Qty;
+  orders: readonly PlannedOrder[];
+}
+
+/** An empty slot: a firm that has not decided yet has no period, no batch and no orders. */
+export const nothingDecided = (): DecidedThisPeriod => ({
+  at: undefined,
+  batch: NO_QTY,
+  orders: [],
+});
 
 /**
  * What a firm decided this period. It is published under the firm's own name and read back by its
@@ -779,42 +801,31 @@ function marketOf(view: ParticipantView, instrument: InstrumentId): MarketId {
 }
 
 /**
- * Law 18, Law 19: the books this firm could be in at all, read off the SAME published plan the
- * orders are read off. Two lists that could disagree would be two writers of one fact (Law 4); this
- * one cannot, because it is the market ids of those orders and nothing else.
+ * Law 15, Law 4: WHAT THIS FIRM DECIDED, kept where a decision belongs.
+ *
+ * These two used to take the firm's own `firms.plan` EVENT and take it apart — `orders` came back
+ * as `unknown[]`, every field was re-checked, and an order whose price did not survive the round
+ * trip was silently dropped. The event was recorded PRIVATE and read back by its own writer in the
+ * same period, which is a store wearing a log's clothes (0e′.4). `ParticipantView.working` is the
+ * store, so the orders never leave the type system and the two parsers are gone.
  */
-export function marketsIn(event: Event): MarketId[] {
-  const rows = event.data['orders'];
-  if (!Array.isArray(rows)) return [];
-  const out = new Set<string>();
-  for (const row of rows as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const id = (row as Record<string, unknown>)['market'];
-    if (typeof id === 'string') out.add(id);
-  }
-  return [...out].map((id) => marketId(id));
+export function marketsIn(decided: DecidedThisPeriod): MarketId[] {
+  const out = new Set<MarketId>();
+  for (const o of decided.orders) out.add(o.market);
+  return [...out];
 }
 
-/** The orders this firm decided on, read back from its own published plan (Law 4). */
-export function ordersFrom(event: Event, market: MarketId, self: PartyId): Order[] {
-  const rows = event.data['orders'];
-  if (!Array.isArray(rows)) return [];
+/** The orders this firm decided on, in the book that is asking (Law 4: one decision, one writer). */
+export function ordersFrom(
+  decided: DecidedThisPeriod,
+  market: MarketId,
+  self: PartyId,
+): Order[] {
   const out: Order[] = [];
-  for (const row of rows as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const o = row as Record<string, unknown>;
-    const side = o['side'];
-    const price = o['price'];
-    const qty = o['qty'];
-    if (o['market'] !== market) continue;
-    if (side !== 'buy' && side !== 'sell') continue;
-    if (typeof qty !== 'number') continue;
-    if (typeof price !== 'number' && price !== 'market') continue;
-    // Law 8, Law 19: read back from the firm's OWN published plan, so what reaches the book is
-    // what it decided and never a second derivation of it (Clearing F1). `asQty` throws if the
-    // plan it is reading carried a size that is not a whole number of pieces — which is the check
-    // that a decision published off the grid cannot quietly become an order.
-    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size`) });
+  for (const o of decided.orders) {
+    if (o.market !== market) continue;
+    out.push({ party: self, side: o.side, price: o.price, qty: o.qty });
   }
   return out;
 }
+

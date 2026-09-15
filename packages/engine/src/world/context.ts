@@ -360,6 +360,29 @@ export function subjectOf(v: OutlookVariable): Option<Subject> {
 
 /** Observer A1-A4: a party's own state plus the public state, and nothing else. */
 export interface ParticipantView extends KernelReads {
+  /**
+   * Law 15, Law 4, Observer A4: THIS PARTY'S OWN WORKING STORE, owned by the module asking.
+   *
+   * A participant is handed a view and nothing else — no `MechanismContext`, so no `ctx.state` —
+   * which meant the only place a decide phase could leave something for its own `markets` and
+   * `orders` callbacks to pick up was the JOURNAL. `firms.plan` and `households.plan` are both
+   * recorded PRIVATE and read back by their own writer in the same period: a store wearing a log's
+   * clothes, undeclared, invisible to `registry/nouns.ts` and to the phase-order check (0e′.4).
+   *
+   * This is the store, and it is the party's own: the kernel resolves the owner from the
+   * participant it is currently evaluating and the party from the view, so a firm's participant
+   * reads that firm's entry and cannot reach another's. It is the same slot the module's phases
+   * write through `ctx.state(name, () => new Map())` — one store, one writer (Law 4) — and the
+   * name must be DECLARED in the module's `nouns` or it does not open.
+   *
+   * It is `working` and not `noun`: a plan nobody has acted on yet is how one module gets from one
+   * of its own phases to the next, and nothing else in this world has an opinion about it.
+   *
+   * Asking outside a participant callback throws: there is no owner to resolve, and a store with
+   * no owner is the bag this register exists to close.
+   */
+  working<T extends object>(name: string, initial: () => T): T;
+
   readonly self: Party;
   /**
    * A3: WHO somebody is — its kind, its region, its bank, whether it is still here, how many people
@@ -797,6 +820,13 @@ export interface MechanismContext extends WorldReads {
    * a party's outlooks — and never a second copy of what a kernel store already holds.
    */
   state<T extends object>(name: string, initial: () => T): T;
+  /**
+   * Law 15, Observer A4: ONE PARTY'S ENTRY in a store of this module's, which its own participants
+   * read back through `ParticipantView.working` (0e′.4). The phase writes every party's entry and
+   * a participant reads its own; it is one store with one writer, and it is the store a decide
+   * phase leaves a plan in instead of recording a private event and reading it back.
+   */
+  workingOf<T extends object>(party: PartyId, name: string, initial: () => T): T;
   readonly parties: PartiesReads;
   readonly register: RegisterReads;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;

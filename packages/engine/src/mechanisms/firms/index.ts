@@ -40,7 +40,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import { committedTo, DECIDED, marketsIn, nothingDecided, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { ownPayroll } from '../../registry/wages.js';
 import { publishExpectation, runLine } from './produce.js';
 import { NO_QTY } from '../../core/tick.js';
@@ -161,6 +161,16 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
   const byName = indexOf(rows);
   return {
     id: 'firms',
+    nouns: [
+      {
+        name: DECIDED,
+        kind: 'working',
+        holds:
+          'what each firm decided this period — the period it decided in, the batch it will start and the orders it will post',
+        why:
+          'it is how this module gets from its decide phase to its own `markets`, `orders` and `runLine`, and nothing outside it has an opinion about a plan nobody has acted on yet (0e′.4). It was a PRIVATE `firms.plan` event read back by its own writer in the same period, which is a store wearing a log\u2019s clothes: undeclared, and with every order going out through `unknown[]` and back. The event stays as the public record of the decision; this is the decision.',
+      },
+    ],
     spec: 'Firm, Goods B, Goods F',
     // It reads the recipe from the good's terms, posts openings into the labour venue, and decides
     // from its own outlook: all three must exist before it does (Part XIII step 4). And it decides
@@ -289,17 +299,15 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         // there are three thousand firms and 261 markets, and a firm is in two or three of them.
         markets: (view: ParticipantView): readonly MarketId[] => {
           if (lineOf(byName, view.self.id) === undefined) return [];
-          const own = view.lastOwnSince('firms.plan', view.period);
-          if (!own.some) return [];
-          return marketsIn(own.value);
+          const decided = view.working(DECIDED, nothingDecided);
+          return decided.at === view.period ? marketsIn(decided) : [];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           if (lineOf(byName, view.self.id) === undefined) return [];
-          const own = view.lastOwnSince('firms.plan', view.period);
-          // Clearing F1: an order is the decision it took this period, read back rather than taken
-          // again. A firm that decided nothing this period posts nothing.
-          if (!own.some) return [];
-          return ordersFrom(own.value, m.id, view.self.id);
+          // Clearing F1: an order is the decision it took this period, read out of the store its
+          // own decide phase left it in. A firm that decided nothing this period posts nothing.
+          const decided = view.working(DECIDED, nothingDecided);
+          return decided.at === view.period ? ordersFrom(decided, m.id, view.self.id) : [];
         },
       },
     ],
@@ -316,8 +324,16 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
   const firm = line.firm as PartyId;
   const view = ctx.participant(firm);
   const decided = plan(view, line);
+  // Law 15, 0e′.4: the plan goes in this firm's own working store, which is what its `markets` and
+  // `orders` read back. The event below is the PUBLIC record of what it expects to deliver; it is
+  // written from the same decision and never read back by this module.
+  const slot = ctx.workingOf(firm, DECIDED, nothingDecided);
+  slot.at = ctx.period;
+  slot.batch = NO_QTY;
+  slot.orders = [];
   if (!decided.some) return;
   const p = decided.value;
+  slot.orders = p.orders;
   if (!p.planned) {
     // Labour C5: it posts no opening at all, which is different from posting an empty one — an
     // empty opening is an employer that has decided it wants nobody. It still offers its stock.
@@ -343,6 +359,7 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       qty: wantsNobody ? NO_QTY : p.hours,
     });
   }
+  slot.batch = p.batch;
   publishFunding(ctx, view, p);
   // Private: what a firm is about to bid is between it and the book until the book clears. What it
   // expects to deliver is the public one (E7), and it is published separately.

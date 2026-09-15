@@ -56,7 +56,7 @@ import { costOfDraw, dueFromLine } from '../../register/register.js';
 import { capacityFrom, rentedRoom, utilisation, vintagesHeld } from '../../registry/physical.js';
 import { payrollSettledIn } from '../../registry/wages.js';
 import type { FirmDecl } from './data.js';
-import { technologyOf } from './decide.js';
+import { DECIDED, nothingDecided, technologyOf } from './decide.js';
 import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
@@ -65,14 +65,12 @@ function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
   return settled.some ? settled.value.paid : asCash(0, 'it employed nobody this period');
 }
 
-/** The batch this firm said it would start, read back from its own published plan. */
+/** The batch this firm said it would start, out of the store its own decide phase left it in. */
 function plannedBatch(view: ParticipantView): Qty {
-  const own = view.lastOwnSince('firms.plan', view.period);
-  const none = asAmount<'piece'>(0, 'a firm with no plan this period starts nothing');
-  if (!own.some) return none;
-  const batch = own.value.data['batch'];
-  // Item 16: a published number re-enters the type system here, through the dimension's own door.
-  return typeof batch === 'number' ? asAmount<'piece'>(batch, 'the batch it said it would start') : none;
+  const decided = view.working(DECIDED, nothingDecided);
+  return decided.at === view.period
+    ? decided.batch
+    : asAmount<'piece'>(0, 'a firm with no plan this period starts nothing');
 }
 
 /** Labour C2, Goods B1.c: the hours it has that can make something, this period. */
