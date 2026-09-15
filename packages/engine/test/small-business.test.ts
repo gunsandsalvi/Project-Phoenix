@@ -12,6 +12,8 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   SMALL_FIRM,
+  VEHICLE,
+  isTranche,
   SMALL_PER_NAMED,
   assemble,
   drawSmallBusiness,
@@ -218,5 +220,108 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     expect(drawSmallBusiness([], [{ bank: 'bank.a', size: 1 }], 100, 's')).toEqual([]);
     expect(drawSmallBusiness(['bakery'], [], 100, 's')).toEqual([]);
     expect(drawSmallBusiness(['bakery'], [{ bank: 'bank.a', size: 1 }], 0, 's')).toEqual([]);
+  });
+});
+
+/**
+ * §42 E1–E6 (11.5): what must not happen, each measured over one scale model. A FORBID that holds
+ * breaks silently, which is why every one of them is a test and not a comment (Part II).
+ */
+describe('what must not happen (Small-Business Pools E1–E6, 11.5)', () => {
+  const PERIODS = 20;
+  const w = rigWorld('sb-e');
+  const opening = w.parties
+    .ofKind(SMALL_FIRM)
+    .reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 1), 0);
+  const unitsReds: string[] = [];
+  for (let i = 0; i < PERIODS; i += 1) {
+    const r = w.step();
+    for (const f of r.audit.families) {
+      for (const v of f.violations) if (v.family === 'units' && v.owner === String(SMALL_FIRM)) unitsReds.push(v.message);
+    }
+  }
+  const vehicles = w.parties.ofKind(VEHICLE);
+  const deals = w.journal.ofKind('securitisation.cut');
+
+  it('E1: no pool without loans to named borrowers', () => {
+    for (const v of vehicles) {
+      let rows = 0;
+      for (const h of w.register.holdingsOf(v.id)) {
+        const i = w.instruments.get(h.instrument);
+        const profile = w.registry.instrumentKind(i.kind);
+        if (profile.pricing === 'money' || isTranche(i.terms)) continue;
+        // A row somebody owes, and who: never a loss rate, never anonymous exposure.
+        expect(profile.liabilityOfIssuer && i.issuer.some).toBe(true);
+        rows += 1;
+      }
+      if (v.status.alive) expect(rows).toBeGreaterThan(0);
+    }
+  });
+
+  it('E2: no tranche without a holder', () => {
+    for (const i of w.instruments.all()) {
+      if (!i.status.live || !isTranche(i.terms)) continue;
+      const holders = w.register.holdersOf(i.id).filter((h) => w.register.quantity(h, i.id) > 0);
+      expect(holders.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('E3: no risk transfer without a transferee', () => {
+    // Every deal names a vehicle that is a party holding the rows; the arranger holds none of them.
+    for (const e of deals) {
+      const vehicle = e.data['vehicle'];
+      const arranger = e.data['arranger'];
+      expect(typeof vehicle === 'string' && w.parties.has(vehicle as never)).toBe(true);
+      if (typeof vehicle !== 'string' || typeof arranger !== 'string') continue;
+      for (const h of w.register.holdingsOf(vehicle as never)) {
+        const i = w.instruments.get(h.instrument);
+        if (w.registry.instrumentKind(i.kind).pricing === 'money' || isTranche(i.terms)) continue;
+        expect(w.register.quantity(arranger as never, i.id)).toBe(0);
+      }
+    }
+  });
+
+  it('E4: the population is not constant, and every change is a dated event with a cause', () => {
+    const now = w.parties
+      .ofKind(SMALL_FIRM)
+      .filter((p) => p.status.alive)
+      .reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 1), 0);
+    expect(now).not.toBe(opening);
+    let byEvents = 0;
+    for (const e of w.journal.ofKind('weight')) {
+      const who = e.subjects[0];
+      if (who === undefined || w.parties.get(who as never).kind !== SMALL_FIRM) continue;
+      const before = e.data['before'];
+      const after = e.data['after'];
+      if (typeof before !== 'number' || typeof after !== 'number') continue;
+      byEvents += after - before;
+    }
+    expect(now - opening).toBe(byEvents);
+  });
+
+  it('E5: no weight that is not a count, moved by five events only', () => {
+    for (const p of w.parties.ofKind(SMALL_FIRM)) {
+      if (p.representation !== 'cell') continue;
+      expect(Number.isInteger(p.weight)).toBe(true);
+      if (p.status.alive) expect(p.weight).toBeGreaterThan(0);
+    }
+    for (const e of w.journal.ofKind('weight')) {
+      expect(['entry', 'death', 'promotion', 'split', 'merge']).toContain(e.data['kind']);
+      expect(typeof e.data['cause']).toBe('string');
+      expect(Number.isInteger(e.period)).toBe(true);
+    }
+    // The family that guards it stayed silent on this kind in every period.
+    expect(unitsReds).toEqual([]);
+  });
+
+  it('E6: no loss allocated to a pool rather than to its cells', () => {
+    // A loss is struck against a row somebody named owes, and lands on a named holder of a layer.
+    for (const e of w.journal.ofKind('credit.impaired')) {
+      expect(typeof e.data['issuer']).toBe('string');
+      expect(w.parties.has(e.data['issuer'] as never)).toBe(true);
+    }
+    for (const e of w.journal.ofKind('tranche.writtenDown')) {
+      expect(typeof e.data['holder'] === 'string' && w.parties.has(e.data['holder'] as never)).toBe(true);
+    }
   });
 });

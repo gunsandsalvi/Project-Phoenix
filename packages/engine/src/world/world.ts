@@ -114,7 +114,7 @@ import { classify, type Classified } from '../registry/universe.js';
 import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { type CellDeps, dieCell, mergeCells, reKeyCell, weightEvent } from './cells.js';
+import { type CellDeps, ceaseCell, dieCell, mergeCells, reKeyCell, weightEvent } from './cells.js';
 import { succeedAgreements } from './succession.js';
 import type { Subject,
   Borrowing,
@@ -2393,7 +2393,19 @@ export class World {
         );
       },
       cease: (party, successor) => {
-        this.parties.cease(party, this.currentPeriod, successor);
+        // XI-15, E5 (11.5): a cell ceasing is the death of its members, and that is a weight
+        // event with a cause — the one the units family reads. A named party just ceases.
+        if (this.parties.get(party).representation === 'cell') {
+          ceaseCell(party, successor, 'ceased', this.currentPeriod, this.currentCycle, this.cellDeps());
+        } else {
+          this.parties.cease(party, this.currentPeriod, successor);
+          succeedAgreements(party, successor, this.currentPeriod, this.currentCycle, {
+            parties: this.parties,
+            registry: this.registry,
+            agreements: this.agreementStore,
+            journal: this.journal,
+          });
+        }
         this.journal.record(
           this.currentPeriod,
           this.currentCycle,
@@ -2402,12 +2414,6 @@ export class World {
           { successor },
           true,
         );
-        succeedAgreements(party, successor, this.currentPeriod, this.currentCycle, {
-          parties: this.parties,
-          registry: this.registry,
-          agreements: this.agreementStore,
-          journal: this.journal,
-        });
       },
       /**
        * Corporate Credit A1, item 0e: one door for what a borrower is short of. The kernel stamps

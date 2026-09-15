@@ -1463,27 +1463,27 @@ measurement is taken there is nothing to name.
 | `Small-Business Pools A6.b` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/lattice.ts (XI-15: a weight of one is a named party; a small firm's size is a drawn number banded by the lattice's edges, so the boundary between this sector and the named one is a size and it moves with the draw) |
 | `Small-Business Pools A6.c` | PARTIAL | packages/engine/src/world/cells.ts `reKeyCell`, packages/engine/src/world/world.ts (0f.4: promotion is a weight event with a cause — `crossed an edge` — and it fires when a cell's band moves; what it makes is a cell on the lattice, never a named `FIRM`, because nothing births a named firm after the seed: 12.1, 12.4; 11.0f says so) |
 | `Small-Business Pools B1` | MET | packages/engine/src/mechanisms/banks/index.ts, packages/engine/src/mechanisms/banks/loan.ts, packages/engine/src/registry/credit.ts (11.2: a loan row per (lender, cell), from the bank of the cell's key — the only bank that quotes a cell keyed on one — with a rate struck at origination, a term placed by date and an amortisation: a term loan repays a slice of what is outstanding every period it has left, read off the calendar, and a line falls due once. The slice is a due action the kernel redeems in whole pieces) — **UNMEASURED** on the schedule for a cell: a small firm's working-capital ask is unsecured and so a line; the amortiser is measured on a named borrower's secured row (`test/loans.test.ts`) and reaches a cell with its first secured row (11.2a plant, 12a.4) |
-| `Small-Business Pools B2` | MISSING |  |
+| `Small-Business Pools B2` | PARTIAL | packages/engine/src/registry/credit.ts `security`, packages/engine/src/mechanisms/banks/index.ts (11.5: a loan names what it is secured on and a secured row is a term loan; a cell's working-capital ask is unsecured today — its first pledge is the plant loan of 11.2a or the owner's house through 12a.4) |
 | `Small-Business Pools B3` | PARTIAL | packages/engine/src/world/failure.ts, packages/engine/src/mechanisms/small-business/profile.ts (11.3: a cell defaults on its own cash — a coupon it cannot pay fails at settlement and the cell fails on cash — and the pool's count is the count of cells that did; with holdings as totals the unit is the cell, not the individual firm: the per-member miss is 12a.1/12a.5) |
 | `Small-Business Pools B4` | MET | packages/engine/test/small-business.test.ts (11.3: no parameter says it — `params.all()` carries none — and at identical draws in one four-country world the failures of a region land in the same periods and two regions do not fail alike, because the same demand, the same rates and the same region hit every cell in it) |
 | `Small-Business Pools B4.a` | MET | packages/engine/test/small-business.test.ts (11.3: fewer periods with a failure in them than failures, in every region with more than one — the loss is not the sum of independent draws) |
 | `Small-Business Pools C1` | MET | packages/engine/src/mechanisms/securitisation/index.ts `saleable`, `arrange` (11.4: what a bank would put into a vehicle is read off two facts every kind declares — no market, a named obligor — and a cell's loan row has both; the probe in `test/small-business.test.ts` sees a cell's row in a bank's own saleable book; the vehicle is XI-11's named party and the arranger sells in the money it issues) — **UNMEASURED** on a deal that carries a cell's row: the scale model's deals are demand deals of the named book so far |
-| `Small-Business Pools C2` | MISSING |  |
-| `Small-Business Pools C3` | MISSING |  |
-| `Small-Business Pools C4` | MISSING |  |
-| `Small-Business Pools C5` | MISSING |  |
-| `Small-Business Pools C6` | MISSING |  |
-| `Small-Business Pools D1` | MISSING |  |
-| `Small-Business Pools D2` | MISSING |  |
-| `Small-Business Pools D3` | MISSING |  |
-| `Small-Business Pools D4` | MISSING |  |
-| `Small-Business Pools D4.a` | MISSING |  |
-| `Small-Business Pools E1` | MISSING |  |
-| `Small-Business Pools E2` | MISSING |  |
-| `Small-Business Pools E3` | MISSING |  |
-| `Small-Business Pools E4` | MISSING |  |
-| `Small-Business Pools E5` | MET | packages/engine/src/audit/families/units.ts, packages/engine/src/world/cells.ts |
-| `Small-Business Pools E6` | MISSING |  |
+| `Small-Business Pools C2` | MET | packages/engine/src/mechanisms/securitisation/index.ts `cut` (11.5, XI-11: a senior layer that clears and a junior that is the rest, losses run from the bottom — `absorb` writes the junior down first and the senior only when it is gone) |
+| `Small-Business Pools C3` | MET | packages/engine/src/mechanisms/securitisation/index.ts (11.5: the senior note is offered into a deal book and clears against named bidders' own money — `noteBids` — its yield derived from the price it cleared at, never a spread or a table) |
+| `Small-Business Pools C4` | MET | packages/engine/src/mechanisms/securitisation/index.ts (11.5: the notes are held by the banks that bid for them and the arranger keeps the junior (C4.a); the loss lands on the holder of the layer, `tranche.writtenDown` names it) — see `Small-Business Pools E2` |
+| `Small-Business Pools C5` | MET | packages/engine/src/mechanisms/securitisation/index.ts `passThrough` (11.5: what the vehicle pays is what the borrowers paid it, interest and principal — an amortiser's slices included since 11.2 — distributed by seniority) |
+| `Small-Business Pools C6` | MET | packages/engine/src/mechanisms/securitisation/index.ts audit family `layers` (11.5: Σ layer face equals the pool after every event and losses allocated equal losses incurred; a violation is reported, never repaired) |
+| `Small-Business Pools D1` | MET | packages/engine/src/mechanisms/securitisation/index.ts (11.5: the rows leave the bank's register for the vehicle's and the notes are bought by named banks out of their own money; XI-11's four objects) |
+| `Small-Business Pools D2` | MET | packages/engine/src/mechanisms/securitisation/index.ts `reasonToSell`, `faceToShed` (11.5: a bank short of capital sheds the face its own rule asks for and the rows leave its risk-weighted book, which is what lets it write again — measured in the scale model as unreached because every shortfall there binds on leverage, a finding written as a test) |
+| `Small-Business Pools D3` | MISSING | the senior note as collateral in the money market is 14/17b's; nothing pledges a tranche today |
+| `Small-Business Pools D4` | MET | packages/engine/src/mechanisms/securitisation/index.ts `absorb` (11.5: when the junior is gone the senior takes the loss, and the holders of D1 are the ones it lands on — the same waterfall, no second rule for the bad case) |
+| `Small-Business Pools D4.a` | MET | packages/engine/src/mechanisms/securitisation/index.ts, packages/engine/test/small-business.test.ts (11.5: nothing scripts it — the loss is what the cells' rows did (B4's correlation measured at 11.3) run through C2's allocation) |
+| `Small-Business Pools E1` | MET | packages/engine/test/small-business.test.ts, packages/engine/src/mechanisms/securitisation/index.ts audit family `names` (11.5: every row a vehicle holds is a claim a named party owes, asserted over the scale model and guarded by the audit) |
+| `Small-Business Pools E2` | MET | packages/engine/test/small-business.test.ts (11.5: every live tranche has a holder with units) |
+| `Small-Business Pools E3` | MET | packages/engine/test/small-business.test.ts (11.5: every deal names a vehicle that is a party holding the rows, and the arranger holds none of them) |
+| `Small-Business Pools E4` | MET | packages/engine/test/small-business.test.ts (11.5: over twenty periods the population is not what it opened at, and the change is exactly the sum of the dated weight events; entry is 12.1 and exit is here, so neither is the identity of the other) |
+| `Small-Business Pools E5` | MET | packages/engine/src/audit/families/units.ts, packages/engine/src/world/cells.ts `ceaseCell`, packages/engine/test/small-business.test.ts (11.5: a weight is an integer count moved by five named events, each with a cause and a period, and the family that guards it is silent on this kind in every period — it fired every time a cell failed, because the kernel's `cease` recorded no death for a cell's members; fixed at cause) |
+| `Small-Business Pools E6` | MET | packages/engine/test/small-business.test.ts (11.5: every impairment names the row's obligor and every write-down names the holder of the layer it landed on; no loss is struck against a pool) |
 
 ## Cross-Border
 

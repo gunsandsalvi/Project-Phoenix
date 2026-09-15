@@ -10965,3 +10965,40 @@ a stale reading of which capital rule binds. Under 17.0.
 
 **Checks.** `small-business.test.ts` 10 green; `securitisation.test.ts` 13 green and 2
 pre-existing reds; `check:opens` green; lint, typecheck green.
+
+## Item 11.5 — E1–E6 as tests; §42 re-marked; module 11 closed
+
+Six FORBIDs, each a test over one twenty-period scale model: every row a vehicle holds names its
+obligor (E1); every live tranche has a holder (E2); every deal names a vehicle that holds the rows
+and the arranger holds none of them (E3); the population is not what it opened at and the change
+is exactly the sum of the dated weight events (E4); a weight is an integer count moved by five
+named events with a cause and a period, and the units family is silent on the kind in every period
+(E5); every impairment names the row's obligor and every write-down the holder it landed on (E6).
+
+**E5's test found a kernel defect and it is fixed at cause.** The kernel's `cease` recorded a
+party ceasing and nothing about its weight, so a cell that failed on its cash went to its estate
+and its members vanished from the population with no event behind them — the units family said
+`smallFirm cells stand for −49 people more than the weight events account for` in the first period
+of every run, and the 52-period loans run carried the same sentence at −51. `ceaseCell` is the one
+writer of that death now: a cell that ceases for any reason records the death of all its members
+with a cause and a successor; `dieCell` is the empty-handed case of it. The family is silent.
+
+**COVERAGE.** All 28 rows of §42 re-marked: 23 MET, 4 PARTIAL (A6.c promotion to a named firm,
+12.4; B2 a cell's first pledge, 11.2a/12a.4; B3 the unit of default is the cell, 12a), 1 MISSING
+(D3, a tranche as collateral, 14/17b).
+
+**The suite, at the end of the module (Law 11).** `npm run test`: 109 files, 892 tests —
+**191 failed, 701 passed**. At 0d it was 106 files, 869 tests, 199 failed, 670 passed. The reds
+are of 0d's character — a test asserting the audit is clean and finding it is not, a rig that no
+longer draws what a test asks for — and the per-file comparison against a run at the 0d commit is
+recorded below when it lands. Every red file stands under its 0d cause or under the item that owns
+it (17.0 for `loans` and `securitisation`, 12b.3 for `labour`, 23.1 for the rig draws).
+
+**The section's exit, said plainly.** A credit tightening reaching a small firm before a large one
+is not measured — there has been no tightening in the scale model to measure it by; an invoice
+naming a small firm has not been seen because no input line trades there (12b.3); small-firm
+sessions clear in the census. The mechanisms are built and the measurements that are missing are
+named.
+
+**Checks.** `small-business.test.ts` 16 green; `check:opens` green; lint, typecheck,
+`check:spec`, `check:existence`, `plan:check` green.

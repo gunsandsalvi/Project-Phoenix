@@ -215,12 +215,31 @@ export function dieCell(
   cycle: Cycle,
   d: CellDeps,
 ): void {
-  const c = d.parties.cell(cell);
   forbid(
     d.register.holdingsOf(cell).length === 0,
     'Appendix B',
     `${cell} still holds something and cannot die; what the dead held goes to somebody by name first`,
   );
+  ceaseCell(cell, successor, cause, period, cycle, d);
+}
+
+/**
+ * XI-15, Small-Business Pools E5 (11.5): A CELL THAT CEASES IS A DEATH OF ALL ITS MEMBERS, whatever
+ * ceased it — the one writer of that weight event. A cell that FAILED on its cash went to its
+ * estate through the kernel's `cease`, which recorded the party ceasing and nothing about its
+ * weight, so a period in which forty-nine firms failed was a period in which the population fell
+ * by forty-nine with no event behind it, and the units family said so every time. The estate is
+ * the successor and takes the book; the members are gone, and the record says how many and why.
+ */
+export function ceaseCell(
+  cell: PartyId,
+  successor: PartyId,
+  cause: string,
+  period: Period,
+  cycle: Cycle,
+  d: CellDeps,
+): void {
+  const c = d.parties.cell(cell);
   d.journal.record(
     period,
     cycle,
