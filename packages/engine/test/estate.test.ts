@@ -327,7 +327,8 @@ function suddenBill(): SystemModule {
         name: 'test.sudden-bill',
         spec: 'Money E1',
         anchor: { before: 'corporateActions' },
-        reads: [],
+        // Clearing F1.a (item 0a): it reads who is employing, of any period, to find a live payer.
+        reads: [{ kind: 'event', name: 'labour.hire', of: 'anyPeriod' }],
         writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== WHEN_THE_BILL_FALLS) return;

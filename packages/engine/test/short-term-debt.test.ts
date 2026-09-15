@@ -42,7 +42,7 @@ describe('what commercial paper IS (A1)', () => {
   it('declares only numbers that are one of Law 2’s kinds, and the shape names its death', () => {
     const declared = shortTermDebt().params;
     for (const d of declared) {
-      expect(['technology', 'preference', 'policy', 'resolution', 'shape']).toContain(d.kind);
+      expect(['technology', 'preference', 'policy', 'resolution', 'shape', 'placeholder']).toContain(d.kind);
       // Law 2: a shape with a scheduled death is a PLACEHOLDER and names the item that kills it.
       if (d.kind === 'shape') expect(d.standsInFor?.item).toBeDefined();
     }
@@ -59,7 +59,11 @@ describe('the roll is a new issue into a market that must clear (B3.a, E1)', () 
     // what maturing paper does is enlarge the need it brings paper against — never renew itself.
     expect(m.phases.map((p) => p.name)).toEqual(['paper.issue', 'paper.backstop']);
     expect(m.phases[0]?.anchor).toEqual({ before: 'markets' });
-    expect(m.phases[1]?.anchor).toEqual({ after: 'markets' });
+    // B3.b (item 0, stop 4): the backstop runs BEFORE the maturity it is drawn to meet. It ran
+    // `after: markets`, and the kernel presents a maturity in `corporateActions`, the period's
+    // first phase — so the paper failed, the default carried to every other line the issuer had,
+    // and the draw arrived to fund a repayment that had already failed.
+    expect(m.phases[1]?.anchor).toEqual({ before: 'corporateActions' });
   });
 
   it('brings paper for a dated need, and says how much of the trip is a roll', () => {

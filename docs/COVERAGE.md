@@ -89,7 +89,7 @@ measurement is taken there is nothing to name.
 | `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs, and the split has its door (item 9). The driver that ISSUES the other two — a board buying its own shares back, a board selling new ones — arrives with corporate control (worklist 13g), which is where item 11 placed raising equity and restricting distributions |
 | `Register E5` | PARTIAL | every register event so far moves money, so the clause holds by having no exceptions to explain. The exceptions arrive with the corporate-action driver (worklist 13g): a split moves quantities and no money, and what it must then record is the why-not. Measuring the VERIFY over a window is Part XII (worklist 16) |
 | `Register F1` | MET | packages/engine/src/register/instruments.ts |
-| `Register F2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/parties/party.ts, packages/engine/src/world/succession.ts (every live agreement row naming the ceased party moves to its successor or ends there, per the kind's own `binds`), packages/engine/src/register/agreements.ts |
+| `Register F2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/parties/party.ts, packages/engine/src/world/succession.ts (every live agreement row naming the ceased party moves to its successor or ends there, per the kind's own `binds`), packages/engine/src/register/agreements.ts, packages/engine/src/mechanisms/equity/index.ts (item 0d: a dividend declared on the record date and paid on the payable date resolves BOTH ends through successors — either can cease in between, and an estate pays what the firm declared) |
 | `Register F3` | MET | packages/engine/src/audit/families/flows.ts |
 
 ## Clearing

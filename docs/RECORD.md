@@ -10051,3 +10051,61 @@ distinct from banking) and `A4` (stock-borrow fees, commissions) are 17b.
 **Checks.** `check:opens`, `check:existence --verify`, `plan:check`, `check:deaths`,
 `check:forbids`, `check:spec`, lint and typecheck green. The plan reads 10 of 28 items closed.
 `tools/test/` is green, all 24 — it had one red before this item.
+
+## Item 0d — The overdue suite run, triaged
+
+**What.** The suite was run once and every red file placed. 106 files, 869 tests, **199 failed, 670
+passed**. Four assertions wrong on their own terms are fixed here; a build-stopper found by the
+measurement is fixed here because the measurement could not be taken without it; everything else is
+positioned.
+
+**The attribution is the AUDIT's, not the assertion's.** Most of the 199 are a test asserting the
+audit is clean and finding it is not, with the diff truncated — so the reds were attributed by
+running the two worlds and reading the audit by family. The rig at period 30 reports 333: 299
+`units` (two cells standing for one household), 23 `flows` (a cell moved N per member and the
+instructions sum to something else), 8 `prices`, 3 `names`. `abroad` at period 12 reports 7,877, and
+**7,185 of them are one sentence**: the Fed carries a euro bond and no revaluation has ever looked
+at it (Currency D2). That single defect is more than nine tenths of everything wrong in the
+four-country world.
+
+**Where they went.** Duplicate cells → **0f** (19 files, and the largest count in the rig). The
+prices family and `Valuation.atCost` giving two answers to one question → **21**. The Fed's
+unrevalued euro bond → **16**. A rig that no longer draws what three tests ask it for, and a
+15-phase assertion against a 33-phase world → **23.1**. Four build-stoppers with their sites → three
+to **21**, one to **22a**.
+
+**The recursion is worth naming.** `worthToItsLender` asks what a loan is worth; it reads the
+borrower's exposure; that reads a MARK; the mark asks the kind's valuer; the valuer is
+`worthToItsLender`. XI-6 says exactly one module answers what a lot with no market is worth, and
+this one answers with itself. The stack overflows in five tests.
+
+**The twenty-fourth stop, found by the measurement and fixed here.** `coverage:reached` over 52
+periods stopped at period 47: `payDividend` paid FROM `action.issuer` and TO the row's creditor,
+neither resolved through successors, and `firm.2` had ceased that period. A declaration names its
+holders on the record date and is paid on the payable date, and either end can cease in between. The
+kernel moves an agreement row at the cease (item 0's `world/succession.ts`), so a row that existed
+then is already on the estate; the ISSUER, read from the corporate action rather than from the row,
+was not. Both ends resolve now (Register F2), the loop matches the RESOLVED issuer so an estate pays
+what the firm declared — it matched the dead name before, so a ceased company simply stopped paying
+— and a claim whose two ends resolve to one party is not paid and stays, which is the estate's to
+divide.
+
+**What has never produced anything, measured.** 52 periods of both worlds: the rig declares 600
+capabilities and reaches 193; `abroad` declares 1,826 and reaches 229. Almost all of the difference
+is the seed's markets, 1,661 of 1,702, which is honest — a market is opened for every good in every
+region and one region has firms in it. What is left is the list that matters: **nine derivative
+classes of nine have never produced a contract** (Part 0 said eight), no corporate bond has ever
+been issued, no insurance policy ever written, and two of the four currency-pair participants have
+never posted. The `UNMEASURED` marks in `docs/COVERAGE.md` **stand**, and they are evidence now
+rather than a reading of the source.
+
+**Twelve periods understate it.** Four capabilities produce between period 12 and period 52 —
+a bank as a borrower, a fund and its manager, a household in a currency pair — so the long run is
+the honest measure and the short one is not.
+
+**Also fixed.** 0c's rounding baseline counted a generated `.d.ts` beside the source it came from;
+the ratchet skips generated output and the baseline is 52 files.
+
+**Checks.** `check:opens` green on both worlds, and the rig now runs 52 periods without throwing.
+Lint, typecheck, spec citations, forbids, deaths, existence and plan green. On the five files
+nearest this change: 31 failed / 48 passed before, 28 failed / 51 passed after.

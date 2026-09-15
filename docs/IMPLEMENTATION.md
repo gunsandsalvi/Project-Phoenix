@@ -18,6 +18,13 @@ code that cannot run (re-marked by the item named): Insurers A4/B1/B2 (14), Hous
 Corporate Credit E5 (17.0), Banks Capital C2 (0.9), §42 A1–A6 (0f), Capital Programme A2/C1 (15.1),
 Commodities Spot D3 (18.3). The table is the tool's; `--verify` holds this file to it.
 
+**The 94 UNMEASURED marks are now measured** (0d.3): 52 periods of both worlds, and the capabilities
+that have never produced anything are listed under 0d. Nine derivative classes of nine, the
+corporate bond, the policy and two of the four currency-pair participants. **The marks stand**, and
+what changed is that they are evidence rather than a reading of the source. Item 0 moved two of
+these into the reached column — `freight`'s transit lines exist and `smallBusiness`'s cells do —
+and neither is yet a MET a run has confirmed.
+
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
 | Money | 28 | 0 | 8 | 0 | 36 |
@@ -371,23 +378,109 @@ small-firm cells. `test/small-business.test.ts` is green. Households unchanged.
 
 ## 0d. The overdue suite run, triaged
 
-**Measured at item 0's close (2026-09-15).** `npm run test`: **105 files, 857 tests — 200 failed,
-657 passed.** It was red before item 0 and item 0 made it less so, which is the only comparison that
-matters here and is why none of these 200 is item 0's to chase (Law 11). Measured against the tree
-at `d032586` on the thirteen files nearest item 0's edits:
+**Measured 2026-09-15, after items 0 to 0c.** `npm run test`: **106 files, 869 tests — 199 failed,
+670 passed.** At item 0's close it was 105 files, 857 tests, 200 failed. It was red before item 0
+and it is less red now; on the thirteen files nearest item 0's edits it went from 59 failed / 16
+passed at `d032586` to 32 failed / 45 passed. **Nothing has gone from green to red.**
 
-| | files | failed | passed |
+- [x] 0d.1 `npm run test` once; the numbers are here rather than in a file.
+- [x] 0d.2 Every red file into one of the four, below.
+- [x] 0d.3 `coverage:reached` over both worlds; the marks stand as `UNMEASURED` and Part 0.1 is regenerated.
+- [x] 0d.4 Record: reds by cause; reached by module.
+
+### 0d.2 The 47 red files, by cause
+
+**Read the AUDIT, not the assertion.** Most of the 199 are a test asserting the audit is clean and
+finding it is not, with the diff truncated — so the attribution is the audit's own report, taken
+over the same worlds `check:opens` runs:
+
+| world | period | total | family | what it says |
+|---|---|---|---|---|
+| rig | 30 | 333 | 299 `units` | `hh.working.bank.a.1` and `.0` are two cells standing for the same household |
+| | | | 23 `flows` | a cell moved N per member and the instructions sum to something else |
+| | | | 8 `prices` | `equity.firm.1` is held and has no print for this period |
+| | | | 3 `names` | a live pool under no mandate |
+| abroad | 12 | 7,877 | 7,185 `money` | `fed` carries `bund.2036-03-15` in EUR **and no revaluation looked at it** |
+| | | | 607 `units` | the same duplicate cells |
+| | | | 59 `flows` | the same per-member disagreement |
+| | | | 26 `prices` | the same held-and-unpriced lines |
+
+(a) **Asserts a world that no longer exists** — 5 files. `in-kind` anchored a test phase to
+`funds.etf`, which has not existed since the listed half of the module was rewritten; 0a's seal
+refused it by name. `short-term-debt` asserted Law 2 has five kinds (it has six since 0.1 declared a
+placeholder) and that `paper.backstop` anchors `after: markets` (0.5 moved it in front of the
+maturity it funds). `capital`, `corporate-action` and `firms` ask the rig for a firm the draw no
+longer makes. `world` asserts an exact 15-phase list and the bare world now assembles 33.
+→ the four that are one line are fixed here; the phase list and the rig draws are **23.1**.
+
+(b) **A mechanism its item has not built** — 38 files, and three causes between them:
+**duplicate cells** (19 files) — `sameState` merge cannot fire, so every split leaves two cells on
+one key and the `units` family says so 299 times in the rig alone → **0f**;
+**the prices family and the valuer disagree** (8 files) — the family reads the KIND's carry and
+`Valuation.atCost` reads the LINE's history, which is two answers to one question (Law 4) → **21**;
+**the Fed's euro bond is never revalued** (the whole of `abroad`'s 7,185) → **16**.
+
+(c) **A build-stopper** — 4, each with its site:
+`banks/index.ts:1604 worthToItsLender` → `quote.ts:291 room` → `exposureTo` → `view.mark` → the
+kind's valuer → `worthToItsLender`: **a loan's worth depends on a mark that depends on the loan's
+worth**, and the stack overflows (XI-6 says exactly one module answers, and this one answers with
+itself) → **21**.
+`funds/index.ts:540 redeem` divides by a NAV of zero: a fund with nothing in it is redeemed rather
+than wound up → **21**.
+`Impossible [Law 8] what is issued of share.fund.money.bank.c is 10539366700626692` → **21**.
+`Forbidden [Seed D1] Japan's banks cannot carry the accounts it opens them with` → **22a**.
+
+(d) **An assertion wrong on its own terms** — fixed here: `estate`'s test phase read `labour.hire`
+without declaring it (0a); `in-kind`'s anchored to a phase nobody declares; `short-term-debt`'s two.
+And 0c's rounding baseline counted a generated `.d.ts` beside the source it was generated from: the
+ratchet skips generated output now, and the baseline is 52 files rather than 53.
+
+### What 0d found and did not fix
+
+- **A company that ceases between the declaration and the payable date.** `payDividend` paid FROM
+  `action.issuer` and TO the row's creditor, and neither was resolved through successors — so a
+  52-period run stopped at period 47 with an instruction addressed to `firm.2`, which had ceased
+  that period. FIXED HERE, because it is a build-stopper and 0d.3's measurement could not be taken
+  without it: both ends resolve (Register F2), the filter matches the RESOLVED issuer so an estate
+  pays what the firm declared, and a claim whose two ends resolve to one party is not paid and
+  stays. It is the twenty-fourth stop.
+### 0d.3 What has never produced anything, measured
+
+`npm run coverage:reached 52`, over both worlds. Reached in EITHER world counts as reached: one
+country cannot exercise a currency pair.
+
+| world | declared | reached | never |
 |---|---|---|---|
-| before item 0 (`d032586`) | 13 | 59 | 16 |
-| after item 0 | 13 | 32 | 45 |
+| rig | 600 | 193 | 407 |
+| abroad | 1,826 | 229 | 1,597 |
 
-The totals differ because tests that used to abort at the first throw now run to their assertions —
-which is what item 0 did. **Nothing went from green to red.**
+Almost all of the "never" is the SEED's markets — 1,661 of 1,702 — which is honest and expected: a
+market is opened for every good in every region and only one region has firms in it (13i). What is
+left is the list that matters, and it is the evidence the `UNMEASURED` marks in `docs/COVERAGE.md`
+were asserting without it. **The marks stand.**
 
-- [x] 0d.1 `npm run test` once; the numbers are above rather than in a file (`docs/measurements/` was deleted with the plan files; a measurement in the plan is read, a measurement in a file is not).
-- [ ] 0d.2 Every red file into exactly one of: (a) asserts a world that no longer exists → 23.1; (b) a mechanism its item has not built → a step in that item naming the test; (c) a build-stopper → a 21 step with file:line; (d) an assertion wrong on its own terms → fixed here. The list is written here before anything changes.
-- [ ] 0d.3 `coverage-reached.ts` over 52 periods of both worlds; COVERAGE re-marked; 0.1 regenerated.
-- [ ] 0d.4 Record: reds by cause; reached by module.
+| module | never produced |
+|---|---|
+| derivative-layer | `closeOut.claim`, `defaultFund.contribution`, `margin.claim`, `participant:fund/contract` |
+| cds | `cds`, `cds.index` |
+| fx-derivatives | `fx.forward`, `xccy` |
+| spot-fx | `participant:firm/fx`, `participant:treasury/fx` |
+| bond-futures | `bond.future` |
+| commodity-futures | `commodity.future` |
+| index-futures | `index.future` |
+| irs | `irs` |
+| options | `option` |
+| corporate-bond | `corporate.bond` |
+| insurers | `policy` |
+| control | `store:control.advisory` |
+| banks | `borrowNeeds:bank` |
+
+**Every derivative class in this world has never produced a contract** — nine of nine, where Part 0
+said eight of nine. No corporate bond has ever been issued and no insurance policy ever written.
+**Twelve periods reach less than 52**: `participant:banks/bank`, `participant:funds/fund`,
+`venueParticipant:funds/fundManager` and `participant:spot-fx/household/fx` all produce between
+period 12 and period 52, so a short run understates what is reachable and a long one is the honest
+measure.
 
 ---
 

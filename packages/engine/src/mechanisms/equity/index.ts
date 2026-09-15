@@ -336,13 +336,33 @@ function payDividend(
 ): void {
   const paid: number[] = [];
   let failed = 0;
+  // Register F2: the ISSUER as it is now. A company that ceased between the declaration and the
+  // payable date has an estate, its rows moved there, and matching on the name it had would skip
+  // every one of them — so what it declared would simply never be paid.
+  const issuer = ctx.parties.resolve(firm).id;
   for (const owed of ctx.agreements.ofKind(DIVIDEND_DECLARED)) {
-    if (owed.debtor !== firm || owed.state !== 'performing') continue;
+    if (ctx.parties.resolve(owed.debtor).id !== issuer || owed.state !== 'performing') continue;
     // Law 15: which declaration this claim came from is a FIELD of its terms, asked for as this
     // kind's terms. It used to be `owed.what !== \`dividend ${action.id}\`` — a string built at one
     // end and compared at the other, which is A-52's shape and is why the kind exists.
     if (!isDividendOwed(owed.terms) || owed.terms.action !== action.id) continue;
-    const holderId = owed.creditor;
+    /**
+     * Register F2, Money E4: EVERY REFERENCE RESOLVES TO SOMEBODY WHO EXISTS, on both ends.
+     *
+     * A declaration names its holders on the record date and is paid on the payable date, and a
+     * company or a holder can cease in between — this world had `firm.2` cease in period 47 with a
+     * declaration of its own still to pay and a claim on another firm still to collect. The kernel
+     * moves an agreement row at the cease (`world/succession.ts`), so a row that existed then is
+     * already on the estate; one written after it, from a record date the register has since
+     * resolved away, is not. Both ends are resolved here, which is what `issueCloseOutClaim` does in
+     * the derivative layer for the same reason and in the same words.
+     *
+     * A payment to yourself is not a payment: when the two resolve to one party the claim is not
+     * paid and STAYS, which is the estate's to divide (XI-8).
+     */
+    const holderId = ctx.parties.resolve(owed.creditor).id;
+    const payer = ctx.parties.resolve(owed.debtor).id;
+    if (holderId === payer) continue;
     const holder = ctx.parties.get(holderId);
     /**
      * Law 19: WHAT IT IS OWED, read from the claim the record date wrote — not recomputed from what
@@ -368,7 +388,7 @@ function payDividend(
     const side = cellSide(holder, share.perMember);
     const leg: Leg = {
       kind: 'money',
-      from: ctx.accountOf(firm, line.ccy),
+      from: ctx.accountOf(payer, line.ccy),
       to: ctx.accountOf(holderId, line.ccy),
       ccy: line.ccy,
       // Treasury C1: the payer says what this is. A dividend is not a wage and not a disposal.

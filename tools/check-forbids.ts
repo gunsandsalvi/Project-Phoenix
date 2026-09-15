@@ -110,7 +110,6 @@ const ROUNDING_BASELINE: Readonly<Record<string, number>> = {
   'audit/families/currency.ts': 2,
   'audit/families/ownership.ts': 1,
   'calendar/calendar.ts': 2,
-  'calendar/civil.d.ts': 1,
   'calendar/civil.ts': 15,
   'clearing/solver.ts': 1,
   'mechanisms/banks/data.ts': 1,
@@ -194,7 +193,9 @@ function ratchet(
   const seen = new Set<string>();
   for (const path of files) {
     const rel = path.slice(SRC.length + 1);
-    if (rel.startsWith('core/')) continue;
+    // `core/` may round: a tick, a piece and a day count are defined there and rounding to a grid
+    // is what they ARE. A `.d.ts` is generated output and not source at all.
+    if (rel.startsWith('core/') || rel.endsWith('.d.ts')) continue;
     const n = (readFileSync(path, 'utf8').match(pattern) ?? []).length;
     const was = baseline[rel] ?? 0;
     seen.add(rel);

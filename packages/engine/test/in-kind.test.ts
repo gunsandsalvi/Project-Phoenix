@@ -121,7 +121,10 @@ function bringsABasket(party: string, side: 'buy' | 'sell', shares: Qty, at: num
       {
         name: 'test.creation',
         spec: 'Fund Shares E3',
-        anchor: { before: 'funds.etf' },
+        // `funds.etf` has not existed since the listed half of the module was rewritten; the phase
+        // that strikes a listed fund is `funds.strike`, and posting must be in front of it
+        // (item 0d). Anchoring to a name nobody declares was refused at assembly and said so.
+        anchor: { before: 'funds.strike' },
         reads: [],
         writes: [],
         run: (ctx: MechanismContext) => {
