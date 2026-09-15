@@ -9694,3 +9694,14 @@ heterogeneous-agent and agent-based literature. All four are in `docs/IMPLEMENTA
   stochastic process. Item 10.5 inserted after 0b′, which it subsumes.
 
 No engine code changed. `check:existence`, `check:deaths`, `plan:check`, `check:spec` green.
+
+## Review 2026-09-15 (fourth pass) — the plan reorganised as one tick list
+
+`docs/IMPLEMENTATION.md` rewritten as an ordered, non-repeating list of 198 steps across 28 items
+(639 lines, from 1,533): Part 0 the measured state in six compact tables; Part 1 the order; Part 2
+the items, each with binding design decisions where a remake is involved and steps that name file,
+change and test; Part 3 the finding index. The narrative parts of the third pass (architecture
+verdict, macro gaps, large optimisations, the population lattice) are folded into 0.4, 0.5, 0g and
+0f respectively. Order fixed: 0 → 0a (phases by reads/writes) → 0b → 0c → 0d → 0e (questions) →
+0f (the lattice, subsuming the cell remake) → 0g (fast, after the register's cell half is final) →
+sectors. Doc checks green; no engine code changed.
