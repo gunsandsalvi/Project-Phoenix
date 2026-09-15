@@ -17,18 +17,11 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 13 of 28 items closed** (96 of 206 steps).
+**The plan: 6 of 21 items closed** (37 of 147 steps).
 **Requirement coverage: 67.2%** (924 MET, 108 PARTIAL, 0 OUT OF SCOPE of 1375 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0 — The world opens | 25 | 25 | closed |
-| 0a — Phases ordered by what they read and write | 5 | 5 | closed |
-| 0b — The cell key belongs to the party kind | 3 | 3 | closed |
-| 0c — One truth in the documents; the guards that bite | 7 | 7 | closed |
-| 0d — The overdue suite run, triaged | 4 | 4 | closed |
-| 0e — Questions, not hooks | 4 | 4 | closed |
-| 0f — The population lattice | 11 | 11 | closed |
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
 | 11 — Small-Business Pools (§42): the profile, then the rest | 7 | 7 | closed |
 | 12 — Firm birth, household formation, promotion | 7 | 7 | closed |
@@ -50,6 +43,7 @@ The plan has two parts:
 | 22a — The opening is not an equilibrium | 6 | 0 | open |
 | 23 — Measure — Part XII | 5 | 0 | open |
 | 24 — The app and the APK | 0 | 0 | open |
+| 0 | — | — | closed |
 | 1 | — | — | closed |
 | 2 | — | — | closed |
 | 2a | — | — | closed |
