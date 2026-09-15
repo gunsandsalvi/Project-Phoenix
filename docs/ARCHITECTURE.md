@@ -1124,6 +1124,30 @@ violations.
 
 ---
 
+### 4.13 What is checked before anything is measured
+
+- **`npm run check:opens`** steps the rig thirty periods and the four-country world twelve and
+  asserts only that neither THROWS. It is the first thing `npm run check` does and it may run at any
+  time: it is not a measurement, so Law 11 does not hold it back. Every mechanism test passed for
+  months while the assembled world stopped in period 2, twenty-three times over.
+- **The phase order is checked at the seal** and the declaration is checked at the site (4.8).
+- **A cell's key belongs to its KIND** (`PartyKindProfile.cellKey`), not to the world. One list for
+  every cell made two populations mutually exclusive: a household has no line of business and a
+  small firm no cohort, so whichever kind was declared second lost every cell it added. The registry
+  refuses a cell kind that declares no key, a named kind that declares one, and a key without
+  `region`; `sameKey` answers false across kinds before it looks at a dimension.
+- **The observer is READ-ONLY and holds a copy.** It takes the world's own reads, snapshots what it
+  shows, and no surface changes the model (Appendix B, Observer). What it adds at 0a is the derived
+  phase order with what each phase needs of the period it is in.
+- **`Cash` erases the currency.** A `Cash` is a count of pieces and does not carry which money's
+  pieces they are, so two currencies can be added by arithmetic that typechecks. Every site that
+  matters names the currency beside it today, and 16.0 is where the type carries it.
+- **`npm run coverage:reached`** is the measurement behind an `UNMEASURED` mark: it steps both
+  worlds and asks the kernel's `Reach` register what every declared capability has produced. It is
+  taken at item 0d.
+
+---
+
 ## 5. Error discipline
 
 Two kinds of wrongness, kept apart on purpose:
@@ -1274,15 +1298,17 @@ that is the audit's job, not the citation checker's.
 
 ## 8. Work discipline (Laws 10–17, Part XIII)
 
-- `docs/WORKLIST.md` is the **one ordered list**, and its state column is the **one writer of an
-  item's state**. Work the first open item; a new item is inserted at the position its dependencies
-  put it, and the record says where and why. `tools/plan-progress.ts` READS that column (Law 19): a
-  deleted plan file used to be taken as a second statement that the item was done, which made an
-  open item whose plan had moved elsewhere count as fourteen worked steps.
+- **`docs/IMPLEMENTATION.md` is the one ordered list.** Twenty-eight items, each carrying the
+  findings it closes; the first open one is the work. `docs/WORKLIST.md` is HISTORY: every row it
+  had open is carried by a plan item and says which, and it is the one writer of one thing only —
+  which items it worked and closed, so `plan:progress` counts a closed item's steps after its
+  section was deleted. The two files used one id for two items (`14` was the polity there and is
+  the insurers here), which is why the plan's ids win and the superseded rows point at them.
+  `tools/plan-progress.ts` counts the PLAN's sections (item 0c): counting the worklist's rows made
+  every step of items 0a to 24 invisible, because none of them has a row there.
 - One bounded change per item; a commit per item; the commit message says what and why.
-- `docs/RECORD.md` is a ledger of outcomes, not a diary. `docs/IMPLEMENTATION.md` is the one place an open
-  FINDING lives, and it is ORDERED WORK: nineteen items, each carrying the findings it closes, worked
-  before `docs/WORKLIST.md` rows 13k–17. A finding leaves it only when its item closes.
+- `docs/RECORD.md` is a ledger of outcomes, not a diary. A finding leaves the plan only when its
+  item closes.
 - No measurement, tuning or diagnosis of numbers until Part XII is reached. Deterministic checks
   (lint, types, tests, audit at period zero) are gates, not experiments.
 - Never roll back a number. Only a change wrong on its own terms is undone.

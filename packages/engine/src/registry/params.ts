@@ -153,17 +153,31 @@ export interface ParamDecl {
 }
 
 /**
- * Law 2: whether a reason names the worklist item that ends this number.
+ * Law 2: whether a reason names the ITEM that ends this number.
  *
  * Only a SHAPE is asked. The eleven policies and preferences that cite a future item cite it for
- * something else — a rate parliament owns from 14, a comparison that becomes real at 11 — and they
+ * something else — a rate parliament owns from 19, a comparison that becomes real at 11 — and they
  * are still there afterwards; what changes is who sets them. A shape is a claim about the answer,
  * so an item that produces the answer is that claim's death, and Law 2 has a word for a shape with
  * a death in it. The check is on the reason because that is where the death was hiding: both
  * field guards above pass while the prose says 13h.
+ *
+ * IT MATCHES THE CLAIM AND NOT THE MENTION, which is item 0c's correction to its own step. The
+ * regex was `worklist [0-9]`, and the plan is `docs/IMPLEMENTATION.md` now, so the step said to
+ * widen the word to `item`. Widened, it fired on `goods.overhead.grain.itServices.machinery`
+ * ("...which is what makes it an overhead rather than an input (item 7b)") and on
+ * `goods.power.spoilage` ("Goods A3, E4, item 11: NOT DECLARED"). Neither is a death: this codebase
+ * cites an item wherever a number came from, and both of those numbers STAY.
+ *
+ * A death is a sentence about the number's future — an item BUILDS the mechanism, and this number
+ * is DELETED when it lands — so that is what is matched. Two rounds of tuning a word was the tell
+ * (Law 12): the rule was never about the word.
  */
+const SCHEDULED_DEATH =
+  /\b(?:worklist|item)\s+[0-9][0-9a-z.]*\s+(?:builds|replaces|deletes|removes|ends|produces|takes it over)|(?:deleted|removed|replaced|dies|goes)\b[^.]{0,80}?\b(?:worklist|item)\s+[0-9]/i;
+
 function namesAnItem(why: string): boolean {
-  return /\bworklist\s+[0-9]/i.test(why);
+  return SCHEDULED_DEATH.test(why);
 }
 
 /** What the register needs of the registry to count a declared amount in pieces (Law 8). */

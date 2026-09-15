@@ -17,12 +17,39 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**Plan completion: 62.1%** (59 of 95 planned steps across 51 items; a closed item's steps are in docs/RECORD.md).
+**The plan: 10 of 28 items closed** (75 of 205 steps).
 **Requirement coverage: 65.5%** (899 MET, 105 PARTIAL, 0 OUT OF SCOPE of 1372 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0 — The world opens | 25 | 25 | closed |
+| 0a — Phases ordered by what they read and write | 5 | 5 | closed |
+| 0b — The cell key belongs to the party kind | 3 | 3 | closed |
+| 0c — One truth in the documents; the guards that bite | 7 | 7 | closed |
+| 0d — The overdue suite run, triaged | 4 | 1 | in progress |
+| 0e — Questions, not hooks; stores, not events | 5 | 0 | open |
+| 0f — The population lattice | 11 | 0 | open |
+| 0g — The core made fast (Law 18) | 16 | 0 | open |
+| 11 — Small-Business Pools (§42), the rest | 5 | 5 | closed |
+| 12 — Firm birth, household formation, promotion | 7 | 7 | closed |
+| 12a — Households borrow, owe and fail; arrears; the immortals | 9 | 9 | closed |
+| 12b — Employment is a standing relation | 6 | 6 | closed |
+| 12c — Productivity is an outcome | 3 | 3 | closed |
+| 12d — Observation | 4 | 4 | closed |
+| 14 — Insurers and pensions (§27) | 8 | 0 | open |
+| 15 — Housing and land, the rest | 7 | 0 | open |
+| 16 — Cross-border, the rest | 9 | 0 | open |
+| 17 — Corporate credit, the rest | 12 | 0 | open |
+| 17b — The leveraged buyout | 0 | 0 | open |
+| 18 — Commodities spot and futures | 9 | 0 | open |
+| 18a — Monetary policy | 5 | 0 | open |
+| 19 — The polity (§47) | 10 | 0 | open |
+| 20 — Periodicity | 3 | 0 | open |
+| 21 — The local repairs | 18 | 0 | open |
+| 22 — The recipe | 3 | 0 | open |
+| 22a — The opening is not an equilibrium | 6 | 0 | open |
+| 23 — Measure — Part XII | 5 | 0 | open |
+| 24 — The app and the APK | 0 | 0 | open |
 | 1 | — | — | closed |
 | 2 | — | — | closed |
 | 2a | — | — | closed |
@@ -39,17 +66,11 @@ The plan has two parts:
 | 10.2 | — | — | closed |
 | 10.3 | — | — | closed |
 | 10.4 | — | — | closed |
-| 11 — Small-Business Pools (§42), the rest | 5 | 5 | closed |
 | pre12 | — | — | closed |
 | 11.5 | — | — | closed |
-| 12 — Firm birth, household formation, promotion | 7 | 7 | closed |
 | 11.6 | — | — | closed |
-| 12a — Households borrow, owe and fail; arrears; the immortals | 9 | 9 | closed |
-| 12b — Employment is a standing relation | 6 | 6 | closed |
 | 12b.1 | — | — | closed |
-| 12c — Productivity is an outcome | 3 | 3 | closed |
 | 12c.1 | — | — | closed |
-| 12d — Observation | 4 | 4 | closed |
 | 13a | — | — | closed |
 | 13b | — | — | closed |
 | 13b.1 | — | — | closed |
@@ -64,15 +85,11 @@ The plan has two parts:
 | 13h | — | — | closed |
 | 13i | — | — | closed |
 | 13j | — | — | closed |
-| 13k | — | — | open (no plan section) |
+| 13k | — | — | moved to plan 20 (Periodicity) |
 | 13l | — | — | closed |
-| 13m | — | — | open (no plan section) |
-| 13n | — | — | open (no plan section) |
-| 13o | — | — | open (no plan section) |
-| 14 — Insurers and pensions (§27) | 8 | 0 | open |
-| 15 — Housing and land, the rest | 7 | 0 | open |
-| 16 — Cross-border, the rest | 9 | 0 | open |
-| 17 — Corporate credit, the rest | 12 | 0 | open |
+| 13m | — | — | moved to plan 15 (Housing and land, the rest) |
+| 13n | — | — | moved to plan 12 (Firm birth, household formation, promotion) |
+| 13o | — | — | moved to plan 17b (The leveraged buyout, and 14 for the asset managers) |
 <!-- progress:end -->
 
 ---

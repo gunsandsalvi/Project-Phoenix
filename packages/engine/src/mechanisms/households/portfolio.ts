@@ -21,7 +21,7 @@
  * It only considers paper that COMES BACK inside its own horizon. Anything longer it would have to
  * sell before maturity at a price nobody can tell it, and what that is worth is the other two
  * reasons D5 names — yield against risk — which a household cannot weigh until something in this
- * world prices risk (worklist 9). Liquidity is the reason it has now, and this is the whole of it.
+ * world a household can SEE prices risk (item 12d). Liquidity is the reason it has now, and this is the whole of it.
  */
 import { none, some, type Option } from '../../core/option.js';
 import type { Ratio } from '../../core/measure.js';

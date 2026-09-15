@@ -43,7 +43,7 @@ function fixture(): { spec: string; coverage: string } {
       '| `Short-Term Debt A2` | MISSING |  |',
       '| `Short-Term Debt A3` | MISSING |  |',
       '| `Equity A1` | MET | packages/engine/src/mechanisms/equity/index.ts |',
-      '| `Equity A2` | MET | packages/engine/src/mechanisms/equity/index.ts — **NEVER REACHED**: the module is assembled and has never produced an outcome |',
+      '| `Equity A2` | MET | packages/engine/src/mechanisms/equity/index.ts — **UNMEASURED**: the module is assembled and has never produced an outcome |',
       '',
     ].join('\n'),
   );
@@ -60,7 +60,7 @@ describe('what exists, per spec system', () => {
     expect(rows[1]).toMatchObject({ met: 2, missing: 0, total: 2 });
   });
 
-  it('counts a MET row that says NEVER REACHED as MET, and separately', () => {
+  it('counts a MET row that says UNMEASURED as MET, and separately', () => {
     // It IS implemented — that is what MET claims — and it has never produced an outcome. Two facts
     // about one row, and collapsing either into the other is what let 95 of them go unnoticed.
     const { spec, coverage } = fixture();
@@ -82,7 +82,7 @@ describe('what exists, per spec system', () => {
     expect(absent(existence(coverage, spec)).map((r) => r.system)).toEqual(['Short-Term Debt']);
   });
 
-  it('names a system whose every MET is NEVER REACHED, which reads as built and is not', () => {
+  it('names a system whose every MET is UNMEASURED, which reads as built and is not', () => {
     // A reader scanning for "0 MET" walks past `M&A 10 MET` — and all ten are marks on a module
     // that has never produced an outcome. Same absence, and it needs saying separately.
     const { spec, coverage } = fixture();

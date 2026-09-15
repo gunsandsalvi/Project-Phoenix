@@ -1,13 +1,17 @@
 /**
  * Recount the plan's completion (Appendix C: recount rather than adjust).
  *
- * The items are the rows of `docs/WORKLIST.md`, which is the one ordered list and the one writer
- * of an item's state (Law 4, Law 19). The steps are read from `docs/IMPLEMENTATION.md`: an open
- * item's section is `## <id>. <title>` and its steps are the `- [ ]` / `- [x]` lines under it. A
- * closed item has no section (it was deleted when the item closed) and counts every step it had as
- * done; an open item with no section has no planned steps yet. Coverage comes from
- * docs/COVERAGE.md. The result is written between the markers in docs/PLAN.md. Run:
- * `npm run plan:progress`; `npm run check` runs it with `--check`, which fails if the block is stale.
+ * THE PLAN IS `docs/IMPLEMENTATION.md` and this counts ITS sections, in the order they are written.
+ * An item is `## <id>. <title>` and its steps are the `- [ ]` / `- [x]` lines under it.
+ *
+ * It used to walk the rows of `docs/WORKLIST.md` instead, and items 0a to 24 have no row there —
+ * they live in the plan alone — so every step of every one of them was invisible: ticking all five
+ * of item 0a moved the figure by nothing, which is how the defect was found (item 0a, positioned
+ * at 0c). The worklist is still read, for one thing it is the one writer of: which of the items it
+ * worked are `done`, so a closed item counts every step it had rather than the none its deleted
+ * section shows. Coverage comes from docs/COVERAGE.md. The result is written between the markers in
+ * docs/PLAN.md. Run `npm run plan:progress`; `npm run check` runs it with `--check`, which fails if
+ * the block is stale.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -97,13 +101,32 @@ export function planSections(text: string): Map<string, PlanSection> {
 
 export function itemProgress(): ItemProgress[] {
   const sections = planSections(readFileSync(resolve(root, 'docs', 'IMPLEMENTATION.md'), 'utf8'));
-  return worklistItems().map((w) => {
-    const closed = w.state === 'done';
-    const s = sections.get(w.id);
-    if (s === undefined) return { ...w, title: '', steps: 0, done: 0, present: false, closed };
+  const worklist = new Map(worklistItems().map((w) => [w.id, w.state]));
+  const out: ItemProgress[] = [];
+  // The PLAN's own order first: every item that has a section, whether or not the worklist knows it.
+  for (const [id, s] of sections) {
     const steps = s.checked + s.unchecked;
-    return { ...w, title: s.title, steps, done: closed ? steps : s.checked, present: true, closed };
-  });
+    /**
+     * Law 4, Law 19: WHO SAYS AN ITEM IS CLOSED. The worklist speaks for the items it WORKED, and
+     * only through `done` — that row is what tells this to count a closed item's steps, whose
+     * section was deleted when it closed. It speaks for nothing else, because the two files used
+     * one id for two items: the worklist's `14` was the polity and the plan's is the insurers.
+     *
+     * Otherwise the item's own steps say it: every one ticked IS closed, because that is what
+     * closing an item means (CLAUDE.md: tick the steps, delete the section). Nothing infers it from
+     * a section's absence, which is the other direction and would make an unwritten item look done.
+     */
+    const closed = worklist.get(id) === 'done' || (steps > 0 && s.unchecked === 0);
+    const state = closed ? 'done' : 'open';
+    out.push({ id, state, title: s.title, steps, done: closed ? steps : s.checked, present: true, closed });
+  }
+  // Then the worklist rows the plan has no section for: the items it worked and closed, whose
+  // sections were deleted when they closed, and whose steps are in docs/RECORD.md.
+  for (const [id, state] of worklist) {
+    if (sections.has(id)) continue;
+    out.push({ id, state, title: '', steps: 0, done: 0, present: false, closed: state === 'done' });
+  }
+  return out;
 }
 
 export function render(items: readonly ItemProgress[]): string {
@@ -115,8 +138,10 @@ export function render(items: readonly ItemProgress[]): string {
   const scope = rows.filter((r) => r.status === 'OUT OF SCOPE').length;
   const pct = (a: number, b: number): string => (b === 0 ? '0.0' : ((100 * a) / b).toFixed(1));
   const lines: string[] = [];
+  const planned = items.filter((i) => i.present);
+  const closedItems = planned.filter((i) => i.steps > 0 && i.done === i.steps).length;
   lines.push(
-    `**Plan completion: ${pct(done, total)}%** (${done} of ${total} planned steps across ${items.length} items; a closed item's steps are in docs/RECORD.md).`,
+    `**The plan: ${closedItems} of ${planned.length} items closed** (${done} of ${total} steps).`,
   );
   lines.push(
     `**Requirement coverage: ${pct(met + scope, rows.length)}%** (${met} MET, ${partial} PARTIAL, ${scope} OUT OF SCOPE of ${rows.length} REASON/VERIFY/FORBID clauses).`,
@@ -125,15 +150,20 @@ export function render(items: readonly ItemProgress[]): string {
   lines.push('| item | steps | done | state |');
   lines.push('|---|---|---|---|');
   for (const i of items) {
+    // A worklist row that was superseded says where it went; the plan item it named is the row
+    // that counts. Only a row that is neither closed nor moved and has no section is a gap.
+    const moved = i.state.startsWith('moved to plan ');
     const state = i.closed
       ? 'closed'
-      : !i.present
-        ? 'open (no plan section)'
-        : i.done === 0
-          ? 'open'
-          : i.done === i.steps
-            ? 'closing'
-            : 'in progress';
+      : moved
+        ? i.state
+        : !i.present
+          ? 'open (no plan section)'
+          : i.done === 0
+            ? 'open'
+            : i.done === i.steps
+              ? 'closing'
+              : 'in progress';
     const name = i.title === '' ? i.id : `${i.id} — ${i.title}`;
     const steps = i.present ? String(i.steps) : '—';
     const doneCol = i.present ? String(i.done) : '—';

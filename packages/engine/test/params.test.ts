@@ -26,7 +26,7 @@ function decl(over: Partial<ParamDecl>): ParamDecl {
 }
 
 describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
-  it('refuses a shape whose reason names a worklist item', () => {
+  it('refuses a shape whose reason says an item will produce the answer', () => {
     // The death was in the prose and both field guards passed: `standsInFor` was absent, so the
     // placeholder guard had nothing to check, and the kind was not placeholder, so the other guard
     // had nothing either. XI-14 calls the count of placeholders the honest measure of how much
@@ -36,7 +36,7 @@ describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
         new ParamRegister([
           decl({
             kind: 'shape',
-            why: 'a claim about the answer until managers compete (worklist 13h).',
+            why: 'a claim about the answer until worklist 13h produces it.',
           }),
         ]),
     ).toThrow(/placeholder/);
@@ -84,6 +84,33 @@ describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
           decl({ kind: 'technology', standsInFor: { mechanism: 'Goods A2', item: '15' } }),
         ]),
     ).toThrow(/scheduled death/);
+  });
+});
+
+describe('a scheduled death is a CLAIM about the number, not a mention of an item (Law 2)', () => {
+  it('fires on a reason that says an item ends it, and not on one that cites where it came from', () => {
+    const dies = (why: string): boolean => {
+      try {
+        new ParamRegister([decl({ kind: 'shape', why })]);
+        return false;
+      } catch {
+        return true;
+      }
+    };
+    // A death: an item BUILDS the mechanism, or the number is DELETED when it lands.
+    expect(dies('A shape until item 17.3 builds the lender decision.')).toBe(true);
+    expect(dies('A claim about the answer; worklist 13h produces it.')).toBe(true);
+    expect(dies('It is deleted in the same change as item 17.3.')).toBe(true);
+    /**
+     * And a citation is not. The regex was `worklist [0-9]`; item 0c widened it to `item` because
+     * the plan is `docs/IMPLEMENTATION.md` now, and widened it fired on two numbers that STAY —
+     * `goods.power.spoilage` ("Goods A3, E4, item 11: NOT DECLARED") and the overhead per machine
+     * ("an overhead rather than an input (item 7b)"). This codebase cites an item wherever a number
+     * came from. Two rounds of tuning a word was the tell that the rule was never about the word.
+     */
+    expect(dies('Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`.')).toBe(false);
+    expect(dies('...which makes it an overhead rather than an input (item 7b).')).toBe(false);
+    expect(dies('A2.a: a support week per unit of machinery in service per period.')).toBe(false);
   });
 });
 

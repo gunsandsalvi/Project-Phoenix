@@ -22,9 +22,13 @@
  * at a place of its own — A3.a's working capital: a shipper that has paid for a cargo and not yet
  * got it is short of both. How long that is, is not a number: each period the voyage comes as far
  * as the weather AT THE PLACE IT IS IN let it, so a gale holds up the ships in that sea area and no
- * others, takes a share of the hulls caught in it WITH THE CARGO ABOARD on two named books, and
- * leaves the next session short of hulls. That is B2.a — freight violent and inelastic in the short
- * run — as a mechanism and not a claim.
+ * others and leaves the next session short of hulls. That is half of B2.a — freight violent and
+ * inelastic in the short run — as a mechanism and not a claim.
+ *
+ * THE OTHER HALF IS NOT BUILT, and this said it was (item 0c): *"takes a share of the hulls caught
+ * in it WITH THE CARGO ABOARD on two named books"*. Nothing here emits `act: 'lose'` — the leg
+ * exists, settlement handles it, and no module in this world has ever written one — so a storm
+ * delays a voyage and has never sunk one. E3 is what that clause is, and it is item 21's.
  *
  * CAPACITY IS NOT A NUMBER ANYWHERE. What a carrier can offer is the hulls it has FREE: a hull on a
  * voyage is liened, and the register already refuses to move encumbered units, so "a hull cannot be

@@ -889,6 +889,14 @@ to look at next is who is on the other side of the sale, not the fund.
 
 ## 9 — Equity, and dealers that carry inventory
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 **What.** A share is an instrument that is not a liability of anybody: a residual claim, counted in
 shares, ranking below everything its issuer owes, perpetual, promising nothing dated, carrying a
 vote — and a cell casts its whole weight of them. Three firms are listed, each with a market. What a
@@ -1443,6 +1451,14 @@ phases and neither calls `gather` yet; every existing world is the same world. T
 than folded in because the kernel changes only by an inserted item.
 
 ## 11 — The money market, the corridor, bank funding and bank capital
+
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
 
 **What.** A bank's reserve position is now the residue of everybody else's payments, and there is a
 market where that position meets somebody else's. The session runs after the flows because the need
@@ -2712,6 +2728,14 @@ is split out.
 
 ## 13a — The derivative layer
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 **What.** The kernel gained a SECOND REGISTER (`register/contracts.ts`) and the module that runs on
 it (`mechanisms/derivative-layer/`). A contract is not a holding (Derivative X1): nobody issued it,
 it has no issued amount, and it enters no ownership check — what it enters is the identity that the
@@ -2892,6 +2916,14 @@ with ordinary comments none of those would be findable at all. The prose is load
 ---
 
 ## 13b — the derivative classes
+
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
 
 **What the item was.** Five bilateral classes on 13a's layer (credit default swap, interest-rate
 swap, FX forward, cross-currency swap, bond future), an option, an index future, the index set they
@@ -3354,6 +3386,14 @@ finding rather than a licence to add a term.
 
 ## 13c — Commodities and freight (closed)
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 Paused twice and finished: steps 1–8 before the map, step 9 after it (13c.1), and steps 10–16 after
 the economy had somewhere to sell to (13c.2).
 
@@ -3456,6 +3496,14 @@ averaging the cohorts that should not be.
 
 ## 13d — Labour mobility, housing, the household life cycle (closed)
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 Paused once, for 13d.1, and finished on the other side of it.
 
 **Labour.** Mobility is TWO ROUNDS OF ONE MATCHING FUNCTION: every seeker offers in the trade it
@@ -3521,6 +3569,14 @@ reading what it is supposed to be reading.
 
 
 ## 13e — trade credit and securitisation: the invoice, the vehicle, the layer
+
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
 
 **Most of the credit in an economy is not a bank's.** A firm that buys from another firm pays in
 thirty days, and until it does the seller has lent it the money without either of them calling it
@@ -3641,6 +3697,14 @@ its own constraints stopped it (C3.a).
 
 ## 13f — the other credit channel, and an issuer that stopped profiting from its decline
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 **The own-credit defect** is written up above; it is the largest thing in this item and it was found
 by being asked the right question. What follows is the rest.
 
@@ -3687,6 +3751,14 @@ covered bond stay in the worklist's carried findings.
 
 ## 13g — the market for control
 
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
+
 **A premium is a price and it has to clear.** Every share in this world already has a market and
 every holder already has its own number for what a share is worth to it. A takeover is what happens
 when somebody else's number for the WHOLE firm is higher than theirs for their piece of it — so the
@@ -3723,6 +3795,14 @@ listed firm here earns something the assertion fails and the tender machinery st
 
 
 ## 13h — the sector that has duration
+
+> **CLOSED ON A WORLD THAT DID NOT ASSEMBLE, OR ON A MECHANISM FOUND UNREACHABLE.** Item 0 stepped
+> the assembled world for the first time and it stopped in period 2; `docs/IMPLEMENTATION.md` Part 0
+> names this module among those that compile, are cited, are marked MET, and have never produced an
+> outcome. Every measurement in this entry was taken on a world that could not run to it. The
+> mechanism may be right and the numbers are not evidence. Re-verified at item 0d; what the
+> capabilities have actually produced is `npm run coverage:reached`.
+
 
 **B2.b is the clause this exists for**, and it says what the easy version gets wrong: a liability
 that accumulates contributions minus benefits plus investment income has no schedule, no discount
@@ -9898,3 +9978,76 @@ the sector before it knows what a key is. Positioned at **0f** (one live cell pe
 three suite files nearest this change: 13 failed / 23 passed before, 12 failed / 26 passed after —
 one fixed, two added, none broken. Lint, typecheck, spec citations, forbids, deaths, existence and
 plan green.
+
+## Item 0c — One truth in the documents; the guards that bite
+
+**What.** The plan counts itself; the worklist says it is history; the coverage file stops claiming
+a measurement nobody took; two ratchets now refuse a new rounding call and a new floor at zero; and
+five docstrings that described something not there say what is.
+
+**The counter read the wrong file.** `plan:progress` walked the rows of `docs/WORKLIST.md`, and
+items 0a to 24 have no row there — they live in the plan alone — so every step of every one of them
+was invisible, which is how the defect was found: ticking all five steps of item 0a moved the figure
+by nothing. It counts the plan's sections now, in the order they are written, and reads the worklist
+for the one thing it is the writer of: which items it worked and closed, so a closed item's steps
+count after its section was deleted.
+
+**And the two files used one id for two items.** The worklist's `14` was the polity; the plan's `14`
+is the insurers. `15`, `16` and `17` differed the same way. The plan's ids win — it is the ordered
+list — and each superseded row points at the item that carries it (`13k` → 20, `13m` → 15, `13n` →
+12, `13o` → 17b, `14` → 19, `15` → 22, `16` → 23, `17` → 24). Three tests hold it: the plan's items
+are counted, a closed worklist item keeps its steps, and no plan item ever takes its state from a
+moved row of the same id.
+
+**`NEVER REACHED` became `UNMEASURED`**, in all 96 rows and in the tool that counts them. The old
+mark asserted a fact nobody had measured: what was known is that the source is there. The
+measurement now exists — `npm run coverage:reached` steps both scale models and asks the kernel's
+own `Reach` register, which declares every capability at assembly so "never" is a state rather than
+a silence — and item 0d is where it is taken and the marks are settled. It lives beside the rig
+rather than in `tools/`, because `tools/` compiles as its own project and cannot import the engine.
+
+**Ten record entries carry a warning.** Item 0 stepped the assembled world for the first time and it
+stopped in period 2; entries 9, 11, 13a, 13b, 13c, 13d, 13e, 13f, 13g and 13h closed on that world
+or on a mechanism Part 0 found unreachable. Their measurements are not evidence. The entries stand,
+because a ledger is not rewritten backwards (Law 13), and each says so at the top.
+
+**Two ratchets.** `Math.floor`, `ceil`, `round`, `abs`, `exp`, `pow`, `sqrt`, `min` and `max`
+outside `core/` — 125 calls in 53 files — and `atLeast(x, 0)` / `atMost(x, NO_QTY)` outside
+`core/num.ts` — 7 in 5 files. `atLeast(x, 0)` is "not less than zero", the exact phrase Law 6
+forbids, and it is harder to see than a `Math.max` because the honest uses of both live in `core/`.
+Neither is banned, because deleting them is item 21 one file at a time; the check fails when a file
+has MORE than it had, or when a clean file acquires one. A single added `Math.floor` fails it by
+name.
+
+**A prose regex, tuned twice, was the tell.** Step 0c.7 said to widen `params.ts`'s scheduled-death
+match from `worklist [0-9]` to `item [0-9]`, because the plan is `docs/IMPLEMENTATION.md` now.
+Widened, it fired on two numbers that STAY: an overhead per machine ("...an overhead rather than an
+input (item 7b)") and `goods.power.spoilage` ("Goods A3, E4, item 11: NOT DECLARED"). This codebase
+cites an item wherever a number came from. A second round of tuning — exempting a citation in
+parentheses — caught the first and not the second, and that was the signal (Law 12): the rule was
+never about the word. It matches the CLAIM now — an item BUILDS the mechanism, the number is
+DELETED when it lands — and six cases are asserted, three deaths and three citations.
+
+**Five stale docstrings.** The freight header said a gale "takes a share of the hulls caught in it
+WITH THE CARGO ABOARD on two named books": nothing in this world emits `act: 'lose'`, so a storm
+delays a voyage and has never sunk one. `ledger/instruction.ts` said a `create` may only appear
+beside the `destroy` legs of what it was made from, which is not the rule and could not be — a thing
+drawn from labour and land alone destroys nothing. `kinds.ts` and `module.ts` each named the other's
+moment for its refusal. `households` was waiting for worklist 9 to price risk, and 9 closed. The
+other seven the review named are accurate, or were made accurate by items 0 to 0b: `goods/data.ts`'s
+"exactly as a tonne in transit is" became true when 0.11 opened the transit lines.
+
+**Found and not fixed.** A `create` leg is refused unless the instruction's cause is `production` or
+`seed`, and BOTH of freight's are not: `cargo()` loads under `cause: 'trade'` and `arrive()` lands
+under `cause: 'corporateAction'`. Neither has ever run, because no cargo has loaded in any period of
+either world — so the first voyage this world manages will throw. Positioned at **13i**, with the
+rest of the freight gap. The 125 rounding calls and 7 zero-floors are positioned at **21**.
+
+**Three PARTIAL rows named nothing**, which is a MISSING with a softer word, and
+`tools/test/spec-coverage.test.ts` had been red on them since before item 0. `Short-Term Debt C3`
+(every buyer sharing one concentration and one memory) is item 17; `Prime Brokerage A2` (custody
+distinct from banking) and `A4` (stock-borrow fees, commissions) are 17b.
+
+**Checks.** `check:opens`, `check:existence --verify`, `plan:check`, `check:deaths`,
+`check:forbids`, `check:spec`, lint and typecheck green. The plan reads 10 of 28 items closed.
+`tools/test/` is green, all 24 — it had one red before this item.

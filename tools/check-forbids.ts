@@ -90,6 +90,124 @@ const CONTRACT_CLASSES: readonly string[] = [
   'derivative-layer',
 ];
 
+/**
+ * Law 6, Law 12: ARITHMETIC THAT ROUNDS, OUTSIDE THE ONE PLACE THAT MAY (`core/`).
+ *
+ * `Math.min`, `Math.max` and `clamp` are already refused by lint. The rest of `Math` is where a
+ * bound hides in plainer clothes: a `floor` is a floor, a `ceil` is a ceiling, and an `abs` is a
+ * sign somebody decided not to carry. `core/` may, because that is where a tick, a piece and a day
+ * count are defined and rounding to a grid is what those ARE.
+ *
+ * It is a RATCHET and not a ban, because 125 of them exist today across 53 files and
+ * deleting them is item 21, one file at a time. The baseline is what each file has now; the check
+ * fails when a file has MORE than it did, or when a file that had none acquires one. A number here
+ * only ever goes down, and a file that reaches zero is deleted from the list.
+ */
+const ROUNDING = /\bMath\.(floor|round|ceil|abs|exp|pow|sqrt|min|max)\b/g;
+
+const ROUNDING_BASELINE: Readonly<Record<string, number>> = {
+  'audit/audit.ts': 2,
+  'audit/families/currency.ts': 2,
+  'audit/families/ownership.ts': 1,
+  'calendar/calendar.ts': 2,
+  'calendar/civil.d.ts': 1,
+  'calendar/civil.ts': 15,
+  'clearing/solver.ts': 1,
+  'mechanisms/banks/data.ts': 1,
+  'mechanisms/banks/dealing.ts': 1,
+  'mechanisms/banks/index.ts': 4,
+  'mechanisms/banks/staff.ts': 2,
+  'mechanisms/bond-futures/index.ts': 1,
+  'mechanisms/capital-programme/index.ts': 5,
+  'mechanisms/central-bank-omo/index.ts': 2,
+  'mechanisms/commodity-futures/index.ts': 1,
+  'mechanisms/derivative-layer/house.ts': 1,
+  'mechanisms/derivative-layer/index.ts': 2,
+  'mechanisms/environment/data.ts': 2,
+  'mechanisms/environment/state.ts': 1,
+  'mechanisms/equity/index.ts': 1,
+  'mechanisms/expectations/index.ts': 2,
+  'mechanisms/external/index.ts': 1,
+  'mechanisms/firms/data.ts': 2,
+  'mechanisms/firms/index.ts': 4,
+  'mechanisms/firms/invest.ts': 1,
+  'mechanisms/firms/produce.ts': 1,
+  'mechanisms/freight/index.ts': 3,
+  'mechanisms/funds/data.ts': 2,
+  'mechanisms/funds/index.ts': 2,
+  'mechanisms/fx-derivatives/participants.ts': 2,
+  'mechanisms/households/lifecycle.ts': 2,
+  'mechanisms/index-futures/index.ts': 1,
+  'mechanisms/irs/index.ts': 3,
+  'mechanisms/labour/index.ts': 2,
+  'mechanisms/labour/matching.ts': 2,
+  'mechanisms/money-market/index.ts': 2,
+  'mechanisms/money-market/resolution.ts': 1,
+  'mechanisms/options/index.ts': 3,
+  'mechanisms/reporting/guidance.ts': 3,
+  'mechanisms/research/index.ts': 2,
+  'mechanisms/small-business/data.ts': 2,
+  'mechanisms/spot-fx/arbitrage.ts': 1,
+  'mechanisms/treasury/index.ts': 3,
+  'prices/curve.ts': 2,
+  'register/register.ts': 1,
+  'register/voyages.ts': 1,
+  'registry/geography.ts': 5,
+  'rng/prng.ts': 1,
+  'rng/spread.ts': 2,
+  'seeds/foundation.ts': 1,
+  'seeds/map.ts': 15,
+  'world/actions.ts': 1,
+  'world/world.ts': 1,
+};
+
+
+/**
+ * Law 6: A FLOOR AT ZERO, wearing the name of the door that was built to avoid one.
+ *
+ * `atLeast(x, 0)` is "not less than zero" — the exact phrase Law 6 forbids — and it is harder to
+ * see than a `Math.max` because `core/num.ts` is where the honest uses of both live. The seven that
+ * exist say what they are in their own `why`: "nobody misses fewer payments than none", "there is
+ * no period before the world began". Two of those are arithmetic impossibility and belong; the rest
+ * are a number that should not have gone negative and a mechanism that is missing (item 21).
+ *
+ * A ratchet, like the rounding one, and for the same reason: they go one at a time.
+ */
+const ZERO_FLOOR = /at(?:Least|Most)\([^,]+,\s*(?:0|NO_QTY)\s*[,)]/g;
+
+const ZERO_FLOOR_BASELINE: Readonly<Record<string, number>> = {
+  'ledger/settlement.ts': 1,
+  'mechanisms/banks/lines.ts': 1,
+  'mechanisms/options/index.ts': 1,
+  'mechanisms/ratings/assess.ts': 3,
+  'mechanisms/treasury/index.ts': 1,
+};
+
+function ratchet(
+  files: readonly string[],
+  pattern: RegExp,
+  baseline: Readonly<Record<string, number>>,
+  spec: string,
+  why: string,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const path of files) {
+    const rel = path.slice(SRC.length + 1);
+    if (rel.startsWith('core/')) continue;
+    const n = (readFileSync(path, 'utf8').match(pattern) ?? []).length;
+    const was = baseline[rel] ?? 0;
+    seen.add(rel);
+    if (n > was) {
+      out.push(`${rel}: [${spec}] ${String(n)} where it had ${String(was)}. ${why}`);
+    }
+  }
+  for (const rel of Object.keys(baseline)) {
+    if (!seen.has(rel)) out.push(`${rel}: [${spec}] is in the baseline and no longer exists; delete its row`);
+  }
+  return out;
+}
+
 function sources(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
@@ -105,7 +223,22 @@ function code(text: string): string {
 }
 
 const files = sources(SRC);
-const broken: string[] = [];
+const broken: string[] = [
+  ...ratchet(
+    files,
+    ROUNDING,
+    ROUNDING_BASELINE,
+    'Law 6',
+    'A floor is a floor and a ceiling is a ceiling; build the mechanism (item 21)',
+  ),
+  ...ratchet(
+    files,
+    ZERO_FLOOR,
+    ZERO_FLOOR_BASELINE,
+    'Law 6',
+    'atLeast(x, 0) is "not less than zero"; only arithmetic impossibility is admissible (item 21)',
+  ),
+];
 for (const rule of FORBIDS) {
   for (const path of files) {
     if (!rule.applies(path)) continue;
@@ -118,4 +251,8 @@ if (broken.length > 0) {
   for (const line of broken) process.stderr.write(`${line}\n`);
   process.exit(1);
 }
-process.stdout.write(`all ${FORBIDS.length} silent FORBIDs hold over ${files.length} files\n`);
+process.stdout.write(
+  `all ${FORBIDS.length} silent FORBIDs hold over ${files.length} files; ` +
+    `${String(Object.keys(ROUNDING_BASELINE).length)} files round outside core/ and ` +
+    `${String(Object.keys(ZERO_FLOOR_BASELINE).length)} floor at zero (item 21)\n`,
+);

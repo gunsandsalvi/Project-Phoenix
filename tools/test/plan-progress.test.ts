@@ -43,9 +43,39 @@ describe('the tree as it stands', () => {
 
   it('takes the state from the last cell, because one row has pipes in its prose', () => {
     const states = new Set(worklistItems().map((w) => w.state));
-    expect([...states].filter((s) => s !== 'state' && s !== '-----').sort()).toEqual([
-      'done',
-      'open',
-    ]);
+    const said = [...states].filter((s) => s !== 'state' && s !== '-----');
+    // The worklist is history now (item 0c): a row is `done`, or it says which plan item carries
+    // it. Nothing is worked from this file, so nothing on it is `open`.
+    expect(said).toContain('done');
+    expect(said.filter((s) => s !== 'done').every((s) => s.startsWith('moved to plan '))).toBe(true);
+  });
+
+  it('counts the PLAN items, which have no worklist row at all (item 0c)', () => {
+    const items = itemProgress();
+    const byId = new Map(items.map((i) => [i.id, i]));
+    // 0a to 24 live in docs/IMPLEMENTATION.md alone. Counting the worklist's rows made every step
+    // of every one of them invisible: ticking all five of 0a moved the figure by nothing.
+    const zeroA = byId.get('0a');
+    expect(zeroA?.present).toBe(true);
+    expect(zeroA?.steps).toBeGreaterThan(0);
+    expect(zeroA?.done).toBe(zeroA?.steps);
+    expect(zeroA?.closed).toBe(true);
+    // And an item the worklist closed keeps counting every step it had, section or no section.
+    expect(items.filter((i) => i.closed && !i.present).length).toBeGreaterThan(0);
+  });
+
+  it('never takes a plan item state from a worklist row of the same id', () => {
+    // The two files used one id for two items: this list's `14` was the polity and the plan's is
+    // the insurers. The worklist speaks only through `done`.
+    const items = itemProgress();
+    const moved = worklistItems().filter((w) => w.state.startsWith('moved to plan '));
+    expect(moved.length).toBeGreaterThan(0);
+    for (const w of moved) {
+      const asPlan = items.find((i) => i.id === w.id && i.present);
+      if (asPlan === undefined) continue;
+      expect(asPlan.state, `${w.id} took its state from a moved worklist row`).not.toContain(
+        'moved',
+      );
+    }
   });
 });

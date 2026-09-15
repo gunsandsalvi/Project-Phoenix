@@ -399,9 +399,10 @@ export type OverdraftDecision =
  * whose answer is a CREDIT DECISION says so and answers nothing: B3.a is explicit that a customer
  * overdrawn is borrowing and that it is its bank's decision, and a decision that weighs the room a
  * bank's own capital supports is not something a kind profile could ever know how to take. The
- * module that owns lending registers it at assembly, and assembly refuses a world where a kind says
- * this and nobody answers — a refusal that exists because a defaulted-to "no" would look exactly
- * like a bank with a credit standard.
+ * module that owns lending registers it at assembly, and the SEAL refuses a world where a kind says
+ * this and nobody answers (`World.requireCreditDeciders`) — a refusal that exists because a
+ * defaulted-to "no" would look exactly like a bank with a credit standard. At the seal rather than
+ * at assembly, and for a reason: the module that answers may be declared after the kind.
  */
 export type OverdraftPolicy = ((ctx: OverdraftContext) => OverdraftDecision) | 'aCreditDecision';
 

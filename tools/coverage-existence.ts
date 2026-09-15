@@ -8,12 +8,12 @@
  * only in the aggregate nobody took (`docs/IMPLEMENTATION.md` Part 0).
  *
  * So: per spec system, how many clauses are MET, PARTIAL, MISSING and OUT OF SCOPE, and how many of
- * the MET carry **NEVER REACHED** — a module that cites the clause and has never produced an
+ * the MET carry **UNMEASURED** — a module that cites the clause and has never produced an
  * outcome. A system with NO clause MET is an ABSENT SECTOR and is named at the top.
  *
  * It reads two files and runs no world. Which system a clause belongs to is the SPEC's fact, so it
  * is joined from the spec index rather than parsed out of COVERAGE's headings (Law 4: one writer).
- * The NEVER REACHED marks are likewise READ from where `world/reach.ts` caused them to be written,
+ * The UNMEASURED marks are likewise READ from where `world/reach.ts` caused them to be written,
  * never re-derived (Law 19) — the reach read is what keeps them true, and this is what counts them.
  *
  * `--verify` fails when the generated table differs from the one in `docs/IMPLEMENTATION.md`
@@ -31,7 +31,7 @@ const root = resolve(here, '..');
 
 /** Where the plan states what exists. The table between these two markers is what `--verify` reads. */
 const PLAN = resolve(root, 'docs', 'IMPLEMENTATION.md');
-const TABLE_START = '| system | MET | PARTIAL | MISSING | NEVER REACHED | total |';
+const TABLE_START = '| system | MET | PARTIAL | MISSING | UNMEASURED | total |';
 
 export interface SystemExistence {
   readonly system: string;
@@ -81,7 +81,7 @@ export function existence(
       outOfScope: s.outOfScope + (status === 'OUT OF SCOPE' ? 1 : 0),
       neverReached:
         s.neverReached +
-        (status === 'MET' && row?.where.includes('NEVER REACHED') === true ? 1 : 0),
+        (status === 'MET' && row?.where.includes('UNMEASURED') === true ? 1 : 0),
     });
   }
   return [...bySystem.values()];
@@ -137,7 +137,7 @@ export function absent(rows: readonly SystemExistence[]): SystemExistence[] {
 }
 
 /**
- * Systems that are built on paper and have produced nothing — every MET they have is NEVER REACHED.
+ * Systems that are built on paper and have produced nothing — every MET they have is UNMEASURED.
  *
  * The same absence as `absent()` wearing a better word. A reader scanning for "0 MET" walks past
  * `M&A 10 MET` without pausing, and all ten of those are marks on a module that has never produced
@@ -199,13 +199,13 @@ function report(): number {
   }
   console.log('');
   console.log(
-    `${String(clauses)} clauses: ${String(met)} MET (${String(dead)} NEVER REACHED), ` +
+    `${String(clauses)} clauses: ${String(met)} MET (${String(dead)} UNMEASURED), ` +
       `${String(partial)} PARTIAL, ${String(missing)} MISSING`,
   );
   const dead2 = builtAndDead(rows);
   console.log('');
   console.log(
-    `BUILT AND DEAD — every clause MET, and every one of them NEVER REACHED: ${String(dead2.length)}`,
+    `BUILT AND DEAD — every clause MET, and every one of them UNMEASURED: ${String(dead2.length)}`,
   );
   for (const r of dead2) {
     console.log(`  ${r.system.padEnd(26)} ${String(r.met)} of ${String(r.total)}, none reached`);

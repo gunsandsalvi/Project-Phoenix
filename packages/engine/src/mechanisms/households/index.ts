@@ -142,7 +142,7 @@ function paramsOf(): ParamDecl[] {
       dimension: 'periods',
       kind: 'preference',
       owner: 'model',
-      why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something in this world prices risk (worklist 9).',
+      why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something a household can SEE prices risk. Worklist 9 closed and a rating and a spread exist; what is still missing is a household that reads either, which is item 12d (observation).',
     },
     {
       id: HOUSEHOLD_PARAMS.toTheMarket,

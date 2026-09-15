@@ -11,14 +11,14 @@
 
 ### 0.1 By spec system
 
-`npm run check:existence` over `docs/COVERAGE.md`. **1,361 clauses: 888 MET (94 NEVER REACHED),
+`npm run check:existence` over `docs/COVERAGE.md`. **1,361 clauses: 888 MET (94 UNMEASURED),
 105 PARTIAL, 368 MISSING.** A MET mark means a module cites the clause; the read found MET rows on
 code that cannot run (re-marked by the item named): Insurers A4/B1/B2 (14), Housing B1/C1/C3/C4
 (12a), Freight A3/D2/D6 (0.11), Trade Credit D1/D4 (12a.3), Short-Term Debt B3.b/B4 (0.5, 12a.7),
 Corporate Credit E5 (17.0), Banks Capital C2 (0.9), §42 A1–A6 (0f), Capital Programme A2/C1 (15.1),
 Commodities Spot D3 (18.3). The table is the tool's; `--verify` holds this file to it.
 
-| system | MET | PARTIAL | MISSING | NEVER REACHED | total |
+| system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
 | Money | 28 | 0 | 8 | 0 | 36 |
 | Register | 20 | 4 | 2 | 0 | 26 |
@@ -346,22 +346,26 @@ small-firm cells. `test/small-business.test.ts` is green. Households unchanged.
 
 ## 0c. One truth in the documents; the guards that bite
 
-**Found at 0a.** `plan:progress` counts only items that have a row in `docs/WORKLIST.md`, and
-items 0a to 24 have none — they live in `docs/IMPLEMENTATION.md` alone. So "plan completion" is a
-figure over item 0 and the closed worklist rows, and ticking every step of 0a moved it by nothing.
-The plan is the ordered list (CLAUDE.md) and the counter has to read it: either the worklist carries
-a row per plan item, or `itemProgress` walks the plan's sections and uses the worklist only for the
-`done` rows it already closed.
+- [x] 0c.1 `tools/plan-progress.ts` counts THIS file's sections, in the order they are written; the worklist is read for one thing only, which of the items it worked are `done`. `docs/WORKLIST.md` says it is history and every row it had open points at the plan item that carries it. The two files used one id for two items — the worklist's `14` was the polity and the plan's is the insurers — so the plan's ids win. The figure is *"N of M items closed (X of Y steps)"*.
+- [x] 0c.2 `docs/COVERAGE.md`: the `B-1 to B-8 and B-12` sentence deleted; all 96 `NEVER REACHED` marks are `UNMEASURED`, in the file, in `tools/coverage-existence.ts` and in Part 0's table. `packages/engine/test/reached.ts` (`npm run coverage:reached`) steps both worlds and asks the kernel's `Reach` register what each declared capability has produced, per module. It lives beside the rig because `tools/` compiles as its own project and cannot import the engine.
+- [x] 0c.3 Ten `docs/RECORD.md` entries — 9, 11, 13a, 13b, 13c, 13d, 13e, 13f, 13g, 13h — carry a note: closed on a world that did not assemble or on a mechanism Part 0 found unreachable; the measurements are not evidence; re-verified at 0d.
+- [x] 0c.4 `docs/ARCHITECTURE.md`: §4.8 rewritten at 0a; §4.13 added — `check:opens`, the phase declaration, the per-kind cell key, the observer's read-only contract, `Cash` erasing the currency (16.0), `coverage:reached`; §8 rewritten to say the plan is the ordered list and the worklist is history.
+- [x] 0c.5 Five docstrings that described something that is not there: the freight header's storm loss (nothing in this world emits `act: 'lose'`, so a storm delays a voyage and has never sunk one — item 21); `ledger/instruction.ts`'s create-with-destroy rule (not the rule and could not be — a thing drawn from labour and land alone destroys nothing); `kinds.ts` and `module.ts` each naming the other's moment for its refusal (the credit decider is refused at the SEAL, the bank choice at ASSEMBLY); `households` waiting for "worklist 9" to price risk, which closed. The other seven the review named are accurate, or were made accurate by items 0 to 0b — `goods/data.ts`'s "exactly as a tonne in transit is" became true when 0.11 opened the transit lines.
+- [x] 0c.6 `tools/check-forbids.ts` gains two RATCHETS over a per-file baseline: `Math.(floor|round|ceil|abs|exp|pow|sqrt|min|max)` outside `core/` (125 in 53 files) and `atLeast(x, 0)` / `atMost(x, NO_QTY)` outside `core/num.ts` (7 in 5 files). The check fails when a file has more than it did or a clean file acquires one; a file that reaches zero is deleted from the list. Proven: a single added `Math.floor` fails the check by name.
+- [x] 0c.7 `params.ts` matches the scheduled-death CLAIM and not the mention. `check:deaths` already resolves a death against this file's step ids. Three PARTIAL rows named no item that finishes them — `Short-Term Debt C3` (17), `Prime Brokerage A2` and `A4` (17b) — which `tools/test/spec-coverage.test.ts` had been red on; a PARTIAL that names nothing is a MISSING with a softer word.
 
-- [ ] 0c.1 `docs/WORKLIST.md` rows 13k–17 → one row per Part 1 item (same ids, `open`, pointing here); `tools/plan-progress.ts` counts THIS file's ticked steps (done); `docs/PLAN.md` progress = *"N of M items closed; check:existence: X MET / Y PARTIAL / Z MISSING / W absent"*, nothing else.
-- [ ] 0c.2 `docs/COVERAGE.md`: delete the `B-1 to B-8 and B-12` sentence; every `NEVER REACHED` → `UNMEASURED`; `tools/coverage-reached.ts`: a module that produced a public event of its own kind in a 52-period run is REACHED (used at 0d.3).
-- [ ] 0c.3 `docs/RECORD.md`: prepend to entries 10b–11.4, 13c, 13d, 13e, 13h, 13m: *closed on a world that did not assemble or on a mechanism found unreachable (Part 0); measurements void; re-verified at 0d.*
-- [ ] 0c.4 `docs/ARCHITECTURE.md`: `check:opens`; the phase dataflow (0a); the per-kind key (0b); the lattice (0f, written when 0f closes); the observer's read-only contract; `Cash` erases the currency (until 16.0).
-- [ ] 0c.5 Twelve stale docstrings rewritten or deleted with the code they describe: freight storm loss (`freight/index.ts` header); `ledger/instruction.ts` create-with-destroy; `kinds.ts:401`, `module.ts:226` "assembly refuses"; `short-term-debt` header "a bank issues"; `cds/participants.ts:643`; `households` "worklist 9"; `estate/index.ts:608` `standsInFor Process`; `environment/index.ts` Insurers B4 reader; `securitisation/index.ts:940`; `registry/environment.ts:184`; `goods/data.ts:1936`.
-- [ ] 0c.6 `tools/check-forbids.ts`: `Math\.(floor|round|ceil|abs|exp|pow|sqrt|min|max)` outside `core/`; `atLeast\(` / `atMost\(` with a literal `0` or `NO_QTY` outside `core/num.ts`; numeric literals in `mechanisms/**/data.ts` and `seeds/**` except 0, 1, -1, 2. Each hit becomes a 21 step until gone; the check fails on any new one.
-- [ ] 0c.7 `params.ts:namesAnItem` regex → `\bitem\s+[0-9]`; `check:deaths` reads step ids of this file.
+**Exit.** `check:opens`, `check:existence --verify`, `plan:check`, `check:deaths`, `check:forbids`,
+`check:spec`, lint and typecheck green; one figure in PLAN.md, read off this file.
 
-**Exit.** `check:existence --verify`, `plan:check`, `check:deaths`, `check:forbids`, `check:spec` green; one figure in PLAN.md.
+### What 0c found and did not fix
+
+- **The rounding ratchet's 125 calls and the 7 zero-floors are each a defect until deleted**, and
+  the baseline is the list. → **21**, one file at a time.
+- **A `create` leg is refused unless the instruction's cause is `production` or `seed`, and both of
+  freight's are not**: `cargo()` loads under `cause: 'trade'` and `arrive()` lands under
+  `cause: 'corporateAction'`. Neither has ever run — no cargo has loaded in any period of either
+  world — so this is a stop that has never been reached. The first voyage in this world throws.
+  → **13i**, with the rest of the freight gap.
 
 ---
 

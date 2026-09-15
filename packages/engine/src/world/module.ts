@@ -225,9 +225,11 @@ export type CreditDecision = (
  * is insured and sticky, A1.b's corporate money banks where it transacts, A1.c's wholesale money is
  * in the market all day and leaves first — so each kind's is written where that kind lives.
  *
- * `none` is staying where it is. A kind whose profile says it chooses its bank must have exactly
- * one module answering, or the world cannot be sealed: a depositor nobody asks is a depositor that
- * can never leave, which is A1.d's stickiness made invisible instead of paid for.
+ * `none` is staying where it is. A kind whose profile says it is a depositor must be answered by
+ * the module that DECLARES it, and `requireBankChoices` refuses that module at assembly if it is
+ * not: a depositor nobody asks is a depositor that can never leave, which is A1.d's stickiness made
+ * invisible instead of paid for. At assembly and per module, because the kind and the answer are
+ * the same module's to give.
  */
 export interface BankChoice {
   readonly to: PartyId;

@@ -31,7 +31,8 @@
     "check:forbids": "tsx tools/check-forbids.ts",
     "check:deaths": "tsx tools/check-deaths.ts",
     "check:existence": "tsx tools/coverage-existence.ts --verify",
-    "check:opens": "vitest run packages/engine/test/opens.test.ts"
+    "check:opens": "vitest run packages/engine/test/opens.test.ts",
+    "coverage:reached": "tsx packages/engine/test/reached.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

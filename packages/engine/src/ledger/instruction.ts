@@ -146,9 +146,15 @@ export interface AssetLeg {
  * A physical thing coming into existence or leaving it (Goods B, E4). It is not a flow between
  * two parties, so it has one side: nobody is on the other end of a harvest or of a batch that
  * spoiled. What keeps it honest is the units identity — produced plus opening equals consumed plus
- * closing plus perished — which the units family checks, and the rule that a `create` may only
- * appear in the same instruction as the `destroy` legs of what it was made from (Commodities
- * Spot F1: units cannot be conjured).
+ * closing plus perished — which the units family checks, and the rule that units enter the world
+ * only through a PRODUCTION (or the seed), which settlement checks on the instruction's cause.
+ *
+ * It said the rule was that a `create` may only appear beside the `destroy` legs of what it was
+ * made from, and that is not the rule and could not be: a thing drawn from labour and land alone
+ * destroys nothing, so requiring it would make the first stage of every production chain impossible
+ * (item 0c). What a batch had to draw is the RECIPE's, and the recipe lives in the good's terms,
+ * which the kernel never looks inside (Law 15) — so it is checked by the goods module's own audit
+ * contribution, where the recipe is readable (Goods B2).
  */
 export interface CreateLeg {
   readonly kind: 'create';
