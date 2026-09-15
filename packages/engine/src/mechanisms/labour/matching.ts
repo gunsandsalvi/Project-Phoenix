@@ -419,7 +419,12 @@ export function separate(
   if (members <= 0) return;
   const whole = members >= row.headcount;
   // 0f.4: the separated move to the standing cell of the unemployed key; there is no split.
-  const gone = ctx.cells.reKey(row.worker, members, { employment: 'unemployed' }, cause);
+  // Register F2, XI-15 (12.4a.2): THE WORKER AS IT IS NOW. The row's terms name the cell that
+  // signed; a cell that merged onto the standing cell of its key has ceased and is succeeded, and
+  // re-keying the name it had merged it a second time — the world stopped there in period 5 of a
+  // scale model. What is separated is the successor's members.
+  const worker = ctx.parties.resolve(row.worker).id;
+  const gone = ctx.cells.reKey(worker, members, { employment: 'unemployed' }, cause);
   if (whole) {
     leave(ctx, book, row, cause);
   } else {
@@ -503,7 +508,7 @@ export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
   for (const row of allRows(ctx, book)) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
     const perMember = wagePerMember(row);
-    const moved = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
+    const moved = payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, perMember, `wages from ${row.employer}`);
     const bill = bills.get(row.employer) ?? {
       due: asCash(0, 'nothing due yet'),
       paid: asCash(0, 'nothing paid yet'),

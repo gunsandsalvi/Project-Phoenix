@@ -34,7 +34,9 @@ import { banksAwayFromTrouble } from '../../registry/switching.js';
 import type { ParticipantView, SeedContext } from '../../world/context.js';
 import type { BankChoice } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
-import { SMALL_FIRM } from '../../registry/profiles.js';
+import { FIRM, SMALL_FIRM } from '../../registry/profiles.js';
+import { weightOf } from '../../parties/party.js';
+import { isOwnership, ownerOf } from './profile.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
 import { DECIDED, OWNERSHIP, SMALL_FIRM_TERMS, TERMS, decide, draw, marketsOf, ordersIn, produce, type OwnershipTerms } from './profile.js';
@@ -390,6 +392,60 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
             if (p.status.alive) draw(ctx, p.id);
+          }
+        },
+      },
+      {
+        name: 'smallBusiness.promote',
+        spec: 'Small-Business Pools A6.b Small-Business Pools A6.c Firm Birth A1',
+        /**
+         * A6.b, A6.c (12.4a.2): THE BOUNDARY IS A SIZE, AND IT MOVES. A cell has outgrown the tier
+         * when one of its members is worth what the smallest named firm is worth — a READ of the
+         * world, never a declared size: the lattice's top edge is a RESOLUTION and Law 2 forbids
+         * the answer moving with it. Every member of such a cell is a firm the named sector would
+         * count, so the whole cell goes, one named firm per member; the firms module bears them
+         * and the owners hold shares instead of a row. Before the firms module's own phase, so the
+         * intent is on the record when it reads it.
+         */
+        anchor: { before: 'firms.bear' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'smallBusiness.promotion' }],
+        run: (ctx: MechanismContext): void => {
+          // A5, A6.c: "large enough to reach the bond market" is read off the market — the
+          // smallest named firm that has paper outstanding with a market in it is the size at
+          // which the bond market took somebody. A world where nobody has brought paper has no
+          // such size, and promotes nobody: a real state, measured (0d: no corporate bond has ever
+          // been issued in the scale model). A failing firm's equity is not the boundary, which is
+          // what "the smallest named firm" read as the first time this ran.
+          let smallest: number | undefined;
+          for (const f of ctx.parties.ofKind(FIRM)) {
+            if (!f.status.alive) continue;
+            const paper = ctx.instruments.issuedBy(f.id).some((i) => i.status.live && i.market.some && ctx.registry.instrumentKind(i.kind).liabilityOfIssuer);
+            if (!paper) continue;
+            const e = ctx.participant(f.id).equity();
+            if (e <= 0) continue;
+            if (smallest === undefined || e < smallest) smallest = e;
+          }
+          if (smallest === undefined) return;
+          for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
+            if (p.representation !== 'cell' || !p.status.alive) continue;
+            const view = ctx.participant(p.id);
+            const perMember = over(view.equity(), asRatio(weightOf(p), 'its members'), 'what one member is worth');
+            if (perMember < smallest) continue;
+            const owner = ownerOf(ctx, p.id);
+            if (!owner.some) continue;
+            ctx.record(
+              'smallBusiness.promotion',
+              [p.id, owner.value.owner],
+              { cell: String(p.id), members: weightOf(p), line: keyOf(p, 'line'), bank: keyOf(p, 'bank'), region: String(p.region), owner: String(owner.value.owner), perMember, smallestNamed: smallest },
+              true,
+            );
+            // A6.a: the row counted the members who ran one; they run a named firm now.
+            const row = ctx.agreements.get(owner.value.row);
+            if (isOwnership(row.terms)) {
+              const terms: OwnershipTerms = { kind: OWNERSHIP, members: row.terms.members - weightOf(p) };
+              ctx.restate(owner.value.row, terms);
+            }
           }
         },
       },

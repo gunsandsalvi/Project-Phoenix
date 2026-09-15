@@ -286,7 +286,9 @@ export function promoteCell(
   forbid(d.register.holdingsOf(to).length === 0, 'XI-15', `${to} already holds something; a promotion arrives with the members' own pieces`);
   const moved = d.register.moveShare(cell, to, members, c.weight, period, cycle);
   const after = c.weight - members;
-  d.parties.applyWeight({ kind: 'promotion', party: cell, before: c.weight, after, period, cause });
+  // A cell of nobody is nobody's (XI-15): the last member does not leave a weight of zero behind,
+  // the cell ceases into the party it became, and the event says so with before and after.
+  if (after > 0) d.parties.applyWeight({ kind: 'promotion', party: cell, before: c.weight, after, period, cause });
   d.journal.record(
     period,
     cycle,
@@ -296,6 +298,11 @@ export function promoteCell(
     true,
   );
   if (after === 0) {
+    // What the cell issued — its loan rows — is the party's to owe now, like a merge: a coupon
+    // addressed to the cell after it ceased is Money E4's refusal, and the world stopped there.
+    for (const i of d.instruments.issuedBy(cell)) {
+      if (i.status.live) d.instruments.reseat(i.id, to);
+    }
     d.parties.cease(cell, period, to);
     succeedAgreements(cell, to, period, cycle, d);
     d.journal.record(period, cycle, 'party.ceased', [cell, to], { successor: to, cause }, true);

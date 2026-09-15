@@ -68,6 +68,9 @@ import { buybackOrder, decideEquity, dividendFor, EQUITY_PLAN, nothingDecided, t
 import { floatations } from './float.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
+import { firmsBornIn } from '../../registry/births.js';
+import { betweenWhole } from '../../rng/spread.js';
+import { PAYOUT_PATIENCE, equityParam as equityParamOf } from './data.js';
 import { asQty } from '../../core/tick.js';
 import { ownFundingThisPeriod } from '../../registry/funding.js';
 
@@ -599,6 +602,88 @@ export const dividendOwed = (action: CorporateActionId, line: InstrumentId): Div
   line,
 });
 
+/** 12.4a.2: the rows this module gained after the seal — a born firm's equity, private at birth. */
+const BORN = 'equity.born';
+interface BornRows {
+  readonly rows: EquityDecl[];
+}
+const bornRows = (ctx: MechanismContext): BornRows => ctx.state<BornRows>(BORN, () => ({ rows: [] }));
+const allRows = (ctx: MechanismContext, rows: readonly EquityDecl[]): readonly EquityDecl[] => [...rows, ...bornRows(ctx).rows];
+
+/**
+ * Firm Birth A1, A2, A3, Equity A6, §29 C5 (12.4a.2): A BORN FIRM'S RESIDUAL HAS A LINE AND A HOLDER
+ * from the period it is born — private, because nobody has sold part of it yet, and held by whoever
+ * owned it as a small firm. Its shares are what its book comes to at the one opening level every
+ * line is cut at (the seed's own rule, Law 4), issued to its owner in one instruction whose
+ * consideration is the business itself: the pieces the promotion brought are the firm's, and the
+ * claim on them is the owner's. Its payout patience is drawn under its own name and declared.
+ */
+function bornShares(ctx: MechanismContext): void {
+  for (const b of firmsBornIn(ctx.journal, ctx.period)) {
+    const firm = b.firm as PartyId;
+    const owner = b.owner as PartyId;
+    if (!ctx.parties.has(firm) || !ctx.parties.get(firm).status.alive || !ctx.parties.has(owner)) continue;
+    const id = equityLineOf(b.firm);
+    if (ctx.instruments.has(id)) continue;
+    const rng = ctx.rng.derive(`born/${b.firm}`);
+    const patience = betweenWhole(rng, PAYOUT_PATIENCE);
+    const row: EquityDecl = {
+      firm: b.firm,
+      listed: false,
+      payoutPatience: patience,
+      makers: [],
+      why: 'Equity A6, Seed B1.a, §29 C5: private at its birth — it has a residual and a named owner and no market, so what its holder carries it at is a mark and never a price. Drawn under its own name.',
+    };
+    ctx.declare({
+      id: equityParamOf(b.firm, 'payoutPatience'),
+      value: patience,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'preference',
+      owner: 'model',
+      why: `Equity D2.c, Firm E5: over how many of its own periods ${b.firm}'s management distributes what it has spare; drawn at its birth.`,
+    });
+    const ccy = ctx.registry.currencyOf(ctx.parties.get(firm).region);
+    const terms: ShareTerms = { kind: SHARE, issuer: firm, votesPerShare: 1 };
+    ctx.issue({ id, kind: SHARE, issuer: some(firm), ccy, terms, market: none<MarketId>() });
+    const price = ctx.params.price(OPENING_SHARE);
+    let book = asCash(0, 'nothing walked yet');
+    for (const h of ctx.register.holdingsOf(firm)) {
+      book = plus(
+        book,
+        ctx.valuation.inOwnMoney(firm, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), ctx.instruments.get(h.instrument).ccy, ctx.period),
+        'its book',
+      );
+    }
+    // Law 8: whole shares, and what the division leaves below one is not issued (the seed's rule).
+    const shares = ctx.registry.pieces(
+      ctx.instruments.get(id).unit,
+      asNamed(downTick(amountOf(book, price, 'the shares its book comes to')), 'what is issued'),
+    );
+    bornRows(ctx).rows.push(row);
+    if (shares <= 0) {
+      ctx.record('equity.born', [firm, owner], { firm: b.firm, owner: b.owner, line: String(id), shares: 0, why: 'its book comes to less than one share' }, true);
+      continue;
+    }
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'asset',
+          from: firm,
+          to: owner,
+          instrument: id,
+          qty: shares,
+          pricePerUnit: some(price),
+          accruedPerUnit: none(),
+        },
+      ],
+      cause: 'issuance',
+      reason: `${b.firm} issues its shares to ${b.owner} at its birth`,
+    });
+    ctx.record('equity.born', [firm, owner], { firm: b.firm, owner: b.owner, line: String(id), shares, outcome: r.outcome }, true);
+  }
+}
+
 export function equity(rows: readonly EquityDecl[], seed: string): SystemModule {
   return {
     id: 'equity',
@@ -611,6 +696,13 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
       },
     ],
     nouns: [
+      {
+        name: BORN,
+        kind: 'noun',
+        holds: 'the equity rows this module gained after the seal — a born firm’s line, private, with the patience it was born with',
+        why: 'Firm Birth A1 (12.4a.2): the seed’s rows are walked as a list; a firm born after it needs a row somewhere that grows.',
+        standsInFor: { noun: 'EquityDecl', planItem: 'docs/IMPLEMENTATION.md item 22' },
+      },
       {
         name: EQUITY_PLAN,
         kind: 'working',
@@ -666,7 +758,7 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
            */
           payDividends(ctx);
           recordDividends(ctx);
-          for (const row of rows) decide(ctx, seed, row);
+          for (const row of allRows(ctx, rows)) decide(ctx, seed, row);
         },
       },
       {
@@ -680,7 +772,7 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         reads: [{ kind: 'event', name: 'firms.funding', of: 'thisPeriod' }],
         writes: [],
         run: (ctx: MechanismContext) => {
-          floatations(ctx, rows);
+          floatations(ctx, allRows(ctx, rows));
         },
       },
       {
@@ -692,7 +784,18 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         reads: [{ kind: 'print', of: 'thisPeriod' }],
         writes: [{ kind: 'event', name: 'equity.reads' }],
         run: (ctx: MechanismContext) => {
-          publishReads(ctx, rows);
+          publishReads(ctx, allRows(ctx, rows));
+        },
+      },
+      {
+        name: 'equity.bornShares',
+        spec: 'Firm Birth A1 Firm Birth A2 Firm Birth A3 Equity A6',
+        // 12.4a.2: after the firms module bore them — the party exists and its pieces are its own.
+        anchor: { after: 'firms.bear' },
+        reads: [{ kind: 'event', name: 'firm.born', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'equity.born' }],
+        run: (ctx: MechanismContext) => {
+          bornShares(ctx);
         },
       },
     ],

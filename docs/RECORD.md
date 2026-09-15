@@ -11166,3 +11166,44 @@ firm a firm to them, and the trigger — a cell whose equity per member reaches 
 firm's, a read of the world and never the lattice's edge.
 
 **Checks.** `promotion.test.ts` green; `check:opens` green; lint, typecheck green.
+
+## Items 12.4a.2 and 12.4 — A born firm is a firm to every module; promotion fires
+
+**The boundary is a size and it moves (A6.b, A6.c).** A cell has outgrown the tier when one of
+its members is worth what the smallest named firm with paper outstanding in a market is worth —
+the size at which the bond market took somebody, read off the world; never the lattice's top
+edge, which is a resolution and would move the answer with the grain. The first read was "the
+smallest named firm" and it promoted a power cell in period five against a firm that was failing:
+a failing firm's equity is not the boundary. Every member of such a cell becomes a named firm, one
+per member, because a member is a firm.
+
+**What being born means, module by module.** The firms module gained a register that grows
+(`firms.register`) and `bearFirm`: a decl drawn from the seed's own spreads under the born name,
+its three numbers declared the period it is born through the kernel's new door, the party entered,
+the member promoted into it with its share of every lot. The equity module reads the birth through
+`registry/births.ts` and gives the firm its residual: a private share line, issued to whoever
+owned it as a small firm at the one opening level every line is cut at, the consideration being
+the business the promotion brought; its payout patience drawn and declared. Both modules read the
+seed's rows and the born ones as one from then on, so a born firm decides, produces, is quoted
+and can float like a seeded one. The small-business module records the intent before the firms
+module's own phase and its ownership row counts the members who left.
+
+**Measured.** Twelve periods of the four-country world: 16 cells, 63 members, in power, telecoms,
+waste and logistics; 63 firms born, 63 share lines issued and settled, 161 decisions by born firms.
+Thirty periods of the one-country scale model: none, because no firm there has brought paper to a
+market, which is 0d's finding read from the other side.
+
+**Found and fixed at cause.** The last member's promotion left a cell of nobody, and the kernel
+refused a weight of zero: the cell ceases into the party it became, what it issued is reseated
+onto it (a coupon addressed to the ceased cell stopped the four-country world), and the event
+carries before and after. And the labour module re-keyed an employment row's worker by the name
+that signed it after that cell had merged away — a seed no test had drawn stopped the world in
+period five — resolved through its successor now; the row's worker is a term and should be its
+creditor (12b).
+
+**Positioned.** A member promoted out of a cell that stays takes its assets and none of its
+liabilities (12a.1/12a.5); the firms audit family skips born firms (21).
+
+**Checks.** `promotion.test.ts` 2 green; `small-business.test.ts` 20 green; `check:opens` green on
+both worlds; the equity, firms, labour and ledger reds unchanged; lint, typecheck, `check:spec`,
+`check:forbids` green.

@@ -43,6 +43,7 @@ import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { committedTo, DECIDED, marketsIn, nothingDecided, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { ownPayroll } from '../../registry/wages.js';
 import { publishExpectation, runLine } from './produce.js';
+import { REGISTER, bearFirms, lineOfFirm } from './born.js';
 import { NO_QTY } from '../../core/tick.js';
 
 export * from './data.js';
@@ -163,6 +164,13 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     id: 'firms',
     nouns: [
       {
+        name: REGISTER,
+        kind: 'noun',
+        holds: 'the rows this module gained after the seal — which born firm is in which line, with the numbers it was born with',
+        why: 'Firm Birth A1 (12.4a.2): the seed’s rows are indexed once; a firm born after it needs a row somewhere that grows, and a firm’s line and technology are a fact about a party that the kernel does not yet keep.',
+        standsInFor: { noun: 'FirmDecl', planItem: 'docs/IMPLEMENTATION.md item 22' },
+      },
+      {
         name: DECIDED,
         kind: 'working',
         holds:
@@ -267,7 +275,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         ],
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
-            const line = lineOf(byName, p.id);
+            const line = lineOfFirm(byName, ctx, p.id);
             if (line === undefined || !p.status.alive) continue;
             decide(ctx, line);
             publishExpectation(ctx, p.id);
@@ -287,10 +295,22 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         writes: [{ kind: 'event', name: 'firms.produced' }],
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
-            const line = lineOf(byName, p.id);
+            const line = lineOfFirm(byName, ctx, p.id);
             if (line === undefined || !p.status.alive) continue;
             runLine(ctx, line);
           }
+        },
+      },
+      {
+        name: 'firms.bear',
+        spec: 'Firm Birth A1 Firm Birth A2 Firm Birth A3 Small-Business Pools A6.c',
+        // A6.c (12.4a.2): after the books are marked — what a member is worth is read off them —
+        // a small firm that outgrew its tier becomes a named firm, one per member.
+        anchor: { after: 'revaluation' },
+        reads: [{ kind: 'event', name: 'smallBusiness.promotion', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'firm.born' }],
+        run: (ctx: MechanismContext) => {
+          bearFirms(ctx);
         },
       },
     ],
@@ -300,12 +320,11 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         // Law 18: the books it could be in, off the plan its orders come off. At the real scale
         // there are three thousand firms and 261 markets, and a firm is in two or three of them.
         markets: (view: ParticipantView): readonly MarketId[] => {
-          if (lineOf(byName, view.self.id) === undefined) return [];
+          // 12.4a.2: a firm in no line decided nothing, so the plan's own date is the guard.
           const decided = view.working(DECIDED, nothingDecided);
           return decided.at === view.period ? marketsIn(decided) : [];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          if (lineOf(byName, view.self.id) === undefined) return [];
           // Clearing F1: an order is the decision it took this period, read out of the store its
           // own decide phase left it in. A firm that decided nothing this period posts nothing.
           const decided = view.working(DECIDED, nothingDecided);
