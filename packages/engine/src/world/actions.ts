@@ -165,20 +165,28 @@ function defaulted(
  * other accelerating line of the issuer; a called line that cannot be paid defaults in turn and
  * calls the rest — including the one that called it, which called it back, and the world stopped
  * on a borrower with two lines that both failed (0f.4, rig period 24). A line is called once in a
- * pass: the set of lines being called is the state of the pass, and a line already in it is not
- * called again. It is a fact about what acceleration IS, not a limit on it.
+ * pass: the set of lines called is the state of the pass, and a line already in it is not called
+ * again, WHOEVER is calling it. It is a fact about what acceleration IS, not a limit on it.
+ *
+ * 0g.1: the set held only the lines DOING the calling, so a line was still redeemed once per
+ * line that defaulted before it in the pass — every ordering of an issuer's lines was walked,
+ * which is factorial in their count, and the second rung of the ladder ran 1.2 million failed
+ * maturities of one firm's paper inside one period before the heap gave out. The pass is the
+ * outermost call; the set is cleared when it returns.
  */
-const accelerating = new Set<string>();
+const called = new Set<string>();
+let passDepth = 0;
 
 function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
   if (d.registry.instrumentKind(defaultedOn.kind).accelerates !== true) return;
-  if (accelerating.has(String(defaultedOn.id))) return;
-  accelerating.add(String(defaultedOn.id));
+  passDepth += 1;
+  called.add(String(defaultedOn.id));
   const issuer = issuerOf(defaultedOn);
   for (const other of d.instruments.all()) {
-    if (other.id === defaultedOn.id || !other.status.live) continue;
+    if (called.has(String(other.id)) || !other.status.live) continue;
     if (!issuedBy(other, issuer)) continue;
     if (d.registry.instrumentKind(other.kind).accelerates !== true) continue;
+    called.add(String(other.id));
     d.journal.record(
       period,
       cycle,
@@ -189,7 +197,8 @@ function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: Ac
     );
     redeem(other, period, cycle, d);
   }
-  accelerating.delete(String(defaultedOn.id));
+  passDepth -= 1;
+  if (passDepth === 0) called.clear();
 }
 
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {

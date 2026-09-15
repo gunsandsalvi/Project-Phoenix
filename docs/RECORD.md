@@ -10628,3 +10628,28 @@ The 1,606 findings that went were the `accounts` family counting a copied ledger
 a fresh walk's moves. The second rung is running as this is written; its line and the third rung
 follow in the next entry. Still to place in 0g: lots never coalesce (36,197 lots over 168
 holdings after a year at this rung — 0g.6), and the journal is the largest thing left (0g.14).
+
+## Item 0g.1 (continued) — The second rung, and what it found
+
+**A third build stop, at period 32 of the second rung: acceleration walked every ordering of an
+issuer's lines.** 0f.4 made a line called once per pass, but the set held only the lines DOING the
+calling, so a line was still redeemed once for every line that had defaulted before it in the
+pass — factorial in the count of an issuer's lines — and one firm's paper ran 1.2 million failed
+maturities inside one period before six gigabytes of heap gave out. The set now holds every line
+CALLED in the pass, whoever calls it, and is cleared when the outermost call returns
+(`world/actions.ts accelerate`). First-rung behaviour did not move but for the events that were
+the repeated calls (56,543 → 54,431).
+
+**The ladder so far** (a year; ×1 the declared grain, ×2 every band cut in two):
+
+| rung | ms/period at 1 / 13 / 26 / 52 | heap MB at 52 | parties / cells / people | events | sessions | audit | money/member | wage/h |
+|---|---|---|---|---|---|---|---|---|
+| 3b/12f ×1 | 243 / 130 / 118 / 115 | 120 | 76 / 37 / 39,171 | 54,431 | 57 | 3,812 | 1,117,471 | 1,351.52 |
+| 3b/12f ×2 | 255 / 134 / 127 / 128 | 318 | 84 / 45 / 39,171 | 57,539 | 57 | 5,360 | 1,117,471 | 1,351.52 |
+| 6b/60f ×1 | 521 / 331 / 315 / 375 | 207 | 118 / 38 / 195,844 | 148,173 | 107 | 7,250 | 2,939,371 | 1,473.73 |
+| 6b/60f ×2 | 491 / 320 / 301 / 367 | 197 | 133 / 53 / 195,844 | 150,195 | 107 | 7,857 | 2,939,371 | 1,473.73 |
+
+People, small firms, sessions cleared, money per member and the going rate are the same at both
+grains on both rungs; what differs is what should — keys occupied, and the events and findings
+that come with more cells. Time is reported, never asserted. Lots grow without bound (302,645 at
+the second rung after a year, ~5,800 a period): 0g.6's coalescing is where that goes.
