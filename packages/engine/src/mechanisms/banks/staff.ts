@@ -44,6 +44,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { ownPayroll, payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
 import { period as periodOf } from '../../calendar/calendar.js';
+import { processesItRan } from '../../registry/notices.js';
 
 /** A3: the trade a bank's lending staff are in. Data, and the venue is found by it. */
 export const BANKING = 'banking';
@@ -262,12 +263,10 @@ export function costOfAProcess(view: ParticipantView): PerPiece | undefined {
 export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   if (venue.key['occupation'] !== ADVISORY) return [];
   if (venue.key['region'] !== String(view.self.region)) return [];
-  const ran = view.lastOwnSince('advisory.ran', payrollSince(view.period));
+  const ran = processesItRan(view, payrollSince(view.period));
   if (!ran.some) return [];
-  const count = ran.value.data['processes'];
-  if (typeof count !== 'number' || count <= 0) return [];
   const per = view.params.count(STAFF_PARAMS.hoursPerProcess);
-  const hours = asQty(scale(asAmount<'piece'>(per, 'the hours one takes'), asRatio(count, 'the ones it ran'), 'the hours they took'));
+  const hours = asQty(scale(asAmount<'piece'>(per, 'the hours one takes'), asRatio(ran.value, 'the ones it ran'), 'the hours they took'));
   if (hours <= 0) return [];
   const took = view.earned(1);
   if (took <= 0) return [];

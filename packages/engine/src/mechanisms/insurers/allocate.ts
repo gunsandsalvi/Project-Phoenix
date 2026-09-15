@@ -52,7 +52,6 @@ import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import {
   amountOf,
   asCash,
-  asPerPiece,
   type Cash,
   heldAsMoney,
   minus,
@@ -67,6 +66,7 @@ import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { MechanismContext } from '../../world/context.js';
 import { isPolicy } from './index.js';
+import { strikeOf } from '../../registry/funding.js';
 
 /** What a pool published about itself, as an allocator reads it off the tape (Observer A3). */
 interface Door {
@@ -92,17 +92,14 @@ function doors(ctx: MechanismContext): readonly Door[] {
     if (v.key['kind'] !== 'fund') continue;
     const fund = v.key['fund'];
     if (fund === undefined) continue;
-    const said = ctx.journal.lastOf('fund.struck', fund);
-    if (said === undefined) continue;
-    const perShare = said.data['perShare'];
-    const years = said.data['durationYears'];
-    const offered = said.data['offered'];
-    if (typeof perShare !== 'number' || perShare <= 0) continue;
+    const said = strikeOf(ctx.journal, fund);
+    if (!said.some) continue;
+    const years = said.value.durationYears.some ? said.value.durationYears.value : undefined;
+    const offered = said.value.offered;
     out.push({
       venue: v.id,
       fund,
-      // Item 16: what the pool published a share is worth, re-entering as the level it is.
-      perShare: asPerPiece(perShare, 'what the fund said a share is worth'),
+      perShare: said.value.perShare,
       years: typeof years === 'number' ? years : undefined,
       offered: typeof offered === 'number' ? offered : undefined,
       asks: v.key['asks'],

@@ -222,32 +222,13 @@ function ratchet(
  * `registry/environment.ts`, `registry/physical.ts`). An event is a LOG — something happened, and
  * anybody may watch — and reading one to decide is reading somebody else's variable.
  *
- * A RATCHET, because 52 of these exist across 31 event kinds and each conversion is its own change
- * (item 0e.2). The pair is `<reader module>:<event kind>`; the check fails on a pair that is not
- * here. A pair that goes away is deleted from the list.
+ * IT WAS A RATCHET and the list is now EMPTY (item 0e′.3): 52 pairs across 31 event kinds, closed
+ * in four passes — `registry/wages.ts`, `registry/banking.ts`, `registry/funding.ts`,
+ * `registry/notices.ts`. The pair is `<reader module>:<event kind>` and the check fails on any pair
+ * not listed, so with nothing listed it is a plain FORBID: a mechanism that names another module's
+ * event kind fails the build. Nothing is added back — the registry read is the fix.
  */
 const CROSS_MODULE_EVENT_READS: ReadonlySet<string> = new Set([
-  'control:advisory.quoted',
-  'banks:advisory.ran',
-  'banks:auction.announced',
-  'banks:bond.offered',
-  'cds:estate.closed',
-  'control:firms.funding',
-  'corporate-bond:firms.funding',
-  'equity:firms.funding',
-  'short-term-debt:firms.funding',
-  'banks:fund.listedStruck',
-  'control:fund.struck',
-  'households:fund.struck',
-  'insurers:fund.struck',
-  'households:housing.shortfall',
-  'commodity-futures:index.benchmark',
-  'fx-derivatives:index.benchmark',
-  'irs:index.benchmark',
-  'funds:prime.call',
-  'funds:prime.line',
-  'banks:prime.wanted',
-  'cds:rating.action',
 ]);
 
 /** `ctx.record('x.y')` in a module: the kinds that module WRITES. */

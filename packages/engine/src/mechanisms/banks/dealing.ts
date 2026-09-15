@@ -30,7 +30,6 @@ import {
   amountOf,
   asAmount,
   asCash,
-  asPerPiece,
   asRatio,
   type Cash,
   minus,
@@ -64,6 +63,8 @@ import type { Qty } from '../../core/tick.js';
 import { NO_QTY } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { liquidHeld, refusedOvernight } from '../../registry/banking.js';
+import { listedStrikeOf } from '../../registry/funding.js';
+import { dealershipShare } from '../../registry/notices.js';
 
 /**
  * D1, XI-4: its own appetite, and what its treasury allotted it to GROW BY. A line's limit is what
@@ -560,16 +561,10 @@ function primaryBid(
   offered: Qty,
 ): readonly Order[] {
   if (q.bid <= 0 || q.view <= 0) return [];
-  const said = view.lastPublicAbout('auction.announced', instrument);
-  const share = said.some && said.value.period === view.period ? said.value.data['dealershipShare'] : undefined;
-  const obliged =
-    typeof share === 'number'
-      ? scale(
-          offered,
-          asRatio(share, 'the share its dealership obliges it to bid for'),
-          'what it must bid for',
-        )
-      : asAmount<'piece'>(0, 'no dealership, no obligation');
+  const share = dealershipShare(view, String(instrument), view.period);
+  const obliged = share.some
+    ? scale(offered, share.value, 'what it must bid for')
+    : asAmount<'piece'>(0, 'no dealership, no obligation');
   // E2.a, E5: and what its own treasury is short of in this line — a reason of its own, and the
   // same distance from target its quote is already skewing around, counted in units.
   const gap = minus(
@@ -637,10 +632,9 @@ function inKindGaps(
     const share = instrumentId(line);
     if (!view.instruments.has(share) || !view.instruments.get(share).status.live) continue;
     if (!d.makes.includes(String(view.instruments.get(share).kind))) continue;
-    const struck = view.lastPublicAbout('fund.listedStruck', fund);
-    const nav = struck.some ? struck.value.data['perShare'] : undefined;
+    const struck = listedStrikeOf(view, fund);
     const print = view.print(share);
-    if (typeof nav !== 'number' || nav <= 0 || !print.some) continue;
+    if (!struck.some || !print.some) continue;
     // Appendix B, Clearing E4: the gap is against a price the market MADE. A mark carried forward
     // because nobody traded is not a level it could sell into, and a bank that delivered a basket
     // against one would be trading on its own carried number.
@@ -648,7 +642,7 @@ function inKindGaps(
     // Law 8, Law 16: it is a PRICE over a price — what one share trades at less what one share of
     // the book is worth — and it is named for that. Called `gap` it read like a quantity, which is
     // the one thing it is not: nothing in this world holds 2,308.77 of anything.
-    const perShare = asPerPiece(nav, 'what one share of the book is worth');
+    const perShare = struck.value.perShare;
     const premium = minus(print.value.price, perShare, 'what the market pays over the book');
     const worth = scale(
       perShare,
@@ -671,7 +665,7 @@ function inKindGaps(
       share,
       perShare,
       premium,
-      basket: struck.some ? struck.value.data['basket'] : undefined,
+      basket: struck.value.basket,
       room,
       held: view.quantity(share),
       printed: print.value.price,

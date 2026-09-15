@@ -20,6 +20,7 @@ import type { MechanismContext, WorldReads } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { IRS, irsKind, isIrs, NOTIONAL, type IrsTerms, irsClass } from './contract.js';
 import { irsMarketOf, irsLineOf, IRS_PARAMS } from './data.js';
+import { hasFixed } from '../../registry/notices.js';
 
 export * from './contract.js';
 export * from './measures.js';
@@ -96,9 +97,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
     if (!ctx.parties.has(clearer) || !ctx.parties.get(clearer).status.alive) continue;
     // D3.a: no fixing, no floating leg. A money whose overnight book has never traded has no
     // benchmark, and a swap on a benchmark that does not exist is a swap on nothing.
-    if (!ctx.journal.ofKind('index.benchmark').some((e) => e.subjects.includes(benchmarkOf(ccy)))) {
-      continue;
-    }
+    if (!hasFixed(ctx.journal, benchmarkOf(ccy))) continue;
     for (const tenorYears of irsTenorsOf(ctx)) {
       const id = irsMarketOf(ccy, tenorYears);
       if (open.has(String(id))) continue;

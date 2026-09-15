@@ -77,6 +77,7 @@ import type { Print } from '../../prices/price-store.js';
 import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { DerivativeClassDecl, SystemModule } from '../../world/module.js';
 import { about } from '../../world/context.js';
+import { lastFixing } from '../../registry/notices.js';
 
 /** Law 8: how a wait in periods becomes a fraction of the year the benchmark is quoted for. */
 const CARRY_DAY_COUNT = 'ACT/ACT';
@@ -261,12 +262,9 @@ export function commodityCarryOf(
     asRatio(periods, 'the periods of waiting'),
     'over the wait',
   );
-  const fixing = ctx.lastPublic('index.benchmark');
-  if (!fixing.some || !fixing.value.subjects.includes(`${String(i.ccy)}:secured`)) {
-    return none<PerPiece>();
-  }
-  const secured = fixing.value.data['rate'];
-  if (typeof secured !== 'number') return none<PerPiece>();
+  const fixing = lastFixing(ctx, `${String(i.ccy)}:secured`);
+  if (!fixing.some) return none<PerPiece>();
+  const secured = fixing.value;
   // Law 8: the benchmark is a rate A YEAR and the wait is in periods, so the two are put in the
   // same unit by the calendar's own day count and never by a number of weeks anybody typed.
   const years = yearFraction(

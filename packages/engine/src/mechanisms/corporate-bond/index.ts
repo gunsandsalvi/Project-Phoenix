@@ -41,7 +41,6 @@ import {
 import { addMonths, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import {
-  currencyCode,
   instrumentId,
   instrumentKindId,
   marketId,
@@ -74,6 +73,7 @@ import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { creditQuoteThisPeriod } from '../../registry/banking.js';
+import { fundingPublishedBy, isShort } from '../../registry/funding.js';
 
 export const CORPORATE_BOND = instrumentKindId('corporate.bond');
 
@@ -264,8 +264,8 @@ function shortOf(
   ctx: MechanismContext,
   firm: PartyId,
 ): Option<{ readonly short: Cash; readonly ccy: CurrencyCode }> {
-  const said = ctx.journal.lastOf('firms.funding', String(firm));
-  if (said?.period !== ctx.period) return none();
+  const said = fundingPublishedBy(ctx.journal, String(firm), ctx.period);
+  if (!said.some) return none();
   /**
    * E4, Short-Term Debt B1 (item 10b): THE PART OF ITS GAP THAT IS NOT DUE FOR YEARS.
    *
@@ -275,12 +275,9 @@ function shortOf(
    * splits it where the firm allocates its own money, and each channel funds what it is for: paper
    * covers what falls due within weeks, a bond covers the plant (Capital Programme B2).
    */
-  const short = said.data['shortTerm'];
-  const ccy = said.data['ccy'];
   // E4: a negative short is what it has OVER, and a firm with money to spare does not borrow.
-  if (typeof short !== 'number' || short <= 0 || typeof ccy !== 'string') return none();
-  // Item 16: a published number re-enters the type system through its own dimension's door.
-  return some({ short: asCash(short, 'what it is short of'), ccy: currencyCode(ccy) });
+  const short = isShort(said.value.shortTerm, 'what it is short of');
+  return short.some ? some({ short: short.value, ccy: said.value.ccy }) : none();
 }
 
 /**

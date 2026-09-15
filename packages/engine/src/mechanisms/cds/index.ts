@@ -35,6 +35,7 @@ import {
   type SeriesName,
   cdsIndexClass,} from './series.js';
 import { middleGrade, rankOf } from '../../registry/grades.js';
+import { estateClosed, gradesOn } from '../../registry/notices.js';
 
 export * from './data.js';
 export * from './contract.js';
@@ -226,15 +227,7 @@ function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId
 
 /** A5.a, Indices A1.a: the grade this world's assessors agree on, by the rule they published. */
 export function publishedGradeOf(ctx: MechanismContext, party: PartyId): string | undefined {
-  const latest = new Map<string, string>();
-  for (const e of ctx.journal.ofKind('rating.action')) {
-    if (!e.subjects.includes(party)) continue;
-    const assessor = e.subjects[0];
-    const grade = e.data['grade'];
-    if (typeof assessor !== 'string' || typeof grade !== 'string') continue;
-    latest.set(assessor, grade);
-  }
-  return middleGrade([...latest.values()]);
+  return middleGrade([...gradesOn(ctx.journal, String(party)).values()]);
 }
 
 /**
@@ -375,7 +368,7 @@ export function recoveryIsKnown(ctx: MechanismContext, reference: PartyId): bool
   if (opened === undefined) return false;
   const estate = opened.data['estate'];
   if (typeof estate !== 'string') return false;
-  return ctx.journal.ofKind('estate.closed').some((e) => e.subjects.includes(estate));
+  return estateClosed(ctx.journal, estate);
 }
 
 /**

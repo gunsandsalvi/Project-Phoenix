@@ -57,6 +57,7 @@ import { none, type Option, some } from '../../core/option.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { Terms } from '../../register/instruments.js';
 import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
+import { wantedToDraw } from '../../registry/notices.js';
 
 /** A1: a named bank and a named client, with a contract that can be ended. */
 export const PRIME = agreementKindId('banks.prime');
@@ -371,9 +372,5 @@ function settle(ctx: MechanismContext, row: AgreementId, line: Line): void {
  * its own. A client that has asked for nothing is not lent anything.
  */
 function wantedBy(ctx: MechanismContext, client: PartyId): Option<Cash> {
-  const said = ctx.journal.lastOf('prime.wanted', String(client));
-  if (said === undefined) return none<Cash>();
-  const wants = said.data['wants'];
-  // Item 16: what a client published it wants to draw re-enters here as the money it is.
-  return typeof wants === 'number' ? some(asCash(wants, 'what it asked to draw')) : none<Cash>();
+  return wantedToDraw(ctx.journal, String(client));
 }

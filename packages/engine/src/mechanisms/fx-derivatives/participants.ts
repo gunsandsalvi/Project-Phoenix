@@ -43,16 +43,11 @@ import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isFxForward, isXccy } from './contract.js';
 import { costOfFundsIn } from '../../registry/banking.js';
+import { fixingOf } from '../../registry/notices.js';
 
 /** The overnight fixing this money's own book published, or nothing (D3.a: no fixing, no rate). */
 export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
-  const e = view.lastPublicAbout('index.benchmark', `${String(ccy)}:secured`);
-  if (!e.some) return none<Ratio>();
-  const rate = e.value.data['rate'];
-  // Item 16: a published rate re-enters the type system here, through its dimension's own door.
-  return typeof rate === 'number'
-    ? some(asRatio(rate, 'what the benchmark printed'))
-    : none<Ratio>();
+  return fixingOf(view, `${String(ccy)}:secured`);
 }
 
 /**

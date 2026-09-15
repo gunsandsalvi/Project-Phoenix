@@ -85,6 +85,7 @@ import { floatations } from './float.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
 import { asQty } from '../../core/tick.js';
+import { ownFundingThisPeriod } from '../../registry/funding.js';
 
 export * from './data.js';
 export * from './share.js';
@@ -170,10 +171,9 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
   const firm = row.firm as PartyId;
   if (!ctx.parties.get(firm).status.alive) return;
   const view = ctx.participant(firm);
-  const funding = view.lastOwn('firms.funding');
-  if (!funding.some || funding.value.period !== ctx.period) return;
-  const short = funding.value.data['short'];
-  if (typeof short !== 'number') return;
+  const funding = ownFundingThisPeriod(view, ctx.period);
+  if (!funding.some) return;
+  const short = funding.value.short;
   const decided = decideEquity(
     view,
     line.id,

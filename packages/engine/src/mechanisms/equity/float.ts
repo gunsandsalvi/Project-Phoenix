@@ -41,7 +41,7 @@
  */
 import { amountOf, asCash, asRatio, over, pricedAt, type Cash, type PerPiece, type Ratio } from '../../core/measure.js';
 import { asQty, upTick, type Qty } from '../../core/tick.js';
-import { currencyCode, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -50,6 +50,7 @@ import { material } from '../../core/num.js';
 import type { MechanismContext } from '../../world/context.js';
 import { equityLineOf, equityMarketOf, type EquityDecl } from './data.js';
 import { creditQuoteThisPeriod } from '../../registry/banking.js';
+import { fundingPublishedBy, isShort } from '../../registry/funding.js';
 
 /** What a firm published it is short of for the thing it wants to build, and the money it is in. */
 interface Need {
@@ -63,13 +64,11 @@ interface Need {
  * same hole and a firm with one hole must not raise twice to fill it (Law 4).
  */
 function shortOf(ctx: MechanismContext, firm: PartyId): Option<Need> {
-  const said = ctx.journal.lastOf('firms.funding', String(firm));
-  if (said?.period !== ctx.period) return none<Need>();
-  const short = said.data['shortTerm'];
-  const ccy = said.data['ccy'];
+  const said = fundingPublishedBy(ctx.journal, String(firm), ctx.period);
+  if (!said.some) return none<Need>();
   // E4: a negative short is what it has OVER, and a firm with money to spare raises nothing.
-  if (typeof short !== 'number' || short <= 0 || typeof ccy !== 'string') return none<Need>();
-  return some({ short: asCash(short, 'what it is short of'), ccy: currencyCode(ccy) });
+  const short = isShort(said.value.shortTerm, 'what it is short of');
+  return short.some ? some({ short: short.value, ccy: said.value.ccy }) : none<Need>();
 }
 
 /** Banks Lending C3.a: the keenest quote this firm was given, and how much that bank will lend. */

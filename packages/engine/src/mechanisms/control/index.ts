@@ -25,7 +25,6 @@
  * and there is one way to write it (XI-8, Register F2).
  */
 import {
-  asCash,
   asPerPiece,
   asRatio,
   type Cash,
@@ -65,6 +64,8 @@ import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
 import { hasEverMetAPayroll } from '../../registry/wages.js';
 import { costOfMoneyQuotedTo, namesQuotedIn } from '../../registry/banking.js';
+import { ownFundingSince, ownStrikeSince, strikeOf, strikesPublished } from '../../registry/funding.js';
+import { advisoryQuotesIn } from '../../registry/notices.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -162,10 +163,9 @@ function worthAt(
 function costOfMoneyOf(ctx: MechanismContext, who: PartyId): Option<Ratio> {
   const quoted = costOfMoneyQuotedTo(ctx.journal, String(who));
   if (quoted.some) return quoted;
-  const struck = ctx.journal.lastOf('fund.struck', who);
-  const requires = struck?.data['requires'];
-  return typeof requires === 'number'
-    ? some(asRatio(requires, 'what its own investors require of it'))
+  const struck = strikeOf(ctx.journal, String(who));
+  return struck.some && struck.value.requires.some
+    ? some(asRatio(struck.value.requires.value, 'what its own investors require of it'))
     : none<Ratio>();
 }
 
@@ -232,12 +232,10 @@ export function tenders(
  * would not be one.
  */
 function mustSell(holder: ParticipantView): boolean {
-  const own = holder.lastOwnSince('firms.funding', holder.period);
-  const short = own.some ? own.value.data['shortTerm'] : undefined;
-  if (typeof short === 'number' && short > 0) return true;
-  const pool = holder.lastOwnSince('fund.struck', holder.period);
-  const owed = pool.some ? pool.value.data['shortfall'] : undefined;
-  return typeof owed === 'number' && owed > 0;
+  const own = ownFundingSince(holder, holder.period);
+  if (own.some && own.value.shortTerm > 0) return true;
+  const pool = ownStrikeSince(holder, holder.period);
+  return pool.some && pool.value.shortfall > 0;
 }
 
 /**
@@ -367,16 +365,10 @@ function appointments(ctx: MechanismContext): { ran: Record<string, number> } {
 function appoint(ctx: MechanismContext, ccy: CurrencyCode): { readonly bank: PartyId; readonly fee: Cash } | undefined {
   const ran = appointments(ctx);
   let best: { bank: PartyId; fee: Cash } | undefined;
-  for (const e of ctx.journal.ofKindIn('advisory.quoted', ctx.period)) {
-    const bank = e.data['bank'];
-    const fee = e.data['fee'];
-    const capacity = e.data['capacity'];
-    if (typeof bank !== 'string' || typeof fee !== 'number' || typeof capacity !== 'number') continue;
-    if (e.data['ccy'] !== String(ccy)) continue;
-    if (zeroIfNone(ran.ran[bank]) >= capacity) continue;
-    if (best === undefined || fee < best.fee) {
-      best = { bank: partyId(bank), fee: asCash(fee, 'what it charges to run one') };
-    }
+  for (const q of advisoryQuotesIn(ctx.journal, ctx.period)) {
+    if (q.ccy !== String(ccy)) continue;
+    if (zeroIfNone(ran.ran[q.bank]) >= q.capacity) continue;
+    if (best === undefined || q.fee < best.fee) best = { bank: partyId(q.bank), fee: q.fee };
   }
   if (best === undefined) return undefined;
   const count = zeroIfNone(ran.ran[String(best.bank)]) + 1;
@@ -899,7 +891,7 @@ function couldBuy(ctx: MechanismContext): readonly PartyId[] {
   const out = new Set<PartyId>();
   const published = [
     ...namesQuotedIn(ctx.journal, ctx.period),
-    ...ctx.journal.ofKindIn('fund.struck', ctx.period),
+    ...strikesPublished(ctx.journal).filter((e) => e.period === ctx.period),
   ];
   for (const e of published) {
     for (const named of e.subjects) {

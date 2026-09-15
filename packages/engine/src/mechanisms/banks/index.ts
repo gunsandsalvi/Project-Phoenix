@@ -97,6 +97,7 @@ import {
   type Regulation,
 } from './quote.js';
 import { creditDefaults } from '../../registry/banking.js';
+import { paperOfferedIn } from '../../registry/notices.js';
 
 export * from './data.js';
 export { DEALING, LENDING, roomFor } from './lines.js';
@@ -1692,7 +1693,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
  * brought and what it was short of, and a bank reads it off the market like anybody else.
  */
 function broughtPaper(ctx: MechanismContext, borrower: PartyId, said: Period): boolean {
-  return ctx.journal.ofKindIn('bond.offered', said).some((e) => e.subjects.includes(borrower));
+  return paperOfferedIn(ctx.journal, String(borrower), said);
 }
 
 /**

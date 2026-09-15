@@ -76,6 +76,7 @@ import {
   paperId,
   type PaperTerms,
 } from './paper.js';
+import { fundingPublishedBy } from '../../registry/funding.js';
 
 export const PAPER_PARAMS = {
   /** A1.b: how long paper runs for. Weeks to months — a convention of the market, stated with it. */
@@ -160,14 +161,11 @@ function issuers(ctx: MechanismContext): readonly { party: PartyId; need: Need }
 
 /** B1: what this firm published it cannot pay of what falls due soon (Law 19: it said it). */
 function firmNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
-  const said = ctx.journal.lastOf('firms.funding', String(issuer));
-  if (said?.period !== ctx.period) return none();
-  const now = said.data['shortNow'];
-  const ccy = said.data['ccy'];
-  if (typeof now !== 'number' || typeof ccy !== 'string') return none();
+  const said = fundingPublishedBy(ctx.journal, String(issuer), ctx.period);
+  if (!said.some) return none();
   return some({
-    shortNow: asCash(now, 'what it cannot pay of what falls due soon'),
-    ccy: currencyCode(ccy),
+    shortNow: asCash(said.value.shortNow, 'what it cannot pay of what falls due soon'),
+    ccy: said.value.ccy,
   });
 }
 

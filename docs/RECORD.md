@@ -10215,3 +10215,31 @@ you put the two callers side by side.
 `money-market`, `short-term-debt` and `securitisation` were run against a worktree at the parent
 commit and carry the same 18 reds and 22 greens before and after, so nothing there went from green
 to red. The suite itself runs at the end of the module (Law 11), not here.
+
+## Item 0e′.3 — The cross-module baseline is empty
+
+**The step's premise was wrong and the measurement said so.** It read "the rest are questions, not
+reads", meaning `registry/questions.ts` — a module SUPPLIES behaviour the kernel asks for. Not one
+of the twenty-one remaining pairs was that. Every one was a READ of a fact somebody published: what
+a firm is short of, what a pool struck at, what a benchmark fixed at, what an assessor graded, what
+a broker called. A question would have been a mechanism where a read belongs, which is the shape
+Law 2 calls an invented primitive. Two more registry files, on 0e′.1's pattern.
+
+**`registry/funding.ts`** — what a party published it NEEDS and what a pool published it is WORTH.
+A firm publishes ONE gap and four channels fund it (equity float, bond, paper, and a control bidder
+reading whether it is forced), which is the arrangement that once had a bond and three-month paper
+both brought against one published `short` and the firm raising twice what it needed. The split is
+now typed where it is read: `shortNow` is weeks, `shortTerm` is the plant. Nine pairs.
+
+**`registry/notices.ts`** — public announcements about a named party: an overnight fixing, an
+auction's dealership share, an offer of paper, a rating action, an estate closing, an advisory
+quote, a margin call. Small, and they do not resemble each other; what they have in common is that
+they are public and about a name, and that is all a reader needs. Twelve pairs.
+
+**52 → 0.** The ratchet in `tools/check-forbids.ts` is now an empty set, so it is a plain FORBID:
+a mechanism that names another module's event kind fails the build. Its header says so; nothing is
+added back, because the registry read is the fix. Four passes closed it — `wages`, `banking`,
+`funding`, `notices` — and each pass found a second copy of a formula nobody was looking for.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec` and `check:forbids`
+green. The suite runs at the end of the module (Law 11).

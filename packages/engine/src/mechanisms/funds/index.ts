@@ -130,6 +130,7 @@ import {
 } from './mandate.js';
 import { navOf } from './nav.js';
 import { corridorPublished } from '../../registry/banking.js';
+import { primeCallOn, primeLineOf } from '../../registry/notices.js';
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
@@ -784,14 +785,12 @@ function highWater(ctx: MechanismContext, fund: string, opening: PerPiece): PerP
  */
 function askToDraw(ctx: MechanismContext, m: Mandate, ccy: CurrencyCode): void {
   if (!m.leverage) return;
-  const said = ctx.journal.lastOf('prime.line', String(m.pool));
-  if (said === undefined) return;
-  const book = said.data['portfolio'];
-  const own = said.data['equity'];
-  if (typeof book !== 'number' || typeof own !== 'number' || own <= 0) return;
+  const said = primeLineOf(ctx.journal, String(m.pool));
+  if (!said.some) return;
+  const book = said.value.portfolio;
   // Item 16: two numbers its broker published about its own account, re-entering as the money
   // they are.
-  const target = scale(asCash(own, 'what its investors have in it'), m.targetLeverage, 'the book it means to run');
+  const target = scale(asCash(said.value.equity, 'what its investors have in it'), m.targetLeverage, 'the book it means to run');
   const cash = heldAsMoney(
     ctx.register.quantity(m.pool, moneyInstrumentId(ctx.accountOf(m.pool, ccy).issuer, ccy)),
     'what is already in its account',
@@ -830,13 +829,10 @@ function askToDraw(ctx: MechanismContext, m: Mandate, ccy: CurrencyCode): void {
  * looking — the broker re-calls every period it is over the line, so the last one is the current one.
  */
 function calledOn(ctx: MechanismContext, m: Mandate): Qty {
-  const said = ctx.journal.lastOf('prime.call', String(m.pool));
-  if (said === undefined || said.period + 1 < ctx.period) return NO_QTY;
-  const unmet = said.data['unmet'];
+  const said = primeCallOn(ctx.journal, String(m.pool));
+  if (!said.some || said.value.period + 1 < ctx.period) return NO_QTY;
   // Item 16: what its broker published it still owes, re-entering as the money it is.
-  return typeof unmet === 'number' && unmet > 0
-    ? ctx.registry.payable(asCash(unmet, 'what its broker called and it could not pay'))
-    : NO_QTY;
+  return ctx.registry.payable(asCash(said.value.unmet, 'what its broker called and it could not pay'));
 }
 
 

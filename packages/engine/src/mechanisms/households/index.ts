@@ -90,6 +90,7 @@ export {
 } from './portfolio.js';
 import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
 import { goingRateIn } from '../../registry/wages.js';
+import { shortfallOf, strikesPublished } from '../../registry/funding.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -514,7 +515,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const p = numbers(view);
   // D2: what it can pay with is its account AND what it can ask back from a fund on demand — that
   // is what makes a money fund a substitute for a deposit rather than an investment (D2).
-  const positions = fundPositions(ctx.venues, ctx.journal.ofKind('fund.struck'), view);
+  const positions = fundPositions(ctx.venues, strikesPublished(ctx.journal), view);
   const onDemand = sum(positions.map((f) => f.worthPerMember)).value;
   const decided = spendPerMember(view, p, onDemand);
   if (!decided.some) return;
@@ -695,13 +696,10 @@ function homeBid(
 ): Option<{ readonly committedPerMember: Cash; readonly order: PlannedHomeOrder }> {
   const nothing = none<{ committedPerMember: Cash; order: PlannedHomeOrder }>();
   if (spare <= 0 || weight <= 0) return nothing;
-  const said = view.lastPublicAbout('housing.shortfall', String(view.self.id));
-  if (!said.some || said.value.period !== view.period) return nothing;
-  const short = said.value.data['short'];
-  const line = said.value.data['dwelling'];
-  // Item 16: two published facts re-enter here — a count of dwellings, and the line they are of.
-  if (typeof short !== 'number' || short <= 0 || typeof line !== 'string') return nothing;
-  const instrument = instrumentId(line);
+  const said = shortfallOf(view, String(view.self.id), view.period);
+  if (!said.some) return nothing;
+  const short = said.value.short;
+  const instrument = instrumentId(said.value.dwelling);
   if (!view.instruments.has(instrument)) return nothing;
   const own = view.outlook(about({ on: 'price', instrument }));
   const print = view.print(instrument);
