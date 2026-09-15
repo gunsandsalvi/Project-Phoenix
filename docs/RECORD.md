@@ -10931,3 +10931,16 @@ E5's own family and sits under 11.5.
 **Checks.** `check:opens` green on both worlds; `loans.test.ts` 8 green and 7 pre-existing reds
 unchanged; `small-business.test.ts` 8 green; lint, typecheck, `check:spec`, `check:forbids`,
 `check:deaths` green.
+
+## Item 11.3 — Correlation, with no parameter
+
+B4 and B4.a are measured rather than declared. One four-country world at one seed — identical
+draws — stepped twelve periods: the small-firm cells that failed on their cash are counted by
+region and by period. Regions differ (over twenty periods the count was 34, 5, 29 and 5) and
+within a region the failures land together (26 of the 34 in one period), because the same demand,
+the same rates and the same region hit every cell in it. Nothing declares a correlation, and the
+test says so over `params.all()`. B3 is PARTIAL: the unit that defaults is the cell, and the
+individual firm's miss is 12a's per-member position.
+
+**Checks.** `small-business.test.ts` 9 green; `check:opens` green; lint, typecheck, `plan:check`,
+`check:existence` green. No engine code changed.

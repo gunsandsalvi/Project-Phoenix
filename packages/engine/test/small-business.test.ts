@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness } from '../src/index.js';
-import { rigDraw, rigFor, rigWorld } from './rig.js';
+import { abroadWorld, rigDraw, rigFor, rigWorld } from './rig.js';
 
 describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () => {
   it('opens with small firms in it, each a cell standing for a count of them', () => {
@@ -130,6 +130,38 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
       const cell = w.parties.get(q.subjects[0] as never);
       expect(cell.representation === 'cell' && cell.key['bank']).toBe(q.data['bank']);
     }
+  });
+
+  it('fails together, by region, with no parameter that says so (B3, B4, B4.a, 11.3)', () => {
+    // B4: the same demand, the same rates and the same region hit all of them — so the failures
+    // in a region land in the same periods, and two regions at IDENTICAL draws (one seed, one
+    // world with four countries in it) do not fail alike. B4.a: the pool's loss is not the sum of
+    // independent draws. Nothing declares a correlation: the count comes out of each cell failing
+    // on its own cash in the world it is in (Law 2, Law 15).
+    const w = abroadWorld('sb-correlation');
+    const region = new Map<string, string>();
+    for (const p of w.parties.ofKind(SMALL_FIRM)) region.set(String(p.id), String(p.region));
+    const PERIODS = 12;
+    for (let i = 0; i < PERIODS; i += 1) w.step();
+    expect(w.params.all().some((d) => /correl/i.test(String(d.id)))).toBe(false);
+    // XI-3, XI-8: a cell that failed on its cash went to its estate; that is the failure event.
+    const failed = w.journal.ofKind('estate.opened').filter((e) => e.subjects.some((s) => region.has(s)));
+    expect(failed.length).toBeGreaterThan(0);
+    const byRegion = new Map<string, { count: number; periods: Set<number> }>();
+    for (const e of failed) {
+      const cell = e.subjects.map(String).find((s) => region.has(s));
+      if (cell === undefined) continue;
+      const r = region.get(cell) ?? '';
+      const row = byRegion.get(r) ?? { count: 0, periods: new Set<number>() };
+      row.count += 1;
+      row.periods.add(e.period);
+      byRegion.set(r, row);
+    }
+    // Different regions, different counts, at identical draws.
+    const counts = [...byRegion.values()].map((r) => r.count);
+    expect(new Set(counts).size).toBeGreaterThan(1);
+    // And within a region they cluster: fewer periods with a failure in them than failures.
+    for (const r of byRegion.values()) if (r.count > 1) expect(r.periods.size).toBeLessThan(r.count);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {
