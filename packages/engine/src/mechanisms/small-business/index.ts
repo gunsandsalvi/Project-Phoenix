@@ -18,16 +18,14 @@
  * SIZE"*, and A6.c promotes a cell across it. Two kinds that can name each other is what a promotion
  * needs; one kind with two representations is not a thing a registry can say.
  *
- * SO `registry/profiles.ts` CARRIES THE NAME AND THE LIST. `PRODUCING_KINDS` is what a module asks
- * when it wants this world's businesses, and every mechanism that reaches the sector reaches it by
- * reading that row rather than by branching on a kind id (Law 15).
+ * SO `registry/profiles.ts` CARRIES THE NAME, because the modules that have to say the word do not
+ * own the kind.
  *
- * WHAT THIS STEP BUILDS AND WHAT IT DOES NOT. The sector EXISTS: cells with weights, drawn sizes,
- * a bank, a region and a line of business, and a parameter register that prints what each of them is
- * like. **It does nothing yet**, and that is the item's own order: it sells and buys on trade credit
- * (11.5), it employs (11.6), it borrows from a named lender on its own row (11.7), it defaults from
- * its own cash flow (11.8), and it is promoted when it outgrows A5 (11.10). Each of those is a step
- * and each names what it turns on.
+ * WHAT IT DOES (11.0): it makes its line out of its members' hours and the inputs it holds and
+ * sells it (11.0a); it buys on terms and ships on terms by the same judgement a named firm does
+ * (11.0b); it posts for hours in the trade its line employs at what an hour is worth to it
+ * (11.0c). What is still to arrive names its step: the owner's draw (11.0d), borrowing and
+ * default (11.0e), plant and promotion (11.0f).
  */
 import type { RegionId } from '../../core/ids.js';
 import { paramId, partyId } from '../../core/ids.js';
@@ -284,7 +282,8 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         name: 'smallBusiness.decide',
         spec: 'Small-Business Pools A1 Goods B1 Labour C1',
         anchor: { before: 'labour.match' },
-        reads: [],
+        // Labour C2 (11.0c): the hours it has under contract are its last wage bill (Clearing F1.a).
+        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
         writes: [{ kind: 'event', name: 'smallBusiness.plan' }],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
@@ -296,7 +295,9 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         name: 'smallBusiness.produce',
         spec: 'Small-Business Pools A1 Goods B5 Goods E1',
         anchor: { after: 'labour.pay' },
-        reads: [],
+        // Labour C2, Goods B5: the payroll that settled this period — the hours that can make
+        // something, and what they cost — is the labour module's own event (Clearing F1.a).
+        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
         writes: [{ kind: 'event', name: 'smallBusiness.produced' }],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {

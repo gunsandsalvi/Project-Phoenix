@@ -42,6 +42,10 @@ import { costOfDraw } from '../../register/register.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
 import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
+import { OCCUPATION_OF } from '../../registry/occupations.js';
+import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
+import { findVenue } from '../../clearing/venue.js';
+import { addQty } from '../../core/tick.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 
 /** The name of the store a cell's decision waits in between its phases (a `working` noun). */
@@ -94,10 +98,24 @@ export function lineOf(view: ParticipantView): Option<Line> {
   });
 }
 
-/** Goods B1.c, XI-15: the hours a cell has this period — every member's, because they work in it. */
+/** Goods B1.c, XI-15: its members' hours — every member's, because they work in it. */
 function ownHours(view: ParticipantView): Qty {
   const each = view.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS);
   return asQty(each * weightOf(view.self), 'the hours its members have between them');
+}
+
+/**
+ * Labour C2, 11.0c: AND THE HOURS IT EMPLOYS beyond its members, under contract at its last
+ * payroll — the same read a named firm makes of its own wage bill (`registry/wages.ts`).
+ */
+function hoursUnderContract(view: ParticipantView): Qty {
+  const own = ownPayroll(view, view.period);
+  return own.some ? own.value.hours : NO_QTY;
+}
+
+/** The hours that can make something this period: its members' and what it employs. */
+function hoursToPlanWith(view: ParticipantView): Qty {
+  return addQty(ownHours(view), hoursUnderContract(view), 'the hours it has');
 }
 
 /**
@@ -105,8 +123,8 @@ function ownHours(view: ParticipantView): Qty {
  * hand reaches. Every limit is a count of the output; the binding one is the state (Law 6: a real
  * shortage, never a cap).
  */
-function canStart(view: ParticipantView, line: Line): Qty {
-  const limits: number[] = [over(ownHours(view), line.hoursPerUnit, 'what its people can make')];
+function canStart(view: ParticipantView, line: Line, hours: Qty): Qty {
+  const limits: number[] = [over(hours, line.hoursPerUnit, 'what its people can make')];
   for (const input of line.inputs) {
     limits.push(over(view.free(input.instrument), input.qtyPerUnit, 'what the stock on hand reaches'));
   }
@@ -127,7 +145,7 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
   slot.batch = NO_QTY;
   if (!line.some) return;
   const l = line.value;
-  slot.batch = canStart(view, l);
+  slot.batch = canStart(view, l, hoursToPlanWith(view));
   // Expectations A2: what a unit of its output fetches, by its own outlook or the tape. A cell that
   // has never seen a price for what it makes cannot say what an input is worth to it, and does not
   // bid — it makes what it can out of what it holds and learns the price by selling.
@@ -141,7 +159,7 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     priced.push(p.value);
   }
   // The next batch is what its hours reach: the inputs are what it is buying.
-  const nextBatch = downTick(over(ownHours(view), l.hoursPerUnit, 'what its people can make'));
+  const nextBatch = downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make'));
   const ccy = view.registry.currencyOf(view.self.region);
   let cash: Cash = heldAsMoney(view.cash(ccy), 'the money it has to buy with');
   const orders: PlannedOrder[] = [];
@@ -171,12 +189,53 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     orders.push({ market: goodMarketId(goodTerms(view.instruments.get(input.instrument)).subUnit, l.terms.region), side: 'buy', price: worth, qty });
   }
   slot.orders = orders;
+  postForHours(ctx, view, l, price.value, priced);
   ctx.record(
     'smallBusiness.plan',
     [cell],
     { cell, line: l.terms.subUnit, batch: slot.batch, bids: orders.length },
     true,
   );
+}
+
+/**
+ * Labour C1, C1.a, C5, D1 (11.0c): WHAT IT WILL PAY FOR AN HOUR, AND HOW MANY IT WANTS. An hour is
+ * worth what the output it makes possible fetches, less the rest of the recipe — the most it will
+ * pay, and the same arithmetic a named firm posts (Law 4). How many it wants is what its stock of
+ * inputs can use beyond its members' own hours: a cell whose people already out-run its stock
+ * wants nobody, and posts that — an empty opening, which the venue reads against the hours it has
+ * under contract and sheds the difference at the cell's cost (Labour C3). The venue it posts in is
+ * the trade its line employs, in its region (Labour A3): a fact of the registry, never a branch.
+ */
+function postForHours(
+  ctx: MechanismContext,
+  view: ParticipantView,
+  line: Line,
+  priceOut: PerPiece,
+  inputPrices: readonly PerPiece[],
+): void {
+  const occupation = OCCUPATION_OF[line.terms.subUnit];
+  if (occupation === undefined) return;
+  const venue = findVenue(view.venues, { region: String(view.self.region), occupation });
+  if (venue === undefined) return;
+  const inputCost = sum(
+    line.inputs.map((i, n) =>
+      scale(inputPrices[n] ?? asPerPiece(0, 'priced above, one per input'), asRatio(i.qtyPerUnit, 'what one takes of it'), 'input cost'),
+    ),
+  ).value;
+  const perHour = over(minus(priceOut, inputCost, 'less its inputs'), line.hoursPerUnit, 'the value of an hour');
+  // What its inputs on hand could make, over what its members' hours already make: the hours it
+  // has a use for. Nothing below zero is wanted, and wanting nobody is a real posting.
+  const fromStock = line.inputs.map((i) => over(view.free(i.instrument), i.qtyPerUnit, 'what the stock reaches'));
+  const stockBound = fromStock.length === 0 ? undefined : fromStock.reduce((a, b) => atMost(a, b, 'the scarcest input'));
+  const wanted = stockBound === undefined ? NO_QTY : downTick(scale(minus(asAmount<'piece'>(stockBound, 'what its stock makes'), asAmount<'piece'>(over(ownHours(view), line.hoursPerUnit, 'what its members make'), 'its members\u2019 share'), 'beyond its members'), line.hoursPerUnit, 'the hours that would take'));
+  const wantsNobody = wanted <= 0 || perHour <= 0;
+  ctx.post(venue.id, {
+    party: view.self.id,
+    side: 'buy',
+    price: wantsNobody ? 0 : perHour,
+    qty: wantsNobody ? NO_QTY : wanted,
+  });
 }
 
 /** Goods B5, E1: the batch, started — inputs drawn at what they cost, output created at that cost. */
@@ -187,9 +246,16 @@ export function produce(ctx: MechanismContext, cell: PartyId): void {
   const line = lineOf(view);
   if (!line.some) return;
   const l = line.value;
-  const batch = slot.batch;
+  // Labour C2: what can be started NOW is bounded by the hours actually paid for this period —
+  // its members' and what its payroll settled — and by what it decided; a hire found this period
+  // is paid and not yet working, and that is a real shortage rather than a plan gone wrong.
+  const settled = payrollSettledIn(ctx.journal, String(cell), ctx.period);
+  const hoursNow = addQty(ownHours(view), settled.some ? settled.value.productive : NO_QTY, 'the hours it has');
+  const batch = atMost(slot.batch, canStart(view, l, hoursNow), 'it starts what its hours and its stock reach');
+  if (batch <= 0) return;
   const legs: Leg[] = [];
-  const costs: Cash[] = [];
+  // Goods B5: what the period's labour cost, capitalised into the batch like a named firm's wages.
+  const costs: Cash[] = [settled.some ? settled.value.paid : heldAsMoney(NO_QTY, 'it employed nobody this period')];
   for (const input of l.inputs) {
     const qty = upTick(scale(batch, input.qtyPerUnit, 'what the recipe draws'));
     if (qty <= 0) continue;

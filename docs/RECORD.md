@@ -10771,3 +10771,21 @@ it is measured where a named firm's is.
 
 **Checks.** `check:opens` green on both worlds; the trade-credit and small-business tests green;
 lint, typecheck, `check:spec`, `check:forbids` green.
+
+## Item 11.0c — Hours
+
+A cell of small firms posts into the trade its line employs, in its region, at what an hour is
+worth to it — the output an hour makes possible at the price it expects, less the rest of the
+recipe — for the hours its stock of inputs can use beyond its members' own; when that is nothing
+it posts an empty opening, and the venue sheds what it no longer wants at the cell's cost. What it
+employs counts in what it plans, and the payroll that settled counts in what it starts and in what
+a unit cost, read off the labour module's own event as a named firm reads it. `PRODUCING_KINDS`,
+the list every module was said to walk, had no reader and is deleted.
+
+**Measured, not chased.** In the rig every small firm's members already out-run its stock of
+inputs, so every posting is empty and no small firm hires; the ladder's first rung is unchanged.
+The hire is measured where a named firm's is, and that is 12b.3's world.
+
+**Checks.** `check:opens` green on both worlds; the small-business and trade-credit tests green;
+the five labour reds are the five that predate this session; lint, typecheck, `check:spec`,
+`check:forbids` green.

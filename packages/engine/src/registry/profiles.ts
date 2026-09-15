@@ -14,7 +14,7 @@
  * @spec Equity A2 Fund Shares A2 Treasury D3 Sovereign A3.b Central Bank A1 Central Bank A1.a Central Bank E2 Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A1 Small-Business Pools A6 Small-Business Pools A6.b Law 15
  */
 import { InvalidRegistry } from '../core/errors.js';
-import { currencyUnit, instrumentKindId, partyKindId, unitId, type PartyKindId } from '../core/ids.js';
+import { currencyUnit, instrumentKindId, partyKindId, unitId } from '../core/ids.js';
 import type { InstrumentKindProfile, PartyKindProfile } from './kinds.js';
 import { issuerName } from './naming.js';
 
@@ -80,24 +80,8 @@ export const FUND_MANAGER = partyKindId('fundManager');
  * name; what it buys is A6.b, which says the boundary between this sector and Corporate Credit's is
  * **not a modelling line but a SIZE** — a weight of one IS a named firm — so the two kinds have to
  * be able to name each other for a cell to be promoted across (A6.c).
- *
- * `PRODUCING_KINDS` below is the list a module asks when it wants this world's BUSINESSES rather
- * than its named companies. Today nobody asks it: the five `ofKind(FIRM)` walks left are about
- * things only a named company has — accounts to publish, a bond to issue, its own line — and a
- * cell of small firms has none of them (11.0a). The list stands for the reader 11.0c brings, the
- * labour venue's employers, which a small firm is.
  */
 export const SMALL_FIRM = partyKindId('smallFirm');
-
-/**
- * §42 A1, A4, Law 15: THE KINDS THAT ARE FIRMS — they sell, they employ, they buy on trade credit
- * and they can fail, and which of them is a cell is a fact about its representation and not about
- * what it does. It is registry DATA in the sense Law 15 means — a list a reader can see, extended
- * by adding a row — and it is the alternative to eleven modules each deciding for themselves
- * whether a small firm counts as a firm. It has no reader yet (see above), and saying that it had
- * was the stale claim 11.0a found.
- */
-export const PRODUCING_KINDS: readonly PartyKindId[] = [FIRM, SMALL_FIRM];
 
 /** The party kinds the kernel itself needs: the ones money cannot exist without (Money A1, A1.b, A1.c). */
 export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
