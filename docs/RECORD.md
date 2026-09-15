@@ -10875,3 +10875,22 @@ ask its bank for what it lacks and fail on a coupon it cannot pay. What it canno
 the item that gives it the mechanism: plant (11.2a), promotion (12.4), a per-member failure
 (12a.1/12a.5), an input line that trades in the rig (12b.3). Nothing in the code changed in this
 close; `check:opens` stands as at 11.0e.
+
+## Item 11.1 — §42 re-marked from a run
+
+A 52-period year of both scale models through `coverage:reached`, the kernel's own reach register
+asked what was ever produced. Every capability the small-business module declares (3), and every
+one the modules a small firm trades through declare — banks (8), labour (1), goods (126),
+trade-credit (1) — was produced. A1 and A3 go from PARTIAL to MET: a small firm sells, borrows
+and fails in the run, and its leverage is a loan row banded by the lattice, not a mean. A1 is
+UNMEASURED on employment, because in the scale model no input line trades and every posting is
+empty (12b.3); the mark says so rather than claiming it. A2, A5, A6 stand as marked at 0f.9 and
+11.0e.
+
+**Found by the run, fixed at cause, committed on its own (5f0b85c):** the four-country world
+stopped in the year at a drawing on a line a cell had inherited by merging — the loan's terms name
+who signed it and the row had been reseated. Two sibling reads of the same stale term are written
+under 11.2 and 12a.4.
+
+**Checks.** `check:opens`, `check:existence`, `plan:check` green. Nothing in the engine changed
+in this close.
