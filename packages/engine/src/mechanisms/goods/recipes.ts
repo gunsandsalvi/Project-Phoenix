@@ -18,6 +18,7 @@ export {
   isGoodTerms,
   isWipTerms,
   labourParam,
+  learningParam,
   leadTimeParam,
   plantParam,
   recipeParam,
@@ -40,6 +41,7 @@ import {
   goodId,
   goodKindId,
   labourParam,
+  learningParam,
   leadTimeParam,
   plantParam,
   recipeParam,
@@ -78,6 +80,7 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
       // plant this line already declares, so a line that needs no premises buys no cleaning.
       overheads: overheadsFor(d),
       labourHoursPerUnit: labourParam(d.subUnit),
+      learningRate: learningParam(d.subUnit),
       plant: d.plant.map((r) => ({
         capitalKind: r.capitalKind,
         unitsPerUnitPerPeriod: plantParam(d.subUnit, r.capitalKind),

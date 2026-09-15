@@ -50,6 +50,7 @@ import {
   isGoodTerms,
   isWipTerms,
   labourParam,
+  learningParam,
   leadTimeParam,
   plantParam,
   recipeParam,
@@ -135,6 +136,15 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       kind: 'technology',
       owner: 'model',
       why: `Goods A2.c: ${d.labourWhy}`,
+    });
+    out.push({
+      id: learningParam(d.subUnit),
+      value: d.learning,
+      unit: `exponent on cumulative pieces of ${d.subUnit} a line has made`,
+      dimension: 'ratio',
+      kind: 'technology',
+      owner: 'model',
+      why: d.learningWhy,
     });
     for (const plant of d.plant) {
       out.push({

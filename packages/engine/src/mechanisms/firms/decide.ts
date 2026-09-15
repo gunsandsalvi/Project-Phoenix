@@ -55,7 +55,7 @@ import {
   spacePerPiece,
   STORAGE,
   storageRateIn,
-  type GoodTerms,
+  type GoodTerms, learnedHoursPerUnit,
 } from '../../registry/physical.js';
 import {
   capacityFrom,
@@ -204,8 +204,14 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     // Goods A2 states what the work takes; Firm A3 states what it takes HERE. This is the one place
     // the two meet, so a firm's own hours-per-unit has one writer and every reader gets the same
     // number — what it bids for an hour, what a unit costs it, and what its people can make.
+    // 12c.1: and what THIS LINE HAS LEARNED — the recipe's hours fall with what it has made, at the
+    // recipe's rate, read off its own history of created units. Nothing stores a level.
     hoursPerUnit: scale(
-      view.params.ratio(terms.recipe.labourHoursPerUnit),
+      learnedHoursPerUnit(
+        view.params.ratio(terms.recipe.labourHoursPerUnit),
+        view.made(output),
+        view.params.ratio(terms.recipe.learningRate),
+      ),
       view.params.ratio(labourScaleId(line.firm)),
       'hours a unit takes this firm',
     ),

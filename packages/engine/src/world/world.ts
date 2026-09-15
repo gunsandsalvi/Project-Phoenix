@@ -1640,6 +1640,7 @@ export class World {
       parties: this.partyReads,
       holdings: () => this.store.holdingsOf(party),
       quantity: (instrument) => this.store.quantity(party, instrument),
+      made: (instrument) => this.ledger.madeBy(party, instrument),
       free: (instrument) => this.store.free(party, instrument),
       cash: (ccy) => this.cash(party, ccy),
       perMember: (instrument) => this.store.perMember(party, instrument),

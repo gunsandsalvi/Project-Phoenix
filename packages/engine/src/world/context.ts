@@ -396,6 +396,8 @@ export interface ParticipantView extends KernelReads {
   holdings(): readonly Holding[];
   /** Law 8: what the register holds is whole pieces, so what it reads back is a count of them. */
   quantity(instrument: InstrumentId): Qty;
+  /** Firm A3, Goods A2.c (12c.1): what it has ever MADE of this, off the ledger's create legs — the history its hours per unit is a read of. */
+  made(instrument: InstrumentId): Qty;
   free(instrument: InstrumentId): Qty;
   /** Own balance at own bank in a currency, per member. */
   cash(ccy: CurrencyCode): Qty;
@@ -871,7 +873,7 @@ export interface MechanismContext extends WorldReads {
     | 'rateInForce'
   >;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
-  readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
+  readonly ledger: Pick<Ledger, 'inPeriod' | 'length' | 'madeBy'>;
   readonly cells: CellEvents;
   /**
    * Derivative X1: the contract store, read-only. It is written by settlement like the register —

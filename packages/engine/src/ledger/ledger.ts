@@ -5,9 +5,9 @@
  * @spec Money D1 Money D1.a Money D1.b Money E1 Money E2 Money E2.a Register C3.b
  */
 import type { Period } from '../calendar/calendar.js';
-import type { InstructionId, InstrumentId } from '../core/ids.js';
+import type { InstructionId, InstrumentId, PartyId } from '../core/ids.js';
 import type { Qty } from '../core/tick.js';
-import { negQty } from '../core/tick.js';
+import { asQty, negQty } from '../core/tick.js';
 import { subjectsOf, type Failed, type SettlementRecord } from './instruction.js';
 
 /**
@@ -49,6 +49,8 @@ export class Ledger {
   private readonly failedBy = new Map<string, Failed[]>();
   /** 0g.2: the period's deltas, written at `append`. */
   private readonly deltasBy = new Map<Period, MutableDeltas>();
+  /** 12c.1, Law 18: what each party has ever created of each thing — an index over the create legs, kept as they settle. */
+  private readonly madeEver = new Map<string, number>();
   private next = 1;
 
   /** The next instruction number; settlement stamps it on the instruction it is about to apply. */
@@ -85,6 +87,11 @@ export class Ledger {
       }
       for (const leg of r.instruction.legs) {
         if (leg.kind !== 'create' && leg.kind !== 'destroy') continue;
+        if (leg.kind === 'create') {
+          const k = `${String(leg.party)}|${String(leg.instrument)}`;
+          const had = this.madeEver.get(k);
+          this.madeEver.set(k, had === undefined ? leg.qty : had + leg.qty);
+        }
         const signed = leg.kind === 'create' ? leg.qty : negQty(leg.qty, 'what left the world');
         const list = d.made.get(leg.instrument);
         if (list === undefined) d.made.set(leg.instrument, [signed]);
@@ -116,6 +123,18 @@ export class Ledger {
 
   all(): readonly SettlementRecord[] {
     return this.records;
+  }
+
+  /**
+   * Firm A3, Goods A2.c (12c.1): WHAT THIS PARTY HAS EVER MADE OF THIS — every unit its create
+   * legs brought into the world, read off the ledger's own index (Law 19). It is what a line's
+   * hours per unit is a read against, and it is not a level anybody stores: the legs are the record.
+   */
+  madeBy(party: PartyId, instrument: InstrumentId): Qty {
+    const had = this.madeEver.get(`${String(party)}|${String(instrument)}`);
+    // A party with no create leg on this thing has made none of it: that is a count, not a default.
+    if (had === undefined) return asQty(0, 'it has made none of it');
+    return asQty(had, 'the pieces it has made');
   }
 
   inPeriod(period: Period): readonly SettlementRecord[] {

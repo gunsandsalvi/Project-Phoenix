@@ -123,6 +123,12 @@ export interface Recipe {
   readonly overheads: readonly RecipeOverhead[];
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: ParamId;
+  /**
+   * Firm A3, Goods A2.c (12c.1): THE RATE AT WHICH HOURS PER UNIT FALL WITH WHAT THE LINE HAS MADE
+   * — Wright's curve: the exponent on cumulative pieces, per recipe, a TECHNOLOGY. A firm's hours
+   * per unit is a READ of its own history of created units against this; nothing stores a level.
+   */
+  readonly learningRate: ParamId;
   /** A2.c: the plant a unit of it takes, per kind. Empty is a line that needs none. */
   readonly plant: readonly RecipePlant[];
   /** B4: the fraction of what is started that is finished; the rest is scrap. */
@@ -208,6 +214,18 @@ export const recipeParam = (output: string, input: string): ParamId =>
 export const overheadParam = (output: string, service: string, capitalKind: string): ParamId =>
   paramId(`goods.overhead.${output}.${service}.${capitalKind}`);
 export const labourParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.labourHours`);
+export const learningParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.learning`);
+
+/**
+ * Firm A3, Goods A2.c (12c.1): WHAT A UNIT TAKES A LINE THAT HAS MADE `made` PIECES OF IT. Wright
+ * (1936): hours per unit fall by a constant fraction with every doubling of cumulative output —
+ * `base × (made + 1) ^ −rate`, the one that has made nothing taking the recipe's hours. It is a
+ * read over the line's own register history and the recipe's declared rate; there is no stored
+ * productivity anywhere, and an entrant's edge (12c.3) is a different base, not a different rate.
+ */
+export function learnedHoursPerUnit(base: Ratio, made: Qty, rate: Ratio): Ratio {
+  return asRatio(base * Math.pow(made + 1, -1 * rate), 'hours a unit takes after what it has made');
+}
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
 export const plantParam = (subUnit: string, capitalKind: string): ParamId =>
   paramId(`goods.${subUnit}.plant.${capitalKind}`);

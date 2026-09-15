@@ -43,7 +43,8 @@ import { expectedPriceOf } from '../../registry/expectation.js';
 import { costOfCapital, plantOffers, project } from '../../registry/capital.js';
 import { period } from '../../calendar/calendar.js';
 import { toTick } from '../../core/tick.js';
-import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type PlantNeed, rentedRoom, vintagesHeld } from '../../registry/physical.js';
+import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type PlantNeed, rentedRoom, vintagesHeld, learnedHoursPerUnit,
+} from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
 import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
@@ -143,7 +144,7 @@ export function lineOf(view: ParticipantView): Option<Line> {
 }
 
 /** A2, Goods A2 (12.1): the line by name and region, for whoever asks — a founder reads it too. */
-export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params'>, subUnit: string, region: RegionId): Option<Line> {
+export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params' | 'made' | 'self'>, subUnit: string, region: RegionId): Option<Line> {
   const output = goodId(subUnit, region);
   if (!view.instruments.has(output)) return none<Line>();
   const terms = goodTerms(view.instruments.get(output));
@@ -151,7 +152,14 @@ export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params'>, su
     output,
     market: goodMarketId(terms.subUnit, terms.region),
     terms,
-    hoursPerUnit: view.params.ratio(terms.recipe.labourHoursPerUnit),
+    // 12c.1: what a MEMBER'S line has learned — the cell's pieces made over its people, against
+    // the recipe's rate. A founder has made nothing and takes the recipe's hours.
+    hoursPerUnit: learnedHoursPerUnit(
+      view.params.ratio(terms.recipe.labourHoursPerUnit),
+      // Law 8: a member has made whole pieces; the share of the cell's count that is one member's rounds down.
+      downTick(over(asAmount<'piece'>(view.made(output), 'what the cell has made'), asRatio(weightOf(view.self), 'its people'), 'made per member')),
+      view.params.ratio(terms.recipe.learningRate),
+    ),
     inputs: terms.recipe.inputs.map((i) => ({
       instrument: goodId(i.subUnit, terms.region),
       qtyPerUnit: view.params.ratio(i.qtyPerUnit),

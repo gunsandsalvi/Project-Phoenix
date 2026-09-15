@@ -172,6 +172,9 @@ export interface GoodDecl {
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: number;
   readonly labourWhy: string;
+  /** 12c.1, Firm A3: the exponent on cumulative pieces made by which hours per unit fall (Wright 1936). */
+  readonly learning: number;
+  readonly learningWhy: string;
   /**
    * A2.c: the capital services a unit takes, per kind of plant. Empty is a real answer and not a
    * missing one: a line that needs no plant is limited by its people and by its inputs, and saying
@@ -221,6 +224,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 9,
     labourWhy: 'A2.c: hours of work per unit. Grown. What a bad season takes, it takes here first.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of grain takes.' },
     ],
@@ -251,6 +256,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 14,
     labourWhy: 'A2.c: hours of work per unit. Grazed and finished on grain.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of livestock takes.' },
     ],
@@ -279,6 +286,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 6,
     labourWhy: 'A2.c: hours of work per unit. Felled. Slow to grow and slow to cut.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of timberLog takes.' },
     ],
@@ -308,6 +317,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 5,
     labourWhy: 'A2.c: hours of work per unit. Dug. Drawn from the ground and labour alone, so nothing upstream of it can be short.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of ironOre takes.' },
     ],
@@ -337,6 +348,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 4,
     labourWhy: 'A2.c: hours of work per unit. Dug. What this world burns for power and smelts with.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of coalRaw takes.' },
     ],
@@ -366,6 +379,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 3,
     labourWhy: 'A2.c: hours of work per unit. Pumped. Fuel and chemicals both start here.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of crude takes.' },
     ],
@@ -395,6 +410,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 4,
     labourWhy: 'A2.c: hours of work per unit. Quarried. Cement and glass both start here.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of limestoneRaw takes.' },
     ],
@@ -424,6 +441,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 5,
     labourWhy: 'A2.c: hours of work per unit. Dug. The light metal begins here.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of bauxite takes.' },
     ],
@@ -461,6 +480,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.4,
     labourWhy: 'A2.c: hours of work per unit. Generated and consumed in the same period: nobody stores a megawatt-hour, which is why an outage is a real shortage rather than a dearer price.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of power takes.' },
     ],
@@ -490,6 +511,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.002,
     labourWhy: 'A2.c: hours of work per unit. Refined. What moves what is not moved by hand.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of fuel takes.' },
     ],
@@ -522,6 +545,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 7,
     labourWhy: 'A2.c: hours of work per unit. Smelted. Most made things are built on it or out of it.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of steel takes.' },
     ],
@@ -553,6 +578,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 6,
     labourWhy: 'A2.c: hours of work per unit. Smelted, and it is mostly electricity: a power shortage is an aluminium shortage a period later.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of aluminium takes.' },
     ],
@@ -584,6 +611,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 3,
     labourWhy: 'A2.c: hours of work per unit. Sawn.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of lumber takes.' },
     ],
@@ -616,6 +645,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 3,
     labourWhy: 'A2.c: hours of work per unit. Burned. Dear to move, so it is made near where it is poured.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of cement takes.' },
     ],
@@ -647,6 +678,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 6,
     labourWhy: 'A2.c: hours of work per unit. Cracked from crude.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of chemicals takes.' },
     ],
@@ -678,6 +711,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 2,
     labourWhy: 'A2.c: hours of work per unit. Made of chemicals and power, and it goes back into the field — so an energy shock reaches the price of bread by two paths.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of fertiliser takes.' },
     ],
@@ -709,6 +744,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 40,
     labourWhy: 'A2.c: hours of work per unit. Synthesised. Low yield, because most of a batch fails its test.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of medicine takes.' },
     ],
@@ -740,6 +777,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 5,
     labourWhy: 'A2.c: hours of work per unit. Milled. The intermediate nobody eats.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of flour takes.' },
     ],
@@ -771,6 +810,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 11,
     labourWhy: 'A2.c: hours of work per unit. Dressed. It keeps badly, so it moves fast or not at all.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of meat takes.' },
     ],
@@ -801,6 +842,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 5,
     labourWhy: 'A2.c: hours of work per unit. Clipped. The other thing a herd gives.',
+    learning: 0.07,
+    learningWhy: '12c.1, Firm A3: a 95% curve — hours per unit fall a twentieth with every doubling of what the line has made. Grown or dug: the work is the ground\'s and the season\'s more than the hands\', and what a line learns is at the margin (Dutton and Thomas 1984, the flat end of their survey). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of wool takes.' },
     ],
@@ -833,6 +876,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 9,
     labourWhy: 'A2.c: hours of work per unit. Spun and woven.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of cloth takes.' },
     ],
@@ -867,6 +912,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.6,
     labourWhy: 'A2.c: hours of work per unit. Cut and sewn.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of clothing takes.' },
     ],
@@ -897,6 +944,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 6,
     labourWhy: 'A2.c: hours of work per unit. Melted. Fragile and heavy, and wanted everywhere.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of glass takes.' },
     ],
@@ -928,6 +977,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 4,
     labourWhy: 'A2.c: hours of work per unit. Moulded. Light, which is why it travels.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of plastic takes.' },
     ],
@@ -959,6 +1010,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 4,
     labourWhy: 'A2.c: hours of work per unit. Compounded. Nothing rolls without it.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of rubber takes.' },
     ],
@@ -991,6 +1044,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 4,
     labourWhy: 'A2.c: hours of work per unit. Pulped and pressed.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of paper takes.' },
     ],
@@ -1024,6 +1079,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 12,
     labourWhy: 'A2.c: hours of work per unit. Baked. It goes stale in days, so it is made near where it is eaten.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 1, why: 'Capital Programme A2: the plant one unit a period of bread takes.' },
     ],
@@ -1056,6 +1113,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 1.5,
     labourWhy: 'A2.c: hours of work per unit. Mixed and poured the same period: nobody stores it, which is what its spoilage says.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of concrete takes.' },
     ],
@@ -1091,6 +1150,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 120,
     labourWhy: 'A2.c: hours of work per unit. The capital good: what every line\'s capacity is made of, including its own.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 6, why: 'Capital Programme A2: the plant one unit a period of machine takes.' },
     ],
@@ -1126,6 +1187,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 9000,
     labourWhy: 'A2.c: hours of work per unit. Built in a yard over half a year, which is why freight capacity answers a shortage slowly.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 10, why: 'Capital Programme A2: the plant one unit a period of vessel takes.' },
     ],
@@ -1163,6 +1226,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 90,
     labourWhy: 'A2.c: hours of work per unit. Assembled out of six industries at once.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 5, why: 'Capital Programme A2: the plant one unit a period of vehicle takes.' },
     ],
@@ -1195,6 +1260,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 1.2,
     labourWhy: 'A2.c: hours of work per unit. Assembled from very little of a great many things. Most of what is started fails a test.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 5, why: 'Capital Programme A2: the plant one unit a period of electronics takes.' },
     ],
@@ -1230,6 +1297,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 3,
     labourWhy: 'A2.c: hours of work per unit. Assembled. What a household replaces rather than repairs.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 4, why: 'Capital Programme A2: the plant one unit a period of appliance takes.' },
     ],
@@ -1264,6 +1333,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 7,
     labourWhy: 'A2.c: hours of work per unit. Made from lumber. Bulky, so it is made near its market.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 2, why: 'Capital Programme A2: the plant one unit a period of furniture takes.' },
     ],
@@ -1297,6 +1368,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.15,
     labourWhy: 'A2.c: hours of work per unit. What everything else moves in. Nobody buys it for itself.',
+    learning: 0.15,
+    learningWhy: '12c.1, Firm A3: a 90% curve — hours per unit fall a tenth with every doubling of what the line has made, the middle of what process industries show (Dutton and Thomas 1984): the vessel and the furnace set most of the hours, and the hands learn the rest. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: the plant one unit a period of packaging takes.' },
     ],
@@ -1335,6 +1408,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 2600,
     labourWhy: 'A2.c: hours of work per unit. Built on site over six periods: the longest lead time in this world.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 8, why: 'Capital Programme A2: the plant one unit a period of building takes.' },
     ],
@@ -1378,6 +1453,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 22,
     labourWhy: 'A2.c: The hours of the clinicians and the people who keep the place running. It is nearly the whole of what care costs, which is why it cannot be made cheaper by making it faster.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.4, why: 'Capital Programme A2: the ward, the surgery and the room the machine stands in.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.1, why: 'Capital Programme A2: the scanner, the pump and the sterile plant.' },
@@ -1408,6 +1485,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 1.2,
     labourWhy: 'A2.c: The teacher’s hours divided over the class. The class size is why one hour reaches many, and it is technology, not a policy.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.08, why: 'Capital Programme A2: the classroom, which is the whole of the capital in it.' },
     ],
@@ -1439,6 +1518,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.9,
     labourWhy: 'A2.c: Cooking it, carrying it and clearing it. A cover is mostly somebody’s hour.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.03, why: 'Capital Programme A2: the room the table is in, which is what the customer is really paying for.' },
     ],
@@ -1469,6 +1550,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.02,
     labourWhy: 'A2.c: Almost none: a connection week is capital, not work, which is why the line is a stock of plant and a handful of engineers.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.01, why: 'Capital Programme A2: the exchange, the mast and the cable plant.' },
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.002, why: 'Capital Programme A2: the building the exchange is in.' },
@@ -1499,6 +1582,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 32,
     labourWhy: 'A2.c: It is people. A support week is a week of somebody’s time and there is nothing else in it.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.3, why: 'Capital Programme A2: servers and the room they are in.' },
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.25, why: 'Capital Programme A2: desks.' },
@@ -1529,6 +1614,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 34,
     labourWhy: 'A2.c: An engagement is hours and a name on the bottom of it. There is nothing else in the cost.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.3, why: 'Capital Programme A2: the office, and a good address is most of what a firm of this kind owns.' },
     ],
@@ -1558,6 +1645,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 36,
     labourWhy: 'A2.c: Hours, and skilled ones. A design week is what somebody who knows how spent a week doing.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.28, why: 'Capital Programme A2: studios.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.1, why: 'Capital Programme A2: the plotting and testing plant.' },
@@ -1589,6 +1678,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 22,
     labourWhy: 'A2.c: The people who make it. A campaign week is their week.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.2, why: 'Capital Programme A2: studios and offices.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.15, why: 'Capital Programme A2: the transmission and production plant.' },
@@ -1619,6 +1710,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 1.1,
     labourWhy: 'A2.c: The driver’s hour, and the hour is the journey.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'fleet', unitsPerUnitPerPeriod: 0.02, why: 'Capital Programme A2: the lorry, the van and the bus.' },
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.002, why: 'Capital Programme A2: the depot.' },
@@ -1650,6 +1743,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 5,
     labourWhy: 'A2.c: A fitter’s day. What a repair costs is almost all of it somebody’s time.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.08, why: 'Capital Programme A2: the workshop.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.06, why: 'Capital Programme A2: the tools, and they are not cheap.' },
@@ -1681,6 +1776,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 18,
     labourWhy: 'A2.c: Cleaning, guarding the doors, keeping the heat on. It is hours and almost nothing else.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.03, why: 'Capital Programme A2: a store and an office on the site.' },
     ],
@@ -1710,6 +1807,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.7,
     labourWhy: 'A2.c: Somebody’s three quarters of an hour, and that is the whole of it.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.015, why: 'Capital Programme A2: the chair and the room it is in.' },
     ],
@@ -1739,6 +1838,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.25,
     labourWhy: 'A2.c: The performers and the people at the doors, divided over the house.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.02, why: 'Capital Programme A2: the hall, the pitch or the screen, which is the whole business.' },
     ],
@@ -1768,6 +1869,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 38,
     labourWhy: 'A2.c: A week of somebody standing there. It is the purest labour line in the table.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.01, why: 'Capital Programme A2: a control room.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.02, why: 'Capital Programme A2: the monitoring plant.' },
@@ -1798,6 +1901,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.5,
     labourWhy: 'A2.c: The crew’s time per tonne lifted.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'fleet', unitsPerUnitPerPeriod: 0.006, why: 'Capital Programme A2: the round’s vehicles.' },
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.002, why: 'Capital Programme A2: the depot.' },
@@ -1828,6 +1933,8 @@ const MAKES: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 0.12,
     labourWhy: 'A2.c: Picking it, packing it and putting it on the lorry. It is what the storage market does NOT pay for: room is rent, handling is work, and they are two different things (Law 4).',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.004, why: 'Capital Programme A2: the trucks inside the shed.' },
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.006, why: 'Capital Programme A2: the dock and the offices; the shed itself is rented in the storage market and is not this.' },
@@ -1860,6 +1967,8 @@ const MAKES: readonly GoodDecl[] = [
     labourHoursPerUnit: 0.2,
     labourWhy:
       'A2.c: buying it, selling it on and keeping the books. It is a thin line per tonne, which is why the trade is volume and why a wholesaler that loses a customer loses a great deal.',
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the line has done. A service is delivered person to person and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.004, why: 'Capital Programme A2: the depot and the offices over it.' },
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.002, why: 'Capital Programme A2: what moves a pallet about inside it.' },
@@ -1902,6 +2011,8 @@ const MAKES: readonly GoodDecl[] = [
     labourHoursPerUnit: 1800,
     labourWhy:
       'A2.c: building trades. About a year of one person\u2019s time per dwelling, which is why the thing that limits how many a place builds is the people who can build them.',
+    learning: 0.32,
+    learningWhy: '12c.1, Firm A3: an 80% curve — hours per unit fall a fifth with every doubling of what the line has made, which is what Wright (1936) measured on airframes and what assembly has done since. TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: plant on the site.' },
     ],
@@ -2014,6 +2125,8 @@ function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
     inputs,
     labourHoursPerUnit: d.hours,
     labourWhy: `A2.c: shop hours per unit sold. Most of what a shop costs is people, and this is them. ${d.why}`,
+    learning: 0.1,
+    learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the shop has sold. A shop is a service delivered over a counter and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
       { capitalKind: 'premises', unitsPerUnitPerPeriod: d.premises, why: 'Capital Programme A2: the shop. A service is made where it is bought and so, very nearly, is a sale.' },
     ],
