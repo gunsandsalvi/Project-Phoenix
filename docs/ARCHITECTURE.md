@@ -817,7 +817,9 @@ fact IS:
 
 - **A read of a public fact is a registry read.** What a market published, a bank said about
   itself, a firm said it is short of, an assessor graded: `registry/wages.ts`, `registry/banking.ts`,
-  `registry/funding.ts`, `registry/notices.ts`, `registry/physical.ts`, `registry/switching.ts`.
+  `registry/funding.ts`, `registry/notices.ts`, `registry/physical.ts`, `registry/switching.ts`,
+  `registry/expectation.ts` (own outlook, else the tape) and `registry/capital.ts` (what a project
+  must earn and the project itself — one arithmetic for a named firm and a cell of small firms, 11.2a.2).
   The registry names the event kind and does the fetch; a caller passes a party or a party's door
   (a narrow `Reads` interface, never a whole view) and gets the fact back in its own dimension. The
   extraction is written once. It was written twice or three times before, every time, and the
@@ -856,7 +858,7 @@ net plus accumulated.
 **Which module owns what.** `mechanisms/capital-programme` owns the STOCK — the kinds registry, the
 vintage instruments and their markets, the wearing-out schedule, retirement, the commissioning of a
 bought good into plant, and the A6.b units identity. It owns no decision. **The decision to invest is
-the firm's** and lives in `mechanisms/firms/invest.ts`, because it is made of the same things every
+the firm's** and lives in `mechanisms/registry/capital.ts`, because it is made of the same things every
 other firm decision is made of (its own outlook, its own cash, the prices it faces) and it shares
 the same order list. `firms` therefore `requires` `capital-programme`, and `capital-programme`
 requires only `goods`.

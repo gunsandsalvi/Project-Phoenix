@@ -37,7 +37,8 @@ import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
-import { DECIDED, OWNERSHIP, decide, draw, marketsOf, ordersIn, produce } from './profile.js';
+import { DECIDED, OWNERSHIP, SMALL_FIRM_TERMS, TERMS, decide, draw, marketsOf, ordersIn, produce } from './profile.js';
+export { lineOf } from './profile.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { keyOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -137,6 +138,42 @@ function paramsOf(): ParamDecl[] {
       why: '0f.3, XI-15: an edge of the small-firm lattice on leverage. A RESOLUTION: refine every edge by two and the world\u2019s aggregates must move by less than derived dust (0f.10), or this is a shape.',
     },
     {
+      id: SMALL_FIRM_TERMS.hurdle,
+      value: 0.04,
+      unit: 'per annum over its cost of capital',
+      dimension: 'perAnnum' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: 'Capital Programme B1.d (11.2a.2): the margin over its cost of capital a small firm’s owner insists on before committing money that cannot be got back — the centre of the named sector’s own spread (0.02–0.06), because a corner shop’s owner and a board face the same question. Drawn per population with the dispersion below, so two populations do not take the same project (XI-16 A3).',
+    },
+    {
+      id: SMALL_FIRM_TERMS.hurdleDispersion,
+      value: 0.5,
+      unit: 'of the mean, either way',
+      dimension: 'ratio' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: 'Capital Programme B1.d, XI-16 A3 (11.2a.2): how far one population’s hurdle sits from another’s. The named sector’s spread runs from half its centre to one and a half times it; this is that width as a ratio.',
+    },
+    {
+      id: SMALL_FIRM_TERMS.horizonPeriods,
+      value: 104,
+      unit: 'periods of service it counts',
+      dimension: 'periods' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: 'Capital Programme B1.d (11.2a.2): how far ahead a small firm’s owner looks — two years, the centre of the named sector’s own spread (52–156). A short one values a room at what the periods it will look at are worth.',
+    },
+    {
+      id: SMALL_FIRM_TERMS.horizonDispersion,
+      value: 0.5,
+      unit: 'of the mean, either way',
+      dimension: 'ratio' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: 'Capital Programme B1.d, XI-16 A3 (11.2a.2): how far one population’s horizon sits from another’s, as a ratio of the mean — the named sector’s spread as a width.',
+    },
+    {
       id: SMALL_FIRM_SWITCHING_COST,
       value: 60,
       denominated: 'money' as const,
@@ -231,6 +268,12 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
     ],
     nouns: [
       {
+        name: TERMS,
+        kind: 'working',
+        holds: 'each population’s own hurdle and horizon, drawn once at its first decision',
+        why: 'XI-16 A3, Capital Programme B1.d (11.2a.2): a preference is the population’s own and is drawn once, so it is kept between periods; it is this module’s and nothing outside it has an opinion about how patient a small firm’s owner is.',
+      },
+      {
         name: DECIDED,
         kind: 'working',
         holds: 'the batch each cell will start and the input bids it decided, and the period it decided them in',
@@ -296,7 +339,11 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         spec: 'Small-Business Pools A1 Goods B1 Labour C1',
         anchor: { before: 'labour.match' },
         // Labour C2 (11.0c): the hours it has under contract are its last wage bill (Clearing F1.a).
-        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
+        // Capital Programme B1.b (11.2a.2): and what its bank last quoted it is what its money costs.
+        reads: [
+          { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+        ],
         // A5, Corporate Credit A1 (11.0e): what a period of trading needs beyond what it has, asked
         // of its bank through the one door every borrower uses.
         writes: [

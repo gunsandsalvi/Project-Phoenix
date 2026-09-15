@@ -11023,3 +11023,34 @@ vintage is one construction wherever a seed opens one.
 the plant market — which is the half that needs the bank's quote.
 
 **Checks.** `small-business.test.ts` 17 green; `check:opens` green; lint, typecheck green.
+
+## Item 11.2a.2 — Plant, the purchase
+
+**One arithmetic.** What a project must earn and the project itself moved out of the firms module
+into `registry/capital.ts`: `costOfCapital` (the debt cost off the quote a bank gave it in the
+caller's own window, else the state's curve at the caller's own horizon; the equity cost off what
+its shareholders are paid against what the market says a share is worth), `project` (what it is
+sure enough of to build for, less its own surprises, against what its plant lets it run at, at
+the price where the contribution of the capacity it adds clears what its money costs it plus its
+hurdle), and `plantOffers`. The firms module's copy is deleted, and with it its own `expectedPrice`,
+which was the registry's `expectedPriceOf` written twice (11.0b's finding, closed for firms).
+
+**A cell decides like a management.** Its hurdle and its horizon are two preferences drawn once
+per population — region, bank, line — and kept; what it retains above a period of trading after
+this period's bids is what it can put to a project; the orders it decides go out with its input
+bids and its ask names its plant as security. Two populations do not take the same project.
+
+**Found by the measurement, fixed at cause.** With its plant pledged on every week's
+working-capital ask, a cell was written a new term loan every week — 414 rows in twenty periods —
+because 11.2 inferred "term loan" from "secured". The borrower now SAYS how it repays on the ask:
+at its option is a line, one row per (lender, borrower) drawn on again; on a schedule is a term
+loan that amortises. A mortgage says schedule; working capital says option; a test says each.
+
+**Measured, not chased.** No cell bids for plant in the scale model: every cell opened holding the
+whole machine its batch reaches, so its plant lets it run at more than it expects to sell and a
+management with no gap builds nothing (B3). The test asserts the rule from both sides — a bid
+where there is a gap, none where there is not — so the day a cell's sales outgrow its room, the
+assertion is the one that turns. §42 B2 is MET: a cell's row is secured on what it has.
+
+**Checks.** `small-business.test.ts` 18 green; `loans.test.ts` 8 green and 7 pre-existing reds;
+`check:opens` green; lint, typecheck, `check:spec` green.

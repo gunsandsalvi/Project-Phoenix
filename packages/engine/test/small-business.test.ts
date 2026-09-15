@@ -13,10 +13,16 @@ import {
   BANK,
   CAPITAL_KINDS,
   SMALL_FIRM,
+  about,
+  capacityFrom,
   goodId,
+  goodMarketId,
   goodTerms,
   isPlant,
+  lineOf,
   plantTerms,
+  rentedRoom,
+  vintagesHeld,
   VEHICLE,
   isTranche,
   SMALL_PER_NAMED,
@@ -247,6 +253,61 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     // And it still makes its line out of it — the limit is a real stock, not a wall.
     for (let i = 0; i < 3; i += 1) w.step();
     expect(w.journal.ofKind('smallBusiness.produced').length).toBeGreaterThan(0);
+  });
+
+  it('bids for plant only when its plant is short of what it expects to sell (Capital Programme B1–B4, 11.2a.2)', () => {
+    // One `project` in the registry, the named firm's own arithmetic. In the scale model no cell
+    // bids, and the test says WHY rather than asserting the absence: every cell opened holding
+    // the whole machine its members' batch reaches, so what its plant lets it run at is above what
+    // it expects to sell, and a management with no gap builds nothing (B3). The day a cell's sales
+    // outgrow its room, this assertion is the one that turns.
+    const shortOfPlant: string[] = [];
+    const probe: SystemModule = {
+      id: 'test.plantGap',
+      spec: 'Capital Programme B3',
+      requires: ['small-business', 'capital-programme'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.plantGap',
+          spec: 'Capital Programme B3',
+          anchor: { after: 'smallBusiness.decide' },
+          reads: [],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            for (const cell of ctx.parties.ofKind(SMALL_FIRM)) {
+              if (!cell.status.alive) continue;
+              const view = ctx.participant(cell.id);
+              const line = lineOf(view);
+              if (!line.some) continue;
+              const sales = view.outlook(about({ on: 'sold', instrument: line.value.output }));
+              const capacity = capacityFrom(line.value.plant, vintagesHeld(view, ctx.calendar.startOf(ctx.period)), rentedRoom(view));
+              if (sales.some && capacity.some && capacity.value.perPeriod < sales.value.expected) shortOfPlant.push(String(cell.id));
+            }
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const { banks, firms } = rigFor('sb-plantbid', { makes: ['coalRaw'] });
+    const spec = rigSpec('sb-plantbid', banks, firms);
+    const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
+    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
+    for (let i = 0; i < 12; i += 1) w.step();
+    const plantMarkets = new Set(
+      CAPITAL_KINDS.flatMap((k) => w.parties.all().filter((p) => cells.has(String(p.id))).map((p) => String(goodMarketId(k.madeFrom, p.region)))),
+    );
+    const bids = w.journal
+      .ofKind('smallBusiness.plan')
+      .filter((e) => JSON.stringify(e.data['orders'] ?? []).split('"').some((s) => plantMarkets.has(s)));
+    // A bid where there is a gap, and none where there is not: the two sides of one rule.
+    if (shortOfPlant.length === 0) expect(bids).toHaveLength(0);
+    else expect(bids.length).toBeGreaterThan(0);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {

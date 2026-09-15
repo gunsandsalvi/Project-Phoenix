@@ -36,7 +36,6 @@ import {
   over,
   type PerPiece,
   plus,
-  ratioOf,
   type Ratio,
   scale,
   valueAt,
@@ -59,15 +58,9 @@ import {
   type GoodTerms,
 } from '../../registry/physical.js';
 import {
-  CAPITAL_KINDS,
   capacityFrom,
   rentedRoom,
   capitalChargePerUnit,
-  capitalKindOf,
-  isPlant,
-  lifeParam,
-  plantTerms,
-  serviceLeft,
   vintagesHeld,
   type PlantNeed,
 } from '../../registry/physical.js';
@@ -75,11 +68,12 @@ import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { ownPayroll, payrollSince, wageFacing as facing } from '../../registry/wages.js';
 import {
   costOfCapital,
+  plantOffers,
   project,
   type CostOfCapital,
-  type PlantOffer,
   type Project,
-} from './invest.js';
+} from '../../registry/capital.js';
+import { expectedPriceOf } from '../../registry/expectation.js';
 import { downTick, upTick } from '../../core/tick.js';
 import { NO_QTY, subQty, toTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
@@ -264,14 +258,6 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
  * formed from what it has itself traded at; otherwise what the market last printed, which is public
  * and is all a party with no history of its own has. From its first sale its own outlook leads.
  */
-export function expectedPrice(view: ParticipantView, instrument: InstrumentId): Option<PerPiece> {
-  const own = view.outlook(about({ on: 'price', instrument: instrument }));
-  if (own.some) {
-    return some(asPerPiece(own.value.expected, `what it expects ${instrument} to fetch`));
-  }
-  const print = view.print(instrument);
-  return print.some ? some(print.value.price) : none<PerPiece>();
-}
 
 /** The venue this firm's occupation is struck in (Clearing B2: found by what makes it itself). */
 export function venueOf(view: ParticipantView, line: FirmDecl): VenueDecl | undefined {
@@ -407,11 +393,11 @@ function carryPerPiece(view: ParticipantView, tech: Technology): PerPiece {
 export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const tech = technologyOf(view, line);
   const output = goodId(line.subUnit, view.self.region);
-  const price = expectedPrice(view, output);
+  const price = expectedPriceOf(view, output);
   const selling = sellSchedule(view, tech, price);
   const venue = venueOf(view, line);
   const wage = venue === undefined ? none<PerPiece>() : wageFacing(view, venue);
-  const inputPrices = tech.inputs.map((i) => expectedPrice(view, i.instrument));
+  const inputPrices = tech.inputs.map((i) => expectedPriceOf(view, i.instrument));
   const sales = view.outlook(about({ on: 'sold', instrument: output }));
   if (!price.some || inputPrices.some((p) => !p.some)) {
     return selling.length === 0
@@ -613,21 +599,21 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     );
     const buy = subQty(need, view.quantity(o.instrument), 'what it must buy');
     if (!material(buy, 2, need) || buy <= 0) continue;
-    const level = expectedPrice(view, o.instrument);
+    const level = expectedPriceOf(view, o.instrument);
     if (!level.some) continue;
     orders.push({ market: marketOf(view, o.instrument), side: 'buy', price: level.value, qty: buy });
   }
   // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
   // against what the rest of the plan leaves it — the cash it is not about to need — and it adds
   // its own orders to the same list, because a purchase of plant is a purchase like any other.
-  const cost = costOfCapital(view);
+  const cost = costOfCapital(view, payrollSince(view.period), view.params.periods(firmParam(line.firm, 'horizon')));
   const decided = cost.some
     ? project(
         view,
         tech.plant,
         vintages,
         surviving.some ? surviving.value.perPeriod : NO_QTY,
-        plantOffers(view, tech, price.value),
+        plantOffers(view, tech.plant, tech.terms.region, price.value),
         // B1.a: the units it would START each period at what it expects to sell — the same number
         // its employment is decided from, read once and used in both (Law 4).
         toTick(perPeriod),
@@ -727,64 +713,6 @@ function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): Cash
  * ordinary markets and both are on the same list, because a project does not care which one filled
  * it; what differs is how much service is left in what is on offer (A6).
  */
-function plantOffers(
-  view: ParticipantView,
-  tech: Technology,
-  ownPrice: number,
-): PlantOffer[] {
-  const out: PlantOffer[] = [];
-  for (const need of tech.plant) {
-    const d = capitalKindOf(CAPITAL_KINDS, need.capitalKind);
-    if (d === undefined) continue;
-    const life = view.params.periods(lifeParam(d.id));
-    const built = goodId(d.madeFrom, tech.terms.region);
-    if (!view.instruments.has(built)) continue;
-    const asking = expectedPrice(view, built);
-    if (!asking.some || asking.value <= 0) continue;
-    out.push({
-      capitalKind: need.capitalKind,
-      unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
-      market: goodMarketId(d.madeFrom, tech.terms.region),
-      price: asking.value,
-      periodsOfService: life,
-      newBuild: true,
-    });
-    for (const i of view.instruments.all()) {
-      if (!i.status.live || !isPlant(i) || !i.market.some) continue;
-      const terms = plantTerms(i);
-      if (terms.capitalKind !== need.capitalKind || terms.region !== view.self.region) continue;
-      const left = serviceLeft(terms, view.calendar.startOf(view.period), view.calendar);
-      if (left <= 0 || life <= 0) continue;
-      // Two counts of periods, so what is left of its service is a pure share of a new one's.
-      const share = ratioOf(
-        asAmount<'piece'>(left, 'the periods of service it has left'),
-        asAmount<'piece'>(life, 'the periods a new one gives'),
-        'the service it has left',
-      );
-      // What it expects a second-hand machine to ask: what one that traded went for, and otherwise
-      // what a new one costs for the service it has left. It is what this firm expects to have to
-      // pay, and it is never what it bids — the bid is its own reservation (Clearing A2).
-      const printed = expectedPrice(view, i.id);
-      out.push({
-        capitalKind: need.capitalKind,
-        unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
-        market: i.market.value,
-        price: printed.some
-          ? printed.value
-          : scale(
-              asking.value,
-              share,
-              'what a used one asks',
-            ),
-        periodsOfService: left,
-        newBuild: false,
-      });
-    }
-  }
-  // `ownPrice` is what its own output fetches; a project's return is built from it upstream, and it
-  // is named here so the offer list and the return are read from one plan (Law 4).
-  return ownPrice > 0 ? out : [];
-}
 
 /** The price of the nth input, which the caller has already established this firm knows. */
 function priceOf(prices: readonly Option<PerPiece>[], n: number): PerPiece {

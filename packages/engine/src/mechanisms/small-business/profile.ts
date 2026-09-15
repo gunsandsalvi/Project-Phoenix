@@ -30,7 +30,7 @@
  */
 import { amountOf, asAmount, asPerPiece, asRatio, type Cash, heldAsMoney, minus, over, type PerPiece, pricedAt, type Ratio, scale, valueAt } from '../../core/measure.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
-import { unitId } from '../../core/ids.js';
+import { paramId, unitId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { none, type Option, some } from '../../core/option.js';
 import { asQty, downTick, NO_QTY, type Qty, subQty, upTick } from '../../core/tick.js';
@@ -40,6 +40,9 @@ import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { keyOf, weightOf } from '../../parties/party.js';
 import { costOfDraw } from '../../register/register.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
+import { costOfCapital, plantOffers, project } from '../../registry/capital.js';
+import { period } from '../../calendar/calendar.js';
+import { toTick } from '../../core/tick.js';
 import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type PlantNeed, rentedRoom, vintagesHeld } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
@@ -77,6 +80,48 @@ interface DecidedThisPeriod {
 }
 
 export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], batch: NO_QTY, keeps: heldAsMoney(NO_QTY, 'nothing decided') });
+
+/**
+ * Capital Programme B1.d, XI-16 A3 (11.2a.2): THIS POPULATION'S OWN HURDLE AND HORIZON, drawn once
+ * from the declared mean and width and kept — the named firm's two management preferences, at a
+ * cell: the margin over its cost of capital it insists on before it commits money it cannot get
+ * back, and how many periods of a machine's service it counts. Drawn under the population's name
+ * (region, bank, line) and not the cell's, so a member who crosses a band keeps its management.
+ */
+export const TERMS = 'smallBusiness.terms';
+interface OwnTerms {
+  hurdle: number | undefined;
+  horizonPeriods: number | undefined;
+}
+const notYetDrawn = (): OwnTerms => ({ hurdle: undefined, horizonPeriods: undefined });
+
+export const SMALL_FIRM_TERMS = {
+  hurdle: paramId('smallBusiness.hurdle'),
+  hurdleDispersion: paramId('smallBusiness.hurdle.dispersion'),
+  horizonPeriods: paramId('smallBusiness.horizonPeriods'),
+  horizonDispersion: paramId('smallBusiness.horizonPeriods.dispersion'),
+} as const;
+
+function ownTerms(view: ParticipantView): { readonly hurdle: Ratio; readonly horizonPeriods: number } {
+  const own = view.working(TERMS, notYetDrawn);
+  if (own.hurdle === undefined || own.horizonPeriods === undefined) {
+    const self = view.self;
+    const population =
+      self.representation === 'cell'
+        ? `${keyOf(self, 'region')}|${keyOf(self, 'bank')}|${keyOf(self, 'line')}`
+        : String(self.id);
+    const rng = view.rng.derive(`terms/${population}`);
+    // Uniform on [mean − spread·mean, mean + spread·mean): centred, and a mean of nothing draws nothing.
+    const hurdle = view.params.perAnnum(SMALL_FIRM_TERMS.hurdle);
+    const hSpread = view.params.ratio(SMALL_FIRM_TERMS.hurdleDispersion);
+    own.hurdle = hurdle + hurdle * hSpread * (2 * rng.next() - 1);
+    const horizon = view.params.periods(SMALL_FIRM_TERMS.horizonPeriods);
+    const zSpread = view.params.ratio(SMALL_FIRM_TERMS.horizonDispersion);
+    // Law 8: a horizon is a count of periods.
+    own.horizonPeriods = downTick(horizon + horizon * zSpread * (2 * rng.next() - 1));
+  }
+  return { hurdle: asRatio(own.hurdle, 'its own hurdle'), horizonPeriods: own.horizonPeriods };
+}
 
 /** A2, Goods A2: the line a cell is in, as the registry declares it — its output and its recipe. */
 export interface Line {
@@ -231,19 +276,64 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     cash = minus(cash, valueAt(worth, qty, 'what this bid commits'), 'what is left for the next input');
     orders.push({ market: goodMarketId(goodTerms(view.instruments.get(input.instrument)).subUnit, l.terms.region), side: 'buy', price: worth, qty });
   }
+  /**
+   * Capital Programme B1–B4 (11.2a.2): AND ITS PLANT, by the named firm's own arithmetic — one
+   * `project`, in the registry, no second copy. What it can put to it is what it retains above a
+   * period of trading after this period's bids: the money the owner would otherwise draw. The
+   * decision is the same one a management makes: what it is sure enough of to build for, less its
+   * own surprises, against what its plant lets it run at, at a price where the contribution of the
+   * capacity it adds clears what its money costs it plus its own hurdle. A cell nobody has quoted
+   * and whose money none of this world's states borrows in has no cost of capital and decides
+   * nothing, rather than being handed a number (Law 2).
+   */
+  const retained = minus(cash, slot.keeps, 'what it retains above a period of trading');
+  const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
+  const terms = ownTerms(view);
+  const cost = costOfCapital(view, period(view.period - 1), terms.horizonPeriods);
+  if (cost.some && retained > 0) {
+    const capacity = capacityFrom(l.plant, vintages, rentedRoom(view));
+    const inputCost = sum(
+      l.inputs.map((i, n) => scale(priced[n] ?? asPerPiece(0, 'priced above, one per input'), asRatio(i.qtyPerUnit, 'what one takes of it'), 'input cost')),
+    ).value;
+    const decided = project(
+      view,
+      l.plant,
+      vintages,
+      capacity.some ? capacity.value.perPeriod : NO_QTY,
+      plantOffers(view, l.plant, l.terms.region, price.value),
+      wanted,
+      toTick(sales.some ? asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about what it sells are') : NO_QTY),
+      minus(price.value, inputCost, 'what a unit brings, less what it takes to make'),
+      terms.hurdle,
+      terms.horizonPeriods,
+      cost.value,
+      retained,
+    );
+    if (decided.some) orders.push(...decided.value.orders);
+  }
   slot.orders = orders;
   postForHours(ctx, view, l, price.value, priced, wanted);
   /**
    * A5, A5.a, Corporate Credit A1 (11.0e): IT IS BANK-DEPENDENT, AND THIS IS THE DEPENDENCE. What a
    * period of trading at its own scale needs beyond what it holds, it asks its bank for — through
-   * the one door every borrower uses, unsecured, because a service line has no plant to pledge. The
+   * the one door every borrower uses, secured on the plant it holds (11.2a.2). The
    * bank reads the ask next period and decides; a cell nobody lends to trades on what it has, which
    * is where a tightening bites first and hardest (A5.a). Default is the kernel's: a coupon it
    * cannot pay is a missed payment like any other, and a cell that cannot cover what fell due
    * fails on cash and goes to its estate (XI-8).
    */
   const shortOfTrading = ctx.registry.payable(minus(slot.keeps, cash, 'what a period of trading needs beyond what it has'));
-  if (shortOfTrading > 0) ctx.request(cell, { ccy, short: heldAsMoney(shortOfTrading, 'what it asks its bank for') });
+  // A4, Small-Business Pools B2 (11.2a.2): SECURED ON WHAT IT HAS — its plant, which the bank can
+  // take and realise. A cell with none asks unsecured, which is a statement and not an absence.
+  if (shortOfTrading > 0) {
+    ctx.request(cell, {
+      ccy,
+      short: heldAsMoney(shortOfTrading, 'what it asks its bank for'),
+      security: vintages.map((v) => ({ instrument: v.instrument as InstrumentId, qty: v.units })),
+      // C9: working capital, drawn and repaid at its option — one line at its bank, secured.
+      repays: 'atOption',
+    });
+  }
   ctx.record(
     'smallBusiness.plan',
     [cell],

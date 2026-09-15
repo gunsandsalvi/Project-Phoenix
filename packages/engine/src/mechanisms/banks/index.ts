@@ -749,8 +749,8 @@ function write(
     // day is a leap day and stopped the world the first time a loan was drawn on one (item 0).
     maturity: addMonths(drawn, ctx.params.months(LENDING_PARAMS.loanMonths)),
     dayCount: 'ACT/365F',
-    // Bond F3, Small-Business Pools B1, Housing C2 (11.2): a TERM LOAN — one written against what
-    // the borrower pledged — repays its principal every period it has left; a LINE is drawn and
+    // Bond F3, Small-Business Pools B1, Housing C2 (11.2): a TERM LOAN — one the borrower said it
+    // repays on a schedule — repays its principal every period it has left; a LINE is drawn and
     // repaid at the borrower's option (C9) and falls due once. It is the same fact as `onTheLine`
     // seen from the borrower's side, and it is struck here, at origination, like the rate.
     amortising: !onTheLine,
@@ -1692,7 +1692,9 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it
     // draws at is the one that was struck when the line was agreed (A2, A3).
-    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, security.length === 0, security);
+    // C9, Bond F3 (11.2a.2): a line if it repays at its option, a term loan if on a schedule —
+    // what the borrower SAID, never inferred from whether it pledged something.
+    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, req.repays === 'atOption', security);
   }
 }
 

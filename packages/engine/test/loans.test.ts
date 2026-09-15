@@ -62,7 +62,7 @@ function asksFor(amount: number, at = 1): SystemModule {
           // Item 0e: a borrower publishes what it is short of through the one door every borrower
           // uses. It wrote `firms.funding` directly, which is the coupling that item removed — a
           // bank read two other modules' event names and a third borrower had to join that list.
-          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, 'what it is short of') });
+          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, 'what it is short of'), repays: 'atOption' });
         },
       },
     ],
@@ -73,8 +73,8 @@ function asksFor(amount: number, at = 1): SystemModule {
 
 /**
  * A borrower that names what it would secure the loan on: the first live line it holds that is
- * not money, for all of it. What the thing IS the bank does not learn (A4); that it is pledged is
- * what makes the row a term loan rather than a line (Bond F3, 11.2).
+ * not money, for all of it. What the thing IS the bank does not learn (A4); that it says it repays
+ * on a schedule is what makes the row a term loan rather than a line (Bond F3, 11.2).
  */
 function asksSecured(amount: number, at = 1): SystemModule {
   return {
@@ -100,6 +100,7 @@ function asksSecured(amount: number, at = 1): SystemModule {
             ccy: USD,
             short: asCash(amount, 'what it is short of'),
             security: [{ instrument: pledge.instrument, qty: ctx.register.quantity(BORROWER, pledge.instrument) }],
+            repays: 'onSchedule',
           });
         },
       },

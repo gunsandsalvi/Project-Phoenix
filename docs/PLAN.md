@@ -18,7 +18,7 @@ The plan has two parts:
 
 <!-- progress:start -->
 **The plan: 6 of 21 items closed** (38 of 148 steps).
-**Requirement coverage: 67.2%** (924 MET, 108 PARTIAL, 0 OUT OF SCOPE of 1375 REASON/VERIFY/FORBID clauses).
+**Requirement coverage: 67.3%** (925 MET, 107 PARTIAL, 0 OUT OF SCOPE of 1375 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|

@@ -34,10 +34,9 @@
  * The only way anything is bought below is that a unit of capacity was worth more to this firm than
  * what the market is asking for the plant that makes one.
  */
-import { payrollSince } from './decide.js';
-import { firmParam } from './data.js';
 import {
   amountOf,
+  asAmount,
   asCash,
   asRatio,
   type Cash,
@@ -49,21 +48,31 @@ import {
   ratioOf,
   scale,
   valueAt,
-} from '../../core/measure.js';
-import { yearFraction } from '../../calendar/daycount.js';
-import { Missing } from '../../core/errors.js';
-import type { InstrumentId, MarketId } from '../../core/ids.js';
-import { period } from '../../calendar/calendar.js';
-import { atLeast, atMost, material, sum } from '../../core/num.js';
-import { none, some, type Option } from '../../core/option.js';
-import type { ParticipantView } from '../../world/context.js';
-import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../../registry/physical.js';
-import type { PlannedOrder } from './decide.js';
-import { downTick, subQty, upTick, type Qty } from '../../core/tick.js';
-import { about } from '../../world/context.js';
-import { ownCostOfMoney } from '../../registry/banking.js';
+} from '../core/measure.js';
+import { yearFraction } from '../calendar/daycount.js';
+import { Missing } from '../core/errors.js';
+import type { InstrumentId, MarketId } from '../core/ids.js';
+import { period } from '../calendar/calendar.js';
+import { atLeast, atMost, material, sum } from '../core/num.js';
+import { none, some, type Option } from '../core/option.js';
+import type { ParticipantView } from '../world/context.js';
+import type { Period } from '../calendar/calendar.js';
+import type { RegionId } from '../core/ids.js';
+import { expectedPriceOf } from './expectation.js';
+import { CAPITAL_KINDS, capacityFrom, capitalKindOf, goodId, goodMarketId, isPlant, lifeParam, plantHeld, plantTerms, serviceLeft, type HeldVintage, type PlantNeed } from './physical.js';
+import { downTick, subQty, upTick, type Qty } from '../core/tick.js';
+import { about } from '../world/context.js';
+import { ownCostOfMoney } from './banking.js';
 
 /** B1.b: what money costs this firm at the margin, now, and what it is made of. */
+/** An order a decision produced, to be posted when the market asks (Law 18). */
+export interface PlannedOrder {
+  readonly market: MarketId;
+  readonly side: 'buy' | 'sell';
+  readonly price: PerPiece;
+  readonly qty: Qty;
+}
+
 export interface CostOfCapital {
   /** Item 16: every one of these is per annum on a unit of capital — pure numbers, never money. */
   readonly perAnnum: Ratio;
@@ -110,8 +119,14 @@ export interface Project {
  * worth. A firm nobody has quoted and whose shares do not trade has no cost of capital, and it
  * makes no investment decision at all rather than being handed a number to compare against.
  */
-export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
-  const debt = quotedRate(view);
+export function costOfCapital(
+  view: ParticipantView,
+  /** The window a quote it was given still counts in — the caller's own payroll window. */
+  since: Period,
+  /** B1.d: the periods of service this management counts, which is the tenor the state's curve is read at. */
+  horizonPeriods: number,
+): Option<CostOfCapital> {
+  const debt = quotedRate(view, since, horizonPeriods);
   const equity = requiredOnEquity(view);
   const debtWeight = owes(view);
   const equityWeight = view.equity();
@@ -149,7 +164,7 @@ export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
  * B1.b: what its debt costs AT THE MARGIN, NOW — the rate a bank has quoted it, not the average
  * coupon on debt already outstanding. XI-4 names that average as the way this joint is deleted.
  */
-function quotedRate(view: ParticipantView): Option<Ratio> {
+function quotedRate(view: ParticipantView, since: Period, horizonPeriods: number): Option<Ratio> {
   /**
    * B1.b, E5, item 0 (stop 17): WHAT BORROWING WOULD COST IT, from the keenest thing anybody has
    * said about it — and a firm nobody has quoted LATELY is not a firm nobody has priced.
@@ -173,9 +188,9 @@ function quotedRate(view: ParticipantView): Option<Ratio> {
    * recorded private and a party's own view may not see another party's private state (Observer
    * A4). What is NOT here either is a number nobody said (Law 3).
    */
-  const quoted = ownCostOfMoney(view, payrollSince(view.period));
+  const quoted = ownCostOfMoney(view, since);
   if (quoted.some) return quoted;
-  return sovereignRate(view);
+  return sovereignRate(view, horizonPeriods);
 }
 
 /**
@@ -183,12 +198,11 @@ function quotedRate(view: ParticipantView): Option<Ratio> {
  * deciding about — the one rate in this world that is a read for every party, and the least any of
  * them could borrow at. It is a curve point and never a level anybody wrote (Law 3).
  */
-function sovereignRate(view: ParticipantView): Option<Ratio> {
+function sovereignRate(view: ParticipantView, horizon: number): Option<Ratio> {
   const family = view.sovereignCurveIn(view.registry.currencyOf(view.self.region));
   if (!family.some) return none<Ratio>();
   // B1.d, Law 8: at the tenor of the decision, which is this management's own horizon — in years,
   // because that is what a curve is read at, and the calendar does the crossing.
-  const horizon = view.params.periods(firmParam(view.self.id, 'horizon'));
   const years = yearFraction(
     'ACT/365F',
     view.calendar.startOf(view.period),
@@ -492,4 +506,69 @@ export function plantByKind(
   const out: Record<string, number> = {};
   for (const need of needs) out[need.capitalKind] = plantHeld(vintages, need.capitalKind);
   return out;
+}
+
+/**
+ * C1, D3: WHAT IT COULD BUY AND WHAT IS ASKED FOR IT — new plant from the capital-goods line of its
+ * region at what it expects that market to take, and every vintage somebody is selling second-hand,
+ * for each kind its line needs. One read for a named firm and a cell of small firms (11.2a.2).
+ */
+export function plantOffers(
+  view: ParticipantView,
+  plant: readonly PlantNeed[],
+  region: RegionId,
+  ownPrice: number,
+): PlantOffer[] {
+  const out: PlantOffer[] = [];
+  for (const need of plant) {
+    const d = capitalKindOf(CAPITAL_KINDS, need.capitalKind);
+    if (d === undefined) continue;
+    const life = view.params.periods(lifeParam(d.id));
+    const built = goodId(d.madeFrom, region);
+    if (!view.instruments.has(built)) continue;
+    const asking = expectedPriceOf(view, built);
+    if (!asking.some || asking.value <= 0) continue;
+    out.push({
+      capitalKind: need.capitalKind,
+      unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
+      market: goodMarketId(d.madeFrom, region),
+      price: asking.value,
+      periodsOfService: life,
+      newBuild: true,
+    });
+    for (const i of view.instruments.all()) {
+      if (!i.status.live || !isPlant(i) || !i.market.some) continue;
+      const terms = plantTerms(i);
+      if (terms.capitalKind !== need.capitalKind || terms.region !== view.self.region) continue;
+      const left = serviceLeft(terms, view.calendar.startOf(view.period), view.calendar);
+      if (left <= 0 || life <= 0) continue;
+      // Two counts of periods, so what is left of its service is a pure share of a new one's.
+      const share = ratioOf(
+        asAmount<'piece'>(left, 'the periods of service it has left'),
+        asAmount<'piece'>(life, 'the periods a new one gives'),
+        'the service it has left',
+      );
+      // What it expects a second-hand machine to ask: what one that traded went for, and otherwise
+      // what a new one costs for the service it has left. It is what this firm expects to have to
+      // pay, and it is never what it bids — the bid is its own reservation (Clearing A2).
+      const printed = expectedPriceOf(view, i.id);
+      out.push({
+        capitalKind: need.capitalKind,
+        unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
+        market: i.market.value,
+        price: printed.some
+          ? printed.value
+          : scale(
+              asking.value,
+              share,
+              'what a used one asks',
+            ),
+        periodsOfService: left,
+        newBuild: false,
+      });
+    }
+  }
+  // `ownPrice` is what its own output fetches; a project's return is built from it upstream, and it
+  // is named here so the offer list and the return are read from one plan (Law 4).
+  return ownPrice > 0 ? out : [];
 }

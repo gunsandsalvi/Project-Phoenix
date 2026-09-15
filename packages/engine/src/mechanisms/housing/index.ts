@@ -577,6 +577,8 @@ function askForMortgages(ctx: MechanismContext, rows: readonly TenureDecl[]): vo
       security: [
         { instrument: id, qty: amountOf(short, print.value.price, 'what the loan would buy') },
       ],
+      // C2: a mortgage is paid down, interest and principal.
+      repays: 'onSchedule',
     });
   }
 }

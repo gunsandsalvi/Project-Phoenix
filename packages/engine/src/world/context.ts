@@ -809,6 +809,7 @@ export interface CreditRequest {
   readonly short: Cash;
   /** A4: what it would secure the loan on, or nothing — which is an unsecured ask. */
   readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
+  readonly repays: 'atOption' | 'onSchedule';
   /** The period it said so in, so a lender can read last period's asks (Law 8). */
   readonly at: Period;
 }
@@ -818,6 +819,14 @@ export interface CreditAsk {
   readonly ccy: CurrencyCode;
   readonly short: Cash;
   readonly security?: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
+  /**
+   * Bond F3, Banks Lending C9 (11.2a.2): HOW IT WILL REPAY, said by the borrower. Working capital
+   * is drawn and repaid at its option — one line per (lender, borrower), drawn on again and again;
+   * a purchase it will pay down is a term loan with a schedule. It was inferred from whether the
+   * ask was secured, and a cell that pledged its plant on every week's working-capital ask was
+   * written a new term loan every week: 414 rows in twenty periods of the scale model.
+   */
+  readonly repays: 'atOption' | 'onSchedule';
 }
 
 export interface MechanismContext extends WorldReads {

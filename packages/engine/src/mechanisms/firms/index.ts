@@ -47,7 +47,7 @@ import { NO_QTY } from '../../core/tick.js';
 
 export * from './data.js';
 export { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
-export { plan, technologyOf, expectedPrice } from './decide.js';
+export { plan, technologyOf } from './decide.js';
 export type { Offering, Plan, Planned, PlannedOrder } from './decide.js';
 
 /**
@@ -451,7 +451,8 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
    * a LENDER needs is the one shape every borrower publishes, so a bank reads one kind rather than
    * naming this module's.
    */
-  ctx.request(view.self.id, { ccy, short });
+  // C9: working capital, drawn and repaid at its option.
+  ctx.request(view.self.id, { ccy, short, repays: 'atOption' });
   ctx.record(
     'firms.funding',
     [view.self.id],

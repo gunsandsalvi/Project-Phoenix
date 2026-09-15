@@ -129,7 +129,7 @@ const ROUNDING_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/external/index.ts': 1,
   'mechanisms/firms/data.ts': 2,
   'mechanisms/firms/index.ts': 4,
-  'mechanisms/firms/invest.ts': 1,
+  'registry/capital.ts': 1,
   'mechanisms/firms/produce.ts': 1,
   'mechanisms/freight/index.ts': 3,
   'mechanisms/funds/data.ts': 2,

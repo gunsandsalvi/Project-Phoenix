@@ -1252,6 +1252,8 @@ export class World {
       if (typeof borrower !== 'string' || typeof short !== 'number' || typeof ccy !== 'string') {
         continue;
       }
+      const repays = e.data['repays'];
+      if (repays !== 'atOption' && repays !== 'onSchedule') continue;
       const raw = e.data['security'];
       const security: { instrument: InstrumentId; qty: Qty }[] = [];
       for (const sec of Array.isArray(raw) ? (raw as unknown[]) : []) {
@@ -1264,6 +1266,7 @@ export class World {
         ccy: ccy as CurrencyCode,
         short: asCash(short, 'what it published it is short of'),
         security,
+        repays,
         at,
       });
     }
@@ -2434,6 +2437,7 @@ export class World {
               instrument: String(sec.instrument),
               qty: Number(sec.qty),
             })),
+            repays: ask.repays,
           },
           false,
         );

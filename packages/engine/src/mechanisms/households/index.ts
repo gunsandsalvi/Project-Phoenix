@@ -1042,6 +1042,8 @@ function homeBid(
         ccy,
         short: gap,
         security: [{ instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) }],
+        // Housing C2: a mortgage is paid down, interest and principal.
+        repays: 'onSchedule',
       });
     }
   }
