@@ -192,7 +192,7 @@ export interface ParamReport {
 }
 
 export class ParamRegister {
-  private readonly decls: ReadonlyMap<ParamId, ParamDecl>;
+  private readonly decls: Map<ParamId, ParamDecl>;
   private readonly units: UnitSource | undefined;
 
   /**
@@ -203,53 +203,61 @@ export class ParamRegister {
    */
   constructor(decls: readonly ParamDecl[], units?: UnitSource) {
     this.units = units;
-    const map = new Map<ParamId, ParamDecl>();
-    for (const d of decls) {
-      if (map.has(d.id)) throw new InvalidRegistry('Law 4', `parameter ${d.id} declared twice`);
-      finite(d.value, `parameter ${d.id}`);
-      if (d.unit.length === 0) throw new InvalidRegistry('Law 8', `parameter ${d.id} has no unit`);
-      if (d.why.length === 0)
-        throw new InvalidRegistry('Law 16', `parameter ${d.id} has no reason`);
-      if (d.kind === 'placeholder' && d.standsInFor === undefined) {
-        throw new InvalidRegistry(
-          'XI-14',
-          `placeholder ${d.id} does not name the mechanism it stands in for`,
-        );
-      }
-      if (d.kind !== 'placeholder' && d.standsInFor !== undefined) {
-        throw new InvalidRegistry(
-          'XI-14',
-          `${d.id} names a scheduled death but is declared ${d.kind}`,
-        );
-      }
-      /**
-       * Law 2, XI-14: ASKED OF A SHAPE **AND OF A TECHNOLOGY**, and of nothing else.
-       *
-       * Firing on `shape` alone polices the honest mistake and misses the one that matters: a
-       * placeholder mislabelled sails through both field guards above while its own prose says
-       * which item kills it. `loan.operatingCost` was exactly that — a wage bill charged to every
-       * borrower and paid to nobody, declared a technology, naming 13d in its reason (item 13b.1).
-       *
-       * It is NOT asked of a policy or a preference, and that is a decision rather than an
-       * oversight: the eleven of those that cite a future item cite it for something else — a rate
-       * parliament owns from 14, a comparison that becomes real at 11 — and they are still there
-       * afterwards, with somebody else setting them. A TECHNOLOGY is different in kind: it is a
-       * fact about the world, and a fact about the world does not have a scheduled death. If an
-       * item kills it, it was a claim about the answer all along.
-       *
-       * A placeholder is exempt because naming the item is what a placeholder DOES; it names it in
-       * `standsInFor`, which the guard above already requires.
-       */
-      if ((d.kind === 'shape' || d.kind === 'technology') && namesAnItem(d.why)) {
-        throw new InvalidRegistry(
-          'Law 2',
-          `${d.kind} ${d.id} names a worklist item in its reason: a ${d.kind} with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, item }`,
-          { id: d.id },
-        );
-      }
-      map.set(d.id, Object.freeze({ ...d }));
+    this.decls = new Map<ParamId, ParamDecl>();
+    for (const d of decls) this.declare(d);
+  }
+
+  /**
+   * XI-14, Firm Birth A1 (12.4a): A NUMBER IS DECLARED WHEN ITS OWNER EXISTS. Every one the seed
+   * knows is declared at assembly; a firm born after it has three of its own (its hurdle, its
+   * horizon, the hours a tonne takes it), drawn under its own name the way a seeded firm's were,
+   * and they are declared here the period it is born. The guards are the same guards; what
+   * changes is only when they are asked. Twice is still twice (Law 4).
+   */
+  declare(d: ParamDecl): void {
+    if (this.decls.has(d.id)) throw new InvalidRegistry('Law 4', `parameter ${d.id} declared twice`);
+    finite(d.value, `parameter ${d.id}`);
+    if (d.unit.length === 0) throw new InvalidRegistry('Law 8', `parameter ${d.id} has no unit`);
+    if (d.why.length === 0)
+      throw new InvalidRegistry('Law 16', `parameter ${d.id} has no reason`);
+    if (d.kind === 'placeholder' && d.standsInFor === undefined) {
+      throw new InvalidRegistry(
+        'XI-14',
+        `placeholder ${d.id} does not name the mechanism it stands in for`,
+      );
     }
-    this.decls = map;
+    if (d.kind !== 'placeholder' && d.standsInFor !== undefined) {
+      throw new InvalidRegistry(
+        'XI-14',
+        `${d.id} names a scheduled death but is declared ${d.kind}`,
+      );
+    }
+    /**
+     * Law 2, XI-14: ASKED OF A SHAPE **AND OF A TECHNOLOGY**, and of nothing else.
+     *
+     * Firing on `shape` alone polices the honest mistake and misses the one that matters: a
+     * placeholder mislabelled sails through both field guards above while its own prose says
+     * which item kills it. `loan.operatingCost` was exactly that — a wage bill charged to every
+     * borrower and paid to nobody, declared a technology, naming 13d in its reason (item 13b.1).
+     *
+     * It is NOT asked of a policy or a preference, and that is a decision rather than an
+     * oversight: the eleven of those that cite a future item cite it for something else — a rate
+     * parliament owns from 14, a comparison that becomes real at 11 — and they are still there
+     * afterwards, with somebody else setting them. A TECHNOLOGY is different in kind: it is a
+     * fact about the world, and a fact about the world does not have a scheduled death. If an
+     * item kills it, it was a claim about the answer all along.
+     *
+     * A placeholder is exempt because naming the item is what a placeholder DOES; it names it in
+     * `standsInFor`, which the guard above already requires.
+     */
+    if ((d.kind === 'shape' || d.kind === 'technology') && namesAnItem(d.why)) {
+      throw new InvalidRegistry(
+        'Law 2',
+        `${d.kind} ${d.id} names a worklist item in its reason: a ${d.kind} with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, item }`,
+        { id: d.id },
+      );
+    }
+    this.decls.set(d.id, Object.freeze({ ...d }));
   }
 
   /**

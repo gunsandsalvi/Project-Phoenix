@@ -80,7 +80,7 @@ import type {
   Instruments,
   InstrumentsReads,
 } from '../register/instruments.js';
-import type { ParamRegister } from '../registry/params.js';
+import type { ParamRegister, ParamDecl } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { Classified } from '../registry/universe.js';
 import type { Prng } from '../rng/prng.js';
@@ -711,6 +711,13 @@ export interface CellEvents {
     cause: string,
   ): PartyId;
   /**
+   * XI-15, Small-Business Pools A6.c (12.4): PROMOTION OUT OF THE POPULATION — `members` of the
+   * cell become the named party `to`, which must have just entered and hold nothing; their share
+   * of every lot goes with them. The whole cell may go, and then the cell ceases with `to` as its
+   * successor. A weight event with a cause, and the population falls by exactly the members.
+   */
+  promote(cell: PartyId, members: number, to: PartyId, cause: string): void;
+  /**
    * XI-15, Households F1.b: every member of this cell has died. It ceases to a named successor and
    * it must already hold nothing — what the dead held goes to somebody by name first (Appendix B).
    */
@@ -968,6 +975,11 @@ export interface MechanismContext extends WorldReads {
    * is there at the start and nothing else may — this is how anybody arrives after that.
    */
   enter(party: Party): void;
+  /**
+   * XI-14 (12.4a): a number whose owner was born after the seal is declared the period it is born,
+   * through the one register every number lives in; journaled as `param.declared`.
+   */
+  declare(decl: ParamDecl): void;
   /**
    * Register E4, E5, Equity D4: restate the count of a line. Every holding's quantity is multiplied
    * and its basis per unit divided, every price ever printed is re-denominated, and the issued

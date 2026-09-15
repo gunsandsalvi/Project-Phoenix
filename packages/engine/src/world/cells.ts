@@ -258,3 +258,46 @@ function nextSplitId(c: CellParty, parties: Parties): PartyId {
     if (!parties.has(id)) return id;
   }
 }
+
+/**
+ * XI-15, Small-Business Pools A6.c, Firm Birth A1 (12.4): PROMOTION OUT OF THE POPULATION. The
+ * members leave the cell with their share of every lot and become the named party `to` — which
+ * entered this period and holds nothing, so what arrives is theirs and nobody's else. The weight
+ * event carries before and after, because unlike a re-key the population of cells falls by what
+ * left (the units family reads exactly that); it says what moved, per instrument, so the flows
+ * family reads the explanation on both sides. When the whole cell goes it ceases with `to` as its
+ * successor, and what it had agreed passes to the party it became.
+ */
+export function promoteCell(
+  cell: PartyId,
+  members: number,
+  to: PartyId,
+  cause: string,
+  period: Period,
+  cycle: Cycle,
+  d: CellDeps,
+): void {
+  const c = d.parties.cell(cell);
+  positiveCount(members, 'members promoted');
+  forbid(members <= c.weight, 'XI-15', `cannot promote ${members} of ${c.weight} members of ${cell}`);
+  const target = d.parties.get(to);
+  forbid(target.representation === 'named', 'A6.c', `${to} is a cell; a promotion makes a named party`);
+  forbid(target.status.alive, 'XI-3', `${to} is not alive to be promoted into`);
+  forbid(d.register.holdingsOf(to).length === 0, 'XI-15', `${to} already holds something; a promotion arrives with the members' own pieces`);
+  const moved = d.register.moveShare(cell, to, members, c.weight, period, cycle);
+  const after = c.weight - members;
+  d.parties.applyWeight({ kind: 'promotion', party: cell, before: c.weight, after, period, cause });
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [cell, to],
+    { kind: 'promotion', from: cell, to, members, before: c.weight, after, cause, moved: Object.fromEntries(moved) },
+    true,
+  );
+  if (after === 0) {
+    d.parties.cease(cell, period, to);
+    succeedAgreements(cell, to, period, cycle, d);
+    d.journal.record(period, cycle, 'party.ceased', [cell, to], { successor: to, cause }, true);
+  }
+}

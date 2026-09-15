@@ -741,7 +741,8 @@ export class Register {
       'XI-15',
       `${to} already has holdings; a split creates a fresh party`,
     );
-    forbid(members > 0 && members < weight, 'XI-15', `moving ${members} of ${weight} members`);
+    // 12.4: a promotion may take the last member with it; a split still leaves somebody behind.
+    forbid(members > 0 && members <= weight, 'XI-15', `moving ${members} of ${weight} members`);
     const src = this.byHolder.get(from);
     if (src !== undefined) {
       const dst = new Map<InstrumentId, MutableHolding>();

@@ -11146,3 +11146,23 @@ a reason. The 16 reds of `equity.test.ts` and the one of `equity-ledger.test.ts`
 are unchanged.
 
 **Checks.** `check:opens` green; lint, typecheck green.
+
+## Item 12.4a.1 — The kernel's doors for a party born after the seed
+
+Two doors the promotion of a small firm into a named one needs, and neither existed. A number
+whose owner is born after the seal is declared the period it is born: `ParamRegister.declare`
+asks the constructor's own guards of one declaration, and `ctx.declare` journals it
+(`param.declared`); XI-14 is about declaration, not about timing, and twice is still twice.
+`ctx.cells.promote` moves members out of a cell into a named party that entered this period and
+holds nothing, with their share of every lot; the weight event carries before and after, because
+unlike a re-key the population of cells falls by what left — which is exactly what the units
+family reads — and what moved per instrument, which the flows family reads on both sides. When the
+whole cell goes it ceases with the party it became as its successor. `moveShare` may take the last
+member now; a split still leaves somebody behind.
+
+**Not yet, and sized:** a party that entered as a `FIRM` decides nothing, because the firms and
+equity modules index their rows once at assembly. 12.4a.2 says the three changes that make a born
+firm a firm to them, and the trigger — a cell whose equity per member reaches the smallest named
+firm's, a read of the world and never the lattice's edge.
+
+**Checks.** `promotion.test.ts` green; `check:opens` green; lint, typecheck green.

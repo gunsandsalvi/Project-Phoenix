@@ -114,7 +114,7 @@ import { classify, type Classified } from '../registry/universe.js';
 import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { type CellDeps, ceaseCell, dieCell, mergeCells, reKeyCell, weightEvent } from './cells.js';
+import { type CellDeps, ceaseCell, dieCell, mergeCells, promoteCell, reKeyCell, weightEvent } from './cells.js';
 import type { CellParty } from '../parties/party.js';
 import { succeedAgreements } from './succession.js';
 import type { Subject,
@@ -2093,6 +2093,9 @@ export class World {
         die: (cell, successor, cause) => {
           dieCell(cell, successor, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },
+        promote: (cell, members, to, cause) => {
+          promoteCell(cell, members, to, cause, this.currentPeriod, this.currentCycle, cellDeps);
+        },
       },
       contracts: this.contracts,
       voyages: this.voyages,
@@ -2173,6 +2176,17 @@ export class World {
       },
       split: (instrument, ratio) => {
         this.splitInstrument(instrument, ratio);
+      },
+      declare: (decl) => {
+        this.params.declare(decl);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'param.declared',
+          [String(decl.id)],
+          { id: String(decl.id), kind: decl.kind, owner: decl.owner, value: decl.value, unit: decl.unit },
+          true,
+        );
       },
       moveBank: (party, to, reason) => this.moveBank(party, to, reason),
       chooseBanks: () => {
