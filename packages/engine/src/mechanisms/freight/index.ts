@@ -433,7 +433,7 @@ function cargo(
       : asCash(0, 'a shipper with no lots of it has paid nothing for it');
     const r = ctx.settle({
       legs: [
-        { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed', fromCell: none() },
+        { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed'},
         {
           kind: 'create',
           party: shipper,
@@ -444,7 +444,6 @@ function cargo(
             take,
             'what a unit cost delivered',
           ),
-          toCell: none(),
         },
         {
           kind: 'money',
@@ -452,8 +451,6 @@ function cargo(
           to: ctx.accountOf(carrier, ccy),
           ccy,
           amount: share,
-          fromCell: none(),
-          toCell: none(),
         },
         {
           kind: 'voyage',
@@ -547,14 +544,13 @@ function arrive(ctx: MechanismContext): void {
     const total = sum(held.lots.map((lot) => lot.qty)).value;
     const r = ctx.settle({
       legs: [
-        { kind: 'destroy', party: v.shipper, instrument: v.cargo, qty: asQty(units), why: 'consumed', fromCell: none() },
+        { kind: 'destroy', party: v.shipper, instrument: v.cargo, qty: asQty(units), why: 'consumed'},
         {
           kind: 'create',
           party: v.shipper,
           instrument: there,
           qty: asQty(units),
           costPerUnit: pricedAt(cost, total, 'what a unit cost delivered'),
-          toCell: none(),
         },
         { kind: 'voyage', act: 'land', voyage: v.id },
       ],

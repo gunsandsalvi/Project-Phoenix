@@ -23,7 +23,6 @@ import {
   assemble,
   isLoan,
   loanKind,
-  none,
   partyId,
   type InstructionDraft,
   type Leg,
@@ -123,8 +122,6 @@ function overspendsItsLimit(at = 2): SystemModule {
                 'a touch more than it holds',
               ),
             ),
-            fromCell: none(),
-            toCell: none(),
           };
           ctx.settle({ legs: [leg], cause: 'transfer', reason: 'a bill' });
         },
@@ -170,8 +167,6 @@ function overspends(times: number, at = 2): SystemModule {
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
             amount: upTick(mul(has, times, 'what it tries to spend')),
-            fromCell: none(),
-            toCell: none(),
           };
           const draft: InstructionDraft = { legs: [leg], cause: 'transfer', reason: 'a bill' };
           ctx.settle(draft);

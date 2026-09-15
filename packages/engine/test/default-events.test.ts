@@ -55,8 +55,6 @@ function drain(): SystemModule {
             to: { holder: SINK, issuer: ctx.parties.get(SINK).bank },
             ccy: USD,
             amount: cash,
-            fromCell: { some: false },
-            toCell: { some: false },
           };
           const draft: InstructionDraft = { legs: [leg], cause: 'transfer', reason: 'drained' };
           ctx.settle(draft);

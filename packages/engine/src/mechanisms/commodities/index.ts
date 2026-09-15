@@ -33,7 +33,6 @@ import {
   
   valueAt,
 } from '../../core/measure.js';
-import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import {
   isGoodTerms,
@@ -224,8 +223,6 @@ function lease(
               to: ctx.accountOf(letter.party, ccy),
               ccy,
               amount: due,
-              fromCell: none(),
-              toCell: none(),
             },
           ],
           cause: 'transfer',

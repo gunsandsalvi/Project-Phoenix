@@ -20,7 +20,6 @@ import {
   USD,
   TREASURY_US,
   assemble,
-  cellSide,
   foundationSeedFor,
   drawBanks,
   drawFirms,
@@ -34,7 +33,7 @@ import {
   some,
   sovereignInstruments,
   sum,
-  totalFor,
+  totalOverMembers,
   type InstructionDraft,
   type MechanismContext,
   type Order,
@@ -755,8 +754,6 @@ describe('settlement contracts', () => {
           to: { holder: cell.id, issuer: cell.bank },
           ccy: USD,
           amount: asQty(10),
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'transfer',
@@ -780,7 +777,6 @@ describe('settlement contracts', () => {
         const payer = atA[0]?.id;
         const payee = atA[1]?.id;
         if (payer === undefined || payee === undefined) throw new Error('no two firms at bank a');
-        const side = cellSide(cell, PAYMENT);
         const draft: InstructionDraft = {
           legs: [
             {
@@ -788,9 +784,7 @@ describe('settlement contracts', () => {
               from: { holder: payer, issuer: BANK_A },
               to: { holder: cell.id, issuer: BANK_B },
               ccy: USD,
-              amount: totalFor(cell, PAYMENT),
-              fromCell: none(),
-              toCell: side === undefined ? none() : some(side),
+              amount: totalOverMembers(cell, PAYMENT),
             },
           ],
           cause: 'transfer',
@@ -804,7 +798,7 @@ describe('settlement contracts', () => {
         expect(rec.reserveLegs).toHaveLength(2);
         // Counts of cents, so the two sides are EXACTLY equal and no closeness is asked for.
         expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, USD))).toBe(
-          reservesA - totalFor(cell, PAYMENT),
+          reservesA - totalOverMembers(cell, PAYMENT),
         );
         expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, USD))).toBe(
           cellBefore + PAYMENT,
@@ -818,8 +812,6 @@ describe('settlement contracts', () => {
               to: { holder: payee, issuer: BANK_A },
               ccy: USD,
               amount: asQty(5),
-              fromCell: none(),
-              toCell: none(),
             },
           ],
           cause: 'transfer',

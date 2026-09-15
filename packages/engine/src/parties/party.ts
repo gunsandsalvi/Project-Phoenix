@@ -9,6 +9,7 @@
  * Which representation a kind takes is its profile's to say (Law 15).
  */
 import { forbid } from '../core/assert.js';
+import { scaleQty, type Qty } from '../core/tick.js';
 import type { Period } from '../calendar/calendar.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import { cohortId, type PartyId, type PartyKindId, regionId, type RegionId } from '../core/ids.js';
@@ -423,4 +424,24 @@ export function partiesReads(parties: Parties): PartiesReads {
     ofKind: (kind: PartyKindId) => parties.ofKind(kind),
     resolve: (id: PartyId) => parties.resolve(id),
   });
+}
+
+/**
+ * XI-15, Law 8, 0f.2: A PER-MEMBER RULE OVER A CELL. Some things are stated per person and paid to
+ * every person — a transfer, a tax, a wage — and the total a cell moves is that number, put on the
+ * unit's grid for one member, times the people in it. It is arithmetic on a count and never a leg
+ * denominated per member: the leg moves the total and the register holds the total. A named party
+ * stands for one of itself.
+ */
+export function totalOverMembers(p: Party, perMember: Qty): Qty {
+  return scaleQty(perMember, weightOf(p), `total for ${p.id}`);
+}
+
+export function gridPerMember(
+  registry: { deliverable(x: number): Qty },
+  party: Party,
+  perMemberWanted: number,
+): { readonly perMember: Qty; readonly total: Qty } {
+  const perMember = registry.deliverable(perMemberWanted);
+  return { perMember, total: totalOverMembers(party, perMember) };
 }

@@ -17,7 +17,6 @@ import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
-import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -272,8 +271,6 @@ function settleSeriesNames(ctx: MechanismContext): void {
               to: ctx.accountOf(buyer, c.ccy),
               ccy: c.ccy,
               amount,
-              fromCell: none(),
-              toCell: none(),
             },
           ],
           cause: 'corporateAction',
@@ -325,8 +322,6 @@ function settleEvents(ctx: MechanismContext): void {
         to: ctx.accountOf(owed > 0 ? buyer : seller, c.ccy),
         ccy: c.ccy,
         amount,
-        fromCell: none(),
-        toCell: none(),
       });
     }
     const r = ctx.settle({

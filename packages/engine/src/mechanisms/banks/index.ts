@@ -44,8 +44,7 @@ import { addMonths } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId, partyId } from '../../core/ids.js';
-import { weightOf } from '../../parties/party.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
+import { weightOf, gridPerMember } from '../../parties/party.js';
 import { atLeast, atMost, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -643,8 +642,6 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
             qty: paying,
             pricePerUnit: some(asPerPiece(1, 'at what it promised')),
             accruedPerUnit: none(),
-            fromCell: none(),
-            toCell: none(),
           },
           {
             kind: 'money',
@@ -652,8 +649,6 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
             to: ctx.accountOf(broker, ccy),
             ccy,
             amount: paying,
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'maturity',
@@ -733,14 +728,11 @@ function write(
    */
   const who = ctx.parties.get(borrower);
   const members = weightOf(who);
-  const share = shareFor(
+  const share = gridPerMember(
     ctx.registry,
     who,
-    currencyUnit(ccy),
-    over(wanted, asRatio(members, 'the members it has'), 'per member'),
-  );
+    over(wanted, asRatio(members, 'the members it has'), 'per member'));
   const principal = share.total;
-  const side = cellSide(who, share.perMember);
   if (principal <= 0) return undefined;
   const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
   if (existing !== undefined) return draw(ctx, existing, principal, ccy);
@@ -772,8 +764,6 @@ function write(
       qty: principal,
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: side === undefined ? none() : some(side),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -789,8 +779,6 @@ function write(
       to: ctx.accountOf(borrower, ccy),
       ccy,
       amount: principal,
-      fromCell: none(),
-      toCell: side === undefined ? none() : some(side),
     },
   ];
   const r = ctx.settle({ legs, cause: 'issuance', reason: `${bank} lends ${principal} to ${borrower}` });
@@ -847,8 +835,6 @@ function draw(
       qty: amount,
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -857,8 +843,6 @@ function draw(
       to: ctx.accountOf(borrower, ccy),
       ccy,
       amount,
-      fromCell: none(),
-      toCell: none(),
     },
   ];
   const r = ctx.settle({

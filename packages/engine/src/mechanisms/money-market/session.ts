@@ -262,8 +262,6 @@ export function writeRow(
       qty: s.amount,
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -271,8 +269,6 @@ export function writeRow(
       to: ctx.accountOf(s.borrower, ccy),
       ccy,
       amount: s.amount,
-      fromCell: none(),
-      toCell: none(),
     },
     ...cover.map(
       (c): Leg => ({
@@ -282,7 +278,6 @@ export function writeRow(
         instrument: c.instrument,
         qty: c.qty,
         secures: String(id),
-        pledgorCell: none(),
       }),
     ),
   ];

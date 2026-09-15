@@ -142,8 +142,6 @@ export function moveFund(
       qty,
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -151,8 +149,6 @@ export function moveFund(
       to: ctx.accountOf(up ? house : member, ccy),
       ccy,
       amount: qty,
-      fromCell: none(),
-      toCell: none(),
     },
   ];
   ctx.settle({
@@ -205,8 +201,6 @@ export function runWaterfall(
           qty: paid,
           pricePerUnit: some(asPerPiece(0, 'at what it promised')),
           accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'default',

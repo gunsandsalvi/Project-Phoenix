@@ -72,9 +72,8 @@ import { addQty, asQty, downTick, NO_QTY, subQty, upTick, type Qty } from '../..
 const ONE_PIECE = asQty(1);
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { wasTraded } from '../../prices/price-store.js';
-import { weightOf } from '../../parties/party.js';
+import { weightOf, gridPerMember, totalOverMembers } from '../../parties/party.js';
 import type { Instrument } from '../../register/instruments.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
@@ -437,8 +436,6 @@ function payFee(ctx: MechanismContext, m: Mandate, amount: Qty): void {
     to: ctx.accountOf(manager.id, ctx.registry.currencyOf(fund.region)),
     ccy: ctx.registry.currencyOf(fund.region),
     amount,
-    fromCell: none(),
-    toCell: none(),
   };
   const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `${fund.id} pays its manager` });
   ctx.record(
@@ -487,28 +484,22 @@ function subscribe(
     paid = ctx.registry.cashFor(valueAt(perShare, shares, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
-  const side = cellSide(party, shares);
-  const money = cellSide(party, paid);
   const legs: Leg[] = [
     {
       kind: 'money',
       from: ctx.accountOf(holder, ccy),
       to: ctx.accountOf(fund.id, ccy),
       ccy,
-      amount: totalFor(party, paid),
-      fromCell: money === undefined ? none() : some(money),
-      toCell: none(),
+      amount: totalOverMembers(party, paid),
     },
     {
       kind: 'asset',
       from: fund.id,
       to: holder,
       instrument: share.id,
-      qty: totalFor(party, shares),
+      qty: totalOverMembers(party, shares),
       pricePerUnit: some(perShare),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: side === undefined ? none() : some(side),
     },
   ];
   const r = ctx.settle({ legs, cause: 'issuance', reason: `${holder} subscribes to ${fund.id}` });
@@ -546,7 +537,7 @@ function redeem(
     fund.id,
     moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
   );
-  const owedNow = ctx.registry.payable(valueAt(perShare, totalFor(party, asked), 'what it owes this holder'),
+  const owedNow = ctx.registry.payable(valueAt(perShare, totalOverMembers(party, asked), 'what it owes this holder'),
   );
   const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
@@ -571,28 +562,22 @@ function redeem(
    * under its own name and the fund is gated, which is the answer C2.b already has for this.
    */
   if (material(sharesNow, 2, asked) && sharesNow > 0 && perMemberCash > 0) {
-    const side = cellSide(party, sharesNow);
-    const money = cellSide(party, perMemberCash);
     const legs: Leg[] = [
       {
         kind: 'asset',
         from: holder,
         to: fund.id,
         instrument: share.id,
-        qty: totalFor(party, sharesNow),
+        qty: totalOverMembers(party, sharesNow),
         pricePerUnit: some(perShare),
         accruedPerUnit: none(),
-        fromCell: side === undefined ? none() : some(side),
-        toCell: none(),
       },
       {
         kind: 'money',
         from: ctx.accountOf(fund.id, ccy),
         to: ctx.accountOf(holder, ccy),
         ccy,
-        amount: totalFor(party, perMemberCash),
-        fromCell: none(),
-        toCell: money === undefined ? none() : some(money),
+        amount: totalOverMembers(party, perMemberCash),
       },
     ];
     const r = ctx.settle({ legs, cause: 'maturity', reason: `${fund.id} redeems for ${holder}` });
@@ -1129,7 +1114,7 @@ function owedOn(ctx: MechanismContext, b: Book, m: Mandate): Qty {
     // money — and what the fund must find is the piece above, because paying all but a fraction of
     // a cent is not paying. It is the same rounding a subscription takes the other way (`cashFor`).
     terms.push(
-      upTick(valueAt(q.navStruck, totalFor(holder, q.sharesPerMember), 'what it is owed')),
+      upTick(valueAt(q.navStruck, totalOverMembers(holder, q.sharesPerMember), 'what it is owed')),
     );
   }
   return asQty(sum(terms).value, 'what its queue is owed');
@@ -1176,7 +1161,7 @@ function payQueue(ctx: MechanismContext, b: Book, m: Mandate): void {
     {
       fund: fundId,
       requests: left.length,
-      sharesOwed: sum(left.map((q) => totalFor(ctx.parties.get(q.holder), q.sharesPerMember))).value,
+      sharesOwed: sum(left.map((q) => totalOverMembers(ctx.parties.get(q.holder), q.sharesPerMember))).value,
       oldest: left.reduce<number>((at, q) => atMost(q.since, at, 'the oldest of them is as old as the oldest'), ctx.period),
     },
     true,
@@ -1493,16 +1478,12 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
     // Law 8: what reaches a holder is whole pieces of money, per member. A holding whose share of
     // the pass-through is less than one piece is paid nothing this period, and the cash stays in
     // the fund for the next one — which is where it was anyway.
-    const share2 = shareFor(
+    const share2 = gridPerMember(
       ctx.registry,
       party,
-      currencyUnit(ccy),
-      valueAt(perShare, perMemberUnits, 'what a member is paid'),
-    );
-    const perMemberCash = share2.perMember;
+      valueAt(perShare, perMemberUnits, 'what a member is paid'));
     const total = share2.total;
     if (!material(total, 2, total) || total <= 0) continue;
-    const side = cellSide(party, perMemberCash);
     const r = ctx.settle({
       legs: [
         {
@@ -1511,8 +1492,6 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
           to: ctx.accountOf(holder, ccy),
           ccy,
           amount: total,
-          fromCell: none(),
-          toCell: side === undefined ? none() : some(side),
         },
       ],
       cause: 'corporateAction',
@@ -2045,7 +2024,7 @@ function noRequestVanishes(b: Book): Family {
       }
       const queued = new Map<string, number>();
       for (const q of b.queued) {
-        addTo(queued, `${q.fund}|${q.holder}`, totalFor(view.parties.get(q.holder), q.sharesPerMember));
+        addTo(queued, `${q.fund}|${q.holder}`, totalOverMembers(view.parties.get(q.holder), q.sharesPerMember));
       }
       for (const [k, want] of asked) {
         const done = plus(
@@ -2076,7 +2055,7 @@ function totalAsked(view: AuditView, data: Record<string, unknown>): number {
   const per = data['sharesPerMember'];
   const holder = data['holder'];
   if (typeof per !== 'number' || typeof holder !== 'string') return 0;
-  return totalFor(view.parties.get(holder as PartyId), asQty(per, 'shares asked back per member'));
+  return totalOverMembers(view.parties.get(holder as PartyId), asQty(per, 'shares asked back per member'));
 }
 
 /**

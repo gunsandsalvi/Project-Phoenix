@@ -40,7 +40,7 @@ import {
   scale,
 } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
-import { asQty, scaleQty, downTick } from '../../core/tick.js';
+import { asQty, scaleQty } from '../../core/tick.js';
 import {
   agreementKindId, partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
@@ -317,7 +317,6 @@ function handToProbate(
   region: RegionId,
 ): readonly Unpaid[] {
   const view = ctx.participant(from);
-  const weight = weightOf(ctx.parties.get(from));
   const legs: Leg[] = [];
   const monies = new Set<CurrencyCode>([ctx.registry.currencyOf(region)]);
   for (const h of view.holdings()) {
@@ -337,15 +336,12 @@ function handToProbate(
       qty: total,
       pricePerUnit: print.some ? some(print.value.price) : none(),
       accruedPerUnit: none(),
-      fromCell: some({ perMember: asQty(downTick(total / weight), 'per member'), weight }),
-      toCell: none(),
     });
   }
   const cash: { readonly ccy: CurrencyCode; readonly amount: number }[] = [];
   for (const ccy of monies) {
     const amount = view.cash(ccy);
     if (amount <= 0) continue;
-    const perMember = asQty(downTick(amount / weight), 'per member');
     cash.push({ ccy, amount });
     legs.push({
       kind: 'money',
@@ -353,8 +349,6 @@ function handToProbate(
       to: ctx.accountOf(to, ccy),
       ccy,
       amount: asQty(amount),
-      fromCell: some({ perMember, weight }),
-      toCell: none(),
     });
   }
   if (legs.length === 0) return [];
@@ -505,8 +499,6 @@ export function settleEstates(ctx: MechanismContext): void {
           qty: scaleQty(perMember, heir.weight, 'what they get between them'),
           pricePerUnit: print.some ? some(print.value.price) : none(),
           accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: some({ perMember, weight: heir.weight }),
         });
       }
       for (const ccy of monies) {
@@ -528,8 +520,6 @@ export function settleEstates(ctx: MechanismContext): void {
           receipt: { of: 'transfer' },
           ccy,
           amount: scaleQty(perMember, heir.weight, 'what they get between them'),
-          fromCell: none(),
-          toCell: some({ perMember, weight: heir.weight }),
         });
       }
       if (legs.length === 0) continue;

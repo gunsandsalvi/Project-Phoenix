@@ -33,7 +33,6 @@ import {
   type PartyId,
 } from '../../core/ids.js';
 import { asCash, type Cash, heldAsMoney, minus, type PerPiece, plus } from '../../core/measure.js';
-import { none } from '../../core/option.js';
 import { sum } from '../../core/num.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -205,8 +204,6 @@ export function callCapital(
           to: ctx.accountOf(pool, ccy),
           ccy,
           amount: wanted,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'transfer',

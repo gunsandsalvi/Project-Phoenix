@@ -22,8 +22,6 @@ import { currencyUnit, moneyInstrumentId, paramId, partyId, partyKindId } from '
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import { asCash, type Cash, scale, heldAsMoney } from '../../core/measure.js';
-import { none } from '../../core/option.js';
-import {} from '../../parties/party.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import { MM_PARAMS } from './data.js';
@@ -93,8 +91,6 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
           to: ctx.accountOf(insurer, ccy),
           ccy,
           amount: due,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'transfer',

@@ -122,8 +122,6 @@ export function moveMargin(
       // D3: it is returned at what it is, not at a price — a claim to cash is worth the cash.
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -131,8 +129,6 @@ export function moveMargin(
       to: ctx.accountOf(up ? holder : poster, ccy),
       ccy,
       amount: qty,
-      fromCell: none(),
-      toCell: none(),
     },
   ];
 }
@@ -216,7 +212,6 @@ export function pledgeInstead(
       instrument: h.instrument,
       qty: units,
       secures: `margin with ${holder} in ${ccy}`,
-      pledgorCell: none(),
     });
     left = minus(left, valueAt(per, units, 'what these units cover'), 'the shortfall after this line');
   }

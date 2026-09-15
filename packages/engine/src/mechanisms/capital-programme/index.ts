@@ -33,7 +33,6 @@ import { addTo, atMost, dustOf, finite, material, sub, sum, withinDust, zeroIfNo
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
-import { cellSideOf } from '../../ledger/settlement.js';
 import { displayName } from '../../registry/naming.js';
 import { WHOLE_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -231,9 +230,7 @@ function retire(ctx: MechanismContext): void {
     if (!wornOut(terms, on)) continue;
     const units = ctx.register.free(h.holder, i.id);
     if (!material(units, h.lots.length + 1, units)) continue;
-    const party = ctx.parties.get(h.holder);
     // 0f.1: `free` is the cell's TOTAL; the leg moves it and the side is derived from it.
-    const side = cellSideOf(party, units);
     const record = ctx.settle({
       legs: [
         {
@@ -242,7 +239,6 @@ function retire(ctx: MechanismContext): void {
           instrument: i.id,
           qty: units,
           why: 'scrapped',
-          fromCell: side === undefined ? none() : some(side),
         },
       ],
       cause: 'corporateAction',
@@ -291,8 +287,6 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     const lost = ctx.registry.deliverable(scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
     );
     if (!material(lost, 2, units) || lost <= 0) continue;
-    const party = ctx.parties.get(h.holder);
-    const side = cellSideOf(party, lost);
     const record = ctx.settle({
       legs: [
         {
@@ -301,7 +295,6 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
           instrument: i.id,
           qty: lost,
           why: 'scrapped',
-          fromCell: side === undefined ? none() : some(side),
         },
       ],
       cause: 'corporateAction',
@@ -353,8 +346,8 @@ function purchases(
       const i = ctx.instruments.get(leg.instrument);
       if (!isGoodTerms(i.terms) || i.terms.subUnit !== d.madeFrom) continue;
       const byRegion = out.get(leg.to) ?? new Map<string, number>();
-      // XI-15: a cell's leg is per member; a named buyer's is the whole of it.
-      addTo(byRegion, i.terms.region, leg.toCell.some ? leg.toCell.value.perMember : leg.qty);
+      // 0f.2: a leg moves the party's total, for a cell as for a named buyer.
+      addTo(byRegion, i.terms.region, leg.qty);
       out.set(leg.to, byRegion);
     }
   }
@@ -382,9 +375,7 @@ function commissionOne(
   const cost = costOfDraw(holding.value.lots, qty);
   const serviceDate = ctx.calendar.startOf(ctx.period);
   const id = vintage(ctx, d, region, serviceDate);
-  const party = ctx.parties.get(buyer);
   // 0f.1: `free` is the cell's TOTAL; what is built is that, and the side is derived from it.
-  const side = cellSideOf(party, qty);
   const total = qty;
   const legs: Leg[] = [
     {
@@ -393,7 +384,6 @@ function commissionOne(
       instrument: good,
       qty: total,
       why: 'consumed',
-      fromCell: side === undefined ? none() : some(side),
     },
     {
       kind: 'create',
@@ -402,7 +392,6 @@ function commissionOne(
       qty: total,
       // C4, A6: what the plant cost is what the machines cost. Nothing is added at the door.
       costPerUnit: pricedAt(cost, qty, 'what a unit of plant cost'),
-      toCell: side === undefined ? none() : some(side),
     },
   ];
   const record = ctx.settle({
@@ -453,10 +442,10 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
             moved.set(key(leg.party, leg.instrument), list);
           } else if (isAssetLeg(leg)) {
             const into = moved.get(key(leg.to, leg.instrument)) ?? [];
-            into.push(leg.toCell.some ? leg.toCell.value.perMember : leg.qty);
+            into.push(leg.qty);
             moved.set(key(leg.to, leg.instrument), into);
             const from = moved.get(key(leg.from, leg.instrument)) ?? [];
-            from.push(negQty(leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty, 'what left'));
+            from.push(negQty(leg.qty, 'what left'));
             moved.set(key(leg.from, leg.instrument), from);
           }
         }

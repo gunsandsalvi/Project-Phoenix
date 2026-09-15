@@ -52,17 +52,14 @@ import {
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import {
-  agreementKindId,
-  type AgreementId, currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
+import { agreementKindId, type AgreementId, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { addQty, asQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, cellSideOf, shareFor } from '../../ledger/settlement.js';
-import { keyOf, weightOf } from '../../parties/party.js';
+import { keyOf, weightOf, gridPerMember } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
 import { creditorOf, isLoan } from '../../registry/credit.js';
@@ -414,17 +411,14 @@ function collect(ctx: MechanismContext): void {
       asRatio(weightOf(tenant), 'the members it has'),
       'per member of the cell that pays it',
     );
-    const share = shareFor(ctx.registry, tenant, currencyUnit(ccy), perMember);
+    const share = gridPerMember(ctx.registry, tenant, perMember);
     if (share.total <= 0) continue;
-    const side = cellSide(tenant, share.perMember);
     const leg: Leg = {
       kind: 'money',
       from: ctx.accountOf(lease.tenant, ccy),
       to: ctx.accountOf(lease.landlord, ccy),
       ccy,
       amount: share.total,
-      fromCell: side === undefined ? none() : some(side),
-      toCell: none(),
     };
     ctx.settle({ legs: [leg], cause: 'transfer', reason: `rent on ${lease.id}` });
   }
@@ -616,7 +610,6 @@ function charge(ctx: MechanismContext): void {
       const pledged = atMost(covers, free, 'it can pledge no more of it than it holds');
       if (pledged <= 0) continue;
       const share = { total: pledged };
-      const side = cellSideOf(cell, pledged);
       ctx.settle({
         legs: [
           {
@@ -626,7 +619,6 @@ function charge(ctx: MechanismContext): void {
             instrument: id,
             qty: share.total,
             secures: String(m.id),
-            pledgorCell: side === undefined ? none() : some(side),
           },
         ],
         cause: 'transfer',
@@ -675,8 +667,6 @@ function foreclose(ctx: MechanismContext): void {
             qty: lien.qty,
             pricePerUnit: some(print.value.price),
             accruedPerUnit: none(),
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'corporateAction',

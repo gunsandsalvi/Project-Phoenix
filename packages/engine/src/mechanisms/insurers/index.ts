@@ -566,8 +566,6 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
           qty,
           pricePerUnit: some(outcome.price),
           accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: none(),
         },
         {
           kind: 'money',
@@ -577,8 +575,6 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
           receipt: { of: 'sale' },
           ccy,
           amount: premium,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'corporateAction',

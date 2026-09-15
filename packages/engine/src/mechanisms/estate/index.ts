@@ -36,15 +36,14 @@ import {
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
+import { paramId, partyId, partyKindId } from '../../core/ids.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import type { Process } from '../../register/processes.js';
 import { material, sub, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
-import { shareFor } from '../../ledger/settlement.js';
-import { weightOf } from '../../parties/party.js';
+import { weightOf, gridPerMember } from '../../parties/party.js';
 import { issuerOf } from '../../register/instruments.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -163,8 +162,6 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
             to: { holder: id, issuer: i.issuer.some ? i.issuer.value : dead },
             ccy: i.ccy,
             amount: units,
-            fromCell: none(),
-            toCell: none(),
           }
         : {
             kind: 'asset',
@@ -176,8 +173,6 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
             // what it fetches is what a market gives the estate for it later (XI-8).
             pricePerUnit: none(),
             accruedPerUnit: none(),
-            fromCell: none(),
-            toCell: none(),
           };
     ctx.settle({ legs: [leg], cause: 'transfer', reason: `${dead} to its estate` });
   }
@@ -351,13 +346,10 @@ function repay(
   // Law 8, XI-15: a claim is redeemed in whole pieces of the money it is denominated in, and for a
   // cell in whole pieces for each member. What is left below a piece stays outstanding, which is
   // what a partial repayment is: the rest of the claim is still there (D2).
-  const share = shareFor(
+  const share = gridPerMember(
     ctx.registry,
     holder,
-    currencyUnit(ccy),
-    over(amount, asRatio(weightOf(holder), 'the members it has'), 'per member'),
-  );
-  const perMember = share.perMember;
+    over(amount, asRatio(weightOf(holder), 'the members it has'), 'per member'));
   if (share.total <= 0) return none<Qty>();
   const legs: Leg[] = [
     {
@@ -368,8 +360,6 @@ function repay(
       qty: share.total,
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
-      toCell: none(),
     },
     {
       kind: 'money',
@@ -377,8 +367,6 @@ function repay(
       to: ctx.accountOf(claim.holder, ccy),
       ccy,
       amount: share.total,
-      fromCell: none(),
-      toCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
     },
   ];
   const r = ctx.settle({
@@ -432,7 +420,6 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
           instrument: h.instrument,
           qty: units,
           why: 'scrapped',
-          fromCell: none(),
         },
       ],
       cause: 'corporateAction',
@@ -441,11 +428,6 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
     ctx.record('estate.abandoned', [estate, h.instrument], { estate, instrument: h.instrument, units }, true);
   }
   for (const c of claimsOn(ctx, estate)) {
-    const holder = ctx.parties.get(c.holder);
-    const perMember = ctx.registry.deliverable(holder.representation === 'cell'
-        ? over(c.units, asRatio(holder.weight, 'the members it has'), 'per member')
-        : c.units,
-    );
     const leg: Leg = {
       kind: 'asset',
       from: c.holder,
@@ -455,8 +437,6 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       // What it fetched is nothing. The holder's loss is what it was carrying, and it lands there.
       pricePerUnit: some(asPerPiece(0, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
-      toCell: none(),
     };
     ctx.settle({
       legs: [leg],

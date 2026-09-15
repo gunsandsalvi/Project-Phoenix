@@ -55,7 +55,7 @@ import {
 } from '../core/measure.js';
 import { addTo, atMost, finite, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
-import { asQty, downTick, negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
+import { negQty, onTick, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -70,7 +70,6 @@ import type { Realised,
   AccountRef,
   AssetLeg,
   AssumeLeg,
-  CellSide,
   CreateLeg,
   DestroyLeg,
   EquityEffect,
@@ -370,8 +369,6 @@ export class Settlement {
     for (const acct of [leg.from, leg.to]) this.validateAccount(acct, leg.ccy, ins);
     const unit = currencyUnit(leg.ccy);
     this.onTheGrid(leg.amount, unit, ins);
-    if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, unit, ins);
-    if (leg.toCell.some) this.onTheGrid(leg.toCell.value.perMember, unit, ins);
   }
 
   private validateAccount(acct: AccountRef, ccy: CurrencyCode, ins: Instruction): void {
@@ -419,9 +416,7 @@ export class Settlement {
       `instruction ${ins.id}: ${inst.id} is a claim, and a claim is issued and redeemed, never made`,
     );
     this.alive(leg.party, ins);
-    const side = leg.kind === 'create' ? leg.toCell : leg.fromCell;
     this.onTheGrid(leg.qty, inst.unit, ins);
-    if (side.some) this.onTheGrid(side.value.perMember, inst.unit, ins);
     if (leg.kind === 'create') {
       impossible(
         finite(leg.costPerUnit, 'cost per unit') >= 0,
@@ -481,7 +476,6 @@ export class Settlement {
       `instruction ${ins.id}: a lien says what it secures`,
     );
     this.onTheGrid(leg.qty, inst.unit, ins);
-    if (leg.pledgorCell.some) this.onTheGrid(leg.pledgorCell.value.perMember, inst.unit, ins);
   }
 
   /**
@@ -591,8 +585,6 @@ export class Settlement {
       );
     }
     this.onTheGrid(leg.qty, inst.unit, ins);
-    if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, inst.unit, ins);
-    if (leg.toCell.some) this.onTheGrid(leg.toCell.value.perMember, inst.unit, ins);
   }
 
   /**
@@ -1136,7 +1128,6 @@ export class Settlement {
             party: op.party,
             instrument: op.instrument,
             qty: negQty(op.qty, 'the other way'),
-            weight: weightOf(this.d.parties.get(op.party)),
             target: 'holding',
           });
           break;
@@ -1151,7 +1142,6 @@ export class Settlement {
             party: op.party,
             instrument: op.instrument,
             qty: op.qty,
-            weight: weightOf(this.d.parties.get(op.party)),
             target: 'holding',
           });
           if (!op.money && op.fromDebit >= 0) {
@@ -1185,7 +1175,6 @@ export class Settlement {
             party: op.issuer,
             instrument: op.instrument,
             qty: op.qty,
-            weight: 1,
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
@@ -1221,7 +1210,6 @@ export class Settlement {
             party: op.holder,
             instrument: op.instrument,
             qty: op.qty,
-            weight: 1,
             target: 'issued',
           });
           break;
@@ -1232,7 +1220,6 @@ export class Settlement {
             party: op.issuer,
             instrument: op.instrument,
             qty: negQty(op.qty, 'the other way'),
-            weight: 1,
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
@@ -1454,48 +1441,6 @@ export class Settlement {
 }
 
 
-/** Helpers for mechanisms building legs (XI-15: a cell side is per member). */
-export function cellSide(p: Party, perMember: Qty): CellSide | undefined {
-  if (p.representation !== 'cell') return undefined;
-  return { perMember, weight: p.weight };
-}
 
-/**
- * 0f.1: THE CELL SIDE OF A LEG WHOSE QUANTITY IS THE CELL'S TOTAL. The register holds totals, so
- * what a leg moves is read straight off it; what one member's share of that is, rounded to the
- * piece below, is a statement the leg carries until 0f.2 deletes the side altogether. A named
- * party has no side.
- */
-export function cellSideOf(p: Party, total: Qty): CellSide | undefined {
-  if (p.representation !== 'cell') return undefined;
-  return { perMember: asQty(downTick(total / p.weight), `${p.id}'s per-member share`), weight: p.weight };
-}
 
-/**
- * Law 8, XI-15: what can actually be moved to or from a party, per member and in total.
- *
- * A member of a cell is a real holder with a real account, so its share is a whole number of the
- * unit's smallest piece like anybody else's — and the total is that times the weight, which is
- * therefore on the grid too. What the fraction below a tick would have been is not moved: it does
- * not exist, so it stays where it was.
- */
-export function shareFor(
-  registry: Pick<Registry, 'deliverable'>,
-  party: Party,
-  unit: UnitId,
-  perMemberWanted: number,
-): { readonly perMember: Qty; readonly total: Qty } {
-  const perMember = registry.deliverable(perMemberWanted);
-  return { perMember, total: totalFor(party, perMember) };
-}
 
-/**
- * Total moved on a party's side: weight × per member for a cell.
- *
- * Law 8: a count of pieces times a count of PEOPLE is a count of pieces, and `scaleQty` is where
- * that is said — it refuses a fractional multiplier, which is the one way this could stop being
- * true (item 13b.1).
- */
-export function totalFor(p: Party, perMember: Qty): Qty {
-  return scaleQty(perMember, weightOf(p), `total for ${p.id}`);
-}

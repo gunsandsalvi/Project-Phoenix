@@ -33,7 +33,6 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import {
   agreementKindId,
-  currencyUnit,
   paramId,
   type CorporateActionId,
   type InstrumentId,
@@ -49,8 +48,7 @@ import { anchorOf, quarterClosedBy } from '../../calendar/fiscal.js';
 import { compareCivil } from '../../calendar/civil.js';
 import type { CorporateAction } from '../../register/corporate.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
-import { weightOf } from '../../parties/party.js';
+import { weightOf, gridPerMember } from '../../parties/party.js';
 import { prng } from '../../rng/prng.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import { CENT_TICK, MONEY_PIECES, SHARE_PIECES } from '../../registry/grid.js';
@@ -291,12 +289,10 @@ function recordDividends(ctx: MechanismContext): void {
       // the total is that over the members (Law 8: whole pieces for each real holder).
       if (ctx.register.quantity(holderId, line.id) <= 0) continue;
       const perMemberUnits = ctx.register.perMember(holderId, line.id);
-      const share = shareFor(
+      const share = gridPerMember(
         ctx.registry,
         holder,
-        currencyUnit(line.ccy),
-        dividendFor(action.perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds')),
-      );
+        dividendFor(action.perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds')));
       if (share.total <= 0) continue;
       ctx.owes({
         debtor: firm,
@@ -373,15 +369,12 @@ function payDividend(
      * agreement carries it and it is paid when the cell can take it, rather than being rounded
      * away into a residual with no holder (Appendix B).
      */
-    const share = shareFor(
+    const share = gridPerMember(
       ctx.registry,
       holder,
-      currencyUnit(line.ccy),
-      owed.owed / weightOf(holder),
-    );
+      owed.owed / weightOf(holder));
     const total = Number(share.total);
     if (total <= 0) continue;
-    const side = cellSide(holder, share.perMember);
     const leg: Leg = {
       kind: 'money',
       from: ctx.accountOf(payer, line.ccy),
@@ -390,8 +383,6 @@ function payDividend(
       // Treasury C1: the payer says what this is. A dividend is not a wage and not a disposal.
       receipt: { of: 'dividend' },
       amount: asQty(total),
-      fromCell: none(),
-      toCell: side === undefined ? none() : some(side),
     };
     const r = ctx.settle({
       legs: [leg],

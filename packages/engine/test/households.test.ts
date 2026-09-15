@@ -138,8 +138,6 @@ function payer(spreadShare: number): SystemModule {
                   to: { holder: cell.id, issuer: cell.bank },
                   ccy: USD,
                   amount: asQty(paid * cell.weight),
-                  fromCell: { some: false },
-                  toCell: { some: true, value: { perMember: asQty(paid), weight: cell.weight } },
                 },
               ],
               cause: 'transfer',

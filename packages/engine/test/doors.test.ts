@@ -266,7 +266,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost')},
           ],
           cause: 'seed',
           reason: 'the opening harvest',
@@ -289,7 +289,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period === 1) {
           ctx.settle({
             legs: [
-              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
+              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost')},
             ],
             cause: 'seed',
             reason: 'the opening harvest',
@@ -298,7 +298,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period === 2) {
           ctx.settle({
             legs: [
-              { kind: 'destroy', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(4), why: 'perished', fromCell: none() },
+              { kind: 'destroy', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(4), why: 'perished'},
             ],
             cause: 'production',
             reason: 'a batch that spoiled',
@@ -320,7 +320,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost')},
           ],
           // A trade moves units that exist; it does not make them.
           cause: 'trade',
@@ -341,7 +341,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(3), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(3), costPerUnit: asPerPiece(1, 'what a unit cost')},
           ],
           cause: 'production',
           reason: 'the harvest',
@@ -361,7 +361,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (line === undefined) throw new Error('no claim in the world');
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: line.id, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: line.id, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost')},
           ],
           cause: 'seed',
           reason: 'a bond from nowhere',
@@ -399,7 +399,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
         });
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost')},
           ],
           cause: 'seed',
           reason: 'the opening harvest',
@@ -471,7 +471,6 @@ function pledgeLeg(qty: Qty, secures: string): Leg {
     instrument: GOV,
     qty,
     secures,
-    pledgorCell: none(),
   };
 }
 
@@ -518,8 +517,6 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
               to: { holder: BANK_A, issuer: BANK_B },
               ccy: USD,
               amount: asQty(10),
-              fromCell: none(),
-              toCell: none(),
             },
           ],
           cause: 'issuance',
@@ -637,8 +634,6 @@ describe('the delivery check is exact, because a quantity is a count of pieces (
                 qty,
                 pricePerUnit: none(),
                 accruedPerUnit: none(),
-                fromCell: none(),
-                toCell: none(),
               },
             ],
             cause: 'transfer',

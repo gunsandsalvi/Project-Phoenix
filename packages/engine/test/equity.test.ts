@@ -95,8 +95,6 @@ function pays(
                   to: { holder, issuer: party.bank },
                   ccy: USD,
                   amount: asQty(row.amount * party.weight),
-                  fromCell: { some: false },
-                  toCell: { some: true, value: { perMember: asQty(row.amount), weight: party.weight } },
                 },
               ],
               cause: 'transfer',

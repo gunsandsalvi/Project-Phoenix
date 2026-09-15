@@ -248,8 +248,6 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
             to: ctx.accountOf(me, ccy),
             ccy,
             amount: due,
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'transfer',

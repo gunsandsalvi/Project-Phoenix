@@ -28,7 +28,7 @@ import {
   partyId,
   snapshot,
   some,
-  totalFor,
+  totalOverMembers,
   type CellParty,
   type InstructionDraft,
   type InstrumentId,
@@ -86,8 +86,6 @@ function overpromise(amount: number): SystemModule {
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
             amount: asQty(owed),
-            fromCell: none(),
-            toCell: none(),
           };
           const draft: InstructionDraft = {
             legs: [leg],
@@ -179,8 +177,6 @@ function writeOff(instrument: InstrumentId): SystemModule {
             qty: units,
             pricePerUnit: some(asPerPiece(0, 'at what it promised')),
             accruedPerUnit: none(),
-            fromCell: none(),
-            toCell: none(),
           };
           ctx.settle({ legs: [leg], cause: 'maturity', reason: `write-off of ${instrument}` });
         },
@@ -229,9 +225,7 @@ function cellCannotPay(): SystemModule {
             from: { holder: cell.id, issuer: cell.bank },
             to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
             ccy: USD,
-            amount: totalFor(cell, perMember),
-            fromCell: some({ perMember, weight: cell.weight }),
-            toCell: none(),
+            amount: totalOverMembers(cell, perMember),
           };
           ctx.settle({ legs: [leg], cause: 'transfer', reason: 'tax it could not pay' });
         },

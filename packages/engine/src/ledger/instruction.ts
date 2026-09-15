@@ -4,8 +4,8 @@
  *
  * @spec Goods B2 Goods E4 Commodities Spot F1 Bond N9.b Money C1 Money C1.a Money C1.b Money C1.c Money D1 Money D1.a Money D2 Money G4 Register C1 Register C2 Register C2.a Register C3 Register C3.a XI-5 XI-15
  *
- * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
- * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
+ * A leg on a cell is denominated like a leg on anybody (0f.2): the register holds the cell's total,
+ * the leg moves a total, and what one member's share of it is is a read, never a side of a leg.
  */
 import type { Cash, PerMember, PerPiece } from '../core/measure.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
@@ -41,11 +41,6 @@ export interface AccountRef {
  * advertised as compiler-checked was enforced at one door and caught at the far end by a runtime
  * check in the register — which is the guard the brand exists to replace.
  */
-export interface CellSide {
-  readonly perMember: Qty;
-  readonly weight: number;
-}
-
 /**
  * Treasury C1, Reporting G2, Law 1: WHAT KIND OF RECEIPT THIS IS FOR WHOEVER GETS IT.
  *
@@ -119,8 +114,6 @@ export interface MoneyLeg {
   readonly ccy: CurrencyCode;
   /** Law 8: total amount that moves, as a count of the money's own smallest piece. */
   readonly amount: Qty;
-  readonly fromCell: Option<CellSide>;
-  readonly toCell: Option<CellSide>;
 }
 
 export interface AssetLeg {
@@ -138,8 +131,6 @@ export interface AssetLeg {
    * what was paid for and nobody has to re-derive it (Law 19).
    */
   readonly accruedPerUnit: Option<number>;
-  readonly fromCell: Option<CellSide>;
-  readonly toCell: Option<CellSide>;
 }
 
 /**
@@ -163,7 +154,6 @@ export interface CreateLeg {
   readonly qty: Qty;
   /** What the units cost to make, per unit: the basis the lot carries (Goods E1). */
   readonly costPerUnit: PerPiece;
-  readonly toCell: Option<CellSide>;
 }
 
 export interface DestroyLeg {
@@ -173,7 +163,6 @@ export interface DestroyLeg {
   readonly qty: Qty;
   /** Why the units left: consumed into something else, perished, scrapped. */
   readonly why: 'consumed' | 'perished' | 'scrapped';
-  readonly fromCell: Option<CellSide>;
 }
 
 /**
@@ -214,7 +203,6 @@ export interface PledgeLeg {
   /** Law 8: total units bound, as a count of the instrument's own smallest piece. */
   readonly qty: Qty;
   readonly secures: string;
-  readonly pledgorCell: Option<CellSide>;
 }
 
 /** The other half of a pledge: the named lien ends and the units are free again (Register D5). */
@@ -492,15 +480,8 @@ export type SettlementRecord = Settled | Failed;
 export interface RegisterDelta {
   readonly party: PartyId;
   readonly instrument: InstrumentId;
-  /** Per member for a cell. */
+  /** What the whole party moved: the register holds totals (0f.2). */
   readonly qty: Qty;
-  /**
-   * XI-15: the multiplicity this delta was struck at, one for a named party. A cell's weight can
-   * change later in the same period — it splits when part of it takes a job — so a reader that
-   * multiplied by today's weight would be reconstructing a different instruction from the one that
-   * settled (Law 19: read what was recorded).
-   */
-  readonly weight: number;
   /** 'holding' moves a holding; 'issued' moves the issuer's issued amount (an issuance or redemption). */
   readonly target: 'holding' | 'issued';
 }

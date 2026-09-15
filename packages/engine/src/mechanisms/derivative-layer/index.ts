@@ -406,8 +406,6 @@ function payLegs(ctx: MechanismContext): void {
             to: ctx.accountOf(due.to, due.ccy),
             ccy: due.ccy,
             amount,
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'coupon',
@@ -497,8 +495,6 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
       to: ctx.accountOf(value > 0 ? c.a : c.b, c.ccy),
       ccy: c.ccy,
       amount: owed,
-      fromCell: none(),
-      toCell: none(),
     });
   }
   const r = ctx.settle({ legs, cause: 'corporateAction', reason: `${id} terminates: ${why}` });
@@ -621,8 +617,6 @@ function issueCloseOutClaim(
         qty,
         pricePerUnit: some(asPerPiece(1, 'at what it promised')),
         accruedPerUnit: none(),
-        fromCell: none(),
-        toCell: none(),
       },
     ],
     cause: 'default',

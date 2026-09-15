@@ -33,11 +33,10 @@ import {
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
 import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { agreementKindId, cohortId, currencyUnit } from '../../core/ids.js';
+import { agreementKindId, cohortId } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
 import { add, atMost, material, sub } from '../../core/num.js';
 import type { AgreementTerms } from '../../register/agreements.js';
-import { none, some } from '../../core/option.js';
 
 
 /**
@@ -70,8 +69,7 @@ export const severanceOwed = (cause: string): SeveranceOwed => ({
   cause,
 });
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
-import { keyOf, weightOf, type Party } from '../../parties/party.js';
+import { keyOf, weightOf, type Party, gridPerMember } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
   allRows,
@@ -454,7 +452,7 @@ export function separate(
    */
   if (!trading && perMember > 0) {
     const ccy = ctx.registry.currencyOf(ctx.parties.get(row.employer).region);
-    const owed = shareFor(ctx.registry, ctx.parties.get(gone), currencyUnit(ccy), perMember).total;
+    const owed = gridPerMember(ctx.registry, ctx.parties.get(gone), perMember).total;
     if (owed > 0) {
       ctx.owes({
         debtor: row.employer,
@@ -568,11 +566,10 @@ function payFrom(
   // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the cell is
   // a count of people and every one of them is paid the same whole number of pieces. What the
   // fraction below one would have been is not paid, because there is no such coin.
-  const share = shareFor(ctx.registry, to, currencyUnit(ccy), perMember);
+  const share = gridPerMember(ctx.registry, to, perMember);
   // A per-member wage below one piece of the money pays NOTHING — there is no such coin — and this
   // used to answer `true`, which is how a wage with no money leg behind it was booked as paid.
   if (share.total <= 0) return nothing;
-  const side = cellSide(to, share.perMember);
   const leg: Leg = {
     kind: 'money',
     from: ctx.accountOf(payer, ccy),
@@ -582,8 +579,6 @@ function payFrom(
     receipt: { of: 'wage' },
     ccy,
     amount: share.total,
-    fromCell: none(),
-    toCell: side === undefined ? none() : some(side),
   };
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
   const r = ctx.settle({ legs: [leg], cause: 'transfer', reason });

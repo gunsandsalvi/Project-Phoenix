@@ -73,7 +73,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind } from '../journal/journal.js';
 import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
-import { Settlement, cellSideOf } from '../ledger/settlement.js';
+import { Settlement } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
 import { type CurveFamilyDecl, type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore, type Print, wasTraded } from '../prices/price-store.js';
@@ -2320,7 +2320,6 @@ export class World {
     // 0f.1: the register holds the cell's TOTAL; the leg's cell side is derived from it.
     const total = this.register.quantity(party, moneyInstrumentId(p.bank, ccy));
     if (total > 0) {
-      const side = cellSideOf(p, total);
       const r = this.settlement.settle(
         {
           legs: [
@@ -2330,8 +2329,6 @@ export class World {
               to: { holder: party, issuer: to },
               ccy,
               amount: total,
-              fromCell: side === undefined ? none() : some(side),
-              toCell: side === undefined ? none() : some(side),
             },
           ],
           cause: 'transfer',
@@ -2351,9 +2348,9 @@ export class World {
       this.currentCycle,
       'deposit.moved',
       [party, from, to],
-      // Law 8: what moved, per member AND in total, because a cell is many real accounts and the
-      // bank it left is short by all of them (E3.a).
-      { party, from, to, amount: cellSideOf(p, total)?.perMember ?? total, total, ccy },
+      // Law 8: what moved, in total, because a cell is many real accounts and the bank it left is
+      // short by all of them (E3.a); a member's share is a read (0f.2).
+      { party, from, to, total, ccy },
       true,
     );
     return true;

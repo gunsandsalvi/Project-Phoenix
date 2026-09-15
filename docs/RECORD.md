@@ -10384,3 +10384,31 @@ inside the same forty-seven files 0d placed.
 
 **Checks.** `check:opens` green on both worlds — the rig thirty periods, the four-country world
 twelve — on totals. Lint, typecheck, `check:spec`, `check:forbids` green.
+
+## Item 0f.2 — A leg moves a total
+
+**The cell side is gone from the leg.** `CellSide`, `fromCell`, `toCell`, `pledgorCell`, the delta's
+`weight`, `validateCellSide`, `cellSide`, `cellSideOf`, `optionalCell`, `cellPays`, `commonGrain`
+and the three grain checks settlement made on a leg's per-member side are deleted — 52 files. A leg
+on a cell is denominated like a leg on anybody: the register holds the cell's total, the leg moves a
+total, and what one member's share is is a read. `pairFills` steps on the unit's own piece: a fill
+between two populations was struck on the least common multiple of their two weights so that every
+member held a whole piece, and with totals in the register there is no such member to protect.
+
+**What survives, and why it is not the same thing.** A per-member RULE over a cell — a transfer per
+person, a tax per person, a wage per person — is a number stated per member and paid to every
+member, and the total a cell moves is that on the grid for one, times the count. That is arithmetic
+on a count and it is one door, `gridPerMember`/`totalOverMembers` in `parties/party.ts`, beside the
+weight it multiplies by. `splitOnTick` stays for the same reason from the other side: it splits a
+TOTAL across named claims — an estate's creditors, a seed's banks — and the parts sum to what there
+was.
+
+**Reads of a leg's side became reads of the leg.** `capital-programme` counted what a cell bought
+per member; `expectations` recorded what a MEMBER received off the leg's side — it is the leg's
+amount over the people now (A2.f), so that a decision is still never taken on the whole cell's
+receipt. A coupon is owed on the holding and struck once on the money's grid; a redemption moves
+the total; the fx and asset trade builders put cash on the money's own grain.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green. Exit measured: `commonGrain`, `shareFor`, `sameState` gone from `src` (three comments name
+them as what was deleted).

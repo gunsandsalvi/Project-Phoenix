@@ -30,6 +30,7 @@ import { rigSpec, rigDraw, mergeModules, quiet } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
 import { upTick, type Qty } from '../src/core/tick.js';
+import { weightOf } from '../src/parties/party.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -315,7 +316,7 @@ describe('a hire (Labour A4, XI-10)', () => {
     expect(wages).toHaveLength(1);
     const leg = wages[0];
     paidTheSame(
-      leg !== undefined && isMoneyLeg(leg) && leg.toCell.some ? leg.toCell.value.perMember : 0,
+      leg !== undefined && isMoneyLeg(leg) ? leg.amount / weightOf(w.parties.get(leg.to.holder)) : 0,
       paidPerMember,
     );
   });

@@ -52,13 +52,12 @@ import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { Missing } from '../../core/errors.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import type { Instrument } from '../../register/instruments.js';
 import { asQty } from '../../core/tick.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { weightOf } from '../../parties/party.js';
+import { weightOf, gridPerMember, totalOverMembers } from '../../parties/party.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
@@ -488,8 +487,6 @@ function payTheBank(
         to: ctx.accountOf(ran.bank, bid.ccy),
         ccy: bid.ccy,
         amount: asQty(fee, 'what the bank is paid for running it'),
-        fromCell: none(),
-        toCell: none(),
       },
     ],
     cause: 'transfer',
@@ -536,15 +533,13 @@ function settleTender(
      * What the cut drops is not demand left unmet somewhere: those shares simply stay where they
      * were, and the tender bought fewer of them and says so.
      */
-    const share = shareFor(
+    const share = gridPerMember(
       ctx.registry,
       seller,
-      ctx.instruments.get(bid.line).unit,
-      downTick(f.qty) / weightOf(seller),
-    );
+      downTick(f.qty) / weightOf(seller));
     const units = share.total;
     const perMember = ctx.registry.payable(valueAt(price, share.perMember, 'what a member is paid'));
-    const cash = totalFor(seller, perMember);
+    const cash = totalOverMembers(seller, perMember);
     if (units <= 0 || cash <= 0) {
       unfilled.push({ holder: String(f.party), wanted: f.qty, filled: NO_QTY });
       continue;
@@ -552,8 +547,6 @@ function settleTender(
     if (units < downTick(f.qty)) {
       unfilled.push({ holder: String(f.party), wanted: f.qty, filled: units });
     }
-    const shareSide = cellSide(seller, share.perMember);
-    const cashSide = cellSide(seller, perMember);
     const legs: Leg[] = [
       {
         kind: 'asset',
@@ -563,8 +556,6 @@ function settleTender(
         qty: units,
         pricePerUnit: some(price),
         accruedPerUnit: none(),
-        fromCell: shareSide === undefined ? none() : some(shareSide),
-        toCell: none(),
       },
       {
         kind: 'money',
@@ -572,8 +563,6 @@ function settleTender(
         to: ctx.accountOf(f.party, bid.ccy),
         ccy: bid.ccy,
         amount: cash,
-        fromCell: none(),
-        toCell: cashSide === undefined ? none() : some(cashSide),
       },
     ];
     const r = ctx.settle({
@@ -780,8 +769,6 @@ function handOver(ctx: MechanismContext, buyer: PartyId, target: PartyId): void 
       qty: asQty(free),
       pricePerUnit: print.some ? some(print.value.price) : none(),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     });
   }
   for (const ccy of monies) {
@@ -793,8 +780,6 @@ function handOver(ctx: MechanismContext, buyer: PartyId, target: PartyId): void 
       to: ctx.accountOf(buyer, ccy),
       ccy,
       amount: asQty(cash),
-      fromCell: none(),
-      toCell: none(),
     });
   }
   if (legs.length === 0) return;

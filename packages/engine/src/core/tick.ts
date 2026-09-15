@@ -239,22 +239,6 @@ export function splitOnTick(total: number, weights: readonly number[]): readonly
   return parts.map((n) => asQty(negative ? -n : n, 'a share of the split'));
 }
 
-/**
- * XI-15, Law 8: the smallest amount two parties can actually exchange.
- *
- * A cell is a count of identical members, and each of them is a real holder whose share is a whole
- * number of pieces — so a cell of five hundred deals in five hundred pieces at a time. Two parties
- * can therefore only exchange a multiple of the least common multiple of their weights: a quantity
- * finer than that would leave one side's members holding a fraction of the smallest piece there is,
- * which is not a small difference but a thing that does not exist.
- *
- * Between named parties both weights are one and the grain is a single piece.
- */
-export function commonGrain(a: number, b: number): number {
-  const wa = whole(a);
-  const wb = whole(b);
-  return (wa / gcd(wa, wb)) * wb;
-}
 
 function whole(w: number): number {
   if (!Number.isInteger(w) || w <= 0) {
@@ -263,16 +247,6 @@ function whole(w: number): number {
   return w;
 }
 
-function gcd(a: number, b: number): number {
-  let x = a;
-  let y = b;
-  while (y !== 0) {
-    const t = y;
-    y = x % y;
-    x = t;
-  }
-  return x;
-}
 
 /**
  * XI-15, Law 8: the most of a quantity that is a whole number of GRAINS, where a grain is what two

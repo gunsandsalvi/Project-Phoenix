@@ -47,9 +47,8 @@ import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
 import { forbid } from '../../core/assert.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
-import type { CellSide } from '../../ledger/instruction.js';
-import { cellSide, cellSideOf, totalFor } from '../../ledger/settlement.js';
-import { weightOf } from '../../parties/party.js';
+import type { } from '../../ledger/instruction.js';
+import { weightOf, totalOverMembers } from '../../parties/party.js';
 import { BANK, TREASURY } from '../../registry/profiles.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -463,10 +462,9 @@ function writeDownDeposit(
     ),
   );
   if (perMember <= 0) return NO_QTY;
-  const total = totalFor(p, perMember);
+  const total = totalOverMembers(p, perMember);
   // XI-15: a cell's side is denominated per member, whatever its weight — every member of it is a
   // real holder with a real account, and one of them is not an exception to that.
-  const per = cellSide(p, perMember);
   const r = ctx.settle({
     legs: [
       {
@@ -475,8 +473,6 @@ function writeDownDeposit(
         to: { holder: bank, issuer: bank },
         ccy,
         amount: total,
-        fromCell: per === undefined ? none<CellSide>() : some(per),
-        toCell: none(),
       },
     ],
     // A resolution is a corporate action and this is part of one: a claim that was worth less than
@@ -510,8 +506,7 @@ function writeDownRow(
   const perMember = ctx.registry.deliverable(over(wiped, asRatio(weightOf(p), 'the members of the cell'), 'per member'),
   );
   if (perMember <= 0) return NO_QTY;
-  const moved = totalFor(p, perMember);
-  const per = cellSide(p, perMember);
+  const moved = totalOverMembers(p, perMember);
   const r = ctx.settle({
     legs: [
       {
@@ -522,8 +517,6 @@ function writeDownRow(
         qty: moved,
         pricePerUnit: some(asPerPiece(0, 'at what it promised')),
         accruedPerUnit: none(),
-        fromCell: per === undefined ? none<CellSide>() : some(per),
-        toCell: none(),
       },
     ],
     cause: 'corporateAction',
@@ -572,8 +565,6 @@ function payFrom(
         to: ctx.accountOf(to, ccy),
         ccy,
         amount,
-        fromCell: none(),
-        toCell: none(),
       },
     ],
     cause: 'transfer',
@@ -620,8 +611,6 @@ function moveBook(
             qty: units,
             pricePerUnit: some(asPerPiece(0, 'at what it promised')),
             accruedPerUnit: none(),
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'corporateAction',
@@ -684,8 +673,6 @@ function moveBook(
             to: { holder: bank, issuer: i.issuer.some ? i.issuer.value : bank },
             ccy: i.ccy,
             amount: owed,
-            fromCell: none(),
-            toCell: none(),
           },
         ],
         cause: 'corporateAction',
@@ -720,8 +707,6 @@ function moveBook(
               to: { holder: acquirer, issuer: i.issuer.some ? i.issuer.value : bank },
               ccy: i.ccy,
               amount: units,
-              fromCell: none(),
-              toCell: none(),
             }
           : {
               kind: 'asset',
@@ -737,8 +722,6 @@ function moveBook(
               // already booked, and hand the issuer of the paper a re-mark of the same size.
               pricePerUnit: none(),
               accruedPerUnit: none(),
-              fromCell: none(),
-              toCell: none(),
             },
       ],
       cause: 'corporateAction',
@@ -766,7 +749,6 @@ function moveBook(
             instrument: h.instrument,
             qty: lien.qty,
             secures: lien.reason,
-            pledgorCell: none(),
           },
         ],
         cause: 'corporateAction',
@@ -814,7 +796,6 @@ function moveBook(
             instrument: h.instrument,
             qty: lien.qty,
             secures: lien.reason,
-            pledgorCell: none(),
           },
         ],
         cause: 'corporateAction',
@@ -827,12 +808,9 @@ function moveBook(
   // anybody hold nothing, and the two legs net to zero in the money family like any other pair.
   for (const holder of [...ctx.register.holdersOf(own)]) {
     if (holder === bank) continue;
-    const p = ctx.parties.get(holder);
     // 0f.1: the register holds the holder's TOTAL balance; the side is derived from it.
     const total = ctx.register.quantity(holder, own);
     if (total <= 0) continue;
-    const held = cellSideOf(p, total);
-    const side = held === undefined ? none<CellSide>() : some(held);
     const r = ctx.settle({
       legs: [
         {
@@ -841,8 +819,6 @@ function moveBook(
           to: { holder: bank, issuer: bank },
           ccy,
           amount: total,
-          fromCell: side,
-          toCell: none(),
         },
         {
           kind: 'money',
@@ -850,8 +826,6 @@ function moveBook(
           to: { holder, issuer: acquirer },
           ccy,
           amount: total,
-          fromCell: none(),
-          toCell: side,
         },
       ],
       cause: 'corporateAction',

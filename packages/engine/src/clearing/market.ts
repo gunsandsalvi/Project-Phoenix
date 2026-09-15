@@ -33,11 +33,11 @@ import {
 import { atMost, finite, sum, zeroIfNone } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
-import { NO_QTY, addQty, asQty, commonGrain, downTick, downToGrain, downToTick, subQty, toGrain, upToTick } from '../core/tick.js';
+import { NO_QTY, addQty, asQty, downTick, downToTick, subQty, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
-import type { AccountRef, InstructionDraft, Leg, CellSide} from '../ledger/instruction.js';
-import { cellSide, type Settlement } from '../ledger/settlement.js';
-import { weightOf, type Parties } from '../parties/party.js';
+import type { AccountRef, InstructionDraft, Leg} from '../ledger/instruction.js';
+import { type Settlement } from '../ledger/settlement.js';
+import { type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
 import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
@@ -422,7 +422,7 @@ export function runMarket(
   const outcome = clear(book, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
-      const trades = pairFills(m, outcome.fills, (p) => weightOf(deps.parties.get(p)));
+      const trades = pairFills(m, outcome.fills);
       // A pair has no coupon and no instrument to ask about, and neither has a contract book: what
       // accrues on money is nothing, and what accrues on an obligation is what its own terms say
       // falls due (D4), which is the kind's business rather than the kernel's.
@@ -561,7 +561,6 @@ function carryLast(
 function pairFills(
   m: MarketDecl,
   fills: readonly Fill[],
-  weight: (party: PartyId) => number,
 ): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
@@ -589,11 +588,11 @@ function pairFills(
       { party: buyer.party, market: m.id },
     );
     const want = atMost(bLeft, sLeft, 'neither side can exchange what the other has not got');
-    // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
-    // own smallest piece; where one side is a population it is that piece for every member of it,
-    // because each member is a real holder and none of them can hold a fraction of one.
-    const step = commonGrain(weight(buyer.party), weight(seller.party));
-    const q = downToGrain(want, step);
+    // Law 8, 0f.2: what these two can exchange is whole pieces of the unit, whoever they are: a
+    // cell holds its total and a leg moves a total, so a fill between two populations steps on the
+    // unit's own piece like any other.
+    const step = asQty(1, 'one piece of the unit');
+    const q = want;
     if (q > 0) out.push({ buyer: buyer.party, seller: seller.party, qty: q });
     // Item 16, Law 8: a count of pieces less a count of pieces, through the door that keeps it one.
     bLeft = subQty(bLeft, q, 'buy left');
@@ -767,8 +766,6 @@ function contractTrade(
       to: deps.accountOf(to, m.ccy),
       ccy: m.ccy,
       amount: premium,
-      fromCell: none(),
-      toCell: none(),
     });
     if (house === null) legs.push(pay(t.buyer, t.seller));
     else legs.push(pay(t.buyer, house), pay(house, t.seller));
@@ -806,15 +803,9 @@ function fxTrade(
   deps: MarketRunDeps,
 ): Option<InstructionDraft> {
   const pair = m.fx;
-  const buyer = deps.parties.get(t.buyer);
-  const seller = deps.parties.get(t.seller);
-  const grain = commonGrain(weightOf(buyer), weightOf(seller));
-  const quote = toGrain(valueAt(price, t.qty, 'what the base costs in quote'), grain);
+  // 0f.2: cash on the money's own grain; the two sides hold totals.
+  const quote = deps.registry.payable(valueAt(price, t.qty, 'what the base costs in quote'));
   if (quote <= 0) return none<InstructionDraft>();
-  const baseOut = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
-  const baseIn = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
-  const quoteOut = cellSide(buyer, asQty(quote / weightOf(buyer), 'its share per member'));
-  const quoteIn = cellSide(seller, asQty(quote / weightOf(seller), 'its share per member'));
   const legs: Leg[] = [
     {
       kind: 'money',
@@ -822,8 +813,6 @@ function fxTrade(
       to: deps.accountOf(t.buyer, pair.base),
       ccy: pair.base,
       amount: t.qty,
-      fromCell: baseOut === undefined ? none() : some(baseOut),
-      toCell: baseIn === undefined ? none() : some(baseIn),
     },
     {
       kind: 'money',
@@ -831,8 +820,6 @@ function fxTrade(
       to: deps.accountOf(t.seller, pair.quote),
       ccy: pair.quote,
       amount: quote,
-      fromCell: quoteOut === undefined ? none() : some(quoteOut),
-      toCell: quoteIn === undefined ? none() : some(quoteIn),
     },
   ];
   return some({ legs, cause: 'trade', reason: `${m.name}: ${t.qty} @ ${price}` });
@@ -854,8 +841,6 @@ function payment(
   m: AssetMarketDecl,
   t: Trade,
   cash: Qty,
-  buyerCashCell: CellSide | undefined,
-  sellerCashCell: CellSide | undefined,
   deps: MarketRunDeps,
 ): Leg {
   const promise =
@@ -872,8 +857,6 @@ function payment(
       // holder's own question, and a late one is worth less to whoever is waiting (D1).
       pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
-      fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
-      toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
     };
   }
   return {
@@ -896,8 +879,6 @@ function payment(
     receipt: sellerIssues(m, t, deps) ? { of: 'sale' } : { of: 'disposal' },
     ccy: m.ccy,
     amount: cash,
-    fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
-    toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
   };
 }
 
@@ -908,24 +889,15 @@ function assetTrade(
   accruedPerUnit: PerPiece,
   deps: MarketRunDeps,
 ): Option<InstructionDraft> {
-  const buyer = deps.parties.get(t.buyer);
-  const seller = deps.parties.get(t.seller);
   // Law 8: WHAT IS PAID IS A WHOLE NUMBER OF THE SMALLEST PIECE OF THE MONEY, and where a side is a
   // population, of that piece for each of its members. The quantity was already struck on a grain
   // both sides can hold (pairFills); the cash is struck on the same grain in money, at the level
   // that cleared. So the price a trade REALISES can differ from the print by less than one piece of
   // money per member — which is what rounding a price to real money has always meant, and is why
   // `settledVolume` and the print are two numbers rather than one.
-  const cashGrain = commonGrain(weightOf(buyer), weightOf(seller));
-  const cash = toGrain(
-    valueAt(plus(price, accruedPerUnit, 'dirty price'), t.qty, 'trade cash'),
-    cashGrain,
-  );
+  // 0f.2: cash on the money's own grain; the two sides hold totals.
+  const cash = deps.registry.payable(valueAt(plus(price, accruedPerUnit, 'dirty price'), t.qty, 'trade cash'));
   if (cash <= 0) return none<InstructionDraft>();
-  const buyerCell = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
-  const sellerCell = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
-  const buyerCashCell = cellSide(buyer, asQty(cash / weightOf(buyer), 'its share per member'));
-  const sellerCashCell = cellSide(seller, asQty(cash / weightOf(seller), 'its share per member'));
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -935,10 +907,8 @@ function assetTrade(
       qty: t.qty,
       pricePerUnit: some(price),
       accruedPerUnit: accruedPerUnit === 0 ? none() : some(accruedPerUnit),
-      fromCell: sellerCell === undefined ? none() : some(sellerCell),
-      toCell: buyerCell === undefined ? none() : some(buyerCell),
     },
-    payment(m, t, cash, buyerCashCell, sellerCashCell, deps),
+    payment(m, t, cash, deps),
   ];
   const issuer = deps.instrumentIssuer(m.instrument);
   const cause = issuer.some && t.seller === issuer.value ? 'issuance' : 'trade';

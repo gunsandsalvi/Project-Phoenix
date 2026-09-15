@@ -536,8 +536,6 @@ function deliver(ctx: MechanismContext): void {
         qty: ctx.registry.deliverable(face),
         pricePerUnit: some(price.value.price),
         accruedPerUnit: none(),
-        fromCell: none(),
-        toCell: none(),
       });
       legs.push({
         kind: 'money',
@@ -545,8 +543,6 @@ function deliver(ctx: MechanismContext): void {
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
         amount: ctx.registry.cashFor(valueAt(price.value.price, face, 'what the face costs')),
-        fromCell: none(),
-        toCell: none(),
       });
     }
     if (!deliverable || legs.length === 0) continue;

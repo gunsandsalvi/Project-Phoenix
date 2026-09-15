@@ -197,7 +197,6 @@ function start(
       instrument: o.instrument,
       qty: asQty(drawn),
       why: 'consumed',
-      fromCell: none(),
     });
   }
   for (const input of tech.inputs) {
@@ -209,7 +208,6 @@ function start(
       instrument: input.instrument,
       qty,
       why: 'consumed',
-      fromCell: none(),
     });
   }
   const cost = sum(costs);
@@ -220,7 +218,6 @@ function start(
     qty: batch,
     // B5, B5.b: the inputs it drew plus what the period's labour cost, over the batch it started.
     costPerUnit: pricedAt(cost.value, batch, 'what a unit on the line has cost'),
-    toCell: none(),
   });
   const record = ctx.settle({
     legs,
@@ -300,7 +297,7 @@ function yieldBatch(
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({
     legs: [
-      { kind: 'destroy', party: firm, instrument: wip, qty: asQty(due, 'the batch that came off the line'), why: 'consumed', fromCell: none() },
+      { kind: 'destroy', party: firm, instrument: wip, qty: asQty(due, 'the batch that came off the line'), why: 'consumed'},
       {
         kind: 'create',
         party: firm,
@@ -308,7 +305,6 @@ function yieldBatch(
         qty: finished,
         // B4: the whole batch's cost over the units that survived it, so a survivor is dearer.
         costPerUnit: pricedAt(cost, finished, 'what a finished unit cost'),
-        toCell: none(),
       },
     ],
     cause: 'production',

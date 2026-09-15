@@ -12,11 +12,9 @@ import {
   KERNEL_PARAMS,
   USD,
   assemble,
-  commonGrain,
   currencyUnit,
   downTick,
   downToTick,
-  none,
   onTick,
   partyId,
   splitOnTick,
@@ -95,13 +93,6 @@ describe('splitting a piece (Clearing C3, Law 2)', () => {
     expect(splitOnTick(-10, [1, 1, 1]).reduce((a, b) => a + b, 0)).toBe(-10);
   });
 
-  it('deals with a population in whole pieces per member (XI-15)', () => {
-    // Two cells of five hundred and three hundred can exchange fifteen hundred pieces at a time:
-    // five each for one of them and three each for the other, and nothing finer than that.
-    expect(commonGrain(500, 300)).toBe(1500);
-    expect(commonGrain(1, 1)).toBe(1);
-    expect(commonGrain(1, 500)).toBe(500);
-  });
 });
 
 /** A module that tries to pay an amount the money does not have a piece for. */
@@ -130,8 +121,6 @@ function payer(amount: number): SystemModule {
             to: { holder: partyId('firm.1'), issuer: BANK_A },
             ccy: USD,
             amount: asQty(amount),
-            fromCell: none(),
-            toCell: none(),
           };
           ctx.settle({
             legs: [leg],

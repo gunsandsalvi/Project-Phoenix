@@ -12,22 +12,21 @@
  *
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
-import { asTotal, eachMember, type PerPiece, valueAt , asPerPiece, asAmount } from '../core/measure.js';
+import { type PerPiece, valueAt, asPerPiece } from '../core/measure.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
-import { negQty, type Qty } from '../core/tick.js';
+import { negQty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import { assertNever, forbid } from '../core/assert.js';
-import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
-import { none, some, type Option } from '../core/option.js';
+import { assertNever } from '../core/assert.js';
+import { type CurrencyCode, type PartyId } from '../core/ids.js';
 import type { Journal } from '../journal/journal.js';
-import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
-import { cellSide, shareFor, type Settlement } from '../ledger/settlement.js';
-import { weightOf, type Parties, type Party } from '../parties/party.js';
+import type { Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
+import { type Settlement } from '../ledger/settlement.js';
+import { type Parties } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
 import type { AccountResolver } from '../clearing/market.js';
-import { asQty } from '../core/tick.js';
+import { none, some } from '../core/option.js';
 
 export interface ActionDeps {
   readonly calendar: Calendar;
@@ -70,42 +69,14 @@ function payToHolders(
 ): void {
   for (const holderId of d.register.holdersOf(i.id)) {
     if (issuedBy(i, holderId)) continue;
-    const holder = d.parties.get(holderId);
     // 0f.1: the register holds the TOTAL; the coupon is struck on it and the leg's cell side says
     // what each member gets of it.
     const unitsHeld = d.register.quantity(holderId, i.id);
     if (unitsHeld <= 0) continue;
-    const perMemberUnits = d.register.perMember(holderId, i.id);
-    // Law 8: WHAT IS OWED IS WHAT EXISTS. A coupon is a rate on a holding, so what it comes to is
-    // a fraction of a tick more often than not, and the payment is the tick below it — for each
-    // member of a cell separately, because each of them is a real holder with a real account
-    // (XI-15). What the fraction would have been is not owed, because it is not money.
-    const share = shareFor(
-      d.registry,
-      holder,
-      currencyUnit(i.ccy),
-      // Item 16: a member's share of the holding re-enters as an amount here, to be put on the grid.
-      valueAt(perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds'), 'coupon cash'),
-    );
-    /**
-     * XI-15, Law 8 (13d.1): AND THE PAYER MAY BE A CELL TOO. A household with a mortgage is a
-     * million households each owing its own share, so what leaves is struck per member of the
-     * ISSUER and the total is that times how many of them there are — the same rule the holder's
-     * side has always had, read from the other end.
-     *
-     * WHICHEVER SIDE IS A CELL GOVERNS, because a cell is the side that cannot take a fraction: a
-     * member is a real holder with a real account and the smallest thing it can pay is one piece of
-     * the money. Both sides being cells is a different problem — the amount would have to be a
-     * whole number of pieces for two different counts of people at once, which two weights in the
-     * millions share no useful number for — and it does not arise in this world: a cell's creditor
-     * is a bank. It throws rather than rounding, because rounding it is where units go missing.
-     */
-    const payer = d.parties.get(issuerOf(i));
-    const struck =
-      payer.representation === 'cell'
-        ? cellPays(d, payer, holder, i, share.total)
-        : { total: share.total, perMemberOut: undefined, perMemberIn: share.perMember };
-    const total = struck.total;
+    // 0f.2: A COUPON IS OWED ON THE HOLDING, and the holding is the party's total. What one piece
+    // of the unit pays times the pieces held, put on the money's grid; the fraction below a piece
+    // is not owed, because it is not money (Law 8). A cell and a named party are paid the same way.
+    const total = d.registry.payable(valueAt(perUnit, unitsHeld, 'coupon cash'));
     if (total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
@@ -116,14 +87,6 @@ function payToHolders(
       receipt: { of: 'interest' },
       ccy: i.ccy,
       amount: total,
-      fromCell: optionalCell(
-        struck.perMemberOut === undefined ? undefined : cellSide(payer, struck.perMemberOut),
-      ),
-      toCell: optionalCell(
-        holder.representation === 'cell' && struck.perMemberIn !== undefined
-          ? cellSide(holder, struck.perMemberIn)
-          : undefined,
-      ),
     };
     const draft: InstructionDraft = {
       legs: [leg],
@@ -141,29 +104,6 @@ function payToHolders(
  * the total is that back out — so the two sides of the leg are the same number reached from the
  * payer's end. What the rounding drops is not owed, because it is not money.
  */
-function cellPays(
-  d: ActionDeps,
-  payer: Party,
-  holder: Party,
-  i: Instrument,
-  gross: Qty,
-): { total: Qty; perMemberOut: Qty | undefined; perMemberIn: Qty | undefined } {
-  forbid(
-    holder.representation !== 'cell',
-    'XI-15',
-    `${i.id} is owed by a cell to a cell: one payment cannot be whole pieces for two counts of people at once`,
-    { instrument: i.id, payer: payer.id, holder: holder.id },
-  );
-  const out = shareFor(
-    d.registry,
-    payer,
-    currencyUnit(i.ccy),
-    // XI-15, item 16: the one door between a total and a per-member number, and it refuses a cell
-    // of nobody where `div` answered `Infinity` and put it on a leg.
-    eachMember(asTotal(gross, 'what the payer owes'), weightOf(payer), 'what each of them owes'),
-  );
-  return { total: out.total, perMemberOut: out.perMember, perMemberIn: undefined };
-}
 
 /**
  * XI-1, Bond N12: a payment fell due and did not happen. Whether that is a DEFAULT is the
@@ -242,14 +182,10 @@ function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: Ac
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
   for (const holderId of [...d.register.holdersOf(i.id)]) {
     if (issuedBy(i, holderId)) continue;
-    const holder = d.parties.get(holderId);
     // 0f.1: the register holds the TOTAL, and the redemption moves the total.
     const units = d.register.quantity(holderId, i.id);
     if (units <= 0) continue;
-    const perMemberUnits = asQty(d.register.perMember(holderId, i.id), 'what one member holds');
-    const cashPerMember = perMemberUnits; // face: one unit of par pays one unit of currency (N10)
-    // N10: par is money, so the units and the cash are on the same grid by construction; nothing
-    // needs rounding here and rounding it would leave a stub of a line outstanding.
+    // N10: par is money, so the units and the cash are on the same grid by construction.
     const legs: Leg[] = [
       {
         kind: 'asset',
@@ -259,25 +195,14 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
         qty: units,
         pricePerUnit: some(asPerPiece(1, 'at what it promised')),
         accruedPerUnit: none(),
-        fromCell: optionalCell(
-          holder.representation === 'cell' ? cellSide(holder, perMemberUnits) : undefined,
-        ),
-        toCell: none(),
       },
       {
         kind: 'money',
         from: d.accountOf(issuerOf(i), i.ccy),
         to: d.accountOf(holderId, i.ccy),
-        // Treasury C1: A PRINCIPAL COMING BACK IS NOT INCOME. It is the holder's own money
-        // returning, and taxing it as income taxed the whole face of every bill every time one
-        // matured (A-46). Nothing about the wire could tell the two apart; the payer can.
         receipt: { of: 'returnOfCapital' },
         ccy: i.ccy,
         amount: units,
-        fromCell: none(),
-        toCell: optionalCell(
-          holder.representation === 'cell' ? cellSide(holder, cashPerMember) : undefined,
-        ),
       },
     ];
     const record = d.settlement.settle(
@@ -298,9 +223,6 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
   }
 }
 
-function optionalCell(c: ReturnType<typeof cellSide>): Option<CellSide> {
-  return c === undefined ? none() : some(c);
-}
 
 /**
  * Money B1, A1; Currency A2, B1: an account is (holder, issuer, currency), and every party banks

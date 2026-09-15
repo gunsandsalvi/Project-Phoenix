@@ -43,9 +43,8 @@ import { type Qty } from '../../core/tick.js';
 import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import type { CellSide, Leg } from '../../ledger/instruction.js';
-import { shareFor } from '../../ledger/settlement.js';
-import { weightOf, type Party } from '../../parties/party.js';
+import type { Leg } from '../../ledger/instruction.js';
+import { weightOf, type Party, gridPerMember } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 
 /** One line of a creation unit: how many units of it back one share (E3). */
@@ -142,13 +141,10 @@ function onGrid(
   instrument: InstrumentId,
   total: Qty,
 ): { readonly perMember: Qty; readonly total: Qty } {
-  const unit = ctx.instruments.get(instrument).unit;
-  return shareFor(
+  return gridPerMember(
     ctx.registry,
     holder,
-    unit,
-    over(total, asRatio(weightOf(holder), 'the members it has'), 'per member'),
-  );
+    over(total, asRatio(weightOf(holder), 'the members it has'), 'per member'));
 }
 
 /**
@@ -196,8 +192,6 @@ export function create(
       qty: units,
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
-      fromCell: cellOf(holder, put.perMember),
-      toCell: none(),
     });
     delivered.push(valueAt(line.markPerUnit, units, 'what this line delivered'));
   }
@@ -210,8 +204,6 @@ export function create(
     qty: shares,
     pricePerUnit: some(perShare),
     accruedPerUnit: none(),
-    fromCell: none(),
-    toCell: cellOf(holder, made.perMember),
   });
   const r = ctx.settle({
     legs,
@@ -269,8 +261,6 @@ export function redeemInKind(
       qty: units,
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: cellOf(holder, got.perMember),
     });
     taken.push(valueAt(line.markPerUnit, units, 'what this line gave back'));
   }
@@ -283,8 +273,6 @@ export function redeemInKind(
     qty: shares,
     pricePerUnit: some(perShare),
     accruedPerUnit: none(),
-    fromCell: cellOf(holder, back.perMember),
-    toCell: none(),
   });
   const r = ctx.settle({
     legs,
@@ -300,14 +288,6 @@ export function redeemInKind(
   return r.outcome === 'settled';
 }
 
-/** XI-15: a cell side carries the per-member amount; a named party carries none. */
-function cellOf(
-  holder: { readonly representation: string; readonly weight?: number },
-  perMember: Qty,
-): Option<CellSide> {
-  if (holder.representation !== 'cell' || holder.weight === undefined) return none();
-  return some({ perMember, weight: holder.weight });
-}
 
 /**
  * E2, E4: the premium or discount — a READ of two prices, published beside both of them.

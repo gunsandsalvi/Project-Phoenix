@@ -706,8 +706,6 @@ function settleDeal(
       qty,
       pricePerUnit: some(price),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     });
   }
   if (legs.length === 0) return false;
@@ -727,8 +725,6 @@ function settleDeal(
       qty: want,
       pricePerUnit: some(price),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     });
     legs.push({
       kind: 'money',
@@ -736,8 +732,6 @@ function settleDeal(
       to: ctx.accountOf(d.arranger, d.ccy),
       ccy: d.ccy,
       amount: cash,
-      fromCell: none(),
-      toCell: none(),
     });
     placed = addQty(placed, want, 'placed');
   }
@@ -752,8 +746,6 @@ function settleDeal(
       qty: downTick(juniorFace),
       pricePerUnit: some(price),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     });
   }
   const r = ctx.settle({
@@ -915,8 +907,6 @@ function payInterest(
           receipt: { of: 'interest' },
           ccy: ccy,
           amount: share,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'corporateAction',
@@ -963,8 +953,6 @@ function windUp(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode | undefined
           receipt: { of: 'transfer' },
           ccy: ccy,
           amount: left,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'corporateAction',
@@ -1061,8 +1049,6 @@ function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: Qt
           qty: share,
           pricePerUnit: some(asPerPiece(0, 'at what it promised')),
           accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'default',
@@ -1115,8 +1101,6 @@ function payTranche(
           qty: share,
           pricePerUnit: some(asPerPiece(1, 'at what it promised')),
           accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: none(),
         },
         {
           kind: 'money',
@@ -1124,8 +1108,6 @@ function payTranche(
           to: ctx.accountOf(holder, ccy),
           ccy: ccy,
           amount: share,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'corporateAction',

@@ -58,7 +58,6 @@ import {
   zeroIfNone,
 } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSideOf } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -224,7 +223,6 @@ export function payDepositInterest(
     const amount = ctx.registry.payable(heldAsMoney(absolute(wanted, 'what moves, either way'), 'the interest'));
     if (amount <= 0) continue;
     const share = { total: amount };
-    const side = cellSideOf(party, amount);
     const leg: Leg = {
       kind: 'money',
       from: paying ? { holder: bank, issuer: bank } : { holder, issuer: bank },
@@ -234,8 +232,6 @@ export function payDepositInterest(
       receipt: { of: 'interest' },
       ccy,
       amount: share.total,
-      fromCell: paying || side === undefined ? none() : some(side),
-      toCell: paying && side !== undefined ? some(side) : none(),
     };
     ctx.settle({
       legs: [leg],

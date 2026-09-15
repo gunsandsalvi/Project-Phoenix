@@ -406,8 +406,6 @@ function openLoan(
       qty: d.units,
       pricePerUnit: some(mark),
       accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
     },
     {
       kind: 'pledge',
@@ -416,7 +414,6 @@ function openLoan(
       instrument: d.collateral,
       qty: posted,
       secures,
-      pledgorCell: none(),
     },
   ];
   const r = ctx.settle({
@@ -501,8 +498,6 @@ export function manufacture(ctx: MechanismContext): void {
           to: ctx.accountOf(loan.lender, loan.ccy),
           ccy: loan.ccy,
           amount: downTick(paid),
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'corporateAction',
@@ -574,8 +569,6 @@ export function charge(ctx: MechanismContext): void {
           to: ctx.accountOf(loan.lender, loan.ccy),
           ccy: loan.ccy,
           amount: fee,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'transfer',
@@ -648,8 +641,6 @@ export function remark(ctx: MechanismContext): void {
           to: ctx.accountOf(payee, loan.ccy),
           ccy: loan.ccy,
           amount: moving,
-          fromCell: none(),
-          toCell: none(),
         },
       ],
       cause: 'transfer',
@@ -753,8 +744,6 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         qty: back,
         pricePerUnit: mark > 0 ? some(mark) : none(),
         accruedPerUnit: none(),
-        fromCell: none(),
-        toCell: none(),
       });
     }
     /**
@@ -774,8 +763,6 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         to: ctx.accountOf(loan.borrower, loan.ccy),
         ccy: loan.ccy,
         amount: downTick(loan.margined),
-        fromCell: none(),
-        toCell: none(),
       });
     }
     if (failed) {
@@ -793,8 +780,6 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         qty: downTick(atMost(loan.posted, ctx.register.free(loan.borrower, loan.collateral), 'what is there to take')),
         pricePerUnit: at > 0 ? some(at) : none(),
         accruedPerUnit: none(),
-        fromCell: none(),
-        toCell: none(),
       });
     }
     // Money D1: an instruction with no legs is not an instruction. A borrow that came back in full

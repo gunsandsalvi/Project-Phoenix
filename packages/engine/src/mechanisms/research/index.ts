@@ -34,8 +34,7 @@ import {
 } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
-import { weightOf } from '../../parties/party.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { weightOf, totalOverMembers } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
@@ -172,8 +171,6 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
     const share = ctx.registry.payable(over(owed, asRatio(members, 'the analysts there are'), "one analyst's share"),
     );
     if (share <= 0) continue;
-    const side = cellSide(cell, share);
-    if (side === undefined) continue;
     ctx.settle({
       legs: [
         {
@@ -181,9 +178,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
           from: ctx.accountOf(bank, ccy),
           to: ctx.accountOf(cell.id, ccy),
           ccy,
-          amount: totalFor(cell, share),
-          fromCell: none(),
-          toCell: some(side),
+          amount: totalOverMembers(cell, share),
         },
       ],
       cause: 'transfer',

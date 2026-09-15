@@ -31,7 +31,6 @@ import {
   negated,
   scale,
 } from '../../core/measure.js';
-import { none } from '../../core/option.js';
 import { months } from '../../core/rate.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -197,8 +196,6 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
     to: ctx.accountOf(to.id, ccy),
     ccy,
     amount: paid,
-    fromCell: none(),
-    toCell: none(),
   };
   const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `remittance to ${to.id}` });
   ctx.record(

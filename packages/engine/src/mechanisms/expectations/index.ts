@@ -37,10 +37,11 @@ import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { add, atLeast, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
-import { isAssetLeg, isContractLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
+import { isAssetLeg, isContractLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { issuedBy } from '../../register/instruments.js';
 import type { MechanismContext, Outlook, OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { weightOf } from '../../parties/party.js';
 
 export const EXPECTATION_PARAMS = {
   memoryMean: paramId('expectations.memory.mean'),
@@ -112,9 +113,10 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
     for (const leg of r.instruction.legs) {
       if (isMoneyLeg(leg)) {
         if (returned.has(leg.to.holder)) continue;
-        // XI-15: what a cell observes is what a MEMBER of it received. The whole cell's receipt is
-        // a sector aggregate, and a decision taken on one would be a decision at an average.
-        const got = leg.toCell.some ? leg.toCell.value.perMember : leg.amount;
+        // XI-15, 0f.2: what a cell observes is what a MEMBER of it received. The leg moves the
+        // cell's total; a member's share of it is that over the people (A2.f), and a decision on
+        // the whole cell's receipt would be a decision at an average.
+        const got = leg.amount / weightOf(ctx.parties.get(leg.to.holder));
         const list = income.get(leg.to.holder) ?? [];
         list.push(got);
         income.set(leg.to.holder, list);
@@ -135,8 +137,8 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
         for (const p of [leg.from, leg.to]) out.set(`${p}|price.${leg.instrument}`, { value: price, unit: ccy });
         // C2: a seller's own fills are what it knows of the demand for what it sells — never the
         // book, which it cannot see, and never the demand it did not win.
-        traded(quantities, leg.from, 'sold', leg.instrument, perMemberOf(leg.fromCell, leg.qty));
-        traded(quantities, leg.to, 'bought', leg.instrument, perMemberOf(leg.toCell, leg.qty));
+        traded(quantities, leg.from, 'sold', leg.instrument, leg.qty / weightOf(ctx.parties.get(leg.from)));
+        traded(quantities, leg.to, 'bought', leg.instrument, leg.qty / weightOf(ctx.parties.get(leg.to)));
       } else if (isContractLeg(leg) && leg.act === 'open') {
         /**
          * A2, Derivative D7: A FILL IN A CONTRACT BOOK IS A PRICE THIS PARTY TRADED AT, like any
@@ -208,9 +210,6 @@ function traded(
 }
 
 /** XI-15: a cell observes what a member of it did, which is what the leg was struck at. */
-function perMemberOf(side: Option<CellSide>, total: number): number {
-  return side.some ? side.value.perMember : total;
-}
 
 /** B3: how wide this party's own recent surprises have been. A read, never a number anybody stated. */
 function width(surprises: readonly number[]): number {
