@@ -11374,3 +11374,30 @@ view that sizes the line (17.0), written under 12a.7.
 **Checks.** `backstop.test.ts` green (two); `short-term-debt.test.ts` green (nine); the estate,
 securitisation and bank-capital suites at their reds of 12a.6 (none new); `check:opens` green;
 lint, typecheck, spec, forbids, deaths green.
+
+## Item 12a.8 — One place to buy a machine, and an estate that asks a price or takes the market
+
+A firm's project bid in every market its plant could come from — the capital-goods line and every
+dead firm's vintage of the kind — and spread its money across them in proportion to what each was
+asking; when two cleared it had bought the gap twice. Now it buys each kind of plant from ONE
+place: the offer asking least per year of the service it would count out to its own horizon, a
+second-hand vintage or a new build, with a tie going to the new build that has its whole life ahead
+of it. The bid itself was already what the service left is worth at its hurdle (D3), so a used
+machine wins when a year of it is cheaper and not otherwise.
+
+The estate's ask had three states and a path between two of them: the last print while it had
+time, sliding to nothing as its programme ran out, and the market in its last period. The slide was
+a written price path (Appendix B) — a reservation nobody had cleared, moved by a count of periods.
+It asks the last print while it has time and takes the market in its last period; nothing between.
+
+**Measured, and written down under 12b.3.** The `sb-found` scale model now throws in period six
+where it used to run: bank.c's wage bill is 5.1e15 and its line publisher cannot tick a negative
+room. The cause is on the record at the baseline too — the banking labour venue prints sixty-seven
+billion an hour at period three on one bank's bid at any price, and bank.c pays 2.7e12 of wages a
+period from period four; this change moved the path enough to cross the throw. A bank's bid for
+hours is the labour venue's finding (12b.3), and `small-business.test.ts:316` is red for it.
+
+**Checks.** `second-hand.test.ts` green (three: the vintage wins when a year of it asks less, the
+new build when not, never both; the estate's ask is the print or the market); `check:opens` green;
+lint, typecheck, spec, forbids, deaths green; the estate suite at its reds; small-business one
+more red, above.

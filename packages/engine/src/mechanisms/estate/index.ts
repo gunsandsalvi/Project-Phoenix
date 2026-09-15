@@ -30,8 +30,6 @@ import {
   asRatio,
   heldAsMoney,
   over,
-  ratioOf,
-  scale,
 } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
@@ -205,37 +203,21 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
 }
 
 /**
- * XI-8, D1: assets are SOLD, into the market that thing always traded in, to whoever bids. The
- * reservation falls as the programme runs out — an estate with a year left can wait for a price and
- * one with a week cannot — and by the last period it takes whatever the book gives it. Nothing here
- * is a discount off book: what it fetches is what somebody paid.
+ * XI-8, D1: assets are SOLD, into the market that thing always traded in, to whoever bids. An
+ * estate with time left asks the last price that thing fetched — what somebody paid — and in its
+ * last period it takes whatever the book gives it. Two states and nothing between them (12a.8):
+ * the reservation used to slide from the print to nothing over the programme, and a path written
+ * down is a price nobody cleared (Appendix B: no written price path). Nothing here is a discount
+ * off book: what it fetches is what somebody bids.
  */
-function offers(view: ParticipantView, m: MarketDecl, closesAfter: number): readonly Order[] {
+export function estateAsk(view: Pick<ParticipantView, 'quantity' | 'period' | 'print' | 'self'>, m: Pick<MarketDecl, 'instrument'>, closesAfter: number): readonly Order[] {
   const units = view.quantity(m.instrument);
   if (!material(units, 2, units)) return [];
   const left = sub(closesAfter, view.period, 'periods left in the programme');
   if (left <= 0) return [{ party: view.self.id, side: 'sell', price: 'market', qty: units }];
   const print = view.print(m.instrument);
   if (!print.some) return [{ party: view.self.id, side: 'sell', price: 'market', qty: units }];
-  // Its patience is what is left of its programme: it asks the last price while it has time, and
-  // less of it as the time goes. There is no discount curve here — the number is how long is left.
-  const total = sub(closesAfter, view.period, 'left') + 1;
-  return [
-    {
-      party: view.self.id,
-      side: 'sell',
-      price: scale(
-        print.value.price,
-        ratioOf(
-          asRatio(left, 'the periods left in its programme'),
-          asRatio(total, 'the periods it has'),
-          'how much of its patience is left',
-        ),
-        'reservation',
-      ),
-      qty: units,
-    },
-  ];
+  return [{ party: view.self.id, side: 'sell', price: print.value.price, qty: units }];
 }
 
 /** A claim on the estate: somebody holding paper the dead party promised (Bond N13, N13.a). */
@@ -681,7 +663,7 @@ export const estate: SystemModule = {
         const opened = view.lastOwn('estate.opened');
         if (!opened.some) return [];
         const closes = opened.value.data['closesAfter'];
-        return offers(view, m, typeof closes === 'number' ? closes : view.period);
+        return estateAsk(view, m, typeof closes === 'number' ? closes : view.period);
       },
     },
   ],

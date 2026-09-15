@@ -366,7 +366,7 @@ export function project(
     readonly outlay: Cash;
     readonly asking: PerPiece;
   }[] = [];
-  for (const o of offers) {
+  for (const o of cheapestPerYear(view, offers, horizonPeriods)) {
     // B1.d, A6: it counts the service THIS plant will give it, out to its own horizon. A vintage
     // half worn out is worth about half as much, and that is why a dead firm's plant fetches what
     // it fetches rather than a discount somebody wrote down (D3).
@@ -472,6 +472,31 @@ function priceOfKind(build: ReadonlyMap<string, PerPiece>, capitalKind: string):
     throw new Missing('Capital Programme C1', `nobody builds ${capitalKind}`, { capitalKind });
   }
   return p;
+}
+
+/**
+ * D3, C1 (12a.8): ONE PLACE TO BUY EACH KIND OF PLANT — the offer that asks least per year of the
+ * service it would count, a dead firm's vintage or a new one. A firm that bid in every market its
+ * plant could come from and spread its money across them bought the gap twice when both cleared;
+ * what it wants is one machine's worth of capacity, from wherever a year of it is cheapest. A tie
+ * goes to the new build, which has its whole life ahead of it.
+ */
+function cheapestPerYear(
+  view: ParticipantView,
+  offers: readonly PlantOffer[],
+  horizonPeriods: number,
+): readonly PlantOffer[] {
+  const best = new Map<string, { readonly offer: PlantOffer; readonly perYear: number }>();
+  for (const o of offers) {
+    const counted = countedYears(view, o.periodsOfService, horizonPeriods);
+    if (counted <= 0 || o.price <= 0) continue;
+    const perYear = over(o.price, asRatio(counted, 'the years of service it counts'), 'what a year of it asks');
+    const standing = best.get(o.capitalKind);
+    if (standing === undefined || perYear < standing.perYear || (perYear === standing.perYear && o.newBuild)) {
+      best.set(o.capitalKind, { offer: o, perYear });
+    }
+  }
+  return [...best.values()].map((b) => b.offer);
 }
 
 /** B1.d, A6: the years of service it counts — its own horizon, or what the plant will give it. */
