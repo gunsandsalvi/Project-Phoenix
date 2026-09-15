@@ -9322,3 +9322,51 @@ what a requirement is, exactly as it was built to.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 6, `check:deaths` 4 of 4,
 `check:existence` green. Tests written and not run.
+
+---
+
+## Item 13.7 — the verification step, and its own figures were the stale ones
+
+13.7 asked for *"COVERAGE re-marked for all 73 clauses across the three"* and for `check:existence`
+to show three fewer absent sectors. **The re-marking had already happened**, in the commits that built
+each piece — which is the loop's own rule (one item, one commit, carrying its COVERAGE re-mark), so
+there was nothing to batch. What was left is a CHECK of what those commits claimed, and the thing it
+caught was the step's own text:
+
+> *"§28 is done at 13.2: Hedge Funds is 5 MET, 3 PARTIAL, 16 MISSING … so the count is four down to
+> three."*
+
+That was 13.2's figure, written before 13.2b existed, and the count is not three.
+
+### What the three sectors actually are
+
+| sector | MET | PARTIAL | MISSING | of | built by |
+|---|---|---|---|---|---|
+| Hedge Funds §28 | 13 | 2 | 9 | 24 | 13.2, 13.2b |
+| Prime Brokerage §15 | 16 | 3 | 5 | 24 | 13.3, 13.4 |
+| Private Equity §29 | 12 | 1 | 12 | 25 | 13.5, 13.5c, 10f.6 |
+
+**ABSENT SECTORS: ONE.** Only the Polity, 0 of 32, which is item 19. It was six when this plan was
+written, and five of those six are closed.
+
+Two other things the check looked for and found clean: no row in the three forward-references a step
+that has since closed, and none of the three is in the BUILT AND DEAD list — the list of sectors
+whose every MET clause carries `NEVER REACHED`, which is the more dangerous kind because it reads as
+done.
+
+**`Insurers` is on that list** (9 of 23, none reached), and it is an inherited measurement: it
+predates the phases 9.5, 14.0, 10f.5 and 13.5c gave that module. It is already positioned at 23.0 as
+`E-25` and was NOT re-taken here, because a measurement is item 23's and taking one mid-build is what
+Law 11 forbids.
+
+### Part 0's tables are annotated rather than rewritten
+
+The two audit tables in Part 0 are the record of what the audit FOUND, and their "who owns it today"
+column had gone stale in four rows. Rewriting the numbers would delete the finding; what is added is
+what has since closed, beside each row, and one line saying the count is now one. **The shape of the
+finding is what the table is kept for** — a sector with no clause MET leaves no trace in any output,
+which is why nobody noticed six of them — and that does not stop being true because the list is
+shorter.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 6, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and not run.

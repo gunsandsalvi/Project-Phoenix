@@ -98,12 +98,17 @@ cell kernel (`parties/party.ts`, `world/cells.ts`) rather than anything that is 
 
 | sector | spec | MET/total | who owns it today |
 |---|---|---|---|
-| **Polity** | §47 | 0 / 32 | worklist **14** → item **19** |
-| **Private Equity** | §29 | 0 / 25 | worklist **13o** → item **13** |
-| **Prime Brokerage** | §15 | 0 / 24 | worklist **13o** → item **13** |
-| **Hedge Funds** | §28 | 0 / 24 | worklist **13o** → item **13** |
-| **Short-Term Debt** | §9 | 0 / 19 | **nobody** → item **10b** |
-| **Small-Business Pools** | §42 | 2 / 28 | **nobody** → item **11** |
+| **Polity** | §47 | 0 / 32 | worklist **14** → item **19** — **still 0, and the only one left** |
+| **Private Equity** | §29 | 0 / 25 | worklist **13o** → item **13** — **closed at 13.5, 13.5c, 10f.6: 12 MET** |
+| **Prime Brokerage** | §15 | 0 / 24 | worklist **13o** → item **13** — **closed at 13.3, 13.4: 16 MET** |
+| **Hedge Funds** | §28 | 0 / 24 | worklist **13o** → item **13** — **closed at 13.2, 13.2b: 13 MET** |
+| **Short-Term Debt** | §9 | 0 / 19 | **nobody** → item **10b** — **closed: 12 MET** |
+| **Small-Business Pools** | §42 | 2 / 28 | **nobody** → item **11** — still 2, both the generic cell kernel |
+
+> **The count as of item 13.7: ONE.** Five of these six were absent when this was written and five of
+> them are not now. What the table is kept for is the SHAPE of the finding — a sector with no clause
+> MET leaves no trace in any output, which is why nobody noticed six of them — and the shape does not
+> stop being true because the list got shorter.
 
 **And five more are built on paper and dead in the world** — every clause they have MET carries
 `NEVER REACHED`, so a module cites it and has never produced an outcome. The check names these
@@ -113,8 +118,8 @@ those are marks on a mechanism nothing has ever invoked.
 | sector | spec | MET (all never reached) / total | the finding | item |
 |---|---|---|---|---|
 | **CDS** | §17 | 17 / 25 | `A-66`, `B-7` — the book cannot produce a first print | **6** |
-| **M&A** | §35 | 10 / 22 | `B-4` — the market for control buys shares and never combines | **6**, **13** |
-| **Insurers** | §27 | 9 / 23 | `A-9`, `B-2` — no policy can be registered in any world | **9**, **14** |
+| **M&A** | §35 | 10 / 22 | `B-4` — the market for control buys shares and never combines | **6**, **13** — **13 MET at 10f.3, 10f.4, and `combine` now has the one condition under which it is not a lie** |
+| **Insurers** | §27 | 9 / 23 | `A-9`, `B-2` — no policy can be registered in any world | **9**, **14** — the module has phases and participants since 9.5, 14.0, 10f.5 and 13.5c; **the NEVER REACHED mark predates all of them and is `E-25`, re-taken at 23.0** |
 | **Securities Lending** | §14 | 9 / 21 | `A-67`, `B-3` — nothing ever borrows a security | **9** |
 | **Commodity Futures** | §20 | 5 / 20 | `A-66`, `B-7` | **6**, **18** |
 
@@ -745,7 +750,20 @@ its lender can cut (B1: *"leverage is a fact about a loan, never a property of t
     the other eight rather than counting it. That is the tool working: marking work you did is not
     wrong, and a count that quietly absorbed it would disagree with the spec's own denominator.
 - [x] 13.6 **The pass that re-marks a fund's claim on itself reads the CONTRACT store**, and it landed before 13.2 draws a mandate that writes anything. `DerivedReads.contractsOf` is the door — signed, per contract, in the money each was written in — injected into `Valuation` the way the curve and the calendar are, so `contract-value.ts` stays the one writer of a mark (Law 4). `navOf` splits it by sign: an asset to one side and a liability to the other (D1), never netted, because a pool long one and short another HAS both. **What remains of this step is 13.2's**: wiring hedge funds into every derivative book as the speculative side (§28 C1) needs a mandate that writes, and there is none. Original text: A fund's equity is zero by construction (Fund Shares A3) because its own claim on itself absorbs whatever its book comes to — and that pass reads the REGISTER, where a contract is not (Derivative X1). A pool with a derivative position would carry a mark its share value had never been told about, which is a fund WITH equity: **measured at 83,247,864 on `etf.us`** the first time funds were let into the contract books. Item 9.7 put `FUND` on `TRADES_CONTRACTS` and made every drawn mandate say `mayWrite: []`, so nothing reaches this today — **by a term of a contract, which 13.2 is about to change.** Open the pass first. Then wire hedge funds into every derivative book as the speculative side (§28 C1), which is the other half of item 6.
-- [ ] 13.7 COVERAGE re-marked for all 73 clauses across the three; `check:existence` shows three fewer absent sectors. **§28 is done at 13.2**: Hedge Funds is 5 MET, 3 PARTIAL, 16 MISSING and is no longer an absent sector, so the count is four down to three. Prime Brokerage (13.3) and Private Equity (13.5) are the two left.
+- [x] **13.7 DONE — and its own figures were stale, which is what a verification step is for.** It
+  said *"Hedge Funds is 5 MET, 3 PARTIAL, 16 MISSING"* (13.2's figure, before 13.2b) and *"the count
+  is four down to three"*. **It is one.** All 73 clauses across the three were re-marked in the
+  commits that built them, which is the loop's own rule — one item, one commit, carrying its COVERAGE
+  re-mark — so there was nothing to batch here and the step is a CHECK of what those commits claimed:
+  - **Hedge Funds 13 MET, 2 PARTIAL, 9 MISSING** of 24 (13.2, 13.2b).
+  - **Prime Brokerage 16 MET, 3 PARTIAL, 5 MISSING** of 24 (13.3, 13.4).
+  - **Private Equity 12 MET, 1 PARTIAL, 12 MISSING** of 25 (13.5, 13.5c, and 10f.6 for §29 B and D).
+  - **ABSENT SECTORS: 1.** Only the Polity (0 of 32), which is item 19. It was six when
+    `docs/IMPLEMENTATION.md` Part 0 was written.
+  - No row in the three forward-references a step that has since closed, and none of the three is in
+    the BUILT AND DEAD list. **`Insurers` is** (9 of 23, none reached) — an inherited measurement that
+    predates the phases 9.5, 14.0, 10f.5 and 13.5c gave that module, already positioned at 23.0 as
+    `E-25` and not re-taken here, because a measurement is item 23's (Law 11).
 - [ ] 13.8 **`E-14`** — `Securities Lending C2, C2.a` are not built, and they are §15 C1's mechanism seen from the other end: both sides of a position marked every period and the difference CALLED in real money between two named parties. `securities-lending:charge` moves the fee and nothing re-marks the collateral, so between the strike and the return the lender's cover erodes silently and C1's haircut is all that stands behind it. Build it once, here, for the portfolio and the stock loan together — two callers of one mechanism, not two mechanisms (Law 4).
 - [x] 13.9 **DONE AT ITEM 10e.4**, which took it whole and went further than this step asked. (a) a manager HIRES in the labour venue, in the `analysis` trade, at what an hour is worth to it. (b) The fee moved off `params` onto `MandateTerms` and the placeholder died — `check:deaths` counts four where it counted five. What 10e.4 did DIFFERENTLY, and deliberately: the fee is not won in a book per pool. A mandate auctioned between managers with no reason to refuse clears at the tick, which is the defect this step was written to avoid and would have reproduced from the other side. What sets a fee is ENTRY: a manager opens a competing product at a fee under the cheapest incumbent, and stops when that fee would not cover what a pool costs it — so the fee falls where several run one blueprint and nothing bounds the fall (Law 6: the refusal is the mechanism). Original text: `fund.fee.<fund>` is a `placeholder` per pool whose own `why` says *"no manager competes for the mandate, so the number stands where a competition should be"*. Item 9.2a built the `Mandate` and 9.2b measured why that is not enough: **a manager in this world employs nobody**, funds nothing and pays for nothing, so two of them in a book bid each other to the tick — which is a competition between parties with no reason to refuse, not a cleared price (Law 11: the missing mechanism, not the number). So this step is two things in one order: (a) a manager HIRES, in the labour venue, like anything else that needs people, and what it can run is the hours it pays for over the assets a mandate carries — the shape `banks/staff.ts:linesCovered` already has for a dealing desk; (b) then the mandate is COMPETED FOR, one book per pool, each manager bidding a fee with its own cost base as its floor, and the winner's bid is the mandate's `fee`. The placeholder dies in the same change (Law 2) and `fee` moves off `params` onto `MandateTerms`, because at that point it is an OUTCOME. A separate account is a mandate whose pool is the client's own balance sheet, so the same book prices that too (§15).
 
