@@ -10944,3 +10944,24 @@ individual firm's miss is 12a's per-member position.
 
 **Checks.** `small-business.test.ts` 9 green; `check:opens` green; lint, typecheck, `plan:check`,
 `check:existence` green. No engine code changed.
+
+## Item 11.4 — The pool into the vehicle
+
+`saleable` never needed a change: 10c replaced its `isLoan` gate with the two facts every kind
+declares — no market, a named obligor — and a cell's loan row has both, so a bank's own view of
+what it would sell shows a cell's row beside a named firm's. A probe in the scale model, asking
+each bank the way the arranger does, sees one. What did change is the money the arranger sells
+in: `moneyOf` read the registry's first currency for every bank in the world, so in a world with
+four currencies a bank abroad would have sold rows in a money it does not issue and found no
+bidder. It is deleted; `arrange` reads `registry.currencyOf(bank.region)` per bank.
+
+**Said plainly.** No deal carrying a cell's row has been cut in the scale model yet; §42 C1 is
+MET on the mechanism and UNMEASURED on that. The §42 C2–C6 and D rows are XI-11's own clauses
+under a second name and are re-marked at 11.5 with the rest.
+
+**Found, positioned.** Two pre-existing reds in `test/securitisation.test.ts`, identical without
+this item: a stale assertion that the module declares no number (it declares one RESOLUTION), and
+a stale reading of which capital rule binds. Under 17.0.
+
+**Checks.** `small-business.test.ts` 10 green; `securitisation.test.ts` 13 green and 2
+pre-existing reds; `check:opens` green; lint, typecheck green.

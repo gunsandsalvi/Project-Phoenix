@@ -206,12 +206,6 @@ export const trancheKind: InstrumentKindProfile = {
 
 
 
-/** The money a bank keeps its book in. One world, one list, read from the registry (Law 4). */
-function moneyOf(ctx: MechanismContext): Option<CurrencyCode> {
-  for (const ccy of ctx.registry.currencies.keys()) return some(ccy);
-  return none<CurrencyCode>();
-}
-
 /** What a party holds in money of a currency, summed over the accounts it banks in. */
 function cashOf(ctx: MechanismContext, who: PartyId, ccy: CurrencyCode): Qty {
   const amounts: Qty[] = [];
@@ -321,7 +315,7 @@ function ccyOfDeal(ctx: MechanismContext, deal: Deal): CurrencyCode | undefined 
  * off the kind's own profile, so a kind that gains a market (item 10d does this to a bank's
  * subordinated debt) stops being securitisable the same day, with nothing here to edit.
  */
-function saleable(view: ParticipantView, ccy: CurrencyCode): readonly Instrument[] {
+export function saleable(view: ParticipantView, ccy: CurrencyCode): readonly Instrument[] {
   const out: Instrument[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
@@ -460,11 +454,12 @@ export function faceToShed(p: {
  * nobody (XI-5).
  */
 export function arrange(ctx: MechanismContext): void {
-  const money = moneyOf(ctx);
-  if (!money.some) return;
-  const ccy = money.value;
   for (const bank of ctx.parties.ofKind(BANK)) {
     if (!bank.status.alive) continue;
+    // Money A1, XI-12 (11.4): THE BANK'S OWN MONEY — the currency of the region it issues in. It
+    // read the registry's first currency for every bank in the world, so in a world with four a
+    // bank abroad sold rows in a money it does not issue and its notes were bid for by nobody.
+    const ccy = ctx.registry.currencyOf(bank.region);
     const view = ctx.participant(bank.id);
     const rows = saleable(view, ccy);
     if (rows.length === 0) continue;

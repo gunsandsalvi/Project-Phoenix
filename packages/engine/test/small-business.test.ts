@@ -9,8 +9,17 @@
  * satisfy every other clause and remove the credit content of §42 without failing anything.
  */
 import { describe, expect, it } from 'vitest';
-import { SMALL_FIRM, SMALL_PER_NAMED, drawSmallBusiness } from '../src/index.js';
-import { abroadWorld, rigDraw, rigFor, rigWorld } from './rig.js';
+import {
+  BANK,
+  SMALL_FIRM,
+  SMALL_PER_NAMED,
+  assemble,
+  drawSmallBusiness,
+  saleable,
+  type MechanismContext,
+  type SystemModule,
+} from '../src/index.js';
+import { abroadWorld, mergeModules, rigDraw, rigFor, rigSpec, rigWorld } from './rig.js';
 
 describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () => {
   it('opens with small firms in it, each a cell standing for a count of them', () => {
@@ -162,6 +171,47 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     expect(new Set(counts).size).toBeGreaterThan(1);
     // And within a region they cluster: fewer periods with a failure in them than failures.
     for (const r of byRegion.values()) if (r.count > 1) expect(r.periods.size).toBeLessThan(r.count);
+  });
+
+  it('its loan row is one a bank can put into a vehicle (C1, E1, XI-11, 11.4)', () => {
+    // What a bank would sell is read off two facts every kind declares — no market, a named
+    // obligor — and a cell's row has both. A probe asks each bank's own view, the way the
+    // arranger does, and the rows it is shown name a cell among them.
+    const seen = new Set<string>();
+    const probe: SystemModule = {
+      id: 'test.saleable',
+      spec: 'Securitisation D1',
+      requires: ['securitisation', 'small-business'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.saleable',
+          spec: 'Securitisation D1',
+          anchor: { after: 'lending.write' },
+          reads: [],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            for (const bank of ctx.parties.ofKind(BANK)) {
+              if (!bank.status.alive) continue;
+              for (const row of saleable(ctx.participant(bank.id), ctx.registry.currencyOf(bank.region))) {
+                if (row.issuer.some && ctx.parties.get(row.issuer.value).kind === SMALL_FIRM) seen.add(String(row.id));
+              }
+            }
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const { banks, firms } = rigFor('sb-borrows', { makes: ['coalRaw'] });
+    const spec = rigSpec('sb-borrows', banks, firms);
+    const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
+    for (let i = 0; i < 4; i += 1) w.step();
+    expect(seen.size).toBeGreaterThan(0);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {
