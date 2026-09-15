@@ -1564,6 +1564,7 @@ export class World {
         parties: this.parties,
         registry: this.registry,
         register: this.store,
+        instruments: this.instruments,
         journal: this.journal,
         agreements: this.agreementStore,
       };
@@ -2475,7 +2476,22 @@ export class World {
       if (r.outcome !== 'settled') return false;
     }
     const from = p.bank;
+    /**
+     * XI-15, 0f.10: A CELL'S BANK IS A DIMENSION OF ITS KEY, so moving banks is moving keys, and a
+     * key has at most one live cell. `rebank` rewrote the key in place and never looked: after a
+     * year every household of a cohort had moved to one bank and stood there as three cells on one
+     * key, which is the state 0f.4 exists to make impossible. The cell standing on the key it is
+     * moving to is found BEFORE the move (afterwards the mover itself stands there), and the mover
+     * merges into it — one of the five events, and it records itself.
+     */
+    const standing =
+      p.representation === 'cell'
+        ? this.parties.liveOnKey(p.kind, { ...p.key, bank: String(to) })
+        : undefined;
     this.parties.rebank(party, to);
+    if (standing !== undefined && standing.id !== party) {
+      mergeCells(standing.id, party, reason, this.currentPeriod, this.currentCycle, this.cellDeps());
+    }
     // E2.a: that a depositor moved is observable — it is what the bank it left will see in its own
     // deposit lines next period (F1), and what the one it arrived at will see too.
     this.journal.record(

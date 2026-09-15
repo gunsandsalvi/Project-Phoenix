@@ -399,15 +399,27 @@ function paramsOf(): ParamDecl[] {
 
 /**
  * C1.c, XI-16 A3, 0f.7c: THIS CELL'S OWN PATIENCE, drawn once from the declared mean and width and
- * kept — the way its memory is (`expectations`). A cell that has not drawn draws now, under its own
- * name, so the draw is the same on every run and different for every cell.
+ * kept — the way its memory is (`expectations`).
+ *
+ * 0f.10: DRAWN UNDER THE POPULATION'S NAME, NOT THE CELL'S. A cell is what the lattice makes of a
+ * population — the people of one cohort at one bank, cut by the bands they fall in — and a member
+ * who crosses an edge moves to another cell of the same population. A draw keyed by the cell's id
+ * would give that member a new patience for having crossed, and the world's answer would move
+ * with the grain: the seeded dimensions of its key are what a population IS, so the draw is keyed
+ * on them, and every cell of one population holds the one draw. What still disagrees is what
+ * XI-16 A3 needs to disagree: two populations, two draws.
  */
 function patienceOf(view: ParticipantView): number {
   const own = view.working(PATIENCE, notYetDrawn);
   if (own.weeks !== undefined) return own.weeks;
+  const self = view.self;
+  const population =
+    self.representation === 'cell'
+      ? `${keyOf(self, 'region')}|${keyOf(self, 'cohort')}|${keyOf(self, 'bank')}`
+      : String(self.id);
   const mean = view.params.periods(HOUSEHOLD_PARAMS.patience);
   const spread = view.params.ratio(HOUSEHOLD_PARAMS.patienceDispersion);
-  const draw = view.rng.derive(`patience/${String(view.self.id)}`).next();
+  const draw = view.rng.derive(`patience/${population}`).next();
   // Uniform on [mean − spread·mean, mean + spread·mean): centred, and a mean of nothing draws nothing.
   own.weeks = mean + mean * spread * (2 * draw - 1);
   return own.weeks;
@@ -567,25 +579,24 @@ function willWork(view: ParticipantView, venue: VenueDecl, rows: readonly Consum
   const hours = scaleQty(each, people, 'hours offered');
   if (hours <= 0) return [];
   /**
-   * B1, B3, D1.c, 0f.7a: WHAT IT WILL WORK FOR IS A THRESHOLD ON ITS OWN KEY, and the wage it is
-   * against is in the basket, not in a `benefit` outlook. The going rate is published every period
-   * and is public (D1.c).
+   * B1, B3, D1.c, 0f.7a: WHAT IT WILL WORK FOR IS WHAT FEEDS ITS PEOPLE, and the wage it is
+   * against is in the basket, not in a `benefit` outlook. A cell asks what its members' NEEDS cost
+   * over the hours it offers, and will not offer into a trade paying less than that — which is
+   * what being out of the workforce IS, and it is reversible, because the going rate is
+   * employment-weighted actual pay (D1.c, public every period) and employers bidding it up brings
+   * the discouraged back. A trade NOBODY is employed in has no going rate and nothing to be
+   * discouraged by, which is how a new trade gets its first worker at all. A cell that cannot cost
+   * its basket has never seen a price and does not answer: missing is missing.
    *
-   * A cell in the first SPELL band — just separated, or never out — asks what the trade pays: its
-   * members came from a job at that wage and will go back at it. A cell in a longer spell asks what
-   * its members' NEEDS cost over the hours it offers (Kroft–Lange–Notowidigdo 2013: the length of
-   * a spell changes what a person will take), and will not offer into a trade paying less than
-   * feeds its people — that is what being out of the workforce IS, and it is reversible, because
-   * the going rate is employment-weighted actual pay and employers bidding it up brings the
-   * discouraged back. A trade NOBODY is employed in has no going rate and nothing to be discouraged
-   * by, which is how a new trade gets its first worker at all. A cell that cannot cost its basket
-   * has never seen a price and does not answer: missing is missing.
+   * 0f.10: NOT ITS SPELL BAND. The first cut of this read the cell's `spell` band — just separated
+   * asks the going rate, a long spell asks the basket — and a decision that reads a BAND INDEX
+   * makes the band's edge a preference: refine the edges and the world's answer moves, which is
+   * the test that says an edge is a shape. The spell stays a dimension of the key, because it is a
+   * fact about the population and the lattice stratifies on it; nothing decides on it.
    */
   const going = goingRateIn(view, venue.id);
   const needs = basketOf(view, rows, numbers(view)).needs;
-  const perHour = pricedAt(needs, each, 'what an hour must bring in to feed a member');
-  const justSeparated = keyOf(self, 'spell') === '0';
-  const mine = justSeparated && going.some ? going.value : perHour;
+  const mine = pricedAt(needs, each, 'what an hour must bring in to feed a member');
   if (mine <= 0) return [];
   if (going.some && going.value < mine) return [];
   return [{ party: self.id, side: 'sell', price: mine, qty: hours }];

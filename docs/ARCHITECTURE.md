@@ -178,44 +178,53 @@ Derivative contracts are **not holdings** (Derivative X1). They live in a separa
 whose invariant is zero-sum (D1.b). The foundation defines the store interface; the layer (§16) fills
 it in its worklist position.
 
-### 4.4 Parties: named or cell (XI-15)
+### 4.4 Parties: named or cell (XI-15, 0f)
 
-A `Party` is `Named` or `Cell`. A cell has an integer `weight` (a count) and holds **per-member**
-state: its holdings and accounts are stored per member, and the cell's total is `weight × member` at
-read. An instruction leg on a cell is denominated **per member** and records the weight it was applied
-at, so the counterparty's total is `perMember × weight` and both legs still sum to zero.
+A `Party` is `Named` or `Cell`. A cell has an integer `weight` (a count of members) and holds
+**totals**: its holdings, accounts and equity are the cell's whole, and `perMember(party,
+instrument)` is a read of the total over the count. A decision is taken for one member
+(Households A2.f) from per-member reads and posted as a total (a per-member rule × the count is the
+arithmetic of a population, `gridPerMember`/`totalOverMembers`); an instruction leg on a cell is a
+total like any other leg. There is no per-member leg, no grain, no divisibility invariant and no
+`sameState`.
+
+**A cell's identity is its KEY on a declared lattice** (`registry/lattice.ts`, `PartyKindProfile.lattice`).
+The lattice is data: categorical dimensions (region, bank, cohort, tenure, employment state, credit
+record; a line and an age for small firms), each owned by the event that moves it, and banded
+dimensions (liquid wealth in weeks of expected income, illiquid wealth, spell length; size and
+leverage for small firms) whose edges are declared as RESOLUTION and tested by invariance
+(`test/lattice.test.ts`: refine every edge by two and the population is the same population). The
+seed states the seeded dimensions only; the kernel reads the rest off the holdings and the record
+at the seal (`placeCellsOnLattice`) and a dimension it cannot read yet is `unread`, a real state.
+**At most one live cell per key**, kept by the kernel: a move onto an occupied key merges
+(`reKeyOntoStanding`; a bank move goes the same way).
+
+Movement is the five weight events and nothing else — entry, death, promotion, merge, and the
+crossings the kernel reads at the close of `revaluation` (`crossings()`, the one writer of a cell's
+position on its bands). A weight event moving `n` members moves `floor(total × n / weight)` pieces
+of every holding (`Register.moveShare`) and the remainder stays; the event journals what moved per
+instrument and the `flows` family reads it as the explanation. A merge adds totals and weights and
+carries what the mover issued (`Instruments.reseat`) and owed (`succeedAgreements`). A cell is
+homogeneous by construction — it is what the lattice makes of one population — and nothing decides
+on a band INDEX: a decision reads the cell's own quantities, because a rule keyed to a band would
+make the band's edge a preference (0f.10).
 
 Consequences the representation enforces rather than checks:
 
-- a cell is homogeneous by construction — there is no field a member could differ in;
-- an event that applies to part of a cell must **split** it first (`splitCell(cell, members)`), which
-  is exact; identical cells **merge**;
-- the weight changes by exactly five events — entry, death, promotion, split, merge — through one
-  `weightEvent` API that journals cause and date; nothing else can write it;
-- aggregation is `cell.integrate(f) = f(memberState) × weight`. There is no `mean()`; the average is
-  unreachable (XI-15: _a question that cannot be phrased will not be asked wrong_).
+- aggregation is `integrate(f) = Σ f(cell) × weight`; there is no `mean()`, so the average is
+  unreachable (XI-15: _a question that cannot be phrased will not be asked wrong_);
+- a preference a cell holds between periods (its patience, its memory) is drawn under its
+  POPULATION's name — the seeded dimensions of its key — so a member that crosses an edge keeps it
+  and the world's answer does not move with the grain;
+- lifting a relationship into the key is a data change (Small-Business Pools A6.a): a registry row,
+  a lattice entry and the event that moves it; no mechanism and no other kernel type changes.
 
-The cell **key** is registry data; lifting a relationship into the key is a data change and a
-re-stratification event, never a mechanism change (Small-Business Pools A6.a). The claim is only
-true if the kernel reads the declared list, so `CellKey` is a MAP of the dimensions the registry
-names (`Readonly<Partial<Record<CellKeyDimension, string>>>`) rather than a shape naming three, and
-`keyOf(cell, dim)` is its one reader. `RegistryData.cellKey` says WHICH dimensions this world
-keys on; `KEY_DIMENSIONS` in `parties/party.ts` says what each one MEANS, and it is the only such
-table (Law 15: data in the registry, kind-varying behaviour in one dispatch). A dimension declares
-two things at most: where the same fact **also** lives on the party, so the copies must agree (Law
-4 — `region` and `bank` do, `cohort` does not), and whether the value must name something the
-registry declares. A dimension with neither — a wealth band, a tenure — is the key's own, and
-having nowhere else to live is precisely why it is a dimension.
-
-`cellKeyFaults(registry, cell)` is the one writer of the rule and has two readers with opposite
-postures: `Parties.add` throws on the first fault, the `names` audit family reports each as a
-finding. Both are needed, because `add` is not the only writer of a party — `bankAt` rewrites a key
-— and because the declared list can change under cells that already exist, which is what a
-re-stratification IS. Merge identity (`Parties.sameKey`) reads the same list: a world keyed on a
-fourth dimension that merged on three would fold together two populations it had just stratified
-apart. **Adding a dimension is a registry row, a table entry and the seed that fills it; no
-mechanism and no other kernel type changes** — which is what 13d needs to stratify households by
-wealth.
+`cellKeyFaults(registry, cell, scope)` is the one writer of the key rule and has two readers with
+opposite postures: `Parties.add` throws on the first fault (scope `seeded`), the `names` and `units`
+audit families report each as a finding (scope `all`; the invariant is one live cell per key).
+`KEY_DIMENSIONS` in `parties/party.ts` says what the kernel can CHECK about a dimension — where the
+same fact also lives on the party (`region`, `bank`) and whether the value must be something the
+registry declares — and every other dimension is the kind's own fact.
 
 ### 4.5 Prices and value (XI-6, Clearing D/E)
 

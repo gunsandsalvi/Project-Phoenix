@@ -3,9 +3,10 @@
  *
  * @spec XI-15 Households F1.a Households F1.b Small-Business Pools A6.c Small-Business Pools E5 Appendix A
  *
- * A split moves a whole-piece share of every holding to a new cell (0f.1). A merge requires an
- * identical key and adds totals and weights. Entry, death and promotion move the weight with a
- * cause and a date. Every event is journaled.
+ * A re-key moves `floor(total × n / weight)` pieces of every holding to the cell on the new key
+ * (0f.4); a merge requires an identical key, adds totals and weights, and carries what the mover
+ * issued (0f.10). Entry, death and promotion move the weight with a cause and a date. Every event
+ * is journaled.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
@@ -14,17 +15,19 @@ import { positiveCount } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellParty, Parties, WeightEventKind } from '../parties/party.js';
 import type { Register } from '../register/register.js';
+import type { Instruments } from '../register/instruments.js';
 import { succeedAgreements, type SuccessionDeps } from './succession.js';
 
 /** Register F2: a cell is a party, so what it owed moves with it when it ceases (`succession`). */
 export interface CellDeps extends SuccessionDeps {
   readonly parties: Parties;
   readonly register: Register;
+  readonly instruments: Instruments;
   readonly journal: Journal;
 }
 
 
-/** Merge `b` into `a`: both must have the same key and identical per-member state. */
+/** Merge `b` into `a`: both must have the same key; totals and weights add, and what `b` issued is `a`'s to owe. */
 export function mergeCells(
   a: PartyId,
   b: PartyId,
@@ -58,6 +61,16 @@ export function mergeCells(
     cause,
   });
   d.parties.cease(b, period, a);
+  /**
+   * XI-8, Register B3, 0f.10: WHAT THE MOVER ISSUED IS THE ABSORBING CELL'S TO OWE. A cell that
+   * borrowed (0f.7b) and then merged left its loan naming an issuer that had ceased, and the next
+   * maturity was refused at settlement (Money E4). The row is per (lender, cell); the cell it is
+   * on is the one standing. A cell of borrowers and a cell of the debt-free sharing one key is a
+   * lattice question, positioned at 12a.4 (a `leverage` band on the household lattice).
+   */
+  for (const i of d.instruments.issuedBy(b)) {
+    if (i.status.live) d.instruments.reseat(i.id, a);
+  }
   succeedAgreements(b, a, period, cycle, d);
   d.journal.record(
     period,

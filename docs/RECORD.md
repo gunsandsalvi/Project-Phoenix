@@ -10564,3 +10564,36 @@ deleted — its purpose is 0f.10's.
 
 **Checks.** `check:opens` green on both worlds; the lattice, small-business and household-profile
 tests green; lint, typecheck, `check:spec`, `check:forbids`, `check:deaths` green.
+
+## Item 0f.10–0f.11 — The lattice over a year, and 0f closed
+
+**Six tests, and what they found.** `test/lattice.test.ts` asks whether a cell stays what the
+lattice makes of a population once people move. Two of the answers were kernel defects the
+representation exists to make impossible, and both are fixed at the cause: a bank move rewrote a
+cell's key in place and never merged, so after a year every household of a cohort had moved to one
+bank and stood there as three cells on one key (the standing cell is now found before the move and
+the mover merges into it); and a merge left what the mover ISSUED naming a ceased issuer — no cell
+had issued anything before 0f.7b — so the next maturity was refused at settlement (`mergeCells`
+carries issued instruments through `Instruments.reseat`, as it already carried agreements).
+
+**Two of 0f.7's own rules were shapes, and the invariance test is what says so.** The reservation
+wage read the cell's spell BAND; a decision keyed to a band index makes the band's edge a
+preference, and the rule now reads the basket only (the spell stays a dimension: the lattice
+stratifies on it, nothing decides on it). Patience was drawn by cell id, so a member that crossed
+an edge drew a new one; it is drawn under the population's name — the seeded dimensions of the key
+— and every cell of one population holds the one draw. With those two gone, refining every band
+edge by two leaves the population the same population and moves a year's household spending by
+less than the grain's own dust (one piece per cell-decision, derived), which is the exit.
+
+**0f.11.** ARCHITECTURE 4.4 is rewritten for totals, the lattice, the five events and one cell per
+key; the CLAUDE.md digest line follows it; COVERAGE is re-marked for §41, §42 and §46 A3 (Part XI
+has no rows of its own — it is reached through the clauses that cite it). The `benefit` outlook is
+deleted from `expectations` and the `Subject` type: nothing has read it since 0f.7a.
+
+**Positioned.** A cell buying from a cell, the size-draw spread and clustered defaults → 11.0 and
+11.3; entry and exit both non-zero → 12.7; the outlook-spread raising crossings → Part XII; a
+`leverage` band on the household lattice → 12a.4; the switching cascade that moved every household
+to one bank within a year → 17.0.
+
+**Checks.** `check:opens` green on both worlds; the lattice suite green; lint, typecheck,
+`check:spec`, `check:forbids`, `check:deaths` green.

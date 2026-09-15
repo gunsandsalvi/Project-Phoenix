@@ -88,9 +88,6 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
 function observations(ctx: MechanismContext): Map<string, { value: number; unit: string }> {
   const out = new Map<string, { value: number; unit: string }>();
   const income = new Map<PartyId, number[]>();
-  // A-38, Labour B1.a: the same receipts LESS the wage, so somebody can ask what a party would have
-  // without the job. One pass, two totals — never a second walk of the same ledger (Law 4).
-  const benefit = new Map<PartyId, number[]>();
   const quantities = new Map<string, { instrument: InstrumentId; party: PartyId; amounts: number[] }>();
   const earnings = new Map<PartyId, number[]>();
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
@@ -120,15 +117,6 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
         const list = income.get(leg.to.holder) ?? [];
         list.push(got);
         income.set(leg.to.holder, list);
-        // Labour B1.a: what it did NOT work for. A wage is the one receipt a job pays, so the
-        // outside option is everything else that reached it — the standing mandate, an estate's
-        // distribution, a coupon. An unclassified receipt is not income (`MoneyLeg.receipt`) and
-        // is not this either.
-        if (leg.receipt !== undefined && leg.receipt.of !== 'wage') {
-          const kept = benefit.get(leg.to.holder) ?? [];
-          kept.push(got);
-          benefit.set(leg.to.holder, kept);
-        }
       } else if (isAssetLeg(leg) && leg.pricePerUnit.some) {
         // A2: the price this party traded at is something it saw; a print it did not trade at is
         // public information, and it reaches the party as one more thing observed, not as this.
@@ -166,10 +154,6 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
   for (const [party, amounts] of income) {
     const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);
     out.set(`${party}|income`, { value: sum(amounts).value, unit: ccy });
-  }
-  for (const [party, amounts] of benefit) {
-    const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);
-    out.set(`${party}|benefit`, { value: sum(amounts).value, unit: ccy });
   }
   for (const [key, seen] of quantities) {
     if (!ctx.parties.has(seen.party)) continue;
