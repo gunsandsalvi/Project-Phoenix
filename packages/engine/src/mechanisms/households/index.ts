@@ -43,7 +43,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { instrumentId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
+import { instrumentId, paramId, partyId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
 import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { keyOf, weightOf } from '../../parties/party.js';
@@ -93,6 +93,7 @@ export {
 } from './portfolio.js';
 import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
 import { goingRateIn } from '../../registry/wages.js';
+import { employedKey } from '../../register/employment.js';
 import { rentOwedBy, shortfallOf, strikesPublished } from '../../registry/funding.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
@@ -129,7 +130,13 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
     {
       dim: 'employment',
       movedBy: 'labour.hire',
-      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('labour.hire', cell).some ? 'employed' : 'unemployed'),
+      // 12b.2a: the value names the JOB (`employedKey`), so a cell is one employer's one row.
+      opening: (reads: LatticeReads, cell: PartyId): string => {
+        const hired = reads.lastEvent('labour.hire', cell);
+        if (!hired.some) return 'unemployed';
+        const d = hired.value.data;
+        return employedKey(partyId(String(d['employer'])), String(d['occupation']), hired.value.period, d['moved'] === true ? 'anywhere' : 'trade');
+      },
       why: 'a wage is the one receipt a job pays; a cell with jobs and a cell without face different weeks (Labour A3.a)',
     },
     {

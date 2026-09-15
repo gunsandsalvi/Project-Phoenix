@@ -158,6 +158,19 @@ export interface EmploymentReads {
 
 const live = (a: Agreement): boolean => a.state === 'performing' || a.state === 'breached';
 
+/**
+ * XI-15, Labour A4.c, B3 (12b.2a): THE EMPLOYED KEY NAMES THE JOB. A cell holds one job, and the
+ * standing cell of a key holds everybody on that key — so a key that said only "employed" held
+ * every employer's staff of a region, cohort and bank in one cell, and a row of ten sat on a cell
+ * of two hundred and ten. The value of the `employment` dimension for the employed is the job:
+ * who, in what trade, hired when and in which round — the four things that make one row's terms —
+ * so the cell a hire lands on is the cell of that row and no other's. The one writer of the value
+ * is here; the lattice's opening rule and the hire both spell it through this.
+ */
+export function employedKey(employer: PartyId, occupation: string, period: Period, round: string): string {
+  return `employed:${String(employer)}:${occupation}:${String(period)}:${round}`;
+}
+
 /** C3, C5 (12b.2): the hours these rows will keep in one trade and place — not the ones under notice. */
 export function standingHours(rows: readonly EmploymentRow[], occupation: string, region: RegionId): Qty {
   return sum(

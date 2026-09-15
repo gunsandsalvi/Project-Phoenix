@@ -11483,3 +11483,25 @@ at 12b.6.
 gate lifted (ten paid through four periods of notice, five separated with nothing owed, five paid
 after); `check:opens` green; lint, typecheck, spec, forbids, deaths green; 41 red of 88 across the
 world, firms, small-business, control, households, treasury, banks and funds suites, from 42.
+
+## Item 12b.2a — The employed key names the job
+
+A hire re-keyed the hired onto the standing cell of `employment = employed`, and the standing cell
+of a key holds everybody on it: every employer's staff of a region, cohort and bank sat in one
+cell, a row of ten on a cell of two hundred and ten, and the units family said so every period
+(`Labour A4.c`) — the finding the labour scale model's tests were red on, and the cell 12b.2 found
+paying twenty-one wage bills. The value of the dimension names the JOB now: who, in what trade,
+hired when and in which round — the four things that make one row's terms — written once in the
+register (`employedKey`) and spelled by the hire and by the lattice's opening rule. A second hire
+into the same job in the same period lands on the same standing cell and moves the row's headcount
+rather than opening a second row: a cell holds one job (B3).
+
+**Measured.** The labour scale model's audit carries no Labour finding. What is left in its five
+red tests is the world's own — prints held without a print (`Clearing F2`), accounts that do not
+close per member (`Audit B5`), plant lines naming markets that do not exist (`Clearing D1`), flows
+the weight events do not sum to (`Money D3`) — which is 12b.6's to read and Part XII's to measure.
+Across the world, firms, small-business, control, households, treasury, banks and funds suites: 38
+red of 88, from 41; the treasury's twelve missed coupons of 12b.2 are gone.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `lattice.test.ts`
+at its one red (a basket, not a key).

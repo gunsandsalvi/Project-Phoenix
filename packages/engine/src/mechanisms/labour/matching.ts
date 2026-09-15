@@ -63,6 +63,7 @@ import { keyOf, weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
   EMPLOYMENT,
+  employedKey,
   employmentOf,
   wagePerMember,
   type EmploymentRow,
@@ -330,8 +331,26 @@ function hire(
   round: Round,
 ): void {
   if (members <= 0) return;
-  // 0f.4: the hired move to the standing cell of the employed key; there is no split.
-  const hired = ctx.cells.reKey(worker, members, { employment: 'employed' }, `hired by ${employer}`);
+  // 0f.4, 12b.2a: the hired move to the standing cell of THIS JOB's key — the employer, the trade,
+  // the period and the round name the row's terms, so the cell they land on holds this row and
+  // no other employer's. There is no split.
+  const hired = ctx.cells.reKey(worker, members, { employment: employedKey(employer, occupation, ctx.period, round) }, `hired by ${employer}`);
+  // B3, A4.c: a cell holds ONE job. A second hire from another cell into the same job this period
+  // lands on the same standing cell, and the row it already holds — same employer, trade, wage
+  // and start — takes the people: its headcount moves, the row does not multiply.
+  const standing = ctx.employment.ofWorker(hired);
+  if (standing?.employer === employer && standing.occupation === occupation && standing.since === ctx.period) {
+    const more: EmploymentTerms = { ...termsOf(standing), headcount: weightOf(ctx.parties.get(hired)) };
+    ctx.restate(standing.id, more);
+    book.skill[hired] = occupation;
+    ctx.record(
+      'labour.hire',
+      [employer, hired],
+      { row: standing.id, employer, worker: hired, occupation, headcount: members, wagePerHour: standing.wagePerHour, productiveFrom: standing.productiveFrom, moved: round === 'anywhere' },
+      true,
+    );
+    return;
+  }
   // XI-8: the row IS the commitment, so the kernel writes it and gives it its identity — there is
   // no `book.next` any more, and no employment id this module invented (item 9.1).
   // An employment owes NOTHING the instant it is struck: the wage falls due at the end of the
