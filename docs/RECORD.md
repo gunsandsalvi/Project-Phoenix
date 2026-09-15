@@ -9614,3 +9614,43 @@ dependency positions. No engine code was changed by the review.
 **Tests run**: `npm run typecheck`, `npm run lint`, `check:spec`, `check:forbids`, `check:deaths`,
 `check:existence` (all green); one smoke assembly of the rig (throws; see above); one profile of
 the patched rig over 20 periods (Part 3 §3.1). The suite was not run: it cannot be until item 0.
+
+## Review 2026-09-15 (second pass) — every engine file read; the plan rewritten from the source
+
+The owner rejected the first pass as insufficient. This pass read every file under
+`packages/engine/src` (187 files, line by line: kernel, registry, seeds, every mechanism, the
+observer) and kept a working findings file as it read — 502 numbered findings, each at a file and
+line — before rolling them into `docs/IMPLEMENTATION.md`. No engine code was changed.
+
+**What the full read found beyond the first pass** (Part 0 of the plan carries the evidence):
+
+- **Eight more stops the smoke run had not reached**, each a blocker the first time its path runs:
+  no transit instrument exists so no cargo has ever loaded (`freight/index.ts:323`); a capital raise
+  at reservation 0 is dropped silently by `onTheGrid`; a period-0 overdraft throws in `bookDraws`;
+  a tender with a cell seller throws at `asQty`; the insurer delivers policy units it was never
+  issued; a loan drawn on 29 February; the deposit-insurance limit is one hundred dollars per
+  member, which closes every bank's funding room from period 1; and the cost of capital requires a
+  quote that requires a project that requires a cost of capital. The last two together are why
+  nothing is ever lent or built.
+- **Four systems whose defects are one design decision**, recommended as remakes rather than
+  repairs: the cell representation (per-member holdings with split-on-partial-event cannot merge,
+  cannot trade cell to cell, cannot age into an existing cell, and contradicts Part XII's one cell
+  per key); phase assembly; the bank's credit view (every required yield is one number for every
+  name, so every desk's view of every bond is the same curve); the opening.
+- **Twelve docstrings that describe mechanisms the code does not contain**, nine facts with two
+  writers, six one-sided flows, a rate-quoted mark off by a factor of a hundred in every
+  rate-priced derivative, a backstop drawn after the paper has defaulted and drawn as a gift, an
+  invoice that is never presented again once missed, land that prints at one cent, rent at 100 %
+  of income, and a small-business tier of cells that hold nothing.
+- **A per-file inventory of every walk** that is O(parties), O(instruments), O(journal) or
+  O(ledger) per period and of every one called per party, per market or per fill (Part 3 §3.1),
+  with the index or cache that replaces each.
+
+**What changed.** `docs/IMPLEMENTATION.md` rewritten: seventeen blockers in item 0; **0b′** (the
+cell remake) and **12b** (employment as a standing relation) inserted; **17.0′** (the credit-view
+remake) as the first step of 17; every item's steps name file, line, change and test; Part 3
+carries fifteen layout steps gated on the ladder; Part 4 positions every one of the 502 findings.
+The `check:existence` table is unchanged and verified.
+
+**Tests run**: `check:existence`, `check:deaths`, `plan:check`, `check:spec` (green). The suite
+was not run: item 0 is what makes it runnable.
