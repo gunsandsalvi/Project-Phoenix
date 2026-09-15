@@ -10597,3 +10597,34 @@ to one bank within a year → 17.0.
 
 **Checks.** `check:opens` green on both worlds; the lattice suite green; lint, typecheck,
 `check:spec`, `check:forbids`, `check:deaths` green.
+
+## Item 0g.1 (in progress) — The ladder, and what its first rung found
+
+**The ladder is a script, one rung per process** (`npm run ladder -- <banks> <firms> <grain>`,
+`test/ladder.ts`), because a measurement runs at the end of a step and not in the suite (Law 11);
+what a rung must hold by construction — people and firms equal at both grains, no fewer keys at
+the finer one — is `test/ladder.test.ts` on the first rung, where the suite can afford it.
+
+**Two build stops at the first rung, fixed at the cause.** `equity/share.ts votesOf` multiplied a
+cell's TOTAL shares by its weight — a 0f.1 site no opens run reached, because votes are counted
+only where a listed line has a record date — and the first rung cast more votes than there are
+safe integers; votes are the units held times the votes a share carries. Then the second rung ran
+out of six gigabytes of heap: `Register.moveShare` COPIED the whole equity ledger of the cell the
+members left — every entry since the seed — into every cell a death or a crossing split off, and
+`merge` concatenated it again, so the history of one population was held once per event that ever
+touched it. The movers now arrive with ONE entry, their per-member equity under the cause that
+moved them, on a fresh walk; a merge adds the one entry its mean adjustment is. The `accounts`
+family's identity (entries = moves + 1, Σ entries = the walk) holds by construction on both.
+
+**First rung, 3 banks / 12 firms, a year, before and after** (behaviour identical: people, small
+firms, events, sessions, money per member and the going rate did not move — Law 18's gate):
+
+| | ms/period at 52 | heap MB at 52 | live sampled heap | audit findings |
+|---|---|---|---|---|
+| before | 121 | 370 | 235 MB (162 MB under `households.lifecycle die` → `moveShare`) | 5,418 |
+| after | 113 | 124 | 69 MB (journal 13, ledger 9, lots 3) | 3,812 |
+
+The 1,606 findings that went were the `accounts` family counting a copied ledger's entries against
+a fresh walk's moves. The second rung is running as this is written; its line and the third rung
+follow in the next entry. Still to place in 0g: lots never coalesce (36,197 lots over 168
+holdings after a year at this rung — 0g.6), and the journal is the largest thing left (0g.14).

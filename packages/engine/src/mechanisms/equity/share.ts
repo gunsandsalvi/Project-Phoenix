@@ -24,7 +24,6 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import { instrumentKindId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { weightOf, type Party } from '../../parties/party.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import { issuerName } from '../../registry/naming.js';
@@ -58,16 +57,14 @@ export function shareTerms(i: Instrument): ShareTerms {
 }
 
 /**
- * F3, A5, XI-15: what a holder can cast. A cell holds per member and stands for `weight` of them,
- * so it casts weight × member × votes per share — a represented holder is not disenfranchised by
- * its representation, and a majority is therefore a thing that can be bought (A5.a).
+ * F3, A5, XI-15: what a holder can cast — every share it holds, times the votes a share carries. A
+ * cell's holding is its members' TOTAL (0f.1), so a represented holder casts exactly what its
+ * members hold between them and is not disenfranchised by its representation; a majority is
+ * therefore a thing that can be bought (A5.a). This multiplied the total by the weight once more,
+ * and the first rung of the ladder (0g.1) cast more votes than there are safe integers.
  */
-export function votesOf(holder: Party, perMemberUnits: Qty, terms: ShareTerms): Qty {
-  return scaleQty(
-    scaleQty(perMemberUnits, weightOf(holder), 'shares the holder casts'),
-    terms.votesPerShare,
-    'votes',
-  );
+export function votesOf(units: Qty, terms: ShareTerms): Qty {
+  return scaleQty(units, terms.votesPerShare, 'votes');
 }
 
 export const shareKind: InstrumentKindProfile = {

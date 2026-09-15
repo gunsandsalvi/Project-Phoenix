@@ -32,7 +32,8 @@
     "check:deaths": "tsx tools/check-deaths.ts",
     "check:existence": "tsx tools/coverage-existence.ts --verify",
     "check:opens": "vitest run packages/engine/test/opens.test.ts",
-    "coverage:reached": "tsx packages/engine/test/reached.ts"
+    "coverage:reached": "tsx packages/engine/test/reached.ts",
+    "ladder": "tsx packages/engine/test/ladder.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

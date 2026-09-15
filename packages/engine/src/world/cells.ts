@@ -51,7 +51,7 @@ export function mergeCells(
    * the run so nothing persisted, but the order was backwards and it costs nothing to put right:
    * ask, apply, journal.
    */
-  const moved = d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight);
+  const moved = d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight, period, cycle);
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -172,7 +172,7 @@ export function reKeyCell(
     key: { ...c.key, ...key },
   };
   d.parties.add(fresh);
-  const moved = d.register.moveShare(cell, id, members, c.weight);
+  const moved = d.register.moveShare(cell, id, members, c.weight, period, cycle);
   d.parties.applyWeight({
     kind: 'promotion',
     party: cell,

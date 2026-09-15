@@ -532,8 +532,7 @@ function publishReads(ctx: MechanismContext, rows: readonly EquityDecl[]): void 
     // a party that funded a firm's entry (Firm Birth A, worklist 13g).
     const boundTerms: number[] = [];
     for (const holder of ctx.register.holdersOf(line.id)) {
-      const party = ctx.parties.get(holder);
-      voteTerms.push(votesOf(party, ctx.register.quantity(holder, line.id), terms));
+      voteTerms.push(votesOf(ctx.register.quantity(holder, line.id), terms));
       // 0f.1: the register holds the cell's TOTAL.
       boundTerms.push(ctx.register.encumbered(holder, line.id));
     }

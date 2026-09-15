@@ -219,7 +219,8 @@ describe('what a share is (Equity A)', () => {
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     expect(cell).toBeDefined();
     if (cell?.representation === 'cell') {
-      expect(votesOf(cell, asQty(2, 'two shares a member'), terms)).toBe(2 * cell.weight * terms.votesPerShare);
+      // 0f.1: a cell's holding is its members' total; it casts what it holds, no more and no less.
+      expect(votesOf(asQty(2 * cell.weight, 'two shares a member, held in total'), terms)).toBe(2 * cell.weight * terms.votesPerShare);
     }
   });
 

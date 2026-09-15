@@ -15,6 +15,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import { asCash, asPerPiece, asRatio, type Cash, over, type PerPiece, type PerMember, valueAt, asTotal, eachMember } from '../core/measure.js';
+import { asPerMember } from '../core/measure.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import {
   atMost,
@@ -713,7 +714,14 @@ export class Register {
    * two cells' totals summed to the old one by construction. With totals in the lots the same
    * conservation has to be MADE, and it is made here, once, for every kind of holding at once.
    */
-  moveShare(from: PartyId, to: PartyId, members: number, weight: number): ReadonlyMap<InstrumentId, Qty> {
+  moveShare(
+    from: PartyId,
+    to: PartyId,
+    members: number,
+    weight: number,
+    period: Period,
+    cycle: Cycle,
+  ): ReadonlyMap<InstrumentId, Qty> {
     const movedByInstrument = new Map<InstrumentId, Qty>();
     forbid(
       !this.byHolder.has(to),
@@ -763,13 +771,27 @@ export class Register {
       this.byHolder.set(to, dst);
     }
     const e = this.equityAccount.get(from);
-    if (e !== undefined) this.equityAccount.set(to, e);
-    const keptEntries = this.equityLedger.get(from);
-    if (keptEntries !== undefined) {
-      this.equityLedger.set(
-        to,
-        keptEntries.map((entry) => ({ ...entry, party: to })),
-      );
+    if (e !== undefined) {
+      // A fresh walk from the per-member value: one opening, no moves — which is what the ledger
+      // below itemises, and what the `accounts` family counts.
+      this.equityAccount.set(to, opened(e.value, `equity of ${to}`));
+      /**
+       * Reporting A2, Law 18, 0g.1: THE MOVERS ARRIVE WITH THEIR EQUITY, as one entry. Their
+       * per-member account is the same number it was in the cell they left, and the itemisation
+       * that has to sum to it is that number, once, under the cause that moved them. This COPIED
+       * the whole ledger of the cell they left — every entry since the seed — into every cell a
+       * death or a crossing split off, and a merge concatenated it again: the ladder's second rung
+       * ran out of six gigabytes of heap on copies of one history (0g.1).
+       */
+      this.equityLedger.set(to, [
+        {
+          party: to,
+          period,
+          cycle,
+          delta: asPerMember<'money:piece'>(e.value, `the equity ${to}'s members arrived with`),
+          cause: 'moved with its members',
+        },
+      ]);
     }
     const revalued = this.revaluationAccount.get(from);
     if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
@@ -790,7 +812,14 @@ export class Register {
    * compare and no reason to refuse: two cells with one key are the same people, and the design
    * says at most one live cell per key (0f). `sameState` is deleted with the representation.
    */
-  merge(into: PartyId, from: PartyId, intoWeight: number, fromWeight: number): ReadonlyMap<InstrumentId, Qty> {
+  merge(
+    into: PartyId,
+    from: PartyId,
+    intoWeight: number,
+    fromWeight: number,
+    period: Period,
+    cycle: Cycle,
+  ): ReadonlyMap<InstrumentId, Qty> {
     forbid(into !== from, 'XI-15', 'a cell cannot merge with itself');
     const absorbed = new Map<InstrumentId, Qty>();
     const m = this.byHolder.get(from);
@@ -827,12 +856,18 @@ export class Register {
       const people = intoWeight + fromWeight;
       const mean = (ea.value * intoWeight + eb.value * fromWeight) / people;
       this.equityAccount.set(into, moved(ea, mean - ea.value, `equity of ${into} at merge`));
-      const kept = this.equityLedger.get(from);
+      // 0g.1: the account moved by the difference the arrivals make to the per-member mean, and
+      // that is the one entry the itemisation gains — never the movers' whole history (above).
       const mine = this.equityLedger.get(into);
-      if (kept !== undefined) {
-        const merged = [...(mine ?? []), ...kept.map((entry) => ({ ...entry, party: into }))];
-        this.equityLedger.set(into, merged);
-      }
+      const entry: EquityEntry = {
+        party: into,
+        period,
+        cycle,
+        delta: asPerMember<'money:piece'>(mean - ea.value, `what ${from}'s members did to ${into}'s mean`),
+        cause: `merged ${from}`,
+      };
+      if (mine === undefined) this.equityLedger.set(into, [entry]);
+      else mine.push(entry);
       const ra = this.revaluationWalk(into);
       const rb = this.revaluationWalk(from);
       const rmean = (ra.value * intoWeight + rb.value * fromWeight) / people;

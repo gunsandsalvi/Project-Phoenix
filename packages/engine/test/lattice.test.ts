@@ -56,11 +56,11 @@ import {
   moneyInstrumentId,
   partyId,
   type MechanismContext,
-  type ParamDecl,
   type SystemModule,
   type World,
 } from '../src/index.js';
 import { mergeModules, ranWorld, rigSpec } from './rig.js';
+import { refined } from './grain.js';
 import { phx } from './units.js';
 
 const YEAR = 52;
@@ -219,35 +219,3 @@ function drainsAndPays(cohort: string, perMember: number, at: number): SystemMod
   };
 }
 
-/** The same world with every lattice band cut in two: a midpoint edge beside every declared one. */
-function refined(spec: ReturnType<typeof rigSpec>): ReturnType<typeof rigSpec> {
-  return {
-    ...spec,
-    modules: spec.modules.map((m) => {
-      const extra: ParamDecl[] = [];
-      const kinds = m.partyKinds.map((k) => {
-        if (k.lattice === undefined) return k;
-        return {
-          ...k,
-          lattice: {
-            ...k.lattice,
-            banded: k.lattice.banded.map((b) => {
-              const edges: ParamDecl['id'][] = [];
-              let below = 0;
-              for (const e of b.edges) {
-                const decl = m.params.find((p) => p.id === e);
-                if (decl === undefined) throw new Error(`${String(e)} is not declared by ${m.id}`);
-                const mid = { ...decl, id: `${String(e)}.half` as ParamDecl['id'], value: (below + decl.value) / 2 };
-                extra.push(mid);
-                edges.push(mid.id, e);
-                below = decl.value;
-              }
-              return { ...b, edges };
-            }),
-          },
-        };
-      });
-      return { ...m, partyKinds: kinds, params: [...m.params, ...extra] };
-    }),
-  };
-}
