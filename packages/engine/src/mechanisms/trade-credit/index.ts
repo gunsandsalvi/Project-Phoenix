@@ -131,12 +131,12 @@ export const invoiceKind: InstrumentKindProfile = {
   due: (i, period, calendar) => {
     if (!isInvoice(i.terms)) return [];
     const due = i.terms.due;
-    // Money G3.a: a date falls in the period the calendar places it in, and the calendar says.
-    const from = calendar.startOf(period);
+    // Trade Credit A3, Money E1 (12a.3): FROM THE DUE DATE UNTIL IT IS PAID. It was presented in the
+    // period the date fell in and never again, so a buyer that missed it owed a row nobody asked
+    // for; what is not paid stands and is asked for every period, and the miss is the default.
     const to = calendar.endOf(period);
-    if (compareCivil(due, from) < 0 || compareCivil(due, to) > 0) return [];
-    // The whole of it, once. What does not settle is the missed payment the kernel records (XI-1).
-    return [{ kind: 'maturity', date: due }];
+    if (compareCivil(due, to) > 0) return [];
+    return [{ kind: 'maturity', date: compareCivil(due, calendar.startOf(period)) < 0 ? calendar.startOf(period) : due }];
   },
   accrued: () => 0,
 };

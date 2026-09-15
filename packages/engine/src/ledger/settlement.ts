@@ -19,7 +19,7 @@
  * transfer is income to one side and expense to the other; a sale away from the mark is a realised
  * gain or loss. Nothing else moves an equity account except revaluation (world/revalue.ts).
  */
-import { ARREAR, arrearId, type ArrearTerms } from '../register/arrears.js';
+import { ARREAR, arrearId, isArrear, type ArrearTerms } from '../register/arrears.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
@@ -301,6 +301,8 @@ export class Settlement {
    */
   private writeArrears(failed: Failed, period: Period, cycle: Cycle): void {
     if (failed.reason.kind !== 'overdraftRefused') return;
+    // A missed payment ON an arrear is the same arrear still standing, never a row on a row.
+    if (failed.instruction.legs.some((l) => l.kind === 'asset' && this.d.instruments.has(l.instrument) && isArrear(this.d.instruments.get(l.instrument)))) return;
     const payer = failed.reason.party;
     let n = 0;
     for (const leg of failed.instruction.legs) {

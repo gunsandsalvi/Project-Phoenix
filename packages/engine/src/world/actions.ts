@@ -14,6 +14,7 @@
  */
 import { type PerPiece, type Ratio, valueAt, asPerPiece, scale } from '../core/measure.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
+import { isArrear } from '../register/arrears.js';
 import { downTick, negQty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
@@ -41,7 +42,12 @@ export interface ActionDeps {
 
 /** Run every action due this period, one instruction per holder of record (Register E1.a). */
 export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps): void {
-  for (const i of d.instruments.all()) {
+  // Money E1, XI-8 (12a.3): WHAT WAS MISSED IS PRESENTED BEFORE WHAT IS NEW. A payer's arrears
+  // come first, so money it has today goes to the wage it did not pay last week before this
+  // week's coupon; the rest of the record follows in its own order.
+  const all = d.instruments.all();
+  const ordered = [...all.filter(isArrear), ...all.filter((i) => !isArrear(i))];
+  for (const i of ordered) {
     if (!i.status.live) continue;
     const profile = d.registry.instrumentKind(i.kind);
     for (const action of profile.due(i, period, d.calendar, d.registry)) {

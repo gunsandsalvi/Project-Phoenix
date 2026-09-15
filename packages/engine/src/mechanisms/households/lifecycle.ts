@@ -367,6 +367,10 @@ function handToProbate(
    * owed by the estate to the office (D3), and the reader below decides what to do about it.
    */
   if (r.outcome === 'settled') return [];
+  // Money E1, 12a.3: money the estate could not fund is an ARREAR now — settlement wrote the row
+  // to the office in the same pass — and a second representation of it here would be Law 4's
+  // defect. What is still this module's to say is a hand-over that failed for another reason.
+  if (r.reason.kind === 'overdraftRefused') return [];
   const why = failedBecause(r.reason);
   return cash.map((c) => ({ payer: from, payee: to, amount: c.amount, ccy: c.ccy, reason: why }));
 }

@@ -99,8 +99,10 @@ export const arrearKind: InstrumentKindProfile = {
     const who = namer.issuer.some ? namer.issuer.value : issuerName(namer, i.id);
     return t === undefined ? String(i.id) : `${who} ${t.class} in arrears (instruction ${String(t.failed)})`;
   },
-  // 12a.3 presents an arrear before any new due of its class; until then it is owed and stands.
-  due: () => [],
+  // 12a.3: IT FALLS DUE EVERY PERIOD UNTIL IT IS PAID — the whole of it, at par, presented before
+  // any new due of the payer's (the kernel walks arrears first); what is paid is redeemed (E2.a: a
+  // new payment, itself traceable) and what is not stands, and settlement writes no row on a row.
+  due: (_i, period, cal) => [{ kind: 'maturity', date: cal.startOf(period) }],
   accrued: () => 0,
   cashFlows: () => [],
   ranking: (i) => ({

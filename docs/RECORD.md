@@ -11256,3 +11256,19 @@ rest stands, held by the payee or the payee's own estate.
 
 **Checks.** `arrears.test.ts` green; `check:opens` green; `check:forbids` green; lint, typecheck
 green.
+
+## Item 12a.3 — What was missed is presented before what is new
+
+An arrear falls due every period until it is paid — the whole of it, at par — and the kernel
+walks a payer's arrears before the rest of the record, so money it has today goes to the wage it
+did not pay last week before this week's coupon. What is paid is redeemed by the same door every
+maturity uses; what is not stands, and settlement writes no row on a row: a missed payment on an
+arrear is the same arrear. An invoice is presented from its due date every period until it is
+paid, where it used to be asked for once and forgotten. The unpaid wage, the unpaid rent, the
+treasury's transfer and the estate's hand-over need nothing of their own: each is a money leg a
+refused payer could not fund, and settlement writes the row for every one. The households module's
+agreement for an unfunded hand-over to probate was a second representation of that row and is
+written no more; it stands only for a hand-over that failed for another reason.
+
+**Checks.** `arrears.test.ts`, `mobility.test.ts`, `trade-credit.test.ts` green; `check:opens`
+green; lint, typecheck green.

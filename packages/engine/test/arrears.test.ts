@@ -87,6 +87,13 @@ describe('a payer that could not pay owes a row (12a.1)', () => {
     expect(held).toBeGreaterThan(0);
     expect(held).toBeLessThanOrEqual(asked);
     expect(row.issued).toBe(held);
+    // 12a.3: it falls due every period until it is paid, and what was paid on it was a redemption
+    // at par — the payer's estate paid part, which is why less than the whole still stands.
+    expect(w.registry.instrumentKind(row.kind).due(row, w.period, w.calendar, w.registry)).toHaveLength(1);
+    const redeemed = w.ledger
+      .all()
+      .filter((r) => r.outcome === 'settled' && r.instruction.cause === 'maturity' && r.instruction.legs.some((l) => l.kind === 'asset' && l.instrument === row.id));
+    expect(redeemed.length).toBeGreaterThan(0);
     // XI-8: it ranks by its class, and it has no market.
     expect(w.registry.instrumentKind(row.kind).pricing).toBe('carriedAtCost');
     expect(w.registry.instrumentKind(row.kind).ranking(row).seniority).toBeGreaterThanOrEqual(0);
