@@ -9654,3 +9654,43 @@ The `check:existence` table is unchanged and verified.
 
 **Tests run**: `check:existence`, `check:deaths`, `plan:check`, `check:spec` (green). The suite
 was not run: item 0 is what makes it runnable.
+
+## Review 2026-09-15 (third pass) — the architecture verdict, the macro gaps, the large optimisations, and the population lattice
+
+The owner asked for four things the second pass had not delivered: a section-by-section verdict
+on the architecture with big-bang changes where the design is the defect; the mechanisms the model
+is missing as an ECONOMY, not by clause; the large (non-local) optimisation changes; and an
+advanced alternative to the household and small-firm modelling grounded in current
+heterogeneous-agent and agent-based literature. All four are in `docs/IMPLEMENTATION.md`:
+
+- **Part 5** — every section of `docs/ARCHITECTURE.md` verified against the code (holds / holds
+  wrongly described / holds wrong design / does not hold), and eight big-bang changes: cells hold
+  totals (BB-1), phases ordered by declared reads and writes (BB-2), money that carries its
+  currency (BB-3), a print that carries its dimension (BB-4), the period index written by the one
+  writer of each fact (BB-5), numbers without objects (BB-6), markets that close and instructions
+  that span books (BB-7), questions instead of fourteen kernel hooks and stores instead of the
+  journal-as-database (BB-8). Items 0a′ and 0f inserted; 16.0, 18.0, 0e.0 named.
+- **Part 6** — thirteen macro-level absences with the literature that names each and the item
+  that builds it: no source of growth (the world decays by construction), no price level, no
+  credit cycle, unemployment not a state, one propensity to consume, no information diffusion, a
+  government that buys nothing, a production network that cannot substitute, a demographic stub,
+  stub countries, no fixed costs at the firm, no household half of the financial accelerator,
+  shocks with no readers. Items 12c (productivity), 12d (observation), 19.0 (the government buys)
+  inserted; 22 widened.
+- **Part 7** — four non-local optimisations after the local ones: columnar state with integer
+  handles, an event-sourced period with incremental readers behind one memo door, parallel order
+  generation with deterministic clearing, a tiered journal; the cost model they buy (a period in
+  O(parties + instruments + legs)) and the order to take them in.
+- **Part 8** — the population lattice: one kernel representation for households and small firms
+  as a discretised heterogeneous-agent distribution with integer mass on declared dimensions
+  (categorical and banded; bands are RESOLUTION), one live cell per key, movement only by the five
+  weight events read against band edges, decisions as threshold rules on kind profiles
+  (buffer-stock consumption with liquid/illiquid wealth, search-and-duration labour, collateral-
+  read borrowing, life cycle, experience-weighted expectations that observe public prints,
+  predictor switching with its killer; for small firms: drawn productivity, retained-earnings
+  growth to promotion, owner draws to a household cell, relationship lending, trade-credit chains
+  cell to cell, liquidity-constrained entry). Six non-linear multi-order chains stated as
+  measurements; two preferences in total (memory, patience); no coefficient, no hazard, no
+  stochastic process. Item 10.5 inserted after 0b′, which it subsumes.
+
+No engine code changed. `check:existence`, `check:deaths`, `plan:check`, `check:spec` green.

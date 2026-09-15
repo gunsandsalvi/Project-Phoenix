@@ -5,7 +5,7 @@
 > line by line; every claim below names the file and line it was checked at; one rig world was
 > assembled and stepped once to measure what the code does). It replaces the file of the same name.
 > `docs/RECORD.md` carries the review's entry. The working findings file the review kept as it read
-> (502 numbered findings) is rolled into Part 4 and every one of them is positioned in an item.
+> (502 numbered findings) is rolled into Part 9 and every one of them is positioned in an item.
 >
 > **One item at a time, in the order in Part 1 (Law 10).** An item is done when its exit holds, its
 > steps are ticked, `docs/RECORD.md` has its entry and `docs/COVERAGE.md` is re-marked — one commit
@@ -40,7 +40,7 @@ means less than that in at least these places, each re-marked by the item named:
 household: 12a); Freight A3/D2/D6 (a transit line that is never created, so no cargo has ever
 loaded: 0.11); Trade Credit D1/D4 (an invoice missed once is never presented again: 17.5);
 Short-Term Debt B3.b/B4 (the backstop is drawn after the paper has already defaulted, and a draw is
-a gift: 12a.7); Corporate Credit E5 (every issuer's required yield is one number: 17.0′);
+a gift: 17.2); Corporate Credit E5 (every issuer's required yield is one number: 17.0′);
 Banks Capital C2 (a raise at reservation 0 never enters the book: 0.8); §42 A1–A6 (cells with no
 holdings, no phase, no participant: 11); Capital Programme A2/C1 (land is bought after the plant
 stands on it, and the state sells it for one cent: 15.1); Commodities Spot D3 (a taker skipped by
@@ -283,21 +283,26 @@ insertions carry a suffix at their dependency position, never at the end.
 | **0a** | **Kernel: assembly resolves phases after every module is collected** | two blockers are the anchor design; every future module hits it |
 | **0b** | **Kernel: the cell key belongs to the party kind** | blocker #6; item 11 cannot construct a party without it |
 | **0b′** | **Kernel REMAKE: a cell holds totals** | the cell count, cell↔cell trade, ageing and merge all fall out of one representation; everything from 11 on trades with cells |
+| **0a′** | **Kernel: phases ordered by what they read and write** (Part 5 BB-2) | taken instead of 0a when accepted; else 0a stands |
 | **0c** | **One truth in the documents** | one plan, one figure, tool-generated tables |
 | **0d** | **The overdue suite run, triaged** | the measurement eleven modules owed |
-| **0e** | **The core made fast (Law 18)** | Part 3; a year in minutes before anything below is measured at scale |
+| **0e** | **The core made fast (Law 18)** | Part 3 and Part 7: BB-5 (the period index), BB-6 (numbers), LO-1..LO-4; a year in minutes before anything below is measured at scale |
+| **0f** | **Questions, not hooks; stores, not events** (Part 5 BB-8) | every sector item after it declares questions; the journal becomes a log |
+| **10.5** | **The population lattice** (Part 8) | subsumes 0b′; households and small firms rebuilt as profiles on it; 11, 12, 12a, 12b, 14.6 stand on it |
 | **11** | Small-Business Pools (§42) | after 0b′; cells that hold, sell, employ, borrow, fail |
 | **12** | Firm birth, household formation, merge in a run | entry into the pool; the population is an outcome both ways |
 | **12a** | Households borrow, owe and fail; arrears; the immortals | the mortgage guard; `fails: []`; the arrears row that housing, treasury and the sovereign wait on |
 | **12b** | **Employment is a standing relation** | one bad period must not empty a desk for ever; firms and banks keep staff between hires |
+| **12c** | **Productivity is an outcome** (Part 6 M-1) | learning by doing, imitation through hires, selection through entry |
+| **12d** | **Observation** (Part 6 M-6) | public prints are observations; predictor switching with its killer |
 | **14** | Insurers and pensions (§27) | a buyer of cover, a claim, a schedule, capital |
 | **15** | Housing and land, the rest | after 12a; the tenancy's term, the landlord's decision, the state's reason to sell ground |
-| **16** | Cross-border, the rest | after 12a (foreign-money failure) |
+| **16** | Cross-border, the rest | 16.0 is BB-3 (money carries its currency); after 12a |
 | **17** | Corporate credit, the rest | 17.0′ is the credit-view remake and comes first |
 | **17b** | The leveraged buyout | after 17.9 |
-| **18** | Commodities spot and futures | the delivery P&L, the anchors, storage |
+| **18** | Commodities spot and futures | 18.6 (BB-4, a print carries its dimension) first; the delivery P&L, the anchors, markets that close (BB-7) |
 | **18a** | Monetary policy has a rule; a rate can be negative; the desk posts a schedule | before the polity |
-| **19** | The polity (§47) | after 18a |
+| **19** | The polity (§47) | 19.0 the government as a buyer (M-7); after 18a |
 | **20** | Periodicity | after 19 |
 | **21** | The local repairs | each when its file is open |
 | **22** | The recipe | unchanged |
@@ -462,6 +467,34 @@ Part 3 §3.4's gate holds.
 
 ---
 
+## 0a′. Kernel: phases ordered by what they read and write
+
+**Why.** Part 5 BB-2. Taken instead of 0a if the owner accepts it; 0a is its minimum.
+
+- [ ] 0a′.1 `PhaseDecl.reads: readonly Dependency[]`, `writes: readonly Dependency[]` where a `Dependency` is `{ kind: 'event', name } | { kind: 'print', family } | { kind: 'store', noun }`; `world/assemble.ts` orders phases by dataflow (a phase after every writer of what it reads; ties by module order then declaration); a read with no writer and a cycle throw at assembly naming both sides.
+- [ ] 0a′.2 `MechanismContext.journal`/`prices` reads check the running phase's declaration and throw `Forbidden 'Clearing F1.a'` on an undeclared read — ARCHITECTURE 4.8's claim made true.
+- [ ] 0a′.3 Every module's phases declare their reads (the per-module read lists in `docs/measurements/2026-09-15-review-findings.md` are the inventory). Anchors deleted; the derived order printed by the observer.
+- [ ] 0a′.4 Tests as 0a.4 plus: an undeclared read throws; a declared-but-unproduced read throws.
+
+---
+
+## 0f. Questions, not hooks; stores, not events
+
+**Why.** Part 5 BB-8.
+
+- [ ] 0f.1 `registry/questions.ts`: `Question<Arg, Answer>` declared by a module (name, scope: party kind or world, `required`); `SystemModule.answers`; assembly collects by (question, kind), refuses two, requires one at seal for every `required` question a registered kind needs. The fourteen hooks (`outlooks`, `marks`, `creditDecisions`, `bankChoices`, `termsOffered`, `borrowNeeds`, `tradingLimits`, `leverageLimits`, `riskBearing`, `resolves`, `clearingCapacity`, `venueParticipants`, `indices`, `curveFamilies`) become questions; `world/world.ts` loses fourteen `provide*` methods and fourteen maps.
+- [ ] 0f.2 Cross-module facts are questions: `credit.request` (17.9), the rented room (CO4), the wage a place pays (`registry/wages.ts`; `research`/`staff` read it), the environment condition (EN2). `grep -rn "ofKind('\w+\.\w+')" src/mechanisms` names no event kind another module writes.
+- [ ] 0f.3 The journal is a log: every module read of its own past by `ofKind` (H7, H9, RP10, CD5, FD3, IN2, MM13, BK31) moves to a declared noun; the event is written from the store once, publicly, never read back by its writer. The nouns report recounted.
+- [ ] 0f.4 ARCHITECTURE 4.9b and 4.10a rewritten; the "assembly refuses" comments at `kinds.ts:401` and `module.ts:226` are now true.
+
+---
+
+## 10.5. The population lattice
+
+Specified in **Part 8**; its steps are 8.4. It subsumes 0b′ and is taken in its place once the owner accepts the design; until then 0b′ stands as the minimum. Items 11, 12, 12a, 12b and 14.6 are built on it.
+
+---
+
 ## 11. Small-Business Pools (§42)
 
 **What is true today.** `small-business/index.ts` has `phases: []`, `participants: []`,
@@ -566,6 +599,27 @@ Employment persists across periods; no party is emptied by one period's earnings
 
 ---
 
+## 12c. Productivity is an outcome
+
+**Why.** Part 6 M-1: the world has no source of growth.
+
+- [ ] 12c.1 Learning by doing (M5): each recipe declares, as TECHNOLOGY, how hours per unit fall with cumulative units the LINE has made (a rate on a log scale, one number per recipe with its `why`); the firm's hours-per-unit is a read of its own register history of created units. No stored productivity level.
+- [ ] 12c.2 Imitation through hires: the employment row (12b.1) carries the learned rate of the trade at the employer it came from; a hire moves it; a firm's rate is the read over its rows.
+- [ ] 12c.3 Selection: entrants (12.1) draw productivity from the line's tail above the incumbents' median (Melitz); exit is the kernel's default; aggregate productivity is an outcome. **Verify:** output per hour rises in a 5-year run with no parameter saying it does; the size distribution's tail exponent is recorded with its killer.
+- [ ] 12c.4 Fixed period costs per vintage and a minimum batch per recipe (M-11), both technology; a line below batch stops.
+
+---
+
+## 12d. Observation
+
+**Why.** Part 6 M-6: information does not diffuse.
+
+- [ ] 12d.1 `expectations`: every public print and every public event about a party the observer is exposed to (its region's wage, the retail prints it buys at, its bank's board, the dwelling print, the reports of companies it holds) enters its outlook as an observation (§46 A2.a). The exposure set is a read of the party's own rows and holdings, never a list.
+- [ ] 12d.2 Predictor switching with its killer: a party keeps its adaptive predictor and one or two public-anchored ones per variable and follows the one with the smaller surprise over its memory; no intensity coefficient (the switch is a threshold on its own record). Killer: §46 E2/E3 measured in a 52-period run; if the aggregate moves BEFORE the surprises, the stage is deleted.
+- [ ] 12d.3 `market.noView`'s count falls to zero for goods books in the census (every book has two opinions).
+
+---
+
 ## 14. Insurers and pensions (§27)
 
 **Why.** 9 of 23 MET and none reached: no buyer (IN1), no capital (IN10), a single one-year
@@ -625,6 +679,7 @@ currency (CD3, SZ1); `control/index.ts:808` and `seeds/foundation.ts:2146` hard-
 
 ### Steps
 
+- [ ] 16.0 **BB-3**: `core/measure.ts` `Cash` carries its currency; `plus/minus` of two monies throw `Impossible('Money A2.b')`; `sum(cash[])` across currencies fails at the site; done with BB-6 in one pass.
 - [ ] 16.1 Run `abroadWorld` 30 periods; count per country: banks, firms, households, listed lines, sessions cleared. Write the table here.
 - [ ] 16.2 Sourcing across regions: a buyer in one place buys from a seller in another; freight and the balance of payments see it. Merchants bid the far print less their outlook of the freight rate on that leg (MR3) with one budget across lines (MR5); producers ship only unsold stock on the dearest leg (FR2).
 - [ ] 16.3 Foreign-currency issuance (M6): a treasury or firm issues in a money it does not print and can fail in it (12a.6).
@@ -689,6 +744,7 @@ module's event (CO4); E4's chain has no reader.
 
 ### Steps
 
+- [ ] 18.0 **BB-4** = 18.6, taken first: a print carries `quotedAs`; every rate-quoted mark is right before any other step here is measured.
 - [ ] 18.1 Delivery at the STRUCK price (BF3): `bond-futures`/`commodity-futures` `deliver` prices the delivery leg at `moneyLevel(c.struckAt)`; the mark to that point was margin. Test: a long that bought at 98 and takes delivery at 100 is richer by 2 × notional.
 - [ ] 18.2 Pairing by the layer (BF4, CF5): the contract row carries `pairedWith` from the strike; netting by (deliverable, expiry) with variation settled.
 - [ ] 18.3 The hedger's reason (BF2, CF1, IF1): want = −(held − target)/contractSize where target is the party's own liquidity/inventory target; a party with none hedges nothing. Storage (CO2): a taker's bid is a step schedule per good; a failed payment skips the taker, not the letter (CO3); the rented room is an agreement the kernel reads (CO4).
@@ -729,6 +785,7 @@ The rate moves in a 52-period run for a recorded reason; a negative rate clears;
 
 ## 19. The polity (§47)
 
+- [ ] 19.0 The government BUYS (Part 6 M-7): an outlay programme as a participant in the construction, vessel and service lines at the treasury's own outlook and within its programme's constraint (Treasury B, D); a public employer in the labour venue.
 - [ ] 19.1 Kernel: `params.setByMandate` on one module's context; every other write throws; owner and setter printed beside every policy value; the target moves to owner `parliament`.
 - [ ] 19.2 Constitution primitives; the four tax bases (profits, interest, gains, consumption: F14) as policy values the treasury reads.
 - [ ] 19.3 Platforms as data; assembly refuses a missing, extra or duplicate row.
@@ -779,7 +836,7 @@ Each taken when its file is open for another item. Every entry names file:line a
 
 ## 22. The recipe
 
-Unchanged (Goods A2). Last before 22a.
+Goods A2, and Part 6 M-8/M-11: a line may declare more than one recipe (technology, data) and the firm picks by its own cost read; a recipe declares a batch and a vintage an upkeep. Last before 22a.
 
 ---
 
@@ -889,7 +946,539 @@ no public event dropped, no sampling of parties.
 
 ---
 
-## Part 4 — The index
+## Part 5 — The architecture, verified section by section, and the big-bang changes
+
+`docs/ARCHITECTURE.md` was read against the code it describes. Verdict per section: **holds**
+(the code does what the section says and the section is the right design), **holds, wrongly
+described** (the code differs from the text), **holds, wrong design** (the code does what the text
+says and the text is the defect), or **does not hold**. Every "wrong design" verdict names a
+big-bang change (**BB-n**) below; a big-bang change is one that touches the kernel's contract with
+every module and is done once, as its own item, not incrementally.
+
+| § | claim | verdict | evidence |
+|---|---|---|---|
+| 1–2 | doubles with derived dust; branded numbers; integer counts of pieces | holds; wrong representation for cost | `Measure<D>` allocates an object per arithmetic op (4 % + GC); dust is derived correctly everywhere except three hand-rolled sites (EX2, RP8, H5) and one dust band on an integer (W4). **BB-6** |
+| 3 | value objects carry unit and dimension | **does not hold for currency** | `Cash = Money<'piece'>` erases the currency (K2); two monies add at compile time; only a leg catches it. Every module summing a party's holdings compiles. **BB-3** |
+| 4.1 | money is an instrument | holds | — |
+| 4.2 | the wire; every state change an instruction; all legs atomic | holds, with two holes | the kernel does not enforce create-with-destroy (K9); `sold` keyed per seller/instrument (K8); no multi-book atomicity, so a three-leg FX round trip is three trades (FX3). Atomicity across BOOKS is a missing kernel concept: **BB-7** |
+| 4.3 | register: lots, liens, both directions indexed | holds; wrong cost | lots never coalesce (R1); `holdingsOf` snapshots (R1); `heldTotal` re-sums (R3); `issuedBy` exists but 14 modules walk `instruments.all()` instead. **BB-5** |
+| 4.4 | parties: named or cell; per-member state; split on partial event; merge on identical state | **holds, wrong design** | R2, M3, W5, H2, F7, A1: the representation cannot merge, cannot trade cell↔cell, and contradicts Part XII. **BB-1 = item 0b′**, extended by Part 8 |
+| 4.5 | prices with provenance; value = units × price at read; unpriced throws | holds; one gap | a print has no `quotedAs`: a rate-quoted level is put through the money grid and read back ×100 (IR6, E-11). A `Print` must carry its dimension. **BB-4** |
+| 4.5b | contracts as the second register | holds | marks and margins are re-derived per call (DL1/DL2); layout only |
+| 4.6 | one solver, one market runner, outcomes never a bracket | holds, with three gaps | an issuer's offer at no level is dropped (M1); a negative level is refused for time as for things (K6, V1); a market once opened never closes (CP4, CF2, CD1). **BB-7** |
+| 4.7 | one calendar; periodicities placed by date | holds in the kernel; **not in modules** | `period % n` in `funds/mandate.ts`, `cds/index.ts`; `openedAt + tenor` in securities-lending; `dueThisPeriod` walks from the epoch (FD12, CD2, SL5, OM5). The calendar must offer the read (`isAnniversary`, `periodsUntil`) so a module has no reason to count |
+| 4.8 | the period loop: ordered phases as data; a phase reading an unproduced print throws | **does not hold as described** | the "not yet produced" throw does not exist — a phase reading an unproduced print reads LAST period's (BK30 shows it: `requiredOf` reads this period's reservations and gets `Missing`, but `lastOf` reads everywhere else silently return the previous period's). Order is by anchor at insertion (WK1). **BB-2** |
+| 4.9 | the audit: independent families; never repairs; not-built reports itself | holds, wrong cost, one contradiction | the units family reports every split child (A1: the invariant contradicts the representation); the prices family and the valuer answer one question two ways (A2); five full passes per period (A3). **BB-5** |
+| 4.9a | equity as a stated account moved by events | holds | `equityEntries` from period 0 per party per period (A4) is cost only |
+| 4.9b | kernel and modules; single-answer hooks; the boundary | **holds, wrong design (admitted in the text)** | fourteen single-answer hooks, each a kernel change; only one is required at seal (W6, A7); the registry reads a module's event kind (CO4); the observer imports four modules (OB5); modules reach each other by event NAME (BK4: banks read `firms.funding` and `housing.funding` by string), which is an import by another spelling. **BB-8** |
+| 4.9c | the capital programme; investment lives with the firm | holds; the mechanism is dead | F3, LD3, CP2 |
+| 4.10 | registry and parameters; every number declared; engine reads via `params` | holds in `mechanisms/*/index.ts`; **not in `seeds/` or `*/data.ts`** | S3, SB2, FR5, CO5, EN3: the lint exempts them |
+| 4.10a | what a module knows between periods: the ontology register | holds; 14 of 19 nouns homeless | the JOURNAL is used as the store for module state (H7, H9, RP10, CD5, FD3): private events written to be read back by `ofKind`. That is a store without a noun. **BB-8** |
+| 4.11 | events and the observer surface; looking changes nothing | holds; wrong cost and wrong dependency | OB1–OB8 |
+| 4.11a | a quantity is a whole number of pieces | holds | `agreements.paid` and `guarantees.called` accept fractions (G5, G6) — two doors missed |
+| 4.11b | a bank's economics live in the bank module | holds; credit-blind | BK3 etc.: **item 17.0′** |
+| 4.12 | reproducibility | holds | `rng` derived per party per period |
+| 5 | error discipline | holds except `core/measure.ts` | K1: `RangeError` at every arithmetic site |
+| 6b | the ontology register | holds; the count is the finding | 14 homeless nouns; the journal-as-store (above) hides more |
+| 9 | lint rules | **hold as spellings, not as rules** | 0.4: `Math.*`, `atLeast(x, 0)`, literals in data files |
+| 11 | decisions deferred | holds | §45 A4 still the owner's |
+
+### The big-bang changes
+
+**BB-1 — Cells hold totals** (item 0b′; Part 8 extends it into a population lattice). Already specified.
+
+**BB-2 — Phases are ordered by what they READ and WRITE, not by anchors.** Item 0a's DAG sorts by
+declared anchors. The right primitive is one level up: a `PhaseDecl` declares `reads: [event kinds,
+print families, stores]` and `writes: [...]`; the kernel derives the order from the dataflow (a
+phase runs after every writer of what it reads, in the same cycle as the latest of them), throws at
+assembly on a read with no writer or a cycle, and — this is what makes ARCHITECTURE 4.8's claim
+true — throws at RUN time when a phase reads a kind or print it did not declare (the context's
+`journal`/`prices` reads check the declaration). Anchors become a derived fact printed in the
+observer, not an input. It replaces 0a.1–0a.2 if taken; 0a as written is the minimum. Item **0a′**,
+inserted after 0a, taken instead of 0a when the owner accepts it.
+
+**BB-3 — Money carries its currency at runtime.** `core/measure.ts`: `Cash` becomes `{ pieces:
+number, ccy: CurrencyCode }` (or a branded number with the currency in the brand where the currency
+is static, and a runtime tag where it is drawn). `plus/minus` of two monies throw `Impossible('Money
+A2.b')` on a mismatch; `valueAt` yields the instrument's currency; `inMoney` is the only door
+between two. Every `sum(cash[])` in a module then fails to compile or throws at the site, which is
+where 16.7's audit of currency literals ends. Item **16.0**, first step of 16; done with BB-6 (one
+pass over every arithmetic site).
+
+**BB-4 — A print carries its dimension.** `Print.quotedAs: 'money' | 'rate' | 'ratio'`; `PriceStore.write`
+refuses a level whose dimension differs from the market kind's; `priceOf`/`onQuoteGrid` never see a
+rate; `ContractReads.print` returns a `RateLevel` for rate books; `struckAt` is typed by the book.
+Item **18.6** as written, promoted to the first step of 18 because every derivative mark, margin
+and close-out is wrong by ×100 until it lands.
+
+**BB-5 — The period index: one walk, every reader.** A kernel service, built once per period by
+settlement and revaluation as they write (no second walk): legs by instrument, legs by party,
+equity delta by party, reserve flow by bank, holdings by party (a frozen view), `heldTotal` per
+instrument, dirty parties, the due heap. The audit families, reporting, external accounts, banks'
+`earnedByLine`, `reserveFlow`, the money-market's `netReserveFlow`, securitisation's
+`interestCollected`, capital-programme's `purchases`, the goods and capital families all READ it.
+Law 19 is honoured better, not worse: the index is written by the one writer of each fact at the
+moment it writes, and every reader that today re-derives from the ledger stops. Item **0e.P2**,
+promoted to its own item **0e.0** because eleven modules change with it.
+
+**BB-6 — Numbers without objects; money with currency; quantities as integers.** One mechanical
+pass: `Measure<D>` → `number & { __d: D }`; `Cash` → BB-3; `Qty` → integer-checked branded number;
+`core/measure.ts` throws `Impossible`. Gated by the ladder. Item **0e.P10** promoted to **0e.1′**
+and done together with 16.0.
+
+**BB-7 — Markets have a life; instructions can span books.** `ctx.closeMarket(id)` and the rule
+that a market with no open interest and no print in N periods closes (18.4); `ctx.transact([books])`
+— one instruction whose trade legs come from two or three sessions, settled atomically or not at all
+(FX3; also the buyout's escrow 17b and the basis trade BF5). A negative level for `quotedAs: 'rate'`
+(18a.4). Item **18.4** and **16.5** as written; the kernel door is one change, listed here so it is
+built once.
+
+**BB-8 — Questions, not hooks; stores, not events.** (a) Replace the fourteen `SystemModule` single-
+answer hooks with one: `answers: { [question]: (view, ...) => answer }` where a `Question` is
+declared by a module (`registry/questions.ts` — a name, an argument type, an answer type, a scope
+of party kind), the kernel collects the answers by (question, party kind), refuses two, and
+REQUIRES one at seal for every question a registered kind's profile says it needs. Adding a
+question is a module file, not a kernel change; the seal check is one loop, not `requireBankChoices`
+plus twelve comments that say "assembly refuses" and do not. (b) A module reads another module's
+published FACT through a declared question too (`credit.request` 17.9 is the first), never by event
+name (BK4). (c) The journal is a LOG: a module that reads its own past by `ofKind` is keeping state
+in the log; every such read (H7, H9, RP10, CD5, FD3, IN2) moves to a declared store in the ontology
+register, and the journal is written FROM the store, once, publicly. Item **0f**, inserted after
+0e and before 11 (every sector item after it declares questions rather than hooks).
+
+**What is NOT changed.** The instrument/register/ledger/settlement core (4.1–4.3, 4.9a) is right and
+stays; the module boundary (4.9b) is right and is tightened, not loosened; the audit's contract
+(4.9) stays; the calendar (4.7) stays and gains reads; the registry (4.10) stays and its guard
+reaches the seeds. The four remakes of Part 0 §0.6 and the eight changes here are the whole of the
+architectural advice; nothing else needs a big bang.
+
+---
+
+## Part 6 — What the model is missing as an ECONOMY
+
+Part 0 §0.6 lists mechanisms absent by clause. This part is one level up: the macro-level modelling
+that no clause names because the specification assumed it would emerge, and which the code, read
+in full, cannot produce. Each is stated as what is missing, why it cannot emerge from what exists,
+what the literature calls it, and the item that builds it. The test of "missing" here is: could the
+world, with every clause built as specified, produce the phenomenon? Where the answer is no, the
+specification itself has a gap and this part says so (Appendix C: an approximation stays with its
+reason; a gap is named, not deleted).
+
+**M-1 Growth does not exist.** Recipes are fixed technology; productivity per firm is drawn once;
+the population is monotone down; capital depreciates; land is finite. The world is a decaying
+economy by construction: every long run the record describes ("output falls to nothing by period
+30") is not a bug in a mechanism but the absence of any source of growth. Solow's residual has no
+writer. **Build:** learning by doing per line (Arrow 1962; M5 in the worklist) as a TECHNOLOGY
+declared per recipe — hours per unit fall with cumulative units made, read from the line's own
+register history; imitation across firms in a line through the labour venue (a hire from a more
+productive firm carries hours-per-unit with it: the employment row carries the trade's learned
+rate); entry of firms with drawn productivity above the incumbents' mean (Hopenhayn 1992, Melitz
+2003: selection is what makes the average rise). Item **12** carries entry; **22** (the recipe)
+carries learning; insert **12c — Productivity is an outcome** after 12b.
+
+**M-2 There is no price level.** A firm's ask is a markup on cost with no memory of `noDemand`
+(F15); a household's outlook of a price is corrected only by its own fills (H8); nothing reads the
+goods prints into an outlook of the level; the central bank has no rule (18a). So there is no
+wage–price loop, no inflation expectation, no real rate, and every nominal quantity is anchored by
+the seed's stated opening prices. Phelps–Friedman is not a model choice here; it is the absence of
+the channel. **Build:** the firm's ask from its outlook on its own sell price formed from fills AND
+the venue print (F15, H8); the wage bid from the employer's outlook on revenue (12b.3); the
+central bank's outlook on the level from the prints (18a.1); a household's outlook on the prices it
+pays from the retail prints it can see (§46 A2.a). All four are §46 reads; none is a coefficient.
+Items **12b.3, 18a.1, 21.18, 22a**.
+
+**M-3 There is no credit cycle.** Lending is shut (MM16, F3); once open, the bank's view is
+credit-blind (BK3) and its LGD constant (BK7), so leverage cannot build in good times and collapse
+in bad (Minsky 1986; Kiyotaki–Moore 1997; Bernanke–Gertler–Gilchrist 1999). The collateral channel
+needs a price the lender reads (housing: HO1; plant: LD3) and a borrower whose limit moves with it.
+**Build:** 17.0′ (the credit view with a memory of its own losses), 12a.4 (the mortgage against the
+dwelling print), 15.1 (plant against ground), and the bank's capital binding on grade (RP14). The
+cycle then has every part Minsky names: rising collateral prints → wider limits → more leverage →
+a surprise → thresholds crossed in the tail → losses at the lender → capital binds → the limit
+falls → forced sales (XI-2) → prints fall. Nothing is scripted. **Verify:** the distribution of
+leverage across cells widens before a crossing wave and narrows after (Part XII).
+
+**M-4 Unemployment is not a state.** Employment is re-matched every period (BK26); a household
+either sells hours this period or does not; there is no duration, no search, no discouraged
+worker with a history, no wage stickiness because there is no contract (Diamond 1982;
+Mortensen–Pissarides 1994; Blanchard–Diamond 1994 on duration dependence). **Build:** 12b (a
+standing relation with notice), plus an unemployment DURATION on the household lattice (Part 8:
+a key dimension `spell` in bands) so the reservation wage, the participation decision and the
+lender's view all read how long a member has been out. Duration dependence then emerges from the
+lattice's own transitions, not a hazard.
+
+**M-5 Demand has one propensity.** Every cell's consumption reads the same rule from its outlook;
+there is no liquid/illiquid wealth distinction, so the marginal propensity to consume out of a
+transfer is the same for a cell with a month of cash and one with a year (Kaplan–Violante 2014's
+wealthy hand-to-mouth; Fagereng–Holm–Natvik 2021; Johnson–Parker–Souleles 2006). A fiscal
+transfer, a rate cut through the deposit board, a dividend — each reaches demand through a single
+number. **Build:** Part 8's lattice with liquid and illiquid wealth as key dimensions and the
+buffer-stock rule (Deaton 1991; Carroll 1997) as the household's own threshold: spend above target,
+save below, where the target is a read of the cell's own confidence. MPC heterogeneity is then an
+OUTCOME of position on the lattice. **Verify:** the same aggregate transfer to two different bands
+produces different demand (§41 A2.a stated as a measurement).
+
+**M-6 Information does not diffuse.** A party observes only what happened to it; public prints are
+not observations (H8); a bank's estimate of a company is formed from that company's reports alone.
+So there is no herding, no bubble and no crash, and no bank run driven by what a depositor saw
+happen to another bank (Diamond–Dybvig 1983 needs a signal; Bikhchandani–Hirshleifer–Welch 1992;
+Lux–Marchesi 1999; Brock–Hommes 1997's heterogeneous-belief switching is the canonical multi-order
+mechanism). **Build:** §46 A2.a taken literally: every public print and every public event about a
+party the observer is exposed to is one more observation in its outlook (21.18). A second stage
+with its own killer (Law 17): a cell chooses among a few forecasting rules (its own adaptive rule;
+"what my region's wage printed"; "what the bank's board says") by which of them has been LESS
+surprised over its memory — Brock–Hommes without an intensity coefficient, because the switch is a
+threshold on the cell's own surprise record. **Insert 12d — Observation** after 12c; its killer is
+§46 E2/E3 (an index moves after the surprises; the surprised act first).
+
+**M-7 The government buys nothing.** Treasury outlays are transfers and wages; there is no
+procurement of goods, no public capital, no public employment beyond the treasury's own staff. A
+fiscal multiplier has no channel through demand for output. **Build:** a public outlay programme
+that BUYS (construction, vessels, the services lines) as a participant with the treasury's own
+outlook and its programme's constraint (Treasury B, D). Item **19.7**'s "outlay programme" made
+concrete as a buyer; insert **19.0** before 19.1.
+
+**M-8 The production network cannot substitute.** Recipes are fixed-proportion (Leontief); a
+shock to one input propagates mechanically at full strength (Acemoglu–Carvalho–Ozdaglar–Tahbaz-
+Salehi 2012 shows network amplification; Baqaee–Farhi 2019 shows the sign depends on substitution).
+That is defensible as technology at a one-week horizon, but there is no second recipe for a line,
+no imported substitute (16.2), no inventory buffer decision. **Build:** a line may declare more than
+one recipe (technology, data); the firm picks by its own cost read (an OUTCOME); imported inputs
+through 16.2. Item **22** (the recipe) gains "recipes, plural".
+
+**M-9 Demography is a stub.** Cohorts are two; ageing is a fixed share; births absent; mortality a
+constant. Retirement, pensions and housing demand all depend on the age structure (M-5's life-cycle
+half: Modigliani; Gourinchas–Parker 2002). **Build:** Part 8's cohort dimension in five-year bands
+with the crossing by date (§41 F1.a); mortality as a TECHNOLOGY per band (an imported real-world
+primitive, allowed by Law 2); formation as 12.3. Item **12.3**, **14.6**.
+
+**M-10 The three other countries are stubs, so there is no external shock.** No terms-of-trade
+move, no capital flight, no foreign-currency borrowing to fail in. Item **16**.
+
+**M-11 Fixed costs, indivisibilities and the S-curve are absent at the firm.** A firm scales
+output linearly in inputs; a plant is divisible into units; there is no minimum efficient scale, so
+no firm is ever forced to choose between running and stopping, and operating leverage — the first
+non-linearity in a downturn — has nowhere to bite. **Build:** the capital vintage's `buildLag` and
+`landPerUnit` are there; add a fixed period cost per vintage (upkeep, a technology) and a minimum
+batch (the recipe's batch size, technology). Then a firm below batch stops the line (a threshold),
+which is the operating-leverage crossing. Item **22**.
+
+**M-12 The financial accelerator has no household half.** Households hold shares by seed fiat
+(S5) and never borrow; a fall in share prints reaches demand only through the wealth read of
+consumption, which is one number. With Part 8's illiquid-wealth dimension and 12a's consumer
+credit, a price fall moves cells across a band boundary and the lender's limit with it
+(Mian–Sufi 2011; Guerrieri–Lorenzoni 2017). No new mechanism: the lattice plus 12a.
+
+**M-13 There is no notion of a shock as an event with a reader.** Environment publishes a
+condition; three consumers read it; insurers do not (EN2); the central bank does not (18.8); a
+household's heating demand does not (WARMTH has no reader). Every listed reader in
+`environment/index.ts`'s header is a claim; 14.2, 18.8, 21.18 are the reads.
+
+What this part does NOT ask for: a representative agent anywhere, a coefficient anywhere, a
+stochastic process standing in for a decision (no hazard rate, no AR(1) income process — income
+risk is the labour venue's outcome), or a calibration to a moment. Every "build" above is a REASON
+a party has, read from its own state, and a threshold it crosses.
+
+---
+
+## Part 7 — The large optimisation changes
+
+Part 3 lists fifteen layout steps, each local. This part is the four changes that are not local:
+each changes how the engine holds state or runs a period for every module at once, and each is
+done once. Together they set the cost of a period to **O(parties + instruments + legs settled)**
+with small constants, which is the floor for a model that does not sample. None changes a
+mechanism, a boundary, a tolerance or the journal's public content (Law 18).
+
+**LO-1 Columnar state with integer handles.** Every store keys by string ids (`PartyId`,
+`InstrumentId`) into `Map`s of objects with frozen copies on read. Replace, at the store layer only:
+an interning table assigns each party, instrument, unit and currency a dense integer at
+registration; holdings are typed arrays indexed `[instrument][party]` in a sparse-row layout
+(CSR) with lots in a side array; equity accounts, weights, prices' `latest` and the period index
+(BB-5) are typed arrays. The public read faces (`RegisterReads`, `PriceStore`, `Parties`) keep their
+string-keyed signatures and translate at the boundary, so no module changes. Expected: the
+register's share of a period from ~20 % (settlement + audit + revaluation walks) to a few percent,
+GC from 9 % to near zero, and the memory of a full-scale world from hundreds of megabytes of
+objects to tens of typed arrays — which is what running on a phone needs. Item **0e.2′**, after
+BB-5/BB-6.
+
+**LO-2 The period is event-sourced and the readers are incremental.** Today every phase and every
+family re-derives its inputs from the whole store; the profile is dominated by re-walks. With BB-5
+the writers maintain the index; with LO-1 the index is arrays. What is left is that each module's
+own per-period reads (`coveredLines`, `eligibleLines`, `stateOf`, `dearest`, `overdue`,
+`claimsSeen`, …) recompute from scratch. Rule: a module's per-period read is a function of (its
+store, the period index, the dirty set); the kernel offers `view.memo(key, deps, compute)` which
+recomputes only when a named dependency's version moved. This is Part 3 P4 generalised into one
+door so that no module writes its own cache. Item **0e.3′**.
+
+**LO-3 Parallel order generation, deterministic clearing.** `runOne` asks each party for orders
+through a view that reads live state; order generation is pure per party within a cycle (a party
+reads, it does not write). Partition the parties of a market by a fixed hash of their handle, run
+the order generation of each partition on a worker (Web Workers in the app, `worker_threads` in
+Node), gather in partition order, clear once. Determinism is preserved because the gather order is
+fixed and the solver is single-threaded. Markets whose instruments are disjoint could also clear in
+parallel, but the settlement of one market's fills changes the cash the next market's parties hold
+(Clearing F1: markets run in declared order), so only the order-generation half parallelises. That
+half is 19 % + the households' 13.5 % of the profile. Gated on the ladder being byte-identical
+single- and multi-threaded. Item **0e.4′**, last of 0e.
+
+**LO-4 The journal is tiered.** The journal is the public record and the observer's source, and it
+grows without bound with four indexes (G7). Keep the last N periods hot (frozen objects, indexed);
+compact older periods into a columnar log (kind, period, subjects, a packed data blob) readable by
+the observer and by `coverage-reached`, and drop the hot indexes for them. No event is lost (Law 8:
+the history is the number); what changes is where it lives. Every module read of the journal older
+than N periods must go through a declared index (BB-8c makes those reads rare). Item **0e.5′**.
+
+**The cost model this buys, and the gate.** Per period: settlement O(legs); revaluation O(dirty
+holdings); the audit O(dirty parties + instruments); each market O(parties interested) for orders
+and O(n log n) to clear; each module phase O(its own rows). At (12 banks, 200 firms, ~400 cells,
+~1,500 markets) that is tens of milliseconds a period in Node and under a second on the target
+device — the Part 3 §3.4 gate (a year in under 60 s on CI; under 3 s at rig scale) with room. The
+resolution ladder (Part 3 §3.2) is the only gate for all four: a change that moves a ratio is not
+an optimisation and is reverted.
+
+**Order.** BB-5 → BB-6 → LO-1 → LO-2 → LO-4 → LO-3. The first three are one campaign (item 0e);
+LO-3 last because it only pays once everything else is small.
+
+---
+
+## Part 8 — Households and small firms: the population lattice
+
+### 8.1 What is wrong with the current modelling, in one paragraph
+
+Households and small firms are "cells": named parties with an integer weight, holding per-member
+state, split on every partial event, merged only on identical state, keyed on (region, cohort,
+bank). Read in full (Part 0, 0b′), the representation has four consequences the specification did
+not intend: the cell count grows without bound and the party count with it (H2, F7, H3, R2); two
+cells cannot transact (M3, W5); ageing cannot land in an existing cell; and the audit's own
+invariant fires on every split (A1). Beyond the representation, the BEHAVIOUR is thin: one
+consumption rule with one propensity (M-5), an outlook corrected only by own fills (H8), no
+employment state with a duration (M-4), no liquid/illiquid distinction, no borrowing (HO1), no
+owner–firm link, no entry (M-1), and a small-firm tier that holds nothing (SB1). The spec's own
+requirements — §41 A2.a–g, C1, D5, E4; §42 A2–A6, B3, B4; §46 A3, E1 — describe a heterogeneous-
+agent economy in which the DISTRIBUTION carries the dynamics. What follows is a design that gives
+them one, keeps every law, and is adaptable because its shape is registry data.
+
+### 8.2 The literature the design draws on, and what each contributes
+
+- **Heterogeneous-agent macro with a distribution as the state** (Aiyagari 1994; Huggett 1993;
+  Krusell–Smith 1998; Kaplan–Moll–Violante 2018 "HANK"; Achdou–Han–Lasry–Lions–Moll 2022 for the
+  continuous-time, discretised-state method). The contribution: the economy's state is a
+  distribution over (wealth, income state, age), decisions are per point of that distribution, and
+  aggregates are integrals over it. The lattice below is that discretised distribution with
+  integer mass, which is what XI-15 already asks for ("aggregate after the nonlinearity").
+- **Two-asset households and the wealthy hand-to-mouth** (Kaplan–Violante 2014; Kaplan–Moll–
+  Violante 2018; Fagereng–Holm–Natvik 2021; Johnson–Parker–Souleles 2006). Contribution: MPC
+  heterogeneity comes from LIQUID wealth, not net worth; a household with a house and no cash
+  behaves like a poor one. Liquid and illiquid wealth are separate lattice dimensions.
+- **Buffer-stock saving under income risk** (Deaton 1991; Carroll 1997; Carroll–Slacalek–Tokuoka–
+  White 2017). Contribution: a THRESHOLD rule — hold a target buffer of liquid wealth against
+  expected income and its variance, spend above it, save below it — which is exactly the shape §46
+  B3 asks for (confidence as the width of surprises) and needs no coefficient: the target is a read.
+- **Life cycle and bequests** (Modigliani–Brumberg 1954; Gourinchas–Parker 2002; De Nardi 2004).
+  Contribution: cohort bands; retirement as a crossing; the heir cell.
+- **Housing as collateral and the household credit channel** (Mian–Sufi 2011, 2014; Guerrieri–
+  Lorenzoni 2017; Iacoviello 2005). Contribution: tenure and loan-to-value as dimensions the lender
+  reads; a price fall tightens limits and demand without a coefficient.
+- **Search, matching and duration** (Diamond 1982; Mortensen–Pissarides 1994; Blanchard–Diamond
+  1994; Kroft–Lange–Notowidigdo 2013 on duration dependence). Contribution: unemployment as a state
+  with a spell length that changes behaviour and employability; the lattice carries the spell.
+- **Learning and belief heterogeneity** (Evans–Honkapohja 2001; Malmendier–Nagel 2011, 2016
+  "experience effects"; Brock–Hommes 1997; Hommes 2021). Contribution: adaptive expectations with
+  a gain that is the party's own (§46's memory), experience-weighted; and, as a second stage with
+  its killer, switching between simple predictors by their own record — the canonical source of
+  multi-order effects (herding, over- and under-shooting).
+- **Agent-based and stock-flow-consistent macro** (Godley–Lavoie 2007; Caiani–Godin–Kinsella et al.
+  2016 "benchmark SFC-ABM"; Dawid–Delli Gatti 2018; Poledna–Miess–Hommes–Rabitsch 2023 at 1:1 scale
+  for Austria). Contribution: every flow two-sided and every stock somebody's — which Phoenix already
+  has — and the evidence that an economy of threshold-following agents with a real balance sheet
+  produces cycles, crises and fat tails without a shock process.
+- **Firm dynamics and selection** (Gibrat 1931; Hopenhayn 1992; Melitz 2003; Axtell 2001 on the
+  Zipf tail; Luttmer 2007). Contribution: firms differ in productivity; growth is retained earnings
+  against a drawn productivity; selection through exit and entry is where aggregate productivity
+  comes from; the size distribution's tail is a PREDICTION the model can be killed by.
+- **SME finance and its constraints** (Stiglitz–Weiss 1981; Holmström–Tirole 1997; Gertler–
+  Gilchrist 1994; Petersen–Rajan 1994; Berger–Udell 2006; Evans–Jovanovic 1989; Hurst–Lusardi
+  2004). Contribution: rationing not price; relationship tenure as the lender's information; small
+  firms first in a tightening; entry constrained by the founder's liquid wealth.
+- **Trade-credit networks and contagion** (Kiyotaki–Moore 1997 "credit chains"; Boissay–Gropp 2013;
+  Jacobson–von Schedvin 2015). Contribution: a missed payment propagates along the receivables
+  graph; the small tier is where it lives (§42 A4).
+- **Granularity and networks** (Gabaix 2011; Acemoglu et al. 2012; Carvalho–Tahbaz-Salehi 2019).
+  Contribution: a fat-tailed firm distribution makes idiosyncratic shocks aggregate; the lattice's
+  size bands and the promotion boundary are where that tail is produced and measured.
+
+### 8.3 The design: one kernel representation, two profiles
+
+**The population lattice.** A `Population` is a kernel store (a noun with a home) for one cell
+KIND: a set of cells indexed by a KEY that is the cross product of DECLARED DIMENSIONS, each
+dimension either categorical (region, bank, cohort band, tenure, employment state, line of
+business, credit record) or a BAND of a quantity the cell itself holds (liquid wealth in weeks of
+expected income; illiquid wealth; leverage; size; spell length). Every cell holds TOTALS (0b′) and
+an integer weight. There is at most ONE live cell per key (Part XII's invariant, kept by the kernel:
+a movement that lands on an occupied key merges into it, by construction). A cell is still one
+possible household with a multiplicity, still homogeneous, still `integrate(f)` with no mean; what
+changes is that its identity is its POSITION and that positions are finite.
+
+**Bands are RESOLUTION.** The band edges of every quantity dimension are declared per kind
+(registry data, Law 2 RESOLUTION): refine them and the answer must not move; the ladder (Part 3
+§3.2) runs the band count as it runs the bank count. Within-band dispersion is what the
+representation loses, and it is measured, not argued.
+
+**Movement on the lattice is the five weight events, and nothing else.** A cell's own state moves
+every period by the flows it is a side of (wages in, spending out, coupons, rent, service). At the
+close of the period the kernel READS each cell's quantities against the band edges of its kind:
+members whose quantity crossed a band edge move to the cell of the new key by a weight event
+(`split` to a new key when unoccupied, `merge` into the occupant when occupied), moving
+`floor(total × n / weight)` pieces of every holding with them and leaving the remainder (0b′). A
+cell whose members all crossed moves whole. Nothing is drawn, nothing is a probability: a crossing
+is arithmetic on the cell's own state against a declared edge. Categorical dimensions move by the
+events that own them: the labour venue moves members between `employed` and `unemployed[spell=0]`
+(a hire or separation is a weight event now, not a split: 12b); the calendar moves cohorts by date
+(§41 F1.a); a foreclosure moves tenure; a default moves the credit record; a promotion moves an SME
+cell's member out of the population into a named firm (§42 A6.c); death moves to probate; entry
+and formation arrive at the key their founders' state puts them on.
+
+**Why this bounds the count.** The number of live cells is at most the product of the dimensions'
+sizes, and in practice far fewer (most keys are empty). A partial event that used to create a new
+party now moves mass between existing positions. The count of parties is a resolution, not a
+runaway.
+
+**Why this allows cell↔cell flows.** Totals in whole pieces, no per-member divisibility (0b′): a
+small-firm cell sells to a household cell, ships on terms to another small-firm cell, and pays rent
+to a landlord cell, all as ordinary two-sided instructions.
+
+**Decisions are per cell, from the cell's own state and outlook, as threshold rules read from the
+kind's PROFILE** (Law 15: behaviour behind a dispatch table; data in the registry). The household
+profile declares:
+
+- *Buffer-stock consumption* (§41 C1, §46 C1): the cell's target liquid buffer is `weeks × expected
+  income per period`, where `weeks` is the cell's PREFERENCE (patience, drawn at entry from a
+  declared width — the second and last preference beside memory) scaled by its own confidence read
+  (wide recent surprises → a longer buffer; §46 B3). Spending this period is the basket the cohort
+  needs (the quantity preference 13c.2 already declares) plus what stands above the target, less
+  debt service and rent due (12a.4). Below the target it spends the basket and no more; a cell
+  whose liquid cash cannot cover the basket cuts it in the basket's own priority order (the
+  quantity basket already has "before anything else" and "on top") — that is §41 C1.d without a
+  constraint written anywhere. MPC heterogeneity, the wealthy hand-to-mouth and the precautionary
+  response to a surprise are OUTCOMES of the band the cell is in.
+- *Portfolio* (§41 D5): the illiquid choice — a fund share, a bond, a house — is made from what is
+  above the buffer, at the cell's own required return (its outlook of the yield it can get on a
+  deposit, read from the boards it can see, is its opportunity cost); the choice between deposit,
+  money fund and bills is the substitution D5.a names and it is a comparison of three public
+  prints against the cell's own liquidity need.
+- *Labour* (§39, 12b): a member offers hours at a reservation that reads its spell band (a longer
+  spell, a lower reservation: the Kroft–Lange–Notowidigdo fact as a threshold on its own state,
+  not a hazard), its cohort and what its region's venue printed; participation reads the wage
+  against the basket, not the existence of a transfer (H1).
+- *Borrowing* (§41 E): a request for a mortgage or consumer credit is published when the cell is
+  short of a roof or of the basket; the LENDER decides (17.0′: its PD for the cell's key is its own
+  record of that key — relationship information à la Petersen–Rajan lives on the loan row's tenure;
+  the limit is the security's print × its own haircut). Default is the kernel's missed payment
+  moving the failed members to the `defaulted` credit record (12a.5).
+- *Tenure and housing* (§Housing): rent is what is left after the basket over the dwellings a
+  member needs (HO6 fixed); a purchase is the borrowing decision above; foreclosure moves tenure.
+- *Life cycle*: cohorts in five-year bands by date; retirement switches income to drawdown of the
+  pension row (14.6); death moves to probate and the heir cell (the cohort-below cell of the same
+  key: §41 F2.a).
+- *Expectations* (§46): one memory preference; observations are own flows AND every public print
+  the cell is exposed to (its region's wage, the retail prints it buys at, its bank's board, the
+  dwelling print) — A2.a taken literally (H8). Stage two, with its killer: a cell keeps two or
+  three simple predictors of each variable and follows the one with the smaller surprise over its
+  memory (Brock–Hommes without an intensity coefficient: the switch is a threshold on its own
+  record). The killer is §46 E2/E3 (the aggregate moves after; the surprised move first).
+- *Vote* (§47): the platform that its own outlook and state prefer, weight votes.
+- *Formation, founding* (§41 F1.b; §34): formation when a member's income clears the printed rent
+  (12.3); founding a small firm when the cell's liquid wealth above its buffer clears the line's
+  published starting cost (Evans–Jovanovic: a liquidity threshold, no rate) and its outlook on the
+  line's margin clears its required return (12.1–12.2).
+
+The small-firm profile declares, on its own lattice (dimensions: region, bank, line, size band,
+leverage band, age band, credit record; plus a ROW to its owner household cell):
+
+- *Production and pricing*: the line's recipe at the cell's drawn productivity (Hopenhayn; the
+  size draw already exists), ask from its own outlook on its sell price (F15), inputs bought on
+  terms from named firms and from other cells (TC4, 11.3), output sold to household cells in its
+  region and to named firms.
+- *Employment*: hours in the labour venue at the wage its own last sales cover (11.4), a standing
+  relation (12b).
+- *Growth*: retained earnings buy plant (the capital programme's door at the cell's hurdle);
+  crossing a size band is a lattice move; crossing the last band is PROMOTION to a named firm
+  (§42 A6.c); the Zipf tail of the size distribution is then a PREDICTION (Axtell 2001; Gibrat)
+  that Part XII measures and can kill.
+- *Owner draws*: profit reaches the owner household cell as a two-sided flow (dividend/draw), so
+  SME income is household income (B3.a: only what is received); a default reaches the owner's
+  house through the security row (§42 B2).
+- *Borrowing*: a loan row per (bank, cell) at the bank's per-key view (17.0′); relationship tenure
+  on the row; rationing is the bank's refusal (Stiglitz–Weiss: the bank declines at any rate above
+  its own threshold, which 17.0′ makes explicit) — the young/low-band cells are refused first in a
+  tightening (Gertler–Gilchrist) as an outcome.
+- *Trade credit*: receivables and payables cell↔cell and cell↔named (0b′); a missed payment is an
+  arrear presented every period (12a.3) and a STOP-SHIPMENT decision by the supplier (its own
+  record of the buyer: TC3) — the Kiyotaki–Moore chain runs cell to cell.
+- *Default and exit*: the kernel's missed payment; the members' pieces to probate; the line's
+  capacity leaves the market.
+- *Entry*: 12.1, from household founders' liquid wealth.
+
+**Non-linear and multi-order effects, and where each comes from.** Nothing below is scripted; each
+is a chain of thresholds the design makes reachable, and each is a VERIFY:
+
+1. A transfer to the low-liquid band raises demand; the same transfer to the high band raises
+   deposits (M-5). *Measure:* demand response by band at constant aggregate.
+2. A wage surprise widens confidence → longer buffers → lower spending → a firm's `noDemand` →
+   its ask falls (F15) → its hiring falls → separations move members to `unemployed` → their
+   reservation falls with the spell → the wage print falls → the price outlook of every cell that
+   reads the wage moves (M-6). *Measure:* §46 E3 — the surprised act first; the rest when it reaches
+   them.
+3. A dwelling print fall → cells cross a loan-to-value band → the lender's limit falls (17.0′) →
+   requests refused → consumption cut (M-12) → retail prints fall → the dwelling print falls
+   further. *Measure:* the leverage distribution narrows after a crossing wave (M-3).
+4. A small-firm cell misses a payment → its supplier's arrear → the supplier stops terms → the
+   supplier's own cash falls → its bank's PD for that key rises → its line is cut (Gertler–
+   Gilchrist, Kiyotaki–Moore). *Measure:* defaults cluster by region and line at constant mean
+   (§42 B4, B4.a).
+5. A mean-preserving spread of the size draw raises defaults (§42 A2.a); of outlooks raises
+   crossings (§46 E1); of liquid wealth raises the MPC response (M-5). *Measure:* the three
+   mean-preserving tests, as the spec states them.
+6. Entry from founders with liquid wealth above the threshold rises when household buffers are
+   full and falls in a tightening — the contestability of every market is an outcome (M-1).
+   *Measure:* entry and exit both non-zero, neither the identity of the other (§42 E4).
+
+**Adaptability.** A new dimension (a wealth band, an education band, a sector for SMEs, a second
+region) is a registry row, a band-edge table and the seed that fills it; no mechanism changes
+(ARCHITECTURE 4.4's own claim, made true because the kernel reads the declared list). A new rule
+is a profile entry behind the dispatch table. A new kind of cell population (pooled borrowers,
+landlords as a mass sector, a cohort of foreign households) is a third profile on the same store.
+The literature's next model — a two-asset HANK with search — is a set of dimensions and rules on
+this lattice, not a rewrite.
+
+**What it costs, declared (Appendix C).** Within-band dispersion (measured by the ladder);
+discreteness of moves in whole members (exact, and bounded by the same ladder); no within-cell
+network (a cell's members trade with the same counterparties — a cost the spec already accepts in
+XI-15). What it removes: the unbounded party count, the lcm grain, the split-per-event, the
+per-member divisibility invariant and its family, the `sameState` merge, and every per-member
+scaling site in the mechanisms.
+
+### 8.4 The item
+
+Inserted as **10.5 — The population lattice**, after 0b′ (which it subsumes: 0b′'s steps are its
+first steps) and before 11; items 11, 12, 12a, 12b and 14.6 are then built ON it and their steps
+that say "cell" mean a lattice cell.
+
+- [ ] 10.5.1 0b′.1–0b′.7 (totals; no per-member legs; the five events move pieces; the kernel merges on key).
+- [ ] 10.5.2 `registry/lattice.ts`: per cell kind, the declared dimensions (categorical, with their owners: which event moves them) and the quantity dimensions with band edges (RESOLUTION params); the household and small-firm declarations as data. `PartyKindProfile.lattice` names it; `cellKey` (0b) becomes the lattice's key.
+- [ ] 10.5.3 `world/cells.ts`: the close-of-period crossing pass — for every quantity dimension of every cell kind, read each cell's quantity per member (a read: `total / weight`), find the members' band, move by a weight event to the key's cell (create or merge). One writer of position. Test: refine every band edge by two; the 52-period aggregates move by less than derived dust.
+- [ ] 10.5.4 `households/` rewritten as a PROFILE of rules on the lattice (8.3's list): consumption, portfolio, labour, borrowing, tenure, life cycle, expectations (observations of public prints), vote, formation, founding. Delete `consume.ts`'s single propensity, `portfolio.ts`'s per-line ladder over every line (H3), `lifecycle.ts`'s split-per-period ageing (H2). The one new PREFERENCE: `households.patience` (weeks of buffer), drawn at entry from a declared width, dispersed (§46 B1.a's sibling); declared with its `why`.
+- [ ] 10.5.5 `small-business/` rewritten as a profile on the lattice with an owner row to a household cell; production, pricing, employment, growth, owner draws, borrowing, trade credit, default, entry as in 8.3.
+- [ ] 10.5.6 The measurements of 8.3 (1–6) as `test/lattice.test.ts`, each with the spec clause it verifies; the Zipf-tail prediction recorded with its killer (Law 17).
+- [ ] 10.5.7 `docs/ARCHITECTURE.md` 4.4 rewritten; `docs/spec` untouched — every clause of §41, §42, §46 and XI-15 is met by this design or its gap is stated (XI-15's "split, never a fraction": a move of whole members is a split by another name; "merge on identical state": subsumed by one cell per key, which is stronger).
+- [ ] 10.5.8 COVERAGE re-marked for §41, §42, §46, XI-15, XI-16; record.
+
+**Exit.** Parties at period 52 ≤ occupied keys + named; the six measurements hold; a mean-preserving
+spread moves crossings and not means; entry and exit both non-zero; a cell sells to a cell.
+
+---
+
+## Part 9 — The index
 
 Every finding of the review, by its working id, and the item that closes it. A finding leaves this
 table only when its item's step is ticked. Ids: D (documents), C (smoke run), K/R/V/M/W/A/G/S (kernel
@@ -937,6 +1526,22 @@ CD/IR, FXD/OP/BF, CF/IF/IX/SL/SZ, ST/SB/TC, IN/HO, LD/MR/FR, CO/EN/CB/SI/SC/OM, 
 | A-24, F4, E-6, MM7, MM8, MM9, E-2, E-3, E-4, 21.8, E-13, A-69, 21.10, D16, E-12, E-18, EQ4, DL6, SL2, SL3, OB6, K1, M5, R5, G5, G6, K7, M4, W4, K8, K10, A5, RP12, F5, DL7, CP3, CP2, OB7, OB5, EX2, RP8, RP11, DL4, FD7, BK27, BK28, DL11, FD11, EN1, H8, H1, H4, FR3, FR4, FR6, FR7, FR8 | 21 | the local repairs |
 | C8, D9, S2, S4, S5, W1, S1, S7, S8, S9 | 22a | the opening |
 | E-22, B-13 | 23 | measurement |
+| Part 5 BB-2 | 0a′ | phases by dataflow |
+| Part 5 BB-8, W6, A7, CO4, BK4, OB5, H7, H9, RP10, CD5, FD3, IN2, MM13, BK31 | 0f | questions, not hooks; stores, not events |
+| Part 5 BB-3, K2 | 16.0 | money carries its currency |
+| Part 5 BB-4, IR6, E-11 | 18.0 | a print carries its dimension |
+| Part 5 BB-5, BB-6; Part 7 LO-1..LO-4 | 0e | the period index; columnar state; incremental readers; parallel orders; the tiered journal |
+| Part 5 BB-7, FX3, CP4, CF2, CD1 | 18.4, 16.5 | markets close; instructions span books |
+| Part 6 M-1, M-11 | 12c, 22 | growth; fixed costs and batches |
+| Part 6 M-2 | 12b.3, 18a.1, 21.18, 22a | the price level |
+| Part 6 M-3, M-12 | 17.0′, 12a.4, 15.1, RP14 | the credit cycle |
+| Part 6 M-4 | 12b, 10.5 | unemployment as a state |
+| Part 6 M-5, M-9 | 10.5 | MPC heterogeneity; demography |
+| Part 6 M-6, M-13 | 12d, 14.2, 18.8 | observation; readers of a shock |
+| Part 6 M-7 | 19.0 | the government buys |
+| Part 6 M-8 | 22, 16.2 | recipes, plural |
+| Part 6 M-10 | 16 | external shocks |
+| Part 8 (all of 8.1–8.3) | 10.5 | the population lattice |
 | WK3–WK15, OB1–OB4, OB8, A3, A4, A6, R1, R3, R4, K5, K11, V2, W2, W3, W7, G1–G4, G7, G8, G11, F1, F2, F11, GD4, CP1, BK10, BK14, BK15, BK17–BK20, MM1–MM5, MM13, FD1–FD3, FD5, FD8, FD9, FD12, EQ1, EQ2, EQ8, EQ9, EQ13, RP1–RP3, RP5, RP9, RP10, EX1, DL1–DL3, DL10, CD1, CD4, CD5, IX1–IX5, SL1, SL4, SL5, SZ2–SZ5, ST5, TC1, TC2, IN7, IN9, HO3–HO5, MR1, MR2, FR1, FR8, CO1, SC1, SC2, OM3–OM5 | 0e (Part 3) | walks, scans, indexes, caches, growth |
 | FD20, SL4, DL9 | 17.10, 16 | a fund can never short (no borrow need) |
 | FD10 | 0.15/0.16 (measure at 0d) | every fund wound up at `patience` |
