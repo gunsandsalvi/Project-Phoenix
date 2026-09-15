@@ -49,6 +49,7 @@ import type { InstrumentId } from '../../core/ids.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { MORTALITY, type MortalityDecl } from './data.js';
+import { rentPrintedIn } from '../../registry/funding.js';
 
 /** F1.b: what this cohort's members die at, per period. One parameter per cohort (Law 2). */
 export const mortalityParam = (cohort: string): ParamId =>
@@ -150,10 +151,12 @@ function crossingShare(ctx: MechanismContext, cohort: string): number | undefine
 interface Waiting {
   readonly toAge: Map<string, number>;
   readonly toDie: Map<string, number>;
+  /** F1.b (12.2): the people standing at the first cohort's lower boundary, not yet formed. */
+  readonly toForm: Map<string, number>;
 }
 
 const waiting = (ctx: MechanismContext): Waiting =>
-  ctx.state<Waiting>('households.waiting', () => ({ toAge: new Map(), toDie: new Map() }));
+  ctx.state<Waiting>('households.waiting', () => ({ toAge: new Map(), toDie: new Map(), toForm: new Map() }));
 
 /**
  * How many whole people cross now, and what is left standing at the boundary.
@@ -544,5 +547,49 @@ export function settleEstates(ctx: MechanismContext): void {
         true,
       );
     }
+  }
+}
+
+/**
+ * F1, F1.b (12.2): FORMATION IS ENTRY. The people reaching the first cohort's lower boundary are
+ * the same geometry ageing out of it is — the share of the band standing at a boundary in a period
+ * (`crossingShare`), carried as whole people — and a household forms when its people can pay for a
+ * roof of their own: the cell's own expected income per member, off its own plan, clears the rent
+ * its region's lettings venue last struck (Housing A2). No rate: a region whose venue has never
+ * cleared, or whose people cannot pay the rent it did, forms nobody, and the ones standing at the
+ * boundary wait, on the record. A formed member enters the cell that stood at the boundary — with
+ * nothing, because an adult with nothing is what forms a household (Firm Birth A2.a's rule for a
+ * person).
+ */
+export function form(ctx: MechanismContext): void {
+  const first = ctx.registry.cohorts[0];
+  if (first === undefined) return;
+  const share = crossingShare(ctx, String(first.id));
+  if (share === undefined) return;
+  for (const cell of [...ctx.parties.ofKind(HOUSEHOLD)]) {
+    if (cell.representation !== 'cell' || !cell.status.alive) continue;
+    if (keyOf(cell, 'cohort') !== String(first.id)) continue;
+    const standing = whole(
+      waiting(ctx).toForm,
+      String(cell.id),
+      mul(weightOf(cell), share, 'the people standing at the boundary'),
+    );
+    if (standing <= 0) continue;
+    const rent = rentPrintedIn(ctx.journal, String(cell.region));
+    const plan = ctx.journal.lastOf('households.plan', String(cell.id));
+    const income = plan?.data['expectedIncome'];
+    let why: string | undefined;
+    if (!rent.some) why = 'its region\u2019s lettings venue has never cleared a rent';
+    else if (typeof income !== 'number') why = 'the cell has no outlook of its income yet';
+    else if (income < rent.value) why = 'its income does not clear the rent';
+    if (why !== undefined || !rent.some) {
+      // They wait, as whole people, and the record says why.
+      const carried = waiting(ctx).toForm;
+      carried.set(String(cell.id), add(zeroIfNone(carried.get(String(cell.id))), standing, 'still standing at the boundary'));
+      ctx.record(LIFECYCLE, [cell.id], { event: 'notFormed', members: standing, why }, true);
+      continue;
+    }
+    ctx.cells.weight(cell.id, 'entry', standing, 'formed');
+    ctx.record(LIFECYCLE, [cell.id], { event: 'formed', members: standing, rent: rent.value, income }, true);
   }
 }

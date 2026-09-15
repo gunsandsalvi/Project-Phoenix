@@ -229,3 +229,24 @@ export function shortfallOf(
 export function isShort(amount: number, what: string): Option<Cash> {
   return amount > 0 ? some(asCash(amount, what)) : none<Cash>();
 }
+
+/* --- What a lettings venue printed ---------------------------------------------------------- */
+
+const RENT_PRINT = 'housing.rent';
+
+/**
+ * Housing A2, Households F1.b (12.2): THE RENT A REGION'S LETTINGS VENUE LAST STRUCK, per dwelling
+ * per period. The housing module writes it; a household deciding whether its people can afford a
+ * roof of their own reads it here, by the registry's name (0e′.3). A region whose venue has never
+ * cleared has no rent, which is a refusal and not a zero.
+ */
+export function rentPrintedIn(reads: WireReads, region: string): Option<PerPiece> {
+  let last: PerPiece | undefined;
+  for (const e of reads.ofKind(RENT_PRINT)) {
+    if (e.data['region'] !== region || e.data['outcome'] !== 'cleared') continue;
+    const rent = e.data['rentPerDwelling'];
+    if (typeof rent === 'number' && rent > 0) last = asPerPiece(rent, 'what a dwelling let for, per period');
+  }
+  return last === undefined ? none<PerPiece>() : some(last);
+}
+

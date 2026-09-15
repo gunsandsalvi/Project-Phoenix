@@ -11092,3 +11092,28 @@ opening-cash placeholder that died here is a SHAPE now: an opening condition, re
 
 **Checks.** `small-business.test.ts` 20 green (founded-or-refused; a cell enters and the
 population accounts for it); `core.test.ts` green; `check:opens` green; lint, typecheck green.
+
+## Item 12.2 — Households form
+
+**Sized honestly first.** The plan wrote formation as members of a cohort k moving to cohort 0
+when their own income clears the rent; this world's cohorts are `working` and `retired`, and a
+cohort of dependants is a population that consumes and does not work, which is a household
+composition noun the model does not have. Formation is therefore ENTRY at the first cohort's
+lower boundary (F1.b), by the geometry that already ages the band out at its upper one: the share
+of a band standing at a boundary in a period, carried as whole people. No rate anywhere.
+
+**The condition.** A household forms when its people can pay for a roof of their own — the
+cell's own expected income per member, off its own plan, clears the rent its region's lettings
+venue last struck. The rent is a registry read (`rentPrintedIn`), never the housing module's event
+name. The ones who cannot form wait at the boundary, whole, and the record says why each period.
+A formed member enters with nothing, which is what an adult with nothing is.
+
+**Measured, not chased.** The scale model's lettings venue has never cleared: `noSupply` in
+eleven periods of twelve, because no owner offers a dwelling to let. So no rent stands, nobody
+forms, and the people at the boundary accumulate on the record with that reason — 89 of them
+after twelve periods against 8 a period ageing out. Positioned at 15.
+
+**Coverage.** Households F1 and F1.b carry formation (F1.b UNMEASURED on the entry); F4 PARTIAL.
+
+**Checks.** `formation.test.ts` green; `household-profile.test.ts` green; `check:opens` green;
+lint, typecheck green.

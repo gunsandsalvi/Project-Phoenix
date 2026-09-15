@@ -63,6 +63,7 @@ import {
   mortalityParams,
   probateKind,
   settleEstates,
+  form,
 } from './lifecycle.js';
 import {
   cushionForFund,
@@ -720,9 +721,15 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         // After everything else has happened to them: somebody who crossed into retirement this
         // period worked this period, and ageing them first would be backdating it.
         anchor: { after: 'revaluation' },
-        reads: [],
+        // F1.b (12.2): who forms reads the rent its region last struck and its own plan.
+        reads: [
+          { kind: 'event', name: 'housing.rent', of: 'anyPeriod' },
+          { kind: 'event', name: 'households.plan', of: 'anyPeriod' },
+        ],
         writes: [{ kind: 'event', name: 'households.lifecycle' }],
         run: (ctx: MechanismContext) => {
+          // F1.b: the people reaching adulthood form before the year's ageing moves the rest.
+          form(ctx);
           age(ctx);
           die(ctx, MORTALITY);
           // F2: and what is in probate is divided, after the deaths that put it there — an estate
