@@ -433,6 +433,19 @@ export class Register {
     const pieces = this.onTheGrid(qty, `what ${holder} is credited of ${instrument}`);
     this.parties.get(holder);
     const h = this.mutable(holder, instrument);
+    /**
+     * Law 18, 0g.1 (0g.6 pulled forward): A LOT IS A BASIS AND A DATE, and two credits with the
+     * same of both are one lot. Lots are drawn first-in-first-out, so joining a credit onto the
+     * LAST lot when it matches changes no draw, no value, no realised gain and no carrying answer
+     * — a lot that was two objects is one object. Every fill of a session at one cleared price
+     * used to be its own lot: the third rung of the ladder held 4.4 million of them by period 4.
+     */
+    const last = h.lots[h.lots.length - 1];
+    if (last?.basisPerUnit === basisPerUnit && last.acquired === period) {
+      const joined: Lot = Object.freeze({ ...last, qty: asQty(last.qty + pieces, 'the lot joined') });
+      h.lots[h.lots.length - 1] = joined;
+      return joined;
+    }
     const lot: Lot = Object.freeze({
       id: this.nextLot as LotId,
       qty: pieces,
@@ -752,10 +765,10 @@ export class Register {
           const left = lien.qty - moved;
           if (left > 0) heldLiens.push(Object.freeze({ ...lien, qty: asQty(left, 'kept') }));
         }
-        h.lots = kept;
+        h.lots = this.joinRuns(kept);
         h.liens = heldLiens;
         if (lots.length > 0 || liens.length > 0) {
-          dst.set(inst, { holder: to, instrument: inst, lots, liens });
+          dst.set(inst, { holder: to, instrument: inst, lots: this.joinRuns(lots), liens });
           this.index(inst).add(to);
           const arrived = lots.reduce((t, l) => t + l.qty, 0);
           if (arrived > 0) movedByInstrument.set(inst, asQty(arrived, 'what moved'));
@@ -836,7 +849,14 @@ export class Register {
           const sum = (mine === undefined ? 0 : mine.qty) + theirs.qty;
           target.lots = [Object.freeze({ ...(mine ?? theirs), qty: asQty(sum, 'the merged balance') })];
         } else {
-          target.lots = [...target.lots, ...h.lots];
+          // Register D4, 0g.1: FIRST ACQUIRED, FIRST OUT is what the draw means, and a merge keeps
+          // it: the two books interleave by date (stable, so equal dates keep each book's order)
+          // and lots of one date and one basis are one lot. Concatenating put every arriving
+          // book's [p0, p1, p2] after the last, so nothing ever joined and the bank every household
+          // moved to held sixteen thousand lots of one line by period 3 of the third rung.
+          target.lots = this.joinRuns(
+            [...target.lots, ...h.lots].sort((a, b) => a.acquired - b.acquired),
+          );
         }
         target.liens = [...target.liens, ...h.liens];
         this.index(inst).add(into);
@@ -884,6 +904,23 @@ export class Register {
 
 
   // ---- internals ---------------------------------------------------------------------------
+
+  /**
+   * Law 18, 0g.1: CONSECUTIVE LOTS OF ONE BASIS AND ONE DATE ARE ONE LOT. The order is kept, so
+   * a first-in-first-out draw takes exactly what it took; only the count of objects changes. A
+   * merge concatenated and a re-key copied lot by lot, so a cell that hired every period held a
+   * hundred copies of one lot by spring (441 of one line at the third rung by period 2).
+   */
+  private joinRuns(lots: readonly Lot[]): Lot[] {
+    const out: Lot[] = [];
+    for (const lot of lots) {
+      const last = out[out.length - 1];
+      if (last?.basisPerUnit === lot.basisPerUnit && last.acquired === lot.acquired) {
+        out[out.length - 1] = Object.freeze({ ...last, qty: asQty(last.qty + lot.qty, 'the lot joined') });
+      } else out.push(lot);
+    }
+    return out;
+  }
 
   private mutable(holder: PartyId, instrument: InstrumentId): MutableHolding {
     let m = this.byHolder.get(holder);

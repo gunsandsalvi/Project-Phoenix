@@ -10653,3 +10653,37 @@ People, small firms, sessions cleared, money per member and the going rate are t
 grains on both rungs; what differs is what should — keys occupied, and the events and findings
 that come with more cells. Time is reported, never asserted. Lots grow without bound (302,645 at
 the second rung after a year, ~5,800 a period): 0g.6's coalescing is where that goes.
+
+## Item 0g.1 (closed) — The third rung, and the ladder as it stands
+
+**A fourth build stop: lots.** The third rung held 4.4 million lots by period 4 and spent nine
+seconds a period on them. Three things made them, all layout (Law 18): every fill of a session at
+one cleared price was its own lot; a re-key copied lot by lot and a merge concatenated, so a cell
+that hired every period held a hundred copies of one lot by spring; and the bank every household
+moved to interleaved every arriving book's `[p0, p1, p2]` after the last, so nothing ever joined —
+sixteen thousand lots of one line by period 3. A lot is a basis and a date, and two credits with
+the same of both are one lot: `credit` joins onto a matching last lot, `moveShare` and `merge`
+join runs of equal lots, and a merge orders the two books by date first (stable), which is what
+first-in-first-out means once a holding has two histories. No value, no draw and no carrying
+answer moves; the first rung's events moved by two (54,431 → 54,429), which is the two draws whose
+lot changed hands in a different order, and every ratio stood. 0g.6's "lots coalesce" is done here.
+
+**The ladder** (a year; ×1 the declared grain, ×2 every band cut in two):
+
+| rung | ms/period at 1 / 13 / 26 / 52 | heap MB at 52 | parties / cells / people | events | sessions | audit | money/member | wage/h |
+|---|---|---|---|---|---|---|---|---|
+| 3b/12f ×1 | 245 / 125 / 110 / 98 | 192 | 76 / 37 / 39,171 | 54,429 | 57 | 3,812 | 1,117,471 | 1,351.52 |
+| 6b/60f ×1 | 521 / 308 / 261 / 262 | 333 | 118 / 38 / 195,844 | 148,176 | 107 | 7,250 | 2,939,371 | 1,473.73 |
+| 6b/60f ×2 | 543 / 328 / 272 / 269 | 333 | 133 / 53 / 195,844 | 150,198 | 107 | 7,857 | 2,939,371 | 1,473.73 |
+| 12b/200f ×1 | 923 / 950 / 842 / 704 | 975 | 212 / 38 / 652,806 | 323,106 | 605 | 16,215 | 822,500 | 16,052.20 |
+| 12b/200f ×2 | 938 / 965 / 831 / 692 | 374 | 229 / 55 / 652,806 | 325,955 | 605 | 17,082 | 822,500 | 16,052.20 |
+
+Lots after a year at the third rung: 5,952 (from millions). Against 0g's exit — (12, 200) a year
+under 60 s, (3, 12) under 3 s — the third rung is at 37 s and the first at 5.1 s; the first is
+where the per-period fixed cost lives and 0g.2–0g.5 are what take it down. Heap at the third
+rung peaks near a gigabyte inside a period and settles to 975 MB at a year (the journal at
+323,000 events; 0g.14). The wage per hour at the third rung (16,052 against 1,474 at the second)
+is a measurement of the labour venue at scale and is positioned at 12b.3, not chased.
+
+**Checks.** `check:opens` green on both worlds; the lattice, ladder, register tests green; lint,
+typecheck, `check:spec`, `check:forbids`, `check:deaths` green.

@@ -146,7 +146,10 @@ a cycle is the instruction order (E3).
 
 ### 4.3 The register (Register A–F)
 
-`Holding (holder, instrument)` → `{ lots: Lot[], liens: Lien[] }`. A lot carries quantity and basis
+`Holding (holder, instrument)` → `{ lots: Lot[], liens: Lien[] }`. A lot is a basis and a date, and
+two credits with the same of both are one lot (0g.1: `credit` joins onto a matching last lot; a
+re-key and a merge join runs of equal lots; a merge orders the two books by date first, which is
+what first-in-first-out means once a holding has two histories). A lot carries quantity and basis
 (D4); a lien encumbers units (D5); free units = held − encumbered, and **only free units can move**
 (D5.a). Both directions are indexed — by holder and by instrument (D2.a) — and both indexes are
 written by the single settlement path. Issued amount per instrument (B1) is changed only by issuance,
