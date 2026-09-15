@@ -332,8 +332,10 @@ function payDividend(
   // payable date has an estate, its rows moved there, and matching on the name it had would skip
   // every one of them — so what it declared would simply never be paid.
   const issuer = ctx.parties.resolve(firm).id;
-  for (const owed of ctx.agreements.ofKind(DIVIDEND_DECLARED)) {
-    if (ctx.parties.resolve(owed.debtor).id !== issuer || owed.state !== 'performing') continue;
+  // Law 18 (12.5): the rows THIS issuer owes of this kind, off the debtor index — the store moved
+  // them to the successor at the cease (Register F2), so the resolved issuer is the debtor of record.
+  for (const owed of ctx.agreements.byDebtorAndKind(issuer, DIVIDEND_DECLARED)) {
+    if (owed.state !== 'performing') continue;
     // Law 15: which declaration this claim came from is a FIELD of its terms, asked for as this
     // kind's terms. It used to be `owed.what !== \`dividend ${action.id}\`` — a string built at one
     // end and compared at the other, which is A-52's shape and is why the kind exists.
@@ -381,7 +383,7 @@ function payDividend(
       to: ctx.accountOf(holderId, line.ccy),
       ccy: line.ccy,
       // Treasury C1: the payer says what this is. A dividend is not a wage and not a disposal.
-      receipt: { of: 'dividend' },
+      receipt: { of: 'dividend', on: String(line.id) },
       amount: asQty(total),
     };
     const r = ctx.settle({
@@ -497,13 +499,12 @@ function dividendLegs(view: AuditView): ReadonlyMap<string, Cash[]> {
   const out = new Map<string, Cash[]>();
   for (const r of view.ledger.inPeriod(view.period)) {
     if (r.outcome !== 'settled') continue;
-    const reason = r.instruction.reason;
-    if (!reason.startsWith('payout on ')) continue;
-    // The reason names the line it is a payout ON, which is what the declaration named.
-    const line = reason.slice('payout on '.length, reason.indexOf(' ', 'payout on '.length));
-    if (line === '') continue;
     for (const leg of r.instruction.legs) {
       if (!isMoneyLeg(leg)) continue;
+      // 12.5: the leg says what it was paid on (Treasury C1: the payer says what this is); nothing
+      // here parses a reason.
+      if (leg.receipt?.of !== 'dividend') continue;
+      const line = leg.receipt.on;
       const key = `${line}\u0000${String(leg.from.holder)}`;
       const held = out.get(key);
       const paidOnIt = heldAsMoney(leg.amount, 'what left the firm on this line');

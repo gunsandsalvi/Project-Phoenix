@@ -273,6 +273,14 @@ export class Agreements {
     return rowsOf(this.rows, this.byCreditor.get(party));
   }
 
+  /**
+   * Law 18 (12.5): what one party owes of one kind — the rows a payer walks when it pays a
+   * declaration, read off the debtor index and never a scan of every row of the kind.
+   */
+  byDebtorAndKind(debtor: PartyId, kind: AgreementKindId): readonly Agreement[] {
+    return this.owedBy(debtor).filter((a) => a.terms.kind === kind);
+  }
+
   /** Every row of one kind — how the module that declared a kind reads its own book back. */
   ofKind(kind: AgreementKindId): readonly Agreement[] {
     return rowsOf(this.rows, this.byKind.get(kind));
@@ -315,7 +323,7 @@ function rowsOf(
 /** A real read-only facade: no write is reachable through it, at runtime as well as in the types. */
 export type AgreementReads = Pick<
   Agreements,
-  'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'kind' | 'all'
+  'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'byDebtorAndKind' | 'kind' | 'all'
 >;
 
 export function agreementReads(store: Agreements): AgreementReads {
@@ -324,6 +332,7 @@ export function agreementReads(store: Agreements): AgreementReads {
     owedBy: (party: PartyId) => store.owedBy(party),
     owedTo: (party: PartyId) => store.owedTo(party),
     ofKind: (kind: AgreementKindId) => store.ofKind(kind),
+    byDebtorAndKind: (debtor: PartyId, kind: AgreementKindId) => store.byDebtorAndKind(debtor, kind),
     kind: (id: AgreementKindId) => store.kind(id),
     all: () => store.all(),
   });

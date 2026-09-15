@@ -541,7 +541,7 @@ export function draw(ctx: MechanismContext, cell: PartyId): void {
         kind: 'money',
         from: ctx.accountOf(cell, ccy),
         to: ctx.accountOf(owner.value.owner, ccy),
-        receipt: { of: 'dividend' },
+        receipt: { of: 'dividend', on: String(owner.value.row) },
         ccy,
         amount: spare,
       },

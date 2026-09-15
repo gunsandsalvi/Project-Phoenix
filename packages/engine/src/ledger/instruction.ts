@@ -71,7 +71,11 @@ export type Receipt =
   | { readonly of: 'wage' }
   | { readonly of: 'rent' }
   | { readonly of: 'interest' }
-  | { readonly of: 'dividend' }
+  /**
+   * Equity D3, 12.5: WHAT IT IS PAID ON — the share line a declaration was on, or the ownership
+   * row a small firm's owners draw on — so the audit reads the leg and never parses a reason.
+   */
+  | { readonly of: 'dividend'; readonly on: string }
   /**
    * Law 19: WHAT IT COST IS NOT THE PAYER'S TO SAY, and it does not try. A buyer paying a seller
    * knows the money is proceeds of a sale; only the register knows which lots the seller's debit

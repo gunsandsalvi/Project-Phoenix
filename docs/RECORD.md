@@ -11132,3 +11132,17 @@ for the source on every band and for the retired to die faster than the working,
 
 **Checks.** `mobility.test.ts` 14 green, `formation.test.ts`, `household-profile.test.ts` green;
 `check:opens` green; lint, typecheck green.
+
+## Item 12.5 — A payer walks its own rows; a dividend leg says what it is on
+
+The equity module paid a declaration by scanning every `DIVIDEND_DECLARED` row in the world and
+resolving each debtor to see whether it was this issuer. The store kept a debtor index all along;
+`byDebtorAndKind` reads it, on the facade, and the payer walks the rows it owes of the kind — the
+store moved them to its successor at the cease (Register F2), so the resolved issuer is the debtor
+of record. The audit's `dividendLegs` sliced the line's name out of an instruction's reason string;
+the dividend receipt says what it was paid ON now — the share line for a declaration, the
+ownership row for a small firm's draw to its owners — and the family reads the leg. Nothing parses
+a reason. The 16 reds of `equity.test.ts` and the one of `equity-ledger.test.ts` predate this and
+are unchanged.
+
+**Checks.** `check:opens` green; lint, typecheck green.
