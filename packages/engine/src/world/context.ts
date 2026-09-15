@@ -694,7 +694,12 @@ export interface ContractsRead extends ContractReadsFacade {
 }
 
 export interface CellEvents {
-  split(cell: PartyId, members: number, cause: string): PartyId;
+  /**
+   * 0f.4: THERE IS NO SPLIT. A cell holds totals and its people are alike on every dimension of
+   * its key, so the only reason part of it ever left was that part of it moved to another KEY —
+   * a hire, a separation, a death — and that is `reKey`, which lands on the standing cell of the
+   * new key and merges, or opens the key if nobody is on it.
+   */
   merge(into: PartyId, from: PartyId, cause: string): void;
   weight(
     cell: PartyId,
@@ -703,8 +708,9 @@ export interface CellEvents {
     cause: string,
   ): void;
   /**
-   * XI-15 (13d.1): a split that changes the key — how a weight moves between keys without value
-   * moving with it. Returns the new cell, which carries the same per-member state and the new key.
+   * XI-15 (13d.1, 0f.4): members move to another key. Their share of every holding moves with them
+   * (`moveShare`); the destination is the standing cell on that key, merged into, or a fresh cell
+   * if the key was empty. Returns the cell the members are in now.
    */
   reKey(
     cell: PartyId,

@@ -403,7 +403,8 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
     const everyone = dying >= weightOf(cell);
     const office = probateId(cell.region, cell.bank);
     if (!ctx.parties.has(office)) continue;
-    const estate = everyone ? cell.id : ctx.cells.split(cell.id, dying, 'died');
+    // 0f.4: the dying move to the standing probate cell of the key; there is no split.
+    const estate = ctx.cells.reKey(cell.id, dying, { estate: 'probate' }, 'died');
     if (everyone) waiting(ctx).toDie.delete(String(cell.id));
     const short = handToProbate(ctx, estate, office, cell.region);
     for (const u of short) {

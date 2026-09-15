@@ -160,8 +160,20 @@ function defaulted(
  * cannot pay the accelerated face fails that too, and each failure is its own event. There is no
  * separate acceleration machinery for a state to get out of step with.
  */
+/**
+ * XI-1, Corporate Credit E3: ACCELERATION IS ONE EVENT PER LINE. A default on one line calls every
+ * other accelerating line of the issuer; a called line that cannot be paid defaults in turn and
+ * calls the rest — including the one that called it, which called it back, and the world stopped
+ * on a borrower with two lines that both failed (0f.4, rig period 24). A line is called once in a
+ * pass: the set of lines being called is the state of the pass, and a line already in it is not
+ * called again. It is a fact about what acceleration IS, not a limit on it.
+ */
+const accelerating = new Set<string>();
+
 function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
   if (d.registry.instrumentKind(defaultedOn.kind).accelerates !== true) return;
+  if (accelerating.has(String(defaultedOn.id))) return;
+  accelerating.add(String(defaultedOn.id));
   const issuer = issuerOf(defaultedOn);
   for (const other of d.instruments.all()) {
     if (other.id === defaultedOn.id || !other.status.live) continue;
@@ -177,6 +189,7 @@ function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: Ac
     );
     redeem(other, period, cycle, d);
   }
+  accelerating.delete(String(defaultedOn.id));
 }
 
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {

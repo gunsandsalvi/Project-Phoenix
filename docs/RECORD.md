@@ -10439,3 +10439,33 @@ write of a key outside the five weight events and it runs before the world has m
 
 **Checks.** `check:opens` green on both worlds; `test/lattice.test.ts` (three tests) green; lint,
 typecheck, `check:spec`, `check:forbids` green.
+
+## Item 0f.4 — Movement is the five events, and a key has one cell
+
+**There is no split.** A cell holds totals and its people are alike on every dimension of its key,
+so the only reason part of a cell ever left was that part of it moved to another key — a hire, a
+separation, a death — and that is `reKey`. `CellEvents.split` and `splitCell` are deleted; the
+three callers re-key: the hired onto `employment: employed`, the separated onto `unemployed`, the
+dying onto a probate cell of their key. A probate cell is a cell of the dead and not an age, so
+`estate: living | probate` is a categorical dimension of the household lattice, opened as `living`
+and moved by death — the "standing probate cell of the key" the design named.
+
+**At most one live cell per key.** `Parties.liveOnKey` finds the standing cell; `reKeyOntoStanding`
+moves a whole cell in place or promotes part of one off it, and if a cell already stands on the new
+key the mover merges into it. A merge adds a money holding into ONE lot — a balance is one lot
+(Money D2) — and keeps every other lot with its own basis and date.
+
+**Crossings.** At the close of revaluation the kernel re-reads every cell's banded dimensions
+against its kind's edges and moves a cell whose people crossed an edge, as a whole, to the key on
+the other side, recording `lattice.crossed`. Categorical dimensions are moved only by their owning
+events. A band is read at the MARK, never the holder's own valuer.
+
+**Two stops, both written down.** `exposureTo` read a loan at the lender's mark; a loan's mark asks
+the lender's valuer; the valuer reads the exposure — the recursion 0d placed under item 21, reached
+here through a credit decision during a probate distribution. Exposure is the face the name owes
+(F3, Law 19), which is the cause; the valuer question for loans stays 21's. And acceleration was
+mutually recursive — a called line that fails calls the line that called it — reached at rig
+period 24 once cells held totals; a line is called once per pass, which is what acceleration is.
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green.

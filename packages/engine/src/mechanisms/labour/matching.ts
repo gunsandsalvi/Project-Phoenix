@@ -318,10 +318,9 @@ function hire(
   p: LabourParams,
   round: Round,
 ): void {
-  const cell = ctx.parties.get(worker);
   if (members <= 0) return;
-  const whole = members >= weightOf(cell);
-  const hired = whole ? worker : ctx.cells.split(worker, members, `hired by ${employer}`);
+  // 0f.4: the hired move to the standing cell of the employed key; there is no split.
+  const hired = ctx.cells.reKey(worker, members, { employment: 'employed' }, `hired by ${employer}`);
   // XI-8: the row IS the commitment, so the kernel writes it and gives it its identity — there is
   // no `book.next` any more, and no employment id this module invented (item 9.1).
   const row = enter(ctx, book, {
@@ -419,7 +418,8 @@ export function separate(
 ): void {
   if (members <= 0) return;
   const whole = members >= row.headcount;
-  const gone = whole ? row.worker : ctx.cells.split(row.worker, members, cause);
+  // 0f.4: the separated move to the standing cell of the unemployed key; there is no split.
+  const gone = ctx.cells.reKey(row.worker, members, { employment: 'unemployed' }, cause);
   if (whole) {
     leave(ctx, book, row, cause);
   } else {

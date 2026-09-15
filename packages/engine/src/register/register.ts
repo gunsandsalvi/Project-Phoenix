@@ -793,7 +793,16 @@ export class Register {
     if (m !== undefined) {
       for (const [inst, h] of m) {
         const target = this.mutable(into, inst);
-        target.lots = [...target.lots, ...h.lots];
+        // Money D2: a money holding is ONE lot — a balance — so two balances add into one; any
+        // other holding keeps every lot, with its own basis and date, because nothing is averaged.
+        const mine = target.lots[0];
+        const theirs = h.lots[0];
+        if (this.moneyAccount.has(moneyKey(from, inst)) && theirs !== undefined) {
+          const sum = (mine === undefined ? 0 : mine.qty) + theirs.qty;
+          target.lots = [Object.freeze({ ...(mine ?? theirs), qty: asQty(sum, 'the merged balance') })];
+        } else {
+          target.lots = [...target.lots, ...h.lots];
+        }
         target.liens = [...target.liens, ...h.liens];
         this.index(inst).add(into);
         this.index(inst).delete(from);

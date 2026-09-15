@@ -12,14 +12,13 @@ describe('the lattice (XI-15, 0f.3)', () => {
   });
 
   it('places every seeded cell on every dimension of its lattice at the seal', () => {
-    const w = rigWorld('seed-lattice' as never);
+    const w = rigWorld('seed-lattice');
     const lattice = w.registry.partyKind(HOUSEHOLD).lattice;
     if (lattice === undefined) throw new Error('households have no lattice');
     const dims = latticeDimensions(lattice);
     const cells = w.parties.ofKind(HOUSEHOLD).filter((p) => p.representation === 'cell');
     expect(cells.length).toBeGreaterThan(0);
     for (const c of cells) {
-      if (c.representation !== 'cell') continue;
       for (const d of dims) expect(c.key[d], `${c.id} on ${d}`).not.toBe(undefined);
       // §46: nobody has an outlook at the seal, so a band on expected income is a real state.
       expect(c.key['liquidWeeks']).toBe(UNREAD);
@@ -30,7 +29,7 @@ describe('the lattice (XI-15, 0f.3)', () => {
   });
 
   it('keeps at most one seeded cell per key', () => {
-    const w = rigWorld('seed-lattice-2' as never);
+    const w = rigWorld('seed-lattice-2');
     const seen = new Map<string, string>();
     for (const c of w.parties.ofKind(HOUSEHOLD)) {
       if (c.representation !== 'cell') continue;

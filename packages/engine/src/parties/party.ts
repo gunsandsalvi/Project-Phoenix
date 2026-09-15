@@ -391,6 +391,30 @@ export class Parties {
     this.map.set(id, next);
   }
 
+  /** XI-15, 0f.4: the one live cell of a kind on a key, if there is one. At most one, by construction. */
+  liveOnKey(kind: PartyKindId, key: CellKey): CellParty | undefined {
+    const dims = keyDimensionsOf(this.registry, kind);
+    for (const p of this.ofKind(kind)) {
+      if (p.representation !== 'cell' || !p.status.alive) continue;
+      if (dims.every((d) => p.key[d] === key[d])) return p;
+    }
+    return undefined;
+  }
+
+  /**
+   * 0f.4: A WHOLE CELL MOVES TO A NEW KEY. It is what a crossing at the close of revaluation does
+   * to a cell whose people all sit on one side of an edge — there is no member to split off, so
+   * the cell itself is on the new key. The weight is untouched; the merge that may follow is one
+   * of the five events and records itself.
+   */
+  moveKey(id: PartyId, key: CellKey): void {
+    const p = this.cell(id);
+    const next: CellParty = Object.freeze({ ...p, key });
+    const faults = cellKeyFaults(this.registry, next);
+    if (faults.length > 0) throw new Forbidden('XI-15', faults.join('; '), { id, key });
+    this.map.set(id, next);
+  }
+
   rebank(id: PartyId, to: PartyId): void {
     const p = this.get(id);
     forbid(p.status.alive, 'Banks Funding E1', `${id} has ceased and banks nowhere`);

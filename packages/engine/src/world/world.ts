@@ -114,7 +114,7 @@ import { classify, type Classified } from '../registry/universe.js';
 import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { type CellDeps, dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
+import { type CellDeps, dieCell, mergeCells, reKeyCell, weightEvent } from './cells.js';
 import { succeedAgreements } from './succession.js';
 import type { Subject,
   Borrowing,
@@ -505,7 +505,7 @@ export class World {
           { kind: 'print', of: 'thisPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
         ],
-        writes: [{ kind: 'event', name: 'revaluation' }],
+        writes: [{ kind: 'event', name: 'revaluation' }, { kind: 'event', name: 'weight' }, { kind: 'event', name: 'lattice.crossed' }],
         run: (w) => {
           revalue(w.period, w.cycle, {
             marked: (instrument, at) => w.markOf(instrument, at),
@@ -1459,9 +1459,76 @@ export class World {
    * which is a real state and not a default. From here on a key moves only by the five events and
    * the crossings the kernel reads at the close of revaluation (0f.4).
    */
-  placeCellsOnLattice(): void {
-    forbid(!this.sealed, 'Seed A2', 'cells are placed on the lattice before the seal, not after');
-    const reads: LatticeReads = {
+  /**
+   * XI-15, 0f.4: MEMBERS MOVE TO A KEY, AND THE KEY HAS AT MOST ONE LIVE CELL. A whole cell moving
+   * moves in place; part of one is promoted off it. Either way, if a cell already stands on the new
+   * key the mover merges into it, so the world never holds two cells for one key — which is what
+   * 0d measured as 299 `units` findings.
+   */
+  private reKeyOntoStanding(
+    cell: PartyId,
+    members: number,
+    patch: Readonly<Record<string, string>>,
+    cause: string,
+  ): PartyId {
+    const c = this.parties.cell(cell);
+    const key = { ...c.key, ...patch };
+    const standing = this.parties.liveOnKey(c.kind, key);
+    if (members >= c.weight) {
+      if (standing !== undefined && standing.id !== cell) {
+        this.parties.moveKey(cell, key);
+        mergeCells(standing.id, cell, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
+        return standing.id;
+      }
+      this.parties.moveKey(cell, key);
+      return cell;
+    }
+    const fresh = reKeyCell(cell, members, patch, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
+    if (standing !== undefined) {
+      mergeCells(standing.id, fresh, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
+      return standing.id;
+    }
+    return fresh;
+  }
+
+  /**
+   * XI-15, 0f.4: THE CROSSINGS, at the close of revaluation — the one writer of a cell's position on
+   * its banded dimensions. Every cell's quantities are read against its kind's edges; a cell whose
+   * people crossed an edge moves as a whole to the key on the other side. Categorical dimensions are
+   * moved by their owning events and are not read here.
+   */
+  crossings(): void {
+    const reads = this.latticeReads();
+    for (const p of [...this.parties.all()]) {
+      if (p.representation !== 'cell' || !p.status.alive) continue;
+      const lattice = this.registry.partyKind(p.kind).lattice;
+      if (lattice === undefined || lattice.banded.length === 0) continue;
+      const patch: Record<string, string> = {};
+      for (const b of lattice.banded) {
+        const q = b.quantity(reads, p.id);
+        const edges = b.edges.map((e) =>
+          this.params.decl(e).denominated === undefined
+            ? this.params.ratio(e)
+            : this.params.amount(e, currencyUnit(reads.homeCurrency(p.id))),
+        );
+        const band = q.some ? bandOf(edges, q.value) : UNREAD;
+        if (band !== p.key[b.dim]) patch[b.dim] = band;
+      }
+      if (Object.keys(patch).length === 0) continue;
+      this.journal.record(
+        this.currentPeriod,
+        this.currentCycle,
+        'lattice.crossed',
+        [p.id],
+        { cell: p.id, from: Object.fromEntries(Object.keys(patch).map((d) => [d, p.key[d]])), to: patch, members: p.weight },
+        true,
+      );
+      this.reKeyOntoStanding(p.id, p.weight, patch, 'crossed an edge');
+    }
+  }
+
+  private latticeReads(): LatticeReads {
+    return {
       cashPerMember: (cell, ccy) =>
         eachMember(
           asTotal<'money:piece'>(this.cash(cell, ccy), 'what is in its account'),
@@ -1470,10 +1537,14 @@ export class World {
         ),
       perMember: (cell, instrument) => this.register.perMember(cell, instrument),
       holdingsOf: (cell) => this.register.holdingsOf(cell),
+      // Law 19, XI-6: at the MARK — what a market printed, or the kind's derived value — and never
+      // the holder's own valuer, which for a loan asks the borrower's lender what the loan is
+      // worth, which asks the mark (the recursion 0d placed under item 21). A lot with no mark is
+      // unread on this dimension, which is the honest band for it.
       worthPerMember: (cell, instrument) => {
-        const w = this.valuation.worthOf(cell, instrument, this.currentPeriod);
-        if (!w.some) return none<number>();
-        return some(w.value.value / weightOf(this.parties.get(cell)));
+        const mark = this.markOf(instrument, this.currentPeriod);
+        if (!mark.some) return none<number>();
+        return some(mark.value * this.register.perMember(cell, instrument));
       },
       expectedIncome: (cell) => {
         const o = this.participantView(cell).outlook(about({ on: 'income' }));
@@ -1486,6 +1557,21 @@ export class World {
       homeCurrency: (cell) => this.registry.currencyOf(this.parties.get(cell).region),
       period: this.currentPeriod,
     };
+  }
+
+  private cellDeps(): CellDeps {
+    return {
+        parties: this.parties,
+        registry: this.registry,
+        register: this.store,
+        journal: this.journal,
+        agreements: this.agreementStore,
+      };
+  }
+
+  placeCellsOnLattice(): void {
+    forbid(!this.sealed, 'Seed A2', 'cells are placed on the lattice before the seal, not after');
+    const reads = this.latticeReads();
     for (const p of this.parties.all()) {
       if (p.representation !== 'cell') continue;
       const lattice = this.registry.partyKind(p.kind).lattice;
@@ -1952,13 +2038,7 @@ export class World {
   }
 
   private buildMechanismContext(owner: string): MechanismContext {
-    const cellDeps: CellDeps = {
-      parties: this.parties,
-      registry: this.registry,
-      register: this.store,
-      journal: this.journal,
-      agreements: this.agreementStore,
-    };
+    const cellDeps = this.cellDeps();
     return {
       period: this.currentPeriod,
       cycle: this.currentCycle,
@@ -1988,16 +2068,13 @@ export class World {
       /** Ratings A2.a: the view an assessor decides from — the same one, with the prices closed. */
       blind: (party: PartyId) => this.blindView(party),
       cells: {
-        split: (cell, members, cause) =>
-          splitCell(cell, members, cause, this.currentPeriod, this.currentCycle, cellDeps),
         merge: (into, from, cause) => {
           mergeCells(into, from, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },
         weight: (cell, kind, members, cause) => {
           weightEvent(cell, kind, members, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },
-        reKey: (cell, members, key, cause) =>
-          reKeyCell(cell, members, key, cause, this.currentPeriod, this.currentCycle, cellDeps),
+        reKey: (cell, members, key, cause) => this.reKeyOntoStanding(cell, members, key, cause),
         die: (cell, successor, cause) => {
           dieCell(cell, successor, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },

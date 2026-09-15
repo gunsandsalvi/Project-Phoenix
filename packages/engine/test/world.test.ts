@@ -845,10 +845,11 @@ describe('cells (XI-15)', () => {
           original = cell.id;
           weight = cell.weight;
           before = ctx.register.quantity(cell.id, GOV_LINE);
-          fresh = ctx.cells.split(cell.id, 100, 'test split');
+          fresh = ctx.cells.reKey(cell.id, 100, { employment: 'employed' }, 'test re-key');
         }
         if (ctx.period === 2 && fresh !== undefined) {
-          ctx.cells.merge(cell.id, fresh as never, 'test merge');
+          // 0f.4: moving them back lands on the standing cell of the key, which merges.
+          ctx.cells.reKey(fresh as never, 100, { employment: 'unemployed' }, 'test merge');
         }
       }),
     );
@@ -878,6 +879,5 @@ describe('cells (XI-15)', () => {
     expect(() => {
       ctx.cells.weight(cell.id, 'death', cell.weight - 100, 'test');
     }).toThrow(Forbidden);
-    expect(() => ctx.cells.split(cell.id, cell.weight - 100, 'test')).toThrow(Forbidden);
   });
 });

@@ -119,6 +119,12 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
     { dim: 'bank', movedBy: 'bank.choice', why: 'a deposit is a claim on a NAMED issuer; two cells at two banks hold two instruments (Money A1)' },
     { dim: 'cohort', movedBy: 'households.lifecycle', why: 'people age, and a cell whose members were not all in one cohort could not be aged as one' },
     {
+      dim: 'estate',
+      movedBy: 'households.lifecycle',
+      opening: (): string => 'living',
+      why: 'XI-8, 0f.4: the dying move to the standing probate cell of their key before what they held is handed to the office; a probate cell is a cell of the dead, not an age',
+    },
+    {
       dim: 'employment',
       movedBy: 'labour.hire',
       opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('labour.hire', cell).some ? 'employed' : 'unemployed'),

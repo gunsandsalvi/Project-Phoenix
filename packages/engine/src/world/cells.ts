@@ -23,50 +23,6 @@ export interface CellDeps extends SuccessionDeps {
   readonly journal: Journal;
 }
 
-/** Split `members` members off `cell` into a new cell with an identical state. Returns the new id. */
-export function splitCell(
-  cell: PartyId,
-  members: number,
-  cause: string,
-  period: Period,
-  cycle: Cycle,
-  d: CellDeps,
-): PartyId {
-  const c = d.parties.cell(cell);
-  positiveCount(members, 'members split');
-  forbid(
-    members < c.weight,
-    'XI-15',
-    `cannot split ${members} of ${c.weight} members off ${cell}; a whole cell moves as itself`,
-  );
-  const id = nextSplitId(c, d.parties);
-  const fresh: CellParty = { ...c, id, name: `${c.name} / split ${id}`, weight: members };
-  d.parties.add(fresh);
-  d.register.moveShare(cell, id, members, c.weight);
-  d.parties.applyWeight({
-    kind: 'split',
-    party: cell,
-    before: c.weight,
-    after: c.weight - members,
-    period,
-    cause,
-  });
-  d.journal.record(
-    period,
-    cycle,
-    'weight',
-    [cell, id],
-    {
-      kind: 'split',
-      from: cell,
-      to: id,
-      members,
-      cause,
-    },
-    true,
-  );
-  return id;
-}
 
 /** Merge `b` into `a`: both must have the same key and identical per-member state. */
 export function mergeCells(

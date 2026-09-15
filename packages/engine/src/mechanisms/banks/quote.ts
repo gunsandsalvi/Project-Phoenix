@@ -317,14 +317,11 @@ export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
     if (!i.issuer.some || view.parties.resolve(i.issuer.value).id !== borrower) continue;
     const units = view.quantity(h.instrument);
     if (units <= 0) continue;
-    const mark = view.mark(h.instrument);
-    total = plus(
-      total,
-      mark.some
-        ? valueAt(mark.value, units, 'at its mark')
-        : heldAsMoney(units, 'at the face it owes'),
-      'exposure to one name',
-    );
+    // F3, Law 19: WHAT THE NAME OWES IT is the FACE. Reading the lender's mark here was the wrong
+    // quantity (mark vs face) and a cycle: a loan's mark asks the lender's own valuer, which reads
+    // this exposure, which asks the mark (0d placed it under item 21; 0f.4 reached it in the
+    // four-country world through a credit decision during a probate distribution).
+    total = plus(total, heldAsMoney(units, 'at the face it owes'), 'exposure to one name');
   }
   return total;
 }
