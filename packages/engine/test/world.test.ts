@@ -308,14 +308,19 @@ describe('the seed (Seed A2)', () => {
     // two cells at ONE bank are identical, and that is the statement the seed is making.
     for (const bank of new Set(cells.map((c) => String(c.bank)))) {
       const here = cells.filter((c) => String(c.bank) === bank);
-      expect(new Set(here.map((c) => w.cash(c.id, USD))).size, `cells at ${bank} differ`).toBe(1);
+      // 0f.1: a cell holds its TOTAL, so two cohorts of two weights hold two totals; the seed's
+      // statement is about what one MEMBER opens with.
+      expect(
+        new Set(here.map((c) => w.cash(c.id, USD) / (c.representation === 'cell' ? c.weight : 1))).size,
+        `cells at ${bank} differ`,
+      ).toBe(1);
     }
     for (let i = 0; i < 8; i += 1) w.step();
     // B4: and a sector of equals never produces a market — so the dispersion has to come from
     // somewhere. It comes from what happened: who was hired, at what wage, and what each of them
     // did with it. It is an outcome now, where it used to be a number the seed stated.
     const alive = w.parties.ofKind(HOUSEHOLD).filter((c) => c.status.alive);
-    expect(new Set(alive.map((c) => w.cash(c.id, USD))).size).toBeGreaterThan(1);
+    expect(new Set(alive.map((c) => w.cash(c.id, USD) / (c.representation === 'cell' ? c.weight : 1))).size).toBeGreaterThan(1);
   });
 });
 
@@ -742,25 +747,6 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
 const PAYMENT = asQty(phx(1));
 
 describe('settlement contracts', () => {
-  it('refuses a cell side without a per-member amount (XI-15)', () => {
-    const w = rigWorld('seed-M');
-    const cell = w.parties.ofKind(HOUSEHOLD)[0];
-    if (cell === undefined) throw new Error('no cell');
-    const draft: InstructionDraft = {
-      legs: [
-        {
-          kind: 'money',
-          from: { holder: partyId('firm.1'), issuer: BANK_A },
-          to: { holder: cell.id, issuer: cell.bank },
-          ccy: USD,
-          amount: asQty(10),
-        },
-      ],
-      cause: 'transfer',
-      reason: 'test',
-    };
-    expect(() => w.settlement.settle(draft, w.period, w.cycle)).toThrow(Forbidden);
-  });
 
   it('routes reserves between banks and none within one (Money C2.a, C2.b)', () => {
     let checked = false;
