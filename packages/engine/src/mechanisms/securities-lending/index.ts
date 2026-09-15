@@ -32,6 +32,7 @@
  * it — the bidder's own reservation, whatever the supply.
  */
 import {
+  absolute,
   amountOf,
   asCash,
   asPerPiece,
@@ -39,6 +40,7 @@ import {
   asRatio,
   type Cash,
   minus,
+  negated,
   plus,
   type Ratio,
   ratioOf,
@@ -57,6 +59,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { atMost, sum } from '../../core/num.js';
+import { callFor } from '../../registry/margin.js';
 import { downTick, subQty, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -88,6 +91,20 @@ export interface StockLoanTerms extends AgreementTerms {
   readonly posted: Qty;
   /** A5: per period, as a fraction of what the borrowed paper is worth. It cleared (A5.a). */
   readonly fee: Ratio;
+  /**
+   * C1, C2 (item 13.8): THE LENDER'S HAIRCUT, kept because the loan is re-marked against it every
+   * period. It is a TERM of the contract — what this lender required of this borrower on this pair
+   * of lines, struck once when the loan opened — and re-asking the lender's view each period would
+   * be C4's *"the broker can raise the requirement when it likes what it sees less"*, which is a
+   * different clause and a different event.
+   */
+  readonly haircut: Ratio;
+  /**
+   * C2, C2.a (item 13.8): the VARIATION the borrower has posted in cash, net, since the loan
+   * opened. The pledge above is the initial collateral and it does not move; what moves as the two
+   * marks move is money, which is what C2.a says the margin flow is.
+   */
+  readonly margined: Cash;
   readonly opened: number;
 }
 
@@ -418,6 +435,9 @@ function openLoan(
     lien: lien.value,
     posted,
     fee: d.fee,
+    // C1, C2 (13.8): what this lender required, kept so the loan can be re-marked against it.
+    haircut: haircut.value,
+    margined: asCash(0, 'nothing has been called on it yet'),
     opened: ctx.period,
   };
   // XI-8: the loan is a COMMITMENT and the kernel keeps it. It owes nothing the instant it is
@@ -529,11 +549,10 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
  * A5: THE FEE, every period, real money between two named parties, on what the paper is worth NOW —
  * so a line that has risen costs more to have borrowed, without anybody re-striking anything.
  *
- * C2 and C2.a are NOT here and the comment used to say they were: nothing re-marks the COLLATERAL,
- * so when the borrowed line rises the borrower owes more of it and no leg posts it. Between the
- * strike and the return the lender's cover erodes and C1's haircut is all that stands behind it.
- * It is `E-14`, and it lands with prime brokerage (item 13.8), because marking both sides of a
- * position and calling the difference is one mechanism with two callers (§15 C1) and not two.
+ * C2 and C2.a are `remark`'s, below (item 13.8): this moves the FEE, which is a price the borrower
+ * pays for having the paper, and that is a different flow from the margin that keeps the lender
+ * covered while it is out. Both are real money between the same two named parties every period, and
+ * they are two payments because they are two obligations.
  */
 export function charge(ctx: MechanismContext): void {
   for (const loan of loansOpen(ctx)) {
@@ -562,6 +581,118 @@ export function charge(ctx: MechanismContext): void {
       cause: 'transfer',
       reason: `${String(loan.borrower)} pays the borrow fee on ${String(loan.instrument)}`,
     });
+  }
+}
+
+/**
+ * C2, C2.a, C1 (item 13.8, `E-14`): BOTH SIDES MARKED EVERY PERIOD, AND THE DIFFERENCE CALLED.
+ *
+ * *"When the borrowed security rises, the borrower posts more collateral"* (C2), and *"the margin
+ * flow is real money moving between two named parties"* (C2.a). Until this, `charge` moved the fee
+ * and NOTHING re-marked the collateral: between the strike and the return the borrowed line could
+ * double and the lender's cover did not move, so C1's haircut — one period's worth of the two marks
+ * moving apart — was all that stood behind the whole term of the loan. It eroded in silence, which
+ * is why it is `E-14`.
+ *
+ * WHAT IS REQUIRED is what C1 already says: the paper at today's mark, plus this lender's own
+ * haircut over it, which is a TERM of the loan and not re-asked (C4 is a different event). WHAT IS
+ * COVERING IT is the pledged collateral at today's mark, plus whatever cash has been called so far.
+ * The difference is `registry/margin.ts`'s `callFor` — the one definition of a margin call in this
+ * world, which a prime broker asks of a portfolio and this asks of a loan (Law 4): two callers of
+ * one mechanism, which is what this step was written to make sure of.
+ *
+ * IT MOVES BOTH WAYS. A borrowed line that FELL leaves the lender holding cover it is not owed, and
+ * it goes back — a mechanism that took margin and never returned it is a one-sided flow nothing ever
+ * fails on (Law 5). The only thing it cannot do is hand back more than was posted, which is
+ * arithmetic impossibility and says so.
+ *
+ * AND IT CAN FAIL. The instruction goes to the wire for the whole call and a borrower that cannot
+ * pay gets a REFUSED instruction (Money E1) — the lender is then uncovered, which is a real state
+ * with both parties named on it, and what happens next is D1's when the term falls due.
+ */
+export function remark(ctx: MechanismContext): void {
+  for (const loan of loansOpen(ctx)) {
+    const onLoan = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
+    const onPledge = ctx.prices.latest(loan.collateral, ctx.period);
+    if (onLoan <= 0 || !onPledge.some || onPledge.value.price <= 0) continue;
+    const call = callFor({
+        // C1: the paper at today's mark, with this lender's haircut over it.
+        required: collateralFor(
+          valueAt(onLoan, loan.units, 'what is out on loan now'),
+          loan.haircut,
+        ),
+        // C2: and what is actually there — the pledge at today's mark, and the cash called so far.
+        covering: plus(
+          valueAt(onPledge.value.price, loan.posted, 'what the pledge is worth now'),
+          loan.margined,
+          'what is covering it',
+        ),
+    });
+    if (call === 0) continue;
+    const owing = call > 0;
+    // Law 6: it cannot hand back more cover than was posted, which is impossible rather than
+    // bounded — there is no further cash of the borrower's for the lender to return.
+    const wanted = owing
+      ? call
+      : atMost(absolute(call, 'what it is over-covered by'), loan.margined, 'it cannot give back more than was posted');
+    // Law 8: money moves on the money's own grid, and it is what the call ACTUALLY reaches.
+    const moving = downTick(wanted);
+    if (moving <= 0) continue;
+    const payer = owing ? loan.borrower : loan.lender;
+    const payee = owing ? loan.lender : loan.borrower;
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'money',
+          from: ctx.accountOf(payer, loan.ccy),
+          to: ctx.accountOf(payee, loan.ccy),
+          ccy: loan.ccy,
+          amount: moving,
+          fromCell: none(),
+          toCell: none(),
+        },
+      ],
+      cause: 'transfer',
+      reason: owing
+        ? `${String(loan.borrower)} meets a margin call on ${String(loan.instrument)}`
+        : `${String(loan.lender)} returns cover on ${String(loan.instrument)}`,
+    });
+    const met = r.outcome === 'settled';
+    if (met) {
+      // Law 19: what has been called is what the calls have actually settled for, and this is the
+      // one writer of that fact — the same shape the capital call's `drawn` has.
+      const now: StockLoanTerms = {
+        kind: STOCK_LOAN,
+        instrument: loan.instrument,
+        units: loan.units,
+        collateral: loan.collateral,
+        lien: loan.lien,
+        posted: loan.posted,
+        fee: loan.fee,
+        haircut: loan.haircut,
+        margined: owing
+          ? plus(loan.margined, heldAsMoney(moving, 'what this call brought in'), 'what it has posted')
+          : minus(loan.margined, heldAsMoney(moving, 'what went back'), 'what it still has posted'),
+        opened: loan.opened,
+      };
+      ctx.restate(loan.id, now);
+    }
+    ctx.record(
+      'borrow.margin',
+      [loan.lender, loan.borrower, loan.instrument],
+      {
+        lender: String(loan.lender),
+        borrower: String(loan.borrower),
+        instrument: String(loan.instrument),
+        // C2.a: which way it moved and how much, and whether it actually moved.
+        // C2.a: signed, because which way the money went is the fact — a call met and cover
+        // returned are the same mechanism and the sign is what tells them apart.
+        called: owing ? moving : negated(moving, 'what went back to the borrower'),
+        met,
+        margined: loan.margined,
+      },
+      true,
+    );
   }
 }
 
@@ -626,6 +757,27 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         toCell: none(),
       });
     }
+    /**
+     * C2.a, A4 (item 13.8): AND THE CASH MARGIN GOES BACK WITH THE COLLATERAL. What the borrower
+     * posted as variation is the borrower's, held against a loan that is ending, so it returns in
+     * the same instruction the paper does — a margin flow that only ever went one way would be a
+     * flow with one leg (Law 5), and the return is where the other one is.
+     *
+     * D1: unless the borrower FAILED, and then the lender keeps it for the same reason it keeps the
+     * collateral — it is left to buy the line back at whatever it costs, and whether the two come
+     * to the same is its outcome and not a number anybody balances (C1).
+     */
+    if (!failed && loan.margined > 0) {
+      legs.push({
+        kind: 'money',
+        from: ctx.accountOf(loan.lender, loan.ccy),
+        to: ctx.accountOf(loan.borrower, loan.ccy),
+        ccy: loan.ccy,
+        amount: downTick(loan.margined),
+        fromCell: none(),
+        toCell: none(),
+      });
+    }
     if (failed) {
       // D1: THE LENDER KEEPS THE COLLATERAL and is left to buy the line back in the market at
       // whatever it costs. Keeping it is title and not a lien: a loan that has terminated cannot go
@@ -668,6 +820,8 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         instrument: String(loan.instrument),
         returned: back,
         owed: loan.units,
+        // C2.a: and what the variation came to over the life of it, which went back or did not.
+        margined: loan.margined,
       },
       true,
     );
@@ -741,7 +895,7 @@ export function securitiesLending(): SystemModule {
     phases: [
       {
         name: 'borrow.economics',
-        spec: 'Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending C2 Securities Lending D1',
+        spec: 'Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending C1 Securities Lending C2 Securities Lending C2.a Securities Lending D1',
         // A3: after the issuer has paid the registered holder, because what is passed on is what
         // arrived. A phase that manufactured a payment before the payment existed would be
         // inventing the lender's income rather than passing it through (Law 19).
@@ -750,6 +904,13 @@ export function securitiesLending(): SystemModule {
         run: (ctx: MechanismContext): void => {
           manufacture(ctx);
           charge(ctx);
+          /**
+           * C2 (item 13.8): BOTH SIDES MARKED, before anything comes back. A loan whose term is up
+           * this period is marked one last time and then returns what it holds — so the borrower
+           * settles what the move cost rather than walking away from it at the door, and the cash
+           * that goes back with the collateral is the right number.
+           */
+          remark(ctx);
           returnLoans(ctx, due(ctx));
         },
       },

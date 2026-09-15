@@ -43,14 +43,15 @@ import {
   type PartyKindId,
 } from '../../core/ids.js';
 import {
-  absolute,
   asCash,
   type Cash,
   minus,
+  plus,
   valueAt,
   asPerPiece,
   heldAsMoney,
 } from '../../core/measure.js';
+import { callFor } from '../../registry/margin.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, type Option, some } from '../../core/option.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
@@ -222,11 +223,24 @@ export function financedFor(
   return sum(terms).value;
 }
 
-/** C3: what a call is — the part of the shortfall that is real money, now. Nothing, when there is none. */
-export const callOf = (line: Line): Cash =>
-  line.available < 0
-    ? absolute(line.available, 'what it is over its line by')
-    : asCash(0, 'it is inside its line');
+/**
+ * C3: what a call is — the part of the shortfall that is real money, now. Nothing, when there is none.
+ *
+ * Item 13.8: it asks `registry/margin.ts`, which is the ONE definition of what a margin call is in
+ * this world (Law 4). A broker marking a portfolio against what it requires and a stock lender
+ * marking lent paper against its collateral are the same sentence about two contracts, and written
+ * twice they would be two definitions — the day one of them gained a floor the other would not.
+ *
+ * What is required of this client is its requirement PLUS what the broker has already financed:
+ * both have to be covered by the book, which is what `available` subtracts in the other order.
+ */
+export const callOf = (line: Line): Cash => {
+  const short = callFor({
+    required: plus(line.required, line.financed, 'what this book has to cover'),
+    covering: line.portfolio,
+  });
+  return short > 0 ? short : asCash(0, 'it is inside its line');
+};
 
 /** The terms a relationship carries after this period's look at it. */
 export const termsOf = (line: Line): PrimeTerms => ({ kind: PRIME, required: line.required });

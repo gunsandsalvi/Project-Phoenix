@@ -53,7 +53,7 @@ checked, not assumed.
 | Money Market | 25 | 3 | 0 | 0 | 28 |
 | Spot FX | 26 | 1 | 0 | 0 | 27 |
 | Fund Shares | 23 | 3 | 0 | 0 | 26 |
-| Securities Lending | 14 | 0 | 7 | **14** | 21 |
+| Securities Lending | 15 | 0 | 6 | **14** | 21 |
 | Prime Brokerage | 16 | 3 | 5 | 0 | 24 |
 | Derivative Layer | 32 | 0 | 0 | **17** | 32 |
 | CDS | 17 | 0 | 8 | **17** | 25 |
@@ -764,7 +764,29 @@ its lender can cut (B1: *"leverage is a fact about a loan, never a property of t
     the BUILT AND DEAD list. **`Insurers` is** (9 of 23, none reached) — an inherited measurement that
     predates the phases 9.5, 14.0, 10f.5 and 13.5c gave that module, already positioned at 23.0 as
     `E-25` and not re-taken here, because a measurement is item 23's (Law 11).
-- [ ] 13.8 **`E-14`** — `Securities Lending C2, C2.a` are not built, and they are §15 C1's mechanism seen from the other end: both sides of a position marked every period and the difference CALLED in real money between two named parties. `securities-lending:charge` moves the fee and nothing re-marks the collateral, so between the strike and the return the lender's cover erodes silently and C1's haircut is all that stands behind it. Build it once, here, for the portfolio and the stock loan together — two callers of one mechanism, not two mechanisms (Law 4).
+- [x] **13.8 DONE (`E-14`).** §14 C2 and C2.a: both sides marked every period and the difference
+  called in real money between two named parties. `charge` moved the FEE and nothing re-marked the
+  collateral, so between the strike and the return the borrowed line could double and the lender's
+  cover did not move — C1's haircut, which is **one period** of the two marks moving apart, was all
+  that stood behind the whole term of the loan. It eroded in silence, which is why it was a finding
+  and not a failure.
+  - **One mechanism, two callers, and that is what the step asked for.** `registry/margin.ts` is the
+    one definition of what a margin call IS — what this exposure requires against what is actually
+    covering it, at today's marks — and a prime broker asks it of a portfolio while a stock lender
+    asks it of a loan. Written twice they would be two definitions, and the day one gained a floor
+    the other would not (Law 4). `prime.ts:callOf` is a caller of it now and no longer its own.
+  - **It is a subtraction and never floored** (§15 C3.b says so outright), so it comes out negative
+    when there is cover to give back and **it goes back**: a margin flow that only ever went one way
+    is a flow with one leg (Law 5). The one thing it cannot do is return more than was posted, which
+    is arithmetic impossibility and says so.
+  - **Two terms on the loan**: the lender's `haircut`, kept because the loan is re-marked against it
+    (re-asking the lender's view each period would be C4's *"raise the requirement when it likes what
+    it sees less"*, a different clause and a different event), and `margined`, the cash posted net,
+    which travels back with the collateral at term and is kept by the lender on a failed return for
+    the same reason the collateral is (D1).
+  - **C3 stays MISSING and says why**: cash collateral REINVESTED — *"this is where a lending
+    programme actually loses money"* — wants a lender with somewhere to put it, which is item 14's
+    allocator. Moving the cash and stopping there is not that clause and does not claim to be.
 - [x] 13.9 **DONE AT ITEM 10e.4**, which took it whole and went further than this step asked. (a) a manager HIRES in the labour venue, in the `analysis` trade, at what an hour is worth to it. (b) The fee moved off `params` onto `MandateTerms` and the placeholder died — `check:deaths` counts four where it counted five. What 10e.4 did DIFFERENTLY, and deliberately: the fee is not won in a book per pool. A mandate auctioned between managers with no reason to refuse clears at the tick, which is the defect this step was written to avoid and would have reproduced from the other side. What sets a fee is ENTRY: a manager opens a competing product at a fee under the cheapest incumbent, and stops when that fee would not cover what a pool costs it — so the fee falls where several run one blueprint and nothing bounds the fall (Law 6: the refusal is the mechanism). Original text: `fund.fee.<fund>` is a `placeholder` per pool whose own `why` says *"no manager competes for the mandate, so the number stands where a competition should be"*. Item 9.2a built the `Mandate` and 9.2b measured why that is not enough: **a manager in this world employs nobody**, funds nothing and pays for nothing, so two of them in a book bid each other to the tick — which is a competition between parties with no reason to refuse, not a cleared price (Law 11: the missing mechanism, not the number). So this step is two things in one order: (a) a manager HIRES, in the labour venue, like anything else that needs people, and what it can run is the hours it pays for over the assets a mandate carries — the shape `banks/staff.ts:linesCovered` already has for a dealing desk; (b) then the mandate is COMPETED FOR, one book per pool, each manager bidding a fee with its own cost base as its floor, and the winner's bid is the mandate's `fee`. The placeholder dies in the same change (Law 2) and `fee` moves off `params` onto `MandateTerms`, because at that point it is an OUTCOME. A separate account is a mandate whose pool is the client's own balance sheet, so the same book prices that too (§15).
 
 ### Findings this closes

@@ -9370,3 +9370,58 @@ shorter.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 6, `check:deaths` 4 of 4,
 `check:existence` green. Tests written and not run.
+
+---
+
+## Item 13.8 — the cover eroded in silence, and a margin call had two definitions
+
+`E-14`. §14 C2: *"both sides are marked every period: when the borrowed security rises, the borrower
+posts more collateral."* C2.a: *"the margin flow is real money moving between two named parties."*
+
+`charge` moved the FEE every period and **nothing re-marked the collateral**. So between the strike
+and the return the borrowed line could double, and the lender's cover did not move. C1's haircut is
+one period's worth of the two marks moving apart — it is sized for a period, and it was standing
+behind the whole four-period term. Nothing failed, nothing was unbalanced, and the module's own
+header cited C2 and C2.a as MET, which is what made it a finding rather than a bug.
+
+### One mechanism, two callers — which is what the step was written to force
+
+A broker marking a client's portfolio against what it requires, and a stock lender marking lent paper
+against the collateral it holds, are **the same sentence about two contracts**: what this exposure
+requires, against what is actually there, at today's marks, and the difference is real money now.
+
+`registry/margin.ts` is that sentence, once. `prime.ts:callOf` is a caller of it and is no longer its
+own definition; `securities-lending:remark` is the second caller. Written twice they would be two
+definitions of what a margin call is, and the day one of them gained a floor the other would not.
+
+**It is never floored**, and §15 C3.b is the clause that says so outright: *"flooring it makes the
+whole path unreachable."* So it is a subtraction and the sign is the answer — positive is a call to
+meet, negative is cover to give back, **and it goes back**. A mechanism that took margin and never
+returned it would be a one-sided flow that nothing ever failed on (Law 5). The single thing it cannot
+do is hand back more than was posted, which is arithmetic impossibility and says so with `atMost`.
+
+### Two terms the loan did not carry
+
+- **`haircut`** — the lender's, struck when the loan opened, kept because the loan is re-marked
+  against it every period. Re-asking the lender's view each period would be C4's *"the broker can
+  raise the requirement when it likes what it sees less"*, which is a different clause and a
+  different event, and conflating them would have made every re-mark look like a tightening.
+- **`margined`** — the cash posted, net, over the life of the loan. It travels back with the
+  collateral at term, in the same instruction, and the lender keeps it on a failed return for exactly
+  the reason it keeps the collateral (D1): it is left to buy the line back at whatever it costs, and
+  whether the two come to the same is its outcome and not a number anybody balances.
+
+And the call can FAIL. The instruction goes to the wire for the whole amount; a borrower that cannot
+pay gets a refused instruction (Money E1), and the lender is uncovered with both parties named on it.
+
+### What stays MISSING, and why it is not hidden
+
+**C3 — cash collateral reinvested**, *"this is where a lending programme actually loses money."* The
+variation cash moves to the lender's account and stops there. It is the lender's money to put to
+work and nothing does, so the position C3 names does not exist. That wants a lender with somewhere to
+put it, which is item 14's allocator, and the row says so rather than reading as done.
+
+§14 goes 14 MET to **15 MET, 6 MISSING** of 21.
+
+Typecheck 0, lint 0, `check:spec` 220 tags, `check:forbids` 6 over 217 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.
