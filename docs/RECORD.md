@@ -10687,3 +10687,13 @@ is a measurement of the labour venue at scale and is positioned at 12b.3, not ch
 
 **Checks.** `check:opens` green on both worlds; the lattice, ladder, register tests green; lint,
 typecheck, `check:spec`, `check:forbids`, `check:deaths` green.
+
+## Item 0g.5 (first site) — The basket costed once
+
+The first rung's profile put an eighth of a period in the labour venue's gather, and most of that
+was `willWork` costing a cell's basket again for every venue it was asked about — twenty venues in
+the four-country world. The basket is costed once per cell at its decision, its needs are kept in
+the cell's own `DECIDED` working store, and the venue reads them. A cell with no income outlook
+still costs its basket and still offers its hours for what feeds its people, so the ladder's first
+rung is byte-identical (events, sessions, money per member, the going rate) at 94 ms a period
+from 98. The rest of 0g.5's sites stay listed; this was the one the profile named.

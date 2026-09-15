@@ -227,10 +227,16 @@ interface PlannedOrder {
 interface DecidedThisPeriod {
   at: Period | undefined;
   orders: readonly PlannedOrder[];
+  /**
+   * Law 18, 0g.5 (taken at 0g.1's measurement): what its members' needs cost, per member, as the
+   * decision costed them — read by `willWork` for every venue it is asked about. Costing the
+   * basket again per venue was a twelfth of a period at the first rung.
+   */
+  needsPerMember: Cash | undefined;
 }
 
 /** An empty slot: a cell that has not decided this period has no period and no orders. */
-export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [] });
+export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], needsPerMember: undefined });
 
 /** Treasury C1: the rate a household pays on what it buys, which it must find on top of the price. */
 export const CONSUMPTION_TAX = paramId('treasury.tax.consumption');
@@ -567,7 +573,7 @@ function publishSectorIncome(ctx: MechanismContext): void {
  * state), and the venue applies those to what it gathers — a market deciding who is in its book is
  * the market's business, and deciding what a seller will accept is not.
  */
-function willWork(view: ParticipantView, venue: VenueDecl, rows: readonly ConsumptionDecl[]): readonly Order[] {
+function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   if (venue.clearedBy !== 'labour') return [];
   const self = view.self;
   if (self.representation !== 'cell' || !self.status.alive) return [];
@@ -595,8 +601,11 @@ function willWork(view: ParticipantView, venue: VenueDecl, rows: readonly Consum
    * fact about the population and the lattice stratifies on it; nothing decides on it.
    */
   const going = goingRateIn(view, venue.id);
-  const needs = basketOf(view, rows, numbers(view)).needs;
-  const mine = pricedAt(needs, each, 'what an hour must bring in to feed a member');
+  // Its own decision costed the basket this period (`decide` runs before the labour venue); a cell
+  // that has not decided has no basket to work for.
+  const decided = view.working(DECIDED, nothingDecided);
+  if (decided.at !== view.period || decided.needsPerMember === undefined) return [];
+  const mine = pricedAt(decided.needsPerMember, each, 'what an hour must bring in to feed a member');
   if (mine <= 0) return [];
   if (going.some && going.value < mine) return [];
   return [{ party: self.id, side: 'sell', price: mine, qty: hours }];
@@ -724,7 +733,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // Clearing B2, Labour B1, `A-43` (item 9.6): WHAT THIS CELL WILL WORK FOR, decided by the
     // module that owns it and posted through the door `gather` is — the last venue in the engine
     // whose sellers' schedules were built by the buyers' market.
-    venueParticipants: [{ partyKind: HOUSEHOLD, orders: (view, venue) => willWork(view, venue, rows) }],
+    venueParticipants: [{ partyKind: HOUSEHOLD, orders: willWork }],
     participants: [
       {
         partyKind: HOUSEHOLD,
@@ -763,6 +772,17 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const self = view.self;
   if (self.representation !== 'cell') return;
   const p = numbers(view);
+  /**
+   * C3, B1, Law 18: THE BASKET IS COSTED ONCE, here, and what its needs come to is kept for the
+   * labour venue to read (`willWork`) — whether or not the cell goes on to decide a spend. A cell
+   * with no income outlook yet decides nothing and still offers its hours for what feeds its
+   * people, exactly as it did when the venue costed the basket itself.
+   */
+  const basket = basketOf(view, rows, p);
+  const slot = ctx.workingOf(cell, DECIDED, nothingDecided);
+  slot.at = ctx.period;
+  slot.orders = [];
+  slot.needsPerMember = basket.needs;
   // D2: what it can pay with is its account AND what it can ask back from a fund on demand — that
   // is what makes a money fund a substitute for a deposit rather than an investment (D2).
   const positions = fundPositions(ctx.venues, strikesPublished(ctx.journal), view);
@@ -789,7 +809,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     ),
     'what falls due on one member',
   );
-  const decided = spendPerMember(view, rows, p, onDemand, due);
+  const decided = spendPerMember(view, basket, p, onDemand, due);
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
@@ -932,8 +952,6 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       qty: asQty(o.qty, `${String(cell)}'s posted size in ${String(o.market)}`),
     })),
   ];
-  const slot = ctx.workingOf(cell, DECIDED, nothingDecided);
-  slot.at = ctx.period;
   slot.orders = plannedOrders;
   ctx.record(
     'households.plan',

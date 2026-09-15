@@ -81,6 +81,8 @@ export interface Spending {
   readonly spend: Cash;
   /** What its basket costs it at the prices it expects (C3), before its money had a say (C1.d). */
   readonly basket: Cash;
+  /** C3, B1: the NEEDS alone — what an hour must bring in to feed a member (`index.ts willWork`). */
+  readonly needs: Cash;
   /** The cushion it wants to be sitting on, per member: its target. */
   readonly buffer: Cash;
   /** E3, E4, 0f.7c: what falls due on it this period, per member — debt service and rent — before the basket. */
@@ -110,7 +112,7 @@ export interface Spending {
  */
 export function spendPerMember(
   view: ParticipantView,
-  rows: readonly ConsumptionDecl[],
+  basket: Basket,
   p: HouseholdParams,
   onDemand: Cash,
   due: Cash,
@@ -147,7 +149,6 @@ export function spendPerMember(
     'the cushion it wants altogether',
   );
   // C3, 0f.7c: what it means to buy is its basket, at the prices it expects, and no gap rate.
-  const basket = basketOf(view, rows, p);
   const wanted = plus(basket.needs, basket.wants, 'what its basket costs it');
   // C1.d: it spends what it has, whatever its basket costs. And nobody buys a negative loaf.
   //
@@ -164,6 +165,7 @@ export function spendPerMember(
   return some({
     spend: atLeast(afforded, asCash(0, 'nothing'), 'there is no less to spend than nothing'),
     basket: wanted,
+    needs: basket.needs,
     buffer,
     due,
     expected: asCash(income.value.expected, 'what it expects to take in'),
