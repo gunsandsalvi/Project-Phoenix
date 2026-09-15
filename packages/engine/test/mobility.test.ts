@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { HOUSEHOLD, LABOUR_PARAMS, paramId } from '../src/index.js';
 import { LABOUR_NUMBERS, OCCUPATIONS } from '../src/mechanisms/labour/data.js';
 import { MORTALITY } from '../src/mechanisms/households/data.js';
+import { cohortMortalityPerAnnum } from '../src/mechanisms/households/lifecycle.js';
 import { PROBATE } from '../src/mechanisms/households/lifecycle.js';
 import { rigWorld } from './rig.js';
 
@@ -135,18 +136,23 @@ describe('a cell moves between keys and nothing crosses (13d.1, XI-15)', () => {
 });
 
 describe('dying, and where what the dead held goes (13d.1, Households F1.b, F2)', () => {
-  it('declares mortality per cohort, and the retired die faster (F1.b)', () => {
+  it('declares mortality per five-year band of age with its source, and a cohort dies at the mean of its bands (F1.b, 12.3)', () => {
     const w = rigWorld('probate-a');
     for (const r of MORTALITY) {
-      const d = w.params.decl(paramId(`households.mortality.${r.cohort}`));
+      const d = w.params.decl(paramId(`households.mortality.${String(r.fromAge)}-${String(r.toAge)}`));
       expect(d.kind).toBe('technology');
       expect(d.value).toBeGreaterThan(0);
+      expect(d.why).toContain('Source:');
+      expect(r.toAge).toBeGreaterThan(r.fromAge);
     }
-    const working = MORTALITY.find((r) => r.cohort === 'working');
-    const retired = MORTALITY.find((r) => r.cohort === 'retired');
-    // The difference between the two rows is what makes an ageing population change what an
-    // economy owns and who owns it.
-    expect(retired?.perPeriod ?? 0).toBeGreaterThan(working?.perPeriod ?? 0);
+    // Nothing is per cohort: what a cohort dies at is derived from the bands it spans, and the
+    // difference between the two is what makes an ageing population change what an economy owns.
+    const working = cohortMortalityPerAnnum(w.registry.cohorts, MORTALITY, 'working');
+    const retired = cohortMortalityPerAnnum(w.registry.cohorts, MORTALITY, 'retired');
+    expect(working).toBeDefined();
+    expect(retired).toBeDefined();
+    expect(retired ?? 0).toBeGreaterThan(working ?? 0);
+    expect(cohortMortalityPerAnnum(w.registry.cohorts, MORTALITY, 'nobody')).toBeUndefined();
   });
 
   it('has a named party for what the dead held, because a cell cannot pay a cell (F2)', () => {

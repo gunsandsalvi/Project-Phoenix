@@ -11117,3 +11117,18 @@ after twelve periods against 8 a period ageing out. Positioned at 15.
 
 **Checks.** `formation.test.ts` green; `household-profile.test.ts` green; `check:opens` green;
 lint, typecheck green.
+
+## Item 12.3 — Mortality is technology, per five-year band
+
+The table was two rows, one per cohort, and a cohort is a band of this world's lattice — a number
+per cohort was a number shaped to the model's own cut. It is sixteen five-year bands now, from 18
+to 100, each the chance of dying within a year with its source on the row: the SSA 2020 period
+life table, sexes averaged, rounded to two significant figures — a real-world primitive imported
+as one. What a cohort dies at is derived: the mean of the bands it spans, weighted by the years of
+each inside it, by the same uniform-age geometry that ages a band out; the last cohort spans to the
+end of the table; and the period's share is the year's put on the calendar's own year fraction. A
+cohort the table does not reach dies at nothing it can state, which is a refusal. The test asks
+for the source on every band and for the retired to die faster than the working, derived.
+
+**Checks.** `mobility.test.ts` 14 green, `formation.test.ts`, `household-profile.test.ts` green;
+`check:opens` green; lint, typecheck green.

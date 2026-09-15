@@ -314,22 +314,38 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
  * world: the difference between the two rows is the whole reason an ageing population changes what
  * an economy owns and who owns it.
  */
+/**
+ * Households F1.b (12.3): MORTALITY IS TECHNOLOGY, PER FIVE-YEAR BAND OF AGE — an imported real-world
+ * primitive (Law 2), declared with its source. What a COHORT dies at is derived: the cohorts are the
+ * lattice's bands and a cohort spans several of these, so its rate is the mean over the years it
+ * spans, by the same uniform-age geometry that ages a band out (`crossingShare`). Nothing here is
+ * per cohort, and a world that cuts its cohorts differently reads the same table.
+ */
 export interface MortalityDecl {
-  readonly cohort: string;
-  readonly perPeriod: number;
+  readonly fromAge: number;
+  /** Exclusive; the last band's end is the end of life this table describes. */
+  readonly toAge: number;
+  /** The probability of dying within a year, for somebody in the band. */
+  readonly perAnnum: number;
   readonly why: string;
 }
 
 /** A period is a week, so these are weekly. Two facts about people, and nothing else. */
 export const MORTALITY: readonly MortalityDecl[] = [
-  {
-    cohort: 'working',
-    perPeriod: 0.0000385,
-    why: 'Households F1.b: about two in a thousand a year between eighteen and sixty-five. It is a fact about people — a real-world primitive imported as one (Law 2) — and it is why an estate happens to somebody who was not failing.',
-  },
-  {
-    cohort: 'retired',
-    perPeriod: 0.000769,
-    why: 'Households F1.b: about four in a hundred a year past sixty-five, which is some twenty more years of life. The difference between these two rows is what makes an ageing population change what an economy owns and who owns it.',
-  },
+  { fromAge: 18, toAge: 25, perAnnum: 0.001, why: 'Households F1.b: the chance of dying within a year between 18 and 25. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 25, toAge: 30, perAnnum: 0.0013, why: 'Households F1.b: the chance of dying within a year between 25 and 30. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 30, toAge: 35, perAnnum: 0.0016, why: 'Households F1.b: the chance of dying within a year between 30 and 35. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 35, toAge: 40, perAnnum: 0.002, why: 'Households F1.b: the chance of dying within a year between 35 and 40. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 40, toAge: 45, perAnnum: 0.0027, why: 'Households F1.b: the chance of dying within a year between 40 and 45. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 45, toAge: 50, perAnnum: 0.004, why: 'Households F1.b: the chance of dying within a year between 45 and 50. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 50, toAge: 55, perAnnum: 0.006, why: 'Households F1.b: the chance of dying within a year between 50 and 55. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 55, toAge: 60, perAnnum: 0.009, why: 'Households F1.b: the chance of dying within a year between 55 and 60. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 60, toAge: 65, perAnnum: 0.013, why: 'Households F1.b: the chance of dying within a year between 60 and 65. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 65, toAge: 70, perAnnum: 0.019, why: 'Households F1.b: the chance of dying within a year between 65 and 70. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 70, toAge: 75, perAnnum: 0.029, why: 'Households F1.b: the chance of dying within a year between 70 and 75. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 75, toAge: 80, perAnnum: 0.045, why: 'Households F1.b: the chance of dying within a year between 75 and 80. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 80, toAge: 85, perAnnum: 0.072, why: 'Households F1.b: the chance of dying within a year between 80 and 85. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 85, toAge: 90, perAnnum: 0.12, why: 'Households F1.b: the chance of dying within a year between 85 and 90. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 90, toAge: 95, perAnnum: 0.19, why: 'Households F1.b: the chance of dying within a year between 90 and 95. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
+  { fromAge: 95, toAge: 100, perAnnum: 0.3, why: 'Households F1.b: the chance of dying within a year between 95 and 100. Source: United States Social Security Administration, Period Life Table 2020 (Actuarial Study No. 128), the two sexes averaged and rounded to two significant figures — a real-world primitive imported as one (Law 2).' },
 ];

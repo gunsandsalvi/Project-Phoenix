@@ -31,7 +31,7 @@
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
-import { add, mul, sub, zeroIfNone } from '../../core/num.js';
+import { add, atLeast, atMost, mul, sub, zeroIfNone } from '../../core/num.js';
 import {
   asRatio,
   heldAsMoney,
@@ -52,8 +52,8 @@ import { MORTALITY, type MortalityDecl } from './data.js';
 import { rentPrintedIn } from '../../registry/funding.js';
 
 /** F1.b: what this cohort's members die at, per period. One parameter per cohort (Law 2). */
-export const mortalityParam = (cohort: string): ParamId =>
-  paramId(`households.mortality.${cohort}`);
+export const mortalityParam = (band: Pick<MortalityDecl, 'fromAge' | 'toAge'>): ParamId =>
+  paramId(`households.mortality.${String(band.fromAge)}-${String(band.toAge)}`);
 
 /**
  * XI-8, Register F2: WHAT AN ESTATE COULD NOT HAND TO PROBATE.
@@ -86,9 +86,9 @@ export function mortalityParams(rows: readonly MortalityDecl[] = MORTALITY): rea
   readonly why: string;
 }[] {
   return rows.map((r) => ({
-    id: mortalityParam(r.cohort),
-    value: r.perPeriod,
-    unit: 'of the cohort per period',
+    id: mortalityParam(r),
+    value: r.perAnnum,
+    unit: 'of the band per year',
     dimension: 'ratio' as const,
     kind: 'technology' as const,
     owner: 'model' as const,
@@ -387,12 +387,51 @@ function failedBecause(reason: FailReason): string {
 }
 
 /** F1.b: the people who died this period, and everything they held, by name and to the piece. */
+/**
+ * F1.b (12.3): WHAT A COHORT DIES AT, PER YEAR — the mean of the five-year bands over the years the
+ * cohort spans, weighted by the years of each band inside it (the uniform-age geometry
+ * `crossingShare` uses). The last cohort spans to the end of the table. A cohort the table does
+ * not reach dies at nothing it can state, which is a refusal.
+ */
+export function cohortMortalityPerAnnum(
+  cohorts: readonly { readonly id: unknown; readonly fromAge: number }[],
+  rows: readonly MortalityDecl[],
+  cohort: string,
+  perAnnumOf: (band: MortalityDecl) => number = (band) => band.perAnnum,
+): number | undefined {
+  const at = cohorts.findIndex((c) => String(c.id) === cohort);
+  const here = cohorts[at];
+  if (here === undefined) return undefined;
+  const next = cohorts[at + 1];
+  const endOfTable = rows.reduce((t, r) => atLeast(t, r.toAge, 'the end of the table is its last band\u2019s'), 0);
+  const to = next === undefined ? endOfTable : next.fromAge;
+  let years = 0;
+  let weighted = 0;
+  for (const r of rows) {
+    // The years a band and a cohort share: an intersection of two spans, which is arithmetic.
+    const lo = atLeast(r.fromAge, here.fromAge, 'the later of the two starts');
+    const hi = atMost(r.toAge, to, 'the earlier of the two ends');
+    if (hi <= lo) continue;
+    years = add(years, sub(hi, lo, 'the years of this band in the cohort'), 'years covered');
+    weighted = add(weighted, mul(sub(hi, lo, 'years'), perAnnumOf(r), 'deaths a year over those years'), 'weighted');
+  }
+  if (years <= 0) return undefined;
+  return weighted / years;
+}
+
 export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void {
   for (const cell of [...ctx.parties.ofKind(HOUSEHOLD)]) {
     if (cell.representation !== 'cell' || !cell.status.alive) continue;
     const cohort = keyOf(cell, 'cohort');
-    if (!rows.some((r) => r.cohort === cohort)) continue;
-    const rate = ctx.params.ratio(mortalityParam(cohort));
+    const perAnnum = cohortMortalityPerAnnum(ctx.registry.cohorts, rows, cohort, (r) => ctx.params.ratio(mortalityParam(r)));
+    if (perAnnum === undefined) continue;
+    // Law 8, Law 2: what a year is belongs to the day count and what a period is to the calendar.
+    const ofAYear = yearFraction(
+      'ACT/365F',
+      ctx.calendar.startOf(ctx.period),
+      ctx.calendar.startOf(periodOf(ctx.period + 1)),
+    );
+    const rate = mul(perAnnum, ofAYear, 'the share of the cohort that dies this period');
     // XI-15: whole people. The fraction that is not somebody WAITS until it is (A-18) — and this is
     // the half where deleting it was worst, because a mortality rate is small: any cell below
     // `1/rate` members had nobody die in it at any age, for the life of the run.
