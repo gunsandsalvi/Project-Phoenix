@@ -12,6 +12,7 @@ export * from './calendar/daycount.js';
 export * from './calendar/calendar.js';
 export * from './rng/prng.js';
 export * from './registry/kinds.js';
+export * from './register/arrears.js';
 export * from './registry/derivatives.js';
 export * from './registry/registry.js';
 export * from './registry/params.js';

@@ -29,6 +29,7 @@ import { weightOf } from '../parties/party.js';
 import { type ParamDecl, ParamRegister } from '../registry/params.js';
 import { type NounDecl, OntologyRegister } from '../registry/nouns.js';
 import { KERNEL_PARTY_KINDS, moneyKind } from '../registry/profiles.js';
+import { arrearKind } from '../register/arrears.js';
 import { Registry, type RegistryData } from '../registry/registry.js';
 import type { SeedContext } from './context.js';
 import type { SystemModule } from './module.js';
@@ -66,7 +67,7 @@ export function assemble(spec: AssemblySpec): World {
     {
       ...spec.registry,
       units: [...spec.registry.units, ...modules.flatMap((m) => m.units)],
-      instrumentKinds: [moneyKind, ...modules.flatMap((m) => m.instrumentKinds)],
+      instrumentKinds: [moneyKind, arrearKind, ...modules.flatMap((m) => m.instrumentKinds)],
       partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
       curveFamilies: modules.flatMap((m) => m.curveFamilies),
       derivativeKinds: modules.flatMap((m) => m.derivativeKinds ?? []),

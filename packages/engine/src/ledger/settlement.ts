@@ -19,6 +19,7 @@
  * transfer is income to one side and expense to the other; a sale away from the mark is a realised
  * gain or loss. Nothing else moves an equity account except revaluation (world/revalue.ts).
  */
+import { ARREAR, arrearId, type ArrearTerms } from '../register/arrears.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
@@ -54,7 +55,7 @@ import {
   valueAt,
 } from '../core/measure.js';
 import { addTo, atMost, finite, sum, zeroIfNone } from '../core/num.js';
-import { none } from '../core/option.js';
+import { none, some } from '../core/option.js';
 import { negQty, onTick, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
@@ -86,7 +87,7 @@ import type { Realised,
   SettlementRecord,
   VoyageLeg,
 } from './instruction.js';
-import { subjectsOf } from './instruction.js';
+import { isMoneyLeg, subjectsOf, type Failed } from './instruction.js';
 import type { Ledger } from './ledger.js';
 import type { Contracts } from '../register/contracts.js';
 import type { Voyages } from '../register/voyages.js';
@@ -261,6 +262,7 @@ export class Settlement {
         },
         false,
       );
+      this.writeArrears(record, period, cycle);
       return record;
     }
 
@@ -288,6 +290,56 @@ export class Settlement {
       false,
     );
     return record;
+  }
+
+  /**
+   * Money E1, E1.b (12a.1): A PAYER THAT COULD NOT PAY OWES A ROW. For every money leg the payer
+   * that was refused could not fund, an arrear is issued by the payer to the payee for the amount,
+   * in the money it was due in, in the same pass as the fail — one writer, settlement. It is an
+   * issuance like any other, so the register and the ledger carry it and the audit reads it; a
+   * fail that was not the payer's money (a delivery that was short) leaves nobody in arrears.
+   */
+  private writeArrears(failed: Failed, period: Period, cycle: Cycle): void {
+    if (failed.reason.kind !== 'overdraftRefused') return;
+    const payer = failed.reason.party;
+    let n = 0;
+    for (const leg of failed.instruction.legs) {
+      if (!isMoneyLeg(leg) || leg.from.holder !== payer || leg.to.holder === payer) continue;
+      if (!this.d.parties.get(payer).status.alive || !this.d.parties.get(leg.to.holder).status.alive) continue;
+      // Law 8: a money leg's amount is already whole pieces of its money.
+      const amount = leg.amount;
+      if (amount <= 0) continue;
+      n += 1;
+      const id = arrearId(failed.instruction.id, n);
+      if (this.d.instruments.has(id)) continue;
+      const terms: ArrearTerms = {
+        kind: ARREAR,
+        failed: failed.instruction.id,
+        class: leg.receipt?.of ?? 'unclassified',
+        payer,
+        payee: leg.to.holder,
+      };
+      this.d.instruments.add({ id, kind: ARREAR, issuer: some(payer), ccy: leg.ccy, terms, market: none() });
+      this.settle(
+        {
+          legs: [
+            {
+              kind: 'asset',
+              from: payer,
+              to: leg.to.holder,
+              instrument: id,
+              qty: amount,
+              pricePerUnit: some(asPerPiece(1, 'a piece of money owed is a piece of money')),
+              accruedPerUnit: none(),
+            },
+          ],
+          cause: 'default',
+          reason: `${String(payer)} owes ${String(leg.to.holder)} ${String(amount)} it could not pay on instruction ${String(failed.instruction.id)}`,
+        },
+        period,
+        cycle,
+      );
+    }
   }
 
   // ---- validation ----------------------------------------------------------------------------

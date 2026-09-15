@@ -11234,3 +11234,25 @@ findings it raised sit under 12a, 12b, 15, 21 and 22.
 
 **Checks.** `population.test.ts` green; `check:opens` green; lint, typecheck, `check:deaths`,
 `plan:check`, `check:existence` green.
+
+## Items 12a.1 and 12a.2 — A missed payment is a row
+
+A payer that cannot pay is a real state with a real consequence (Money E1), and until now the
+consequence was a record in the ledger that one read walked and nobody held. It is a row now:
+`ARREAR`, issued by the payer to the payee for what did not arrive, in the money it was due in,
+carried at what it is because no market exists in a missed payment, named by the instruction that
+failed and the class of payment the leg carried — a wage, a rent, a coupon — because the class
+is what an estate ranks it by (XI-8; an order of classes, senior first, a fact about the law and
+data). Settlement writes it in the same pass as the fail, as an issuance with cause `default`, so
+the register, the ledger and every audit family carry it like any claim; a fail that was not the
+payer's money — a delivery that was short — leaves nobody in arrears. Registered as a kernel kind
+beside money.
+
+What a party still owes on payments it missed is the rows it issued, in that money, off the
+register (12a.2). It was a walk over THIS period's failed instructions, so a payer that missed a
+wage last week and had the money this week was never short and one that missed today was.
+Measured: the payer fails on what it owes, its estate pays what it has against the row, and the
+rest stands, held by the payee or the payee's own estate.
+
+**Checks.** `arrears.test.ts` green; `check:opens` green; `check:forbids` green; lint, typecheck
+green.

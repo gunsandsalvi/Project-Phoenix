@@ -16,18 +16,23 @@
  * whichever fired is named in the reason so the resolution can say which one it was.
  */
 import type { Period } from '../calendar/calendar.js';
+import type { CurrencyCode } from '../core/ids.js';
 import { sum, withinDust } from '../core/num.js';
-import { unpaid } from '../ledger/instruction.js';
+import { isArrear } from '../register/arrears.js';
 import type { MechanismContext, ParticipantView } from './context.js';
 
 /** What it failed to pay this period out of its own balance, and has not since covered (Money E1). */
-export function stillOwed(view: ParticipantView): number {
-  const mine = view.failedPayments(FROM_THE_BEGINNING);
+/**
+ * Money E1, XI-3 (12a.2): WHAT IT STILL OWES ON PAYMENTS IT MISSED — the arrears it issued, in this
+ * money, read off the register (Law 19). It was a walk over its failed instructions of THIS period
+ * only, so a payer that missed a wage last week and had the money this week was never short and
+ * one that missed today was; the rows are what is owed, whenever it fell due.
+ */
+export function stillOwed(view: ParticipantView, ccy: CurrencyCode): number {
   const terms: number[] = [];
-  for (const f of mine) {
-    if (f.instruction.period !== view.period) continue;
-    if (f.reason.kind !== 'overdraftRefused') continue;
-    for (const owed of unpaid(f)) if (owed.payer === view.self.id) terms.push(owed.amount);
+  for (const i of view.instruments.issuedBy(view.self.id)) {
+    if (!i.status.live || !isArrear(i) || i.ccy !== ccy) continue;
+    terms.push(i.issued);
   }
   return sum(terms).value;
 }
@@ -38,13 +43,12 @@ export function stillOwed(view: ParticipantView): number {
  * named consequences of what they ARE rather than omissions.
  */
 /** Money E1.b: every failure this party has ever had — the epoch is where its history starts. */
-const FROM_THE_BEGINNING = 0 as Period;
 
 export function failedWhy(ctx: MechanismContext, view: ParticipantView): string | undefined {
   const can = ctx.registry.partyKind(view.self.kind).fails ?? [];
   const ccy = ctx.registry.currencyOf(view.self.region);
   if (can.includes('cash')) {
-    const owed = stillOwed(view);
+    const owed = stillOwed(view, ccy);
     if (owed > 0 && owed > view.cash(ccy)) {
       return `it could not pay ${owed} that fell due and still cannot`;
     }
