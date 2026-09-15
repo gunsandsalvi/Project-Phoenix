@@ -54,20 +54,15 @@ import {
 } from '../../registry/physical.js';
 import { costOfDraw, dueFromLine } from '../../register/register.js';
 import { capacityFrom, rentedRoom, utilisation, vintagesHeld } from '../../registry/physical.js';
+import { payrollSettledIn } from '../../registry/wages.js';
 import type { FirmDecl } from './data.js';
 import { technologyOf } from './decide.js';
 import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
 function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
-  const events = ctx.journal
-    .ofKind('labour.wages')
-    .filter((e) => e.period === ctx.period && e.subjects.includes(firm));
-  const last = events[events.length - 1];
-  if (last === undefined) return asCash(0, 'it employed nobody this period');
-  const paid = last.data['paid'];
-  // Item 16: the wage bill re-enters here, from what the labour module published about this firm.
-  return typeof paid === 'number' ? asCash(paid, 'what it paid its people') : asCash(0, 'nothing');
+  const settled = payrollSettledIn(ctx.journal, String(firm), ctx.period);
+  return settled.some ? settled.value.paid : asCash(0, 'it employed nobody this period');
 }
 
 /** The batch this firm said it would start, read back from its own published plan. */
@@ -82,15 +77,10 @@ function plannedBatch(view: ParticipantView): Qty {
 
 /** Labour C2, Goods B1.c: the hours it has that can make something, this period. */
 function productiveHours(ctx: MechanismContext, firm: PartyId): Qty {
-  const events = ctx.journal
-    .ofKind('labour.wages')
-    .filter((e) => e.period === ctx.period && e.subjects.includes(firm));
-  const last = events[events.length - 1];
-  const none = asAmount<'piece'>(0, 'a firm that employed nobody has no hours');
-  if (last === undefined) return none;
-  const hours = last.data['productive'];
-  // Item 16: a published number re-enters the type system here, through the dimension's own door.
-  return typeof hours === 'number' ? asAmount<'piece'>(hours, 'the hours it paid for') : none;
+  const settled = payrollSettledIn(ctx.journal, String(firm), ctx.period);
+  return settled.some
+    ? settled.value.productive
+    : asAmount<'piece'>(0, 'a firm that employed nobody has no hours');
 }
 
 /** E1, E5: what the units this draw takes cost the firm, read off the lots they come out of. */
@@ -129,7 +119,7 @@ function start(
   // line whose recipe needs no plant is not limited by one, which is a different answer from being
   // limited by a large number (Law 6).
   const vintages = vintagesHeld(view, ctx.calendar.startOf(ctx.period));
-  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view.lastOwn('commodities.leased')));
+  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view));
   // Every limit is a count of the OUTPUT, whatever it was derived from: hours over hours-per-unit,
   // plant over plant-per-unit, stock over stock-per-unit. A recipe coefficient is a count over a
   // count, so `over` keeps the quantity's dimension and the coefficient can never become one.

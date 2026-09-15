@@ -42,7 +42,7 @@ import { downTick, asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
+import { ownPayroll, payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 
 /** A3: the trade a bank's lending staff are in. Data, and the venue is found by it. */
@@ -177,23 +177,15 @@ export const staffVenue = (view: ParticipantView): VenueDecl | undefined =>
  * with nobody on it is not a desk, and a line nobody quotes journals `market.noView` and says so.
  */
 export function linesCovered(view: ParticipantView): number {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  if (!own.some) return 0;
-  const hours = own.value.data['hours'];
-  if (typeof hours !== 'number' || hours <= 0) return 0;
+  const own = ownPayroll(view, view.period);
+  if (!own.some || own.value.hours <= 0) return 0;
   const per = asAmount<'piece'>(
     view.params.count(STAFF_PARAMS.hoursPerLinePeriod),
     'the hours one line takes',
   );
   if (per <= 0) return 0;
   // Hours it employs over hours one line takes: two amounts of the same unit, so a pure count.
-  return Math.floor(
-    ratioOf(
-      asAmount<'piece'>(hours, 'the hours it actually paid for'),
-      per,
-      'the lines its people can cover',
-    ),
-  );
+  return Math.floor(ratioOf(own.value.hours, per, 'the lines its people can cover'));
 }
 
 
@@ -232,22 +224,14 @@ export const advisoryVenue = (view: ParticipantView): VenueDecl | undefined =>
  * answer rather than a zero with a rule behind it.
  */
 export function processesRun(view: ParticipantView): number {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  if (!own.some) return 0;
-  const hours = own.value.data['hours'];
-  if (typeof hours !== 'number' || hours <= 0) return 0;
+  const own = ownPayroll(view, view.period);
+  if (!own.some || own.value.hours <= 0) return 0;
   const per = asAmount<'piece'>(
     view.params.count(STAFF_PARAMS.hoursPerProcess),
     'the hours one process takes',
   );
   if (per <= 0) return 0;
-  return Math.floor(
-    ratioOf(
-      asAmount<'piece'>(hours, 'the hours it actually paid for'),
-      per,
-      'the processes its people can run',
-    ),
-  );
+  return Math.floor(ratioOf(own.value.hours, per, 'the processes its people can run'));
 }
 
 /**

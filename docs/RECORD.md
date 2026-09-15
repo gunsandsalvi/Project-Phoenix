@@ -10157,3 +10157,33 @@ inside on the `registry/switching.ts` pattern is 0e′.1.
 **Checks.** `check:opens` green on both worlds; `test/questions.test.ts` is five new tests; on the
 seven files nearest this change nothing went from green to red. Lint, typecheck, spec citations,
 forbids, deaths, existence and plan green.
+
+## Item 0e′.1 — The registry does its own fetching
+
+**The shape that was wrong.** `registry/wages.ts` and `registry/physical.ts rentedRoom` were built
+to end a formula written twice, and they did — but each took the EVENT as an argument, so every
+caller still had to write `lastOwnSince('labour.wages', …)` or `lastOwn('commodities.leased')` to
+produce it. The formula moved and the NAME did not, which is half a fix: eleven mechanism sites in
+six modules still reached for another module's event kind, and each one still decided for itself
+what `hours`, `due`, `paid` or `space` meant when it came back. The registry now names the kind and
+does the fetch; the caller passes a party, or a party's door.
+
+**What one read replaced.** `ownPayroll(reads, at)` is the extraction five sites were doing by hand
+(`banks/staff.ts` twice, `firms/index.ts`, `firms/decide.ts` twice). `ownPayrollOf`,
+`wageFacingParty`, `wagePrintedIn`, `payrollSettledIn` and `hasEverMetAPayroll` are the same reads
+through the door a PHASE has, which is a journal and not a view; `firms/produce.ts`,
+`research/index.ts`, `control/index.ts` and `treasury/index.ts` take them. `rentedRoom` takes the
+party. `hoursPaidFor` had no caller and is deleted.
+
+**A third writer of the wage formula, found by moving the fetch.** `treasury/index.ts` held
+`currentPayroll` (which was `payrollSince` inlined), its own copy of the own-bill-over-own-hours
+calculation, and a fallback of its own. That fallback took the LAST `labour.print` ANYWHERE, so a
+state read another country's wage whenever that country printed later — a wage in the wrong money as
+often as not. The registry's fallback is the party's own REGION, which is where an hour is hired.
+That is a behaviour change and it is the point of the read: the file header says this module's rules
+have caught a second copy three times, and this is the fourth.
+
+**Checks.** `check:opens` green on both worlds. `check:forbids` cross-module baseline 51 → 44, the
+seven closed rows deleted (`banks|control|firms|treasury:labour.wages`,
+`research|treasury:labour.print`, `firms:commodities.leased`). Lint and typecheck green;
+`output-kind.test.ts` moved to the new `rentedRoom` door and its seven tests pass.

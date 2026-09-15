@@ -73,7 +73,7 @@ import {
   type PlantNeed,
 } from '../../registry/physical.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { payrollSince, wageFacing as facing } from '../../registry/wages.js';
+import { ownPayroll, payrollSince, wageFacing as facing } from '../../registry/wages.js';
 import {
   costOfCapital,
   project,
@@ -280,21 +280,14 @@ function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
  * to know. Nobody hired since is in it, and that is right: they are not productive yet.
  */
 function hoursUnderContract(view: ParticipantView): Qty {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  const none = asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
-  if (!own.some) return none;
-  const hours = own.value.data['hours'];
-  // Item 16: a published number re-enters the type system here, through the dimension's own door.
-  return typeof hours === 'number' ? asAmount<'piece'>(hours, 'the hours it has under contract') : none;
+  const own = ownPayroll(view, view.period);
+  return own.some ? own.value.hours : asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
 }
 
 /** D1: what it must pay out that it already knows about — the payroll it is committed to. */
 function wagesDue(view: ParticipantView): Cash {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  if (!own.some) return asCash(0, 'a firm that has published no payroll owes none');
-  const due = own.value.data['due'];
-  // Item 16: money re-entering from what this firm published, at the read that knows what it is.
-  return asCash(typeof due === 'number' ? due : 0, 'what its own payroll says it owes');
+  const own = ownPayroll(view, view.period);
+  return own.some ? own.value.due : asCash(0, 'a firm that has published no payroll owes none');
 }
 
 /**
@@ -432,7 +425,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   ).value;
   // Capital Programme A2, A4: what its plant lets it make, and what that plant costs it to use.
   const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
-  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view.lastOwn('commodities.leased')));
+  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view));
   // Capital Programme D1, A6: what its plant will still let it run at next period — this period's
   // stock less the vintages whose life ends before then. It is computed once and both the decision
   // and the record it publishes read the same number (Law 4).

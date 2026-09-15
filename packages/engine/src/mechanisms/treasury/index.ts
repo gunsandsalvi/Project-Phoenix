@@ -22,7 +22,6 @@ import {
   amountOf,
   asAmount,
   asCash,
-  asPerPiece,
   asPerMember,
   asRatio,
   asTotal,
@@ -31,7 +30,6 @@ import {
   minus,
   over,
   plus,
-  pricedAt,
   ratioOf,
   scale,
   valueAt,
@@ -41,7 +39,6 @@ import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import type { Event } from '../../journal/journal.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
   agreementKindId,
@@ -91,6 +88,7 @@ import {
   TENOR_WINDOW_YEARS,
 } from './data.js';
 import { downTick, type Qty, upTick } from '../../core/tick.js';
+import { ownPayrollOf, wageFacingParty } from '../../registry/wages.js';
 
 /**
  * Treasury B1, XI-8, D-1: A LEVY ASSESSED AND NOT PAID.
@@ -217,51 +215,23 @@ function mandatePerPeriod(ctx: MechanismContext, id: PartyId): Cash {
   return sum(terms).value;
 }
 
-/**
- * A-33, Law 8: ITS OWN PAYROLL, IF IT IS STILL CURRENT. `payWages` writes an event only for an
- * employer that has rows, so taking the last one from any period ever meant a state that stopped
- * employing kept both its wage bill and the wage it bids for an hour frozen at its final period.
- * `labour.pay` settles in cycle 2, so this period's and the one before it are current and older is
- * a payroll of nobody.
- */
-function currentPayroll(ctx: MechanismContext, id: PartyId): Event | undefined {
-  const events = ctx.journal.forSubject('labour.wages', id);
-  const last = events[events.length - 1];
-  const since = ctx.period > 0 ? period(ctx.period - 1) : ctx.period;
-  return last === undefined || last.period < since ? undefined : last;
-}
-
 /** What its own payroll came to last time it was paid, read from its own record (Law 19). */
 function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
-  const last = currentPayroll(ctx, id);
-  if (last === undefined) return asCash(0, 'a treasury that has published no payroll');
-  const due = last.data['due'];
-  return asCash(typeof due === 'number' ? due : 0, 'what its own payroll says it owes');
+  const own = ownPayrollOf(ctx.journal, String(id), ctx.period);
+  return own.some ? own.value.due : asCash(0, 'a treasury that has published no payroll');
 }
 
-/** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
+/**
+ * What an hour costs it: what its own payroll paid for one, or what its region last printed.
+ *
+ * This was `currentPayroll` + a copy of `wageFacing`, which made the file the THIRD writer of one
+ * formula (Law 4, 0e′.1). Its fallback also took the last print ANYWHERE, so a state read another
+ * country's wage whenever that country printed later; the registry's is its own region's.
+ */
 function wageItFaces(ctx: MechanismContext, id: PartyId): PerPiece | undefined {
-  const mine = currentPayroll(ctx, id);
-  if (mine !== undefined) {
-    const due = mine.data['due'];
-    const hours = mine.data['hours'];
-    if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
-      // Item 16: two published numbers re-enter here, and what an hour costs is money over hours.
-      return pricedAt(
-        asCash(due, 'what its payroll came to'),
-        asAmount<'piece'>(hours, 'the hours it paid for'),
-        'what an hour costs it',
-      );
-    }
-  }
-  // Expectations A2.a: what the market last paid is a published fact, and it is what a state with
-  // no payroll of its own has to go on. It offers it and takes what the venue gives it.
-  const prints = ctx.journal.ofKind('labour.print');
-  const last = prints[prints.length - 1];
-  if (last === undefined) return undefined;
-  const wage = last.data['wagePerHour'];
-  // Item 16: a published level re-enters the type system here, through its dimension's own door.
-  return typeof wage === 'number' ? asPerPiece(wage, 'what the market last paid for an hour') : undefined;
+  const region = ctx.parties.get(id).region;
+  const facing = wageFacingParty(ctx.journal, String(id), ctx.period, region);
+  return facing.some ? facing.value : undefined;
 }
 
 /** What it collected last period, which is what it has to go on until it has an outlook (§46 C5). */

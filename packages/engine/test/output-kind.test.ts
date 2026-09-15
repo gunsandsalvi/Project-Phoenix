@@ -66,11 +66,15 @@ describe('what a lease buys (A-64)', () => {
      * period it was short of exactly the same room and rented it again. The money was conserved,
      * so no audit family could see it: the buyer of a service that did not exist (Law 1).
      */
-    expect(rentedRoom(none())).toEqual(new Map());
-    expect(rentedRoom(some({ data: { space: 40 } }))).toEqual(new Map([[STORAGE, 40]]));
+    // The registry names the kind itself now, so a reader is a party's door and not an Option.
+    const said = (data: Record<string, unknown> | undefined) => ({
+      lastOwn: () => (data === undefined ? none<{ data: Record<string, unknown> }>() : some({ data })),
+    });
+    expect(rentedRoom(said(undefined))).toEqual(new Map());
+    expect(rentedRoom(said({ space: 40 }))).toEqual(new Map([[STORAGE, 40]]));
     // A lease of nothing is not a lease, and a malformed event buys nothing rather than NaN of it.
-    expect(rentedRoom(some({ data: { space: 0 } }))).toEqual(new Map());
-    expect(rentedRoom(some({ data: {} }))).toEqual(new Map());
+    expect(rentedRoom(said({ space: 0 }))).toEqual(new Map());
+    expect(rentedRoom(said({}))).toEqual(new Map());
   });
 
   it('is one event per taker per period, carrying what it rented in TOTAL (Law 4)', () => {

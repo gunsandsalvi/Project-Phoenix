@@ -24,7 +24,6 @@ import {
   absolute,
   asAmount,
   asCash,
-  asPerPiece,
   asRatio,
   type Cash,
   minus,
@@ -43,6 +42,7 @@ import type { SystemModule } from '../../world/module.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { estimateFrom, seenOf } from './estimate.js';
 import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
+import { wagePrintedIn } from '../../registry/wages.js';
 
 export * from './data.js';
 export * from './estimate.js';
@@ -196,16 +196,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
 
 /** Law 19: what an hour of somebody's time last went for, read off the wage this world printed. */
 function wagePrinted(ctx: MechanismContext, bank: PartyId): Option<PerPiece> {
-  const region = ctx.parties.get(bank).region;
-  let best: PerPiece | undefined;
-  for (const e of ctx.journal.ofKind('labour.print')) {
-    if (e.data['region'] !== String(region)) continue;
-    const wage = e.data['wagePerHour'];
-    // Item 16: a wage re-enters from what the labour venue published — a level per hour, in the
-    // same money an hour is paid in.
-    if (typeof wage === 'number' && wage > 0) best = asPerPiece(wage, 'what an hour cleared at');
-  }
-  return best === undefined ? none<PerPiece>() : some(best);
+  return wagePrintedIn(ctx.journal, ctx.parties.get(bank).region);
 }
 
 /** C1–C4: form, publish and revise. Every estimate is this bank's own and none of them is a price. */

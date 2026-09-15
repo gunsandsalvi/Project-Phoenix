@@ -40,7 +40,8 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder, payrollSince } from './decide.js';
+import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import { ownPayroll } from '../../registry/wages.js';
 import { publishExpectation, runLine } from './produce.js';
 import { NO_QTY } from '../../core/tick.js';
 
@@ -442,10 +443,8 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
 
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */
 function wagesPromised(view: ParticipantView): Cash {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  if (!own.some) return asCash(0, 'it has promised nobody anything');
-  const due = own.value.data['due'];
-  return typeof due === 'number' ? asCash(due, 'what its last wage bill came to') : asCash(0, 'nothing');
+  const own = ownPayroll(view, view.period);
+  return own.some ? own.value.due : asCash(0, 'it has promised nobody anything');
 }
 
 /** The orders as the data they are, so the party's own participant can read them back. */

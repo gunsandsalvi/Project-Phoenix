@@ -63,6 +63,7 @@ import { weightOf } from '../../parties/party.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
+import { hasEverMetAPayroll } from '../../registry/wages.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -664,7 +665,7 @@ function settleTender(
  * that position permanently and this module never has to know what a pool of money is.
  */
 function couldRunIt(ctx: MechanismContext, buyer: PartyId): boolean {
-  return ctx.journal.lastOf('labour.wages', String(buyer)) !== undefined;
+  return hasEverMetAPayroll(ctx.journal, String(buyer));
 }
 
 /**

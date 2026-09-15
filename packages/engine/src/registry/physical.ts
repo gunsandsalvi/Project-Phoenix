@@ -489,8 +489,21 @@ export function vintagesHeld(view: PlantHolder, on: Civil): HeldVintage[] {
  *
  * Read off the party's own lease event (Law 19) — the storage market records one per taker per
  * period carrying the total, so this is one writer and one reader and nothing is stored twice.
+ *
+ * It NAMES THE EVENT ITSELF (0e′.1): a caller that had to pass `lastOwn('commodities.leased')` was
+ * a mechanism naming another module's event kind, which is what `phoenix/no-cross-module-event-read`
+ * forbids. What the caller has is a party; what the kind is called is this file's business.
  */
-export function rentedRoom(said: Option<{ readonly data: Record<string, unknown> }>): ReadonlyMap<string, number> {
+/** What the storage market records about a lease. */
+const LEASED = 'commodities.leased';
+
+/** The narrow door: a party's own last event of a kind. */
+export interface LeaseReads {
+  lastOwn(kind: string): Option<{ readonly data: Record<string, unknown> }>;
+}
+
+export function rentedRoom(reads: LeaseReads): ReadonlyMap<string, number> {
+  const said = reads.lastOwn(LEASED);
   if (!said.some) return new Map();
   const space = said.value.data['space'];
   if (typeof space !== 'number' || space <= 0) return new Map();
