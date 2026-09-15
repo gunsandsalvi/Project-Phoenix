@@ -72,12 +72,14 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     // A small firm in `power` burns coal it buys from a mine, and a rig of twelve firms has drawn
     // no mine as often as not: the test asks for a world that has one (Seed B1.a).
     const { world: w } = rigFor('sb-makes', { makes: ['coalRaw'] });
+    // The cells as the seed cut them: a cell that merged onto another's key by the year's end
+    // (0f.4) is gone from the parties store, and its legs are still in the ledger.
+    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
     for (let i = 0; i < 8; i += 1) w.step();
     const made = w.journal.ofKind('smallBusiness.produced').filter((e) => e.data['settled'] === true);
     expect(made.length).toBeGreaterThan(0);
     // A1: "small firms are firms" — what it made reached a buyer through a cleared book, as an
     // asset leg from a small-firm cell in a settled instruction with money coming back.
-    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
     let sold = 0;
     for (const r of w.ledger.all()) {
       if (r.outcome !== 'settled') continue;
@@ -86,6 +88,25 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
       }
     }
     expect(sold).toBeGreaterThan(0);
+  });
+
+  it('names its owner as a row and draws what it does not need to its owner (A6.a, 11.0d)', () => {
+    const { world: w } = rigFor('sb-owner', { makes: ['coalRaw'] });
+    const cells = new Set(w.parties.ofKind(SMALL_FIRM).map((p) => String(p.id)));
+    // A6.a: the relationship is a ROW per cell, never an attribute inside it.
+    const rows = w.agreements.all().filter((a) => String(a.terms.kind) === 'smallBusiness.ownership');
+    expect(rows.length).toBe(cells.size);
+    for (const r of rows) expect(String(w.parties.get(r.creditor).kind)).toBe('household');
+    for (let i = 0; i < 8; i += 1) w.step();
+    let drawn = 0;
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'settled') continue;
+      for (const leg of r.instruction.legs) {
+        if (leg.kind === 'money' && leg.receipt?.of === 'dividend' && cells.has(String(leg.from.holder))) drawn += 1;
+      }
+    }
+    // Households B3: income that is not a wage reached a household cell, from a named payer.
+    expect(drawn).toBeGreaterThan(0);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {

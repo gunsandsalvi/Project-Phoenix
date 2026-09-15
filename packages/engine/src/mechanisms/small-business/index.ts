@@ -37,7 +37,9 @@ import type { ParamDecl } from '../../registry/params.js';
 import { SMALL_FIRM } from '../../registry/profiles.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
-import { DECIDED, decide, marketsOf, ordersIn, produce } from './profile.js';
+import { DECIDED, OWNERSHIP, decide, draw, marketsOf, ordersIn, produce } from './profile.js';
+import { HOUSEHOLD } from '../../registry/profiles.js';
+import { keyOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -216,6 +218,15 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
      * this module is DECLARED AFTER the seed rather than declaring it a requirement in place.
      */
     requires: ['firms', 'banks', 'goods', 'expectations', 'labour'],
+    agreementKinds: [
+      {
+        id: OWNERSHIP,
+        what: 'who owns a cell of small firms: the household cell its owners live in',
+        // XI-8: a relationship, not a debt. An estate winding the cell up does not run it; what is
+        // left is the estate's to divide, and the owners' claim on that is the residual.
+        binds: 'aGoingConcern',
+      },
+    ],
     nouns: [
       {
         name: DECIDED,
@@ -288,6 +299,20 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
             if (p.status.alive) decide(ctx, p.id);
+          }
+        },
+      },
+      {
+        name: 'smallBusiness.draw',
+        spec: 'Small-Business Pools A1 Small-Business Pools A6.a Households B3',
+        // After the session that turned what it made into money, and after wages went out: what
+        // is left above what its next decision has committed is the owners'.
+        anchor: { after: 'markets' },
+        reads: [{ kind: 'event', name: 'labour.wages', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'smallBusiness.drawn' }],
+        run: (ctx: MechanismContext): void => {
+          for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
+            if (p.status.alive) draw(ctx, p.id);
           }
         },
       },
@@ -404,6 +429,33 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
             if (drawn <= 0) continue;
             ctx.endowUnits(id, line, drawn, opened.value.price);
           }
+        }
+        /**
+         * A6.a (11.0d): WHO OWNS IT is a ROW, opened here because a firm has an owner before it
+         * trades: the household cell of its place that banks where it banks, in the first working
+         * cohort — the people a corner shop's owners are. A world with no such cell opens the firms
+         * with no owner named, which is a real state the draw reads as one.
+         */
+        const first = ctx.registry.cohorts[0];
+        const owners = first === undefined
+          ? undefined
+          : ctx.parties.ofKind(HOUSEHOLD).find(
+              (h) =>
+                h.representation === 'cell' &&
+                h.status.alive &&
+                keyOf(h, 'region') === String(pool.region) &&
+                keyOf(h, 'bank') === String(pool.bank) &&
+                keyOf(h, 'cohort') === String(first.id),
+            );
+        if (owners !== undefined) {
+          ctx.owes({
+            debtor: id,
+            creditor: owners.id,
+            ccy: ctx.registry.currencyOf(pool.region),
+            owed: 0,
+            terms: { kind: OWNERSHIP },
+            why: `${String(owners.id)} owns the ${String(pool.count)} ${pool.line} firms at ${String(pool.bank)}`,
+          });
         }
         // Seed C4: what its members hold between them, stated per member as every endowment is.
         ctx.endowMoney(

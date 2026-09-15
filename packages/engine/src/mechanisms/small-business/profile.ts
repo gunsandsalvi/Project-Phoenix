@@ -46,7 +46,8 @@ import { OCCUPATION_OF } from '../../registry/occupations.js';
 import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
 import { findVenue } from '../../clearing/venue.js';
 import { addQty } from '../../core/tick.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import { agreementKindId, type AgreementId } from '../../core/ids.js';
+import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
 
 /** The name of the store a cell's decision waits in between its phases (a `working` noun). */
 export const DECIDED = 'smallBusiness.decided';
@@ -67,9 +68,15 @@ interface DecidedThisPeriod {
   orders: readonly PlannedOrder[];
   /** What it will start this period, in whole pieces of its output. */
   batch: Qty;
+  /**
+   * 11.0d: WHAT IT KEEPS TO GO ON TRADING — a period of its inputs at the prices it expects, for
+   * the batch its hours can make, and the wages it owes. Its own working capital, read off its own
+   * plan; the owner draws what stands above it and what falls due on what it issued.
+   */
+  keeps: Cash;
 }
 
-export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], batch: NO_QTY });
+export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], batch: NO_QTY, keeps: heldAsMoney(NO_QTY, 'nothing decided') });
 
 /** A2, Goods A2: the line a cell is in, as the registry declares it — its output and its recipe. */
 export interface Line {
@@ -143,9 +150,21 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
   slot.at = ctx.period;
   slot.orders = [];
   slot.batch = NO_QTY;
+  slot.keeps = heldAsMoney(NO_QTY, 'a cell with no line keeps nothing');
   if (!line.some) return;
   const l = line.value;
-  slot.batch = canStart(view, l, hoursToPlanWith(view));
+  /**
+   * Firm B1, Expectations C2: WHAT IT MAKES IS WHAT IT EXPECTS TO SELL — its own outlook of its
+   * own fills, formed from what it actually sold. A cell that has never sold anything has no
+   * expectation of demand and starts ONE PIECE, to find out what it sells; it does not run its
+   * members' hours flat out into a book that takes a fraction of it, which is what made the first
+   * cut of this kill five cells in six by period one: the unsold perished at cost.
+   */
+  const sales = view.outlook(about({ on: 'sold', instrument: l.output }));
+  const wanted = sales.some
+    ? downTick(asAmount<'piece'>(sales.value.expected, 'the units it expects to sell'))
+    : asQty(1, 'one piece, to find out what it sells');
+  slot.batch = atMost(canStart(view, l, hoursToPlanWith(view)), wanted, 'it makes what it expects to sell, and no more than it can');
   // Expectations A2: what a unit of its output fetches, by its own outlook or the tape. A cell that
   // has never seen a price for what it makes cannot say what an input is worth to it, and does not
   // bid — it makes what it can out of what it holds and learns the price by selling.
@@ -158,9 +177,21 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     if (!p.some) return;
     priced.push(p.value);
   }
-  // The next batch is what its hours reach: the inputs are what it is buying.
-  const nextBatch = downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make'));
+  // The next batch is what it expects to sell, as far as its hours reach: the inputs are what it is buying.
+  const nextBatch = atMost(downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make')), wanted, 'no more than it expects to sell');
   const ccy = view.registry.currencyOf(view.self.region);
+  // 11.0d: A PERIOD OF TRADING AT ITS OWN SCALE, at the prices it expects — the inputs for the
+  // batch its hours can make, in full, whether or not it already holds some of them, and the wages
+  // it owes. That is what it keeps; a draw of everything above what it happened to bid for emptied
+  // every cell to the same nothing, and the lattice merged the sector into one cell a line.
+  const capacity = downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make'));
+  const wages = ownPayroll(view, view.period);
+  slot.keeps = sum([
+    ...l.inputs.map((input, n) =>
+      valueAt(priced[n] ?? asPerPiece(0, 'priced above, one per input'), upTick(scale(capacity, input.qtyPerUnit, 'what a full batch draws')), 'what a period of this input costs'),
+    ),
+    ...(wages.some ? [wages.value.due] : []),
+  ]).value;
   let cash: Cash = heldAsMoney(view.cash(ccy), 'the money it has to buy with');
   const orders: PlannedOrder[] = [];
   for (const [n, input] of l.inputs.entries()) {
@@ -189,7 +220,7 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     orders.push({ market: goodMarketId(goodTerms(view.instruments.get(input.instrument)).subUnit, l.terms.region), side: 'buy', price: worth, qty });
   }
   slot.orders = orders;
-  postForHours(ctx, view, l, price.value, priced);
+  postForHours(ctx, view, l, price.value, priced, wanted);
   ctx.record(
     'smallBusiness.plan',
     [cell],
@@ -213,6 +244,7 @@ function postForHours(
   line: Line,
   priceOut: PerPiece,
   inputPrices: readonly PerPiece[],
+  batch: Qty,
 ): void {
   const occupation = OCCUPATION_OF[line.terms.subUnit];
   if (occupation === undefined) return;
@@ -224,11 +256,15 @@ function postForHours(
     ),
   ).value;
   const perHour = over(minus(priceOut, inputCost, 'less its inputs'), line.hoursPerUnit, 'the value of an hour');
-  // What its inputs on hand could make, over what its members' hours already make: the hours it
-  // has a use for. Nothing below zero is wanted, and wanting nobody is a real posting.
-  const fromStock = line.inputs.map((i) => over(view.free(i.instrument), i.qtyPerUnit, 'what the stock reaches'));
-  const stockBound = fromStock.length === 0 ? undefined : fromStock.reduce((a, b) => atMost(a, b, 'the scarcest input'));
-  const wanted = stockBound === undefined ? NO_QTY : downTick(scale(minus(asAmount<'piece'>(stockBound, 'what its stock makes'), asAmount<'piece'>(over(ownHours(view), line.hoursPerUnit, 'what its members make'), 'its members\u2019 share'), 'beyond its members'), line.hoursPerUnit, 'the hours that would take'));
+  // The hours the batch it expects to sell would take, beyond its members' own: the hours it has
+  // a use for. Nothing below zero is wanted, and wanting nobody is a real posting.
+  const wanted = downTick(
+    minus(
+      scale(batch, line.hoursPerUnit, 'the hours the batch takes'),
+      asAmount<'piece'>(ownHours(view), 'its members\u2019 own hours'),
+      'beyond its members',
+    ),
+  );
   const wantsNobody = wanted <= 0 || perHour <= 0;
   ctx.post(venue.id, {
     party: view.self.id,
@@ -311,3 +347,79 @@ export function ordersIn(view: ParticipantView, market: MarketId): readonly Orde
   return out;
 }
 
+
+/* --------------------------------------------------------------------------------------------
+ * THE OWNER (11.0d)
+ *
+ * @spec Small-Business Pools A1 Small-Business Pools A6.a Households B3 XI-8 Law 5
+ *
+ * A6.a: "every relationship that must be named is either a dimension of the cell's key or a
+ * register row, never an attribute averaged inside it." WHO OWNS a small firm is such a
+ * relationship, and it is a ROW: one commitment per small-firm cell, from the cell to the household
+ * cell its owners live in — the people of its place who bank where it banks, in the first working
+ * cohort. It is opened at the seed, because a firm has an owner before it trades, and it binds a
+ * going concern: an estate winding the cell up does not run it, and what is left is the estate's
+ * to divide (XI-8).
+ *
+ * WHAT THE OWNER DRAWS is what the cell does not need to keep trading: its cash above what its
+ * own decision has committed — the input bids it is about to settle and the wages it owes. That
+ * is a read of its own plan and its own book, and nothing else: no payout ratio, no target return
+ * (Law 2). It goes to the owner as a dividend in a two-sided instruction (Law 5), which is how a
+ * household comes to have income that is not a wage (Households B3).
+ * ------------------------------------------------------------------------------------------ */
+
+/** The commitment that names a small-firm cell's owner. */
+export const OWNERSHIP = agreementKindId('smallBusiness.ownership');
+
+/** A6.a: the row that names this cell's owner, read off the kernel's book of commitments by its kind. */
+export function ownerOf(ctx: MechanismContext, cell: PartyId): Option<{ readonly row: AgreementId; readonly owner: PartyId }> {
+  for (const a of ctx.agreements.ofKind(OWNERSHIP)) {
+    if (a.debtor !== cell || a.state !== 'performing') continue;
+    return some({ row: a.id, owner: a.creditor });
+  }
+  return none<{ row: AgreementId; owner: PartyId }>();
+}
+
+/**
+ * What the cell has to keep: its own working capital (`keeps`, read off its plan) and what falls
+ * due on what it has issued — an invoice it took terms on, a loan — which `owedIn` states as its
+ * position (due less held), so what is due is that plus what it holds (Law 19: one read).
+ */
+function needed(view: ParticipantView): Cash {
+  const decided = view.working(DECIDED, nothingDecided);
+  const ccy = view.registry.currencyOf(view.self.region);
+  const due = heldAsMoney(addQty(view.owedIn(ccy), view.cash(ccy), 'what falls due on what it issued'), 'its dues');
+  return sum([decided.at === view.period ? decided.keeps : heldAsMoney(NO_QTY, 'no plan, nothing kept'), due]).value;
+}
+
+/** The draw: what stands above what the cell has committed goes to its owner, whole pieces. */
+export function draw(ctx: MechanismContext, cell: PartyId): void {
+  const view = ctx.participant(cell);
+  const owner = ownerOf(ctx, cell);
+  if (!owner.some || !ctx.parties.get(owner.value.owner).status.alive) return;
+  const ccy = view.registry.currencyOf(view.self.region);
+  const spare = ctx.registry.payable(
+    minus(heldAsMoney(view.cash(ccy), 'what it holds'), needed(view), 'what it does not need to keep trading'),
+  );
+  if (spare <= 0) return;
+  const record = ctx.settle({
+    legs: [
+      {
+        kind: 'money',
+        from: ctx.accountOf(cell, ccy),
+        to: ctx.accountOf(owner.value.owner, ccy),
+        receipt: { of: 'dividend' },
+        ccy,
+        amount: spare,
+      },
+    ],
+    cause: 'transfer',
+    reason: `${String(cell)} draws ${String(spare)} to its owners`,
+  });
+  ctx.record(
+    'smallBusiness.drawn',
+    [cell, owner.value.owner],
+    { cell, owner: owner.value.owner, drew: spare, settled: record.outcome === 'settled' },
+    true,
+  );
+}

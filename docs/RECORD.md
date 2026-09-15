@@ -10789,3 +10789,32 @@ The hire is measured where a named firm's is, and that is 12b.3's world.
 **Checks.** `check:opens` green on both worlds; the small-business and trade-credit tests green;
 the five labour reds are the five that predate this session; lint, typecheck, `check:spec`,
 `check:forbids` green.
+
+## Item 11.0d — The owner
+
+**Who owns a cell of small firms is a row** (`smallBusiness.ownership`), opened at the seed from the
+cell to the household cell of its region and bank in the first working cohort, and binding a going
+concern: an estate winding the cell up does not run it. Each period after the session, what stands
+above what the cell keeps goes to its owner as a dividend in a two-sided instruction, which is how
+a household comes to have income that is not a wage (Households B3).
+
+**What it keeps was the whole of the step.** The first cut drew everything above what the cell had
+bid for; every cell was emptied to the same nothing, and the lattice — correctly — merged the
+sector into one cell a line, 98 to 27 in a period. What a firm keeps is a period of trading at its
+own scale: the inputs for the batch its hours can make, in full, at the prices it expects, plus the
+wages it owes and what falls due on what it has issued. It is its own working capital, read off its
+own plan and its own book; there is no payout ratio and no target return (Law 2).
+
+**Found with it.** A cell ran its members' hours flat out into a book that takes a fraction of it,
+and the unsold perished at cost: five cells in six were insolvent by period one. What it makes is
+what it expects to sell — its own outlook of its own fills, one piece to find out — which is the
+named firm's rule (Firm B1) and was never the small firm's until now. And the make-and-sell test
+took its cell ids after the year, when the cells that had merged onto another's key were gone from
+the parties store; it takes them at the seal.
+
+**Measured, not chased.** With the owner drawing, the first rung ends the year with 65 small firms
+of 144 in 27 cells, as before the draw; in the world with a mine, the sector settles at twenty cells
+by period five, most of them merged rather than dead.
+
+**Checks.** `check:opens` green on both worlds; the small-business tests green; lint, typecheck,
+`check:spec`, `check:forbids` green.
