@@ -34,7 +34,7 @@ import { clear, isCleared, type Cleared, type Order } from '../../clearing/solve
 import type { VenueDecl } from '../../clearing/venue.js';
 import { agreementKindId, cohortId } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, sub, sum } from '../../core/num.js';
+import { add, atMost, div, sub, sum } from '../../core/num.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 
 
@@ -65,11 +65,14 @@ import {
   EMPLOYMENT,
   employedKey,
   employmentOf,
+  unemployedKey,
   wagePerMember,
   type EmploymentRow,
   type EmploymentTerms,
 } from '../../register/employment.js';
-import { addQty, asQty, scaleQty, subQty } from '../../core/tick.js';
+import { addQty, asQty, downTick, scaleQty, subQty } from '../../core/tick.js';
+import { OCCUPATION_OF } from '../../registry/occupations.js';
+import { goodId } from '../../registry/physical.js';
 import type { Qty } from '../../core/tick.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
@@ -81,9 +84,36 @@ import type { Qty } from '../../core/tick.js';
  */
 export interface SkillBook {
   skill: Record<string, string>;
+  /** 12c.2: the pieces per member a cell's people had made in their trade at the employer they left. */
+  learned: Record<string, number>;
 }
 
-export const emptySkills = (): SkillBook => ({ skill: {} });
+export const emptySkills = (): SkillBook => ({ skill: {}, learned: {} });
+
+/**
+ * Firm A3, XI-10 (12c.2): WHAT A MEMBER MADE AT THE EMPLOYER — its ledger count of the trade's
+ * output over the people it employs in that trade, the point on the curve its people stand at.
+ * The occupation names the goods it makes (`OCCUPATION_OF`, data), and the count is the kernel's.
+ */
+function learnedAt(ctx: MechanismContext, employer: PartyId, occupation: string, region: RegionId): number {
+  const heads = sum(ctx.employment.at(employer, occupation, region).map((r) => r.headcount)).value;
+  if (heads <= 0) return 0;
+  let made = 0;
+  for (const [subUnit, trade] of Object.entries(OCCUPATION_OF)) {
+    if (trade !== occupation) continue;
+    const good = goodId(subUnit, region);
+    if (!ctx.instruments.has(good)) continue;
+    made = add(made, ctx.ledger.madeBy(employer, good), 'made in the trade');
+  }
+  return div(made, heads, 'made per head');
+}
+
+/** 12c.2: what this cell's people bring to a job in this trade — nothing for a first job or a new trade. */
+function brings(book: SkillBook, cell: PartyId, occupation: string): Qty {
+  const had = book.learned[cell];
+  if (had === undefined || book.skill[cell] !== occupation) return asQty(0, 'a first job in the trade brings nothing');
+  return downTick(had);
+}
 
 /** A4, XI-8: the terms of a row as the kernel holds them, for a restatement that changes one. */
 function termsOf(row: EmploymentRow): EmploymentTerms {
@@ -99,6 +129,7 @@ function termsOf(row: EmploymentRow): EmploymentTerms {
     headcount: row.headcount,
     leaving: row.leaving,
     ends: row.ends,
+    brought: row.brought,
   };
 }
 
@@ -370,7 +401,12 @@ function hire(
   // and start — takes the people: its headcount moves, the row does not multiply.
   const standing = ctx.employment.ofWorker(hired);
   if (standing?.employer === employer && standing.occupation === occupation && standing.since === ctx.period) {
-    const more: EmploymentTerms = { ...termsOf(standing), headcount: weightOf(ctx.parties.get(hired)) };
+    const more: EmploymentTerms = {
+      ...termsOf(standing),
+      headcount: weightOf(ctx.parties.get(hired)),
+      // 12c.2: and what these people bring adds to what the row's people already brought.
+      brought: addQty(standing.brought, scaleQty(brings(book, worker, occupation), members, 'what these people bring'), 'brought'),
+    };
     ctx.restate(standing.id, more);
     book.skill[hired] = occupation;
     ctx.record(
@@ -407,6 +443,8 @@ function hire(
     headcount: weightOf(ctx.parties.get(hired)),
     leaving: 0,
     ends: none<Period>(),
+    // 12c.2: what the people bring from the employer they left, read off the cell they came from.
+    brought: scaleQty(brings(book, worker, occupation), members, 'what these people bring'),
   };
   const row = employmentOf(
     ctx.owes({
@@ -505,13 +543,18 @@ export function separate(
 ): void {
   if (members <= 0) return;
   const whole = members >= row.headcount;
+  // 12c.2: what the leavers learned HERE, read before the row is touched — the count over the
+  // heads on it, off this employer's own ledger.
+  const learnedHere = learnedAt(ctx, row.employer, row.occupation, row.region);
   // 0f.4: the separated move to the standing cell of the unemployed key; there is no split.
   // Register F2, XI-15 (12.4a.2): THE WORKER AS IT IS NOW. The row's terms name the cell that
   // signed; a cell that merged onto the standing cell of its key has ceased and is succeeded, and
   // re-keying the name it had merged it a second time — the world stopped there in period 5 of a
   // scale model. What is separated is the successor's members.
   const worker = ctx.parties.resolve(row.worker).id;
-  const gone = ctx.cells.reKey(worker, members, { employment: 'unemployed' }, cause);
+  // 12c.2: onto the cell of the people who left THIS employer in THIS trade THIS period, so what
+  // they learned there is theirs and not a standing cell's (XI-15: the key names what differs).
+  const gone = ctx.cells.reKey(worker, members, { employment: unemployedKey(row.occupation, row.employer, ctx.period) }, cause);
   if (whole) {
     // XI-8: TERMINATED and not discharged — the commitment ended by its own terms, and the row
     // stays in the kernel's book saying so. A job that vanished would leave a severance nothing
@@ -528,11 +571,16 @@ export function separate(
       headcount: sub(row.headcount, members, 'headcount after separation'),
       leaving,
       ends: leaving > 0 ? row.ends : none<Period>(),
+      // 12c.2: the leavers take their share of what the row's people brought with them.
+      brought: downTick(scale(row.brought, asRatio(sub(row.headcount, members, 'who stays') / row.headcount, 'the share that stays'), 'what stays')),
     };
     ctx.restate(row.id, fewer);
   }
-  // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
+  // The trade stays with the person who has it: an unemployed baker looks for baking (A3) — and
+  // so does what they learned doing it (12c.2): the point on the curve this employer's people
+  // stand at, per head, off its own ledger count of what the trade makes.
   book.skill[gone] = row.occupation;
+  book.learned[gone] = learnedHere;
   // C3, C4, XI-8 (12b.2): WHAT A SEPARATION COSTS IS THE NOTICE, paid as wages while it runs. An
   // employer that is trading has paid it by the time the row ends, and owes nothing at the door.
   // One that has CEASED released its people at once (C4) and owes them the notice it could not

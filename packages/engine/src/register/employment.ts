@@ -63,6 +63,14 @@ export interface EmploymentTerms extends AgreementTerms {
    */
   readonly leaving: number;
   readonly ends: Option<Period>;
+  /**
+   * Firm A3, XI-10 (12c.2): WHAT ITS PEOPLE BROUGHT — the pieces of the trade's output the row's
+   * people had made at the employer they came from, struck at the hire off that employer's own
+   * ledger count, a TOTAL for the row so a second hire onto it adds. A first job, or a changed
+   * trade, brings nothing. A firm's hours per unit read over its rows add this to what the firm
+   * itself has made, so learning travels with the people who did it.
+   */
+  readonly brought: Qty;
 }
 
 /**
@@ -154,6 +162,8 @@ export interface EmploymentReads {
   payrollOf(employer: PartyId, at: Period): Payroll;
   /** Whether this party has ever employed anybody — a row of its, live or ended. */
   everEmployed(employer: PartyId): boolean;
+  /** Firm A3 (12c.2): the pieces its people had made elsewhere in this trade — what its live rows there brought. */
+  learnedBy(employer: PartyId, occupation: string, region: RegionId): Qty;
 }
 
 const live = (a: Agreement): boolean => a.state === 'performing' || a.state === 'breached';
@@ -169,6 +179,17 @@ const live = (a: Agreement): boolean => a.state === 'performing' || a.state === 
  */
 export function employedKey(employer: PartyId, occupation: string, period: Period, round: string): string {
   return `employed:${String(employer)}:${occupation}:${String(period)}:${round}`;
+}
+
+/**
+ * XI-15, Labour A3, XI-10 (12c.2): THE UNEMPLOYED KEY NAMES WHERE THEY CAME FROM. People separated
+ * carry a trade and what they learned doing it at one employer up to one period — the standing cell
+ * of a bare `unemployed` held every separation's people at once, and the last to arrive wrote its
+ * trade and its learning over everybody's. A cell whose people share a trade, an employer and a
+ * leaving date is one group with one history; a fresh cell that never worked is `unemployed`.
+ */
+export function unemployedKey(occupation: string, from: PartyId, period: Period): string {
+  return `unemployed:${occupation}:${String(from)}:${String(period)}`;
 }
 
 /** C3, C5 (12b.2): the hours these rows will keep in one trade and place — not the ones under notice. */
@@ -247,5 +268,7 @@ export function employmentReads(
     },
     everEmployed: (employer: PartyId): boolean =>
       store.byDebtorAndKind(employer, EMPLOYMENT).some((a) => isEmployment(a.terms)),
+    learnedBy: (employer: PartyId, occupation: string, region: RegionId): Qty =>
+      sum(at(employer, occupation, region).map((r) => r.brought)).value,
   });
 }

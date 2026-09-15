@@ -74,7 +74,7 @@ import {
   type Project,
 } from '../../registry/capital.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
-import { downTick, upTick } from '../../core/tick.js';
+import { downTick, upTick, addQty } from '../../core/tick.js';
 import { NO_QTY, subQty, toTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 import type { Period } from '../../calendar/calendar.js';
@@ -206,10 +206,12 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     // number — what it bids for an hour, what a unit costs it, and what its people can make.
     // 12c.1: and what THIS LINE HAS LEARNED — the recipe's hours fall with what it has made, at the
     // recipe's rate, read off its own history of created units. Nothing stores a level.
+    // 12c.2: and what its PEOPLE brought — the pieces they had made in this trade at the employers
+    // they came from, carried on their rows — counts with what this line has made.
     hoursPerUnit: scale(
       learnedHoursPerUnit(
         view.params.ratio(terms.recipe.labourHoursPerUnit),
-        view.made(output),
+        addQty(view.made(output), broughtBy(view, line), 'what the line and its people have made'),
         view.params.ratio(terms.recipe.learningRate),
       ),
       view.params.ratio(labourScaleId(line.firm)),
@@ -262,6 +264,16 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
  * formed from what it has itself traded at; otherwise what the market last printed, which is public
  * and is all a party with no history of its own has. From its first sale its own outlook leads.
  */
+
+/** 12c.2, Firm A3: what this firm's people had made in its trade before they came — over its rows. */
+function broughtBy(view: ParticipantView, line: FirmDecl): Qty {
+  return sum(
+    view
+      .employs()
+      .filter((r) => r.occupation === line.occupation && r.region === view.self.region)
+      .map((r) => r.brought),
+  ).value;
+}
 
 /** The venue this firm's occupation is struck in (Clearing B2: found by what makes it itself). */
 export function venueOf(view: ParticipantView, line: FirmDecl): VenueDecl | undefined {

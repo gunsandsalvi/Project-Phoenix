@@ -4,7 +4,8 @@
  *
  * @spec Labour A1 Labour A2 Labour A3 Labour A4 Labour A4.a Labour A4.b Labour A4.c Labour B1 Labour B1.a Labour B3 Labour B4 Labour B5 Labour C2 Labour C3 Labour C5 Labour D1 Labour D1.a Labour D1.c Labour D2 Labour D2.b Labour D3 Labour E1 Labour F1 Labour F2 XI-10 XI-15
  */
-import { heldAsMoney } from '../src/core/measure.js';
+import { asPerPiece, heldAsMoney } from '../src/core/measure.js';
+import { goodId } from '../src/registry/physical.js';
 import { describe, expect, it } from 'vitest';
 import {
   type PartyId,
@@ -490,6 +491,43 @@ describe('the contract (Labour D2, C3)', () => {
     expect(rows(w)[0]?.leaving).toBe(0);
     const after = w.step();
     paidTheSame(paidBy(w, FIRM_1, after.period), 5 * hours(1) * struck, 5);
+  });
+});
+
+describe('learning travels with the people who did it (Firm A3, XI-10, 12c.2)', () => {
+  it('a hire carries what its people had made at the employer they left, and the new employer reads it over its rows', () => {
+    const bread = goodId('bread', REGION);
+    const w = world((ctx) => {
+      if (ctx.period === 2) ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(10) });
+      // What the bakers made while they were there: the line's own create legs, which is the count
+      // their learning is read off (12c.1).
+      if (ctx.period === 3 && ctx.instruments.has(bread)) {
+        ctx.settle({
+          legs: [{ kind: 'create', party: FIRM_1, instrument: bread, qty: 300 as never, costPerUnit: asPerPiece(1, 'a loaf') }],
+          cause: 'production',
+          reason: `${String(FIRM_1)} finished 300 of bread`,
+        });
+      }
+      // The whole desk is cut; the notice runs; the people go, carrying what they learned.
+      if (ctx.period === 4) ctx.post(BAKERY, { party: FIRM_1, side: 'sell', price: 'market', qty: hours(10) });
+      // And another employer takes everybody it can in the same trade.
+      if (ctx.period === 9) ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(30), qty: everyHourInTown(ctx) });
+    });
+    for (let i = 0; i < 9; i += 1) w.step();
+    expect(w.instruments.has(bread)).toBe(true);
+    expect(w.ledger.madeBy(FIRM_1, bread)).toBe(300);
+    // Nobody had made anything at FIRM_1 before they were hired: their row brought nothing.
+    const first = w.journal.ofKind('labour.hire').filter((e) => e.subjects.includes(FIRM_1));
+    expect(first).toHaveLength(1);
+    const separated = w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1));
+    expect(separated).toHaveLength(1);
+    // The people FIRM_2 took include the ten who baked three hundred loaves: thirty a head.
+    const rows = w.employment.at(FIRM_2, 'bakery', REGION);
+    expect(rows.length).toBeGreaterThan(0);
+    // Ten people at thirty a head: three hundred loaves' worth of learning, on whichever row
+    // they landed on — and the people who came from nowhere in the trade brought nothing to it.
+    expect(rows.reduce((t, r) => t + r.brought, 0)).toBe(300);
+    expect(w.employment.learnedBy(FIRM_2, 'bakery', REGION)).toBe(300);
   });
 });
 

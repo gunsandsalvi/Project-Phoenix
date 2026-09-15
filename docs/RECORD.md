@@ -11619,3 +11619,27 @@ for ever. The four-country world and the rig run; nothing new is red across the 
 
 **Checks.** `learning.test.ts` green (two); `check:opens` green; lint, typecheck, spec, forbids,
 deaths green.
+
+## Item 12c.2 — Learning travels with the people who did it
+
+What a line had learned was the line's alone: a firm's hours per unit read its own ledger count,
+and a baker who left took nothing with them. The employment row now carries what its people
+BROUGHT — the pieces of the trade's output they had made at the employer they left, read at the
+separation off that employer's own count over the heads in the trade, kept with the people while
+they look, and moved onto the new row at the hire. A firm's hours per unit read over its rows: what
+the line has made plus what its people brought, on the recipe's curve. The row carries a total, so
+a second hire onto the same row adds and leavers take their share.
+
+**Found and fixed on the way (XI-15).** The separated re-keyed onto the one standing `unemployed`
+cell of their region, bank and cohort, so every separation's people shared a cell and the last to
+arrive wrote its trade and its learning over everybody's — the same defect 12b.2a found on the
+employed side. The unemployed key names the trade, the employer and the period they left; a cell
+is one group with one history, and a fresh cell that never worked is `unemployed`.
+
+**Measured.** Ten bakers who made three hundred loaves at one firm are cut, run their notice, and
+are hired by another firm carrying three hundred loaves' worth of learning onto its row; the
+people who came from nowhere in the trade bring nothing. Nothing new is red across the ten suites
+(56 of 109).
+
+**Checks.** `labour.test.ts` mobility test green; `check:opens` green; lint, typecheck, spec,
+forbids, deaths green; `lattice.test.ts` at its one red.
