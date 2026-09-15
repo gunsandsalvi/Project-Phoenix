@@ -11401,3 +11401,27 @@ hours is the labour venue's finding (12b.3), and `small-business.test.ts:316` is
 new build when not, never both; the estate's ask is the print or the market); `check:opens` green;
 lint, typecheck, spec, forbids, deaths green; the estate suite at its reds; small-business one
 more red, above.
+
+## Item 12a.9 — The tests; item 12a closed
+
+Six things the item promised, measured. A failed levy is a row: the payer's arrear to the state,
+class `tax`, written by settlement in the pass of the fail and named by it — and the agreement the
+treasury wrote beside it since D-1 was the same debt twice (Law 4), so it is deleted and the tax
+leg says what it is. A mortgage built in the scale model (no bank there quotes a household name,
+12a.4) is charged on the roofs, serviced — interest and a slice of principal every period — and
+when the cell's money goes elsewhere the default is recorded on the row, the lender forecloses
+through the lien and holds the roofs, and the cell is in probate marked defaulted. A treasury
+short in a foreign money fails and a backstop drawn is a row on both books (12a.6, 12a.7's
+tests). `housing.shortfall` fires for fewer cells than there are, every period.
+
+**Finding (positioned at 21.2).** Twelve levies at period three of the confiscatory scale model
+failed because the payer's BANK was refused at the central bank, and no row was written on
+anybody: settlement writes the payer's arrear only when the payer was refused. A bank refused at
+the window has failed to deliver its customer's money; the row is the bank's.
+
+**Item 12a closed.** The section is removed; its findings are positioned at 12b.1 (a cell fails as
+one), 12b.3 (the banking venue's print), 17.0 (nobody quotes a household; a paper issuer's equity
+reads nothing) and 21.2 (the bank refused at the window). Coverage 68.3%.
+
+**Checks.** `agreement.test.ts` green (six), `mortgage.test.ts` green (four), `arrears.test.ts`
+green (two); `check:opens` green; lint, typecheck, spec, forbids, deaths green.

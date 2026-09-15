@@ -41,7 +41,6 @@ import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
-  agreementKindId,
   currencyUnit,
   instrumentId,
   marketId,
@@ -52,7 +51,6 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import type { AgreementTerms } from '../../register/agreements.js';
 import { addTo, atLeast, atMost, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
@@ -103,27 +101,6 @@ export interface ProgrammeNeed {
 
 /** An empty slot: a treasury that has published no programme this period has no period and no need. */
 export const nothingNeeded = (): ProgrammeNeed => ({ at: undefined, need: 0 });
-
-/**
- * Treasury B1, XI-8, D-1: A LEVY ASSESSED AND NOT PAID.
- *
- * It was written on `treasury.receipts` as `unpaid` and nothing carried it: the cell did not owe it
- * next period, the treasury did not chase it, and no account anywhere was short by it. A tax that
- * failed was a hole between two balance sheets that only the journal knew about.
- */
-export const LEVY_IN_ARREARS = agreementKindId('treasury.levyInArrears');
-
-export interface LevyOwed extends AgreementTerms {
-  readonly kind: typeof LEVY_IN_ARREARS;
-  /** The period it was assessed in: two periods of unpaid tax are two claims, not one doubled. */
-  readonly assessedIn: Period;
-}
-
-/** Law 4: one writer of the terms of an unpaid levy. */
-export const levyOwed = (assessedIn: Period): LevyOwed => ({
-  kind: LEVY_IN_ARREARS,
-  assessedIn,
-});
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
@@ -270,14 +247,10 @@ function gridDate(target: Civil): Civil {
 }
 
 export const treasury: SystemModule = {
-  agreementKinds: [
-    {
-      id: LEVY_IN_ARREARS,
-      what: 'a levy assessed on a payer that could not pay it',
-      // Sovereign C, XI-8: a tax assessed and unpaid is a debt, and it follows the payer's name.
-      binds: 'whoeverSucceeds',
-    },
-  ],
+  // Money E1 (12a.9): a levy that fails is an ARREAR the payer issued to the state — settlement
+  // writes it in the pass of the fail, ranked as tax in an estate (`register/arrears.ts`). The
+  // agreement this module wrote beside it was the same debt twice (Law 4); the row is the read.
+  agreementKinds: [],
   id: 'treasury',
   nouns: [
     {
@@ -966,8 +939,9 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'returnOfCapital':
         case 'borrowing':
         case 'transfer':
-          // Its own money coming back, money it must repay, and money the state itself moved. None
-          // of the three is income and each used to be taxed as one.
+        case 'tax':
+          // Its own money coming back, money it must repay, money the state itself moved, and a
+          // tax paid. None of the four is income and the first three used to be taxed as one.
           break;
         default:
           assertNever(receipt, 'Treasury C1');
@@ -1004,6 +978,9 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       kind: 'money',
       from: ctx.accountOf(payer, ccy),
       to: ctx.accountOf(id, ccy),
+      // C1, Money E1 (12a.9): what this money IS — a tax — so the row settlement writes when it
+      // does not arrive ranks where the law puts what the state is owed (XI-8).
+      receipt: { of: 'tax' },
       ccy,
       amount: share.total,
     };
@@ -1013,24 +990,9 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       collected = plus(collected, heldAsMoney(share.total, 'what was collected'), 'collected');
       continue;
     }
+    // Money E1 (12a.3, 12a.9): the miss is the payer's arrear to the state, written by settlement in
+    // the same pass; what is counted here is the measurement, not the claim.
     unpaid = plus(unpaid, heldAsMoney(share.total, 'what was not paid'), 'unpaid');
-    /**
-     * D-1, XI-8, Money E1: ARREARS. A LEVY THAT FAILED IS A CLAIM THE TREASURY HOLDS ON THE PAYER.
-     *
-     * `unpaid` above is a number in an event and nothing carried it: the cell did not owe it next
-     * period, the treasury did not chase it, and no account anywhere was short by it. A tax that
-     * failed was a hole between two balance sheets that only the journal knew about. It is an
-     * agreement now — a named debtor, a named creditor, an amount and a state — which is what makes
-     * it something an estate can divide and a later period can collect.
-     */
-    ctx.owes({
-      debtor: payer,
-      creditor: id,
-      ccy,
-      owed: share.total,
-      terms: levyOwed(previous),
-      why: `assessed in ${previous} and not paid: a levy that fails is a claim the state holds`,
-    });
   }
   ctx.record(
     'treasury.receipts',

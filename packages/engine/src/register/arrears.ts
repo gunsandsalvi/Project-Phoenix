@@ -32,6 +32,7 @@ export type PaymentClass =
   | 'returnOfCapital'
   | 'borrowing'
   | 'transfer'
+  | 'tax'
   | 'unclassified';
 
 export interface ArrearTerms extends Terms {
@@ -69,7 +70,7 @@ export const arrearId = (failed: number, n: number): InstrumentId =>
  */
 export const CLASS_ORDER: readonly (readonly PaymentClass[])[] = [
   ['wage'],
-  ['transfer'],
+  ['transfer', 'tax'],
   ['rent'],
   ['interest', 'borrowing'],
   ['disposal', 'sale', 'unclassified'],

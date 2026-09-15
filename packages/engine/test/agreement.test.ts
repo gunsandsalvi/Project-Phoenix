@@ -3,7 +3,7 @@ import { currencyCode, partyId } from '../src/core/ids.js';
 import { period } from '../src/calendar/calendar.js';
 import { Agreements, type AgreementTerms } from '../src/register/agreements.js';
 import { agreementKindId } from '../src/core/ids.js';
-import { LEVY_IN_ARREARS } from '../src/mechanisms/treasury/index.js';
+import { TREASURY, arrearTerms, isArrear } from '../src/index.js';
 import { RATING_FEE_OWED } from '../src/mechanisms/ratings/index.js';
 import { assemble, type World } from '../src/index.js';
 import { mergeModules, rigSpec, rigWorld } from './rig.js';
@@ -107,46 +107,77 @@ describe('an agreement: what one party owes another that is not an instrument (X
   });
 });
 
-describe('what used to evaporate (D-1, A-41)', () => {
-  it('a levy that failed is a claim the state holds, and it adds up to what it says (Law 4)', () => {
+describe('what used to evaporate (D-1, A-41, 12a.9)', () => {
+  /** Money E1: the tax arrears in this world — rows the payer issued to the state, ranked as tax. */
+  const taxArrears = (w: World) =>
+    w.instruments.all().filter((i) => isArrear(i) && arrearTerms(i).class === 'tax');
+
+  it('a levy that failed is a row the state holds on the payer, written in the pass it failed, and it adds up to what it says (Law 4)', () => {
     /**
      * `treasury.receipts` carried an `unpaid` number and NOTHING carried the claim: the cell did
      * not owe it next period, the treasury did not chase it, and no account was short by it. A tax
-     * that failed was a hole between two balance sheets that only the journal knew about.
+     * that failed was a hole between two balance sheets that only the journal knew about. It was
+     * then an agreement this module wrote beside the arrear settlement writes (12a.1) — the same
+     * debt twice (Law 4) — and it is now the one row.
      */
     const w = confiscatory('estate', 20);
     for (let i = 0; i < 14; i += 1) w.step();
-    const arrears = w.agreements.all().filter((a) => a.terms.kind === LEVY_IN_ARREARS);
+    const arrears = taxArrears(w);
     expect(arrears.length).toBeGreaterThan(0);
-    for (const a of arrears) {
-      // Law 5: two named sides and a size. The debtor is the cell that could not pay and the
-      // creditor is the treasury that assessed it — which is the pair `unpaid` never wrote down.
-      expect(a.debtor).not.toBe(a.creditor);
-      expect(a.owed).toBeGreaterThan(0);
-      expect(a.state).toBe('performing');
+    const treasuries = new Set(w.parties.ofKind(TREASURY).map((p) => String(p.id)));
+    let owed = 0;
+    // Money E1: the row is the PAYER'S when the payer was refused. A levy that failed because the
+    // payer's BANK could not settle it at the central bank is the bank's failure, not the payer's,
+    // and settlement writes no row on the payer for it (a finding of 12a.9, positioned in the plan).
+    const refused = new Set<number>();
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'failed' || !r.instruction.reason.startsWith('tax due from')) continue;
+      const payer = r.instruction.legs.find((l) => l.kind === 'money')?.from.holder;
+      if (r.reason.kind === 'overdraftRefused' && String(r.reason.party) === String(payer)) refused.add(r.instruction.id);
+    }
+    for (const i of arrears) {
+      const t = arrearTerms(i);
+      // Law 5: two named sides and a size. The payer is the cell that could not pay and the payee
+      // is the treasury that assessed it — which is the pair `unpaid` never wrote down.
+      expect(String(t.payer)).not.toBe(String(t.payee));
+      expect(treasuries.has(String(t.payee))).toBe(true);
+      // Register F2: the row follows the payer's name — whoever succeeded it issues it now.
+      expect(String(i.issuer.some ? i.issuer.value : '')).toBe(String(w.parties.resolve(t.payer).id));
+      // E1.a: named by the instruction that failed, and written in the same pass as the fail — the
+      // levy fell due the period after the income it was assessed on, and the row is that period's.
+      const failed = w.ledger.all().find((r) => r.instruction.id === t.failed);
+      expect(failed?.outcome).toBe('failed');
+      expect(failed?.instruction.reason).toBe(`tax due from ${String(t.payer)}`);
+      const issued = w.ledger.all().find((r) => r.outcome === 'settled' && r.instruction.cause === 'default' && r.instruction.legs.some((l) => l.kind === 'asset' && String(l.instrument) === String(i.id)));
+      expect(issued?.instruction.period).toBe(failed?.instruction.period);
+      for (const l of failed?.instruction.legs ?? []) if (l.kind === 'money') owed += l.amount;
     }
     /**
-     * Law 4 and the whole point: the treasury's `unpaid` and the claims it now holds are THE SAME
+     * Law 4 and the whole point: the treasury's `unpaid` and the rows it now holds are THE SAME
      * MONEY, reached two ways and equal to the piece. If they ever differ, one of them is a second
      * writer of one fact — so this is the check that keeps the number in the event honest, and it
      * is exact because both sides are whole pieces of one currency (Law 7: no band).
      */
-    const said = w.journal
-      .ofKind('treasury.receipts')
-      .reduce((t, e) => t + Number(e.data['unpaid']), 0);
-    const owed = arrears.reduce((t, a) => t + a.owed, 0);
+    let said = 0;
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'failed' || !refused.has(r.instruction.id)) continue;
+      for (const l of r.instruction.legs) if (l.kind === 'money') said += l.amount;
+    }
     expect(owed).toBe(said);
+    expect(arrears.every((i) => refused.has(arrearTerms(i).failed))).toBe(true);
   });
 
   it('the arrears are on the payer as well, which is what an estate divides (XI-8)', () => {
     const w = confiscatory('estate', 20);
     for (let i = 0; i < 14; i += 1) w.step();
-    const arrears = w.agreements.all().filter((a) => a.terms.kind === LEVY_IN_ARREARS);
+    const arrears = taxArrears(w).filter((i) => i.status.live);
     expect(arrears.length).toBeGreaterThan(0);
-    // Indexed both ways, which is the read an estate needs: what this party owes, by name.
-    for (const a of arrears) {
-      expect(w.agreements.owedBy(a.debtor).some((x) => x.id === a.id)).toBe(true);
-      expect(w.agreements.owedTo(a.creditor).some((x) => x.id === a.id)).toBe(true);
+    // Indexed both ways, which is the read an estate needs: what this party owes, by name, and
+    // what the state holds of it.
+    for (const i of arrears) {
+      const t = arrearTerms(i);
+      expect([...w.instruments.issuedBy(t.payer)].some((x) => x.id === i.id)).toBe(true);
+      expect(w.register.quantity(w.parties.resolve(t.payee).id, i.id)).toBe(i.issued);
     }
   });
 });
