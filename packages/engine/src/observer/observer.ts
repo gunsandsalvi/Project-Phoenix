@@ -543,7 +543,14 @@ export interface Snapshot {
    */
   readonly followed: Readonly<Record<string, readonly Event[]>>;
   readonly ledgerLength: number;
-  readonly phases: readonly { name: string; cycle: number; spec: string }[];
+  /** Law 10: the order this world runs in, with what each phase needs of the period it is in. */
+  readonly phases: readonly {
+    name: string;
+    cycle: number;
+    spec: string;
+    anchoredTo: string | null;
+    needs: readonly string[];
+  }[];
   /** A2: every party's outlooks for an inspector; only its own for a party (A2: private state). */
   readonly outlooks: readonly OutlookView[];
   /**
@@ -947,7 +954,17 @@ export function snapshot(
       follow.map((kind) => [kind, w.journal.recentOfKind(kind, journalTail, sees)]),
     ),
     ledgerLength: w.ledger.length,
-    phases: w.phases.map((p) => ({ name: p.name, cycle: p.cycle, spec: p.spec })),
+    phases: w.phases.map((p) => ({
+      name: p.name,
+      cycle: p.cycle,
+      spec: p.spec,
+      anchoredTo: p.anchoredTo,
+      // Only what it needs of THIS period: a read of history is not an ordering fact and says
+      // nothing about where the phase sits (item 0a).
+      needs: p.reads
+        .filter((r) => r.of === 'thisPeriod')
+        .map((r) => (r.kind === 'print' ? 'a price struck this period' : r.name)),
+    })),
     outlooks,
     state: scope.kind === 'inspector' ? w.stateSlots() : null,
   };

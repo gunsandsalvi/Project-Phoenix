@@ -1492,7 +1492,8 @@ export function securitisation(): SystemModule {
          * the accounts family is built to catch, and it caught it.
          */
         anchor: { before: 'lending.book' },
-        cycle: 'anchor',
+        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'securitisation.cut' }],
         run: arrange,
       },
       {
@@ -1517,7 +1518,17 @@ export function securitisation(): SystemModule {
          * loan somebody writes, never a raw negative balance (Money B3.a).
          */
         anchor: { before: 'lending.book' },
-        cycle: 'anchor',
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.costOfFunds', of: 'anyPeriod' },
+          { kind: 'event', name: 'securitisation.absorbed', of: 'anyPeriod' },
+          { kind: 'event', name: 'tranche.writtenDown', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: distribute,
       },
     ],

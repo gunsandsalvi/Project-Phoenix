@@ -386,8 +386,12 @@ export function insurers(): SystemModule {
          */
         name: 'insurers.allocate',
         spec: 'Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares C1 Fund Shares C2 Private Equity A2.a XI-2',
-        cycle: 0,
         anchor: { before: 'funds.strike' },
+        reads: [
+          { kind: 'event', name: 'fund.called', of: 'thisPeriod' },
+          { kind: 'event', name: 'insurer.claim', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(INSURANCE)) {
             if (!p.status.alive) continue;
@@ -405,10 +409,17 @@ export function insurers(): SystemModule {
       {
         name: 'insurers.cover',
         spec: 'Insurers A4 Insurers A4.a Insurers A4.b Insurers A4.c Clearing C3',
-        cycle: 1,
         // Before the goods and paper sessions, because what an insurer writes this period is
         // capacity it then has to stand behind: a session it cannot see cannot be a reason.
         anchor: { before: 'markets' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           /**
            * B-2, A-9: THE SECTOR RUNS. `phases: []` and `participants: []` meant nothing in this

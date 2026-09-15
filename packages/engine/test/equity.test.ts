@@ -78,8 +78,9 @@ function pays(
       {
         name,
         spec: 'Money C4',
-        cycle: 0,
         anchor: { before: 'households.decide' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           for (const row of rows) {
@@ -125,8 +126,9 @@ function splits(line: string, ratio: number, at: number): SystemModule {
       {
         name: 'test.split',
         spec: 'Equity D4',
-        cycle: 0,
         anchor: { after: 'equity.decide' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           // Register E5, D4: the invariance is about the SPLIT, so it is measured ACROSS the split

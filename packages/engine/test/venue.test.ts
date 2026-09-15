@@ -49,8 +49,9 @@ function venueOwner(opts: { gatherTwice?: boolean; gatherAnother?: boolean } = {
       {
         name: 'test.venue-owner',
         spec: 'Clearing B2',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (!ctx.venues.some((v) => v.id === VENUE)) {
             ctx.openVenue({
@@ -112,8 +113,9 @@ function anotherVenue(): SystemModule {
       {
         name: 'test.another',
         spec: 'Clearing B2',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.venues.some((v) => v.id === OTHER)) return;
           ctx.openVenue({

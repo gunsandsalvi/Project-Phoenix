@@ -28,6 +28,7 @@ import type {
 import type { DerivativeKindProfile, StruckAt } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { NounEntry } from '../registry/nouns.js';
+import type { EventKind } from '../journal/journal.js';
 import type { AgreementKindDecl } from '../register/agreements.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
@@ -51,17 +52,64 @@ export type { DerivativeClassDecl } from './context.js';
 /** The kernel's own phases, which a module's phase is anchored to (Clearing F1: a stated point). */
 export type KernelPhase = 'corporateActions' | 'markets' | 'revaluation';
 
+/**
+ * Law 10, Clearing F1.a: WHAT A PHASE NEEDS OF THE PERIOD IT IS IN, and what it puts into it.
+ *
+ * Measured before it was designed (item 0a): both worlds were stepped with every journal and price
+ * read attributed to the running phase. Two kinds of dependency came out of it and no more.
+ *
+ * A PRINT HAS ONE WRITER. `runOne` is called from the kernel `markets` phase and from nowhere else,
+ * so every cleared price in this world is written there and a phase that reads THIS PERIOD'S runs
+ * after it. There is no family to name: naming one would be a second answer to a question the
+ * source settles. Reading an EARLIER print — which is what most of this world does — needs nothing
+ * of this period and is `anyPeriod` like any other look at history.
+ *
+ * AN EVENT READ CARRIES ITS PERIOD, and that is the difference between an order and a cycle. Eight
+ * phases read the kind they themselves write — a bank's last deposit rate, a fund's last strike, a
+ * desk's last estimate — and each is a read of HISTORY. `anyPeriod` says so and orders nothing;
+ * `thisPeriod` says the writer must already have run, and is the only thing that is an edge.
+ */
+export type Dependency =
+  | { readonly kind: 'event'; readonly name: EventKind; readonly of: When }
+  | { readonly kind: 'print'; readonly of: When };
+
+/**
+ * WHICH PERIOD A READ IS OF, and it is the difference between an order and a cycle.
+ *
+ * `anyPeriod` is a read of HISTORY and orders nothing: a bank's last deposit rate, a fund's last
+ * strike, yesterday's close. Eight phases read the very kind they write, and every one of them this
+ * way — a dataflow order blind to the period would report each as a cycle. `thisPeriod` says the
+ * writer must already have run, and is the only thing that is an edge.
+ */
+export type When = 'thisPeriod' | 'anyPeriod';
+
+/** What a phase puts into the period. A write is always of this period; there is no other kind. */
+export interface Produces {
+  readonly kind: 'event';
+  readonly name: EventKind;
+}
+
 export interface PhaseDecl {
   readonly name: string;
   readonly spec: string;
   /**
-   * The settlement cycle this phase runs in (Money G2); must not run before an earlier phase's
-   * cycle. 'anchor' means the same cycle as the phase it is anchored to, which is how a module says
-   * "with that one" without knowing how many cycles this world's calendar has.
+   * Law 10: WHERE IN THE PERIOD IT RUNS, against a kernel phase or another module's.
+   *
+   * It is not derivable and item 0a's premise that it would be is wrong, which the measurement
+   * showed. `goods.spoilage` runs after the period's trades and before the marking — E4's own
+   * words — and no read or write says so: it reads holdings and writes holdings exactly as
+   * `markets`, `firms.produce` and forty others do, so a holdings dependency makes every pair of
+   * them mutually dependent and the whole graph is one cycle. The three kernel acts are world-wide
+   * MOMENTS, and where a module sits against them is a fact only that module has.
+   *
+   * What IS derived is the settlement cycle (Money G2) and the order among the siblings of one
+   * anchor, both in `world/order.ts` and both out of `reads` and `writes` below.
    */
-  readonly cycle: number | 'anchor';
-  /** Where in the period it runs, relative to a kernel phase or another module's phase. */
   readonly anchor: { readonly before: string } | { readonly after: string };
+  /** What it needs of this period. A `thisPeriod` event or a print orders it; nothing else does. */
+  readonly reads: readonly Dependency[];
+  /** What it puts into the period, so another phase can say it needs it. */
+  readonly writes: readonly Produces[];
   run(ctx: MechanismContext): void;
 }
 

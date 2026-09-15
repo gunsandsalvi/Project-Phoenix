@@ -304,8 +304,9 @@ export function indexFutures(
       {
         name: 'futures.books',
         spec: 'Indices C3 Derivative Layer B1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house, lines);
         },

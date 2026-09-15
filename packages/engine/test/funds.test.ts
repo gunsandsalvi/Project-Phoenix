@@ -59,8 +59,9 @@ function everybodyRedeems(at: number): SystemModule {
       {
         name: 'test.run',
         spec: 'Fund Shares C2',
-        cycle: 0,
         anchor: { before: 'funds.strike' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           for (const p of ctx.parties.ofKind(HOUSEHOLD)) {

@@ -43,8 +43,9 @@ function drain(): SystemModule {
       {
         name: 'test.drain',
         spec: 'Money E1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           const cash = ctx.participant(TREASURY_US).cash(USD);
           if (cash <= 0) return;

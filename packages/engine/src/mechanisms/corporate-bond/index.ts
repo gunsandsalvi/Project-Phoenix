@@ -645,7 +645,11 @@ export function corporateBondModule(): SystemModule {
         // book has cleared is not an offer. `before: markets` is the last position in the period
         // that is still in front of the auction, which is exactly where an issuer stands.
         anchor: { before: 'markets' },
-        cycle: 'anchor',
+        reads: [
+          { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
+          { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
+        ],
+        writes: [],
         run: issueBonds,
       },
       {
@@ -654,7 +658,15 @@ export function corporateBondModule(): SystemModule {
         // B2.a: on the PUBLISHED accounts, so after whatever published them this period. A covenant
         // a lender could test on private books is not a covenant, it is surveillance.
         anchor: { before: 'revaluation' },
-        cycle: 'anchor',
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+          { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: testCovenants,
       },
     ],

@@ -434,8 +434,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
       {
         name: 'households.decide',
         spec: 'Households C1 Households C2 Households C3 Households D5 Households B5',
-        cycle: 0,
         anchor: { before: 'labour.match' },
+        reads: [{ kind: 'event', name: 'fund.struck', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'households.income' },
+          { kind: 'event', name: 'households.plan' },
+        ],
         run: (ctx: MechanismContext) => {
           publishSectorIncome(ctx);
           for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
@@ -446,10 +450,11 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
       {
         name: 'households.lifecycle',
         spec: 'Households F1 Households F1.a Households F3 XI-15',
-        cycle: 'anchor',
         // After everything else has happened to them: somebody who crossed into retirement this
         // period worked this period, and ageing them first would be backdating it.
         anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'households.lifecycle' }],
         run: (ctx: MechanismContext) => {
           age(ctx);
           die(ctx, MORTALITY);

@@ -257,7 +257,8 @@ export function external(): SystemModule {
         spec: 'Cross-Border E1 Cross-Border E2 Cross-Border E4',
         // Last, because it reads the period's settled legs and a period is not settled until it is.
         anchor: { before: 'revaluation' },
-        cycle: 'anchor',
+        reads: [],
+        writes: [{ kind: 'event', name: 'external.accounts' }],
         run: publishExternal,
       },
     ],

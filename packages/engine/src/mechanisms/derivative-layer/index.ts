@@ -824,12 +824,13 @@ export function derivativeLayer(
     {
       name: 'margin.calls',
       spec: 'Derivative D4 Derivative D5 Derivative D6 Derivative D6.a Derivative Layer D1 Derivative Layer D2 Derivative Layer D4 Derivative Layer D5 XI-2',
-      cycle: 0,
       // Requirements are re-measured against LAST CLOSE's marks, at the top of the period, so a
       // call caused by them can be met out of this period's session (docs/PLAN.md §8). A call
       // caused by this period's own marks is next period's, and that lag is Clearing F1 being
       // honest rather than a second session hiding it.
       anchor: { after: 'corporateActions' },
+      reads: [{ kind: 'event', name: 'derivatives.refused', of: 'anyPeriod' }],
+      writes: [],
       run: (ctx: MechanismContext): void => {
         // D4 before D2: what the terms put in this period is an obligation the contract created,
         // and the margin is what secures what is LEFT after it. A call measured before the
@@ -843,11 +844,12 @@ export function derivativeLayer(
     {
       name: 'derivatives.resolve',
       spec: 'Derivative D11 Derivative D11.a Derivative Layer C4 Derivative Layer F1 Derivative Layer F2 XI-3',
-      cycle: 'anchor',
       // After the estate has opened for whoever died this period: a claim has to name somebody who
       // exists, and the successor is what the estate is (Register F2). `anchor` takes the estate's
       // own cycle, which is the one after the marks are in (XI-8).
       anchor: { after: 'estates.resolve' },
+      reads: [{ kind: 'event', name: 'margin.call', of: 'anyPeriod' }],
+      writes: [],
       run: resolveContracts,
     },
   ],

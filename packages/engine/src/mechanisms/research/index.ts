@@ -510,8 +510,13 @@ export function research(seed: string): SystemModule {
         // reads is what that phase wrote. `reporting.publish` moved to the close of the period
         // (a balance sheet is struck at one) and a cycle stated here would have pinned this to
         // the top of it — which is the anchor design item 0a deletes.
-        cycle: 'anchor',
         anchor: { after: 'reporting.publish' },
+        reads: [
+          { kind: 'event', name: 'research.dropped', of: 'anyPeriod' },
+          { kind: 'event', name: 'research.estimate', of: 'anyPeriod' },
+          { kind: 'event', name: 'research.initiated', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           settle(ctx);
         },
@@ -520,8 +525,17 @@ export function research(seed: string): SystemModule {
         name: 'research.cover',
         spec: 'Reporting C1 Reporting C4 Reporting D1 Reporting D2',
         // It follows the surprise it is anchored to, and takes its cycle (item 0, stop 18).
-        cycle: 'anchor',
         anchor: { after: 'research.settle' },
+        reads: [
+          { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
+          { kind: 'event', name: 'research.dropped', of: 'anyPeriod' },
+          { kind: 'event', name: 'research.estimate', of: 'anyPeriod' },
+          { kind: 'event', name: 'research.initiated', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'research.estimate' },
+          { kind: 'event', name: 'research.initiated' },
+        ],
         run: (ctx: MechanismContext): void => {
           cover(seed, ctx);
         },

@@ -11,7 +11,6 @@
  * positive by arithmetic and never by a bound (Law 6). Nothing here clamps, and nothing here knows
  * what a bad season DOES — each consumer reads the condition and applies it to its own normal.
  */
-import type { Period } from '../../calendar/calendar.js';
 import type { PlaceId } from '../../core/ids.js';
 import { add, finite, mul } from '../../core/num.js';
 import type { Prng } from '../../rng/prng.js';
@@ -27,11 +26,17 @@ export interface Condition {
   readonly ofNormal: number;
 }
 
-/** The module's own store. One writer (this module), and the period it was last written for. */
+/**
+ * The module's own store, and one writer of it (item 0a).
+ *
+ * It carried the period it was last written for, and a guard that returned early when the phase
+ * ran twice in one. A phase cannot: `World.step` walks the phase list once and each phase is on it
+ * once (Law 4 is enforced at `addPhase`, which refuses a name twice). The guard never fired in any
+ * run, and a check on something arithmetic is the symptom patch Law 12 names.
+ */
 export interface Weather {
   /** Keyed `fact|region`; the value is the departure, which is the thing that carries. */
   readonly departures: Map<string, number>;
-  written: Period | undefined;
 }
 
 export const keyOf = (fact: FactId, region: PlaceId): string => `${fact}|${region}`;

@@ -121,8 +121,9 @@ function bringsABasket(party: string, side: 'buy' | 'sell', shares: Qty, at: num
       {
         name: 'test.creation',
         spec: 'Fund Shares E3',
-        cycle: 0,
         anchor: { before: 'funds.etf' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           ctx.post(VENUE, { party: partyId(party), side, price: 'market', qty: shares });

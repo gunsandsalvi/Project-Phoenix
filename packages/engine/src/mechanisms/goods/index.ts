@@ -510,8 +510,9 @@ export function goods(
         spec: 'Goods E4 Goods E4.a',
         // What perishes is what is still in store at the end of the period: after this period's
         // trades and production, and before the write-down looks at what survived (E2).
-        cycle: 'anchor',
         anchor: { before: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'goods.perished' }],
         run: (ctx: MechanismContext) => {
           perish(ctx, kinds);
         },

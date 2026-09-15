@@ -969,7 +969,11 @@ export function control(): SystemModule {
          * balance it turns out not to have is overdrawn, and an overdraft here is a LOAN.
          */
         anchor: { before: 'lending.book' },
-        cycle: 'anchor',
+        reads: [
+          { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
+          { kind: 'event', name: 'fund.struck', of: 'thisPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           const lines = equityLines(ctx);
           if (lines.length === 0) return;

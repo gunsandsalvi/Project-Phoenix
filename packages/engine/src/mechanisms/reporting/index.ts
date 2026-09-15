@@ -274,8 +274,12 @@ export function reporting(seed: string): SystemModule {
          * the lag publishing has, which is what B2.a asks for anyway: a covenant a lender could
          * test before the accounts were struck is not a covenant.
          */
-        cycle: 'anchor',
         anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'reporting.guidance' },
+          { kind: 'event', name: 'reporting.report' },
+        ],
         run: (ctx: MechanismContext): void => {
           publish(seed, ctx);
         },

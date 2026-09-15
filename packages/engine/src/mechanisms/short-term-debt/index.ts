@@ -850,7 +850,12 @@ export function shortTermDebt(): SystemModule {
         // and before the session, because an offer that arrives after the book has cleared is not
         // an offer. `before: markets` is the last position still in front of the auction.
         anchor: { before: 'markets' },
-        cycle: 'anchor',
+        reads: [
+          { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
+          { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'paper.offered' }],
         run: (ctx: MechanismContext): void => {
           // B4 before B1: an issuer that has no line gets one before it needs it, because a
           // backstop arranged after the book declined is not a backstop.
@@ -870,7 +875,11 @@ export function shortTermDebt(): SystemModule {
          * repayment that had already failed. A backstop drawn after the default is not a backstop.
          */
         anchor: { before: 'corporateActions' },
-        cycle: 'anchor',
+        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'backstop.drawn' },
+          { kind: 'event', name: 'credit.declined' },
+        ],
         run: (ctx: MechanismContext): void => {
           drawBackstops(ctx);
           chargeBackstops(ctx);

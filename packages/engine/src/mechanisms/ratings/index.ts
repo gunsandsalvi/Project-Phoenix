@@ -350,8 +350,16 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
         // At the top of the period, on the state the last one closed with. An assessment taken
         // after this period's own flows would be an opinion formed from the thing it is meant to
         // be an input to (Expectations B4's rule, applied to an assessment).
-        cycle: 'anchor',
         anchor: { before: 'markets' },
+        reads: [
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'credit.declined' },
+          { kind: 'event', name: 'rating.action' },
+          { kind: 'event', name: 'rating.unpaid' },
+        ],
         run: (ctx: MechanismContext): void => {
           assessAll(ctx, rows);
           collectFees(ctx, rows);

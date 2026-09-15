@@ -97,8 +97,9 @@ function phase(fn: (ctx: MechanismContext) => void): SystemModule {
       {
         name: 'test.phase',
         spec: 'Clearing F1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: fn,
       },
     ],
@@ -472,8 +473,9 @@ describe('the period loop', () => {
         {
           name: 'probe',
           spec: 'Clearing F1',
-          cycle: 1,
           anchor: { before: 'markets' },
+          reads: [],
+          writes: [],
           run: (ctx) => {
             seen.push(`${ctx.period}:${ctx.cycle}`);
             expect('credit' in ctx.register).toBe(false);

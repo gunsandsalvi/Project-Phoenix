@@ -9789,3 +9789,69 @@ stop does not exist — an `asset` leg from the issuer already expands to an iss
 the step asked for proves it. 0.15's "within two orders of the opening deposit" is not a true rule
 of this world, and why is the finding above. 0.16's third fallback would read another party's
 private state (Observer A4).
+
+## Item 0a — A phase says what it needs of the period it is in
+
+**What.** `PhaseDecl` gains `reads` and `writes`, and loses `cycle`. Every phase in this world — 84
+module phases and the 3 kernel ones — declares what it needs of the period it runs in and what it
+puts into one. The seal refuses a phase in front of a `thisPeriod` read's writer, and refuses a
+`thisPeriod` read nothing in this world writes (`world/order.ts`). At run time a read the phase did
+not declare throws `Forbidden 'Clearing F1.a'` at the site. The settlement cycle is the anchor's and
+a module no longer states one.
+
+**Measured before it was designed.** Both worlds were stepped with every journal, price and store
+read attributed to the running phase — 30 periods of the rig, 12 of `abroad`, 68 phases, 33 event
+kinds. Four things the measurement settled, three of them against this item's own premise:
+
+- **A print has one writer.** `runOne` is called from the kernel `markets` phase and nowhere else,
+  so a price read is one edge and there is no family to name. The plan's `{ kind: 'print', family }`
+  was a guess the source answers.
+- **A read carries its period.** Eight phases read the very kind they write — a bank's last deposit
+  rate, a fund's last strike, a desk's last estimate — and every one is a read of history. Blind to
+  the period, each reads as a cycle. `anyPeriod` orders nothing; `thisPeriod` is the only edge.
+- **A store carries no ordering.** `banks/book`, `banks/banks.couponsPaid` and `money-market/market`
+  are each touched from nine or ten phases belonging to other modules, because a kernel hook — the
+  overdraft credit decision, the money market's resolution — re-enters the owning module from
+  whatever phase triggered it. Store edges would order `treasury.receipts` against `lending.write`
+  because both make a payment. `{ kind: 'store', noun }` is dropped; the re-entrancy is 0e's.
+- **Almost nothing reads the period it is in.** Of 84 phases, NINE. And the order this world already
+  had satisfied all nine.
+
+**So the anchor stays, and this item's premise is overturned.** "Order is a function of declared
+reads and writes only" cannot hold: `goods.spoilage` runs after the period's trades and before the
+marking — E4's own words — and no read or write says so, because it reads holdings and writes
+holdings exactly as `markets`, `firms.produce` and forty others do. A holdings dependency makes
+every pair of them mutually dependent and the graph is one cycle. The three kernel acts are
+world-wide moments and where a module sits against them is a fact only that module has. What this
+item delivers is therefore a GUARD, not a re-ordering — and a guard is what two of item 0's stops
+needed and neither had: a phase anchored to one declared below it, and a phase running before the
+maturity it was meant to fund. Both are a phase in front of something it needs; in both cases what
+said so was a run that failed three phases later.
+
+**A false paragraph deleted.** ARCHITECTURE 4.8 said a phase reading a not-yet-produced print gets
+`NotYetProduced` rather than a stale value. It never did: `lastOf` answers with last period's event
+and `latest` with last period's price. That falseness IS stop 18 — `reporting.publish` published a
+company's worth from the week before and nothing complained. 4.8 now says what is true and says
+where the check is.
+
+**Declarations.** 65 phases from the measurement; 10 that have never run in any period of either
+world declared from their module's source and marked as such, so they narrow the first time the
+check can say which reads they actually wanted; 9 that read nothing. The kernel's three declare the
+one journal kind that reaches them through a hook (`credit.default`, read as history).
+
+**Deleted.** `environment`'s `written === period` guard and the store field behind it: a phase runs
+once a period by construction (`addPhase` refuses a name twice, `step` walks the list once), so the
+guard never fired — a check on something arithmetic is the symptom patch Law 12 names. The "order
+matters at one anchor" comment in `seeds/foundation.ts` STAYS: the three phases it names have no
+dataflow between them and declaration order is what puts them in order, so the comment is the only
+thing that says why.
+
+**Found and not fixed.** `plan:progress` counts only items with a row in `docs/WORKLIST.md`, and
+items 0a to 24 have none — so "plan completion" measures item 0 and the closed rows, and ticking
+every step of this item moved it by nothing. Positioned at **0c**.
+
+**Checks.** `check:opens` green on both worlds with the runtime check live; lint, typecheck, spec
+citations, forbids, deaths, existence green. `test/phases.test.ts` is seven new tests: the cycle is
+the anchor's, a late reader is named with both positions, a need nothing writes is refused, a
+history read stands anywhere, a price read before the session is refused, an undeclared read throws
+at the site, a declared one does not.

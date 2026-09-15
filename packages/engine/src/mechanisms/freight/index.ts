@@ -629,8 +629,9 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
       {
         name: FREIGHT_SAIL,
         spec: 'Freight A3 Freight B4 Freight D4',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           sail(ctx, ctx.params.ratio(windHardnessParam(VESSEL)));
         },
@@ -638,8 +639,9 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
       {
         name: 'freight.arrive',
         spec: 'Freight A3 Freight A3.a Freight E3',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           arrive(ctx);
         },
@@ -647,8 +649,9 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
       {
         name: FREIGHT_SESSION,
         spec: 'Freight C1 Freight C3 Freight D1 Freight D6',
-        cycle: 1,
         anchor: { before: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'freight.session' }],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
           // Law 18: one walk of each origin, offered on every leg out of it.

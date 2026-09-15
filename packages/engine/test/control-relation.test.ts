@@ -219,8 +219,9 @@ function acquirer(buyer: PartyId, target: PartyId): SystemModule {
       {
         name: 'test.acquire',
         spec: 'M&A A4',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx) => {
           if (ctx.period === 2 && ctx.control.controllerOf(target) === undefined) {
             ctx.takeControl(buyer, target, 'shares', 'the test bought the votes');

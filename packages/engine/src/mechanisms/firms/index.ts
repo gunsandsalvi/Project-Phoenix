@@ -242,10 +242,15 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
       {
         name: 'firms.decide',
         spec: 'Firm E1 Firm E2 Firm E6 Firm E7 Goods B1 Labour C5',
-        cycle: 0,
         // Before the jobs are struck, which is before the markets: everything it decides is decided
         // on what has already happened (Clearing F1).
         anchor: { before: 'labour.match' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'firms.expectation' },
+          { kind: 'event', name: 'firms.funding' },
+          { kind: 'event', name: 'firms.plan' },
+        ],
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
             const line = lineOf(byName, p.id);
@@ -258,10 +263,14 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
       {
         name: 'firms.produce',
         spec: 'Firm B2 Firm B3 Goods B2 Goods B3 Goods B4 Goods B5',
-        cycle: 2,
         // After the wage bill, because what the period's labour cost is part of what the batch cost
         // (Goods B5), and after the markets, because what it bought this period it can draw on.
         anchor: { after: 'labour.pay' },
+        reads: [
+          { kind: 'event', name: 'environment.state', of: 'anyPeriod' },
+          { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'firms.produced' }],
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
             const line = lineOf(byName, p.id);

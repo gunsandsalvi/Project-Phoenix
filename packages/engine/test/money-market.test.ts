@@ -415,8 +415,9 @@ function everythingPledged(bank: PartyId): SystemModule {
       {
         name: 'test.pledgeAll',
         spec: 'Register D5',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx): void => {
           const to = bank === BANK_A ? BANK_B : BANK_A;
           const on = ctx.calendar.startOf(ctx.period);
@@ -466,8 +467,9 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
       {
         name: 'test.bigpayment',
         spec: 'Money B3.b',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx) => {
           if (ctx.period !== at) return;
           const cb = ctx.registry.centralBankOf(USD);

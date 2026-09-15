@@ -591,8 +591,9 @@ export function options(
       {
         name: 'options.books',
         spec: 'Derivative D7 Derivative D3.a Derivative Layer B1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'print', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house, universe(ctx));
         },

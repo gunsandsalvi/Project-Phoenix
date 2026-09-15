@@ -822,10 +822,19 @@ export const moneyMarket: SystemModule = {
     {
       name: 'moneyMarket.rates',
       spec: 'Banks Funding B1 Banks Funding B1.a Money Market D2',
-      cycle: 0,
       // AFTER the banks have decided their boards: what this phase does is PAY at the rates they
       // announced and let the depositors answer them. It decides nothing about any bank.
       anchor: { after: 'banks.treasury' },
+      reads: [
+        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: 'centralBank.collateral' },
+        { kind: 'event', name: 'centralBank.corridor' },
+        { kind: 'event', name: 'deposit.classes' },
+        { kind: 'event', name: 'insurance.premium' },
+      ],
       run: (ctx: MechanismContext): void => {
         freeRepaidCollateral(ctx);
         publishCorridor(ctx);
@@ -841,8 +850,9 @@ export const moneyMarket: SystemModule = {
       // After the session and after the lending module has booked its own drawings: what is still
       // below zero at the central bank at the close of the period is an overdraft, and it becomes
       // a row before anything can die of it or the audit can see it.
-      cycle: 'anchor',
       anchor: { before: 'revaluation' },
+      reads: [],
+      writes: [{ kind: 'event', name: 'moneyMarket.window' }],
       run: (ctx: MechanismContext): void => {
         bookOverdrafts(ctx);
       },
@@ -850,7 +860,6 @@ export const moneyMarket: SystemModule = {
     {
       name: 'moneyMarket.resolve',
       spec: 'Banks Capital C3 Banks Capital D1 Banks Capital D2 Banks Capital D3 Banks Capital D4 Banks Capital D5 Banks Capital D6',
-      cycle: 'anchor',
       // BEFORE revaluation, and after this module's own booking phase — so what is still below
       // zero has already become a row, and the whole book moves at what it is carried at and is
       // re-marked on the acquirer's balance sheet in the same period it lands there. Moving it
@@ -866,6 +875,14 @@ export const moneyMarket: SystemModule = {
       // estate at all — the estate leaves a bank alone by asking the kernel whether some module
       // resolves the kind (`resolvesItsOwn`), which is this one saying `resolves: [BANK]`.
       anchor: { before: 'revaluation' },
+      reads: [],
+      writes: [
+        { kind: 'event', name: 'bank.resolution.bid' },
+        { kind: 'event', name: 'bank.resolution.done' },
+        { kind: 'event', name: 'bank.resolution.ownClaim' },
+        { kind: 'event', name: 'bank.resolution.valued' },
+        { kind: 'event', name: 'bank.resolution.writtenDown' },
+      ],
       run: (ctx: MechanismContext): void => {
         for (const f of failedBanks(ctx)) resolve(ctx, f.bank, f.why);
       },
@@ -878,8 +895,17 @@ export const moneyMarket: SystemModule = {
       // until they have happened. It sits in the last cycle of the period, at the seam just ahead
       // of the lending module's own booking phase, which is a phase this module already depends on
       // being there (`requires`).
-      cycle: 'anchor',
       anchor: { before: 'lending.book' },
+      reads: [
+        { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: 'bank.liquidity' },
+        { kind: 'event', name: 'centralBank.parked' },
+        { kind: 'event', name: 'moneyMarket.print' },
+        { kind: 'event', name: 'moneyMarket.refused' },
+      ],
       run: (ctx: MechanismContext): void => {
         runSession(ctx);
         publishFunding(ctx);

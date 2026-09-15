@@ -88,8 +88,9 @@ function auctioneer(
       {
         name: 'test.offer',
         spec: 'Sovereign C1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 1) return;
           ctx.offer({
@@ -230,8 +231,9 @@ describe('a line with no price (XI-6)', () => {
         {
           name: 'test.newline',
           spec: 'Sovereign C1',
-          cycle: 0,
           anchor: { after: 'corporateActions' },
+          reads: [],
+          writes: [],
           run: (ctx: MechanismContext) => {
             if (ctx.period !== 1) return;
             const terms: SovereignBillTerms = {

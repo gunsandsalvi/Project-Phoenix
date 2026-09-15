@@ -51,7 +51,7 @@ of these findings has been positioned into an item yet.
 | `Money F3` | MET | packages/engine/src/audit/families/money.ts |
 | `Money F4` | MET | packages/engine/src/audit/families/money.ts |
 | `Money G1` | MET | packages/engine/src/calendar/calendar.ts, packages/engine/src/world/world.ts |
-| `Money G2` | MET | packages/engine/src/calendar/calendar.ts, packages/engine/src/world/world.ts |
+| `Money G2` | MET | packages/engine/src/calendar/calendar.ts, packages/engine/src/world/world.ts (a phase's settlement cycle is its anchor's and a module states none, so a declared cycle cannot contradict where the phase runs) |
 | `Money G3` | MET | packages/engine/src/calendar/calendar.ts |
 | `Money G3.b` | MET | packages/engine/src/calendar/calendar.ts |
 | `Money G4` | MET | packages/engine/src/calendar/calendar.ts, packages/engine/src/journal/journal.ts, packages/engine/src/ledger/instruction.ts, packages/engine/src/world/world.ts |
@@ -116,7 +116,7 @@ of these findings has been positioned into an item yet.
 | `Clearing E2` | MISSING |  |
 | `Clearing E3` | PARTIAL | no dealer schedules yet (worklist 9) |
 | `Clearing E4` | MET | packages/engine/src/audit/families/prices.ts, packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts |
-| `Clearing F1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/world/world.ts |
+| `Clearing F1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/world/world.ts, packages/engine/src/world/order.ts (and a phase that reads this period's price before the session that strikes it is refused at the seal), packages/engine/test/phases.test.ts |
 | `Clearing F2` | MET | packages/engine/src/audit/families/prices.ts, packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts |
 | `Clearing F3` | PARTIAL | to be measured once markets read period state (Part XII) |
 

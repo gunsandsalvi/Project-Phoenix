@@ -429,8 +429,15 @@ export const treasury: SystemModule = {
     {
       name: 'treasury.programme',
       spec: 'Treasury D1 Treasury D4 Sovereign A2 Sovereign C1',
-      cycle: 0,
       anchor: { after: 'corporateActions' },
+      reads: [
+        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+        { kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: 'auction.announced' },
+        { kind: 'event', name: 'treasury.programme' },
+      ],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
           if (t.status.alive) runProgramme(ctx, t.id);
@@ -440,8 +447,19 @@ export const treasury: SystemModule = {
     {
       name: 'treasury.outlays',
       spec: 'Treasury B1 Treasury A3.a Treasury D3',
-      cycle: 0,
       anchor: { after: 'treasury.programme' },
+      // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+      // it — so what it reads is read off its module's source and not off a measurement, and
+      // it is the module's whole read set rather than this phase's. It narrows the first time
+      // the phase runs and the check can say which of these it actually wanted.
+      reads: [
+        { kind: 'event', name: 'auction.result', of: 'anyPeriod' },
+        { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
+        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+        { kind: 'event', name: 'treasury.programme', of: 'anyPeriod' },
+        { kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' },
+      ],
+      writes: [],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
           if (t.status.alive) runOutlays(ctx, t.id);
@@ -451,10 +469,14 @@ export const treasury: SystemModule = {
     {
       name: 'treasury.employment',
       spec: 'Treasury B1 Labour C5 Labour F1',
-      cycle: 0,
       // Before the jobs are struck: the state posts what it wants like any other employer, in the
       // same venue, and what it pays is what that venue cleared at.
       anchor: { before: 'labour.match' },
+      reads: [
+        { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
+        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+      ],
+      writes: [],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
           if (t.status.alive) postPublicService(ctx, t.id);
@@ -464,8 +486,12 @@ export const treasury: SystemModule = {
     {
       name: 'treasury.receipts',
       spec: 'Treasury C1 Treasury C1.a Treasury C3',
-      cycle: 0,
       anchor: { after: 'treasury.outlays' },
+      reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+      writes: [
+        { kind: 'event', name: 'credit.declined' },
+        { kind: 'event', name: 'treasury.receipts' },
+      ],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
           if (t.status.alive) runReceipts(ctx, t.id);

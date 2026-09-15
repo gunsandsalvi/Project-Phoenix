@@ -325,8 +325,9 @@ describe('the audit of a line (Goods B5, F5.b)', () => {
         {
           name: 'test.conjure',
           spec: 'Goods B5',
-          cycle: 2,
           anchor: { after: 'firms.produce' },
+          reads: [],
+          writes: [],
           run: (ctx) => {
             if (ctx.period !== 1) return;
             ctx.settle({

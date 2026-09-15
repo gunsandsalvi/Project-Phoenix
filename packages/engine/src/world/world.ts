@@ -23,7 +23,7 @@ import {
   period,
 } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
-import { InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
+import { Forbidden, InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
 import {
   contractId,
   type CurrencyCode,
@@ -69,7 +69,7 @@ import {
 } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import { Journal } from '../journal/journal.js';
+import { Journal, type EventKind } from '../journal/journal.js';
 import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
@@ -135,7 +135,9 @@ import type {
   BorrowNeeds,
   CreditDecision,
   OutlookProvider,
+  Dependency,
   ParticipantDecl,
+  Produces,
   VenueParticipantDecl,
   PhaseDecl,
   Valuer,
@@ -143,6 +145,7 @@ import type {
   TermsDecision,
 } from './module.js';
 import { revalue } from './revalue.js';
+import { refuseLateReads } from './order.js';
 import { NO_QTY, type Qty } from '../core/tick.js';
 import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
 
@@ -170,6 +173,9 @@ export interface Phase {
   readonly owner: string;
   /** The phase this one was anchored to, so a later module lands after an earlier one (Law 10). */
   readonly anchoredTo: string | null;
+  /** Clearing F1.a: what it needs of the period it is in, and what it puts into one. */
+  readonly reads: readonly Dependency[];
+  readonly writes: readonly Produces[];
   run(world: World): void;
 }
 
@@ -445,6 +451,15 @@ export class World {
         spec: 'Register E1 Register E2',
         cycle: 0,
         owner: 'kernel',
+        // What the calendar says falls due: a coupon, a maturity, a redemption. What it needs of
+        // the period is nothing — it is what begins one — but a payment that fails here is an
+        // overdraft, and the kind whose overdraft is a credit decision has a module that takes it
+        // (Money B3.a). That module reads the defaults it has seen, from inside this phase.
+        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'centralBank.refused' },
+          { kind: 'event', name: 'credit.declined' },
+        ],
         run: (w) => {
           runCorporateActions(w.period, w.cycle, {
             calendar: w.calendar,
@@ -464,6 +479,13 @@ export class World {
         spec: 'Clearing F1',
         cycle: 1,
         owner: 'kernel',
+        // Clearing F1: THE ONE WRITER OF EVERY PRICE IN THIS WORLD. `runOne` is called here and
+        // nowhere else, so a phase that reads this period's print is a phase that runs after this
+        // one, and `refuseLateReads` is what says so rather than a comment. What it READS is every
+        // participant's own view, and the one journal kind that reaches it that way is the public
+        // record of who has failed — which is a reason to refuse a name, in any book (C3).
+        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+        writes: [],
         run: (w) => {
           // Register B4: a matured line moves no units, so its market has nothing left to clear.
           // The instrument's cessation is the event; the venue simply stops (Bond N10).
@@ -491,6 +513,13 @@ export class World {
         spec: 'Clearing D4 Currency D3',
         cycle: this.calendar.cyclesPerPeriod - 1,
         owner: 'kernel',
+        // It reads every holding in the world at the marks this period struck, which is why it is
+        // last and why nothing it needs is nameable as an event: what it reads is the register.
+        reads: [
+          { kind: 'print', of: 'thisPeriod' },
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'revaluation' }],
         run: (w) => {
           revalue(w.period, w.cycle, {
             marked: (instrument, at) => w.markOf(instrument, at),
@@ -880,7 +909,7 @@ export class World {
         `${kind} says an overdraft at it is a credit decision and nobody takes it`,
       );
     }
-    return (o) => held.decide(this.mechanismContext(held.owner), o);
+    return (o) => this.askedByTheKernel(() => held.decide(this.mechanismContext(held.owner), o));
   }
 
   /**
@@ -921,7 +950,7 @@ export class World {
     if (printed.some) return some(printed.value.price);
     const held = this.valuers.get(i.kind);
     if (held === undefined) return none<PerPiece>();
-    return held.value(this.mechanismContext(held.owner), i, at);
+    return this.askedByTheKernel(() => held.value(this.mechanismContext(held.owner), i, at));
   }
 
   // ---- contracts (Derivative X1: the second register) ------------------------------------------
@@ -1123,10 +1152,9 @@ export class World {
         `${m.id} is a contract book and no module says what a member may carry`,
       );
     }
-    return held.capacity.admits(this.mechanismContext(held.owner), party, wanted, {
-      market: m,
-      struck,
-    });
+    return this.askedByTheKernel(() =>
+      held.capacity.admits(this.mechanismContext(held.owner), party, wanted, { market: m, struck }),
+    );
   }
 
   private marginLegsOf(
@@ -1143,10 +1171,12 @@ export class World {
         `${m.id} is a contract book and no module says what is posted against a trade in it`,
       );
     }
-    return held.capacity.margin(this.mechanismContext(held.owner), party, against, size, {
-      market: m,
-      struck,
-    });
+    return this.askedByTheKernel(() =>
+      held.capacity.margin(this.mechanismContext(held.owner), party, against, size, {
+        market: m,
+        struck,
+      }),
+    );
   }
 
   /** Expectations A2: exactly one module answers what a party expects (Law 4). */
@@ -1165,14 +1195,14 @@ export class World {
   outlookOf(party: PartyId, variable: OutlookVariable): Option<Outlook> {
     const p = this.outlookProvider;
     if (p === undefined) return none();
-    return p.provider.of(this.mechanismContext(p.owner), party, variable);
+    return this.askedByTheKernel(() => p.provider.of(this.mechanismContext(p.owner), party, variable));
   }
 
   /** A2: what this party has an outlook of at all — nothing, for one that has observed nothing. */
   outlookVariables(party: PartyId): readonly OutlookVariable[] {
     const p = this.outlookProvider;
     if (p === undefined) return [];
-    return p.provider.variables(this.mechanismContext(p.owner), party);
+    return this.askedByTheKernel(() => p.provider.variables(this.mechanismContext(p.owner), party));
   }
 
   /** A module's participants: evaluated per party of the kind with that party's own view (Clearing B2). */
@@ -1249,14 +1279,24 @@ export class World {
     if (anchored === undefined) {
       throw new Missing('Law 10', `phase ${anchorName} vanished between lookup and use`);
     }
-    const cycle = decl.cycle === 'anchor' ? anchored.cycle : decl.cycle;
-    this.calendar.cycle(cycle);
+    /**
+     * Money G2, item 0a: THE CYCLE IS THE ANCHOR'S, and a module no longer states one.
+     *
+     * A phase runs where its anchor puts it, so the cycle it runs in is the cycle of the phase it
+     * is beside — there is no third answer, and a module that gave one could give a cycle its own
+     * anchor contradicts. `paper.backstop` did: `cycle: 2` with `before: corporateActions`, which
+     * is cycle 0, and the two together were the fourth stop of item 0. Derived, that is not a thing
+     * a module can say.
+     */
+    const cycle = anchored.cycle;
     const phase: Phase = {
       name: decl.name,
       spec: decl.spec,
       cycle,
       owner,
       anchoredTo: anchorName,
+      reads: decl.reads,
+      writes: decl.writes,
       run: (w) => {
         decl.run(w.mechanismContext(owner));
       },
@@ -1357,6 +1397,10 @@ export class World {
   seal(): AuditReport {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
     this.requireCreditDeciders();
+    // Law 10, Clearing F1.a: the order is the anchors', and this is the check on it — every phase
+    // that needs something of the period it is in runs after whoever writes it. Two of item 0's
+    // stops were a phase in front of something it needed, and neither threw where it was caused.
+    refuseLateReads(this.phaseList);
     this.sealed = true;
     this.walkIndices();
     const report = this.audit.run(this.view(), this.reads());
@@ -1386,8 +1430,10 @@ export class World {
     this.currentCycle = this.calendar.cycle(0);
     for (const phase of this.phaseList) {
       this.currentCycle = this.calendar.cycle(phase.cycle);
+      this.running = phase;
       phase.run(this);
     }
+    this.running = undefined;
     this.currentCycle = this.calendar.lastCycle;
     this.walkIndices();
     const audit = this.audit.run(this.view(), this.reads());
@@ -1757,6 +1803,64 @@ export class World {
    */
   private contexts = new Map<string, { period: Period; cycle: Cycle; ctx: MechanismContext }>();
 
+  /**
+   * Clearing F1.a, Law 10: THE PHASE RUNNING NOW, so a read can be checked against what it said it
+   * would read. It is `undefined` outside the period loop — at the seal, in an audit family, in a
+   * test holding a context — and a read then is not checked, because there is no phase to check it
+   * against and the seal has already refused every late one there is.
+   */
+  private running: Phase | undefined;
+
+  /**
+   * Clearing F1.a: a phase reads what it declared and nothing else.
+   *
+   * ARCHITECTURE 4.8 said "a phase reading a not-yet-produced print throws" and it was not true:
+   * `lastOf` answered with LAST period's event and `latest` with last period's price, so a phase
+   * that ran too early got a stale answer and no complaint — which is how `reporting.publish` came
+   * to publish a company's worth from the week before (item 0, stop 18), and how a module could
+   * read another's output without either of them saying so.
+   *
+   * What is refused here is the UNDECLARED read. A read of this period that arrives too early is
+   * refused at the seal (`order.ts`), where it is an ordering fact about two phases rather than an
+   * accident of which party happened to be asked first.
+   */
+  /**
+   * Clearing F1.a: WHOSE READ IT IS. A kernel hook asks a module a question the KERNEL needed
+   * answered — what an overdraft at this bank should be (Money B3.a), what a lot with no market is
+   * worth (XI-6), what this party expects (§46) — and the answering module reads whatever it needs
+   * to answer it, from inside whichever phase happened to make the payment.
+   *
+   * That read is the kernel's and not the phase's, and attributing it to the phase would make a
+   * declaration mean "everything any hook I might trigger could want": `labour.pay` and
+   * `funds.strike` would each have to declare `credit.default` because a wage or a redemption can
+   * overdraw an account. So the check is suspended while a hook runs, and what it measures stays
+   * what the phase itself asked for.
+   */
+  private inHook = 0;
+
+  /**
+   * No `finally`, and that is the discipline rather than an omission (ARCHITECTURE §5): a hook that
+   * throws stops the run at its site, so there is nothing after it for a leaked count to affect.
+   */
+  private askedByTheKernel<T>(ask: () => T): T {
+    this.inHook += 1;
+    const out = ask();
+    this.inHook -= 1;
+    return out;
+  }
+
+  private declared(kind: EventKind): void {
+    const at = this.running;
+    if (at === undefined || this.inHook > 0) return;
+    for (const r of at.reads) if (r.kind === 'event' && r.name === kind) return;
+    for (const w of at.writes) if (w.name === kind) return;
+    throw new Forbidden(
+      'Clearing F1.a',
+      `phase ${at.name} reads ${kind}, which it did not declare`,
+      { phase: at.name, kind },
+    );
+  }
+
   mechanismContext(owner: string): MechanismContext {
     const root = this.root;
     const held = this.contexts.get(owner);
@@ -1783,6 +1887,39 @@ export class World {
     const out = Object.create(fresh) as { rng: Prng };
     out.rng = root.derive(`module/${owner}/${this.currentPeriod}`);
     return out as MechanismContext;
+  }
+
+  /**
+   * Clearing F1.a: the journal a phase reads through, which asks whether it said it would.
+   *
+   * `inPeriod` and `tail` name no kind, so there is nothing to declare and nothing to check: they
+   * are a walk of the period and of the tail, which a module uses to report rather than to decide.
+   */
+  private checkedJournal(): Pick<
+    Journal,
+    'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'
+  > {
+    const j = this.journal;
+    return {
+      inPeriod: (p: Period) => j.inPeriod(p),
+      ofKind: (k: EventKind) => {
+        this.declared(k);
+        return j.ofKind(k);
+      },
+      ofKindIn: (k: EventKind, p: Period) => {
+        this.declared(k);
+        return j.ofKindIn(k, p);
+      },
+      forSubject: (k: EventKind, x: string) => {
+        this.declared(k);
+        return j.forSubject(k, x);
+      },
+      tail: (n: number) => j.tail(n),
+      lastOf: (k: EventKind, x: string) => {
+        this.declared(k);
+        return j.lastOf(k, x);
+      },
+    };
   }
 
   private buildMechanismContext(owner: string): MechanismContext {
@@ -1816,7 +1953,7 @@ export class World {
       register: this.register,
       prices: this.prices,
       valuation: this.valuation,
-      journal: this.journal,
+      journal: this.checkedJournal(),
       ledger: this.ledger,
       index: (id: string) => this.index(id),
       /** Ratings A2.a: the view an assessor decides from — the same one, with the prices closed. */

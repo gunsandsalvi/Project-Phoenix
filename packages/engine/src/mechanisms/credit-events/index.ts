@@ -187,10 +187,14 @@ export const creditEvents: SystemModule = {
     {
       name: 'credit.events',
       spec: 'XI-1 Money E1 Register E3 Banks Lending E1 Banks Lending E2',
-      cycle: 0,
       // After the coupons and maturities, so what fell due today and did not arrive is already in
       // the ledger, and before anybody decides anything, so they decide knowing it.
       anchor: { after: 'corporateActions' },
+      reads: [],
+      writes: [
+        { kind: 'event', name: 'credit.default' },
+        { kind: 'event', name: 'credit.impaired' },
+      ],
       run: (ctx: MechanismContext): void => {
         inDefaultOfPayment(ctx, 0);
         impairments(ctx);

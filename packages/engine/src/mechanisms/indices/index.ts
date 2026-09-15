@@ -177,8 +177,12 @@ export function indices(
         // prints said, so it is published once they are all in; the benchmark is what the overnight
         // book settled at, so it is published once that book has cleared. A phase that ran earlier
         // would publish the period before's prints under this period's date, which is Law 8.
-        cycle: 'anchor',
         anchor: { before: 'revaluation' },
+        reads: [{ kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'index.benchmark' },
+          { kind: 'event', name: 'index.level' },
+        ],
         run: (ctx: MechanismContext): void => {
           publish(ctx, regions, currencies, statedIn);
         },

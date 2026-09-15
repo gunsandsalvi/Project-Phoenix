@@ -1343,13 +1343,18 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.capital',
       spec: 'Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a',
-      cycle: 'anchor',
       // AFTER THE MARKS ARE TAKEN, which is the only moment its book has a value: capital is the
       // residual (A1), and a residual computed against prints that have not happened yet is not one
       // (Clearing F1.a). So a bank lends this period against the position it closed the last one
       // with — a lag, and a real one: a bank finds out what its capital allowed after the quarter
       // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
       anchor: { after: 'revaluation' },
+      reads: [],
+      writes: [
+        { kind: 'event', name: 'bank.capital' },
+        { kind: 'event', name: 'bank.capitalPlan' },
+        { kind: 'event', name: 'bank.lines' },
+      ],
       run: (ctx: MechanismContext): void => {
         publishCapital(rows, ctx);
       },
@@ -1357,10 +1362,11 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.raise',
       spec: 'Banks Capital A3 Banks Capital C2 Banks Capital C2.a Banks Capital C2.b',
-      cycle: 0,
       // Before it decides anything about lending: a bank short of capital raises what it can first
       // and then lends what is left of its room (C2: recapitalisation FIRST).
       anchor: { after: 'corporateActions' },
+      reads: [{ kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' }],
+      writes: [{ kind: 'event', name: 'bank.raise.offered' }],
       run: (ctx: MechanismContext): void => {
         runRaises(rows, ctx);
       },
@@ -1368,11 +1374,25 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'lending.write',
       spec: 'Banks Lending B1 Banks Lending C1 Banks Lending C2 Banks Lending C3',
-      cycle: 0,
       // Clearing F1: it acts on what it has already been told. A borrower says what it is short of
       // in the period it finds out, and the credit is arranged in the next one — which is a lag
       // and is stated as one, because arranging a loan takes longer than noticing you need it.
       anchor: { after: 'corporateActions' },
+      reads: [
+        { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+        { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
+        { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: 'bank.costOfFunds' },
+        { kind: 'event', name: 'bank.reservation' },
+        { kind: 'event', name: 'credit.declined' },
+        { kind: 'event', name: 'credit.draw' },
+        { kind: 'event', name: 'credit.quoted' },
+        { kind: 'event', name: 'credit.written' },
+      ],
       run: (ctx: MechanismContext): void => {
         runRequests(rows, ctx);
         // Clearing F1: everything that prices off a bank's own economics this period reads it here
@@ -1388,10 +1408,16 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.treasury',
       spec: 'Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B3 Money Market D2',
-      cycle: 0,
       // After it has published what money costs it: a board is priced off its own funding and its
       // rivals' boards, and both are reads of what was published (Law 4, Law 19).
       anchor: { after: 'lending.write' },
+      reads: [
+        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+        { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
+        { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
+        { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
+      ],
+      writes: [{ kind: 'event', name: 'bank.depositRate' }],
       run: (ctx: MechanismContext): void => {
         const classes = classesSeen(ctx);
         if (classes.length === 0) return;
@@ -1405,10 +1431,39 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.arbitrage',
       spec: 'Fund Shares E3 Fund Shares E3.a Dealer Desks D1',
-      cycle: 0,
       // After it has published what money costs it: what carrying a position costs is the number
       // that decides whether closing a gap is worth doing at all (D3), and it is that publication.
       anchor: { after: 'lending.write' },
+      // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+      // it — so what it reads is read off its module's source and not off a measurement, and
+      // it is the module's whole read set rather than this phase's. It narrows the first time
+      // the phase runs and the check can say which of these it actually wanted.
+      reads: [
+        { kind: 'event', name: 'advisory.ran', of: 'anyPeriod' },
+        { kind: 'event', name: 'auction.announced', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.costOfFunds', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.lines', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.liquidity', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.reservation', of: 'anyPeriod' },
+        { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
+        { kind: 'event', name: 'centralBank.corridor', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.written', of: 'anyPeriod' },
+        { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
+        { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
+        { kind: 'event', name: 'fund.listedStruck', of: 'anyPeriod' },
+        { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
+        { kind: 'event', name: 'labour.wages', of: 'anyPeriod' },
+        { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
+        { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
+        { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
+      ],
+      writes: [],
       run: (ctx: MechanismContext): void => {
         for (const b of ctx.parties.ofKind(BANK)) {
           if (b.status.alive) arbitrage(ctx, b.id, rows);
@@ -1418,9 +1473,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.dealing',
       spec: 'Dealer Desks D5 Dealer Desks E4',
-      cycle: 'anchor',
       // After the marks are in the books, so what it says the book is worth is what it is worth.
       anchor: { after: 'revaluation' },
+      reads: [],
+      writes: [{ kind: 'event', name: 'bank.dealing' }],
       run: (ctx: MechanismContext): void => {
         for (const b of ctx.parties.ofKind(BANK)) {
           if (b.status.alive) publishDealing(ctx, b.id, rows);
@@ -1430,12 +1486,21 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'lending.book',
       spec: 'Money B3.a Money B3.c Banks Lending B1',
-      cycle: 'anchor',
       // Before the audit sees the period, and before anything can DIE of it: an overdraft the bank
       // allowed is a drawing, and a drawing is a row. A party that ceased still carrying a raw
       // negative balance would leave its bank holding a claim with no instrument behind it, and the
       // estate nothing to assume — so this runs first and what is left is always a loan.
       anchor: { before: 'revaluation' },
+      reads: [
+        { kind: 'event', name: 'credit.declined', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.written', of: 'thisPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: 'credit.draw' },
+        { kind: 'event', name: 'credit.standard' },
+        { kind: 'event', name: 'credit.written' },
+      ],
       run: (ctx: MechanismContext): void => {
         bookDraws(rows, ctx);
         publishStandard(ctx);
@@ -1453,11 +1518,12 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
        */
       name: 'banks.prime',
       spec: 'Prime Brokerage A1 Prime Brokerage B1 Prime Brokerage B3 Prime Brokerage C1 Prime Brokerage C3 Prime Brokerage C3.b Prime Brokerage E1',
-      cycle: 0,
       // After the period's lending decisions and before the session, so a client that is lent to
       // this morning can put the money to work this afternoon, and one that is CALLED this morning
       // knows what it must sell before the books open (C3, XI-2).
       anchor: { after: 'lending.write' },
+      reads: [{ kind: 'event', name: 'prime.wanted', of: 'anyPeriod' }],
+      writes: [{ kind: 'event', name: 'prime.line' }],
       run: (ctx: MechanismContext): void => {
         runPrime(ctx, primeDeps(rows), FUND);
       },
@@ -1465,12 +1531,13 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     {
       name: 'banks.buffer',
       spec: 'Banks Funding C2 Banks Funding C2.a Money Market A2.a',
-      cycle: 'anchor',
       // AFTER THE FLOWS AND BEFORE THE SESSION. What its account did to it this week is only known
       // once the week's payments have happened, and what it holds against a bad one is what every
       // schedule it posts in the session is measured against — so it is taken here, once, and
       // published, and the session reads it rather than deriving a second one (Law 4).
       anchor: { before: 'lending.book' },
+      reads: [{ kind: 'event', name: 'bank.buffer', of: 'anyPeriod' }],
+      writes: [{ kind: 'event', name: 'bank.buffer' }],
       run: (ctx: MechanismContext): void => {
         for (const b of ctx.parties.ofKind(BANK)) {
           if (!b.status.alive || declOf(rows, b.id) === undefined) continue;

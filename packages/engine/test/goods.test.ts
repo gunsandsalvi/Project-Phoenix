@@ -130,7 +130,14 @@ function acts(run: (ctx: MechanismContext) => void, participants: SystemModule['
     units: [],
     params: [],
     phases: [
-      { name: 'test.acts', spec: 'Goods B1', cycle: 0, anchor: { after: 'corporateActions' }, run },
+      {
+        name: 'test.acts',
+        spec: 'Goods B1',
+        anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
+        run,
+      },
     ],
     participants,
     families: [],

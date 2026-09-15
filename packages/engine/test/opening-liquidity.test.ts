@@ -166,8 +166,9 @@ function penalty(at: number, weeks: number, share: number): SystemModule {
       {
         name: 'test.penalty',
         spec: 'XI-1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.period < at || ctx.period >= at + weeks) return;
           const bank = partyId('bank.b');

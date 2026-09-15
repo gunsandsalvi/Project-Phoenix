@@ -161,8 +161,9 @@ function book(opts: {
       {
         name: 'test.book',
         spec: 'Derivative Layer B1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.markets.some((m) => m.id === BOOK)) return;
           const line = tradableLine(ctx.markets, (i) =>
@@ -603,8 +604,9 @@ function drain(who: PartyId, after: number): SystemModule {
       {
         name: 'test.drain',
         spec: 'Derivative Layer D2.c',
-        cycle: 0,
         anchor: { before: 'margin.calls' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.period < after || !ctx.parties.has(who)) return;
           if (!ctx.parties.get(who).status.alive) return;

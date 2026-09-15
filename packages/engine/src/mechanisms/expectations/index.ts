@@ -262,8 +262,9 @@ export const expectations: SystemModule = {
     {
       name: 'expectations.form',
       spec: 'Expectations B1 Expectations B4 Expectations D1',
-      cycle: 0,
       anchor: { before: 'corporateActions' },
+      reads: [],
+      writes: [{ kind: 'event', name: 'expectations.dispersion' }],
       run: (ctx: MechanismContext): void => {
         const held = book(ctx);
         for (const forParty of Object.values(held)) {
@@ -282,8 +283,9 @@ export const expectations: SystemModule = {
     {
       name: 'expectations.score',
       spec: 'Expectations B2 Expectations B2.a Expectations B3',
-      cycle: 'anchor',
       anchor: { after: 'revaluation' },
+      reads: [{ kind: 'event', name: 'revaluation', of: 'anyPeriod' }],
+      writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {
         const held = book(ctx);
         for (const [key, seen] of observations(ctx)) {

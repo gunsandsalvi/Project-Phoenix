@@ -110,16 +110,13 @@ export function environment(
         spec: 'Commodities Spot B3 Goods B4 Freight B4 Insurers B4',
         // At the top of the period, before anything decides, produces or ships: the weather is
         // already what it is when the day starts, and everybody who acts today acts in it.
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'environment.state' }],
         run: (ctx: MechanismContext): void => {
           const held = ctx.state<Weather>('environment.weather', () => ({
             departures: new Map<string, number>(),
-            written: undefined,
           }));
-          // Law 4: ONE WRITER, ONCE A PERIOD. A phase that ran twice would move the weather twice
-          // in one day, and the second move would be invisible to whoever read it after the first.
-          if (held.written === ctx.period) return;
           const byRegion = new Map<string, Record<string, number>>();
           for (const c of climate) {
             const persistence = ctx.params.ratio(persistenceParam(c));
@@ -131,7 +128,6 @@ export function environment(
             row[String(c.fact)] = now.ofNormal;
             byRegion.set(String(c.region), row);
           }
-          held.written = ctx.period;
           for (const [region, facts] of byRegion) {
             // Observer A3: PUBLIC. The weather is not private state — a producer, a carrier, an
             // insurer and a household are all standing in it, and each acts on what it can see.

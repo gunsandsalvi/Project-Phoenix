@@ -407,8 +407,14 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
       {
         name: 'labour.match',
         spec: 'Labour C3 Labour C5 Labour D1 Labour D1.a Labour D1.c Labour D3',
-        cycle: 1,
         anchor: { before: 'markets' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'labour.goingRate' },
+          { kind: 'event', name: 'labour.hire' },
+          { kind: 'event', name: 'labour.print' },
+          { kind: 'event', name: 'labour.separation' },
+        ],
         run: (ctx: MechanismContext) => {
           const b = bookOf(ctx);
           const p = numbers(ctx);
@@ -440,8 +446,9 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
       {
         name: 'labour.pay',
         spec: 'Labour E1 Labour E2 Labour F1',
-        cycle: 2,
         anchor: { after: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'labour.wages' }],
         run: (ctx: MechanismContext) => {
           payWages(ctx, bookOf(ctx));
         },
@@ -449,12 +456,13 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
       {
         name: 'labour.release',
         spec: 'Labour C3 Labour C4 Labour F1 Firm Birth D4.a XI-8',
-        cycle: 'anchor',
         // After the estates, because a module assembled before this one resolves the failures in
         // this same slot: a party that died this period has already ceased when this reads the
         // rows, and what it owes the people it employed leaves the account every reference to it
         // now resolves to.
         anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'labour.separation' }],
         run: (ctx: MechanismContext) => {
           release(ctx, bookOf(ctx), numbers(ctx));
         },

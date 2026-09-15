@@ -69,8 +69,9 @@ function overpromise(amount: number): SystemModule {
       {
         name: 'test.overpromise',
         spec: 'Money E1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 2) return;
           // `amount` of 1 means a payment it CAN make (the test that says nothing happens); any
@@ -163,8 +164,9 @@ function writeOff(instrument: InstrumentId): SystemModule {
       {
         name: 'test.write-off',
         spec: 'Banks Lending E5',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 2) return;
           const units = ctx.register.quantity(PAYEE, instrument);
@@ -204,8 +206,9 @@ function cellCannotPay(): SystemModule {
       {
         name: 'test.ask-the-cell',
         spec: 'Money E1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 2) return;
           const cell = ctx.parties

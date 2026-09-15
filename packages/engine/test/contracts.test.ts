@@ -55,8 +55,9 @@ function forwards(plan: (ctx: MechanismContext) => void): SystemModule {
       {
         name: 'test.forwards',
         spec: 'Derivative D1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: plan,
       },
     ],

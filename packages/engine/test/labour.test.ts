@@ -53,8 +53,9 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
       {
         name: 'test.vacancies',
         spec: 'Labour C5',
-        cycle: 1,
         anchor: { before: 'labour.match' },
+        reads: [],
+        writes: [],
         run: post,
       },
     ],

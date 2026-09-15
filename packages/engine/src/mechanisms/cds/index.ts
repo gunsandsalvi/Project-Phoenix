@@ -428,8 +428,17 @@ export function cds(house: (ccy: CurrencyCode) => PartyId): SystemModule {
       {
         name: 'cds.books',
         spec: 'CDS A1 CDS A1.d CDS A4.a',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'cds.index.settled', of: 'anyPeriod' },
+          { kind: 'event', name: 'estate.closed', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
         },
@@ -437,8 +446,9 @@ export function cds(house: (ccy: CurrencyCode) => PartyId): SystemModule {
       {
         name: 'cds.roll',
         spec: 'CDS A5 CDS A5.a Indices A1.a',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'rating.action', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'cds.index.rolled' }],
         run: (ctx): void => {
           rollSeries(ctx, house);
         },
@@ -446,10 +456,11 @@ export function cds(house: (ccy: CurrencyCode) => PartyId): SystemModule {
       {
         name: 'cds.settle',
         spec: 'CDS D2 CDS D2.a CDS D2.b CDS D3 CDS D4',
-        cycle: 'anchor',
         // After the estate has paid what it could: what protection pays is par less what the
         // reference's own debt turned out to be worth, and that number does not exist until then.
         anchor: { after: 'estates.resolve' },
+        reads: [{ kind: 'event', name: 'cds.index.settled', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           settleEvents(ctx);
           settleSeriesNames(ctx);

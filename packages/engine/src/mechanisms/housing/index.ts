@@ -751,8 +751,9 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       {
         name: 'housing.lettings',
         spec: 'Housing A2 Housing A3 Housing B5 Clearing C4.b',
-        cycle: 1,
         anchor: { before: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'housing.rent' }],
         run: (ctx: MechanismContext) => {
           /**
            * Clearing B2, B-5: THE LETTINGS VENUE HAD NEVER HAD AN ORDER IN IT. `venueParticipants`
@@ -771,8 +772,9 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       {
         name: 'housing.asking',
         spec: 'Housing B1 Housing C1 Households E2',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'housing.shortfall' }],
         run: (ctx: MechanismContext) => {
           publishShortfall(ctx, rows);
           askForMortgages(ctx, rows);
@@ -781,22 +783,25 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       {
         name: 'housing.charge',
         spec: 'Housing C1 Register D5',
-        cycle: 2,
         anchor: { after: 'markets' },
+        reads: [],
+        writes: [],
         run: charge,
       },
       {
         name: 'housing.foreclose',
         spec: 'Housing C4 Housing C4.a XI-2',
-        cycle: 'anchor',
         anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [],
         run: foreclose,
       },
       {
         name: 'housing.rent',
         spec: 'Housing A2 Households E5 Law 5',
-        cycle: 2,
         anchor: { after: 'markets' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           collect(ctx);
         },

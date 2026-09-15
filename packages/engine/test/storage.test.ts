@@ -178,8 +178,9 @@ function gift(seen: { grain: number; space: number }): SystemModule {
       {
         name: 'test.gift',
         spec: 'Commodities Spot D3',
-        cycle: 0,
         anchor: { before: 'commodities.storage' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (seen.grain > 0 && seen.space > 0) return;
           const line = STORED[0];

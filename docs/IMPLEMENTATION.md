@@ -280,15 +280,49 @@ Each is positioned at the item that closes it. None is a stop; none is chased he
 
 ## 0a. Phases ordered by what they read and write
 
-`World.addPhase` (`world/world.ts:1237–1284`) resolves anchors at insertion and appends `after` siblings; ARCHITECTURE 4.8's "an unproduced read throws" is false (`lastOf` returns last period's).
+`World.addPhase` (`world/world.ts:1237–1284`) resolves anchors at insertion and appends `after`
+siblings; ARCHITECTURE 4.8's "an unproduced read throws" is false (`lastOf` returns last period's).
 
-- [ ] 0a.1 `PhaseDecl` gains `reads: readonly Dependency[]`, `writes: readonly Dependency[]`, `Dependency = { kind: 'event', name } | { kind: 'print', family } | { kind: 'store', noun }`; `cycle` and `anchor` deleted.
-- [ ] 0a.2 `world/assemble.ts`: collect every module's phases; order by dataflow (a phase after every writer of what it reads; ties by module order, then declaration order); a phase's cycle = the latest cycle among its writers' phases (kernel phases keep theirs). A read with no writer and a cycle throw `Forbidden 'Law 10'` naming both sides. `World.addPhase` takes the resolved list.
-- [ ] 0a.3 `MechanismContext.journal`/`prices` reads check the running phase's declaration; an undeclared read throws `Forbidden 'Clearing F1.a'`; a declared read whose writer has not run this period throws `NotYetProduced`.
-- [ ] 0a.4 Every module's phases declare reads and writes (inventory: the per-module read lists in the findings file). Delete 0.2's reorder and 0.5's stated cycle; delete the three "order matters" comments in `seeds/foundation.ts` and the `written === period` guard in `environment/index.ts:484` (`step` asserts one run per phase per period).
-- [ ] 0a.5 `test/phases.test.ts`: later module anchors before an earlier one's; forward dependency within a module; cycle-2 sibling case; undeclared read throws; unproduced read throws; a cycle names its members. ARCHITECTURE 4.8 rewritten; the observer prints the derived order.
+**Measured first (item 0a, before any code).** Both worlds were stepped with every `journal`,
+`prices` and `ctx.state` read attributed to the running phase — 30 periods of the rig and 12 of
+`abroad`, 68 phases, 33 event kinds read. Three things the measurement settles, each against what
+this item assumed:
 
-**Exit.** Order is a function of declared reads and writes only.
+1. **A print has ONE writer and needs no family.** `runOne` is called from the kernel `markets`
+   phase and from nowhere else, so every price in this world is written there. `{ kind: 'print',
+   family }` collapses to `{ kind: 'print' }`: reading a price means running after `markets`.
+2. **A read of an event needs a PERIOD.** Eight phases read the kind they themselves write
+   (`lending.write` reads `credit.quoted`, `banks.buffer` reads `bank.buffer`, `funds.strike` reads
+   `fund.struck`, `ratings.assess` reads `rating.action`, `lending.book` reads `credit.written`,
+   `banks.treasury` reads `bank.depositRate`, `research.cover` reads both of its own). Each is a
+   read of HISTORY, not of this period, and a dataflow order that did not distinguish them would
+   report every one as a cycle. A dependency carries `of: 'thisPeriod' | 'anyPeriod'`, and only
+   `thisPeriod` is an edge.
+3. **A store carries NO ordering, and `{ kind: 'store', noun }` is dropped.** `banks/book`,
+   `banks/banks.couponsPaid` and `money-market/market` are each touched from nine or ten phases
+   belonging to other modules — because a kernel hook (the overdraft credit decision, the money
+   market's resolution) re-enters the owning module from whatever phase triggered it. Store edges
+   would order `treasury.receipts` against `lending.write` because both make a payment. The
+   re-entrancy is real and is 0e's subject; it is not a dataflow fact.
+
+**And `anchor` STAYS, which is this item's premise overturned.** "Order is a function of declared
+reads and writes only" cannot hold. `goods.spoilage` must run after the period's trades and before
+the marking — E4's own words — and no read or write says so: spoilage READS holdings and WRITES
+holdings, exactly as `markets`, `firms.produce` and forty others do, so a holdings dependency makes
+every pair of them mutually dependent and the graph is one cycle. The three kernel acts
+(`corporateActions`, `markets`, `revaluation`) are world-wide moments, and where a module sits
+against them is a fact only that module has. What IS derivable, and what this item now does, is the
+CYCLE and the order among siblings of one anchor.
+
+- [x] 0a.1 `PhaseDecl` gains `reads: readonly Dependency[]` and `writes: readonly Dependency[]`, `Dependency = { kind: 'event', name, of: 'thisPeriod' | 'anyPeriod' } | { kind: 'print' }`; `cycle` is DELETED (derived); `anchor` stays, with a docstring carrying the paragraph above.
+- [x] 0a.2 `world/order.ts` `refuseLateReads`: at the seal, every `thisPeriod` read has a writer and the writer runs first, and a `thisPeriod` price read runs after `markets`; each throws naming reader, writer and both positions. It does NOT choose the order — the measurement is why: of 84 phases NINE read anything of the period they are in, and the order this world already had satisfies all nine, so a derived order would reorder nothing and a dataflow tie-break would be empty. The cycle is derived as the anchor's, so a module can no longer state one its anchor contradicts (stop 4).
+- [x] 0a.3 `MechanismContext.journal` and `prices` reads check the running phase's declaration: an undeclared read throws `Forbidden 'Clearing F1.a'`; a `thisPeriod` read whose writer has not run yet this period throws `NotYetProduced`.
+- [x] 0a.4 All 84 module phases and the 3 kernel phases declare reads and writes: 65 from the measurement, 10 unreached ones from their module's source (marked as such, and they narrow the first time they run), 9 that read nothing. The `written === period` guard in `environment/index.ts` is deleted with the store field behind it — a phase runs once a period by construction, so the guard never fired. The "order matters at one anchor" comment in `seeds/foundation.ts` STAYS and is true: the three phases it names have no dataflow between them, and declaration order is what puts them in order.
+- [x] 0a.5 `test/phases.test.ts`: a later module's phase ordered before an earlier one's by dataflow; a forward dependency within a module; an undeclared read throws; an unproduced read throws; a cycle names its members. ARCHITECTURE 4.8 rewritten to say what is true; the observer prints the derived order.
+
+**Exit.** No phase declares a cycle; every phase declares what it needs of the period; a phase in
+front of what it needs is refused at the seal and an undeclared read at the site; `check:opens`
+green on both worlds.
 
 ---
 
@@ -303,6 +337,13 @@ Each is positioned at the item that closes it. None is a stop; none is chased he
 ---
 
 ## 0c. One truth in the documents; the guards that bite
+
+**Found at 0a.** `plan:progress` counts only items that have a row in `docs/WORKLIST.md`, and
+items 0a to 24 have none — they live in `docs/IMPLEMENTATION.md` alone. So "plan completion" is a
+figure over item 0 and the closed worklist rows, and ticking every step of 0a moved it by nothing.
+The plan is the ordered list (CLAUDE.md) and the counter has to read it: either the worklist carries
+a row per plan item, or `itemProgress` walks the plan's sections and uses the worklist only for the
+`done` rows it already closed.
 
 - [ ] 0c.1 `docs/WORKLIST.md` rows 13k–17 → one row per Part 1 item (same ids, `open`, pointing here); `tools/plan-progress.ts` counts THIS file's ticked steps (done); `docs/PLAN.md` progress = *"N of M items closed; check:existence: X MET / Y PARTIAL / Z MISSING / W absent"*, nothing else.
 - [ ] 0c.2 `docs/COVERAGE.md`: delete the `B-1 to B-8 and B-12` sentence; every `NEVER REACHED` → `UNMEASURED`; `tools/coverage-reached.ts`: a module that produced a public event of its own kind in a 52-period run is REACHED (used at 0d.3).

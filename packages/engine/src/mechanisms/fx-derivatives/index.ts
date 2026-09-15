@@ -187,8 +187,9 @@ export function fxDerivatives(house: (ccy: CurrencyCode) => PartyId): SystemModu
       {
         name: 'fx.books',
         spec: 'FX Forwards A1 FX Forwards C1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'print', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
         },

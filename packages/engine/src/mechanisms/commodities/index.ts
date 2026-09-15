@@ -303,8 +303,9 @@ export function commodities(): SystemModule {
         // thing it can have at the end of the period (Capital Programme A2, D4), so a firm that
         // wants to make more rents the room first and decides afterwards, knowing what it has
         // (Clearing F1: a decision acts on what has already happened).
-        cycle: 0,
         anchor: { before: 'firms.decide' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'commodities.storage' }],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
           for (const r of ctx.registry.regions.values()) lease(ctx, r.id, ctx.registry.currencyOf(r.id), said);

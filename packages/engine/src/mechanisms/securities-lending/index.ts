@@ -903,7 +903,8 @@ export function securitiesLending(): SystemModule {
         // arrived. A phase that manufactured a payment before the payment existed would be
         // inventing the lender's income rather than passing it through (Law 19).
         anchor: { after: 'corporateActions' },
-        cycle: 'anchor',
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           manufacture(ctx);
           charge(ctx);
@@ -925,7 +926,8 @@ export function securitiesLending(): SystemModule {
         // is after `borrow.economics` so that what went back this period is back in its lender's
         // free balance before the book counts what there is to lend (B4).
         anchor: { after: 'borrow.economics' },
-        cycle: 'anchor',
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           runBorrows(ctx, ctx.borrowsWanted());
         },

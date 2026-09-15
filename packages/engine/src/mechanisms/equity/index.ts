@@ -636,11 +636,16 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
       {
         name: 'equity.decide',
         spec: 'Equity D1 Equity D2 Equity D3 Firm E4 Firm E5',
-        cycle: 0,
         // After the firm has planned its period, because what it has spare is its own funding read;
         // before the session, because everything it decides it decides on what has already
         // happened (Clearing F1).
         anchor: { after: 'firms.decide' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'equity.plan' },
+          { kind: 'event', name: 'equity.succeeded' },
+          { kind: 'event', name: 'payout.declared' },
+        ],
         run: (ctx: MechanismContext) => {
           /**
            * D3, item 10: THE THREE DATES, in order, in one phase — because they are one story and
@@ -665,7 +670,8 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         // session, because an offer that arrives after the book has cleared is not an offer. It is
         // the same slot an issuer of paper stands in (`bond.issue`), for the same reason.
         anchor: { before: 'markets' },
-        cycle: 'anchor',
+        reads: [{ kind: 'event', name: 'firms.funding', of: 'thisPeriod' }],
+        writes: [],
         run: (ctx: MechanismContext) => {
           floatations(ctx, rows);
         },
@@ -673,10 +679,11 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
       {
         name: 'equity.reads',
         spec: 'Equity B4 Equity C1.b Equity F3 Equity G3',
-        cycle: 'anchor',
         // After the session has printed and the marks are in the books: a read of a price is taken
         // once the price exists, never before (Clearing F1.a).
         anchor: { after: 'revaluation' },
+        reads: [{ kind: 'print', of: 'thisPeriod' }],
+        writes: [{ kind: 'event', name: 'equity.reads' }],
         run: (ctx: MechanismContext) => {
           publishReads(ctx, rows);
         },

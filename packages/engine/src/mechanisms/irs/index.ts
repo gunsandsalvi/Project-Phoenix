@@ -175,8 +175,9 @@ export function irs(house: (ccy: CurrencyCode) => PartyId): SystemModule {
       {
         name: 'irs.books',
         spec: 'IRS A1 IRS C1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'index.benchmark', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
         },

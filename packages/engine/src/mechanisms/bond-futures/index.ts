@@ -622,8 +622,9 @@ export function bondFutures(
       {
         name: 'bondFutures.books',
         spec: 'Sovereign I1 Derivative Layer B1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'print', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house, issuer);
         },
@@ -631,10 +632,11 @@ export function bondFutures(
       {
         name: 'bondFutures.deliver',
         spec: 'Sovereign I1 XI-5',
-        cycle: 'anchor',
         // Before the layer's own resolution: what this contract does at its term is DELIVER, and a
         // cash close-out on top of a delivery would settle it twice.
         anchor: { before: 'derivatives.resolve' },
+        reads: [],
+        writes: [],
         run: deliver,
       },
     ],

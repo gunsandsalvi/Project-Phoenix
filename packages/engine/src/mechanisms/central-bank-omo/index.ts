@@ -88,8 +88,15 @@ export const centralBankOmo: SystemModule = {
     {
       name: 'centralBank.remittance',
       spec: 'Central Bank E3 Central Bank E3.a Central Bank E4 Sovereign H3',
-      cycle: 'anchor',
       anchor: { before: 'revaluation' },
+      // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+      // it — so what it reads is read off its module's source and not off a measurement, and
+      // it is the module's whole read set rather than this phase's. It narrows the first time
+      // the phase runs and the check can say which of these it actually wanted.
+      reads: [
+        { kind: 'event', name: 'centralBank.remittance', of: 'anyPeriod' },
+      ],
+      writes: [],
       run: (ctx: MechanismContext): void => {
         for (const cb of ctx.parties.ofKind(CENTRAL_BANK)) {
           if (cb.status.alive) remit(ctx, cb.id);

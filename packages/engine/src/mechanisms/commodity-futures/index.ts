@@ -703,8 +703,9 @@ export function commodityFutures(house: (ccy: CurrencyCode) => PartyId): SystemM
       {
         name: 'commodityFutures.books',
         spec: 'Commodity Futures A2 Derivative Layer B1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'print', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
         },
@@ -712,10 +713,17 @@ export function commodityFutures(house: (ccy: CurrencyCode) => PartyId): SystemM
       {
         name: 'commodityFutures.deliver',
         spec: 'Commodity Futures A1 Commodity Futures C4 XI-5',
-        cycle: 'anchor',
         // Before the layer's own resolution: what this contract does at its term is DELIVER, and a
         // cash close-out on top of a delivery would settle it twice.
         anchor: { before: 'derivatives.resolve' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: deliver,
       },
     ],

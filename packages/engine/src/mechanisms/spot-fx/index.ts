@@ -113,10 +113,17 @@ export function spotFx(rows: readonly FxDeskDecl[]): SystemModule {
       {
         name: 'fx.arbitrage',
         spec: 'Spot FX C2.a C3 E3',
-        cycle: 'anchor',
         // Before the session it acts in: what it sees is what the market last said (Clearing F1),
         // and what it does about it is an order like anybody else's.
         anchor: { before: 'markets' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'fx.arbitrage', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext) => {
           arbitrage(ctx, byName);
         },

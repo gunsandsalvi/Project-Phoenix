@@ -423,12 +423,36 @@ calendar's dates (G3.c). No periodicity finer than a period exists (G3.b); finer
 
 ### 4.8 The period loop
 
-A period is an **ordered list of phases** held as data (`schedule.ts`), each a `Mechanism` with a
-name, its spec citations, and a `run(world)`. Markets clear at their stated point (Clearing F1); a
-phase that reads a print not yet produced this period gets a `NotYetProduced` error, not a stale
-value — the fix is the order (F1.a). Every period ends with settlement of the last cycle, then
-revaluation ordering checks, then the **audit** (Audit C1–C3). The loop is the same every period;
-phases are never skipped conditionally (Audit C3).
+A period is an **ordered list of phases** held as data, each with a name, its spec citations, an
+**anchor**, what it **reads** and what it **writes**, and a `run(ctx)`. Markets clear at their
+stated point (Clearing F1). Every period ends with settlement of the last cycle, then revaluation,
+then the **audit** (Audit C1–C3). The loop is the same every period; phases are never skipped
+conditionally (Audit C3).
+
+**The anchor places it; the declaration checks the placing** (item 0a). A module says where it sits
+against the three kernel acts — `corporateActions`, `markets`, `revaluation` — and that is not
+derivable: `goods.spoilage` runs after the period's trades and before the marking, and no read or
+write says so, because it reads holdings and writes holdings exactly as forty other phases do. What
+IS derived is the **settlement cycle**, which is the anchor's (Money G2), so a module cannot state
+one its own anchor contradicts — which is what `paper.backstop` did, with `cycle: 2` in front of a
+cycle-0 anchor.
+
+A dependency carries the period it is of. `thisPeriod` says the writer must already have run and is
+the only thing that is an edge; `anyPeriod` is a read of history and orders nothing — eight phases
+in this world read the very kind they write, and a check blind to the period would call each a
+cycle. `world/order.ts` refuses, at the seal, a phase in front of a `thisPeriod` read's writer, and
+a `thisPeriod` read nothing writes. At run time an **undeclared** read throws `Forbidden
+'Clearing F1.a'` at the site, naming the phase and the kind.
+
+This paragraph used to say that a phase reading an unproduced print got `NotYetProduced` rather than
+a stale value. **That was false**, and the falseness is what stop 18 was: `lastOf` answered with
+last period's event and `latest` with last period's price, so `reporting.publish` published a
+company's worth from the week before and nothing complained. It is the seal that refuses the order
+now, where it is a fact about two phases rather than an accident of which party was asked first.
+
+**Almost nothing in this world reads the period it is in.** Of eighty-four phases, nine do; the
+order that existed satisfied all nine. The declaration is a guard, not a re-ordering — which is what
+two of item 0's stops needed and neither had.
 
 **Where a phase goes is decided by what it READS, and one system can need two slots.** A test of
 solvency asks whether liabilities exceed assets AT MARKS, so it belongs after revaluation — asked

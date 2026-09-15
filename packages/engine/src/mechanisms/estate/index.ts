@@ -630,13 +630,14 @@ export const estate: SystemModule = {
     {
       name: 'estates.resolve',
       spec: 'XI-3 XI-8 Firm Birth D1 Firm Birth D5 Banks Capital C1',
-      cycle: 'anchor',
       // The resolution slot: after the markets, the period's payments, the drawings that became
       // rows — and after REVALUATION, because Firm D4 asks whether liabilities exceed assets AT
       // MARKS, and the marks are not in anybody's book until revaluation has put them there. Asked
       // before it, a party whose own liabilities are marked (a fund, whose shares ARE its book:
       // Fund Shares A3) reads as insolvent by exactly whatever it paid out this period.
       anchor: { after: 'revaluation' },
+      reads: [],
+      writes: [{ kind: 'event', name: 'estate.opened' }],
       run: (ctx: MechanismContext): void => {
         for (const p of ctx.parties.all()) {
           if (!p.status.alive) continue;
@@ -656,7 +657,6 @@ export const estate: SystemModule = {
     {
       name: 'estates.settle',
       spec: 'XI-8 Firm Birth D2 Firm Birth D3 Firm Birth D6 Banks Lending E5',
-      cycle: 2,
       /**
        * The period's payments, after the session it sold into (docs/PLAN.md §8 puts it here). It is
        * NOT after revaluation, and the reason is a party whose own liability IS its book: a fund's
@@ -670,6 +670,12 @@ export const estate: SystemModule = {
        * with the period's other payments.
        */
       anchor: { after: 'markets' },
+      reads: [],
+      writes: [
+        { kind: 'event', name: 'estate.closed' },
+        { kind: 'event', name: 'estate.paid' },
+        { kind: 'event', name: 'estate.residual' },
+      ],
       run: (ctx: MechanismContext): void => {
         /**
          * Item 14, Law 19: THE RUNNING ONES, asked of the kernel rather than walked out of a bag.

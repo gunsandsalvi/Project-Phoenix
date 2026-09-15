@@ -539,10 +539,14 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
       {
         name: 'capital.retire',
         spec: 'Capital Programme A6 Capital Programme A6.a Capital Programme A6.b',
-        cycle: 0,
         // At the top of the period, so what a firm decides and what it can make this period are
         // decided against the plant it actually still has.
         anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'environment.state', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'capital.retired' },
+          { kind: 'event', name: 'capital.weathered' },
+        ],
         run: (ctx: MechanismContext) => {
           retire(ctx);
           // B3: and what the weather took, before anybody decides what it can make with what is
@@ -553,11 +557,12 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
       {
         name: 'capital.commission',
         spec: 'Capital Programme C1 Capital Programme C3 Capital Programme C4 Capital Programme A4.c',
-        cycle: 'anchor',
         // After the session it was bought in and after the lines have run, so a machine delivered
         // this period is installed at the end of the period the build lag names, and the vintage
         // it joins is dated by when it went into service rather than when it was ordered.
         anchor: { before: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'capital.commissioned' }],
         run: (ctx: MechanismContext) => {
           commission(ctx, rows);
         },

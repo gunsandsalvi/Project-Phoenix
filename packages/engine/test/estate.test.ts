@@ -169,8 +169,9 @@ function cannotPay(): SystemModule {
       {
         name: 'test.cannot-pay',
         spec: 'Money E1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 1) return;
           const to = ctx.parties.get(SENIOR_HOLDER);
@@ -240,8 +241,9 @@ function paysAStranger(): SystemModule {
       {
         name: 'test.leak',
         spec: 'Firm Birth D6',
-        cycle: 'anchor',
         anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (!ctx.parties.has(ESTATE_OF_DEBTOR)) return;
           const estate = ctx.parties.get(ESTATE_OF_DEBTOR);
@@ -324,8 +326,9 @@ function suddenBill(): SystemModule {
       {
         name: 'test.sudden-bill',
         spec: 'Money E1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== WHEN_THE_BILL_FALLS) return;
           const employing = ctx.journal

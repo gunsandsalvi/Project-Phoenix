@@ -110,8 +110,9 @@ function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext
       {
         name: 'test.goods',
         spec: 'Goods B',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run,
       },
     ],
@@ -446,7 +447,14 @@ function pledgeModule(run: (ctx: MechanismContext) => void): SystemModule {
     units: [],
     params: [],
     phases: [
-      { name: 'test.pledge', spec: 'Register D5', cycle: 0, anchor: { after: 'corporateActions' }, run },
+      {
+        name: 'test.pledge',
+        spec: 'Register D5',
+        anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
+        run,
+      },
     ],
     participants: [],
     families: [],

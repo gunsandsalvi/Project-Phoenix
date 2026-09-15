@@ -136,9 +136,10 @@ function declaresOnce(line: InstrumentId, issuer: PartyId, perUnit: PerPiece): S
       {
         name: 'test.declare',
         spec: 'Equity D3',
-        cycle: 0,
         // Before `equity.decide`, so the record and pay passes in it see what this declared.
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx) => {
           if (ctx.period !== 2) return;
           ctx.announce({

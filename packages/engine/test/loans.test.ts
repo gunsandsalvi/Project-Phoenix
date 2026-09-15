@@ -55,8 +55,9 @@ function asksFor(amount: number, at = 1): SystemModule {
       {
         name: 'test.ask',
         spec: 'Banks Lending C2',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           ctx.record('firms.funding', [BORROWER], { short: amount, owed: amount, ccy: USD }, false);
@@ -90,8 +91,9 @@ function overspendsItsLimit(at = 2): SystemModule {
       {
         name: 'test.overspend',
         spec: 'Money B3.a',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           const bank = ctx.parties.get(BORROWER).bank;
@@ -150,8 +152,9 @@ function overspends(times: number, at = 2): SystemModule {
       {
         name: 'test.overspend',
         spec: 'Money B3.a',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
           const has = ctx.register.quantity(

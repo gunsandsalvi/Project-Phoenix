@@ -83,8 +83,9 @@ function penalty(at: number, share: number): SystemModule {
       {
         name: 'test.penalty',
         spec: 'XI-1',
-        cycle: 0,
         anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.period < at || ctx.period >= at + WEEKS) return;
           // Money E4: a party that has ceased is not a payer. Once the resolution has taken it,

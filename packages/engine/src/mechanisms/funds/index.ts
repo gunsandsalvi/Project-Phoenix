@@ -2311,10 +2311,22 @@ export function funds(
       {
         name: 'funds.strike',
         spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
-        cycle: 0,
         // After the households have decided, because what they decided is posted into the venue
         // this phase reads; before the markets, because what it cannot pay is what it must sell.
         anchor: { after: 'households.decide' },
+        reads: [
+          { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.call', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.line', of: 'thisPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'fund.fee' },
+          { kind: 'event', name: 'fund.gate' },
+          { kind: 'event', name: 'fund.redeemed' },
+          { kind: 'event', name: 'fund.requested' },
+          { kind: 'event', name: 'fund.struck' },
+          { kind: 'event', name: 'fund.subscribed' },
+        ],
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
           for (const m of livingPools(ctx)) strike(ctx, b, m);
@@ -2328,8 +2340,13 @@ export function funds(
          */
         name: 'funds.manager',
         spec: 'Fund Shares A4 Fund Shares B3 Fund Shares F3 Fund Shares G1 Seed A3',
-        cycle: 0,
         anchor: { before: 'funds.strike' },
+        reads: [{ kind: 'event', name: 'fund.struck', of: 'anyPeriod' }],
+        writes: [
+          { kind: 'event', name: 'fund.launched' },
+          { kind: 'event', name: 'fund.notice' },
+          { kind: 'event', name: 'fund.woundUp' },
+        ],
         run: (ctx: MechanismContext) => {
           runManagers(ctx);
         },
@@ -2342,8 +2359,12 @@ export function funds(
          */
         name: 'funds.capital',
         spec: 'Private Equity A1 Private Equity A2 Private Equity A2.b Private Equity A3 Private Equity E2 Seed A3',
-        cycle: 0,
         anchor: { before: 'funds.strike' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'fund.called' },
+          { kind: 'event', name: 'fund.committed' },
+        ],
         run: (ctx: MechanismContext) => {
           const opening = ctx.params.price(FUND_PARAMS.openingShare);
           for (const d of decls) {
@@ -2375,7 +2396,6 @@ export function funds(
       {
         name: 'funds.place',
         spec: 'Fund Shares C2.a Money Market B5 Money Market B5.a',
-        cycle: 0,
         // Money Market B5: NON-BANK CASH IS IN THE SAME MARKET. A money fund's spare cash is the
         // largest single pool of it in this world, and a fund that left it sitting as a deposit
         // would be a money fund that does not use the money market -- which is most of what a money
@@ -2383,6 +2403,8 @@ export function funds(
         // redemptions have been struck, and what it will take for it is the floor (B5.a): the
         // central bank pays that for cash it takes in, and nothing it lends should earn less.
         anchor: { after: 'funds.strike' },
+        reads: [{ kind: 'event', name: 'centralBank.corridor', of: 'anyPeriod' }],
+        writes: [],
         run: (ctx: MechanismContext) => {
           for (const m of livingPools(ctx)) placeSpareCash(ctx, m);
         },
@@ -2390,8 +2412,9 @@ export function funds(
       {
         name: 'funds.settle',
         spec: 'Fund Shares C2.a Fund Shares C2.b Fund Shares C4 Fund Shares C4.a',
-        cycle: 2,
         anchor: { after: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'fund.gate' }],
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
           for (const m of livingPools(ctx)) payQueue(ctx, b, m);
@@ -2400,11 +2423,24 @@ export function funds(
       {
         name: 'funds.inKind',
         spec: 'Fund Shares B3 Fund Shares E3 Fund Shares G1.a',
-        cycle: 0,
         // With the other fund's own strike, and before the session: what a dealing line brought in this
         // morning is shares it can offer this afternoon, and the fee is inside the period so the
         // revaluation that closes it carries the claim at what the book then comes to (A3).
         anchor: { after: 'funds.strike' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'centralBank.corridor', of: 'anyPeriod' },
+          { kind: 'event', name: 'fund.performanceFee', of: 'anyPeriod' },
+          { kind: 'event', name: 'fund.redeemed', of: 'anyPeriod' },
+          { kind: 'event', name: 'fund.requested', of: 'anyPeriod' },
+          { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.call', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.line', of: 'anyPeriod' },
+        ],
+        writes: [],
         run: (ctx: MechanismContext) => {
           for (const d of listed) launchInKind(ctx, d);
           // E3.a: a vehicle whose index has not answered yet has not been launched, and there is
@@ -2418,10 +2454,11 @@ export function funds(
       {
         name: 'funds.listed.read',
         spec: 'Fund Shares E1 Fund Shares E2 Fund Shares E4',
-        cycle: 'anchor',
         // After the marks are in the books, because the NAV is a read of those marks and the
         // premium is a read of that NAV against what the session printed (Clearing F1.a).
         anchor: { after: 'revaluation' },
+        reads: [{ kind: 'print', of: 'thisPeriod' }],
+        writes: [{ kind: 'event', name: 'fund.listedStruck' }],
         run: (ctx: MechanismContext) => {
           for (const m of livingPools(ctx)) {
             const d = declOf(listed, String(m.pool));

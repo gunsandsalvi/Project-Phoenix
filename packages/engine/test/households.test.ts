@@ -112,8 +112,9 @@ function payer(spreadShare: number): SystemModule {
       {
         name: 'test.pay',
         spec: 'Households B2',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext) => {
           // Money E4: a module does not address a party that has ceased. Its purse is sized so it
           // does not, and saying so is what makes that a property rather than an assumption.

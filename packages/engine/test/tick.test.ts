@@ -119,8 +119,9 @@ function payer(amount: number): SystemModule {
       {
         name: 'test.offgrid',
         spec: 'Money C1',
-        cycle: 0,
         anchor: { after: 'corporateActions' },
+        reads: [],
+        writes: [],
         run: (ctx: MechanismContext): void => {
           if (ctx.period !== 1) return;
           const leg: Leg = {
