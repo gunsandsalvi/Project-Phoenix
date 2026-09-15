@@ -9271,3 +9271,54 @@ say where, and the two have to agree. It is **17b** now, after 17.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` **6** over 216 files, `check:deaths` 4 of
 4, `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13.5c — the second rung of the ladder A2.a describes
+
+§29 A2.a: *"an investor must hold liquidity against calls it did not choose the timing of, and in a
+stress the calls and its own troubles arrive together."* 13.5 built the obligation and the default —
+the call goes to the wire for the whole amount, nothing is trimmed to fit, and an investor that
+cannot pay gets a refused instruction. **What was missing is the rest of A2.b's sentence**: *"the
+investor funds it from its own liquidity ladder — selling if it must — or it defaults."* An investor
+that defaults and does nothing about it defaults again next time, and a ladder with one rung is not
+a ladder.
+
+### It holds liquidity, and not the way that would defeat the clause
+
+What its last call TOOK comes off what it can put to work. It is its own experience and the same read
+the claim buffer already is (A4.c), and no number is declared anywhere.
+
+**It is never the undrawn commitment, and must not be.** Money set aside against a commitment in full
+is money already paid, and the whole of A2 is that capital is committed and NOT paid — an investor
+holding its commitment in cash has converted the structure into a subscription. So nothing here reads
+a commitment's size. What it holds is what a CALL costs, which is the liquidity the clause names.
+
+### And it sells if it must
+
+A call it could not meet is money it must find, so it asks for its money back out of the pools it is
+in. It names no price (XI-2): a forced seller that named one would not be one, and what it gets is
+what the queue gives it at the NAV of the day it asked. It is the SAME channel a household short of
+its own cushion uses — a holder that needs money asks the pools it is in — and there is one of it in
+this world rather than one per holder (Law 4).
+
+**The pool that called it is the one it cannot redeem from.** A closed-end fund has no redemption;
+the money was committed for its life. So the trap A2.a describes arrives without being written: it
+has to sell something else, and the refusal on the closed one is recorded rather than dropped.
+
+**The lag is the clause.** A call arrives and settles in one pass, and the response is the next
+period. *"In a stress the calls and its own troubles arrive together"* is what that looks like from
+inside, and an investor selling into the market a week after it was called is the shape of it.
+
+### One thing I checked and was wrong about
+
+While marking coverage I found four §29 clauses with no COVERAGE row and measured what looked like
+123 of them across the spec. `coverage-existence` already handles it and its own docstring says so:
+*"a clause with no COVERAGE row at all is counted MISSING — treating an absent row as absent from the
+count would let a system look complete by having fewer rows."* It iterates the SPEC, not COVERAGE.
+A2.a itself is a spec NOTE (it carries no REASON/VERIFY/FORBID word), so its MET row is reported
+beside the other eight rather than counted — which is the tool showing two files disagreeing about
+what a requirement is, exactly as it was built to.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 6, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and not run.

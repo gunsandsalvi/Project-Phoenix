@@ -69,7 +69,7 @@ import { issuerName } from '../../registry/naming.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { allocate } from './allocate.js';
+import { allocate, meetCalls } from './allocate.js';
 
 /**
  * Law 9: AN INSURANCE COMPANY, named as the world names one. The deposit insurer this world already
@@ -385,12 +385,19 @@ export function insurers(): SystemModule {
          * period's flows, so what it puts to work is what it actually has.
          */
         name: 'insurers.allocate',
-        spec: 'Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares C1',
+        spec: 'Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares C1 Fund Shares C2 Private Equity A2.a XI-2',
         cycle: 0,
         anchor: { before: 'funds.strike' },
         run: (ctx: MechanismContext): void => {
           for (const p of ctx.parties.ofKind(INSURANCE)) {
             if (!p.status.alive) continue;
+            /**
+             * §29 A2.a (item 13.5c): WHAT IT OWES BEFORE WHAT IT WOULD LIKE TO OWN. A call it could
+             * not meet is money it must find, and asking for it back comes before putting anything
+             * new to work — an investor that allocated while it was in default on a call would be
+             * two decisions about one balance (Law 4).
+             */
+            meetCalls(ctx, p.id);
             allocate(ctx, p.id, ctx.registry.currencyOf(p.region));
           }
         },

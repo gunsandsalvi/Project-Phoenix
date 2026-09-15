@@ -1,7 +1,7 @@
 /**
  * An institution does not invest. It hands its assets to somebody whose business that is.
  *
- * @spec Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A1 Fund Shares A4 Fund Shares D2 Fund Shares D5 Law 2 Law 3 Law 4 Law 6 Law 19
+ * @spec Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers A4.c Fund Shares A1 Fund Shares A4 Fund Shares C2 Fund Shares D2 Fund Shares D5 Private Equity A2 Private Equity A2.a Private Equity A2.b XI-2 Law 2 Law 3 Law 4 Law 6 Law 19
  *
  * ITEM 14.0, AND IT IS THE OWNER'S LARGEST SIMPLIFICATION: *"insurance companies and pension funds
  * don't invest themselves. Their assets are always third party managed."* So there is no portfolio
@@ -57,10 +57,12 @@ import {
   heldAsMoney,
   minus,
   type PerPiece,
+  plus,
   valueAt,
 } from '../../core/measure.js';
-import { sum } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { atMost, sum } from '../../core/num.js';
+import { asQty, downTick } from '../../core/tick.js';
+import { period as periodOf } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -152,7 +154,86 @@ export function investable(ctx: MechanismContext, insurer: PartyId, ccy: Currenc
     claim === undefined || typeof claim.data['amount'] !== 'number'
       ? asCash(0, 'an insurer that has paid no claim has none to keep against')
       : asCash(claim.data['amount'], 'what its last claim cost it');
-  return minus(cash, keep, 'what it can put to work');
+  /**
+   * §29 A2.a (item 13.5c): AND WHAT A CALL TAKES, which is the other thing it does not choose the
+   * timing of. *"An investor must hold liquidity against calls it did not choose the timing of."*
+   *
+   * It is the SAME read as the claim buffer and for the same reason (A4.c): its own experience, and
+   * never a ratio anybody stated. What its last call took is a fact about its own book, and an
+   * investor that has never been called has nothing to keep against — which is right, because a
+   * commitment nobody has drawn on has told it nothing about what a draw looks like.
+   *
+   * It does NOT hold the undrawn commitment in cash, and must not: money set aside against a
+   * commitment in full is money already paid, and the whole of A2 is that capital is committed and
+   * not paid. What it holds is what a CALL costs, which is the liquidity A2.a names.
+   */
+  const called = ctx.journal.lastOf(CALLED_KIND, String(insurer));
+  const against =
+    called === undefined || typeof called.data['called'] !== 'number'
+      ? asCash(0, 'an investor nobody has called has no call to keep against')
+      : asCash(called.data['called'], 'what its last call took');
+  return minus(cash, plus(keep, against, 'what it keeps back'), 'what it can put to work');
+}
+
+/** The one name a capital call goes under; read, never re-derived (Law 4, `funds/commitment.ts`). */
+const CALLED_KIND = 'fund.called';
+
+/**
+ * §29 A2.a, A2.b, XI-2, Fund Shares C2 (item 13.5c): A CALL IT COULD NOT MEET, AND WHAT IT DOES
+ * ABOUT IT — *"the investor funds it from its own liquidity ladder, selling if it must, or it
+ * defaults on the call"*.
+ *
+ * 13.5 built the OBLIGATION and the DEFAULT: the call goes to the wire for the whole amount and an
+ * investor that cannot pay gets a REFUSED instruction, which is a recorded state and nothing is
+ * trimmed to fit (the fifth silent FORBID). **What was missing is the rest of the sentence.** An
+ * investor that defaults and does nothing about it defaults again next time, and the ladder A2.a
+ * describes — hold liquidity, sell if you must — had only its first rung.
+ *
+ * So it asks for its money back, out of the pools it is in, for what the call took and it did not
+ * have. It names no price (XI-2): a forced seller that named one would not be one, and what it gets
+ * is what the queue gives it at the NAV of the day it asked (Fund Shares C2). It is the SAME channel
+ * a household short of its own cushion uses (`households/portfolio.ts`) — a holder that needs money
+ * asks the pools it is in — and there is one of it in this world rather than one per holder (Law 4).
+ *
+ * THE LAG IS REAL AND IS THE CLAUSE. A call arrives and settles in one pass; the response is the
+ * next period. *"In a stress the calls and its own troubles arrive together"* (A2.a), and an
+ * investor selling into the market a week after it was called is what that looks like from inside.
+ */
+export function meetCalls(ctx: MechanismContext, insurer: PartyId): void {
+  let missed = asCash(0, 'nothing has been called of it');
+  for (const e of ctx.journal.forSubject(CALLED_KIND, String(insurer))) {
+    if (e.period !== periodOf(Number(ctx.period) - 1)) continue;
+    if (e.data['paid'] === true) continue;
+    const called = e.data['called'];
+    if (typeof called !== 'number' || called <= 0) continue;
+    missed = plus(missed, asCash(called, 'what it was called and did not pay'), 'what it owes');
+  }
+  if (missed <= 0) return;
+  for (const d of doors(ctx)) {
+    const held = heldIn(ctx, insurer, d);
+    if (held <= 0) continue;
+    // Law 8: a share is indivisible, so what it hands back is a whole number of them, and it is the
+    // number DOWN — what it can actually give back, never a fraction of a claim.
+    const want = downTick(amountOf(missed, d.perShare, 'shares it must give back'));
+    const units = downTick(amountOf(held, d.perShare, 'the shares it holds of this one'));
+    if (want <= 0 || units <= 0) continue;
+    // Law 6: not a bound on an outcome — it cannot hand back more of a pool than it holds of it,
+    // which is arithmetic impossibility and says so.
+    const asked = atMost(want, units, 'it cannot give back more of a pool than it holds');
+    ctx.post(d.venue, {
+      party: insurer,
+      side: 'sell',
+      // XI-2: at whatever the queue gives. A forced seller that named a price would not be one.
+      price: 'market',
+      qty: asQty(asked, 'what it asks back of this pool'),
+    });
+    ctx.record(
+      'insurer.raised',
+      [insurer, d.fund],
+      { insurer, fund: d.fund, missed, asked },
+      false,
+    );
+  }
 }
 
 /** The one name the claims event goes under; read, never re-derived (Law 4). */

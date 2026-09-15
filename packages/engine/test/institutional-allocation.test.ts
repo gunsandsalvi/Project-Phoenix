@@ -1,7 +1,7 @@
 /**
  * An institution's whole investment decision: which mandates it can ACCEPT, and which it feeds.
  *
- * @spec Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A4 Fund Shares D2 Law 2 Law 3 Law 6 Law 19
+ * @spec Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A4 Fund Shares C2 Fund Shares D2 Private Equity A2 Private Equity A2.a Private Equity A2.b XI-2 Law 2 Law 3 Law 6 Law 19
  *
  * ITEM 14.0. *"Insurance companies and pension funds don't invest themselves. Their assets are
  * always third party managed"* (the owner), so there is no portfolio to test here and no allocation
@@ -18,6 +18,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { acceptable } from '../src/mechanisms/insurers/allocate.js';
+import { ranWorld } from './rig.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { venueId } from '../src/core/ids.js';
 
@@ -71,5 +72,61 @@ describe('B2: and it will not take less than its promises require', () => {
 
   it('applies no return test where the world published no curve to require anything from', () => {
     expect(acceptable(door('thin', 5, 0.01), 8, undefined)).toBe(true);
+  });
+});
+
+/**
+ * 13.5c: §29 A2.a — *"an investor must hold liquidity against calls it did not choose the timing of,
+ * and in a stress the calls and its own troubles arrive together."*
+ */
+describe('A2.a: what an investor does about a call it did not choose the timing of', () => {
+  it('keeps back what a call took, and never the undrawn commitment', () => {
+    /**
+     * The buffer is its own EXPERIENCE, exactly as the claim buffer is (A4.c): what its last call
+     * took. Holding the whole undrawn commitment in cash would be money already paid, and the whole
+     * of A2 is that capital is committed and NOT paid — so nothing here reads a commitment's size.
+     */
+    const w = ranWorld('calls', 12);
+    for (const e of w.journal.ofKind('insurer.allocated')) {
+      // What it put to work is a number, and it is never the whole of its account: the two buffers
+      // come off it first. Both are reads of what happened to it, and neither is a ratio.
+      expect(typeof e.data['putToWork']).toBe('number');
+      expect(Number(e.data['putToWork'])).toBeGreaterThan(0);
+    }
+    for (const d of w.params.all()) {
+      const id = String(d.id).toLowerCase();
+      expect(id).not.toContain('callbuffer');
+      expect(id).not.toContain('liquidityratio');
+    }
+  });
+
+  it('asks for its money back when a call went unpaid, and names no price (XI-2)', () => {
+    const w = ranWorld('calls', 26);
+    for (const e of w.journal.ofKind('insurer.raised')) {
+      // It is raising against a call it missed, and it asks for whole shares it actually holds.
+      expect(Number(e.data['missed'])).toBeGreaterThan(0);
+      expect(Number(e.data['asked'])).toBeGreaterThan(0);
+      expect(Number.isInteger(Number(e.data['asked']))).toBe(true);
+      // A2.b: and the call it missed was REFUSED in full rather than trimmed to what it held.
+      const missed = w.journal
+        .forSubject('fund.called', String(e.data['insurer']))
+        .filter((c) => c.data['paid'] === false);
+      expect(missed.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('cannot redeem out of the pool that called it, which is the trap A2.a names', () => {
+    /**
+     * A closed-end fund has no redemption — the money was committed for its life — so an investor
+     * called by one cannot meet the call by asking that one for its money back. It sells something
+     * ELSE, or it defaults, and the refusal is recorded rather than silently dropped.
+     */
+    const w = ranWorld('calls', 26);
+    for (const e of w.journal.ofKind('fund.notRedeemable')) {
+      // The refusal names the pool, the holder and the TERMS it came in on — an investor asking for
+      // money it agreed it could not have is a real fact about its own position (App A).
+      expect(String(e.data['fund'])).not.toBe('');
+      expect(['closed', 'listed']).toContain(String(e.data['terms']));
+    }
   });
 });
