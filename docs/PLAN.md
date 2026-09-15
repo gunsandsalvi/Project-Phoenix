@@ -17,8 +17,8 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 13 of 28 items closed** (95 of 205 steps).
-**Requirement coverage: 65.5%** (899 MET, 108 PARTIAL, 0 OUT OF SCOPE of 1372 REASON/VERIFY/FORBID clauses).
+**The plan: 13 of 28 items closed** (96 of 206 steps).
+**Requirement coverage: 65.6%** (902 MET, 108 PARTIAL, 0 OUT OF SCOPE of 1374 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -30,7 +30,7 @@ The plan has two parts:
 | 0e — Questions, not hooks | 4 | 4 | closed |
 | 0f — The population lattice | 11 | 11 | closed |
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 11 — Small-Business Pools (§42): the profile, then the rest | 6 | 6 | closed |
+| 11 — Small-Business Pools (§42): the profile, then the rest | 7 | 7 | closed |
 | 12 — Firm birth, household formation, promotion | 7 | 7 | closed |
 | 12a — Households borrow, owe and fail; arrears; the immortals | 9 | 9 | closed |
 | 12b — Employment is a standing relation | 6 | 6 | closed |

@@ -10839,3 +10839,39 @@ of anything (Law 8). A coupon due is `payable` now, which is what will be paid.
 
 **Checks.** `check:opens` green on both worlds; the eight small-business tests green; lint,
 typecheck, `check:spec`, `check:forbids`, `check:deaths` green.
+
+## Item 11.0f — Plant and promotion: positioned, not built
+
+The step was two mechanisms and neither is the profile's to build today, and the plan now says
+where each of them goes rather than carrying a claim.
+
+**Plant.** Every line a small firm runs declares plant (the room the table is in, the ward, the
+classroom — Capital Programme A2), the named firm's start is limited by its vintages, and the
+profile's `canStart` reads hours and inputs and no plant: a cell serves a meal with no room, which
+is a finding and is written down. The limit cannot go in alone — a cell holds no plant, so it would
+be a sector that makes nothing — and the purchase needs what a cell's money costs, which is its
+bank's quote (11.2), and the arithmetic of what a project must earn, which the firms module owns
+and a module never imports. It is 11.2a: the cost-of-capital read becomes the registry's, the way
+the expected-price read did at 11.0a, the seed opens a cell with the plant its opening batch takes,
+and the profile bids in the plant market with what it retains. One arithmetic, no copy (Law 4).
+
+**Promotion.** The event exists and fires — a cell whose band moves is re-keyed by a `promotion`
+event with the cause `crossed an edge` — and what it makes is a cell, never a named firm, because
+a named firm is a declaration the firms module draws at the seed and nothing births one after it.
+That is 12.1's instruction and 12.4's promotion. With holdings as totals *a member* whose size
+crosses the last edge is not visible to the model at all; the per-member position is 12a.1/12a.5's,
+as 11.0e already said.
+
+**COVERAGE.** A6.b MET (a weight of one is a named party; the boundary is a size). A6.c PARTIAL,
+naming 12.4.
+
+## Item 11.0 — closed
+
+The profile is built in five sub-steps (11.0a–e) and the sixth is positioned. What a cell of small
+firms can do in the scale model and the rig: decide a batch from its members' hours and its own
+outlook of its fills; bid for its inputs at what they are worth to it; be shipped on terms and ship
+on terms; post for hours; keep a period of trading at its own scale and pay the rest to its owner;
+ask its bank for what it lacks and fail on a coupon it cannot pay. What it cannot yet do is under
+the item that gives it the mechanism: plant (11.2a), promotion (12.4), a per-member failure
+(12a.1/12a.5), an input line that trades in the rig (12b.3). Nothing in the code changed in this
+close; `check:opens` stands as at 11.0e.
