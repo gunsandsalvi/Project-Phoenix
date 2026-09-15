@@ -369,3 +369,12 @@ export function addTo<K>(acc: Map<K, number>, key: K, delta: number): void {
   const cur = acc.get(key);
   acc.set(key, cur === undefined ? finite(delta, 'accumulator') : finite(cur + delta, 'accumulator'));
 }
+
+/**
+ * Law 6, Law 8 (12c.1): A POWER, in core because core owns the arithmetic. `x` raised to `to` —
+ * what a learning curve is made of (Wright: hours fall by a constant fraction per doubling, which
+ * is a negative power of the count) — and nothing here bounds or rounds.
+ */
+export function raised(x: number, to: number, what: string): number {
+  return finite(Math.pow(x, to), what);
+}

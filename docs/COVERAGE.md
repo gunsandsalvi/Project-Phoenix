@@ -1126,7 +1126,7 @@ measurement is taken there is nothing to name.
 |---|---|---|
 | `Firm A1` | MET | packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts (a named party with an account and a register of what it holds) |
 | `Firm A2` | MET | packages/engine/src/mechanisms/firms/data.ts (the region fixes its money and the line fixes what it buys, sells and employs) |
-| `Firm A3` | PARTIAL | size and COST both: firms differ in stock, work in progress and cash, and each has its own labour productivity, so what it will pay for an hour differs from its neighbour's and one of them is the marginal employer (packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/mechanisms/firms/decide.ts). That dispersion is what makes the venue a market rather than one bid. Leverage arrives with loans (worklist 6) |
+| `Firm A3` | PARTIAL | size and COST both: firms differ in stock, work in progress and cash, and each has its own labour productivity, so what it will pay for an hour differs from its neighbour's and one of them is the marginal employer (packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/mechanisms/firms/decide.ts). That dispersion is what makes the venue a market rather than one bid. Leverage arrives with loans (worklist 6); 12c.1: and what a line has LEARNED — its hours per unit fall with what it has made, at the recipe's declared rate, read off the ledger's create legs (`registry/physical.ts learnedHoursPerUnit`, `Ledger.madeBy`); no stored productivity anywhere |
 | `Firm A4` | PARTIAL | the residual is the firm own equity account (packages/engine/src/audit/families/accounts.ts); owners of record are a share register (worklist 9) |
 | `Firm B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (what it sells is what its own offers cleared at, against named buyers; never a rate applied to last period) |
 | `Firm B2` | MET | packages/engine/src/mechanisms/firms/produce.ts (what it bought, drawn at what it cost it: packages/engine/src/mechanisms/goods/inventory.ts) |
@@ -1282,7 +1282,7 @@ measurement is taken there is nothing to name.
 | requirement | status | where / why |
 |---|---|---|
 | `Goods A1` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/recipes.ts, packages/engine/src/mechanisms/goods/inventory.ts |
-| `Goods A2` | MET | packages/engine/src/mechanisms/goods/recipes.ts (the recipe is the good own public technology in physical quantities), packages/engine/src/mechanisms/firms/produce.ts (and the firm draws exactly it) |
+| `Goods A2` | MET | packages/engine/src/mechanisms/goods/recipes.ts (the recipe is the good own public technology in physical quantities), packages/engine/src/mechanisms/firms/produce.ts (and the firm draws exactly it); 12c.1 (A2.c): the recipe's hours are what a line that has made nothing takes; each recipe declares the rate they fall at with cumulative output (`learning`, TECHNOLOGY, Wright 1936) |
 | `Goods A2.b` | MET | packages/engine/src/mechanisms/goods/index.ts (refused at assembly by the declared unit), tools/eslint-rules/index.js (phoenix/no-value-recipe) |
 | `Goods A3` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/inventory.ts |
 | `Goods A4` | MET | packages/engine/src/mechanisms/goods/index.ts (one instrument per region and sub-unit) |

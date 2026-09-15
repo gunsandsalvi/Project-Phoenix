@@ -11597,3 +11597,25 @@ throw of 12b.3, the research rig where nobody wants a view, and the manager that
 
 **Checks.** `employment.test.ts` green (three); `check:opens` green; lint, typecheck, spec,
 forbids, deaths green. Coverage 68.3%.
+
+## Item 12c.1 — Hours per unit are a read of what the line has made
+
+A recipe's hours per unit were a constant, scaled once per firm (Firm A3). Every recipe now
+declares, as TECHNOLOGY, the rate at which its hours fall with cumulative output — Wright's curve,
+an exponent on the pieces the line has made, its `why` naming the class of work it comes from:
+grown or dug barely learns, a process learns a tenth a doubling, assembly a fifth, a service about
+a fourteenth. A firm's hours per unit is a READ against that: the recipe's hours times what it
+has made to the minus rate, the count off the ledger's own index over the create legs (the record,
+never a level), through `view.made(instrument)`; a small firm's against what a member of the cell
+has made. Nothing stores productivity, and an entrant's edge (12c.3) will be a different base, not
+a different rate. The power is core's (`raised`): the forbids gate counts arithmetic outside it,
+and the first commit of this item went in with that gate red — this record and the move are the
+follow-up.
+
+**Measured.** In eight periods of the scale model every firm that has produced takes fewer hours
+a unit than its recipe says, exactly by the curve; a line with no learning takes the same hours
+for ever. The four-country world and the rig run; nothing new is red across the ten suites (56 of
+108).
+
+**Checks.** `learning.test.ts` green (two); `check:opens` green; lint, typecheck, spec, forbids,
+deaths green.

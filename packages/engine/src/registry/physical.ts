@@ -55,7 +55,7 @@ import {
   scale,
   valueAt,
 } from '../core/measure.js';
-import { div, sub, sum, zeroIfNone } from '../core/num.js';
+import { div, sub, sum, zeroIfNone, raised } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { SeedContext } from '../world/context.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
@@ -224,7 +224,7 @@ export const learningParam = (subUnit: string): ParamId => paramId(`goods.${subU
  * productivity anywhere, and an entrant's edge (12c.3) is a different base, not a different rate.
  */
 export function learnedHoursPerUnit(base: Ratio, made: Qty, rate: Ratio): Ratio {
-  return asRatio(base * Math.pow(made + 1, -1 * rate), 'hours a unit takes after what it has made');
+  return asRatio(base * raised(made + 1, -1 * rate, 'the curve at what it has made'), 'hours a unit takes after what it has made');
 }
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
 export const plantParam = (subUnit: string, capitalKind: string): ParamId =>
