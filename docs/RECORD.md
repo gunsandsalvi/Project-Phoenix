@@ -11573,3 +11573,27 @@ red for it.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `labour.test.ts`
 at its five reds.
+
+## Item 12b.6 — The tests; item 12b closed
+
+One register answers who works where: the agreement store, the employment reads, an employer's
+rows and a worker's row are one answer, a cell's weight is its row's headcount (12b.2a), an
+employer's payroll is its rows and nothing else, and every hire is on a row now or was separated
+since. A bank that lost money this week posts the same thing for its desk as one that did not,
+because the bid is its outlook and not the week (12b.3). A separation runs its notice with wages
+due and ends with nothing more owed (12b.2) — the world-audit gate is lifted from that one test,
+whose subject it is not.
+
+**Item 12b closed.** The section is removed. Its findings are positioned: the price level and the
+banking venue's print at 12d.1; the fund manager that bids its whole earnings at 14; the capacity
+past 2^53 at 21.1; the service lines nobody buys from at 22.3. Two are closed by the item itself:
+an employment row's worker is its creditor and never a term (12b.1), and the labour test that
+divided a wage by a cell's weight divides by the row's people now that the cell is the row's
+(12b.2a).
+
+**Measured.** 56 red of 108 across the world, firms, small-business, control, households, treasury,
+banks, funds, labour and research suites: the world's own audit findings, the price level, the
+throw of 12b.3, the research rig where nobody wants a view, and the manager that bid everything.
+
+**Checks.** `employment.test.ts` green (three); `check:opens` green; lint, typecheck, spec,
+forbids, deaths green. Coverage 68.3%.

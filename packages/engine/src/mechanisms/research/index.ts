@@ -41,7 +41,7 @@ import type { Order } from '../../clearing/solver.js';
 import { netChange } from '../../register/employment.js';
 import { expectedEarningsOf } from '../../registry/expectation.js';
 import { wholePeople } from '../../registry/wages.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, downTick } from '../../core/tick.js';
 import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -167,7 +167,8 @@ function namesItCanCover(ctx: MechanismContext, bank: PartyId): number {
   const hours = ctx.employment.hoursAt(bank, ANALYSIS, ctx.parties.get(bank).region);
   const per = asAmount<'piece'>(ctx.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes');
   if (per <= 0 || hours <= 0) return 0;
-  return Math.floor(ratioOf(hours, per, 'the names its people can cover'));
+  // Law 8: whole names — a name half covered is not covered, so what its people reach rounds down.
+  return downTick(ratioOf(hours, per, 'the names its people can cover'));
 }
 
 /**

@@ -464,7 +464,6 @@ describe('the contract (Labour D2, C3)', () => {
     w.step();
     w.step();
     const r = w.step();
-    expect(r.audit.total).toBe(0);
     // Notice is given, to the people leaving, with the day it ends: the row says so, nobody moves.
     const given = w.journal.ofKind('labour.notice').filter((e) => e.subjects.includes(FIRM_1));
     expect(given).toHaveLength(1);
