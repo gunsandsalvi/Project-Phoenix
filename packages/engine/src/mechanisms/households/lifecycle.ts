@@ -50,6 +50,8 @@ import type { PartyKindProfile } from '../../registry/kinds.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { MORTALITY, type MortalityDecl } from './data.js';
 import { rentPrintedIn } from '../../registry/funding.js';
+import { failedWhy } from '../../world/failure.js';
+import { issuedBy } from '../../register/instruments.js';
 
 /** F1.b: what this cohort's members die at, per period. One parameter per cohort (Law 2). */
 export const mortalityParam = (band: Pick<MortalityDecl, 'fromAge' | 'toAge'>): ParamId =>
@@ -328,6 +330,10 @@ function handToProbate(
       monies.add(ctx.instruments.get(h.instrument).ccy);
       continue;
     }
+    // Law 5, Money E1 (12a.5): A CLAIM ON ITSELF IS NOT HANDED OVER. A cell that absorbed both the
+    // payer and the payee of an arrear issues the row and holds it; moving it would be an issuance
+    // with no price, and there is nothing to hand to anybody — it is the estate's to extinguish.
+    if (issuedBy(ctx.instruments.get(h.instrument), from)) continue;
     // 0f.1: the register holds the cell's TOTAL, and the whole of it moves to probate.
     const total = view.free(h.instrument);
     if (total <= 0) continue;
@@ -635,5 +641,30 @@ export function form(ctx: MechanismContext): void {
     }
     ctx.cells.weight(cell.id, 'entry', standing, 'formed');
     ctx.record(LIFECYCLE, [cell.id], { event: 'formed', members: standing, rent: rent.value, income }, true);
+  }
+}
+
+/**
+ * XI-3, Households F1.b, Corporate Credit E5 (12a.5): A HOUSEHOLD THAT CANNOT PAY FAILS. The kernel
+ * says why (`failedWhy`: what it still owes on payments it missed is more than it holds); this
+ * module says what happens, because it owns the population: the members go to the standing
+ * probate cell of their key — the same destination death is — and the record follows them: the
+ * `credit` dimension of the key reads `defaulted`, which is what a lender reads (E5). With
+ * holdings as totals a cell fails as one; the per-member miss is a finding under this item.
+ */
+export function fail(ctx: MechanismContext): void {
+  for (const cell of [...ctx.parties.ofKind(HOUSEHOLD)]) {
+    if (cell.representation !== 'cell' || !cell.status.alive) continue;
+    if (keyOf(cell, 'estate') !== 'living') continue;
+    const why = failedWhy(ctx, ctx.participant(cell.id));
+    if (why === undefined) continue;
+    const office = probateId(cell.region, cell.bank);
+    if (!ctx.parties.has(office)) continue;
+    const members = weightOf(cell);
+    const estate = ctx.cells.reKey(cell.id, members, { estate: 'probate', credit: 'defaulted' }, `failed: ${why}`);
+    waiting(ctx).toDie.delete(String(cell.id));
+    waiting(ctx).toAge.delete(String(cell.id));
+    handToProbate(ctx, estate, office, cell.region);
+    ctx.record(LIFECYCLE, [cell.id, estate], { event: 'failed', members, why }, true);
   }
 }

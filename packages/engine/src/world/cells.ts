@@ -248,6 +248,12 @@ export function ceaseCell(
     { kind: 'death', members: c.weight, before: c.weight, after: 0, successor, cause },
     true,
   );
+  // Register F2, Money E4 (12a.5): WHAT THE DEAD OWED IS THE SUCCESSOR'S TO OWE — its loan rows and
+  // its arrears — as a merge and a promotion already did; a coupon addressed to the cell after it
+  // ceased was Money E4's refusal, and the four-country world stopped there in period 7.
+  for (const i of d.instruments.issuedBy(cell)) {
+    if (i.status.live) d.instruments.reseat(i.id, successor);
+  }
   d.parties.cease(cell, period, successor);
   succeedAgreements(cell, successor, period, cycle, d);
 }

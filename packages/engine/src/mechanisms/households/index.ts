@@ -64,6 +64,7 @@ import {
   probateKind,
   settleEstates,
   form,
+  fail,
 } from './lifecycle.js';
 import {
   cushionForFund,
@@ -687,8 +688,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
          */
         lattice: HOUSEHOLD_LATTICE,
         moneyIssuer: null,
-        fails: [],
-        borrows: false,
+        // XI-3 (12a.5): nothing is immortal — a household that cannot pay what fell due fails on
+        // cash, and this module says where its people go (`resolves`).
+        fails: ['cash'],
+        // C1.d, Housing C1 (12a.5): it borrows — a mortgage on a schedule, consumer credit at its
+        // option — through the one door every borrower uses; whether a bank lends is the bank's.
+        borrows: true,
         buysOnTerms: false,
         depositClass: 'retail',
       },
@@ -728,6 +733,8 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         ],
         writes: [{ kind: 'event', name: 'households.lifecycle' }],
         run: (ctx: MechanismContext) => {
+          // XI-3 (12a.5): who could not pay goes to probate first, with the record that says so.
+          fail(ctx);
           // F1.b: the people reaching adulthood form before the year's ageing moves the rest.
           form(ctx);
           age(ctx);
@@ -767,6 +774,8 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
       },
     ],
     families: [consumptionIsBought()],
+    // XI-3 (12a.5): the estate module leaves a household's failure to this one (`resolvesItsOwn`).
+    resolves: [HOUSEHOLD],
     bankChoices: [{ partyKind: HOUSEHOLD, chooses: householdChoosesBank }],
   };
 }
@@ -904,6 +913,16 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // fund published is public (Clearing F1: it acts on what it has already been told), and what it
   // offers is compared against the same requirement a bill is.
   const short = shortForSpending(decided.value.cash, decided.value.spend);
+  // C1.d, Corporate Credit A1 (12a.5): CONSUMER CREDIT IS THE SAME ROW, UNSECURED. What its basket
+  // needs beyond what it holds it asks its bank for, at its option, through the one door every
+  // borrower uses; a bank that says no leaves it short, which is the constrained state A2.g counts.
+  if (short > 0) {
+    ctx.request(self.id, {
+      ccy,
+      short: scale(short, asRatio(weightOf(self), 'its members'), 'what the cell is short of between them'),
+      repays: 'atOption',
+    });
+  }
   const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);
   for (const o of fundOrders(positions, required, toFund, short, decided.value.wealth)) {
     if (!material(o.sharesPerMember, 2, o.sharesPerMember)) continue;

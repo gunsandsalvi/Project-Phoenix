@@ -11292,3 +11292,31 @@ the answer is the credit view's (17.0), where the haircut on the print also live
 
 **Checks.** `mortgage.test.ts` green; the household, housing, formation, mobility and arrears
 tests unchanged; `check:opens` green; lint, typecheck green.
+
+## Item 12a.5 — A household that cannot pay fails
+
+Nothing is immortal (XI-3), and a household was: it could miss a wage, a rent, an invoice, and
+carry the arrears forever with no consequence but the rows. Now the household kind declares what
+it fails on — cash — and the households module, which owns the population, says what happens: a
+living cell the kernel says cannot pay what it still owes goes whole to the standing probate cell
+of its key, as the dead do, with `credit = defaulted` on the key, its holdings handed to the
+probate office and the kernel's reason on the record. A lender reads the record off the key
+(Corporate Credit E5). Consumer credit is the same loan row unsecured: what its basket is short
+beyond what it holds it asks its bank for, at its option, through the door every borrower uses.
+
+**Two stops on the way, both fixed where they were.** A cell that ceased into its estate still
+had instruments issued in its name, and the next coupon addressed to it was Money E4's refusal —
+the four-country world stopped in period 7; `ceaseCell` now reseats what the ceasing cell issued
+onto its successor, as a merge and a promotion already did. And a cell that had absorbed both the
+payer and the payee of an arrear held a claim on itself; handing it to probate was an issuance
+with no price. A self-claim stays where it is: it is the estate's to extinguish.
+
+**Finding (positioned under 12a.5, waits on 12b).** With holdings as totals a cell fails as ONE:
+every member of a twenty-thousand-household cell goes to probate for a miss that was some of
+theirs. The per-member miss needs a member with an income of its own, which is what 12b's
+employment register gives it.
+
+**Checks.** `household-failure.test.ts` green (a cell that cannot cover an arrear fails on cash,
+its people are in probate marked defaulted, the reason names the miss); the mortgage, arrears,
+formation and mobility tests green (16); the households suite's nine reds are the nine of 12a.4;
+`check:opens` green; lint, typecheck green.
