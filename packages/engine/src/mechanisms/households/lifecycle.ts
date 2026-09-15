@@ -370,6 +370,7 @@ function handToProbate(
   // Money E1, 12a.3: money the estate could not fund is an ARREAR now — settlement wrote the row
   // to the office in the same pass — and a second representation of it here would be Law 4's
   // defect. What is still this module's to say is a hand-over that failed for another reason.
+  // eslint-disable-next-line phoenix/no-kind-branch -- a fail reason's tag, not a party or product kind
   if (r.reason.kind === 'overdraftRefused') return [];
   const why = failedBecause(r.reason);
   return cash.map((c) => ({ payer: from, payee: to, amount: c.amount, ccy: c.ccy, reason: why }));
