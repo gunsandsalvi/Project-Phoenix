@@ -9425,3 +9425,79 @@ put it, which is item 14's allocator, and the row says so rather than reading as
 
 Typecheck 0, lint 0, `check:spec` 220 tags, `check:forbids` 6 over 217 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13 — CLOSED. Three sectors that produced nothing, and one absent sector left
+
+Item 13 was the three asset-management systems: hedge funds (§28), private equity (§29) and prime
+brokerage (§15). All three opened at **0 MET**, and they were three of the six absent sectors this
+plan was written to find — a sector with no clause MET produces nothing and leaves no trace in any
+output, which is why nobody had noticed them.
+
+| | opened | closed | by |
+|---|---|---|---|
+| Hedge Funds §28 | 0 / 24 | **13** MET, 2 PARTIAL | 13.1, 13.2, 13.2b, 13.6 |
+| Prime Brokerage §15 | 0 / 24 | **17** MET, 2 PARTIAL | 13.3, 13.4, 13.8 |
+| Private Equity §29 | 0 / 25 | **12** MET, 1 PARTIAL | 13.5, 13.5c, and 10f.6 |
+| Securities Lending §14 | 14 / 21 | **15** MET | 13.8 |
+
+**ABSENT SECTORS: ONE.** Only the Polity, 0 of 32, which is item 19.
+
+### What the item turned out to be, against what it was written as
+
+Almost every step was smaller than its plan said, and each for the same reason: **the mechanism was
+already there and something one line long was making it unreachable.**
+
+- **13.1 was done at 10e**, and further than written.
+- **13.2**: there is no hedge-fund party kind. What makes a pool a hedge fund is four terms of a
+  MANDATE, and a strategy is a blueprint.
+- **13.2b** was written as *"every class needs a second reason"*. Every class already had one. What
+  none of them had was a party that could be SIZED: eleven speculative terms all read `view.equity()`,
+  and a pool's equity is zero by construction. One kernel door, eleven reads deleted, and the rule is
+  now the sixth silent FORBID.
+- **13.3**: prime brokerage is a bank's fifth business line and what it does is WRITE A LOAN. Two
+  kernel doors, and C4.a fell out of brokers disagreeing rather than being written.
+- **13.4**: the loop D1→D4 needed no contagion step. **Both changes were removals.**
+- **13.5**: no private-equity party kind either — a closed-end mandate over unlisted equity. Its
+  FORBID (a call bounded by the investor's spare cash) became the fifth silent one.
+- **13.5c**: the second rung of A2.a's ladder — hold liquidity against a call, and sell if you must.
+- **13.6**: the NAV pass reads the contract store, so a pool with a position is not a fund with equity.
+- **13.7**: a check, and the thing it caught was its own figures.
+- **13.8** (`E-14`): both sides marked and the difference called. A margin call had two definitions
+  in this world and now has one, with a broker and a stock lender as its two callers.
+- **13.9 was done at 10e.4**, and differently on purpose: a fee set by ENTRY rather than by a book.
+
+### The measurement is removed
+
+**13.4b is gone on the owner's instruction.** It asked for a measurement of the loss chain — one
+fund's loss reaching another fund's margin call — and measurement is not what this item is for
+(Law 11). §15 D4, the clause it carried, asks that the chain be **traceable party by party**, and it
+is, by construction: every link is a named pair on a public or own-name event, and a loss that
+stopped at the fund would need a link with one party on it. There is no such link in the path. D4
+goes PARTIAL → MET on the traceability the clause actually asks for, and the row says plainly that
+whether it propagates in a long run is item 23's.
+
+### What did NOT close, named rather than absorbed
+
+- **§29 B2, B2.a, B4, B5 and C3 — the LEVERAGE.** *"Most of the price is debt raised against the
+  target itself."* The target has to borrow conditional on a tender that has not settled yet and pay
+  the sellers in the same breath: a two-phase deal the period loop has no shape for, and it needs
+  17.9's request channel. It is **item 17b**, after 17. Until it lands a buyout here is unlevered and
+  B2.b's *"the credit market decides which buyouts occur"* does not bite. **This is the third of item
+  13's three exit sentences, and it is the one that does not hold.**
+- **§14 C3 — cash collateral reinvested**, *"where a lending programme actually loses money"*. 13.8
+  moves the variation cash and stops; putting it to work wants item 14's allocator.
+- **§28 B1's other half**: leverage permits without supplying until a lender can hear a pool's
+  request, which is 17.9 again.
+
+### And the closed sections are gone
+
+This file's own rule: *"this is the plan of what is left, and `docs/RECORD.md` is the ledger of what
+was done."* 10f's section was left in when it closed, which was an omission; both are removed here.
+Stage C is now 11, 12, 14–18.
+
+Plan completion 92.9%; requirement coverage **65.4%** (896 MET of 1371), from 64.3% when 10f opened.
+
+Typecheck 0, lint 0, `check:spec` 220 tags, `check:forbids` 6 over 217 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.
