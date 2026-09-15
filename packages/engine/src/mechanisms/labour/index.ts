@@ -17,7 +17,6 @@ import type { Family, Violation } from '../../audit/audit.js';
 import {
   cohortId,
   paramId,
-  unitId,
   venueId,
   type RegionId,
   type VenueId,
@@ -30,6 +29,7 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { LABOUR_NUMBERS, OCCUPATIONS, type OccupationDecl } from './data.js';
+import { HOURS, HOURS_PER_MEMBER } from '../../registry/wages.js';
 import {
   emptySkills,
   endNotices,
@@ -46,10 +46,10 @@ import type { AuditView } from '../../audit/view.js';
 
 export * from './data.js';
 
-export const HOURS = unitId('hours');
+export { HOURS } from '../../registry/wages.js';
 
 export const LABOUR_PARAMS = {
-  hoursPerMember: paramId('labour.hoursPerMember'),
+  hoursPerMember: HOURS_PER_MEMBER,
   retirementAge: paramId('labour.retirementAge'),
   hiringLag: paramId('labour.hiring.lagPeriods'),
   severance: paramId('labour.severance.periods'),

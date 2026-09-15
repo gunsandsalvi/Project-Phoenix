@@ -100,21 +100,20 @@ describe('coverage (Reporting D1, D2, D3, D3.a)', () => {
     expect(sizes.some((n) => n < banks)).toBe(true);
   });
 
-  it('costs real money paid to named people, every period it covers anything (D2, Law 5)', () => {
+  it('is staffed by analysts hired in the venue, and covers no more names than they reach (D2, Law 5, 12b.5)', () => {
     const w = ran('research', 40);
-    let instructions = 0;
-    let settled = 0;
-    for (let p = 1; p <= 40; p += 1) {
-      for (const r of w.ledger.inPeriod(p as never)) {
-        if (!r.instruction.reason.includes('research desk')) continue;
-        instructions += 1;
-        if (r.outcome === 'settled') settled += 1;
-      }
+    // D2: the analysts are employed — rows in the `analysis` trade, at a named bank, paid with
+    // everybody else's wages off the employment register. There is no research budget parameter
+    // and no desk payment: a wage is a job, and a job is a row.
+    const analysts = w.employment.all().filter((r) => r.occupation === 'analysis');
+    expect(analysts.length).toBeGreaterThan(0);
+    const per = w.params.count('research.hoursPerName' as never);
+    for (const bank of new Set(analysts.map((r) => String(r.employer)))) {
+      const hours = analysts.filter((r) => String(r.employer) === bank).reduce((t, r) => t + r.hoursPerMember * r.headcount, 0);
+      const initiated = new Set(w.journal.ofKind('research.initiated').filter((e) => String(e.data['bank']) === bank).map((e) => String(e.data['company'])));
+      for (const e of w.journal.ofKind('research.dropped')) if (String(e.data['bank']) === bank) initiated.delete(String(e.data['company']));
+      expect(initiated.size).toBeLessThanOrEqual(Math.floor(hours / per));
     }
-    // D2: the analysts are employed and the cost has a named payee. There is no research budget
-    // parameter anywhere — a budget would be the cost stated where D2 asks for it to be paid.
-    expect(instructions).toBeGreaterThan(0);
-    expect(settled).toBe(instructions);
   });
 
   it('initiates and drops, and both are decisions somebody can see', () => {

@@ -42,7 +42,7 @@ import { downTick, asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { ownPayroll, payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
+import { ownPayroll, payrollSince, wageFacing as facingIn, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { expectedEarningsOf } from '../../registry/expectation.js';
 import { period as periodOf } from '../../calendar/calendar.js';
@@ -164,7 +164,7 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (want <= 0) return [];
   // Labour C3, C5 (12b.2): the CHANGE against what it will have — more at what an hour is worth
   // to it, or fewer as a cut given notice.
-  const change = netChange(view.employs(), BANKING, view.self.region, asQty(want));
+  const change = netChange(view.employs(), BANKING, view.self.region, wholePeople(view, asQty(want)));
   if (change === undefined) return [];
   return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
 }
@@ -279,7 +279,7 @@ export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonl
   if (!took.some || took.value <= 0) return [];
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
-  const change = netChange(view.employs(), ADVISORY, view.self.region, hours);
+  const change = netChange(view.employs(), ADVISORY, view.self.region, wholePeople(view, hours));
   if (change === undefined) return [];
   return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
 }

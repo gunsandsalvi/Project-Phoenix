@@ -11547,3 +11547,29 @@ world's labour venues are seekers waiting for a bid — the price level of 12b.3
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `labour.test.ts`
 at its five reds.
+
+## Item 12b.5 — Analysts are staff
+
+A research desk was paid by a transfer to every household that banked with the bank, split per
+member, at the printed wage, for hours nobody had contracted — a wage with no job behind it. A
+desk is people now: the bank posts for analysts in the `analysis` venue as its other desks post —
+the change against what it has, for the hours the names it wanted last period take, at what an
+hour is worth to it — pays them off the employment register with everybody else's wages, and covers
+no more names than their hours reach; a name it cannot staff is dropped with that reason. The
+desk payment and the family that watched it settle are deleted.
+
+**Found and fixed on the way (Law 8).** A desk that needs thirty-two hours of a thirty-five-hour
+week and posted thirty-two hired nobody: the fill did not make a person. Every employer's posting
+now rounds up to whole people, through one helper in the registry that names the labour module's
+hours per member for the purpose.
+
+**Measured.** In the research scale model no bank wants a view of anybody — it holds nothing any
+company issued — so nothing is initiated in sixty periods with or without this change (eight of
+nine research tests red at the baseline, seven now). The fund managers hire analysts in the same
+venue, and one that is the only bidder pays its whole bid — four analysts at 43.7 an hour, 6,116
+out of 5,245, gone the period after: a desk is worth what it lets the manager keep, not everything
+the pools pay it, and that is written under the asset managers' item (14); `funds.test.ts:227` is
+red for it.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `labour.test.ts`
+at its five reds.

@@ -22,13 +22,31 @@
  * a zero (App A).
  */
 import { period as periodOf, type Period } from '../calendar/calendar.js';
-import { asCash, asPerPiece, asRatio, type Cash, heldAsMoney, type PerPiece, plus, pricedAt, scale } from '../core/measure.js';
+import { asCash, asPerPiece, asRatio, type Cash, heldAsMoney, type PerPiece, plus, pricedAt, ratioOf, scale } from '../core/measure.js';
 import { addQty, NO_QTY, type Qty, scaleQty } from '../core/tick.js';
-import type { PartyId, RegionId, VenueId } from '../core/ids.js';
+import { paramId, unitId, type PartyId, type RegionId, type VenueId } from '../core/ids.js';
+import { upTick } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
 import type { SettlementRecord } from '../ledger/instruction.js';
 import { type EmploymentReads, type EmploymentRow, wagePerMember } from '../register/employment.js';
+
+/** Labour A1, Law 8: time's smallest piece is the hour, and this is the unit a venue counts it in. */
+export const HOURS = unitId('hours');
+/** Labour A1, B2: what one person has to sell in a week — the labour module's own number, named here so an employer can post whole people. */
+export const HOURS_PER_MEMBER = paramId('labour.hoursPerMember');
+
+/**
+ * Law 8, Labour A4.b, D3 (12b.5): WHAT AN EMPLOYER MUST HAVE ROUNDS UP TO WHOLE PEOPLE. A person
+ * sells all of their hours or none, so a desk that needs thirty-two hours of a thirty-five-hour
+ * week and posts thirty-two hires nobody — the fill does not make a person. What it posts is the
+ * people its need takes, in their hours.
+ */
+export function wholePeople(reads: { params: { amount(id: typeof HOURS_PER_MEMBER, unit: typeof HOURS): Qty } }, hours: Qty): Qty {
+  const per = reads.params.amount(HOURS_PER_MEMBER, HOURS);
+  if (per <= 0 || hours <= 0) return hours;
+  return scaleQty(per, upTick(ratioOf(hours, per, 'the people the hours take')), 'their hours');
+}
 
 const GOING_RATE = 'labour.goingRate';
 const PRINTED_WAGE = 'labour.print';

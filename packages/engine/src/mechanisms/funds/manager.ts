@@ -61,7 +61,7 @@ import { atMost } from '../../core/num.js';
 import { none, type Option, some } from '../../core/option.js';
 import { asQty, type Qty } from '../../core/tick.js';
 import type { Blueprint } from '../../registry/blueprint.js';
-import { wageFacing } from '../../registry/wages.js';
+import { wageFacing, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { expectedEarningsOf } from '../../registry/expectation.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -145,7 +145,7 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   // Labour C3, C5 (12b.2): the change against what it will have; fewer is a cut given notice.
-  const change = netChange(view.employs(), INVESTING, view.self.region, asQty(hours));
+  const change = netChange(view.employs(), INVESTING, view.self.region, wholePeople(view, asQty(hours)));
   if (change === undefined) return [];
   return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
 }

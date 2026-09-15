@@ -29,19 +29,24 @@ import {
   minus,
   over,
   type PerPiece,
+  pricedAt,
+  ratioOf,
   scale,
-  valueAt,
 } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
-import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
-import { weightOf, totalOverMembers } from '../../parties/party.js';
-import type { MechanismContext } from '../../world/context.js';
+import { BANK } from '../../registry/profiles.js';
+import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { VenueDecl } from '../../clearing/venue.js';
+import type { Order } from '../../clearing/solver.js';
+import { netChange } from '../../register/employment.js';
+import { expectedEarningsOf } from '../../registry/expectation.js';
+import { wholePeople } from '../../registry/wages.js';
+import { asQty } from '../../core/tick.js';
 import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { estimateFrom, seenOf } from './estimate.js';
 import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
-import { wagePrintedIn } from '../../registry/wages.js';
 import { linesQuoted } from '../../registry/banking.js';
 import { QUESTIONS, type ConsensusRead } from '../../registry/questions.js';
 
@@ -139,60 +144,56 @@ function needsTheView(ctx: MechanismContext, bank: PartyId, company: PartyId): b
 }
 
 /**
- * D2: COVERAGE COSTS, and the cost has a named payee. The analysts are people and this is what they
- * are paid — an instruction from the bank to the household cells whose members do the work, in the
- * bank's own money, every period it covers anything.
- *
- * The hours are TECHNOLOGY (`research.hoursPerName`): covering a name takes a person a stated amount
- * of time, which is a fact about the work and not a preference of anybody. What the time COSTS is
- * whatever the labour venue cleared at, read off this world's own wage prints — never a research
- * budget somebody wrote down, which would be the cost stated instead of paid.
+ * D2, Labour A4, F1 (12b.5): THE ANALYSTS ARE STAFF. A desk is people hired in the `analysis`
+ * venue like any other trade — the bank posts the hours the names it wants to cover take, at what
+ * an hour is worth to it, and pays them through the employment register with everybody else's
+ * wages. What it can cover is what its analysts' hours reach; a bank with no analysts covers
+ * nothing, which is a real answer. It PAID a desk here — a transfer to every household that banked
+ * with it, split per member, at the printed wage, for hours nobody had contracted — a wage with no
+ * employment behind it (Law 5: no income without a job; no employment without an employer).
  */
-function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
-  if (names <= 0) return;
-  const wage = wagePrinted(ctx, bank);
-  if (!wage.some) return;
-  const hours = scale(
-    asAmount<'piece'>(ctx.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes'),
-    asRatio(names, 'the names it covers'),
-    'the hours this desk takes',
-  );
-  const owed = valueAt(wage.value, hours, 'what the desk costs it');
-  if (owed <= 0) return;
-  // D2: THE ANALYSTS ARE PEOPLE AND THIS IS WHAT THEY ARE PAID. They are the members of the cells
-  // that bank here, which is who is at hand to do the work, and the payment is split across them
-  // per member exactly as a wage is (XI-15). A bank with no household at it pays nobody and has no
-  // desk, which is a real answer and not a missing one.
-  const cells = ctx.parties.ofKind(HOUSEHOLD).filter((c) => c.status.alive && c.bank === bank);
-  const members = cells.reduce((t, c) => t + weightOf(c), 0);
-  if (members <= 0) return;
-  const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
-  for (const cell of cells) {
-    const share = ctx.registry.payable(over(owed, asRatio(members, 'the analysts there are'), "one analyst's share"),
-    );
-    if (share <= 0) continue;
-    ctx.settle({
-      legs: [
-        {
-          kind: 'money',
-          from: ctx.accountOf(bank, ccy),
-          to: ctx.accountOf(cell.id, ccy),
-          ccy,
-          amount: totalOverMembers(cell, share),
-        },
-      ],
-      cause: 'transfer',
-      reason: `${bank} pays its research desk for ${names} names`,
-    });
-  }
+export const ANALYSIS = 'analysis';
+const WANTED = 'research.wanted';
+
+interface Wanted {
+  at: number;
+  names: number;
 }
 
-/** Law 19: what an hour of somebody's time last went for, read off the wage this world printed. */
-function wagePrinted(ctx: MechanismContext, bank: PartyId): Option<PerPiece> {
-  return wagePrintedIn(ctx.journal, ctx.parties.get(bank).region);
+const nothingWanted = (): Wanted => ({ at: -1, names: 0 });
+
+/** D2: the names this desk's people can cover — its analysts' hours over what one name takes. */
+function namesItCanCover(ctx: MechanismContext, bank: PartyId): number {
+  const hours = ctx.employment.hoursAt(bank, ANALYSIS, ctx.parties.get(bank).region);
+  const per = asAmount<'piece'>(ctx.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes');
+  if (per <= 0 || hours <= 0) return 0;
+  return Math.floor(ratioOf(hours, per, 'the names its people can cover'));
 }
 
-/** C1–C4: form, publish and revise. Every estimate is this bank's own and none of them is a price. */
+/**
+ * Labour C1, C5 (12b.5): what a bank posts for analysts — the change against what it has, for the
+ * hours the names it wanted last period take, at what an hour is worth to it (its own outlook on
+ * what it makes over the hours it needs, as its other desks bid).
+ */
+export function analystOrders(view: ParticipantView, venue: VenueDecl): readonly Order[] {
+  if (venue.key['occupation'] !== ANALYSIS) return [];
+  if (venue.key['region'] !== String(view.self.region)) return [];
+  const wanted = view.working(WANTED, nothingWanted);
+  if (wanted.at !== view.period - 1) return [];
+  const per = asAmount<'piece'>(view.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes');
+  const hours = wholePeople(view, asQty(scale(per, asRatio(wanted.names, 'the names it wants covered'), 'the hours they take')));
+  const took = expectedEarningsOf(view);
+  const worth: PerPiece | undefined =
+    took.some && hours > 0 ? pricedAt(took.value, hours, 'what an hour of this is worth to it') : undefined;
+  // Hours worth nothing to it are hours it does not want: the change is then a cut of what it has.
+  const wants = worth !== undefined && worth > 0 ? hours : asQty(0, 'hours worth nothing to it');
+  const change = netChange(view.employs(), ANALYSIS, view.self.region, wants);
+  if (change === undefined) return [];
+  if (change.side === 'sell') return [{ party: view.self.id, side: 'sell', price: 'market', qty: change.qty }];
+  if (worth === undefined) return [];
+  return [{ party: view.self.id, side: 'buy', price: worth, qty: change.qty }];
+}
+
 function cover(seed: string, ctx: MechanismContext): void {
   const all = desks(ctx);
   const companies = reported(ctx);
@@ -200,16 +201,24 @@ function cover(seed: string, ctx: MechanismContext): void {
     if (!bank.status.alive) continue;
     const desk = deskOf(all, bank.id);
     const memory = memoryOf(seed, bank.id);
+    // D2 (12b.5): what it CAN cover is what its analysts reach; what it WANTS to cover is what it
+    // posts for next period. A name it wants and has nobody for is not covered, and one it was
+    // covering is dropped for want of an analyst — the same drop, a different reason on it.
+    const room = namesItCanCover(ctx, bank.id);
+    let wants = 0;
     let covered = 0;
     for (const company of companies) {
       const wanted = needsTheView(ctx, bank.id, company);
       const cover = coverageOf(ctx, bank.id, String(company));
       const standing = cover.said.some ? cover.said.value : undefined;
-      if (!wanted) {
-        // D2: and it DROPS one it cannot justify. What it said stands until it says otherwise.
+      if (wanted) wants += 1;
+      const staffed = wanted && covered < room;
+      if (!staffed) {
+        // D2: and it DROPS one it cannot justify, or cannot staff. What it said stands until it
+        // says otherwise.
         if (!cover.since.some) continue;
         desk.seenTo.delete(String(company));
-        ctx.record('research.dropped', [bank.id, company], { bank: bank.id, company }, true);
+        ctx.record('research.dropped', [bank.id, company], { bank: bank.id, company, why: wanted ? 'no analyst to cover it' : 'no longer needs the view' }, true);
         continue;
       }
       covered += 1;
@@ -253,7 +262,9 @@ function cover(seed: string, ctx: MechanismContext): void {
         true,
       );
     }
-    pay(ctx, bank.id, covered);
+    const slot = ctx.workingOf(bank.id, WANTED, nothingWanted);
+    slot.at = ctx.period;
+    slot.names = wants;
   }
 }
 
@@ -426,41 +437,18 @@ function researchNames(): Family {
 }
 
 /** Law 5, Reporting D2: what a research desk cost was paid, in full, to somebody with a name. */
-function researchFlows(): Family {
-  return {
-    name: 'flows',
-    contributor: 'research',
-    spec: 'Reporting D2 Law 5',
-    built: true,
-    check: (view) => {
-      const out: Violation[] = [];
-      for (const r of view.ledger.inPeriod(view.period)) {
-        if (!r.instruction.reason.includes('research desk')) continue;
-        if (r.outcome === 'settled') continue;
-        out.push({
-          family: 'flows',
-          spec: 'Reporting D2',
-          owner: r.instruction.legs[0]?.kind ?? 'a desk',
-          size: 1,
-          unit: 'instructions',
-          period: view.period,
-          // D2 asks for a cost that is PAID. A bank that could not pay its analysts has a funding
-          // problem and that is a real state — but it is one somebody must be able to see.
-          message: `a research desk cost did not settle: ${r.instruction.reason}`,
-        });
-      }
-      return out;
-    },
-  };
-}
-
-/** C1, D1: the module. The banks that exist do this; there is no analyst party kind. */
 export function research(seed: string): SystemModule {
   forbid(seed.length > 0, 'Seed A5', 'a research desk is drawn from the world seed');
   return {
     id: 'research',
     measures: [{ question: QUESTIONS.whatTheConsensusIs, fn: consensusOf }],
     nouns: [
+      {
+        name: WANTED,
+        kind: 'working',
+        holds: 'the names each bank wanted a view of this period, which is what it posts for analysts against next period',
+        why: 'D2, Labour C5 (12b.5): what a desk decided it needs is handed from the cover phase to the bank’s own posting in the analysis venue; it is the bank’s own decision read back by the bank, and the coverage it publishes is what the world reads (Law 4).',
+      },
       {
         name: 'research',
         kind: 'working',
@@ -505,7 +493,6 @@ export function research(seed: string): SystemModule {
         // It follows the surprise it is anchored to, and takes its cycle (item 0, stop 18).
         anchor: { after: 'research.settle' },
         reads: [
-          { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
           { kind: 'event', name: 'research.dropped', of: 'anyPeriod' },
           { kind: 'event', name: 'research.estimate', of: 'anyPeriod' },
           { kind: 'event', name: 'research.initiated', of: 'anyPeriod' },
@@ -520,6 +507,8 @@ export function research(seed: string): SystemModule {
       },
     ],
     participants: [],
-    families: [researchNames(), researchFlows()],
+    // 12b.5: the desk's wages are the labour module's instructions off the employment register, and
+    // a wage that does not settle is the arrear settlement writes — no family of this module's.
+    families: [researchNames()],
   };
 }
