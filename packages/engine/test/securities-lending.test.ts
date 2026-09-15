@@ -19,7 +19,7 @@ describe('the pool is a read, and it is what caps a short (B4, E1)', () => {
       if (holders.length === 0) continue;
       for (const h of holders) {
         const free = w.register.free(h, i.id);
-        const total = w.register.totalQuantity(h, i.id);
+        const total = w.register.quantity(h, i.id);
         // C4, Register D5.a: posted collateral leaves the poster's free balance, so it cannot be
         // counted as available by both sides. Free is never more than held — that is the register
         // refusing, not this module remembering.

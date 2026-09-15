@@ -40,7 +40,7 @@ import {
   scale,
 } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
-import { asQty, scaleQty } from '../../core/tick.js';
+import { asQty, scaleQty, downTick } from '../../core/tick.js';
 import {
   agreementKindId, partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
@@ -325,27 +325,27 @@ function handToProbate(
       monies.add(ctx.instruments.get(h.instrument).ccy);
       continue;
     }
-    const perMember = view.free(h.instrument);
-    if (perMember <= 0) continue;
+    // 0f.1: the register holds the cell's TOTAL, and the whole of it moves to probate.
+    const total = view.free(h.instrument);
+    if (total <= 0) continue;
     const print = view.print(h.instrument);
     legs.push({
       kind: 'asset',
       from,
       to,
       instrument: h.instrument,
-      // XI-15: the register holds per MEMBER, and what moves is what all of them held between them.
-      qty: scaleQty(perMember, weight, 'what they held between them'),
+      qty: total,
       pricePerUnit: print.some ? some(print.value.price) : none(),
       accruedPerUnit: none(),
-      fromCell: some({ perMember, weight }),
+      fromCell: some({ perMember: asQty(downTick(total / weight), 'per member'), weight }),
       toCell: none(),
     });
   }
   const cash: { readonly ccy: CurrencyCode; readonly amount: number }[] = [];
   for (const ccy of monies) {
-    const perMember = view.cash(ccy);
-    if (perMember <= 0) continue;
-    const amount = scaleQty(perMember, weight, 'the money they had between them');
+    const amount = view.cash(ccy);
+    if (amount <= 0) continue;
+    const perMember = asQty(downTick(amount / weight), 'per member');
     cash.push({ ccy, amount });
     legs.push({
       kind: 'money',

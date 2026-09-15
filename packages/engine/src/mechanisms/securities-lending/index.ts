@@ -539,7 +539,7 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
   const total = sum(amounts).value;
   // E2: it passes on what the units it BORROWED earned, not what its whole holding earned. A
   // borrower that already owned some of the line keeps its own.
-  const held = ctx.register.totalQuantity(loan.borrower, loan.instrument);
+  const held = ctx.register.quantity(loan.borrower, loan.instrument);
   return held <= 0
     ? asCash(0, 'it holds none of the line')
     : scale(total, ratioOf(loan.units, held, 'the borrowed share of what it holds'), 'passed on');
@@ -845,7 +845,7 @@ function borrows(): Family {
         const holders = view.register.holdersOf(i.id);
         if (holders.length === 0) continue;
         for (const h of holders) {
-          const units: number = view.register.totalQuantity(h, i.id);
+          const units: number = view.register.quantity(h, i.id);
           if (units >= 0) continue;
           // E1: a negative position nobody lent is an invented security. A short is a BORROW and
           // the borrowed units are in somebody's name; there is no other way to be short here.

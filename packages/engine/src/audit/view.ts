@@ -37,7 +37,7 @@ export interface AuditView {
     Register,
     | 'holding'
     | 'quantity'
-    | 'totalQuantity'
+    | 'perMember'
     | 'encumbered'
     | 'free'
     | 'holdingsOf'

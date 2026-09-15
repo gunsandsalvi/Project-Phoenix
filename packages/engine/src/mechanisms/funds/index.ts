@@ -66,16 +66,7 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import { addTo, atMost, dustOf, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import {
-  addQty,
-  asQty,
-  downTick,
-  NO_QTY,
-  scaleQty,
-  subQty,
-  upTick,
-  type Qty,
-} from '../../core/tick.js';
+import { addQty, asQty, downTick, NO_QTY, subQty, upTick, type Qty } from '../../core/tick.js';
 
 /** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
 const ONE_PIECE = asQty(1);
@@ -544,8 +535,9 @@ function redeem(
   const party = ctx.parties.get(holder);
   const fund = ctx.parties.get(m.pool);
   const ccy = ctx.registry.currencyOf(fund.region);
-  // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
-  const held = ctx.register.quantity(holder, share.id);
+  // XI-15, 0f.1: the register holds the cell's TOTAL; a request is per member, so what one member
+  // holds is the read that bounds it.
+  const held = asQty(downTick(ctx.register.perMember(holder, share.id)), 'what one member holds');
   const weight = weightOf(party);
   const asked = atMost(ctx.registry.deliverable(sharesAsked), held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
@@ -1387,16 +1379,12 @@ function firstCreation(
 
 /** E3: the most shares this party could create out of what it actually holds, line by line. */
 function couldCreate(ctx: MechanismContext, e: FundDecl, party: PartyId): Qty {
-  const weight = weightOf(ctx.parties.get(party));
   let most: Qty | undefined;
   for (const [line, perShare] of Object.entries(inKindOf(e).basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
-    const free = scaleQty(
-      ctx.register.free(party, id),
-      weight,
-      'what it holds free of this line',
-    );
+    // 0f.1: the register holds the cell's TOTAL.
+    const free = ctx.register.free(party, id);
     const backs = downTick(
       over(free, asRatio(perShare, 'what one share draws of it'), 'shares this line of its basket backs'),
     );
@@ -1499,8 +1487,9 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
   for (const holder of ctx.register.holdersOf(share)) {
     if (holder === fund.id) continue;
     const party = ctx.parties.get(holder);
-    const perMemberUnits = ctx.register.quantity(holder, share);
-    if (perMemberUnits <= 0) continue;
+    // 0f.1: the register holds the TOTAL; what a member is paid is on its share of it.
+    if (ctx.register.quantity(holder, share) <= 0) continue;
+    const perMemberUnits = asAmount<'piece'>(ctx.register.perMember(holder, share), 'what one member holds');
     // Law 8: what reaches a holder is whole pieces of money, per member. A holding whose share of
     // the pass-through is less than one piece is paid nothing this period, and the cash stays in
     // the fund for the next one — which is where it was anyway.
@@ -2244,20 +2233,12 @@ function outOfTheFloat(
   const taken: Qty[] = [];
   for (const holder of ctx.register.holdersOf(id)) {
     if (holder === fund) continue;
-    const weight = weightOf(ctx.parties.get(holder));
     const mine = ctx.register.quantity(holder, id);
-    const perMember = downTick(
-      over(
-        scale(wanted, ratioOf(mine, outstanding, 'its share of the line'), 'its share of what the launch takes'),
-        asRatio(1, 'and a holder holds per member already'),
-        'per member',
-      ),
-    );
-    if (perMember <= 0) continue;
-    ctx.register.debit(holder, id, perMember);
-    // XI-15, item 16: a count PER MEMBER times the cell's weight, through the one door that says
-    // so — it refuses a fractional weight, and a total cannot be mistaken for a per-member count.
-    taken.push(scaleQty(perMember, weight, 'units this holder gave up'));
+    // 0f.1: the register holds the cell's TOTAL, and what the launch takes is a share of it.
+    const take = downTick(scale(wanted, ratioOf(mine, outstanding, 'its share of the line'), 'its share of what the launch takes'));
+    if (take <= 0) continue;
+    ctx.register.debit(holder, id, take);
+    taken.push(take);
   }
   return sum(taken).value;
 }
@@ -2344,6 +2325,10 @@ export function funds(
         // this phase reads; before the markets, because what it cannot pay is what it must sell.
         anchor: { after: 'households.decide' },
         reads: [
+          // 0f.1: what a saver certified is read at the strike (a lastOf, so any period). It was
+          // never declared and never reached: with cells holding their real totals a pool now has
+          // subscriptions to strike against, and the phase-order check said so (Clearing F1.a).
+          { kind: 'event', name: CERTIFIED, of: 'anyPeriod' },
           { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
           { kind: 'event', name: 'prime.call', of: 'anyPeriod' },
           { kind: 'event', name: 'prime.line', of: 'thisPeriod' },

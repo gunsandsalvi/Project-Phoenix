@@ -13,9 +13,8 @@
  *    drawing (B3.a), the central bank the reserve overdraft it stood behind (D3.b). One reported
  *    here is a defect in whichever of them allowed it, named by holder and size.
  */
-import { negQty, scaleQty } from '../../core/tick.js';
+import { negQty } from '../../core/tick.js';
 import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import { weightOf } from '../../parties/party.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -42,12 +41,10 @@ export function moneyFamily(memory: AuditMemory): Family {
         for (const d of r.deltas) {
           if (!moneyInstruments.has(d.instrument)) continue;
           const ccy = view.instruments.get(d.instrument).ccy;
-          // XI-15: the weight the delta was struck at, not the weight the cell has now — it may
-          // have split since, and this instruction moved what it moved.
+          // 0f.1: a delta's `qty` is what the whole party moved — the register holds totals — so
+          // nothing scales it; the weight it was struck at is a statement the delta still carries.
           const signed =
-            d.target === 'holding'
-              ? scaleQty(d.qty, d.weight, 'what the whole party moved')
-              : negQty(d.qty, 'what the issuer owes, the other way');
+            d.target === 'holding' ? d.qty : negQty(d.qty, 'what the issuer owes, the other way');
           const list = perCcy.get(ccy) ?? [];
           list.push(signed);
           perCcy.set(ccy, list);
@@ -112,7 +109,7 @@ export function moneyFamily(memory: AuditMemory): Family {
             family: 'money',
             spec: 'Money B3.c',
             owner: h.holder,
-            size: qty * weightOf(view.parties.get(h.holder)),
+            size: qty,
             unit: view.instruments.get(h.instrument).ccy,
             period: view.period,
             message: `${h.holder} closes ${qty} per member on ${h.instrument} with no lender row behind it`,

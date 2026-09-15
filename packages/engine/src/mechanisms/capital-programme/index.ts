@@ -33,7 +33,7 @@ import { addTo, atMost, dustOf, finite, material, sub, sum, withinDust, zeroIfNo
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSideOf } from '../../ledger/settlement.js';
 import { displayName } from '../../registry/naming.js';
 import { WHOLE_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -232,14 +232,15 @@ function retire(ctx: MechanismContext): void {
     const units = ctx.register.free(h.holder, i.id);
     if (!material(units, h.lots.length + 1, units)) continue;
     const party = ctx.parties.get(h.holder);
-    const side = cellSide(party, units);
+    // 0f.1: `free` is the cell's TOTAL; the leg moves it and the side is derived from it.
+    const side = cellSideOf(party, units);
     const record = ctx.settle({
       legs: [
         {
           kind: 'destroy',
           party: h.holder,
           instrument: i.id,
-          qty: totalFor(party, units),
+          qty: units,
           why: 'scrapped',
           fromCell: side === undefined ? none() : some(side),
         },
@@ -291,14 +292,14 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     );
     if (!material(lost, 2, units) || lost <= 0) continue;
     const party = ctx.parties.get(h.holder);
-    const side = cellSide(party, lost);
+    const side = cellSideOf(party, lost);
     const record = ctx.settle({
       legs: [
         {
           kind: 'destroy',
           party: h.holder,
           instrument: i.id,
-          qty: totalFor(party, lost),
+          qty: lost,
           why: 'scrapped',
           fromCell: side === undefined ? none() : some(side),
         },
@@ -382,8 +383,9 @@ function commissionOne(
   const serviceDate = ctx.calendar.startOf(ctx.period);
   const id = vintage(ctx, d, region, serviceDate);
   const party = ctx.parties.get(buyer);
-  const side = cellSide(party, qty);
-  const total = totalFor(party, qty);
+  // 0f.1: `free` is the cell's TOTAL; what is built is that, and the side is derived from it.
+  const side = cellSideOf(party, qty);
+  const total = qty;
   const legs: Leg[] = [
     {
       kind: 'destroy',

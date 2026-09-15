@@ -58,10 +58,10 @@ import {
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
-import { addQty, asQty, downTick, NO_QTY, type Qty, scaleQty, subQty } from '../../core/tick.js';
+import { addQty, asQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
+import { cellSide, cellSideOf, shareFor } from '../../ledger/settlement.js';
 import { keyOf, weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
@@ -184,9 +184,8 @@ function goodUnitOf(view: ParticipantView, region: RegionId): UnitId {
 function owned(view: ParticipantView, region: RegionId): Qty {
   const id = goodId(DWELLING, region);
   if (!view.instruments.has(id)) return NO_QTY;
-  // XI-15: a cell's holdings are per MEMBER and a venue speaks in totals, so the weight goes on
-  // here and nowhere else. A named party stands for one of itself, and its weight is one.
-  return scaleQty(view.free(id), weightOf(view.self), 'what the people it stands for own between them');
+  // XI-15, 0f.1: a cell's holding IS the total the people it stands for own between them.
+  return view.free(id);
 }
 
 /**
@@ -531,14 +530,8 @@ function shortOfMoney(
    * multiplied out to meet it rather than subtracted from a number in a different denomination.
    */
   const cost: Cash = valueAt(price, want, 'what buying them would cost it');
-  const money = heldAsMoney(
-    scaleQty(
-      view.cash(ctx.registry.currencyOf(region)),
-      weightOf(view.self),
-      'the money its people have between them',
-    ),
-    'the money its people have between them',
-  );
+  // 0f.1: the register holds the cell's TOTAL.
+  const money = heldAsMoney(view.cash(ctx.registry.currencyOf(region)), 'the money its people have between them');
   const short = minus(cost, money, 'less the money it has');
   if (short <= 0) return undefined;
   return short;
@@ -619,10 +612,11 @@ function charge(ctx: MechanismContext): void {
        * lien is on the total. `free` is already per member for a cell, so the share is struck the
        * way every other movement on a cell is struck and the two agree by construction.
        */
-      const perMember = atMost(covers, free, 'it can pledge no more of it than it holds');
-      const share = shareFor(ctx.registry, cell, ctx.instruments.get(id).unit, perMember);
-      if (share.total <= 0) continue;
-      const side = cellSide(cell, share.perMember);
+      // 0f.1: `free` is the cell's TOTAL, so what it pledges is a total; the side is derived.
+      const pledged = atMost(covers, free, 'it can pledge no more of it than it holds');
+      if (pledged <= 0) continue;
+      const share = { total: pledged };
+      const side = cellSideOf(cell, pledged);
       ctx.settle({
         legs: [
           {

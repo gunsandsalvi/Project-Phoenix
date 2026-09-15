@@ -270,7 +270,7 @@ function crossModuleReads(files: readonly string[]): string[] {
       if (CROSS_MODULE_EVENT_READS.has(pair)) continue;
       out.push(
         `mechanisms/${mod}: [Law 15] reads "${kind}", which ${[...ws].sort().join(' and ')} writes. ` +
-          `A cross-module fact is a question or a registry read, never an event name (item 0e.2)`,
+          `A cross-module fact is a question or a registry read, never an event name (0e′.3: the baseline is empty)`,
       );
     }
   }
@@ -328,5 +328,5 @@ process.stdout.write(
   `all ${FORBIDS.length} silent FORBIDs hold over ${files.length} files; ` +
     `${String(Object.keys(ROUNDING_BASELINE).length)} files round outside core/ and ` +
     `${String(Object.keys(ZERO_FLOOR_BASELINE).length)} floor at zero (item 21), ` +
-    `${String(CROSS_MODULE_EVENT_READS.size)} read another module's event by name (item 0e.2)\n`,
+    `${String(CROSS_MODULE_EVENT_READS.size)} read another module's event by name (0e′.3)\n`,
 );

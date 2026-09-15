@@ -10338,3 +10338,49 @@ and here is the measurement" is a placement.
 green; `plan:progress` recounted. The full suite was not run for this item — the owner's rule is
 that it runs at the end of a module, and the four sector items 0f–0g and 11 onward are what this
 block was clearing the ground for.
+
+## Item 0f.1 — A cell holds totals
+
+**One representation change, not three steps.** 0f.1 as written was the register alone. It could
+not open the world alone: the moment a lot is a total, settlement writing a leg's per-member side
+into it is wrong, and every read that multiplied a holding by `weightOf` double-counts. So this is
+the register on totals, settlement handing the register the leg's total (the cell side stays on the
+leg as a statement until 0f.2 deletes it), the read-side half of 0f.5, and the balance sheet as a
+total on both sides — and nothing else. The decision × weight sites (a per-member demand ladder
+becoming a total order, a bequest per heir × heirs) are correct and untouched: a decision is per
+member and an order is a total.
+
+**The register.** `quantity` is the party's total; `perMember` is a read of it through the door that
+refuses a cell of nobody; `totalQuantity` is deleted (ten source sites, eight test sites).
+`copyMemberState` is `moveShare`: a split or promotion of `members` of `weight` people moves
+`floor(qty × members / weight)` pieces of every lot and lien and the remainder stays with the people
+who stayed — arithmetic, not a bound. `forget` is `merge`: lots and liens concatenate, money walks
+add, and the per-member equity and revaluation accounts take the weighted mean of the two, the one
+division a merge costs, its dust on the walk. `sameState` is deleted with the representation.
+`validateCellSide` and the per-member divisibility check are deleted here, not at 0f.2: 15,169,244
+pieces among 3 people is not a whole number each, and a total that does not divide is arithmetic.
+
+**Where the double-counting hid, found by opening the world.** Each stop was a site that read a
+holding and multiplied by a weight, and each was found by the world refusing to run: a bank's
+resolution moving every cell's deposits × weight (22.7 trillion out of a 5-billion account, period
+1); the audit's `money` family scaling every ledger delta by the weight it was struck at; the
+balance sheet scaling holder-side liabilities by the holder's weight and the consolidation by each
+member's; deposit interest on a total balance handed to `shareFor`, which multiplies by the weight —
+interest on the whole cell, once per member, compounding to 10¹⁶ by period 12; a fund's pass-through
+and a firm's dividend read as per member; plant scrapping, storm loss, plant building, perishing and
+a mortgage pledge each moving `free × weight`. Nine `cellSideOf` sites derive a leg's side from the
+total; 0f.2 deletes the side and the helper together.
+
+**Households decide per member and read per member.** `ParticipantView.perMember(instrument)` and
+`cashPerMember(ccy)` are the two doors; the spending decision, the spare, and the fund position
+read through them, because everything they are compared with is per member (A2.e, A2.f).
+
+**Findings.** `funds/index.ts` writes the register directly at two sites, which the module contract
+forbids — positioned under 0f.2. `funds.strike` read `investor.wealth` undeclared and never reached
+it until cells held their real totals; declared. The block's full suite, run once at its close,
+measured **200 failed / 674 passed of 874** against 0d's 199/670 of 869: five tests added, four
+green, one red not attributed — the failing list is saved with this item and the difference is
+inside the same forty-seven files 0d placed.
+
+**Checks.** `check:opens` green on both worlds — the rig thirty periods, the four-country world
+twelve — on totals. Lint, typecheck, `check:spec`, `check:forbids` green.

@@ -12,7 +12,7 @@
  *
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
-import { asTotal, eachMember, type PerPiece, valueAt , asPerPiece} from '../core/measure.js';
+import { asTotal, eachMember, type PerPiece, valueAt , asPerPiece, asAmount } from '../core/measure.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import { negQty, type Qty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
@@ -21,12 +21,13 @@ import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
-import { cellSide, shareFor, type Settlement, totalFor } from '../ledger/settlement.js';
+import { cellSide, shareFor, type Settlement } from '../ledger/settlement.js';
 import { weightOf, type Parties, type Party } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
 import type { AccountResolver } from '../clearing/market.js';
+import { asQty } from '../core/tick.js';
 
 export interface ActionDeps {
   readonly calendar: Calendar;
@@ -70,8 +71,11 @@ function payToHolders(
   for (const holderId of d.register.holdersOf(i.id)) {
     if (issuedBy(i, holderId)) continue;
     const holder = d.parties.get(holderId);
-    const perMemberUnits = d.register.quantity(holderId, i.id);
-    if (perMemberUnits <= 0) continue;
+    // 0f.1: the register holds the TOTAL; the coupon is struck on it and the leg's cell side says
+    // what each member gets of it.
+    const unitsHeld = d.register.quantity(holderId, i.id);
+    if (unitsHeld <= 0) continue;
+    const perMemberUnits = d.register.perMember(holderId, i.id);
     // Law 8: WHAT IS OWED IS WHAT EXISTS. A coupon is a rate on a holding, so what it comes to is
     // a fraction of a tick more often than not, and the payment is the tick below it — for each
     // member of a cell separately, because each of them is a real holder with a real account
@@ -80,7 +84,8 @@ function payToHolders(
       d.registry,
       holder,
       currencyUnit(i.ccy),
-      valueAt(perUnit, perMemberUnits, 'coupon cash'),
+      // Item 16: a member's share of the holding re-enters as an amount here, to be put on the grid.
+      valueAt(perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds'), 'coupon cash'),
     );
     /**
      * XI-15, Law 8 (13d.1): AND THE PAYER MAY BE A CELL TOO. A household with a mortgage is a
@@ -238,9 +243,10 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
   for (const holderId of [...d.register.holdersOf(i.id)]) {
     if (issuedBy(i, holderId)) continue;
     const holder = d.parties.get(holderId);
-    const perMemberUnits = d.register.quantity(holderId, i.id);
-    if (perMemberUnits <= 0) continue;
-    const units = totalFor(holder, perMemberUnits);
+    // 0f.1: the register holds the TOTAL, and the redemption moves the total.
+    const units = d.register.quantity(holderId, i.id);
+    if (units <= 0) continue;
+    const perMemberUnits = asQty(d.register.perMember(holderId, i.id), 'what one member holds');
     const cashPerMember = perMemberUnits; // face: one unit of par pays one unit of currency (N10)
     // N10: par is money, so the units and the cash are on the same grid by construction; nothing
     // needs rounding here and rounding it would leave a stub of a line outstanding.

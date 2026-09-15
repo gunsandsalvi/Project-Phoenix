@@ -20,7 +20,7 @@
  * sum over accounts that moved hundreds of times, and a tolerance that saw only the sum reports a
  * violation the moment the world starts paying itself.
  */
-import { asRatio, type Cash, heldAsMoney, over, scale } from '../../core/measure.js';
+import { type Cash, heldAsMoney } from '../../core/measure.js';
 import { negated } from '../../core/measure.js';
 import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
@@ -150,7 +150,6 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
       if (inside.has(String(holder))) continue;
       const h = view.register.holding(holder, inst.id);
       if (!h.some) continue;
-      const w = weightOf(view.parties.get(holder));
       /**
        * Register B3 (13f): WHAT THIS PARTY OWES, and for almost everything that is the BALANCE
        * rather than what somebody would pay for it today. A borrower owes the whole of what it
@@ -170,29 +169,20 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
         kind.owes === 'value'
           ? view.valuation.valueOfLots(inst.id, h.value.lots, view.period)
           : heldAsMoney(sum(h.value.lots.map((l) => l.qty)).value, 'the face it holds');
-      liabilityTerms.push(
-        scale(
-          view.valuation.inMoney(owed, inst.ccy, home, view.period),
-          asRatio(w, 'the people it stands for'),
-          'what the group owes on it',
-        ),
-      );
+      // 0f.1: the holder's lots are its TOTAL, so what this party owes on them is read straight.
+      liabilityTerms.push(view.valuation.inMoney(owed, inst.ccy, home, view.period));
       // What this party owes IS those balances, read from the other side (Register B3), so every
       // rounding they have taken since they were opened is a rounding in this number.
-      if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust * w;
+      if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust;
     }
   }
-  // Per member of the party (XI-15): holdings are per member; liabilities are held by others in
-  // total and are divided by the party's own weight. A contract's value is already per member and
-  // is on the asset side, so it is not in the division below.
-  const w = weightOf(p);
+  // 0f.1: THE SHEET IS A TOTAL on both sides. Holdings are the party's totals (the register holds
+  // them so), liabilities are what others hold of its paper in total, and a contract's value is
+  // what the contract is worth to the party. Per member is a READ of this, where anybody wants one.
   return {
     assets: sum(assetTerms),
-    liabilities: sum([
-      ...liabilityTerms.map((t) => over(t, asRatio(w, 'the people it stands for'), 'per member')),
-      ...contractLiabilities,
-    ]),
-    walked: walked / w,
+    liabilities: sum([...liabilityTerms, ...contractLiabilities]),
+    walked,
     ccy: home,
   };
 }
@@ -227,27 +217,12 @@ export function consolidated(view: BalanceReads, group: readonly PartyId[]): Bal
   const liabilities: Cash[] = [];
   let walked = 0;
   for (const member of group) {
+    // 0f.1: a member's sheet is already its TOTAL; the group's is the sum of them.
     const sheet = sheetOf(view, member, inside);
-    const w = weightOf(view.parties.get(member));
-    const own = asRatio(w, 'the people it stands for');
-    assets.push(
-      view.valuation.inMoney(
-        scale(sheet.assets.value, own, 'what its people hold between them'),
-        sheet.ccy,
-        home,
-        view.period,
-      ),
-    );
-    liabilities.push(
-      view.valuation.inMoney(
-        scale(sheet.liabilities.value, own, 'what its people owe between them'),
-        sheet.ccy,
-        home,
-        view.period,
-      ),
-    );
+    assets.push(view.valuation.inMoney(sheet.assets.value, sheet.ccy, home, view.period));
+    liabilities.push(view.valuation.inMoney(sheet.liabilities.value, sheet.ccy, home, view.period));
     // Law 7: the dust the READS carried, added the way the numbers were, and never a band.
-    walked += sheet.walked * w;
+    walked += sheet.walked;
   }
   return { assets: sum(assets), liabilities: sum(liabilities), walked, ccy: home };
 }
@@ -288,9 +263,12 @@ export function accountsFamily(): Family {
         // equity account, which is the one number they have.
         const equity = view.register.equityWalk(p.id);
         const revaluation = view.register.revaluationWalk(p.id);
-        const stands = sum([equity.value, revaluation.value]);
+        // 0f.1: the sheet is a TOTAL and the equity account is still PER MEMBER (settlement writes
+        // it so until 0f.2), so what stands against the read is the account over the people. The
+        // multiplication is by a count and adds no dust (Law 7).
+        const people = weightOf(p);
+        const stands = sum([equity.value * people, revaluation.value * people]);
         const read = sum([assets.value, negated(liabilities.value, 'what it owes, the other way')]);
-        // Per member, like the two sides it belongs to (XI-15).
         const dust =
           combineDust(assets, liabilities, read) +
           equity.dust +

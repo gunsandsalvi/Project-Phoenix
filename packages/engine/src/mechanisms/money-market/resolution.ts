@@ -41,29 +41,14 @@
  * what holders lost sum to the hole, and the audit family says so rather than this function
  * asserting it.
  */
-import {
-  acrossMembers,
-  asCash,
-  asPerMember,
-  asRatio,
-  asTotal,
-  type Cash,
-  eachMember,
-  heldAsMoney,
-  minus,
-  over,
-  plus,
-  ratioOf,
-  scale,
-  valueAt,
- asPerPiece} from '../../core/measure.js';
+import { acrossMembers, asCash, asRatio, asTotal, type Cash, eachMember, heldAsMoney, minus, over, plus, ratioOf, scale, valueAt, asPerPiece } from '../../core/measure.js';
 import type { CurrencyCode, InstrumentId, ParamId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
 import { forbid } from '../../core/assert.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { CellSide } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, cellSideOf, totalFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { BANK, TREASURY } from '../../registry/profiles.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -142,17 +127,8 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
   const insured: Cash[] = [];
   for (const holder of ctx.register.holdersOf(own)) {
     if (holder === bank) continue;
-    const p = ctx.parties.get(holder);
-    deposits.push(
-      acrossMembers(
-        asPerMember<'money:piece'>(
-          heldAsMoney(ctx.register.quantity(holder, own), 'what one member holds'),
-          'what one member holds',
-        ),
-        weightOf(p),
-        'what it owes this holder',
-      ),
-    );
+    // 0f.1: the register holds the cell's TOTAL.
+    deposits.push(heldAsMoney(ctx.register.quantity(holder, own), 'what it owes this holder'));
     insured.push(insuredAt(ctx, bank, holder, ccy, limit));
   }
   const borrowings: Cash[] = [];
@@ -166,11 +142,8 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
       if (!worth.some) continue;
       borrowings.push(
         ctx.valuation.inMoney(
-          acrossMembers(
-            asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
-            weightOf(ctx.parties.get(holder)),
-            'what it owes on this row',
-          ),
+          // 0f.1: `worthOf` values the holding the register holds, which is the cell's TOTAL.
+          worth.value.value,
           worth.value.ccy,
           ccy,
           ctx.period,
@@ -358,12 +331,7 @@ function allocate(
       .seniority;
   for (const holder of ctx.register.holdersOf(own)) {
     if (holder === bank) continue;
-    const p = ctx.parties.get(holder);
-    const owed = acrossMembers(
-      asPerMember<'money:piece'>(uninsuredAt(ctx, bank, holder, ccy, limit), 'what one member is owed'),
-      weightOf(p),
-      'uninsured',
-    );
+    const owed = uninsuredAt(ctx, bank, holder, ccy, limit);
     if (owed > 0) exposed.push({ holder, owed, rank: rankOf(own) });
   }
   for (const i of ctx.instruments.all()) {
@@ -380,11 +348,7 @@ function allocate(
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some || worth.value.value <= 0) continue;
       const claim = ctx.valuation.inMoney(
-        acrossMembers(
-          asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
-          weightOf(ctx.parties.get(holder)),
-          'what it is owed',
-        ),
+        worth.value.value,
         worth.value.ccy,
         ccy,
         ctx.period,
@@ -537,9 +501,9 @@ function writeDownRow(
   owed: Cash,
 ): Qty {
   const p = ctx.parties.get(holder);
-  const units = ctx.register.quantity(holder, row);
-  if (units <= 0 || owed <= 0) return NO_QTY;
-  const total = scaleQty(units, weightOf(p), 'what it holds');
+  // 0f.1: the register holds the cell's TOTAL.
+  const total = ctx.register.quantity(holder, row);
+  if (total <= 0 || owed <= 0) return NO_QTY;
   const wiped = ctx.registry.deliverable(scale(total, ratioOf(share, owed, 'the share of it that is lost'), 'units written off'),
   );
   if (wiped <= 0) return NO_QTY;
@@ -644,7 +608,8 @@ function moveBook(
     if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
     const mine = ctx.register.quantity(acquirer, i.id);
     if (mine > 0) {
-      const units = totalFor(ctx.parties.get(acquirer), mine);
+      // 0f.1: the register holds the TOTAL.
+      const units = mine;
       const gone = ctx.settle({
         legs: [
           {
@@ -863,11 +828,11 @@ function moveBook(
   for (const holder of [...ctx.register.holdersOf(own)]) {
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
-    const perMember = ctx.register.quantity(holder, own);
-    if (perMember <= 0) continue;
-    const held = cellSide(p, perMember);
+    // 0f.1: the register holds the holder's TOTAL balance; the side is derived from it.
+    const total = ctx.register.quantity(holder, own);
+    if (total <= 0) continue;
+    const held = cellSideOf(p, total);
     const side = held === undefined ? none<CellSide>() : some(held);
-    const total = totalFor(ctx.parties.get(holder), perMember);
     const r = ctx.settle({
       legs: [
         {

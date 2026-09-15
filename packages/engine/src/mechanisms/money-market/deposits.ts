@@ -48,7 +48,7 @@ import {
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
+import { moneyInstrumentId } from '../../core/ids.js';
 import {
   
   atMost,
@@ -58,7 +58,7 @@ import {
   zeroIfNone,
 } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
+import { cellSideOf } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -80,7 +80,7 @@ export function depositsByClass(
     if (holder === bank) continue;
     const cls = classOf(ctx.registry, ctx.parties.get(holder).kind);
     if (cls === undefined) continue;
-    const held = ctx.register.totalQuantity(holder, money);
+    const held = ctx.register.quantity(holder, money);
     if (held === 0) continue;
     out.set(cls.id, plus(zeroIfNone(out.get(cls.id)), held, `${cls.id} at ${bank}`));
   }
@@ -93,6 +93,7 @@ export function depositsByClass(
  * is what makes E4's break in the loop real rather than notional: a large cell of small depositors
  * is covered and a cell of large ones is not.
  */
+/** 0f.1: the register holds the cell's TOTAL; the guarantee covers each member up to the limit. */
 function coveredPerMember(
   ctx: MechanismContext,
   bank: PartyId,
@@ -101,7 +102,7 @@ function coveredPerMember(
   limit: number,
 ): number {
   const cls = classOf(ctx.registry, ctx.parties.get(holder).kind);
-  const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
+  const perMember = ctx.register.perMember(holder, moneyInstrumentId(bank, ccy));
   return covered(cls, perMember, limit);
 }
 
@@ -137,11 +138,17 @@ export function uninsuredAt(
   ccy: CurrencyCode,
   limit: number,
 ): Cash {
-  const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
-  if (perMember <= 0) return asCash(0, 'a holder with nothing at this bank');
+  const total = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
+  if (total <= 0) return asCash(0, 'a holder with nothing at this bank');
+  // 0f.1: the register holds the TOTAL; what is uninsured is the total less what each member has
+  // covered, over the members.
   return minus(
-    heldAsMoney(perMember, 'what one member holds'),
-    asCash(coveredPerMember(ctx, bank, holder, ccy, limit), 'what one member has covered'),
+    heldAsMoney(total, 'what it holds'),
+    acrossMembers(
+      asPerMember<'money:piece'>(coveredPerMember(ctx, bank, holder, ccy, limit), 'what one member has covered'),
+      weightOf(ctx.parties.get(holder)),
+      'what its members have covered',
+    ),
     'uninsured',
   );
 }
@@ -165,16 +172,8 @@ export function couldLeave(
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
     if (classOf(ctx.registry, p.kind) === undefined) continue;
-    terms.push(
-      acrossMembers(
-        asPerMember<'money:piece'>(
-          uninsuredAt(ctx, bank, holder, ccy, limit),
-          'what one member has uninsured',
-        ),
-        weightOf(p),
-        'what can run',
-      ),
-    );
+    // 0f.1: `uninsuredAt` is the holder's TOTAL uninsured money; nothing scales it.
+    terms.push(uninsuredAt(ctx, bank, holder, ccy, limit));
   }
   return sum(terms).value;
 }
@@ -219,16 +218,13 @@ export function payDepositInterest(
       'interest',
     );
     const paying = wanted > 0;
-    const share = shareFor(
-      ctx.registry,
-      party,
-      currencyUnit(ccy),
-      absolute(wanted, 'what moves, either way'),
-    );
-    const perMember = share.perMember;
-    if (perMember <= 0) continue;
-    const amount = perMember;
-    const side = cellSide(party, amount);
+    // 0f.1: `balance` is the cell's TOTAL, so `wanted` is the total interest: it goes on the grid
+    // as money and the leg carries it whole. `shareFor` took a PER-MEMBER number and multiplied it
+    // by the weight, which with a total in was interest on the whole cell, once per member.
+    const amount = ctx.registry.payable(heldAsMoney(absolute(wanted, 'what moves, either way'), 'the interest'));
+    if (amount <= 0) continue;
+    const share = { total: amount };
+    const side = cellSideOf(party, amount);
     const leg: Leg = {
       kind: 'money',
       from: paying ? { holder: bank, issuer: bank } : { holder, issuer: bank },

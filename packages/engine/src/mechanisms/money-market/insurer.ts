@@ -21,9 +21,9 @@
 import { currencyUnit, moneyInstrumentId, paramId, partyId, partyKindId } from '../../core/ids.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
-import { acrossMembers, asCash, asPerMember, type Cash, scale } from '../../core/measure.js';
+import { asCash, type Cash, scale, heldAsMoney } from '../../core/measure.js';
 import { none } from '../../core/option.js';
-import { weightOf } from '../../parties/party.js';
+import {} from '../../parties/party.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import { MM_PARAMS } from './data.js';
@@ -114,14 +114,8 @@ export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): Cash {
   const insurer = insurerOf(ccy);
   if (!ctx.parties.has(insurer)) return asCash(0, 'there is no insurer in this money');
   const p = ctx.parties.get(insurer);
-  return acrossMembers(
-    asPerMember<'money:piece'>(
-      ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)),
-      'what it holds',
-    ),
-    weightOf(p),
-    'the fund',
-  );
+  // 0f.1: the register holds the cell's TOTAL.
+  return heldAsMoney(ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)), 'the fund');
 }
 
 /**

@@ -220,8 +220,10 @@ function seedContext(w: World): SeedContext {
       forbid(w.instruments.has(inst), 'Money A1', `${p.bank} issues no money in ${ccy}`);
       const held = w.registry.payable(perMember);
       if (held <= 0) return;
-      store.moneyDelta(p.id, inst, held, w.period);
-      w.instruments.adjustIssued(inst, held * weightOf(p));
+      // 0f.1: the register holds the cell's TOTAL; the seed states an endowment per member.
+      const total = held * weightOf(p);
+      store.moneyDelta(p.id, inst, total, w.period);
+      w.instruments.adjustIssued(inst, total);
     },
     endowUnits: (
       party: PartyId,
@@ -232,8 +234,9 @@ function seedContext(w: World): SeedContext {
       const p = w.parties.get(party);
       const held = w.registry.deliverable(perMember);
       if (held <= 0) return;
-      store.credit(p.id, instrument, held, basisPerUnit, w.period);
-      w.instruments.adjustIssued(instrument, held * weightOf(p));
+      const total = held * weightOf(p);
+      store.credit(p.id, instrument, total, basisPerUnit, w.period);
+      w.instruments.adjustIssued(instrument, total);
     },
     market: (id) => w.market(id),
     /** Item 10e: the seed writes mandates, so it needs the same classification everybody else gets. */
@@ -276,11 +279,13 @@ function stateEquityAsRead(w: World): void {
     // subtraction between them, and the walk behind every money balance they were read off. A
     // party whose equity is zero BY CONSTRUCTION (a fund, Fund Shares A3) is nothing but that
     // residue, and `opened(0)` charged it the rounding of stating a zero (worklist 13a).
+    // 0f.1: the sheet is a TOTAL; the account is per member until 0f.2, so it opens with the
+    // total over the people — the one division a per-member account costs, its dust carried.
+    const people = weightOf(p);
     store.stateEquity(
       p.id,
-      // XI-15: the sheet it was read off is per member, and so is the account it opens.
-      asPerMember<'money:piece'>(read.value, 'what one member opens with'),
-      combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
+      asPerMember<'money:piece'>(read.value / people, 'what one member opens with'),
+      (combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked) / people,
       w.period,
       w.cycle,
     );

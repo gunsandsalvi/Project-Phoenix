@@ -55,7 +55,7 @@ import {
 } from '../core/measure.js';
 import { addTo, atMost, finite, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
-import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
+import { asQty, downTick, negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -368,8 +368,6 @@ export class Settlement {
     );
     this.d.registry.currency(leg.ccy);
     for (const acct of [leg.from, leg.to]) this.validateAccount(acct, leg.ccy, ins);
-    this.validateCellSide(leg.from.holder, leg.fromCell, leg.amount, ins);
-    this.validateCellSide(leg.to.holder, leg.toCell, leg.amount, ins);
     const unit = currencyUnit(leg.ccy);
     this.onTheGrid(leg.amount, unit, ins);
     if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, unit, ins);
@@ -422,7 +420,6 @@ export class Settlement {
     );
     this.alive(leg.party, ins);
     const side = leg.kind === 'create' ? leg.toCell : leg.fromCell;
-    this.validateCellSide(leg.party, side, leg.qty, ins);
     this.onTheGrid(leg.qty, inst.unit, ins);
     if (side.some) this.onTheGrid(side.value.perMember, inst.unit, ins);
     if (leg.kind === 'create') {
@@ -483,7 +480,6 @@ export class Settlement {
       'Register D5.b',
       `instruction ${ins.id}: a lien says what it secures`,
     );
-    this.validateCellSide(leg.pledgor, leg.pledgorCell, leg.qty, ins);
     this.onTheGrid(leg.qty, inst.unit, ins);
     if (leg.pledgorCell.some) this.onTheGrid(leg.pledgorCell.value.perMember, inst.unit, ins);
   }
@@ -594,8 +590,6 @@ export class Settlement {
         `a price cannot be negative`,
       );
     }
-    this.validateCellSide(leg.from, leg.fromCell, leg.qty, ins);
-    this.validateCellSide(leg.to, leg.toCell, leg.qty, ins);
     this.onTheGrid(leg.qty, inst.unit, ins);
     if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, inst.unit, ins);
     if (leg.toCell.some) this.onTheGrid(leg.toCell.value.perMember, inst.unit, ins);
@@ -618,44 +612,8 @@ export class Settlement {
     );
   }
 
-  /** XI-15: a cell side carries a per-member amount at the current weight; a named side carries none. */
-  private validateCellSide(
-    party: PartyId,
-    side: MoneyLeg['fromCell'],
-    total: number,
-    ins: Instruction,
-  ): void {
-    const p = this.d.parties.get(party);
-    if (p.representation === 'cell') {
-      forbid(
-        side.some,
-        'XI-15',
-        `instruction ${ins.id}: a movement on cell ${party} must be denominated per member`,
-      );
-      const cs: CellSide = side.value;
-      forbid(
-        cs.weight === p.weight,
-        'XI-15',
-        `instruction ${ins.id}: cell ${party} weight is ${p.weight}, leg struck at ${cs.weight}`,
-      );
-      // Law 8, XI-15: EXACTLY. A per-member amount is a count of pieces and a weight is a count
-      // of people, so the product is a count of pieces and the leg's total is the same count —
-      // two integers, which agree bit for bit or name two different amounts. The dust this
-      // carried was a band under a multiplication that cannot round (item 13b.1).
-      const expected = scaleQty(cs.perMember, cs.weight, 'cell total');
-      forbid(
-        expected === total,
-        'XI-15',
-        `instruction ${ins.id}: cell ${party} per-member ${cs.perMember} x ${cs.weight} is not ${total}`,
-      );
-    } else {
-      forbid(
-        !side.some,
-        'XI-15',
-        `instruction ${ins.id}: ${party} is named; it has no per-member side`,
-      );
-    }
-  }
+
+
 
   private alive(id: PartyId, ins: Instruction): Party {
     const p = this.d.parties.get(id);
@@ -691,7 +649,9 @@ export class Settlement {
             op: 'credit',
             party: leg.party,
             instrument: leg.instrument,
-            qty: leg.toCell.some ? leg.toCell.value.perMember : leg.qty,
+            // 0f.1: the register holds TOTALS; the cell side on the leg is a statement the check
+            // above holds it to, not a quantity anything is written in.
+            qty: leg.qty,
             totalQty: leg.qty,
             money: false,
             basis: leg.costPerUnit,
@@ -704,7 +664,7 @@ export class Settlement {
             op: 'debit',
             party: leg.party,
             instrument: leg.instrument,
-            qty: leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty,
+            qty: leg.qty,
             money: false,
           });
           ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: negQty(leg.qty, 'what leaves the world') });
@@ -724,7 +684,7 @@ export class Settlement {
             pledgor: leg.pledgor,
             beneficiary: leg.beneficiary,
             instrument: leg.instrument,
-            qty: leg.pledgorCell.some ? leg.pledgorCell.value.perMember : leg.qty,
+            qty: leg.qty,
             secures: leg.secures,
           });
           break;
@@ -761,8 +721,9 @@ export class Settlement {
     const m1 = moneyInstrumentId(i1, leg.ccy);
     const m2 = moneyInstrumentId(i2, leg.ccy);
     const cb = this.d.registry.centralBankOf(leg.ccy);
-    const perFrom = leg.fromCell.some ? leg.fromCell.value.perMember : leg.amount;
-    const perTo = leg.toCell.some ? leg.toCell.value.perMember : leg.amount;
+    // 0f.1: the register holds TOTALS, for a cell as for a named party.
+    const perFrom = leg.amount;
+    const perTo = leg.amount;
 
     // Payer minus (C2), or creation if the payer is the issuer itself (C4).
     if (leg.from.holder === i1)
@@ -859,8 +820,8 @@ export class Settlement {
 
   private expandAsset(leg: AssetLeg, ops: Op[]): void {
     const inst = this.d.instruments.get(leg.instrument);
-    const perFrom = leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty;
-    const perTo = leg.toCell.some ? leg.toCell.value.perMember : leg.qty;
+    const perFrom = leg.qty;
+    const perTo = leg.qty;
     const price: PerPiece | 'carrying' = leg.pricePerUnit.some ? leg.pricePerUnit.value : 'carrying';
     let debitIndex = -1;
     if (issuedBy(inst, leg.from)) {
@@ -931,7 +892,7 @@ export class Settlement {
     // same instruction takes out of the holding — one question asked once, before anything moves.
     for (const leg of ins.legs) {
       if (leg.kind !== 'pledge') continue;
-      const per = leg.pledgorCell.some ? leg.pledgorCell.value.perMember : leg.qty;
+      const per = leg.qty;
       const moving = zeroIfNone(net.get(`${leg.pledgor}|${leg.instrument}`)?.delta);
       const free = finite(
         this.d.register.free(leg.pledgor, leg.instrument) +
@@ -1497,6 +1458,17 @@ export class Settlement {
 export function cellSide(p: Party, perMember: Qty): CellSide | undefined {
   if (p.representation !== 'cell') return undefined;
   return { perMember, weight: p.weight };
+}
+
+/**
+ * 0f.1: THE CELL SIDE OF A LEG WHOSE QUANTITY IS THE CELL'S TOTAL. The register holds totals, so
+ * what a leg moves is read straight off it; what one member's share of that is, rounded to the
+ * piece below, is a statement the leg carries until 0f.2 deletes the side altogether. A named
+ * party has no side.
+ */
+export function cellSideOf(p: Party, total: Qty): CellSide | undefined {
+  if (p.representation !== 'cell') return undefined;
+  return { perMember: asQty(downTick(total / p.weight), `${p.id}'s per-member share`), weight: p.weight };
 }
 
 /**

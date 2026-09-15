@@ -78,7 +78,7 @@ describe('the requirement (Banks Capital B1, B1.a)', () => {
             w.register
               .holdersOf(i.id)
               .filter((h) => h !== bank)
-              .map((h) => w.register.totalQuantity(h, i.id)),
+              .map((h) => w.register.quantity(h, i.id)),
           ),
       ).value;
       expect(num(said, 'capital')).toBeCloseTo(w.register.equity(bank) + junior, 6);

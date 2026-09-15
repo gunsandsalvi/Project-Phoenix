@@ -25,21 +25,7 @@
  * there is one. What this module does is stop pricing the line: a claim on a liquidation is not the
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
-import {
-  type Cash,
-  type PerPiece,
-  acrossMembers,
-  amountOf,
-  asAmount,
-  asCash,
-  asNamed,
-  asPerMember,
-  heldAsMoney,
-  minus,
-  negated,
-  plus,
-  pricedAt,
-} from '../../core/measure.js';
+import { type Cash, type PerPiece, amountOf, asAmount, asCash, asNamed, heldAsMoney, minus, negated, plus, pricedAt } from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
@@ -56,7 +42,7 @@ import {
 } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 import { combineDust, div, sum, withinDust } from '../../core/num.js';
-import { downTick, type Qty, scaleQty } from '../../core/tick.js';
+import { downTick, type Qty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { anchorOf, quarterClosedBy } from '../../calendar/fiscal.js';
@@ -301,13 +287,15 @@ function recordDividends(ctx: MechanismContext): void {
     for (const holderId of ctx.register.holdersOf(line.id)) {
       if (holderId === firm) continue;
       const holder = ctx.parties.get(holderId);
-      const perMemberUnits = ctx.register.quantity(holderId, line.id);
-      if (perMemberUnits <= 0) continue;
+      // 0f.1: the register holds the TOTAL; a dividend is declared per member of a cell and
+      // the total is that over the members (Law 8: whole pieces for each real holder).
+      if (ctx.register.quantity(holderId, line.id) <= 0) continue;
+      const perMemberUnits = ctx.register.perMember(holderId, line.id);
       const share = shareFor(
         ctx.registry,
         holder,
         currencyUnit(line.ccy),
-        dividendFor(action.perUnit, perMemberUnits),
+        dividendFor(action.perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds')),
       );
       if (share.total <= 0) continue;
       ctx.owes({
@@ -555,16 +543,8 @@ function publishReads(ctx: MechanismContext, rows: readonly EquityDecl[]): void 
     for (const holder of ctx.register.holdersOf(line.id)) {
       const party = ctx.parties.get(holder);
       voteTerms.push(votesOf(party, ctx.register.quantity(holder, line.id), terms));
-      boundTerms.push(
-        acrossMembers(
-          asPerMember<'amount:piece'>(
-            ctx.register.encumbered(holder, line.id),
-            'what one member has bound',
-          ),
-          weightOf(party),
-          'units bound',
-        ),
-      );
+      // 0f.1: the register holds the cell's TOTAL.
+      boundTerms.push(ctx.register.encumbered(holder, line.id));
     }
     const strategic = sum(boundTerms).value;
     const print = ctx.prices.latest(line.id, ctx.period);
@@ -908,7 +888,7 @@ export function strategicOf(ctx: MechanismContext, firm: string): Qty {
   const terms: Qty[] = [];
   for (const holder of ctx.register.holdersOf(line)) {
     terms.push(
-      scaleQty(ctx.register.encumbered(holder, line), weightOf(ctx.parties.get(holder)), 'units bound'),
+      ctx.register.encumbered(holder, line),
     );
   }
   return sum(terms).value;

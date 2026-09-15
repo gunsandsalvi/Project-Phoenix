@@ -54,7 +54,7 @@ import {
   plus,
   valueAt,
   type Ratio,
-  scale, asAmount,} from '../core/measure.js';
+  scale, asAmount, eachMember, asTotal } from '../core/measure.js';
 import { finite, addTo, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -73,7 +73,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind } from '../journal/journal.js';
 import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
-import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
+import { Settlement, cellSideOf } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
 import { type CurveFamilyDecl, type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore, type Print, wasTraded } from '../prices/price-store.js';
@@ -1479,6 +1479,13 @@ export class World {
       quantity: (instrument) => this.store.quantity(party, instrument),
       free: (instrument) => this.store.free(party, instrument),
       cash: (ccy) => this.cash(party, ccy),
+      perMember: (instrument) => this.store.perMember(party, instrument),
+      cashPerMember: (ccy) =>
+        eachMember(
+          asTotal<'money:piece'>(this.cash(party, ccy), 'what is in its account'),
+          weightOf(this.parties.get(party)),
+          'what one member has in it',
+        ),
       equity: () => this.store.equity(party),
       earned: (periods: number): Cash => {
         // The window is inclusive of this period and runs back `periods` of them, or to the epoch
@@ -2310,9 +2317,10 @@ export class World {
     const p = this.parties.get(party);
     if (p.bank === to) return false;
     const ccy = this.registry.currencyOf(p.region);
-    const perMember = this.register.quantity(party, moneyInstrumentId(p.bank, ccy));
-    if (perMember > 0) {
-      const side = cellSide(p, perMember);
+    // 0f.1: the register holds the cell's TOTAL; the leg's cell side is derived from it.
+    const total = this.register.quantity(party, moneyInstrumentId(p.bank, ccy));
+    if (total > 0) {
+      const side = cellSideOf(p, total);
       const r = this.settlement.settle(
         {
           legs: [
@@ -2321,7 +2329,7 @@ export class World {
               from: { holder: party, issuer: p.bank },
               to: { holder: party, issuer: to },
               ccy,
-              amount: totalFor(p, perMember),
+              amount: total,
               fromCell: side === undefined ? none() : some(side),
               toCell: side === undefined ? none() : some(side),
             },
@@ -2345,7 +2353,7 @@ export class World {
       [party, from, to],
       // Law 8: what moved, per member AND in total, because a cell is many real accounts and the
       // bank it left is short by all of them (E3.a).
-      { party, from, to, amount: perMember, total: totalFor(p, perMember), ccy },
+      { party, from, to, amount: cellSideOf(p, total)?.perMember ?? total, total, ccy },
       true,
     );
     return true;

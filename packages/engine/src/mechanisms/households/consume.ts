@@ -34,22 +34,7 @@
  * range than one that has not.
  */
 import { scaleQty } from '../../core/tick.js';
-import { type Ratio,
-  absolute,
-  asAmount,
-  asCash,
-  asPerPiece,
-  asRatio,
-  type Cash,
-  heldAsMoney,
-  minus,
-  over,
-  type PerPiece,
-  plus,
-  ratioOf,
-  scale,
-  valueAt,
-} from '../../core/measure.js';
+import { type Ratio, absolute, asAmount, asCash, asPerPiece, asRatio, type Cash, minus, over, type PerPiece, plus, ratioOf, scale, valueAt } from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -128,7 +113,8 @@ export function spendPerMember(
   const income = view.outlook(about({ on: 'income' }));
   if (!income.some) return none();
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
+  // 0f.1: a cell decides for ONE member and holds a total, so what it has is read per member.
+  const cash = asCash(view.cashPerMember(ccy), 'what one member has in the account');
   const budget = plus(cash, onDemand, 'what it can pay with');
   const wealth = plus(wealthOf(view, cash), onDemand, 'what it owns');
   // C1.c, §46 B3: the cushion is so many periods of what it expects, widened by how wrong that

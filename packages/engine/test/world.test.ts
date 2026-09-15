@@ -852,7 +852,7 @@ describe('cells (XI-15)', () => {
         if (ctx.period === 1) {
           original = cell.id;
           weight = cell.weight;
-          before = ctx.register.totalQuantity(cell.id, GOV_LINE);
+          before = ctx.register.quantity(cell.id, GOV_LINE);
           fresh = ctx.cells.split(cell.id, 100, 'test split');
         }
         if (ctx.period === 2 && fresh !== undefined) {
@@ -866,14 +866,14 @@ describe('cells (XI-15)', () => {
     expect(w.parties.cell(original as never).weight).toBe(weight - 100);
     expect(w.parties.cell(fresh as never).weight).toBe(100);
     expect(
-      w.register.totalQuantity(original as never, GOV_LINE) +
-        w.register.totalQuantity(fresh as never, GOV_LINE),
+      w.register.quantity(original as never, GOV_LINE) +
+        w.register.quantity(fresh as never, GOV_LINE),
     ).toBeCloseTo(before, 9);
     w.step();
     expect(violations(w)).toEqual([]);
     expect(w.parties.cell(original as never).weight).toBe(weight);
     expect(w.parties.get(fresh as never).status.alive).toBe(false);
-    expect(w.register.totalQuantity(original as never, GOV_LINE)).toBeCloseTo(before, 9);
+    expect(w.register.quantity(original as never, GOV_LINE)).toBeCloseTo(before, 9);
   });
 
   it('a weight changes only by the five events, and never to nobody', () => {

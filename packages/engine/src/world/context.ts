@@ -11,7 +11,7 @@
  * - SeedContext: what a seed module may do at period zero, which is the only time endowments are
  *   written directly (Seed A3: a stock the flows then act on).
  */
-import type { Cash, PerPiece, Ratio } from '../core/measure.js';
+import type { Cash, PerMember, PerPiece, Ratio } from '../core/measure.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
@@ -382,6 +382,15 @@ export interface ParticipantView extends KernelReads {
    * no owner is the bag this register exists to close.
    */
   working<T extends object>(name: string, initial: () => T): T;
+  /**
+   * XI-15, 0f.1: WHAT ONE MEMBER OF THIS CELL HOLDS — a read of the cell's total over the count of
+   * people. A cell's decisions are per member (Households A2.e, A2.f) and its holdings are totals,
+   * so a participant deciding for one member reads its share here rather than treating the total
+   * as its own. A named party stands for one of itself and reads its holding back unchanged.
+   */
+  perMember(instrument: InstrumentId): PerMember<'amount:piece'>;
+  /** The same read for the money in its account in a currency. */
+  cashPerMember(ccy: CurrencyCode): PerMember<'money:piece'>;
 
   readonly self: Party;
   /**
@@ -1114,7 +1123,7 @@ export interface SeedContext {
     | 'debit'
     | 'moneyDelta'
     | 'quantity'
-    | 'totalQuantity'
+    | 'perMember'
     | 'free'
     | 'encumbered'
     | 'holding'

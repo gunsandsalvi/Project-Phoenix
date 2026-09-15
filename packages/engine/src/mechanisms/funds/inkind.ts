@@ -39,7 +39,7 @@ import {
   over,
 } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
-import { scaleQty, type Qty } from '../../core/tick.js';
+import { type Qty } from '../../core/tick.js';
 import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -174,7 +174,6 @@ export function create(
   if (basket.length === 0 || wanted <= 0) return false;
   if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
-  const weight = weightOf(holder);
   const made = onGrid(ctx, holder, share, wanted);
   const shares = made.total;
   if (shares <= 0) return false;
@@ -185,7 +184,8 @@ export function create(
     const units = put.total;
     if (!material(units, 2, units)) return false;
     // F1: it delivers what it holds. A creator that has not got the basket does not create.
-    if (scaleQty(ctx.register.free(party, line.instrument), weight, 'what it holds') < units) {
+    // 0f.1: the register holds the cell's TOTAL; nothing scales it.
+    if (ctx.register.free(party, line.instrument) < units) {
       return false;
     }
     legs.push({
@@ -244,11 +244,10 @@ export function redeemInKind(
   if (basket.length === 0 || wanted <= 0) return false;
   if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
-  const weight = weightOf(holder);
   const back = onGrid(ctx, holder, share, wanted);
   const shares = back.total;
   if (shares <= 0) return false;
-  const held = scaleQty(ctx.register.free(party, share), weight, 'shares it can give back');
+  const held = ctx.register.free(party, share);
   if (held < shares) return false;
   const legs: Leg[] = [];
   const taken: Cash[] = [];

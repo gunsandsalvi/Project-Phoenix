@@ -262,7 +262,7 @@ function claimsOn(ctx: MechanismContext, estate: PartyId): Claim[] {
     const seniority = ctx.registry.instrumentKind(i.kind).ranking(i).seniority;
     for (const holder of ctx.register.holdersOf(i.id)) {
       if (holder === estate) continue;
-      const units = ctx.register.totalQuantity(holder, i.id);
+      const units = ctx.register.quantity(holder, i.id);
       if (units <= 0) continue;
       out.push({ holder, instrument: i.id, units, seniority });
     }

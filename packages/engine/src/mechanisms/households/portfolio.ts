@@ -54,7 +54,7 @@ import {
 } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import { atMost, material, sum } from '../../core/num.js';
-import { downTick, scaleQty } from '../../core/tick.js';
+import { downTick, scaleQty, asQty } from '../../core/tick.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { levelsBelow, rungsOver } from '../../clearing/schedule.js';
@@ -326,7 +326,8 @@ export function shareOrders(
     if (!line.instrument.market.some) continue;
     const market = line.instrument.market.value;
     const id = line.instrument.id;
-    const units = scaleQty(view.free(id), weight, 'shares it could sell');
+    // 0f.1: the register holds the cell's TOTAL.
+    const units = view.free(id);
     if (short > 0 || perLine <= 0 || steps < 1) {
       if (!material(units, 2, units)) continue;
       // A-28: AT WHAT IT WILL TAKE. A holder short of cash sells at the market; one that is not
@@ -442,7 +443,8 @@ export function fundPositions(
      * compare does not compare: the position is not in the list, and its absence is the answer.
      */
     if (typeof offered !== 'number') continue;
-    const held = view.quantity(instrumentId(line));
+    // 0f.1: a position is per member here, because everything it is compared with is.
+    const held = asQty(downTick(view.perMember(instrumentId(line))), 'shares one member holds');
     // Item 10e.6: what this door asks, read off the policy it names. A key naming a parameter that
     // is not declared is a door nobody could ever answer, so it throws where it is read (XI-14).
     const asks = v.key['asks'];

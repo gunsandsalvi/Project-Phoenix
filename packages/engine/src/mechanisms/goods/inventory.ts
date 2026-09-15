@@ -22,7 +22,7 @@ import type { InstrumentKindId } from '../../core/ids.js';
 import { material, sum } from '../../core/num.js';
 import type { PerPiece } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
-import { cellSide, shareFor } from '../../ledger/settlement.js';
+import { cellSideOf } from '../../ledger/settlement.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { GoodDecl } from './data.js';
@@ -146,22 +146,19 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
     // Law 8, E4: what perishes is whole pieces of the good, and for a cell whole pieces on each
     // member's own shelf. A fraction of a piece has not spoiled; it is still there, and it spoils
     // when enough of it has gone the same way.
-    const share = shareFor(
-      ctx.registry,
-      party,
-      inst.unit,
-      scale(held.value, rate, `${inst.id} perished`),
-    );
-    const perMember = share.perMember;
-    if (!material(perMember, h.lots.length + 1, held.value) || perMember <= 0) continue;
-    const side = cellSide(party, perMember);
+    // 0f.1: `held` is the cell's TOTAL; what perishes is whole pieces of that, and the side is
+    // derived from it.
+    const gone = ctx.registry.deliverable(scale(held.value, rate, `${inst.id} perished`));
+    if (!material(gone, h.lots.length + 1, held.value) || gone <= 0) continue;
+    const perMember = gone;
+    const side = cellSideOf(party, gone);
     const record = ctx.settle({
       legs: [
         {
           kind: 'destroy',
           party: h.holder,
           instrument: inst.id,
-          qty: share.total,
+          qty: gone,
           why: 'perished',
           fromCell: side === undefined ? none() : some(side),
         },

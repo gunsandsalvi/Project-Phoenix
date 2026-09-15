@@ -3,9 +3,10 @@
  *
  * @spec Register A1 Register A1.c Register A3 Register B2 Register B3 Register C1 Register C4 Register D1 Register D2 Register D2.a Register D4 Register D5 Register D5.a Register D5.b Register E4 Equity D4 Audit B5 Audit B5.b XI-15
  *
- * A holding is (holder, instrument) -> lots and liens. For a cell the quantities are PER MEMBER; the
- * cell's total is weight x member at read (XI-15). Both directions are indexed and both are written by
- * the one mutation path, which only settlement and the cell events call.
+ * A holding is (holder, instrument) -> lots and liens. A cell holds TOTALS in whole pieces, like a
+ * named party, and its weight is a count of people; what one member holds is a READ (`perMember`,
+ * 0f.1). Both directions are indexed and both are written by the one mutation path, which only
+ * settlement and the cell events call.
  *
  * The equity book is the stated equity account per party (Audit B5): a balance moved only by named
  * events (settlement's realised effects, revaluation, capital), never a stored total of anything.
@@ -13,16 +14,7 @@
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
-import {
-  asCash,
-  asPerPiece,
-  asRatio,
-  type Cash,
-  over,
-  type PerPiece,
-  type PerMember,
-  valueAt,
-} from '../core/measure.js';
+import { asCash, asPerPiece, asRatio, type Cash, over, type PerPiece, type PerMember, valueAt, asTotal, eachMember } from '../core/measure.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import {
   atMost,
@@ -34,14 +26,14 @@ import {
   type Running,
   type Sum,
 } from '../core/num.js';
-import { NO_QTY, asQty, onTick, scaleQty, subQty, type Qty } from '../core/tick.js';
+import { NO_QTY, asQty, onTick, subQty, type Qty, downTick } from '../core/tick.js';
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
 
 export interface Lot {
   readonly id: LotId;
-  /** Law 8: units, per member for a cell — a count of the unit's own smallest piece. */
+  /** Law 8: units, the whole party's — a count of the unit's own smallest piece. */
   readonly qty: Qty;
   /**
    * What those units cost, per unit, in the instrument's currency (Register D4).
@@ -56,7 +48,7 @@ export interface Lot {
 
 export interface Lien {
   readonly id: LienId;
-  /** Law 8: units encumbered, per member for a cell — a count of pieces. */
+  /** Law 8: units encumbered, the whole party's — a count of pieces. */
   readonly qty: Qty;
   /** Who the units are bound to (D5.b: the chain is traceable). */
   readonly beneficiary: PartyId;
@@ -212,12 +204,17 @@ export class Register {
     return asQty(held, 'units held');
   }
 
-  /** Units held by the whole party: weight x member (XI-15). A weight is a count of people. */
-  totalQuantity(holder: PartyId, instrument: InstrumentId): Qty {
-    return scaleQty(
-      this.quantity(holder, instrument),
+  /**
+   * XI-15, 0f.1: WHAT ONE MEMBER OF A CELL HOLDS, as a read. A cell holds totals; a member's share
+   * is the total over the count of people, through the one door that refuses a cell of nobody. It
+   * replaces `totalQuantity`, which multiplied a per-member lot by the weight — the representation
+   * this file no longer has. A named party stands for one of itself.
+   */
+  perMember(holder: PartyId, instrument: InstrumentId): PerMember<'amount:piece'> {
+    return eachMember(
+      asTotal<'amount:piece'>(this.quantity(holder, instrument), 'what the whole party holds'),
       weightOf(this.parties.get(holder)),
-      'units the whole party holds',
+      'what one member holds',
     );
   }
 
@@ -251,9 +248,9 @@ export class Register {
     return s === undefined ? [] : [...s];
   }
 
-  /** B2: the sum of holdings, weight x member for cells, as a Sum with its dust. */
+  /** B2: the sum of holdings, as a Sum with its dust. A cell's holding is already its total. */
   heldTotal(instrument: InstrumentId): Sum<Qty> {
-    return sum(this.holdersOf(instrument).map((h) => this.totalQuantity(h, instrument)));
+    return sum(this.holdersOf(instrument).map((h) => this.quantity(h, instrument)));
   }
 
   allHoldings(): readonly Holding[] {
@@ -703,158 +700,137 @@ export class Register {
     }
   }
 
-  /** Copy per-member state to a new party (a split: XI-15). The equity account is copied too. */
-  copyMemberState(from: PartyId, to: PartyId): void {
-    const src = this.byHolder.get(from);
+  /**
+   * XI-15, 0f.1: A SPLIT OR A PROMOTION MOVES A SHARE OF EVERY HOLDING, in whole pieces. A weight
+   * event moving `members` of `weight` people moves `floor(total x members / weight)` pieces of
+   * every lot and every lien to the fresh party, and the remainder STAYS: the pieces that would not
+   * divide belong to the people who stayed, which is arithmetic and not a bound. The fresh party's
+   * money walks open at what arrived; the dust of the source's history stays with the source. The
+   * equity and revaluation accounts are per member and a member described twice is the same member,
+   * so those copy as they did — with the itemisation, which is the count check in `accounts`.
+   *
+   * This was `copyMemberState`: a cell's lots were PER MEMBER, so a split duplicated them and the
+   * two cells' totals summed to the old one by construction. With totals in the lots the same
+   * conservation has to be MADE, and it is made here, once, for every kind of holding at once.
+   */
+  moveShare(from: PartyId, to: PartyId, members: number, weight: number): void {
     forbid(
       !this.byHolder.has(to),
       'XI-15',
       `${to} already has holdings; a split creates a fresh party`,
     );
+    forbid(members > 0 && members < weight, 'XI-15', `moving ${members} of ${weight} members`);
+    const src = this.byHolder.get(from);
     if (src !== undefined) {
       const dst = new Map<InstrumentId, MutableHolding>();
       for (const [inst, h] of src) {
-        dst.set(inst, { holder: to, instrument: inst, lots: [...h.lots], liens: [...h.liens] });
-        this.index(inst).add(to);
+        const lots: Lot[] = [];
+        const kept: Lot[] = [];
+        for (const lot of h.lots) {
+          const moved = downTick((lot.qty * members) / weight);
+          if (moved > 0) {
+            lots.push(Object.freeze({ ...lot, id: this.nextLot as LotId, qty: asQty(moved, 'moved') }));
+            this.nextLot += 1;
+          }
+          const left = lot.qty - moved;
+          if (left > 0) kept.push(Object.freeze({ ...lot, qty: asQty(left, 'kept') }));
+        }
+        const liens: Lien[] = [];
+        const heldLiens: Lien[] = [];
+        for (const lien of h.liens) {
+          const moved = downTick((lien.qty * members) / weight);
+          if (moved > 0) liens.push(Object.freeze({ ...lien, qty: asQty(moved, 'moved') }));
+          const left = lien.qty - moved;
+          if (left > 0) heldLiens.push(Object.freeze({ ...lien, qty: asQty(left, 'kept') }));
+        }
+        h.lots = kept;
+        h.liens = heldLiens;
+        if (lots.length > 0 || liens.length > 0) {
+          dst.set(inst, { holder: to, instrument: inst, lots, liens });
+          this.index(inst).add(to);
+          const arrived = lots.reduce((t, l) => t + l.qty, 0);
+          if (this.moneyAccount.has(moneyKey(from, inst))) {
+            const key = moneyKey(to, inst);
+            this.moneyAccount.set(key, opened(arrived, key));
+            const walk = this.moneyWalk(from, inst);
+            this.moneyAccount.set(moneyKey(from, inst), moved(walk, -arrived, `balance of ${from}/${inst}`));
+          }
+        }
+        if (kept.length === 0 && heldLiens.length === 0) this.drop(from, inst);
       }
       this.byHolder.set(to, dst);
     }
-    // The copy is the same number reached the same way, so it inherits the walk as well (XI-15).
     const e = this.equityAccount.get(from);
     if (e !== undefined) this.equityAccount.set(to, e);
-    // Reporting A2, XI-15: AND THE ITEMISATION, which is per-member state like everything else here.
-    // A split is one member described twice, so the new cell's equity has the same history as the
-    // old one's — it did not arrive from nowhere. Copying the walk and not the entries left a cell
-    // whose account said it had been moved eighteen times and whose ledger carried nine, which is
-    // the count check in the `accounts` family catching a hole a sum alone would have missed.
-    const kept = this.equityLedger.get(from);
-    if (kept !== undefined)
+    const keptEntries = this.equityLedger.get(from);
+    if (keptEntries !== undefined) {
       this.equityLedger.set(
         to,
-        kept.map((entry) => ({ ...entry, party: to })),
+        keptEntries.map((entry) => ({ ...entry, party: to })),
       );
-    /**
-     * A-15: AND THE OTHER TWO PER-PARTY STORES, which this said it copied and did not.
-     *
-     * There are five of them here — holdings, the equity account, the equity ledger, the
-     * REVALUATION account and the MONEY WALKS — and this copied the first three. Both of the others
-     * are per-member state by exactly the argument in the block above.
-     *
-     * The money half was live and the direction was the safe one, which is why nothing had caught
-     * it: a split cell's `moneyWalk` opened at zero dust while its copied lots carried a real
-     * balance, so the `accounts` and `ownership` families checked it against a tolerance TOO TIGHT
-     * for what it held (Law 7) — a spurious violation waiting to be reported against a cell that
-     * had done nothing. The revaluation half is inert today, because the only party whose
-     * revaluation account moves is a central bank and no central bank is a cell; it becomes wrong
-     * the day any cell holds foreign money (Currency C4).
-     */
+    }
     const revalued = this.revaluationAccount.get(from);
     if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
-    if (src !== undefined) {
-      for (const inst of src.keys()) {
-        const walk = this.moneyAccount.get(moneyKey(from, inst));
-        if (walk !== undefined) this.moneyAccount.set(moneyKey(to, inst), walk);
-      }
-    }
   }
 
+
   /**
-   * XI-15: remove every trace of a cell that has merged INTO another — and GUARD THE STORE.
+   * XI-15, 0f.1: A MERGE ADDS TOTALS AND WEIGHTS. Two cells on one key become one cell holding what
+   * both held: the lots concatenate (each lot keeps its own basis and date — nothing is averaged),
+   * the liens concatenate, the money walks add, and the per-member equity and revaluation accounts
+   * become the weighted mean of the two, which is the one place a merge divides: it is the
+   * accounting identity of the two books over the people in them and its dust is carried on the
+   * walk (Law 7), never a decision at an average.
    *
-   * What makes this legitimate is not that the cell is empty: it is that its per-member state is
-   * IDENTICAL to the cell it merged into, so the members and what each of them holds are still
-   * there, under one name, with the absorbing cell's weight grown by exactly theirs. Nothing is
-   * dropped, because every member's holding survives in the cell that now counts them.
-   *
-   * It used to take the caller's word for that on a comment — the one door in this file that
-   * trusted its caller instead of guarding the store — while the check itself lived in
-   * `world/cells.ts`, a second reader of this register's own lots (item 13b.1). It is asked here,
-   * where the deletion happens and where the state is, and asked once (Law 4). A caller that got
-   * it wrong deleted units and an equity account with nothing on either side (Law 5, Appendix B).
+   * This was `forget`, which REFUSED a merge unless the two cells' per-member state was identical
+   * (`sameState`) — a merge was a renaming. With totals in the lots there is no per-member state to
+   * compare and no reason to refuse: two cells with one key are the same people, and the design
+   * says at most one live cell per key (0f). `sameState` is deleted with the representation.
    */
-  forget(party: PartyId, into: PartyId): void {
-    forbid(
-      this.sameState(party, into),
-      'XI-15',
-      `${party} cannot be forgotten into ${into}: their per-member state differs`,
-      { party, into },
-    );
-    const m = this.byHolder.get(party);
+  merge(into: PartyId, from: PartyId, intoWeight: number, fromWeight: number): void {
+    forbid(into !== from, 'XI-15', 'a cell cannot merge with itself');
+    const m = this.byHolder.get(from);
     if (m !== undefined) {
-      for (const inst of m.keys()) {
-        this.index(inst).delete(party);
-        // A-15: and the walk behind that balance, which was left keyed to a party that no longer
-        // exists — a row nothing could reach and nothing would ever delete.
-        this.moneyAccount.delete(moneyKey(party, inst));
+      for (const [inst, h] of m) {
+        const target = this.mutable(into, inst);
+        target.lots = [...target.lots, ...h.lots];
+        target.liens = [...target.liens, ...h.liens];
+        this.index(inst).add(into);
+        this.index(inst).delete(from);
+        const fromWalk = this.moneyAccount.get(moneyKey(from, inst));
+        if (fromWalk !== undefined) {
+          const key = moneyKey(into, inst);
+          const intoWalk = this.moneyAccount.get(key) ?? opened(0, key);
+          this.moneyAccount.set(key, moved(intoWalk, fromWalk.value, `balance of ${key}`));
+          this.moneyAccount.delete(moneyKey(from, inst));
+        }
       }
     }
-    this.byHolder.delete(party);
-    this.equityAccount.delete(party);
-    this.equityLedger.delete(party);
-    this.revaluationAccount.delete(party);
+    const ea = this.equityAccount.get(into);
+    const eb = this.equityAccount.get(from);
+    if (ea !== undefined && eb !== undefined) {
+      const people = intoWeight + fromWeight;
+      const mean = (ea.value * intoWeight + eb.value * fromWeight) / people;
+      this.equityAccount.set(into, moved(ea, mean - ea.value, `equity of ${into} at merge`));
+      const kept = this.equityLedger.get(from);
+      const mine = this.equityLedger.get(into);
+      if (kept !== undefined) {
+        const merged = [...(mine ?? []), ...kept.map((entry) => ({ ...entry, party: into }))];
+        this.equityLedger.set(into, merged);
+      }
+      const ra = this.revaluationWalk(into);
+      const rb = this.revaluationWalk(from);
+      const rmean = (ra.value * intoWeight + rb.value * fromWeight) / people;
+      this.revaluationAccount.set(into, moved(ra, rmean - ra.value, `revaluation account of ${into}`));
+    }
+    this.byHolder.delete(from);
+    this.equityAccount.delete(from);
+    this.equityLedger.delete(from);
+    this.revaluationAccount.delete(from);
   }
 
-  /**
-   * XI-15: whether two cells hold exactly the same thing per member — the same lines, the same
-   * lots in the same order at the same basis and the same age, the same liens, the same equity.
-   * It is what makes a merge a renaming rather than a transfer, and it is the register's question
-   * because the lots are the register's.
-   */
-  sameState(a: PartyId, b: PartyId): boolean {
-    const ha = this.holdingsOf(a);
-    const hb = this.holdingsOf(b);
-    if (ha.length !== hb.length) return false;
-    for (const x of ha) {
-      const y = hb.find((h) => h.instrument === x.instrument);
-      if (y === undefined) return false;
-      if (x.lots.length !== y.lots.length || x.liens.length !== y.liens.length) return false;
-      for (let i = 0; i < x.lots.length; i += 1) {
-        const p = x.lots[i];
-        const q = y.lots[i];
-        if (p === undefined || q === undefined) return false;
-        if (p.qty !== q.qty || p.basisPerUnit !== q.basisPerUnit || p.acquired !== q.acquired) {
-          return false;
-        }
-      }
-      /**
-       * A-2: AND THE LIENS, WHICH THIS ONLY COUNTED. Two cells with one lien each — of different
-       * sizes, to different beneficiaries, for different reasons — were judged the same, and
-       * `forget` then deleted the absorbed cell's whole position, its liens with it, with no
-       * instruction and no counterparty (Law 5; Appendix B, "no collateral counted twice"). A
-       * household cell does carry them: `housing` pledges a cell's dwellings to its mortgage
-       * lender at `outstanding / price`, which differs between two cells whose mortgages differ.
-       *
-       * A lien's id is not compared and must not be: two identical pledges made by two cells are
-       * two rows with two ids, and that is what a merge is renaming.
-       */
-      for (let i = 0; i < x.liens.length; i += 1) {
-        const p = x.liens[i];
-        const q = y.liens[i];
-        if (p === undefined || q === undefined) return false;
-        if (p.qty !== q.qty || p.beneficiary !== q.beneficiary || p.reason !== q.reason) {
-          return false;
-        }
-      }
-    }
-    const ea = this.hasEquityAccount(a) ? this.equity(a) : undefined;
-    const eb = this.hasEquityAccount(b) ? this.equity(b) : undefined;
-    if (ea !== eb) return false;
-    /**
-     * A-2, Law 7: AND THE WALK BEHIND IT. `forget` deletes the equity LEDGER as well as the
-     * balance, and only the balance was checked — so two cells that reached the same number by
-     * different histories merged, and one history was thrown away with no event. A balance is not
-     * one rounding old (Audit B5.b), so two of them that agree today are not the same state.
-     */
-    const wa = this.hasEquityAccount(a) ? this.equityWalk(a) : undefined;
-    const wb = this.hasEquityAccount(b) ? this.equityWalk(b) : undefined;
-    if (wa !== wb) return false;
-    /**
-     * A-15: AND THE REVALUATION ACCOUNT, which `forget` deletes and this never looked at. Two cells
-     * whose marks have moved differently are not the same state, and merging them would throw one
-     * of the two histories away with no instruction and no counterparty (Law 5).
-     */
-    return this.revaluation(a) === this.revaluation(b);
-  }
+
+
 
   // ---- internals ---------------------------------------------------------------------------
 
@@ -911,7 +887,7 @@ export type RegisterReads = Pick<
   Register,
   | 'holding'
   | 'quantity'
-  | 'totalQuantity'
+  | 'perMember'
   | 'encumbered'
   | 'free'
   | 'holdingsOf'
@@ -932,8 +908,7 @@ export function registerReads(store: Register): RegisterReads {
   return Object.freeze({
     holding: (holder: PartyId, instrument: InstrumentId) => store.holding(holder, instrument),
     quantity: (holder: PartyId, instrument: InstrumentId) => store.quantity(holder, instrument),
-    totalQuantity: (holder: PartyId, instrument: InstrumentId) =>
-      store.totalQuantity(holder, instrument),
+    perMember: (holder: PartyId, instrument: InstrumentId) => store.perMember(holder, instrument),
     encumbered: (holder: PartyId, instrument: InstrumentId) => store.encumbered(holder, instrument),
     free: (holder: PartyId, instrument: InstrumentId) => store.free(holder, instrument),
     holdingsOf: (holder: PartyId) => store.holdingsOf(holder),

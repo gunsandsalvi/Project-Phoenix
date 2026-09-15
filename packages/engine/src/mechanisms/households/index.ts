@@ -552,7 +552,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
-    heldAsMoney(view.cash(view.registry.currencyOf(self.region)), 'what is in its account'),
+    // 0f.1: per member, like the spend and the buffer it is set against.
+    asCash(view.cashPerMember(view.registry.currencyOf(self.region)), 'what one member has in the account'),
     decided.value.spend,
     decided.value.buffer,
   );
@@ -666,7 +667,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // Law 15, 0e′.4: the orders go in this cell's own working store, which is what its `markets` and
   // `orders` read back. The event below is the record of what it decided; it is written from the
   // same orders and never read back by this module.
-  const decided_orders: readonly PlannedOrder[] = [
+  const plannedOrders: readonly PlannedOrder[] = [
     ...goods.map((g) => ({
       market: g.market,
       side: 'buy' as const,
@@ -692,7 +693,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   ];
   const slot = ctx.workingOf(cell, DECIDED, nothingDecided);
   slot.at = ctx.period;
-  slot.orders = decided_orders;
+  slot.orders = plannedOrders;
   ctx.record(
     'households.plan',
     [cell],
@@ -722,7 +723,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       // C2: what it does not spend and does not put into paper is saved where it already is.
       // D5, item 7b: what it put towards a home, and nothing when it owns what its people live in.
       toAHomePerMember: home.some ? home.value.committedPerMember : asCash(0, 'it owns its home'),
-      orders: decided_orders,
+      orders: plannedOrders,
     },
     false,
   );

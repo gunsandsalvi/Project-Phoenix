@@ -278,7 +278,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
     const w = worldWith('equity', [splits(String(LINE_4), 2, 4)]);
     for (let i = 0; i < 3; i += 1) w.step();
     const holders = w.register.holdersOf(LINE_4);
-    const heldBefore = holders.map((h) => w.register.totalQuantity(h, LINE_4));
+    const heldBefore = holders.map((h) => w.register.quantity(h, LINE_4));
     const printBefore = w.prices.latest(LINE_4, w.period);
 
     const r = w.step();
@@ -337,7 +337,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
       // across the names it now goes by. So what a holder ends the week with is exactly twice what
       // it started it with plus what it bought less what it sold, and nothing else.
       const mine = asItStands(String(h));
-      const now = mine.reduce((t, d) => t + w.register.totalQuantity(partyId(d), LINE_4), 0);
+      const now = mine.reduce((t, d) => t + w.register.quantity(partyId(d), LINE_4), 0);
       const moved = mine.reduce((t, d) => t + traded(d), 0);
       expect(now).toBeCloseTo((heldBefore[i] ?? 0) * 2 + moved, 6);
     });

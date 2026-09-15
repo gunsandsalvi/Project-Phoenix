@@ -3,8 +3,8 @@
  *
  * @spec XI-15 Households F1.a Households F1.b Small-Business Pools A6.c Small-Business Pools E5 Appendix A
  *
- * A split is exact: the affected members become a new cell with the same per-member state. A merge
- * requires an identical key and identical state. Entry, death and promotion move the weight with a
+ * A split moves a whole-piece share of every holding to a new cell (0f.1). A merge requires an
+ * identical key and adds totals and weights. Entry, death and promotion move the weight with a
  * cause and a date. Every event is journaled.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
@@ -42,7 +42,7 @@ export function splitCell(
   const id = nextSplitId(c, d.parties);
   const fresh: CellParty = { ...c, id, name: `${c.name} / split ${id}`, weight: members };
   d.parties.add(fresh);
-  d.register.copyMemberState(cell, id);
+  d.register.moveShare(cell, id, members, c.weight);
   d.parties.applyWeight({
     kind: 'split',
     party: cell,
@@ -92,7 +92,7 @@ export function mergeCells(
    * the run so nothing persisted, but the order was backwards and it costs nothing to put right:
    * ask, apply, journal.
    */
-  d.register.forget(b, a);
+  d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight);
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -202,7 +202,7 @@ export function reKeyCell(
     key: { ...c.key, ...key },
   };
   d.parties.add(fresh);
-  d.register.copyMemberState(cell, id);
+  d.register.moveShare(cell, id, members, c.weight);
   d.parties.applyWeight({
     kind: 'promotion',
     party: cell,
