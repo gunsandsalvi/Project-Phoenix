@@ -11002,3 +11002,24 @@ named.
 
 **Checks.** `small-business.test.ts` 16 green; `check:opens` green; lint, typecheck,
 `check:spec`, `check:existence`, `plan:check` green.
+
+## Item 11.2a.1 — Plant, the stock
+
+A small firm's line now carries the plant its recipe names, and what a cell can start is limited
+by the plant it holds through the same read the named firm's start is — `capacityFrom` over its
+vintages and what it rents. Before this a cell served a meal with no room to serve it in (11.0f's
+finding). The seed opens each cell with the plant a member's opening batch takes: the whole
+machine the fraction reaches, because a firm whose batch takes three hundredths of a room still
+needs the room; in the three vintages every seeded party's plant is in, carried at the straight
+line since service. Measured before the rounding was right: ten of twelve lines in the scale
+model opened with no plant at all, because a member's share of a machine is a fraction and a
+fraction rounds down to nothing.
+
+`seedVintage` and the seed's plant ages moved out of the capital-programme module and the
+foundation seed into `registry/physical.ts`: a module's seed may not import a module, and a
+vintage is one construction wherever a seed opens one.
+
+**Not yet:** the purchase (11.2a.2) — the cost-of-capital read to the registry and a cell's bid in
+the plant market — which is the half that needs the bank's quote.
+
+**Checks.** `small-business.test.ts` 17 green; `check:opens` green; lint, typecheck green.

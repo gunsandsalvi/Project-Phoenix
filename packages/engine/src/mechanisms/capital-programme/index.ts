@@ -37,7 +37,7 @@ import { displayName } from '../../registry/naming.js';
 import { WHOLE_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { UnitDecl } from '../../registry/registry.js';
-import type { MechanismContext, SeedContext } from '../../world/context.js';
+import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 // Law 15, docs/PLAN.md 3.2: a typed accessor for another kind's TERMS, from the module that owns
 // the kind. What a good is and what a lot of it cost are the goods module's to say; this module
@@ -175,42 +175,6 @@ export function vintage(
     ccy: ctx.registry.currencyOf(region),
     // D3, Clearing C4: a dead firm's plant is sold to whoever will have it, and a shortage of it is
     // shared in the proportion each bidder asked for. It is the rule every market here states once.
-    rationing: 'proRata',
-  });
-  return id;
-}
-
-/** The same, at the seed: the opening world's plant is registered before anything can be endowed. */
-export function seedVintage(
-  ctx: SeedContext,
-  d: CapitalKindDecl,
-  region: RegionId,
-  serviceDate: Civil,
-): InstrumentId {
-  const id = plantVintageId(d.id, region, serviceDate);
-  if (ctx.instruments.has(id)) return id;
-  const market = plantMarketId(d.id, region, serviceDate);
-  const ccy = ctx.registry.currencyOf(region);
-  const terms: PlantTerms = {
-    kind: plantKindId(d.id),
-    capitalKind: d.id,
-    region,
-    serviceDate,
-    retires: addDays(serviceDate, ctx.params.periods(lifeParam(d.id)) * ctx.calendar.periodDays),
-  };
-  ctx.instruments.add({
-    id,
-    kind: plantKindId(d.id),
-    issuer: none(),
-    ccy,
-    terms,
-    market: some(market),
-  });
-  ctx.openMarket({
-    id: market,
-    name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
-    instrument: id,
-    ccy,
     rationing: 'proRata',
   });
   return id;

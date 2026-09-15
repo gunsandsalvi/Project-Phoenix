@@ -39,7 +39,7 @@ import {
 } from '../core/ids.js';
 import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
-import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
+import { addDays, compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
 import {
   type PerPiece,
   type Ratio,
@@ -57,6 +57,7 @@ import {
 } from '../core/measure.js';
 import { div, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
+import type { SeedContext } from '../world/context.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { ParamRegister } from './params.js';
@@ -805,3 +806,46 @@ export const lifeParam = (capitalKind: string): ParamId =>
   paramId(`plant.usefulLife.${capitalKind}`);
 export const buildLagParam = (capitalKind: string): ParamId =>
   paramId(`plant.buildLag.${capitalKind}`);
+
+/**
+ * Capital Programme A6, Seed C3: the vintages the world opens with, as ages in periods. Three of
+ * them, evenly spread across a machine's life, so a third of every firm's plant comes up for
+ * replacement at a time and the world has a reason to invest before anything has grown. Here and
+ * not in the foundation seed (11.2a) because every seed that opens a party with plant opens it
+ * with the same vintages — the named firms' and the small firms' plant are one stock (Law 4).
+ */
+export const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
+
+/**
+ * Seed C3, Capital Programme A6: THE VINTAGE A SEED OPENS, once per (kind, region, service date),
+ * shared by every party the seed opens holding some of it. It was the capital programme's export
+ * and only the foundation seed could reach it; a module's seed may not import a module (4.9b), so
+ * the construction lives with the plant identity it names (11.2a).
+ */
+export function seedVintage(
+  ctx: SeedContext,
+  d: CapitalKindDecl,
+  region: RegionId,
+  serviceDate: Civil,
+): InstrumentId {
+  const id = plantVintageId(d.id, region, serviceDate);
+  if (ctx.instruments.has(id)) return id;
+  const market = plantMarketId(d.id, region, serviceDate);
+  const ccy = ctx.registry.currencyOf(region);
+  const terms: PlantTerms = {
+    kind: plantKindId(d.id),
+    capitalKind: d.id,
+    region,
+    serviceDate,
+    retires: addDays(serviceDate, ctx.params.periods(lifeParam(d.id)) * ctx.calendar.periodDays),
+  };
+  ctx.instruments.add({
+    id,
+    kind: plantKindId(d.id),
+    issuer: none(),
+    ccy,
+    terms,
+    market: some(market),
+  });
+  return id;
+}

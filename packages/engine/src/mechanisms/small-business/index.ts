@@ -46,7 +46,9 @@ import type { Order } from '../../clearing/solver.js';
 import type { MarketId } from '../../core/ids.js';
 import { bandOf } from '../../registry/lattice.js';
 import { currencyUnit, unitId } from '../../core/ids.js';
-import { goodId, goodTerms } from '../../registry/physical.js';
+import { CAPITAL_KINDS, goodId, goodTerms, lifeParam, plantKindId, SEED_PLANT_AGES, seedVintage } from '../../registry/physical.js';
+import { addDays } from '../../calendar/civil.js';
+import { splitOnTick, upTick } from '../../core/tick.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 
 /** Law 8: an hour is the labour venue's unit, and a member's hours are counted in it. */
@@ -433,6 +435,40 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
             );
             if (drawn <= 0) continue;
             ctx.endowUnits(id, line, drawn, opened.value.price);
+          }
+          /**
+           * Capital Programme A2, Seed D1 (11.2a): AND THE PLANT ITS OPENING BATCH TAKES, in the
+           * vintages every seeded party's plant is in, carried at what is left of what a new one
+           * costs — the foundation's own statement for a named firm, at this cell's scale: what
+           * one member's hours can make in a period times the plant a unit takes, whole machines,
+           * with no headroom, because one person and a van is plant sized to its people. A line
+           * whose plant this world does not make opens with none, and makes none (Law 6: a real
+           * shortage, never a bound).
+           */
+          for (const need of recipe.plant) {
+            const kind = CAPITAL_KINDS.find((k) => k.id === need.capitalKind);
+            if (kind === undefined || !ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
+            const built = goodId(kind.madeFrom, pool.region);
+            if (!ctx.instruments.has(built)) continue;
+            const newPrice = ctx.prices.latest(built, ctx.period);
+            if (!newPrice.some) continue;
+            const life = ctx.params.periods(lifeParam(kind.id));
+            // Law 8, Law 1: WHOLE MACHINES PER MEMBER, and the whole one the fraction reaches — a
+            // firm whose batch takes three hundredths of a room still needs the room. The odd one
+            // across the vintages goes in a named vintage (core/tick.ts).
+            const mine = upTick(
+              scale(perMemberBatch, ctx.params.ratio(need.unitsPerUnitPerPeriod), 'the plant a period of its batch takes'),
+            );
+            if (mine <= 0) continue;
+            const perVintage = splitOnTick(mine, SEED_PLANT_AGES.map(() => 1));
+            SEED_PLANT_AGES.forEach((age, at) => {
+              const units = perVintage[at];
+              if (units === undefined || units <= 0) return;
+              const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
+              const vintage = seedVintage(ctx, kind, pool.region, serviceDate);
+              // A3, A6: carried at the straight line it has been on since it went into service.
+              ctx.endowUnits(id, vintage, units, (newPrice.value.price * (life - age)) / life);
+            });
           }
         }
         /**

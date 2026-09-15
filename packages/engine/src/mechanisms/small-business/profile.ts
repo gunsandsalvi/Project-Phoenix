@@ -40,7 +40,7 @@ import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { keyOf, weightOf } from '../../parties/party.js';
 import { costOfDraw } from '../../register/register.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
-import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../../registry/physical.js';
+import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type PlantNeed, rentedRoom, vintagesHeld } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
 import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
@@ -85,6 +85,8 @@ export interface Line {
   readonly terms: GoodTerms;
   readonly hoursPerUnit: Ratio;
   readonly inputs: readonly { readonly instrument: InstrumentId; readonly qtyPerUnit: Ratio }[];
+  /** Capital Programme A2 (11.2a): the plant a unit of it takes, per kind — the room the table is in. */
+  readonly plant: readonly PlantNeed[];
 }
 
 export function lineOf(view: ParticipantView): Option<Line> {
@@ -101,6 +103,10 @@ export function lineOf(view: ParticipantView): Option<Line> {
     inputs: terms.recipe.inputs.map((i) => ({
       instrument: goodId(i.subUnit, terms.region),
       qtyPerUnit: view.params.ratio(i.qtyPerUnit),
+    })),
+    plant: terms.recipe.plant.map((r) => ({
+      capitalKind: r.capitalKind,
+      unitsPerUnitPerPeriod: view.params.ratio(r.unitsPerUnitPerPeriod),
     })),
   });
 }
@@ -135,6 +141,12 @@ function canStart(view: ParticipantView, line: Line, hours: Qty): Qty {
   for (const input of line.inputs) {
     limits.push(over(view.free(input.instrument), input.qtyPerUnit, 'what the stock on hand reaches'));
   }
+  // Capital Programme A2, Goods B1.a (11.2a): AND ITS PLANT, the same read the named firm's start
+  // is limited by — a meal needs a room to be served in, and a cell with no room makes none. A line
+  // whose recipe needs no plant is not limited by one, which is a different answer from a large
+  // number (Law 6).
+  const capacity = capacityFrom(line.plant, vintagesHeld(view, view.calendar.startOf(view.period)), rentedRoom(view));
+  if (capacity.some) limits.push(capacity.value.perPeriod);
   const least = limits.reduce((a, b) => atMost(a, b, 'a batch is no bigger than its scarcest limit'));
   return downTick(asAmount<'piece'>(least, 'what it can start'));
 }

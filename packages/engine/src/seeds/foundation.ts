@@ -119,8 +119,8 @@ import {
   CAPITAL_KINDS,
   capitalProgramme,
   plantKindId,
-  seedVintage,
 } from '../mechanisms/capital-programme/index.js';
+import { SEED_PLANT_AGES, seedVintage } from '../registry/physical.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
@@ -579,13 +579,6 @@ const SEED_STOCK_BASIS = 0.8;
  * its own recipe from there, which turns thirty-five shapes into arithmetic (Law 2).
  */
 const OPENING_WAGE = asPerNamedUnit(40, 'what an hour of work opens at');
-
-/**
- * Capital Programme A6, Seed C3: the vintages the world opens with, as ages in periods. Three of
- * them, evenly spread across a machine's life, so a third of every firm's plant comes up for
- * replacement at a time and the world has a reason to invest before anything has grown.
- */
-const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
 
 const P = {
   membersPerCohort: paramId('seed.households.membersPerCohort'),

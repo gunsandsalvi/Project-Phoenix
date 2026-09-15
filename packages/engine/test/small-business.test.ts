@@ -11,7 +11,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
+  CAPITAL_KINDS,
   SMALL_FIRM,
+  goodId,
+  goodTerms,
+  isPlant,
+  plantTerms,
   VEHICLE,
   isTranche,
   SMALL_PER_NAMED,
@@ -214,6 +219,34 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
     for (let i = 0; i < 4; i += 1) w.step();
     expect(seen.size).toBeGreaterThan(0);
+  });
+
+  it('opens with the plant its line takes, and its start is limited by it (Capital Programme A2, 11.2a)', () => {
+    const { world: w } = rigFor('sb-plant', { makes: ['coalRaw'] });
+    let withPlant = 0;
+    for (const cell of w.parties.ofKind(SMALL_FIRM)) {
+      if (cell.representation !== 'cell') continue;
+      const line = w.instruments.get(goodId(cell.key['line'] ?? '', cell.region));
+      const needs = goodTerms(line).recipe.plant.filter((n) =>
+        w.instruments.has(goodId(CAPITAL_KINDS.find((k) => k.id === n.capitalKind)?.madeFrom ?? '', cell.region)),
+      );
+      for (const need of needs) {
+        // Seed D1: a whole machine of each kind its recipe names that this world makes, held by
+        // the cell that runs on it — never a number on the cell.
+        const held = w.register
+          .holdingsOf(cell.id)
+          .filter((h) => {
+            const i = w.instruments.get(h.instrument);
+            return isPlant(i) && plantTerms(i).capitalKind === need.capitalKind;
+          });
+        expect(held.length).toBeGreaterThan(0);
+        withPlant += 1;
+      }
+    }
+    expect(withPlant).toBeGreaterThan(0);
+    // And it still makes its line out of it — the limit is a real stock, not a wall.
+    for (let i = 0; i < 3; i += 1) w.step();
+    expect(w.journal.ofKind('smallBusiness.produced').length).toBeGreaterThan(0);
   });
 
   it('draws nothing where there is nothing to draw from (App A)', () => {
