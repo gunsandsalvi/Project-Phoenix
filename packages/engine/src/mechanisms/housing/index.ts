@@ -63,6 +63,7 @@ import { keyOf, weightOf, gridPerMember } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
 import { creditorOf, isLoan } from '../../registry/credit.js';
+import { isTenancy, type TenancyTerms as PublicTenancyTerms } from '../../registry/funding.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
@@ -91,21 +92,21 @@ export const DWELLING_WEEKS = unitId('dwellingWeeks');
  */
 export const TENANCY = agreementKindId('housing.tenancy');
 
-/** A2, A3, Law 15: what a tenancy says that the kernel has no business understanding. */
-export interface TenancyTerms extends AgreementTerms {
+/**
+ * A2, A3, Law 15: what a tenancy says. The SHAPE is a public read (`registry/funding.ts`, 0f.7c):
+ * a tenant reads what falls due on it off its own commitments, and it may not import this module.
+ * What this module adds is the region the letting is in.
+ */
+/** Law 15: the public shape, and this module's region on it. */
+const isOwnTenancy = (t: AgreementTerms): t is TenancyTerms => isTenancy(t) && 'region' in t;
+
+export interface TenancyTerms extends PublicTenancyTerms {
   readonly kind: typeof TENANCY;
   readonly region: RegionId;
   /** A2: struck at the letting and moving only by a new letting. */
   readonly rentPerDwelling: PerPiece;
   readonly dwellings: Qty;
 }
-
-/**
- * Law 15: the module that declared the kind narrows a row back to it, structurally — what makes
- * these terms a tenancy is that they name a rent per dwelling and a number of dwellings.
- */
-export const isTenancy = (t: AgreementTerms): t is TenancyTerms =>
-  'rentPerDwelling' in t && 'dwellings' in t;
 
 /**
  * One tenancy as this module reads it. The TENANT owes the rent, so it is the debtor and the
@@ -118,7 +119,7 @@ export interface Lease extends TenancyTerms {
 }
 
 export function leaseOf(a: Agreement): Lease {
-  if (!isTenancy(a.terms)) throw new TypeError(`Housing A2: ${a.id} is not a tenancy`);
+  if (!isOwnTenancy(a.terms)) throw new TypeError(`Housing A2: ${a.id} is not a tenancy`);
   return { ...a.terms, id: a.id, tenant: a.debtor, landlord: a.creditor };
 }
 
@@ -195,7 +196,7 @@ function owned(view: ParticipantView, region: RegionId): Qty {
 const tenancies = (view: ParticipantView): readonly Lease[] =>
   view
     .commitments()
-    .filter((a) => a.state === 'performing' && isTenancy(a.terms))
+    .filter((a) => a.state === 'performing' && isOwnTenancy(a.terms))
     .map(leaseOf);
 
 function letOut(view: ParticipantView): Qty {

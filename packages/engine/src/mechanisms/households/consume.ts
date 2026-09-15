@@ -7,18 +7,20 @@
  * household carried with a multiplicity, so what it decides is what one household decides, and the
  * sector's number is the weighted sum of those — never a decision taken at the sector's average.
  *
- * IT SPENDS WHAT IT EXPECTS TO HAVE, corrected towards the cushion it wants to be sitting on. Its
- * own outlook of its own income says the first (C1.a, §46 C1); the second is a stock — so many
- * periods of its own income, widened by how wrong its income has recently been (C1.c: confidence is
- * a read of its own surprises, never a stated mood) — and the gap between what it OWNS and that
- * cushion is closed at its own patience. What it owns is its cash and what the market last said its
- * holdings are worth (C1.b, D1, D3: a read, never a stored number), which is why an asset price
- * moving reaches demand at all. A cell that has been surprised widely holds more and spends less,
- * which is B3 made concrete rather than asserted.
+ * IT BUYS ITS BASKET OUT OF WHAT IS LIQUID, AND WHAT STANDS ABOVE ITS TARGET IS SPARE (0f.7c).
+ * What is liquid is its account and what a money fund owes it on demand, LESS what falls due on
+ * what it has issued and the rent on its tenancy — both read, never estimated. Its target is a
+ * stock: so many weeks of its own expected income, widened by how wrong that income has recently
+ * been (C1.c: confidence is a read of its own surprises, never a stated mood) and by what its own
+ * holdings could move by. The weeks are its PATIENCE, drawn once per cell the way its memory is
+ * (XI-16 A3): two cells with the same income hold different cushions because they drew differently,
+ * and that — not a rate anybody stated — is why a windfall reaches one cell's spending before the
+ * other's. There is no gap-closing rate: below the target it buys the basket and keeps the rest;
+ * above it, the rest is placed (`portfolio.ts`).
  *
- * IT CANNOT BORROW (C1.d): nobody lends to a household in this world yet, so what it cannot pay for
- * it does not buy. That is not a bound on the decision — it is what a budget is — and when credit
- * exists (worklist 6) the constraint becomes a decision somebody else takes.
+ * IT CANNOT BORROW FOR A LOAF (C1.d): what it cannot pay for it does not buy. That is not a bound
+ * on the decision — it is what a budget is. What it CAN borrow for is a roof (E2), and it asks its
+ * bank for that through the one door every borrower uses (`index.ts homeBid`).
  *
  * WHAT IT BUYS IS A BASKET (13c.2). Its cohort declares two physical quantities per good — what a
  * member has before anything else, and what it takes on top when the money reaches — so what it
@@ -57,8 +59,8 @@ export interface DemandStep {
 
 /** The numbers a household decides with, all declared by the module (Law 2). */
 export interface HouseholdParams {
+  /** C1.c, XI-16 A3: THIS CELL's weeks of buffer, drawn once at its first decision (`index.ts`). */
   readonly patience: number;
-  readonly bufferPeriods: number;
   readonly steps: number;
   /** The rate the state charges on what a household buys. A `Ratio`: never a level (A-44). */
   readonly consumptionTax: Ratio;
@@ -73,29 +75,30 @@ export interface HouseholdParams {
  */
 export interface Spending {
   /**
-   * The MOST it will spend, per member. What it actually spends is what its basket cost it, and
-   * since 13c.2 that can be less: a cell whose needs and wants are covered for less than this keeps
-   * the difference, which is a saving nobody decided on separately (`demandOf`).
+   * What it will spend, per member: its basket at the prices it expects, and no more than what is
+   * liquid after what falls due — a cell whose basket costs less than it has keeps the difference.
    */
   readonly spend: Cash;
-  /** What it wanted to spend before its own budget had a say (C1.d). */
-  readonly wanted: Cash;
-  /** The cushion it wants to be sitting on, per member. */
+  /** What its basket costs it at the prices it expects (C3), before its money had a say (C1.d). */
+  readonly basket: Cash;
+  /** The cushion it wants to be sitting on, per member: its target. */
   readonly buffer: Cash;
+  /** E3, E4, 0f.7c: what falls due on it this period, per member — debt service and rent — before the basket. */
+  readonly due: Cash;
   /** Its own outlook of what it will earn (C1.a). */
   readonly expected: Cash;
   /** What it holds in its account, per member. */
   readonly cash: Cash;
   /**
    * C1.d, D2: THE WHOLE OF WHAT IT CAN PAY WITH, per member — its account and what it can ask back
-   * from a money fund on demand, because nobody lends to it and those are the two places its money
-   * is. It is the number that bound the decision, so it is the number `constrained` is about, and
-   * it is published: a reader that had only `cash` would see a cell spending more than it holds.
+   * from a money fund on demand, LESS what falls due on it first. It is the number that bound the
+   * decision, so it is the number `constrained` is about, and it is published: a reader that had
+   * only `cash` would see a cell spending more than it holds.
    */
   readonly budget: Cash;
   /** C1.b, D3: what it owns, per member — its cash and its holdings at what the market last said. */
   readonly wealth: Cash;
-  /** C1.d: whether its budget bound it, which is a threshold a mean-preserving spread moves cells across (A2.g). */
+  /** C1.d: whether its budget bound it — its basket cost more than it had — a threshold a mean-preserving spread moves cells across (A2.g). */
   readonly constrained: boolean;
 }
 
@@ -107,27 +110,31 @@ export interface Spending {
  */
 export function spendPerMember(
   view: ParticipantView,
+  rows: readonly ConsumptionDecl[],
   p: HouseholdParams,
   onDemand: Cash,
+  due: Cash,
 ): Option<Spending> {
   const income = view.outlook(about({ on: 'income' }));
   if (!income.some) return none();
   const ccy = view.registry.currencyOf(view.self.region);
   // 0f.1: a cell decides for ONE member and holds a total, so what it has is read per member.
   const cash = asCash(view.cashPerMember(ccy), 'what one member has in the account');
-  const budget = plus(cash, onDemand, 'what it can pay with');
+  // E3, E4: what falls due on it comes first, because a payment that fails is an event and a loaf
+  // it did not buy is not (XI-1). What is left is what it can pay with.
+  const budget = minus(plus(cash, onDemand, 'what it can pay with'), due, 'after what falls due');
   const wealth = plus(wealthOf(view, cash), onDemand, 'what it owns');
-  // C1.c, §46 B3: the cushion is so many periods of what it expects, widened by how wrong that
+  // C1.c, §46 B3: the target is so many weeks of what it expects, widened by how wrong that
   // expectation has recently been. Confidence is in the same unit as the variable, so a cell whose
-  // income has been unpredictable by a given amount wants that much more in hand per period.
+  // income has been unpredictable by a given amount wants that much more in hand per week.
   const buffer = plus(
     scale(
       plus(
         asCash(income.value.expected, 'what it expects to take in'),
         asCash(income.value.confidence, 'how wrong that has been'),
-        'what a period could cost it',
+        'what a week could cost it',
       ),
-      asRatio(p.bufferPeriods, 'the periods of cushion it wants'),
+      asRatio(p.patience, 'the weeks of cushion it wants'),
       'the cushion it wants against its income',
     ),
     // XI-2, §46 B3, Fund Shares C2.b (13d): AND AGAINST ITS SAVINGS. What it holds can move, and how
@@ -139,17 +146,10 @@ export function spendPerMember(
     atRisk(view),
     'the cushion it wants altogether',
   );
-  const gap = over(
-    minus(wealth, buffer, 'what it owns over its cushion'),
-    asRatio(p.patience, 'how fast it closes a gap'),
-    'closed at its own patience',
-  );
-  const wanted = plus(
-    asCash(income.value.expected, 'what it expects to take in'),
-    gap,
-    'what it decides to spend',
-  );
-  // C1.d: it spends what it has, whatever it wants. And nobody buys a negative loaf.
+  // C3, 0f.7c: what it means to buy is its basket, at the prices it expects, and no gap rate.
+  const basket = basketOf(view, rows, p);
+  const wanted = plus(basket.needs, basket.wants, 'what its basket costs it');
+  // C1.d: it spends what it has, whatever its basket costs. And nobody buys a negative loaf.
   //
   // Law 7: nor an unrepresentable one. A cell whose budget is the rounding of a subtraction would
   // take a demand curve to market in quantities so small that the per-member share of a fill
@@ -157,16 +157,15 @@ export function spendPerMember(
   // number there is no relative precision left, so dust itself underflows to zero and every
   // identity in the wire becomes exact. A spend that is dust of what it has is nothing.
   const affordable = atMost(wanted, budget, 'it buys with the money it has');
-  // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's, and a local
-  // of that name shadowed it in the middle of this function.
-  const magnitudes = sum([budget, absolute(wanted, 'what it decided to spend')]);
+  const magnitudes = sum([budget, absolute(wanted, 'what its basket costs')]);
   const afforded = material(affordable, magnitudes.terms + 1, magnitudes.value)
     ? affordable
     : asCash(0, 'a spend that is dust of what it has is nothing');
   return some({
     spend: atLeast(afforded, asCash(0, 'nothing'), 'there is no less to spend than nothing'),
-    wanted,
+    basket: wanted,
     buffer,
+    due,
     expected: asCash(income.value.expected, 'what it expects to take in'),
     cash,
     budget,
@@ -189,8 +188,9 @@ function atRisk(view: ParticipantView): Cash {
   for (const h of view.holdings()) {
     const outlook = view.outlook(about({ on: 'price', instrument: h.instrument }));
     if (!outlook.some || outlook.value.confidence <= 0) continue;
-    const units = sum(h.lots.map((l) => l.qty));
-    if (units.value <= 0) continue;
+    // 0f.7d: PER MEMBER, like the cash it is set against. `h.lots` is the cell's total (0f.1).
+    const units = asAmount<'piece'>(view.perMember(h.instrument), 'what one member holds of it');
+    if (units <= 0) continue;
     // Currency C4.a, A-23: IN ITS OWN MONEY. What a cell is exposed to is one number in the money
     // it spends, and a household paid a coupon in a money it does not bank in (C4) has holdings in
     // two — so this added the move on a foreign line straight into the total.
@@ -198,7 +198,7 @@ function atRisk(view: ParticipantView): Cash {
       view.inOwnMoney(
         valueAt(
           asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
-          units.value,
+          units,
           'what this line could move by',
         ),
         view.instruments.get(h.instrument).ccy,
@@ -220,12 +220,13 @@ function wealthOf(view: ParticipantView, cash: Cash): Cash {
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
-    const units = sum(h.lots.map((l) => l.qty));
+    // 0f.7d: what ONE MEMBER holds of it, because `cash` is one member's.
+    const units = asAmount<'piece'>(view.perMember(h.instrument), 'what one member holds of it');
     // Currency C4.a, A-23: and the same for what it is worth. `cash` is its own money's balance,
     // so every term added to it has to be in that money.
     terms.push(
       view.inOwnMoney(
-        valueAt(print.value.price, units.value, 'what it holds is worth'),
+        valueAt(print.value.price, units, 'what it holds is worth'),
         view.instruments.get(h.instrument).ccy,
       ),
     );
@@ -257,21 +258,29 @@ function wealthOf(view: ParticipantView, cash: Cash): Cash {
  * C4: the tax is part of what a purchase costs it, so it is in what it works the basket out
  * against, and out of the price it posts — what it bids is what reaches the seller.
  */
-export function demandOf(
-  view: ParticipantView,
-  rows: readonly ConsumptionDecl[],
-  p: HouseholdParams,
-  spend: Cash,
-): DemandStep[] {
+/** C3, 0f.7a: what a member's basket costs at the prices this cell expects, needs and wants apart. */
+export interface Basket {
+  readonly lines: readonly Line[];
+  /** What a member must have, costed: the reservation a long spell asks for (`index.ts willWork`). */
+  readonly needs: Cash;
+  readonly wants: Cash;
+}
+
+/**
+ * C3, Law 4, 0f.7a: THE BASKET, COSTED ONCE. Two decisions read it — what to buy and what to work
+ * for — and a second costing would be a second writer of what a loaf costs this cell.
+ */
+export function basketOf(view: ParticipantView, rows: readonly ConsumptionDecl[], p: HouseholdParams): Basket {
   const self = view.self;
-  if (self.representation !== 'cell') return [];
   const lines: Line[] = [];
-  for (const row of rows) {
-    if (row.cohort !== keyOf(self, 'cohort')) continue;
-    const line = lineFor(view, self, row, p);
-    if (line !== undefined) lines.push(line);
+  if (self.representation === 'cell') {
+    for (const row of rows) {
+      if (row.cohort !== keyOf(self, 'cohort')) continue;
+      const line = lineFor(view, self, row, p);
+      if (line !== undefined) lines.push(line);
+    }
   }
-  const needCost = sum(
+  const needs = sum(
     lines.map((l) =>
       valueAt(
         l.perUnit,
@@ -280,7 +289,7 @@ export function demandOf(
       ),
     ),
   ).value;
-  const wantCost = sum(
+  const wants = sum(
     lines.map((l) =>
       valueAt(
         l.perUnit,
@@ -289,6 +298,18 @@ export function demandOf(
       ),
     ),
   ).value;
+  return { lines, needs, wants };
+}
+
+export function demandOf(
+  view: ParticipantView,
+  rows: readonly ConsumptionDecl[],
+  p: HouseholdParams,
+  spend: Cash,
+): DemandStep[] {
+  const self = view.self;
+  if (self.representation !== 'cell') return [];
+  const { lines, needs: needCost, wants: wantCost } = basketOf(view, rows, p);
   // C1.d: it eats before it does anything else, and it eats out of money it has.
   const toNeeds = atMost(spend, needCost, 'it needs what it needs and pays with what it has');
   const left = minus(spend, toNeeds, 'what is left when it has had what it must have');

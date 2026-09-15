@@ -172,7 +172,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
       ? {
           ...m,
           params: m.params.map((p) =>
-            p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p,
+            p.id === 'households.patience' ? { ...p, value: 0 } : p,
           ),
         }
       : m,

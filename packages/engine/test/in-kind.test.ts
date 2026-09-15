@@ -50,7 +50,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
   const spec = rigSpec(seed, shape.banks, shape.firms);
   const modules = spec.modules.map((m) =>
     m.id === 'households'
-      ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
+      ? { ...m, params: m.params.map((p) => (p.id === 'households.patience' ? { ...p, value: 0 } : p)) }
       : m,
   );
   return assemble({ ...spec, modules: mergeModules(modules, extra) });
@@ -283,7 +283,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
       ...spec,
       modules: noParticipant.map((m) =>
         m.id === 'households'
-          ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
+          ? { ...m, params: m.params.map((p) => (p.id === 'households.patience' ? { ...p, value: 0 } : p)) }
           : m,
       ),
     });

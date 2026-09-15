@@ -46,7 +46,7 @@ import { period, type Period } from '../../calendar/calendar.js';
 import { instrumentId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
 import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
-import { weightOf } from '../../parties/party.js';
+import { keyOf, weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { LatticeDecl, LatticeReads } from '../../registry/lattice.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
@@ -55,7 +55,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST, ownDepositRate } from './bank.js';
 import { CONSUMPTION, MORTALITY, type ConsumptionDecl } from './data.js';
-import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
+import { basketOf, demandOf, spendPerMember, type HouseholdParams } from './consume.js';
 import {
   age,
   die,
@@ -91,7 +91,7 @@ export {
 } from './portfolio.js';
 import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
 import { goingRateIn } from '../../registry/wages.js';
-import { shortfallOf, strikesPublished } from '../../registry/funding.js';
+import { rentOwedBy, shortfallOf, strikesPublished } from '../../registry/funding.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -190,15 +190,22 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
 };
 
 export const HOUSEHOLD_PARAMS = {
+  /** C1.c, XI-16 A3 (0f.7c): the weeks of buffer a cell wants — the MEAN it draws its own around. */
   patience: paramId('households.patience'),
-  buffer: paramId('households.buffer.periods'),
+  /** 0f.7c: how wide the draw is, as a share of the mean, the way `expectations.memory.dispersion` is. */
+  patienceDispersion: paramId('households.patience.dispersion'),
   liquidityPremium: paramId('households.liquidityPremium'),
   horizon: paramId('households.horizon.periods'),
   toTheMarket: paramId('households.toTheMarket'),
   steps: paramId('households.demand.steps'),
-  /** D5, Housing E1: what a cell puts towards a home it needs and does not own (item 7b). */
-  toAHome: paramId('households.toAHome'),
 } as const;
+
+/** 0f.7c: the store a cell's own patience is drawn into, once, at its first decision. */
+export const PATIENCE = 'households.patience';
+interface OwnPatience {
+  weeks: number | undefined;
+}
+const notYetDrawn = (): OwnPatience => ({ weeks: undefined });
 
 /** The name of the store a cell's spend phase leaves its plan in, declared in the module's nouns. */
 export const DECIDED = 'households.decided';
@@ -325,21 +332,21 @@ function paramsOf(): ParamDecl[] {
     },
     {
       id: HOUSEHOLD_PARAMS.patience,
-      value: 6,
-      unit: 'periods',
+      value: 4,
+      unit: 'weeks of its own income',
       dimension: 'periods',
       kind: 'preference',
       owner: 'model',
-      why: 'Households C1: over how many of its own periods a household closes the gap between the cash it holds and the cushion it wants. It is the whole of its patience: a windfall it means to keep reaches its spending over this many weeks, and a hole it has fallen into is refilled over the same.',
+      why: 'Households C1.c, §46 B3, XI-16 A3 (0f.7c): how many weeks of what it expects a household wants to be sitting on — the mean of the draw each cell makes once. It is widened by how wrong its own income has recently been, which is a read of its own surprises and not a second number. The gap-closing rate this id used to name is gone: below its target a cell buys its basket and keeps the rest, above it the rest is placed, and there is no speed a windfall reaches spending at other than the cell holding what it wants to hold.',
     },
     {
-      id: HOUSEHOLD_PARAMS.buffer,
-      value: 4,
-      unit: 'periods of its own income',
-      dimension: 'periods',
+      id: HOUSEHOLD_PARAMS.patienceDispersion,
+      value: 0.5,
+      unit: 'of the mean, either way',
+      dimension: 'ratio',
       kind: 'preference',
       owner: 'model',
-      why: 'Households C1.d, §46 B3: how many periods of what it expects a household wants to be sitting on. It is widened by how wrong its own income has recently been, which is a read of its own surprises and not a second number.',
+      why: 'XI-16 A3, 0f.7c: how far apart two cells\u2019 patience can be drawn. The disagreement is load-bearing: cells that want different cushions place and spend differently out of the same income, which is what gives a saving line two sides in a sector that would otherwise trade once and stop.',
     },
     {
       id: HOUSEHOLD_PARAMS.liquidityPremium,
@@ -379,15 +386,6 @@ function paramsOf(): ParamDecl[] {
       why: 'Banks Funding A1.d, E1: what it costs one household to move its account, ONCE, as an amount of its own money. It is weighed against what staying has already cost it — its own balance times the gap between the boards over as long as it has stayed — so a bigger balance moves for a smaller gap and the class drains instead of crossing at one instant. Retail money is the stickiest because the amount is large beside what a household holds, and that is A1.a arriving as a cost somebody bears rather than as a stated stickiness.',
     },
     {
-      id: HOUSEHOLD_PARAMS.toAHome,
-      value: 0.5,
-      unit: 'of what it has left over',
-      dimension: 'ratio',
-      kind: 'preference',
-      owner: 'model',
-      why: 'Households D5, Housing E1 (item 7b): how much of what a cell has left over it puts towards the home its people live in, when it does not own one. A home is a DURABLE — bought once and then owned — so it is not consumption and it is not a claim; it is the other thing a household can do with what it saves, and how hard it goes at it is a preference. A cell that already owns what its people live in puts nothing here, and the whole of its spare goes to the saving lines.',
-    },
-    {
       id: HOUSEHOLD_PARAMS.steps,
       value: 5,
       unit: 'count',
@@ -399,10 +397,25 @@ function paramsOf(): ParamDecl[] {
   ];
 }
 
+/**
+ * C1.c, XI-16 A3, 0f.7c: THIS CELL'S OWN PATIENCE, drawn once from the declared mean and width and
+ * kept — the way its memory is (`expectations`). A cell that has not drawn draws now, under its own
+ * name, so the draw is the same on every run and different for every cell.
+ */
+function patienceOf(view: ParticipantView): number {
+  const own = view.working(PATIENCE, notYetDrawn);
+  if (own.weeks !== undefined) return own.weeks;
+  const mean = view.params.periods(HOUSEHOLD_PARAMS.patience);
+  const spread = view.params.ratio(HOUSEHOLD_PARAMS.patienceDispersion);
+  const draw = view.rng.derive(`patience/${String(view.self.id)}`).next();
+  // Uniform on [mean − spread·mean, mean + spread·mean): centred, and a mean of nothing draws nothing.
+  own.weeks = mean + mean * spread * (2 * draw - 1);
+  return own.weeks;
+}
+
 function numbers(view: ParticipantView): HouseholdParams {
   return {
-    patience: view.params.periods(HOUSEHOLD_PARAMS.patience),
-    bufferPeriods: view.params.periods(HOUSEHOLD_PARAMS.buffer),
+    patience: patienceOf(view),
     steps: view.params.count(HOUSEHOLD_PARAMS.steps),
     consumptionTax: view.params.ratio(CONSUMPTION_TAX),
   };
@@ -542,40 +555,38 @@ function publishSectorIncome(ctx: MechanismContext): void {
  * state), and the venue applies those to what it gathers — a market deciding who is in its book is
  * the market's business, and deciding what a seller will accept is not.
  */
-function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
+function willWork(view: ParticipantView, venue: VenueDecl, rows: readonly ConsumptionDecl[]): readonly Order[] {
   if (venue.clearedBy !== 'labour') return [];
   const self = view.self;
   if (self.representation !== 'cell' || !self.status.alive) return [];
   if (venue.key['region'] !== String(self.region)) return [];
-  /**
-   * B1, B3: PARTICIPATION IS A DECISION WITH THE WAGE IN IT, and the wage it is against is what
-   * this cell would live on WITHOUT the job — `benefit`, which the expectations module forms from
-   * what reached it that it did not work for (A-38). A cell that has never observed one has no
-   * outside option to compare against and does not answer: missing is missing.
-   */
-  const outside = view.outlook(about({ on: 'benefit' }));
-  if (!outside.some) return [];
   const people = weightOf(self);
   if (people <= 0) return [];
   // Law 8, XI-15: whole hours for every member the cell stands for, in the venue's own unit.
   const each = view.params.amount(PEOPLE_PARAMS.hoursPerMember, venue.unit);
   const hours = scaleQty(each, people, 'hours offered');
   if (hours <= 0) return [];
-  const mine = pricedAt(
-    asCash(outside.value.expected, 'what it expects to live on without the job'),
-    each,
-    'reservation wage',
-  );
-  if (mine <= 0) return [];
   /**
-   * D1.c: AND IT CAN SEE WHAT THE TRADE ACTUALLY PAYS. The going rate is published every period and
-   * is public, so a cell does not offer its members' hours into a trade paying less than it lives on
-   * without the job — that is what being out of the workforce IS, and it is reversible, because the
-   * going rate is employment-weighted actual pay and employers bidding it up brings the discouraged
-   * back. A trade NOBODY is employed in has no going rate and nothing to be discouraged by, which is
-   * how a new trade gets its first worker at all.
+   * B1, B3, D1.c, 0f.7a: WHAT IT WILL WORK FOR IS A THRESHOLD ON ITS OWN KEY, and the wage it is
+   * against is in the basket, not in a `benefit` outlook. The going rate is published every period
+   * and is public (D1.c).
+   *
+   * A cell in the first SPELL band — just separated, or never out — asks what the trade pays: its
+   * members came from a job at that wage and will go back at it. A cell in a longer spell asks what
+   * its members' NEEDS cost over the hours it offers (Kroft–Lange–Notowidigdo 2013: the length of
+   * a spell changes what a person will take), and will not offer into a trade paying less than
+   * feeds its people — that is what being out of the workforce IS, and it is reversible, because
+   * the going rate is employment-weighted actual pay and employers bidding it up brings the
+   * discouraged back. A trade NOBODY is employed in has no going rate and nothing to be discouraged
+   * by, which is how a new trade gets its first worker at all. A cell that cannot cost its basket
+   * has never seen a price and does not answer: missing is missing.
    */
   const going = goingRateIn(view, venue.id);
+  const needs = basketOf(view, rows, numbers(view)).needs;
+  const perHour = pricedAt(needs, each, 'what an hour must bring in to feed a member');
+  const justSeparated = keyOf(self, 'spell') === '0';
+  const mine = justSeparated && going.some ? going.value : perHour;
+  if (mine <= 0) return [];
   if (going.some && going.value < mine) return [];
   return [{ party: self.id, side: 'sell', price: mine, qty: hours }];
 }
@@ -600,6 +611,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
           'the orders each cell decided to post this period, and the period it decided them in',
         why:
           'it is how this module gets from its spend phase to its own `markets` and `orders`, and nothing outside it has an opinion about an order nobody has posted yet (0e\u2032.4). It was a PRIVATE `households.plan` event read back by its own writer in the same period, with every order going out through `unknown[]` and back and any that did not survive the round trip dropped in silence. The event stays as the record of what the cell decided; this is the decision, and the door that says a size is a COUNT now sits at the WRITE.',
+      },
+      {
+        name: PATIENCE,
+        kind: 'working',
+        holds: 'each cell\u2019s own weeks of buffer, drawn once at its first decision',
+        why: 'XI-16 A3, 0f.7c: a preference is the cell\u2019s own and is drawn once, so it has to be kept somewhere between periods; it is this module\u2019s and nothing outside it has an opinion about how patient a household is.',
       },
       {
         name: 'households.waiting',
@@ -666,6 +683,8 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         writes: [
           { kind: 'event', name: 'households.income' },
           { kind: 'event', name: 'households.plan' },
+          // E2, 0f.7b: a cell short of a roof asks its bank through the one door every borrower uses.
+          { kind: 'event', name: 'credit.request' },
         ],
         run: (ctx: MechanismContext) => {
           publishSectorIncome(ctx);
@@ -694,7 +713,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // Clearing B2, Labour B1, `A-43` (item 9.6): WHAT THIS CELL WILL WORK FOR, decided by the
     // module that owns it and posted through the door `gather` is — the last venue in the engine
     // whose sellers' schedules were built by the buyers' market.
-    venueParticipants: [{ partyKind: HOUSEHOLD, orders: willWork }],
+    venueParticipants: [{ partyKind: HOUSEHOLD, orders: (view, venue) => willWork(view, venue, rows) }],
     participants: [
       {
         partyKind: HOUSEHOLD,
@@ -737,12 +756,34 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // is what makes a money fund a substitute for a deposit rather than an investment (D2).
   const positions = fundPositions(ctx.venues, strikesPublished(ctx.journal), view);
   const onDemand = sum(positions.map((f) => f.worthPerMember)).value;
-  const decided = spendPerMember(view, p, onDemand);
+  const ccy = view.registry.currencyOf(self.region);
+  /**
+   * E3, E4, 0f.7c: WHAT FALLS DUE ON IT COMES BEFORE THE BASKET — the service on what it has issued
+   * (`owedIn` is its position: what is due less what it holds, so what is due is that plus what it
+   * holds) and the rent on its tenancy, both read off the kernel's own books, per member.
+   */
+  const due = asCash(
+    over(
+      plus(
+        plus(
+          heldAsMoney(view.owedIn(ccy), 'its position in its own money'),
+          heldAsMoney(view.cash(ccy), 'what it holds of it'),
+          'what falls due on what it issued',
+        ),
+        rentOwedBy(view.commitments(), cell),
+        'and the rent on its tenancy',
+      ),
+      asRatio(weightOf(self), 'the members between whom it falls due'),
+      'per member',
+    ),
+    'what falls due on one member',
+  );
+  const decided = spendPerMember(view, rows, p, onDemand, due);
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
-    // 0f.1: per member, like the spend and the buffer it is set against.
-    asCash(view.cashPerMember(view.registry.currencyOf(self.region)), 'what one member has in the account'),
+    // 0f.1: per member, like the spend and the buffer it is set against; 0f.7c: after what is due.
+    minus(asCash(view.cashPerMember(ccy), 'what one member has in the account'), due, 'after what falls due'),
     decided.value.spend,
     decided.value.buffer,
   );
@@ -800,7 +841,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
    * here under this cell's own name — the route every cross-module read uses, because a module never
    * imports a module.
    */
-  const home = homeBid(view, spare, weightOf(self));
+  const home = homeBid(ctx, view, spare, weightOf(self));
   const toSave = home.some
     ? minus(spare, home.value.committedPerMember, 'what is left after what it puts towards a home')
     : spare;
@@ -889,7 +930,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     {
       // Per member, because that is what it decided (A2.f); the orders carry the cell's weight.
       spendPerMember: decided.value.spend,
-      wantedPerMember: decided.value.wanted,
+      basketPerMember: decided.value.basket,
+      duePerMember: decided.value.due,
       bufferPerMember: decided.value.buffer,
       cashPerMember: decided.value.cash,
       // C1.d, D2: what it could pay with, which is its account AND what a money fund owes it on
@@ -919,7 +961,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
 }
 
 /**
- * D5, Housing E1, item 7b: WHAT THIS CELL BIDS FOR A HOME, and what that commits of what it has left.
+ * D5, E2, Housing E1, item 7b, 0f.7b: WHAT THIS CELL BIDS FOR A HOME, AND WHAT IT ASKS ITS BANK FOR.
  *
  * `housing` publishes what each cell needs against what it owns and what it rents; this reads that
  * event under the cell's own name. A cell that is short of nothing bids for nothing, and the whole of
@@ -927,19 +969,25 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
  *
  * The level is its OWN — its outlook of the line where it has one, the last print where it has not,
  * which is the same ladder it buys a loaf on and never a valuation of a house from anybody's
- * accounts (Law 3). The size is what its own share of its spare reaches at that level, and never
- * more than it is short of: a cell does not buy a second home because it could afford one.
+ * accounts (Law 3). It bids for what it is SHORT OF, and no more: a cell does not buy a second
+ * home because it could afford one. What it pays with is the whole of its spare — a roof comes
+ * before paper because a roof is a need (Housing E1) and paper is not, which is an ORDER and not a
+ * share of anything (the half-of-spare rule that stood here was a shape). What its spare does not
+ * reach it asks its bank for through the one door every borrower uses (Corporate Credit A1), secured
+ * on the dwellings the loan would buy (A4); whether anybody lends is the lender's standard (C5.a),
+ * and a cell nobody will lend to goes on renting.
  */
 function homeBid(
+  ctx: MechanismContext,
   view: ParticipantView,
   spare: Cash,
   weight: number,
 ): Option<{ readonly committedPerMember: Cash; readonly order: PlannedHomeOrder }> {
   const nothing = none<{ committedPerMember: Cash; order: PlannedHomeOrder }>();
-  if (spare <= 0 || weight <= 0) return nothing;
+  if (weight <= 0) return nothing;
   const said = shortfallOf(view, String(view.self.id), view.period);
   if (!said.some) return nothing;
-  const short = said.value.short;
+  const short = asAmount<'piece'>(said.value.short, 'what it is short of');
   const instrument = instrumentId(said.value.dwelling);
   if (!view.instruments.has(instrument)) return nothing;
   const own = view.outlook(about({ on: 'price', instrument }));
@@ -950,18 +998,32 @@ function homeBid(
       ? print.value.price
       : undefined;
   if (level === undefined || level <= 0) return nothing;
-  const budget = scale(spare, view.params.ratio(HOUSEHOLD_PARAMS.toAHome), 'towards a home');
-  if (budget <= 0) return nothing;
-  // Law 8, XI-15: whole pieces, per member, and DOWN — what its money actually reaches.
-  const perMember = downTick(amountOf(budget, level, 'what its share of its spare reaches'));
-  if (perMember <= 0) return nothing;
-  const wanted = scaleQty(perMember, weight, 'what the cell bids for');
-  const qty = atMost(wanted, asAmount<'piece'>(short, 'what it is short of'), 'and no more than it needs');
-  if (qty <= 0) return nothing;
   const market = goodMarketOf(view, instrument);
   if (market === undefined) return nothing;
+  const ccy = view.registry.currencyOf(view.self.region);
+  // What the roofs it is short of would cost the cell, and what its people have spare between them.
+  const cost = valueAt(level, short, 'what the roofs it is short of would cost');
+  const have = scale(spare, asRatio(weight, 'its members'), 'what the cell has spare between them');
+  if (cost > have) {
+    // C3: one mortgage at a time — a cell already carrying one is paying that down, not asking.
+    if (view.owedIn(ccy) + view.cash(ccy) <= 0) {
+      const gap = minus(cost, have, 'what its spare does not reach');
+      ctx.request(view.self.id, {
+        ccy,
+        short: gap,
+        security: [{ instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) }],
+      });
+    }
+  }
+  if (spare <= 0) return nothing;
+  // Law 8, XI-15: whole pieces, per member, and DOWN — what its money actually reaches.
+  const perMember = downTick(amountOf(spare, level, 'what one member\u2019s spare reaches'));
+  if (perMember <= 0) return nothing;
+  const wanted = scaleQty(perMember, weight, 'what the cell bids for');
+  const qty = atMost(wanted, short, 'and no more than it needs');
+  if (qty <= 0) return nothing;
   return some({
-    // What this actually commits is what the units it bids for come to, not the whole share: the
+    // What this actually commits is what the units it bids for come to, not the whole spare: the
     // rest is still spare and goes to the saving lines with everything else (Law 4).
     committedPerMember: valueAt(level, asAmount<'piece'>(perMember, 'what one member bids for'), 'towards a home'),
     order: { market, side: 'buy' as const, price: level, qty: asQty(qty) },

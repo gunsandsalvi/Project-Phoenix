@@ -23,11 +23,53 @@ import { currencyCode, type CurrencyCode } from '../core/ids.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
 import type { Period } from '../calendar/calendar.js';
+import type { Agreement, AgreementTerms } from '../register/agreements.js';
+import { sum } from '../core/num.js';
+import { asAmount, valueAt } from '../core/measure.js';
+import type { PartyId } from '../core/ids.js';
 
 const FUNDING = 'firms.funding';
 const STRUCK = 'fund.struck';
 const LISTED_STRUCK = 'fund.listedStruck';
 const SHORTFALL = 'housing.shortfall';
+
+/* --- What a tenant owes on its tenancy ------------------------------------------------------- */
+
+/**
+ * Housing A2, A3, Law 15: what a tenancy says that the kernel has no business understanding — a
+ * rent per dwelling and a number of dwellings. The housing module writes these terms; a household
+ * reads them off its own commitments to know what falls due before it buys a loaf (E3, 0f.7c), and
+ * neither module may import the other, so the shape lives here with the other public reads.
+ */
+export interface TenancyTerms extends AgreementTerms {
+  /** A2: struck at the letting and moving only by a new letting. Money per dwelling per period. */
+  readonly rentPerDwelling: number;
+  readonly dwellings: number;
+}
+
+/** Law 15: the terms narrow back structurally — a tenancy is what names a rent and a count. */
+export const isTenancy = (t: AgreementTerms): t is TenancyTerms =>
+  'rentPerDwelling' in t && 'dwellings' in t;
+
+/**
+ * Households E3, 0f.7c: THE RENT THAT FALLS DUE ON THIS PARTY this period, off the kernel's own
+ * book of commitments: every performing tenancy it is the tenant of, at the rent it was struck at.
+ * A cell's tenancy is on the whole cell, so this is the TOTAL its members owe between them.
+ */
+export function rentOwedBy(commitments: readonly Agreement[], who: PartyId): Cash {
+  const terms: Cash[] = [];
+  for (const a of commitments) {
+    if (a.debtor !== who || a.state !== 'performing' || !isTenancy(a.terms)) continue;
+    terms.push(
+      valueAt(
+        asPerPiece(a.terms.rentPerDwelling, 'the rent a dwelling was let at'),
+        asAmount<'piece'>(a.terms.dwellings, 'the dwellings it took'),
+        'the rent on this tenancy',
+      ),
+    );
+  }
+  return sum(terms).value;
+}
 
 /** The phase's door: the wire, asked about a named party. */
 export interface WireReads {

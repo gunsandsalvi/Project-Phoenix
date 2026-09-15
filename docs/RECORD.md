@@ -10490,3 +10490,42 @@ holding.
 
 **Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
 green.
+
+## Item 0f.7 — The household profile, sized at the step
+
+**The step as written was a rewrite, and a rewrite is not a bounded change.** `consume.ts`,
+`portfolio.ts` and `lifecycle.ts` already meet the clauses 0f.7 named; what the 0f design needed
+and the module did not do was four things, and the plan now says so. Lifecycle re-keys by date
+since 0f.4 and the portfolio is already the price ladder over every public print; both stay.
+
+**0f.7a — what it will work for is a threshold on its own key.** The `benefit`-outlook gate is
+gone. A cell in the first spell band asks the trade's going rate; one in a longer spell asks what
+its members' NEEDS cost over the hours it offers, and does not offer into a trade paying less than
+feeds its people (Labour B1, B3, D1.c). The basket is costed once (`basketOf`) and both decisions
+read it (Law 4).
+
+**0f.7b — a roof before paper, and the bank asked through the one door.** `homeBid` bids what it
+is short of at its own level, up to what the whole of its spare reaches; the half-of-spare rule
+(`households.toAHome`) was a shape and is deleted. What its spare does not reach it asks its bank
+for through `ctx.request`, secured on the dwellings (Corporate Credit A1, A4; Households E2).
+Housing's `askForMortgages` keeps skipping cells: the borrower's module owns the reason.
+
+**0f.7c — one preference, drawn.** `spend = basket cost`, paid out of what is liquid after what
+falls due — debt service on what it issued (`owedIn`) and the rent on its tenancy, a new read
+`rentOwedBy` in `registry/funding.ts` off the kernel's own agreements, with the tenancy's public
+shape moved there so housing and households read one shape. What stands above
+`target = patience × (expected income + its own surprise) + what its holdings could move by` is
+spare. `patience` is weeks of buffer drawn once per cell from `households.patience` and
+`households.patience.dispersion`, the way `memory` is (XI-16 A3); the gap-closing rate that id
+used to name and `households.buffer.periods` are deleted. Two tests that zeroed the buffer now zero
+the patience mean.
+
+**0f.7d — found reading for (c), fixed here because it is this item's code.** `wealthOf` and
+`atRisk` valued the cell's TOTAL units against a PER-MEMBER cash since 0f.1; nothing throws on a
+wrong wealth, so the opens run could not see it. Both read `perMember`.
+
+**Positioned.** The `benefit` outlook has no reader now → 0f.11. A cell can now carry a mortgage
+and 13d.1's missed-payment drift is measurable → 13f (not measured, Law 11).
+
+**Checks.** `check:opens` green on both worlds; lint, typecheck, `check:spec`, `check:forbids`
+green.
