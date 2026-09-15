@@ -34,7 +34,7 @@ import { clear, isCleared, type Cleared, type Order } from '../../clearing/solve
 import type { VenueDecl } from '../../clearing/venue.js';
 import { agreementKindId, cohortId } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, sub } from '../../core/num.js';
+import { add, atMost, sub, sum } from '../../core/num.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 
 
@@ -69,7 +69,7 @@ import {
   type EmploymentRow,
   type EmploymentTerms,
 } from '../../register/employment.js';
-import { asQty, scaleQty, subQty } from '../../core/tick.js';
+import { addQty, asQty, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
@@ -223,7 +223,23 @@ export function runVenue(
   // the book has one bidder on the other; what makes this one a market is that the line has three
   // firms in it and they do not bid the same number (Firm A3, Seed B4).
   const outcome = clear([...bids, ...offers], 'proRata', 'marginalBid');
-  if (!isCleared(outcome)) return;
+  // Clearing C4, Labour B4 (12b.4): A VENUE THAT DID NOT CLEAR IS A REAL OUTCOME, and the hours
+  // offered into it and not taken are unsold — journaled with why, never dropped. What was
+  // offered and what was wanted are read off the book this session, so a reader can see a venue
+  // with seekers and no employer (noDemand) from one with employers and nobody to hire.
+  const offered = sum(offers.map((o) => o.qty)).value;
+  const wanted = sum(bids.map((b) => b.qty)).value;
+  if (!isCleared(outcome)) {
+    if (offered > 0 || wanted > 0) {
+      ctx.record(
+        'labour.unsold',
+        [v.id],
+        { venue: v.id, occupation, region, outcome: outcome.kind, offered, wanted, hours: offered, round },
+        true,
+      );
+    }
+    return;
+  }
   // D1, and this is the whole of it: THE BID THAT TOOK THE LAST MATCH IS THE PRINT. The solver
   // finds how much trades — the crossing, which is a fact about both sides — but the level it
   // reports is the crossing's, and in a slack market the crossing sits on a SELLER's reservation.
@@ -233,7 +249,18 @@ export function runVenue(
   // nothing. The `prices` family checks the print against the bids for exactly this reason.
   const struck = marginalBid(outcome);
   if (struck === undefined) return;
-  match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p, round);
+  const hired = match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p, round);
+  // Law 8, A4.b (12b.4): the match is in WHOLE PEOPLE — a person sells all of their hours or none —
+  // so the hours the book cleared that do not make one more person are unsold, and said so.
+  const remainder = subQty(asQty(outcome.volume, 'the hours the book cleared'), hired, 'the hours cleared that did not make a whole person');
+  if (remainder > 0) {
+    ctx.record(
+      'labour.unsold',
+      [v.id],
+      { venue: v.id, occupation, region, outcome: 'remainder', offered, wanted, hours: remainder, round },
+      true,
+    );
+  }
   // D1: the occupation's print. It is a wage, not an instrument's price, so it is an event and not
   // a mark: nothing is valued at it (Law 8: the unit is money per hour).
   ctx.record(
@@ -290,7 +317,8 @@ function match(
   region: RegionId,
   p: LabourParams,
   round: Round,
-): void {
+): Qty {
+  let hired = asQty(0, 'nobody hired yet');
   const queue = offers
     .filter((o) => o.price !== 'market' && o.price <= struck)
     .sort((a, b) => (a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price)))
@@ -311,10 +339,12 @@ function match(
       }
       const taken = atMost(people, available, 'there are no more people in the cell than there are');
       hire(ctx, book, f.party, cell, taken, struck, occupation, region, p, round);
+      hired = addQty(hired, scaleQty(p.hoursPerMember, taken, 'the hours the hired sell'), 'hours hired');
       people = sub(people, taken, 'people left to hire');
       if (taken === available) next += 1;
     }
   }
+  return hired;
 }
 
 /** A4.b, A4.c: a hire moves a whole number of people, and part of a cell splits off first. */

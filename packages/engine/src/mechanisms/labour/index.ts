@@ -380,6 +380,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
           { kind: 'event', name: 'labour.notice' },
           { kind: 'event', name: 'labour.print' },
           { kind: 'event', name: 'labour.separation' },
+          { kind: 'event', name: 'labour.unsold' },
         ],
         run: (ctx: MechanismContext) => {
           const b = bookOf(ctx);

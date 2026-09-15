@@ -11530,3 +11530,20 @@ pieces a period, which `downTick` refuses past 2^53. The price level that belief
 its five reds, `expectations.test.ts` at its two (the baseline's); 44 red of 88 across the world,
 firms, small-business, control, households, treasury, banks and funds suites, from 38 — the six are
 the throw above.
+
+## Item 12b.4 — Unsold hours are on the record
+
+The labour venue matched whole people and said nothing about the rest: a session with seekers and
+no employer returned before it wrote anything, and the hours a cleared book took that did not make
+one more person vanished between the solver and the hire. Both are journaled now, `labour.unsold`
+with the venue's own outcome — `noDemand`, `noSupply`, `noOverlap`, or a whole-person `remainder` —
+and the hours offered and wanted, so a reader can tell a trade nobody hires in from one nobody
+offers in. The print a reader faces was already its own region's since 12b.1.
+
+**Measured.** Six periods of the scale model: 304 venue-sessions with seekers and no employer,
+eight with employers and no seeker, seven whole-person remainders, eight prints. Most of this
+world's labour venues are seekers waiting for a bid — the price level of 12b.3 and the buyers of
+22.3, read against each other here.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green; `labour.test.ts`
+at its five reds.
