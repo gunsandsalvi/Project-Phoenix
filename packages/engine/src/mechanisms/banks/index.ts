@@ -35,7 +35,7 @@ import {
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { asQty, downTick, NO_QTY, type Qty } from '../../core/tick.js';
+import { downTick, NO_QTY, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -1382,8 +1382,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
         { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
         { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
-        { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
-        { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
+        { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
       ],
       writes: [
         { kind: 'event', name: 'bank.costOfFunds' },
@@ -1642,42 +1641,29 @@ function worthToItsLender(
   );
 }
 
-/**
- * A4 (13d): what a funding request said it was secured on, read out of the event that asked. It is
- * data crossing the 4.9b door and it is checked here rather than trusted: an instrument this world
- * does not have, or a quantity that is not one, is not security.
- */
-function securityIn(said: unknown): readonly { readonly instrument: InstrumentId; readonly qty: Qty }[] {
-  if (!Array.isArray(said)) return [];
-  const out: { instrument: InstrumentId; qty: Qty }[] = [];
-  for (const row of said as unknown[]) {
-    if (typeof row !== 'object' || row === null) continue;
-    const instrument = (row as Record<string, unknown>)['instrument'];
-    const qty = (row as Record<string, unknown>)['qty'];
-    if (typeof instrument !== 'string' || typeof qty !== 'number' || !(qty > 0)) continue;
-    // Law 8: what crossed the 4.9b door says it is a count, and this is where that is checked —
-    // `asQty` throws on anything that is not a whole number of the unit's pieces.
-    out.push({ instrument: instrument as InstrumentId, qty: asQty(qty, 'the security it offered') });
-  }
-  return out;
-}
 
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */
 function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
   if (ctx.period === 0) return;
   const said = period(ctx.period - 1);
-  for (const e of [...ctx.journal.ofKind('firms.funding'), ...ctx.journal.ofKind('housing.funding')]) {
-    if (e.period !== said) continue;
-    const borrower = e.subjects[0];
-    const asked = e.data['short'];
-    if (borrower === undefined || typeof asked !== 'number' || asked <= 0) continue;
-    // Item 16: what a borrower published it is short of re-enters here, as the money it is.
-    const want = asCash(asked, 'what it published it is short of');
+  /**
+   * Corporate Credit A1, Law 15 (item 0e): EVERY BORROWER, through the kernel's one read.
+   *
+   * It was `[...ofKind('firms.funding'), ...ofKind('housing.funding')]` — two other modules' event
+   * names, spelled out here, so a third borrower had to be added to this list by hand and none was:
+   * the small-business sector published nothing a bank would look at and got no credit at all
+   * (BK4). What a borrower is short of is one kind now, written through `ctx.request` and read
+   * through `ctx.requests`, so a sector that borrows is a sector this sees.
+   */
+  for (const req of ctx.requests(said)) {
+    if (req.short <= 0) continue;
+    const borrower = String(req.borrower);
+    const want = req.short;
     // A4 (13d): the request may name what it is secured on. A bank reading this does not learn
     // what the thing IS — it learns that there is an instrument it could take and realise, which
     // is the whole of what security means to a lender (Law 15).
-    const security = securityIn(e.data['security']);
-    const party = ctx.parties.get(borrower as PartyId);
+    const security = req.security;
+    const party = ctx.parties.get(req.borrower);
     // XI-8, Firm Birth D5: what it asked for last period it asked for as a going concern. It has
     // since ceased, and an estate is winding it up rather than borrowing: there is nobody left to
     // sign, so the request dies with the borrower.

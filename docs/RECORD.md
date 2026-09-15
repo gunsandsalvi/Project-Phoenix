@@ -10109,3 +10109,51 @@ the ratchet skips generated output and the baseline is 52 files.
 **Checks.** `check:opens` green on both worlds, and the rig now runs 52 periods without throwing.
 Lint, typecheck, spec citations, forbids, deaths, existence and plan green. On the five files
 nearest this change: 31 failed / 48 passed before, 28 failed / 51 passed after.
+
+## Item 0e — Questions, not hooks
+
+**What.** The eleven questions this kernel asks and cannot answer are DATA
+(`registry/questions.ts`), held in one register with one door and one refusal. Eleven maps, eleven
+`provide*` methods and eleven hand-written refusals are gone from `world/world.ts`. A cross-module
+ratchet in `check:forbids` stops the event coupling growing, and the first of it is removed: every
+borrower now publishes what it is short of through one door.
+
+**Fourteen, measured, are eleven.** `venueParticipants`, `indices` and `derivativeClasses` are
+REGISTRIES and not questions: a question has one answer per kind and its absence is a state the
+seal can refuse; a registry has as many entries as modules put in it, and an empty one is emptiness.
+Saying so is the difference between a check that means something and a check that fires on nothing.
+
+**What the duplication cost was not the lines.** `requireCreditDeciders` checked that ONE of the
+eleven was answered where a registered kind needed it — the overdraft — and the other ten could be
+silently unanswered until something asked mid-period. `requireBankChoices` checked a second, and
+only against the module that DECLARED the kind. `refuseUnanswered` checks all eleven against every
+kind the registry holds, and it found something at once.
+
+**A bank has a deposit class and does not shop.** `depositClass` says what a party's balance is to
+the bank holding it, and a bank's is wholesale money (A1.c). It does not follow that a bank chooses
+where to bank: its own account is at its central bank because that is what settling in central-bank
+money IS (Money C2.a). The predicate is a depositor that is not itself an issuer. **The per-module
+check could not have found this**, because nothing declares a bank and a bank's banking together.
+
+**The coupling is 52 pairs over 31 event kinds.** "A module never imports another module" is checked
+by lint, and the journal is the hole it leaves: `banks` read `firms.funding` and `housing.funding`
+BY NAME, so a third borrower had to be added to that list by hand and none was — the small-business
+sector published nothing a bank would look at and got no credit at all (BK4). `check:forbids` now
+baselines every pair and fails on a new one.
+
+**One kind for what a borrower is short of.** `ctx.request(borrower, { ccy, short, security })` is
+the one door, `ctx.requests(at)` the one read, and the kernel stamps the party and the period so
+nothing else can say either. A firm and a landlord publish the same shape; a bank reads one thing.
+`firms.funding` stays and carries what only a firm's own readers want — the split between what falls
+due soon and what it wants to build — which is a different fact with a different audience.
+
+**Item 0e′ inserted after this one and before 0f**, carrying what is left: the 51 remaining pairs,
+the eight nouns the journal is standing in for, and the observer's module imports. It is before 0f
+because the lattice declares stores and what a store IS has to be settled first. `registry/wages.ts`
+and `registry/physical.ts rentedRoom` already exist and are the right shape — each is a pure
+function over an event the CALLER fetched, so the module still names the kind, and moving the fetch
+inside on the `registry/switching.ts` pattern is 0e′.1.
+
+**Checks.** `check:opens` green on both worlds; `test/questions.test.ts` is five new tests; on the
+seven files nearest this change nothing went from green to red. Lint, typecheck, spec citations,
+forbids, deaths, existence and plan green.

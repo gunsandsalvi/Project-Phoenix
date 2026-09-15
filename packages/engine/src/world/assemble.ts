@@ -14,6 +14,8 @@ import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
+import { QUESTIONS } from '../registry/questions.js';
+import type { ParticipantView } from './context.js';
 import { asPerMember, type Cash, negated } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
@@ -108,28 +110,48 @@ export function assemble(spec: AssemblySpec): World {
     for (const p of m.phases) world.addPhase(p, m.id);
     for (const p of m.participants) world.addParticipant(p, m.id);
     for (const p of m.venueParticipants ?? []) world.addVenueParticipant(p, m.id);
+    /**
+     * Law 4, Law 15: WHAT THIS MODULE ANSWERS, through the one door (`registry/questions.ts`).
+     *
+     * It was eleven `provide*` methods on the world, each with its own map and its own refusal of a
+     * second — the same shape eleven times over, and a kernel change for every new question. The
+     * questions are data; this is a walk over them.
+     */
     const outlooks = m.outlooks;
-    if (outlooks !== undefined) world.provideOutlooks(m.id, outlooks);
-    for (const d of m.creditDecisions ?? []) world.provideCreditDecision(m.id, d.partyKind, d.decide);
-    for (const d of m.bankChoices ?? []) {
-      world.provideBankChoice(m.id, d.partyKind, (view) => d.chooses(view));
+    if (outlooks !== undefined) world.answer(QUESTIONS.whatItExpects, 'world', m.id, outlooks);
+    const capacity = m.clearingCapacity;
+    if (capacity !== undefined) {
+      world.answer(QUESTIONS.whatAMemberMayCarry, 'world', m.id, capacity);
     }
-    for (const d of m.termsOffered ?? []) world.provideTerms(m.id, d.partyKind, d.decide);
-    for (const d of m.borrowNeeds ?? []) world.provideBorrowNeeds(m.id, d.partyKind, d.needs);
-    for (const d of m.tradingLimits ?? []) world.provideTradingLimit(m.id, d.partyKind, d.mayTrade);
+    for (const d of m.creditDecisions ?? []) {
+      world.answer(QUESTIONS.whetherAnOverdraftIsADecision, String(d.partyKind), m.id, d.decide);
+    }
+    for (const d of m.bankChoices ?? []) {
+      world.answer(QUESTIONS.whereItBanks, String(d.partyKind), m.id, (v: ParticipantView) =>
+        d.chooses(v),
+      );
+    }
+    for (const d of m.termsOffered ?? []) {
+      world.answer(QUESTIONS.whatItShipsOn, String(d.partyKind), m.id, d.decide);
+    }
+    for (const d of m.borrowNeeds ?? []) {
+      world.answer(QUESTIONS.whatItMustBorrow, String(d.partyKind), m.id, d.needs);
+    }
+    for (const d of m.tradingLimits ?? []) {
+      world.answer(QUESTIONS.whatItMayTrade, String(d.partyKind), m.id, d.mayTrade);
+    }
     for (const d of m.riskBearing ?? []) {
-      world.provideRiskBearing(m.id, d.partyKind, d.standsBehind);
+      world.answer(QUESTIONS.whatStandsBehindIt, String(d.partyKind), m.id, d.standsBehind);
     }
     for (const d of m.leverageLimits ?? []) {
-      world.provideLeverageLimit(m.id, d.partyKind, d.mayBorrow);
+      world.answer(QUESTIONS.whetherItMayBorrow, String(d.partyKind), m.id, d.mayBorrow);
     }
-    for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
-    const capacity = m.clearingCapacity;
-    if (capacity !== undefined) world.provideCapacity(m.id, capacity);
+    for (const k of m.resolves ?? []) world.answer(QUESTIONS.whoResolvesIt, String(k), m.id, k);
+    for (const v of m.marks ?? []) {
+      world.answer(QUESTIONS.whatALotIsWorth, String(v.instrumentKind), m.id, v.value);
+    }
     for (const c of m.derivativeClasses ?? []) world.addDerivativeClass(c, m.id);
     for (const i of m.indices?.(world.params) ?? []) world.addIndex(i, m.id);
-    for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
-    requireBankChoices(m);
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);
@@ -138,35 +160,6 @@ export function assemble(spec: AssemblySpec): World {
   return world;
 }
 
-/**
- * Banks Funding A1.d, E1: A MODULE THAT DECLARES A DEPOSITOR MUST SAY HOW IT LEAVES.
- *
- * A party kind with a `depositClass` is somebody's deposit base — it is what a bank prices its
- * board against and pays a premium for. If nothing ever asks it where it wants to bank then it can
- * never leave, and that is A1.d's stickiness arriving as an omission instead of as a cost somebody
- * bears: the bank it funds can pay it less for ever and no run reaches it. So the module that
- * declares the kind declares the reason too, or the world does not open.
- *
- * It asks each MODULE about its OWN declaration rather than asking the registry about every kind,
- * and that is what makes it a check rather than a nuisance: a world assembled from four modules to
- * exercise one kernel door has the kernel's party kinds in it and nothing to speak for them, and a
- * guard that fired there would be refusing a legitimate world for a defect that is not in it.
- *
- * IT COVERS EVERY DEPOSITOR NOW, with no exception list, because `firm` and `household` are
- * declared by `firms` and `households` rather than by the kernel (worklist 11.6). The kernel's own
- * kinds are the ones money needs, and not one of them is anybody's deposit base — so there is no
- * kind this can reach that no module has to answer for.
- */
-function requireBankChoices(m: SystemModule): void {
-  const answered = new Set((m.bankChoices ?? []).map((d) => String(d.partyKind)));
-  for (const kind of m.partyKinds) {
-    if (kind.depositClass === null || answered.has(String(kind.id))) continue;
-    throw new InvalidRegistry(
-      'Banks Funding E1',
-      `${m.id} declares ${kind.id} as a "${kind.depositClass}" depositor and never says where it banks`,
-    );
-  }
-}
 
 /** Modules in an order that satisfies `requires` (Part XIII), stable for equal rank. */
 export function orderModules(modules: readonly SystemModule[]): SystemModule[] {

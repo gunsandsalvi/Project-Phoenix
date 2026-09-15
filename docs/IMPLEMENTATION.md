@@ -196,7 +196,8 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 0b | The cell key belongs to the party kind | stop 6; 0f needs it |
 | 0c | One truth in the documents; the guards that bite | before any item closes on the new plan |
 | 0d | The overdue suite run, triaged | the measurement eleven modules owed |
-| 0e | Questions, not hooks; stores, not events | the module contract every sector item after it uses |
+| 0e | Questions, not hooks | the module contract every sector item after it uses |
+| 0e′ | Stores, not events; and the observer imports nothing | the same subject; before 0f, because the lattice declares stores |
 | 0f | The population lattice (cells hold totals) | the representation every mass sector stands on; must precede the columnar state |
 | 0g | The core made fast | after 0f (the register's cell half is final); a year in minutes before anything is measured at scale |
 | 11 | Small-Business Pools | on 0f |
@@ -484,15 +485,55 @@ measure.
 
 ---
 
-## 0e. Questions, not hooks; stores, not events
+## 0e. Questions, not hooks
 
-Fourteen `SystemModule` single-answer hooks, each a kernel change; only `bankChoices` required at seal; modules read each other by event name; the journal is used as a store.
+Fourteen `SystemModule` single-answer hooks, each a kernel change; only `bankChoices` required at
+seal; modules read each other by event name.
 
-- [ ] 0e.1 `registry/questions.ts`: `Question<Arg, Answer> = { name, scope: 'partyKind' | 'world', required }` declared by a module; `SystemModule.answers: { [name]: (ctx, ...) => Answer }`; assembly collects by (question, kind), refuses two, requires one at seal for every `required` question a registered kind's profile names. Replace: `outlooks`, `marks`, `creditDecisions`, `bankChoices`, `termsOffered`, `borrowNeeds`, `tradingLimits`, `leverageLimits`, `riskBearing`, `resolves`, `clearingCapacity`, `venueParticipants`, `indices`, `curveFamilies`. Delete the fourteen `provide*` methods and maps in `world/world.ts` and `requireCreditDeciders`.
-- [ ] 0e.2 Cross-module facts are questions or registry reads, never event names: `credit.request` (one kind, written by `ctx.request({ short, security, ccy })`; `banks/index.ts:1583 runRequests` reads it; `firms.funding`/`housing.funding` readers become it); the rented room (`registry/physical.ts rentedRoom` reads an agreement row, `commodities` writes one); the wage a place pays (`registry/wages.ts`; `research/index.ts:837`, `banks/staff.ts wageFacing` read it); the environment condition (`registry/environment.ts`). Guard: `grep -rn "ofKind('\w\+\.\w\+')" src/mechanisms` names no kind another module writes; add to `check-forbids`.
-- [ ] 0e.3 The journal is a log: `expectations` book and surprises (H7), `households.plan` (H9), `ratings published` (RP10), `cds settledNames` (CD5), `funds asked/paid` (FD3), `insurers claims` (IN2), `moneyMarket printed` (MM13), `bank.dealing` (BK31) each become a declared noun with a store; the event is written from the store once, publicly, and never read back by its writer. `registry/nouns.ts` recounted.
-- [ ] 0e.4 Observer imports no module: `research consensusOf` and `fx-derivatives hedgedResidual` become registered `measures`; `OCCUPATION_OF`/`OCCUPATIONS` move to the registry (OB5).
-- [ ] 0e.5 ARCHITECTURE 4.9b, 4.10a rewritten. Test: a kind whose profile needs a question with no answer refuses to seal; two answers refuse.
+**Measured first.** Of the fourteen, ELEVEN are questions and three are not: `venueParticipants`,
+`indices` and `derivativeClasses` are REGISTRIES. A question has one answer per kind and its
+absence is a state the seal can refuse; a registry has as many entries as modules put in it and an
+empty one is emptiness. And the coupling is 52 pairs over 31 event kinds, not a handful.
+
+- [x] 0e.1 `registry/questions.ts`: `QuestionDecl { name, scope, required, spec, why }` and one `Answers` register. Eleven maps, eleven `provide*` methods and eleven refusals in `world/world.ts` become one `World.answer` door and one `refuseUnanswered` at the seal. `requireCreditDeciders` and `requireBankChoices` are deleted: the first checked one question of eleven, the second asked only the module that declared the kind.
+- [x] 0e.2a `tools/check-forbids.ts` gains the CROSS-MODULE RATCHET: a module reading an event kind another module writes is a pair `<reader>:<kind>`, 52 of them baselined, and the check fails on a new one. "A module never imports another module" is checked by lint; this is the hole it leaves.
+- [x] 0e.2b `credit.request`: one kind, written through `ctx.request(borrower, { ccy, short, security })` and read through `ctx.requests(at)`. `banks` read `firms.funding` and `housing.funding` BY NAME, so a third borrower had to join that list by hand and none did — the small-business sector published nothing a bank would look at and got no credit at all (BK4). Two of the 52 pairs are gone.
+- [x] 0e.5a `test/questions.test.ts`: a second answer is refused by name with the reason two would be wrong; a kind that needs an answer and has none cannot seal; a BANK is not asked where it banks.
+
+**Exit.** One door for a question, one refusal for a second, one check at the seal for all eleven;
+the coupling cannot grow; every borrower asks the same way.
+
+### What 0e found and did not fix
+
+- **A bank has a `depositClass` and does not shop.** The seal's new check fired on it at once:
+  `depositClass` says what a party's balance is to the bank holding it, and a bank's is wholesale
+  money (A1.c) — but its own account is at its central bank because that is what settling in
+  central-bank money IS (Money C2.a). The predicate asks for a depositor that is not itself an
+  issuer. **The per-module check could not have found this**: it asked only the module that DECLARED
+  the kind, and nothing declares a bank and a bank's banking together.
+- **`registry/wages.ts` and `registry/physical.ts rentedRoom` already exist** and are the right
+  shape — but each is a pure function over an event the CALLER fetched, so the module still names
+  the kind. Moving the fetch inside, the way `registry/switching.ts` does, is the rest of 0e.2.
+  → **0e′**.
+
+---
+
+## 0e′. Stores, not events; and the observer imports nothing
+
+Inserted here, after 0e and before 0f, because it is the same subject and the same measurement: 0e
+made a question a declaration and stopped the coupling growing; this removes the 51 pairs that are
+left and the journal-as-database behind them. It is before 0f because the lattice declares stores,
+and what a store IS has to be settled first.
+
+- [ ] 0e′.1 The remaining cross-module reads become registry reads that do their own fetching, on the `registry/switching.ts` pattern (a narrow `Reads` interface, not a `MechanismContext`): the wage a place pays (`labour.print`, `labour.goingRate`, `labour.wages` → `registry/wages.ts`), the rented room (`commodities.leased` → `registry/physical.ts`), the environment condition (`environment.state` → `registry/environment.ts`). Each pair deleted from the ratchet's baseline in the same change.
+- [ ] 0e′.2 The bank's own publications (`bank.buffer`, `bank.capital`, `bank.costOfFunds`, `bank.depositRate`, `bank.dealing`, `bank.reservation`, `bank.liquidity`, `deposit.classes`, `moneyMarket.print`, `moneyMarket.refused`, `centralBank.corridor`, `credit.quoted`, `credit.default`) are what a lender or a saver READS ABOUT A BANK: one registry read per fact, keyed by bank, over the public record. 24 of the remaining pairs.
+- [ ] 0e′.3 The rest are questions, not reads: `prime.wanted`/`prime.call`/`prime.line` (what a broker's client wants), `fund.struck`/`fund.listedStruck` (what a pool is worth), `advisory.ran`/`advisory.quoted`, `auction.announced`, `bond.offered`, `estate.closed`, `housing.shortfall`, `index.benchmark`, `rating.action`, `commodities.leased`.
+- [ ] 0e′.4 The journal is a LOG: `expectations` book and surprises (H7), `households.plan` (H9), `ratings published` (RP10), `cds settledNames` (CD5), `funds asked/paid` (FD3), `insurers claims` (IN2), `moneyMarket printed` (MM13), `bank.dealing` (BK31) each become a declared noun with a store; the event is written from the store once, publicly, and never read back by its writer. `registry/nouns.ts` recounted.
+- [ ] 0e′.5 Observer imports no module: `research consensusOf` and `fx-derivatives hedgedResidual` become registered `measures`; `OCCUPATION_OF`/`OCCUPATIONS` move to the registry (OB5).
+- [ ] 0e′.6 ARCHITECTURE 4.9b and 4.10a rewritten. Test: the ratchet's baseline is empty.
+
+**Exit.** `check:forbids` reports no module reading another module's event by name; no module keeps
+a fact in the journal that it reads back.
 
 ---
 

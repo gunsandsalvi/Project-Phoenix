@@ -765,6 +765,31 @@ export interface Borrowing extends BorrowNeed {
   readonly borrower: PartyId;
 }
 
+/**
+ * Corporate Credit A1, A4: WHAT A BORROWER IS SHORT OF, and what it would put up for it.
+ *
+ * One shape for every borrower — a firm building something, a landlord buying a dwelling, a small
+ * firm short of working capital — because a lender reading three shapes is a lender that has to
+ * know which sort of borrower it is looking at (Law 15).
+ */
+export interface CreditRequest {
+  readonly borrower: PartyId;
+  readonly ccy: CurrencyCode;
+  /** What it cannot fund out of what it holds. A count of pieces of `ccy`. */
+  readonly short: Cash;
+  /** A4: what it would secure the loan on, or nothing — which is an unsecured ask. */
+  readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
+  /** The period it said so in, so a lender can read last period's asks (Law 8). */
+  readonly at: Period;
+}
+
+/** What a borrower publishes. The kernel stamps the borrower and the period (Law 4). */
+export interface CreditAsk {
+  readonly ccy: CurrencyCode;
+  readonly short: Cash;
+  readonly security?: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
+}
+
 export interface MechanismContext extends WorldReads {
   /**
    * A module's own state, under a name of its choosing (Law 4: its module is the one writer). It is
@@ -858,6 +883,20 @@ export interface MechanismContext extends WorldReads {
    * run is the same run twice from one seed.
    */
   borrowsWanted(): readonly Borrowing[];
+  /**
+   * Corporate Credit A1, Law 15, ARCHITECTURE 4.9b: WHAT A BORROWER SAID IT IS SHORT OF, in one
+   * kind, written through one door and read through one read.
+   *
+   * It was two event kinds — `firms.funding` and `housing.funding` — that `banks` read BY NAME, so
+   * a third borrower had to be added to that list by hand and none was: the small-business sector
+   * published nothing a bank would look at and got no credit at all, which is finding BK4. A module
+   * naming another module's event is the coupling an import would be, with nothing to see it.
+   *
+   * What each borrower publishes is its own (`request`); what a lender reads is the kernel's, so no
+   * module names another's. A request is recorded PRIVATE, like a firm's funding need always was: it
+   * is between a borrower and whoever lends, and the kernel is what carries it between them.
+   */
+  requests(at: Period): readonly CreditRequest[];
   /** What every party has posted into a venue this period (the module that clears it reads this). */
   posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
@@ -1005,6 +1044,14 @@ export interface MechanismContext extends WorldReads {
     data: Record<string, unknown>,
     isPublic: boolean,
   ): Event;
+  /**
+   * Corporate Credit A1: THIS PARTY IS SHORT OF THIS MUCH, and would put this up for it.
+   *
+   * The one door a borrower publishes through, whatever sort of borrower it is, so `requests` is
+   * the one read a lender makes. The kernel stamps the party and the period: a borrower saying
+   * which period it is short in would be a second writer of something the world already knows.
+   */
+  request(borrower: PartyId, ask: CreditAsk): void;
 }
 
 /** Seed A1-A5: the opening world, written directly and once, then audited. */

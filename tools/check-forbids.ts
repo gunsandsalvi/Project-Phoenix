@@ -209,6 +209,126 @@ function ratchet(
   return out;
 }
 
+/**
+ * Law 15, ARCHITECTURE 4.9b: A MODULE READS ANOTHER MODULE'S EVENT BY NAME.
+ *
+ * "A module never imports another module" is checked by lint, and this is the hole it leaves: the
+ * journal is public, so `banks` reads `firms.funding` and `housing.funding` BY NAME and a third
+ * borrower has to be added to that list by hand — which is why the small-business sector got no
+ * bank credit at all. The coupling is the same coupling an import would be, with nothing to see it.
+ *
+ * A cross-module fact belongs in one of two places: a QUESTION the kernel asks the owning module
+ * (`registry/questions.ts`), or a registry read both modules make (`registry/wages.ts`,
+ * `registry/environment.ts`, `registry/physical.ts`). An event is a LOG — something happened, and
+ * anybody may watch — and reading one to decide is reading somebody else's variable.
+ *
+ * A RATCHET, because 52 of these exist across 31 event kinds and each conversion is its own change
+ * (item 0e.2). The pair is `<reader module>:<event kind>`; the check fails on a pair that is not
+ * here. A pair that goes away is deleted from the list.
+ */
+const CROSS_MODULE_EVENT_READS: ReadonlySet<string> = new Set([
+  'control:advisory.quoted',
+  'banks:advisory.ran',
+  'banks:auction.announced',
+  'money-market:bank.buffer',
+  'short-term-debt:bank.buffer',
+  'securitisation:bank.capital',
+  'fx-derivatives:bank.costOfFunds',
+  'securitisation:bank.costOfFunds',
+  'research:bank.dealing',
+  'money-market:bank.depositRate',
+  'short-term-debt:bank.depositRate',
+  'banks:bank.liquidity',
+  'money-market:bank.reservation',
+  'banks:bond.offered',
+  'banks:centralBank.corridor',
+  'funds:centralBank.corridor',
+  'firms:commodities.leased',
+  'banks:credit.default',
+  'control:credit.quoted',
+  'corporate-bond:credit.quoted',
+  'equity:credit.quoted',
+  'firms:credit.quoted',
+  'short-term-debt:credit.quoted',
+  'banks:deposit.classes',
+  'cds:estate.closed',
+  'control:firms.funding',
+  'corporate-bond:firms.funding',
+  'equity:firms.funding',
+  'short-term-debt:firms.funding',
+  'banks:fund.listedStruck',
+  'control:fund.struck',
+  'households:fund.struck',
+  'insurers:fund.struck',
+  'households:housing.shortfall',
+  'commodity-futures:index.benchmark',
+  'fx-derivatives:index.benchmark',
+  'irs:index.benchmark',
+  'households:labour.goingRate',
+  'research:labour.print',
+  'treasury:labour.print',
+  'banks:labour.wages',
+  'control:labour.wages',
+  'firms:labour.wages',
+  'treasury:labour.wages',
+  'banks:moneyMarket.print',
+  'indices:moneyMarket.print',
+  'banks:moneyMarket.refused',
+  'funds:prime.call',
+  'funds:prime.line',
+  'banks:prime.wanted',
+  'cds:rating.action',
+]);
+
+/** `ctx.record('x.y')` in a module: the kinds that module WRITES. */
+const WRITES = /\.record\(\s*'([\w.]+)'/g;
+/** Reading a kind by name, through the journal or through a participant's view. */
+const READS =
+  /(?:journal|events)\.(?:ofKind|ofKindIn|lastOf|forSubject)\(\s*'([\w.]+)'|(?:lastPublic|lastOwn|lastPublicAbout|lastOwnSince)\(\s*'([\w.]+)'/g;
+
+function moduleOf(path: string): string | undefined {
+  const rel = path.slice(SRC.length + 1);
+  const m = /^mechanisms\/([^/]+)\//.exec(rel);
+  return m?.[1];
+}
+
+function crossModuleReads(files: readonly string[]): string[] {
+  const writers = new Map<string, Set<string>>();
+  const readers = new Map<string, Set<string>>();
+  const into = (at: Map<string, Set<string>>, kind: string, mod: string): void => {
+    const held = at.get(kind);
+    if (held === undefined) at.set(kind, new Set([mod]));
+    else held.add(mod);
+  };
+  for (const path of files) {
+    const mod = moduleOf(path);
+    if (mod === undefined) continue;
+    const text = readFileSync(path, 'utf8');
+    for (const m of text.matchAll(WRITES)) into(writers, m[1] ?? '', mod);
+    for (const m of text.matchAll(READS)) into(readers, m[1] ?? m[2] ?? '', mod);
+  }
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const [kind, mods] of [...readers].sort()) {
+    const ws = writers.get(kind);
+    if (ws === undefined) continue;
+    for (const mod of [...mods].sort()) {
+      if (ws.has(mod)) continue;
+      const pair = `${mod}:${kind}`;
+      seen.add(pair);
+      if (CROSS_MODULE_EVENT_READS.has(pair)) continue;
+      out.push(
+        `mechanisms/${mod}: [Law 15] reads "${kind}", which ${[...ws].sort().join(' and ')} writes. ` +
+          `A cross-module fact is a question or a registry read, never an event name (item 0e.2)`,
+      );
+    }
+  }
+  for (const pair of CROSS_MODULE_EVENT_READS) {
+    if (!seen.has(pair)) out.push(`${pair}: [Law 15] is in the cross-module baseline and is gone; delete its row`);
+  }
+  return out;
+}
+
 function sources(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
@@ -225,6 +345,7 @@ function code(text: string): string {
 
 const files = sources(SRC);
 const broken: string[] = [
+  ...crossModuleReads(files),
   ...ratchet(
     files,
     ROUNDING,
@@ -255,5 +376,6 @@ if (broken.length > 0) {
 process.stdout.write(
   `all ${FORBIDS.length} silent FORBIDs hold over ${files.length} files; ` +
     `${String(Object.keys(ROUNDING_BASELINE).length)} files round outside core/ and ` +
-    `${String(Object.keys(ZERO_FLOOR_BASELINE).length)} floor at zero (item 21)\n`,
+    `${String(Object.keys(ZERO_FLOOR_BASELINE).length)} floor at zero (item 21), ` +
+    `${String(CROSS_MODULE_EVENT_READS.size)} read another module's event by name (item 0e.2)\n`,
 );

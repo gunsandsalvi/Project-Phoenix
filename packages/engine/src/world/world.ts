@@ -29,11 +29,12 @@ import {
   type CurrencyCode,
   type CurveFamilyId,
   type DerivativeKindId,
+  instrumentId,
   type InstrumentId,
-  type InstrumentKindId,
   type MarketId,
   moneyInstrumentId,
   paramId,
+  partyId,
   type PartyId,
   type PartyKindId,
   type VenueId,
@@ -128,6 +129,7 @@ import type { Subject,
   VoyagesRead,
 } from './context.js';
 import { subjectOf } from './context.js';
+import type { CreditRequest } from './context.js';
 import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
@@ -145,8 +147,12 @@ import type {
   TermsDecision,
 } from './module.js';
 import { revalue } from './revalue.js';
+import { Answers, EVERY_QUESTION, QUESTIONS, type QuestionDecl } from '../registry/questions.js';
 import { refuseLateReads } from './order.js';
-import { NO_QTY, type Qty } from '../core/tick.js';
+
+/** Corporate Credit A1: the one kind a borrower publishes a funding need under (item 0e). */
+export const CREDIT_REQUEST = 'credit.request';
+import { asQty, NO_QTY, type Qty } from '../core/tick.js';
 import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
 
 
@@ -282,40 +288,22 @@ export class World {
    * is two lookups of a name that already exists rather than a string built to make a key.
    */
   private readonly slots = new Map<string, Map<string, object>>();
-  /** Expectations A2: the one module that answers what a party expects. */
-  private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
-  /** Derivative Layer E1: the one module that says what a clearing member may carry. */
-  private capacity: { owner: string; capacity: ClearingCapacity } | undefined;
-  private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
-  /** Trade Credit A3 (13e): who answers whether a seller of a kind ships on terms, and with what. */
-  private readonly termsDeciders = new Map<
-    PartyKindId,
-    {
-      owner: string;
-      decide: TermsDecision;
-    }
-  >();
-  /** Securities Lending B1: the one module that answers what a party of a kind must borrow. */
-  private readonly borrowAskers = new Map<PartyKindId, { owner: string; needs: BorrowNeeds }>();
-  /** Fund Shares A3: the one module that answers what a party of a kind may take a position in. */
-  /** Hedge Funds B1 (item 13.3): who answers whether a party of a kind may owe money at all. */
-  private readonly leverageLimits = new Map<
-    PartyKindId,
-    { owner: string; mayBorrow: (view: ParticipantView) => boolean }
-  >();
-  private readonly riskBearing = new Map<
-    PartyKindId,
-    { owner: string; standsBehind: (view: ParticipantView) => Cash }
-  >();
-  private readonly tradingLimits = new Map<
-    PartyKindId,
-    { owner: string; mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean }
-  >();
-  /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
-  private readonly bankChoosers = new Map<
-    PartyKindId,
-    { owner: string; chooses: (view: ParticipantView) => Option<BankChoice> }
-  >();
+  /**
+   * Law 4, Law 15: THE ELEVEN QUESTIONS THIS KERNEL ASKS AND CANNOT ANSWER, in one register.
+   *
+   * It was eleven maps, eleven `provideX` methods that refused a second and named the first, and
+   * eleven `askX` reads — the same shape written out eleven times, differing in a type and a
+   * citation (Law 4's parallel formula). What that cost was not the lines: `requireCreditDeciders`
+   * checked that ONE of them was answered where a registered kind needed it, and the other ten
+   * could be silently unanswered until something asked mid-period. `registry/questions.ts` holds
+   * the questions as data and `refuseUnanswered` checks every one of them at the seal.
+   */
+  private readonly heldAnswers = new Answers();
+
+  /** Law 15, Audit E2: what this world was asked and who answered — a read, like `reach()`. */
+  get answers(): Pick<Answers, 'answer' | 'answered' | 'keys'> {
+    return this.heldAnswers;
+  }
   /** Banks Funding E1: whether the depositors have been asked this period, so they are asked once. */
   private choseBanks = false;
   /** Law 18: one participant view per party per cycle. Layout only; every read reaches live state. */
@@ -364,9 +352,7 @@ export class World {
    */
   private indexThrough: Period = period(0);
   private deps: IndexDeps | undefined;
-  /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
-  private readonly resolvers = new Map<PartyKindId, string>();
-  private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
+
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
   private readonly memory: AuditMemory = emptyMemory();
@@ -748,185 +734,38 @@ export class World {
   }
 
   /**
-   * Money B3.a: exactly one module answers what a bank does about a customer overdrawn at it, and
-   * it answers for a whole party kind, because every bank of a kind decides the same way from its
-   * own state (Law 15). Registered at assembly; a kind whose profile says its answer is a credit
-   * decision and has nobody to take it is a world that cannot be sealed.
+  /**
+   * Law 4, Law 10: A MODULE ANSWERS A QUESTION, and the register refuses a second by name.
+   *
+   * This was eleven methods — `provideResolution`, `provideTerms`, `provideTradingLimit`,
+   * `provideLeverageLimit`, `provideRiskBearing`, `provideBorrowNeeds`, `provideCreditDecision`,
+   * `provideBankChoice`, `provideMark`, `provideCapacity`, `provideOutlooks` — each with its own
+   * map, its own refusal and its own citation, and each a kernel change for a new question. The
+   * questions are data now (`registry/questions.ts`); this is the one door they come through.
    */
-  /** XI-3: a kind whose failure a module resolves itself, so the estate leaves it alone. */
-  provideResolution(owner: string, kind: PartyKindId): void {
-    forbid(!this.sealed, 'Law 10', 'a resolution is declared at assembly');
-    const held = this.resolvers.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Banks Capital C3',
-        `${owner} would be a second resolver of ${kind}, after ${held}`,
-      );
-    }
-    this.resolvers.set(kind, owner);
+  answer(q: QuestionDecl, key: string, owner: string, fn: unknown): void {
+    forbid(!this.sealed, 'Law 10', `an answer to "${q.name}" is declared at assembly`);
+    this.heldAnswers.provide(q, key, owner, fn);
   }
 
   /** Whether some module takes charge of what happens when a party of this kind fails (XI-3). */
   resolvesItsOwn(kind: PartyKindId): boolean {
-    return this.resolvers.has(kind);
+    return this.answers.answered(QUESTIONS.whoResolvesIt, String(kind));
   }
 
-  /**
-   * Trade Credit A1, A3, B5 (13e): exactly one module answers whether a seller of a kind ships on
-   * terms (Law 4). A second would be two sellers' judgements about one sale.
-   */
-  provideTerms(
-    owner: string,
-    kind: PartyKindId,
-    decide: TermsDecision,
-  ): void {
-    forbid(!this.sealed, 'Law 10', 'terms are declared at assembly');
-    const held = this.termsDeciders.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Trade Credit A3',
-        `${owner} would be a second decider of what ${kind} ships on, after ${held.owner}`,
-      );
-    }
-    this.termsDeciders.set(kind, { owner, decide });
-  }
-
-  /**
-   * Fund Shares A3, `B-14`: exactly one module answers what a party of a kind may trade (Law 4). A
-   * second would be two mandates over one pool, and the pool could act on the looser.
-   */
-  provideTradingLimit(
-    owner: string,
-    kind: PartyKindId,
-    mayTrade: (view: ParticipantView, k: DerivativeKindId) => boolean,
-  ): void {
-    forbid(!this.sealed, 'Law 10', 'a trading limit is declared at assembly');
-    const held = this.tradingLimits.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Fund Shares A3',
-        `${owner} would be a second decider of what a ${kind} may trade, after ${held.owner}`,
-      );
-    }
-    this.tradingLimits.set(kind, { owner, mayTrade });
-  }
-
-  /**
-   * Hedge Funds B1 (item 13.3): exactly one module answers whether a party of a kind may owe money
-   * (Law 4). A second would be two answers to one permission, and a lender could act on the looser.
-   */
-  provideLeverageLimit(
-    owner: string,
-    kind: PartyKindId,
-    mayBorrow: (view: ParticipantView) => boolean,
-  ): void {
-    forbid(!this.sealed, 'Law 10', 'a leverage limit is declared at assembly');
-    const held = this.leverageLimits.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Hedge Funds B1',
-        `${owner} would be a second decider of whether a ${kind} may borrow, after ${held.owner}`,
-      );
-    }
-    this.leverageLimits.set(kind, { owner, mayBorrow });
-  }
-
-  /**
-   * Hedge Funds C1, Fund Shares A3 (item 13.2b): exactly one module answers what a party of a kind
-   * has behind a position of its own (Law 4). A second would be two answers to one question, and a
-   * book would size the same party two ways depending on which class asked.
-   */
-  provideRiskBearing(
-    owner: string,
-    kind: PartyKindId,
-    standsBehind: (view: ParticipantView) => Cash,
-  ): void {
-    forbid(!this.sealed, 'Law 10', 'what stands behind a position is declared at assembly');
-    const held = this.riskBearing.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Fund Shares A3',
-        `${owner} would be a second decider of what a ${kind} has behind a position, after ${held.owner}`,
-      );
-    }
-    this.riskBearing.set(kind, { owner, standsBehind });
-  }
-
-  /**
-   * Securities Lending B1, A5.a: exactly one module answers what a party of a kind must borrow
-   * (Law 4). A second would be two reasons for one short, and the party could act on both.
-   */
-  provideBorrowNeeds(owner: string, kind: PartyKindId, needs: BorrowNeeds): void {
-    forbid(!this.sealed, 'Law 10', 'a borrow need is declared at assembly');
-    const held = this.borrowAskers.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Securities Lending B1',
-        `${owner} would be a second decider of what a ${kind} borrows, after ${held.owner}`,
-      );
-    }
-    this.borrowAskers.set(kind, { owner, needs });
-    this.reachTally.declare('borrowNeeds', declId(owner, kind), owner);
-  }
-
-  provideCreditDecision(owner: string, kind: PartyKindId, decide: CreditDecision): void {
-    forbid(!this.sealed, 'Law 10', 'the credit decision is declared at assembly');
-    const held = this.creditDeciders.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Banks Lending C3',
-        `${owner} would be a second decider of ${kind}'s overdrafts, after ${held.owner}`,
-      );
-    }
-    this.creditDeciders.set(kind, { owner, decide });
-  }
-
-  /**
-   * Banks Funding E1, Observer A4: exactly one module answers where a depositor of a kind banks
-   * (Law 4). A second would be two reasons for one party, and the party could act on both.
-   */
-  provideBankChoice(
-    owner: string,
-    kind: PartyKindId,
-    chooses: (view: ParticipantView) => Option<BankChoice>,
-  ): void {
-    forbid(!this.sealed, 'Law 10', 'a bank choice is declared at assembly');
-    const held = this.bankChoosers.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'Banks Funding E1',
-        `${owner} would be a second decider of where a ${kind} banks, after ${held.owner}`,
-      );
-    }
-    this.bankChoosers.set(kind, { owner, chooses });
-  }
 
   private creditDecisionOf(kind: PartyKindId): (o: OverdraftContext) => OverdraftDecision {
-    const held = this.creditDeciders.get(kind);
+    const held = this.answers.answer<CreditDecision>(
+      QUESTIONS.whetherAnOverdraftIsADecision,
+      String(kind),
+    );
     if (held === undefined) {
       throw new Missing(
         'Money B3.a',
         `${kind} says an overdraft at it is a credit decision and nobody takes it`,
       );
     }
-    return (o) => this.askedByTheKernel(() => held.decide(this.mechanismContext(held.owner), o));
-  }
-
-  /**
-   * XI-6: exactly one module answers what a lot of a kind with no market is worth (Law 4). The
-   * kernel asks it only when the price store has nothing, so a market always wins: a holder's own
-   * assessment is what stands where there is no market, never what stands instead of one.
-   */
-  provideMark(owner: string, kind: InstrumentKindId, value: Valuer): void {
-    forbid(!this.sealed, 'Law 10', 'a valuer is declared at assembly');
-    const held = this.valuers.get(kind);
-    if (held !== undefined) {
-      throw new InvalidRegistry(
-        'XI-6',
-        `${owner} would be a second valuer of ${kind}, after ${held.owner}`,
-      );
-    }
-    this.valuers.set(kind, { owner, value });
+    return (o) => this.askedByTheKernel(() => held.fn(this.mechanismContext(held.owner), o));
   }
 
   private markOf(instrument: InstrumentId, at: Period): Option<PerPiece> {
@@ -948,9 +787,14 @@ export class World {
     }
     const printed = this.prices.latest(instrument, at);
     if (printed.some) return some(printed.value.price);
-    const held = this.valuers.get(i.kind);
+    /**
+     * XI-6: the one module that answers what a lot of this kind with no market is worth. It is
+     * asked only when the price store has nothing, so a market always wins: a holder's own
+     * assessment is what stands where there is no market, never instead of one.
+     */
+    const held = this.answers.answer<Valuer>(QUESTIONS.whatALotIsWorth, String(i.kind));
     if (held === undefined) return none<PerPiece>();
-    return this.askedByTheKernel(() => held.value(this.mechanismContext(held.owner), i, at));
+    return this.askedByTheKernel(() => held.fn(this.mechanismContext(held.owner), i, at));
   }
 
   // ---- contracts (Derivative X1: the second register) ------------------------------------------
@@ -1125,18 +969,12 @@ export class World {
   }
 
   /**
-   * Derivative Layer E1-E3: exactly one module answers what a member may carry (Law 4). A world
-   * with a contract book and nobody answering cannot be sealed, because a defaulted-to "as much as
-   * you like" is E4's limit raised by omission.
+   * Derivative Layer E1-E3: the one module that says what a member may carry. A world with a
+   * contract book and nobody answering throws where the book is asked, because a defaulted-to "as
+   * much as you like" is E4's limit raised by omission.
    */
-  provideCapacity(owner: string, capacity: ClearingCapacity): void {
-    forbid(!this.sealed, 'Law 10', 'the clearing capacity is declared at assembly');
-    forbid(
-      this.capacity === undefined,
-      'Law 4',
-      `${owner} would be the second module to say what a clearing member may carry (${this.capacity?.owner ?? ''})`,
-    );
-    this.capacity = { owner, capacity };
+  private theHouse(): { owner: string; fn: ClearingCapacity } | undefined {
+    return this.answers.answer<ClearingCapacity>(QUESTIONS.whatAMemberMayCarry, 'world');
   }
 
   private capacityOf(
@@ -1145,7 +983,7 @@ export class World {
     m: ContractMarketDecl,
     struck: StruckAt,
   ): number {
-    const held = this.capacity;
+    const held = this.theHouse();
     if (held === undefined) {
       throw new InvalidRegistry(
         'Derivative Layer E1',
@@ -1153,7 +991,7 @@ export class World {
       );
     }
     return this.askedByTheKernel(() =>
-      held.capacity.admits(this.mechanismContext(held.owner), party, wanted, { market: m, struck }),
+      held.fn.admits(this.mechanismContext(held.owner), party, wanted, { market: m, struck }),
     );
   }
 
@@ -1164,7 +1002,7 @@ export class World {
     m: ContractMarketDecl,
     struck: StruckAt,
   ): readonly Leg[] {
-    const held = this.capacity;
+    const held = this.theHouse();
     if (held === undefined) {
       throw new InvalidRegistry(
         'Derivative Layer D9',
@@ -1172,37 +1010,30 @@ export class World {
       );
     }
     return this.askedByTheKernel(() =>
-      held.capacity.margin(this.mechanismContext(held.owner), party, against, size, {
+      held.fn.margin(this.mechanismContext(held.owner), party, against, size, {
         market: m,
         struck,
       }),
     );
   }
 
-  /** Expectations A2: exactly one module answers what a party expects (Law 4). */
-  provideOutlooks(owner: string, provider: OutlookProvider): void {
-    forbid(!this.sealed, 'Law 10', 'the outlook provider is declared at assembly');
-    if (this.outlookProvider !== undefined) {
-      throw new InvalidRegistry(
-        'Expectations A2.b',
-        `${owner} would be a second writer of what a party expects, after ${this.outlookProvider.owner}`,
-      );
-    }
-    this.outlookProvider = { owner, provider };
+  /** Expectations A2: the one module that answers what a party expects (Law 4). */
+  private theOutlooks(): { owner: string; fn: OutlookProvider } | undefined {
+    return this.answers.answer<OutlookProvider>(QUESTIONS.whatItExpects, 'world');
   }
 
   /** Expectations A1, A2: what a named party expects of a variable, asked of the one provider. */
   outlookOf(party: PartyId, variable: OutlookVariable): Option<Outlook> {
-    const p = this.outlookProvider;
+    const p = this.theOutlooks();
     if (p === undefined) return none();
-    return this.askedByTheKernel(() => p.provider.of(this.mechanismContext(p.owner), party, variable));
+    return this.askedByTheKernel(() => p.fn.of(this.mechanismContext(p.owner), party, variable));
   }
 
   /** A2: what this party has an outlook of at all — nothing, for one that has observed nothing. */
   outlookVariables(party: PartyId): readonly OutlookVariable[] {
-    const p = this.outlookProvider;
+    const p = this.theOutlooks();
     if (p === undefined) return [];
-    return this.askedByTheKernel(() => p.provider.variables(this.mechanismContext(p.owner), party));
+    return this.askedByTheKernel(() => p.fn.variables(this.mechanismContext(p.owner), party));
   }
 
   /** A module's participants: evaluated per party of the kind with that party's own view (Clearing B2). */
@@ -1331,15 +1162,47 @@ export class World {
    * world that cannot answer is broken from the start and finding out mid-period would make it look
    * like a refusal — which is exactly the thing C3.a says must be visible and never defaulted to.
    */
-  private requireCreditDeciders(): void {
-    for (const kind of this.registry.partyKinds.values()) {
-      if (kind.moneyIssuer?.overdraft !== 'aCreditDecision') continue;
-      if (this.creditDeciders.has(kind.id)) continue;
-      throw new InvalidRegistry(
-        'Money B3.a',
-        `${kind.id} says an overdraft at it is a credit decision and no module takes it`,
-      );
+  /**
+   * Corporate Credit A1: what every borrower said it was short of in a period, typed.
+   *
+   * Read HERE and not by the module that lends, because a lender reading a borrower's event by name
+   * is the coupling item 0e is about: `banks` read `firms.funding` and `housing.funding`, a third
+   * borrower had to be added to that list by hand, and none was — so the small-business sector
+   * published nothing a bank would look at and got no credit at all (BK4).
+   */
+  private requestsIn(at: Period): readonly CreditRequest[] {
+    const out: CreditRequest[] = [];
+    for (const e of this.journal.ofKindIn(CREDIT_REQUEST, at)) {
+      const borrower = e.data['borrower'];
+      const short = e.data['short'];
+      const ccy = e.data['ccy'];
+      if (typeof borrower !== 'string' || typeof short !== 'number' || typeof ccy !== 'string') {
+        continue;
+      }
+      const raw = e.data['security'];
+      const security: { instrument: InstrumentId; qty: Qty }[] = [];
+      for (const sec of Array.isArray(raw) ? (raw as unknown[]) : []) {
+        const row = sec as { instrument?: unknown; qty?: unknown };
+        if (typeof row.instrument !== 'string' || typeof row.qty !== 'number') continue;
+        security.push({ instrument: instrumentId(row.instrument), qty: asQty(row.qty) });
+      }
+      out.push({
+        borrower: partyId(borrower),
+        ccy: ccy as CurrencyCode,
+        short: asCash(short, 'what it published it is short of'),
+        security,
+        at,
+      });
     }
+    return out;
+  }
+
+  private requireAnswers(): void {
+    this.heldAnswers.refuseUnanswered(EVERY_QUESTION, (scope) =>
+      scope === 'partyKind'
+        ? [...this.registry.partyKinds.values()].map((k) => ({ id: String(k.id), profile: k }))
+        : [...this.registry.instrumentKinds.values()].map((k) => ({ id: String(k.id), profile: k })),
+    );
   }
 
   /**
@@ -1350,10 +1213,15 @@ export class World {
   chooseBanks(): void {
     if (this.choseBanks) return;
     this.choseBanks = true;
-    for (const [kind, chooser] of [...this.bankChoosers].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
-      for (const party of this.parties.ofKind(kind)) {
+    for (const kind of [...this.answers.keys(QUESTIONS.whereItBanks)].sort()) {
+      const chooser = this.answers.answer<(v: ParticipantView) => Option<BankChoice>>(
+        QUESTIONS.whereItBanks,
+        kind,
+      );
+      if (chooser === undefined) continue;
+      for (const party of this.parties.ofKind(kind as PartyKindId)) {
         if (!party.status.alive) continue;
-        const going = chooser.chooses(this.participantView(party.id));
+        const going = chooser.fn(this.participantView(party.id));
         if (going.some) this.moveBank(party.id, going.value.to, going.value.reason);
       }
     }
@@ -1378,13 +1246,15 @@ export class World {
 
   borrowsWanted(): readonly Borrowing[] {
     const out: Borrowing[] = [];
-    for (const [kind, asker] of [...this.borrowAskers].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
-      for (const party of this.parties.ofKind(kind)) {
+    for (const kind of [...this.answers.keys(QUESTIONS.whatItMustBorrow)].sort()) {
+      const asker = this.answers.answer<BorrowNeeds>(QUESTIONS.whatItMustBorrow, kind);
+      if (asker === undefined) continue;
+      for (const party of this.parties.ofKind(kind as PartyKindId)) {
         if (!party.status.alive) continue;
-        const wants = asker.needs(this.participantView(party.id));
+        const wants = asker.fn(this.participantView(party.id));
         this.reachTally.produced(
           'borrowNeeds',
-          declId(asker.owner, kind),
+          declId(asker.owner, kind as PartyKindId),
           wants.length,
           this.currentPeriod,
         );
@@ -1396,7 +1266,7 @@ export class World {
 
   seal(): AuditReport {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
-    this.requireCreditDeciders();
+    this.requireAnswers();
     // Law 10, Clearing F1.a: the order is the anchors', and this is the check on it — every phase
     // that needs something of the period it is in runs after whoever writes it. Two of item 0's
     // stops were a phase in front of something it needed, and neither threw where it was caused.
@@ -1614,8 +1484,11 @@ export class World {
       // Fund Shares A3: the module that owns this party's kind answers, and a kind nobody answers
       // for may trade anything — the absence of a rule is not a prohibition.
       mayTrade: (kind: DerivativeKindId): boolean => {
-        const held = this.tradingLimits.get(this.parties.get(party).kind);
-        return held === undefined || held.mayTrade(this.participantView(party), kind);
+        const held = this.answers.answer<(v: ParticipantView, k: DerivativeKindId) => boolean>(
+          QUESTIONS.whatItMayTrade,
+          String(this.parties.get(party).kind),
+        );
+        return held === undefined || held.fn(this.participantView(party), kind);
       },
       /**
        * Hedge Funds B1, Fund Shares F2 (item 13.3): the KIND says whether a thing of this sort can
@@ -1627,8 +1500,11 @@ export class World {
       mayBorrow: (): boolean => {
         const kind = this.parties.get(party).kind;
         if (!this.registry.partyKind(kind).borrows) return false;
-        const held = this.leverageLimits.get(kind);
-        return held === undefined || held.mayBorrow(this.participantView(party));
+        const held = this.answers.answer<(v: ParticipantView) => boolean>(
+          QUESTIONS.whetherItMayBorrow,
+          String(kind),
+        );
+        return held === undefined || held.fn(this.participantView(party));
       },
       /**
        * Hedge Funds C1, Fund Shares A3 (item 13.2b): what this party has behind a position it takes
@@ -1637,10 +1513,13 @@ export class World {
        * module that runs pools answers for them.
        */
       standsBehind: (): Cash => {
-        const held = this.riskBearing.get(this.parties.get(party).kind);
+        const held = this.answers.answer<(v: ParticipantView) => Cash>(
+          QUESTIONS.whatStandsBehindIt,
+          String(this.parties.get(party).kind),
+        );
         return held === undefined
           ? this.store.equity(party)
-          : held.standsBehind(this.participantView(party));
+          : held.fn(this.participantView(party));
       },
       contracts: {
         mine: () => this.contractStore.openOf(party),
@@ -1662,11 +1541,11 @@ export class World {
           // D2, D9: and what the LAYER will ask it to post against those rows. Margin is an asset
           // swap, but the money leaves the account all the same, and what a margin claim is, is the
           // layer's own instrument (Law 15) — so the layer answers and this adds it.
-          const held = this.capacity;
+          const held = this.theHouse();
           const margining =
-            held?.capacity.dueNext === undefined
+            held?.fn.dueNext === undefined
               ? asCash(0, 'no house asks this party to post anything')
-              : held.capacity.dueNext(this.mechanismContext(held.owner), party, ccy, at);
+              : held.fn.dueNext(this.mechanismContext(held.owner), party, ccy, at);
           return plus(margining, sum(
             this.contractStore
               .openOf(party)
@@ -2300,6 +2179,30 @@ export class World {
           journal: this.journal,
         });
       },
+      /**
+       * Corporate Credit A1, item 0e: one door for what a borrower is short of. The kernel stamps
+       * the party and the period, so nothing else can say either, and `requests` reads them back —
+       * no module names another module's event (Law 15).
+       */
+      request: (borrower, ask) => {
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          CREDIT_REQUEST,
+          [String(borrower)],
+          {
+            borrower: String(borrower),
+            ccy: ask.ccy,
+            short: ask.short,
+            security: (ask.security ?? []).map((sec) => ({
+              instrument: String(sec.instrument),
+              qty: Number(sec.qty),
+            })),
+          },
+          false,
+        );
+      },
+      requests: (at) => this.requestsIn(at),
       record: (kind, subjects, data, isPublic) =>
         this.journal.record(this.currentPeriod, this.currentCycle, kind, subjects, data, isPublic),
     };
@@ -2908,9 +2811,12 @@ export class World {
       // Trade Credit A1, A3 (13e): what the buyer pays with, which is the SELLER's decision and
       // therefore its own module's. None is cash, which is what every market did before this door.
       onTerms: (sale) => {
-        const decider = this.termsDeciders.get(this.parties.get(sale.seller).kind);
+        const decider = this.answers.answer<TermsDecision>(
+          QUESTIONS.whatItShipsOn,
+          String(this.parties.get(sale.seller).kind),
+        );
         if (decider === undefined) return none<InstrumentId>();
-        return decider.decide(this.mechanismContext(decider.owner), sale);
+        return decider.fn(this.mechanismContext(decider.owner), sale);
       },
       kinds: {
         contract: {

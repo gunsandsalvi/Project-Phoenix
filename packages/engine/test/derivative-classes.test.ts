@@ -24,6 +24,7 @@ import {asContractMarket, contractOf, pairOf, BOND_FUTURE_PARAMS,
   snapshot,
   type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
+import { QUESTIONS } from '../src/registry/questions.js';
 
 function ran(periods: number): World {
   const w = rigWorld('classes');
@@ -359,8 +360,16 @@ describe('what a party has behind a position (§28 C1, Fund Shares A3)', () => {
     // The same rule `mayTrade` and `mayBorrow` have: a second module answering for a kind would let
     // a book size the same party two ways depending on which class asked.
     const w = rigWorld('behind');
+    /**
+     * Item 0e: eleven `provide*` doors became one `answer`, and a sealed world refuses at the FIRST
+     * of the two rules — an answer is declared at assembly (Law 10) — so that is what is asserted
+     * here. That the second answer itself is refused, by name and with the reason two would be
+     * wrong, is `test/questions.test.ts` over the register, which is where the rule lives.
+     */
     expect(() => {
-      w.provideRiskBearing('probe', partyKindId('fund'), () => asCash(1, 'probe'));
-    }).toThrow();
+      w.answer(QUESTIONS.whatStandsBehindIt, 'fund', 'probe', () => asCash(1, 'probe'));
+    }).toThrow(/an answer to "whatStandsBehindIt" is declared at assembly/);
+    // And the one that was given at assembly is still the one that stands.
+    expect(w.answers.answered(QUESTIONS.whatStandsBehindIt, 'fund')).toBe(true);
   });
 });

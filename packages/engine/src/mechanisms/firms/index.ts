@@ -248,6 +248,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         reads: [],
         writes: [
           { kind: 'event', name: 'firms.expectation' },
+          { kind: 'event', name: 'credit.request' },
           { kind: 'event', name: 'firms.funding' },
           { kind: 'event', name: 'firms.plan' },
         ],
@@ -422,6 +423,15 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   const shortNow = minus(working, toNear, 'what it cannot pay of what falls due soon');
   const left = minus(cash, toNear, 'what is left once the near need is met');
   const shortTerm = minus(programme, left, 'what it cannot fund of what it wants to build');
+  /**
+   * Corporate Credit A1 (item 0e): WHAT IT IS SHORT OF, through the one door every borrower uses.
+   *
+   * `firms.funding` stays and carries what only a FIRM's own readers want — the split between what
+   * falls due soon and what it wants to build, which its board and its flotation read off it. What
+   * a LENDER needs is the one shape every borrower publishes, so a bank reads one kind rather than
+   * naming this module's.
+   */
+  ctx.request(view.self.id, { ccy, short });
   ctx.record(
     'firms.funding',
     [view.self.id],

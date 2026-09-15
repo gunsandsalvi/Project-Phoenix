@@ -454,7 +454,6 @@ function collect(ctx: MechanismContext): void {
  * it (Appendix B).
  * ---------------------------------------------------------------------------------------------- */
 
-export const HOUSING_FUNDING = 'housing.funding';
 export const FORECLOSED = 'housing.foreclosed';
 
 /** C1: the loans this party has that are secured on a dwelling — read off the register (Law 19). */
@@ -577,19 +576,20 @@ function askForMortgages(ctx: MechanismContext, rows: readonly TenureDecl[]): vo
     const id = goodId(DWELLING, cell.region);
     const print = ctx.prices.latest(id, ctx.period);
     if (!print.some || print.value.price <= 0) continue;
-    ctx.record(
-      HOUSING_FUNDING,
-      [cell.id],
-      {
-        short,
-        // A4: what it would put up. The quantity is what the money would buy at the price the
-        // market last printed, which is the only quantity either side can check.
-        security: [
-          { instrument: String(id), qty: amountOf(short, print.value.price, 'what the loan would buy') },
-        ],
-      },
-      true,
-    );
+    /**
+     * Corporate Credit A1, A4 (item 0e): one door, one shape. A landlord short of the price of a
+     * dwelling asks the same way a firm short of a machine does, so a bank reads one kind.
+     *
+     * A4: what it would put up is the quantity the money would buy at the price the market last
+     * printed, which is the only quantity either side can check.
+     */
+    ctx.request(cell.id, {
+      ccy: ctx.registry.currencyOf(cell.region),
+      short,
+      security: [
+        { instrument: id, qty: amountOf(short, print.value.price, 'what the loan would buy') },
+      ],
+    });
   }
 }
 
@@ -774,7 +774,10 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         spec: 'Housing B1 Housing C1 Households E2',
         anchor: { after: 'corporateActions' },
         reads: [],
-        writes: [{ kind: 'event', name: 'housing.shortfall' }],
+        writes: [
+          { kind: 'event', name: 'credit.request' },
+          { kind: 'event', name: 'housing.shortfall' },
+        ],
         run: (ctx: MechanismContext) => {
           publishShortfall(ctx, rows);
           askForMortgages(ctx, rows);

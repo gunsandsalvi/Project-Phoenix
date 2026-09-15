@@ -17,7 +17,7 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 11 of 28 items closed** (78 of 205 steps).
+**The plan: 12 of 29 items closed** (82 of 210 steps).
 **Requirement coverage: 65.5%** (899 MET, 105 PARTIAL, 0 OUT OF SCOPE of 1372 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -27,7 +27,8 @@ The plan has two parts:
 | 0b — The cell key belongs to the party kind | 3 | 3 | closed |
 | 0c — One truth in the documents; the guards that bite | 7 | 7 | closed |
 | 0d — The overdue suite run, triaged | 4 | 4 | closed |
-| 0e — Questions, not hooks; stores, not events | 5 | 0 | open |
+| 0e — Questions, not hooks | 4 | 4 | closed |
+| 0e′ — Stores, not events; and the observer imports nothing | 6 | 0 | open |
 | 0f — The population lattice | 11 | 0 | open |
 | 0g — The core made fast (Law 18) | 16 | 0 | open |
 | 11 — Small-Business Pools (§42), the rest | 5 | 5 | closed |

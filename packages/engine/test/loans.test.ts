@@ -57,10 +57,13 @@ function asksFor(amount: number, at = 1): SystemModule {
         spec: 'Banks Lending C2',
         anchor: { before: 'corporateActions' },
         reads: [],
-        writes: [],
+        writes: [{ kind: 'event', name: 'credit.request' }],
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
-          ctx.record('firms.funding', [BORROWER], { short: amount, owed: amount, ccy: USD }, false);
+          // Item 0e: a borrower publishes what it is short of through the one door every borrower
+          // uses. It wrote `firms.funding` directly, which is the coupling that item removed — a
+          // bank read two other modules' event names and a third borrower had to join that list.
+          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, 'what it is short of') });
         },
       },
     ],
