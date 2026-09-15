@@ -211,7 +211,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * A desk that is OVER-hedged is the third case and was unreachable: `want <= 0` returned nothing,
    * so a desk short more index than its book takes could not buy any of it back.
    */
-  const own = view.equity();
+  const own = view.standsBehind();
   const room =
     own > 0
       ? view.registry.deliverable(ratioOf(own, perContract, 'what its capital carries'))

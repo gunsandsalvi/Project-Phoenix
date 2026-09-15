@@ -2,9 +2,10 @@
  * What the classes owe the rest of the world: wrong-way risk, the funding swap, the hedge, and the
  * reads nobody may turn into a price.
  *
- * @spec CDS B1.a CDS B3 CDS E1 CDS E2 CDS E3 CDS E4 FX Forwards A4 FX Forwards B3 FX Forwards B3.b FX Forwards D3 FX Forwards E4 Dealer Desks E1 Dealer Desks E2 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D10 Derivative D10.a Law 3 Law 19
+ * @spec CDS B1.a CDS B3 CDS E1 CDS E2 CDS E3 CDS E4 FX Forwards A4 FX Forwards B3 FX Forwards B3.b FX Forwards D3 FX Forwards E4 Dealer Desks E1 Dealer Desks E2 Hedge Funds C1 Fund Shares A3 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D10 Derivative D10.a Law 3 Law 4 Law 6 Law 19
  */
-import { asPerPiece } from '../src/core/measure.js';
+import { asCash, asPerPiece } from '../src/core/measure.js';
+import { partyKindId } from '../src/core/ids.js';
 import { describe, expect, it } from 'vitest';
 import {asContractMarket, contractOf, pairOf, BOND_FUTURE_PARAMS,
   CDS_PARAMS,
@@ -308,5 +309,58 @@ describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
       }
     }
     expect(posted).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 13.2b: THE SPECULATIVE SIDE. §28 C1 calls a hedge fund *"the natural home of the speculative side
+ * of every derivative book"*, and this world let one into every book and gave it nothing to say.
+ */
+describe('what a party has behind a position (§28 C1, Fund Shares A3)', () => {
+  it('is the equity account for anybody whose module has not said otherwise', () => {
+    const w = rigWorld('behind');
+    for (const p of w.parties.all()) {
+      if (String(p.kind) === 'fund') continue;
+      // The default and the account are the same number, and nothing about a party kind changes it.
+      expect(w.participantView(p.id).standsBehind()).toBe(w.participantView(p.id).equity());
+    }
+  });
+
+  it('is NOT the equity account for a pool, because a pool has none (A3)', () => {
+    const w = rigWorld('behind');
+    for (let i = 0; i < 4; i += 1) w.step();
+    for (const p of w.parties.ofKind(partyKindId('fund'))) {
+      const view = w.participantView(p.id);
+      const struck = w.journal.lastOf('fund.struck', p.id);
+      if (struck === undefined) continue;
+      const perShare = Number(struck.data['perShare']);
+      const shares = Number(struck.data['shares']);
+      if (!(perShare > 0 && shares > 0)) continue;
+      // What stands behind it is its investors' money, at its own published value — and it is not
+      // the equity account, which A3 requires to be nothing.
+      expect(view.standsBehind()).toBeGreaterThan(0);
+      expect(Math.abs(view.equity())).toBeLessThan(view.standsBehind());
+    }
+  });
+
+  it('is a magnitude and never a limit: nothing anywhere bounds a position by it (Law 6)', () => {
+    // It scales a conviction; it does not cap one. A pool that has lost money takes a smaller
+    // position next period because its NAV FELL, which is a view widening against it and not a rule.
+    const w = rigWorld('behind');
+    for (const d of w.params.all()) {
+      const id = String(d.id).toLowerCase();
+      expect(id).not.toContain('maxposition');
+      expect(id).not.toContain('positionlimit');
+      expect(id).not.toContain('speculativelimit');
+    }
+  });
+
+  it('has exactly one decider per party kind (Law 4)', () => {
+    // The same rule `mayTrade` and `mayBorrow` have: a second module answering for a kind would let
+    // a book size the same party two ways depending on which class asked.
+    const w = rigWorld('behind');
+    expect(() => {
+      w.provideRiskBearing('probe', partyKindId('fund'), () => asCash(1, 'probe'));
+    }).toThrow();
   });
 });

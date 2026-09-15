@@ -424,6 +424,24 @@ export interface SystemModule {
     readonly partyKind: PartyKindId;
     readonly mayBorrow: (view: ParticipantView) => boolean;
   }[];
+  /**
+   * Hedge Funds C1, Fund Shares A3 (item 13.2b): WHAT A PARTY OF THIS KIND HAS BEHIND A POSITION IT
+   * TAKES ON ITS OWN ACCOUNT — the third door of the same shape, and the same rule: exactly one
+   * module answers for a kind, and a kind nobody answers for stands behind a position with its own
+   * EQUITY ACCOUNT, which is what a loss on it would fall on.
+   *
+   * That default is right for a bank, a firm and a household and **wrong for a pool, by
+   * construction**. A fund's equity is zero (A3: the holders own the assets, so assets minus
+   * liabilities is nothing), and every speculative term in every contract class in this world sized
+   * itself by `view.equity()` — so a hedge fund, *"the natural home of the speculative side of every
+   * derivative book"* (§28 C1), could take a position of exactly nothing in any of them. What stands
+   * behind a pool's position is its investors' money, which is its NAV, and only the module that
+   * runs pools can say so.
+   */
+  readonly riskBearing?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly standsBehind: (view: ParticipantView) => Cash;
+  }[];
   readonly borrowNeeds?: readonly {
     readonly partyKind: PartyKindId;
     readonly needs: BorrowNeeds;

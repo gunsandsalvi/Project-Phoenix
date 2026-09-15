@@ -9201,3 +9201,73 @@ M&A 13 of 22, Private Equity 12 of 25 — from 5, 10 and 5 when the item was ins
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13.2b — the speculative side had a door, and a pool that could not be sized
+
+**The step was written as**: the classes know only a hedger's reason, so `DerivativeClassDecl` needs a
+second one — what a party with a VIEW would take — and it touches nine class modules.
+
+**That is not what was wrong.** Every class already has a speculative term: its own number against
+where the book stands, sized by conviction, both ways around its own level when it has nothing to
+hedge. `A-66` added them after this step was written, and the step went stale without anybody
+noticing — which is the ordinary hazard of a plan that outlives the code it was written against.
+
+### What was actually wrong, and it was in all eleven of them
+
+```ts
+const own = view.equity();          // and ten more like it
+const conviction = sizeOf(view, own, mine);
+```
+
+**A pool's equity account is ZERO by construction.** Fund Shares A3: the holders own the assets, so
+assets minus liabilities is nothing, and a fund with equity has mislaid somebody's money. It is not
+an accident to be worked around — it is the clause, and there is an audit family that enforces it.
+
+So the one party §28 C1 calls *"the natural home of the speculative side of every derivative book"*
+was asked in every book, was permitted by its wide mandate (13.2), had its position seen by the NAV
+pass (13.6) — and computed a conviction of exactly nothing, in all nine classes. **The door was open
+and there was nothing to say at it.**
+
+And it left no trace anywhere. The pool is asked, it returns no order, the session prints exactly as
+it would have. Nothing fails, nothing is unbalanced, no number is wrong. That is what a silent
+prohibition looks like from the inside.
+
+### One kernel door, eleven reads deleted
+
+`ParticipantView.standsBehind()` is the third door of the shape `mayTrade` (9.7) and `mayBorrow`
+(13.3) already have, with the same rule: exactly one module answers for a party kind, and a kind
+nobody answers for gets the honest default. The default here is **the party's own equity account**,
+which is what a loss falls on for a bank, a firm or a household and needed no saying — and a pool's
+module answers differently, with its **own last published NAV** (Law 19: its own number, not a
+second walk of its register).
+
+**It is a magnitude and never a limit.** Nothing is bounded by it (Law 6): it is what a conviction is
+scaled against. A pool that has been wrong loses money, its next NAV strike is lower, and it takes a
+smaller position — which is the step's own warning honoured exactly: *"a view that can widen against
+it, never an arbitrage it cannot lose"*.
+
+### The sixth silent FORBID
+
+Eleven sites, nine modules, no output. That is the case `check-forbids` exists for, and CLAUDE.md
+says so outright: *a rule that can be a check should be one; when a rule is broken twice, write the
+check*. `view.equity()` is now refused anywhere in the nine class modules, with the clause and the
+reasoning in the failure message. **The guard was proved to bite before it was trusted**: one site
+was reverted, the check failed naming it, and the site was restored.
+
+§28 C1 goes PARTIAL → MET. Hedge Funds is 13 MET of 24.
+
+### What the step asked for and did not need
+
+A second `reasons` hook on the class. A fund forms outlooks the ordinary way — §46 builds one from
+the instructions a party was actually a side of, and a fund trades — so the lines it has a view on
+are already what `options.reasons` returns, and a book that has printed is already `openToAll` to
+everybody. The narrowing was never the barrier; the sizing was.
+
+**Also fixed here**: the `10g` row inserted at 10f.6's close sat at position two in the ordered plan
+while its own reason said it belonged after 17.9. Law 10 says insert at the dependency position and
+say where, and the two have to agree. It is **17b** now, after 17.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` **6** over 216 files, `check:deaths` 4 of
+4, `check:existence` green with Part 0 regenerated. Tests written and not run.

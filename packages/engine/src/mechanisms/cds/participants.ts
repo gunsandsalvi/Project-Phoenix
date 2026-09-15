@@ -156,8 +156,8 @@ function ownView(view: ParticipantView, t: CdsTerms): PerPiece | undefined {
  * somebody already full of the same credit is protection that pays when its writer cannot (E2).
  */
 function counterpartyTerm(view: ParticipantView, facing: Qty, against: string): Ratio {
-  const own = view.equity();
-  if (own <= 0) return asRatio(1, 'a party with no capital discounts nothing');
+  const own = view.standsBehind();
+  if (own <= 0) return asRatio(1, 'a party with nothing behind it discounts nothing');
   // A fraction of its own capital, which is a read and not a limit: the more of one name it
   // already faces through one counterparty, the less the next unit of it is worth.
   const held = heldAsMoney(facing, `facing ${against}`);
@@ -205,7 +205,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   let price = scale(mine, term, 'what cover is worth facing this side');
   if (at.some) {
     const book = at.value.price;
-    const conviction = sizeOf(view, view.equity(), mine);
+    const conviction = sizeOf(view, view.standsBehind(), mine);
     if (mine > plus(book, tick, 'wider than the book by a tick it can act on')) {
       want = addQty(want, conviction, 'and what its own view is worth to it');
     } else if (mine < minus(book, tick, 'tighter than the book by a tick it can act on')) {
@@ -229,7 +229,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * book's own print.
    */
   if (move === 0) {
-    const room = sizeOf(view, view.equity(), mine);
+    const room = sizeOf(view, view.standsBehind(), mine);
     if (room <= 0) return [];
     const bid = minus(mine, tick, 'a tick inside its own number');
     if (bid <= 0) return [];
@@ -330,7 +330,7 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
    * ask a tick outside: a spread, and not a crossing.
    */
   if (want === 0) {
-    const room = sizeOf(view, view.equity(), level);
+    const room = sizeOf(view, view.standsBehind(), level);
     if (room <= 0) return [];
     const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
     const bid = minus(level, tick, 'a tick inside its own number');

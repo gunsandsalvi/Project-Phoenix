@@ -352,7 +352,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     );
     worth = plus(worth, view.contracts.valueOf(c), 'what its book is worth');
   }
-  const own = view.equity();
+  const own = view.standsBehind();
   /**
    * I3.a: CUT ON A DRAWDOWN, and it is the first thing this party asks. A position that has gone
    * against it past what it will stand is closed — its own equity, its own tolerance, and nothing

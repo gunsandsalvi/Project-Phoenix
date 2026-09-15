@@ -67,7 +67,7 @@ checked, not assumed.
 | Banks Capital | 20 | 2 | 1 | 0 | 23 |
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
-| Hedge Funds | 12 | 3 | 9 | 0 | 24 |
+| Hedge Funds | 13 | 2 | 9 | 0 | 24 |
 | Private Equity | 12 | 1 | 12 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
@@ -185,8 +185,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| ~~**10f**~~ | Public and private firms, and the market for control | 13.5b | **CLOSED.** Six steps. Every firm has a share line and public is a MARKET, not a size; the flotation is a funding comparison whose first price the session strikes; M&A is one layer with four outcomes read off the register; a bank's IBD runs the sale out of the people it employs; institutions invest across strategies; and §29 B, C and D are callers of the layer rather than a private-equity mechanism. **Equity 26/37, M&A 13/22, Private Equity 12/25** — from 25, 10 and 5. The LEVERAGE (B2, B2.a, B4, B5, C3) is inserted at 17.9's position |
-| **10g** | The leveraged buyout: the TARGET raises the debt | B2, B2.a, B4, B5, C3 | **inserted at 10f.6's close, at 17.9's dependency position**: *“most of the price is debt raised against the target itself … which is why a failed buyout kills the firm and not the fund”*. It needs the target to borrow CONDITIONAL on a tender that has not settled yet and to pay the sellers in the same breath — a two-phase deal the period loop has no shape for — and it needs 17.9's bank request channel. Until it lands, a buyout here is unlevered and B2.b's *“the credit market decides which buyouts occur”* does not bite |
+| ~~**10f**~~ | Public and private firms, and the market for control | 13.5b | **CLOSED.** Six steps. Every firm has a share line and public is a MARKET, not a size; the flotation is a funding comparison whose first price the session strikes; M&A is one layer with four outcomes read off the register; a bank's IBD runs the sale out of the people it employs; institutions invest across strategies; and §29 B, C and D are callers of the layer rather than a private-equity mechanism. **Equity 26/37, M&A 13/22, Private Equity 12/25** — from 25, 10 and 5. The LEVERAGE (B2, B2.a, B4, B5, C3) is inserted as **17b**, after 17, because it needs 17.9's request channel |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -194,6 +193,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **15** | Housing, the rest | — | needs **3** and **7**; worklist 13m, and `E-5` |
 | **16** | Cross-border, the rest | — | needs **10b** (foreign-currency issuance) and **13** |
 | **17** | Corporate credit, the rest | — | needs **10**; 51 clauses, the largest single gap |
+| **17b** | The leveraged buyout: the TARGET raises the debt | B2, B2.a, B4, B5, C3 | **inserted at 10f.6's close, AFTER 17 and not before it** (Law 10: at its dependency position, and this is where). *“Most of the price is debt raised against the target itself … which is why a failed buyout kills the firm and not the fund”*. It needs the target to borrow CONDITIONAL on a tender that has not settled yet and to pay the sellers in the same breath — a two-phase deal the period loop has no shape for — and it needs **17.9**'s one funding-request channel, which is a step of 17. Until it lands a buyout here is unlevered and B2.b's *“the credit market decides which buyouts occur”* does not bite. It was first written into the table at position two, which contradicted its own reason |
 | **18** | Commodities spot and futures | — | 35 clauses across two systems; needs **6** for the futures half |
 | **19** | The polity (§47) | 3 | worklist 14; carries `D-1`, `D-2`, `E-7` |
 | **20** | Periodicity: the fee and the assessment | 1 | worklist 13k; needs **19** for who sets a fiscal period |
@@ -548,8 +548,8 @@ both:
   the same breath: a two-phase deal, and the period loop has no shape for a funding request that
   depends on an outcome later in the same period. What exists instead is honest and smaller: the
   pool pays out of the capital it called (13.5), so a buyout here is unlevered and B2.b's *"the
-  credit market decides which buyouts occur"* is not yet biting. **Positioned as its own item at
-  17.9's dependency position**, where the bank's request channel opens.
+  credit market decides which buyouts occur"* is not yet biting. **Positioned as item 17b**, after 17,
+  because 17.9's request channel is a step of it.
 - **B5's sources-and-uses VERIFY** waits on B2: with no debt leg there is nothing for the two sides
   to fail to balance that the wire does not already check.
 - **C3, the recapitalisation.** A controlled firm raising debt to pay its owner a distribution is the
@@ -687,7 +687,31 @@ its lender can cut (B1: *"leverage is a fact about a loan, never a property of t
 
 - [x] 13.1 **DONE AT ITEM 10e**, and further than written: `Mandate` is not only the spine, it carries the whole PRODUCT — blueprint, liquidity, tracks, fee, buffer, required yield, access and whether notice has been given — and the pools that exist are the performing mandates rather than a declared roster. Original text: a hedge fund is **a mandate with leverage**, a separate account is a mandate whose pool is the client's own balance sheet, an ETF and an MMF are pools with different redemption rules. Build the three sectors on it and nothing else.
 - [x] 13.2 Hedge funds: **the party, the manager, the two fees, the wide mandate** — and there is no hedge-fund party kind, because `mayWrite`, `leverage` and the performance fee are terms of a MANDATE and a strategy is a BLUEPRINT (10e's language). `mayWrite` and `leverage` came off `openMandate`, where they were hard-coded the same for every mandate in every world; `fundKind.borrows` no longer says `false` for the category; and the performance fee is charged over a high-water mark read off the last charge, never stored. **What is NOT here and why**: the SPECULATIVE side (C1) — a pool is spoken for in every contract book and its wide mandate says yes, but what it POSTS is the class's own `orders`, which is a hedger's reason; turning a party's own OUTLOOK into a position is a second reason on `DerivativeClassDecl` that every class implements, which is item 6's other half and **13.2b**. And leverage PERMITS without supplying: the lender is 13.3, and the bank's request channel is 17.9. Original text: — `mayWrite` and `leverage` are the two terms that make a mandate a hedge fund's, and both exist (item 9.2a, 9.7). `borrows` comes off the mandate, not off `fundKind` where it is hard-coded `false`. **Not before 13.6**: a mandate that writes contracts before the NAV pass reads them is a fund with equity.
-- [ ] 13.2b **THE SPECULATIVE SIDE** (§28 C1, and the other half of item 6). A pool with a wide mandate is asked in every contract book and the NAV can see what it takes (13.6) — but the ONLY reason any class knows how to post is a HEDGER's: `futureOrders` sells against a book it holds, and a party with no such book posts nothing. So *"the natural home of the speculative side of every derivative book"* has a door and nothing to say at it. The fix is NOT a kind branch inside a class (forbidden, and it would be one): `DerivativeClassDecl` gains a second reason — what a party with a VIEW about this subject would take — answered by the class, which knows its own payoff, out of the party's OWN OUTLOOK, which §46 already builds and which every deciding party already has. A bank with a view speculates too, and that is right. It touches nine class modules, which is why it is its own step. **Read the item's own warning first**: the reason must be a view that can widen against it, never an arbitrage it cannot lose (Appendix B: no free arbitrage, no unlimited arbitrageur) — a party that closes every gap by construction deletes the net basis, the ETF premium and the liquidity premium XI-2's forced seller pays.
+- [x] **13.2b DONE, and it was not the step it was written as.** The step said the classes knew only a
+  HEDGER's reason and needed a second one on `DerivativeClassDecl`. **Every class already had a
+  speculative term** — its own number against where the book stands, sized by conviction, added by
+  `A-66` after this step was written. What none of them had was a party that could be sized: **all
+  eleven of those terms read `view.equity()`, and a pool's equity is ZERO by construction** (Fund
+  Shares A3 — the holders own the assets, so assets minus liabilities is nothing). So a hedge fund
+  was asked in every book, was permitted by its wide mandate, computed a conviction of nothing and
+  returned no order. §28 C1's door was open and there was nothing to say at it, in all nine classes,
+  **in perfect silence**: the session prints exactly as it would have.
+  - **One kernel door, eleven reads deleted.** `ParticipantView.standsBehind()` is the third of the
+    `mayTrade`/`mayBorrow` shape: the equity account for anybody whose module has not said otherwise,
+    and a pool's own last published NAV for a pool (Law 19: its own number, not a second walk of its
+    register). Exactly one module answers for a kind, like the other two.
+  - **It is a magnitude and never a limit** (Law 6). Nothing is bounded by it: it is what a party's
+    conviction is scaled against, which is why a pool that has lost money takes a smaller position
+    next period — its NAV fell. That is the step's own warning honoured: *"a view that can widen
+    against it, never an arbitrage it cannot lose"*.
+  - **The sixth silent FORBID.** `view.equity()` is refused anywhere in the nine class modules, and
+    the guard was proved to bite before it was trusted. A rule broken eleven times with no trace in
+    any output is exactly what `check-forbids` is for (CLAUDE.md: *a rule that can be a check should
+    be one*). §28 C1 goes PARTIAL → MET.
+  - **What the step asked for and did NOT need**: a second `reasons` hook. A fund forms outlooks the
+    ordinary way — §46 builds one from the instructions a party was a side of, and a fund trades — so
+    the lines it has a view on are already what `options.reasons` returns, and a book that has
+    printed is already `openToAll`.
 
 - [x] 13.3 Prime brokerage: the relationship as an `Agreement` (`banks.prime`, appointed and endable); portfolio margin as the broker's own decision, built out of ITS OWN OUTLOOK about each line (§46 B3's `confidence`) so two brokers want different amounts and **C4.a falls out rather than being written**; and **no floor on the line** — `available` is a subtraction allowed to come out negative, and that negative number IS the call. It lives in `banks/` because it is a bank's fifth business line and what it does is WRITE A LOAN (ARCHITECTURE 4.11b). Two kernel doors it needed: the FUND party-kind ids moved to `registry/profiles.ts` (a name a module that does not own the kind still has to say), and `leverageLimits`/`ParticipantView.mayBorrow` — the mirror of `mayTrade`, so a lender asks the borrower's own module whether it may be levered instead of reading its mandate. **What is left is 13.4's**: *"meet it or be liquidated"*, and the chain D1–D4.
 - [x] 13.4 The loop D1→D4 falls out of the parts, and **no contagion step was written** (D4.a). Two changes, both of them REMOVALS of something that was preventing it:

@@ -146,7 +146,7 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
    * setting a level rather than a party's own reservation naming one.
    */
   if (!carry.some) return [];
-  const room = view.equity();
+  const room = view.standsBehind();
   if (room <= 0) return [];
   const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'),
   );
@@ -234,8 +234,8 @@ export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order
     return [{ party: view.self.id, side: 'buy', price: mine, qty: asQty(qty) }];
   }
   // §46 A3, B2.b: a party with nothing to swap quotes both ways around its own basis, and the size
-  // is what its own balance sheet has room for. Nothing raises that room.
-  const room = view.equity();
+  // is what stands behind a position of its own (item 13.2b). Nothing raises that room.
+  const room = view.standsBehind();
   if (room <= 0) return [];
   const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'));
   if (size <= 0) return [];

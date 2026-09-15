@@ -897,6 +897,18 @@ nobody ever asked — stickiness that cost nobody anything, which is the defect 
 an omission. A kind chooses its bank if and only if the module that owns it declared a `bankChoices`
 reason for it (§4.9b), which is the fact and its answer in one place (Law 4).
 
+**Three questions about a party are answered by the module that owns its kind, never by the book
+asking** (items 9.7, 13.3, 13.2b): whether it MAY take a position in a contract of a kind
+(`mayTrade`), whether it MAY owe money at all (`mayBorrow`), and WHAT IT HAS BEHIND a position it
+takes on its own account (`standsBehind`). All three have the same rule — exactly one module answers
+for a kind, and a kind nobody answers for gets the honest default, because the absence of a rule is
+not a prohibition. The defaults are: trade anything, whatever the party kind's own profile says
+about borrowing, and the party's own equity account. **The third exists because that default is
+wrong for a pool by construction**: a fund's equity is zero (Fund Shares A3), so every contract class
+that sized a speculative position by `view.equity()` gave a hedge fund a position of nothing in every
+book in this world — the door §28 C1 needs, open, with nothing to say at it. What stands behind a
+pool's position is its investors' money, and only the module that runs pools can say so.
+
 Every number that shapes behaviour is declared in the **parameter register** with value, unit, owner,
 and provenance kind: `technology | preference | policy | resolution | shape | placeholder`. A
 placeholder names the mechanism whose absence it stands in for and the worklist item that deletes it.

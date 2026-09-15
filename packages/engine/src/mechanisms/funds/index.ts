@@ -2512,6 +2512,41 @@ export function funds(
         },
       },
     ],
+    /**
+     * A3, Hedge Funds C1 (item 13.2b): WHAT A POOL HAS BEHIND A POSITION — its investors' money,
+     * which is what its own last NAV strike says its book comes to.
+     *
+     * A pool's EQUITY ACCOUNT is zero and that is not an accident to be worked around: the holders
+     * own the assets, so assets minus liabilities is nothing (A3), and a fund with equity has
+     * mislaid somebody's money. But a loss on a position it takes falls on the SHARE VALUE, and
+     * what a pool can stand is therefore what the shares are worth — which every contract class in
+     * this world was reading as zero, so no pool anywhere could take a speculative position of any
+     * size. §28 C1 had a door and nothing to say at it, and this is why.
+     *
+     * Law 19: it is the pool's OWN published number (`fund.struck`) and never a second walk of its
+     * register. A pool that has not struck a NAV yet has nothing behind it, which is true — it has
+     * not started — and is an absence rather than a zero anybody chose (App A).
+     */
+    riskBearing: [
+      {
+        partyKind: FUND,
+        standsBehind: (view: ParticipantView): Cash => {
+          const own = view.lastOwn('fund.struck');
+          if (!own.some) return asCash(0, 'a pool that has never struck a value has nothing behind it');
+          const perShare = own.value.data['perShare'];
+          const shares = own.value.data['shares'];
+          if (typeof perShare !== 'number' || typeof shares !== 'number') {
+            return asCash(0, 'a pool that published no value has nothing behind it');
+          }
+          // Item 16: two published numbers re-entering through their own dimensions' doors.
+          return valueAt(
+            asPerPiece(perShare, 'what it published a share is worth'),
+            asQty(shares, 'the shares there are of it'),
+            'what its investors have behind it',
+          );
+        },
+      },
+    ],
     tradingLimits: [
       {
         partyKind: FUND,

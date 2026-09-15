@@ -163,11 +163,12 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
 }
 
 /**
- * Derivative Layer E1: what it would carry, from its own capital at the rate it is quoting. It is
- * arithmetic on its own balance sheet and never a notional limit somebody wrote down.
+ * Derivative Layer E1: what it would carry, from whatever stands behind a position of its own at
+ * the rate it is quoting — its equity account, or for a pool its investors' money, answered by the
+ * module that runs it (item 13.2b). It is arithmetic and never a notional limit somebody wrote down.
  */
 function sizeOf(view: ParticipantView, unit: UnitId, level: PerPiece): Qty {
-  const own = view.equity();
+  const own = view.standsBehind();
   if (own <= 0 || level <= 0) return NO_QTY;
   // `E-11`: THIS BOOK'S LEVEL IS A RATE EXPRESSED AS MONEY PER PIECE — two per cent a year on a
   // unit of notional is two cents, as the comment at `mine` says. So what its capital carries is

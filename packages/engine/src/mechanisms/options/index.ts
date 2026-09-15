@@ -460,8 +460,9 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * per unit of the underlying, out by the multiplier, into the same book the read comes off.
    */
   const price = scale(mine, asRatio(t.multiplier, 'the multiplier'), 'per contract');
-  // What it can write comes off its own balance sheet.
-  const own = view.equity();
+  // C3: what it can write comes off whatever stands behind a position of its own — its equity
+  // account, or for a pool its investors' money, which its own module answers (item 13.2b).
+  const own = view.standsBehind();
   const room =
     own > 0
       ? view.registry.deliverable(amountOf(own, price, 'what it can write'))

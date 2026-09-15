@@ -345,7 +345,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     over(held, asRatio(t.lotUnits, 'what one lot is'), 'what its holding comes to in lots'),
     'so lots it wants to be short',
   );
-  const own = view.equity();
+  const own = view.standsBehind();
   const conviction =
     own > 0
       ? view.registry.deliverable(

@@ -64,6 +64,30 @@ const FORBIDS: readonly Forbid[] = [
       !p.includes(join('mechanisms', 'research')) && !p.includes(join('src', 'observer')),
     pattern: /consensusOf\(/,
   },
+  {
+    spec: 'Hedge Funds C1, Fund Shares A3',
+    why:
+      'A SPECULATIVE POSITION SIZED BY THE EQUITY ACCOUNT IS A POSITION NO POOL CAN EVER TAKE. A fund\u2019s equity is ZERO by construction \u2014 the holders own the assets, so assets minus liabilities is nothing (A3), and a fund with equity has mislaid somebody\u2019s money \u2014 so `view.equity()` answers zero for the one party \u00a728 C1 calls *\u201cthe natural home of the speculative side of every derivative book\u201d*. Every one of the nine contract classes read it, and every one of them therefore let a hedge fund into the book and gave it nothing to say. It breaks in perfect silence: the pool is asked, it is permitted by its mandate, it computes a conviction of zero and returns no order, and the session prints exactly as it would have. What a party has behind a position is `view.standsBehind()`, which is the equity account for anybody whose module has not said otherwise and a pool\u2019s NAV for a pool (item 13.2b)',
+    applies: (p) =>
+      CONTRACT_CLASSES.some((dir) => p.includes(join('mechanisms', dir))),
+    pattern: /\bview\.equity\(\)/,
+  },
+];
+
+/**
+ * The modules that own a class of derivative, which is where a position is SIZED (item 13.2b). It
+ * is written out because it is a fact about this world's modules rather than a pattern in a path,
+ * and a tenth class added without a line here is a tenth class this rule does not cover.
+ */
+const CONTRACT_CLASSES: readonly string[] = [
+  'cds',
+  'commodity-futures',
+  'bond-futures',
+  'index-futures',
+  'options',
+  'irs',
+  'fx-derivatives',
+  'derivative-layer',
 ];
 
 function sources(dir: string, out: string[] = []): string[] {

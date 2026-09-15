@@ -117,6 +117,9 @@ export function assemble(spec: AssemblySpec): World {
     for (const d of m.termsOffered ?? []) world.provideTerms(m.id, d.partyKind, d.decide);
     for (const d of m.borrowNeeds ?? []) world.provideBorrowNeeds(m.id, d.partyKind, d.needs);
     for (const d of m.tradingLimits ?? []) world.provideTradingLimit(m.id, d.partyKind, d.mayTrade);
+    for (const d of m.riskBearing ?? []) {
+      world.provideRiskBearing(m.id, d.partyKind, d.standsBehind);
+    }
     for (const d of m.leverageLimits ?? []) {
       world.provideLeverageLimit(m.id, d.partyKind, d.mayBorrow);
     }

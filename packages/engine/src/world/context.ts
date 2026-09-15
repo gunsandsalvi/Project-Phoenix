@@ -486,6 +486,22 @@ export interface ParticipantView extends KernelReads {
    * of the fund"*: the permission is the borrower's and the loan is the lender's.
    */
   mayBorrow(): boolean;
+  /**
+   * Hedge Funds C1, Fund Shares A3 (item 13.2b): WHAT THIS PARTY HAS BEHIND A POSITION IT TAKES ON
+   * ITS OWN ACCOUNT — what a loss on it would fall on, asked of the module that owns its kind.
+   *
+   * For a bank, a firm or a household that is its EQUITY ACCOUNT and nothing else needed saying, so
+   * every contract class in this world read `view.equity()` and sized a speculative position by it.
+   * **A pool's equity account is ZERO by construction** (A3: the holders own the assets, so assets
+   * minus liabilities is nothing), so a hedge fund — *"the natural home of the speculative side of
+   * every derivative book"* (§28 C1) — could take a position of exactly nothing in any of the nine
+   * classes. What stands behind a pool's position is its investors' money.
+   *
+   * It is not a LIMIT and nothing bounds anything by it (Law 6): it is the magnitude a party's own
+   * conviction is scaled against, which is why a party with more behind it takes a larger position
+   * at the same view and why a pool that has lost money takes a smaller one next period.
+   */
+  standsBehind(): Cash;
 
   /**
    * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session

@@ -296,6 +296,10 @@ export class World {
     PartyKindId,
     { owner: string; mayBorrow: (view: ParticipantView) => boolean }
   >();
+  private readonly riskBearing = new Map<
+    PartyKindId,
+    { owner: string; standsBehind: (view: ParticipantView) => Cash }
+  >();
   private readonly tradingLimits = new Map<
     PartyKindId,
     { owner: string; mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean }
@@ -795,6 +799,27 @@ export class World {
       );
     }
     this.leverageLimits.set(kind, { owner, mayBorrow });
+  }
+
+  /**
+   * Hedge Funds C1, Fund Shares A3 (item 13.2b): exactly one module answers what a party of a kind
+   * has behind a position of its own (Law 4). A second would be two answers to one question, and a
+   * book would size the same party two ways depending on which class asked.
+   */
+  provideRiskBearing(
+    owner: string,
+    kind: PartyKindId,
+    standsBehind: (view: ParticipantView) => Cash,
+  ): void {
+    forbid(!this.sealed, 'Law 10', 'what stands behind a position is declared at assembly');
+    const held = this.riskBearing.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Fund Shares A3',
+        `${owner} would be a second decider of what a ${kind} has behind a position, after ${held.owner}`,
+      );
+    }
+    this.riskBearing.set(kind, { owner, standsBehind });
   }
 
   /**
@@ -1556,6 +1581,18 @@ export class World {
         if (!this.registry.partyKind(kind).borrows) return false;
         const held = this.leverageLimits.get(kind);
         return held === undefined || held.mayBorrow(this.participantView(party));
+      },
+      /**
+       * Hedge Funds C1, Fund Shares A3 (item 13.2b): what this party has behind a position it takes
+       * on its own account. Its EQUITY ACCOUNT unless its own module says otherwise, because that
+       * is what a loss on the position falls on — and a pool's is zero by construction, so the
+       * module that runs pools answers for them.
+       */
+      standsBehind: (): Cash => {
+        const held = this.riskBearing.get(this.parties.get(party).kind);
+        return held === undefined
+          ? this.store.equity(party)
+          : held.standsBehind(this.participantView(party));
       },
       contracts: {
         mine: () => this.contractStore.openOf(party),
