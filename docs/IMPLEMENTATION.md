@@ -214,7 +214,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17b′ | The books a lender sees — **done** (section removed; see `docs/RECORD.md`; a borrower asking for a commitment prepares management accounts and its lender reads them, so *no accounts, no commitment* holds. 21.76's lender half closed; its `worthAt` half stays at 23.1) | before 17c |
 | 17c | The board — **done** (section removed; see `docs/RECORD.md`; a controlled company reads its owner's required return and its owner's duration. §35 D4 MET; §29 C2 stays PARTIAL with its cost-base half named as productivity's, not control's) | after 17b |
 | 17d | Loans float — **done** (section removed; see `docs/RECORD.md`; a loan is a margin over the fixings compounded, and a fixed row where the book has never traded. §7 B4 MET on the loan side; finding 21.77 at 23.3) | after 17c |
-| 17e | Capex and productivity | after 17d; what a firm contracts for is decided from what its plant will make |
+| 17e | Capex and productivity — **done** (section removed; see `docs/RECORD.md`; productivity is a read of the plant a firm holds by vintage, and a thing that wears can be KEPT — one outlay for plant and one for a dwelling, sharing the share gone without. Firm A3 carries 17e.1, Capital Programme A6 the upkeep, Housing A5 PARTIAL → MET; 21.43 closed; finding 21.78 at 23.1) | after 17d |
 | 17f | Contracts that last | after 17e |
 | 17g | What a pool is made of | after 17f |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
@@ -256,51 +256,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 ---
 
-
----
-
-
----
-
----
-
-## 17e. Capex and productivity
-
-The owner: *"investing in new plants or in general growth capex should reward the business with
-higher productivity while lack of maintenance capex should decay productivity (as a bottom up
-mechanism)."* After 17d and before 17f, because what a firm contracts for — hours, inputs — is
-decided from what its plant will make.
-
-**What is there.** `firms.labourScale.<firm>` is a DRAWN CONSTANT: a firm's productivity is set at
-the seed and never moves again, so a firm that builds a new plant makes exactly as much per hour as
-one that has let its machines rot for fifty periods. Plant already WEARS (`goods.spoilage`, the
-vintage's service life) and 21.43 already says nobody can maintain a dwelling; this is the same
-absence on the production side and it is the bottom-up half of §12c.
-
-- [x] 17e.1 **Productivity is what its plant makes it** (Firm A3, Capital Programme A6, Law 2). The
-  drawn number becomes what a firm STARTS at — a seed dispersion, which is legitimate — and what it
-  is NOW is a read: its own starting scale against the state of the plant it actually holds, by
-  vintage. A new vintage is better than an old one because that is what a vintage IS (it carries its
-  service date), so a firm that commissions raises its own productivity by holding newer plant, and
-  one that does not lowers it by holding older. **No new number for "better"**: the ratio is the
-  plant's remaining life against its whole life, which the vintage already states.
-- [x] 17e.2a **Maintenance is an outlay, and not making it decays — the PLANT half** (Capital
-  Programme A6, Housing A5). A kind of capital declares what a unit of it eats of what it is made of
-  each period (technology); the holder buys it or it does not; `capital.upkeep` consumes what it
-  bought off its own shelf and scraps what went without it — `units × wentWithout / periodsLeft`,
-  which is a period of service gone beyond the calendar and takes no number of its own. Firms and
-  landlords bid for the parts.
-- [x] 17e.2b **The DWELLING half** (Housing A5, 21.43). A dwelling is not plant: it is a GOOD (13d)
-  and what wears it is `goods.spoilage`, a rate rather than two dates — so "built once for both" is
-  the SHARE GONE WITHOUT (`wentWithout`, built at 17e.2a and shared), and what it answers is each
-  thing's own wear. A good declares an upkeep where it has one (a dwelling does; grain does not, and
-  no upkeep keeps a tonne of grain), what perishes is its spoilage times what it went without, and
-  the holder — landlord or owner-occupier — bids for the materials. 21.43 closes here.
-- [ ] 17e.3 §12c's bottom-up half re-marked, Firm A3 and Capital Programme A6 re-read; 21.43 closed;
-  record.
-
-**Exit.** Two firms drawn identical diverge in output per hour because one commissioned and
-maintained and the other did not, and neither number was written anywhere.
 
 ---
 

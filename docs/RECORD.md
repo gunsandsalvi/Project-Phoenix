@@ -13860,3 +13860,67 @@ is finding 21.77, positioned at 23.3 beside 21.72, because "the banks stop quoti
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
 four new tests green (the file's four reds unchanged); `loans`: three new tests green, seven reds
 unchanged; `buyout` ten green; `backstop` and `mortgage` carry the two reds they carried before.
+
+---
+
+## Item 17e — Capex and productivity: closed
+
+The owner asked for it in one sentence: *"investing in new plants or in general growth capex should
+reward the business with higher productivity while lack of maintenance capex should decay
+productivity (as a bottom up mechanism)."* Two absences answered it, and neither needed a new number.
+
+**Productivity was a DRAWN CONSTANT** (17e.1). `firms.labourScale.<firm>` was set at the seed and
+never moved again, so a firm that commissioned a new plant made exactly as much per hour as one that
+had let its machines rot for fifty periods. The drawn number is now what a firm STARTS at — a seed
+dispersion, which is legitimate — and what it is NOW is a read of the plant it actually holds. A
+vintage already states the life it was built with and what is left of it, two dates on the
+instrument, so how worn the plant is is a read of those dates: **no new number says "better"**,
+because a service date is what "newer" MEANS. Within a kind the vintages count by their units; across
+kinds the line runs at the WORST of the kinds its recipe names, for the same reason capacity runs at
+the scarcest (A4) and never at a mean over kinds whose units are not the same thing (Law 8, "no
+decision at an average"). `technologyOf` divides the firm's hours-per-unit by that state, so the same
+work on half-worn plant takes twice the hours, and new plant reads 1 and changes nothing.
+
+**Wear was an event nobody could answer** (17e.2a, 17e.2b). A holder's only reply to a thing getting
+older was to hold fewer of them; 21.43 had said so of a dwelling since item 15. What was missing is
+the OUTLAY. A kind of capital now states what a unit of it eats of what it is MADE OF each period —
+parts for a machine, a roof for a building — and `capital.upkeep` consumes what the holder actually
+bought off its own shelf and scraps what went without it: `units × wentWithout / periodsLeft`, which
+is a period of service gone beyond the calendar and takes no number of its own. A shop that buys
+nothing ages its machines at twice the calendar; one that buys half at half again; continuously, with
+nothing happening AT any level.
+
+**Nothing is written down and nothing is rescheduled.** The vintage keeps the two dates it was made
+with (Law 4: one representation of how worn a thing is, and 17e.1 reads it). What neglect takes is
+UNITS — machines that broke and were not put right — so the carrying value, the wear charge, the
+capacity read and the condition read all follow with no second writer, and the loss lands on the
+holder's equity because settlement debits the lots at what they carried.
+
+**A dwelling is not plant, and that changed the plan** (17e.2b). The item said "the same mechanism,
+built once for both". A dwelling is a GOOD (13d) and what wears it is a RATE, not two dates — so what
+the two halves share is the share gone without (`wentWithout`) and not a phase, and what it answers is
+each thing's own wear. A good states an upkeep where anything can keep it: a dwelling eats the timber
+in it; grain in a silo goes the way grain goes however much is spent on it, and that stays a real
+answer rather than an unset number. `perish` lets go the good's own spoilage times the share gone
+without, so a stock nobody spends on shrinks at exactly the rate its spoilage always claimed, and one
+kept up does not. **21.43 closes.**
+
+**Who buys it.** Firms bid for their parts beside their overheads — and the two are not one fact
+twice: an overhead is a SERVICE the site takes and going without it costs the firm only the service,
+while upkeep is the plant eating what it is made of and going without it is machines that break.
+Landlords bid beside their build; a household that owns the roof it lives in and a landlord that lets
+one bid by the SAME read, because what a dwelling eats is a fact about the dwelling and not about who
+holds it (Law 15). All of them bid what they expect to pay: what a plank is worth to its buyer is the
+roof it keeps, and nothing in this world prices that yet.
+
+**Marked.** Firm A3 keeps PARTIAL on its other half and carries 17e.1; Capital Programme A6 MET and
+carries the upkeep; Housing A5 moves PARTIAL → **MET**.
+
+**Named and left open.** The HOURS half — a repair is also somebody's time — and the other nine
+materials a dwelling is built from: one material stands for the repair of a thing built from ten,
+which is a SHAPE with its death at item 22, where the recipe is. Finding 21.78: `test/capital.test.ts`
+does not collect at all (its module scope asks the draw for a second grain firm and the draw made
+none), pre-existing and the same shape as 21.67's `bank-capital.test.ts`, positioned at 23.1.
+
+**Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
+green. `test/upkeep.test.ts` is new and four green.
