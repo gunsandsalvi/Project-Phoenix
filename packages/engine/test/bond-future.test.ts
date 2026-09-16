@@ -68,6 +68,7 @@ describe('the contract (I1, D3)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+      pairedWith: { some: false },
       house: null,
     } as Contract;
     const reads = w.contractReads(w.period);
@@ -136,6 +137,7 @@ describe('delivery (I1, XI-5)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+      pairedWith: { some: false },
       house: null,
     } as Contract;
     const reads = w.contractReads(w.period);

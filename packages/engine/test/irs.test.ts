@@ -66,6 +66,7 @@ function aSwap(w: World, a: string, b: string, tenorYears: number): Contract {
     opened: w.period,
     state: 'open',
     terminated: { some: false },
+    pairedWith: { some: false },
     house: null,
   } as Contract;
 }

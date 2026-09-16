@@ -65,6 +65,7 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+    pairedWith: { some: false },
       house: null,
     } as Contract;
     // A2, E3: nothing falls due before maturity — what moves in between is the margin.
@@ -104,6 +105,7 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+    pairedWith: { some: false },
       house: null,
     } as Contract;
     const reads = w.contractReads(w.period);
@@ -166,6 +168,7 @@ describe('the cross-currency swap (C1, C1.a, C3)', () => {
       opened: t.started,
       state: 'open',
       terminated: { some: false },
+    pairedWith: { some: false },
       house: null,
     } as Contract;
     const start = xccyKind.legs(c, t.started, w.contractReads(t.started));

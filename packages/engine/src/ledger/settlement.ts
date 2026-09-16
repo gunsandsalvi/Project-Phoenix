@@ -616,6 +616,7 @@ export class Settlement {
     // kind whose underlying is read off its terms is checked on the terms it is being written with.
     const asIfOpen: Contract = {
       id: 'unwritten' as Contract['id'],
+      pairedWith: none<ContractId>(),
       kind: leg.derivative,
       a: leg.a,
       b: leg.b,
@@ -1549,6 +1550,25 @@ export class Settlement {
           proceeds: heldAsMoney(leg.amount, leg.ccy, 'what the seller was paid'),
           basis,
         });
+      }
+    }
+    /**
+     * C2, XI-5 (18.2): THE TWO ROWS ONE CLEARED FILL MADE, TOLD ABOUT EACH OTHER.
+     *
+     * A house is buyer to the seller and seller to the buyer, so one fill writes two rows in one
+     * instruction — and everything that has to treat them as one trade had to find the sibling
+     * afterwards by comparing fields that happened to agree, including `struckAt === struckAt`,
+     * which compared two objects by identity. The instruction knows, so it says so here. Nothing
+     * else may: the pairing is a fact about how the trade was written (Law 4, one writer).
+     */
+    if (written.length === 2) {
+      const [first, second] = written;
+      if (first !== undefined && second !== undefined) {
+        const left = this.d.contracts.get(first);
+        const right = this.d.contracts.get(second);
+        if (left.house !== null && left.house === right.house) {
+          this.d.contracts.pair(first, second);
+        }
       }
     }
     return { deltas, equity: effects, contracts: written, realised };

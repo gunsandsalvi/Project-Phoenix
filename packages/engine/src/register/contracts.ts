@@ -121,11 +121,25 @@ export class Contracts {
       opened: at,
       state: 'open',
       terminated: none(),
+      pairedWith: none<ContractId>(),
       house: decl.house,
     };
     this.rows.set(id, row);
     this.index(row);
     return row;
+  }
+
+  /**
+   * C2, XI-5 (18.2): the two rows one cleared fill made, told about each other. It is called by
+   * settlement, in the instruction that wrote them, and by nothing else: the pairing is a fact
+   * about how the trade was written and not something a reader may decide afterwards.
+   */
+  pair(a: ContractId, b: ContractId): void {
+    const left = this.get(a);
+    const right = this.get(b);
+    forbid(!left.pairedWith.some && !right.pairedWith.some, 'Derivative D1', `${a} or ${b} is already paired`);
+    this.rows.set(a, Object.freeze({ ...left, pairedWith: some(b) }));
+    this.rows.set(b, Object.freeze({ ...right, pairedWith: some(a) }));
   }
 
   /** D11: it ceases to exist on both books at once. The row stays, so the chain stays traceable (F4). */

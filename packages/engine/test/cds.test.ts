@@ -103,6 +103,7 @@ describe('what the contract IS (A2, A3, D1.b)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+    pairedWith: { some: false },
       house: null,
     } as Contract;
   }

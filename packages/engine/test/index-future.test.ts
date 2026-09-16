@@ -68,6 +68,7 @@ describe('the contract (C3, D3, D3.a)', () => {
       opened: w.period,
       state: 'open',
       terminated: { some: false },
+    pairedWith: { some: false },
       house: null,
     } as Contract;
     const reads = w.contractReads(w.period);

@@ -47,6 +47,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: Qty): Co
     opened: w.period,
     state: 'open',
     terminated: { some: false },
+    pairedWith: { some: false },
     house: null,
   };
 }

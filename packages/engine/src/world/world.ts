@@ -1069,6 +1069,7 @@ export class World {
             // margin does not depend on one — what it depends on is the underlying, the size and
             // the level, all of which are here.
             id: contractId('unwritten'),
+            pairedWith: none<Contract['id']>(),
             basis: noCash(about.ccy),
             opened: at,
             state: 'open',

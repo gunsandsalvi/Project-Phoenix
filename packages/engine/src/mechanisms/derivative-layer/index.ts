@@ -47,6 +47,7 @@ import type { Order } from '../../clearing/solver.js';
 import { BANK, FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { ClearingCapacity, SystemModule } from '../../world/module.js';
+import type { ContractTerms } from '../../registry/derivatives.js';
 import {
   closeOutKind,
   defaultFundKind,
@@ -481,6 +482,78 @@ function resolveContracts(ctx: MechanismContext): void {
   }
 }
 
+/**
+ * Derivative Layer C1.a, D11, XI-5 (18.2): TWO ROWS THAT CANCEL EACH OTHER ARE CLOSED, and what the
+ * difference between them came to is SETTLED.
+ *
+ * A party that is long a thing and short the same thing with the same counterparty holds no
+ * position at all — and this world kept both rows open to expiry, so a future that had been offset
+ * in the session still delivered, gross, both ways, and the margin on both stayed locked up. What
+ * makes them offsetting is kind-agnostic and needs no new fact: the same KIND, the same TERMS (the
+ * deliverable, the expiry, the side the terms are stated from), the same notional, and the two
+ * parties the other way round. What is NOT the same is the level each was struck at — and that
+ * difference is exactly what closing them realises, whatever the underlying does afterwards.
+ *
+ * Both rows close at their own close-out values, through the one door that already does it
+ * (`settleAndTearUp`, Law 4), so the variation the marks had moved is paid rather than released:
+ * margin in this world is posted and HELD, so nothing else would have paid it (C3.a).
+ *
+ * Only EQUAL notionals net. A long of five lots against a short of three is a position of two, and
+ * reducing a row is not something a contract in this world can do — a partial net would be a new
+ * mechanism (a row split) and it is written down rather than half-built (21.82).
+ */
+function netOffsetting(ctx: MechanismContext): void {
+  const done = new Set<string>();
+  for (const c of ctx.contracts.open_()) {
+    if (done.has(String(c.id))) continue;
+    const other = ctx.contracts
+      .between(c.a, c.b)
+      .find(
+        (x) =>
+          x.state === 'open' &&
+          String(x.id) !== String(c.id) &&
+          !done.has(String(x.id)) &&
+          // Law 15: this is not a branch ON a kind — nothing here asks WHICH kind it is. It asks
+          // whether two rows are of the SAME one, which is what "the same trade twice" means.
+          String(x.kind) === String(c.kind) &&
+          x.ccy === c.ccy &&
+          x.notional === c.notional &&
+          String(x.a) === String(c.b) &&
+          String(x.b) === String(c.a) &&
+          sameTerms(x.terms, c.terms),
+      );
+    if (other === undefined) continue;
+    done.add(String(c.id));
+    done.add(String(other.id));
+    settleAndTearUp(ctx, c.id, 'it was offset by an equal and opposite row');
+    settleAndTearUp(ctx, other.id, 'it was offset by an equal and opposite row');
+    ctx.record(
+      'derivatives.netted',
+      [String(c.id), String(other.id), c.a, c.b],
+      {
+        contract: String(c.id),
+        against: String(other.id),
+        a: c.a,
+        b: c.b,
+        kind: String(c.kind),
+        notional: c.notional,
+      },
+      true,
+    );
+  }
+}
+
+/** Law 15: two rows are the same trade when their terms say the same things, whatever kind they are. */
+function sameTerms(a: ContractTerms, b: ContractTerms): boolean {
+  const left = a as unknown as Record<string, unknown>;
+  const right = b as unknown as Record<string, unknown>;
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const k of keys) {
+    if (String(left[k]) !== String(right[k])) return false;
+  }
+  return true;
+}
+
 /** D11: expiry. What it is worth to `a` moves in cash, and the row leaves both books at once. */
 function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): void {
   const c = ctx.contracts.get(id);
@@ -894,6 +967,16 @@ export function derivativeLayer(
         reads: [{ kind: 'event', name: 'margin.call', of: 'anyPeriod' }],
         writes: [],
         run: resolveContracts,
+      },
+      {
+        name: 'derivatives.net',
+        spec: 'Derivative Layer C1.a Derivative D11 XI-5',
+        // After the session that could have offset a position and before the futures deliver, so a
+        // row closed out in the book does not also hand over the thing at expiry (18.2).
+        anchor: { after: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'derivatives.netted' }],
+        run: netOffsetting,
       },
     ],
     /**

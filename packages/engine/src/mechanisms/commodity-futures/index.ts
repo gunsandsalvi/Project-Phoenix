@@ -683,16 +683,16 @@ function matching(ctx: MechanismContext, c: Contract): readonly Contract[] {
   const house = c.house;
   const mine = c.terms;
   if (house === null || !isCommodityFuture(mine)) return [c];
-  const other = ctx.contracts.openOf(house).find((x) => {
-    const theirs = x.terms;
-    if (x.id === c.id || !isCommodityFuture(theirs)) return false;
-    return (
-      theirs.deliverable === mine.deliverable &&
-      theirs.expiry === mine.expiry &&
-      x.struckAt === c.struckAt &&
-      x.notional === c.notional
-    );
-  });
+  /**
+   * C2 (18.2): THE OTHER HALF IS NAMED ON THE ROW. It used to be found by looking through the
+   * house's open rows for one whose deliverable, expiry, notional and level agreed — and the level
+   * was compared with `===` on an object, so two rows struck at the same price in two sessions
+   * matched only when they happened to share a reference. The instruction that wrote them says
+   * which is which now (`pairedWith`), and a row with no sibling is a row that had none.
+   */
+  const paired = c.pairedWith;
+  if (!paired.some) return [c];
+  const other = ctx.contracts.openOf(house).find((x) => x.id === paired.value);
   if (other === undefined) return [c];
   // Register C4: the house receives before it delivers — it is flat, so what it hands the long is
   // what the short just handed it, and legs settle in the order they are written.

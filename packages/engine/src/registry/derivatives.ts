@@ -164,6 +164,14 @@ export interface Contract {
   /** D7: the rate, spread or strike the two sides entered at, as the market cleared it. */
   readonly struckAt: StruckAt;
   /**
+   * C2, XI-5 (18.2): THE OTHER HALF OF A CLEARED TRADE. A house is buyer to the seller and seller
+   * to the buyer, so one fill is TWO rows, and everything that has to treat them as one trade —
+   * delivery, a netting, a close-out — used to FIND the sibling by comparing fields that happened
+   * to agree (`struckAt === struckAt` compared two objects by identity). The instruction that wrote
+   * them both knows which is which, so it says so here, once. `none` on a bilateral row.
+   */
+  readonly pairedWith: Option<ContractId>;
+  /**
    * Register D4: what the position COST — what it was worth to `a` when it was written, which is
    * zero for a contract struck at par (D7.b) and the premium for one bought outright. It is the
    * basis, not a mark: what the equity account has recognised until revaluation moves it.
