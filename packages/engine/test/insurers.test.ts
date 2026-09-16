@@ -153,7 +153,9 @@ describe('a fill is a policy, and both legs settle (A4.a, Law 5, Clearing D2)', 
       { party: insurer.id, side: 'sell', price: asPerPiece(5, 'what it will write cover at'), qty: asQty(100) },
       { party: buyer.id, side: 'buy', price: asPerPiece(9, 'what it will pay'), qty: asQty(10) },
     ]);
-    const cleared = w.journal.ofKindIn('cover.cleared', w.period);
+    // 14.2: the module's own session this period is on the record too (nobody quoted, `noSupply`);
+    // the one that struck is the test's.
+    const cleared = w.journal.ofKindIn('cover.cleared', w.period).filter((e) => Number(e.data['written']) > 0);
     expect(cleared.length, 'the session recorded what it struck').toBe(1);
     expect(cleared[0]?.data['written'], 'one policy was written').toBe(1);
     // B1, Register B3: the cover is a claim ON the insurer, so the insurer ISSUED it and the buyer

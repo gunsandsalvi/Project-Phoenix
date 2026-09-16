@@ -55,7 +55,7 @@ import {
   scale,
   valueAt,
 } from '../core/measure.js';
-import { div, sub, sum, zeroIfNone, raised } from '../core/num.js';
+import { decayed, div, raised, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { SeedContext } from '../world/context.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
@@ -815,6 +815,15 @@ export function storageRateIn(reads: SessionReads, region: RegionId): PerPiece |
 
 export const standsWindParam = (capitalKind: string): ParamId =>
   paramId(`plant.standsWind.${capitalKind}`);
+/**
+ * Capital Programme A4, Insurers A4.b (14.2): WHAT FRACTION OF A KIND OF PLANT STANDS through a
+ * period of wind at `wind` times the region's normal — `exp(-(wind / standsWind) ^ hardness)`, with
+ * no threshold in it. One writer: the weather that scraps plant reads it, and a firm pricing the
+ * cover it wants against its own outlook of the wind reads the same relation (Law 4).
+ */
+export function survivesWind(wind: number, standsWind: number, hardness: number): number {
+  return decayed(raised(wind / standsWind, hardness, 'the stress on the plant'), 'what the weather leaves standing');
+}
 /** 13c.1: the ground a unit of this kind stands on, under its own name (XI-14). */
 export const landPerUnitParam = (capitalKind: string): ParamId =>
   paramId(`capital.${capitalKind}.landPerUnit`);

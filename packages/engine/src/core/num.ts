@@ -378,3 +378,12 @@ export function addTo<K>(acc: Map<K, number>, key: K, delta: number): void {
 export function raised(x: number, to: number, what: string): number {
   return finite(Math.pow(x, to), what);
 }
+
+/**
+ * Law 6 (14.2): EXPONENTIAL DECAY, in core because core owns the arithmetic. `e^-x` — what
+ * survives a stress that scales with `x`, and what a rate does to a level over time — and nothing
+ * here bounds or rounds.
+ */
+export function decayed(x: number, what: string): number {
+  return finite(Math.exp(-finite(x, what)), what);
+}

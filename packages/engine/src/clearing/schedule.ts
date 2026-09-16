@@ -31,7 +31,7 @@ import {
   ratioOf,
   scale,
 } from '../core/measure.js';
-import { atMost, material, sub } from '../core/num.js';
+import { material, sub } from '../core/num.js';
 import { downTick, NO_QTY, subQty, type Qty } from '../core/tick.js';
 
 /** One limit order of a curve: a level, and the extra this level adds to what the party wants. */
@@ -86,8 +86,11 @@ export function rungsUpTo(levels: readonly PerPiece[], money: Cash, want: number
   const ceiling = downTick(want);
   for (const price of [...levels].sort((a, b) => b - a)) {
     if (price <= 0) continue;
-    const afford = downTick(amountOf(money, price, 'units the money it set aside would take'));
-    const wants = atMost(afford, ceiling, 'it buys what it wanted, not what happened to be cheap');
+    // Law 8 (14.2): what the money would take at this price is compared with what it wanted BEFORE
+    // it is made a count — at a price of a few millionths a unit the money would take more pieces
+    // than the grid can count, and a count it was never going to ask for is not a count to make.
+    const affordable = amountOf(money, price, 'units the money it set aside would take');
+    const wants = affordable >= ceiling ? ceiling : downTick(affordable);
     const extra = subQty(wants, taken, 'the extra this level adds');
     taken = wants;
     if (!material(extra, 2, wants)) continue;

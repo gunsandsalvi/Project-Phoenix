@@ -20,33 +20,20 @@
  * and coupons on the paper it holds (B3) — all of them money that actually arrived, because income
  * a household did not receive is not income (B3.a).
  */
+import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
+import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
 import { none, some, type Option } from '../../core/option.js';
 import { about } from '../../world/context.js';
-import {
-  pricedAt,
-  asCash,
-  asRatio,
-  type Cash,
-  heldAsMoney,
-  minus,
-  over,
-  plus,
-  scale,
-  valueAt,
-  amountOf,
-  asAmount,
-  asPerPiece,
-  type PerPiece,
-} from '../../core/measure.js';
+import { pricedAt, asCash, asRatio, type Cash, heldAsMoney, minus, over, plus, scale, valueAt, amountOf, asAmount, asPerPiece, type PerPiece } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { instrumentId, paramId, partyId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
-import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone, raised } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
-import { keyOf, weightOf } from '../../parties/party.js';
+import { keyOf, weightOf, type CellParty } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { LatticeDecl, LatticeReads } from '../../registry/lattice.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
@@ -449,6 +436,37 @@ function numbers(view: ParticipantView): HouseholdParams {
 }
 
 /**
+ * Insurers B3, A4.b, Households F1.b, §46 C3 (14.2): A CELL BIDS FOR LIFE COVER ON WHAT IT OWES, AT
+ * WHAT IT EXPECTS OF ITS OWN MORTALITY. What a member's death leaves is its debts; a member covers
+ * them, so the units a member asks for are what a member owes (a read of its own rows), and the
+ * most a unit is worth to it is the chance it dies within the term — its own outlook of its
+ * cohort's death share, formed from the deaths it has observed, compounded over the term. A ladder
+ * down from there (Clearing C3), out of the cash a member holds. A cell that owes nothing, or has
+ * seen nobody die, bids for nothing.
+ */
+function insureLife(ctx: MechanismContext, view: ParticipantView, self: CellParty, p: HouseholdParams, cashPerMember: Cash): void {
+  const cohort = keyOf(self, 'cohort');
+  const mortality = view.outlook(about({ on: 'mortality', cohort }));
+  if (!mortality.some || mortality.value.expected <= 0) return;
+  const ccy = view.registry.currencyOf(self.region);
+  let owed = 0;
+  for (const a of view.commitments()) {
+    if (a.debtor === self.id && a.state === 'performing' && a.ccy === ccy) owed += a.owed;
+  }
+  if (owed <= 0) return;
+  const perMember = ctx.registry.cashFor(asCash(owed / weightOf(self), 'what one member owes'));
+  if (perMember <= 0) return;
+  const term = view.params.periods(COVER_TERM);
+  const dies = 1 - raised(1 - mortality.value.expected, term, 'the chance a member lives out the term');
+  if (dies <= 0) return;
+  const top = asPerPiece(dies, 'what a unit of cover on its debts is worth to a member');
+  const rungs = rungsUpTo(levelsBelow(top, top, p.steps), cashPerMember, perMember);
+  for (const r of rungs) {
+    ctx.post(coverVenue(ccy), { party: self.id, side: 'buy', price: r.price, qty: scaleQty(r.qty, weightOf(self), 'over its members') });
+  }
+}
+
+/**
  * C5, D6, Firm F1 from the buying end: what a household consumed is what it paid a named seller
  * for. Units of a physical thing reaching a household with no money going the other way in the same
  * instruction is a gift nobody gave, and money going out with no units coming back is a payment for
@@ -836,6 +854,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const decided = spendPerMember(view, basket, p, onDemand, due);
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
+  // Insurers B3, A4.b (14.2): and life cover on what it owes, at its own outlook of its mortality.
+  insureLife(ctx, view, self, p, decided.value.cash);
   const spare = sparePerMember(
     // 0f.1: per member, like the spend and the buffer it is set against; 0f.7c: after what is due.
     minus(asCash(view.cashPerMember(ccy), 'what one member has in the account'), due, 'after what falls due'),

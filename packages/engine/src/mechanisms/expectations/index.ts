@@ -1,7 +1,7 @@
 /**
  * What every deciding party expects, formed from what that party itself observed.
  *
- * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations C2.a Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
+ * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations C2.a Insurers A4.b Insurers B3 Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
  *
  * An outlook is personal (A2). It is last period's outlook corrected towards what this party
  * actually observed, at this party's own speed (B1); the speed is its MEMORY, the one preference
@@ -17,6 +17,9 @@
  * expectation anywhere (A2.b): the aggregate this module publishes is a lagged statistic that
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
+import { HOUSEHOLD } from '../../registry/profiles.js';
+import { deathsIn } from '../../registry/insurance.js';
+import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
 /**
@@ -34,7 +37,7 @@ import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
  * the mean surprise and the width below are the same arithmetic whatever the unit, and they stay
  * `add`/`sub`/`mul`/`div` so that no reader is handed a dimension this file invented.
  */
-import { add, atLeast, div, mul, sub, sum } from '../../core/num.js';
+import { add, atLeast, div, mul, sub, sum, addTo } from '../../core/num.js';
 import { assertNever } from '../../core/assert.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
@@ -114,6 +117,8 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'wage':
     case 'deposit':
     case 'reported':
+    case 'condition':
+    case 'mortality':
       return seen;
     case 'bought':
     case 'sold':
@@ -259,9 +264,16 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
     }
   }
   // A2.a (12d.1): WHAT IS PUBLIC ABOUT WHAT IT IS EXPOSED TO reaches it as one more thing observed.
+  // 14.2: who there is in each cohort, counted once — what a cell's cohort's deaths are a share of.
+  const cohorts = new Map<string, number>();
+  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
+    if (p.representation !== 'cell' || !p.status.alive) continue;
+    const cohort = p.key['cohort'];
+    if (cohort !== undefined) addTo(cohorts, cohort, p.weight);
+  }
   for (const p of ctx.parties.all()) {
     if (!p.status.alive) continue;
-    for (const [variable, seen] of exposed(ctx, p.id)) {
+    for (const [variable, seen] of exposed(ctx, p.id, cohorts)) {
       const key = `${String(p.id)}|${String(variable)}`;
       if (!out.has(key)) out.set(key, seen);
     }
@@ -283,9 +295,28 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
  * variable is the outlook, and from then on the print corrects it at this party's own memory like
  * any surprise. A party sees nothing private here — every read is of a print or a public event.
  */
-function exposed(ctx: MechanismContext, party: PartyId): Map<OutlookVariable, { value: number; unit: string }> {
+function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<string, number>): Map<OutlookVariable, { value: number; unit: string }> {
   const out = new Map<OutlookVariable, { value: number; unit: string }>();
   const p = ctx.parties.get(party);
+  // Insurers A4.b, Goods B4 (14.2): THE WEATHER OF THE PLACE IT STANDS IN — every party stands in
+  // one, and a firm pricing the cover it wants prices it against what it expects of the wind.
+  const here = conditionsIn(ctx, p.region);
+  if (here !== undefined) {
+    for (const [fact, value] of here) out.set(about({ on: 'condition', fact, region: p.region }), { value, unit: 'multiple of normal' });
+  }
+  // Insurers B3, Households F1.b (14.2): A CELL OBSERVES ITS COHORT'S MORTALITY — who died this
+  // period, as the households module published it, over who there were; nothing here is a rate
+  // anybody stated, and a period with no deaths is observed as one.
+  // A cell with a cohort is one this world ages and buries; the map above says which cohorts those are.
+  if (p.representation === 'cell') {
+    const cohort = p.key['cohort'];
+    const living = cohort === undefined ? undefined : cohorts.get(cohort);
+    if (cohort !== undefined && living !== undefined) {
+      const died = deathsIn(ctx.journal, cohort, ctx.period);
+      const were = add(living, died, 'who there were before this period took its dead');
+      if (were > 0) out.set(about({ on: 'mortality', cohort }), { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
+    }
+  }
   const reads = {
     ofKind: (kind: EventKind): readonly Event[] => ctx.journal.ofKind(kind),
     lastOf: (kind: EventKind, subject: string): Event | undefined => ctx.journal.lastOf(kind, subject),
@@ -443,6 +474,9 @@ export const expectations: SystemModule = {
         { kind: 'event', name: 'labour.goingRate', of: 'anyPeriod' },
         { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
         { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
+        // 14.2: the region's published weather, and the cohort's published deaths.
+        { kind: 'event', name: ENVIRONMENT_STATE, of: 'anyPeriod' },
+        { kind: 'event', name: 'households.lifecycle', of: 'anyPeriod' },
       ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {

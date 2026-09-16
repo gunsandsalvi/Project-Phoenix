@@ -22,6 +22,7 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
 import { none, some } from '../../core/option.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { valueAt } from '../../core/measure.js';
@@ -47,16 +48,11 @@ import type { Qty } from '../../core/tick.js';
 import { compareCivil, type Civil } from '../../calendar/civil.js';
 import {
   instrumentId,
-  instrumentKindId,
   partyKindId,
-  unitId,
-  venueId,
   type CurrencyCode,
   type CurveFamilyId,
   type InstrumentId,
   type PartyId,
-  type VenueId,
-  paramId,
 } from '../../core/ids.js';
 import { InvalidRegistry, Unpriced } from '../../core/errors.js';
 import { sum } from '../../core/num.js';
@@ -77,11 +73,10 @@ import { allocate, meetCalls } from './allocate.js';
  * charges the bank for it — and two things called the same thing is how two facts become one.
  */
 export const INSURANCE = partyKindId('insurance');
-export const POLICY = instrumentKindId('policy');
-export const COVER = unitId('cover');
+// 14.2, Law 4: the names of cover are the registry's, so a buyer in another module can post into the book.
+export { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
 
 /** B1: how long a unit of cover runs for, which is a convention of the contract (Law 2). */
-export const COVER_TERM = paramId('insurers.coverTermPeriods');
 
 /** A4: a claim this insurer actually paid, which is the only experience it has (A4.c). */
 export const CLAIM_PAID = 'insurer.claim';
@@ -90,7 +85,6 @@ export const CLAIM_PAID = 'insurer.claim';
 export const policyId = (insurer: PartyId, n: number): InstrumentId =>
   instrumentId(`policy:${insurer}:${n}`);
 
-export const coverVenue = (ccy: CurrencyCode): VenueId => venueId(`cover:${ccy}`);
 
 export interface PolicyTerms extends Terms {
   readonly kind: typeof POLICY;
@@ -457,6 +451,19 @@ export function insurers(): SystemModule {
        * institution, because an insurer is one: it has a balance sheet, it can fail, and what it
        * writes is a claim on it.
        */
+      // 14.2: THE BOOK IS OPEN BEFORE ANYBODY BIDS. A firm posts for cover in its own decide phase
+      // and a household in its own, both before the insurers quote; a venue that opened only when
+      // the quote came would refuse their postings.
+      for (const ccy of ctx.registry.currencies.keys()) {
+        ctx.openVenue({
+          id: coverVenue(ccy),
+          name: `cover in ${ccy}`,
+          clearedBy: 'insurers',
+          unit: COVER,
+          ccy,
+          key: { ccy },
+        });
+      }
       for (const region of ctx.registry.regions.values()) {
         const bank = [...ctx.parties.all()].find(
           (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
@@ -529,8 +536,16 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
     });
   }
   for (const b of bids) ctx.post(venue, b);
-  const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
-  if (!isCleared(outcome)) return;
+  const posted = ctx.posted(venue);
+  const bidders = posted.filter((o) => o.side === 'buy').length;
+  const askers = posted.filter((o) => o.side === 'sell').length;
+  const outcome = clear(posted, 'proRata', 'sellersCompete');
+  if (!isCleared(outcome)) {
+    // 14.2: a session with buyers and no insurer willing to write (a quote of nothing is no quote,
+    // A4.a) is a real state and it is said — the buyers were there and nobody wrote them cover.
+    ctx.record('cover.cleared', [], { ccy, outcome: outcome.kind, bids: bidders, asks: askers, written: 0 }, true);
+    return;
+  }
   /**
    * A-9, Law 5, Clearing D2: A SESSION THAT STRIKES A PRICE AND MOVES NO MONEY IS NOT A SESSION.
    *
@@ -589,7 +604,7 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
     });
     if (r.outcome === 'settled') written += 1;
   }
-  ctx.record('cover.cleared', [], { ccy, price: outcome.price, written }, true);
+  ctx.record('cover.cleared', [], { ccy, outcome: outcome.kind, price: outcome.price, bids: bidders, asks: askers, written }, true);
 };
 
 /** Clearing D2: who was on the other side of this fill, from the book's own record of it. */

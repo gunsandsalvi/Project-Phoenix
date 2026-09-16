@@ -19,24 +19,20 @@
  * WHAT IT CANNOT DO is decide differently because of what it makes (F4, Law 15). There is one
  * decision function, and the industry is data: a recipe, a lead time, a yield and an occupation.
  */
-import {
-  acrossMembers,
-  asCash,
-  type PerMember,
-  type Cash,
-  heldAsMoney,
-  minus,
-  plus,
-  valueAt,
-} from '../../core/measure.js';
+import { paramId } from '../../core/ids.js';
+import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
+import { WIND } from '../../registry/environment.js';
+import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
+import { standsWindParam, survivesWind, vintagesHeld, windHardnessParam } from '../../registry/physical.js';
+import { acrossMembers, asCash, type PerMember, type Cash, heldAsMoney, minus, plus, valueAt, asRatio, pricedAt, scale } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId } from '../../core/ids.js';
-import { atMost, combineDust, dustOf, sum, withinDust } from '../../core/num.js';
+import { atMost, combineDust, dustOf, sum, withinDust, raised } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
@@ -221,6 +217,15 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     // a tonne takes THIS firm, against the hours the trade takes.
     params: [
       {
+        id: FIRM_PARAMS.coverLadderSteps,
+        value: 4,
+        unit: 'rungs',
+        dimension: 'count',
+        kind: 'resolution',
+        owner: 'model',
+        why: 'Insurers A4, Clearing C3 (14.2): how many rungs a firm\u2019s bid for cover is posted on, between the most it will pay and nothing. A RESOLUTION: the curve it draws is the same curve at any count, and a finer ladder changes what fills only by the grid.',
+      },
+      {
         id: FIRM_SWITCHING_COST,
         value: 250,
         denominated: 'money' as const,
@@ -302,6 +307,21 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         },
       },
       {
+        name: 'firms.insure',
+        spec: 'Insurers A4 Insurers A4.b Capital Programme A4 Expectations C3',
+        // Before the insurers quote (their phase sits before the markets too, and later in the
+        // order), so the bid is on the book when the cover clears.
+        anchor: { before: 'markets' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'firms.insured' }],
+        run: (ctx: MechanismContext) => {
+          for (const p of ctx.parties.ofKind(FIRM)) {
+            if (!p.status.alive) continue;
+            insure(ctx, p.id);
+          }
+        },
+      },
+      {
         name: 'firms.bear',
         spec: 'Firm Birth A1 Firm Birth A2 Firm Birth A3 Small-Business Pools A6.c',
         // A6.c (12.4a.2): after the books are marked — what a member is worth is read off them —
@@ -335,6 +355,56 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     families: [productionCosts(byName)],
     bankChoices: [{ partyKind: FIRM, chooses: firmChoosesBank }],
   };
+}
+
+export const FIRM_PARAMS = {
+  coverLadderSteps: paramId('firms.coverLadderSteps'),
+} as const;
+
+/**
+ * Insurers A4, A4.b, Capital Programme A4, §46 C3 (14.2): A FIRM STANDING IN THE WEATHER BIDS FOR
+ * COVER AT ITS OWN OUTLOOK OF THE LOSS. What it has at risk is its plant at what its books carry it
+ * at; what it expects to lose over the term is that plant through the wind it expects, at the one
+ * relation the weather itself scraps plant by (`survivesWind`, Law 4), compounded over the periods
+ * a unit of cover runs. A unit of cover promises a unit of money, so the most a unit is worth to it
+ * is the share of a unit it expects to lose — and it bids a ladder down from there (Clearing C3),
+ * out of the cash it holds. A firm that has never seen its weather has no outlook and bids nothing;
+ * one with no plant has nothing at risk.
+ */
+function insure(ctx: MechanismContext, firm: PartyId): void {
+  const view = ctx.participant(firm);
+  const region = view.self.region;
+  const ccy = view.registry.currencyOf(region);
+  const wind = view.outlook(about({ on: 'condition', fact: WIND, region }));
+  if (!wind.some) return;
+  const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
+  if (vintages.length === 0) return;
+  const term = view.params.periods(COVER_TERM);
+  let atRisk = asCash(0, 'nothing at risk yet');
+  let expectedLoss = asCash(0, 'nothing expected lost yet');
+  for (const v of vintages) {
+    const standard = view.params.ratio(standsWindParam(v.capitalKind));
+    if (standard <= 0) continue;
+    const hardness = view.params.ratio(windHardnessParam(v.capitalKind));
+    const value = valueAt(v.basisPerUnit, v.units, 'what this vintage is on its books at');
+    const standing = raised(survivesWind(wind.value.expected, standard, hardness), term, 'what stands through the term');
+    atRisk = plus(atRisk, value, 'its plant at risk');
+    expectedLoss = plus(expectedLoss, scale(value, asRatio(1 - standing, 'the share it expects the wind to take'), 'what it expects to lose'), 'its expected loss');
+  }
+  if (atRisk <= 0 || expectedLoss <= 0) return;
+  // COVER counts in the money's pieces (one unit promises one unit of money), so what it covers is
+  // what it has at risk, in those pieces.
+  const units = ctx.registry.cashFor(atRisk);
+  if (units <= 0) return;
+  const top = pricedAt(expectedLoss, units, 'what a unit of cover is worth to it');
+  const rungs = rungsUpTo(levelsBelow(top, top, view.params.count(FIRM_PARAMS.coverLadderSteps)), heldAsMoney(view.cash(ccy), 'what it can pay a premium out of'), units);
+  for (const r of rungs) ctx.post(coverVenue(ccy), { party: firm, side: 'buy', price: r.price, qty: r.qty });
+  ctx.record(
+    'firms.insured',
+    [firm],
+    { firm, atRisk, expectedLoss, expectedWind: wind.value.expected, term, rungs: rungs.length },
+    false,
+  );
 }
 
 /**

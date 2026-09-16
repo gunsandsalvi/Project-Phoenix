@@ -11838,3 +11838,33 @@ holding it up (positioned at 22.3).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 14.2 — The buyer of cover
+
+Cover had a seller and no buyer: the insurers' book cleared only in a test that posted both sides
+itself. A firm standing in the weather now bids for cover on what its plant is on its books at, at
+the share of it the wind it expects would take over the term — read through the one survival
+relation the weather itself scraps plant by, moved to the registry so there is one writer — as a
+ladder down from that price out of the cash it holds; a cell bids for life cover on what a member
+owes, at the chance a member dies within the term off its own outlook of its cohort's mortality.
+Both expectations are §46 outlooks like any other: every party observes its region's published
+weather every period and every cell its cohort's published deaths, adaptive at their own memory
+and anchored on the public level. The names of cover are the registry's, the book is opened at
+the seed so the buyers can post before the quote, and every session is on the record with its
+outcome and who was in it.
+
+**Found and fixed on the way (Law 8).** `rungsUpTo` made a count of what the money would take at a
+rung before comparing it with what was wanted, and at a premium of a few millionths a unit the
+count passed the grid: both worlds threw the first period a firm bid. It compares first now.
+
+**Not built here.** The insurer's quote: with no claims experience and no debt-funded capital it
+prices cover at nothing and writes none, so every session says `noSupply` with the buyers in it.
+That is 14.4's return on the capital it holds against a premium.
+
+**Measured.** Eight periods of the scale model: every living party holds an outlook on its region's
+wind and every cell one on its cohort's mortality; every firm with plant records what it has at
+risk, what it expects to lose — a share, never all — and its ladder; the bids are in the book
+every period and nobody writes them (`cover.test.ts`, three green). Nothing new is red: eighteen
+suites at 90 of 196, as at 14.1.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

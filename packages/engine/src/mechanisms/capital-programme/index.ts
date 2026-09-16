@@ -29,7 +29,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import { negQty } from '../../core/tick.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { addTo, atMost, dustOf, finite, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
@@ -42,7 +42,11 @@ import type { SystemModule } from '../../world/module.js';
 // Law 15, docs/PLAN.md 3.2: a typed accessor for another kind's TERMS, from the module that owns
 // the kind. What a good is and what a lot of it cost are the goods module's to say; this module
 // asks it rather than keeping a second copy of the answer (Law 4, Law 19).
-import { goodId, isGoodTerms } from '../../registry/physical.js';
+import {
+  goodId,
+  isGoodTerms,
+  survivesWind,
+} from '../../registry/physical.js';
 import { costOfDraw } from '../../register/register.js';
 import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
 import { conditionsFor, WIND } from '../../registry/environment.js';
@@ -243,10 +247,8 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     const standard = ctx.params.ratio(standsWindParam(terms.capitalKind));
     const hardness = ctx.params.ratio(windHardnessParam(terms.capitalKind));
     if (standard <= 0) continue;
-    const survived = finite(
-      Math.exp(-Math.pow(wind / standard, hardness)),
-      'what the weather left standing',
-    );
+    // 14.2, Law 4: the one relation, in the registry, read here and by the firm that insures against it.
+    const survived = survivesWind(wind, standard, hardness);
     const units = ctx.register.free(h.holder, i.id);
     const lost = ctx.registry.deliverable(scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
     );

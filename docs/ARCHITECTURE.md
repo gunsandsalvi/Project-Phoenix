@@ -1551,3 +1551,16 @@ a subscriber put in. Two succession rules the wire now keeps for named parties a
 `cease` reseats a dead party's live issued paper to its successor (Register F2), and a bank books a
 drawing to the borrower as it is now (`parties.resolve`).
 
+### Cover has buyers, and the weather and the dead are things a party expects (item 14.2)
+
+`registry/insurance.ts` spells the names of cover — the policy kind, the unit, the venue per
+currency, the term — so a firm and a household can post into the insurers' book without importing
+the module that writes the cover; the insurers module re-exports them and opens the book at the
+seed. Two subjects joined the outlook vocabulary: `condition.<fact>.<region>` (every party observes
+its region's published weather every period) and `mortality.<cohort>` (a cell observes its cohort's
+published deaths over who there were). A firm bids for cover on its plant at the share of it the
+wind it expects would take over the term — `registry/physical.ts survivesWind`, the one relation the
+weather itself scraps plant by — and a cell bids for life cover on what a member owes at the chance
+a member dies within the term; both as ladders (`clearing/schedule.ts rungsUpTo`), which now
+compares what the money would take with what was wanted before making it a count.
+

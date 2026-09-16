@@ -64,7 +64,7 @@ import type {
 } from '../register/agreements.js';
 import type { EmploymentReads, EmploymentRow } from '../register/employment.js';
 import { none, some } from '../core/option.js';
-import { instrumentId, partyId, venueId } from '../core/ids.js';
+import { instrumentId, partyId, venueId, type RegionId } from '../core/ids.js';
 
 /** Law 4: every read of the voyage store and no writer. The writes reach settlement and nothing else. */
 export interface VoyagesRead {
@@ -311,7 +311,11 @@ export type Subject =
   /** §46 A2.a (12d.1): what the bank this party banks at pays on its class of deposit. */
   | { readonly on: 'deposit'; readonly bank: PartyId }
   /** §46 A2.a, C2.a (12d.1): what a company whose paper this party holds published it earned a period. */
-  | { readonly on: 'reported'; readonly party: PartyId };
+  | { readonly on: 'reported'; readonly party: PartyId }
+  /** Insurers A4.b, Goods B4 (14.2): how a physical condition of a region stands, as a multiple of its normal. */
+  | { readonly on: 'condition'; readonly fact: string; readonly region: RegionId }
+  /** Insurers B3, Households F1.b (14.2): the share of a cohort that dies in a period, as the cell observes it. */
+  | { readonly on: 'mortality'; readonly cohort: string };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -333,6 +337,10 @@ export function about(s: Subject): OutlookVariable {
       return `wage.${String(s.venue)}` as OutlookVariable;
     case 'deposit':
       return `deposit.${String(s.bank)}` as OutlookVariable;
+    case 'condition':
+      return `condition.${s.fact}.${String(s.region)}` as OutlookVariable;
+    case 'mortality':
+      return `mortality.${s.cohort}` as OutlookVariable;
     case 'income':
     case 'earnings':
       return s.on as OutlookVariable;
@@ -361,6 +369,12 @@ export function subjectOf(v: OutlookVariable): Option<Subject> {
   if (on === 'credit' || on === 'reported') return some({ on, party: partyId(rest) });
   if (on === 'wage') return some({ on, venue: venueId(rest) });
   if (on === 'deposit') return some({ on, bank: partyId(rest) });
+  if (on === 'mortality') return some({ on, cohort: rest });
+  if (on === 'condition') {
+    const at = rest.indexOf('.');
+    if (at < 0) return none<Subject>();
+    return some({ on, fact: rest.slice(0, at), region: rest.slice(at + 1) as RegionId });
+  }
   return none<Subject>();
 }
 
