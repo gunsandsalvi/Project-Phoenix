@@ -341,7 +341,9 @@ export type Subject =
   /** Insurers A4.c (14.4): what a unit of the cover this party has written costs it in claims, a period. */
   | { readonly on: 'claims' }
   /** §29 A2.a (14.7): what the pools this party committed to call of it in a period — money it did not choose the timing of. */
-  | { readonly on: 'called' };
+  | { readonly on: 'called' }
+  /** Freight C1, Cross-Border B2 (16.3): what carrying a unit from one place to another last cost, as the leg's session struck it. */
+  | { readonly on: 'freight'; readonly from: RegionId; readonly to: RegionId };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -365,6 +367,8 @@ export function about(s: Subject): OutlookVariable {
       return `deposit.${String(s.bank)}` as OutlookVariable;
     case 'condition':
       return `condition.${s.fact}.${String(s.region)}` as OutlookVariable;
+    case 'freight':
+      return `freight.${String(s.from)}.${String(s.to)}` as OutlookVariable;
     case 'mortality':
       return `mortality.${s.cohort}` as OutlookVariable;
     case 'income':

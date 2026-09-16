@@ -17,6 +17,7 @@
  * expectation anywhere (A2.b): the aggregate this module publishes is a lagged statistic that
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
+import { FREIGHT_SESSION, freightRateOn } from '../../registry/ports.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { deathsIn, isPensionTerms, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
 import { callsOn } from '../../registry/funding.js';
@@ -131,6 +132,7 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'reported':
     case 'condition':
     case 'mortality':
+    case 'freight':
       return seen;
     case 'bought':
     case 'sold':
@@ -429,6 +431,18 @@ function exposed(
         });
     }
   }
+  // Freight C1, Cross-Border B2 (16.3): A PARTY OBSERVES WHAT CARRIAGE OUT OF ITS OWN PLACE COST this
+  // period — the rate each leg's session struck, a public print — so a shipper or a merchant bids
+  // the far print less ITS OWN outlook of the freight, never a rate table (§46 A2.a, Law 3).
+  for (const to of ctx.registry.regions.keys()) {
+    if (to === p.region) continue;
+    const struck = freightRateOn(ctx.journal, p.region, to);
+    if (!struck.some || struck.value.period !== ctx.period) continue;
+    out.set(about({ on: 'freight', from: p.region, to }), {
+      value: struck.value.rate,
+      unit: ctx.registry.currencyOf(p.region),
+    });
+  }
   // §29 A2.a (14.7): AN INVESTOR OBSERVES WHAT THE POOLS CALLED OF IT this period — its own money,
   // on a timing it did not choose — and, once it has been called at all, a period with no call is
   // observed as one, so what it keeps back against a call is its own experience and decays as it
@@ -640,6 +654,8 @@ export const expectations: SystemModule = {
         { kind: 'event', name: 'households.lifecycle', of: 'anyPeriod' },
         // §29 A2.a (14.7): what the pools called of an investor this period, for its `called` outlook.
         { kind: 'event', name: 'fund.called', of: 'anyPeriod' },
+        // Freight C1 (16.3): what each leg out of a party's place struck this period, for its freight outlook.
+        { kind: 'event', name: FREIGHT_SESSION, of: 'anyPeriod' },
       ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {

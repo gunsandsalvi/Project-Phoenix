@@ -39,7 +39,7 @@
  * costs IT — below which sailing is worse than staying in port.
  */
 import type { CurrencyCode, InstrumentId, PartyId, RegionId, VoyageId } from '../../core/ids.js';
-import { PORT_BERTHS, callsAt, portOwnerOf } from '../../registry/ports.js';
+import { FREIGHT_SESSION, PORT_BERTHS, callsAt, portOwnerOf } from '../../registry/ports.js';
 import { costOfDraw } from '../../register/register.js';
 import { instrumentId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
@@ -98,7 +98,7 @@ export type { CarrierDecl } from './data.js';
 export const inTransit = (subUnit: string, from: RegionId, to: RegionId): InstrumentId =>
   instrumentId(`good.${subUnit}.transit.${from}.${to}`);
 
-export const FREIGHT_SESSION = 'freight.session';
+export { FREIGHT_SESSION } from '../../registry/ports.js';
 export const FREIGHT_REFUSED = 'freight.refused';
 export const FREIGHT_SAIL = 'freight.sail';
 /** 15.2: a call the quay turned away this period, with its owner named. */
@@ -204,6 +204,35 @@ function toShip(ctx: MechanismContext, from: RegionId): readonly Shippable[] {
     }
   }
   return out;
+}
+
+/**
+ * Cross-Border B1 (16.3): WHERE THIS CARGO GOES — the leg out of its place with the widest gap
+ * between what the thing fetches there and here, off two public prints (Law 19). A cargo with no gap
+ * anywhere stays where it is; that is a place with nothing to export in this line, not a defect.
+ */
+function dearestLeg(
+  ctx: MechanismContext,
+  s: Shippable,
+  from: RegionId,
+  paths: ReadonlyMap<string, Path>,
+): string | undefined {
+  let best: string | undefined;
+  let widest = 0;
+  const view = ctx.participant(s.party);
+  for (const to of ctx.registry.regions.keys()) {
+    if (to === from || !paths.has(legKey(from, to))) continue;
+    const there = goodId(s.subUnit, to);
+    if (!ctx.instruments.has(there)) continue;
+    const away = view.print(there);
+    if (!away.some) continue;
+    const gap = minus(away.value.price, s.here, 'what the voyage is worth a unit');
+    if (gap > widest) {
+      widest = gap;
+      best = legKey(from, to);
+    }
+  }
+  return best;
 }
 
 /** What that becomes on one leg: the gap to where it is going, which is what a shipper will pay. */
@@ -749,15 +778,31 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         ],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
-          // Law 18: one walk of each origin, offered on every leg out of it.
-          const have = new Map<RegionId, readonly Shippable[]>();
-          for (const [key, leg] of legs(ctx)) {
+          // Law 18: one walk of each origin. Cross-Border B1, Freight C1.a (16.3): AND ONE LEG PER
+          // CARGO — what a place has to ship goes to the ONE destination where the gap is widest, not
+          // to every book out of the port at once. The same unsold stock bid for room on every leg,
+          // so a shipper could be filled on three of them for one cargo and the loads after the
+          // first found nothing free; and a producer chooses where to sell, it does not scatter.
+          const paths = legs(ctx);
+          const have = new Map<string, Shippable[]>();
+          const shipping = new Set<RegionId>();
+          for (const from of ctx.registry.regions.keys()) {
+            for (const s of toShip(ctx, from)) {
+              shipping.add(from);
+              const best = dearestLeg(ctx, s, from, paths);
+              if (best === undefined) continue;
+              const list = have.get(best) ?? [];
+              list.push(s);
+              have.set(best, list);
+            }
+          }
+          for (const [key, leg] of paths) {
             const [from, to] = key.split('|') as [RegionId, RegionId];
             if (!ctx.registry.regions.has(from) || !ctx.registry.regions.has(to)) continue;
-            const mine = have.get(from) ?? toShip(ctx, from);
-            have.set(from, mine);
-            if (mine.length === 0) continue;
-            session(ctx, carriers, from, to, leg, mine, ctx.registry.currencyOf(from), said);
+            // Clearing C4.b, D6: a leg out of a place with something to ship RUNS and says what it did
+            // — `noDemand` when every cargo chose another leg — so an idle leg is reported, not hidden.
+            if (!shipping.has(from)) continue;
+            session(ctx, carriers, from, to, leg, have.get(key) ?? [], ctx.registry.currencyOf(from), said);
           }
           ctx.record(FREIGHT_SESSION, [...said.keys()], { byLeg: Object.fromEntries(said) }, true);
         },

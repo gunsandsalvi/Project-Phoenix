@@ -12278,3 +12278,21 @@ hundred-odd parties per money are dead by period thirty, with the US treasury re
 of 1.6 × 10¹¹ pieces every period from 29.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green. Suites at the end of item 16.
+
+## Item 16.3 — Sourcing across regions
+
+A cargo goes to ONE place: `freight.session` sends what a place has to ship down the leg with the
+widest gap between the far print and the home print, instead of bidding the same unsold stock for
+room on every leg out of the port at once (Cross-Border B1, Freight C1.a); a leg out of a place that
+has something to ship still runs and says `noDemand` when every cargo chose another (Clearing C4.b).
+A merchant bids the far print LESS ITS OWN OUTLOOK OF THE FREIGHT on that leg — a new outlook
+subject, `freight.from.to`, observed by every party from the leg's session print each period (§46
+A2.a) and read through `registry/ports.ts freightRateOn` where it has none yet — and its appetite is
+one budget spread across the portable lines it buys in, not that budget again in every book (Freight
+C3, Law 2). A merchant that cannot say what the passage costs does not bid for that destination (App
+A). The freight session's name moved to the registry so the expectations module reads the rate by a
+registry read and not by another module's event name (0e′.3). Finding 21.48: three freight tests
+were red before this change and are red after it, and say so.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `freight.test.ts` 13 green,
+3 red as at 15.7. Suites at the end of item 16.

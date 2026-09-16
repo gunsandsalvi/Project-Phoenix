@@ -16,7 +16,10 @@ import { paramId, type PartyId, type PlaceId, type VoyageId } from '../core/ids.
 import type { Period } from '../calendar/calendar.js';
 import type { Leg } from '../ledger/instruction.js';
 import type { Voyage } from '../register/voyages.js';
-import { placeAt, type GeographyDecl } from './geography.js';
+import { legKey, placeAt, type GeographyDecl } from './geography.js';
+import { asPerPiece, type PerPiece } from '../core/measure.js';
+import { none, some, type Option } from '../core/option.js';
+import type { Event } from '../journal/journal.js';
 import { authorityIdFor } from './land.js';
 import type { RegionId } from '../core/ids.js';
 
@@ -65,4 +68,29 @@ export function callsAt(reads: CallReads, voyages: VoyageLookup, g: GeographyDec
     }
   }
   return calls;
+}
+
+/** Freight D1 (16.3): the one public record of every leg's session in a period, keyed by the leg. */
+export const FREIGHT_SESSION = 'freight.session';
+
+/**
+ * Freight C1, C3, Law 19 (16.3): THE RATE A LEG LAST STRUCK, per unit carried, and the period it was
+ * struck in — read off the freight module's own record by the leg's name, so a merchant or a
+ * shipper in another module reads the print and never a rate table. Nothing where the leg has never
+ * cleared: a rate nobody paid is not a rate (Law 3).
+ */
+export function freightRateOn(
+  reads: { lastOf(kind: string, subject: string): Event | undefined },
+  from: RegionId,
+  to: RegionId,
+): Option<{ readonly rate: PerPiece; readonly period: Period }> {
+  const said = reads.lastOf(FREIGHT_SESSION, legKey(from, to));
+  if (said === undefined) return none();
+  const byLeg = said.data['byLeg'];
+  if (typeof byLeg !== 'object' || byLeg === null) return none();
+  const leg = (byLeg as Record<string, unknown>)[legKey(from, to)];
+  if (typeof leg !== 'object' || leg === null) return none();
+  const rate = (leg as Record<string, unknown>)['rate'];
+  if (typeof rate !== 'number' || rate <= 0) return none();
+  return some({ rate: asPerPiece(rate, `what the leg ${String(from)} to ${String(to)} last cleared at`), period: said.period });
 }

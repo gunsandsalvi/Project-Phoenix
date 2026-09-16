@@ -19,12 +19,15 @@
  * NOTHING HERE IS A SPREAD TABLE. There is no mark-up per line, no fee, no schedule of margins by
  * distance: one preference per merchant, drawn, and two prints.
  */
+import type { EventKind } from '../../journal/journal.js';
+import { freightRateOn } from '../../registry/ports.js';
 import {
   amountOf,
   asPerPiece,
   asRatio,
   heldAsMoney,
   minus,
+  over,
   type PerPiece,
   plus,
   pricedAt,
@@ -66,16 +69,49 @@ function expected(view: ParticipantView, subUnit: string, region: RegionId): Per
   return undefined;
 }
 
-/** D3: the best another place would pay for this line, and which place that is. */
+/**
+ * Freight C1, C3, Cross-Border B1, B2 (16.3): what THIS party expects carrying a unit from here to
+ * there to cost — its own outlook of the leg's rate where it has formed one, the leg's last print
+ * where it has not, and NOTHING where the leg has never cleared. A merchant that cannot say what the
+ * passage costs has no number to bid net of it, and it does not bid (App A: Missing is Missing).
+ */
+function freightExpected(view: ParticipantView, from: RegionId, to: RegionId): PerPiece | undefined {
+  const outlook = view.outlook(about({ on: 'freight', from, to }));
+  if (outlook.some) return asPerPiece(outlook.value.expected, `what it expects the leg ${String(from)} to ${String(to)} to cost`);
+  const struck = freightRateOn(
+    { lastOf: (kind, subject) => { const said = view.lastPublicAbout(kind as EventKind, subject); return said.some ? said.value : undefined; } },
+    from,
+    to,
+  );
+  return struck.some ? struck.value.rate : undefined;
+}
+
+/**
+ * D3, Cross-Border B1: the best another place would pay for this line NET OF THE PASSAGE — the far
+ * print less what this merchant expects the leg to cost — and which place that is. The freight is
+ * not a cost it computes: it is a rate a session struck and it expects to pay again (C3).
+ */
 function dearest(view: ParticipantView, subUnit: string, notHere: RegionId): PerPiece | undefined {
   let best: PerPiece | undefined;
   for (const region of view.registry.regions.keys()) {
     if (region === notHere) continue;
     const there = expected(view, subUnit, region);
     if (there === undefined) continue;
-    if (best === undefined || there > best) best = there;
+    const passage = freightExpected(view, notHere, region);
+    if (passage === undefined) continue;
+    const net = minus(there, passage, 'what the far print leaves after the passage');
+    if (best === undefined || net > best) best = net;
   }
   return best;
+}
+
+/** Law 18, Clearing B2: how many portable lines this merchant is buying in this cycle — its money is spread over them. */
+function linesBought(view: ParticipantView, m: MerchantDecl): number {
+  let n = 0;
+  for (const i of view.instruments.all()) {
+    if (i.status.live && isGoodTerms(i.terms) && i.terms.portable && i.terms.region === m.region) n += 1;
+  }
+  return n;
 }
 
 /** Law 19: what its own lots of this cost it, per unit. The register is where a basis lives. */
@@ -115,9 +151,14 @@ function ordersOf(view: ParticipantView, market: MarketDecl, m: MerchantDecl): r
     );
     if (bid <= 0) return [];
     const appetite = view.params.ratio(merchantParam(m.merchant, 'appetite'));
-    const behind = scale(
-      heldAsMoney(view.cash(i.ccy), i.ccy, 'the money it holds'),
-      appetite,
+    // Cross-Border B1 (16.3): ONE BUDGET ACROSS THE LINES IT BUYS IN. What it will put behind
+    // cargoes is its appetite of its money, and that is spread over every portable line here — not
+    // that much again in each book, which had one purse bid whole in every line at once.
+    const lines = linesBought(view, m);
+    if (lines <= 0) return [];
+    const behind = over(
+      scale(heldAsMoney(view.cash(i.ccy), i.ccy, 'the money it holds'), appetite, 'what it will put behind cargoes'),
+      asRatio(lines, 'the lines it buys in'),
       'what it will put behind this line',
     );
     const qty = downTick(amountOf(behind, bid, 'units it can pay for'));
