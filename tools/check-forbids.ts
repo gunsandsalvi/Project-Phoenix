@@ -28,6 +28,13 @@ interface Forbid {
 
 const FORBIDS: readonly Forbid[] = [
   {
+    spec: 'Private Equity E3, C5.a, Law 3',
+    why:
+      'NO EXIT AT A PRICE NOBODY PAID. An unlisted holding has a MARK and not a price (C5, C5.a: *“an unlisted mark is not a cleared price, and it must never be treated as one by the holder’s own accounts”*), and the one place the difference could be laundered is the exit: a tender or a flotation struck at what the holder carries it at would turn a belief into a realisation, book a gain nobody funded, and print exactly like a deal real money cleared. So the module that runs a change of control may not read a MARK at all. What it may read is a PRINT — what a share of this actually traded at (a buyer bids only above it, B1) — and a holder’s own LOTS, which is what it PAID. Both are money somebody moved; a mark is not.',
+    applies: (p) => p.includes(join('mechanisms', 'control')),
+    pattern: /\.mark\(|markPerUnit\(/,
+  },
+  {
     spec: 'Reporting C6',
     why: 'an estimate that reads the share price is a restatement of the market: it cannot disagree with it, and it makes the surprise a tautology (§44 A2.a is the same defect in ratings)',
     applies: (p) => p.includes(join('mechanisms', 'research')),

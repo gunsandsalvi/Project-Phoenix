@@ -13629,3 +13629,57 @@ What is tested is the shape — that the vehicle declares a life, and that no ot
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
 `committed-capital`: two new tests, eleven green with the one red that is 21.74; `fund-manager` and
 `buyout` green. §29 A4 and D3 re-marked MET.
+
+## Item 17b — The leveraged buyout: closed
+
+**What.** §29 in full: a fund with committed capital buys a company with money the company borrows,
+and the debt is the company's from the instant it is bought. Eleven steps.
+
+A lender can now agree to lend and not lend (17b.1): `CreditAsk.wants` asks for a COMMITMENT instead
+of money, and a bank writes a `FACILITY` its own capital stands behind and which lapses if the deal
+does not close — which is what lets a tender be conditional, because the money it promises is made
+inside the instruction that draws it. A buyer that cannot pay for a company publishes the hole **in
+the target's name** (17b.2), because the debt is the target's and a request says who will owe it;
+B2.b needed no mechanism at all, since `shop` already finds which bank quoted the TARGET and what
+room it has for the name.
+
+**The tender has two payers** (17b.3), and that is the whole design. The only two-sided way for a
+company's own borrowing to reach its own shareholders is for it to get its shares back for the
+money, so a fill the facility pays for is a redemption — the units go back to their issuer and cease
+— and a fill the buyer pays for is the purchase it always was. The buyer ends up with a majority of
+what is LEFT because the denominator shrank, which is what leverage is; B4 needed no code, because
+*"leverage up, interest cost up, ownership changed in the register"* is what the instruction did;
+and B5 balances leg by leg, measured by a `flows` contribution rather than asserted (17b.5).
+
+The call is paced by the deal (17b.4): a pool calls what it published it must bring, pro rata across
+what its investors still promised, and a pool with no deal calls nothing. The owner's hand is the
+recapitalisation (17b.6): a company its controller needs money from borrows money it does not need,
+and the distribution is the ordinary one a company with spare cash makes — nothing in `control`
+writes a dividend. A deal is struck in the money the shares are in (17b.7). A term is the borrower's
+decision, not a number in the lender (17b.8). A covenant is something the LENDER asked for, because
+the size is the lender's (17b.8a). And the fund has a life and gives back what it does not need
+(17b.9).
+
+**What it deleted.** The escrow the item's own note asked for — settlement is atomic, so a failed
+tender draws nothing and there is nothing to return. `lending.loanMonths` as the term of every loan
+in the world. The placeholder that called every commitment the moment a pool's cash reached zero.
+
+**§29 is answered 25 of 25** — 24 MET and one PARTIAL, and the PARTIAL says where its other half
+went: C2's investment and costs became **item 17c (The board)**, inserted at its dependency position
+because what they need is a mechanism this world has nowhere — a party taking a decision on another
+party's behalf. Cross-Border C4 is PARTIAL with the same honesty: the unit is fixed, the world that
+would show it is 23.1's.
+
+**Where the findings went.** 21.15 closed at 17b.4, 21.60(a) at 17b.8, 21.60(b) at 17b.8a. 21.60(c)
+and 21.60's diversification half are re-positioned at 18a.1. New: 21.70 (the loan's `borrower` term
+mirrors its issuer) and 21.71 (BACKSTOP and FACILITY are one object) at 18; 21.72 (the banks stop
+quoting every name by period 9) at 23.3; 21.73 (`control` has never run in an assembled world),
+21.74, 21.75 and 21.76 (only cells publish accounts before period 25) at 23.1.
+
+**What this item could not show.** Four of its findings are the same fact from four sides: no world
+this repository builds draws a buyout pool, quotes a name after period 9, or publishes a named firm's
+accounts before period 25 — so §29's mechanisms are exercised by a scale model built by hand
+(`buyout.test.ts`) and not by the assembled world. That is 23.1's work and it is named rather than
+worked around.
+
+**The suites run at the end of step 19**, by the owner's instruction, not at this close.

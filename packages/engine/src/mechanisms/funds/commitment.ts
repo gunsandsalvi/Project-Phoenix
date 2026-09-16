@@ -297,3 +297,40 @@ export function callCapital(
     );
   }
 }
+
+/**
+ * §29 D5 (17b.10): WHAT THIS FUND RETURNED ITS INVESTORS AGAINST WHAT IT CALLED OF THEM, and both
+ * are actual cash.
+ *
+ * *"The fund's returns are a read of D3 against A2, and both are actual cash."* So it is a READ and
+ * nothing anywhere stores one: two walks of the public record — what calls actually SETTLED
+ * (`fund.called`, `paid`) and what redemptions actually PAID (`fund.redeemed`, `paid`) — and the
+ * difference between them. A return computed from a NAV would be a mark rather than a return, and a
+ * return kept as a field would be a number that could disagree with the payments it is about
+ * (Law 4, Law 19).
+ *
+ * It is negative for most of a fund's life and that is not a loss: a vintage calls first and
+ * distributes later, which is the whole shape of the thing.
+ */
+export function returnedBy(
+  reads: { ofKind(kind: string): readonly { readonly data: Record<string, unknown> }[] },
+  pool: PartyId,
+  ccy: CurrencyCode,
+): { readonly called: Cash; readonly distributed: Cash } {
+  const paidIn = (kind: string, key: string): Cash => {
+    const rows: Cash[] = [];
+    for (const e of reads.ofKind(kind)) {
+      if (e.data['fund'] !== pool || e.data['paid'] === false) continue;
+      const amount = e.data[key];
+      if (typeof amount !== 'number' || amount <= 0) continue;
+      rows.push(asCash(amount, ccy, `what one ${kind} actually moved`));
+    }
+    return sumCash(ccy, rows, `what its ${kind} came to`).value;
+  };
+  return {
+    // A2: what the calls that SETTLED brought in. A call that was refused moved nothing.
+    called: paidIn('fund.called', 'called'),
+    // D3: what the redemptions PAID, which is money in a named account and never a NAV.
+    distributed: paidIn('fund.redeemed', 'paid'),
+  };
+}
