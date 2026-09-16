@@ -156,12 +156,14 @@ export interface FacilityTerms extends AgreementTerms {
    * commitment leaves you, and the commitment is the size I chose.* A bank that would commit less
    * imposes a tighter one, which is what bargaining looks like arithmetically.
    *
-   * NOTHING is a real answer and is stated rather than pretended: a borrower that has never
-   * published accounts has nothing a covenant could be tested on, and terms nobody can test are not
-   * terms (Reporting A2.a). A lender that commits to such a name has asked for no promise and bears
-   * that, which is a decision and not an oversight.
+   * THERE IS ALWAYS ONE (17b′.2). It was an `Option` for a week, on the reasoning that a borrower
+   * which has never published has nothing a covenant could be tested on — and the owner's answer is
+   * the right one: *a lender needs to see accounts before a buyout or any type of large lending.*
+   * So a company asking for a commitment PREPARES them (`reporting.interim`), and a lender with
+   * nothing to test does not commit. Terms nobody can test are not terms (Reporting A2.a), and a
+   * commitment with no promise on it is not a credit decision.
    */
-  readonly covenant: Option<Covenants>;
+  readonly covenant: Covenants;
 }
 
 /** Structural, like `isLoan`: a size, a price for drawing it, a date it stops standing, a promise. */

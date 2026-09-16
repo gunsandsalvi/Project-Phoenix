@@ -888,7 +888,16 @@ fact IS:
   capital for a year, and the row is written for what the ask said. The lengths themselves are
   declared by the module that owns each product, with the ids of the ones more than one module has
   to say in `registry/credit.ts` (`TERM_MONTHS`) — a mortgage is asked for by `housing` for a
-  landlord and by `households` for a family, and one product may not be two lengths (Law 4).
+  landlord and by `households` for a family, and one product may not be two lengths (Law 4). And a
+  borrower asking for a COMMITMENT has its BOOKS prepared for it (`reporting.interim`, 17b′): every
+  company already prepares full quarterly financials (17.0a), but its first close is one to four
+  quarters after the world opens, and in that window it has nothing to show a lender. So it prepares
+  MANAGEMENT ACCOUNTS as at today — the same statement over a span that is not a quarter, private
+  always, shown through the same door the quarterly one is plus to every bank that has quoted it —
+  and the lender reads them in the next period, when it decides. **No accounts, no commitment.**
+  `reporting` is not a `requires` of `banks` and cannot be: §48 reads what banks publish about their
+  own regulation, so the two need each other and `requires` is a DAG. What orders them is the phase
+  graph, which is where a mutual need belongs.
 
 **The observer is under the same rule and has no sibling of its own.** It imports the kernel and the
 registry and no module (`phoenix/no-cross-module-import` covers `src/observer/`); a measure it

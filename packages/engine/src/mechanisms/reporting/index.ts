@@ -26,6 +26,10 @@ import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import { REPORTING_PARAMS, reportingParams } from './data.js';
 import { anchorOf, publishableOn, quarterClosedBy, spanOf } from '../../calendar/fiscal.js';
+import { period as asPeriod } from '../../calendar/calendar.js';
+import { INTERIM } from '../../registry/statements.js';
+import { namesQuotedIn } from '../../registry/banking.js';
+import { partyId } from '../../core/ids.js';
 import { isPublic, keepsAccounts, listedLineOf } from './report.js';
 import { earnedOver, prepareStatement } from './statement.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -104,6 +108,84 @@ function publish(seed: string, ctx: MechanismContext): void {
   }
   // B2: a revision is information, so it is looked for every period and not only on a report.
   revise(seed, ctx, state);
+}
+
+/**
+ * Reporting A2, A3, Corporate Credit A4, §29 E1 (17b′.1): THE BOOKS A LENDER ASKED TO SEE.
+ *
+ * The owner's finding: *"a lender needs to see accounts before a buyout or any type of large
+ * lending, even if just a current snapshot."* A company's first fiscal close is one to four quarters
+ * after this world opens — a quarter that began before the epoch is a quarter with no books in it —
+ * and in that window it has nothing to show anybody. A bank that committed a facility in it would be
+ * lending large against nothing, and nobody does that.
+ *
+ * So a company that has asked for a COMMITMENT prepares MANAGEMENT ACCOUNTS: the same statement
+ * `report` prepares, over the span from its last close (or from the opening) to now. It is PRIVATE
+ * and stays private — a snapshot handed to a lender is not a quarter anybody may trade on — and it
+ * is shown through the same door the quarterly one is, plus to every bank that has quoted the name,
+ * which is who it is asking.
+ *
+ * WHICH ASKS GET ONE IS NOT A SIZE ANYBODY DECLARED (Law 6). It is `wants: 'commitment'`, and in
+ * this world that IS the large borrowing: a facility a lender's capital stands behind before a penny
+ * moves, as against a line drawn and repaid at the borrower's option. A company that wants a week's
+ * working capital is not asked for its books and does not prepare any.
+ *
+ * IT RUNS IN THIS PHASE, after revaluation, for the reason the quarterly report does: a balance
+ * sheet is struck when the marks are final (Clearing F1.a). The lender reads it in the NEXT period,
+ * when it decides — which is the lag Reporting B2.a wants anyway, because a covenant a lender could
+ * test before the accounts were struck is not a covenant.
+ *
+ * It takes no fiscal anchor, unlike `publish`: a snapshot is struck AS AT TODAY and belongs to no
+ * quarter, which is the whole of what makes it a snapshot.
+ */
+function prepareForLenders(ctx: MechanismContext): void {
+  const today = ctx.calendar.endOf(ctx.period);
+  for (const req of ctx.requests(ctx.period)) {
+    if (req.wants !== 'commitment') continue;
+    const company = ctx.parties.resolve(req.borrower).id;
+    const who = ctx.parties.get(company);
+    /**
+     * A3, 17.0a: ASKING IS THE REASON. `keepsAccounts` asks whether anybody is already OWED this
+     * company's books — a lender of record, or the people it employs — and a company that owes
+     * nobody anything yet keeps none. A company asking a bank to commit is in exactly that
+     * position and is exactly the one that must produce them: it owes its books to the lender it
+     * is asking. An ESTATE is still the exception, as it is for the quarterly report — it is
+     * realising a book, not borrowing against one (XI-8).
+     */
+    if (!who.status.alive || ctx.registry.partyKind(who.kind).terminal === true) continue;
+    /**
+     * A2: IT DOES NOT PREPARE WHAT IT ALREADY HAS. Accounts struck at the close of the period that
+     * just ended are this morning's, and a second set for the same day would be two answers to one
+     * question (Law 4). What it has is the fresher of its quarterly report and its last snapshot.
+     */
+    const held = ctx.published.latestAccounts(company);
+    if (held !== undefined && held.to >= ctx.period) continue;
+    // The span since its books were last struck, or since this world opened if they never were.
+    const from = held === undefined ? asPeriod(0) : asPeriod(held.to + 1);
+    if (from > ctx.period) continue;
+    const label = `interim ${today.y}-${today.m}-${today.d}`;
+    const prepared = prepareStatement(ctx, company, label, { from, to: ctx.period });
+    const statement = ctx.record(
+      INTERIM,
+      [company],
+      {
+        ...prepared,
+        opens: `${ctx.calendar.startOf(from).y}-${ctx.calendar.startOf(from).m}-${ctx.calendar.startOf(from).d}`,
+        closes: `${today.y}-${today.m}-${today.d}`,
+      },
+      // A3, G4: PRIVATE, always. It is not a quarter and nothing may trade on it.
+      false,
+    );
+    share(ctx, company, statement);
+    // Corporate Credit A4: and to the banks it is ASKING, which are the ones that quoted it — the
+    // whole point of preparing them. A bank that never quoted this name is not owed its books.
+    for (const e of namesQuotedIn(ctx.journal, ctx.period)) {
+      const bank = e.data['bank'];
+      if (typeof bank !== 'string' || e.subjects[0] !== String(company)) continue;
+      const to = ctx.parties.resolve(partyId(bank)).id;
+      if (to !== company) ctx.disclose(company, to, statement);
+    }
+  }
 }
 
 function key(company: PartyId, quarter: string): string {
@@ -292,6 +374,9 @@ export function reporting(seed: string): SystemModule {
         // ledger, the agreements, the contracts, the employment rows and the party's own outlooks.
         reads: [
           { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
+          // 17b′.1: who asked for a commitment today, and which banks have quoted them.
+          { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
+          { kind: 'event', name: 'credit.request', of: 'thisPeriod' },
           { kind: 'event', name: 'bank.liquidity', of: 'anyPeriod' },
           { kind: 'event', name: 'control.acquired', of: 'anyPeriod' },
           { kind: 'event', name: 'control.combined', of: 'anyPeriod' },
@@ -304,10 +389,13 @@ export function reporting(seed: string): SystemModule {
         writes: [
           { kind: 'event', name: 'disclosed' },
           { kind: 'event', name: 'reporting.guidance' },
+          { kind: 'event', name: 'reporting.interim' },
           { kind: 'event', name: 'reporting.report' },
         ],
         run: (ctx: MechanismContext): void => {
           publish(seed, ctx);
+          // 17b′.1: and the books a lender asked to see, for whoever asked for a commitment today.
+          prepareForLenders(ctx);
         },
       },
     ],

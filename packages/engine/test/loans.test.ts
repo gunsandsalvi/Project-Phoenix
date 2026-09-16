@@ -274,6 +274,10 @@ m.id === 'sovereign-instruments' ||
       m.id === 'seed.funding' ||
         m.id === 'credit-events' ||
         m.id === 'banks' ||
+        // 17b′.2: a lender commits against ACCOUNTS, so the module that prepares them is in the
+        // scale model. It is not a `requires` — §48 reads what banks publish about themselves and
+        // the two would be a cycle — so a world that wants both says so here.
+        m.id === 'reporting' ||
         m.id === 'money-market',
     )
     .map((m) =>
@@ -1637,5 +1641,52 @@ describe('how long it is for is the borrower\u2019s (Corporate Credit A2, 17b.8)
     // Finding 21.60(a): every loan in this world ran twelve months because one parameter said so.
     expect(months(short)).toBe(3);
     expect(months(long)).toBe(60);
+  });
+});
+
+describe('the books a lender sees (Reporting A2, A3, Corporate Credit A4, 17b′.1)', () => {
+  it('prepares management accounts for a borrower that asked for a commitment', () => {
+    const w = world([asksForCommitment(phx(20_000).pieces)]);
+    w.step();
+    const said = w.journal.ofKind('reporting.interim').filter((e) => e.subjects[0] === BORROWER);
+    // It asked in period 1 and its books were struck at the end of period 1, before its lender
+    // decided in period 2 — which is the lag a covenant needs (Reporting B2.a).
+    expect(said).toHaveLength(1);
+    expect(said[0]?.period).toBe(1);
+    // A3, G4: PRIVATE. A snapshot handed to a lender is not a quarter anybody may trade on.
+    expect(said[0]?.public).toBe(false);
+    // It covers the whole of the company's life so far, because it has never closed a quarter.
+    expect(Number(said[0]?.data['from'])).toBe(0);
+    expect(Number(said[0]?.data['to'])).toBe(1);
+  });
+
+  it('prepares none for a borrower that just wants the money', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    w.step();
+    w.step();
+    // A working-capital line is not the large underwritten borrowing, and nobody asks a company for
+    // its books to draw one. The trigger is what it asked for, never a size anybody declared.
+    expect(w.journal.ofKind('reporting.interim')).toHaveLength(0);
+    expect(w.journal.ofKind('credit.written').length).toBeGreaterThan(0);
+  });
+
+  it('is shown to the banks it is asking, and the commitment is struck on it', () => {
+    const w = world([asksForCommitment(phx(20_000).pieces)]);
+    w.step();
+    w.step();
+    const said = w.journal.ofKind('reporting.interim').find((e) => e.subjects[0] === BORROWER);
+    expect(said).toBeDefined();
+    // Observer A3: the disclosure is on the record — who was shown what, and when.
+    const shown = w.journal
+      .ofKind('disclosed')
+      .filter((e) => Number(e.data['event']) === Number(said?.id));
+    expect(shown.length).toBeGreaterThan(0);
+    // And the promise the lender asked for was struck on those accounts: no accounts, no commitment.
+    const row = w.agreements.ofKind(FACILITY).find((a) => a.debtor === BORROWER);
+    expect(row).toBeDefined();
+    const terms = row?.terms;
+    if (terms === undefined || !isFacility(terms)) throw new Error('no commitment was written');
+    expect(terms.covenant.leverage).toBeGreaterThan(0);
+    expect(terms.covenant.coverage).toBeGreaterThan(0);
   });
 });

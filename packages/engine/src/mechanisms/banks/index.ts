@@ -872,12 +872,24 @@ function commit(
   months: number,
 ): void {
   if (bank === borrower || !ctx.parties.get(bank).status.alive) return;
-  // C9: one live commitment per (lender, borrower). A borrower that asks again while one stands is
-  // asking for the same money twice, and the second would be room this bank had already committed.
+  /**
+   * Corporate Credit C9 (17b′.2): ONE LINE PER LENDER PER BORROWER — so a borrower that comes back
+   * while one stands is not written a second one. It is INCREASED.
+   *
+   * *"A draw taps the existing line at the margin it was struck at; a new line opens only when none
+   * is live."* A committed line that has been drawn does not lapse (17b.8a), so after a buyout the
+   * company has a live line with its lender and nothing left on it; without this, the
+   * recapitalisation C3 describes could never be funded by the bank that funded the purchase, which
+   * is the bank that knows the name. What the lender does instead is what a lender does: it looks
+   * at the borrower again, and it raises the limit or it does not.
+   *
+   * The new limit is what is OUTSTANDING plus what its room allows now — `room` already has this
+   * borrower's exposure in it, so the two do not double-count — and the covenant is struck again on
+   * the accounts as they stand, which is the point of asking for them.
+   */
   const already = ctx.agreements
     .ofKind(FACILITY)
     .find((a) => a.state === 'performing' && a.debtor === borrower && a.creditor === bank);
-  if (already !== undefined) return;
   /**
    * B2, B2.a, Reporting A2 (17b.8a): THE COVENANT THE LENDER ASKS FOR, off the borrower's own
    * published accounts with THIS COMMITMENT on them. *"No worse than this leaves you"* — and what
@@ -888,31 +900,34 @@ function commit(
    * A BORROWER THAT HAS PUBLISHED NOTHING GETS NO COMMITMENT. Terms nobody can test are not terms
    * (Reporting A2.a), and a promise about accounts that do not exist is worse than no promise.
    */
-  const said = ctx.published.lastStatement(borrower);
+  /**
+   * 17b′.2: THE FRESHEST BOOKS IT HAS, whichever act produced them — a closed quarter, or the
+   * management accounts it prepared because this ask was for a commitment (`reporting.interim`).
+   * *"What this company's books say"* is one question and there is one read of it (Law 4).
+   */
+  const said = ctx.published.latestAccounts(borrower);
   const annual = scale(limit, rate, 'what the line would cost it a year if it drew all of it');
-  const testable =
-    said !== undefined &&
-    said.balance.assets.pieces > 0 &&
-    said.earned.pieces > 0 &&
-    annual.pieces > 0;
-  const covenant: Option<Covenants> =
-    said !== undefined && testable
-      ? some({
-          leverage: ratioOf(
-            plus(said.balance.liabilities, limit, 'what it would owe with this drawn'),
-            said.balance.assets,
-            'the most it may owe against what it holds',
-          ),
-          coverage: ratioOf(
-            said.earned,
-            annual,
-            'the least it must earn against what this costs it',
-          ),
-        })
-      : none<Covenants>();
+  // NO ACCOUNTS, NO COMMITMENT. A lender that cannot test a promise has not taken a credit
+  // decision, and a commitment with nothing to test is not one (Reporting A2.a, §29 E1).
+  if (said === undefined || said.balance.assets.pieces <= 0) return;
+  if (said.earned.pieces <= 0 || annual.pieces <= 0) return;
+  const covenant: Covenants = {
+    leverage: ratioOf(
+      plus(said.balance.liabilities, limit, 'what it would owe with this drawn'),
+      said.balance.assets,
+      'the most it may owe against what it holds',
+    ),
+    coverage: ratioOf(said.earned, annual, 'the least it must earn against what this costs it'),
+  };
+  const row = facilityLoanId(bank, borrower);
+  const outstanding = asCash(
+    ctx.instruments.has(row) ? Number(ctx.register.heldTotal(row).value) : 0,
+    ccy,
+    'what it has already drawn on the line it has',
+  );
   const terms: FacilityTerms = {
     kind: FACILITY,
-    limit,
+    limit: already === undefined ? limit : plus(outstanding, limit, 'the line, increased'),
     rate,
     covenant,
     // B2.b: the period the deal has to close in, which is the one after the ask was answered.
@@ -921,20 +936,34 @@ function commit(
     // and it is the term the BORROWER asked for (17b.8), not this lender's line convention.
     maturity: addMonths(ctx.calendar.startOf(ctx.period), months),
   };
-  ctx.owes({
-    debtor: borrower,
-    creditor: bank,
-    ccy,
-    // It owes nothing NOW. What it owes is what it draws, when it draws it — which is exactly the
-    // difference between a commitment and a debt (Law 2).
-    owed: 0,
-    terms,
-    why: `${String(bank)} commits ${limit.pieces} to ${String(borrower)} for a deal that has not closed`,
-  });
+  if (already === undefined) {
+    ctx.owes({
+      debtor: borrower,
+      creditor: bank,
+      ccy,
+      // It owes nothing NOW. What it owes is what it draws, when it draws it — which is exactly the
+      // difference between a commitment and a debt (Law 2).
+      owed: 0,
+      terms,
+      why: `${String(bank)} commits ${limit.pieces} to ${String(borrower)} for a deal that has not closed`,
+    });
+  } else {
+    // Law 15: the same two parties, the same row, different terms — never a second kind and never a
+    // second line (C9). What changed is the size, the date it stands until, and the promise.
+    ctx.restate(already.id, terms);
+  }
   ctx.record(
     'credit.committed',
     [String(bank), String(borrower)],
-    { bank: String(bank), borrower: String(borrower), limit: limit.pieces, rate, ccy },
+    {
+      bank: String(bank),
+      borrower: String(borrower),
+      limit: terms.limit.pieces,
+      // C9: whether this opened a line or raised one the borrower already had.
+      increased: already !== undefined,
+      rate,
+      ccy,
+    },
     true,
   );
 }
@@ -958,10 +987,9 @@ function testFacilityCovenants(ctx: MechanismContext): void {
     if (a.state !== 'performing') continue;
     const t = a.terms;
     if (!isFacility(t)) continue;
-    // B2.a: a line with no promise on it has nothing to test, and that is stated on the terms.
-    if (!t.covenant.some) continue;
-    const promised = t.covenant.value;
-    const said = ctx.published.lastStatement(a.debtor);
+    const promised = t.covenant;
+    // 17b′.2: tested on the freshest books it has, which is the same read the promise was struck on.
+    const said = ctx.published.latestAccounts(a.debtor);
     if (said === undefined) continue;
     const row = facilityLoanId(a.creditor, a.debtor);
     if (saidAlready(ctx, row, said.quarter)) continue;
@@ -1476,6 +1504,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
     // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
     // not it has firms, and a bank's answer to Money B3.a exists as soon as there is a bank.
+    /**
+     * Reporting A2 (17b′.2): §48 IS NOT A `requires` AND CANNOT BE. A bank prices credit off the
+     * accounts a company prepared, and `reporting` reads what banks published about their own
+     * regulation — the two need each other, and `requires` is a DAG (Part XIII refuses the cycle).
+     * What orders them is the phase graph, which is where a mutual need belongs: the statement is
+     * struck after revaluation and read by the lender in the next period (Clearing F1.a). A world
+     * assembled without §48 has banks that lend and never COMMIT, which is *no accounts, no
+     * commitment* working exactly as it should.
+     */
     requires: [],
     instrumentKinds: [loanKind, subordinatedKind],
     // Prime Brokerage A1 (item 13.3): a named bank and a named client, with a contract that can be

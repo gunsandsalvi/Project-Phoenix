@@ -35,6 +35,22 @@ import type { Event } from '../journal/journal.js';
 
 /** The kind every company's quarterly financials are written under. Named HERE, once. */
 export const REPORT = 'reporting.report';
+
+/**
+ * Reporting A2, A3, Corporate Credit A4 (17b′.1): MANAGEMENT ACCOUNTS — the same statement over a
+ * span that is not a fiscal quarter, prepared because a LENDER asked to see the books.
+ *
+ * A company's first fiscal close is one to four quarters after this world opens (a quarter that
+ * began before the epoch is a quarter with no books in it), and in that window a company has
+ * nothing to show anybody. A bank underwriting a commitment in it would be lending large on
+ * nothing, which nobody does.
+ *
+ * It is a SECOND KIND and not a second `reporting.report`, because the two are different acts: a
+ * report is what a company says about a quarter that closed, and this is what it hands one lender
+ * as at today. Nothing may trade on it, nothing guides off it, and the covenant test tells them
+ * apart by which it read. Same fields, same parser, same vocabulary (Law 4).
+ */
+export const INTERIM = 'reporting.interim';
 /** The kernel's record that one party showed another one of its own events (Observer A3). */
 export const DISCLOSED = 'disclosed';
 /** §35: the events a deal leaves on the record, read here so no module names another's. */
@@ -455,8 +471,14 @@ const rows = (v: unknown): readonly unknown[] => (Array.isArray(v) ? (v as unkno
  * "never published".
  */
 export function statementOf(e: Event): Statement {
-  if (e.kind !== REPORT) {
-    throw new InvalidRegistry('Reporting A2', `${e.kind} is not a published statement`);
+  /**
+   * A2, A3 (17b′.1): the two acts that produce a statement — a QUARTER a company reported on, and
+   * the MANAGEMENT ACCOUNTS it prepared for a lender that asked. Same fields, same parse, one
+   * vocabulary (Law 4); what tells them apart is the kind, and every reader that cares asks for the
+   * one it means rather than unpacking a record twice.
+   */
+  if (e.kind !== REPORT && e.kind !== INTERIM) {
+    throw new InvalidRegistry('Reporting A2', `${e.kind} is not a set of accounts`);
   }
   const d = e.data;
   const ccy = str(e, 'ccy') as CurrencyCode;

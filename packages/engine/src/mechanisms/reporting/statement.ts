@@ -376,8 +376,17 @@ export function prepareStatement(
 
   // ---- changes in equity: the same account, before and after.
   let opening = 0;
-  for (const e of ctx.register.equityEntries(company, asPeriod(0), asPeriod(span.from - 1))) {
-    opening += whole(ctx, company, e.delta, e.cause);
+  /**
+   * G2, Money G4 (17b′.1): A SPAN THAT STARTS AT THE OPENING HAS NOTHING BEFORE IT, and asking for
+   * it is asking for period −1. No quarterly report could reach here — a quarter that began before
+   * the epoch is skipped — and the first caller that asked for a span from the world's first period
+   * (management accounts prepared for a lender) stopped the run at the tick. The opening balance of
+   * a statement about the whole of a company's life is nothing, which is what it was.
+   */
+  if (span.from > 0) {
+    for (const e of ctx.register.equityEntries(company, asPeriod(0), asPeriod(span.from - 1))) {
+      opening += whole(ctx, company, e.delta, e.cause);
+    }
   }
   // The identity is opening + earned = closing; the three below are components OF `earned`, named
   // because a reader of a statement of changes in equity wants them by name (G2).

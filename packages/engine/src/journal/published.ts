@@ -38,7 +38,7 @@
 // was and a journal carries `unknown`, so the field this reads into goes through the dimension's
 // own door and says which it is.
 import { asCash, type Cash } from '../core/measure.js';
-import { REPORT, type Statement, statementOf } from '../registry/statements.js';
+import { INTERIM, REPORT, type Statement, statementOf } from '../registry/statements.js';
 import type { Period } from '../calendar/calendar.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
@@ -69,6 +69,17 @@ type JournalRead = Pick<Journal, 'ofKind' | 'lastOf'>;
 export interface PublishedReads {
   /** A2: the last accounts this company published, or nothing if it never has. */
   lastStatement(company: PartyId): PublishedStatement | undefined;
+  /**
+   * A2, A3 (17b′.1): the last MANAGEMENT ACCOUNTS it prepared for a lender — a snapshot as at a
+   * date that is not a fiscal close, which a company in its first year has and a report it has not.
+   */
+  lastInterim(company: PartyId): PublishedStatement | undefined;
+  /**
+   * Corporate Credit A4, Law 4 (17b′.2): THE FRESHEST BOOKS THIS COMPANY HAS, whichever act
+   * produced them. *"What this company's books say"* is one question, and a lender that read the
+   * older of two sets because it asked the wrong door would be pricing a name on stale accounts.
+   */
+  latestAccounts(company: PartyId): PublishedStatement | undefined;
   /** Every set it has published, oldest first. Pass no company for every company's. */
   statements(company?: PartyId): readonly PublishedStatement[];
   lastGuidance(company: PartyId): PublishedGuidance | undefined;
@@ -80,6 +91,19 @@ export function publishedReads(journal: JournalRead): PublishedReads {
     lastStatement: (company: PartyId) => {
       const e = journal.lastOf(STATEMENT, company);
       return e === undefined ? undefined : statementOf(e);
+    },
+    lastInterim: (company: PartyId) => {
+      const e = journal.lastOf(INTERIM, company);
+      return e === undefined ? undefined : statementOf(e);
+    },
+    latestAccounts: (company: PartyId) => {
+      const report = journal.lastOf(STATEMENT, company);
+      const interim = journal.lastOf(INTERIM, company);
+      if (report === undefined) return interim === undefined ? undefined : statementOf(interim);
+      if (interim === undefined) return statementOf(report);
+      // The later of the two, and on the same date the QUARTER wins: a closed set of accounts is
+      // what a snapshot was standing in for until it existed.
+      return statementOf(interim.period > report.period ? interim : report);
     },
     statements: (company?: PartyId) =>
       forSubject(journal.ofKind(STATEMENT), company).map(statementOf),

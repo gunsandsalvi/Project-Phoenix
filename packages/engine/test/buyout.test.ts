@@ -319,27 +319,37 @@ describe('sources and uses are measured, not assumed (Private Equity B5)', () =>
 });
 
 describe('the owner’s hand (Private Equity C2, C3)', () => {
-  it('a company its owner needs money from borrows, and the money is the owner’s to take', () => {
+  it('a company its owner needs money from asks for it, in its own name', () => {
     const w = buyoutWorld();
     for (let i = 0; i < PERIODS + 6; i += 1) w.step();
-    const done = w.journal.ofKind('control.recapitalised');
-    expect(done.length).toBeGreaterThan(0);
-    const e = done[0];
+    const asks = w.journal
+      .ofKind('control.financing')
+      .filter((e) => Number(e.data['cheque']) === 0);
+    expect(asks.length).toBeGreaterThan(0);
+    const e = asks[0];
     if (e === undefined) return;
-    // C3: "raise more debt to pay itself a distribution". The debt is raised here; the distribution
-    // is the ordinary one a company with spare cash makes, and nothing in `control` writes it.
-    expect(Number(e.data['drawn'])).toBeGreaterThan(0);
-    expect(e.data['settled']).toBe(true);
-    const company = partyId(String(e.data['company']));
-    // C3: it is the COMPANY that owes it, on the line its owner had it commit — a transfer from the
-    // firm's future to the owner's present, and the row is where the future is.
-    const row = w.instruments.get(facilityLoanId(partyId(String(e.data['bank'])), company));
-    expect(row.issuer.some && row.issuer.value === company).toBe(true);
-    expect(isLoan(row.terms)).toBe(true);
-    // And the money landed in the company's OWN account, which is what makes it distributable —
-    // where a buyout's proceeds pay the sellers and never touch it.
-    expect(w.cash(company, USD)).toBeGreaterThan(0);
-    // Its owner asked for it and this company is the one the owner controls.
-    expect(String(e.data['owner'])).toBe(String(BUYER));
+    // C2, C3: the borrowing is the COMPANY's — a request says who will owe it — and the reason is
+    // its OWNER's, which is why the cheque is nothing: nobody is buying anything, the owner already
+    // owns it. The buyer named beside it is the controller whose need this is.
+    expect(String(e.data['buyer'])).toBe(String(BUYER));
+    expect(Number(e.data['wanted'])).toBeGreaterThan(0);
+    const target = String(e.data['target']);
+    expect(w.control.controllerOf(partyId(target))?.controller).toBe(BUYER);
+  });
+
+  it('and whether it gets it is the credit market’s answer, not the owner’s (B2.b)', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < PERIODS + 6; i += 1) w.step();
+    // 17b.6 said this would happen and it does: the company that has just been levered to buy
+    // itself asks for more, and its lender reads the accounts it has just prepared — no earnings
+    // over the periods it was bought in — and does not commit. A recapitalisation is not a thing an
+    // owner can take; it is a thing a lender agrees to, which is B2.b reaching back into C3.
+    const funded = w.journal.ofKind('control.recapitalised');
+    const committed = w.journal.ofKind('credit.committed');
+    // One commitment in this world and it is the BUYOUT's: the deal that was fundable was funded.
+    expect(committed).toHaveLength(1);
+    expect(committed[0]?.data['increased']).toBe(false);
+    expect(funded).toHaveLength(0);
   });
 });
+

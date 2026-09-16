@@ -13683,3 +13683,61 @@ accounts before period 25 — so §29's mechanisms are exercised by a scale mode
 worked around.
 
 **The suites run at the end of step 19**, by the owner's instruction, not at this close.
+
+## Item 17b′ — The books a lender sees
+
+**The owner's finding**, and it is the right one: *"a lender needs to see accounts before a buyout or
+any type of large lending, even if just a current snapshot."* 17b.8a had made the covenant an
+`Option` and let a bank commit to a name with no accounts at all, reasoning that only cells publish
+before period 25 (21.76). That was the wrong half to give way on. **No bank underwrites a buyout on
+nothing**, and "the borrower has never published" is a fact about this world's CALENDAR rather than
+about what a lender would accept.
+
+**Most of it was already there.** 17.0a has every company prepare full quarterly financials —
+private where its paper is private — and `share()` shows them to the lenders of record and the bank
+that keeps its account. What was missing is accounts in the window before a company's first close:
+the first quarter that opens on or after the epoch closes one to four quarters in, and until then a
+company has no books to show anybody.
+
+**What a real deal does in that window is hand over management accounts.** So a company asking for a
+COMMITMENT prepares them: the same statement, over the span from its last close — or from the
+opening — to today, recorded as `reporting.interim` and PRIVATE always, because a snapshot handed to
+a lender is not a quarter anybody may trade on. It is shown through the same door the quarterly one
+is, plus to every bank that has quoted the name, which is who it is asking.
+
+**Which asks get one is not a size anybody declared** (Law 6). It is `wants: 'commitment'`, and in
+this world that IS the large borrowing: a facility a lender's capital stands behind before a penny
+moves, as against a line drawn at the borrower's option. Nobody asks a company for its books to draw
+a week's working capital.
+
+**ASKING IS THE REASON.** `keepsAccounts` asks whether anybody is already OWED a company's books — a
+lender of record, or the people it employs — and a company that owes nobody anything yet keeps none.
+A company asking a bank to commit is in exactly that position and is exactly the one that must
+produce them: it owes its books to the lender it is asking. An estate is still the exception.
+
+**Then 17b.8a's rule is restored**: `FacilityTerms.covenant` is a `Covenants` again and not an
+`Option`, and a lender with nothing to test does not commit. The accounts it reads are the fresher of
+the two — a closed quarter or a snapshot — through one kernel read, because *what this company's
+books say* is one question (Law 4).
+
+**Two things fell out of it.** A statement whose span starts at the OPENING asked the register for
+period −1 and stopped the run at the tick; no quarterly report could reach there, and the first
+caller that asked for a company's whole life did. And a borrower that comes back while a line stands
+now has it INCREASED rather than refused (Corporate Credit C9: *"a new line opens only when none is
+live"*) — without it, the recapitalisation §29 C3 describes could never be funded by the bank that
+funded the purchase, because a drawn line does not lapse.
+
+**And the recapitalisation test was asserting the wrong thing.** With the buyout now properly funded,
+the same lender reads the company's fresh accounts — no earnings over the periods it was bought in —
+and does not commit. That is B2.b reaching back into C3, exactly as 17b.6's record said it would, and
+the test now asserts the ask and the market's answer rather than a drawing that should not happen.
+
+**`reporting` is not a `requires` of `banks` and cannot be**: §48 reads what banks publish about
+their own regulation, so the two need each other and `requires` is a DAG (Part XIII refuses the
+cycle). What orders them is the phase graph. A world assembled without §48 has banks that lend and
+never commit, which is *no accounts, no commitment* working as it should; the scale model says so by
+naming `reporting` in its own module list.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+three new tests, green, and the file's seven reds are the seven that were red at `72e0d28`; `buyout`
+seven green; `corporate-bond`, `committed-capital` and `reporting` carry the reds they carried before.

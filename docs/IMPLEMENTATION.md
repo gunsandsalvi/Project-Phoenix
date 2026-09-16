@@ -211,7 +211,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 16 | Cross-border, the rest — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.44–21.55; 16.7's other half at 18a.3; the firm half of 16.4 at 17.4; Cross-Border C4 at 17b) | after 15 |
 | 17 | Corporate credit, the rest — **done** (section removed; see `docs/RECORD.md`; §7 answered 62 of 62. Findings positioned at 23.1 (21.65, 21.67), 23.2 (21.64, 21.66), 23.3 (21.67, 21.69), 19 (21.62); 21.59 closed at 17.7, 21.61 at 17.7a, 21.63 answered at 17.9a, 21.68 answered at 17.10a; the covered bond out of scope by the owner's decision) | 17.0 the credit view |
 | 17b | The leveraged buyout — **done** (section removed; see `docs/RECORD.md`; §29 answered 25 of 25. Findings positioned at 23.1 (21.73, 21.74, 21.75, 21.76), 23.3 (21.72), 18 (21.71), 18a.1 (21.60(c) and 21.60's diversification half); 21.15 closed at 17b.4, 21.60(a) at 17b.8 and 21.60(b) at 17b.8a; §29 C2's other half became item 17c) | after 17.9 |
-| 17b′ | The books a lender sees | before 17c; 17b.8a lent large on no accounts, and the owner is right that nobody does |
+| 17b′ | The books a lender sees — **done** (section removed; see `docs/RECORD.md`; a borrower asking for a commitment prepares management accounts and its lender reads them, so *no accounts, no commitment* holds. 21.76's lender half closed; its `worthAt` half stays at 23.1) | before 17c |
 | 17c | The board | after 17b; §29 C2's other half, and it has no other home |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
@@ -257,52 +257,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 
 ---
-
----
-
-## 17b′. The books a lender sees
-
-Inserted at 17b's close, at its dependency position: it repairs 17b.8a and 17c does not depend on it.
-
-**The owner's finding.** *"Lender needs to see accounts before a buyout or any type of large lending,
-even if just a current snapshot or something."* 17b.8a made the covenant an `Option` and let a bank
-commit to a name with no accounts at all, on the reasoning that only cells publish before period 25
-(21.76). That is the wrong half to give way on: **no bank underwrites a buyout on nothing**, and
-"the borrower has never published" is a fact about this world's CALENDAR rather than about what a
-lender would accept.
-
-**What is actually there.** 17.0a already had every company prepare full quarterly financials —
-`report()` runs for every living party that keeps accounts, PUBLIC where its paper is public and
-private otherwise, and `share()` shows it to the lenders of record and the bank that keeps its
-account. The mechanism is not missing. What is missing is a set of accounts in the window BEFORE a
-company's first close: the first quarter that opens on or after the epoch closes one to four quarters
-in, and until then a company has no books to show anybody.
-
-**What a real deal does in that window is hand over MANAGEMENT ACCOUNTS.** Not a published quarter —
-a snapshot as at the last close, prepared because a lender asked to see it. That is the mechanism,
-and it is the same preparation over a different span.
-
-- [ ] 17b′.1 **A borrower asked for its books prepares them** (Reporting A2, A3, Corporate Credit A4).
-  `reporting` prepares an INTERIM for every party that published a credit request for a COMMITMENT
-  this period and has no accounts covering the period that just closed: `prepareStatement` over the
-  span from its last close (or the epoch) to now, recorded as `reporting.interim` — PRIVATE, never
-  published, because a snapshot shown to a lender is not a quarter anybody may trade on — and shown
-  through the same `share()` the quarterly one uses, plus to every bank that quoted the name, which
-  is who it is asking. It is prepared in the SAME phase as the quarterly report, `after: revaluation`,
-  for the same reason: a balance sheet is struck when the marks are final (Clearing F1.a), and the
-  lender reads it in the next period when it decides — which keeps Reporting B2.a's lag, because a
-  covenant a lender could test before the accounts were struck is not a covenant.
-  **Which asks get one is not a size anybody declares**: it is `wants: 'commitment'`, which in this
-  world IS the large underwritten borrowing — a facility a lender's capital stands behind before a
-  penny moves, as against a working-capital line drawn at the borrower's option (Law 6: no threshold).
-- [ ] 17b′.2 **No accounts, no commitment** (§29 E1, Corporate Credit B2.a). `FacilityTerms.covenant`
-  goes back to being a `Covenants` and not an `Option`, and `commit()` refuses where there is nothing
-  to test — which is 17b.8a's rule restored now that a borrower can produce something to test. The
-  accounts it reads are the FRESHER of the two: `lastStatement` and `lastInterim`, through one kernel
-  read, because "what this company's books say" is one question (Law 4).
-- [ ] 17b′.3 §48 A2/A3 and §7 B2.a re-marked; 21.76 re-read in the light of it; record.
-
-**Exit.** A bank commits to a buyout against a set of accounts it was shown, or it does not commit.
 
 ---
 
@@ -383,7 +337,7 @@ its own, and the difference is a read of the owner's own numbers rather than an 
 
 Each when its file is open for another item; file:line and the change.
 
-- [ ] 21.76 `reporting/index.ts`: IN TWENTY-FOUR PERIODS OF THE RIG ONLY CELLS PUBLISH ACCOUNTS. The seventeen reports at period 20 are household and small-business cells; the first NAMED FIRM publishes at period 25, and firms' year-ends are staggered after that. Everything that reads a company's published accounts therefore has nothing to read for most of a run: `control/index.ts worthAt` (a bid is what the target PUBLISHED, so no named company can be valued at all), `corporate-bond openLine` (a covenant is its published accounts), and 17b.8a's facility covenant (a lender with nothing to test asks for no promise). It is the DEEPER CAUSE of 21.73 — `control` never runs — and it is not obviously a defect: a quarter is thirteen weeks and a staggered year-end is real. What is not established is whether a named firm publishes on the same cadence a cell does once it has started. Positioned at 23.1 with 21.73, where the scale model is resized and a world that can be measured before period 25 is what is wanted (17b.8a).
+- [ ] 21.76 `reporting/index.ts`: IN TWENTY-FOUR PERIODS OF THE RIG ONLY CELLS PUBLISH ACCOUNTS. The seventeen reports at period 20 are household and small-business cells; the first NAMED FIRM publishes at period 25, and firms' year-ends are staggered after that. Everything that reads a company's published accounts therefore has nothing to read for most of a run: `control/index.ts worthAt` (a bid is what the target PUBLISHED, so no named company can be valued at all), `corporate-bond openLine` (a covenant is its published accounts), and 17b.8a's facility covenant (a lender with nothing to test asks for no promise). It is the DEEPER CAUSE of 21.73 — `control` never runs — and it is not obviously a defect: a quarter is thirteen weeks and a staggered year-end is real. **Re-read at 17b′**: the LENDER's half is closed — a borrower asking for a commitment now prepares management accounts and its lender reads those (`reporting.interim`), so *no accounts, no commitment* holds without waiting for a quarter. What is left is the other readers: `control worthAt` values a company off what it PUBLISHED, and a named firm publishes nothing until period 25, so no bid can be formed for one before then. That half stays, positioned at 23.1 with 21.73 (17b.8a, 17b′.1).
 - [ ] 21.75 17b.7's change is not covered by a test and cannot be in any world this repository builds: a deal struck in the money the shares are in only differs from one struck in the buyer's where the two moneys differ, and the rig is ONE COUNTRY while `control` has never run in the four-country world (21.73). What the change fixes was visible by reading — every price carried `currencyOf(buyer.region)` whatever the line was, so a foreign seller would have been paid in the wrong money (Law 8) — and it is fixed; what is missing is the world that would show it. Positioned at 23.1 with the scale model's resize, which is where a buyer and a company in two moneys become possible (17b.7).
 - [ ] 21.74 `committed-capital.test.ts:45` asserts `expect(undrawnOn(promised(100_000_000, 0))).toBe(100_000_000)` — a `Cash` against a number, so it can never pass. The two lines under it read `.pieces` and do. Pre-existing (1 red, 5 green at `3f7b4e1`; 1 red, 9 green after 17b.4's four). A wrong assertion is not a finding about the world and is not chased here (the three rules); positioned at 23.1 with the rest of the suite's triage (17b.4).
 - [ ] 21.73 `control/index.ts` NEVER RUNS. Twenty-four periods of the `opens` rig: `control.tender` 0, `control.failed` 0, `control.acquired` 0, `control.financing` 0 — so §35 and §29 B are a thousand lines nothing has ever exercised in an assembled world, and every test of them is a scale model built by hand. `couldBuy` finds six candidates in period 24 and all six are index ETFs (`etf.us`, `etf.equity.large.us.1`, …): the rig draws no buyout fund at all (`drawPrivateEquity` needs a bank at or above `SPONSOR_SIZE` and the rig's banks are smaller), and a tracker has no view of a company to value one with. Positioned at 23.1, which is where the scale model is resized and is exactly this: a test never names a party, so the draw has to make a buyer (17b.2).
