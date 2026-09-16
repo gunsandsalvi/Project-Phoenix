@@ -201,7 +201,11 @@ export function strike(
   borrower: PartyId,
   book: BookDecl,
 ): readonly Struck[] {
-  const outcome = clear(posted, 'proRata', 'sellersCompete');
+  // 18a.4: THIS BOOK CLEARS THE PRICE OF TIME, and the price of time may be negative. A lender
+  // that gets back less than it lent is paying for somewhere to put its money — two central banks
+  // did exactly that for years, and the yen's own reason in `data.ts` apologises for the floor this
+  // world used to impose instead.
+  const outcome = clear(posted, 'proRata', 'sellersCompete', true);
   if (!isCleared(outcome)) return [];
   const out: Struck[] = [];
   for (const f of outcome.fills) {

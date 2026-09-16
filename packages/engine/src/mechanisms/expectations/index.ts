@@ -17,6 +17,7 @@
  * expectation anywhere (A2.b): the aggregate this module publishes is a lagged statistic that
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
+import { consumerIndexOf } from '../../prices/index-read.js';
 import { FREIGHT_SESSION, freightRateOn } from '../../registry/ports.js';
 import { benchmarksFixedIn } from '../../registry/notices.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -136,6 +137,12 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'freight':
     case 'rate':
       return seen;
+    case 'index': {
+      // Indices A1, A2 (18a.1): AN INDEX IS PUBLIC, and its level is a read of prints anybody may
+      // see — so what a party was surprised BY is the level itself and not what it was told.
+      const read = ctx.index(subject.value.index);
+      return read.some ? read.value.level : null;
+    }
     case 'bought':
     case 'sold':
     case 'income':
@@ -546,6 +553,23 @@ function exposed(
         value: rate.value,
         unit: ctx.registry.currencyOf(r.region),
       });
+  }
+  /**
+   * Indices A1, D4, Central Bank B1 (18a.1): AND THE PRICE LEVEL WHERE IT LIVES.
+   *
+   * The consumer basket of its own place is public — a read of prints anybody may see — and every
+   * party in this world buys things in that place, so every party watches it. What each of them
+   * makes of it is its own (§46 A2): the outlook is formed from the levels it has actually seen,
+   * and two parties that started watching at different times will disagree about where it is
+   * going, which is what a policy maker acting on its own view means (A4: there is no global one).
+   */
+  const basket = consumerIndexOf(p.region);
+  const level = ctx.index(basket);
+  if (level.some) {
+    out.set(about({ on: 'index', index: basket }), {
+      value: level.value.level,
+      unit: 'of its base',
+    });
   }
   // Banks Funding B1.a: the board of the bank it banks at, on the class its kind is in.
   const cls = ctx.registry.partyKind(p.kind).depositClass;

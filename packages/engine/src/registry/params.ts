@@ -271,6 +271,43 @@ export class ParamRegister {
   }
 
   /**
+   * XI-14, Central Bank B1, §47 (18a.1): A POLICY NUMBER IS SET BY WHOEVER OWNS IT.
+   *
+   * Every number in this register was declared once and never moved, which is right for a
+   * technology and a preference and WRONG for a policy: a policy is somebody's decision, and a
+   * decision nobody can revisit is not one. A central bank that cannot change its own rate has no
+   * policy at all — it has a constant with a mandate written beside it.
+   *
+   * THREE THINGS IT REFUSES, and between them they are why this is not a door onto every number:
+   * a parameter that is not a POLICY cannot be set at all (a technology that moved would be a
+   * fact about the world changing because somebody wanted it to); it may be set only by the owner
+   * the declaration NAMES, so nobody sets another's; and the value is finite like any other. What
+   * it does then is change the value and hand the caller what to record — the kernel publishes it,
+   * because a policy decision is public by construction (Observer A1).
+   */
+  setByMandate(id: ParamId, value: number, by: ParamOwner, why: string): ParamDecl {
+    const was = this.decl(id);
+    if (was.kind !== 'policy') {
+      throw new InvalidRegistry(
+        'XI-14',
+        `${id} is declared ${was.kind} and only a policy is set by a mandate`,
+        { id, kind: was.kind },
+      );
+    }
+    if (was.owner !== by) {
+      throw new InvalidRegistry(
+        'XI-14',
+        `${id} is ${was.owner}'s and ${by} would set it`,
+        { id, owner: was.owner, by },
+      );
+    }
+    if (why.length === 0) throw new InvalidRegistry('Law 16', `setting ${id} has no reason`);
+    const now: ParamDecl = { ...was, value: finite(value, `parameter ${id}`), why: `${was.why} ${why}` };
+    this.decls.set(id, Object.freeze(now));
+    return now;
+  }
+
+  /**
    * Read a value, NAMING WHAT YOU EXPECT IT TO BE (Law 8).
    *
    * The dimension is the half of the unit a machine can check, and this is where it is checked: a

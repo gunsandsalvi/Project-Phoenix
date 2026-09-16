@@ -42,13 +42,16 @@ export const EQUITY_INDEX = (region: RegionId): string => `equity.${String(regio
 export const SIZE_INDEX = (region: RegionId, segment: SizeSegment): string =>
   `equity.${segment}.${String(region)}`;
 /** M9, XI-12: the one line that crosses regions, stated in one money at cleared rates. */
+import { consumerIndexOf } from '../../prices/index-read.js';
+
 export const GLOBAL_INDEX = (ccy: CurrencyCode): string => `equity.global.${String(ccy)}`;
 export const CREDIT_INDEX = (ccy: CurrencyCode): string => `credit.${String(ccy)}`;
 /** A1, C2, Ratings C2 (17.10): the rated universe, on each side of the line the market draws. */
 export const RATED_INDEX = (ccy: CurrencyCode, side: 'investment' | 'speculative'): string =>
   `credit.${side}.${String(ccy)}`;
 export const PRODUCER_INDEX = (region: RegionId): string => `producer.${String(region)}`;
-export const CONSUMER_INDEX = (region: RegionId): string => `consumer.${String(region)}`;
+/** 18a.1: the name is the kernel's, so a party can name what it has a view of without this module. */
+export const CONSUMER_INDEX = (region: RegionId): string => consumerIndexOf(String(region));
 
 /**
  * The rules, built from the registry's own regions and currencies: a world with four countries in

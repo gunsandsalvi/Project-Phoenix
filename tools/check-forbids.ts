@@ -239,6 +239,10 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/insurers/index.ts': 1,
   'mechanisms/insurers/pensions.ts': 1,
   'mechanisms/money-market/index.ts': 11,
+  // 18a.1: THE CENTRAL BANK'S OWN view, for the central bank's own decision — its outlook of the
+  // basket it has a mandate about. It reads no counterparty's state: the basket is public and the
+  // view of it is the deciding party's, which is what §46 A2 requires of a decision at all.
+  'mechanisms/money-market/policy.ts': 1,
   'mechanisms/money-market/resolution.ts': 3,
   'mechanisms/money-market/session.ts': 2,
   'mechanisms/property/index.ts': 1,

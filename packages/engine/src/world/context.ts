@@ -28,6 +28,7 @@ import type {
   DerivativeKindId,
   InstrumentId,
   MarketId,
+  ParamId,
   PartyId,
   PartyKindId,
   VenueId,
@@ -99,7 +100,7 @@ import type {
  */
 export type Reagreement = 'rolled' | 'restructured';
 
-import type { ParamRegister, ParamDecl } from '../registry/params.js';
+import type { ParamRegister, ParamDecl, ParamOwner } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { Classified } from '../registry/universe.js';
 import type { Prng } from '../rng/prng.js';
@@ -364,7 +365,19 @@ export type Subject =
    * this rate is choosing on its own view of where the rate goes, which is why the view has to be
    * ITS OWN (§46 A2) and never a forecast the model hands it (A4).
    */
-  | { readonly on: 'rate'; readonly benchmark: string };
+  | { readonly on: 'rate'; readonly benchmark: string }
+  /**
+   * Indices A1, D4, Central Bank B1 (18a.1): WHAT AN INDEX HAS BEEN READING AT — a level anybody
+   * may read, formed from prints nobody owns.
+   *
+   * It is the subject a POLICY MAKER's view is about: a central bank whose mandate is about the
+   * price level has to have a view of the price level, and until this there was no variable for
+   * one — the list ran from a named instrument's price to a counterparty's credit and had no room
+   * for a basket (finding 21.83). It is not a global expectation (A4): each party forms its own
+   * from what it has watched, and two parties watching the same index can disagree about where it
+   * goes, which is what makes a policy decision a decision.
+   */
+  | { readonly on: 'index'; readonly index: string };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -392,6 +405,8 @@ export function about(s: Subject): OutlookVariable {
       return `freight.${String(s.from)}.${String(s.to)}` as OutlookVariable;
     case 'rate':
       return `rate.${s.benchmark}` as OutlookVariable;
+    case 'index':
+      return `index.${s.index}` as OutlookVariable;
     case 'mortality':
       return `mortality.${s.cohort}` as OutlookVariable;
     case 'income':
@@ -427,6 +442,7 @@ export function subjectOf(v: OutlookVariable): Option<Subject> {
   if (on === 'deposit') return some({ on, bank: partyId(rest) });
   if (on === 'mortality') return some({ on, cohort: rest });
   if (on === 'rate') return some({ on, benchmark: rest });
+  if (on === 'index') return some({ on, index: rest });
   if (on === 'condition') {
     const at = rest.indexOf('.');
     if (at < 0) return none<Subject>();
@@ -1188,6 +1204,13 @@ export interface MechanismContext extends WorldReads {
    * through the one register every number lives in; journaled as `param.declared`.
    */
   declare(decl: ParamDecl): void;
+  /**
+   * XI-14, Central Bank B1 (18a.1): SET A POLICY NUMBER THIS PARTY'S MANDATE OWNS. The register
+   * refuses anything that is not a POLICY and anything whose declared owner is not `by`, so a
+   * module cannot move a technology and cannot move somebody else's rate; the kernel records it,
+   * because a policy decision is public (Observer A1).
+   */
+  setByMandate(id: ParamId, value: number, by: ParamOwner, why: string): void;
   /**
    * Register E4, E5, Equity D4: restate the count of a line. Every holding's quantity is multiplied
    * and its basis per unit divided, every price ever printed is re-denominated, and the issued

@@ -2576,6 +2576,26 @@ export class World {
           true,
         );
       },
+      /**
+       * XI-14, Central Bank B1 (18a.1): A POLICY NUMBER MOVES, and everybody is told.
+       *
+       * The register refuses everything but a policy, and only the owner the declaration names may
+       * set it. What the kernel adds is the one thing a module cannot: the record. A policy
+       * decision is public by construction (Observer A1) — a rate nobody was told about is not a
+       * rate anybody can act on — so the event carries what it was, what it is, and why.
+       */
+      setByMandate: (id, value, by, why) => {
+        const was = this.params.decl(id).value;
+        const now = this.params.setByMandate(id, value, by, why);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'param.set',
+          [String(id), by],
+          { id: String(id), by, was, now: now.value, unit: now.unit, why },
+          true,
+        );
+      },
       moveBank: (party, to, reason) => this.moveBank(party, to, reason),
       chooseBanks: () => {
         this.chooseBanks();

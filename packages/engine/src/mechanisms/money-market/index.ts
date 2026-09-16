@@ -14,6 +14,7 @@ import { atMostCash, sumCash } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { Order } from '../../clearing/solver.js';
+import { decideRates, POLICY_PARAMS, POLICY_SET } from './policy.js';
 import {
   currencyUnit,
   moneyInstrumentId,
@@ -709,6 +710,35 @@ function paramsOf(): ParamDecl[] {
       owner: 'centralBank',
       why: `Central Bank B1, B2: the rate ${r.ccy}'s own central bank declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14). ${r.why}`,
     })),
+    ...POLICY_RATES.flatMap((r): ParamDecl[] => [
+      {
+        id: POLICY_PARAMS.target(r.ccy),
+        value: 0.02,
+        unit: 'per annum',
+        dimension: 'perAnnum',
+        kind: 'policy',
+        owner: 'centralBank',
+        why: `Central Bank B1.a (18a.1): what ${r.ccy}'s mandate is FOR — the rate of change of the consumer basket the bank is trying to hold to. Two per cent a year, which is the number the institutions this world imports its primitives from actually use, and it is a POLICY: somebody chose it, it can be changed by whoever owns it, and after §47 that owner is parliament.`,
+      },
+      {
+        id: POLICY_PARAMS.step(r.ccy),
+        value: 0.0025,
+        unit: 'per annum',
+        dimension: 'perAnnum',
+        kind: 'policy',
+        owner: 'centralBank',
+        why: `Central Bank B1 (18a.1): the smallest move ${r.ccy}'s bank makes. A decision has a grain and this is the grain — a quarter of a point, the move the committees that do this actually make — and it is NOT a gain: nothing multiplies the gap by anything, and a bank that sees a gap moves one of these and looks again at its next meeting.`,
+      },
+      {
+        id: POLICY_PARAMS.every(r.ccy),
+        value: 2,
+        unit: 'months',
+        dimension: 'months',
+        kind: 'policy',
+        owner: 'centralBank',
+        why: `Central Bank B1 (18a.1): how often ${r.ccy}'s bank meets. Every two months — eight times a year, which is what the committees do — and it is a DATE walked from the day this world opened rather than a remainder on the period index, so what a period is long does not change how often anybody decides (Money G3.a).`,
+      },
+    ]),
     {
       id: MM_PARAMS.floorSpread,
       value: 0.001,
@@ -892,6 +922,21 @@ export const moneyMarket: SystemModule = {
         publishCollateral(ctx);
         payDeposits(ctx);
         collectPremiums(ctx, banksOf(ctx));
+      },
+    },
+    {
+      /**
+       * Central Bank B1, B1.a (18a.1): THE DECISION. Before the corridor is published and before
+       * anything is paid at it, because what the rest of the period runs on is the rate it has just
+       * set — a bank that met after its own corridor was published would be setting next week's.
+       */
+      name: 'moneyMarket.policy',
+      spec: 'Central Bank B1 Central Bank B1.a Central Bank B2 Indices D4 Expectations A2',
+      anchor: { before: 'moneyMarket.rates' },
+      reads: [{ kind: 'event', name: 'environment.state', of: 'thisPeriod' }],
+      writes: [{ kind: 'event', name: POLICY_SET }],
+      run: (ctx: MechanismContext): void => {
+        decideRates(ctx, [...ctx.registry.currencies.values()].map((c) => c.code));
       },
     },
     {

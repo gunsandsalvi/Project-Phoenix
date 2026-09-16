@@ -141,6 +141,17 @@ export interface IndexRead {
   }[];
 }
 
+/**
+ * Indices A1, D4, Central Bank B1 (18a.1): THE NAME OF A PLACE'S CONSUMER BASKET.
+ *
+ * An index NAME is public, the way a benchmark's is (`USD:secured`): it is what a reader asks for,
+ * not a fact about the module that computes it. The rule itself is the indices module's — what is
+ * in the basket, and what each thing weighs — and this is only the name, so a party that has to
+ * have a view of the price level can name the thing it has a view OF without importing a module
+ * (Law 15). The indices module builds its own rule under this same name, once (Law 4).
+ */
+export const consumerIndexOf = (region: string): string => `consumer.${region}`;
+
 /** What the index reader needs of the world: the prints, and nothing else (A2). */
 export interface IndexDeps {
   price(instrument: InstrumentId, at: Period): Option<PerPiece>;

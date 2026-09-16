@@ -150,10 +150,23 @@ export function resolveMarketOrders(orders: readonly Order[]): {
   return { resolved, unpriced };
 }
 
-function validate(orders: readonly LimitOrder[]): void {
+/**
+ * Law 6, Law 8 (18a.4): WHAT MAY BE NEGATIVE IS THE PRICE OF TIME, and nothing else.
+ *
+ * A price cannot be negative because nobody pays to be given a thing: a tonne at minus a pound is
+ * somebody handing over grain AND money, which is not a trade. A RATE is not that kind of price. A
+ * lender that accepts less back than it lent is paying for somewhere to put its money, two central
+ * banks ran their rates below zero for years, and this world could not express it — the yen's own
+ * `why` apologises for sitting a tenth of a point above its own floor for exactly this reason.
+ *
+ * So the refusal is not deleted, it is DISPATCHED: a book says whether what it clears is a level in
+ * money (no) or a rate (yes), which is the same `quotedAs` the print and the struck level already
+ * carry (18.0, Law 4 — one fact, read wherever it is needed).
+ */
+function validate(orders: readonly LimitOrder[], mayBeNegative: boolean): void {
   for (const o of orders) {
     impossible(
-      finite(o.price, 'order price') >= 0,
+      mayBeNegative || finite(o.price, 'order price') >= 0,
       'Law 6',
       `a price cannot be negative: ${o.price}`,
     );
@@ -177,9 +190,11 @@ export function clear(
   posted: readonly Order[],
   rationing: Rationing,
   priceRule: PriceRule = 'sellersCompete',
+  /** 18a.4: a book that clears a RATE may clear a negative one; one that clears a thing may not. */
+  mayBeNegative = false,
 ): Outcome {
   const { resolved: orders } = resolveMarketOrders(posted);
-  validate(orders);
+  validate(orders, mayBeNegative);
   const ration = RATIONERS[rationing];
   const buys = orders.filter((o) => o.side === 'buy');
   const sells = orders.filter((o) => o.side === 'sell');
