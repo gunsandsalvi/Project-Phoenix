@@ -213,6 +213,10 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17b | The leveraged buyout — **done** (section removed; see `docs/RECORD.md`; §29 answered 25 of 25. Findings positioned at 23.1 (21.73, 21.74, 21.75, 21.76), 23.3 (21.72), 18 (21.71), 18a.1 (21.60(c) and 21.60's diversification half); 21.15 closed at 17b.4, 21.60(a) at 17b.8 and 21.60(b) at 17b.8a; §29 C2's other half became item 17c) | after 17.9 |
 | 17b′ | The books a lender sees — **done** (section removed; see `docs/RECORD.md`; a borrower asking for a commitment prepares management accounts and its lender reads them, so *no accounts, no commitment* holds. 21.76's lender half closed; its `worthAt` half stays at 23.1) | before 17c |
 | 17c | The board — **done** (section removed; see `docs/RECORD.md`; a controlled company reads its owner's required return and its owner's duration. §35 D4 MET; §29 C2 stays PARTIAL with its cost-base half named as productivity's, not control's) | after 17b |
+| 17d | Loans float | after 17c; every item after it decides something against what money costs |
+| 17e | Capex and productivity | after 17d; what a firm contracts for is decided from what its plant will make |
+| 17f | Contracts that last | after 17e |
+| 17g | What a pool is made of | after 17f |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
 | 19 | The polity | 19.0 the government buys |
@@ -257,6 +261,140 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 
 ---
+
+---
+
+## 17d. Loans float
+
+The owner: *"Loans are floaters on top of the equivalent to Xm SOFR, with X being based on the coupon
+frequency."* Before 17e, because every other item here decides something against what money costs.
+
+**What is there.** `corporate-bond/floating.ts` already has floating paper — a margin over a named
+benchmark, fixed by `ctx.fixCoupon` — and `indices/benchmark.ts` publishes a fixing that is
+TRANSACTED or nothing (XI-7, D3.a: the volume-weighted rate of the overnight lending that settled).
+**What is not** is that the benchmark is OVERNIGHT ONLY, and that a bank LOAN is a fixed rate struck
+at origination and never moved: `LoanTerms.rate`, set once, for a year, whatever happens to money.
+Corporate Credit B4 says the opposite in one line — *"fixed or floating, and floating is the norm in
+the loan market"* — and a world where every loan is fixed has no channel from a policy rate to a
+borrower's payment at all.
+
+- [ ] 17d.1 **A term rate is the overnight fixings compounded** (XI-7, Indices D3.a, Law 3). *"Xm"*
+  where the world has only overnight: the term rate is what the overnight fixings COMPOUND to over
+  the tenor that just ended — in arrears, which is what a SOFR-based loan actually pays and is the
+  only form of it in which every input is a rate somebody transacted at. A period nobody borrowed
+  overnight in has no fixing and therefore no term rate, and that is the answer rather than a rate
+  carried forward (Appendix B: no posted benchmark). One read in `registry/credit.ts`, over the
+  fixings the journal already carries; nothing stores a curve.
+- [ ] 17d.2 **A loan is a margin over a fixing** (Corporate Credit B4, A2). `LoanTerms.rate` becomes
+  `margin`, and the tenor is the COUPON FREQUENCY — X months of fixing for a loan that pays every X
+  months, which is the owner's rule and is what makes the two periodicities one number (Law 8).
+  `loanKind.due` reads the fixing for the accrual just ended and pays margin plus it; a borrower's
+  payment therefore moves when money does. `credit.quoted` publishes BOTH — the margin the lender
+  struck and the all-in rate it comes to today — so every reader of *what borrowing costs this name*
+  is unchanged and no one of them recomputes it (Law 4, Law 19).
+- [ ] 17d.3 **What a fixed rate still is.** A loan written where the benchmark has never fixed cannot
+  float, and says so: it is a fixed row, stamped as one at origination, and the two are told apart by
+  the terms rather than by a flag anybody sets later. §7 B4 re-marked; record.
+
+**Exit.** A borrower's payment on the same row differs between two periods because the fixing did,
+and the audit's flows family sees both legs of the difference.
+
+---
+
+## 17e. Capex and productivity
+
+The owner: *"investing in new plants or in general growth capex should reward the business with
+higher productivity while lack of maintenance capex should decay productivity (as a bottom up
+mechanism)."* After 17d and before 17f, because what a firm contracts for — hours, inputs — is
+decided from what its plant will make.
+
+**What is there.** `firms.labourScale.<firm>` is a DRAWN CONSTANT: a firm's productivity is set at
+the seed and never moves again, so a firm that builds a new plant makes exactly as much per hour as
+one that has let its machines rot for fifty periods. Plant already WEARS (`goods.spoilage`, the
+vintage's service life) and 21.43 already says nobody can maintain a dwelling; this is the same
+absence on the production side and it is the bottom-up half of §12c.
+
+- [ ] 17e.1 **Productivity is what its plant makes it** (Firm A3, Capital Programme A6, Law 2). The
+  drawn number becomes what a firm STARTS at — a seed dispersion, which is legitimate — and what it
+  is NOW is a read: its own starting scale against the state of the plant it actually holds, by
+  vintage. A new vintage is better than an old one because that is what a vintage IS (it carries its
+  service date), so a firm that commissions raises its own productivity by holding newer plant, and
+  one that does not lowers it by holding older. **No new number for "better"**: the ratio is the
+  plant's remaining life against its whole life, which the vintage already states.
+- [ ] 17e.2 **Maintenance is an outlay, and not making it decays** (Capital Programme A6, Housing A5,
+  21.43). Wear is already an event; what is missing is the outlay that answers it. A holder of plant
+  buys the inputs and the hours that keep a vintage at its age, or it does not, and what it does not
+  spend shows up as a vintage ageing faster than the calendar. It is the same mechanism a dwelling
+  needs (21.43), so it is built once, in the registry, for both — and 21.43 closes here.
+- [ ] 17e.3 §12c's bottom-up half re-marked, Firm A3 and Capital Programme A6 re-read; 21.43 closed;
+  record.
+
+**Exit.** Two firms drawn identical diverge in output per hour because one commissioned and
+maintained and the other did not, and neither number was written anywhere.
+
+---
+
+## 17f. Contracts that last
+
+The owner: *"There should be long term supply contracts and employment contracts. A corporate can
+lock in supply of labour and inputs in long term contracts. Firing costs a severance, breaking a
+contract costs a pre-decided break up cost. Contracts can be extended and reopened, I don't want
+contracts to multiply infinitely."* After 17e.
+
+**What is there.** An EMPLOYMENT is already a standing relation with a notice period, an `ends` date
+and a severance an employer owes (12b, `register/employment.ts`); `ctx.owes` already holds a
+commitment of any kind with two named parties and a state, and the estate already divides them.
+**What is not**: a fixed TERM as against notice, a BREAK COST agreed at the start, a way to EXTEND or
+REOPEN one — and, on the input side, nothing at all. A firm buys its inputs in a session every
+period at whatever clears, so nobody in this world can lock anything in.
+
+- [ ] 17f.1 **A supply contract** (Goods A4, Trade Credit A3, Law 5). A buyer and a seller agree a
+  QUANTITY PER PERIOD at a PRICE for a TERM: one agreement, two named parties, and a delivery every
+  period that settles like any other sale (both legs, same pass). The price is struck where the two
+  of them meet — what the buyer would otherwise expect to pay against what the seller would
+  otherwise expect to get — so it is cleared and not posted (Law 3), and the contract is worth having
+  precisely because the session's price will move away from it.
+- [ ] 17f.2 **Breaking one costs what was agreed** (Law 2). A break cost is a TERM struck when the
+  contract is, never a number this world holds: the party that walks pays it, in one instruction with
+  both legs, and the agreement ends. It is the same shape for both sides of both kinds of contract —
+  an employer firing before term, a buyer walking from supply, a seller that will not deliver — so it
+  is ONE mechanism and not four. Severance stays what it is: what an employment owes on NOTICE, which
+  is the contract running out rather than being broken.
+- [ ] 17f.3 **Extended and reopened, and never multiplied** (Law 4, Corporate Credit C9's lesson).
+  *"I don't want contracts to multiply infinitely."* A contract that reaches its term is EXTENDED —
+  the same row, restated, with a new end and whatever price the two of them now agree — and one
+  neither party wants ends. A party has at most one live contract per counterparty per thing, which
+  is the rule `commit` already follows for a committed line (C9: a draw taps the existing line) and
+  for the same reason: two rows for one relationship are two answers to what was agreed. The audit
+  counts them, so a world that starts multiplying says so.
+- [ ] 17f.4 §11 Labour's term clauses and §Goods' supply clauses re-marked; record.
+
+**Exit.** A firm that locked its inputs in pays what it agreed while the session price moves, and a
+firm that walks away pays for walking; the count of live contracts per pair never exceeds one.
+
+---
+
+## 17g. What a pool is made of
+
+The owner: *"Remove covered bonds, you can use securitization for the same stuff, and securitization
+should include mortgages and CRE as type of collateral."* After 17f.
+
+**The covered bond is already gone** (the owner's earlier decision, recorded at item 17's close) and
+nothing in the engine names one. What is left is the second half, and most of it may already hold:
+`saleable` is deliberately KIND-AGNOSTIC — anything carried at cost that a named party owes and
+nobody makes a market in — so a mortgage row and a premises loan are both poolable today without a
+line naming either. That is a CLAIM and this item is where it is checked.
+
+- [ ] 17g.1 **Measure it before building anything** (Law 11, Law 19). Whether a mortgage and a
+  commercial-premises loan actually reach a pool in a run, and what stops them if they do not. A
+  finding, not a fix, until the answer is in.
+- [ ] 17g.2 **What a pool is made OF is visible** (§42 C6, Law 9). A deal states the collateral behind
+  it — what kinds of thing its rows are secured on — because a holder of a note pricing it needs to
+  know whether it is houses or shops, and *"a pool of loans"* is not a description anybody can price.
+  It is a READ of the rows' own security (`registry/secured.ts`), never a label the arranger types.
+- [ ] 17g.3 Whatever 17g.1 found, built or positioned; §42 re-marked; record.
+
+**Exit.** A note's holder can say what is behind it, and the answer came from the rows.
 
 ---
 
