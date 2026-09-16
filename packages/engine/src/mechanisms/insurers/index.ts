@@ -308,7 +308,8 @@ export function insurers(): SystemModule {
           // doors it can subscribe at. Never declared, because no insurer had lived to allocate.
           { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
         ],
-        writes: [],
+        // 14.7: what it put to work and what it kept back, and what it asked back after a missed call.
+        writes: [{ kind: 'event', name: 'insurer.allocated' }, { kind: 'event', name: 'insurer.raised' }],
         run: (ctx: MechanismContext): void => {
           // 14.6: a pension fund invests the same way — it does not invest itself either.
           for (const p of [...ctx.parties.ofKind(INSURANCE), ...ctx.parties.ofKind(PENSION)]) {

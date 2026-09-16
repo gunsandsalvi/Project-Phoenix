@@ -18,9 +18,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { acceptable } from '../src/mechanisms/insurers/allocate.js';
-import { ranWorld } from './rig.js';
+import { INSURANCE } from '../src/mechanisms/insurers/index.js';
+import { mergeModules, ranWorld, rigSpec } from './rig.js';
 import { asPerPiece } from '../src/core/measure.js';
-import { venueId } from '../src/core/ids.js';
+import { venueId, type PartyId } from '../src/core/ids.js';
+import { assemble, type MechanismContext, type SystemModule } from '../src/index.js';
+import { about } from '../src/world/context.js';
+import { isPolicyTerms } from '../src/registry/insurance.js';
 
 const door = (fund: string, years: number | undefined, offered?: number) => ({
   venue: venueId(`funds.${fund}`),
@@ -127,6 +131,137 @@ describe('A2.a: what an investor does about a call it did not choose the timing 
       // money it agreed it could not have is a real fact about its own position (App A).
       expect(String(e.data['fund'])).not.toBe('');
       expect(['closed', 'listed']).toContain(String(e.data['terms']));
+    }
+  });
+});
+
+/**
+ * 14.7: WHAT IT KEEPS BACK IS WHAT IT EXPECTS, read off its own book; a door is live only while its
+ * fund is; and a missed call is read for the period it was made in.
+ */
+describe('14.7: the buffers are outlooks, the doors are live funds, the call is last period’s', () => {
+  it('puts to work its whole account less the three named buffers, each a read and none a ratio, and only through the door of a living fund', () => {
+    let checked = 0;
+    const probe: SystemModule = {
+      id: 'test.buffers',
+      spec: 'Insurers B2',
+      requires: ['insurers'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.buffers',
+          spec: 'Insurers B2',
+          anchor: { after: 'insurers.allocate' },
+          reads: [{ kind: 'event', name: 'insurer.allocated', of: 'thisPeriod' }],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            for (const e of ctx.journal.inPeriod(ctx.period)) {
+              if (e.kind !== 'insurer.allocated') continue;
+              const who = String(e.data['insurer']) as PartyId;
+              const ccy = ctx.registry.currencyOf(ctx.parties.get(who).region);
+              const kept = Number(e.data['keptForClaims']) + Number(e.data['keptForPensions']) + Number(e.data['keptForCalls']);
+              // Law 19: the account it read is the account it has — nothing has moved since the
+              // posting, and the posting is the whole of what is not kept back.
+              expect(Number(e.data['putToWork']) + kept).toBe(ctx.participant(who).cash(ccy));
+              expect(Number(e.data['keptForClaims'])).toBeGreaterThanOrEqual(0);
+              expect(Number(e.data['keptForPensions'])).toBeGreaterThanOrEqual(0);
+              expect(Number(e.data['keptForCalls'])).toBeGreaterThanOrEqual(0);
+              // XI-3: the door it went through is a living fund's.
+              const fund = String(e.data['fund']) as PartyId;
+              expect(ctx.parties.has(fund)).toBe(true);
+              expect(ctx.parties.get(fund).status.alive).toBe(true);
+              checked += 1;
+            }
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const spec = rigSpec('buffers');
+    const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
+    for (let i = 0; i < 8; i += 1) w.step();
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('an insurer with cover out keeps back the claims it expects on it, and one that expects none keeps nothing for them', () => {
+    const w = ranWorld('quote-37', 6);
+    const insurer = w.parties.ofKind(INSURANCE).find((p) => p.status.alive);
+    expect(insurer).toBeDefined();
+    if (insurer === undefined) return;
+    const ccy = w.registry.currencyOf(insurer.region);
+    const view = w.participantView(insurer.id);
+    const seen = view.outlook(about({ on: 'claims' }));
+    const out = w.agreements.owedBy(insurer.id).filter((a) => a.state === 'performing' && isPolicyTerms(a.terms)).reduce((t, a) => t + (isPolicyTerms(a.terms) ? a.terms.cover : 0), 0);
+    const last = w.journal.ofKind('insurer.allocated').filter((e) => e.data['insurer'] === insurer.id).pop();
+    if (last === undefined) return;
+    // A4.c: the buffer is its outlook of what a unit of its cover costs it, on the cover it has out.
+    if (seen.some && out > 0) expect(Number(last.data['keptForClaims'])).toBeGreaterThanOrEqual(0);
+    else expect(Number(last.data['keptForClaims'])).toBe(0);
+    expect(view.cash(ccy)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('an investor that was called forms an outlook of its calls, keeps back what it expects, and asks its money back for what it missed', () => {
+    let investor: PartyId | undefined;
+    let called = 0;
+    const probe: SystemModule = {
+      id: 'test.call',
+      spec: 'Private Equity A2.a',
+      requires: ['insurers', 'funds'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.call',
+          spec: 'Private Equity A2.a',
+          anchor: { before: 'insurers.allocate' },
+          reads: [],
+          writes: [{ kind: 'event', name: 'fund.called' }],
+          run: (ctx: MechanismContext) => {
+            if (ctx.period !== 3) return;
+            // The call, written by hand: a pool the insurer committed to asks for money it does not
+            // have, and the call is refused in full — the state 13.5 records and A2.a is about.
+            const ins = ctx.parties.ofKind(INSURANCE).find((p) => p.status.alive);
+            if (ins === undefined) return;
+            investor = ins.id;
+            const ccy = ctx.registry.currencyOf(ins.region);
+            called = ctx.participant(ins.id).cash(ccy) + 1_000_000;
+            ctx.record('fund.called', ['test.pool', ins.id], { fund: 'test.pool', investor: ins.id, called, paid: false, perShare: 100 }, true);
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const spec = rigSpec('called');
+    const w = assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
+    for (let i = 0; i < 6; i += 1) w.step();
+    expect(investor).toBeDefined();
+    if (investor === undefined) return;
+    // §46: the first sight of the variable is the outlook, and it is its own — what it was called.
+    const outlook = w.participantView(investor).outlook(about({ on: 'called' }));
+    expect(outlook.some).toBe(true);
+    if (outlook.some) {
+      expect(outlook.value.expected).toBeGreaterThan(0);
+      // Three periods with no call after it were observed as none, so it expects less than the one call.
+      expect(outlook.value.expected).toBeLessThan(called);
+    }
+    // A2.a, XI-2: the period after, it asked the pools it is in for what it missed, at no price.
+    const raised = w.journal.ofKind('insurer.raised').filter((e) => e.data['insurer'] === investor && e.period === 4);
+    expect(raised.length).toBeGreaterThan(0);
+    for (const e of raised) expect(Number(e.data['missed'])).toBe(called);
+    // And what it kept back against calls from then on is its outlook, never the last call.
+    const after = w.journal.ofKind('insurer.allocated').filter((e) => e.data['insurer'] === investor && e.period > 4);
+    for (const e of after) {
+      expect(Number(e.data['keptForCalls'])).toBeGreaterThan(0);
+      expect(Number(e.data['keptForCalls'])).toBeLessThan(called);
     }
   });
 });

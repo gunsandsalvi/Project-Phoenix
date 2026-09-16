@@ -250,3 +250,33 @@ export function rentPrintedIn(reads: WireReads, region: string): Option<PerPiece
   return last === undefined ? none<PerPiece>() : some(last);
 }
 
+/* --- What a pool called of an investor ------------------------------------------------------- */
+
+const CALLED = 'fund.called';
+
+/** §29 A2 (14.7): one call a pool made of an investor — what it asked for, and whether it was paid. */
+export interface PublishedCall {
+  readonly fund: string;
+  readonly called: Cash;
+  readonly paid: boolean;
+}
+
+/**
+ * §29 A2.a, Law 19 (14.7): THE CALLS MADE OF THIS INVESTOR IN ONE PERIOD, off the public record —
+ * the funds module writes them; the investor's buffer and its response read them here, by the
+ * registry's name (0e′.3), with the period in the ask so a stale call is never read as current.
+ */
+export function callsOn(
+  reads: { ofKindIn(kind: string, period: Period): readonly Event[] },
+  investor: PartyId,
+  period: Period,
+): readonly PublishedCall[] {
+  const out: PublishedCall[] = [];
+  for (const e of reads.ofKindIn(CALLED, period)) {
+    if (e.data['investor'] !== investor) continue;
+    const called = e.data['called'];
+    if (typeof called !== 'number') continue;
+    out.push({ fund: String(e.data['fund']), called: asCash(called, 'what it was called for'), paid: e.data['paid'] === true });
+  }
+  return out;
+}

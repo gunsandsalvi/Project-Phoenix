@@ -535,6 +535,18 @@ function redeem(
   const weight = weightOf(party);
   const asked = atMost(ctx.registry.deliverable(sharesAsked), held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
+  /**
+   * D4, G1 (14.7): A SHARE STRUCK AT NOTHING IS OWED NOTHING. A pool whose book has come to nothing
+   * — a money fund wound up on paper that failed — queues every holder at a NAV of nothing, and
+   * dividing what it can pay by that price is arithmetic that has no answer (it stopped `exp-f`
+   * in period 16). What the holder is owed at that price is nothing, which is a real answer and
+   * said: the request is met in full with no money, the shares stay where they are until the pool
+   * ceases, and the record carries the price it was met at.
+   */
+  if (perShare <= 0) {
+    ctx.record('fund.redeemed', [fund.id, holder], { fund: fund.id, holder, sharesPerMember: asked, perShare, paid: 0 }, false);
+    return 0;
+  }
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
   const cash = ctx.register.quantity(
     fund.id,

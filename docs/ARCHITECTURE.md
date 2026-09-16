@@ -1611,3 +1611,14 @@ the outlook — and `AgreementReads.markOf` exposes the kernel's mark so the fun
 rather than re-deriving it (Law 19). Two receipts join the wire: `pension` (income to the cell,
 taxed and ranked as a wage) and `contribution` (not income; ranked with a claim).
 
+### What an institution keeps back is a read of its own outlooks (item 14.7)
+
+`insurers/allocate.ts buffersOf` names the three things an institution keeps out of what it puts to
+work — the claims it expects a period (its `claims` outlook on the cover it has out), the pensions
+its rows pay next period, the calls it expects (its `called` outlook) — and `insurer.allocated`
+publishes them. `called` is an own-observation subject of §46 (`registry/funding.ts callsOn` reads the
+funds module's calls by the registry's name; `expectations exposed` observes them for any party that
+has ever been called, a quiet period as none). A door (`doors`) is live only while its fund party is;
+a missed call is read for last period through the same registry read. `longestPromise` reads pension
+rows to the end of the mortality table.
+

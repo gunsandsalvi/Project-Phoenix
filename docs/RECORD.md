@@ -11973,7 +11973,34 @@ what a firing costs through the notice. Nothing new is red: eighteen suites at 9
 set; the nineteenth is green.
 
 **Findings.** The sponsor's covenant is not on the sponsor's books (21.24); a promise indexed to a
-trade nobody works in any more is worth nothing until somebody does (21.25); the fund puts almost
-nothing to work, which is 14.7.
+trade nobody works in any more is worth nothing until somebody does (21.25). (The note here that the
+fund "puts almost nothing to work" was wrong — it invests a period's contributions the period after
+they arrive, the allocation sitting before the strike and the payroll after the markets — and 14.7
+corrected it.)
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 14.7 — What an institution keeps back is what it expects
+
+An institution kept back its last claim and its last call: one storm and it sat on that much for
+ever, no storm and it kept nothing. It keeps back three named reads of its own book now — the
+claims it expects a period on the cover it has out (its `claims` outlook), the pensions its rows say
+it pays next period (a schedule), and the calls it expects (a new own-observation subject, `called`:
+an investor observes what the pools called of it each period, and once called, a quiet period is
+observed as one, so the buffer decays as it rises) — and publishes them beside what it put to work.
+A missed call is read for the period it was made in, every call of that period, through the
+registry; a door is live only while its fund is; and a fund's longest promise reads its pension rows
+to the end of the mortality table, so its duration test is against the long promise C2.a names.
+
+**Measured.** `institutional-allocation.test.ts`, twelve green: every allocation puts to work exactly
+the account less the three buffers through a living fund's door; a hand-written call the insurer
+cannot meet forms its `called` outlook, it asks the pools it is in for what it missed the period
+after at no price, and what it keeps back for calls thereafter is the outlook and never the call.
+The 14.6 note that the pension fund put almost nothing to work was wrong and is corrected.
+**Found and fixed on the way:** with the buffers changed, the money fund of a bank in `exp-f` winds
+up at a NAV of nothing in period 16, and a redemption at that price divided by it and stopped the
+world; a share struck at nothing is owed nothing now, said on the record, and why the pool's book
+came to nothing is positioned at 21.26. Nothing new is red: eighteen suites at 90 of 196, the same
+set.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

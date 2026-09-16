@@ -52,6 +52,7 @@ import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import {
   amountOf,
   asCash,
+  asPerPiece,
   type Cash,
   heldAsMoney,
   minus,
@@ -59,14 +60,17 @@ import {
   plus,
   valueAt,
 } from '../../core/measure.js';
-import { atMost, sum } from '../../core/num.js';
+import { atMost, largest, sum } from '../../core/num.js';
 import { asQty, downTick } from '../../core/tick.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { MechanismContext } from '../../world/context.js';
-import { isPolicyTerms } from '../../registry/insurance.js';
-import { strikeOf } from '../../registry/funding.js';
+import { endOfMortalityTable, isPensionTerms, isPolicyTerms } from '../../registry/insurance.js';
+import { callsOn, strikeOf } from '../../registry/funding.js';
+import { about } from '../../world/context.js';
+import { weightOf } from '../../parties/party.js';
+import { pensionPerMember, type PensionReads } from './pensions.js';
 
 /** What a pool published about itself, as an allocator reads it off the tape (Observer A3). */
 interface Door {
@@ -92,6 +96,9 @@ function doors(ctx: MechanismContext): readonly Door[] {
     if (v.key['kind'] !== 'fund') continue;
     const fund = v.key['fund'];
     if (fund === undefined) continue;
+    // 14.7, XI-3: A DOOR IS LIVE ONLY WHILE ITS FUND IS. A pool that has ceased leaves its venue and
+    // its last strike on the record, and money posted at that door is money posted to nobody.
+    if (!ctx.parties.has(partyId(fund)) || !ctx.parties.get(partyId(fund)).status.alive) continue;
     const said = strikeOf(ctx.journal, fund);
     if (!said.some) continue;
     const years = said.value.durationYears.some ? said.value.durationYears.value : undefined;
@@ -122,22 +129,78 @@ function doors(ctx: MechanismContext): readonly Door[] {
 export function longestPromise(ctx: MechanismContext, insurer: PartyId): number | undefined {
   const now = ctx.calendar.startOf(ctx.period);
   let furthest: typeof now | undefined;
+  let years: number | undefined;
   // 14.5: its promises are rows, and the furthest is the last day any of its cover runs to.
   for (const a of ctx.agreements.owedBy(insurer)) {
-    if (a.state !== 'performing' || !isPolicyTerms(a.terms) || a.terms.cover <= 0) continue;
-    if (compareCivil(a.terms.to, now) <= 0) continue;
-    if (furthest === undefined || compareCivil(a.terms.to, furthest) > 0) furthest = a.terms.to;
+    if (a.state !== 'performing') continue;
+    if (isPolicyTerms(a.terms) && a.terms.cover > 0) {
+      if (compareCivil(a.terms.to, now) <= 0) continue;
+      if (furthest === undefined || compareCivil(a.terms.to, furthest) > 0) furthest = a.terms.to;
+    }
+    // 14.7, Insurers B1, C2: a pension runs as long as the youngest member could live — to the end
+    // of the mortality table from the age the cohort enters at — which is the long promise C2.a
+    // says this sector holds against, and what a fund's duration is a read of.
+    if (isPensionTerms(a.terms)) {
+      const end = endOfMortalityTable(ctx.params);
+      if (end === undefined) continue;
+      const left = end - a.terms.entersAt;
+      if (left > 0 && (years === undefined || left > years)) years = left;
+    }
   }
-  return furthest === undefined ? undefined : yearFraction('ACT/365F', now, furthest);
+  const cover = furthest === undefined ? undefined : yearFraction('ACT/365F', now, furthest);
+  if (cover === undefined) return years;
+  if (years === undefined) return cover;
+  // A SELECTION over two real promises — the furthest of them is the one that decides (App B: not a bound).
+  return largest([cover, years], 'the furthest of its promises');
+}
+
+/** 14.7: what an institution keeps back this period, and why — each a read of its own book. */
+export interface Buffers {
+  /** A4.c: the claims it expects a period on the cover it has out — its own outlook, on its own book. */
+  readonly forClaims: Cash;
+  /** Insurers B1 (14.6): the pensions its rows say it pays next period — a read of the schedule. */
+  readonly forPensions: Cash;
+  /** §29 A2.a: what it expects the pools to call of it a period — its own outlook of its own calls. */
+  readonly forCalls: Cash;
 }
 
 /**
- * B2, A4.c: WHAT IT CAN PUT TO WORK — its account, less what a period of its own claims costs it.
- *
- * The buffer is its OWN experience and not a ratio anybody stated: what it has actually paid out on
- * claims is a fact about its own book (A4.c), and an institution keeps enough to meet what its book
- * has been costing it. What is left is money that should be earning, and an insurer sitting on it is
- * an insurer whose promises are unfunded — which is what B2 is about.
+ * B2, A4.c, §29 A2.a, §46 (14.7): WHAT IT KEEPS BACK — three reads of its own book, none a ratio
+ * anybody stated, and none the LAST thing that happened to it. What stood here kept back its last
+ * claim and its last call: one storm and it sat on that much for ever, no storm and it kept
+ * nothing. What it keeps now is what it EXPECTS a period — its `claims` outlook on the cover it
+ * has out, its `called` outlook on the commitments it has made, both formed from every period of
+ * its own history and corrected at its own memory (§46) — and what its pension rows say it pays
+ * next period, which is a schedule and needs no outlook. An institution that has never had cover
+ * out, never promised a pension and never been called keeps nothing back, which is right: it has
+ * nothing to keep it against.
+ */
+export function buffersOf(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): Buffers {
+  const view = ctx.participant(insurer);
+  let coverOut = 0;
+  const pensions: Cash[] = [];
+  const reads: PensionReads = { goingRate: (o, r) => ctx.employment.goingRate(o, r), params: ctx.params };
+  for (const a of ctx.agreements.owedBy(insurer)) {
+    if (a.state !== 'performing' || a.ccy !== ccy) continue;
+    if (isPolicyTerms(a.terms)) coverOut += a.terms.cover;
+    if (isPensionTerms(a.terms)) {
+      const perMember = pensionPerMember(reads, a.terms);
+      if (perMember.some) pensions.push(valueAt(asPerPiece(perMember.value, 'a member’s pension'), asQty(weightOf(ctx.parties.resolve(a.creditor)), 'the members promised'), 'what the row pays next period'));
+    }
+  }
+  const claims = view.outlook(about({ on: 'claims' }));
+  const forClaims = claims.some && coverOut > 0
+    ? valueAt(asPerPiece(claims.value.expected, 'what a unit of its cover costs it a period'), asQty(coverOut, 'the cover it has out'), 'the claims it expects a period')
+    : asCash(0, 'nothing out, or nothing expected of it');
+  const called = view.outlook(about({ on: 'called' }));
+  const forCalls = called.some ? asCash(called.value.expected, 'what it expects to be called a period') : asCash(0, 'nobody has called it');
+  return { forClaims, forPensions: sum(pensions).value, forCalls };
+}
+
+/**
+ * B2, A4.c: WHAT IT CAN PUT TO WORK — its account, less what it keeps back (`buffersOf`). What is
+ * left is money that should be earning, and an insurer sitting on it is an insurer whose promises
+ * are unfunded — which is what B2 is about.
  */
 export function investable(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): Cash {
   const account = ctx.accountOf(insurer, ccy);
@@ -145,34 +208,9 @@ export function investable(ctx: MechanismContext, insurer: PartyId, ccy: Currenc
     ctx.register.quantity(insurer, moneyInstrumentId(account.issuer, ccy)),
     'what is in its account',
   );
-  const claim = ctx.journal.lastOf(CLAIM_PAID_KIND, String(insurer));
-  const keep =
-    claim === undefined || typeof claim.data['amount'] !== 'number'
-      ? asCash(0, 'an insurer that has paid no claim has none to keep against')
-      : asCash(claim.data['amount'], 'what its last claim cost it');
-  /**
-   * §29 A2.a (item 13.5c): AND WHAT A CALL TAKES, which is the other thing it does not choose the
-   * timing of. *"An investor must hold liquidity against calls it did not choose the timing of."*
-   *
-   * It is the SAME read as the claim buffer and for the same reason (A4.c): its own experience, and
-   * never a ratio anybody stated. What its last call took is a fact about its own book, and an
-   * investor that has never been called has nothing to keep against — which is right, because a
-   * commitment nobody has drawn on has told it nothing about what a draw looks like.
-   *
-   * It does NOT hold the undrawn commitment in cash, and must not: money set aside against a
-   * commitment in full is money already paid, and the whole of A2 is that capital is committed and
-   * not paid. What it holds is what a CALL costs, which is the liquidity A2.a names.
-   */
-  const called = ctx.journal.lastOf(CALLED_KIND, String(insurer));
-  const against =
-    called === undefined || typeof called.data['called'] !== 'number'
-      ? asCash(0, 'an investor nobody has called has no call to keep against')
-      : asCash(called.data['called'], 'what its last call took');
-  return minus(cash, plus(keep, against, 'what it keeps back'), 'what it can put to work');
+  const kept = buffersOf(ctx, insurer, ccy);
+  return minus(cash, plus(plus(kept.forClaims, kept.forPensions, 'claims and pensions'), kept.forCalls, 'what it keeps back'), 'what it can put to work');
 }
-
-/** The one name a capital call goes under; read, never re-derived (Law 4, `funds/commitment.ts`). */
-const CALLED_KIND = 'fund.called';
 
 /**
  * §29 A2.a, A2.b, XI-2, Fund Shares C2 (item 13.5c): A CALL IT COULD NOT MEET, AND WHAT IT DOES
@@ -196,13 +234,13 @@ const CALLED_KIND = 'fund.called';
  * investor selling into the market a week after it was called is what that looks like from inside.
  */
 export function meetCalls(ctx: MechanismContext, insurer: PartyId): void {
+  // 14.7, Law 8: THE PERIOD IS IN THE ASK. It walked every call ever made of it and tested the
+  // period itself; it asks the registry for last period's calls, and a stale one cannot be read as
+  // current. It is every call of the period and not the last, because two pools may call at once.
   let missed = asCash(0, 'nothing has been called of it');
-  for (const e of ctx.journal.forSubject(CALLED_KIND, String(insurer))) {
-    if (e.period !== periodOf(Number(ctx.period) - 1)) continue;
-    if (e.data['paid'] === true) continue;
-    const called = e.data['called'];
-    if (typeof called !== 'number' || called <= 0) continue;
-    missed = plus(missed, asCash(called, 'what it was called and did not pay'), 'what it owes');
+  for (const c of callsOn(ctx.journal, insurer, periodOf(Number(ctx.period) - 1))) {
+    if (c.paid || c.called <= 0) continue;
+    missed = plus(missed, c.called, 'what it owes');
   }
   if (missed <= 0) return;
   for (const d of doors(ctx)) {
@@ -231,9 +269,6 @@ export function meetCalls(ctx: MechanismContext, insurer: PartyId): void {
     );
   }
 }
-
-/** The one name the claims event goes under; read, never re-derived (Law 4). */
-const CLAIM_PAID_KIND = 'insurer.claim';
 
 /**
  * B2, B2.b (item 10f.5): WHETHER THIS INSTITUTION CAN ACCEPT THIS POOL — two refusals and nothing
@@ -311,6 +346,7 @@ function heldIn(ctx: MechanismContext, insurer: PartyId, d: Door): Cash {
  * so is cheaper than knowing which doors those are.
  */
 export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): void {
+  const kept = buffersOf(ctx, insurer, ccy);
   const spare = investable(ctx, insurer, ccy);
   if (spare <= 0) return;
   const years = longestPromise(ctx, insurer);
@@ -338,6 +374,10 @@ export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyC
       doors: open.length,
       shares,
       putToWork: spare,
+      // 14.7: and what it kept back, each read named, so the whole of its account is on the record.
+      keptForClaims: kept.forClaims,
+      keptForPensions: kept.forPensions,
+      keptForCalls: kept.forCalls,
     },
     false,
   );

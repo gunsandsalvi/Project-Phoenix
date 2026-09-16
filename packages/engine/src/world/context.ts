@@ -317,7 +317,9 @@ export type Subject =
   /** Insurers B3, Households F1.b (14.2): the share of a cohort that dies in a period, as the cell observes it. */
   | { readonly on: 'mortality'; readonly cohort: string }
   /** Insurers A4.c (14.4): what a unit of the cover this party has written costs it in claims, a period. */
-  | { readonly on: 'claims' };
+  | { readonly on: 'claims' }
+  /** §29 A2.a (14.7): what the pools this party committed to call of it in a period — money it did not choose the timing of. */
+  | { readonly on: 'called' };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -346,6 +348,7 @@ export function about(s: Subject): OutlookVariable {
     case 'income':
     case 'earnings':
     case 'claims':
+    case 'called':
       return s.on as OutlookVariable;
     default:
       return assertNever(s, '§46 B1');
@@ -361,7 +364,7 @@ export function about(s: Subject): OutlookVariable {
  */
 export function subjectOf(v: OutlookVariable): Option<Subject> {
   const s = String(v);
-  if (s === 'income' || s === 'earnings' || s === 'claims') return some({ on: s });
+  if (s === 'income' || s === 'earnings' || s === 'claims' || s === 'called') return some({ on: s });
   const dot = s.indexOf('.');
   if (dot < 0) return none<Subject>();
   const on = s.slice(0, dot);

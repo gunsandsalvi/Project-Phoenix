@@ -19,6 +19,7 @@
  */
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { deathsIn, isPensionTerms, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
+import { callsOn } from '../../registry/funding.js';
 import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
@@ -126,6 +127,7 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'earnings':
     case 'credit':
     case 'claims':
+    case 'called':
       return null;
     default:
       return assertNever(subject.value, '§46 A2.a');
@@ -342,6 +344,14 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
       if (were > 0) out.set(about({ on: 'mortality', cohort }), { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
     }
   }
+  // §29 A2.a (14.7): AN INVESTOR OBSERVES WHAT THE POOLS CALLED OF IT this period — its own money,
+  // on a timing it did not choose — and, once it has been called at all, a period with no call is
+  // observed as one, so what it keeps back against a call is its own experience and decays as it
+  // rises (A4.c). A party nobody has ever called observes nothing and keeps nothing back.
+  const calls = callsOn(ctx.journal, party, ctx.period);
+  if (calls.length > 0 || ctx.participant(party).outlookVariables().includes(about({ on: 'called' }))) {
+    out.set(about({ on: 'called' }), { value: sum(calls.map((c) => c.called)).value, unit: ctx.registry.currencyOf(p.region) });
+  }
   // Insurers B3 (14.6): A FUND THAT PROMISED A COHORT A PENSION OBSERVES THAT COHORT'S MORTALITY —
   // the same public count a cell of the cohort reads, because the schedule it owes decays at it.
   for (const row of ctx.agreements.owedBy(party)) {
@@ -514,6 +524,8 @@ export const expectations: SystemModule = {
         // 14.2: the region's published weather, and the cohort's published deaths.
         { kind: 'event', name: ENVIRONMENT_STATE, of: 'anyPeriod' },
         { kind: 'event', name: 'households.lifecycle', of: 'anyPeriod' },
+        // §29 A2.a (14.7): what the pools called of an investor this period, for its `called` outlook.
+        { kind: 'event', name: 'fund.called', of: 'anyPeriod' },
       ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {
