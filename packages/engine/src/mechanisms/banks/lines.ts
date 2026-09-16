@@ -27,7 +27,7 @@
  * would price against, and no rival may see it. Its consequence is public — a bank that stops
  * quoting has stopped quoting where everyone can see.
  */
-import { atLeastCash, atMostCash, noCash } from '../../core/measure.js';
+import { atMostCash, negated, noCash } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
   acrossMembers,
@@ -43,8 +43,7 @@ import {
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { atLeast } from '../../core/num.js';
-import { downTick, NO_QTY, type Qty } from '../../core/tick.js';
+import { downTick, NO_QTY, type Qty, upTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { LineWeights } from './capital.js';
@@ -90,51 +89,108 @@ export function publishLines(
   // The higher earner first. A line that has not earned on anything yet is behind one that has,
   // and two lines that made the same return are left in the order they are declared in — which is
   // an order and not a preference: nothing downstream reads it as one.
+  // The higher earner first when there is room to give out, and the LOWER earner first when there
+  // is a hole to fill: a treasury gives its best line the next unit and takes the next unit back
+  // off its worst. It is one order read from both ends, and neither end is a preference — nothing
+  // downstream reads the rank for anything else.
   const order = [...rows].sort((a, b) => rank(b) - rank(a));
   const allotted = new Map<string, number>();
+  /**
+   * B3, XI-4, Banks Funding D4 (17.9): WHAT A LINE IS ALLOTTED IS A SIGNED NUMBER, and the sign is
+   * the whole of the mechanism this used to be missing.
+   *
+   * A line asks for the distance between its own appetite and what it is already using. That
+   * distance can be NEGATIVE — the line is past its own appetite, or the bank is past the capital
+   * rules and has no room to share at all — and what a negative distance means is not "it is asking
+   * for nothing". It means IT MUST COME DOWN. Two floors used to turn that into a zero (`atLeastCash`
+   * on the ask, `atLeast` on the allotment), and with them the world had no way to say the one thing
+   * a bank in breach has to be told: sell something. Every bank in the scale model opens in breach
+   * with negative headroom (21.66), every line was allotted nothing, and nothing shrank.
+   *
+   * Nothing new reads this. A line's limit was already "what it carries plus the room it was given"
+   * (`dealing.ts allotted`, `banks/index.ts`, `credit-view.ts room`), so a negative room lowers the
+   * limit below the book and the desk sells down to it, the lending line writes nothing, and D4.a's
+   * *"a funding problem transmitted into the credit decision"* — the credit crunch — falls out of
+   * the arithmetic instead of being absent.
+   */
+  const shed = new Map<string, Cash>();
+  // Law 4: what each line asks for, derived ONCE. It is published beside what the line was given,
+  // because they are two facts — what it wanted and what it got — and a reader that had to
+  // recompute the first from the other three would be deriving it a second time (Law 19).
+  const asked = new Map<string, Cash>(
+    rows.map((r) => [
+      r.line,
+      minus(
+        scale(capital, r.appetite, 'what its appetite would have it hold'),
+        r.capital,
+        'the room its appetite leaves',
+      ),
+    ]),
+  );
+  const wantsOf = (line: string): Cash => {
+    const want = asked.get(line);
+    if (want === undefined) {
+      throw new Missing('Banks Capital B3', `${line} asked the treasury for nothing at all`, { line });
+    }
+    return want;
+  };
   let left = headroom;
+  // First: every line past its own appetite comes back to it. Doing so RELEASES the capital it was
+  // using, so what the bank has to share out grows by exactly what its lines are giving back.
   for (const r of order) {
-    /**
-     * What it asks for, and it is asking to GROW: the room being shared out is what the bank may
-     * still add to its book (`headroom`), not what it already carries. EVERY line asks the same
-     * way — the distance between its own appetite and what it is already using (Dealer Desks D1) —
-     * and its appetite is data about the bank, drawn per line (Law 15).
-     *
-     * The lending line used to ask for `left`, which is everything there is. An ask of everything
-     * is not an ask: whichever line was served first took the whole headroom, the sort that was
-     * supposed to decide between them decided nothing, and the dealing line — declared second, and
-     * tied at nothing earned on the first morning — was allotted zero in every bank in every period
-     * of the world. Its desk's limit is then exactly the book it already has, so a desk that starts
-     * empty can never open one, never earns, and never outranks lending: the starvation sealed
-     * itself (`13b-7`). The branch that did it was also a branch on a line's id, which is the one
-     * Law 15 forbids by name.
-     */
-    const wants = minus(
-      scale(capital, r.appetite, 'what its appetite would have it hold'),
-      r.capital,
-      'the room its appetite leaves',
-    );
-    const asks = atLeastCash(
-      wants,
-      noCash(wants.ccy),
-      'a line already past its own appetite is asking for nothing',
-    );
-    // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
-    // left can be nothing, and then the line behind stops writing.
-    //
-    // Law 8: AND IT IS MONEY, so what a line is allotted is a whole number of the smallest piece of
-    // it. Both numbers above are a capital position over a risk weight, so both land between two
-    // pieces; a line cannot be given a fraction of a cent to lend, and the treasury keeps whatever
-    // the rounding leaves rather than handing it to a line that did not ask for it.
+    const wants = wantsOf(r.line);
+    if (wants.pieces >= 0) continue;
+    const back = negated(wants, 'what it is over its own appetite by');
+    shed.set(r.line, back);
+    left = plus(left, back, 'and what it gives back is room again');
+  }
+  // Then: the lines that still want room share what there is, best earner first. What is left can
+  // be nothing, and then the line behind writes nothing — arithmetic, not a bound (Law 6).
+  for (const r of order) {
+    if (shed.has(r.line)) continue;
+    const wants = wantsOf(r.line);
+    // Law 8: what a line is allotted is a whole number of the smallest piece of the money. Both
+    // numbers are a capital position over a risk weight, so both land between two pieces; the
+    // treasury keeps what the rounding drops rather than handing it to a line that did not ask.
     const give = downTick(
-      atMostCash(left, asks, 'the room that is left is all the room there is').pieces,
+      atMostCash(left, wants, 'the room that is left is all the room there is').pieces,
     );
-    allotted.set(r.line, atLeast(give, NO_QTY, 'there is no less room to give than none'));
-    left = minus(
-      left,
-      heldAsMoney(give, left.ccy, 'what this line was allotted'),
-      'the room it has left',
-    );
+    if (give <= 0) continue;
+    allotted.set(r.line, give);
+    left = minus(left, heldAsMoney(give, left.ccy, 'what this line was allotted'), 'the room it has left');
+  }
+  /**
+   * And last: THE BANK ITSELF IS OVER THE RULES. Every line has come back to its own appetite and
+   * the book is still too big — so the rest of the hole is shed as well, and it falls on the WORST
+   * earner first, which is what a treasury actually cuts. A line cannot shed more than it is using,
+   * which is arithmetic and not a floor; what no line can cover is published as it stands, because
+   * a bank that cannot shed its way back is a bank for its resolver and not for its treasury
+   * (Banks Capital C1).
+   */
+  let hole = negated(left, 'what the book is over the rules by');
+  for (const r of [...order].reverse()) {
+    if (hole.pieces <= 0) break;
+    const already = shed.get(r.line);
+    const still = minus(r.capital, already ?? noCash(hole.ccy), `what ${r.line} is still using`);
+    if (still.pieces <= 0) continue;
+    const take = atMostCash(hole, still, 'a line cannot shed more capital than it is using');
+    shed.set(r.line, already === undefined ? take : plus(already, take, 'and the rest of the hole'));
+    hole = minus(hole, take, 'what is still to be found');
+  }
+  for (const r of rows) {
+    if (allotted.has(r.line)) continue;
+    const back = shed.get(r.line);
+    /**
+     * Law 8, `core/tick.ts`: WHAT A PARTY CAN DO ROUNDS DOWN AND WHAT IT MUST DO ROUNDS UP. Room
+     * given is what the line MAY add, so it rounds down; a shed is what it MUST take off, so it
+     * rounds up in size — a line told to come down by less than it is over is a line still over.
+     */
+    if (back === undefined) {
+      allotted.set(r.line, 0);
+      continue;
+    }
+    const size = asCash(upTick(back.pieces), back.ccy, `what ${r.line} comes down by`);
+    allotted.set(r.line, negated(size, 'a shed is room the other way').pieces);
   }
   // Law 15, 0e′.4: what each line was allotted goes in this bank's own working store, which is what
   // the line itself reads back. The event below is the record of the allotment; it is written from
@@ -160,6 +216,9 @@ export function publishLines(
         capital: r.capital,
         earned: r.earned,
         appetite: r.appetite,
+        // B3 (17.9): what it ASKED for, which can be negative — a line past its own appetite is not
+        // asking for nothing, it is saying how much it has to come down by.
+        asked: wantsOf(r.line).pieces,
         returnOnCapital: r.returnOnCapital.some ? r.returnOnCapital.value : null,
         // Every line above is given a share in the loop, so a line with none is a line the loop
         // did not see, and that is a defect rather than nothing (Appendix A: missing is missing).

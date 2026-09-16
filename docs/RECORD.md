@@ -12989,3 +12989,47 @@ repairs.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
 unchanged.
+
+## Item 17.9 — What the treasury allots can be negative
+
+A line asks its treasury for the distance between its own appetite and what it is already using.
+That distance can be negative, and what a negative distance means is not "this line is asking for
+nothing" — it means IT MUST COME DOWN. Two floors said the first thing (`atLeastCash` on the ask,
+`atLeast` on the allotment), and with them the world had no way to tell a bank in breach the one
+thing it has to be told: sell something. Both are deleted and `banks/lines.ts` leaves the zero-floor
+ratchet.
+
+**Three passes, each a sentence.** Every line past its own appetite comes back to it, and doing so
+RELEASES the capital it was using — so what the bank has to share out grows by exactly what its
+lines are giving back. The lines that still want room share what there is, best earner first, and
+what is left can be nothing. And if the bank is still over the rules after all that, the rest of the
+hole is shed too, worst earner first, because that is what a treasury actually cuts; no line sheds
+more than it is using, which is arithmetic and not a floor, and what no line can cover is left
+standing, because a bank that cannot shed its way back is its resolver's and not its treasury's.
+
+**Nothing new reads it.** A line's limit was already "what it carries plus the room it was given", so
+a negative room lowers the limit below the book and the lending line writes nothing. What was
+missing was the other half: a desk over its limit had no reason to sell. `mustRaise` is now the two
+reasons in one place — the overnight session refused it, or its book is above what its treasury
+allotted — and the bigger of the two is what it raises, because a sale answers both: the money comes
+in and the capital the position was using is released with it.
+
+**Law 4, in passing.** The ask was derived twice inside the same function and is now derived once and
+PUBLISHED beside what the line got. They are two facts — what it wanted and what it got — and a
+reader that had to rebuild the first out of the other three would be deriving it a second time.
+
+**What the census said.** The credit side came back to life: 38 loans written in period 2 of the
+scale model, where the world had written none after period 5. The hole did not close — two of the
+three banks are insolvent by period 3 and stop publishing, and the third's headroom runs from −34bn
+to −102bn over twelve periods while it sheds. 21.66 is rewritten to say exactly that and re-aimed at
+23.2, whose sentence it now is: a bank that is insolvent is never resolved. And one more of 21.67's
+shape, worse than the first: `test/bank-capital.test.ts` does not collect at all — it asserts an
+empty audit at module scope — so every case in it has been silently unrun.
+
+**Split.** 17.9 carried the treasury's allocation and the loan's own lifecycle. The second is
+inserted as 17.9a, immediately after: prepayment and the write-off are one bounded change that needs
+nothing of this one, and two findings already wait there.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+three new tests, all three green; the file's seven reds are the seven that were red at `8f4d70e` and
+are unchanged.

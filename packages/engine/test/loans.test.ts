@@ -56,7 +56,10 @@ import { uncoveredShare } from '../src/registry/secured.js';
 import { requiredOnClaim, requiredYieldOf } from '../src/mechanisms/banks/treasury.js';
 import { expectedLossOn } from '../src/registry/banking.js';
 import { downTick } from '../src/core/tick.js';
-import { FIRM, HOUSEHOLD } from '../src/registry/profiles.js';
+import { BANK, FIRM, HOUSEHOLD } from '../src/registry/profiles.js';
+import { mustRaise } from '../src/mechanisms/banks/dealing.js';
+import type { DeskState } from '../src/mechanisms/banks/dealing-quote.js';
+import { rigWorld } from './rig.js';
 import type { AuditReport, Violation } from '../src/audit/audit.js';
 
 /** Every ownership violation this period that is about where a loan is owed (17.8). */
@@ -1174,5 +1177,85 @@ describe('where a loan may be owed (Banks Lending D4.a, XI-11)', () => {
     // much of it — it does not move the units back, because the audit never repairs.
     expect(said.length).toBeGreaterThan(0);
     expect(said.some((m) => m.includes('not distributed outside the banking system'))).toBe(true);
+  });
+});
+
+/**
+ * A line that is past its appetite is told to come DOWN (Banks Capital B1, B3; Banks Funding D4;
+ * item 17.9).
+ *
+ * The treasury shares out what the capital rules leave. Two floors used to turn a negative share
+ * into a zero — *"a line already past its own appetite is asking for nothing"* — and with them the
+ * world had no way to say the one thing a bank in breach has to be told.
+ */
+describe('what the treasury allots can be negative (Banks Capital B3, Banks Funding D4)', () => {
+  /** Every line every bank published this period: what it asked for and what it was given. */
+  function linesIn(w: World): { line: string; asked: number; room: number }[] {
+    const out: { line: string; asked: number; room: number }[] = [];
+    for (const e of w.journal.ofKindIn('bank.lines', w.period)) {
+      const rows = e.data['lines'];
+      if (!Array.isArray(rows)) continue;
+      for (const r of rows as Record<string, unknown>[]) {
+        out.push({ line: String(r['line']), asked: Number(r['asked']), room: Number(r['room']) });
+      }
+    }
+    return out;
+  }
+
+  it('tells a line over its own appetite to shed, and never rounds the shed up to nothing', () => {
+    const w = rigWorld('lines-shed');
+    let over = 0;
+    for (let i = 0; i < 4; i += 1) {
+      w.step();
+      for (const l of linesIn(w)) {
+        if (l.asked >= 0) continue;
+        over += 1;
+        // D1, XI-4: the ask is the distance between its own appetite and what the line is already
+        // using, and a negative distance is not "asking for nothing" — it is the size of the sale.
+        // Law 6: there is no floor under it, so it is never a zero.
+        expect(l.room).toBeLessThan(0);
+        // It rounds UP in SIZE, because a shed is what the line MUST do: a line told to come down
+        // by less than it is over is a line still over. And it can be told to come down by MORE —
+        // when the bank itself is past the capital rules, the rest of that hole is shed too.
+        expect(l.room).toBeLessThanOrEqual(-Math.ceil(-l.asked));
+      }
+    }
+    // The scale model's banks open past their appetites, so there was something here to check.
+    expect(over).toBeGreaterThan(0);
+  });
+
+  it('never gives a line more room than it asked for', () => {
+    const w = rigWorld('lines-shed');
+    for (let i = 0; i < 4; i += 1) {
+      w.step();
+      for (const l of linesIn(w)) {
+        if (l.asked < 0) continue;
+        expect(l.room).toBeLessThanOrEqual(Math.ceil(l.asked));
+      }
+    }
+  });
+
+  it('is what the desk reads, so a book above its limit is a sale (Banks Funding D2, D4)', () => {
+    const w = rigWorld('lines-shed');
+    for (let i = 0; i < 3; i += 1) w.step();
+    const bank = w.parties.ofKind(BANK).find((b) => b.status.alive);
+    expect(bank).toBeDefined();
+    if (bank === undefined) return;
+    // A real bank's own view, and a book put beside a limit: what is constructed here is the two
+    // numbers the treasury and the desk each already produce, not the desk.
+    const view = w.participantView(bank.id);
+    const home = w.registry.currencyOf(bank.region);
+    const state = (book: number, limit: number) =>
+      ({
+        bookValue: asCash(book, home, 'what its book is worth'),
+        limitAggregate: asCash(limit, home, 'what its treasury allotted it'),
+      }) as unknown as DeskState;
+    // D4: "it shrinks its assets" — a desk carrying more than the room it was given raises the
+    // difference by selling, and the size is the difference and nothing else.
+    expect(mustRaise(view, state(1000, 400), home).pieces).toBe(600);
+    // A desk inside its limit sells nothing for that reason, which is arithmetic and not a rule.
+    expect(mustRaise(view, state(300, 400), home).pieces).toBeLessThanOrEqual(0);
+    // And a desk whose treasury has said nothing has only the other reason to sell.
+    expect(mustRaise(view, undefined, home).pieces).toBeLessThanOrEqual(0);
   });
 });

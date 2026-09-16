@@ -176,7 +176,6 @@ const ZERO_FLOOR = /at(?:Least|Most)\([^,]+,\s*(?:0|NO_QTY)\s*[,)]/g;
 
 const ZERO_FLOOR_BASELINE: Readonly<Record<string, number>> = {
   'ledger/settlement.ts': 1,
-  'mechanisms/banks/lines.ts': 1,
   'mechanisms/options/index.ts': 1,
   'mechanisms/ratings/assess.ts': 3,
   'mechanisms/treasury/index.ts': 1,

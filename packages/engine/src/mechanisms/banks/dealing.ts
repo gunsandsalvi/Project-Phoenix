@@ -16,7 +16,7 @@
  * the capital the position consumes has to earn. A bank that carried inventory for free would have
  * to be a bank that paid nothing for its money.
  */
-import { atMostCash, heldAsMoney, noCash, sumCash } from '../../core/measure.js';
+import { atLeastCash, atMostCash, heldAsMoney, noCash, sumCash } from '../../core/measure.js';
 import { linesCovered } from './staff.js';
 import {
   instrumentId,
@@ -482,7 +482,10 @@ export function dealingOrders(
    * bank could not open. Quoting a market and being made to sell are different acts and only the
    * first of them needs people.
    */
-  const urgent = urgentSale(view, d, i.id);
+  // 17.9: its own state is read before the sale, because one of the two reasons to sell is in it —
+  // a book above the limit its treasury allotted. A desk with no state has only the other reason.
+  const state = stateOf(view, d);
+  const urgent = urgentSale(view, d, i.id, state);
   if (urgent > 0) return [{ party: view.self.id, side: 'sell', price: 'market', qty: urgent }];
   /**
    * Dealer Desks D1, D4, XI-13 (13d): AND IT CAN ONLY QUOTE WHAT IT EMPLOYS. Making a market in a
@@ -494,7 +497,6 @@ export function dealingOrders(
    * here: a desk under pressure keeps the lines it has been in and stops quoting the rest.
    */
   if (!covers(view, d, i.id, makersOf)) return [];
-  const state = stateOf(view, d);
   if (state === undefined) return [];
   const quoted = quoteFor(view, i.id, state);
   if (!quoted.some) return [];
@@ -529,15 +531,14 @@ export function dealingOrders(
  * 8: it delivers whole pieces and rounds UP, because the point is to cover the shortfall — bounded
  * by what it actually holds, which is not a clamp but the arithmetic of a delivery (Law 6).
  */
-function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty {
-  const said = refusedOvernight(view);
-  if (!said.some || said.value.period + 1 !== view.period) return NO_QTY;
+function urgentSale(
+  view: ParticipantView,
+  d: BankDecl,
+  line: InstrumentId,
+  state: DeskState | undefined,
+): Qty {
   const home = view.registry.currencyOf(view.self.region);
-  const owed = minus(
-    asCash(said.value.short, home, 'what the session refused it'),
-    asCash(said.value.buffer, home, 'the cushion inside it'),
-    'what it cannot pay, once the cushion is gone',
-  );
+  const owed = mustRaise(view, state, home);
   if (owed.pieces <= 0) return NO_QTY;
   const worths: Cash[] = [];
   let mine = noCash(home);
@@ -564,6 +565,48 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty
   const want = upTick(amountOf(share, mark.value, 'units to sell'));
   const free = view.free(line);
   return atMost(want, free, 'it sells what it holds unencumbered and no more');
+}
+
+/**
+ * Banks Funding D1, D2, D4, Banks Capital B1 (17.9): WHAT THIS DESK HAS TO RAISE BY SELLING, and
+ * there are two reasons for it.
+ *
+ * THE OVERNIGHT SESSION REFUSED IT (XI-2, Money Market A2.b): what it could not borrow, less the
+ * cushion inside it. A bank that could not top up its cushion sells nothing; a bank that cannot meet
+ * a maturity sells until it can.
+ *
+ * ITS BOOK IS OVER THE ROOM ITS OWN TREASURY ALLOTTED IT (B1, D4): the treasury shares out what the
+ * capital rules leave, and when there is nothing to share it tells a line to come DOWN (17.9,
+ * `lines.ts`). A desk whose limit is now below the book it carries is a desk that has to sell, and
+ * this is where "it shrinks its assets" stops being a sentence in §24 and becomes an order in a
+ * book. Nothing new is decided here: the limit is the treasury's number and the book is the desk's
+ * own, both already computed.
+ *
+ * THE BIGGER OF THE TWO IS WHAT IT RAISES, because a sale answers both — the money comes in and the
+ * capital the position was using is released with it. It is a comparison of two shortfalls and not
+ * a floor (Law 6): each is a real number and the smaller is covered by the larger.
+ */
+export function mustRaise(
+  view: ParticipantView,
+  state: DeskState | undefined,
+  home: CurrencyCode,
+): Cash {
+  const said = refusedOvernight(view);
+  const refused =
+    said.some && said.value.period + 1 === view.period
+      ? minus(
+          asCash(said.value.short, home, 'what the session refused it'),
+          asCash(said.value.buffer, home, 'the cushion inside it'),
+          'what it cannot pay, once the cushion is gone',
+        )
+      : noCash(home);
+  if (state === undefined) return refused;
+  const overLimit = minus(
+    state.bookValue,
+    state.limitAggregate,
+    'what its book is over the room its treasury allotted it',
+  );
+  return atLeastCash(refused, overLimit, 'the bigger of the two reasons to sell covers the smaller');
 }
 
 /**
