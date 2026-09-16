@@ -126,6 +126,7 @@ describe('stage 1: the kernel carries its dimensions', () => {
       market: marketId('mkt.under.test'),
       period: period(0),
       price: asPerPiece(3, 'a level'),
+      quotedAs: 'money',
       ccy: currencyCode('USD'),
       provenance: { kind: 'opening' },
     };

@@ -31,6 +31,7 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
+import { ratePrint } from '../../prices/price-store.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
@@ -111,11 +112,12 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   const t = c.terms;
   const now = reads.print(t.book, at);
   if (!now.some) return noCash(c.ccy);
-  // Law 8, E-10, E-11: a swap book clears a RATE. `rateLevel` says so about this contract's own
-  // level and `asRatio` says it about the print, which is still a `PerPiece` on every book in this
-  // world (`E-11`, item 6). A rate over a notional is money per year, not a value.
+  // Law 8, E-10, E-11 (18.0): a swap book clears a RATE, and both sides of this subtraction now SAY
+  // so — `rateLevel` about this contract's own level and `ratePrint` about the print. A print used
+  // to be a `PerPiece` on every book in this world whatever it had cleared, and the only thing
+  // between two per cent and two cents was this comment. A rate over a notional is money per year.
   const richer = minus(
-    asRatio(now.value.price, 'the rate this book last printed'),
+    ratePrint(now.value, 'the rate this book last printed'),
     rateLevel(c.struckAt, 'an interest-rate swap is struck at a rate'),
     'the rate now against the rate struck',
   );

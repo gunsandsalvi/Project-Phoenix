@@ -44,6 +44,7 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
+import { moneyPrint } from '../../prices/price-store.js';
 import { nextCycle, type Calendar, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId } from '../../core/ids.js';
@@ -118,7 +119,8 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   const p = reads.print(c.terms.book, at);
   if (!p.some) return noCash(c.ccy);
   const move = minus(
-    p.value.price,
+    // 18.0: and the PRINT says it is money too, which is the other half of `moneyLevel`'s check.
+    moneyPrint(p.value, 'the price this book last printed'),
     moneyLevel(c.struckAt, 'a commodity future is struck at a price'),
     'the future now against the level struck',
   );

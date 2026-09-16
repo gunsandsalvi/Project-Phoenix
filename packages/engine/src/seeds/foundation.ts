@@ -1622,7 +1622,8 @@ export function foundationSeedFor(
             period: ctx.period,
             price: priced(ctx, id, price),
             ccy: c.ccy,
-            provenance: { kind: 'opening' },
+            quotedAs: 'money',
+          provenance: { kind: 'opening' },
           });
         }
 
@@ -1857,6 +1858,7 @@ export function foundationSeedFor(
             ctx.registry.rateTickFor(base, quote),
           ),
           ccy: quote,
+          quotedAs: 'money',
           provenance: { kind: 'opening' },
         });
       }
@@ -1912,7 +1914,8 @@ export function foundationSeedFor(
               ),
             ),
             ccy: ctx.registry.currencyOf(where),
-            provenance: { kind: 'opening' },
+            quotedAs: 'money',
+          provenance: { kind: 'opening' },
           });
         }
       }

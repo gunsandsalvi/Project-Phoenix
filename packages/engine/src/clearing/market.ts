@@ -509,6 +509,7 @@ export function runMarket(
         period,
         price: outcome.price,
         ccy: m.ccy,
+        quotedAs: quotes(m, deps),
         provenance: {
           kind: 'traded',
           qty: settledVolume,
@@ -579,6 +580,7 @@ export function printAfterTransact(
     period,
     price: pending.price,
     ccy: m.ccy,
+    quotedAs: quotes(m, deps),
     provenance: {
       kind: 'traded',
       qty: settledVolume,
@@ -595,6 +597,20 @@ export function printAfterTransact(
     { price: pending.price, volume: settledVolume, settledVolume, failedTrades: 0, rationed: false, transact: true },
     true,
   );
+}
+
+/**
+ * Law 8, Derivative D7, E-11 (18.0): WHAT THIS BOOK QUOTES, so its print says which it is.
+ *
+ * A contract book asks its KIND — the same `quotedAs` the struck level is tagged with, one fact and
+ * one writer (Law 4) — and everything else in this world quotes money per unit of the thing. It is
+ * the print's tag and not a second opinion about it: a book that quoted a rate and printed money
+ * would be two answers to what the number is.
+ */
+function quotes(m: MarketDecl, deps: MarketRunDeps): 'money' | 'rate' {
+  return m.kind === 'contract'
+    ? deps.kinds.contract.derivativeKind(m.contract.kind).quotedAs
+    : 'money';
 }
 
 /**
@@ -648,6 +664,7 @@ function carryLast(
     period,
     price: last.value.price,
     ccy: m.ccy,
+    quotedAs: last.value.quotedAs,
     provenance: { kind: 'stale', from, reason },
   });
   deps.journal.record(

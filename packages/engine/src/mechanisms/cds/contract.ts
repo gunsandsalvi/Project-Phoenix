@@ -31,6 +31,7 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import type { Calendar, Period } from '../../calendar/calendar.js';
+import { ratePrint } from '../../prices/price-store.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
@@ -118,14 +119,14 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   const now = reads.print(t.book, at);
   if (!now.some) return noCash(c.ccy);
   /**
-   * Law 8, E-10, E-11: A SPREAD IS A RATE, and a protection book clears one. `rateLevel` is where
-   * this contract says so about its own level; `asRatio` beside it is the same statement about the
-   * PRINT, which is still a `PerPiece` on every book in this world (`E-11`, item 6). Both were a
-   * `PerPiece` before, so nothing could tell a hundred and twenty-five basis points from a cent
-   * and a quarter — and what a spread over a notional gives is money over a year, not a value.
+   * Law 8, E-10, E-11 (18.0): A SPREAD IS A RATE, and a protection book clears one. `rateLevel` is
+   * where this contract says so about its own level and `ratePrint` is the same statement about the
+   * PRINT — which was a `PerPiece` on every book in this world until 18.0, so nothing could tell a
+   * hundred and twenty-five basis points from a cent and a quarter. What a spread over a notional
+   * gives is money over a year, not a value.
    */
   const richer = minus(
-    asRatio(now.value.price, 'the spread this book last printed'),
+    ratePrint(now.value, 'the spread this book last printed'),
     rateLevel(c.struckAt, 'a credit default swap is struck at a spread'),
     'the spread now against the spread struck',
   );

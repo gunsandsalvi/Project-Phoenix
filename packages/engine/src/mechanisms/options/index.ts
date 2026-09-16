@@ -20,6 +20,7 @@
  * when it does not; what comes out is never "the payoff, floored at zero" — it is the payoff of the
  * choice it made, and the choice is the mechanism.
  */
+import { moneyPrint } from '../../prices/price-store.js';
 import {
   absolute,
   amountOf,
@@ -150,7 +151,8 @@ function premiumNow(c: Contract, at: Period, reads: ContractReads): Cash {
   const p = reads.print(c.terms.book, at);
   if (!p.some) return intrinsic(c, at, reads);
   return valueAt(
-    p.value.price,
+    // 18.0: a premium is MONEY per unit, and the print says so rather than being taken for it.
+    moneyPrint(p.value, 'the premium this book last printed'),
     scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'),
     c.ccy,
     'of the thing each',

@@ -961,7 +961,8 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
             period: ctx.period,
             price,
             ccy,
-            provenance: { kind: 'opening' },
+            quotedAs: 'money',
+          provenance: { kind: 'opening' },
           });
         }
         /**

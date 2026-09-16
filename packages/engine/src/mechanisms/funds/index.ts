@@ -2472,7 +2472,8 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
     // is a tick, and a print off the grid is a level nobody could have posted.
     price: ctx.registry.onQuoteGrid(FUND_SHARE, ctx.registry.currencyOf(region.id), perShare),
     ccy: ctx.registry.currencyOf(region.id),
-    provenance: { kind: 'opening' },
+    quotedAs: 'money',
+          provenance: { kind: 'opening' },
   });
 }
 

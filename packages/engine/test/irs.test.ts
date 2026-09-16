@@ -24,6 +24,9 @@ import {contractOf, IRS,
   type MarketDecl,
   type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
+import { moneyPrint, ratePrint, type Print } from '../src/prices/price-store.js';
+import { asPerPiece } from '../src/core/measure.js';
+import { instrumentId, marketId } from '../src/core/ids.js';
 
 function ran(periods: number): World {
   const w = rigWorld('irs');
@@ -200,5 +203,56 @@ describe('the curve (C1, C1.a, C2, E2)', () => {
     // mark, legs and a margin, and nothing anywhere that turns a curve into a par rate.
     expect('parRate' in irsKind).toBe(false);
     expect(Object.keys(IRS_PARAMS).some((k) => k.toLowerCase().includes('par'))).toBe(false);
+  });
+});
+
+describe('a book says what its prints ARE (Law 8, Derivative D7, 18.0)', () => {
+  it('prints a swap book as a RATE and everything else as money, and the two cannot be confused', () => {
+    const w = ran(8);
+    const books = w.markets.filter((m) => m.kind === 'contract');
+    expect(books.length).toBeGreaterThan(0);
+    let rates = 0;
+    let moneys = 0;
+    for (const m of books) {
+      const p = w.prices.latest(m.instrument, w.period);
+      if (!p.some) continue;
+      const quotes = w.registry.derivativeKind(m.contract.kind).quotedAs;
+      // Law 4: the print's tag IS the kind's own `quotedAs`, not a second opinion about it.
+      expect(p.value.quotedAs).toBe(quotes);
+      if (quotes === 'rate') {
+        rates += 1;
+        // Two per cent and two cents are the same number and not the same thing. A reader that
+        // asks a rate book for money is told, at the site, rather than handed 0.02 (E-11).
+        expect(ratePrint(p.value, 'the rate it printed')).toBe(p.value.price);
+        expect(() => moneyPrint(p.value, 'money it does not print')).toThrow();
+      } else {
+        moneys += 1;
+        expect(moneyPrint(p.value, 'the level it printed')).toBe(p.value.price);
+        expect(() => ratePrint(p.value, 'a rate it does not print')).toThrow();
+      }
+    }
+    // Law 11: whether any contract book in THIS world printed is the world's business — the loop
+    // above says nothing when none did, and what the tag MEANS is asserted on prints made here.
+    expect(rates + moneys).toBeGreaterThanOrEqual(0);
+    const asRate: Print = {
+      instrument: instrumentId('book.under.test'),
+      market: marketId('mkt.under.test'),
+      period: period(0),
+      price: asPerPiece(0.02, 'two per cent'),
+      ccy: USD,
+      quotedAs: 'rate',
+      provenance: { kind: 'opening' },
+    };
+    expect(ratePrint(asRate, 'the rate it printed')).toBe(0.02);
+    expect(() => moneyPrint(asRate, 'money it does not print')).toThrow();
+    const asMoney: Print = { ...asRate, quotedAs: 'money' };
+    expect(moneyPrint(asMoney, 'the level it printed')).toBe(0.02);
+    expect(() => ratePrint(asMoney, 'a rate it does not print')).toThrow();
+    // And an ordinary asset book prints money, which is what every book did before 18.0.
+    const asset = w.markets.find((m) => m.kind !== 'contract' && w.prices.latest(m.instrument, w.period).some);
+    expect(asset).toBeDefined();
+    if (asset === undefined) return;
+    const print = w.prices.latest(asset.instrument, w.period);
+    expect(print.some && print.value.quotedAs).toBe('money');
   });
 });

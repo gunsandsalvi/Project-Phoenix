@@ -9,9 +9,9 @@
  */
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { NotYetProduced, Unpriced } from '../core/errors.js';
+import { Mismatch, NotYetProduced, Unpriced } from '../core/errors.js';
 import type { CurrencyCode, InstrumentId, MarketId } from '../core/ids.js';
-import { asRatio, over, type PerPiece } from '../core/measure.js';
+import { asRatio, over, type PerPiece, type Ratio } from '../core/measure.js';
 import { finite } from '../core/num.js';
 import { type Option, none, some } from '../core/option.js';
 
@@ -58,7 +58,48 @@ export interface Print {
   /** Per unit of the instrument, in its currency. */
   readonly price: PerPiece;
   readonly ccy: CurrencyCode;
+  /**
+   * Law 8, Derivative D7, E-11 (18.0): WHAT THE LEVEL IS — money per unit, or a RATE.
+   *
+   * Every book in this world printed a `PerPiece` whatever it actually cleared, so a swap book's
+   * two per cent and a bond's two cents were the same number to every reader, and the only thing
+   * standing between them was a comment. A contract's own level has been tagged since item 6
+   * (`StruckAt`); this is the same fact about the PRINT, and the two are now told the same way.
+   *
+   * There is no third tag. Nothing in this world quotes a bare ratio — an index future quotes a
+   * level in money and a cross-currency basis quotes a rate — and a tag nothing carries would be a
+   * shape with no mechanism behind it (Law 2).
+   */
+  readonly quotedAs: 'money' | 'rate';
   readonly provenance: Provenance;
+}
+
+/**
+ * Law 8, D7 (18.0): READ A PRINT THE WAY ITS BOOK QUOTES IT, and throw where it quotes the other.
+ *
+ * The same pair `moneyLevel`/`rateLevel` are for a contract's struck level, and for the same
+ * reason: the assertion belongs at the READ, where a caller says which of the two it is expecting,
+ * and it is a contract violation when the book says otherwise (`PhoenixError`, at the site).
+ */
+export function moneyPrint(p: Print, what: string): PerPiece {
+  if (p.quotedAs !== 'money') {
+    throw new Mismatch('Derivative D7', `${what}: ${String(p.market)} prints a RATE, not money`, {
+      market: String(p.market),
+      level: p.price,
+    });
+  }
+  return p.price;
+}
+
+/** The same, the other way: the rate a book that quotes one last printed. */
+export function ratePrint(p: Print, what: string): Ratio {
+  if (p.quotedAs !== 'rate') {
+    throw new Mismatch('Derivative D7', `${what}: ${String(p.market)} prints MONEY, not a rate`, {
+      market: String(p.market),
+      level: p.price,
+    });
+  }
+  return asRatio(p.price, what);
 }
 
 /**
@@ -147,6 +188,15 @@ export class PriceStore {
     forbid(p.price >= 0, 'Law 6', `a price cannot be negative: ${p.instrument} ${p.price}`);
     const list = this.byInstrument.get(p.instrument) ?? [];
     const last = list[list.length - 1];
+    // Law 8, Law 4 (18.0): A BOOK QUOTES ONE THING. A line whose prints changed dimension would be
+    // a series nobody could read — half of it money and half of it a rate, with the change itself
+    // invisible — so the first print settles what this line is quoted in and the rest agree.
+    forbid(
+      last === undefined || last.quotedAs === p.quotedAs,
+      'Law 8',
+      `${p.instrument} prints ${last?.quotedAs ?? ''} and this print is ${p.quotedAs}`,
+      { instrument: p.instrument, was: last?.quotedAs ?? '', now: p.quotedAs },
+    );
     forbid(
       last === undefined || last.period < p.period,
       'Clearing F2',
