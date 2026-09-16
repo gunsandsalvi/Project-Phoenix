@@ -29,6 +29,8 @@ import {
 } from '../src/mechanisms/trade-credit/index.js';
 import { TERMS_SPREAD, assertTermsAreOrdered, sellerParam } from '../src/mechanisms/trade-credit/data.js';
 import { InvalidRegistry } from '../src/core/errors.js';
+import { cheaperThanBorrowing, ownPrice, worthSelling } from '../src/mechanisms/trade-credit/factoring.js';
+import { LENDING_LINE, lineRoomOf } from '../src/registry/banking.js';
 import { paramId } from '../src/core/ids.js';
 import { asQty, type Qty } from '../src/core/tick.js';
 import { addDays, civil, compareCivil, type Civil } from '../src/calendar/civil.js';
@@ -411,5 +413,102 @@ describe('a buyer pays early when the discount beats what its money earns (A3, B
     const thin = world(0.0001);
     for (let i = 0; i < 8; i += 1) thin.step();
     expect(thin.journal.ofKind('tradeCredit.paidEarly')).toHaveLength(0);
+  });
+});
+
+/**
+ * Factoring (Trade Credit A3, B2, C1.a; §42 A4, A5; item 17.7b).
+ *
+ * A3 ends *"without it there is no rate, and no factoring market can exist"*. With it there is one,
+ * and this is what it is: the seller sells the claim to somebody who will wait, at what that
+ * somebody requires of the name that owes it.
+ */
+describe('a receivable is sold to whoever waits cheaper (Trade Credit A3, §42 A5)', () => {
+  it('will not take less than its own customer already offers, and borrows against the better name', () => {
+    const off = asRatio(0.02, 'two off for paying early');
+    // A3: the seller has already said what it will pay for early money. A factor has to beat it.
+    expect(ownPrice(off)).toBeCloseTo(0.98, 12);
+    expect(worthSelling(asPerPiece(0.99, 'a keen bid'), off)).toBe(true);
+    expect(worthSelling(asPerPiece(0.97, 'a mean one'), off)).toBe(false);
+    // §42 A5, XI-4: and selling the row is borrowing against the CUSTOMER instead of itself, so it
+    // is worth doing exactly when the customer is the cheaper name — which is why the small firm
+    // shipping the large one factors and the large one shipping the small one does not.
+    const small = asRatio(0.09, 'what money costs a small firm');
+    const large = asRatio(0.02, 'what money costs its customer');
+    expect(cheaperThanBorrowing(large, small)).toBe(true);
+    expect(cheaperThanBorrowing(small, large)).toBe(false);
+  });
+
+  /**
+   * A SCALE MODEL OF A BANK WITH ROOM. Every bank in the rig opens in capital breach with negative
+   * headroom, so every line is allotted nothing and nothing can be taken onto any book at all
+   * (finding 21.66) — which is a fact about the seed and not about factoring. The rule under test is
+   * the seller's decision and the factor's price; the capital rule is relaxed so that a bank in this
+   * world has a book to buy onto, and it is relaxed by moving the standard-setter's own two numbers
+   * rather than by exempting anybody.
+   */
+  function withRoomToLend(seed: string): World {
+    const spec = rigSpec(seed);
+    return assemble({
+      ...spec,
+      modules: spec.modules.map((m) => ({
+        ...m,
+        params: m.params.map((p) =>
+          String(p.id) === 'regulation.capitalRatio' || String(p.id) === 'regulation.leverageRatio'
+            ? { ...p, value: 0.001 }
+            : p,
+        ),
+      })),
+    });
+  }
+
+  it('moves the row to the factor and the money to the seller, and creates nothing', () => {
+    const w = withRoomToLend('trade');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const sold = w.journal.ofKind('tradeCredit.factored');
+    expect(sold.length).toBeGreaterThan(0);
+    for (const e of sold) {
+      // Both alternatives were beaten, and the record says which: the factor paid more than the
+      // seller's own early payment would have left it, and waits cheaper than a lender would.
+      expect(Number(e.data['bid'])).toBeGreaterThan(Number(e.data['ownPrice']));
+      expect(Number(e.data['atYield'])).toBeLessThan(Number(e.data['borrowingCost']));
+      // Law 5: one instruction, two legs. The row is the same row — nothing about what the buyer
+      // owes has changed — and the units moved rather than being reissued.
+      const row = w.instruments.get(instrumentId(String(e.data['invoice'])));
+      const t = invoiceTerms(row);
+      expect(String(t.buyer)).toBe(String(e.data['obligor']));
+      expect(Number(e.data['paid'])).toBeLessThan(Number(e.data['units']));
+      // The units left the seller and the money arrived, in one settled instruction. Who holds the
+      // row NOW is a later question — a bank that bought a bill may sell it on, and the register is
+      // the one writer of that (Law 19) — so what is checked here is the transfer itself.
+      const moved = w.ledger
+        .all()
+        .filter((r) => r.outcome === 'settled')
+        .some(
+          (r) =>
+            r.instruction.reason ===
+            `${String(t.seller)} factors ${String(row.id)} to ${String(e.data['factor'])}`,
+        );
+      expect(moved).toBe(true);
+    }
+  });
+
+  it('buys nothing past the room its own treasury allotted it (Banks Capital B3)', () => {
+    const w = withRoomToLend('trade');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const spent = new Map<string, number>();
+    for (const e of w.journal.ofKind('tradeCredit.factored')) {
+      const factor = String(e.data['factor']);
+      spent.set(factor, (spent.get(factor) ?? 0) + Number(e.data['paid']));
+    }
+    expect(spent.size).toBeGreaterThan(0);
+    for (const [factor, paid] of spent) {
+      // Appendix B: no unlimited exposure and no infinite balance sheet. What a factor may spend is
+      // what its own treasury published it had spare, and a bank that published none takes nothing.
+      const room = lineRoomOf(w.journal, factor, LENDING_LINE);
+      expect(room.some).toBe(true);
+      if (!room.some) continue;
+      expect(paid).toBeLessThanOrEqual(room.value);
+    }
   });
 });

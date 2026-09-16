@@ -28,14 +28,25 @@
  * B3's "stop shipment" and D4's tightening in one read: what a seller knows about a customer is
  * what that customer did to it.
  */
-import { asPerPiece, asRatio, minus, over, scale, type Ratio } from '../../core/measure.js';
+import { amountOf, asCash, asPerPiece, asRatio, minus, over, scale, valueAt, type PerPiece, type Ratio } from '../../core/measure.js';
+import { atMost } from '../../core/num.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
-import { yearFraction } from '../../calendar/daycount.js';
+import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { percent } from '../../core/format.js';
 import { between, betweenWhole } from '../../rng/spread.js';
 import { assertTermsAreOrdered, sellerParam, TERMS_SPREAD } from './data.js';
-import { depositRateFor } from '../../registry/banking.js';
-import { downTick } from '../../core/tick.js';
+import {
+  LENDING_LINE,
+  costOfMoneyQuotedTo,
+  depositRateFor,
+  lineRoomOf,
+  requiredOfName,
+} from '../../registry/banking.js';
+import { asQty, downTick } from '../../core/tick.js';
+import { priceAt } from '../../prices/curve.js';
+import { BANK } from '../../registry/profiles.js';
+import { moneyInstrumentId } from '../../core/ids.js';
+import { cheaperThanBorrowing, ownPrice, worthSelling } from './factoring.js';
 import {
   instrumentId,
   instrumentKindId,
@@ -54,6 +65,13 @@ import { isShort, ownFundingThisPeriod } from '../../registry/funding.js';
 import type { SystemModule, TermsSale } from '../../world/module.js';
 
 export const INVOICE = instrumentKindId('invoice');
+
+/**
+ * A3, Law 8: the one day count this module measures a span of days with — the rate the discount
+ * makes and the price a factor pays for the days it waits are the same span read twice, so they
+ * count it the same way (Law 4).
+ */
+const TRADE_DAY_COUNT: DayCount = 'ACT/365F';
 
 /** A1: one row per (seller, buyer, sale). Named so a reader can see whose it is (Law 9). */
 export const invoiceId = (
@@ -250,7 +268,7 @@ function termsOf(ctx: MechanismContext, seller: PartyId): SellerTerms {
  */
 export function impliedRate(t: InvoiceTerms, on: Civil): Option<Ratio> {
   if (compareCivil(on, t.discountBy) > 0) return none<Ratio>();
-  const span = yearFraction('ACT/365F', t.discountBy, t.due);
+  const span = yearFraction(TRADE_DAY_COUNT, t.discountBy, t.due);
   if (span <= 0) return none<Ratio>();
   const paid = minus(asRatio(1, 'the face'), t.discount, 'what it pays if it pays early');
   return some(
@@ -419,6 +437,133 @@ function walkOverdue(ctx: MechanismContext, seller: PartyId): readonly Written[]
 }
 
 /**
+ * A3, B2, C1.a, §42 A4, A5 (17.7b): THE SELLER SELLS THE RECEIVABLE WHEN SOMEBODY BEATS ITS OWN
+ * TERMS.
+ *
+ * 17.5 gave a seller short of cash one answer — ship for cash instead of on terms — and that is the
+ * answer for the sale it has not made yet. For the ones it has already made it has another, and it
+ * is the one small firms actually use (§42 A5: they are bank-dependent, and this is the shape most
+ * of that dependence takes): it sells the invoice to a bank and takes the money now.
+ *
+ * WHO PRICES IT AND ON WHAT. The factor prices the name that OWES the row — the buyer — off what it
+ * published it requires of that name, and discounts the row's own promise at that yield through the
+ * one discounting this world has (Law 3: a price, never a yield-from-a-table). Every bank that
+ * issues the money publishes such a number for every issuer of live paper, an invoice included, so
+ * the seller shops: it takes the keenest bid and there is no bid at all from a bank that has priced
+ * nothing.
+ *
+ * WHAT IT COMPARES THE BID WITH is its own discount (`factoring.ts`), and that is A3's sentence run
+ * backwards: the seller has already said what it will pay to be paid early, so a factor has to beat
+ * its own customer.
+ *
+ * WHAT STOPS A FACTOR BUYING EVERYTHING is what stops a dealer taking everything: the room its own
+ * treasury allotted its book, published under its own name and spent as it buys (Banks Capital B3,
+ * Appendix B — no unlimited exposure). A bank that has published no room takes nothing.
+ */
+function factorsReceivables(ctx: MechanismContext): void {
+  const on = ctx.calendar.startOf(ctx.period);
+  /**
+   * Banks Capital B3, Appendix B (no unlimited exposure, no infinite balance sheet): WHAT A FACTOR
+   * HAS ROOM TO TAKE ONTO ITS BOOK, off the line its own treasury allotted and published, spent as
+   * it buys within the period.
+   *
+   * It is the LENDING line and not the dealing one: a factor buys the bill to hold it to its day and
+   * be paid by the buyer, which is a claim carried to maturity rather than inventory it means to
+   * turn over (Dealer Desks D1). A bank that published no room takes nothing, and that is a refusal
+   * rather than a zero anybody chose.
+   */
+  const left = new Map<string, number>();
+  const roomOf = (bank: PartyId): number => {
+    const had = left.get(String(bank));
+    if (had !== undefined) return had;
+    const said = lineRoomOf(ctx.journal, String(bank), LENDING_LINE);
+    const room = said.some ? said.value : 0;
+    left.set(String(bank), room);
+    return room;
+  };
+  for (const i of ctx.instruments.ofKind(INVOICE)) {
+    if (!i.status.live || !isInvoice(i.terms)) continue;
+    const t = i.terms;
+    if (compareCivil(t.due, on) <= 0) continue;
+    const seller = ctx.parties.resolve(t.seller).id;
+    // XI-11, Law 19: only the party that shipped sells its own receivable. A row that has already
+    // been factored is a bank's asset, and a bank holding a bill is not a supplier waiting to be
+    // paid — it is holding paper to maturity, which is a different decision and not this one.
+    const held = ctx.register.quantity(seller, i.id);
+    if (held <= 0) continue;
+    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
+    if (flows.length === 0) continue;
+    const obligor = ctx.parties.resolve(t.buyer).id;
+    // XI-4: what money costs the SELLER, which is the alternative it is choosing against — the rate
+    // it was last quoted to borrow (Corporate Credit A4, one published read). A name no lender has
+    // quoted has no alternative, so it has nothing to compare and does not sell.
+    const ownCost = costOfMoneyQuotedTo(ctx.journal, String(seller));
+    if (!ownCost.some) continue;
+    let best: { bank: PartyId; bid: PerPiece; yield: Ratio } | undefined;
+    for (const b of ctx.parties.ofKind(BANK)) {
+      if (!b.status.alive || b.id === seller) continue;
+      // Money A1, XI-12: a bank buys where it can pay, which is where it issues.
+      if (!ctx.instruments.has(moneyInstrumentId(b.id, i.ccy))) continue;
+      const required = requiredOfName(ctx.journal, String(b.id), String(obligor));
+      if (!required.some) continue;
+      const bid = priceAt(flows, required.value, on, TRADE_DAY_COUNT, `what ${String(b.id)} would pay`);
+      if (best === undefined || bid > best.bid) best = { bank: b.id, bid, yield: required.value };
+    }
+    if (best === undefined) continue;
+    if (!worthSelling(best.bid, t.discount)) continue;
+    if (!cheaperThanBorrowing(best.yield, ownCost.value)) continue;
+    // Law 8: it buys whole pieces, and only as many as its published room pays for.
+    const room = roomOf(best.bank);
+    const canPayFor = amountOf(asCash(room, i.ccy, 'what its book has spare'), best.bid, 'units its room pays for');
+    const units = downTick(atMost(held, canPayFor, 'it buys no more than its own book has room for'));
+    if (units <= 0) continue;
+    const pay = downTick(valueAt(best.bid, asQty(units), i.ccy, 'what it pays for them').pieces);
+    if (pay <= 0) continue;
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'asset',
+          from: seller,
+          to: best.bank,
+          instrument: i.id,
+          qty: asQty(units),
+          pricePerUnit: some(best.bid),
+          accruedPerUnit: none(),
+        },
+        {
+          kind: 'money',
+          from: ctx.accountOf(best.bank, i.ccy),
+          to: ctx.accountOf(seller, i.ccy),
+          ccy: i.ccy,
+          amount: pay,
+        },
+      ],
+      cause: 'trade',
+      reason: `${String(seller)} factors ${String(i.id)} to ${String(best.bank)}`,
+    });
+    if (r.outcome !== 'settled') continue;
+    left.set(String(best.bank), room - pay);
+    ctx.record(
+      'tradeCredit.factored',
+      [String(i.id), String(seller), String(best.bank), String(obligor)],
+      {
+        invoice: String(i.id),
+        seller: String(seller),
+        factor: String(best.bank),
+        obligor: String(obligor),
+        units,
+        paid: pay,
+        bid: best.bid,
+        atYield: best.yield,
+        borrowingCost: ownCost.value,
+        ownPrice: ownPrice(t.discount),
+      },
+      false,
+    );
+  }
+}
+
+/**
  * A3, B1, B4 (17.7a): WHAT A BUYER'S MONEY EARNS WHERE IT SITS, which is what it is choosing
  * between when it decides whether to pay early.
  *
@@ -555,6 +700,22 @@ export function tradeCredit(): SystemModule {
      */
     params: [],
     phases: [
+      {
+        name: 'tradeCredit.factor',
+        spec: 'Trade Credit A3 Trade Credit B2 Trade Credit C1.a Small-Business Pools A5',
+        // After the banks have published what they require of each name (`lending.write`) and
+        // before the marks, so a row that changed hands is on the right book when it is valued.
+        // Before `payEarly` in the same cycle: a seller sells today and the buyer's early payment
+        // then pays whoever is owed it (Clearing F1).
+        anchor: { before: 'revaluation' },
+        reads: [
+          { kind: 'event', name: 'bank.reservation', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.lines', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'tradeCredit.factored' }],
+        run: factorsReceivables,
+      },
       {
         name: 'tradeCredit.payEarly',
         spec: 'Trade Credit A3 Trade Credit B1',

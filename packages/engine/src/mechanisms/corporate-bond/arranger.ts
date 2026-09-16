@@ -51,7 +51,7 @@ import {
 import { asQty, downTick, splitOnTick, type Qty } from '../../core/tick.js';
 import { atMost } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { lineRoomOf, requiredOfName, underwritingBy } from '../../registry/banking.js';
+import { lineRoomOf, requiredOfName, underwritingBy, DEALING_LINE } from '../../registry/banking.js';
 import type { MechanismContext } from '../../world/context.js';
 
 /** C11: the two bases, and they are different products with different prices. */
@@ -138,7 +138,7 @@ export function appoint(
     }
     // C11.b, C10.b: what it may commit is what its OWN dealing line was allotted this period —
     // published under its own name (Dealer Desks D1, D2) — in units of what it would be holding.
-    const room = lineRoomOf(ctx.journal, b.bank, 'dealing');
+    const room = lineRoomOf(ctx.journal, b.bank, DEALING_LINE);
     if (!room.some || room.value <= 0 || price <= 0) continue;
     const risk = riskPremium(ctx, bank, issuer, price);
     if (!risk.some) continue;

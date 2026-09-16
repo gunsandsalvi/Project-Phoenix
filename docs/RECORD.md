@@ -12850,3 +12850,44 @@ resized.
 `trade-credit`: four new tests and one rewritten (it asserted the world-wide number this item
 deleted; what it also asserted — that no `tradeCredit.` number is a share, a rate, a loss or a
 default — is kept and now covers the derived rate too), all fourteen green.
+
+## Item 17.7b — Factoring
+
+Trade Credit A3 ends *"without it there is no rate, and no factoring market can exist."* 17.7a made
+the rate; this is the market.
+
+**What the factor pays** is the receivable discounted at what that factor requires of the name that
+OWES it, which is the BUYER. A factor that priced the seller would be pricing the wrong credit: the
+money comes from the buyer on the due date and the seller is out of it the moment the row changes
+hands. Every bank publishes what it requires of every issuer of live paper, and an invoice is live
+paper whose issuer is its buyer, so every receivable in this world already had a price waiting for
+it. The seller shops all of them and takes the keenest; a name no bank has priced has no factor,
+which is a refusal and not a price.
+
+**What the seller compares it with** is two alternatives it already has, and neither is a gate
+anybody chose. The first is its own discount — it has published what it will pay to be paid early,
+so a factor has to beat its own customer. The second is what money costs the seller itself, the rate
+it was last quoted to borrow. That second comparison is why factoring exists and why §42 A5's tier
+uses it most: selling a receivable is borrowing against your CUSTOMER's credit instead of your own,
+worth doing exactly when the customer is the better name. Nothing states which is which. In the run,
+the firm borrows at 1.9 per cent and its customer is taken at 0.28, so it sells.
+
+**What stops a factor buying everything** is the line its own treasury allotted it and published,
+spent as it buys. It is the LENDING line and not the dealing one: a factor holds the bill to its day
+rather than turning it over. A bank that published no room takes nothing.
+
+**What the census said, and it is a large one.** EVERY BANK IN THE SCALE MODEL OPENS IN CAPITAL
+BREACH, IN PERIOD ONE, with negative headroom — so both lines are allotted zero room in every bank in
+every period and nothing can be taken onto any bank's book at all. That is what stops an arranger
+backstopping an issue at 17.2, and it is upstream of every bank being insolvent by period six.
+Relaxing the standard-setter's two ratios to a thousandth gives one bank room and the factoring
+market opens immediately, seven receivables in six periods — so what is missing is the response to a
+breach, not the mechanisms behind it. Written up as 21.66 and positioned at 17.9, whose subject is
+exactly that: a negative want publishes `mustShed`, and the floor that turns it into a zero goes.
+
+**Law 4, in passing.** Two modules now ask what a bank has spare on a named line and neither may
+import the module that names it, so both were spelling the line out. The names are in
+`registry/banking.ts` and the arranger reads the same constant.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`trade-credit`: three new tests, all seventeen green.

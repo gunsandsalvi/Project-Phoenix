@@ -42,6 +42,16 @@ const MM_REFUSED = 'moneyMarket.refused';
 const CREDIT_QUOTED = 'credit.quoted';
 const CREDIT_DEFAULT = 'credit.default';
 const LINES = 'bank.lines';
+
+/**
+ * Law 4 (17.7b): THE NAME OF THE LINE A BANK'S DEALING BOOK IS ALLOTTED, spelled once. Two modules
+ * ask what a bank has spare to take paper onto its book — an arranger's backstop and a factor's bid
+ * — and neither may import the module that names it, so both were writing the string out.
+ */
+export const DEALING_LINE = 'dealing';
+
+/** The other one: what a bank's lending book was allotted, which is what a claim held to maturity consumes. */
+export const LENDING_LINE = 'lending';
 const UNDERWRITING = 'bank.underwriting';
 
 /** The participant's door: what a party can see about itself and about the public record. */
