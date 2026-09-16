@@ -214,6 +214,16 @@ export class ParamRegister {
    * and they are declared here the period it is born. The guards are the same guards; what
    * changes is only when they are asked. Twice is still twice (Law 4).
    */
+  /**
+   * XI-14 (17.7a): WHETHER THIS NUMBER HAS BEEN DECLARED YET. A party that declares its own
+   * preference the first time it needs one has to be able to ask whether it already did — and
+   * `decl` throws on a number that is not there, which is right for a read and wrong for a
+   * question. Declaring twice is still refused; this is how a caller avoids asking.
+   */
+  has(id: ParamId): boolean {
+    return this.decls.has(id);
+  }
+
   declare(d: ParamDecl): void {
     if (this.decls.has(d.id)) throw new InvalidRegistry('Law 4', `parameter ${d.id} declared twice`);
     finite(d.value, `parameter ${d.id}`);

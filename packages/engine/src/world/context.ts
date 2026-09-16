@@ -217,6 +217,7 @@ export interface KernelReads {
     | 'km'
     | 'kmPerDay'
     | 'decl'
+    | 'has'
     | 'report'
     | 'all'
   >;

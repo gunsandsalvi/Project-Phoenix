@@ -12807,3 +12807,46 @@ index-linked schedule is inserted at 18a.1, where the first published price leve
 eight new tests, all eight green; the file's seven reds are the seven that were red at `8f4d70e`
 before this change and are unchanged by it (verified in a worktree at that commit — same seven, same
 names), and they are 21.64's world rather than this item's.
+
+## Item 17.7a — The seller's own terms, and the price of paying early
+
+Trade Credit A3 has two halves and this world had neither.
+
+**How long is the seller's, and it is drawn.** `tradeCredit.days` was thirty days for everybody — a
+mill and a corner shop wrote the same invoice — and B5 says the seller decides its terms. What had
+stopped this being fixed was a home: a seller here is a firm, a small-business cell or a merchant,
+and only firms have a module that draws numbers for them. THE PARAMETER REGISTER IS THE HOME THEY
+SHARE. It is keyed by the party's own name, it holds a number for the life of the world, and it is
+already where a firm born after the seed declares its hurdle and its horizon. So each seller draws
+its days, its window and its discount from the module's stated widths the first time it ships on
+terms, declares them under its own name, and writes them on every invoice afterwards. The module
+declares nothing at assembly at all. `params.has` is the one kernel addition: a caller that declares
+on first use has to be able to ask whether it already did, and `decl` throws on a number that is not
+there — right for a read, wrong for a question.
+
+**And the discount is an interest rate, which is why A3 is a clause.** Paying ninety-eight on the
+tenth instead of a hundred on the thirtieth buys the buyer twenty days and costs it two of the
+ninety-eight it still owed: thirty-seven per cent a year, derived once from the terms the two of them
+struck and declared nowhere. A buyer that reads it chooses against what its money earns where it is
+— the board its own bank published for the class its kind belongs to (Law 15: the registry says which
+class, not this module) — and pays early when the seller is offering more for its money than its bank
+is. A buyer that does not know what its money earns has nothing to compare and does not pay early,
+which is a stated answer rather than a zero.
+
+Paying early is a redemption below par: the holder gives up the row at what it agreed to take and
+realises the difference against what it was carrying, the buyer keeps what it did not pay, and it is
+one instruction with two legs like every other. It settles whoever HOLDS the row rather than whoever
+wrote it, which is what a receivable that has been sold needs (17.7b).
+
+**What the census said.** The mechanism is exercised by a test and by nothing in the assembled world,
+and the reason is written down as 21.65: every invoice the scale model writes is one firm on the
+TREASURY — one seller, one buyer, seventeen rows in twelve periods — and no firm ships another firm
+on terms at all, which is the connection §42 A4 calls the tier that lives on it. The one buyer this
+world has banks at the central bank and so keeps no deposit board to compare against. One of the four
+seeds tried writes no invoice at all in twelve periods. Positioned at 23.1, where the scale model is
+resized.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`trade-credit`: four new tests and one rewritten (it asserted the world-wide number this item
+deleted; what it also asserted — that no `tradeCredit.` number is a share, a rate, a loss or a
+default — is kept and now covers the derived rate too), all fourteen green.

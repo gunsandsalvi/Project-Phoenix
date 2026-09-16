@@ -28,14 +28,18 @@
  * B3's "stop shipment" and D4's tightening in one read: what a seller knows about a customer is
  * what that customer did to it.
  */
-import { asPerPiece } from '../../core/measure.js';
+import { asPerPiece, asRatio, minus, over, scale, type Ratio } from '../../core/measure.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
+import { yearFraction } from '../../calendar/daycount.js';
+import { percent } from '../../core/format.js';
+import { between, betweenWhole } from '../../rng/spread.js';
+import { assertTermsAreOrdered, sellerParam, TERMS_SPREAD } from './data.js';
+import { depositRateFor } from '../../registry/banking.js';
+import { downTick } from '../../core/tick.js';
 import {
   instrumentId,
   instrumentKindId,
-  paramId,
   type InstrumentId,
-  type ParamId,
   type PartyId,
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -50,10 +54,6 @@ import { isShort, ownFundingThisPeriod } from '../../registry/funding.js';
 import type { SystemModule, TermsSale } from '../../world/module.js';
 
 export const INVOICE = instrumentKindId('invoice');
-
-export const TRADE_CREDIT_PARAMS = {
-  days: paramId('tradeCredit.days'),
-} as const satisfies Record<string, ParamId>;
 
 /** A1: one row per (seller, buyer, sale). Named so a reader can see whose it is (Law 9). */
 export const invoiceId = (
@@ -89,6 +89,17 @@ export interface InvoiceTerms extends Terms {
   readonly buyer: PartyId;
   /** A2: the day the whole of it falls due. There is no coupon and no schedule; there is a date. */
   readonly due: Civil;
+  /**
+   * A3 (17.7a): what this seller takes off for being paid by `discountBy`, and the day that window
+   * shuts. They are on the ROW because they are terms of the sale the two of them struck, like the
+   * date — a buyer reads what it was offered, not what its supplier is offering this week.
+   *
+   * WITH THE TWO DATES THEY ARE AN INTEREST RATE (`impliedRate`), which is the whole of why A3 is a
+   * clause: it is the rate at which the seller buys its own money back early, and the rate a factor
+   * has to beat to buy the receivable instead.
+   */
+  readonly discount: Ratio;
+  readonly discountBy: Civil;
 }
 
 export const isInvoice = (t: Terms): t is InvoiceTerms =>
@@ -117,10 +128,17 @@ export const invoiceKind: InstrumentKindProfile = {
     if (t.seller === t.buyer) {
       throw new InvalidRegistry('Trade Credit A1', 'an invoice needs two parties');
     }
+    // A3: the window is inside the term, or the discount is an offer that expires after the money
+    // was due — which is not an early-payment discount, it is nothing.
+    if (compareCivil(t.discountBy, t.due) >= 0) {
+      throw new InvalidRegistry('Trade Credit A3', 'the early-payment window outlasts the invoice');
+    }
   },
+  // Law 9: as the trade names it — who on whom, what is off for paying early, and when it is due.
   displayName: (i) =>
     isInvoice(i.terms)
-      ? `${String(i.terms.seller)} on ${String(i.terms.buyer)}, due ${formatCivil(i.terms.due)}`
+      ? `${String(i.terms.seller)} on ${String(i.terms.buyer)}, ${percent(i.terms.discount)} by ` +
+        `${formatCivil(i.terms.discountBy)}, due ${formatCivil(i.terms.due)}`
       : String(i.id),
   ranking: () => ({
     seniority: 0,
@@ -150,6 +168,99 @@ export const invoiceKind: InstrumentKindProfile = {
   },
   accrued: () => 0,
 };
+
+/**
+ * A3, B5 (17.7a, finding 21.61): THIS SELLER'S OWN TERMS, drawn once and declared under its own name.
+ *
+ * B5 says the seller decides its terms, and one number for the whole world said the opposite: a mill
+ * and a corner shop wrote the same invoice. What stopped this being fixed where the other drawn
+ * preferences are is that a seller here is a firm, a small-business cell or a merchant, and the
+ * firms module draws numbers for firms only — so the preference had no home every seller has. THE
+ * PARAMETER REGISTER IS THAT HOME (XI-14): it is where a firm born after the seed declares its
+ * hurdle and its horizon, it is keyed by the party's own name, and it holds a number for the life of
+ * the world. The draw happens the first time a seller ships on terms, from the module's own stated
+ * spreads, and every invoice it writes afterwards reads what it declared.
+ *
+ * The stream is derived from the SELLER's name so the same world gives the same seller the same
+ * terms whenever it first ships (the period the parent stream carries never reaches the draw).
+ */
+export interface SellerTerms {
+  readonly days: number;
+  readonly discountDays: number;
+  readonly discount: Ratio;
+}
+
+function termsOf(ctx: MechanismContext, seller: PartyId): SellerTerms {
+  const days = sellerParam(String(seller), 'days');
+  const windowOf = sellerParam(String(seller), 'discountDays');
+  const off = sellerParam(String(seller), 'discount');
+  if (!ctx.params.has(days)) {
+    assertTermsAreOrdered(TERMS_SPREAD);
+    const rng = ctx.rng.derive(`terms/${String(seller)}`);
+    const drawn = {
+      days: betweenWhole(rng, TERMS_SPREAD.days),
+      discountDays: betweenWhole(rng, TERMS_SPREAD.discountDays),
+      discount: between(rng, TERMS_SPREAD.discount),
+    };
+    ctx.declare({
+      id: days,
+      value: drawn.days,
+      unit: 'days a buyer has to pay',
+      dimension: 'days',
+      kind: 'preference',
+      owner: 'model',
+      why: `Trade Credit A3, B5: how long ${String(seller)} gives a buyer to pay, drawn from the stated width the first time it shipped on terms. ${TERMS_SPREAD.days.why}`,
+    });
+    ctx.declare({
+      id: windowOf,
+      value: drawn.discountDays,
+      unit: 'days the early-payment window is open',
+      dimension: 'days',
+      kind: 'preference',
+      owner: 'model',
+      why: `Trade Credit A3: how long ${String(seller)} leaves its discount open. ${TERMS_SPREAD.discountDays.why}`,
+    });
+    ctx.declare({
+      id: off,
+      value: drawn.discount,
+      unit: 'share of the face taken off for paying inside the window',
+      dimension: 'ratio',
+      kind: 'preference',
+      owner: 'model',
+      why: `Trade Credit A3: what ${String(seller)} takes off to be paid early. ${TERMS_SPREAD.discount.why}`,
+    });
+  }
+  return {
+    days: ctx.params.days(days),
+    discountDays: ctx.params.days(windowOf),
+    discount: ctx.params.ratio(off),
+  };
+}
+
+/**
+ * A3: THE DISCOUNT IS AN INTEREST RATE, and this is the one place it is read as one.
+ *
+ * Paying `1 - d` on the window's last day instead of `1` on the due day buys the buyer the days
+ * between them, and what it pays for them is `d` of what it still owed — so the rate per annum is
+ * `d / (1 - d)` over the fraction of a year those days are. It is a DERIVED read of terms the two
+ * of them struck, never a number anybody declared, and it is what a factor has to beat to buy the
+ * receivable instead (17.7b) and what a buyer weighs its own money against.
+ *
+ * Nothing where the window has already shut: an offer that has expired has no rate.
+ */
+export function impliedRate(t: InvoiceTerms, on: Civil): Option<Ratio> {
+  if (compareCivil(on, t.discountBy) > 0) return none<Ratio>();
+  const span = yearFraction('ACT/365F', t.discountBy, t.due);
+  if (span <= 0) return none<Ratio>();
+  const paid = minus(asRatio(1, 'the face'), t.discount, 'what it pays if it pays early');
+  return some(
+    over(
+      over(t.discount, paid, 'what the days cost, per unit it still owed'),
+      asRatio(span, 'the fraction of a year they are'),
+      'per annum',
+    ),
+  );
+}
 
 /**
  * A3, B5, D4: WHETHER THIS SELLER SHIPS THIS BUYER ON TERMS. It is a read of its own record of that
@@ -191,14 +302,17 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
    * (D3: a contagion path that runs firm to firm).
    */
   if (shortOfCash(ctx, seller)) return none<InstrumentId>();
-  const days = ctx.params.days(TRADE_CREDIT_PARAMS.days);
+  // B5, 21.61: the terms are THIS seller's, drawn under its own name and read from the register.
+  const mine = termsOf(ctx, seller);
   const on = ctx.calendar.startOf(ctx.period);
   const id = freeRow(ctx, seller, buyer);
   const invoice: InvoiceTerms = {
     kind: INVOICE,
     seller,
     buyer,
-    due: addDays(on, days),
+    due: addDays(on, mine.days),
+    discount: mine.discount,
+    discountBy: addDays(on, mine.discountDays),
   };
   ctx.issue({
     id,
@@ -304,6 +418,104 @@ function walkOverdue(ctx: MechanismContext, seller: PartyId): readonly Written[]
   return out;
 }
 
+/**
+ * A3, B1, B4 (17.7a): WHAT A BUYER'S MONEY EARNS WHERE IT SITS, which is what it is choosing
+ * between when it decides whether to pay early.
+ *
+ * Its money is a deposit at its own bank, and what that pays is the board the bank published for the
+ * CLASS this buyer's kind belongs to — a public number, read where everybody can reach it
+ * (`registry/banking.ts`), never re-derived and never a table here (Law 4, Law 19). Which class it
+ * is, is the registry's to say and never this module's (Law 15).
+ *
+ * Nothing where the kind keeps no deposit or the bank has posted no board: a buyer that does not
+ * know what its money earns has nothing to compare the discount with, and that is a stated answer
+ * rather than a zero anybody chose (Appendix A).
+ */
+function whatMoneyEarns(ctx: MechanismContext, buyer: PartyId): Option<Ratio> {
+  const who = ctx.parties.get(buyer);
+  const cls = ctx.registry.partyKind(who.kind).depositClass;
+  if (cls === null) return none<Ratio>();
+  return depositRateFor(ctx.journal, String(who.bank), cls);
+}
+
+/**
+ * A3, B1 (17.7a): THE BUYER PAYS EARLY WHEN THE DISCOUNT IS DEARER THAN ITS OWN MONEY IS.
+ *
+ * A3 makes the discount an interest rate, and a rate is a thing somebody chooses against something.
+ * What the buyer chooses against is what its money earns where it is (B1's other side: the terms
+ * bridge a gap, and a buyer with no gap is holding cash that is earning the deposit board). If the
+ * seller is offering more for its money than its bank is, it pays; otherwise it keeps the money and
+ * pays on the day. Neither branch is a preference — both sides of it are numbers somebody published.
+ *
+ * Paying early is a redemption BELOW PAR, and that is the seller's cost of it: the holder gives up
+ * the row at what it agreed to take, realises the difference against what it was carrying, and the
+ * buyer keeps what it did not pay. Nothing is written off and nothing is created; it is one
+ * instruction with two legs, like every other (Law 5).
+ *
+ * It settles whoever HOLDS the row, not whoever wrote it: a receivable that has been sold is owed to
+ * its buyer, and an early payment pays the party that is owed (Law 19).
+ */
+function paysEarly(ctx: MechanismContext): void {
+  const today = ctx.calendar.startOf(ctx.period);
+  for (const i of ctx.instruments.ofKind(INVOICE)) {
+    if (!i.status.live || !isInvoice(i.terms)) continue;
+    const t = i.terms;
+    const rate = impliedRate(t, today);
+    if (!rate.some) continue;
+    const buyer = ctx.parties.resolve(t.buyer).id;
+    if (!ctx.parties.get(buyer).status.alive) continue;
+    const earns = whatMoneyEarns(ctx, buyer);
+    if (!earns.some || rate.value <= earns.value) continue;
+    for (const holder of ctx.register.holdersOf(i.id)) {
+      const units = ctx.register.quantity(holder, i.id);
+      if (units <= 0) continue;
+      const per = minus(asRatio(1, 'the face'), t.discount, 'what it pays for a unit');
+      // Law 8: money moves in whole pieces of itself, so what it pays is the discounted face down
+      // to money that exists. What the rounding drops is not paid, because it is not money.
+      const pay = downTick(scale(units, per, 'what it pays for the lot'));
+      if (pay <= 0) continue;
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'asset',
+            from: holder,
+            to: buyer,
+            instrument: i.id,
+            qty: units,
+            pricePerUnit: some(asPerPiece(per, 'the face less what was taken off')),
+            accruedPerUnit: none(),
+          },
+          {
+            kind: 'money',
+            from: ctx.accountOf(buyer, i.ccy),
+            to: ctx.accountOf(holder, i.ccy),
+            receipt: { of: 'returnOfCapital' },
+            ccy: i.ccy,
+            amount: pay,
+          },
+        ],
+        cause: 'maturity',
+        reason: `${String(buyer)} pays ${String(i.id)} early and takes ${percent(t.discount)} off`,
+      });
+      if (r.outcome !== 'settled') continue;
+      ctx.record(
+        'tradeCredit.paidEarly',
+        [String(i.id), String(holder), String(buyer)],
+        {
+          invoice: String(i.id),
+          holder: String(holder),
+          buyer: String(buyer),
+          paid: pay,
+          face: units,
+          impliedRate: rate.value,
+          earns: earns.value,
+        },
+        false,
+      );
+    }
+  }
+}
+
 /** One invoice, as this module reads it: who shipped, who owes, which row and when it falls due. */
 export interface Written {
   readonly id: InstrumentId;
@@ -334,18 +546,27 @@ export function tradeCredit(): SystemModule {
     partyKinds: [],
     curveFamilies: [],
     units: [],
-    params: [
+    /**
+     * A3, B5 (17.7a, finding 21.61): NO NUMBER FOR THE WHOLE WORLD. `tradeCredit.days` was one —
+     * thirty days, a technology, the same for a mill and a corner shop — and B5 says the seller
+     * decides. Each seller's days, its window and its discount are drawn from `TERMS_SPREAD` and
+     * declared under its own name the first time it ships on terms (`termsOf`), which is where every
+     * other drawn preference in this world lives (XI-14).
+     */
+    params: [],
+    phases: [
       {
-        id: TRADE_CREDIT_PARAMS.days,
-        value: 30,
-        unit: 'days',
-        dimension: 'days',
-        kind: 'technology',
-        owner: 'standardSetter',
-        why: 'Trade Credit A3: how long a buyer has to pay. It is the convention of the trade — thirty days is what most of the world writes on an invoice — and it is what makes the credit a real one: a seller that ships today and is paid in a month has lent the money for a month, whether or not either of them calls it that. What a seller does about a buyer that has not paid is a DECISION and is not this number.',
+        name: 'tradeCredit.payEarly',
+        spec: 'Trade Credit A3 Trade Credit B1',
+        // After the period's shipping (`firms.invoice`, cycle 2) so a buyer can take a discount on
+        // the invoice it was handed this week, and before the marks, so what the seller realised on
+        // a row it gave up is in the books the revaluation reads (Clearing F1).
+        anchor: { before: 'revaluation' },
+        reads: [{ kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'tradeCredit.paidEarly' }],
+        run: paysEarly,
       },
     ],
-    phases: [],
     participants: [],
     // A3, B5: exactly one module answers what a firm ships on, and it is the one that owns firms'
     // judgements of each other. The kernel writes the leg; this decides what goes in it.

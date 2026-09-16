@@ -644,6 +644,16 @@ asks. The rule that door exists for is the one a module can break silently — r
 own view with `ctx.participant(x)` gives a mechanism private state no participant may have, so the
 count of those reads per file is ratcheted in `tools/check-forbids.ts` and may only fall.
 
+**A PREFERENCE THAT EVERY KIND OF PARTY CAN HAVE LIVES IN THE PARAMETER REGISTER** (XI-14; Trade
+Credit B5; item 17.7a). A firm's hurdle and horizon are drawn at its birth and declared under its own
+name, and that worked because firms have a module that draws for them. A seller's terms are the same
+kind of number and sellers are not one kind of thing: a firm, a small-business cell and a merchant
+all ship on terms, and no module draws for all three. The register is the home they share — keyed by
+the party's name, declared once with a unit and a reason, readable by anybody, and `params.has` is
+what lets a caller declare on first use instead of asking for a number that is not there yet. The
+module states the WIDTH (`mechanisms/<system>/data.ts`, a `Spread` with its own why) and never the
+number; the party's own stream, derived from its name, decides where in the width it lands.
+
 **ONE DOOR OUT OF TERMS FIXED AT ISSUANCE, and the kind holds the key** (Banks Lending E3; item
 17.7). Terms are the structure of an instrument and not an opening condition (Seed C4.b), so nothing
 could change them: a claim that stopped performing stayed in default for the rest of its life and a
