@@ -1078,7 +1078,7 @@ measurement is taken there is nothing to name.
 | `Central Bank E3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank E4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank E5` | PARTIAL | the two statements are both true of the books; measuring them is the measurement programme (worklist 16) |
-| `Central Bank F1` | MISSING |  |
+| `Central Bank F1` | MISSING | 16.7: the seed's stated share of foreign paper is deleted (a placeholder that named this item); nothing yet gives a central bank a reason to buy reserves — 18a.1, finding 21.54 |
 | `Central Bank F2` | MISSING |  |
 | `Central Bank F3` | MISSING |  |
 | `Central Bank F4` | MISSING |  |
@@ -1493,32 +1493,36 @@ measurement is taken there is nothing to name.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Cross-Border A1` | PARTIAL | packages/engine/src/seeds/foundation.ts — four regions, each with its own money, its own central bank and its own sovereign borrower. The three abroad have no firms, no households and no labour market: a real economy there is 13i’s |
-| `Cross-Border A2` | MET | packages/engine/src/seeds/foundation.ts (a holder in one region holds another’s paper, and the coupon crosses the border in the issuer’s money) |
-| `Cross-Border A3` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/audit/families/accounts.ts (what a holder abroad is worth at home moves with the rate, and the balance sheet reads it in the holder’s own money) |
-| `Cross-Border A4` | PARTIAL | packages/engine/src/mechanisms/spot-fx — the capital flow that exists is the one the cross holdings and the coupons produce. Trade invoiced in another country’s money, and a portfolio decision to hold abroad, are 13i and 13h |
-| `Cross-Border B1` | MISSING |  |
-| `Cross-Border B2` | MISSING |  |
-| `Cross-Border B3` | MISSING |  |
-| `Cross-Border B4` | MISSING |  |
-| `Cross-Border C1` | MISSING |  |
+| `Cross-Border A1` | MET | packages/engine/src/mechanisms/merchants/index.ts, packages/engine/src/mechanisms/freight/index.ts, packages/engine/src/mechanisms/treasury/index.ts (16.8: a merchant in one place buys a line made in another and ships it; a treasury borrows from holders abroad; the four regions each have banks, firms, households and a labour market since 13i) |
+| `Cross-Border A2` | MET | packages/engine/src/clearing/market.ts (a trade settles in the market's one stated money — the seller's, Spot FX F1 — and whoever is not in it is short of it: `owedIn`, Spot FX B1), packages/engine/src/seeds/foundation.ts (a coupon crosses the border in the issuer's money) |
+| `Cross-Border A2.a` | PARTIAL | packages/engine/src/mechanisms/fx-derivatives (a forward and a cross-currency swap exist and a party with a reason may hedge in them); a firm or a treasury with a foreign obligation CARRIES it today — nothing yet reasons about hedging it (17.4, 21.46) |
+| `Cross-Border A3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/world/actions.ts (a payment in a money lands in the payee's account IN THAT MONEY, at that money's own banking system — `accountOf(party, ccy)` — wherever the payee is; Currency B2.a, B3) |
+| `Cross-Border A4` | PARTIAL | packages/engine/src/registry/banking.ts (a lender's view of a name is its own, wherever the name is); nothing yet makes a FOREIGN counterparty a different credit or legal fact from a domestic one — no jurisdiction on an estate, no withholding — 17.0's credit view is where a lender would read it |
+| `Cross-Border B1` | MET | packages/engine/src/mechanisms/merchants/index.ts (16.3: a merchant buys here to sell where the far print net of the passage is dearest; a producer ships its unsold stock down the one leg with the widest gap — because of price, and only when the gap pays for the voyage) |
+| `Cross-Border B2` | MET | packages/engine/src/mechanisms/freight/index.ts (a cargo is loaded, sails for the leg's days, lands and is delivered; the freight is a session per leg and is paid to a named carrier; a port has berths and a queue) |
+| `Cross-Border B3` | MET | packages/engine/src/mechanisms/merchants/index.ts, packages/engine/src/prices/value.ts (16.0, 16.3: what a buyer pays is read in its own money at the rate in force — `inMoney`, a report — and its bid net of the passage moves when the rate does, because the far print is in the far money) |
+| `Cross-Border B3.a` | PARTIAL | packages/engine/src/mechanisms/merchants/index.ts (a rate move changes which destination is dearest and whether the gap pays for the voyage — a consequence of B1's decision, no elasticity anywhere); UNMEASURED until Part XII |
+| `Cross-Border B4` | MET | packages/engine/src/mechanisms/freight/index.ts (a cargo leaves one register line and arrives in another, unit for unit, on a numbered instruction with the shipper and carrier named — an export IS the other side's import because it is the same instruction) |
+| `Cross-Border C1` | MET | packages/engine/src/mechanisms/indices/baskets.ts, packages/engine/src/mechanisms/funds (the global equity line and the tracker that follows it hold every region's shares; a holder of foreign paper holds a claim on a foreign issuer, revalued at the rate — Currency D2) |
 | `Cross-Border C2` | PARTIAL | packages/engine/src/mechanisms/treasury/index.ts (16.4: a treasury borrows in the money it reads the cost lowest in — its own curve at home, another money's benchmark plus its own outlook of the pair abroad — and then owes a money it does not earn, failing in it as 12a.6 made it); a firm still issues in its home money only (17.4, 21.49) |
-| `Cross-Border C3` | MISSING |  |
-| `Cross-Border C4` | MISSING |  |
-| `Cross-Border C5` | MISSING |  |
-| `Cross-Border D1` | MISSING |  |
-| `Cross-Border D2` | MISSING |  |
-| `Cross-Border D3` | MISSING |  |
-| `Cross-Border D4` | MISSING |  |
-| `Cross-Border D5` | MISSING |  |
-| `Cross-Border D6` | MISSING |  |
-| `Cross-Border E1` | MET | packages/engine/src/mechanisms/external/index.ts (the current half is a walk over settled legs — a thing crossing is trade, and a payment with nothing delivered beside it books what it bought at what was paid) |
-| `Cross-Border E2` | MET | packages/engine/src/mechanisms/external/index.ts (the financial half is claims crossing; `financedBy` is who had to lend, read from the region own end) |
-| `Cross-Border E3` | MET | packages/engine/src/mechanisms/external/index.ts (the `flows` family: the two halves cancel because every transaction had two sides, measured with derived dust and never repaired) |
-| `Cross-Border E4` | MET | packages/engine/src/mechanisms/external/index.ts (`external.accounts` published every period, causing nothing and storing no level) |
-| `Cross-Border F1` | MISSING |  |
-| `Cross-Border F2` | MISSING |  |
-| `Cross-Border F3` | MISSING |  |
+| `Cross-Border C3` | PARTIAL | packages/engine/src/mechanisms/money-market/index.ts (16.5: a bank short of a money it does not book in is funded by its own central bank off the swap line and owes it in that money; squaring is what the spot book and `owedIn` are for — Spot FX B1); a bank that LENDS in a money it does not fund in is 17.0's (`costOfFunds` per money exists since 12a.7) |
+| `Cross-Border C4` | MISSING | a bidder for control (`control/index.ts`) bids for lines in its own money only; a direct investment across the border is 17b's (the leveraged buyout) with 16.5's `transact` for the escrow |
+| `Cross-Border C5` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/mechanisms/equity/index.ts (a coupon, a dividend or interest is paid to the holder of record in the line's money, wherever the holder banks — Register E1) |
+| `Cross-Border D1` | MET | packages/engine/src/mechanisms/external/index.ts (the current half is a walk over settled legs — a thing crossing is trade, and a payment with nothing delivered beside it books what it bought at what was paid; each leg translated into the region's money for the report, Currency C4) |
+| `Cross-Border D2` | MET | packages/engine/src/mechanisms/external/index.ts (the financial half is claims crossing; `financedBy` is who had to lend, read from the region's own end) |
+| `Cross-Border D3` | MET | packages/engine/src/mechanisms/external/index.ts (the `flows` family: the two halves cancel because every transaction had two sides, measured with derived dust and never repaired) |
+| `Cross-Border D3.a` | MET | packages/engine/src/mechanisms/external/index.ts (a residual is a violation naming the region and its size, never a plug) |
+| `Cross-Border D4` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts, packages/engine/src/mechanisms/money-market/index.ts (a region short of a money buys it from whoever will sell at a rate, or its banks are lent it off a finite swap line; nobody is made to finance anybody, and both can stop) |
+| `Cross-Border D4.a` | MET | packages/engine/src/register/register.ts (every foreign balance and every foreign claim is a holding of a named party; nothing is netted into a regional number) |
+| `Cross-Border D5` | MET | packages/engine/src/world/revalue.ts (every position in a money that is not its holder's own is revalued to the holder's equity, the central bank's to its revaluation account — Currency D2, D2.b) |
+| `Cross-Border D6` | PARTIAL | packages/engine/src/mechanisms/external/index.ts (each region's two halves cancel; that the four regions sum to zero in every category is the same walk summed and is UNMEASURED until Part XII) |
+| `Cross-Border E1` | MET | packages/engine/src/world/world.ts (16.6: every party of every kind is asked in every pair; a market's book takes an order from a party of any region, and the trade settles in the market's money at both parties' accounts in it) |
+| `Cross-Border E2` | MET | packages/engine/src/register/register.ts, packages/engine/src/seeds/foundation.ts (a holding is (holder, instrument) whatever region either is in; foreign paper is held from the seed) |
+| `Cross-Border E3` | MET | packages/engine/src/mechanisms/estate/index.ts (an estate pays every claim in proportion by rank, and a claim is a holding wherever the holder banks) |
+| `Cross-Border E4` | MET | packages/engine/src/mechanisms/money-market/index.ts (16.5: a central bank's swap line reaches another region's banks through their own central bank; its rate reaches every holder of its money through the pairs) |
+| `Cross-Border F1` | PARTIAL | packages/engine/src/mechanisms/merchants, packages/engine/src/mechanisms/spot-fx (every region has merchants, pairs and a desk, and 16.2's table shows the pairs clearing); whether every party trades only domestically is a MEASUREMENT for Part XII |
+| `Cross-Border F2` | MET | packages/engine/src/mechanisms/external/index.ts (the accounts are a walk over named legs and store nothing; every cross-border flow has two named parties on it) |
+| `Cross-Border F3` | MET | packages/engine/src/mechanisms/merchants/index.ts, packages/engine/src/mechanisms/treasury/index.ts (a cargo ships because a gap pays for it, a foreign issue happens because the cost read lower; no trade or capital-flow series exists anywhere) |
 
 ## Ratings
 

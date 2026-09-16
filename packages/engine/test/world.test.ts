@@ -235,7 +235,8 @@ describe('the seed (Seed A2)', () => {
     // NINE from 13c: this world gained a fund that holds the thing itself (Commodities Spot C3),
     // and every fund carries a management fee standing in for the same mechanism at the same item.
     // A count that stayed put while the world grew a fund would be the register not counting.
-    expect(report?.reads.placeholders).toBe(9);
+    // 16.7: `seed.crossHoldingShare` died on the item it named; a central bank holds abroad what it bought.
+    expect(report?.reads.placeholders).toBe(8);
     // PLAN §7: what each stands in for and which item kills it, never the id — a fund's own id
     // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
@@ -244,7 +245,6 @@ describe('the seed (Seed A2)', () => {
         .sort(),
     ).toEqual([
       "Banks Lending C1.d — the credit officer's hours, paid to a named person at 13d",
-      'Central Bank F4 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',

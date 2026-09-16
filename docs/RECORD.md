@@ -12360,3 +12360,47 @@ name — margin now returns to a side's living successor (Money E4). A firm whos
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `spot-fx`, `currency`,
 `money-market` suites at their 19 reds of 15.7, none new. Suites at the end of item 16.
+
+## Item 16.7 — A central bank holds abroad what it bought
+
+The seed stated eight per cent of every central bank's reserves as another country's paper
+(`seed.crossHoldingShare`, a placeholder whose named mechanism was Central Bank F4) and planted the
+holdings and their cross-currency coupons at the opening. The share is deleted with the block that
+spent it, and no central bank opens holding another money's paper: what it holds abroad is what it
+BOUGHT, and nothing in this world yet gives it a reason to buy (Central Bank F1, F2 are a reserve
+target and an intervention rule, both a mandate's decisions, positioned at 18a.1 as 21.54). The
+`world.test.ts` placeholder census falls from nine to eight. The other half of this item — the
+opening share of its own sovereign's paper a central bank holds (`seed.centralBank.openingHoldingShare`,
+a POLICY under Central Bank C1.a) — is kept: it is the size of the central bank's balance sheet the
+policy opens with, and 18a.3's open-market operations are what move it thereafter.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, existence green. Suites at the end
+of item 16.
+
+## Item 16.8 — Cross-Border re-marked; item 16 closes
+
+Every Cross-Border clause is re-read against the tree at 16.7 and re-marked: 20 MET, 5 PARTIAL
+(A2.a the corporate's hedge, A4, B3.a, C2 the firm half at 17.4, C3, D6, F1), 1 MISSING (C4 — the
+leveraged buyout's foreign tranche, 17b); four rows the coverage lacked are added (A2.a, B3.a, D3.a,
+D4.a). Central Bank F1 is annotated to 21.54. `check:opens` now prints how many FX pairs cleared
+alongside the census, and the four-country `opens` world at twelve periods reads:
+
+| period | pairs cleared | swap-line draws | cargoes | transact trips |
+|---|---|---|---|---|
+| 1 | 3 of 6 | 0 | 0 | 0 |
+| 2 | 4 of 6 | 5 | 0 | 1 |
+| 3 | 6 of 6 | 2 | 0 | 1 |
+| 4 | 6 of 6 | 4 | 0 | 2 |
+| 5–7 | 3, 3, 2 of 6 | 2, 3, 3 | 0 | 0 |
+| 8–12 | 0 of 6 | 6, 5, 5, 5, 5 | 0 | 0 |
+
+That is a measurement, not a diagnosis (Law 11): the pairs stop clearing from period 8 while five
+banks a period draw on the swap line to settle what they owe abroad, and no cargo sails in twelve
+periods — written as 21.55 and positioned at 18a.1 with 21.54, since a world where no central bank
+buys abroad has one fewer side in every pair. Item 16 closes: its section is removed from
+`docs/IMPLEMENTATION.md`; its findings are 21.44–21.55; 16.7's other half sits at 18a.3, the firm
+half of 16.4 at 17.4, Cross-Border C4 at 17b.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence, plan green.
+**Measured.** The eighteen suites run at the close of this major item; their result is the next
+entry.

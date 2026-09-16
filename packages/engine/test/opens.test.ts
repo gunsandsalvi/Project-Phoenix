@@ -53,6 +53,8 @@ function steps(w: World, periods: number, name: string): void {
         ` events=${w.journal.inPeriod(w.period).length}` +
         ` settled=${w.ledger.inPeriod(w.period).length}` +
         ` cargo=${w.journal.ofKindIn('freight.loaded', w.period).length}` +
+        // 16.8: the pairs that CLEARED this period, so a world with two moneys and no FX is visible.
+        ` fx=${report.markets.filter((m) => m.outcome === 'cleared' && w.markets.find((d) => d.id === m.market)?.kind === 'fx').length}` +
         ` loans=${w.journal.ofKindIn('credit.written', w.period).length}` +
         ` audit=${report.audit.total}`,
     );

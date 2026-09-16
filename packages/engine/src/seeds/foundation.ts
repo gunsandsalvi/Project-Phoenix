@@ -699,7 +699,6 @@ const P = {
   plantHeadroom: paramId('seed.firm.plantHeadroom'),
   openingYield: paramId('seed.openingYield'),
   openingRate: paramId('seed.openingRate'),
-  crossHoldingShare: paramId('seed.crossHoldingShare'),
   cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
   treasuryBufferShare: paramId('seed.treasury.bufferShare'),
   insurerOpeningSurplusPerHead: paramId('seed.insurer.openingSurplusPerHead'),
@@ -925,19 +924,6 @@ export function foundationSeedFor(
         kind: 'shape',
         owner: 'model',
         why: "Spot FX C1, Seed C4: what one unit of one money costs in another, before any pair has ever traded. A market that has never traded has no price (XI-6) and a world that opens with holdings in four moneys has to say what they are worth in each other, so ONE level is claimed and each pair's own first session replaces it. One, and the same one for every pair, because a level of one asserts less than any other number would: it says the moneys are all the same size, which is what a world with nothing to distinguish them yet has no reason to deny — and it opens the three crosses consistent with the three dollar rates, so the triangle starts with no gap in it rather than with one somebody put there. What it opens at is not what it stays at: America's banks earn euros, sterling and yen they have no use for and the foreign reserve managers earn dollars they have none for, and where those meet is the rate from period one.",
-      },
-      {
-        id: P.crossHoldingShare,
-        value: 0.08,
-        unit: "share of a holder's paper that is another country's",
-        dimension: 'ratio',
-        kind: 'placeholder',
-        owner: 'model',
-        why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision, after which what anybody holds abroad is an outcome of what it bought and sold. It pointed at 13h, which closed without one; what a central bank's reserves are MADE of is a cross-border question and item 16.6 is where it is answered.",
-        standsInFor: {
-          mechanism: 'Central Bank F4',
-          item: '16.7',
-        },
       },
       ...openingPrices(),
       {
@@ -1537,11 +1523,6 @@ export function foundationSeedFor(
         else held.push(f);
       }
 
-      /** What one country's own paper came to in the hands of its own banking system. */
-      const systemPaperIn = new Map<string, Stated>();
-      /** Central Bank F4: the line a reserve manager abroad holds — the benchmark, and its price. */
-      const benchmarkIn = new Map<string, { id: InstrumentId; price: PerNamedUnit }>();
-
       for (const c of countries) {
         const where = String(c.country);
         const banksHere = banksIn.get(where) ?? [];
@@ -1711,14 +1692,6 @@ export function foundationSeedFor(
             );
           }
         }
-        systemPaperIn.set(where, systemPaper);
-        const last = seedLineRows[seedLineRows.length - 1];
-        if (last !== undefined) {
-          benchmarkIn.set(where, {
-            id: instrumentId(last.id),
-            price: openingOf(opening, last.id),
-          });
-        }
 
         // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING
         // WITH. Its money is its liability and the paper above is the asset it bought with it, so
@@ -1887,69 +1860,10 @@ export function foundationSeedFor(
         });
       }
 
-      // ------------------------------------------------------------------------------------------
-      // THE CROSS HOLDINGS (Currency D2, Spot FX B1, B2; Central Bank F4)
-      //
-      // EVERY CROSS HOLDING IN THIS WORLD IS A CENTRAL BANK'S, and that is not a convenience — it is
-      // the only holder for whom foreign paper is what it is FOR (Central Bank F4: reserves ARE a
-      // claim on another country's issuer). Each country's central bank holds the others' paper, and
-      // that one fact gives the currency layer everything it needs: a position to revalue every
-      // period (Currency D2, and for a central bank it goes to its revaluation account, A2.c), a
-      // COUPON that arrives in a money its receiver does not book in (C4), and parties on both sides
-      // of a pair holding a money they have no use for (Spot FX B1, B2; XI-13).
-      //
-      // IT IS NOT THE COMMERCIAL BANKS', and the first version of this seed had it be. A bank's
-      // liquid assets are its reserves plus what its own unencumbered paper would raise AT ITS OWN
-      // CENTRAL BANK'S WINDOW (Money Market C1, C1.a) — and a foreign government's bond raises
-      // nothing there, because the window is its own system's (Currency D4). So eight per cent of the
-      // banking system's paper moved abroad took eight per cent of its liquidity with it, every bank
-      // in the world went to negative funding room, `publishQuotes` stopped quoting anybody, and
-      // lending, investment and the whole real chain stopped with it — 121 credit quotes became 20.
-      // That is not a finding about banks; it is a seed that put a position where its own liquidity
-      // rule says it cannot be. What a COMMERCIAL bank holds abroad is a decision it takes with its
-      // own capital once there is a reason to (13h), and it is not the seed's to state.
-      //
-      // 13j: it is now symmetric BY CONSTRUCTION rather than by arrangement. Every country has a
-      // banking system with paper in it, so what each central bank holds abroad is the same share of
-      // its OWN system's paper, spread over the other countries — and nothing in this world says
-      // which of the four is the reserve currency (XI-12).
-      // A world of ONE country has no cross holdings, because there is nobody else to hold its
-      // paper and nothing of anybody else's to hold. It is not a case to handle: it is the honest
-      // answer to "what does this central bank hold abroad" when there is no abroad (Law 2).
-      const elsewhere = countries.length - 1;
-      const crossShare = ctx.params.ratio(P.crossHoldingShare);
-      const abroadShare =
-        elsewhere <= 0
-          ? asRatio(0, 'a world with no abroad holds nothing of it')
-          : over(
-              crossShare,
-              asRatio(elsewhere, 'the other countries there are'),
-              'the part of it that is any ONE other country’s',
-            );
-      for (const mine of elsewhere <= 0 ? [] : countries) {
-        const systemPaper = zeroIfNone(systemPaperIn.get(String(mine.country)));
-        if (systemPaper <= 0) continue;
-        for (const theirs of countries) {
-          if (theirs.country === mine.country) continue;
-          const bench = benchmarkIn.get(String(theirs.country));
-          if (bench === undefined || bench.price <= 0) continue;
-          const units = amountOf(
-            scale(systemPaper, abroadShare, `what ${mine.name} holds of ${theirs.name}`),
-            bench.price,
-            'units',
-          );
-          if (units <= 0) continue;
-          const drawn = held(ctx, bench.id, units);
-          if (drawn <= 0) continue;
-          // Law 8: WHAT IT ACTUALLY HOLDS, in the units the price is quoted in. This read multiplied
-          // a count of PIECES by a price per NAMED unit, so the reserves the seed thought it had
-          // bought were the subdivision of a bond times too big — eight per cent of the system's
-          // paper became eight times it, the money issued against it went with it, and every one of
-          // those numbers moved again when the pieces were made finer. One unit on both sides, or it
-          // is not a value.
-          ctx.endowUnits(mine.centralBank, bench.id, drawn, priced(ctx, bench.id, bench.price));
-        }
-      }
+      // Central Bank F1, F2 (16.7): WHAT A CENTRAL BANK HOLDS ABROAD IS WHAT IT BOUGHT FOR A REASON.
+      // The seed stated a share of every central bank's reserves as another country's paper
+      // (`seed.crossHoldingShare`, a placeholder that named this item); it is gone, and a central bank
+      // opens holding nothing abroad until a mechanism gives it a reason to buy (18a; 21.54).
 
       // Banks Capital B1.b, A3: a bank opens where ITS OWN CAPITAL RULE puts it, so it neither has to
       // shrink on the first morning nor opens with headroom nobody gave it. At the opening its assets
