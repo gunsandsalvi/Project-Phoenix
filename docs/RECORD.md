@@ -13563,3 +13563,37 @@ re-positioned at 18a.1 with the other funding-shape reads.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 two new tests, green, and the file's seven reds are the seven that were red at `c7a2d38`; `buyout`
 six green.
+
+## Item 17b.8a — A covenant is something the lender asked for
+
+Finding 21.60(b): *"what an issuer promises is still the arithmetic of its own accounts as this
+borrowing leaves them — the tightest covenant a lender could ask for — because no holder bids a
+covenant, and B2's negotiation has one side."* A buyout is where the missing side shows: a bank
+committing against a company it is about to lever is the one lender in this world with a reason to
+name a line.
+
+**The second side is the SIZE.** A facility's covenant is struck off the borrower's published
+accounts with *this commitment* on them — the same shape the bond's is — and what makes it the
+lender's ask rather than the borrower's arithmetic is that the commitment is the LENDER's: it
+committed what its own room allowed, not what the borrower asked for. A bank that would commit less
+draws a tighter line, which is what bargaining looks like arithmetically and costs no new number.
+
+**A covenant is one kind of fact however the money was lent.** `Covenants` moved to
+`registry/credit.ts`, because two lenders make one and neither module may import the other; the test
+is the same arithmetic on the same two published numbers and writes the same `covenant.breached`
+event, once per line per set of accounts, read off the journal rather than remembered (Law 19).
+
+**A line that was drawn does not lapse.** `lapseFacilities` ends a promise nobody used; a credit
+agreement the borrower drew on stands while anything is outstanding, because the covenant is a term
+of it and a covenant that expired the week after the drawing is not one.
+
+**Nothing is a real answer, and it is stated.** A borrower that has never published accounts has
+nothing a covenant could be tested on, and terms nobody can test are not terms (Reporting A2.a), so
+`covenant` is an `Option` and a lender that commits to such a name has asked for no promise and
+bears it. That is not hypothetical: **finding 21.76**, raised here — in twenty-four periods of the
+rig only CELLS publish accounts, and the first named firm publishes at period 25. Requiring a
+testable covenant would have made a buyout impossible in every world this repository can build, and
+the honest answer was to say when there is no promise rather than to refuse the loan or to invent one.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`
+six green; `loans` and `corporate-bond` carry the nine reds they carried at `e2326d3`.

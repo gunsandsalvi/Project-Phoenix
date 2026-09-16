@@ -82,6 +82,7 @@ import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import { TERM_MONTHS } from '../../registry/credit.js';
 import {
+  type Covenants,
   FACILITY,
   facilityLoanId,
   type FacilityTerms,
@@ -877,10 +878,43 @@ function commit(
     .ofKind(FACILITY)
     .find((a) => a.state === 'performing' && a.debtor === borrower && a.creditor === bank);
   if (already !== undefined) return;
+  /**
+   * B2, B2.a, Reporting A2 (17b.8a): THE COVENANT THE LENDER ASKS FOR, off the borrower's own
+   * published accounts with THIS COMMITMENT on them. *"No worse than this leaves you"* — and what
+   * makes it the lender's ask rather than the borrower's arithmetic is that the SIZE is the
+   * lender's: it committed what its own room allowed, so a bank that would commit less draws a
+   * tighter line.
+   *
+   * A BORROWER THAT HAS PUBLISHED NOTHING GETS NO COMMITMENT. Terms nobody can test are not terms
+   * (Reporting A2.a), and a promise about accounts that do not exist is worse than no promise.
+   */
+  const said = ctx.published.lastStatement(borrower);
+  const annual = scale(limit, rate, 'what the line would cost it a year if it drew all of it');
+  const testable =
+    said !== undefined &&
+    said.balance.assets.pieces > 0 &&
+    said.earned.pieces > 0 &&
+    annual.pieces > 0;
+  const covenant: Option<Covenants> =
+    said !== undefined && testable
+      ? some({
+          leverage: ratioOf(
+            plus(said.balance.liabilities, limit, 'what it would owe with this drawn'),
+            said.balance.assets,
+            'the most it may owe against what it holds',
+          ),
+          coverage: ratioOf(
+            said.earned,
+            annual,
+            'the least it must earn against what this costs it',
+          ),
+        })
+      : none<Covenants>();
   const terms: FacilityTerms = {
     kind: FACILITY,
     limit,
     rate,
+    covenant,
     // B2.b: the period the deal has to close in, which is the one after the ask was answered.
     until: period(ctx.period + 1),
     // A2: the term the drawing will run for, struck here because this is where it was agreed —
@@ -906,6 +940,76 @@ function commit(
 }
 
 /**
+ * Corporate Credit B2, B2.a (17b.8a): THE LENDER TESTS WHAT IT ASKED FOR, on the accounts the
+ * borrower published.
+ *
+ * *"Covenants are how credit risk is observed BEFORE a default; without them the only credit
+ * dynamic the model has is the binary one, and an assessment has nothing to update on between
+ * paying and gone."* A levered company is where that bites hardest: it trips a covenant long before
+ * it misses a payment, and the trip is what its lenders, its assessors and its owner react to.
+ *
+ * It is the same arithmetic the bond's own test does, on the same two published numbers, and it
+ * writes the same event — so a breach is one kind of fact however the money was lent (Law 4). One
+ * per line per set of accounts: the test is a pure read and costs nothing to repeat, and what must
+ * not happen twice is the ANNOUNCEMENT, which the journal is the one writer of (Law 19).
+ */
+function testFacilityCovenants(ctx: MechanismContext): void {
+  for (const a of ctx.agreements.ofKind(FACILITY)) {
+    if (a.state !== 'performing') continue;
+    const t = a.terms;
+    if (!isFacility(t)) continue;
+    // B2.a: a line with no promise on it has nothing to test, and that is stated on the terms.
+    if (!t.covenant.some) continue;
+    const promised = t.covenant.value;
+    const said = ctx.published.lastStatement(a.debtor);
+    if (said === undefined) continue;
+    const row = facilityLoanId(a.creditor, a.debtor);
+    if (saidAlready(ctx, row, said.quarter)) continue;
+    const broke: string[] = [];
+    // B2: what it owes against what it holds. A firm with no assets has no ratio that means
+    // anything and has breached, which is what the worst case IS rather than a number pushed back.
+    const levered =
+      said.balance.assets.pieces <= 0
+        ? undefined
+        : ratioOf(said.balance.liabilities, said.balance.assets, 'what it owes against what it holds');
+    if (levered === undefined || levered > promised.leverage) broke.push('leverage');
+    // B2, A3.a: what it earns against what the line costs it a year at the rate it was committed at.
+    const annual = scale(t.limit, t.rate, 'what the line costs it a year');
+    if (
+      annual.pieces > 0 &&
+      ratioOf(said.earned, annual, 'what it earns against what it costs') < promised.coverage
+    ) {
+      broke.push('coverage');
+    }
+    if (broke.length === 0) continue;
+    ctx.record(
+      'covenant.breached',
+      [String(a.debtor), String(row)],
+      {
+        issuer: String(a.debtor),
+        bond: String(row),
+        lender: String(a.creditor),
+        quarter: said.quarter,
+        broke: broke.join(' and '),
+        leverage: levered ?? null,
+        promised: promised.leverage,
+        earned: said.earned.pieces,
+        owedPerYear: annual.pieces,
+        ccy: a.ccy,
+      },
+      true,
+    );
+  }
+}
+
+/** Law 19: whether this line's breach on these accounts has already been announced. */
+function saidAlready(ctx: MechanismContext, row: InstrumentId, quarter: string): boolean {
+  return ctx.journal
+    .ofKind('covenant.breached')
+    .some((e) => e.data['bond'] === String(row) && e.data['quarter'] === quarter);
+}
+
+/**
  * B2.b (17b.1): A COMMITMENT NOBODY DREW LAPSES, and the lender's capital is its own again.
  *
  * It is TERMINATED rather than discharged: nothing was ever owed on it, and what ended it is its own
@@ -918,6 +1022,13 @@ function lapseFacilities(ctx: MechanismContext): void {
     if (a.state !== 'performing') continue;
     const t = a.terms;
     if (!isFacility(t) || ctx.period <= t.until) continue;
+    /**
+     * B2.a (17b.8a): A LINE THAT WAS DRAWN IS NOT OVER. What lapses is a promise nobody used; a
+     * credit agreement the borrower drew on stands while anything is outstanding on it, because the
+     * COVENANT is a term of it and a covenant that expired the week after the drawing is not one.
+     */
+    const row = facilityLoanId(a.creditor, a.debtor);
+    if (ctx.instruments.has(row) && ctx.register.heldTotal(row).value > 0) continue;
     ctx.endAgreement(a.id, 'the deal it was committed for did not close');
     ctx.record(
       'credit.lapsed',
@@ -1658,6 +1769,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+          { kind: 'event', name: 'covenant.breached', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
           { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
           { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
@@ -1668,6 +1780,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'bank.insolvent' },
           { kind: 'event', name: 'bank.reservation' },
           { kind: 'event', name: 'bank.underwriting' },
+          { kind: 'event', name: 'covenant.breached' },
           { kind: 'event', name: 'credit.committed' },
           { kind: 'event', name: 'credit.declined' },
           { kind: 'event', name: 'credit.draw' },
@@ -1685,6 +1798,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           // B2.b (17b.1): a commitment nobody drew is over before this period's are made, so the
           // room it was holding is the bank's own again when it decides on this period's asks.
           lapseFacilities(ctx);
+          // B2.a (17b.8a): and what stands is tested against the accounts the borrower published,
+          // before this period's decisions are taken on it.
+          testFacilityCovenants(ctx);
           runRequests(rows, ctx);
           // Clearing F1: everything that prices off a bank's own economics this period reads it here
           // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether

@@ -43,6 +43,12 @@ const OVER = 4;
 const CHEQUE = 0.2;
 
 /**
+ * How far the world runs: the deal is found in period 1, its lender decides in period 2 and the
+ * tender is in period 3, and the rest is room for what follows it (the owner's hand at 17b.6).
+ */
+const PERIODS = 6;
+
+/**
  * Seed B1.a: THE COMPANY THE DRAW MADE, asked for rather than named — the equity line with the most
  * holders that are not the buyer, which is the one a tender has anybody to tender into.
  */
@@ -74,8 +80,20 @@ function dearestBasis(ctx: MechanismContext, line: InstrumentId): number {
  * The buyer, and the deal it does: it asks the company's lenders to commit in period 1 and runs the
  * tender in period 3, by which time a bank has decided. It brings a fifth of the price itself.
  */
-function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
-  const chosen: { line?: InstrumentId; target?: PartyId; cost?: number; needs?: number } = {};
+function buysACompany(): SystemModule {
+  /**
+   * The deal's own clock. A lender will not commit against accounts that do not exist (Reporting
+   * A2.a: terms nobody can test are not terms), and this world's companies close their books once a
+   * quarter — thirteen weeks — so the deal starts when the target has PUBLISHED and not on a period
+   * number written here.
+   */
+  const chosen: {
+    line?: InstrumentId;
+    target?: PartyId;
+    needs?: number;
+    asked?: number;
+    done?: number;
+  } = {};
   return {
     id: 'test.lbo',
     spec: 'Private Equity B2',
@@ -98,7 +116,7 @@ function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
         reads: [],
         writes: [{ kind: 'event', name: 'firms.funding' }],
         run: (ctx: MechanismContext) => {
-          if (ctx.period !== wants) return;
+          if (chosen.done === undefined || ctx.period !== chosen.done + 1) return;
           ctx.record(
             'firms.funding',
             [BUYER],
@@ -133,7 +151,7 @@ function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
           { kind: 'event', name: 'tender.unfilled' },
         ],
         run: (ctx: MechanismContext) => {
-          if (ctx.period === asks) {
+          if (chosen.asked === undefined) {
             const found = targetIn(ctx);
             if (found === undefined) return;
             const outstanding = ctx.register.heldTotal(found.line).value;
@@ -143,7 +161,7 @@ function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
             chosen.line = found.line;
             chosen.target = found.target;
             chosen.needs = needs;
-            chosen.cost = cost;
+            chosen.asked = ctx.period;
             // B2: it brings a fifth and asks the company's lenders to commit the rest.
             askToFund(
               ctx,
@@ -153,10 +171,13 @@ function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
               BUYER,
               ctx.params.months(DEAL_MONTHS),
             );
+            return;
           }
-          if (ctx.period !== tenders) return;
           const { line, target } = chosen;
           if (line === undefined || target === undefined || chosen.needs === undefined) return;
+          // It asked in one period, its lender decided in the next, and it tenders in the one after.
+          if (chosen.done !== undefined || ctx.period < chosen.asked + 2) return;
+          chosen.done = ctx.period;
           const bid: Bid = {
             buyer: BUYER,
             target,
@@ -198,7 +219,7 @@ function buyoutWorld(seed = 'lbo'): World {
 describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () => {
   it('the company borrows, buys its own shares back, and the buyer pays the rest', () => {
     const w = buyoutWorld();
-    for (let i = 0; i < 3; i += 1) w.step();
+    for (let i = 0; i < PERIODS; i += 1) w.step();
     const done = w.journal.ofKind('control.acquired');
     expect(done.length).toBeGreaterThan(0);
     const e = done[0];
@@ -217,7 +238,7 @@ describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () =
 
   it('the debt is the TARGET’s liability and nobody else’s (B2.a)', () => {
     const w = buyoutWorld();
-    for (let i = 0; i < 3; i += 1) w.step();
+    for (let i = 0; i < PERIODS; i += 1) w.step();
     const e = w.journal.ofKind('control.acquired')[0];
     if (e === undefined) throw new Error('the deal did not happen');
     const target = partyId(String(e.data['target']));
@@ -238,7 +259,10 @@ describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () =
     // The company owes it; the buyer owes nothing at all, which is why a failed buyout would kill
     // the firm and not the fund.
     expect(row.terms.borrower).toBe(target);
-    expect(row.issued).toBeCloseTo(Number(e.data['drawn']), 6);
+    // It was drawn on the commitment made for this deal, and the row is the one the lender's own
+    // headroom read names — one row, two readers (Law 4). What is OUTSTANDING on it now is a moving
+    // number: a borrower with money over what it needs pays its dearest line down (17.9a).
+    expect(row.terms.originator).not.toBe(BUYER);
     expect(
       w.instruments.all().filter((i) => i.kind === LOAN && i.issuer.some && i.issuer.value === BUYER),
     ).toHaveLength(0);
@@ -246,7 +270,7 @@ describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () =
 
   it('what the company paid for ceases, so the buyer holds a majority of what is left (B4)', () => {
     const w = buyoutWorld();
-    for (let i = 0; i < 3; i += 1) w.step();
+    for (let i = 0; i < PERIODS; i += 1) w.step();
     const e = w.journal.ofKind('control.acquired')[0];
     if (e === undefined) throw new Error('the deal did not happen');
     const line = instrumentId(String(e.subjects[2]));
@@ -263,7 +287,7 @@ describe('sources and uses are measured, not assumed (Private Equity B5)', () =>
   it('the family reports nothing on a deal that balanced', () => {
     const w = buyoutWorld();
     let said: string[] = [];
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < PERIODS; i += 1) {
       const report = w.step();
       said = report.audit.families
         .filter((f) => f.family === 'flows')
@@ -283,7 +307,7 @@ describe('sources and uses are measured, not assumed (Private Equity B5)', () =>
     // carries what the sellers were paid and the two places it came from, under those names.
     const w = buyoutWorld();
     let built = false;
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < PERIODS; i += 1) {
       const report = w.step();
       built = report.audit.families.some((f) => f.family === 'flows' && f.built);
     }
@@ -297,7 +321,7 @@ describe('sources and uses are measured, not assumed (Private Equity B5)', () =>
 describe('the owner’s hand (Private Equity C2, C3)', () => {
   it('a company its owner needs money from borrows, and the money is the owner’s to take', () => {
     const w = buyoutWorld();
-    for (let i = 0; i < 7; i += 1) w.step();
+    for (let i = 0; i < PERIODS + 6; i += 1) w.step();
     const done = w.journal.ofKind('control.recapitalised');
     expect(done.length).toBeGreaterThan(0);
     const e = done[0];

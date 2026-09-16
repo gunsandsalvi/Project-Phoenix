@@ -147,11 +147,26 @@ export interface FacilityTerms extends AgreementTerms {
    * party that decided it — so the term travels with the promise (Law 4).
    */
   readonly maturity: Civil;
+  /**
+   * Corporate Credit B2, B2.a (17b.8a): WHAT THE LENDER ASKED FOR, and it is the half of a covenant
+   * that was missing. What an issuer promises on its paper is the arithmetic of its own accounts as
+   * that borrowing leaves them, because no holder bids a covenant and B2's negotiation has one
+   * side. Here the SIZE is the lender's — it committed what its own room allowed, not what the
+   * borrower asked for — so the line the covenant draws is the lender's too: *no worse than this
+   * commitment leaves you, and the commitment is the size I chose.* A bank that would commit less
+   * imposes a tighter one, which is what bargaining looks like arithmetically.
+   *
+   * NOTHING is a real answer and is stated rather than pretended: a borrower that has never
+   * published accounts has nothing a covenant could be tested on, and terms nobody can test are not
+   * terms (Reporting A2.a). A lender that commits to such a name has asked for no promise and bears
+   * that, which is a decision and not an oversight.
+   */
+  readonly covenant: Option<Covenants>;
 }
 
-/** Structural, like `isLoan`: a size, a price for drawing it, and a date it stops standing. */
+/** Structural, like `isLoan`: a size, a price for drawing it, a date it stops standing, a promise. */
 export const isFacility = (t: AgreementTerms): t is FacilityTerms =>
-  'limit' in t && 'rate' in t && 'until' in t && 'maturity' in t;
+  'limit' in t && 'rate' in t && 'until' in t && 'maturity' in t && 'covenant' in t;
 
 /**
  * F1.a: the row a facility is drawn into — one per (lender, borrower), named so a reader sees whose
@@ -183,3 +198,27 @@ export const TERM_MONTHS = {
   /** Corporate Credit C9: a working-capital line, drawn and repaid at the borrower's option. */
   working: paramId('lending.loanMonths'),
 } as const;
+
+/* --- What a borrower promised its lender ----------------------------------------------------- */
+
+/**
+ * Corporate Credit B2, B2.a: WHAT THIS BORROWER PROMISED, struck when it borrowed and stated on the
+ * paper or on the commitment.
+ *
+ * Two lines, because they are the two questions a lender actually asks and they fail in different
+ * worlds: how much it owes against what it has (a balance-sheet test, which a fall in asset prices
+ * breaks), and what it earns against what falls due (an income test, which a bad year breaks). A
+ * firm can pass either while failing the other, and which one goes says what went wrong.
+ *
+ * Neither is a parameter. They are TERMS — this borrower's own commitment at this borrowing — and
+ * what a given firm promised is an outcome of what it had to promise to be lent to.
+ *
+ * It is here rather than beside the bond because two lenders make one: a holder of paper and a bank
+ * that commits a facility, and neither module may import the other (17b.8a).
+ */
+export interface Covenants {
+  /** B2: the most it may owe against what it holds, as the borrower's own published accounts read. */
+  readonly leverage: Ratio;
+  /** B2: the least it must earn against what falls due, on the same published accounts. */
+  readonly coverage: Ratio;
+}
