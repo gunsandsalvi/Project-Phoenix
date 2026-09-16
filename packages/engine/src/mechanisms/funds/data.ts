@@ -12,6 +12,7 @@ import { paramId } from '../../core/ids.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import type { Blueprint } from '../../registry/blueprint.js';
+import type { AssetClass } from '../../registry/universe.js';
 import type { Liquidity, MayWrite } from './mandate.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
@@ -266,12 +267,31 @@ export function drawTrackers(
    * a size boundary is a rebalance nobody has to trade.
    */
   tracks: readonly string[],
+  /**
+   * A4, Indices C1 (17.10b): WHAT THESE VEHICLES MAY HOLD, which is not what their index says they
+   * MUST. An equity tracker's mandate is listed equity — the class a share is — and a CREDIT
+   * tracker's is the claims a company issued; the index picks the lines inside that, and the
+   * mandate is what bounds it. Two words apart, and without them a credit tracker would be an
+   * equity mandate holding bonds.
+   */
+  holds: readonly AssetClass[],
+  /** Law 9: what this house's vehicles are called, so two sets of them are two names. */
+  named: string,
+  /**
+   * E3.a, Indices A3, D5.a: whether the SEED may open the first of them. It may where the index
+   * answers at period zero — a broad equity line is its listed constituents and they are listed —
+   * and it may not where the index holds paper that does not exist yet, which is every credit line.
+   */
+  seeds: boolean,
 ): readonly FundDecl[] {
-  if (lines.length === 0 || tracks.length === 0) return [];
+  if (tracks.length === 0) return [];
+  // E3.a: a SEEDED vehicle needs the basket named in advance; one that launches in kind reads its
+  // own index for it (`funds/index.ts launchBasket`), so it needs no list here at all.
+  if (seeds && lines.length === 0) return [];
   const rng = prng(seed, 'trackers');
   const basket: Record<string, number> = {};
   for (const line of lines) basket[line] = 1;
-  const manager = 'manager.etf.us';
+  const manager = `manager.${named}`;
   const by: Record<string, number> = {};
   by[manager] = IN_KIND_SPONSOR_SHARE;
   // The participants, drawn without repeating a name: a bank cannot be two of them.
@@ -290,7 +310,10 @@ export function drawTrackers(
   for (const bank of [...chosen].sort()) by[bank] = rest / chosen.length;
   const home = chosen[0];
   return tracks.map((index, n) => ({
-    fund: n === 0 ? 'etf.us' : `etf.${index}`,
+    // Law 9: the index it follows IS its name. The one the seed opens is the house's broad
+    // vehicle and is named for the house; every other is named for its line, so a reader can see
+    // which market a vehicle is in without looking anything up.
+    fund: seeds && n === 0 ? `${named}.us` : `${named}.${index}`,
     manager,
     managerName: 'American Index Managers',
     bank: home ?? manager,
@@ -309,7 +332,7 @@ export function drawTrackers(
     leverage: false,
     performanceFee: 0,
     targetLeverage: 1,
-    blueprint: { classes: ['residual'], currencies: [], listed: true },
+    blueprint: { classes: holds, currencies: [], listed: true },
     ownCurrencyOnly: true,
     // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
     // why it is not a forced seller and why some other vehicle has to carry that.
@@ -332,7 +355,7 @@ export function drawTrackers(
        * reads its constituents' own prints — so a seed that launched one would be handing it a
        * basket nobody could have said was right.
        */
-      seeded: n === 0,
+      seeded: seeds && n === 0,
       needs: ['equity', 'banks'],
     },
     why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the index it tracks, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',

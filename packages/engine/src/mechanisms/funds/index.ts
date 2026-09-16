@@ -1337,7 +1337,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
     blueprint: {
       classes: [
         ...new Set(
-          Object.keys(inKindOf(e).basket).map((line) => ctx.classify(instrumentId(line)).what),
+          Object.keys(launchBasket(ctx, e)).map((line) => ctx.classify(instrumentId(line)).what),
         ),
       ],
       currencies: [ccy],
@@ -1395,9 +1395,10 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
  */
 function launchSize(ctx: MechanismContext, e: FundDecl): Qty {
   let full: Qty | undefined;
+  const basket = launchBasket(ctx, e);
   for (const [holder, slice] of launchers(ctx, e)) {
     const reaches = over(
-      couldCreate(ctx, e, holder),
+      couldCreate(ctx, e, holder, basket),
       asRatio(slice, 'its declared slice'),
       'the launch its slice reaches',
     );
@@ -1431,7 +1432,7 @@ function firstCreation(ctx: MechanismContext, e: FundDecl, share: InstrumentId, 
       scale(full, asRatio(slice, "this holder's slice"), "this holder's slice of the launch"),
     );
     if (wanted <= 0) continue;
-    if (create(ctx, e.fund as PartyId, inKindOf(e).basket, share, holder, wanted)) {
+    if (create(ctx, e.fund as PartyId, launchBasket(ctx, e), share, holder, wanted)) {
       made = addQty(made, wanted, 'shares created');
     }
   }
@@ -1439,9 +1440,38 @@ function firstCreation(ctx: MechanismContext, e: FundDecl, share: InstrumentId, 
 }
 
 /** E3: the most shares this party could create out of what it actually holds, line by line. */
-function couldCreate(ctx: MechanismContext, e: FundDecl, party: PartyId): Qty {
+/**
+ * Indices C1, C2, Fund Shares E3 (17.10b): WHAT A TRACKER'S LAUNCH BASKET IS — ITS INDEX'S.
+ *
+ * A tracker's mandate is the asset class its investors bought and the INDEX is what says which lines
+ * and in what weights (E3). The declared basket was a list written down at the seed, which works for
+ * a vehicle on a market that exists at period zero and cannot work for one on a market that does
+ * not: a credit index holds paper issued years into the run, with ids nobody could have named in
+ * advance, so a tracker on it would have launched out of a basket naming nothing this world has.
+ *
+ * So the launch reads the index. It is asked only where the index HAS answered — `launchInKind`
+ * refuses before that (D5.a) — and one unit of each constituent backs a share, which is the
+ * convention the seeded vehicles already launch on. After the launch nothing reads either: a
+ * creation unit is a pro-rata slice of what the fund actually holds (`inkind.ts basketOf`, Law 19).
+ */
+function launchBasket(ctx: MechanismContext, e: FundDecl): Readonly<Record<string, number>> {
+  const tracks = e.tracks;
+  if (tracks === undefined) return inKindOf(e).basket;
+  const read = ctx.index(tracks);
+  if (!read.some) return inKindOf(e).basket;
+  const out: Record<string, number> = {};
+  for (const c of read.value.basket) out[String(c.instrument)] = 1;
+  return out;
+}
+
+function couldCreate(
+  ctx: MechanismContext,
+  e: FundDecl,
+  party: PartyId,
+  basket: Readonly<Record<string, number>>,
+): Qty {
   let most: Qty | undefined;
-  for (const [line, perShare] of Object.entries(inKindOf(e).basket)) {
+  for (const [line, perShare] of Object.entries(basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     // 0f.1: the register holds the cell's TOTAL.

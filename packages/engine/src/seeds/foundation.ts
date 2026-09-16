@@ -212,7 +212,7 @@ import { bondFutures } from '../mechanisms/bond-futures/index.js';
 import { research } from '../mechanisms/research/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { indexFutures } from '../mechanisms/index-futures/index.js';
-import { EQUITY_INDEX, GLOBAL_INDEX, SIZE_INDEX, indices } from '../mechanisms/indices/index.js';
+import { EQUITY_INDEX, GLOBAL_INDEX, SIZE_INDEX, indices, RATED_INDEX } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
@@ -2460,6 +2460,39 @@ export function foundationDraw(
       SIZE_INDEX(REGION, 'small'),
       GLOBAL_INDEX(globalStatedIn(countries)),
     ],
+    // A4: listed equity is what these hold, and the seed may open the first: a broad equity index
+    // is its listed constituents, and they are listed at period zero.
+    ['residual'] as const,
+    'etf',
+    true,
+  );
+  /**
+   * Indices C2, Ratings C2 (17.10b): AND A VEHICLE ON EACH SIDE OF THE CREDIT LINE.
+   *
+   * A credit tracker is the same construction with two words changed — what it may hold is the
+   * claims a company issued rather than the residual, and the seed may NOT open it. Its index holds
+   * paper that does not exist at period zero and whose ids nobody could name in advance, so it
+   * launches the period its own index first answers, in kind, out of what the participants
+   * actually hold (`launchInKind`, E3.a).
+   *
+   * There are two of them because the line has two sides, and that is the point: a name that is
+   * downgraded across it leaves one vehicle's index and joins the other's, and both have to trade.
+   * A world where every name sits on one side launches one and leaves the other waiting, which is
+   * a true statement about that world rather than a gap.
+   */
+  const creditTrackers = drawTrackers(
+    [],
+    names,
+    seed,
+    [...new Set(countries.map((c) => c.ccy))].flatMap((ccy) => [
+      RATED_INDEX(ccy, 'investment'),
+      RATED_INDEX(ccy, 'speculative'),
+    ]),
+    ['corporate'] as const,
+    // F3: the same index house. A manager that runs the equity trackers runs the credit ones, which
+    // is what an index house is; what tells its vehicles apart is the line each of them follows.
+    'etf',
+    false,
   );
   return {
     banks: bankRows,
@@ -2467,10 +2500,13 @@ export function foundationDraw(
     equities,
     small,
     funds: [...pools, ...strategies, ...privateEquity],
-    trackers,
+    trackers: [...trackers, ...creditTrackers],
     // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
     // index house is a manager like any other and competes for the same people.
-    managers: drawManagers([...pools, ...strategies, ...privateEquity, ...trackers], seed),
+    managers: drawManagers(
+      [...pools, ...strategies, ...privateEquity, ...trackers, ...creditTrackers],
+      seed,
+    ),
   };
 }
 

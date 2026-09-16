@@ -13179,3 +13179,34 @@ measure may be saturated. Written up as 21.69 and positioned at 23.3; not chased
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
 one new test, green; the file's three reds were red before this change.
+
+## Item 17.10b — The tracker over the rated universe
+
+An index with no vehicle following it is a measurement nobody trades. 17.10 built two credit lines
+and neither had one, and the reason it could not have one was structural.
+
+**A tracker's launch basket is its index's, not a list.** The declared basket was written down at the
+seed, which works for a vehicle on a market that exists at period zero — a broad equity index is its
+listed constituents, and they are listed — and cannot work for one on a market that does not. A
+credit index holds paper issued years into the run, with ids nobody could name in advance, so a
+tracker on it would have launched out of a basket naming nothing this world has. Now the launch reads
+the index, which is what the code's own comment had been claiming all along: the mandate is the asset
+class its investors bought and the INDEX is what says which lines and in what weights. Nothing after
+the launch reads either — a creation unit is already a pro-rata slice of what the fund actually
+holds.
+
+**And a tracker draw carries three things it did not.** What its vehicles may HOLD — the claims a
+company issued rather than the residual, because without that a credit tracker is an equity mandate
+holding bonds — the house they belong to, and whether the seed may open them. A vehicle the seed may
+not open is one whose index has not answered yet, and it launches in kind when it does.
+
+**Two of them, because the line has two sides.** A name downgraded across it leaves one vehicle's
+index and joins the other's, and both have to trade; that is C2's simultaneity with something to be
+simultaneous about. A world where every name sits on one side launches one and leaves the other
+waiting, which is a true statement about that world rather than a gap.
+
+**Law 9.** Each vehicle is named for the line it follows, so a reader sees which market it is in
+without looking anything up; only the one the seed opens is named for its house.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`fund-manager`: two new tests, all fourteen green.

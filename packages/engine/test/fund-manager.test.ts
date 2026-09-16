@@ -142,7 +142,7 @@ describe('who may get in', () => {
       const isMoney = p.blueprint.duration?.to === 1;
       expect(p.offeredPublicly).toBe(isMoney);
     }
-    for (const t of drawTrackers(['equity.firm.1'], ['bank.a'], 'a-seed', ['idx'])) {
+    for (const t of drawTrackers(['equity.firm.1'], ['bank.a'], 'a-seed', ['idx'], ['residual'], 'etf', true)) {
       // E1, G1.a: you buy a listed share from a HOLDER, in a market anybody can trade in. A vehicle
       // whose shares are listed cannot ask anything of whoever ends up with one.
       expect(t.offeredPublicly).toBe(true);
@@ -215,5 +215,57 @@ describe('the empty blueprint', () => {
     // A share has no duration. A blueprint that states one is not describing a share, and admitting
     // it by silence would be the `?? 0` this codebase refuses.
     expect(admits({ ...anything, duration: { to: 1 } }, share, () => undefined)).toBe(false);
+  });
+});
+
+/**
+ * A tracker on a market that does not exist yet (Indices C1, C2; Fund Shares A4, E3, E3.a;
+ * item 17.10b).
+ *
+ * An equity tracker can be opened by the seed: its index is the listed lines and they are listed at
+ * period zero. A CREDIT tracker cannot. Its index holds paper issued years into the run, with ids
+ * nobody could name in advance — so it launches the period its own index first answers, in kind,
+ * out of what the participants actually hold.
+ */
+describe('a credit tracker (Fund Shares A4, E3.a; Indices C2)', () => {
+  it('holds what a company issued, not the residual, and the seed does not open it', () => {
+    const credit = drawTrackers(
+      [],
+      ['bank.a', 'bank.b'],
+      'a-seed',
+      ['credit.investment.USD', 'credit.speculative.USD'],
+      ['corporate'],
+      'etf',
+      false,
+    );
+    expect(credit).toHaveLength(2);
+    for (const t of credit) {
+      // A4: the MANDATE is the asset class its investors bought; the index picks the lines inside
+      // it. Without the two being apart, a credit tracker would be an equity mandate holding bonds.
+      expect(t.blueprint.classes).toEqual(['corporate']);
+      // E3.a: and nothing is endowed. The seed cannot hand it a basket nobody could have named.
+      expect(t.inKind?.seeded).toBe(false);
+      expect(t.inKind?.basket).toEqual({});
+      // Law 9: named for the line it follows, so a reader sees which market it is in.
+      expect(t.fund).toContain('credit');
+      expect(t.tracks).toBeDefined();
+    }
+    expect(credit.map((t) => t.tracks)).toEqual([
+      'credit.investment.USD',
+      'credit.speculative.USD',
+    ]);
+  });
+
+  it('refuses to be seeded with no basket to be seeded from (E3.a)', () => {
+    // A seeded vehicle needs its basket named in advance, because the seed has no index to read.
+    // Asked for one with nothing to open it with, the draw makes none — rather than a share line
+    // with no shares behind it, which is not a fund with nothing in it but not a fund.
+    expect(drawTrackers([], ['bank.a'], 'a-seed', ['credit.investment.USD'], ['corporate'], 'etf', true))
+      .toHaveLength(0);
+    // And an equity tracker, whose lines do exist at period zero, is opened by it.
+    const equity = drawTrackers(['equity.firm.1'], ['bank.a'], 'a-seed', ['idx'], ['residual'], 'etf', true);
+    expect(equity).toHaveLength(1);
+    expect(equity[0]?.inKind?.seeded).toBe(true);
+    expect(equity[0]?.blueprint.classes).toEqual(['residual']);
   });
 });
