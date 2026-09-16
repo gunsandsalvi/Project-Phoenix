@@ -186,13 +186,12 @@ export const commodityFutureKind: DerivativeKindProfile = {
     if (!isCommodityFuture(t) || at < t.expiry) return noCash(c.ccy);
     const long = t.long ? c.a : c.b;
     if (long !== party) return noCash(c.ccy);
-    const price = reads.print(t.deliverable, at);
-    if (!price.some) return noCash(c.ccy);
+    // 18.1: at the price THIS ROW was struck at, which is what it will actually pay.
     return valueAt(
-      price.value.price,
+      moneyLevel(c.struckAt, 'a commodity future is struck at a price'),
       scale(c.notional, asRatio(t.lotUnits, 'the units in a lot'), 'the units it takes'),
       c.ccy,
-      'at their price',
+      'at the price it struck',
     );
   },
   closeOut: markOf,
@@ -634,13 +633,17 @@ function deliver(ctx: MechanismContext): void {
       const units = scaleQty(row.notional, row.terms.lotUnits, 'the units this lot delivers');
       legs.push({ kind: 'contract', act: 'close', contract: row.id, why: 'delivered' });
       if (units <= 0) continue;
+      // A1, D8 (18.1): AT THE PRICE THE ROW WAS STRUCK AT, per row. It delivered at spot, so a
+      // mill that had locked a lot in at 98 paid 100 for it when grain printed 100 — and margin in
+      // this world is posted and HELD, so nothing gave the difference back. See `bond-futures`.
+      const struck = moneyLevel(row.struckAt, 'a commodity future is struck at a price');
       legs.push({
         kind: 'asset',
         from: short,
         to: long,
         instrument: t.deliverable,
         qty: ctx.registry.deliverable(units),
-        pricePerUnit: some(price.value.price),
+        pricePerUnit: some(struck),
         accruedPerUnit: none(),
       });
       legs.push({
@@ -648,9 +651,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(
-          valueAt(price.value.price, units, row.ccy, 'what the lot costs'),
-        ),
+        amount: ctx.registry.cashFor(valueAt(struck, units, row.ccy, 'what the lot costs')),
       });
     }
     if (!deliverable || legs.length === 0) continue;
@@ -664,7 +665,10 @@ function deliver(ctx: MechanismContext): void {
         deliverable: String(t.deliverable),
         rows: rows.length,
         units: scaleQty(c.notional, t.lotUnits, 'the units this lot delivers'),
-        at: price.value.price,
+        // 18.1: what it delivered AT — the level this row struck — and what the thing was worth on
+        // the day beside it, so a reader can see what the contract was worth to whoever held it.
+        at: moneyLevel(c.struckAt, 'a commodity future is struck at a price'),
+        spot: price.value.price,
         // E1: a delivery that did not settle is a FAIL, and it says so. Nothing pays a difference
         // instead, and the row stays open for the layer to resolve at its stated value.
         settled: r.outcome === 'settled',

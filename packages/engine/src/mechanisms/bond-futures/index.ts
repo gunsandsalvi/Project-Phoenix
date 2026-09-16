@@ -179,13 +179,13 @@ export const bondFutureKind: DerivativeKindProfile = {
     if (!isBondFuture(t) || at < t.expiry) return noCash(c.ccy);
     const long = t.long ? c.a : c.b;
     if (long !== party) return noCash(c.ccy);
-    const price = reads.print(t.deliverable, at);
-    if (!price.some) return noCash(c.ccy);
+    // 18.1: at the price THIS ROW was struck at, which is what it will actually pay — the spot
+    // price on the day is what it would have paid without the contract.
     return valueAt(
-      price.value.price,
+      moneyLevel(c.struckAt, 'a bond future is struck at a price'),
       scale(c.notional, asRatio(t.contractSize, 'the face in a contract'), 'the face it takes'),
       c.ccy,
-      'at its price',
+      'at the price it struck',
     );
   },
   closeOut: markOf,
@@ -567,13 +567,24 @@ function deliver(ctx: MechanismContext): void {
       );
       legs.push({ kind: 'contract', act: 'close', contract: row.id, why: 'delivered' });
       if (face <= 0) continue;
+      /**
+       * I1, D8 (18.1): AT THE PRICE THE ROW WAS STRUCK AT, and this is the whole of what a future
+       * is for. It delivered at the deliverable's SPOT price, so a long that had locked in 98 paid
+       * 100 when the bond printed 100 and its contract had bought it nothing — and nothing else
+       * gave it back, because margin in this world is POSTED AND HELD (a claim redeemed when the
+       * row closes, Derivative Layer C3.a) and never a settled profit. The gain was nowhere.
+       *
+       * It is per ROW and not per book: each side agreed its own level, and the house's two rows
+       * can have been struck at different ones in different sessions.
+       */
+      const struck = moneyLevel(row.struckAt, 'a bond future is struck at a price');
       legs.push({
         kind: 'asset',
         from: short,
         to: long,
         instrument: t.deliverable,
         qty: ctx.registry.deliverable(face),
-        pricePerUnit: some(price.value.price),
+        pricePerUnit: some(struck),
         accruedPerUnit: none(),
       });
       legs.push({
@@ -581,9 +592,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(
-          valueAt(price.value.price, face, row.ccy, 'what the face costs'),
-        ),
+        amount: ctx.registry.cashFor(valueAt(struck, face, row.ccy, 'what the face costs')),
       });
     }
     if (!deliverable || legs.length === 0) continue;
@@ -597,7 +606,10 @@ function deliver(ctx: MechanismContext): void {
         deliverable: String(t.deliverable),
         rows: rows.length,
         face: scaleQty(c.notional, t.contractSize, 'the face this contract delivers'),
-        at: price.value.price,
+        // 18.1: what it delivered AT — the level this row struck — and the cash price on the day
+        // beside it, so a reader can see what the contract was worth to whoever held it.
+        at: moneyLevel(c.struckAt, 'a bond future is struck at a price'),
+        spot: price.value.price,
         settled: r.outcome === 'settled',
       },
       true,

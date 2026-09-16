@@ -110,4 +110,47 @@ describe('delivery (I1, XI-5)', () => {
     // D11: a future that delivers is never torn up for a cash difference by the layer instead.
     expect(bondFutureKind.expires({} as Contract, 0 as never, w.calendar)).toBe(false);
   });
+
+  it('is taken at the price the row STRUCK, which is the whole of what a future is for (18.1)', () => {
+    // It delivered at the deliverable's spot price, so a long that had locked in 0.98 paid 1.00
+    // when the line printed 1.00 — and margin in this world is posted and HELD, redeemed when the
+    // row closes, so nothing gave the difference back. The gain was nowhere.
+    const w = ran(6);
+    const m = futureBooks(w)[0];
+    const t = contractOf(m)?.terms;
+    if (m === undefined || t === undefined || !isBondFuture(t)) return;
+    const parties = w.parties.all().filter((p) => p.status.alive);
+    const a = parties[0]?.id;
+    const b = parties[1]?.id;
+    if (a === undefined || b === undefined) return;
+    const long = {
+      id: 'contract.test.long' as Contract['id'],
+      kind: BOND_FUTURE,
+      a,
+      b,
+      terms: { ...t, expiry: w.period },
+      ccy: m.ccy,
+      notional: asQty(5, 'the notional'),
+      struckAt: struckAs('money', 0.98),
+      basis: asCash(0, m.ccy, 'what it cost'),
+      opened: w.period,
+      state: 'open',
+      terminated: { some: false },
+      house: null,
+    } as Contract;
+    const reads = w.contractReads(w.period);
+    const due = bondFutureKind.cashDue?.(long, w.period, reads, a);
+    expect(due).toBeDefined();
+    if (due === undefined) return;
+    // What it pays is its own level over the face, whatever the line is worth on the day.
+    const face = 5 * t.contractSize;
+    expect(due.pieces).toBeCloseTo(0.98 * face, 6);
+    // And a row struck two cents dearer pays exactly two cents a unit more for the same bond:
+    // the difference between the two IS what having struck at 98 was worth.
+    const dearer = { ...long, struckAt: struckAs('money', 1.0) } as Contract;
+    const dearerDue = bondFutureKind.cashDue?.(dearer, w.period, reads, a);
+    expect(dearerDue).toBeDefined();
+    if (dearerDue === undefined) return;
+    expect(dearerDue.pieces - due.pieces).toBeCloseTo(0.02 * face, 6);
+  });
 });
