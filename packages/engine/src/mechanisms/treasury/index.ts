@@ -817,7 +817,20 @@ function openLine(
       { kind: SOVEREIGN_BILL, issueDate: on, maturity, dayCount }
     : {
         kind: SOVEREIGN_BOND,
-        coupon: rate(atLeast(y, 0, 'an issuer cannot promise to be paid for borrowing'), ANNUAL),
+        /**
+         * Sovereign A2, Law 6 (18a.4): THE COUPON IS WHAT THE CURVE SAYS, and it may be nothing.
+         *
+         * It reads as a floor — the thing Law 6 forbids — and it is standing for a real fact: an issuer does not promise to PAY somebody for lending to it, so a coupon below
+         * zero is not a coupon. What happens where money is dear enough for the curve to go below
+         * zero is that the issuer prints a ZERO coupon and the paper sells ABOVE PAR, which is the
+         * lender paying for the privilege — a price, cleared in the auction, and not a promise.
+         * So the zero is arithmetic about what a promise can BE and not a bound on an outcome —
+         * which is why it stays where 18a.4 expected it to go, with its reason said properly.
+         */
+        coupon: rate(
+          atLeast(y, 0, 'a promise to be PAID for borrowing is not a coupon; what it prints is a zero'),
+          ANNUAL,
+        ),
         couponPeriodicity: SEMI_ANNUAL,
         dayCount,
         issueDate: on,

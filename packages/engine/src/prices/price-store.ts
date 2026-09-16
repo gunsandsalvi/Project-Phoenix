@@ -185,7 +185,14 @@ export class PriceStore {
   /** One print per (instrument, period); a second writer is Law 4's defect and throws. */
   write(p: Print): void {
     finite(p.price, `print ${p.instrument}`);
-    forbid(p.price >= 0, 'Law 6', `a price cannot be negative: ${p.instrument} ${p.price}`);
+    // Law 6, 18a.4: a price of a THING cannot be negative — nobody is paid to be handed grain — and
+    // the price of TIME can be: a lender that gets back less than it lent has paid for somewhere to
+    // put its money, which two central banks charged for years. The book says which it prints.
+    forbid(
+      p.quotedAs === 'rate' || p.price >= 0,
+      'Law 6',
+      `a price cannot be negative: ${p.instrument} ${p.price}`,
+    );
     const list = this.byInstrument.get(p.instrument) ?? [];
     const last = list[list.length - 1];
     // Law 8, Law 4 (18.0): A BOOK QUOTES ONE THING. A line whose prints changed dimension would be

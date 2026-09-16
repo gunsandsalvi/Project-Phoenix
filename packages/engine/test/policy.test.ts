@@ -13,6 +13,10 @@ import {
 import { POLICY_PARAMS } from '../src/mechanisms/money-market/policy.js';
 import { policyRateOf } from '../src/mechanisms/money-market/data.js';
 import { mergeModules, rigSpec, rigFor } from './rig.js';
+import { clear } from '../src/clearing/solver.js';
+import { PriceStore, type Print } from '../src/prices/price-store.js';
+import { asPerPiece } from '../src/core/measure.js';
+import { instrumentId, marketId, period, USD } from '../src/index.js';
 
 function worldWith(probe: SystemModule) {
   const { banks, firms } = rigFor('policy', { makes: ['coalRaw'] });
@@ -66,6 +70,41 @@ describe('the facilities re-price at the new rate (Central Bank B2, C1–C4, 18a
     // The WIDTH is the policy choice and it did not change; what changed is where the corridor is.
     expect(width(after)).toBeCloseTo(width(before), 12);
     expect(Number(after.data['policy'])).toBeGreaterThan(Number(before.data['policy']));
+  });
+});
+
+describe('the price of TIME may be negative (Law 6, 18a.4)', () => {
+  it('clears a rate below zero, and refuses a negative price for a thing', () => {
+    // A price of a THING cannot be negative — nobody is paid to be handed grain — and the price of
+    // TIME can be: two central banks charged for years for somewhere to put money. The refusal is
+    // dispatched on what the book quotes rather than deleted.
+    const lend = [
+      { party: 'a' as never, side: 'sell' as const, price: -0.005 as never, qty: 1_000 as never },
+      { party: 'b' as never, side: 'buy' as const, price: -0.002 as never, qty: 1_000 as never },
+    ];
+    const struck = clear(lend, 'proRata', 'sellersCompete', true);
+    expect(struck.kind).toBe('cleared');
+    expect(struck.kind === 'cleared' && struck.price).toBeLessThan(0);
+    // The same book of orders, in a market that clears a THING, is refused at the site.
+    expect(() => clear(lend, 'proRata', 'sellersCompete')).toThrow();
+    // And a print of a rate below zero is written, where one of a thing is not (`price-store`).
+    const negative: Print = {
+      instrument: instrumentId('book.under.test'),
+      market: marketId('mkt.under.test'),
+      period: period(0),
+      price: asPerPiece(-0.005, 'minus half a point'),
+      ccy: USD,
+      quotedAs: 'rate',
+      provenance: { kind: 'opening' },
+    };
+    const store = new PriceStore();
+    expect(() => {
+      store.write(negative);
+    }).not.toThrow();
+    const store2 = new PriceStore();
+    expect(() => {
+      store2.write({ ...negative, quotedAs: 'money' });
+    }).toThrow();
   });
 });
 

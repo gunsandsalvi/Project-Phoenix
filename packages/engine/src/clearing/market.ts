@@ -447,7 +447,14 @@ export function runMarket(
   });
   // Sovereign C2: a session carrying an offer is an auction, and its stated allotment is the
   // stop-out. Without one the venue is an open book and the sellers compete.
-  const outcome = clear(book, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
+  // 18a.4: a book that clears a RATE may clear a negative one — the price of time, not of a thing.
+  // It is the same `quotedAs` the print and the struck level carry, asked once (Law 4).
+  const outcome = clear(
+    book,
+    m.rationing,
+    offer.some ? 'marginalBid' : 'sellersCompete',
+    quotes(m, deps) === 'rate',
+  );
   switch (outcome.kind) {
     case 'cleared': {
       const trades = pairFills(m, outcome.fills);

@@ -185,6 +185,6 @@ export const POLICY_RATES: readonly { readonly ccy: string; readonly rate: numbe
   {
     ccy: 'JPY',
     rate: 0.002,
-    why: 'The lowest of the four, which is what makes the yen a funding currency and gives a carry trade something to fund with. IT IS NOT ZERO, AND IT WANTED TO BE (`E-7`): a rate of zero puts the corridor FLOOR at minus a tenth of a point, and the solver refuses a negative price — rightly for the price of a THING, and wrongly for the price of TIME, which the Bank of Japan and the ECB both ran below zero for years. A negative policy rate is real and this world cannot express one; the least it can say is a tenth of a point above its own floor.',
+    why: 'The lowest of the four, which is what makes the yen a funding currency and gives a carry trade something to fund with. It was a tenth of a point above its own floor because the solver refused a negative price and a rate of zero puts the corridor floor below it (`E-7`); 18a.4 dispatched that refusal on what a book QUOTES — the price of a thing cannot be negative and the price of time can — so the number here is now a rate somebody chose rather than the least this world could say, and its own bank may step it under zero like the two that did.',
   },
 ];
