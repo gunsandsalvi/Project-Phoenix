@@ -243,3 +243,45 @@ describe('a credit index over the rated universe (Indices C2, Ratings C2)', () =
     expect(side('investment', bad)).toHaveLength(0);
   });
 });
+
+/**
+ * The chain from a company's books to a rated index (Reporting A1; Ratings A5, C2; Indices C2;
+ * item 17.10a).
+ *
+ * It is four mechanisms and each is somebody's act: a company closes a quarter, shows the statement
+ * to the assessor it pays, the assessor grades what it was shown, and the index reads the grade. A
+ * census over twelve and twenty periods found none of it happening and called it a defect. It was
+ * the CALENDAR: a quarter is thirteen weeks and the first one that opens after the epoch closes
+ * around period twenty, so a world stepped for less than that has nothing to report on.
+ */
+describe('from a closed quarter to a rated index (Reporting A1, Ratings A5, Indices C2)', () => {
+  it('reports, shows, grades and indexes, in that order and on the calendar', () => {
+    // The draw decides whether this world has corporate paper for a rated basket to hold at all;
+    // this seed makes some. What the test is about is the ORDER of the four acts, not the dates.
+    const w = rigWorld('rated-a');
+    let firstReport = 0;
+    let firstRating = 0;
+    let firstLevel = 0;
+    for (let i = 0; i < 22; i += 1) {
+      w.step();
+      if (firstReport === 0 && w.journal.ofKind('reporting.report').length > 0) firstReport = w.period;
+      if (firstRating === 0 && w.journal.ofKind('rating.action').length > 0) firstRating = w.period;
+      if (
+        firstLevel === 0 &&
+        (w.index(RATED_INDEX(USD, 'investment')).some || w.index(RATED_INDEX(USD, 'speculative')).some)
+      ) {
+        firstLevel = w.period;
+      }
+    }
+    // Seed A2, Money G3: nothing is reported on a quarter that began before the world did, so the
+    // first close is between one and four quarters in — and everything downstream waits for it.
+    expect(firstReport).toBeGreaterThan(0);
+    expect(w.journal.ofKind('disclosed').length).toBeGreaterThan(0);
+    // A5: the assessor grades what it was SHOWN, so it cannot speak before the company has spoken.
+    expect(firstRating).toBeGreaterThanOrEqual(firstReport);
+    // C2: and a rated index has a level once there is a graded name in its basket — not before,
+    // because an index of nothing is not a number (D5.a).
+    expect(firstLevel).toBeGreaterThanOrEqual(firstRating);
+    expect(firstLevel).toBeGreaterThan(0);
+  });
+});

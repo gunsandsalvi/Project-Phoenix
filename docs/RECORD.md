@@ -13150,3 +13150,32 @@ the index's.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
 two new tests, both green; the file's three reds were red at `b540d35` before this change.
+
+## Item 17.10a — The assessors say nothing: answered, not a defect
+
+Two censuses found the same silence and I wrote it up as a defect twice: three assessors in every
+scale model, zero ratings, every name unrated, both rated indices empty. It was the CALENDAR.
+
+A quarter is thirteen weeks, and nothing is reported on a quarter that began before this world did —
+so the first fiscal close is between one and four quarters into a run, plus the reporting lag. In the
+rig it lands at period 20. The first rating follows at 21 and the first rated index level at 21. The
+censuses had stepped twelve and twenty periods: one week short in the second case.
+
+**What it cost to find out** is the reason this is written down rather than quietly fixed. A
+mechanism that has not happened YET looks exactly like a mechanism that does not work, and the only
+thing that tells them apart is stepping far enough. Every census in this file that reports an absence
+over twelve or twenty periods is reporting on a world that has not closed a quarter.
+
+**A test pins the chain and its order.** A company closes a quarter; it shows the statement to the
+assessor it pays; the assessor grades what it was shown; the index reads the grade. Four mechanisms,
+each somebody's act, and each one can only happen after the one before — which is what the test
+asserts, rather than the dates, because the dates are a draw.
+
+**What the census said instead.** Every grade this world has ever published is the WORST one: all 240
+rating actions carry `c`. So the investment-grade index is permanently empty, the high-yield one
+carries every rated line, and three assessors looking at twelve issuers never disagree about
+anything. It may be a true reading of a world whose banks open in breach and whose firms fail, or the
+measure may be saturated. Written up as 21.69 and positioned at 23.3; not chased.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
+one new test, green; the file's three reds were red before this change.
