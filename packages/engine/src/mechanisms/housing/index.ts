@@ -1,7 +1,7 @@
 /**
  * Housing: who lives where, what they pay for it, and who owns the roof.
  *
- * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing A5 Housing B1 Housing B2 Housing B5 Housing D1 Housing E1 Households A2.b Households E1 Households E5 Labour A2 Banks Lending A2 Clearing A2 Clearing B2 Clearing C4.b Expectations A2 Law 2 Law 3 Law 5 Law 8 Law 15 Law 19 XI-8 XI-15
+ * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing A5 Housing B1 Housing B2 Housing B5 Housing D1 Housing E1 Seed D1 Households A2.b Households E1 Households E5 Labour A2 Banks Lending A2 Clearing A2 Clearing B2 Clearing C4.b Expectations A2 Law 2 Law 3 Law 5 Law 8 Law 15 Law 19 XI-8 XI-15
  *
  * A DWELLING IS A GOOD (13d). It is built by named builders out of concrete, timber, steel and
  * glass, it takes half a year, it stands where it was built and it wears out — so there is no
@@ -78,6 +78,7 @@ import type { InstrumentId } from '../../core/ids.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import type { Family, Violation } from '../../audit/audit.js';
 import { DWELLING, HOUSING_PARAMS, TENURE, rentVenue, type TenureDecl } from './data.js';
 import { about } from '../../world/context.js';
 
@@ -830,6 +831,61 @@ function params(rows: readonly TenureDecl[]): ParamDecl[] {
   ];
 }
 
+/**
+ * Housing A1, E1, Seed D1 (15.6): THE ROOFS FAMILY. A place with people in it and no dwelling line
+ * is a place nobody can live in — the goods are placed where firms were (`settled(placed)`) and the
+ * people where the banks are, and a region with a bank and no firm opened with households and no
+ * roof for a year without anybody saying so. The seal runs the audit at period 0, so this is a
+ * SEED FINDING, reported there with the people it concerns; it never repairs (Audit A1). And E1's
+ * half that can break silently: a dwelling whose holder has ceased is a house without an owner.
+ */
+export function roofs(): Family {
+  return {
+    name: 'names',
+    contributor: 'housing',
+    spec: 'Housing A1 Housing E1 Seed D1',
+    built: true,
+    check: (view): Violation[] => {
+      const out: Violation[] = [];
+      const people = new Map<RegionId, number>();
+      for (const p of view.parties.ofKind(HOUSEHOLD)) {
+        if (!p.status.alive || p.representation !== 'cell') continue;
+        const had = people.get(p.region);
+        people.set(p.region, had === undefined ? weightOf(p) : had + weightOf(p));
+      }
+      for (const [region, members] of people) {
+        if (view.instruments.has(goodId(DWELLING, region))) continue;
+        out.push({
+          family: 'names',
+          spec: 'Housing A1',
+          owner: String(region),
+          size: members,
+          unit: 'people',
+          period: view.period,
+          message: `${String(region)}: ${String(members)} people live here and the place has no dwelling line — nobody here can live anywhere (Seed D1)`,
+        });
+      }
+      for (const region of view.registry.regions.values()) {
+        const id = goodId(DWELLING, region.id);
+        if (!view.instruments.has(id)) continue;
+        for (const holder of view.register.holdersOf(id)) {
+          if (view.parties.has(holder) && view.parties.get(holder).status.alive) continue;
+          out.push({
+            family: 'names',
+            spec: 'Housing E1',
+            owner: String(holder),
+            size: view.register.quantity(holder, id),
+            unit: String(id),
+            period: view.period,
+            message: `${String(holder)} holds ${String(id)} and has ceased: a house without an owner`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
+
 export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
   const mine = (v: VenueDecl): boolean => v.clearedBy === 'housing';
   return {
@@ -939,7 +995,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         orders: (view, venue) => ordersOf(view, venue, rows),
       },
     ],
-    families: [],
+    families: [roofs()],
     seed(ctx: SeedContext): void {
       for (const region of ctx.registry.regions.values()) {
         if (!ctx.instruments.has(goodId(DWELLING, region.id))) continue;

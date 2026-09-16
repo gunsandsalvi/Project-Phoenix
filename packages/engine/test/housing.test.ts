@@ -1,10 +1,11 @@
 /**
  * Housing (13d): a dwelling is a good that stands where it was built, and a tenancy is a venue.
  *
- * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing B2 Housing B5 Housing E1 Households E1 Banks Lending A2 Expectations A2 Law 2 Law 3 Law 5 Law 8 Law 15 XI-8
+ * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing B2 Housing B5 Housing E1 Seed D1 Households E1 Banks Lending A2 Expectations A2 Law 2 Law 3 Law 5 Law 8 Law 15 XI-8
  */
 import { describe, expect, it } from 'vitest';
-import { DWELLING, HOUSING_PARAMS, TENANCY, TENANCY_ENDED, TENURE, assemble, paramId, rentVenue, regionId, type MechanismContext, type SystemModule, type TenancyTerms } from '../src/index.js';
+import { DWELLING, HOUSEHOLD, HOUSING_PARAMS, TENANCY, TENANCY_ENDED, TENURE, assemble, paramId, rentVenue, regionId, roofs, type MechanismContext, type SystemModule, type TenancyTerms } from '../src/index.js';
+import type { AuditView } from '../src/audit/view.js';
 import { GOODS } from '../src/mechanisms/goods/data.js';
 import { LANDLORD } from '../src/registry/property.js';
 import { compareCivil } from '../src/calendar/civil.js';
@@ -235,6 +236,32 @@ describe('a landlord ends a tenancy on its own view of the tenant (A3, Banks Len
     for (const e of put) {
       expect(Number(e.data['worth'])).toBeLessThan(Number(e.data['wear']));
       expect(Number(e.data['expectsPaid'])).toBeLessThan(1);
+    }
+  });
+});
+
+describe('a place with people and no dwelling line is a seed finding at the seal (A1, E1, Seed D1, 15.6)', () => {
+  it('the seal reports the family built, names every such place with the people in it, and names nothing where the line exists', () => {
+    const w = rigWorld('housing-roofs');
+    const report = w.last?.audit;
+    expect(report).toBeDefined();
+    const names = report?.families.find((f) => f.family === 'names');
+    expect(names?.built).toBe(true);
+    // Every region with people: either it has a dwelling line, or the seal said so — never silence.
+    const peopled = new Set(w.parties.ofKind(HOUSEHOLD).filter((p) => p.status.alive).map((p) => String(p.region)));
+    for (const region of peopled) {
+      const said = (names?.violations ?? []).some((v) => v.spec === 'Housing A1' && v.owner === region);
+      expect(said).toBe(!w.instruments.has(dwellingLine(region) as never));
+    }
+    // And the check itself, asked about a world with no dwelling line anywhere: one finding per
+    // peopled place, sized in the people who live there (Audit A2).
+    const view = { period: w.period, parties: w.parties, register: w.register, registry: w.registry, instruments: { has: () => false } } as unknown as AuditView;
+    const found = roofs().check(view);
+    expect(found.filter((v) => v.spec === 'Housing A1').map((v) => v.owner).sort()).toEqual([...peopled].sort());
+    for (const v of found) {
+      expect(v.size).toBeGreaterThan(0);
+      expect(v.unit).toBe('people');
+      expect(v.period).toBe(w.period);
     }
   });
 });

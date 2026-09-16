@@ -1686,4 +1686,9 @@ lines by kind (`InstrumentsReads`, the audit and seed picks widened); `foreclose
 `ofKind(LOAN)`, and both mortgage reads compare the security's instrument and the lien's `secures`
 by name.
 
+### A peopled place without a dwelling line is a seed finding (item 15.6)
 
+`housing/index.ts roofs()`: a `names` family contributed by the housing module — one violation per
+region with living household cells and no `good.dwelling.<region>` line, owner the region, size its
+people; and one per dwelling holder that has ceased (E1). The seal runs the audit at period 0, which
+is what makes it a seed finding.

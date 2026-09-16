@@ -12143,7 +12143,7 @@ the tenant puts on the roof. The session signs at the solver's own price; everyt
 is in the book's own unit, occupancy; the mortgage reads compare names, never prefixes; the register
 indexes lines by kind.
 
-**Measured.** `housing.test.ts`, twelve green, four new: every landlord opens holding dwellings and
+**Measured.** `housing.test.ts`, eleven green, four new: every landlord opens holding dwellings and
 every dwelling has a live holder; tenancies are signed at the level the book printed, run to a day,
 and the rent moves tenant to landlord every period after; a tenancy of two periods ends on its day
 and the tenant is re-let; a tenant drained of its money fails three rents, is in probate that period,
@@ -12166,5 +12166,19 @@ there* has eleven failed instructions in a year of the rig (21.41).
 **Findings.** A renting household never buys (21.39); a singleton's rent is its whole income
 (21.38); the dwelling good is on the tonne's grid (21.37); a roof-holding cell's default cannot be
 staged from outside (21.40); the treasury fails eleven instructions in a year of the rig (21.41).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.6 — A region with people and no dwelling line is a seed finding at the seal
+
+Goods are placed where firms were placed and people where the banks are, so a region with a bank
+and no firm opened with households and no dwelling line, and nothing said so. The housing module
+contributes a `names` audit family now: a peopled region with no dwelling line is a violation owned
+by the region and sized in its people, reported at the seal (period 0) and never repaired; a
+dwelling whose holder has ceased is a house without an owner (E1).
+
+**Measured.** `housing.test.ts`, twelve green: the family is built at the seal, every peopled
+region either has its line or is named, and asked about a world with no dwelling line anywhere the
+check names every peopled region with its people.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
