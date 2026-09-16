@@ -86,7 +86,19 @@ import type {
   InstrumentDecl,
   Instruments,
   InstrumentsReads,
+  Terms,
 } from '../register/instruments.js';
+/**
+ * Banks Lending E3, 21.59 (17.7): WHICH RE-AGREEMENT THIS IS, and the two are not the same event.
+ *
+ * `rolled` is a relationship that is performing and reaches its maturity: the lender would write
+ * the line again today, so it extends the one it has rather than being repaid and writing another.
+ * `restructured` is a claim that stopped performing: the holder agreed new terms because what they
+ * pay is worth more to it than what enforcing the old ones would return. A reader counting workouts
+ * must not count rolls, and a lender's own record of how a name has behaved must not confuse them.
+ */
+export type Reagreement = 'rolled' | 'restructured';
+
 import type { ParamRegister, ParamDecl } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { Classified } from '../registry/universe.js';
@@ -1010,6 +1022,23 @@ export interface MechanismContext extends WorldReads {
    * that its coupon floats, and a line that has ceased.
    */
   fixCoupon(instrument: InstrumentId, coupon: Rate, benchmark: string): void;
+  /**
+   * Banks Lending E3, 21.59 (17.7): THE TWO PARTIES TO A CLAIM AGREE NEW TERMS ON IT.
+   *
+   * The one door out of terms fixed at issuance, and it is narrow in three ways rather than
+   * general. The KIND says what a re-agreement of it may not change (`profile.reagree`), so a kind
+   * that declares nothing cannot be re-agreed at all and no module can rewrite a line whose kind
+   * did not agree to it. The REASON says which of the two this is, and the kernel holds it to the
+   * status: a `rolled` line is one that is performing — a relationship extended at maturity instead
+   * of repaid and rewritten — and a `restructured` line is one that stopped performing, which is
+   * the workout. And the claim keeps its identity, its issuer, its kind and its holders, because
+   * only `terms` moves.
+   *
+   * It is public (Firm Birth C3): a default is announced, and so is the agreement that follows it —
+   * every other creditor of the name, and every assessor, learns that the claim was re-agreed and
+   * on what.
+   */
+  reagree(instrument: InstrumentId, terms: Terms, why: Reagreement): void;
   /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
   openVenue(decl: VenueDecl): void;
   /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */

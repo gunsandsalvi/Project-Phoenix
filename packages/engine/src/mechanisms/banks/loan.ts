@@ -20,6 +20,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { percent } from '../../core/format.js';
 import { currencyUnit, instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
+import { none, some } from '../../core/option.js';
 import { LOAN, isLoan, type LoanTerms } from '../../registry/credit.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
@@ -179,6 +180,44 @@ export const loanKind: InstrumentKindProfile = {
       : undefined,
   // Banks Lending states no cross-default; corporate paper does, and it arrives at 13f.
   accelerates: false,
+  /**
+   * E3, 21.59 (17.7): WHAT A RE-AGREEMENT OF A LOAN MAY CHANGE, which is time and price and
+   * nothing else.
+   *
+   * A loan is the one claim in this world that two named parties can sit down and re-agree, because
+   * it is the one with exactly two of them (A1). What they can agree is how long the borrower has
+   * and what it pays for it — and, with them, whether the principal comes back in slices or at the
+   * end, which is the same conversation about time.
+   *
+   * What they cannot agree here is everything that would make it a DIFFERENT claim. Who wrote it
+   * and who owes it are the two parties themselves. What it is secured on is a lien in the register
+   * and a pledge is an act with two sides, not a line of terms (A4, XI-5); a workout that takes
+   * security takes it the same way the original drawing did. The day count is the convention every
+   * accrual on the row has already been struck under, and the drawing date is when the money
+   * actually moved — neither is negotiable after the fact (Law 8, Law 19). And the maturity moves
+   * OUT only: a date brought forward is an acceleration, which has its own path and its own event.
+   */
+  reagree: (was, now) => {
+    if (!isLoan(was) || !isLoan(now)) {
+      return some('a loan is re-agreed as a loan');
+    }
+    if (was.originator !== now.originator || was.borrower !== now.borrower) {
+      return some('a re-agreement is between the two parties that are already on it');
+    }
+    if (was.dayCount !== now.dayCount) {
+      return some('the convention every accrual so far was struck under does not change');
+    }
+    if (compareCivil(was.drawn, now.drawn) !== 0) {
+      return some('the day the money moved is not negotiable');
+    }
+    if (was.security.length !== now.security.length) {
+      return some('security is a lien in the register, pledged by an act with two sides');
+    }
+    if (compareCivil(now.maturity, was.maturity) < 0) {
+      return some('a date brought forward is an acceleration, not an agreement');
+    }
+    return none<string>();
+  },
   // N13, N13.a: what the lender is entitled to, and where it stands.
   ranking: (i) => {
     const t = isLoan(i.terms) ? i.terms : undefined;

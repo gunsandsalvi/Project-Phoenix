@@ -12744,3 +12744,66 @@ what it reports is cash that did not move rather than a mechanism doing its job.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green. `short-term-debt`:
 three new tests, all sixteen green.
+
+## Item 17.7 — The re-agreement
+
+Terms are fixed at issuance, and until now there was no way out of that at all: a claim that stopped
+performing stayed in default for the rest of its life, and a claim that was being paid fell due on
+the day it was written for whatever either party wanted. One door out, and it is narrow in three
+ways rather than general.
+
+**The KIND says what a re-agreement of it may not change.** `InstrumentKindProfile.reagree` returns
+the reason to refuse, and a kind that declares nothing cannot be re-agreed at all — so a share, a
+good and a bond are not reachable from here, which is right: a share is not renegotiated and a
+bond's restructuring is an exchange offer to its holders, not a private word with one of them
+(Sovereign G4, still missing and now at 17b where the tender is). A loan says what a loan means: the
+two parties, the day the money moved, the convention every accrual was struck under and what stands
+behind it are not negotiable after the fact, and a date brought forward is an acceleration. Time and
+price are what the two of them can agree.
+
+**The STATUS says which event this is.** A `rolled` line is performing and a `restructured` one is
+not, and the kernel refuses the other pairing — because a reader counting workouts must not count
+rolls, and a lender's record of how a name has behaved must not confuse them.
+
+**And the line performs on the terms that stand.** That is one sentence and not a branch: performing
+means no promise of this claim has been broken, and the promise that was broken is not a promise of
+this claim any more. It is the only path that restores what `markDefaulted` took away, and the
+journal still has the miss and the re-agreement both.
+
+**The workout is a decision with a cost on both sides** (E3). Enforcing brings what an estate would
+return — this creditor's own recoveries, netted against the market's own price of whatever is
+pledged — and brings it now. Agreeing brings par less what it still expects to lose on a name that
+has just failed it, at the new maturity, so the row goes on consuming the bank's capital until then
+at the charge the bank itself requires. A creditor that has met no estate has recovered nothing, so
+enforcing brings it nothing and it agrees; one that has been paid in full by every estate it met
+takes the money; and between them it is the length of the new terms that decides. Neither number is
+a price and neither is discounted: a loan has no market and is carried at what its holder expects to
+recover, and these are two readings of that one expectation over two futures.
+
+**The roll is 21.59, and it was a missing mechanism rather than a preference.** A borrower in this
+world publishes what its wages and its orders cost it and never what falls due, so nothing refinances
+a maturity: a performing borrower with a loan maturing had no channel at all and failed on the date.
+A lender now agrees another term with a name its own standard would still write today, at what its
+view of that name now requires, the period before the money is due. A name it declines is not rolled
+and has to find the money.
+
+**What the census said.** The mechanism fires in a scale model whose loans reach a maturity (the
+test shortens the term rather than stepping a year of weeks), and it fires nowhere in the thirty
+periods of the rig — for a reason that is nothing to do with it and is now written down: every bank
+in that world is insolvent from period six and none is resolved, an insolvent bank publishes no cost
+of funds, and with no cost of funds there is no credit view, no quote, no reservation and no
+workout. `credit.written` is zero in every period after the fifth. That is 21.64, positioned at 23.2.
+Two more found in the same census: a row repaid to the last unit stays live (21.63, at 17.9), and an
+agreement has no cure — `breached` reaches only `discharged` or `terminated` (21.62, at 17.9).
+
+**Split, and where the rest went.** 17.7 carried five mechanisms. The covered bond, factoring on §42
+receivables and repo-eligible senior notes and CP are inserted as 17.7a, immediately after this item
+and before 17.8: each is an instrument shape that needs this door and nothing later, and factoring is
+where 21.61's seller-chosen days belong, because Trade Credit A3 makes the early-payment discount the
+implicit rate a receivable is sold at and says there is no factoring market without one. The
+index-linked schedule is inserted at 18a.1, where the first published price level in this world is.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+eight new tests, all eight green; the file's seven reds are the seven that were red at `8f4d70e`
+before this change and are unchanged by it (verified in a worktree at that commit — same seven, same
+names), and they are 21.64's world rather than this item's.

@@ -82,6 +82,7 @@ import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import type { Holding } from '../../register/register.js';
 import {
+  CREDIT_DAY_COUNT,
   creditInputs,
   creditView,
   type CreditView,
@@ -91,6 +92,7 @@ import {
   type Quote,
   type Regulation,
 } from './credit-view.js';
+import { pathsOf, rolls, takes } from './workout.js';
 import { weightOfName } from './capital.js';
 import { type Statement } from '../../registry/statements.js';
 import { creditDefaults } from '../../registry/banking.js';
@@ -1499,6 +1501,30 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         },
       },
       {
+        name: 'lending.workout',
+        spec: 'Banks Lending E3 Banks Lending C3 Banks Lending D1',
+        // Clearing F1: after the period's payments, so a miss this period is a miss this phase can
+        // see — and a maturity NEXT period is the one it can still do something about. A row that
+        // falls due this morning is already paid or already failed; agreeing an extension the week
+        // before is what a lender and a borrower actually do.
+        anchor: { after: 'corporateActions' },
+        reads: [
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
+          { kind: 'event', name: 'disclosed', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'credit.reagreed' },
+          { kind: 'event', name: 'credit.restructured' },
+          { kind: 'event', name: 'credit.rolled' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          runWorkouts(rows, ctx);
+        },
+      },
+      {
         name: 'banks.treasury',
         spec: 'Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B3 Money Market D2',
         // After it has published what money costs it: a board is priced off its own funding and its
@@ -1750,6 +1776,96 @@ function worthToItsLender(
       'what a unit is worth to it',
     ),
   );
+}
+
+/**
+ * Banks Lending E3, 21.59 (17.7): WHAT EACH LENDER DOES WITH THE ROWS IT ALREADY HOLDS.
+ *
+ * Two decisions, on two kinds of row, and they are the same decision seen at two moments.
+ *
+ * A row that is STILL PERFORMING and reaches its maturity is rolled when this lender would write it
+ * again today — same row, another term, at what its view of the name now requires (21.59). Nothing
+ * in this world funds a maturity: a borrower publishes what its wages and its orders cost it, never
+ * what falls due (`firms publishFunding`), so a healthy borrower with a loan maturing had no channel
+ * to refinance it and failed on the date. That is not a credit event, it is a missing mechanism, and
+ * this is it. A name its own standard now turns away is not rolled and has to find the money.
+ *
+ * A row that has STOPPED performing is restructured when new terms bring this creditor more than
+ * enforcement would (E3, `workout.ts`). It acts on a miss from an earlier period, because a workout
+ * is negotiated after the payment fails rather than in the instant it does — the same lag the credit
+ * decision itself carries, and stated as one.
+ *
+ * Both agree TIME AND PRICE only: what is forgiven is a redemption at what it fetched (E5) and is
+ * not this, and what is pledged is an act with two sides and is not this either.
+ */
+function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
+  const today = ctx.calendar.startOf(ctx.period);
+  // A2, Law 4: how long this lender lends for is one number and it is the one a new loan is written
+  // for. A term agreed today runs from today, whatever the row's original one was.
+  const until = addMonths(today, ctx.params.months(LENDING_PARAMS.loanMonths));
+  const years = asRatio(
+    yearFraction(CREDIT_DAY_COUNT, today, until),
+    'how long the new terms carry it',
+  );
+  for (const i of ctx.instruments.ofKind(LOAN)) {
+    if (!i.status.live || !isLoan(i.terms)) continue;
+    // D4, XI-11: the creditor is whoever is owed it NOW, which after a sale is not the bank that
+    // wrote it (Law 19). A row nobody is owed has nobody to agree with.
+    const creditor = creditorOf((id) => ctx.register.holdersOf(id), i);
+    if (!creditor.some) continue;
+    const decl = declOf(rows, creditor.value);
+    if (decl === undefined) continue;
+    const cv = creditViewFor(rows, ctx, creditor.value, i.ccy);
+    if (cv === undefined) continue;
+    const borrower = ctx.parties.resolve(i.terms.borrower).id;
+    // XI-8, Firm Birth D5: an estate is winding the borrower up and there is nobody left to sign.
+    if (!ctx.parties.get(borrower).status.alive) continue;
+    const name = cv.of(borrower);
+    const agreed: LoanTerms = { ...i.terms, rate: name.rate, maturity: until };
+    if (i.status.performing) {
+      // 21.59: the row that is about to fall due, and not one that has a year to run. NEXT period,
+      // because this period's payments have already been made or already failed by the time this
+      // runs — an extension agreed after the money was due is not what saved anybody.
+      if (ctx.calendar.periodOf(i.terms.maturity) !== ctx.period + 1) continue;
+      if (!rolls(name)) continue;
+      ctx.reagree(i.id, agreed, 'rolled');
+      ctx.record(
+        'credit.rolled',
+        [String(creditor.value), String(borrower), String(i.id)],
+        { bank: String(creditor.value), borrower: String(borrower), loan: String(i.id), rate: name.rate },
+        false,
+      );
+      continue;
+    }
+    // E3, C5.a: what it expects to lose of a unit of THIS row if the name fails — its own recovery
+    // record, netted against the market's own price of whatever stands behind it.
+    const owed = ctx.register.heldTotal(i.id).value;
+    const loss = lossGivenDefault(
+      cv.lossGivenDefault,
+      i.terms.security,
+      (pledged) => {
+        const print = ctx.prices.latest(pledged, ctx.period);
+        return print.some ? print.value.price : undefined;
+      },
+      asCash(owed, i.ccy, 'what is owed on this row'),
+    );
+    const paths = pathsOf(loss, name.probabilityOfDefault, name.capitalCharge, years);
+    if (takes(paths) !== 'agree') continue;
+    ctx.reagree(i.id, agreed, 'restructured');
+    ctx.record(
+      'credit.restructured',
+      [String(creditor.value), String(borrower), String(i.id)],
+      {
+        bank: String(creditor.value),
+        borrower: String(borrower),
+        loan: String(i.id),
+        rate: name.rate,
+        agreeing: paths.agreeing,
+        enforcing: paths.enforcing,
+      },
+      false,
+    );
+  }
 }
 
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */

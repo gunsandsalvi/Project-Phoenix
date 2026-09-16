@@ -195,6 +195,19 @@ export interface InstrumentKindProfile {
    * the rate the benchmark published, and `ctx.fixCoupon` refuses a kind that did not say it floats.
    */
   readonly floats?: boolean;
+  /**
+   * Banks Lending E3 (17.7): WHAT A RE-AGREEMENT OF THIS CLAIM MAY NOT CHANGE ABOUT IT.
+   *
+   * Terms are fixed at issuance (Seed C4.b) and there is exactly one way out of that: the two
+   * parties to a bilateral claim agree new ones, which is a roll when it is still performing and a
+   * workout when it is not. The door has to be narrow or it is a way for any module to rewrite any
+   * line, so the KIND says what its own re-agreement means (Law 15) and a kind that says nothing
+   * cannot be re-agreed at all: a share is not renegotiated, and a bond's restructuring is an
+   * exchange offer to its holders, not a private word with one of them (Sovereign G4).
+   *
+   * It returns the REASON the change is refused, or nothing when the new terms are the same claim.
+   */
+  readonly reagree?: (was: Terms, now: Terms) => Option<string>;
   /** The dated actions the terms place in `period` (Money G3.a), in date order. */
   readonly due: (
     i: Instrument,

@@ -46,6 +46,10 @@ import type { ParticipantView } from '../src/world/context.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
+import { pathsOf, rolls, takes } from '../src/mechanisms/banks/workout.js';
+import type { LoanTerms } from '../src/mechanisms/banks/loan.js';
+import { Forbidden } from '../src/core/errors.js';
+import { addMonths } from '../src/calendar/civil.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -227,7 +231,7 @@ function overspends(times: number, at = 2): SystemModule {
   };
 }
 
-function world(extra: readonly SystemModule[] = [], limits?: number): World {
+function world(extra: readonly SystemModule[] = [], limits?: number, months?: number): World {
   const spec = rigSpec('loans');
   const modules = withDependencies(spec.modules, (m) =>
 m.id === 'sovereign-instruments' ||
@@ -246,7 +250,25 @@ m.id === 'sovereign-instruments' ||
               p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: limits } : p,
             ),
           },
-    ).map(notDealing);
+    )
+    /**
+     * A2, 17.7: how long this world's loans run for. A commercial facility is written for a year
+     * and the world says so; a SCALE MODEL of a maturity has to reach one inside the periods a test
+     * steps, so the test that is about what happens AT a maturity shortens the term rather than
+     * stepping a year of weeks to get there. It is the same number in the same register, read the
+     * same way — only smaller, which is what a scale model is.
+     */
+    .map((m) =>
+      months === undefined
+        ? m
+        : {
+            ...m,
+            params: m.params.map((p) =>
+              String(p.id) === 'lending.loanMonths' ? { ...p, value: months } : p,
+            ),
+          },
+    )
+    .map(notDealing);
   return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
@@ -760,5 +782,161 @@ describe('the credit view (Banks Lending C1, C3, C4; Corporate Credit A4, E5)', 
     expect(dear.declines.some && dear.declines.value).toBe('marketYield');
     const fine = nameView(view, decl, NAME, inputsWith(covered));
     expect(fine.declines.some).toBe(false);
+  });
+});
+
+/**
+ * The workout (Banks Lending E3, finding 21.59, item 17.7).
+ *
+ * Two decisions and one door. The decisions are arithmetic over what the creditor's own view
+ * already says, so they are checked as arithmetic; the door is the kernel's and is checked by what
+ * it refuses, because what it refuses is the whole reason it is not a way to rewrite any line.
+ */
+describe('the workout (Banks Lending E3, 21.59)', () => {
+  const YEAR = asRatio(1, 'a year of it');
+  const NOTHING = asRatio(0, 'none of it');
+
+  it('agrees when enforcing brings it nothing, and enforces when enforcing brings it everything', () => {
+    // C1.b: a creditor that has met no estate has recovered nothing and expects to recover nothing,
+    // so enforcing brings it nothing at all and any promise is worth more than that.
+    const blind = pathsOf(asRatio(1, 'all of it at risk'), asRatio(0.1, 'seen it fail'), asRatio(0.01, 'what its capital costs'), YEAR);
+    expect(blind.enforcing).toBe(0);
+    expect(takes(blind)).toBe('agree');
+    // And one that has been paid in full by every estate it met gets the whole of it now, which
+    // nothing it waits for can beat once waiting costs it anything.
+    const paidInFull = pathsOf(NOTHING, asRatio(0.1, 'seen it fail'), asRatio(0.01, 'what its capital costs'), YEAR);
+    expect(paidInFull.enforcing).toBe(1);
+    expect(takes(paidInFull)).toBe('enforce');
+  });
+
+  it('is the capital that carrying it costs that decides between two otherwise identical claims (E3)', () => {
+    const loss = asRatio(0.5, 'half of it at risk');
+    const fails = asRatio(0.2, 'how often it has seen the name fail');
+    const charge = asRatio(0.4, 'what a unit of capital costs it');
+    // The same claim, the same name, the same recovery: the only difference is how long the new
+    // terms would carry it, and that is what E3 means by each path having a cost.
+    const brief = pathsOf(loss, fails, charge, asRatio(0.1, 'a few weeks of it'));
+    const long = pathsOf(loss, fails, charge, asRatio(2, 'two years of it'));
+    expect(brief.enforcing).toBe(long.enforcing);
+    expect(takes(brief)).toBe('agree');
+    expect(takes(long)).toBe('enforce');
+  });
+
+  it('rolls a name it would lend to today, and calls in one its own standard turns away (C3)', () => {
+    const w = world();
+    w.step();
+    const decl = drawBanks(BANK_COUNT, 'loans')[0];
+    expect(decl).toBeDefined();
+    if (decl === undefined) return;
+    const view = w.participantView(partyId(decl.bank));
+    const inputs = (over: Partial<CreditInputs>): CreditInputs => ({
+      funds: asRatio(0.02, 'what money costs it'),
+      reg: {
+        capitalRatio: asRatio(0.08, 'what the standard asks'),
+        riskWeight: asRatio(1, 'what an ordinary exposure weighs'),
+        operatingCost: asRatio(0.01, 'what running a loan costs it'),
+      },
+      defaults: [],
+      recovered: { paid: asQty(0), lost: asQty(0) },
+      gradeOn: () => none(),
+      weightOf: () => asRatio(1, 'what an ordinary exposure weighs'),
+      statementOf: () => none(),
+      prepared: () => false,
+      marketYieldOn: () => none(),
+      ...over,
+    });
+    // A name that kept its books shut is a name this bank declines, and a lender that would not
+    // write the line today does not agree another term of it either.
+    expect(rolls(nameView(view, decl, partyId('name.shut'), inputs({ prepared: () => true })))).toBe(false);
+    expect(rolls(nameView(view, decl, partyId('name.young'), inputs({})))).toBe(true);
+  });
+
+  it('refuses a kind that never said it could be re-agreed (Law 15)', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    // A share is not renegotiated and a sovereign bond's restructuring is an exchange offer to its
+    // holders, not a private word with one of them — so neither kind declares a re-agreement and
+    // neither is reachable through this door, whoever calls it.
+    const other = w.instruments.all().find((i) => i.kind !== LOAN && i.status.live && i.issuer.some);
+    expect(other).toBeDefined();
+    if (other === undefined) return;
+    expect(() => { w.reagreeOn(other.id, other.terms, 'rolled'); }).toThrow(Forbidden);
+  });
+
+  it('refuses new terms that would make it a different claim (E3)', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    const t: LoanTerms = row.terms;
+    // The two parties on it are the two parties to the agreement; a date brought forward is an
+    // acceleration and has its own path; what it is secured on is a lien and is pledged, not typed.
+    const changed = (over: Partial<LoanTerms>): LoanTerms => ({ ...t, ...over });
+    expect(() => { w.reagreeOn(row.id, changed({ borrower: PAYEE }), 'rolled'); }).toThrow(Forbidden);
+    expect(() => { w.reagreeOn(row.id, changed({ maturity: t.drawn }), 'rolled'); }).toThrow(Forbidden);
+    expect(() => {
+      w.reagreeOn(row.id, changed({ security: [{ instrument: row.id, qty: asQty(1) }] }), 'rolled');
+    }).toThrow(Forbidden);
+  });
+
+  it('holds the reason to the status, because a roll and a workout are different events', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    expect(row.status.live && row.status.performing).toBe(true);
+    const later: LoanTerms = { ...row.terms, maturity: addMonths(row.terms.maturity, 1) };
+    expect(() => { w.reagreeOn(row.id, later, 'restructured'); }).toThrow(Forbidden);
+    w.reagreeOn(row.id, later, 'rolled');
+    expect(w.journal.ofKind('credit.reagreed')).toHaveLength(1);
+  });
+
+  it('keeps the row and moves only what the two of them agreed (Register F1)', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    const owed = creditorOf((h) => w.register.holdersOf(h), row);
+    // E2: it stopped performing, and only the re-agreement brings it back — on the new terms.
+    w.instruments.markDefaulted(row.id);
+    expect(w.instruments.get(row.id).status).toEqual({ live: true, performing: false });
+    const agreed: LoanTerms = {
+      ...row.terms,
+      maturity: addMonths(row.terms.maturity, 6),
+      rate: asRatio(0.09, 'what it now requires'),
+    };
+    w.reagreeOn(row.id, agreed, 'restructured');
+    const after = w.instruments.get(row.id);
+    expect(after.status).toEqual({ live: true, performing: true });
+    expect(after.id).toBe(row.id);
+    expect(after.issued).toBe(row.issued);
+    expect(String(after.issuer.some ? after.issuer.value : '')).toBe(String(row.issuer.some ? row.issuer.value : ''));
+    expect(w.register.holdersOf(row.id).map(String)).toEqual(
+      owed.some ? [String(owed.value)] : [],
+    );
+    expect(isLoan(after.terms) && after.terms.rate).toBe(0.09);
+  });
+
+  it('rolls a relationship that reaches its maturity instead of failing it (21.59)', () => {
+    // A borrower publishes what its wages and its orders cost it and never what falls due, so
+    // nothing in this world refinances a maturity: without the roll a performing borrower fails on
+    // the date. One month rather than the world's twelve, so the scale model reaches one.
+    const w = world([asksFor(phx(20_000).pieces)], undefined, 1);
+    let rolled = 0;
+    for (let i = 0; i < 8; i += 1) {
+      w.step();
+      rolled += w.journal.ofKindIn('credit.rolled', w.period).length;
+    }
+    expect(rolled).toBeGreaterThan(0);
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    // The row is the same row, still performing, with a date further out than the one it was
+    // written for — and the borrower never defaulted on it.
+    expect(row.status.live && row.status.performing).toBe(true);
+    expect(w.journal.ofKind('credit.default').filter((e) => e.subjects.includes(String(row.id)))).toEqual([]);
   });
 });

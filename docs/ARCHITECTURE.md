@@ -644,6 +644,22 @@ asks. The rule that door exists for is the one a module can break silently — r
 own view with `ctx.participant(x)` gives a mechanism private state no participant may have, so the
 count of those reads per file is ratcheted in `tools/check-forbids.ts` and may only fall.
 
+**ONE DOOR OUT OF TERMS FIXED AT ISSUANCE, and the kind holds the key** (Banks Lending E3; item
+17.7). Terms are the structure of an instrument and not an opening condition (Seed C4.b), so nothing
+could change them: a claim that stopped performing stayed in default for the rest of its life and a
+claim being paid fell due on the day it was written for. `ctx.reagree(instrument, terms, why)` is the
+one path, `Instruments.reterm` the one writer, and it is narrow in three ways rather than general,
+because a general terms-restatement is a way for any module to rewrite any line. The KIND declares
+`reagree(was, now)` and returns the reason to refuse, so a kind that declares nothing cannot be
+re-agreed at all — a share is not renegotiated and a bond's restructuring is an exchange offer to its
+holders, not a private word with one of them — and a loan refuses everything that would make it a
+different claim (the two parties, the drawing, the convention, the security, a date brought forward).
+The STATUS decides which event it is: `rolled` is a performing line extended at maturity, and
+`restructured` is one that stopped performing, and the kernel refuses the other pairing so a reader
+counting workouts never counts rolls. And the line performs on the terms that stand — one sentence,
+not a branch, and the only path that restores what `markDefaulted` took away. What is forgiven is a
+redemption at what it fetched and leaves by the ordinary two-sided leg, not through here.
+
 **The opening world is TWO seed modules, and the second one is why** (Seed A4, C1; item 12). Who
 exists and what each party is endowed with is one question; **what stands behind a bank** is another,
 and it cannot be answered until every module has handed out what it hands out. `equity` opens every

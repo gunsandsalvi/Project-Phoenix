@@ -92,7 +92,7 @@ import { PriceStore, type Print, wasTraded } from '../prices/price-store.js';
 import { priceAt } from '../prices/curve.js';
 import type { WorthReads } from '../registry/kinds.js';
 import { Valuation } from '../prices/value.js';
-import { Instruments } from '../register/instruments.js';
+import { Instruments, type Terms } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
 import { Contracts } from '../register/contracts.js';
 import { Voyages } from '../register/voyages.js';
@@ -152,7 +152,7 @@ import type {
   VoyagesRead,
 } from './context.js';
 import { subjectOf } from './context.js';
-import type { CreditRequest } from './context.js';
+import type { CreditRequest, Reagreement } from './context.js';
 import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
@@ -725,6 +725,72 @@ export class World {
     if (!was.some) return;
     const at = this.marketList.findIndex((m) => m.id === was.value);
     if (at >= 0) this.marketList.splice(at, 1);
+  }
+
+  /**
+   * Banks Lending E3, 21.59 (17.7): THE TERMS OF A CLAIM WERE RE-AGREED BY THE TWO PARTIES TO IT.
+   *
+   * Three refusals, and between them they are why this is not a door onto every line in the world.
+   * The KIND is asked first and refuses what a re-agreement of it may not change (Law 15): a kind
+   * that declares no `reagree` cannot be re-agreed at all, so a share, a good and a bond are not
+   * reachable from here. The REASON is held to the status, because a roll and a workout are
+   * different events and a caller that muddles them is publishing a lie: only a performing line is
+   * rolled, only one that stopped performing is restructured. And there must be somebody holding
+   * it: a claim nobody is owed has nobody to agree with.
+   *
+   * What it does then is exactly two things — the register takes the new terms (and the line
+   * performs on them), and the world is told. It books no payment and forgives no principal: what
+   * is forgiven leaves through a redemption at what it fetched (E5), which is a leg with two sides
+   * like every other.
+   */
+  reagreeOn(instrument: InstrumentId, terms: Terms, why: Reagreement): void {
+    const i = this.instruments.get(instrument);
+    const profile = this.registry.instrumentKind(i.kind);
+    const may = profile.reagree;
+    if (may === undefined) {
+      throw new Forbidden(
+        'Banks Lending E3',
+        `a ${i.kind} says nothing about being re-agreed, so ${instrument} cannot be`,
+        { instrument, kind: String(i.kind) },
+      );
+    }
+    const refused = may(i.terms, terms);
+    if (refused.some) {
+      throw new Forbidden('Banks Lending E3', `${instrument}: ${refused.value}`, {
+        instrument,
+        kind: String(i.kind),
+      });
+    }
+    forbid(i.status.live, 'Banks Lending E3', `${instrument} has ceased; there is nothing to agree`);
+    forbid(
+      why === (i.status.performing ? 'rolled' : 'restructured'),
+      'Banks Lending E3',
+      `${instrument} is ${i.status.performing ? 'performing' : 'not performing'} and would be ${why}`,
+      { instrument, why },
+    );
+    const holders = this.register.holdersOf(instrument);
+    forbid(
+      holders.length > 0,
+      'Banks Lending E3',
+      `${instrument} is owed to nobody; there is no counterparty to agree with`,
+      { instrument },
+    );
+    this.instruments.reterm(instrument, terms);
+    // Firm Birth C3, Observer A1: a default is announced and so is what was agreed after it — every
+    // other creditor of the name learns that this one gave it more time, and on what.
+    this.journal.record(
+      this.currentPeriod,
+      this.currentCycle,
+      'credit.reagreed',
+      [String(instrument), ...(i.issuer.some ? [String(i.issuer.value)] : []), ...holders.map(String)],
+      {
+        instrument: String(instrument),
+        issuer: i.issuer.some ? String(i.issuer.value) : '',
+        holders: holders.map(String).join(','),
+        why,
+      },
+      true,
+    );
   }
 
   /** Declare a venue a module clears itself (Clearing B2); like a market, it is declared once. */
@@ -2324,6 +2390,9 @@ export class World {
           { instrument: String(instrument), benchmark, coupon: coupon.amount, per: coupon.per.kind },
           true,
         );
+      },
+      reagree: (instrument, terms, why) => {
+        this.reagreeOn(instrument, terms, why);
       },
       openVenue: (decl) => {
         this.addVenue(decl);

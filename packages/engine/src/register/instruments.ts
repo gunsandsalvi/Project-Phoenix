@@ -226,8 +226,8 @@ export class Instruments {
   /**
    * Banks Lending E1, E2: the one path that writes the status. It is called by the kernel when a
    * payment this instrument promised failed and its own profile called that a default (Bond N12);
-   * nothing else may, and nothing restores it — a cure is a state of its own and needs a workout
-   * to reach it (E3, worklist 6).
+   * nothing else may. One path restores it and only one: `reterm`, where the two parties agree new
+   * terms and the claim performs on those (E3, 17.7). Nothing else does, and nothing forgets it.
    */
   markDefaulted(id: InstrumentId): void {
     const i = this.get(id);
@@ -237,6 +237,41 @@ export class Instruments {
     if (!i.status.performing) return;
     const status: InstrumentStatus = { live: true, performing: false };
     this.map.set(id, Object.freeze({ ...i, status }));
+    this.everything = undefined;
+    this.changes += 1;
+  }
+
+  /**
+   * Banks Lending E3, 21.59 (17.7): THE TERMS WERE RE-AGREED, and the claim is the same claim.
+   *
+   * A bilateral claim has two parties and they can agree new terms: a relationship that is still
+   * performing is ROLLED at maturity rather than repaid and rewritten, and one that stopped
+   * performing is RESTRUCTURED — more time, a different rate — rather than enforced. Both are the
+   * same fact about the register: the row keeps its identity (Register F1), its issuer, its kind
+   * and its holders, and what it promises from here is what the two of them just agreed.
+   *
+   * THE LINE PERFORMS ON THE TERMS THAT STAND. That is one sentence and not a branch: performing
+   * means no promise of this claim has been broken, and the promise that was broken is not a
+   * promise of this claim any more. It is the only path that restores what `markDefaulted` took
+   * away, and the journal still has the miss and the re-agreement both, so nothing is forgotten —
+   * what is forgiven is a redemption at what it fetched (E5) and is not this.
+   *
+   * The kernel is the one caller and it asks the KIND first (`profile.reagree`): what a kind refuses
+   * to have changed about itself is the kind's to say, and a kind that says nothing at all cannot
+   * be re-agreed. Here there are two guards only, and both are facts about the register rather than
+   * about credit: a line that has ceased has nothing left to agree about, and a claim that changed
+   * kind would be a different claim under one id.
+   */
+  reterm(id: InstrumentId, terms: Terms): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Banks Lending E3', `instrument ${id} has ceased; there is nothing to agree`);
+    forbid(
+      terms.kind === i.terms.kind,
+      'Banks Lending E3',
+      `${id} is a ${i.terms.kind} and would be re-agreed as a ${terms.kind}`,
+    );
+    const status: InstrumentStatus = { live: true, performing: true };
+    this.map.set(id, Object.freeze({ ...i, terms: Object.freeze(terms), status }));
     this.everything = undefined;
     this.changes += 1;
   }
