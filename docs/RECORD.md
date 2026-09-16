@@ -11690,3 +11690,42 @@ learning travels with the people who did it (12c.2), and an entrant enters at th
 practice (12c.3). No stored productivity anywhere. The item's findings are positioned at 21.1
 (the capacity grid), 21.19 (the mark before the market) and 22.2 (the firms that never start);
 its section is removed and its row marked done.
+
+## Item 12d.1 — What is public about what a party is exposed to reaches it
+
+An outlook was formed from a party's own fills and receipts, and from the print of a line it had
+once traded. What is public about the rest of its exposure reached nobody: a household holding a
+share it had never traded saw no print of it, a worker saw no going rate, a depositor no board,
+and a holder nothing of what the company it held published. The exposure set is a read of the
+party's holdings and its rows — nothing here is a list anybody wrote — and every public fact about
+it enters the outlook as one more observation, corrected towards at the party's own memory, never
+as the outlook itself (§46 A2.a): the print of every line it holds; what a company whose paper it
+holds published it earned a period, the period after it published, which is the lag a statement
+has; what an hour cleared at in every venue its employment rows put it in, on either side, off the
+going rate the labour module publishes about the period that closed; the board of the bank it
+banks at, on its class of deposit. Three subjects joined the kernel's vocabulary for it
+(`wage.<venue>`, `deposit.<bank>`, `reported.<company>`), and the reads go through the registry.
+
+**Not built here.** The retail prints a cell buys at before it has ever bought, and the dwelling
+print for a cell that rents: a basket is the households module's costing and a tenure row names a
+venue, neither is a holding or a row naming the line. Both go with 12d.2's anchored predictors.
+
+**Found on the way (XI-15).** The book of outlooks is keyed by party id and follows no cell event:
+a cell split off its parent after a statement came out has a fresh book, although its people saw
+the statement as members of the parent. Positioned at 21.20; the test skips those cells and says
+so.
+
+**Found and fixed on the way (the plan's own tool).** `plan:progress` reported plan item 12d as
+closed with four open steps: the worklist's `12d` (the test migration, closed by the owner) shares
+its id, and the tool let a worklist `done` speak for an item that has a section. An item with a
+section is judged by its section alone now.
+
+**Measured.** Twenty-two periods of the scale model: every party holds an outlook on every line it
+held that printed this period; every party on an employment row holds one on the going rate where
+it works or hires and a cell that never worked holds none; depositors hold their bank's board in
+`per annum`; the holders of the one company that reported by period 20 hold what it published,
+the period after, and nobody else does (`observation.test.ts`, four green). Nothing new is red:
+the ten suites at 56 of 109 and `expectations.test.ts` at its two, the same sets.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

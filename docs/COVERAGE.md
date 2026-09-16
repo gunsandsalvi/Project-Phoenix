@@ -1627,7 +1627,7 @@ measurement is taken there is nothing to name.
 | requirement | status | where / why |
 |---|---|---|
 | `Expectations A1` | MET | packages/engine/src/world/context.ts (an outlook carries its number, its unit, its periodicity and how much the party trusts it), packages/engine/src/mechanisms/expectations/index.ts |
-| `Expectations A2` | MET | packages/engine/src/mechanisms/expectations/index.ts (formed from legs the party was a side of and from what happened to its own account; 12b.3, A2.a: a price it already watches and did not trade at reaches it as the venue's print, one more thing observed and never the outlook itself) |
+| `Expectations A2` | MET | packages/engine/src/mechanisms/expectations/index.ts (formed from legs the party was a side of and from what happened to its own account; 12b.3, A2.a: a price it already watches and did not trade at reaches it as the venue's print, one more thing observed and never the outlook itself); 12d.1, A2.a: WHAT IS PUBLIC ABOUT WHAT IT IS EXPOSED TO reaches it as an observation — the print of every line it holds, what a company whose paper it holds published (the period after, the lag a statement has), the going rate where its employment rows put it, the board of its own bank on its class — the exposure set a read of holdings and rows (`exposed`), the facts read through the registry, none of it the outlook itself |
 | `Expectations A2.b` | MET | packages/engine/src/world/context.ts (the only door answers about self), packages/engine/src/mechanisms/expectations/index.ts (the published aggregate is a lagged read no decision can consult) |
 | `Expectations A3` | MET | packages/engine/src/mechanisms/expectations/index.ts, packages/engine/src/mechanisms/households/index.ts `patienceOf` (memory and patience are drawn per population and dispersed, so parties with the same history still move differently; 0f.7c) |
 | `Expectations A4` | MET | packages/engine/src/mechanisms/expectations/index.ts (an outlook is last period outlook corrected towards what happened; nothing runs the world forward) |
@@ -1640,7 +1640,7 @@ measurement is taken there is nothing to name.
 | `Expectations B4` | MET | packages/engine/src/mechanisms/expectations/index.ts (form runs at the top of the period on what the close of the last one recorded) |
 | `Expectations B5` | MISSING |  |
 | `Expectations C1` | MISSING |  |
-| `Expectations C2` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (output and hiring read the firm own outlook of what it sells and what it fetches), packages/engine/src/mechanisms/firms/produce.ts (and it publishes it); investment arrives with the capital programme (worklist 10) |
+| `Expectations C2` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (output and hiring read the firm own outlook of what it sells and what it fetches), packages/engine/src/mechanisms/firms/produce.ts (and it publishes it); investment arrives with the capital programme (worklist 10); 12d.1, C2.a: an outlook ABOUT ANOTHER PARTY exists as a subject (`reported.<company>`): what a holder observed the company publish, formed the same way, its own and nobody's to inherit |
 | `Expectations C3` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (what a firm offers and what it will pay are its own expectation of the price); the sovereign holders required yield is still a placeholder (worklist 10) |
 | `Expectations C4` | MISSING |  |
 | `Expectations C5` | MISSING |  |

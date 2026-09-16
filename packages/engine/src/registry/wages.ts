@@ -95,6 +95,16 @@ export function wageFacing(reads: WageReads, at: Period, venue: VenueId): Option
   return goingRateIn(reads, venue);
 }
 
+/**
+ * §46 A2.a (12d.1): the going rate AS PUBLISHED THIS PERIOD, or nothing — the observation a party
+ * exposed to the venue takes, the period the statistic comes out, and not on the weeks it did not.
+ */
+export function goingRatePublishedAt(reads: Pick<WageReads, 'lastPublic'>, venue: VenueId, at: Period): Option<PerPiece> {
+  const published = reads.lastPublic(GOING_RATE);
+  if (!published.some || published.value.period !== at) return none<PerPiece>();
+  return goingRateIn(reads, venue);
+}
+
 export function goingRateIn(reads: Pick<WageReads, 'lastPublic'>, venue: VenueId): Option<PerPiece> {
   const published = reads.lastPublic(GOING_RATE);
   if (!published.some) return none<PerPiece>();

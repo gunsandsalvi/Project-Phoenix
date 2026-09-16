@@ -64,7 +64,7 @@ import type {
 } from '../register/agreements.js';
 import type { EmploymentReads, EmploymentRow } from '../register/employment.js';
 import { none, some } from '../core/option.js';
-import { instrumentId, partyId } from '../core/ids.js';
+import { instrumentId, partyId, venueId } from '../core/ids.js';
 
 /** Law 4: every read of the voyage store and no writer. The writes reach settlement and nothing else. */
 export interface VoyagesRead {
@@ -305,7 +305,13 @@ export type Subject =
   | { readonly on: 'income' }
   | { readonly on: 'earnings' }
   /** What this party thinks of THAT one: whether it is good for what it owes (Banks Lending A2). */
-  | { readonly on: 'credit'; readonly party: PartyId };
+  | { readonly on: 'credit'; readonly party: PartyId }
+  /** §46 A2.a (12d.1): what an hour clears at in a venue this party works or hires in. */
+  | { readonly on: 'wage'; readonly venue: VenueId }
+  /** §46 A2.a (12d.1): what the bank this party banks at pays on its class of deposit. */
+  | { readonly on: 'deposit'; readonly bank: PartyId }
+  /** §46 A2.a, C2.a (12d.1): what a company whose paper this party holds published it earned a period. */
+  | { readonly on: 'reported'; readonly party: PartyId };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -321,7 +327,12 @@ export function about(s: Subject): OutlookVariable {
     case 'sold':
       return `${s.on}.${String(s.instrument)}` as OutlookVariable;
     case 'credit':
-      return `credit.${String(s.party)}` as OutlookVariable;
+    case 'reported':
+      return `${s.on}.${String(s.party)}` as OutlookVariable;
+    case 'wage':
+      return `wage.${String(s.venue)}` as OutlookVariable;
+    case 'deposit':
+      return `deposit.${String(s.bank)}` as OutlookVariable;
     case 'income':
     case 'earnings':
       return s.on as OutlookVariable;
@@ -347,7 +358,9 @@ export function subjectOf(v: OutlookVariable): Option<Subject> {
   if (on === 'price' || on === 'bought' || on === 'sold') {
     return some({ on, instrument: instrumentId(rest) });
   }
-  if (on === 'credit') return some({ on, party: partyId(rest) });
+  if (on === 'credit' || on === 'reported') return some({ on, party: partyId(rest) });
+  if (on === 'wage') return some({ on, venue: venueId(rest) });
+  if (on === 'deposit') return some({ on, bank: partyId(rest) });
   return none<Subject>();
 }
 

@@ -115,8 +115,12 @@ export function itemProgress(): ItemProgress[] {
      * Otherwise the item's own steps say it: every one ticked IS closed, because that is what
      * closing an item means (CLAUDE.md: tick the steps, delete the section). Nothing infers it from
      * a section's absence, which is the other direction and would make an unwritten item look done.
+     *
+     * 12d.1: and an item WITH a section is judged by its section alone. The worklist's `12d` (the
+     * test migration, closed by the owner) shares its id with the plan's `12d` (observation), and
+     * the worklist's `done` was reporting four open steps as a closed item.
      */
-    const closed = worklist.get(id) === 'done' || (steps > 0 && s.unchecked === 0);
+    const closed = steps > 0 && s.unchecked === 0;
     const state = closed ? 'done' : 'open';
     out.push({ id, state, title: s.title, steps, done: closed ? steps : s.checked, present: true, closed });
   }

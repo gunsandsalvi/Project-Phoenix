@@ -1,7 +1,7 @@
 /**
  * What every deciding party expects, formed from what that party itself observed.
  *
- * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
+ * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations C2.a Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
  *
  * An outlook is personal (A2). It is last period's outlook corrected towards what this party
  * actually observed, at this party's own speed (B1); the speed is its MEMORY, the one preference
@@ -39,8 +39,12 @@ import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
 import { isAssetLeg, isContractLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { issuedBy } from '../../register/instruments.js';
-import type { MechanismContext, Outlook, OutlookVariable } from '../../world/context.js';
+import { findVenue } from '../../clearing/venue.js';
+import { depositRatePostedAt } from '../../registry/banking.js';
+import { goingRatePublishedAt } from '../../registry/wages.js';
+import { about, type MechanismContext, type Outlook, type OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import type { Event, EventKind } from '../../journal/journal.js';
 import { weightOf } from '../../parties/party.js';
 
 export const EXPECTATION_PARAMS = {
@@ -186,6 +190,75 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
       out.set(`${party}|${variable}`, { value: print.value.price, unit: ctx.instruments.get(instrument).ccy });
     }
   }
+  // A2.a (12d.1): WHAT IS PUBLIC ABOUT WHAT IT IS EXPOSED TO reaches it as one more thing observed.
+  for (const p of ctx.parties.all()) {
+    if (!p.status.alive) continue;
+    for (const [variable, seen] of exposed(ctx, p.id)) {
+      const key = `${String(p.id)}|${String(variable)}`;
+      if (!out.has(key)) out.set(key, seen);
+    }
+  }
+  return out;
+}
+
+/**
+ * §46 A2.a, A1 (12d.1): THE PUBLIC FACTS ABOUT WHAT THIS PARTY IS EXPOSED TO, this period. The
+ * exposure set is a read of its holdings and its rows — nothing here is a list anybody wrote:
+ *
+ * - the print of every line it HOLDS (the value of what it holds is a variable it acts on);
+ * - what a company whose paper it holds PUBLISHED it earned a period, the period it published;
+ * - what an hour cleared at in every venue it works or hires in, as the venue published it, with
+ *   the lag a statistic has (the going rate is about the period that closed);
+ * - what the bank it banks at posted on its class of deposit, the period it posted.
+ *
+ * Each enters the outlook as an observation and never as the outlook itself: the first sight of a
+ * variable is the outlook, and from then on the print corrects it at this party's own memory like
+ * any surprise. A party sees nothing private here — every read is of a print or a public event.
+ */
+function exposed(ctx: MechanismContext, party: PartyId): Map<OutlookVariable, { value: number; unit: string }> {
+  const out = new Map<OutlookVariable, { value: number; unit: string }>();
+  const p = ctx.parties.get(party);
+  const reads = {
+    ofKind: (kind: EventKind): readonly Event[] => ctx.journal.ofKind(kind),
+    lastOf: (kind: EventKind, subject: string): Event | undefined => ctx.journal.lastOf(kind, subject),
+    forSubject: (kind: EventKind, subject: string): readonly Event[] => ctx.journal.forSubject(kind, subject),
+    lastPublic: (kind: EventKind): Option<Event> => {
+      const list = ctx.journal.ofKind(kind);
+      const last = list[list.length - 1];
+      return last === undefined ? none<Event>() : some(last);
+    },
+  };
+  for (const h of ctx.register.holdingsOf(party)) {
+    const i = ctx.instruments.get(h.instrument);
+    if (!i.status.live) continue;
+    const print = ctx.prices.read(h.instrument, ctx.period);
+    if (print.some) out.set(about({ on: 'price', instrument: h.instrument }), { value: print.value.price, unit: i.ccy });
+    if (!i.issuer.some || i.issuer.value === party) continue;
+    // C2.a, Reporting A1: what THAT company said it made, per period of the span it reported on.
+    // A statement is published after the period's close, so it reaches its holders the period
+    // after — the lag a published thing has (A2.a) — and once: the period it is one period old.
+    const statement = ctx.published.lastStatement(i.issuer.value);
+    if (statement?.at !== lagged(ctx.period)) continue;
+    out.set(about({ on: 'reported', party: i.issuer.value }), {
+      value: div(statement.earned, statement.periods, 'what it published it earned a period'),
+      unit: statement.ccy,
+    });
+  }
+  // Labour D1.c: the venues it works or hires in — its rows on either side name the trade and place.
+  const worked = ctx.employment.ofWorker(party);
+  const rows = [...ctx.employment.by(party), ...(worked === undefined ? [] : [worked])];
+  for (const r of rows) {
+    const venue = findVenue(ctx.venues, { region: String(r.region), occupation: r.occupation });
+    if (venue === undefined) continue;
+    const rate = goingRatePublishedAt(reads, venue.id, ctx.period);
+    if (rate.some) out.set(about({ on: 'wage', venue: venue.id }), { value: rate.value, unit: ctx.registry.currencyOf(r.region) });
+  }
+  // Banks Funding B1.a: the board of the bank it banks at, on the class its kind is in.
+  const cls = ctx.registry.partyKind(p.kind).depositClass;
+  if (cls !== null) {
+    const rate = depositRatePostedAt(reads, String(p.bank), cls, ctx.period);
+    if (rate.some) out.set(about({ on: 'deposit', bank: p.bank }), { value: rate.value, unit: 'per annum' });
+  }
   return out;
 }
 
@@ -287,6 +360,12 @@ export const expectations: SystemModule = {
         { kind: 'event', name: 'revaluation', of: 'anyPeriod' },
         // 12b.3: the period's prints, for the prices a party watches and did not trade at.
         { kind: 'print', of: 'thisPeriod' },
+        // 12d.1: what is public about what a party is exposed to — the going rate and the boards
+        // are posted before the markets and are read this period; a statement is published after
+        // the close and is read the period after, which is why none of these is `thisPeriod`.
+        { kind: 'event', name: 'labour.goingRate', of: 'anyPeriod' },
+        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+        { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
       ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {

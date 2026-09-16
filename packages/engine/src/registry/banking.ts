@@ -184,6 +184,17 @@ export function depositRateFor(reads: WireReads, bank: string, cls: string): Opt
   return rateIn(last.data['rates'], cls, 'what this bank announced for this class');
 }
 
+/**
+ * §46 A2.a (12d.1): what this bank posted for this class THIS PERIOD, or nothing — the observation
+ * a depositor takes the period the board goes up, and not on the weeks it stands.
+ */
+export function depositRatePostedAt(reads: WireReads, bank: string, cls: string, at: Period): Option<Ratio> {
+  const said = reads.forSubject(DEPOSIT_RATE, bank);
+  const last = said[said.length - 1];
+  if (last?.period !== at) return none<Ratio>();
+  return rateIn(last.data['rates'], cls, 'what this bank announced for this class');
+}
+
 /** B1.a: the whole of a bank's board this period, in one money. Nothing where it has not posted one. */
 export function boardPosted(
   reads: BankReads,
