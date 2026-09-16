@@ -101,10 +101,24 @@ function schedules(ctx: MechanismContext, region: RegionId): readonly Order[] {
     }
     const short = minus(room.needs, room.owns, 'the space it is short of');
     if (short <= 0) continue;
-    const worth = perUnitWorth(ctx, view, region);
-    if (worth === undefined) continue;
-    const qty = downTick(short);
-    if (qty > 0) out.push({ party: p.id, side: 'buy', price: worth, qty });
+    /**
+     * A3, Clearing A2 (18.3): A STEP SCHEDULE, one step per THING it is holding.
+     *
+     * It bid one price for all the room it was short of — the value of the DEAREST thing on its
+     * shelf, for every piece of space, including the pieces its cheapest sacks would go in. So a
+     * holder of one tonne of something valuable and fifty of something ordinary bid the valuable
+     * tonne's price for all fifty-one, and a session that cleared above what the ordinary sacks
+     * were worth charged it anyway. What it is willing to pay for the NEXT piece of space is what
+     * the next thing that would go in it is worth, which is a schedule and not a number (A2).
+     */
+    let left = downTick(short);
+    for (const step of worthPerGood(ctx, view, region)) {
+      if (left <= 0) break;
+      const qty = downTick(atMost(step.space, left, 'no more room than it is short of'));
+      if (qty <= 0) continue;
+      out.push({ party: p.id, side: 'buy', price: step.worth, qty });
+      left = subQty(left, qty, 'the room it is still short of');
+    }
   }
   return out;
 }
@@ -115,12 +129,12 @@ function schedules(ctx: MechanismContext, region: RegionId): readonly Order[] {
  * a rate: a holder of something dear will outbid a holder of something cheap for the same shed,
  * which is what a storage market is for.
  */
-function perUnitWorth(
+function worthPerGood(
   ctx: MechanismContext,
   view: ParticipantView,
   region: RegionId,
-): number | undefined {
-  let dearest: number | undefined;
+): readonly { readonly worth: PerPiece; readonly space: Qty }[] {
+  const steps: { worth: PerPiece; space: Qty }[] = [];
   for (const h of view.holdings()) {
     const i = ctx.instruments.get(h.instrument);
     if (!i.status.live || !isGoodTerms(i.terms)) continue;
@@ -140,9 +154,12 @@ function perUnitWorth(
     // what a piece of space saves is the mark OVER that ratio — a level back, not a level over a
     // count. `space` is deliberately not on a grid: rounding it to a whole piece makes it nothing.
     const worth = over(mark.value, space, 'what a piece of space saves it');
-    if (dearest === undefined || worth > dearest) dearest = worth;
+    const units = view.quantity(h.instrument);
+    if (units <= 0) continue;
+    steps.push({ worth, space: spaceFor(ctx, i.unit, units, perNamed) });
   }
-  return dearest;
+  // A2: the dearest thing first, so the room it is short of goes to what it would rather not lose.
+  return steps.sort((a, b) => b.worth - a.worth);
 }
 
 /**
@@ -230,10 +247,13 @@ function lease(
          * the next taker could not have it — one insolvent taker could shut a region's storage
          * market for the period. A payer that cannot pay has not paid, and has not rented either.
          */
-        if (r.outcome !== 'settled') {
-          at += 1;
-          continue;
-        }
+        /**
+         * 18.3: AND IT SKIPS THE TAKER, NOT THE LETTER. It advanced `at` — the LETTER's place in
+         * the queue — so a taker that could not pay cost the letter its turn and the room went
+         * unlet for the period. The party that failed is the taker, so the taker is what stops:
+         * the letter keeps its space and the next taker down the book gets it.
+         */
+        if (r.outcome !== 'settled') break;
         got.set(
           String(taker.party),
           plus(zeroIfNone(got.get(String(taker.party))), space, 'space taken'),

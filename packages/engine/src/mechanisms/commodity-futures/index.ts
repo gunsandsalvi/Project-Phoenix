@@ -63,7 +63,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
-import { moneyLevel } from '../../registry/derivatives.js';
+import { exposedTo, moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, kindOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -353,10 +353,15 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
       'its position',
     );
   }
-  // B1: short by what it is holding. It made the thing, or it bought it; either way it is exposed.
-  const held = view.free(t.deliverable);
+  // B1, 18.3: short by what it is EXPOSED to, which is not what it is holding. A mill holding a
+  // week of grain and buying a week of grain every week is not long grain: what it holds it will
+  // use, and what it will buy is a short — a price rise costs it. So the stock, less what it means
+  // to buy, plus what it means to sell, each the party's own outlook (`exposedTo`, §46 A2). This is
+  // also the missing BUYER: every holder wanting to be short and nobody wanting to be long is why
+  // 3,680 sessions of this book cleared nothing.
+  const held = exposedTo(view, t.deliverable);
   let want = negated(
-    over(held, asRatio(t.lotUnits, 'what one lot is'), 'what its holding comes to in lots'),
+    over(held, asRatio(t.lotUnits, 'what one lot is'), 'what its exposure comes to in lots'),
     'so lots it wants to be short',
   );
   const own = view.standsBehind();

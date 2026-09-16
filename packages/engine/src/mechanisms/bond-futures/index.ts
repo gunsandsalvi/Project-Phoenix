@@ -53,7 +53,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
-import { moneyLevel } from '../../registry/derivatives.js';
+import { exposedTo, moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, kindOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -399,12 +399,17 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * is worth more than the book says wants to be LONG. When one party has both reasons they are
    * two terms in one target, and what it posts is the distance from where it is (Clearing A2).
    */
-  const held = view.free(t.deliverable);
+  // 18.3: WHAT IT IS EXPOSED TO, not what it is holding — its stock less what it means to buy and
+  // plus what it means to sell, each its own outlook (`exposedTo`, §46 A2). A desk holding a week
+  // of the line and buying a week of it every week is not long the line at all, and a party with
+  // neither a holding nor a view of its own flow hedges NOTHING, which is what a hedger without an
+  // exposure should always have done.
+  const held = exposedTo(view, t.deliverable);
   let want = negated(
     over(
       held,
       asRatio(t.contractSize, 'the face one contract delivers'),
-      'what its holding comes to in contracts',
+      'what its exposure comes to in contracts',
     ),
     'so contracts it wants to be short',
   );

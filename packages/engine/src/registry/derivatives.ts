@@ -15,9 +15,9 @@
  * contract and D1.b would be checking a coincidence. `ContractReads` is therefore the kernel's own
  * reads — prints, marks, indices, curves, public events — and no view of anybody.
  */
-import { asPerPiece, asRatio, type Cash, type PerPiece, type Ratio } from '../core/measure.js';
+import { asAmount, asPerPiece, asRatio, type Cash, type PerPiece, type Ratio } from '../core/measure.js';
 import { Mismatch } from '../core/errors.js';
-import type { Qty } from '../core/tick.js';
+import { asQty, downTick, type Qty } from '../core/tick.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import type {
@@ -36,6 +36,7 @@ import type { CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { Print } from '../prices/price-store.js';
 import type { Namer } from './naming.js';
+import { about, type ParticipantView } from '../world/context.js';
 import type { ParamRegister } from './params.js';
 
 /**
@@ -140,6 +141,36 @@ export function rateLevel(s: StruckAt, what: string): Ratio {
     });
   }
   return s.level;
+}
+
+/**
+ * Derivative D8, §46 A2, Clearing A2 (18.3): WHAT A PARTY IS ACTUALLY EXPOSED TO in a thing, which
+ * is not what it is holding.
+ *
+ * A hedger hedged its whole stock, which is only right for somebody who will never buy or sell any
+ * of it again. A mill holding a week of grain and buying a week of grain every week is not long
+ * grain at all: what it holds it will use, and what it will buy is a SHORT — a price rise costs it.
+ * So the exposure is what it holds, less what it means to buy, plus what it means to sell, and each
+ * of those is the party's OWN outlook formed from its own history (§46 A2) and never a plan this
+ * world hands it.
+ *
+ * A party with no holding and no outlook of either is exposed to nothing and hedges nothing, which
+ * is what it should have been doing all along: every holder of the thing wanting to be short of it
+ * and nobody wanting to be long is why these books were sell-only and never crossed.
+ *
+ * It is ONE PERIOD's flow against the stock, because that is what an outlook states. What a longer
+ * horizon would need is an outlook with a horizon on it, which §46 does not have yet.
+ */
+export function exposedTo(view: ParticipantView, instrument: InstrumentId): Qty {
+  const held = view.free(instrument);
+  const buys = view.outlook(about({ on: 'bought', instrument }));
+  const sells = view.outlook(about({ on: 'sold', instrument }));
+  const flow =
+    (sells.some ? sells.value.expected : 0) - (buys.some ? buys.value.expected : 0);
+  return asQty(
+    downTick(asAmount<'piece'>(held + flow, 'what it is exposed to in this thing')),
+    'what it is exposed to in this thing',
+  );
 }
 
 /** The level a book of this kind struck, tagged with what that kind quotes in (Law 4, one writer). */

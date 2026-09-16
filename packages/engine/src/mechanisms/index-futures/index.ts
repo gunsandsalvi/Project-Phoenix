@@ -222,6 +222,14 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
       'what it has already laid off',
     );
   }
+  /**
+   * 18.3: THE BOOK IT HOLDS IS THE TARGET HERE, and that is not the compromise it looks like. A
+   * commodity or a bond has an outlook of its own flow — what this party means to buy and sell of
+   * that very line (`exposedTo`) — and an INDEX has none of itself: nobody buys or sells the index,
+   * and what a desk MEANS to hold of the constituents is a mandate, which belongs to whoever gave
+   * it and not to this book. So what is hedged is what is held, and the day a mandate is a read a
+   * book can ask for, this is the line that changes.
+   */
   const want = minus(
     asAmount<'piece'>(ratioOf(book, perContract, 'contracts its book would take'), 'contracts'),
     hedged,
