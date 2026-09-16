@@ -608,6 +608,27 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
 }
 
 /**
+ * A2, Clearing C3 (18.4): A SERIES THAT IS OVER IS CLOSED.
+ *
+ * Every series this module ever opened stayed open, so a world that had run a year was holding
+ * sessions in books whose delivery date had passed months before — each one printing `noDemand`
+ * every period for the rest of the run, and each one counted in every reading of how many markets
+ * this world has. A series past its expiry with nothing open in it has nothing left to do.
+ *
+ * The kernel refuses to close a book with open interest, so a row that has not delivered — a fail,
+ * a side that has ceased — keeps its book, which is the answer that leaves the row somewhere to be
+ * marked (Derivative D8).
+ */
+function closeExpired(ctx: MechanismContext): void {
+  for (const market of ctx.markets) {
+    const decl = contractOf(market);
+    if (decl === undefined || !isCommodityFuture(decl.terms)) continue;
+    if (ctx.period <= decl.terms.expiry) continue;
+    ctx.closeMarket(market.id, 'its delivery date has passed and nothing is open in it');
+  }
+}
+
+/**
  * A1, C4, XI-5: DELIVERY, which is why the thing converges. The short hands over the units and the
  * long pays for them at the grade's own cleared spot price, in one instruction — so either the
  * goods and the money both move or neither does. A short with nothing in the shed FAILS, and the
@@ -730,6 +751,8 @@ export function commodityFutures(house: (ccy: CurrencyCode) => PartyId): SystemM
         writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
+          // 18.4: and the ones whose date has passed stop being books.
+          closeExpired(ctx);
         },
       },
       {

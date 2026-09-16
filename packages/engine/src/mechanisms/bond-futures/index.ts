@@ -468,6 +468,21 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
 
+/**
+ * I1, Clearing C3 (18.4): A SERIES THAT IS OVER IS CLOSED. Its delivery date has passed and nothing
+ * is open in it, so it has nothing left to do — and every one of them used to stay open for the
+ * rest of the run, printing `noDemand` every period. The kernel refuses one with open interest, so
+ * a row that could not deliver keeps its book to be marked against (Derivative D8).
+ */
+function closeExpired(ctx: MechanismContext): void {
+  for (const market of ctx.markets) {
+    const decl = contractOf(market);
+    if (decl === undefined || !isBondFuture(decl.terms)) continue;
+    if (ctx.period <= decl.terms.expiry) continue;
+    ctx.closeMarket(market.id, 'its delivery date has passed and nothing is open in it');
+  }
+}
+
 /** I1: a book on each benchmark line this world prints, cleared where there is a house. */
 function openBooks(
   ctx: MechanismContext,
@@ -678,6 +693,8 @@ export function bondFutures(house: (ccy: CurrencyCode) => PartyId, issuer: Party
         writes: [],
         run: (ctx): void => {
           openBooks(ctx, house, issuer);
+          // 18.4: and the ones whose date has passed stop being books.
+          closeExpired(ctx);
         },
       },
       {

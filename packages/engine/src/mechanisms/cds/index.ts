@@ -25,6 +25,8 @@ import type { SystemModule } from '../../world/module.js';
 
 import { CDS_PARAMS, PROTECTED, cdsLineOf, cdsMarketOf } from './data.js';
 import { CDS, cdsKind, isCds, type CdsTerms, cdsClass } from './contract.js';
+import { contractOf } from '../../clearing/market.js';
+import { struckIn } from '../../prices/price-store.js';
 import {
   CDS_INDEX,
   cdsIndexKind,
@@ -74,6 +76,15 @@ function params(): ParamDecl[] {
       why: 'CDS A5: how often a new series is published. The names are fixed when it is — that is what a series IS — so this is how long a line runs before the next one starts, which is a convention of the market and not anybody’s choice within it.',
     },
     {
+      id: CDS_PARAMS.idle,
+      value: 52,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'technology',
+      owner: 'standardSetter',
+      why: 'CDS A1.d, Clearing C3 (18.4): how long a book with nothing open in it goes without a trade before it stops being a book. A year. It is a convention of the market and not a judgement about any name: what closes the book is that nobody has come to it, and the day somebody has a reason again it opens again (the reason is a holding, and the holding is a fact).',
+    },
+    {
       id: CDS_PARAMS.riskWeightSold,
       value: 1,
       unit: 'of the notional sold',
@@ -91,6 +102,32 @@ export function cdsTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly num
   const out: number[] = [];
   for (let y = 1; y <= longest; y += 2) out.push(y);
   return out;
+}
+
+/**
+ * A1.d, Clearing C3 (18.4): A BOOK NOBODY HAS COME TO IS CLOSED.
+ *
+ * A book opened the moment one party held another's paper and *"nothing closes it"* — so a world
+ * that had run a year held sessions on every name anybody had ever lent to, at every tenor, most of
+ * them never traded, each printing `noDemand` every period for ever. A book with nothing open in it
+ * that has gone a year without a trade has nobody in it, and closing it says so.
+ *
+ * IT IS NOT A JUDGEMENT ABOUT THE NAME and it is not permanent: the reason a book exists is that
+ * somebody holds the paper, that is still true or it is not, and the day it is true again with
+ * somebody willing to trade, `openBooks` opens it again. What the kernel refuses is closing one
+ * with open interest, which is the row's right to be marked (Derivative D8).
+ */
+function closeIdle(ctx: MechanismContext): void {
+  const idle = ctx.params.periods(CDS_PARAMS.idle);
+  for (const market of ctx.markets) {
+    const decl = contractOf(market);
+    if (decl === undefined || !isCds(decl.terms)) continue;
+    const last = ctx.prices.latest(market.instrument, ctx.period);
+    // A book that has never printed is a book nothing has ever been said in: it is as idle as one
+    // whose last trade was a year ago, and the period it opened in is not a fact this world keeps.
+    if (last.some && struckIn(last.value) + idle > ctx.period) continue;
+    ctx.closeMarket(market.id, 'nothing is open in it and nobody has traded it for a year');
+  }
 }
 
 /**
@@ -445,6 +482,8 @@ export function cds(house: (ccy: CurrencyCode) => PartyId): SystemModule {
         writes: [],
         run: (ctx): void => {
           openBooks(ctx, house);
+          // 18.4: and the ones nobody has come to stop being books.
+          closeIdle(ctx);
         },
       },
       {

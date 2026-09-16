@@ -28,6 +28,7 @@ export const CDS_PARAMS = {
   tenors: paramId('cds.tenors'),
   window: paramId('cds.margin.window'),
   roll: paramId('cds.index.roll.periods'),
+  idle: paramId('cds.idlePeriods'),
   riskWeightSold: paramId('regulation.riskWeight.cds.sold'),
 } as const;
 

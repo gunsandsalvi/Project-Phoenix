@@ -1061,6 +1061,12 @@ export interface MechanismContext extends WorldReads {
   classify(instrument: InstrumentId): Classified;
   openMarket(decl: MarketDecl): void;
   /**
+   * Clearing C3 (18.4): CLOSE A BOOK THAT IS OVER — a series past its expiry, a vintage worn out, a
+   * name nobody watches. The kernel refuses one with open interest in it; when it is over is the
+   * owning module's to say, and it says it here.
+   */
+  closeMarket(id: MarketId, why: string): void;
+  /**
    * Equity D1, E3, §29 D2 (item 10f.2): LIST A LINE THAT DID NOT TRADE — seat the market on the
    * instrument and open it, in one call, because a flotation is one event and the two halves of it
    * must not be able to disagree. It is the only way a line's `market` ever changes, and `delist`

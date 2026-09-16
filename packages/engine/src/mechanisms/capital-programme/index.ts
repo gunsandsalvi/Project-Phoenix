@@ -264,6 +264,12 @@ function retire(ctx: MechanismContext): void {
       { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units, why: 'retired' },
       false,
     );
+    // A6, Clearing C3 (18.4): AND ITS BOOK CLOSES WITH IT. A vintage that is worn out is scrap;
+    // the second-hand market in it held a session every period for the rest of the run, printing
+    // `noDemand` at nobody. What may still be sold is a vintage that still has life in it.
+    if (i.market.some && ctx.register.heldTotal(i.id).value <= 0) {
+      ctx.closeMarket(i.market.value, 'the vintage is worn out and there is none of it left');
+    }
   }
 }
 

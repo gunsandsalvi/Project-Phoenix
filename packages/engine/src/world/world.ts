@@ -720,6 +720,48 @@ export class World {
    * that price goes visibly stale (Clearing E4), which is §29 C5's *"a value that is not a market
    * price"* arrived at by the market closing rather than by a rule about unlisted things.
    */
+  /**
+   * Clearing C3, Law 9, Law 16 (18.4): A BOOK THAT IS OVER IS CLOSED.
+   *
+   * A series expires, a vintage wears out, a name nobody watches any more stops being watched — and
+   * every one of those books stayed open for ever, gathering a `noDemand` print every period for
+   * the rest of the run. A session nobody can trade in is not a market: it is a line in a census
+   * that makes every reading of *how many markets this world has* wrong, and a cost on every
+   * period for nothing.
+   *
+   * IT REFUSES A BOOK WITH ANYTHING LEFT IN IT. An open contract names the book it was struck in
+   * and is marked against its prints, so closing one under a live row would leave the row valuing
+   * itself against a session that cannot happen (Derivative D8). What may close is a book with no
+   * open interest, and the module that owns it decides when — this is only the door.
+   */
+  closeMarket(id: MarketId, why: string): void {
+    const at = this.marketList.findIndex((m) => m.id === id);
+    if (at < 0) return;
+    const decl = this.marketList[at];
+    if (decl === undefined) return;
+    // D3, Law 15: what a row is struck IN is the kind's to say (`underlying`), and a book is a
+    // PRINT underlying that names this market. Nothing here looks inside a contract's terms.
+    const open = this.contracts.open_().filter((c) => {
+      const u = this.registry.derivativeKind(c.kind).underlying(c);
+      return u.kind === 'print' && u.market === id;
+    }).length;
+    forbid(
+      open === 0,
+      'Derivative D8',
+      `market ${id} has ${open} open contracts struck in it and cannot close`,
+      { market: String(id), open },
+    );
+    this.marketList.splice(at, 1);
+    this.journal.record(
+      this.currentPeriod,
+      this.currentCycle,
+      'market.closed',
+      [String(id), String(decl.instrument)],
+      { market: String(id), instrument: String(decl.instrument), why },
+      true,
+    );
+  }
+
   delistLine(instrument: InstrumentId): void {
     const was = this.instruments.get(instrument).market;
     this.instruments.delist(instrument);
@@ -2413,6 +2455,9 @@ export class World {
       classify: (instrument) => this.classifyAsset(instrument),
       openMarket: (decl) => {
         this.addMarket(decl);
+      },
+      closeMarket: (id, why) => {
+        this.closeMarket(id, why);
       },
       list: (instrument, decl) => {
         this.listLine(instrument, decl);
