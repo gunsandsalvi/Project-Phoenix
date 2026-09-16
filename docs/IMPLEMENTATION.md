@@ -64,7 +64,7 @@ and neither is yet a MET a run has confirmed.
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 13 | 7 | 5 | **1** | 25 |
-| M&A | 13 | 0 | 9 | **7** | 22 |
+| M&A | 14 | 0 | 8 | **7** | 22 |
 | Trade Credit | 9 | 3 | 10 | 0 | 22 |
 | Goods | 27 | 2 | 10 | 0 | 39 |
 | Freight | 17 | 3 | 0 | 0 | 20 |
@@ -212,7 +212,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17 | Corporate credit, the rest — **done** (section removed; see `docs/RECORD.md`; §7 answered 62 of 62. Findings positioned at 23.1 (21.65, 21.67), 23.2 (21.64, 21.66), 23.3 (21.67, 21.69), 19 (21.62); 21.59 closed at 17.7, 21.61 at 17.7a, 21.63 answered at 17.9a, 21.68 answered at 17.10a; the covered bond out of scope by the owner's decision) | 17.0 the credit view |
 | 17b | The leveraged buyout — **done** (section removed; see `docs/RECORD.md`; §29 answered 25 of 25. Findings positioned at 23.1 (21.73, 21.74, 21.75, 21.76), 23.3 (21.72), 18 (21.71), 18a.1 (21.60(c) and 21.60's diversification half); 21.15 closed at 17b.4, 21.60(a) at 17b.8 and 21.60(b) at 17b.8a; §29 C2's other half became item 17c) | after 17.9 |
 | 17b′ | The books a lender sees — **done** (section removed; see `docs/RECORD.md`; a borrower asking for a commitment prepares management accounts and its lender reads them, so *no accounts, no commitment* holds. 21.76's lender half closed; its `worthAt` half stays at 23.1) | before 17c |
-| 17c | The board | after 17b; §29 C2's other half, and it has no other home |
+| 17c | The board — **done** (section removed; see `docs/RECORD.md`; a controlled company reads its owner's required return and its owner's duration. §35 D4 MET; §29 C2 stays PARTIAL with its cost-base half named as productivity's, not control's) | after 17b |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
 | 19 | The polity | 19.0 the government buys |
@@ -257,30 +257,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 
 ---
-
----
-
-## 17c. The board
-
-Inserted at 17b.10, at its dependency position (Law 10), because §29 C2 has a half with nowhere else
-to go: *"the owner INFLUENCES the firm — investment, costs, distributions."* Distributions are built
-(17b.6) and the other two are not, and what they need is a mechanism this world has nowhere: **a
-party taking a decision on another party's behalf.** `ctx.control` says who controls whom and every
-decision in this world is still taken by the party it is about, so a controlled firm invests what it
-would have invested and pays what it would have paid. A buyout that changes nothing about how the
-company is run is a buyout with the operating half missing (§35 D4, §29 C1).
-
-- [ ] 17c.1 **A controller's say over what its company builds** (§29 C2, Capital Programme B1). The
-  investment decision reads the DECIDER's cost of money rather than the firm's own where the firm is
-  controlled — which is the whole of what a sponsor changes about a company and is one read, not a
-  second decision (Law 4).
-- [ ] 17c.2 **A controller's say over what its company spends** (§29 C2, Firm B2). The cost base is
-  the firm's and stays the firm's; what a controller supplies is a target for it, which the firm
-  meets by the ordinary decisions (hiring, inputs, plant) and not by a number written onto its books.
-- [ ] 17c.3 §35 D4 and §29 C2 re-marked; record.
-
-**Exit.** A company under an owner invests and spends differently from the same company standing on
-its own, and the difference is a read of the owner's own numbers rather than an override.
 
 ---
 

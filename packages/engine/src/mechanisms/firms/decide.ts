@@ -74,6 +74,7 @@ import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { ownPayroll, payrollSince, wageFacing as facing } from '../../registry/wages.js';
 import {
   costOfCapital,
+  horizonOf,
   plantOffers,
   project,
   type CostOfCapital,
@@ -643,11 +644,14 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
   // against what the rest of the plan leaves it — the cash it is not about to need — and it adds
   // its own orders to the same list, because a purchase of plant is a purchase like any other.
-  const cost = costOfCapital(
-    view,
-    payrollSince(view.period),
-    view.params.periods(firmParam(line.firm, 'horizon')),
-  );
+  /**
+   * Capital Programme B1.d, §29 C2 (17c.2): HOW LONG THIS MANAGEMENT COUNTS — and under an OWNER it
+   * is the owner's. A sponsor with four years of its fund's life left does not build a plant that
+   * pays back over ten, and the number is one the owner already publishes about itself (its
+   * duration), read rather than written onto the company.
+   */
+  const counts = horizonOf(view, view.params.periods(firmParam(line.firm, 'horizon')));
+  const cost = costOfCapital(view, payrollSince(view.period), counts);
   const decided = cost.some
     ? project(
         view,
@@ -677,7 +681,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         ),
         contribution,
         view.params.perAnnum(firmParam(line.firm, 'hurdle')),
-        view.params.periods(firmParam(line.firm, 'horizon')),
+        counts,
         cost.value,
         spendable(view, orders),
         groundFor(view, tech.terms.region, vintages),

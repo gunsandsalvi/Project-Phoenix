@@ -32,6 +32,7 @@ const FUNDING = 'firms.funding';
 const STRUCK = 'fund.struck';
 const LISTED_STRUCK = 'fund.listedStruck';
 const SHORTFALL = 'housing.shortfall';
+const CREDIT_QUOTED = 'credit.quoted';
 
 /* --- What a tenant owes on its tenancy ------------------------------------------------------- */
 
@@ -263,6 +264,63 @@ export function rentPrintedIn(reads: WireReads, region: string): Option<PerPiece
   }
   return last === undefined ? none<PerPiece>() : some(last);
 }
+
+/* --- What a party requires of its own money -------------------------------------------------- */
+
+/**
+ * M&A B1, §29 C2, Capital Programme B1.b (17c.1): WHAT THIS PARTY REQUIRES OF ITS OWN MONEY, per
+ * annum — one question with two sources, and never two questions (Law 4).
+ *
+ * A COMPANY reads what a bank quoted it: its own cost of money, published under its own name, and a
+ * firm nobody will lend to has no number here at all. A POOL reads what its investors require of
+ * it, which its own NAV pass publishes beside its duration band for exactly this kind of reader — a
+ * prospectus states a target return, and a closed-end fund raised to buy companies has one whether
+ * or not a bank has ever quoted it.
+ *
+ * It is here rather than in the module that first needed it because THREE now do: a bidder valuing
+ * a company (`control`), a company under an owner working out what its equity costs it
+ * (`registry/capital.ts`), and whoever asks next. A second copy would be a second answer.
+ */
+export function requiredBy(said: AboutAParty, who: string): Option<number> {
+  const quoted = said(CREDIT_QUOTED, who);
+  const rate = quoted.some ? quoted.value.data['rate'] : undefined;
+  if (typeof rate === 'number') return some(rate);
+  const struck = strikeFrom(oneOf(said(STRUCK, who)));
+  return struck.some && struck.value.requires.some ? struck.value.requires : none<number>();
+}
+
+/**
+ * §29 C2, A4, Capital Programme B1.d (17c.2): HOW LONG THIS PARTY COUNTS, in years — what a pool
+ * published about its own duration, and nothing for anybody who has published none.
+ *
+ * *"The periods of service this management counts"* is a management's own preference, and under an
+ * owner it is the owner's: a sponsor with four years of its fund's life left does not build a plant
+ * that pays back over ten.
+ */
+export function countsOver(said: AboutAParty, who: string): Option<number> {
+  const struck = strikeFrom(oneOf(said(STRUCK, who)));
+  return struck.some ? struck.value.durationYears : none<number>();
+}
+
+/**
+ * Observer A3, A4: THE LAST PUBLIC THING SAID ABOUT A NAMED PARTY, however the asker reaches it.
+ *
+ * A phase reads the wire (`journal.lastOf`) and a participant reads what it is allowed to see
+ * (`view.lastPublicAbout`), and the two are different doors onto one fact. Taking the door as an
+ * argument is what lets one read serve both without either of them keeping a copy of the answer
+ * (Law 4) — and it keeps the privacy distinction where it belongs, with the caller.
+ */
+export type AboutAParty = (kind: string, subject: string) => Option<Event>;
+
+/** The phase's door, as the read above wants it. */
+export const onTheWire =
+  (reads: WireReads): AboutAParty =>
+  (kind, subject) => {
+    const said = reads.lastOf(kind, subject);
+    return said === undefined ? none<Event>() : some(said);
+  };
+
+const oneOf = (said: Option<Event>): Event | undefined => (said.some ? said.value : undefined);
 
 /* --- What a deal needs that its buyer cannot pay for ----------------------------------------- */
 

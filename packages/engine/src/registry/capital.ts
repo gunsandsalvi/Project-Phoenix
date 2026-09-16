@@ -61,6 +61,7 @@ import type { ParticipantView } from '../world/context.js';
 import type { Period } from '../calendar/calendar.js';
 import type { RegionId } from '../core/ids.js';
 import { expectedPriceOf } from './expectation.js';
+import { countsOver, requiredBy } from './funding.js';
 import {
   CAPITAL_KINDS,
   capacityFrom,
@@ -279,6 +280,26 @@ function owes(view: ParticipantView): Cash {
  * has ever bought a share of has no market read of what its equity costs (Equity A6).
  */
 function requiredOnEquity(view: ParticipantView): Option<Ratio> {
+  /**
+   * §29 C2, §35 D4 (17c.1): A COMPANY UNDER AN OWNER HAS ITS OWNER'S COST OF EQUITY.
+   *
+   * *"The owner influences the firm — investment, costs, distributions."* Its equity is not
+   * something a market prices; it is one party's, and what it costs is what THAT party requires of
+   * its money (`requiredBy`: a bank's quote to a company, a pool's published requirement). The
+   * whole of what a sponsor changes about a company is the number it has to clear, and this is it.
+   *
+   * It is a READ and not a second decision (Law 4): nothing is written onto the company's books,
+   * nothing overrides its plan, and the firm goes on taking its own decisions — against a different
+   * number, because it is answering to somebody else. A wholly-bought company is delisted (`own`),
+   * so the market read below has nothing to say about it anyway; what would have happened without
+   * this is that its hurdle quietly became its debt cost alone, which is the cheapest capital in
+   * the world and the opposite of what being bought by a fund does to a company.
+   */
+  const held = view.control.controllerOf(view.self.id);
+  if (held !== undefined) {
+    const owner = requiredBy((k, w) => view.lastPublicAbout(k as never, w), String(held.controller));
+    if (owner.some) return some(asRatio(owner.value, 'what its owner requires of its money'));
+  }
   const line = shareLine(view);
   if (!line.some) return none<Ratio>();
   const print = view.print(line.value);
@@ -739,4 +760,37 @@ export function plantOffers(
   // `ownPrice` is what its own output fetches; a project's return is built from it upstream, and it
   // is named here so the offer list and the return are read from one plan (Law 4).
   return ownPrice > 0 ? out : [];
+}
+
+/**
+ * Capital Programme B1.d, §29 C2, §35 D4 (17c.2): THE PERIODS OF SERVICE THIS MANAGEMENT COUNTS.
+ *
+ * Its own, where it answers to nobody — a preference, declared per firm. Its OWNER's, where it is
+ * controlled: *"the owner influences the firm — investment, costs, distributions"*, and a horizon is
+ * how the first of those actually bites. A fund that has four years of its own life left counts four
+ * years, so the company it owns stops building things that pay back over ten — which is the famous
+ * thing a sponsor does to a company and is not a rule anywhere here: it is one number read off what
+ * the owner already publishes about itself.
+ *
+ * An owner that has published no duration changes nothing, and the company counts its own.
+ */
+export function horizonOf(view: ParticipantView, own: number): number {
+  const held = view.control.controllerOf(view.self.id);
+  if (held === undefined) return own;
+  const years = countsOver((k, w) => view.lastPublicAbout(k as never, w), String(held.controller));
+  if (!years.some || years.value <= 0) return own;
+  /**
+   * Law 8: a duration is in YEARS and a horizon is in PERIODS, so the CALENDAR crosses them — the
+   * fraction of a year one period is, taken from the dates, and never a periods-per-year written
+   * down here (Money G3.a). DOWN, because a horizon is whole periods a management will still be
+   * there for and a part of one is not one.
+   */
+  const ofAYear = yearFraction(
+    'ACT/365F',
+    view.calendar.startOf(view.period),
+    view.calendar.startOf(period(view.period + 1)),
+  );
+  if (ofAYear <= 0) return own;
+  const periods = downTick(years.value / ofAYear);
+  return periods > 0 ? periods : own;
 }

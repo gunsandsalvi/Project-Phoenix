@@ -33,6 +33,9 @@ import { asCash, asPerPiece } from '../src/core/measure.js';
 import { mergeModules, rigSpec } from './rig.js';
 import { equityLines, runTender, type Bid } from '../src/mechanisms/control/index.js';
 import { askToFund, DEAL_MONTHS } from '../src/mechanisms/control/deal.js';
+import { countsOver, requiredBy } from '../src/registry/funding.js';
+import { none, some } from '../src/core/option.js';
+import type { Event } from '../src/journal/journal.js';
 import { facilityLoanId, isLoan, LOAN } from '../src/registry/credit.js';
 
 const BUYER = partyId('buyer.lbo');
@@ -353,3 +356,60 @@ describe('the owner’s hand (Private Equity C2, C3)', () => {
   });
 });
 
+
+describe('the board (Private Equity C2, M&A D4, 17c)', () => {
+  /** A stub of the one door these reads take: the last public thing said about a named party. */
+  const said =
+    (rows: Readonly<Record<string, Record<string, unknown>>>) =>
+    (kind: string, who: string) => {
+      const data = rows[`${kind}|${who}`];
+      return data === undefined
+        ? none<Event>()
+        : some({ kind, subjects: [who], data, public: true } as unknown as Event);
+    };
+
+  it('what a party requires of its own money is one question with two sources', () => {
+    // M&A B1: a COMPANY reads what a bank quoted it; a POOL reads what its investors require of it.
+    // Two sources, one answer — and a second copy of this would be a second answer (Law 4).
+    expect(requiredBy(said({ 'credit.quoted|firm.x': { rate: 0.07 } }), 'firm.x')).toEqual(some(0.07));
+    expect(
+      requiredBy(said({ 'fund.struck|pool.x': { perShare: 1, requires: 0.15 } }), 'pool.x'),
+    ).toEqual(some(0.15));
+    // A quote is the keener source and wins where both exist: it is what borrowing costs it NOW.
+    expect(
+      requiredBy(
+        said({ 'credit.quoted|both': { rate: 0.07 }, 'fund.struck|both': { perShare: 1, requires: 0.15 } }),
+        'both',
+      ),
+    ).toEqual(some(0.07));
+    // And a party nobody has said anything about has no number, which is Missing and not a zero.
+    expect(requiredBy(said({}), 'nobody').some).toBe(false);
+  });
+
+  it('how long a party counts is what it published about itself, or nothing', () => {
+    expect(
+      countsOver(said({ 'fund.struck|pool.x': { perShare: 1, durationYears: 4 } }), 'pool.x'),
+    ).toEqual(some(4));
+    // A company publishes no duration and a horizon it never stated is not one (Appendix A).
+    expect(countsOver(said({ 'credit.quoted|firm.x': { rate: 0.07 } }), 'firm.x').some).toBe(false);
+  });
+
+  it('a company under an owner has its OWNER’s cost of equity', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < PERIODS; i += 1) w.step();
+    const e = w.journal.ofKind('control.acquired')[0];
+    if (e === undefined) throw new Error('the deal did not happen');
+    const target = partyId(String(e.data['target']));
+    expect(w.control.controllerOf(target)?.controller).toBe(BUYER);
+    // C2: its equity is not something a market prices — it is one party's, and what it costs is
+    // what THAT party requires of its money. The read is the same one the buyer valued it with.
+    const owner = requiredBy(
+      (k, who) => {
+        const last = w.journal.lastOf(k as never, who);
+        return last === undefined ? none<Event>() : some(last);
+      },
+      String(BUYER),
+    );
+    expect(owner.some).toBe(true);
+  });
+});

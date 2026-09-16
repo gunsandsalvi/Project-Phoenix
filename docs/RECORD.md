@@ -13741,3 +13741,47 @@ naming `reporting` in its own module list.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 three new tests, green, and the file's seven reds are the seven that were red at `72e0d28`; `buyout`
 seven green; `corporate-bond`, `committed-capital` and `reporting` carry the reds they carried before.
+
+## Item 17c — The board: closed
+
+§29 C2: *"the owner influences the firm — investment, costs, distributions."* Distributions were
+17b.6. This is the other two, and what they needed was a mechanism this world had nowhere: **a party
+taking a decision on another party's behalf.** `ctx.control` says who controls whom, and every
+decision was still taken by the party it is about — so a bought-out company invested what it would
+have invested and counted the horizon its own management counted. A buyout that changes nothing about
+how the company is run is a buyout with the operating half missing (§35 D4).
+
+**Neither is a decision taken twice.** They are two READS of numbers the owner already publishes
+about itself, and nothing is written onto the company's books:
+
+- **What its equity costs it is what its OWNER requires of its money.** A controlled company's equity
+  is not something a market prices — it is one party's — so `requiredOnEquity` asks that party. It
+  matters most exactly where it is most invisible: a wholly-bought company is delisted, so the market
+  read had nothing to say about it, and its hurdle quietly became its DEBT cost alone. That is the
+  cheapest capital in the world and the opposite of what being bought by a fund does to a company.
+- **How long it counts is what its owner published about its own duration.** *"The periods of service
+  this management counts"* (Capital Programme B1.d) is a management's own preference, and under an
+  owner it is the owner's: a sponsor with four years of its fund's life left does not build a plant
+  that pays back over ten. The years cross to periods through the CALENDAR and round DOWN, because a
+  horizon is whole periods a management will still be there for.
+
+**One question, one answer, two doors.** `requiredBy` is what `control` used to keep to itself, moved
+to `registry/funding.ts` because a company under an owner now asks the same question about that owner
+that a bidder asks about itself. A phase reads the wire and a participant reads what it is allowed to
+see, so the read takes the DOOR as an argument — which keeps the privacy distinction with the caller
+and stops either of them keeping a copy of the answer (Law 4, Observer A3).
+
+**The half that is not built, named.** COSTS. A firm's headcount and inputs are derived from what it
+plans to make, so there is no slack for an owner to cut and cutting would mean cutting output — which
+is a different decision and not what a sponsor does. §35 E3 is the spec's own warning about the
+shortcut (*no headcount saving that deletes workers without a separation event*), and what it needs
+is a firm that could make the same output for less: productivity's mechanism (12c), not control's.
+§29 C2 stays PARTIAL and says exactly that.
+
+**§35 D4 is MET**, both halves: an acquired firm is not a dead firm (10f.3 leaves it standing with its
+employment rows, its invoices and its debts, and `combine` moves obligations rather than ending them),
+and it is under a DIFFERENT OWNER, which is this item.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
+three new tests, ten green in the file; `loans` at its seven reds. `capital` and `firms` fail to
+collect at HEAD and after it, for a draw that made no grain firm — untouched here.

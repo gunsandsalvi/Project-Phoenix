@@ -63,11 +63,12 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
 import { hasEverMetAPayroll } from '../../registry/wages.js';
-import { costOfMoneyQuotedTo, namesQuotedIn } from '../../registry/banking.js';
+import { namesQuotedIn } from '../../registry/banking.js';
 import {
+  onTheWire,
   ownFundingSince,
   ownStrikeSince,
-  strikeOf,
+  requiredBy,
   strikesPublished,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
@@ -182,11 +183,11 @@ function worthAt(
  * rather than walking every quote the world has ever published back to the beginning.
  */
 function costOfMoneyOf(ctx: MechanismContext, who: PartyId): Option<Ratio> {
-  const quoted = costOfMoneyQuotedTo(ctx.journal, String(who));
-  if (quoted.some) return quoted;
-  const struck = strikeOf(ctx.journal, String(who));
-  return struck.some && struck.value.requires.some
-    ? some(asRatio(struck.value.requires.value, 'what its own investors require of it'))
+  // 17c.1: one read, in `registry/funding.ts`, because a company under an owner asks the same
+  // question about that owner when it works out what its own equity costs it (Law 4).
+  const required = requiredBy(onTheWire(ctx.journal), String(who));
+  return required.some
+    ? some(asRatio(required.value, 'what it requires of its own money, per annum'))
     : none<Ratio>();
 }
 
