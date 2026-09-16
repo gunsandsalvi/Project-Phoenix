@@ -60,9 +60,13 @@ export function needOrders(view: ParticipantView, m: MarketDecl): readonly Order
   const pair = pairOf(m);
   if (pair === undefined || !view.self.status.alive) return [];
   const home = view.registry.currencyOf(view.self.region);
+  const foreign = pair.base === home ? pair.quote : pair.quote === home ? pair.base : undefined;
+  if (foreign === undefined) return [];
+  // Law 18 (16.6): a party with no balance in the foreign money and no line it owes in it has no
+  // position there to read — the walk of its dues (`owedIn`) is spared for the many that have none.
+  if (view.cash(foreign) <= 0 && !view.instruments.issuedBy(view.self.id).some((i) => i.status.live && i.ccy === foreign)) return [];
   if (pair.base === home) return ownMoneyIsTheBase(view, m, pair.quote);
-  if (pair.quote === home) return ownMoneyIsTheQuote(view, pair.base);
-  return [];
+  return ownMoneyIsTheQuote(view, pair.base);
 }
 
 /**

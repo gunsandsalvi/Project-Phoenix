@@ -376,7 +376,16 @@ function place(
   // Law 8: it needs to raise a sum of MONEY and raises it by selling UNITS, which are indivisible —
   // so it brings the whole units that sum comes to. UP, because the ask is the money: an issue a
   // fraction of a unit short of what it needs is short of it.
-  const units = upTick(amountOf(short, walkAway, 'units offered'));
+  // Law 8, Law 1 (16.6): a count of units is a whole number, and a number past the largest whole
+  // number the arithmetic can hold is not a count of anything — a firm whose published short comes
+  // to that many units has no issue anybody could allot (21.52), and it says so rather than stopping
+  // the world at the tick.
+  const wanted = amountOf(short, walkAway, 'units offered');
+  if (!(wanted <= Number.MAX_SAFE_INTEGER)) {
+    ctx.record('bond.refused', [issuer], { issuer, short: short.pieces, ccy: short.ccy, walkAway, why: 'more units than can be counted' }, true);
+    return;
+  }
+  const units = upTick(wanted);
   if (units <= 0) return;
   if (standing === undefined && !openLine(ctx, issuer, ccy, id, schedule, units, onto)) return;
   ctx.offer({

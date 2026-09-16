@@ -1148,9 +1148,13 @@ function swapDraw(
       reason: `${String(homeCb)} hands ${String(issuer)} its own money against the swap-line draw ${line.value}`,
     });
   }
-  const k = m.next;
-  m.next += 1;
-  const onward = writeRow(ctx, { lender: homeCb, borrower: bank, amount: need, rate: atPenalty, book }, k, ccy, []);
+  // A central bank short abroad ITSELF draws the line and lends it on to nobody: one row, not two.
+  let onward: Option<string> = none<string>();
+  if (bank !== homeCb) {
+    const k = m.next;
+    m.next += 1;
+    onward = writeRow(ctx, { lender: homeCb, borrower: bank, amount: need, rate: atPenalty, book }, k, ccy, []);
+  }
   ctx.record(
     'centralBank.swapLine',
     [issuer, homeCb, bank],

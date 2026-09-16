@@ -20,6 +20,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId, RegionId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { DerivativeKindId } from '../core/ids.js';
+import { partyKindId } from '../core/ids.js';
 import type {
   InstrumentKindProfile,
   OverdraftContext,
@@ -119,9 +120,18 @@ export interface PhaseDecl {
  * that party's own view (Observer A4, Expectations D1): a schedule cannot be written against
  * something the party may not see.
  */
+/**
+ * Law 15, Spot FX B1, B2 (16.6): A PARTICIPANT ASKED OF EVERY KIND THERE IS. A reason that any party
+ * can have — owing a money it has not got — is not a list of the kinds that have it; a module that
+ * declares one with this kind is expanded at assembly into one declaration per kind the registry
+ * knows, so a kind added later is asked without anybody editing a list.
+ */
+export const EVERY_PARTY_KIND: PartyKindId = partyKindId('*');
+
 export interface ParticipantDecl {
   /** The module that declared it, stamped by the kernel so a never-reached one has an owner. */
   readonly owner?: string;
+  /** The kind it is asked of, or `EVERY_PARTY_KIND` for all of them (16.6). */
   readonly partyKind: PartyKindId;
   /**
    * Spot FX D1, Clearing B2, Law 15: WHICH SORT OF MARKET THIS PARTICIPANT IS ASKED ABOUT — the

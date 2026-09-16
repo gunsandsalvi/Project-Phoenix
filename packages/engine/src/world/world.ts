@@ -81,6 +81,7 @@ import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind, type Event } from '../journal/journal.js';
 import type { InstructionDraft, Leg } from '../ledger/instruction.js';
+import { EVERY_PARTY_KIND } from './module.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
@@ -1184,6 +1185,11 @@ export class World {
 
   addParticipant(p: ParticipantDecl, owner: string): void {
     forbid(!this.sealed, 'Law 10', 'participants are declared at assembly');
+    if (p.partyKind === EVERY_PARTY_KIND) {
+      // Law 15 (16.6): one question, asked of every kind the registry knows — no kinds list.
+      for (const kind of this.registry.partyKinds.keys()) this.addParticipant({ ...p, partyKind: kind }, owner);
+      return;
+    }
     this.registry.partyKind(p.partyKind);
     this.reachTally.declare('participant', declId(owner, p.partyKind, p.in), owner);
     this.participantDecls.push({ ...p, owner });

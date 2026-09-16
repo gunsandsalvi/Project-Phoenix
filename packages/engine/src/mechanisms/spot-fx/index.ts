@@ -25,7 +25,8 @@
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { fxPairId, marketId, type CurrencyCode, type MarketId } from '../../core/ids.js';
-import { BANK, FIRM, HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
+import { BANK } from '../../registry/profiles.js';
+import { EVERY_PARTY_KIND } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -164,18 +165,18 @@ export function spotFx(rows: readonly FxDeskDecl[]): SystemModule {
           return dealerOrders(view, m, byName.get(String(view.self.id)));
         },
       },
-      // B1, B2: and everybody else who owes a money it has not got or holds one it does not want.
-      // The reason is the same reason whoever has it, so it is one function asked of every kind
-      // that can have a foreign obligation — never a rule about what sort of party this is (Law 15).
-      //
-      // The KERNEL's kinds, because a module may not name another module's (`no-cross-module-import`
-      // is the lint, and the boundary is the point): a fund or an estate with a foreign obligation
-      // is its own module's participant, calling the same `needOrders` this one exports.
-      ...([TREASURY, FIRM, HOUSEHOLD] as const).map((partyKind) => ({
-        partyKind,
+      // B1, B2 (16.6): and everybody else who owes a money it has not got or holds one it does not
+      // want. The reason is the same reason whoever has it, so it is ONE question asked of EVERY kind
+      // the registry knows — no list of kinds, so a fund, an estate or a kind not yet written is
+      // asked without anybody editing this (Law 15). A party that runs a desk is not asked twice: its
+      // desk's quote already carries its position (D4), and that is a fact about the party's rows,
+      // not its kind.
+      {
+        partyKind: EVERY_PARTY_KIND,
         in: 'fx' as const,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => needOrders(view, m),
-      })),
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          byName.has(String(view.self.id)) ? [] : needOrders(view, m),
+      },
     ],
     families: [triangularConsistency(rows), revaluationAddsUp()],
     seed(ctx) {

@@ -633,9 +633,13 @@ function issueCloseOutClaim(
 
 /** D3: margin is returned when there is nothing left to secure — the poster always owned it. */
 function returnMargin(ctx: MechanismContext, a: PartyId, b: PartyId, ccy: CurrencyCode): void {
+  // Money E4, XI-8 (16.6): a side that has ceased is its estate now, and what it posted or holds is
+  // the estate's to receive or return — an instruction addressed to the dead name is not one.
+  const liveA = ctx.parties.resolve(a).id;
+  const liveB = ctx.parties.resolve(b).id;
   for (const [poster, holder] of [
-    [a, b],
-    [b, a],
+    [liveA, liveB],
+    [liveB, liveA],
   ] as const) {
     const need = requirement(ctx, poster, holder, ccy);
     const have = posted(ctx, poster, holder, ccy);

@@ -12344,3 +12344,19 @@ restored from the commit before the edits were re-applied.
 `currency.test.ts`, `money-market.test.ts` at their reds of 15.7 (none new; *carries the last real
 price, visibly stale* went red mid-item when a pending book wrote a print with nothing settled, and
 is green with the print written when the trip settles). Suites at the end of item 16.
+
+## Item 16.6 — FX participation is a question of every kind
+
+Owing a money it has not got, or holding one it does not want, is a reason ANY party can have, so
+the spot-FX module asks it of every party kind the registry knows rather than of three named kinds:
+a participant declared for `EVERY_PARTY_KIND` is expanded at assembly into one declaration per kind
+(Law 15), and a party that runs a desk is not asked twice because its rows say it runs one, not
+because of what kind it is. A party with no balance in the money and no live line it owes in it is
+not walked for its dues (Law 18). Funds, estates, insurers and clearing houses square their foreign
+balances now, and the first consequence is on the record: the USD clearing house ceases by period 2
+to 4 of the four-country worlds (21.53), and a member defaulting into it tore up against the dead
+name — margin now returns to a side's living successor (Money E4). A firm whose short came to
+10²² units is refused at the site and said, rather than stopping the world at the tick (21.52).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `spot-fx`, `currency`,
+`money-market` suites at their 19 reds of 15.7, none new. Suites at the end of item 16.
