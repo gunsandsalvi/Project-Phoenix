@@ -33,7 +33,7 @@ import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext } from '../../world/context.js';
 import { fundingPublishedBy, strikeOf } from '../../registry/funding.js';
-import { askToFund, facilityFor, facilityRow } from './deal.js';
+import { askToFund, DEAL_MONTHS, facilityFor, facilityRow } from './deal.js';
 
 /**
  * C2: WHAT THIS OWNER MUST FIND, in its own words. Two kinds of owner publish it and the question is
@@ -66,7 +66,8 @@ export function askForTheOwner(ctx: MechanismContext): void {
     const ccy = ctx.registry.currencyOf(company.region);
     const wants = whatItsOwnerMustFind(ctx, row.controller, ccy);
     if (wants.pieces <= 0) continue;
-    askToFund(ctx, company.id, wants, noCash(ccy), row.controller);
+    // C3 (17b.8): over the years the company will service it, like the buyout's own debt.
+    askToFund(ctx, company.id, wants, noCash(ccy), row.controller, ctx.params.months(DEAL_MONTHS));
   }
 }
 

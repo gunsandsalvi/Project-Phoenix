@@ -21,6 +21,7 @@
  * a household did not receive is not income (B3.a).
  */
 import { noCash, sumCash } from '../../core/measure.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
 import {
   COVER_TERM,
@@ -1065,6 +1066,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       repays: 'atOption',
       // 17b.1: the money, not a promise of it — a household short this week is short now.
       wants: 'money',
+      // Corporate Credit C9 (17b.8): a line, over the term a line is written for.
+      months: ctx.params.months(TERM_MONTHS.working),
     });
   }
   const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);
@@ -1230,6 +1233,9 @@ function homeBid(
       repays: 'onSchedule',
       // 17b.1: the money, not a promise of it — a buyer of a roof pays for the roof.
       wants: 'money',
+      // C2 (17b.8): over the decades a roof is bought over, and it is one number for both the
+      // family that lives in it and the landlord that lets it (Law 4).
+      months: view.params.months(TERM_MONTHS.mortgage),
     });
   }
   if (spare.pieces <= 0) return nothing;

@@ -19,6 +19,7 @@ import {
   agreementKindId,
   instrumentId,
   instrumentKindId,
+  paramId,
   type InstrumentId,
   type PartyId,
 } from '../core/ids.js';
@@ -160,3 +161,25 @@ export const isFacility = (t: AgreementTerms): t is FacilityTerms =>
 export function facilityLoanId(lender: PartyId, borrower: PartyId): InstrumentId {
   return instrumentId(`loan:${String(lender)}:${String(borrower)}:facility`);
 }
+
+/* --- How long a borrowing runs for, where more than one module has to say it ------------------ */
+
+/**
+ * Corporate Credit A2, Housing C2, Bond F3 (17b.8): THE TERMS A BORROWER ASKS FOR, in months.
+ *
+ * A tenor is a decision about a NEED and the need is the borrower's: a roof is paid for over
+ * decades and a stock of grain over weeks. Every loan in this world ran for twelve months because
+ * one parameter in the banks module said so (finding 21.60(a)), which made the term a fact about
+ * the lender.
+ *
+ * The ids are here rather than in the module that declares each because more than one module has to
+ * say the same one: a mortgage is asked for by `housing` for a landlord and by `households` for a
+ * family, and the two must not be two different lengths of the same product (Law 4, ARCHITECTURE
+ * 4.9b). The VALUES are declared by the module that owns the product.
+ */
+export const TERM_MONTHS = {
+  /** Housing C2: what a family or a landlord borrows over to buy a roof. Declared by `housing`. */
+  mortgage: paramId('housing.mortgageMonths'),
+  /** Corporate Credit C9: a working-capital line, drawn and repaid at the borrower's option. */
+  working: paramId('lending.loanMonths'),
+} as const;

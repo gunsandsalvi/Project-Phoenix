@@ -883,7 +883,12 @@ fact IS:
   door. A commitment is a `FACILITY` agreement (`registry/credit.ts`) whose undrawn limit consumes
   the lender's capital through `headroom` and which lapses if it is not drawn: the money it promises
   is made inside the instruction that draws it, which is what lets a deal be conditional on it
-  (§29 B2, E1).
+  (§29 B2, E1). It also says HOW LONG it wants the money for (`months`, 17b.8): a term is a decision
+  about a need and the need is the borrower's, so a mortgage runs for decades and a week's working
+  capital for a year, and the row is written for what the ask said. The lengths themselves are
+  declared by the module that owns each product, with the ids of the ones more than one module has
+  to say in `registry/credit.ts` (`TERM_MONTHS`) — a mortgage is asked for by `housing` for a
+  landlord and by `households` for a family, and one product may not be two lengths (Law 4).
 
 **The observer is under the same rule and has no sibling of its own.** It imports the kernel and the
 registry and no module (`phoenix/no-cross-module-import` covers `src/observer/`); a measure it

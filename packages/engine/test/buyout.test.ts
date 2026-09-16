@@ -32,7 +32,7 @@ import { REGION, USD } from '../src/seeds/foundation.js';
 import { asCash, asPerPiece } from '../src/core/measure.js';
 import { mergeModules, rigSpec } from './rig.js';
 import { equityLines, runTender, type Bid } from '../src/mechanisms/control/index.js';
-import { askToFund } from '../src/mechanisms/control/deal.js';
+import { askToFund, DEAL_MONTHS } from '../src/mechanisms/control/deal.js';
 import { facilityLoanId, isLoan, LOAN } from '../src/registry/credit.js';
 
 const BUYER = partyId('buyer.lbo');
@@ -151,6 +151,7 @@ function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
               asCash(cost * (1 - CHEQUE), USD, 'what the deal is short of'),
               asCash(cost * CHEQUE, USD, 'what the buyer brings itself'),
               BUYER,
+              ctx.params.months(DEAL_MONTHS),
             );
           }
           if (ctx.period !== tenders) return;

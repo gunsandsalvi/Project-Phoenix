@@ -32,6 +32,7 @@
  * the bank's to grant or refuse out of its own view.
  */
 import type { Order } from '../../clearing/solver.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { VenueDecl } from '../../clearing/venue.js';
@@ -677,6 +678,8 @@ function askForLoans(ctx: MechanismContext): void {
       security,
       repays: 'onSchedule',
       wants: 'money',
+      // Housing C2 (17b.8): it is buying a roof to let, over the term a roof is bought over.
+      months: ctx.params.months(TERM_MONTHS.mortgage),
     });
     ctx.record(
       LANDLORD_PLAN,

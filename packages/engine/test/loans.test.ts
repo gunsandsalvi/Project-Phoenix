@@ -72,7 +72,7 @@ function outOfTheSystem(report: { readonly audit: AuditReport }): Violation[] {
 import { asPerPiece } from '../src/core/measure.js';
 import { instrumentId } from '../src/core/ids.js';
 import { loanTerms } from '../src/mechanisms/banks/loan.js';
-import { FACILITY, isFacility } from '../src/registry/credit.js';
+import { FACILITY, isFacility, TERM_MONTHS } from '../src/registry/credit.js';
 import { askToFund, committedTo } from '../src/mechanisms/control/deal.js';
 
 const BORROWER = partyId('firm.1');
@@ -108,6 +108,9 @@ function asksFor(amount: number, at = 1): SystemModule {
             repays: 'atOption',
             // 17b.1: the money, not a promise of it.
             wants: 'money',
+            // 17b.8: over the term a line is written for, which the borrower says — and it is
+            // the world's own number, so a test that shortens it still shortens this.
+            months: ctx.params.months(TERM_MONTHS.working),
           });
         },
       },
@@ -148,6 +151,7 @@ function asksSecured(amount: number, at = 1): SystemModule {
             security: [{ instrument: pledge.instrument, qty: ctx.register.quantity(BORROWER, pledge.instrument) }],
             repays: 'onSchedule',
             wants: 'money',
+            months: ctx.params.months(TERM_MONTHS.working),
           });
         },
       },
@@ -1296,6 +1300,7 @@ describe('paying a line down (Banks Lending C9, F2)', () => {
               short: asCash(-amount, USD, 'the money it does not need'),
               repays: 'atOption',
               wants: 'money',
+              months: ctx.params.months(TERM_MONTHS.working),
             });
           },
         },
@@ -1426,6 +1431,7 @@ function asksForCommitment(amount: number, at = 1): SystemModule {
             short: asCash(amount, USD, 'what the deal is short of'),
             repays: 'onSchedule',
             wants: 'commitment',
+            months: ctx.params.months(TERM_MONTHS.working),
           });
         },
       },
@@ -1498,6 +1504,7 @@ function asksToFund(amount: number, from = 1, to = 1): SystemModule {
             asCash(amount, USD, 'what the deal is short of'),
             asCash(amount, USD, 'what the buyer brings itself'),
             partyId(PAYEE),
+            60,
           );
         },
       },
@@ -1570,5 +1577,65 @@ describe('the deal asks for the money that will buy it (Private Equity B2, B2.a,
     expect(seen[0]).toBe(0);
     expect(seen[1]).toBeGreaterThan(0);
     expect(seen.at(-1)).toBe(0);
+  });
+});
+
+/** 17b.8: a borrower that says how long it wants the money for, which is the thing under test. */
+function asksForMonths(amount: number, months: number, at = 1): SystemModule {
+  return {
+    ...asksFor(amount, at),
+    id: 'test.asksMonths',
+    phases: [
+      {
+        name: 'test.askMonths',
+        spec: 'Corporate Credit A2',
+        anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'credit.request' }],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          ctx.request(partyId(BORROWER), {
+            ccy: USD,
+            short: asCash(amount, USD, 'what it is short of'),
+            repays: 'onSchedule',
+            wants: 'money',
+            months,
+          });
+        },
+      },
+    ],
+  };
+}
+
+describe('how long it is for is the borrower\u2019s (Corporate Credit A2, 17b.8)', () => {
+  it('writes the row for the term the ask named, not for a number in the lender', () => {
+    const w = world([asksForMonths(phx(20_000).pieces, 7)]);
+    w.step();
+    w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    // A2: a term is a decision about a NEED and the need is the borrower's. Seven months because
+    // the ask said seven — the lender's own convention is a year and it is not what was written.
+    const t = row.terms;
+    expect(t.maturity.m - t.drawn.m + 12 * (t.maturity.y - t.drawn.y)).toBe(7);
+  });
+
+  it('two borrowers asking for two terms get two terms from the same lender', () => {
+    const short = world([asksForMonths(phx(20_000).pieces, 3)]);
+    const long = world([asksForMonths(phx(20_000).pieces, 60)]);
+    for (const w of [short, long]) {
+      w.step();
+      w.step();
+    }
+    const months = (w: World): number => {
+      const row = w.instruments.all().find((i) => i.kind === LOAN);
+      if (row === undefined || !isLoan(row.terms)) return 0;
+      const t = row.terms;
+      return t.maturity.m - t.drawn.m + 12 * (t.maturity.y - t.drawn.y);
+    };
+    // Finding 21.60(a): every loan in this world ran twelve months because one parameter said so.
+    expect(months(short)).toBe(3);
+    expect(months(long)).toBe(60);
   });
 });

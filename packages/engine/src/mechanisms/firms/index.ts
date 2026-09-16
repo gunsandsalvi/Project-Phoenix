@@ -20,6 +20,7 @@
  * decision function, and the industry is data: a recipe, a lead time, a yield and an occupation.
  */
 import { paramId } from '../../core/ids.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
 import { WIND } from '../../registry/environment.js';
 import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
@@ -605,7 +606,14 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
    */
   // C9: working capital, drawn and repaid at its option.
   // 17b.1: the money, not a promise of it — what a firm is short of, it is short of now.
-  ctx.request(view.self.id, { ccy, short, repays: 'atOption', wants: 'money' });
+  ctx.request(view.self.id, {
+    ccy,
+    short,
+    repays: 'atOption',
+    wants: 'money',
+    // Corporate Credit C9 (17b.8): a working-capital line, over the term one is written for.
+    months: view.params.months(TERM_MONTHS.working),
+  });
   ctx.record(
     'firms.funding',
     [view.self.id],

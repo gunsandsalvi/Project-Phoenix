@@ -28,8 +28,15 @@ import {
   LOAN,
   type LoanTerms,
 } from '../../registry/credit.js';
+import { paramId, type ParamId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { MechanismContext } from '../../world/context.js';
+
+/**
+ * §29 C1, B2 (17b.8): HOW LONG A BUYOUT'S DEBT RUNS FOR. It is the deal's number and not the
+ * market's line convention: what the company carries afterwards is what C1 is about.
+ */
+export const DEAL_MONTHS: ParamId = paramId('control.dealMonths');
 
 /** E1: one lender's standing promise to a named company, as the party that will draw it reads it. */
 export interface Facility {
@@ -94,6 +101,13 @@ export function askToFund(
   /** B3, A2: what the buyer itself must bring, and therefore what a pool has to have called. */
   cheque: Cash,
   buyer: PartyId,
+  /**
+   * §29 C1, Corporate Credit A2 (17b.8): OVER THE YEARS THE COMPANY WILL SERVICE IT. A buyout's
+   * debt is what the firm carries afterwards — *"it operates and services its debt out of cash
+   * flow, and the higher leverage means less room"* — so its term is a term of the deal and not the
+   * length of a working-capital line. It is handed in because the caller owns the number.
+   */
+  months: number,
 ): void {
   if (cheque.pieces <= 0 && wanted.pieces <= 0) return;
   const who = ctx.parties.get(target);
@@ -116,6 +130,7 @@ export function askToFund(
       repays: 'onSchedule',
       // E1: a lender that has agreed to lend and has not lent, so a deal can be conditional on it.
       wants: 'commitment',
+      months,
     });
   }
   /**

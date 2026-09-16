@@ -42,6 +42,7 @@
  * letting the roof costs it: a comparison of two of its own reads, with no threshold anywhere.
  */
 import type { CurrencyCode } from '../../core/ids.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import {
   type Cash,
   type PerPiece,
@@ -771,6 +772,8 @@ function askForMortgages(ctx: MechanismContext, rows: readonly TenureDecl[]): vo
       repays: 'onSchedule',
       // 17b.1: the money, not a promise of it — a buyer of a roof pays for the roof.
       wants: 'money',
+      // C2 (17b.8): over the decades a roof is bought over, which is this module's number.
+      months: ctx.params.months(TERM_MONTHS.mortgage),
     });
   }
 }
@@ -905,6 +908,15 @@ function foreclose(ctx: MechanismContext): void {
 
 function params(rows: readonly TenureDecl[]): ParamDecl[] {
   return [
+    {
+      id: TERM_MONTHS.mortgage,
+      value: 300,
+      unit: 'months',
+      dimension: 'months' as const,
+      kind: 'technology' as const,
+      owner: 'standardSetter' as const,
+      why: 'Housing C2 (17b.8): how long a mortgage runs for. Twenty-five years is what a roof is bought over \u2014 a convention of the market rather than a choice this world takes each time, stated in MONTHS because that is the grain the calendar places a maturity on (Law 8). It is declared HERE because this module owns what a mortgage is, and its id is in `registry/credit.ts` because two modules ask for one: a family buying its own roof (`households`) and a landlord buying one to let (`property`), and the two must not be two different lengths of the same product (Law 4). It used to be `lending.loanMonths` \u2014 every mortgage in this world was written for twelve months, which is not a mortgage (finding 21.60(a)).',
+    },
     ...rows.map((r) => ({
       id: HOUSING_PARAMS.perMember(r.cohort),
       value: r.perMember,

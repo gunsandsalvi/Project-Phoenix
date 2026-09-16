@@ -937,6 +937,18 @@ export interface CreditRequest {
    * rate. Stated either way and never inferred, like `repays`.
    */
   readonly wants: 'money' | 'commitment';
+  /**
+   * Corporate Credit A2, Bond F3, §7 (17b.8): HOW LONG IT WANTS THE MONEY FOR, in months.
+   *
+   * Every loan in this world ran for twelve months, because one parameter said so — a mortgage, a
+   * week's working capital and a buyout's debt alike (finding 21.60(a)). A tenor is a DECISION a
+   * borrower takes about its own need, and the need is the borrower's: a roof is paid for over
+   * decades and a stock of grain over weeks, and neither is a fact about the lender.
+   *
+   * The lender still decides whether to lend at all and at what price; what it no longer decides is
+   * how long the borrower needed it for.
+   */
+  readonly months: number;
   /** The period it said so in, so a lender can read last period's asks (Law 8). */
   readonly at: Period;
   /**
@@ -975,6 +987,18 @@ export interface CreditAsk {
    * rate. Stated either way and never inferred, like `repays`.
    */
   readonly wants: 'money' | 'commitment';
+  /**
+   * Corporate Credit A2, Bond F3, §7 (17b.8): HOW LONG IT WANTS THE MONEY FOR, in months.
+   *
+   * Every loan in this world ran for twelve months, because one parameter said so — a mortgage, a
+   * week's working capital and a buyout's debt alike (finding 21.60(a)). A tenor is a DECISION a
+   * borrower takes about its own need, and the need is the borrower's: a roof is paid for over
+   * decades and a stock of grain over weeks, and neither is a fact about the lender.
+   *
+   * The lender still decides whether to lend at all and at what price; what it no longer decides is
+   * how long the borrower needed it for.
+   */
+  readonly months: number;
 }
 
 export interface MechanismContext extends WorldReads {

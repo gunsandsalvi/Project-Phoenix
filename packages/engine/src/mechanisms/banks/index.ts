@@ -80,6 +80,7 @@ import {
 import { financedFor, type PrimeDeps, PRIME, runPrime } from './prime.js';
 import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import {
   FACILITY,
   facilityLoanId,
@@ -640,7 +641,11 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
       if (q.declines.some) return false;
       // C9, F1.a: one row per (lender, borrower) — a client that comes back is drawing on what it
       // already has here, never taking a new loan every week.
-      return write(ctx, broker, client, amount, q.rate, ccy, true) !== undefined;
+      return (
+        // C9 (17b.8): a prime broker's financing is a LINE, over the term a line is written for.
+        write(ctx, broker, client, amount, q.rate, ccy, ctx.params.months(TERM_MONTHS.working), true) !==
+        undefined
+      );
     },
     /**
      * C3: the money comes back and what is owed falls by it. It is the reverse of the drawing and
@@ -743,6 +748,12 @@ function write(
    * never a new loan every period, which would turn a facility into a pile of term loans and make
    * the borrower's exposure a thing you have to add up rather than a thing you can look at.
    */
+  /**
+   * Corporate Credit A2 (17b.8): HOW LONG THE BORROWER SAID IT NEEDS IT FOR. A term is a decision
+   * about a need and the need is the borrower's — a roof over decades, a stock of grain over weeks
+   * — and it used to be one number in this module for every loan in the world (21.60(a)).
+   */
+  months: number,
   onTheLine = false,
   /**
    * A4 (13d): WHAT IT IS SECURED ON, in the words of whoever asked. A bank does not know what a
@@ -782,7 +793,7 @@ function write(
     // A2: a year, placed by date like every other maturity in this world (Money G3.a). It is the
     // calendar's own month arithmetic and not `civil(y + 1, m, d)`, which is not a date when the
     // day is a leap day and stopped the world the first time a loan was drawn on one (item 0).
-    maturity: addMonths(drawn, ctx.params.months(LENDING_PARAMS.loanMonths)),
+    maturity: addMonths(drawn, months),
     dayCount: 'ACT/365F',
     // Bond F3, Small-Business Pools B1, Housing C2 (11.2): a TERM LOAN — one the borrower said it
     // repays on a schedule — repays its principal every period it has left; a LINE is drawn and
@@ -856,6 +867,8 @@ function commit(
   limit: Cash,
   rate: Ratio,
   ccy: CurrencyCode,
+  /** A2 (17b.8): the term the borrower asked for, carried on the promise so the drawing has it. */
+  months: number,
 ): void {
   if (bank === borrower || !ctx.parties.get(bank).status.alive) return;
   // C9: one live commitment per (lender, borrower). A borrower that asks again while one stands is
@@ -870,11 +883,9 @@ function commit(
     rate,
     // B2.b: the period the deal has to close in, which is the one after the ask was answered.
     until: period(ctx.period + 1),
-    // A2: the term the drawing will run for, struck here because this is where it was agreed.
-    maturity: addMonths(
-      ctx.calendar.startOf(ctx.period),
-      ctx.params.months(LENDING_PARAMS.loanMonths),
-    ),
+    // A2: the term the drawing will run for, struck here because this is where it was agreed —
+    // and it is the term the BORROWER asked for (17b.8), not this lender's line convention.
+    maturity: addMonths(ctx.calendar.startOf(ctx.period), months),
   };
   ctx.owes({
     debtor: borrower,
@@ -1081,7 +1092,17 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // the row is priced off the one view (Law 4) whether or not that view would open a NEW line.
     const q = cv.of(borrower.id);
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
-    write(ctx, bank, borrower.id, d.amount, q.rate, d.ccy as CurrencyCode, true);
+    // C9 (17b.8): a drawing on a committed line, over the term a line is written for.
+    write(
+      ctx,
+      bank,
+      borrower.id,
+      d.amount,
+      q.rate,
+      d.ccy as CurrencyCode,
+      ctx.params.months(TERM_MONTHS.working),
+      true,
+    );
   }
 }
 
@@ -1391,7 +1412,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         dimension: 'months',
         kind: 'technology',
         owner: 'standardSetter',
-        why: 'Banks Lending A2: how long a loan runs for. A convention of the market rather than a choice this world takes each time — a year is what a commercial facility is written for — and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It is not a forecast of how long the borrower needs the money; what it needs is what it asked for.',
+        why: 'Corporate Credit C9, Banks Lending A2 (17b.8): how long a WORKING-CAPITAL LINE runs for — a year is what a commercial facility is written for. It is a convention of the market and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It used to be the term of EVERY loan in this world, a mortgage and a buyout included (finding 21.60(a)); a term is a decision about a need and the need is the borrower\u2019s, so what a loan is written for is now what the ask said (`CreditAsk.months`) and this is the number the borrowers of a LINE ask for. The workout still reads it: a lender re-agreeing a row lends for its own term.',
       },
       {
         id: LENDING_PARAMS.undrawnWeight,
@@ -2193,7 +2214,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
      * plan"* arriving as the ordinary answer to an ordinary ask.
      */
     if (req.wants === 'commitment') {
-      commit(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy);
+      commit(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, req.months);
       continue;
     }
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
@@ -2208,6 +2229,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
       lend,
       best.rate,
       ccy,
+      req.months,
       req.repays === 'atOption',
       security,
     );

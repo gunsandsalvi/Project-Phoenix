@@ -1463,6 +1463,10 @@ export class World {
       // not a request a lender can answer, and nothing here supplies the missing half.
       const wants = e.data['wants'];
       if (wants !== 'money' && wants !== 'commitment') continue;
+      // Law 8, Appendix A: a term is part of the ask, and an ask with none is not one a lender can
+      // answer — nothing here supplies a default for it.
+      const months = e.data['months'];
+      if (typeof months !== 'number' || months <= 0) continue;
       const raw = e.data['security'];
       const security: { instrument: InstrumentId; qty: Qty }[] = [];
       for (const sec of Array.isArray(raw) ? (raw as unknown[]) : []) {
@@ -1479,6 +1483,7 @@ export class World {
         security,
         repays,
         wants,
+        months,
         at,
         statement: report === undefined ? none<Statement>() : some(statementOf(report)),
       });
@@ -2833,6 +2838,9 @@ export class World {
             repays: ask.repays,
             // §29 B2, E1 (17b.1): money, or a lender that has agreed to lend and has not lent.
             wants: ask.wants,
+            // Corporate Credit A2 (17b.8): how long the borrower wants it for, which is its own
+            // decision about its own need and never the lender's convention.
+            months: ask.months,
             // Corporate Credit A3, A4 (17.0a): a borrower that asks opens its books with the ask — the
             // latest statement it prepared, named here so whoever lends reads that one.
             statement: this.journal.lastOf(REPORT, String(borrower))?.id ?? null,

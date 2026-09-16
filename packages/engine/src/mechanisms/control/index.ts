@@ -72,6 +72,7 @@ import {
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
 import { askForTheOwner, drawForTheOwner } from './owner.js';
+import { DEAL_MONTHS } from './deal.js';
 import {
   askToFund,
   cashOf,
@@ -1212,7 +1213,17 @@ export function control(): SystemModule {
     partyKinds: [],
     curveFamilies: [],
     units: [],
-    params: [],
+    params: [
+      {
+        id: DEAL_MONTHS,
+        value: 84,
+        unit: 'months',
+        dimension: 'months',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: '\u00a729 B2, C1 (17b.8): how long a buyout\u2019s debt runs for. Seven years is what a leveraged facility is written for, and it is the DEAL\u2019s term rather than the market\u2019s working-capital convention: what the company carries afterwards is the whole of C1 (*\u201cit operates and services its debt out of cash flow, and the higher leverage means less room\u201d*), and a buyout financed over twelve months would be a company that has to find the whole price again within the year. A convention of the market, stated in MONTHS because that is the grain the calendar places a maturity on (Law 8).',
+      },
+    ],
     phases: [
       {
         name: 'control.tender',
@@ -1279,7 +1290,7 @@ export function control(): SystemModule {
           // they can be bought at all. A deal that comes back funded is a bid two periods from now.
           for (const [target, w] of holes) {
             if (byTarget.has(target)) continue;
-            askToFund(ctx, target, w.hole, w.has, w.bid.buyer);
+            askToFund(ctx, target, w.hole, w.has, w.bid.buyer, ctx.params.months(DEAL_MONTHS));
           }
         },
       },

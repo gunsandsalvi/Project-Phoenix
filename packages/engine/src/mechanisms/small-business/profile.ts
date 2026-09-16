@@ -45,6 +45,7 @@ import {
   sumCash,
   valueAt,
 } from '../../core/measure.js';
+import { TERM_MONTHS } from '../../registry/credit.js';
 import type { InstrumentId, MarketId, PartyId, RegionId } from '../../core/ids.js';
 import { paramId, unitId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
@@ -451,6 +452,8 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
       repays: 'atOption',
       // 17b.1: the money, not a promise of it — a cell short of stock needs to pay for stock.
       wants: 'money',
+      // Corporate Credit C9 (17b.8): a working-capital line, over the term one is written for.
+      months: ctx.params.months(TERM_MONTHS.working),
     });
   }
   ctx.record(

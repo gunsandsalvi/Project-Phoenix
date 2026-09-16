@@ -13531,3 +13531,35 @@ cross-border reads.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green; `buyout`
 six green. Cross-Border C4 re-marked PARTIAL, with the half that is missing named.
+
+## Item 17b.8 — How long it is for is the borrower's
+
+Finding 21.60(a) said the tenor of a corporate borrowing was *"a market convention read from one
+parameter"*. It was worse than that: `lending.loanMonths` was the term of **every loan in this
+world**. A mortgage ran twelve months. A landlord's building loan ran twelve months. A buyout's debt
+would have run twelve months, which is a company that has to find the whole price again within the
+year.
+
+**A term is a decision about a NEED, and the need is the borrower's.** `CreditAsk.months`: every
+borrower says how long it wants the money for, the row is written for that, and the lender decides
+what it always decided — whether to lend at all, and at what price. What it no longer decides is how
+long somebody else needed it for.
+
+**The lengths are declared by whoever owns the product**, and the ids of the ones two modules have to
+say live in `registry/credit.ts`: a mortgage is asked for by `housing` for a landlord and by
+`households` for a family, and one product may not be two lengths (Law 4). Twenty-five years for a
+roof, a year for a working-capital line, seven for a buyout's debt — each a market convention with
+its own `why`, where there was one number doing all three.
+
+**`lending.loanMonths` survives with a smaller job**, and its `why` says so: it is the term a
+WORKING-CAPITAL LINE is written for, asked for by the borrowers of one, and the term a lender
+re-agreeing a row lends for. Nothing reads it as "how long a loan runs".
+
+**21.60(b) is not closed and is now its own step.** A covenant as a term the lender bargains for is
+17b.8a, inserted after this one, because the commitment 17b.1 built is what gives a lender a place to
+put one. 21.60's diversification half — a second maturity so that less falls due at once — is
+re-positioned at 18a.1 with the other funding-shape reads.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+two new tests, green, and the file's seven reds are the seven that were red at `c7a2d38`; `buyout`
+six green.
