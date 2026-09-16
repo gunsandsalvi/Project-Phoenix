@@ -12182,3 +12182,23 @@ region either has its line or is named, and asked about a world with no dwelling
 check names every peopled region with its people.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.7 — Housing COVERAGE re-marked; item 15 closes
+
+Fifteen Housing clauses were MISSING at 15.6. Each was read against the code rather than against
+the item's wish: five are MET by mechanisms that exist and are measured (C3 the loan-to-value read
+at the lender, D1 the mark on a held dwelling reaching the cell's equity and its spending, E2 no
+written price path, E3 no mortgage without the lender's account on the other side, E4 debt owed
+equals assets held by the ownership family); seven are PARTIAL, built but unmeasured because no
+builder sells and no owner buys in the rig (A5, B1, B3, B4, C6, D2, D4); three stay MISSING and say
+where they go — B4.a and D5 are measurements for Part XII, D3 is the rent absent from the consumer
+basket (21.42). The item said "built or OUT OF SCOPE"; none is out of scope, and the three that are
+not built are named rather than deleted (Part II). Two findings surfaced by the read: rent is not in
+the basket (21.42) and a dwelling cannot be maintained (21.43).
+
+Item 15 closes: 15.1 the ground and its seller, 15.2 the port and its berth, 15.3 the lease and the
+landlord, 15.4 the shop on a lease and the cells' marks, 15.5 the tenancy and the landlord's view,
+15.6 the roofs family, 15.7 the re-mark. Its section is removed; its findings are positioned at
+21.27–21.29 and 21.31–21.43; 12.2 closed at 15.5.
+
+**Checks.** lint, typecheck, spec, forbids, deaths, existence, plan green.

@@ -17,13 +17,12 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 0 of 14 items closed** (8 of 125 steps).
-**Requirement coverage: 69.0%** (950 MET, 113 PARTIAL, 2 OUT OF SCOPE of 1379 REASON/VERIFY/FORBID clauses).
+**The plan: 0 of 13 items closed** (2 of 120 steps).
+**Requirement coverage: 69.4%** (955 MET, 120 PARTIAL, 2 OUT OF SCOPE of 1379 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 15 — Housing and land, the rest | 7 | 6 | in progress |
 | 16 — Cross-border, the rest | 9 | 0 | open |
 | 17 — Corporate credit, the rest | 12 | 0 | open |
 | 17b — The leveraged buyout | 0 | 0 | open |
@@ -31,7 +30,7 @@ The plan has two parts:
 | 18a — Monetary policy | 5 | 0 | open |
 | 19 — The polity (§47) | 10 | 0 | open |
 | 20 — Periodicity | 3 | 0 | open |
-| 21 — The local repairs | 40 | 1 | in progress |
+| 21 — The local repairs | 42 | 1 | in progress |
 | 22 — The recipe | 3 | 0 | open |
 | 22a — The opening is not an equilibrium | 6 | 0 | open |
 | 23 — Measure — Part XII | 5 | 0 | open |
@@ -84,6 +83,7 @@ The plan has two parts:
 | 13n | — | — | moved to plan 12 (Firm birth, household formation, promotion) |
 | 13o | — | — | moved to plan 17b (The leveraged buyout, and 14 for the asset managers) |
 | 14 | — | — | moved to plan 19 (The polity) |
+| 15 | — | — | moved to plan 22 (The recipe) |
 <!-- progress:end -->
 
 ---
