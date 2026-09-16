@@ -600,8 +600,16 @@ export function drawPrivateEquity(
       leverage: false,
       performanceFee: between(rng, PRIVATE_EQUITY_SPREAD.carry),
       targetLeverage: 1,
-      // A2: committed and called. Nobody gets in at the door and nobody gets out.
-      liquidity: { how: 'closed' },
+      /**
+       * A2: committed and called. Nobody gets in at the door and nobody gets out.
+       *
+       * A4 (17b.9): AND IT HAS A LIFE — ten years, which is what a buyout vintage is raised for, in
+       * periods because that is the grain this world's calendar counts in. It is a TERM agreed
+       * before the first call and not a decision anybody takes when the time comes, which is the
+       * whole of why *"the investors' claims resolve into cash rather than freezing"*: the manager
+       * that would rather hold on does not get to.
+       */
+      liquidity: { how: 'closed', lifePeriods: 520 },
       offeredPublicly: false,
       // A2: it holds no buffer against redemptions because there are none to hold one against.
       buffer: 0,

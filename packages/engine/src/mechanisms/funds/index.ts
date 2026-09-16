@@ -677,6 +677,77 @@ function lastNav(ctx: MechanismContext, fund: string): Option<PerPiece> {
  * (C4, at the NAV of the day it asked), so only the REST is added — asking twice for one holding
  * would be two claims where there is one.
  */
+/**
+ * §29 D3, A4, Fund Shares C1 (17b.9): A CLOSED-END POOL GIVES BACK WHAT IT DOES NOT NEED.
+ *
+ * *"Proceeds are distributed to the investors, in cash, into their accounts."* A closed-end fund has
+ * no redemption door — nobody can demand money back, which is the whole reason the structure exists
+ * (G1.b) — so the money an exit brought in would sit in the pool until the wind-up unless the
+ * MANAGER returned it. That is the distinction Private Equity D3 was PARTIAL for: a wound-up pool
+ * queues everybody, and a live one returning capital mid-life did not exist.
+ *
+ * It is the same queue and the same NAV a redemption is paid at, because the payment is the same
+ * payment and there is one writer of it (Law 4). What differs is WHOSE decision it is: nobody asked.
+ *
+ * WHAT IT DOES NOT NEED is what it holds beyond the cheque it published for a deal in front of it
+ * (`financingBy`, the same read the call is paced by). A pool that has just called for a purchase is
+ * not sitting on spare cash; one that has sold something and has no deal is.
+ */
+function returnCapital(
+  ctx: MechanismContext,
+  b: Book,
+  m: Mandate,
+  share: Instrument,
+  perShare: PerPiece,
+): void {
+  if (m.liquidity.how !== 'closed' || share.issued <= 0 || perShare <= 0) return;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(m.pool).region);
+  const held = ctx.register.quantity(
+    m.pool,
+    moneyInstrumentId(ctx.accountOf(m.pool, ccy).issuer, ccy),
+  );
+  if (held <= 0) return;
+  // A2: what a deal in front of it needs, over the periods between the ask and the tender. Money it
+  // called last week for a purchase this week is not spare, and giving it back would be a call it
+  // has to make again.
+  let needs = 0;
+  for (let back = 0; back <= DEAL_LAG; back += 1) {
+    if (ctx.period < back) break;
+    const said = financingBy(ctx.journal, String(m.pool), asPeriod(ctx.period - back));
+    if (said.some && said.value.cheque.pieces > needs) needs = said.value.cheque.pieces;
+  }
+  const spare = subQty(asQty(held, 'what it holds'), asQty(needs, 'what its deal needs'), 'spare');
+  if (spare <= 0) return;
+  // Law 8: whole shares, and what the money REACHES rather than a share past it.
+  const shares = downTick(amountOf(heldAsMoney(spare, ccy, 'what it is giving back'), perShare, 'shares it buys back'));
+  if (shares <= 0) return;
+  const issued = share.issued;
+  for (const holder of ctx.register.holdersOf(share.id)) {
+    if (holder === m.pool) continue;
+    const has = ctx.register.quantity(holder, share.id);
+    if (has <= 0) continue;
+    // D3: pro rata, because nobody asked and there is no queue to be at the front of.
+    const mine = downTick((shares * has) / issued);
+    if (mine <= 0) continue;
+    b.queued.push({
+      fund: String(m.pool),
+      holder,
+      sharesPerMember: asQty(mine, 'shares returned out of it'),
+      navStruck: perShare,
+      since: ctx.period,
+    });
+    ctx.record(
+      'fund.requested',
+      [m.pool, holder],
+      { fund: m.pool, holder, sharesPerMember: mine, perShare, why: 'distribution' },
+      false,
+    );
+  }
+}
+
+/** How long a deal takes from the ask to the tender, in periods: ask, decide, tender (17b.4). */
+const DEAL_LAG = 2;
+
 function queueEverybody(
   ctx: MechanismContext,
   b: Book,
@@ -942,6 +1013,7 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   // ordinary redemption path: the fund pays what its cash reaches, sells for the rest at whatever
   // the market gives (C2.a, XI-2), and the holders who are paid last get what the sales fetched.
   if (m.windingUp) queueEverybody(ctx, b, m, share, perShare);
+  else returnCapital(ctx, b, m, share, perShare);
   for (const o of ctx.posted(fundVenue(String(fundId)))) {
     if (o.qty <= 0) continue;
     // XI-15, Law 8: a posting is a total and a cell's decision is per member; this is the one place

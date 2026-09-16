@@ -57,7 +57,7 @@ and neither is yet a MET a run has confirmed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 16 | 5 | 0 | 0 | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
-| Private Equity | 20 | 2 | 3 | 0 | 25 |
+| Private Equity | 22 | 1 | 2 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -342,7 +342,7 @@ already writes against an agreed line.
   negotiation has one side. A buyout is where this bites: a lender committing a facility against a company it
   is about to lever asks for the covenant the leverage needs.
 - [x] 17b.8a **A covenant is something the lender asked for** (21.60(b), Corporate Credit B2.a). *“Covenants exist: promises about the issuer's conduct whose breach is an OBSERVABLE event… without them the only credit dynamic the model has is the binary one.”* What an issuer promises today is the arithmetic of its own accounts as the borrowing leaves them — the tightest covenant a lender could ask for — because no holder bids one and B2's negotiation has one side. A buyout is where it bites: a bank committing a facility against a company it is about to lever asks for the leverage the company may not exceed, and that is a TERM of the commitment (`FacilityTerms`) rather than a number the borrower worked out about itself. Inserted here, after 17b.8, because it is the commitment 17b.1 built that gives the lender a place to put it.
-- [ ] 17b.9 **The fund's life and its end** (A4, D3, D4). *"The fund has a life: it invests, it holds, it
+- [x] 17b.9 **The fund's life and its end** (A4, D3, D4). *"The fund has a life: it invests, it holds, it
   exits, and it winds up — and on winding up the investors' claims resolve into cash rather than freezing."*
   The exit is built (10f.2's flotation, 10f.6's tender); what is not is the DISTRIBUTION of what an exit
   brought in, as distinct from a redemption (Private Equity D3 is PARTIAL for exactly this), and the WIND-UP at

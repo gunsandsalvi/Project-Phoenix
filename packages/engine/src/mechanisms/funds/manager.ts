@@ -344,6 +344,18 @@ export function noticeToGive(
   const patience = ctx.params.periods(managerParam(String(view.self.id), 'patience'));
   for (const m of poolsRun(view)) {
     if (m.windingUp) continue;
+    /**
+     * §29 A4 (17b.9): A CLOSED-END FUND REACHES THE END OF ITS LIFE AND WINDS UP, whatever it earns
+     * its manager. *"It invests, it holds, it exits, and it winds up — and on winding up the
+     * investors' claims resolve into cash rather than freezing."* The life was a term of the
+     * mandate before the first call, so a manager that would rather hold on does not get to; and it
+     * is tested before the fee test below, because a vintage past its term winds up even where it
+     * is the most profitable thing the house runs.
+     */
+    if (m.liquidity.how === 'closed' && ctx.period >= m.since + m.liquidity.lifePeriods) {
+      out.push({ pool: m.pool, earns: noCash(cost.ccy), costs: cost });
+      continue;
+    }
     if (ctx.period < m.since + patience) continue;
     const assets = netAssetsOf(ctx, m.pool);
     const earns = assets.some ? feeOn(ctx, assets.value, m.feePerAnnum) : noCash(cost.ccy);

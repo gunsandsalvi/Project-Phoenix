@@ -128,3 +128,26 @@ describe('when it calls (Private Equity A2, 17b.4)', () => {
     expect(calledFrom(mine(60), promised(100), short(50)).pieces).toBe(30);
   });
 });
+
+describe('the fund has a life (Private Equity A4, 17b.9)', () => {
+  const [pe] = drawPrivateEquity(BANKS, INVESTORS, 'a-seed');
+
+  it('is a term of the vehicle, agreed before the first call', () => {
+    expect(pe?.liquidity.how).toBe('closed');
+    if (pe?.liquidity.how !== 'closed') return;
+    // A4: "it invests, it holds, it exits, and it WINDS UP." Ten years, in the periods this world
+    // counts in — a term the investors agreed to before anybody called a penny, so the manager that
+    // would rather hold on does not get to and the claims resolve into cash rather than freezing.
+    expect(pe.liquidity.lifePeriods).toBeGreaterThan(0);
+    expect(pe.liquidity.lifePeriods % 52).toBe(0);
+  });
+
+  it('is a term only a closed-end vehicle has', () => {
+    // A life that is absent for three kinds of vehicle out of four is not a term of a mandate
+    // (Appendix A), so it sits inside the variant that has one rather than beside it.
+    for (const p of drawFunds(BANKS, 'a-seed')) {
+      expect(p.liquidity.how).not.toBe('closed');
+      expect('lifePeriods' in p.liquidity).toBe(false);
+    }
+  });
+});

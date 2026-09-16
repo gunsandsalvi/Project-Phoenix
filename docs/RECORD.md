@@ -13597,3 +13597,35 @@ the honest answer was to say when there is no promise rather than to refuse the 
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`
 six green; `loans` and `corporate-bond` carry the nine reds they carried at `e2326d3`.
+
+## Item 17b.9 — The fund's life and its end
+
+§29 A4: *"the fund has a life: it invests, it holds, it exits, and it winds up — and on winding up
+the investors' claims resolve into cash rather than freezing."* And D3 had been PARTIAL since 10f.6
+for the other half of the same sentence: a closed-end fund's DISTRIBUTION as distinct from a
+redemption.
+
+**The life is a term of the mandate and of no other kind of vehicle.** Ten years, in the periods this
+world counts in, agreed before the first call — which is what a vintage IS. It sits inside the
+closed-end variant rather than beside it, because a term that is absent for three kinds out of four
+is not a term of a mandate (Appendix A). A pool past its life goes on the notice list whatever it
+earns its manager, and the test comes BEFORE the fee test: a vintage winds up even where it is the
+most profitable thing the house runs, and the manager that would rather hold on does not get to.
+What follows is the wind-down that was already there — everybody queued at the NAV, the book sold at
+whatever the market gives, the pool ceasing to its manager when the last share is back.
+
+**A closed-end pool gives back what it does not need.** It has no redemption door — nobody can demand
+money back, which is the whole reason the structure exists (G1.b) — so the money an exit brought in
+would sit there until the wind-up unless the manager returned it. Now it does, through **the same
+queue and the same NAV a redemption is paid at**, because the payment is the same payment and there
+is one writer of it (Law 4). What differs is that nobody asked. What counts as spare is what it
+holds beyond the cheque it published for a deal in front of it, over the periods a deal takes, so
+money called last week for a purchase this week is not given back and called again.
+
+**Neither is exercised end to end**, for the reason everything in this item is not: no world this
+repository builds draws a buyout pool (21.73), and the two credit trackers in the rig are open-ended.
+What is tested is the shape — that the vehicle declares a life, and that no other vehicle has one.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`committed-capital`: two new tests, eleven green with the one red that is 21.74; `fund-manager` and
+`buyout` green. §29 A4 and D3 re-marked MET.

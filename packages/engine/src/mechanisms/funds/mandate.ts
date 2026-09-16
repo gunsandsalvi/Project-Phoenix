@@ -59,8 +59,15 @@ export type Liquidity =
   /**
    * G1.b: committed for the life of the fund, so there is no redemption at all and it can never be
    * a forced seller — which is the entire reason the structure exists, and what §29 is built on.
+   *
+   * §29 A4 (17b.9): AND THE LIFE IS A TERM OF IT. *"The fund has a life: it invests, it holds, it
+   * exits, and it winds up — and on winding up the investors' claims resolve into cash rather than
+   * freezing."* A vintage is a fund raised to run for so long and no longer, and the end of it is
+   * not a decision anybody takes when the time comes: it was agreed before the first call. It sits
+   * inside this variant rather than beside it because only a closed-end vehicle has one, and a term
+   * that is absent for three kinds out of four is not a term of a mandate (Appendix A).
    */
-  | { readonly how: 'closed' }
+  | { readonly how: 'closed'; readonly lifePeriods: number }
   /**
    * E1, G1.a: you do not subscribe — you buy the share from a HOLDER, in a market, at a cleared
    * price. Creation and redemption are IN KIND against the basket, which is why an exchange-traded
