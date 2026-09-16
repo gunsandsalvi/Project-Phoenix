@@ -32,6 +32,7 @@ export * from './register/guarantees.js';
 export * from './register/processes.js';
 export * from './register/corporate.js';
 export * from './mechanisms/land/index.js';
+export * from './mechanisms/property/index.js';
 export * from './journal/published.js';
 export * from './register/contracts.js';
 export * from './ledger/instruction.js';

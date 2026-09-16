@@ -35,6 +35,7 @@ import {
   type InstrumentKindId,
   type MarketId,
   type ParamId,
+  type PartyId,
   type RegionId,
   type UnitId,
 } from '../core/ids.js';
@@ -60,6 +61,7 @@ import { decayed, div, raised, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { SeedContext } from '../world/context.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
+import type { Agreement, AgreementTerms } from '../register/agreements.js';
 import type { Holding } from '../register/register.js';
 import type { ParamRegister } from './params.js';
 import type { Registry } from './registry.js';
@@ -517,17 +519,51 @@ export function vintagesHeld(view: PlantHolder, on: Civil): HeldVintage[] {
 /** What the storage market records about a lease. */
 const LEASED = 'commodities.leased';
 
-/** The narrow door: a party's own last event of a kind. */
-export interface LeaseReads {
-  lastOwn(kind: string): Option<{ readonly data: Record<string, unknown> }>;
+/**
+ * Item 15.3: A LEASE OF PLANT — what a named landlord lets a named tenant, of one kind of plant, so
+ * many units, at a rent per unit per period, until a day. The tenant is the debtor: it owes the
+ * rent every period; the landlord holds the plant and is the creditor. A lease has a TERM, and
+ * when the day passes the row ends and the units are the landlord's to let again.
+ */
+export interface LeaseTerms extends AgreementTerms {
+  readonly region: RegionId;
+  readonly capitalKind: string;
+  readonly units: Qty;
+  readonly rentPerUnit: PerPiece;
+  readonly until: Civil;
 }
 
+/** Law 15: a lease is told by the shape of its terms, never by its kind id. */
+export const isLeaseTerms = (t: AgreementTerms): t is LeaseTerms => 'capitalKind' in t && 'rentPerUnit' in t && 'until' in t;
+
+/** The narrow door: a party's own last event of a kind, and (15.3) its own rows. */
+export interface LeaseReads {
+  lastOwn(kind: string): Option<{ readonly data: Record<string, unknown> }>;
+  commitments?(): readonly Agreement[];
+  readonly self?: { readonly id: PartyId };
+}
+
+/**
+ * Commodities Spot A3, Capital Programme A2 (15.3): WHAT IT HAS THE USE OF WITHOUT OWNING — the
+ * covered space it rented this period (the commodities module's lease of room) and the plant it
+ * holds under a lease from a landlord, by kind. Both count as plant it can run on, because that is
+ * what a lease is for; neither is on its own register.
+ */
 export function rentedRoom(reads: LeaseReads): ReadonlyMap<string, number> {
+  const out = new Map<string, number>();
   const said = reads.lastOwn(LEASED);
-  if (!said.some) return new Map();
-  const space = said.value.data['space'];
-  if (typeof space !== 'number' || space <= 0) return new Map();
-  return new Map([[STORAGE, space]]);
+  if (said.some) {
+    const space = said.value.data['space'];
+    if (typeof space === 'number' && space > 0) out.set(STORAGE, space);
+  }
+  if (reads.commitments !== undefined && reads.self !== undefined) {
+    const me = reads.self.id;
+    for (const a of reads.commitments()) {
+      if (a.state !== 'performing' || a.debtor !== me || !isLeaseTerms(a.terms)) continue;
+      out.set(a.terms.capitalKind, zeroIfNone(out.get(a.terms.capitalKind)) + a.terms.units);
+    }
+  }
+  return out;
 }
 
 /** A2: the ground the plant this party already holds is standing on, read off its own vintages. */

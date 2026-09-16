@@ -12072,3 +12072,29 @@ older tests are red before and after this step (21.31). Nothing new is red in th
 **Findings.** Port dues have no cleared price (21.30); the three older freight reds (21.31).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.3 — Space built to let, a lease with a term, a landlord sector, a loan on the building
+
+Nobody built space to let: a warehouse was plant a firm built for its own stock, and a retail firm
+sold from nowhere. A `property` module now: landlords are a mass sector — cells with a lattice,
+the third such profile — each opening with premises, the ground under them and a building's worth
+of cash a member. A lease is a row with a term, signed in a lettings book per place where landlords
+offer what they have not let at their reservation (the rent the book last struck, never below the
+wear a unit costs them) and a firm whose plan binds on premises bids at what a piece earns it a
+period. Leases are signed in whole units a landlord that pay each a whole piece; rents are collected
+every period as rent; the tenant runs on the leased room as on its own; a lease ends when its day
+passes or a side ceases. A landlord fully let prices a building at the rent over its horizon at its
+own cost of capital, buys a building a member a period for what its money reaches, ground first,
+and asks its bank for the rest secured on its premises through the one credit door.
+
+**Measured.** `property.test.ts`, three green: the cells open holding premises, ground and cash; a
+hand-posted tenant bid clears, leases sign in whole units a landlord, rent moves every period as a
+`rent` receipt, the tenant's rented room is the leased units, and a two-period lease has ended by
+the third period; a landlord fully let and short of its pace asks its bank secured on its premises.
+Nothing new is red in the eighteen suites.
+
+**Findings.** No firm's plan binds on premises in the rig, so no tenant bids of its own (21.32); a
+bank resolution's merge leaves a lease below a piece a landlord (21.33); no builder sells buildings
+in the rig, so no building is built to let after the opening (21.34).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

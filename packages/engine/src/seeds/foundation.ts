@@ -127,6 +127,7 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { land } from '../mechanisms/land/index.js';
+import { property } from '../mechanisms/property/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
@@ -2918,6 +2919,8 @@ export function foundationSpec(
        * and this world lost its entire merchant fleet. A module that requires the seed is declared
        * after the seed.
        */
+      // 15.3: the landlords' seed puts premises in the world before the land seed gives them the ground under them.
+      property(),
       land(),
       /**
        * §42 A1, A5, A6 (items 11, 0b): THE TIER BELOW THE NAMED FIRMS, and it is DECLARED HERE for

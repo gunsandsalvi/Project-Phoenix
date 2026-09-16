@@ -1645,3 +1645,15 @@ module asks `berthFree` before a vessel lands and before a cargo loads; what is 
 (a landed-but-not-alongside voyage stays under way) or does not sail, and is said as
 `port.congested`. Nothing is stored between the reads.
 
+### Commercial property: a lease is a row, a landlord is a cell (item 15.3)
+
+`mechanisms/property/` owns the landlord kind (`LANDLORD`, cells with `LANDLORD_LATTICE`: region,
+bank, size), the lease row kind (`LEASE_ROW`; terms in `registry/physical.ts LeaseTerms` so
+`rentedRoom` can count leased plant as room), the lettings book per place (`lettingsVenue`, cleared
+by `property.let` before the markets, `marginalBid`), the rent collection (`property.collect`, a
+`rent` receipt, whole pieces a landlord) and the landlord's build and its secured ask
+(`buildOf`, `askForLoans` through `ctx.request`). The names are `registry/property.ts`; the tenant's
+reason is read off its own published plan (`planOf`: `firms.plan`, bound on `premises`). The land
+seed runs after the property seed (`land` requires `property`) and gives cells the ground under
+their opening plant per member where it comes to whole hectares.
+

@@ -49,6 +49,7 @@ import { type InstrumentId, type PartyId, type RegionId } from '../../core/ids.j
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { shareOf, tilesOf } from '../../registry/geography.js';
 import { groundUnder, isPlant, plantTerms } from '../../registry/physical.js';
+import { weightOf } from '../../parties/party.js';
 import type { GeographyDecl, RatioReads } from '../../registry/geography.js';
 import { HECTARE, LAND, LOCAL_AUTHORITY, PLANNING_RELEASE, authorityIdFor, hectaresOf, landId, landMarket } from '../../registry/land.js';
 import type { ParticipantView, SeedContext } from '../../world/context.js';
@@ -176,7 +177,8 @@ export function land(): SystemModule {
     // The plant kinds have to be registered before their `landPerUnit` can be read, and the STATE
     // HAS TO EXIST before it can hold what nobody has built on — which means the foundation seed,
     // because that is what puts the parties in the world (Seed B1).
-    requires: ['capital-programme', 'treasury', 'seed.foundation'],
+    // 15.3: and the landlords, whose seed puts premises in the world before this gives the ground under them.
+    requires: ['capital-programme', 'treasury', 'seed.foundation', 'property'],
     instrumentKinds: [landKind],
     derivativeKinds: [],
     partyKinds: [localAuthorityKind],
@@ -256,11 +258,14 @@ export function land(): SystemModule {
         if (total <= 0) continue;
         let underPlant: Qty = asQty(0, 'nothing yet');
         for (const p of ctx.parties.all()) {
-          if (p.representation !== 'named' || p.region !== r.id) continue;
+          if (p.region !== r.id) continue;
+          // XI-15: a cell holds per member, so the ground under a member's plant is a whole number
+          // of hectares per member or it is nobody's yet — a member whose rooms stand on less than
+          // a hectare stands on the authority's ground (21.29), and a landlord's buildings on its own.
           const standing = groundUnderAt(ctx, p.id, id);
           if (standing <= 0) continue;
           ctx.endowUnits(p.id, id, standing, 0);
-          underPlant = asQty(underPlant + standing, 'the ground the opening\u2019s plant stands on');
+          underPlant = asQty(underPlant + standing * weightOf(p), 'the ground the opening\u2019s plant stands on');
         }
         const authority = authorityFor(ctx, r.id);
         if (authority === undefined) continue;
@@ -271,17 +276,23 @@ export function land(): SystemModule {
   };
 }
 
-/** Seed C4: the whole hectares a named party's opening plant stands on, off its own holdings. */
+/**
+ * Seed C4: the whole hectares a party's opening plant stands on, PER MEMBER, off its own holdings —
+ * a named party is one member. A cell whose member's plant takes less than a hectare gets none:
+ * there is no such piece of ground, and its rooms stand on the authority's (21.29).
+ */
 function groundUnderAt(ctx: SeedContext, party: PartyId, land: InstrumentId): Qty {
   const rows: { readonly capitalKind: string; readonly units: Qty }[] = [];
   for (const h of ctx.register.holdingsOf(party)) {
     if (h.instrument === land) continue;
     const i = ctx.instruments.get(h.instrument);
     if (!i.status.live || !isPlant(i)) continue;
-    rows.push({ capitalKind: plantTerms(i).capitalKind, units: ctx.register.quantity(party, h.instrument) });
+    rows.push({ capitalKind: plantTerms(i).capitalKind, units: asQty(downTick(ctx.register.perMember(party, h.instrument)), 'a member’s plant') });
   }
   if (rows.length === 0) return asQty(0, 'no plant');
-  return hectaresOf(groundUnder(ctx, rows));
+  const km2 = groundUnder(ctx, rows);
+  const hectares = km2 * HECTARES_PER_KM2;
+  return hectares >= 1 ? hectaresOf(km2) : asQty(0, 'less than a hectare a member');
 }
 
 /**
