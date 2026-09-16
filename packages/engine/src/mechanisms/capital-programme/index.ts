@@ -23,10 +23,9 @@
  * built it (E2), and shows up in the producer's revenue rather than in a firm's own balance sheet
  * out of nowhere.
  */
-import { asRatio, minus, pricedAt, scale } from '../../core/measure.js';
-import type { Qty } from '../../core/tick.js';
+import { asRatio, minus, pricedAt, scale, asCash, plus, valueAt, type Cash, type PerPiece } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { negQty } from '../../core/tick.js';
+import { negQty, asQty, type Qty } from '../../core/tick.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
@@ -253,6 +252,9 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     const lost = ctx.registry.deliverable(scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
     );
     if (!material(lost, 2, units) || lost <= 0) continue;
+    // Insurers A4 (14.3): WHAT THE LOST UNITS WERE ON THE BOOKS AT, read off the lots the destroy
+    // will draw (first in, first out, as the register draws) — the amount a claim on them is for.
+    const atCost = costOfDrawing(h.lots, lost);
     const record = ctx.settle({
       legs: [
         {
@@ -270,10 +272,23 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     ctx.record(
       'capital.weathered',
       [h.holder, i.id],
-      { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units: lost, wind, survived },
+      { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units: lost, wind, survived, atCost },
       true,
     );
   }
+}
+
+/** Register D4, Law 19: what drawing `units` first-in-first-out off these lots costs — the register's own order. */
+function costOfDrawing(lots: readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[], units: Qty): Cash {
+  let left: number = units;
+  let cost = asCash(0, 'nothing drawn yet');
+  for (const lot of lots) {
+    if (left <= 0) break;
+    const take = atMost(lot.qty, asQty(left, 'what is left to draw'), 'a lot gives no more than it has');
+    cost = plus(cost, valueAt(lot.basisPerUnit, asQty(take, 'the pieces this lot gives'), 'what these pieces cost'), 'what the drawing costs');
+    left -= take;
+  }
+  return cost;
 }
 
 /**

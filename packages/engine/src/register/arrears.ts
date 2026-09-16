@@ -33,6 +33,7 @@ export type PaymentClass =
   | 'borrowing'
   | 'transfer'
   | 'tax'
+  | 'claim'
   | 'unclassified';
 
 export interface ArrearTerms extends Terms {
@@ -70,7 +71,8 @@ export const arrearId = (failed: number, n: number): InstrumentId =>
  */
 export const CLASS_ORDER: readonly (readonly PaymentClass[])[] = [
   ['wage'],
-  ['transfer', 'tax'],
+  // 14.3: a policyholder's unpaid claim ranks with what the state and a counterparty are owed.
+  ['transfer', 'tax', 'claim'],
   ['rent'],
   ['interest', 'borrowing'],
   ['disposal', 'sale', 'unclassified'],

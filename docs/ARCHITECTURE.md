@@ -1564,3 +1564,13 @@ weather itself scraps plant by — and a cell bids for life cover on what a memb
 a member dies within the term; both as ladders (`clearing/schedule.ts rungsUpTo`), which now
 compares what the money would take with what was wanted before making it a count.
 
+### A claim is a redemption of cover against a loss the weather said (item 14.3)
+
+The capital programme's `capital.weathered` carries what the lost units were on the holder's books
+at, drawn off the lots as the register draws them; `registry/physical.ts weatheredIn` reads the
+period's losses; the insurers' `claims` phase pays each covered loser up to the cover it holds and
+takes the cover used back in the same numbered instruction — an asset leg to the issuer is a
+redemption, so the cover is gone. `claim` is a receipt class of its own (`ledger/instruction.ts`,
+`register/arrears.ts`: it ranks with what the state and a counterparty are owed) and is nobody's
+income (`treasury`).
+

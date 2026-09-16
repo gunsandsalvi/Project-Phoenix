@@ -22,6 +22,7 @@
  * unit is what makes A2.b enforceable: a recipe quantity is `tonnes per tonne of flour`, and a
  * number denominated in money is refused at assembly, by name.
  */
+import { type Period } from '../calendar/calendar.js';
 import { downTick, type Qty } from '../core/tick.js';
 import { Missing } from '../core/errors.js';
 import {
@@ -875,4 +876,32 @@ export function seedVintage(
     market: some(market),
   });
   return id;
+}
+
+/** Capital Programme A4, Insurers A4 (14.3): one loss the weather took, as the capital programme published it. */
+export interface WeatheredLoss {
+  readonly holder: string;
+  readonly vintage: string;
+  readonly capitalKind: string;
+  readonly units: number;
+  /** What the lost units were on the holder's books at — the amount a claim on them is for. */
+  readonly atCost: number;
+}
+
+const WEATHERED = 'capital.weathered';
+
+/**
+ * Insurers A4, Law 19 (14.3): WHAT THE WEATHER TOOK THIS PERIOD, from whom, at what it was carried
+ * at — read off the public events the capital programme wrote, never re-derived from the register
+ * after the fact (the lots are gone by then).
+ */
+export function weatheredIn(reads: { ofKindIn(kind: string, period: Period): readonly Event[] }, period: Period): readonly WeatheredLoss[] {
+  const out: WeatheredLoss[] = [];
+  for (const e of reads.ofKindIn(WEATHERED, period)) {
+    const d = e.data;
+    if (typeof d['holder'] !== 'string' || typeof d['vintage'] !== 'string' || typeof d['capitalKind'] !== 'string') continue;
+    if (typeof d['units'] !== 'number' || typeof d['atCost'] !== 'number') continue;
+    out.push({ holder: d['holder'], vintage: d['vintage'], capitalKind: d['capitalKind'], units: d['units'], atCost: d['atCost'] });
+  }
+  return out;
 }

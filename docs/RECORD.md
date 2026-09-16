@@ -11868,3 +11868,26 @@ suites at 90 of 196, as at 14.1.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 14.3 — The claim
+
+A policy promised a unit of money at the end of its term and nothing happened in between: the
+weather took plant from parties holding cover and no claim was ever made, because nothing read
+the loss and nothing paid on it. The capital programme's own event now says what the lost units
+were on the holder's books at, the registry reads the period's losses, and the insurers' claims
+phase — after the weather, at the same anchor — pays each covered loser what it lost, up to the
+cover it holds, oldest cover first, and takes the cover used back in the same numbered instruction
+(an asset leg to the issuer is a redemption, so the cover is gone). `insurer.claim` is that
+instruction's event, paid or failed. A claim the insurer cannot pay fails on the wire like any
+payment and its arrear ranks as a policyholder's; that is how an insurer dies of a storm (A3, B4).
+One storm is one period's list of losses, and every line of it reaches the phase. `claim` is a
+receipt class of its own and nobody's income.
+
+**Measured.** Cover written by hand to a carrier for a million and a storm written by hand that
+takes 137 million of its hull: the insurer pays the million, the policy's outstanding is nil, the
+money out and the cover back are two legs of one instruction, and the claim is on the record
+(`claim.test.ts`, one green). The rig's own storms are too gentle in eight periods to take a whole
+piece of anything, and the rig's insurer quotes nothing yet (14.4), so the world's own claims wait
+on both. Nothing new is red: eighteen suites at 90 of 196.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

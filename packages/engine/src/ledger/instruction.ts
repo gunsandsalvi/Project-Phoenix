@@ -97,7 +97,9 @@ export type Receipt =
   | { readonly of: 'borrowing' }
   | { readonly of: 'transfer' }
   /** Treasury C1, Money E1 (12a.9): a levy — what the state is owed, which ranks as such in an estate. */
-  | { readonly of: 'tax' };
+  | { readonly of: 'tax' }
+  /** Insurers A4 (14.3): a claim paid — indemnity for a loss, which restores what was lost and is nobody's income. */
+  | { readonly of: 'claim' };
 
 export const RECEIPT_KINDS = [
   'wage',
@@ -110,6 +112,7 @@ export const RECEIPT_KINDS = [
   'borrowing',
   'transfer',
   'tax',
+  'claim',
 ] as const;
 
 export interface MoneyLeg {

@@ -22,6 +22,7 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import { weatheredIn } from '../../registry/physical.js';
 import { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
 import { none, some } from '../../core/option.js';
 import { period, type Period } from '../../calendar/calendar.js';
@@ -55,8 +56,8 @@ import {
   type PartyId,
 } from '../../core/ids.js';
 import { InvalidRegistry, Unpriced } from '../../core/errors.js';
-import { sum } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { sum, atMost } from '../../core/num.js';
+import { downTick, subQty } from '../../core/tick.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { FACE_TICK, MONEY_PIECES } from '../../registry/grid.js';
 import type { CashFlow, InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
@@ -405,6 +406,18 @@ export function insurers(): SystemModule {
         },
       },
       {
+        name: 'insurers.claims',
+        spec: 'Insurers A4 Insurers B4 Law 5',
+        // After the weather has taken what it takes (the capital programme's phase sits at the same
+        // anchor, earlier in the order), so a claim is on a loss that has happened and been said.
+        anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'capital.weathered', of: 'thisPeriod' }],
+        writes: [{ kind: 'event', name: CLAIM_PAID }],
+        run: (ctx: MechanismContext): void => {
+          payClaims(ctx);
+        },
+      },
+      {
         name: 'insurers.cover',
         spec: 'Insurers A4 Insurers A4.a Insurers A4.b Insurers A4.c Clearing C3',
         // Before the goods and paper sessions, because what an insurer writes this period is
@@ -608,6 +621,74 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
 };
 
 /** Clearing D2: who was on the other side of this fill, from the book's own record of it. */
+/**
+ * Insurers A4, B4, Law 5 (14.3): THE CLAIM. What the weather took from a covered party this period,
+ * at what its books carried it, is paid by the insurers whose cover it holds — oldest cover first,
+ * up to the cover it holds — and the cover used is handed back in the same numbered instruction: a
+ * unit of cover promised a unit of money against a loss, the loss came, the unit is paid and gone.
+ * A claim the insurer cannot pay fails on the wire like any payment and is an arrear ranking as a
+ * policyholder's (`register/arrears.ts`), which is how an insurer dies of a storm (A3, B4). One
+ * event hitting many policies at once is one period's `capital.weathered` list, and every line of
+ * it reaches here.
+ */
+function payClaims(ctx: MechanismContext): void {
+  const insurers = ctx.parties.ofKind(INSURANCE).filter((p) => p.status.alive);
+  if (insurers.length === 0) return;
+  for (const loss of weatheredIn(ctx.journal, ctx.period)) {
+    const holder = ctx.parties.resolve(loss.holder as PartyId);
+    if (!holder.status.alive) continue;
+    const ccy = ctx.registry.currencyOf(holder.region);
+    let unpaid = ctx.registry.cashFor(asCash(loss.atCost, 'what the lost plant was on its books at'));
+    if (unpaid <= 0) continue;
+    for (const insurer of insurers) {
+      if (unpaid <= 0) break;
+      if (ctx.registry.currencyOf(insurer.region) !== ccy) continue;
+      const policies = ctx.instruments
+        .issuedBy(insurer.id)
+        .filter((i) => i.status.live && isPolicy(i.terms) && ctx.register.quantity(holder.id, i.id) > 0)
+        .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      for (const policy of policies) {
+        if (unpaid <= 0) break;
+        const held = ctx.register.quantity(holder.id, policy.id);
+        // COVER counts in the money's pieces: a unit of cover pays a unit of money.
+        const units = atMost(held, unpaid, 'it pays no more than the cover it holds, and no more than was lost');
+        if (units <= 0) continue;
+        const r = ctx.settle({
+          legs: [
+            {
+              kind: 'money',
+              from: ctx.accountOf(insurer.id, ccy),
+              to: ctx.accountOf(holder.id, ccy),
+              receipt: { of: 'claim' },
+              ccy,
+              amount: units,
+            },
+            {
+              kind: 'asset',
+              from: holder.id,
+              to: insurer.id,
+              instrument: policy.id,
+              qty: units,
+              pricePerUnit: some(asPerPiece(1, 'a unit of cover, paid')),
+              accruedPerUnit: none(),
+            },
+          ],
+          cause: 'corporateAction',
+          reason: `${String(insurer.id)} pays ${String(holder.id)}'s claim on ${loss.vintage}`,
+        });
+        ctx.record(
+          CLAIM_PAID,
+          [insurer.id, holder.id],
+          { insurer: insurer.id, holder: holder.id, policy: policy.id, vintage: loss.vintage, capitalKind: loss.capitalKind, loss: loss.atCost, amount: units, paid: r.outcome === 'settled' },
+          true,
+        );
+        if (r.outcome === 'settled') unpaid = subQty(unpaid, units, 'what is still uncovered');
+        else break;
+      }
+    }
+  }
+}
+
 function sellerOf(fills: readonly Fill[], buy: Fill): PartyId | undefined {
   return fills.find((f) => f.side === 'sell' && f.party !== buy.party)?.party;
 }

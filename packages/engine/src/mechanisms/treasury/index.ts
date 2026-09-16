@@ -938,8 +938,10 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'borrowing':
         case 'transfer':
         case 'tax':
-          // Its own money coming back, money it must repay, money the state itself moved, and a
-          // tax paid. None of the four is income and the first three used to be taxed as one.
+        case 'claim':
+          // Its own money coming back, money it must repay, money the state itself moved, a tax
+          // paid, and an indemnity for what it lost (14.3). None is income and the first three used
+          // to be taxed as one.
           break;
         default:
           assertNever(receipt, 'Treasury C1');
