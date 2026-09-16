@@ -24,7 +24,7 @@
  */
 import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import { isMoneyLeg } from '../../ledger/instruction.js';
-import type { Period } from '../../calendar/calendar.js';
+import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
@@ -73,6 +73,7 @@ import { addQty, asQty, downTick, NO_QTY, subQty, upTick, type Qty } from '../..
 /** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
 const ONE_PIECE = asQty(1);
 import { none, some, type Option } from '../../core/option.js';
+import { financingBy, type PublishedFinancing } from '../../registry/funding.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { wasTraded } from '../../prices/price-store.js';
 import { weightOf, gridPerMember, totalOverMembers } from '../../parties/party.js';
@@ -107,7 +108,13 @@ import {
   type FundDecl,
 } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './inkind.js';
-import { callCapital, COMMITMENT, openCommitments } from './commitment.js';
+import {
+  callCapital,
+  COMMITMENT,
+  commitmentsTo,
+  openCommitments,
+  undrawnTo,
+} from './commitment.js';
 import {
   isMandate,
   MANDATE,
@@ -1062,6 +1069,12 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
       fund: fundId,
       perShare,
       shares: share.issued,
+      /**
+       * §29 A2, B3 (17b.4): WHAT IT COULD STILL CALL and has not. It is not money it has — that is
+       * the whole of A2 — but a buyer weighing whether it can pay for a company counts it beside
+       * its balance, and a pool with nobody committed to it publishes nothing here.
+       */
+      couldCall: undrawnTo(commitmentsTo(ctx, fundId), ccy).pieces,
       /**
        * D2, D2.a: what it actually returned over the period that closed — a read of two values it
        * published, not a series it keeps. It is what a saver compares against a deposit, and it is
@@ -2561,7 +2574,11 @@ export function funds(
         name: 'funds.capital',
         spec: 'Private Equity A1 Private Equity A2 Private Equity A2.b Private Equity A3 Private Equity E2 Seed A3',
         anchor: { before: 'funds.strike' },
-        reads: [],
+        // A2 (17b.4): what a call is FOR — the cheque the pool published it must bring to the deal
+        // it is doing. A pool with no deal in front of it calls nothing. LAST period's, because the
+        // capital is called before the books that name the deals run (this phase sits at 40 and the
+        // tender at 70): a call takes a week, like every other payment anybody has to arrange.
+        reads: [{ kind: 'event', name: 'control.financing', of: 'anyPeriod' }],
         writes: [
           { kind: 'event', name: 'fund.called' },
           { kind: 'event', name: 'fund.committed' },
@@ -2579,7 +2596,18 @@ export function funds(
             const ccy = ctx.registry.currencyOf(ctx.parties.get(m.pool).region);
             const share = ctx.instruments.get(shareLineOf(String(m.pool)));
             const at = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
-            callCapital(ctx, m.pool, ccy, at, (investor, paid, perShare) => {
+            /**
+             * A2 (17b.4): *"it is called when A DEAL NEEDS IT"* — so what a call is for is read off
+             * what the pool published it must bring to the deal it is doing (`financingBy`, through
+             * the registry, because the module that runs a tender and the module that owns a pool
+             * may not import each other). A pool with no deal calls nothing, which is the clause:
+             * capital is committed, not paid.
+             */
+            const deal =
+              ctx.period === 0
+                ? none<PublishedFinancing>()
+                : financingBy(ctx.journal, String(m.pool), asPeriod(ctx.period - 1));
+            callCapital(ctx, m.pool, ccy, at, deal.some ? some(deal.value.cheque) : none<Cash>(), (investor, paid, perShare) => {
               // A3, Law 4: the ordinary subscription door, so a call and a subscription are issued
               // at the same NAV by the same code.
               subscribe(

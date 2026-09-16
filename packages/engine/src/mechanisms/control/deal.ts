@@ -16,7 +16,8 @@
  * A company nobody will commit to is a company nobody can buy with borrowed money, and no line here
  * says so.
  */
-import { asCash, minus, type Cash, noCash, type Ratio } from '../../core/measure.js';
+import { asCash, minus, plus, type Cash, noCash, type Ratio } from '../../core/measure.js';
+import { strikeOf } from '../../registry/funding.js';
 import type { Civil } from '../../calendar/civil.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
@@ -78,36 +79,52 @@ export function committedTo(ctx: MechanismContext, target: PartyId, ccy: Currenc
  * conditional: what a bank promises here is drawn inside the instruction that completes the
  * purchase, or it is never drawn at all.
  */
-export function askToFund(ctx: MechanismContext, target: PartyId, hole: Cash, buyer: PartyId): void {
-  if (hole.pieces <= 0) return;
+export function askToFund(
+  ctx: MechanismContext,
+  target: PartyId,
+  /** B2: what a lender is asked to commit, which is nothing where the buyer can find it all. */
+  wanted: Cash,
+  /** B3, A2: what the buyer itself must bring, and therefore what a pool has to have called. */
+  cheque: Cash,
+  buyer: PartyId,
+): void {
+  if (cheque.pieces <= 0 && wanted.pieces <= 0) return;
   const who = ctx.parties.get(target);
   if (!who.status.alive) return;
   // Corporate Credit A1: its own money, and a deal in another one is 17b.7's (Cross-Border C4).
-  if (ctx.registry.currencyOf(who.region) !== hole.ccy) return;
+  if (ctx.registry.currencyOf(who.region) !== wanted.ccy) return;
   /**
-   * C9: IT DOES NOT ASK TWICE WHILE ITS LAST ASK IS UNANSWERED. A borrower publishes in one period
-   * and hears in the next, so an ask repeated every period is the same money asked for three times
-   * over and three lenders' capital held against one deal. What it already has committed is
-   * subtracted by the caller; what it asked for last period is still out.
+   * C9: IT DOES NOT SAY IT TWICE WHILE THE LAST ONE IS UNANSWERED. A borrower publishes in one
+   * period and hears in the next, so an ask repeated every period is the same money asked for three
+   * times over and three lenders' capital held against one deal. What is already committed was
+   * subtracted by the caller.
    */
   const asked = ctx.journal.lastOf('control.financing', String(target));
   if (asked !== undefined && asked.period >= ctx.period - 1) return;
-  ctx.request(target, {
-    ccy: hole.ccy,
-    short: hole,
-    // B2: a buyout's debt is a term loan the company pays down, never a line it draws at will.
-    repays: 'onSchedule',
-    // E1: a lender that has agreed to lend and has not lent, so that a deal can be conditional.
-    wants: 'commitment',
-  });
+  if (wanted.pieces > 0) {
+    ctx.request(target, {
+      ccy: wanted.ccy,
+      short: wanted,
+      // B2: a buyout's debt is a term loan the company pays down, never a line it draws at will.
+      repays: 'onSchedule',
+      // E1: a lender that has agreed to lend and has not lent, so a deal can be conditional on it.
+      wants: 'commitment',
+    });
+  }
+  /**
+   * A2, B3 (17b.4): AND THE BUYER SAYS WHAT IT HAS TO BRING, because a pool's capital is *"called
+   * when a deal needs it"* and the pool has to be able to find out that it is buying. The module
+   * that owns the pool reads this through the registry (`financingBy`), never by this name.
+   */
   ctx.record(
     'control.financing',
     [String(target), String(buyer)],
     {
       target: String(target),
       buyer: String(buyer),
-      wanted: hole.pieces,
-      ccy: hole.ccy,
+      wanted: wanted.pieces,
+      cheque: cheque.pieces,
+      ccy: wanted.ccy,
     },
     true,
   );
@@ -120,6 +137,26 @@ export const holeIn = (cost: Cash, has: Cash, committed: Cash): Cash =>
     committed,
     'and what a lender has already promised the company',
   );
+
+/**
+ * §29 A2, B3 (17b.4): WHAT A BUYER COULD BRING ITSELF — its own money, and for a pool the capital
+ * it could still call. *"Capital is committed, not paid"*, so what it could call is not money it
+ * has; it is money it can require, and a buyer weighing whether it can pay for a company counts it
+ * beside its balance and then has to actually call it before the tender.
+ *
+ * It is the pool's own published number (`fund.struck`), read through the registry like every other
+ * public fact about a party (Law 19, 0e′.3). A buyer that is not a pool has published none and its
+ * equity is its balance, which is the ordinary case.
+ */
+export function equityOf(ctx: MechanismContext, buyer: PartyId, cash: Cash): Cash {
+  const struck = strikeOf(ctx.journal, String(buyer));
+  if (!struck.some || struck.value.couldCall <= 0) return cash;
+  return plus(
+    cash,
+    asCash(struck.value.couldCall, cash.ccy, 'what it could still call from its investors'),
+    'what it could bring itself',
+  );
+}
 
 /** A buyer's own money, as money rather than a count — one crossing, named (Law 8). */
 export const cashOf = (pieces: number, ccy: CurrencyCode): Cash =>

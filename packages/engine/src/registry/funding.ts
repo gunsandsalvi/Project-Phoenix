@@ -1,7 +1,7 @@
 /**
  * WHAT A PARTY PUBLISHED IT NEEDS, AND WHAT A POOL PUBLISHED IT IS WORTH.
  *
- * @spec Firm E4 Firm E5 Capital Programme B2 Short-Term Debt B1 Fund Shares B3 Fund Shares C4 Housing D3 Law 4 Law 15 Law 19
+ * @spec Firm E4 Firm E5 Capital Programme B2 Short-Term Debt B1 Fund Shares B3 Fund Shares C4 Housing D3 Private Equity A2 Private Equity B2 Private Equity B3 Law 4 Law 15 Law 19
  *
  * The third file on the shape 0e′.1 settled, after `registry/wages.ts` and `registry/banking.ts`:
  * the kind names live here and the fetch happens here, so a mechanism asks about a PARTY and never
@@ -145,6 +145,13 @@ export interface PublishedStrike {
   /** What a saver requires of it, which is a cost of capital to whatever it holds. */
   readonly requires: Option<number>;
   readonly durationYears: Option<number>;
+  /**
+   * §29 A2, B3 (17b.4): what a CLOSED-END pool could still call from its investors and has not.
+   * It is not money it has — that is the whole of A2 — but it is what a buyer working out whether
+   * it can pay for a company counts beside its balance, and it is nothing for a pool with nobody
+   * committed to it.
+   */
+  readonly couldCall: number;
   readonly offered: unknown;
 }
 
@@ -161,6 +168,7 @@ function strikeFrom(e: Event | undefined): Option<PublishedStrike> {
     shortfall: typeof shortfall === 'number' ? shortfall : 0,
     requires: typeof requires === 'number' ? some(requires) : none<number>(),
     durationYears: typeof years === 'number' ? some(years) : none<number>(),
+    couldCall: typeof e.data['couldCall'] === 'number' ? e.data['couldCall'] : 0,
     offered: e.data['offered'],
   });
 }
@@ -254,6 +262,49 @@ export function rentPrintedIn(reads: WireReads, region: string): Option<PerPiece
       last = asPerPiece(rent, 'what a dwelling let for, per period');
   }
   return last === undefined ? none<PerPiece>() : some(last);
+}
+
+/* --- What a deal needs that its buyer cannot pay for ----------------------------------------- */
+
+const FINANCING = 'control.financing';
+
+/** §29 B2, B3 (17b.4): the two halves of a deal nobody could pay for out of what they hold. */
+export interface PublishedFinancing {
+  readonly target: string;
+  readonly buyer: string;
+  /** B2: what the company is asked to have a lender commit — the debt half. */
+  readonly wanted: Cash;
+  /** B3: what the buyer itself has to bring — the equity cheque. */
+  readonly cheque: Cash;
+}
+
+/**
+ * §29 A2, B3, Law 15 (17b.4): THE DEAL THIS BUYER PUBLISHED IT NEEDS THE MONEY FOR.
+ *
+ * *"Capital is committed, not paid: it is called when A DEAL NEEDS IT"* — so the pool that is
+ * buying has to be able to find out that it is buying, and the module that runs the tender and the
+ * module that owns the pool may not import each other. The name lives here with the other public
+ * reads (0e′.3), and both of them ask about a PARTY.
+ *
+ * This period's only: a deal published two periods ago has been funded or has not, and either way
+ * the buyer said so again since.
+ */
+export function financingBy(reads: WireReads, buyer: string, at: Period): Option<PublishedFinancing> {
+  const said = reads.lastOf(FINANCING, buyer);
+  if (said?.period !== at) return none<PublishedFinancing>();
+  const wanted = said.data['wanted'];
+  const cheque = said.data['cheque'];
+  const ccy = said.data['ccy'];
+  // Item 16: two published amounts re-entering the type system through their own door.
+  if (typeof wanted !== 'number' || typeof cheque !== 'number' || typeof ccy !== 'string') {
+    return none<PublishedFinancing>();
+  }
+  return some({
+    target: String(said.data['target']),
+    buyer: String(said.data['buyer']),
+    wanted: asCash(wanted, currencyCode(ccy), 'what the company is asked to commit a lender to'),
+    cheque: asCash(cheque, currencyCode(ccy), 'what the buyer itself has to bring'),
+  });
 }
 
 /* --- What a pool called of an investor ------------------------------------------------------- */

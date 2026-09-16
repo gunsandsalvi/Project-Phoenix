@@ -120,6 +120,7 @@ function buysACompany(asks = 1, tenders = 3): SystemModule {
               ctx,
               found.target,
               asCash(cost * (1 - CHEQUE), USD, 'what the deal is short of'),
+              asCash(cost * CHEQUE, USD, 'what the buyer brings itself'),
               BUYER,
             );
           }

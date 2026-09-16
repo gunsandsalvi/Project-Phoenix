@@ -18,7 +18,7 @@
 import { USD } from '../src/seeds/foundation.js';
 import { describe, expect, it } from 'vitest';
 import { drawPrivateEquity, drawFunds } from '../src/mechanisms/funds/data.js';
-import { undrawnOn, undrawnTo, type Commitment } from '../src/mechanisms/funds/commitment.js';
+import { calledFrom, undrawnOn, undrawnTo, type Commitment } from '../src/mechanisms/funds/commitment.js';
 import { asCash } from '../src/core/measure.js';
 import { partyId, agreementId } from '../src/core/ids.js';
 import { COMMITMENT } from '../src/mechanisms/funds/commitment.js';
@@ -91,5 +91,40 @@ describe('what makes a pool private equity', () => {
     // Every other vehicle takes money at a door. This one was raised before it existed, which is
     // what a vintage is — and it is why `commitments` is absent everywhere else.
     for (const p of drawFunds(BANKS, 'a-seed')) expect(p.commitments).toBeUndefined();
+  });
+});
+
+describe('when it calls (Private Equity A2, 17b.4)', () => {
+  const short = (n: number) => asCash(n, USD, 'what the deal needs that the pool has not got');
+  const promised = (n: number) => asCash(n, USD, 'what is still promised to it between them');
+  const mine = (n: number) => asCash(n, USD, 'what this investor still promised');
+
+  it('calls the WHOLE promise where the deal needs everything that is left', () => {
+    // A2: a deal bigger than the fund's remaining commitments takes all of them, which is the case
+    // the old placeholder was doing every time — correctly, but for the wrong reason.
+    expect(calledFrom(mine(60), promised(100), short(100)).pieces).toBe(60);
+    expect(calledFrom(mine(60), promised(100), short(250)).pieces).toBe(60);
+  });
+
+  it('calls each investor’s SHARE of what is still promised where the deal is smaller', () => {
+    // Two investors, sixty and forty of a hundred still promised, and a deal needing half of it.
+    expect(calledFrom(mine(60), promised(100), short(50)).pieces).toBe(30);
+    expect(calledFrom(mine(40), promised(100), short(50)).pieces).toBe(20);
+  });
+
+  it('adds to what the deal needs and no more, which is what makes it deal-paced', () => {
+    const rows = [mine(60), mine(30), mine(10)];
+    const total = promised(100);
+    const need = short(35);
+    const asked = rows.reduce((acc, r) => acc + calledFrom(r, total, need).pieces, 0);
+    // Every investor is called for its share and the shares are the deal: the money that arrives is
+    // the money the deal needs, and the rest stays committed and unpaid, which is A2 exactly.
+    expect(asked).toBeCloseTo(need.pieces, 9);
+  });
+
+  it('never looks at what the investor holds (A2.b)', () => {
+    // The balance appears nowhere in it: what is called is arithmetic on two promises and a deal.
+    // An investor with nothing is called for exactly what one with everything would be.
+    expect(calledFrom(mine(60), promised(100), short(50)).pieces).toBe(30);
   });
 });

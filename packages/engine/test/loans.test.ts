@@ -1496,6 +1496,7 @@ function asksToFund(amount: number, from = 1, to = 1): SystemModule {
             ctx,
             partyId(BORROWER),
             asCash(amount, USD, 'what the deal is short of'),
+            asCash(amount, USD, 'what the buyer brings itself'),
             partyId(PAYEE),
           );
         },

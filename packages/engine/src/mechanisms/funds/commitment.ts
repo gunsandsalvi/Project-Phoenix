@@ -45,6 +45,7 @@ import {
 } from '../../core/measure.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { MechanismContext } from '../../world/context.js';
+import type { Option } from '../../core/option.js';
 
 /** A1, A2: what one named investor promised this pool, and what of it has been drawn. */
 export const COMMITMENT = agreementKindId('funds.commitment');
@@ -164,6 +165,24 @@ export function openCommitments(
 }
 
 /**
+ * A2 (17b.4): WHAT ONE INVESTOR IS CALLED FOR — the whole of what it still promised where the deal
+ * needs everything the fund has left to call, and its SHARE of what is still promised otherwise.
+ *
+ * Two real quantities and a branch between them, and that is the whole of it: nothing here is a
+ * bound on either (Law 6) and nothing looks at what the investor holds (A2.b). A call sized by the
+ * DEAL is not a call sized by the investor's balance — which is why this is arithmetic on two
+ * promises and the balance appears nowhere in it.
+ */
+export const calledFrom = (mine: Cash, promised: Cash, short: Cash): Cash =>
+  short.pieces >= promised.pieces
+    ? mine
+    : scale(
+        mine,
+        asRatio(short.pieces / promised.pieces, 'the share of the promises this deal needs'),
+        'what this investor is called for',
+      );
+
+/**
  * A2, A2.b, A3, E2 (item 13.5): THE CAPITAL CALL — and it is the one payment in this world that is
  * not bounded by what the payer has.
  *
@@ -184,17 +203,29 @@ export function openCommitments(
  * subscription door — so a call is a subscription its investor agreed in advance to make, and there
  * is one writer of what a share is issued at (Law 4).
  *
- * WHEN IT CALLS is the part this world cannot yet pace honestly, and it is said rather than dressed
- * up. A closed-end fund calls when a DEAL needs the money (A2), and there are no deals: §29 B's
- * buyout is 13.5b. What is here is the limit case — it calls what it has not called when it has run
- * out of cash to invest, which for a fund with nothing to buy yet is once, at the start. The
- * SCHEDULE arrives with the deals; the OBLIGATION is what this step is about and it is whole.
+ * WHEN IT CALLS IS THE DEAL (17b.4). *"Capital is committed, not paid: it is called when A DEAL
+ * NEEDS IT, and the call is a real payment from the investor's account on a date it cannot refuse."*
+ * What a deal needs of this pool is handed in — the cheque the buyer published it must bring
+ * (`financingBy`) — and a pool with no deal calls NOTHING, which is the clause rather than a
+ * placeholder for it. It used to call the whole of what was promised the moment its cash reached
+ * zero, which for a fund with nothing to buy was once, at the start, and left the investors' money
+ * sitting in the pool from period 1 for the rest of the run.
+ *
+ * WHAT EACH INVESTOR IS CALLED FOR is its share of what is still promised — `undrawn_i / undrawn`
+ * of the deal's need — and a deal bigger than everything still promised calls all of it. That is a
+ * branch on two real quantities and not a bound on either (Law 6): what is called is either the
+ * whole of the promise or a share of it, never a demand trimmed to fit something.
  */
 export function callCapital(
   ctx: MechanismContext,
   pool: PartyId,
   ccy: CurrencyCode,
   perShare: PerPiece,
+  /**
+   * A2: WHAT THE DEAL NEEDS OF IT. Nothing is a real answer and is the ordinary one: a pool with no
+   * deal in front of it calls nothing, because capital is committed and not paid.
+   */
+  needs: Option<Cash>,
   /**
    * A3: what the pool does with what a call brought in — issue shares for it, at the NAV, through
    * the ordinary subscription door. It is handed in rather than imported so that THIS FILE IS THE
@@ -203,18 +234,30 @@ export function callCapital(
    */
   issue: (investor: PartyId, paid: Cash, at: PerPiece) => void,
 ): void {
+  if (!needs.some || perShare <= 0) return;
   const cash = ctx.register.quantity(pool, moneyInstrumentId(ctx.accountOf(pool, ccy).issuer, ccy));
-  // A2: it calls when it needs the money and not before. A fund still holding what it last called
-  // has not needed any since — which is as close to deal-paced as a world with no deals can be.
-  if (cash > 0 || perShare <= 0) return;
-  for (const c of commitmentsTo(ctx, pool)) {
-    const wanted = ctx.registry.payable(undrawnOn(c));
+  // A2: what the deal needs that it has not already got. A pool holding what it last called does
+  // not call again for the same deal, and one holding enough for this one calls nothing at all.
+  const short = minus(
+    needs.value,
+    heldAsMoney(cash, ccy, 'what it is already holding toward it'),
+    'what the deal needs that it has not got',
+  );
+  if (short.pieces <= 0) return;
+  const rows = commitmentsTo(ctx, pool);
+  const promised = undrawnTo(rows, ccy);
+  if (promised.pieces <= 0) return;
+  for (const c of rows) {
+    const mine = undrawnOn(c);
+    if (mine.pieces <= 0) continue;
+    const wanted = ctx.registry.payable(calledFrom(mine, promised, short));
     if (wanted <= 0) continue;
     const investor = ctx.parties.get(c.investor);
     /**
-     * A2.b: FOR THE WHOLE OF IT. The one thing this line must not do is look at what the investor
-     * holds — and the one thing it must not be is two instructions, because a call met in halves is
-     * a call the investor got to size.
+     * A2.b: FOR THE WHOLE OF WHAT IT WAS CALLED FOR. The one thing this line must not do is look at
+     * what the investor holds — a call sized by the DEAL is not a call sized by the investor's
+     * balance — and the one thing it must not be is two instructions, because a call met in halves
+     * is a call the investor got to size.
      */
     const r = ctx.settle({
       legs: [

@@ -57,7 +57,7 @@ and neither is yet a MET a run has confirmed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 16 | 5 | 0 | 0 | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
-| Private Equity | 15 | 3 | 7 | 0 | 25 |
+| Private Equity | 16 | 2 | 7 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -311,7 +311,7 @@ already writes against an agreed line.
   B4 is then not a step at all: *"leverage up, interest cost up, ownership changed in the register"* is what
   the instruction did. C4 follows the same way — the firm services a bill it did not have before and a firm
   that cannot dies, with the loss falling on the lender and the equity wiped, through machinery already built.
-- [ ] 17b.4 **The call is paced by the deal** (A2, B3, 21.15). `callCapital` calls today when the pool's cash
+- [x] 17b.4 **The call is paced by the deal** (A2, B3, 21.15). `callCapital` calls today when the pool's cash
   reaches zero, which for a fund with nothing to buy is once at the start; the file says so and names this
   item. A deal gives it its pace: the pool calls what its cheque is short of, pro rata across its commitments
   (`wanted × undrawn_i / undrawn`). **A2.b is untouched and must stay untouched**: a slice sized by the DEAL is
@@ -409,6 +409,7 @@ commit to does not happen.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.74 `committed-capital.test.ts:45` asserts `expect(undrawnOn(promised(100_000_000, 0))).toBe(100_000_000)` — a `Cash` against a number, so it can never pass. The two lines under it read `.pieces` and do. Pre-existing (1 red, 5 green at `3f7b4e1`; 1 red, 9 green after 17b.4's four). A wrong assertion is not a finding about the world and is not chased here (the three rules); positioned at 23.1 with the rest of the suite's triage (17b.4).
 - [ ] 21.73 `control/index.ts` NEVER RUNS. Twenty-four periods of the `opens` rig: `control.tender` 0, `control.failed` 0, `control.acquired` 0, `control.financing` 0 — so §35 and §29 B are a thousand lines nothing has ever exercised in an assembled world, and every test of them is a scale model built by hand. `couldBuy` finds six candidates in period 24 and all six are index ETFs (`etf.us`, `etf.equity.large.us.1`, …): the rig draws no buyout fund at all (`drawPrivateEquity` needs a bank at or above `SPONSOR_SIZE` and the rig's banks are smaller), and a tracker has no view of a company to value one with. Positioned at 23.1, which is where the scale model is resized and is exactly this: a test never names a party, so the draw has to make a buyer (17b.2).
 - [ ] 21.72 `banks/index.ts publishQuotes` STOPS QUOTING EVERY NAME. `opens` rig, quotes per period: 121, 102, 81, 55, 62, 62 … and 0 from period 9 or so to the end of twenty-four, with declines rising the other way (12 at p12, 106 at p24). The reasons the banks give for the declines after period 10: 178× `appetite`, 58× `it cannot cost its own funding`, 61× `nobody lends to a party of this kind`. A world where no bank will quote anybody has no credit market at all, and §29 B2.b (*“the credit market decides which buyouts occur”*) cannot be exercised in it. NOT CHASED (Law 11): appetite is the bank's own room and the room is made of capital, funding and what it already has out, none of which this reading separates. Positioned at 23.3, with Part XII's measurements, where what a bank's room is made of is measured with the level carried (17b.2).
 - [ ] 21.71 `short-term-debt/index.ts BACKSTOP` and `registry/credit.ts FACILITY` are ONE OBJECT under two names (Law 4): a named bank's committed line to a named borrower, at a limit and a rate, whose undrawn headroom consumes the lender's capital and whose drawing is a loan row. The differences are a commitment FEE (the backstop has one, and §18 B4 is right that a line without one is a free option) and an END (the facility lapses, the backstop stands). Both are TERMS, not kinds. Merging them means moving §18's fee onto the kernel's shape and deciding whether an acquisition commitment is charged for, which is §18's economics and not §29's; positioned at 18 with commercial paper's own item (17b.1).

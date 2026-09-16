@@ -1036,9 +1036,9 @@ export interface Wanted {
   readonly bid: Bid;
   /** What control would cost at this buyer's own number for the company. */
   readonly cost: Cash;
-  /** B3: the equity cheque — what the buyer itself has toward it. */
+  /** B3: the equity cheque — what the buyer itself has to bring, and has to have called (A2). */
   readonly has: Cash;
-  /** B2: the rest, and what the target is asked to commit a lender to. */
+  /** B2: the rest, and what a lender is asked to commit. Nothing where the buyer can find it all. */
   readonly hole: Cash;
 }
 
@@ -1189,7 +1189,7 @@ export function control(): SystemModule {
           // they can be bought at all. A deal that comes back funded is a bid two periods from now.
           for (const [target, w] of holes) {
             if (byTarget.has(target)) continue;
-            askToFund(ctx, target, w.hole, w.bid.buyer);
+            askToFund(ctx, target, w.hole, w.has, w.bid.buyer);
           }
         },
       },

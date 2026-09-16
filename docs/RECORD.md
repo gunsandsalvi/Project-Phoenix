@@ -13375,3 +13375,46 @@ nothing, and the buyer holds a majority of what is left.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
 three new tests, all green. §29 B2, B4 and E1 re-marked MET; B3 and B5 PARTIAL with their step named.
+
+## Item 17b.4 — The call is paced by the deal
+
+§29 A2: *"capital is committed, not paid: it is called when A DEAL NEEDS IT, and the call is a real
+payment from the investor's account on a date it cannot refuse."* The clause has two halves and only
+one of them was built. `callCapital` called the whole of what every investor had promised the moment
+the pool's cash reached zero — which for a fund with nothing to buy was once, at the start — and the
+file said so, naming this item. The investors' money then sat in the pool from period 1 for the rest
+of the run, which is the opposite of what A2 describes.
+
+**The deal is the pace.** A buyer that cannot pay for a company out of what it holds now publishes
+both halves of what it has to find: the debt a lender is asked to commit, and the CHEQUE it must
+bring itself. The pool reads its own cheque and calls that — and a pool with no deal in front of it
+calls nothing at all, which is the clause rather than a placeholder for it.
+
+**Neither module names the other's event.** The module that runs a tender and the module that owns a
+pool may not import each other, so `control.financing`'s name lives in `registry/funding.ts` beside
+`firms.funding` and `fund.struck`, and both of them ask about a PARTY (0e′.3). It is LAST period's:
+the capital phase sits at 40 and the tender at 70, so a call takes a week like every other payment
+anybody has to arrange — the ordering check said so and the lag is the answer, not a reordering.
+
+**What each investor is called for is its share of what is still promised** — `undrawn_i / undrawn`
+of what the deal needs — and a deal bigger than everything left to call takes all of it. Two real
+quantities and a branch between them, never a bound on either (Law 6), and the investor's balance
+appears nowhere in it: **a call sized by the DEAL is not a call sized by the investor's cash**, which
+is what A2.b forbids. `check:forbids` still refuses `atMost`, `atLeast` and `Math.min` anywhere in
+that file, and the arithmetic is a pure read (`calledFrom`) so it can be tested without one.
+
+**And a pool can now weigh a deal before it has the money.** `fund.struck` publishes what the pool
+could still call, and a buyer counts it beside its balance when deciding whether to pursue a company
+— but never when bidding, because what it could call is not money until it has called it (A2). The
+sequence is: it sees the deal and says what it needs (p), it calls and its lender commits (p+1), it
+bids with cash in hand (p+2).
+
+**Not exercised end to end, and why.** No world this repository builds draws a buyout pool at all —
+the rig's only pools are two credit trackers, and `fund.called` has never fired in it. That is
+finding 21.73 and it is positioned at 23.1, where the scale model is resized. What is tested here is
+the arithmetic of the call as a read, which is where the clause actually lives.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`committed-capital`: four new tests, all green; the file's one red (`:45` asserts a `Cash` against a
+number) is the one that was red before, written down as 21.74. §29 A2 re-marked with the pacing and
+B3 MET.
