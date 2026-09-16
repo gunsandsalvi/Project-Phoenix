@@ -73,6 +73,7 @@ import { asPerPiece } from '../src/core/measure.js';
 import { instrumentId } from '../src/core/ids.js';
 import { loanTerms } from '../src/mechanisms/banks/loan.js';
 import { FACILITY, isFacility } from '../src/registry/credit.js';
+import { askToFund, committedTo } from '../src/mechanisms/control/deal.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -1468,5 +1469,105 @@ describe('a lender that agreed to lend (Private Equity B2, B2.b, E1)', () => {
     expect(live).toHaveLength(0);
     // And no money was ever made for it: a deal that did not happen left the bank where it was.
     expect(loans(w)).toHaveLength(0);
+  });
+});
+
+/**
+ * §29 B2, B2.a (17b.2): the deal's borrowing, published in the TARGET's name. The module stands in
+ * for `control` so that what is under test is the ask and not the valuation behind it.
+ */
+function asksToFund(amount: number, from = 1, to = 1): SystemModule {
+  return {
+    ...asksFor(amount, from),
+    id: 'test.asksToFund',
+    phases: [
+      {
+        name: 'test.askToFund',
+        spec: 'Private Equity B2',
+        anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'control.financing' },
+          { kind: 'event', name: 'credit.request' },
+        ],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period < from || ctx.period > to) return;
+          askToFund(
+            ctx,
+            partyId(BORROWER),
+            asCash(amount, USD, 'what the deal is short of'),
+            partyId(PAYEE),
+          );
+        },
+      },
+    ],
+  };
+}
+
+/** What a lender has committed to the borrower, recorded each period so a test can read it back. */
+function watchesCommitments(): SystemModule {
+  return {
+    ...asksFor(0, 99),
+    id: 'test.watchesCommitments',
+    phases: [
+      {
+        name: 'test.watchCommitments',
+        spec: 'Private Equity B2',
+        anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'test.committed' }],
+        run: (ctx: MechanismContext) => {
+          ctx.record(
+            'test.committed',
+            [String(BORROWER)],
+            { committed: committedTo(ctx, partyId(BORROWER), USD).pieces },
+            false,
+          );
+        },
+      },
+    ],
+  };
+}
+
+describe('the deal asks for the money that will buy it (Private Equity B2, B2.a, B2.b)', () => {
+  it('asks in the TARGET’s name, because the debt is the target’s', () => {
+    const w = world([asksToFund(phx(20_000).pieces)]);
+    w.step();
+    const asked = w.journal.ofKind('credit.request');
+    expect(asked).toHaveLength(1);
+    // B2.a: *"the debt is the target's liability, not the fund's"*. The borrower on the request is
+    // the company, and the buyer is named beside it rather than on it.
+    expect(asked[0]?.data['borrower']).toBe(String(BORROWER));
+    expect(asked[0]?.data['wants']).toBe('commitment');
+    const said = w.journal.ofKind('control.financing');
+    expect(said).toHaveLength(1);
+    expect(said[0]?.data['target']).toBe(String(BORROWER));
+    expect(said[0]?.data['buyer']).toBe(String(PAYEE));
+  });
+
+  it('does not ask twice while its last ask is unanswered (Corporate Credit C9)', () => {
+    const w = world([asksToFund(phx(20_000).pieces, 1, 2)]);
+    w.step();
+    w.step();
+    // Two periods, two attempts, one ask: a borrower that published in period 1 hears in period 2,
+    // and asking again in between is the same money asked for twice and two lenders' capital held
+    // against one deal.
+    expect(w.journal.ofKind('credit.request')).toHaveLength(1);
+    expect(w.journal.ofKind('control.financing')).toHaveLength(1);
+  });
+
+  it('reads what a lender has committed, and nothing once it has lapsed', () => {
+    const w = world([asksForCommitment(phx(20_000).pieces), watchesCommitments()]);
+    const seen: number[] = [];
+    for (let i = 0; i < 5; i += 1) {
+      w.step();
+      const e = w.journal.ofKindIn('test.committed', w.period).at(-1);
+      seen.push(Number(e?.data['committed']));
+    }
+    // Nothing in period 1 (it has only just asked), something once the bank committed, nothing
+    // again once the deal it was committed for did not close.
+    expect(seen[0]).toBe(0);
+    expect(seen[1]).toBeGreaterThan(0);
+    expect(seen.at(-1)).toBe(0);
   });
 });

@@ -71,6 +71,7 @@ import {
   strikesPublished,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
+import { askToFund, cashOf, committedTo, holeIn } from './deal.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -905,19 +906,50 @@ function couldBuy(ctx: MechanismContext): readonly PartyId[] {
   return [...out];
 }
 
-export function controlBidsFor(
+/**
+ * §29 B2, B3 (17b.2): A DEAL THIS BUYER WANTS AND CANNOT PAY FOR OUT OF WHAT IT HOLDS.
+ *
+ * It is not a refusal and not a bid: it is the hole, which is the thing a lender is asked to fill.
+ */
+export interface Wanted {
+  readonly bid: Bid;
+  /** What control would cost at this buyer's own number for the company. */
+  readonly cost: Cash;
+  /** B3: the equity cheque — what the buyer itself has toward it. */
+  readonly has: Cash;
+  /** B2: the rest, and what the target is asked to commit a lender to. */
+  readonly hole: Cash;
+}
+
+/**
+ * M&A B1, B3, §29 B2, B3 (17b.2): WHAT THIS BUYER WOULD DO, SPLIT BY WHETHER IT CAN PAY FOR IT.
+ *
+ * One walk of the lines for both answers, because it is one question asked once: what is each of
+ * these companies worth to me, and can I find the money. A deal it can fund becomes a bid in this
+ * period's book; a deal it cannot becomes a borrowing the company is asked to arrange, and comes
+ * back as a bid two periods later or not at all (§29 B2.b).
+ *
+ * What it can pay with is its own balance, and what it is short of is that balance against the price
+ * LESS what a lender has already committed to the company (`committedTo`) — so a deal a bank has
+ * promised to fund is not asked about twice while the promise stands.
+ */
+export function controlDealsFor(
   view: ParticipantView,
   ctx: MechanismContext,
   lines: readonly Instrument[],
-): readonly Bid[] {
+): { readonly bids: readonly Bid[]; readonly wanted: readonly Wanted[] } {
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = view.cash(ccy);
-  if (cash <= 0) return [];
+  const held = view.cash(ccy);
+  // B3: a buyout with no equity cheque at all is not a buyout. A buyer with nothing of its own is
+  // not levering anything — it is asking a bank to buy a company and hold the shares for it.
+  if (held <= 0) return { bids: [], wanted: [] };
+  const cash = cashOf(held, ccy);
   // B1: what this buyer's own money costs it, which is the same number for every company on the
   // list, and a firm nobody will lend to does not look at the list at all.
   const required = costOfMoneyOf(ctx, view.self.id);
-  if (!required.some || required.value <= 0) return [];
-  const out: Bid[] = [];
+  if (!required.some || required.value <= 0) return { bids: [], wanted: [] };
+  const bids: Bid[] = [];
+  const wanted: Wanted[] = [];
   for (const i of lines) {
     const target = i.issuer.some ? i.issuer.value : view.self.id;
     if (target === view.self.id) continue;
@@ -934,12 +966,21 @@ export function controlBidsFor(
       ),
     );
     if (needs <= 0) continue;
-    // B2: and it does not bid for what it cannot pay for. A bid it could not honour is not a bid.
-    const would = valueAt(worth.value, needs, ccy, 'what control would cost it at its own number');
-    if (would.pieces > cash) continue;
-    out.push({ buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy });
+    const cost = valueAt(worth.value, needs, ccy, 'what control would cost it at its own number');
+    const bid = { buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy };
+    /**
+     * E1, B2: IT DOES NOT BID FOR WHAT IT CANNOT PAY FOR. A bid it could not honour is not a bid.
+     *
+     * What it can pay with is its OWN money, and that is still true here: a commitment is not money
+     * until it is drawn, and drawing it is 17b.3 — the instruction that completes the purchase. So
+     * a company a lender has already committed to is neither bid for nor asked about again, and
+     * waits for the step that lets the commitment pay for the shares.
+     */
+    const hole = holeIn(cost, cash, committedTo(ctx, target, ccy));
+    if (cost.pieces <= cash.pieces) bids.push(bid);
+    else if (hole.pieces > 0) wanted.push({ bid, cost, has: cash, hole });
   }
-  return out;
+  return { bids, wanted };
 }
 
 export function control(): SystemModule {
@@ -988,8 +1029,10 @@ export function control(): SystemModule {
           { kind: 'event', name: 'control.combined' },
           { kind: 'event', name: 'control.contested' },
           { kind: 'event', name: 'control.failed' },
+          { kind: 'event', name: 'control.financing' },
           { kind: 'event', name: 'control.owned' },
           { kind: 'event', name: 'control.tender' },
+          { kind: 'event', name: 'credit.request' },
           { kind: 'event', name: 'tender.unfilled' },
         ],
         run: (ctx: MechanismContext): void => {
@@ -1002,15 +1045,30 @@ export function control(): SystemModule {
            * which let the first bidder past the post buy it before the second was asked.
            */
           const byTarget = new Map<PartyId, Bid[]>();
+          const holes = new Map<PartyId, Wanted>();
           for (const p of couldBuy(ctx)) {
             if (!ctx.parties.get(p).status.alive) continue;
-            for (const bid of controlBidsFor(ctx.participant(p), ctx, lines)) {
+            const { bids, wanted } = controlDealsFor(ctx.participant(p), ctx, lines);
+            for (const bid of bids) {
               const held = byTarget.get(bid.target);
               if (held === undefined) byTarget.set(bid.target, [bid]);
               else held.push(bid);
             }
+            // §29 B2 (17b.2): ONE ASK PER TARGET, and where two buyers want the same firm it is the
+            // biggest hole — what the company would have to carry if the dearest of them wins. The
+            // two of them meet in the book (B4) and not here.
+            for (const w of wanted) {
+              const worst = holes.get(w.bid.target);
+              if (worst === undefined || w.hole.pieces > worst.hole.pieces) holes.set(w.bid.target, w);
+            }
           }
           for (const [target, bids] of byTarget) runProcess(ctx, target, bids);
+          // B2.b: and the companies nobody could pay for outright ask the credit market whether
+          // they can be bought at all. A deal that comes back funded is a bid two periods from now.
+          for (const [target, w] of holes) {
+            if (byTarget.has(target)) continue;
+            askToFund(ctx, target, w.hole, w.bid.buyer);
+          }
         },
       },
     ],

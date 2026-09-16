@@ -13291,3 +13291,43 @@ belong in §29's item. The duplication is written down as finding 21.71 with the
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 two new tests, both green; the file's seven reds are unchanged.
+
+## Item 17b.2 — A buyer that must borrow says so
+
+§29 B2 is *"most of the price is debt raised against the target itself"*, and B2.a says whose it is:
+*"the debt is the TARGET's liability, not the fund's — which is why a failed buyout kills the firm
+and not the fund."* So the borrowing a deal needs is published **in the target's name**, through the
+kernel's one borrowing door. A request says who will owe the money and the answer is the company; a
+fund that borrowed for its deals would be a fund a failed deal can kill, which is the clause read
+backwards — and it is why `funds/data.ts` has said `leverage: false` about the buyout pool since
+13.5.
+
+**One ask per target, not one per bidder.** A company cannot owe two deals' debt at once. Where two
+buyers want the same firm the ask is the biggest of the holes they would have to fill — what the
+company would carry if the dearest of them wins — and the two of them meet in the book afterwards
+(B4), not here. And it does not ask twice while its last ask is unanswered: a borrower publishes in
+one period and hears in the next, so a repeated ask is one deal holding three lenders' capital.
+
+**B2.b needed no mechanism at all.** *"The deal only happens if lenders will lend, at a price — the
+credit market decides which buyouts occur."* That is the ordinary credit decision with nothing added:
+`shop` finds which bank quoted the TARGET and how much room that bank has for the name, and what
+comes back is a commitment at that size and rate, or nothing. There is no buyout branch anywhere in
+the banks module, and a company nobody will commit to simply never has the money.
+
+**What did not change, deliberately.** A bid is still only what the buyer holds. A commitment is not
+money until it is drawn and drawing it is 17b.3, so a deal a lender has already promised to fund is
+neither bid for nor asked about again — it waits one step. Letting the commitment size the bid today
+would have let a tender clear at a price the buyer could not pay, and half of it would have settled:
+the acceptance condition is checked on the book, not on the money.
+
+**Two findings, neither chased** (Law 11). **21.73:** `control` has never run in an assembled world —
+`control.tender` 0 over twenty-four periods of the rig — because the only parties that publish a cost
+of money are index trackers, and the rig draws no buyout fund at all. Positioned at 23.1, which is
+where the scale model is resized. **21.72:** the banks stop quoting every name by about period 9
+(121 quotes in period 1, 0 from period 9 on, 106 declines in period 24), giving `appetite`, `it
+cannot cost its own funding` and `nobody lends to a party of this kind` as their reasons. A world
+with no credit market cannot exercise B2.b; what a bank's room is made of is a Part XII measurement
+and it is positioned at 23.3.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+three new tests, all green.
