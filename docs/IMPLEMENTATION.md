@@ -55,7 +55,7 @@ and neither is yet a MET a run has confirmed.
 | Banks Funding | 28 | 4 | 0 | 0 | 32 |
 | Banks Capital | 20 | 2 | 1 | 0 | 23 |
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
-| Insurers | 9 | 0 | 14 | **9** | 23 |
+| Insurers | 9 | 0 | 14 | **7** | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
 | Private Equity | 12 | 1 | 12 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
