@@ -17,6 +17,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import { finite, moveDust } from '../core/num.js';
+import type { Rate } from '../core/rate.js';
 import { NO_QTY, asQty, onTick, type Qty } from '../core/tick.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
@@ -306,6 +307,26 @@ export class Instruments {
    * cost them is unchanged in value, so no equity moves and no money does either — which is the
    * "explicitly says why not" E5 asks of an event that moves a register without moving money.
    */
+  /**
+   * Bond N5.b (17.1): THE COUPON A FLOATING LINE CARRIES FOR THE ACCRUAL PERIOD IT HAS JUST ENTERED.
+   * A floating note promises a margin over a named reference, and what it owes is settled when that
+   * reference FIXES — so the terms carry the rate in force and every reader of the schedule (what
+   * falls due, what has accrued, what it is worth) reads one number rather than each re-deriving a
+   * fixing (Law 4, Law 19). What it paid before is settled and in the ledger; nothing re-derives it.
+   */
+  fixCoupon(id: InstrumentId, coupon: Rate): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; its coupon cannot fix`);
+    const terms = i.terms;
+    forbid(
+      'coupon' in terms,
+      'Bond N5.b',
+      `instrument ${id} promises no coupon, so there is nothing to fix`,
+    );
+    this.map.set(id, Object.freeze({ ...i, terms: Object.freeze({ ...terms, coupon }) }));
+    this.changes += 1;
+  }
+
   restate(id: InstrumentId, ratio: number): void {
     const i = this.get(id);
     forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; its count cannot change`);

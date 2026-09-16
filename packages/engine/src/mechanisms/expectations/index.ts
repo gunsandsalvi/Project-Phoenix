@@ -18,6 +18,7 @@
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
 import { FREIGHT_SESSION, freightRateOn } from '../../registry/ports.js';
+import { benchmarksFixedIn } from '../../registry/notices.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { deathsIn, isPensionTerms, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
 import { callsOn } from '../../registry/funding.js';
@@ -133,6 +134,7 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'condition':
     case 'mortality':
     case 'freight':
+    case 'rate':
       return seen;
     case 'bought':
     case 'sold':
@@ -453,6 +455,16 @@ function exposed(
       unit: ctx.registry.currencyOf(p.region),
     });
   }
+  // Indices A1, D3, Bond N5.b (17.1): EVERY PARTY OBSERVES WHAT THE OVERNIGHT BOOKS FIXED AT this
+  // period — a transacted rate, published, and the thing a floating coupon is a margin over. A
+  // borrower with a view of where it goes chooses between fixing and floating on that view; one
+  // without a view has what the rate IS, which is what nobody having looked yet means.
+  for (const fixed of benchmarksFixedIn(ctx.journal, ctx.period)) {
+    out.set(about({ on: 'rate', benchmark: fixed.named }), {
+      value: fixed.rate,
+      unit: 'per annum on what it borrows',
+    });
+  }
   // §29 A2.a (14.7): AN INVESTOR OBSERVES WHAT THE POOLS CALLED OF IT this period — its own money,
   // on a timing it did not choose — and, once it has been called at all, a period with no call is
   // observed as one, so what it keeps back against a call is its own experience and decays as it
@@ -666,7 +678,8 @@ export const expectations: SystemModule = {
         { kind: 'event', name: 'fund.called', of: 'anyPeriod' },
         // Freight C1 (16.3): what each leg out of a party's place struck this period, for its freight outlook.
         { kind: 'event', name: FREIGHT_SESSION, of: 'anyPeriod' },
-      ],
+                { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
+        ],
       writes: [{ kind: 'event', name: 'expectations.surprise' }],
       run: (ctx: MechanismContext): void => {
         const held = book(ctx);

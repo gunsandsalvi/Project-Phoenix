@@ -219,7 +219,8 @@ measurement is taken there is nothing to name.
 | `Bond N2` | MET | packages/engine/src/register/instruments.ts |
 | `Bond N3` | MET | packages/engine/src/register/instruments.ts |
 | `Bond N4` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
-| `Bond N5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts (fixed for bonds, zero for bills), packages/engine/src/mechanisms/corporate-bond/index.ts (fixed, locked at issuance), packages/engine/src/mechanisms/corporate-bond/floating.ts (17.1: a margin over a named reference) — all three shapes, and a kind is exactly one of them |
+| `Bond N5.b` | MET | packages/engine/src/mechanisms/corporate-bond/floating.ts (the reference is the money's own overnight fixing — transacted, published, and absent where the book did not trade), packages/engine/src/world/world.ts (`fixCoupon`: the kernel writes the rate in force onto the terms and announces it, and refuses a kind that did not declare that its coupon floats), packages/engine/src/registry/notices.ts (`lastBenchmarkFix`: one read of what was published) |
 | `Bond N6` | MET | packages/engine/src/calendar/daycount.ts, packages/engine/src/core/rate.ts, packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Bond N7` | MET | packages/engine/src/clearing/market.ts |
 | `Bond N7.b` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/prices/curve.ts |
@@ -271,7 +272,7 @@ measurement is taken there is nothing to name.
 | `Corporate Credit B1` | MISSING |  |
 | `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due. `openLine` strikes them from the issuer's own published accounts AS THIS BORROWING LEAVES THEM, so the promise is "no worse than the day I made it" and no covenant number is invented), packages/engine/test/corporate-bond.test.ts |
 | `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation — and there is now paper for it to look at) |
-| `Corporate Credit B4` | MISSING |  |
+| `Corporate Credit B4` | MET | packages/engine/src/mechanisms/corporate-bond/floating.ts (17.1: `corporate.leveragedLoan` — a margin over the overnight book's own cleared fixing, reset at each accrual period from what the index system published; which shape a firm brings is its own decision, taken on its own outlook of the rate against the coupon it would otherwise lock), packages/engine/test/corporate-bond.test.ts |
 | `Corporate Credit C1` | MISSING |  |
 | `Corporate Credit C2` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/corporate-bond/index.ts (`bond.issue` brings the paper and holders post schedules into its market: the book is real buyers at real levels, and C2.a's indication IS a schedule — a size at a level — because that is the only thing the solver takes) |
 | `Corporate Credit C3` | MET | packages/engine/src/clearing/market.ts (`allotment: 'uniformPrice'`: one level is struck at which the book fills, and every winner pays the stop-out) |
@@ -792,7 +793,7 @@ measurement is taken there is nothing to name.
 | `Indices C4` | PARTIAL | packages/engine/src/mechanisms/indices/benchmark.ts — the benchmark is published and transacted; a floating coupon that FIXES on it is 13f’s |
 | `Indices D1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (an equity index per region, over the listed shares of the companies that book there) |
 | `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
-| `Indices D3` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (the volume-weighted rate of the overnight lending that SETTLED, per book; a book that did not trade has no fixing) |
+| `Indices D3` | MET | packages/engine/src/mechanisms/indices/index.ts (the reference short rate floating instruments fix on, published per money per book and only where that book cleared), packages/engine/src/mechanisms/corporate-bond/floating.ts (17.1: what fixes on it) |
 | `Indices D3.b` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (nothing here reads the corridor: what the central bank administers is not what the market paid) |
 | `Indices D4` | MET | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices are now DIFFERENT BASKETS and not only different weights: a household buys the shelf line and a firm sells the one at the gate, so the two levels part on the shop's staff, its premises, its round and its bin, plus the freight and the merchant's margin behind it (13c.2). D4.a's margin story is legible: output prices rising faster than input prices is the distribution margin widening |
 | `Indices D5` | MET | packages/engine/src/world/world.ts (one system: a second module declaring the same id is refused at assembly) |

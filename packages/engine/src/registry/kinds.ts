@@ -188,6 +188,13 @@ export interface InstrumentKindProfile {
    * the issuer's name only when there is an issuer and says how it names itself without one.
    */
   readonly displayName: (i: Instrument, namer: Namer) => string;
+  /**
+   * Bond N5.b (17.1): whether this kind's coupon is a MARGIN OVER A NAMED BENCHMARK that resets,
+   * rather than a rate locked at issuance. It is declared here because the kernel is the one writer
+   * of what a fixing does to an instrument's terms: a module decides WHEN a line fixes and reads
+   * the rate the benchmark published, and `ctx.fixCoupon` refuses a kind that did not say it floats.
+   */
+  readonly floats?: boolean;
   /** The dated actions the terms place in `period` (Money G3.a), in date order. */
   readonly due: (
     i: Instrument,

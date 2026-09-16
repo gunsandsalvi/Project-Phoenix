@@ -2289,6 +2289,26 @@ export class World {
       delist: (instrument) => {
         this.delistLine(instrument);
       },
+      fixCoupon: (instrument, coupon, benchmark) => {
+        const i = this.instruments.get(instrument);
+        forbid(
+          this.registry.instrumentKind(i.kind).floats === true,
+          'Bond N5.b',
+          `${instrument} is not a floating line: its coupon was locked at issuance`,
+          { instrument, kind: String(i.kind) },
+        );
+        this.instruments.fixCoupon(instrument, coupon);
+        // Indices A1, Observer A1: a fixing is a public fact about a public line — its holders
+        // learn what it pays next, and so does anybody pricing it.
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'coupon.fixed',
+          [String(instrument), benchmark],
+          { instrument: String(instrument), benchmark, coupon: coupon.amount, per: coupon.per.kind },
+          true,
+        );
+      },
       openVenue: (decl) => {
         this.addVenue(decl);
       },

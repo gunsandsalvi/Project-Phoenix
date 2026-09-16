@@ -18,6 +18,13 @@ import {
   type World,
 } from '../src/index.js';
 import { ranWorld, rigWorld } from './rig.js';
+import { ANNUAL, rate } from '../src/core/rate.js';
+import {
+  couponAt,
+  floatsRatherThanFixes,
+  LEVERAGED_LOAN,
+  leveragedLoanTerms,
+} from '../src/mechanisms/corporate-bond/floating.js';
 
 describe('what a corporate bond IS, beside a sovereign one', () => {
   it('can default, cross-defaults, and says where it ranks (N12, N13.a, G2)', () => {
@@ -44,16 +51,23 @@ describe('what a corporate bond IS, beside a sovereign one', () => {
     }
   });
 
-  it('declares one number, and it is a market convention (Law 2, Law 6)', () => {
+  it('declares no covenant, no spread and no leverage — and says which number dies (Law 2)', () => {
     // B2: what a given firm promised is an outcome of what it had to promise to be lent to. A
     // world with a `corporate.covenant.leverage` in it would have every issuer promising the same
     // thing, which is one issuer with many names. So: no covenant number, no spread, no leverage
-    // line, and the one number there IS is how long a firm's paper runs for — a TECHNOLOGY of the
-    // market, declared in the unit the calendar takes (Law 8).
+    // line. What IS declared is how long a firm's paper runs for — a TECHNOLOGY of the market, in
+    // the unit the calendar takes (Law 8) — and, since 17.1, the margin a floating line promises
+    // over its reference, which is a PLACEHOLDER with a scheduled death: 17.2 builds the book that
+    // strikes a margin, and a struck margin is a cleared level rather than a number anybody typed.
     const declared = corporateBondModule().params;
-    expect(declared.map((d) => String(d.id))).toEqual(['corporateBond.tenor']);
+    expect(declared.map((d) => String(d.id))).toEqual([
+      'corporateBond.tenor',
+      'corporateBond.margin',
+    ]);
     expect(declared[0]?.kind).toBe('technology');
     expect(declared[0]?.dimension).toBe('months');
+    expect(declared[1]?.kind).toBe('placeholder');
+    expect(declared[1]?.standsInFor?.item).toBe('17.2');
   });
 });
 
@@ -82,7 +96,9 @@ describe('the covenant is tested on what was PUBLISHED (B2.a, Reporting A2)', ()
 
   it('never repairs or accelerates by itself: a breach is an event and that is all', () => {
     const m = corporateBondModule();
-    expect(m.phases.map((f) => f.name)).toEqual(['bond.issue', 'covenant.test']);
+    // N5.b (17.1): and a floating line FIXES before anything it pays or is priced at — which is a
+    // third phase and still not a repair: what a fixing does is set what the line owes next.
+    expect(m.phases.map((f) => f.name)).toEqual(['loan.fix', 'bond.issue', 'covenant.test']);
     // What happens after a breach is the holders' decision, and a decision is not a rule.
     expect(m.families.every((f) => f.built)).toBe(true);
   });
@@ -206,5 +222,74 @@ describe('a firm issues because a market was cheaper than its bank (A1, B1, E5.d
     expect(live.length).toBeGreaterThan(0);
     // 10.4, G2: and every one of them cross-defaults, which a sovereign line does not (Sovereign G3).
     expect(w.registry.instrumentKind(CORPORATE_BOND).accelerates).toBe(true);
+  });
+});
+
+/**
+ * B4, N5.b (17.1): the leveraged loan — a corporate line whose coupon is a margin over a rate the
+ * money market actually cleared, rather than one locked at issuance.
+ */
+describe('fixed or floating is a decision (Corporate Credit B4, Bond N5.b, N6)', () => {
+  it('pays the reference plus what the issuer promised over it, and nothing else', () => {
+    // N5.b: the coupon in force IS the fixing plus the margin. Two numbers, added once.
+    const fixing = asRatio(0.04, 'what the overnight book cleared at');
+    const margin = rate(asRatio(0.03, 'what it promised over it'), ANNUAL);
+    expect(couponAt(fixing, margin).amount).toBeCloseTo(0.07, 12);
+    expect(couponAt(fixing, margin).per.kind).toBe('annual');
+  });
+
+  it('floats when floating is cheaper on its OWN view of the rate, and fixes when it is not (A2.c)', () => {
+    const fixed = asRatio(0.09, 'the coupon it would have to lock');
+    const fixing = asRatio(0.04, 'what the rate is now');
+    const margin = asRatio(0.03, 'what it would promise over it');
+    // Four plus three against nine: floating, on what it knows now.
+    expect(floatsRatherThanFixes(fixed, fixing, margin, undefined)).toBe(true);
+    // A firm that expects the rate at seven does not float at three over it, on the same day and
+    // the same market — which is A2.c: the structure is an outcome of a decision meeting a price.
+    expect(
+      floatsRatherThanFixes(fixed, fixing, margin, asRatio(0.07, 'where it thinks the rate goes')),
+    ).toBe(false);
+  });
+
+  it('brings floating lines named by their MARGIN, and fixes them from the published benchmark', () => {
+    const w = ranWorld('bond-issue', 20);
+    const loans = w.instruments.all().filter((i) => i.kind === LEVERAGED_LOAN);
+    // A world whose overnight book never cleared has no benchmark and can bring none of these,
+    // which is the honest state and not a failure — so what is asserted is what a brought one IS.
+    for (const i of loans) {
+      // Law 9: the issuer and the maturity, and the display name carries the margin rather than
+      // the coupon — the margin is what it promised; the coupon is what that comes to this quarter.
+      expect(String(i.id)).toMatch(/^loan:firm\.\d+:/);
+      const t = leveragedLoanTerms(i);
+      expect(t.benchmark.endsWith(':secured')).toBe(true);
+      expect(t.margin.amount).toBeGreaterThan(0);
+      expect(t.coupon.amount).toBeGreaterThan(t.margin.amount);
+    }
+    // N5.b, Indices A1: every fixing on the record is a rate somebody PUBLISHED plus that line's
+    // own margin — read, never re-derived.
+    for (const e of w.journal.ofKind('coupon.fixed')) {
+      const line = w.instruments.get(instrumentId(String(e.data['instrument'])));
+      const t = leveragedLoanTerms(line);
+      const named = String(e.data['benchmark']);
+      expect(named).toBe(t.benchmark);
+      const published = w.journal
+        .ofKind('index.benchmark')
+        .filter((b) => b.subjects.includes(named) && b.period <= e.period)
+        .at(-1);
+      expect(published, `${named} fixed with nothing published`).toBeDefined();
+      expect(Number(e.data['coupon'])).toBeCloseTo(
+        Number(published!.data['rate']) + t.margin.amount,
+        12,
+      );
+    }
+  });
+
+  it('says which of the two kinds resets, so the kernel can refuse the other (N5.a against N5.b)', () => {
+    const w = ranWorld('bond-issue', 20);
+    // The kernel's fixing door asks the KIND and not the caller (`ctx.fixCoupon` → `floats`): a
+    // fixed line has no reference to fix on, and a module that thought it did would be quietly
+    // rewriting what an issuer promised. The declaration is what makes that refusal possible.
+    expect(w.registry.instrumentKind(LEVERAGED_LOAN).floats).toBe(true);
+    expect(w.registry.instrumentKind(CORPORATE_BOND).floats).not.toBe(true);
   });
 });

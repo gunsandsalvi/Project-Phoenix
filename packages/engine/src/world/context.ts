@@ -13,7 +13,7 @@
  */
 import type { Cash, PerMember, PerPiece, Ratio } from '../core/measure.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import type { Periodicity } from '../core/rate.js';
+import type { Periodicity, Rate } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
@@ -344,7 +344,14 @@ export type Subject =
   /** §29 A2.a (14.7): what the pools this party committed to call of it in a period — money it did not choose the timing of. */
   | { readonly on: 'called' }
   /** Freight C1, Cross-Border B2 (16.3): what carrying a unit from one place to another last cost, as the leg's session struck it. */
-  | { readonly on: 'freight'; readonly from: RegionId; readonly to: RegionId };
+  | { readonly on: 'freight'; readonly from: RegionId; readonly to: RegionId }
+  /**
+   * Indices A1, D3, Bond N5.b (17.1): what a NAMED BENCHMARK has been fixing at — a transacted
+   * overnight rate anybody may read. A borrower choosing between a fixed coupon and a margin over
+   * this rate is choosing on its own view of where the rate goes, which is why the view has to be
+   * ITS OWN (§46 A2) and never a forecast the model hands it (A4).
+   */
+  | { readonly on: 'rate'; readonly benchmark: string };
 
 /**
  * The key a subject is stored under. The store is still a map keyed by a string, and this is the
@@ -370,6 +377,8 @@ export function about(s: Subject): OutlookVariable {
       return `condition.${s.fact}.${String(s.region)}` as OutlookVariable;
     case 'freight':
       return `freight.${String(s.from)}.${String(s.to)}` as OutlookVariable;
+    case 'rate':
+      return `rate.${s.benchmark}` as OutlookVariable;
     case 'mortality':
       return `mortality.${s.cohort}` as OutlookVariable;
     case 'income':
@@ -404,6 +413,7 @@ export function subjectOf(v: OutlookVariable): Option<Subject> {
   if (on === 'wage') return some({ on, venue: venueId(rest) });
   if (on === 'deposit') return some({ on, bank: partyId(rest) });
   if (on === 'mortality') return some({ on, cohort: rest });
+  if (on === 'rate') return some({ on, benchmark: rest });
   if (on === 'condition') {
     const at = rest.indexOf('.');
     if (at < 0) return none<Subject>();
@@ -992,6 +1002,14 @@ export interface MechanismContext extends WorldReads {
   list(instrument: InstrumentId, decl: MarketDecl): void;
   /** Equity E3 (item 10f.3): the take-private — the line stops trading and the book closes. */
   delist(instrument: InstrumentId): void;
+  /**
+   * Bond N5.b (17.1): A FLOATING LINE FIXES. The module that owns the line decides WHEN — its reset
+   * dates are its own terms — and reads the rate off what the benchmark PUBLISHED (Indices A1);
+   * the kernel writes it onto the terms and announces it, so every reader of the schedule gets one
+   * number and nobody re-derives a fixing (Law 4, Law 19). It refuses a kind that did not declare
+   * that its coupon floats, and a line that has ceased.
+   */
+  fixCoupon(instrument: InstrumentId, coupon: Rate, benchmark: string): void;
   /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
   openVenue(decl: VenueDecl): void;
   /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */

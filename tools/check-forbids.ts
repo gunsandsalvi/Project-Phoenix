@@ -206,6 +206,10 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/capital-programme/index.ts': 1,
   'mechanisms/commodities/index.ts': 1,
   'mechanisms/control/index.ts': 3,
+  // 17.1: the ISSUER's own outlook of the rate it would float over, for the ISSUER's own decision
+  // between a fixed coupon and a margin (Corporate Credit A2.c). It reads no counterparty's state,
+  // which is what this ratchet is about; finding 21.57 carries the whole list.
+  'mechanisms/corporate-bond/index.ts': 1,
   'mechanisms/derivative-layer/house.ts': 2,
   'mechanisms/derivative-layer/index.ts': 2,
   'mechanisms/derivative-layer/margin.ts': 2,

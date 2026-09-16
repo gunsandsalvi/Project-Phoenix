@@ -66,37 +66,31 @@ import {
 } from '../../registry/claims.js';
 import { FACE_TICK, MONEY_PIECES } from '../../registry/grid.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
-import { unitId } from '../../core/ids.js';
+import { CORPORATE_PAR, type Covenants } from './terms.js';
+export * from './terms.js';
 import { displayName, issuerName } from '../../registry/naming.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { creditQuoteThisPeriod } from '../../registry/banking.js';
+import { lastBenchmarkFix } from '../../registry/notices.js';
+import { about } from '../../world/context.js';
+import {
+  benchmarkNamed,
+  couponAt,
+  fixResets,
+  floatsRatherThanFixes,
+  leveragedLoan,
+  LEVERAGED_LOAN,
+  leveragedLoanId,
+  leveragedLoanTerms,
+  type LeveragedLoanTerms,
+} from './floating.js';
+export * from './floating.js';
 import { fundingPublishedBy, isShort } from '../../registry/funding.js';
 
 export const CORPORATE_BOND = instrumentKindId('corporate.bond');
-
-/** N9: quoted as a fraction of its own face, like any other bond. */
-export const CORPORATE_PAR = unitId('corporate.par');
-
-/**
- * B2, B2.a: WHAT THIS ISSUER PROMISED ITS LENDERS, struck when it borrowed and stated on the paper.
- *
- * Two lines, because they are the two questions a lender actually asks and they fail in different
- * worlds: how much it owes against what it has (a balance-sheet test, which a fall in asset prices
- * breaks), and what it earns against what falls due (an income test, which a bad year breaks). A
- * firm can pass either while failing the other, and which one goes says what went wrong.
- *
- * Neither is a parameter. They are TERMS — this issuer's own commitment at this issue — and what a
- * given firm promised is an outcome of what it had to promise to be lent to.
- */
-export interface Covenants {
-  /** B2: the most it may owe against what it holds, as the issuer's own published accounts read. */
-  readonly leverage: Ratio;
-  /** B2: the least it must earn against what falls due, on the same published accounts. */
-  readonly coverage: Ratio;
-}
 
 export interface CorporateBondTerms extends Terms, CouponSchedule {
   readonly kind: typeof CORPORATE_BOND;
@@ -109,8 +103,13 @@ export interface CorporateBondTerms extends Terms, CouponSchedule {
   readonly covenants: Covenants;
 }
 
+/**
+ * Law 15, B4 (17.1): a FIXED corporate line, told by the shape of its terms. A floating one carries
+ * a margin over a named reference as well, and the two guards are disjoint — a guard that claimed
+ * both would let the fixed kind's schedule read a line whose coupon resets.
+ */
 export const isCorporateBond = (t: Terms): t is CorporateBondTerms =>
-  'covenants' in t && 'seniority' in t && 'coupon' in t;
+  'covenants' in t && 'seniority' in t && 'coupon' in t && !('margin' in t);
 
 export function corporateBondTerms(i: Instrument): CorporateBondTerms {
   if (!isCorporateBond(i.terms)) {
@@ -197,7 +196,19 @@ export const corporateBond: InstrumentKindProfile = {
 /** N4, C8: how long a firm's paper runs for. A convention of the market, stated with it (Law 2). */
 export const CORPORATE_BOND_PARAMS = {
   tenor: paramId('corporateBond.tenor'),
+  margin: paramId('corporateBond.margin'),
 } as const;
+
+/**
+ * B4, N5.b (17.1): WHAT THIS ISSUER PROMISES OVER THE REFERENCE, if it floats. It is the same
+ * question the fixed coupon answers — what this name has to pay for money beyond what money costs —
+ * so it is the keenest requirement its holders published LESS what the reference is fixing at, and
+ * a firm nobody requires anything of pays nothing over it. The parameter beside it is a
+ * PLACEHOLDER: what an arranger actually strikes a margin at is 17.2's, where the book is built.
+ */
+function marginOn(ctx: MechanismContext): Ratio {
+  return ctx.params.perAnnum(CORPORATE_BOND_PARAMS.margin);
+}
 
 /** ACT/365F, as every dated claim in this world is measured (Law 8: the day count is the number). */
 const CORPORATE_DAY_COUNT: DayCount = 'ACT/365F';
@@ -344,8 +355,43 @@ function place(
 ): void {
   const on = ctx.calendar.startOf(ctx.period);
   const maturity = addMonths(on, ctx.params.months(CORPORATE_BOND_PARAMS.tenor));
-  const id = corporateBondId(issuer, maturity);
-  const standing = ctx.instruments.has(id) ? ctx.instruments.get(id) : undefined;
+  /**
+   * A2, A2.a, A2.c, B4 (17.1): FIXED OR FLOATING, and it is the issuer's decision. It compares the
+   * coupon it would have to lock today against the rate in force plus the margin it would promise,
+   * carried at ITS OWN outlook of that rate — so two firms with different views choose differently
+   * on one day and the mix of debt kinds a firm ends up with is an outcome (A2.c).
+   *
+   * A line it ALREADY HAS at this maturity is the line it taps: the shape was decided when it was
+   * opened, and a tap is more of the same paper (C8).
+   */
+  const fixedId = corporateBondId(issuer, maturity);
+  const floatingId = leveragedLoanId(issuer, maturity);
+  const hasFixed = ctx.instruments.has(fixedId);
+  const hasFloating = ctx.instruments.has(floatingId);
+  const benchmark = benchmarkNamed(ccy);
+  // Indices A1: the fixing is public, so it is read off the record and not through anybody's view.
+  const fixing = lastBenchmarkFix(ctx.journal, benchmark);
+  // §46 A2, Observer A4: the VIEW is the issuer's own, and the decision being made is the issuer's
+  // own — which is what this door is for. It sees no counterparty's state (17.0a, 21.57).
+  const outlook = ctx.participant(issuer).outlook(about({ on: 'rate', benchmark }));
+  // B4, N5.b: no benchmark, no floating line — a margin over a rate this world does not produce is
+  // a promise over nothing (the rule Derivative E3 states for a floating leg).
+  const floats =
+    !hasFixed &&
+    fixing.some &&
+    (hasFloating ||
+      floatsRatherThanFixes(
+        keenest,
+        fixing.value,
+        marginOn(ctx),
+        outlook.some ? asRatio(outlook.value.expected, 'where it thinks the rate goes') : undefined,
+      ));
+  if (floats) {
+    placeFloating(ctx, issuer, ccy, short, keenest, quoted, maturity, fixing.value, benchmark);
+    return;
+  }
+  const id = fixedId;
+  const standing = hasFixed ? ctx.instruments.get(id) : undefined;
   // G1: a line that has ceased is not tapped. What replaced it is a new name at a new maturity.
   if (standing !== undefined && !standing.status.live) return;
   const onto = gridOf(ctx, ccy);
@@ -508,6 +554,163 @@ function openLine(
   return true;
 }
 
+/**
+ * B4, N5.b, C8 (17.1): THE FLOATING LINE — brought the same way the fixed one is, and differing in
+ * exactly what B4 says differs: what it promises is a MARGIN over a named reference, and the coupon
+ * it carries is that margin over what the reference is fixing at today.
+ *
+ * Its walk-away, its size, its covenants and its market are the fixed line's arithmetic, because
+ * none of that is about the shape of the coupon: a firm brings what it is short of, at the price
+ * its alternative gives it, promising not to get worse than this borrowing leaves it.
+ */
+function placeFloating(
+  ctx: MechanismContext,
+  issuer: PartyId,
+  ccy: CurrencyCode,
+  short: Cash,
+  keenest: Ratio,
+  quoted: Option<{ readonly rate: Ratio; readonly most: Cash }>,
+  maturity: Civil,
+  fixing: Ratio,
+  benchmark: string,
+): void {
+  const on = ctx.calendar.startOf(ctx.period);
+  const id = leveragedLoanId(issuer, maturity);
+  const standing = ctx.instruments.has(id) ? ctx.instruments.get(id) : undefined;
+  if (standing !== undefined && !standing.status.live) return;
+  const onto = gridOf(ctx, ccy);
+  // N5.b: what it promised, per annum — the line's own if it is tapping one it has.
+  const margin: Ratio =
+    standing === undefined ? marginOn(ctx) : asRatio(leveragedLoanTerms(standing).margin.amount, 'its margin');
+  const coupon =
+    standing === undefined ? couponAt(fixing, rate(margin, ANNUAL)) : leveragedLoanTerms(standing).coupon;
+  const schedule: CouponSchedule =
+    standing === undefined
+      ? {
+          coupon,
+          couponPeriodicity: SEMI_ANNUAL,
+          dayCount: CORPORATE_DAY_COUNT,
+          issueDate: on,
+          maturity,
+        }
+      : leveragedLoanTerms(standing);
+  const flows = cashFlowsOf(schedule, on, ctx.calendar, onto);
+  if (flows.length === 0) return;
+  const walkAway = priceAt(
+    flows,
+    quoted.some ? quoted.value.rate : keenest,
+    on,
+    schedule.dayCount,
+    'what the loan is worth at the price of its alternative',
+  );
+  if (walkAway <= 0) return;
+  const wanted = amountOf(short, walkAway, 'units offered');
+  if (!(wanted <= Number.MAX_SAFE_INTEGER)) {
+    ctx.record(
+      'bond.refused',
+      [issuer],
+      { issuer, short: short.pieces, ccy: short.ccy, walkAway, why: 'more units than can be counted' },
+      true,
+    );
+    return;
+  }
+  const units = upTick(wanted);
+  if (units <= 0) return;
+  if (
+    standing === undefined &&
+    !openFloatingLine(ctx, issuer, ccy, id, schedule, units, onto, benchmark, margin)
+  ) {
+    return;
+  }
+  ctx.offer({
+    market: marketOf(ctx, id),
+    issuer,
+    size: units,
+    reservation: some(walkAway),
+    allotment: 'uniformPrice',
+  });
+  ctx.record(
+    'bond.offered',
+    [issuer, id],
+    {
+      issuer,
+      line: id,
+      size: units,
+      reservation: walkAway,
+      coupon: schedule.coupon.amount,
+      // N5.b: what it PROMISED is the margin; the coupon is what that comes to at today's fixing.
+      margin,
+      benchmark,
+      requiredByHolders: keenest,
+      quoted: quoted.some ? quoted.value.rate : null,
+      lendable: quoted.some ? quoted.value.most.pieces : null,
+      short: short.pieces,
+      ccy: short.ccy,
+    },
+    true,
+  );
+}
+
+/** The floating line's own opening: the fixed line's covenant arithmetic, on a margin it promises. */
+function openFloatingLine(
+  ctx: MechanismContext,
+  issuer: PartyId,
+  ccy: CurrencyCode,
+  id: InstrumentId,
+  schedule: CouponSchedule,
+  units: Qty,
+  onto: (x: PerNamedUnit, what: string) => PerPiece,
+  benchmark: string,
+  margin: Ratio,
+): boolean {
+  const said = ctx.published.lastStatement(issuer);
+  if (said === undefined || said.balance.assets.pieces <= 0) return false;
+  const face = valueAt(
+    onto(asPerNamedUnit(1, 'par'), 'par on the grid'),
+    units,
+    ccy,
+    'the face it takes on',
+  );
+  const owes = ratioOf(
+    plus(said.balance.liabilities, face, 'what it owes with this on it'),
+    said.balance.assets,
+    'what it owes against what it holds',
+  );
+  const annual = valueAt(
+    asPerPiece(schedule.coupon.amount, 'what a unit of it costs a year'),
+    units,
+    ccy,
+    'what this line costs it a year',
+  );
+  if (owes <= 0 || annual.pieces <= 0) return false;
+  if (said.earned.pieces <= 0) return false;
+  const covers = ratioOf(said.earned, annual, 'what it earns against what this line costs it');
+  const terms: LeveragedLoanTerms = {
+    kind: LEVERAGED_LOAN,
+    issuer,
+    seniority: 1,
+    covenants: { leverage: owes, coverage: covers },
+    coupon: schedule.coupon,
+    couponPeriodicity: schedule.couponPeriodicity,
+    dayCount: schedule.dayCount,
+    issueDate: schedule.issueDate,
+    maturity: schedule.maturity,
+    benchmark,
+    margin: rate(margin, ANNUAL),
+    fixedOn: schedule.issueDate,
+  };
+  const market = marketId(`mkt.${id}`);
+  ctx.issue({ id, kind: LEVERAGED_LOAN, issuer: some(issuer), ccy, terms, market: some(market) });
+  ctx.openMarket({
+    id: market,
+    name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
+    instrument: id,
+    ccy,
+    rationing: 'proRata',
+  });
+  return true;
+}
+
 function marketOf(ctx: MechanismContext, id: InstrumentId): MarketId {
   const inst = ctx.instruments.get(id);
   if (!inst.market.some) {
@@ -635,7 +838,7 @@ export function corporateBondModule(): SystemModule {
     // banks in it. A firm that reaches a market reaches it INSTEAD of a lender (A1), so the lender
     // has to be there to be chosen against.
     requires: ['firms', 'reporting', 'banks'],
-    instrumentKinds: [corporateBond],
+    instrumentKinds: [corporateBond, leveragedLoan],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: CORPORATE_PAR, name: 'units of par', perUnit: MONEY_PIECES }],
@@ -649,8 +852,29 @@ export function corporateBondModule(): SystemModule {
         owner: 'standardSetter',
         why: 'Bond N4, Corporate Credit C8: how long a firm\u2019s paper runs for. A convention of the market rather than a choice this world makes each time \u2014 five years is the tenor a company issues a first senior unsecured line at \u2014 and it is stated in MONTHS because that is what the calendar takes (Law 8): a tenor in years would be converted somewhere, and the conversion is the place a duration stops being the number it was declared as. It is not a forecast of how long the firm needs the money: what it needs is what it published it is short of, and the term is the market\u2019s.',
       },
+      {
+        id: CORPORATE_BOND_PARAMS.margin,
+        value: 0.03,
+        unit: 'per annum over the reference a floating line fixes on',
+        dimension: 'perAnnum',
+        kind: 'placeholder',
+        owner: 'model',
+        why: 'Corporate Credit B4, Bond N5.b (17.1): what a firm promises OVER the transacted overnight rate on a floating line. Three per cent: enough that a leveraged loan is dearer than the money market and cheap enough that a firm brings one, which is the band the loan market actually sits in. It is a SHAPE and it dies at 17.2, where an arranger builds a book and the margin is what the book strikes — a cleared level like any other, and the count of shapes falls by one when it does.',
+        standsInFor: { mechanism: 'Corporate Credit C2, C3 — the book strikes the margin', item: '17.2' },
+      },
     ],
     phases: [
+      {
+        name: 'loan.fix',
+        spec: 'Corporate Credit B4 Bond N5.b Bond N6 Indices A1 Indices D3',
+        // N5.b: a line fixes for the accrual period it has just entered, so the rate is set BEFORE
+        // anything it pays or is priced at this period — and after the overnight books have
+        // published what they struck, which is the period before (Clearing F1).
+        anchor: { before: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'index.benchmark', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'coupon.fixed' }],
+        run: fixResets,
+      },
       {
         name: 'bond.issue',
         spec: 'Corporate Credit A1 Corporate Credit A2 Corporate Credit A2.c Corporate Credit B2 Corporate Credit C2 Corporate Credit C2.a Corporate Credit C3 Corporate Credit C4 Corporate Credit C5 Corporate Credit C8 Corporate Credit E5 Corporate Credit E5.d Bond N4 Bond N5.a Reporting A2',
@@ -663,6 +887,9 @@ export function corporateBondModule(): SystemModule {
         reads: [
           { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
           { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
+          // N5.b (17.1): what the reference is fixing at, which is half of what the issuer compares
+          // when it chooses between locking a coupon and promising a margin over it.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
         ],
         writes: [],
         run: issueBonds,

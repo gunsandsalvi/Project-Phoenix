@@ -73,6 +73,36 @@ export function lastFixing(reads: Pick<PartyReads, 'lastPublic'>, named: string)
   return said.some ? rateOf(said.value, named) : none<Ratio>();
 }
 
+/**
+ * Indices A1, D3 (17.1): EVERY BENCHMARK THAT FIXED IN A PERIOD, by the name it was published
+ * under. A book that did not trade published nothing and is not here — carrying the last one
+ * forward would be the posted benchmark Appendix B forbids.
+ */
+export function benchmarksFixedIn(
+  reads: Pick<WireReads, 'ofKind'>,
+  at: Period,
+): readonly { readonly named: string; readonly rate: number }[] {
+  const out: { named: string; rate: number }[] = [];
+  for (const e of reads.ofKind(BENCHMARK)) {
+    if (e.period !== at) continue;
+    const named = e.subjects[1];
+    const rate = e.data['rate'];
+    if (typeof named !== 'string' || typeof rate !== 'number') continue;
+    out.push({ named, rate });
+  }
+  return out;
+}
+
+/**
+ * Indices A1, D3 (17.1): WHAT A NAMED BENCHMARK LAST FIXED AT, read off the public record itself
+ * rather than through a party — a fixing is public, so a module that needs one needs nobody's view
+ * of it (Observer A3, A4).
+ */
+export function lastBenchmarkFix(reads: Pick<WireReads, 'lastOf'>, named: string): Option<Ratio> {
+  const said = reads.lastOf(BENCHMARK, named);
+  return said === undefined ? none<Ratio>() : rateOf(said, named);
+}
+
 /** D3.a: whether a named benchmark has ever fixed at all. No fixing, no floating leg. */
 export function hasFixed(reads: WireReads, named: string): boolean {
   return reads.ofKind(BENCHMARK).some((e) => e.subjects.includes(named));

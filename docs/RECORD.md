@@ -12526,3 +12526,44 @@ same seven, in the same order, as at the close of item 16.
 **Left for the close of item 17**, where the suites run: the two stale assertions in
 `securitisation.test.ts` and the two findings at 12a.4 and 12a.7, all four parked at this item to be
 re-read against the view rather than against the world that had none.
+
+## Item 17.1 — The leveraged loan: a coupon that is a margin over a transacted rate
+
+B4 says a corporate line is fixed or floating and that *"floating is the norm in the loan market"*;
+N5.b says what floating IS — a margin over a named reference that is itself observable and
+transacted. This world already produced such a reference: the overnight book's own cleared fixing,
+published as `index.benchmark` by the index system, with a money whose book never traded having no
+benchmark at all. So the second kind is `corporate.leveragedLoan`, and what it promises is a margin
+over that.
+
+**Fixing is the kernel's write and the module's decision.** A kind declares `floats`; a module reads
+what the benchmark PUBLISHED and calls `ctx.fixCoupon`, which refuses a kind that did not declare it,
+writes the rate in force onto the terms and announces `coupon.fixed` publicly — so what falls due,
+what has accrued and what a holder thinks the line is worth are read off ONE number (Law 4) and
+nobody re-derives a fixing. What it paid before is settled and in the ledger. A line whose benchmark
+has not fixed since it was drawn keeps the rate it was drawn at: the money market did not trade, and
+inventing a rate for it would be the posted benchmark Appendix B forbids.
+
+**What a holder projects is stated rather than hidden.** Beyond the current accrual period the
+schedule is every remaining coupon AT THE RATE IN FORCE — what the line pays if the rate never moves
+again. That is not a forecast, and nothing in the module has one.
+
+**Fixed or floating is a decision (A2.c).** The issuer compares the coupon it would have to lock
+today against the rate in force plus the margin it would promise, carried at ITS OWN outlook of that
+rate — a new subject, `rate.<benchmark>`, which every party forms from the fixings it observes
+(§46 A2). Two firms with different views choose differently on one day, which is what makes the mix
+of debt kinds an outcome rather than an assignment. A firm with no view has what the rate IS.
+
+**One placeholder, with its death named.** What a firm promises over the reference is
+`corporateBond.margin` (three per cent), and it dies at 17.2 where an arranger builds a book and the
+margin is what the book strikes. The module's other number is the tenor, a technology.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green. `corporate-bond`:
+four new tests green — the coupon is the fixing plus the margin and nothing else; a firm floats when
+floating is cheaper on its own view and fixes when it is not; a brought line is named by its margin
+and every fixing on the record is a published rate plus that line's own margin; and the two kinds
+differ in exactly one declaration, which is what lets the kernel refuse to fix a locked coupon. Two
+tests were updated because the module changed under them: it now declares a second number (the
+placeholder) and runs a third phase (`loan.fix`). The suite's two standing reds are unchanged and
+are written up as 21.58 — no firm in that world brings paper at all, which was true at the close of
+item 16 and is where 17.2 lands.
