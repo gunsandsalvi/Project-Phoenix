@@ -261,94 +261,98 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 ## 17b. The leveraged buyout
 
 After 17.9. §29 is the first deal in this world whose money does not come out of the buyer's pocket, and
-everything the section asks for follows from that one sentence. **The design, stated once.** A buyout is a
-BRIDGE AND A PUSH-DOWN: the buyer borrows what the target can carry, buys the company with it, and the
-liability lands on the target at completion by the one door that moves a liability between two balance
-sheets (`assume`, XI-8). There is NO ESCROW and the item's own note is superseded: an escrow is what a
-world whose closings are not atomic needs, and settlement here is atomic by construction (Law 5, XI-5) —
-a tender that fails moves nothing at all, so there is nothing to return. What a failed deal costs the
-buyer is the arrangement fee and a period's interest on money it borrowed and gave back, which is what
-`runTender`'s own docstring has said since 10f.6: *"the acquirer is exactly where it was, minus what it
-spent finding out."*
+everything the section asks for follows from that one sentence.
 
-- [ ] 17b.1 **A buyer that must borrow says so** (B2, B2.b, E1). `control/deal.ts`: what control of a target
-  would cost this buyer (`needs` × its own `worthToBuyer`, plus what a process costs) against what it holds;
-  the gap is published through the kernel's one borrowing door (`ctx.request`) in a new phase
-  `control.finance`, anchored `before: 'lending.book'` so a bank decides it in the same period and the money
-  is there for the next one — a real financing lag, and the reason a deal takes more than a week. **B2.b is
-  the size and it is read off the credit market, not chosen**: the debt is going to sit on the target, so
-  what the deal can carry is what banks have published they will have out to THE TARGET
-  (`credit.quoted`'s `most`, already read here by `namesQuotedIn`) less what the target already owes — *"the
-  credit market decides which buyouts occur, and that is a real constraint, not a rate applied to a plan"*.
-  A deal nobody will fund is never asked for and never becomes a bid. **E1 stays an absence**: `controlBidsFor`
-  goes on refusing a bid it could not honour out of a named balance (`would.pieces > cash`), so there is no
-  buyout without a lender who agreed to lend and no line in this module says so. Event `control.financing`
-  (public: buyer, target, wanted, carried, refused). Test: a pool with a tenth of the price bids the period
-  after a bank wrote it the rest, and does not bid when no bank quoted the target.
-- [ ] 17b.2 **Who owes a loan is the register's fact** (Law 4, Law 12). `LoanTerms.borrower` is a mirror of
-  `Instrument.issuer` and the push-down is what exposes it: `banks/loan.ts reagree` has to REFUSE a change of
-  borrower to keep the two in step, which is a guard standing in for a fact with two writers. Delete the
-  term; `borrowerOf(i)` in `registry/credit.ts` reads `i.issuer` beside `creditorOf`'s read of the holder,
-  and the nine sites that read `i.terms.borrower` (`banks/index.ts` ×3, `money-market/index.ts` ×2,
-  `housing/index.ts`, `banks/loan.ts` ×3) read it instead. The `reagree` clause that guarded it goes with it.
-- [ ] 17b.3 **The debt lands on the target** (B2.a, B4, C4). At completion the rows the buyer drew for this
-  deal are ASSUMED by the target — an `assume` leg per row in the instruction that completes the purchase, so
-  *"the target's balance sheet is transformed at the moment of purchase: leverage up, interest cost up,
-  ownership changed in the register"* is one numbered instruction and not three. Which rows: the loans issued
-  by the buyer since it published `control.financing` for this target, named in the event. It fires where
-  `own` and `combine` already fire — **where the buyer holds ALL of it**, because debt pushed onto a company
-  with minority holders left outside is a transfer out of their pockets that nobody agreed to; a buyer that
-  won control but not the whole of it KEEPS the debt, which is a hung bridge and a real outcome, not a rule.
-  B2.a then holds by construction: the firm carries it, so a firm that cannot service it dies and the fund
-  loses its equity and no more (C4). Event `control.pushedDown`. Test: the target's interest bill rises by the
-  row's coupon in the period after completion, and a target that cannot pay it defaults while the buyer lives.
-- [ ] 17b.4 **The call is paced by what the pool owes** (A2, B3, 21.15). `callCapital` calls today when the
-  pool's cash reaches zero, which for a fund with nothing to buy is once at the start; the file says so and
-  names this item. A deal gives it its pace: a pool that drew a bridge owes money it must repay, so it calls
-  what the shortfall is, pro rata across its commitments (`wanted × undrawn_i / undrawn`), and the equity
-  cheque is what the call brought in (B3). **A2.b is untouched and must stay untouched**: a slice sized by the
-  DEAL is not a slice sized by the investor's balance, the instruction still goes for the whole of what was
-  called, and `check-forbids` still refuses `atMost`/`atLeast`/`Math.min` anywhere in that file.
+**The design, stated once — and it is the SECOND one.** The first said a buyout was a bridge at the fund
+pushed down onto the target at completion, and it was wrong on its own terms: `funds/data.ts` declares the
+buyout pool `leverage: false`, *"B2.a: the debt in a buyout is the TARGET's liability, which is why a failed
+buyout kills the firm and not the fund — so the fund itself borrows nothing"*, and that is B2.a read
+correctly. A fund that bridges is a fund a failed deal can kill.
+
+So the debt is the target's **from the first instant**, and the only two-sided way for a company's own
+borrowing to reach its own shareholders is for it to get its shares back for the money: **the tender has TWO
+PAYERS.** One book, one cleared price, every seller met at it; what each fill is paid WITH is split between
+the facility the target draws — and the shares that buys come back to the issuer and cease, which settlement
+already does for any asset leg whose payee is the issuer (Register B3) — and the buyer's own cheque, whose
+shares move to it. The buyer ends up holding a majority of what is left because the denominator shrank, which
+is what leverage IS, and B5 balances by construction: what the sellers were paid is what was drawn plus what
+the buyer put up, and *"the debt proceeds stop at the target"* is the one thing that cannot happen here.
+
+**There is no escrow** and the item's own note is superseded: an escrow is what a world whose closings are not
+atomic needs, and settlement here is atomic by construction (Law 5, XI-5). A tender that fails draws nothing
+and moves nothing, so there is nothing to return — which is what `runTender` has said since 10f.6: *"the
+acquirer is exactly where it was, minus what it spent finding out."* No new primitive is added by any of
+this: a redemption is an `asset` leg whose payee is the issuer, and a drawing is what `short-term-debt`
+already writes against an agreed line.
+
+- [ ] 17b.1 **A committed facility is a thing a borrower can ask for** (B2, B2.b, E1). Today a borrower
+  publishes what it is short of and gets MONEY next period; a deal needs a lender that has agreed to lend and
+  has not yet paid, because the money must not exist unless the tender completes. `CreditAsk.wants: 'money' |
+  'commitment'` — the borrower says which, one field on the one door every borrower uses — and
+  `banks/index.ts runRequests` answers a commitment with an AGREEMENT rather than a row: `FACILITY` in
+  `registry/credit.ts` (limit, rate, `for`), granted at the size and price it would have lent at, so the
+  decision is the same credit decision and only what it produces differs. **E1 is then structural**: a deal
+  with no facility has nothing to draw and cannot settle a penny. `short-term-debt`'s `BACKSTOP` is the same
+  object under another name and is not merged here — recorded as a finding, because a committed line with a
+  commitment fee and a committed line without one are one mechanism with two spellings (Law 4).
+- [ ] 17b.2 **A buyer that must borrow says so** (B2, B2.b). `control/deal.ts`: what control of a target would
+  cost this buyer (`needs` × its own `worthToBuyer`) against what it holds; the gap is published through
+  `ctx.request` **in the target's name**, because the debt is the target's (B2.a) and a request is a fact
+  about who will owe it, with the buyer named in `control.financing` beside it. **B2.b is the size and it is
+  the credit market's, not the buyer's**: the bank prices the TARGET, and a target no bank will commit to is a
+  buyout that does not happen — *"a real constraint, not a rate applied to a plan"*. A buyer does not ask
+  twice while its last ask is unanswered. `controlBidsFor` then bids up to its cash PLUS what a bank has
+  committed for this deal, which is the one line of this item that makes a leveraged bid possible at all.
+- [ ] 17b.3 **The tender has two payers** (B1, B2.a, B3, B4, B5, C4). `settleTender` splits each fill in the
+  deal's own proportion: the target's share is drawn on the facility inside the same instruction (the loan row
+  issued by the target, the lender's money created against it) and buys shares that return to their issuer and
+  cease; the buyer's share moves shares to the buyer. Four legs, one instruction per holder, atomic — so a
+  holder whose leg fails costs the deal that holder and nothing else, and a tender that fails draws nothing.
+  B4 is then not a step at all: *"leverage up, interest cost up, ownership changed in the register"* is what
+  the instruction did. C4 follows the same way — the firm services a bill it did not have before and a firm
+  that cannot dies, with the loss falling on the lender and the equity wiped, through machinery already built.
+- [ ] 17b.4 **The call is paced by the deal** (A2, B3, 21.15). `callCapital` calls today when the pool's cash
+  reaches zero, which for a fund with nothing to buy is once at the start; the file says so and names this
+  item. A deal gives it its pace: the pool calls what its cheque is short of, pro rata across its commitments
+  (`wanted × undrawn_i / undrawn`). **A2.b is untouched and must stay untouched**: a slice sized by the DEAL is
+  not a slice sized by the investor's balance, the instruction still goes for the whole of what was called, and
+  `check-forbids` still refuses `atMost`/`atLeast`/`Math.min` anywhere in that file.
 - [ ] 17b.5 **Sources and uses** (B5, D5, E3). An audit family `deal` (contributor `control`): for every
   `control.acquired` in the period, what the sellers were PAID against what was drawn for it plus what the
   buyer put up plus the fee — *"sources and uses must balance exactly, and the money must come out of named
-  accounts"*, measured to derived dust and never repaired. And D5's read beside it: a pool's return is what it
-  distributed against what it called, both actual cash, both read off the wire (`fund.called`, the
-  distributions of 17b.9). E3 is an absence to guard: nothing writes a price for a holding that no session
-  struck, which `prices/value.ts` already keeps (C5.a).
-- [ ] 17b.6 **The owner's hand** (C1, C2, C3). A controller decides three things about what it controls and
-  each is a real instruction: what it invests, what it takes out, and whether it borrows to take it out.
-  C3 is the one this item owes: **the recapitalisation** — the controlled firm borrows against itself and
-  distributes the proceeds to its owner, *"a real transfer from the firm's future to the owner's present"*.
-  It reuses 17b.1's door (the firm publishes what it is short of; a bank decides it) and the ordinary
-  distribution, and the owner's reason is its own: a pool short of what it owes its investors takes it out of
-  what it owns. C1 is a read once the debt is there — the firm services it out of cash flow and has less room
-  — and is measured, not built.
-- [ ] 17b.7 **Across the border** (Cross-Border C4, A2.a, and 21.60(c)). *"A direct investment buys a firm
-  outright, which is a lasting claim."* `controlBidsFor` looks at lines in the buyer's own money only; the
-  target's shares are priced in the target's. A buyer that wants a foreign company buys the money in this
-  period's FX session (which clears before this phase) and bids with it, so between the two it carries an FX
-  exposure it chose (A2.a) and a failed tender leaves it holding a money it does not earn. The debt tranche
-  follows the target, which is 21.60(c)'s *"a lender base in another money"* arriving for the first reason
-  that needs it.
-- [ ] 17b.8 **The three reasons a corporate borrowing still has not got** (21.60). (a) TENOR AND SIZE as
+  accounts"*, to derived dust, never repaired. D5's read beside it: a pool's return is what it distributed
+  against what it called, both actual cash, both read off the wire. E3 is an absence already kept by
+  `prices/value.ts` (C5.a) and is guarded rather than built.
+- [ ] 17b.6 **The owner's hand** (C1, C2, C3). A controller decides what the firm it controls invests, what it
+  takes out, and whether it borrows to take it out. C3 is the one this item owes — **the recapitalisation**,
+  *"raise more debt to pay itself a distribution, a real transfer from the firm's future to the owner's
+  present"* — and it is 17b.1's facility drawn a second time with the proceeds distributed, so the mechanism is
+  already there and what is new is the owner's reason to use it: a pool short of what it owes its investors
+  takes it out of what it owns. C1 is a read once the debt is there and is measured, not built.
+- [ ] 17b.7 **Across the border** (Cross-Border C4, A2.a, 21.60(c)). *"A direct investment buys a firm
+  outright, which is a lasting claim."* `controlBidsFor` looks at lines in the buyer's own money only. A buyer
+  that wants a foreign company buys the money in this period's FX session (which clears before this phase) and
+  bids with it, so between the two it carries an exposure it chose (A2.a) and a failed tender leaves it holding
+  a money it does not earn. The facility follows the target's money, which is 21.60(c)'s *"a lender base in
+  another money"* arriving for the first reason that needs it.
+- [ ] 17b.8 **The two reasons a corporate borrowing still has not got** (21.60 a, b). (a) TENOR AND SIZE as
   separate decisions — a management that wants a shorter line, or a second maturity so that less falls due at
   once, has no way to say so; the ask carries them. (b) COVENANTS AS A TERM OF THE HOLDER'S BID — what an
   issuer promises is still the arithmetic of its own accounts, because no holder bids a covenant and B2's
-  negotiation has one side. A buyout is where this bites: a lender funding a bridge asks for the covenant the
-  leverage needs. (c) is 17b.7's.
-- [ ] 17b.9 **The fund's life and its end** (A4, D1, D3, D4). *"The fund has a life: it invests, it holds, it
+  negotiation has one side. A buyout is where this bites: a lender committing a facility against a company it
+  is about to lever asks for the covenant the leverage needs.
+- [ ] 17b.9 **The fund's life and its end** (A4, D3, D4). *"The fund has a life: it invests, it holds, it
   exits, and it winds up — and on winding up the investors' claims resolve into cash rather than freezing."*
   The exit is built (10f.2's flotation, 10f.6's tender); what is not is the DISTRIBUTION of what an exit
-  brought in, as distinct from a redemption (Private Equity D3 is PARTIAL for exactly this), and the WIND-UP
-  at the end of a declared life. Both are the pool's own decision out of its own state; D4's *"in a bad market
-  it does not happen"* is already what a book that does not clear does.
+  brought in, as distinct from a redemption (Private Equity D3 is PARTIAL for exactly this), and the WIND-UP at
+  the end of a declared life. Both are the pool's own decision out of its own state; D4's *"in a bad market it
+  does not happen"* is already what a book that does not clear does.
 - [ ] 17b.10 §29 clause by clause, A1 to E3, with a place for every MISSING; COVERAGE re-marked; Part 0's
   existence table synced; record.
 
-**Exit.** A pool with a tenth of the price buys a company a bank agreed to fund, the company carries the debt
-from the moment it is bought, the sources and uses of the deal balance to dust, and a deal nobody would fund
-does not happen.
+**Exit.** A pool with a tenth of the price buys a company a bank committed to fund, the company carries the
+debt from the instant it is bought, the sources and uses of the deal balance to dust, and a deal nobody would
+commit to does not happen.
 
 ---
 
@@ -405,6 +409,7 @@ does not happen.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.70 `registry/credit.ts LoanTerms.borrower` IS A MIRROR OF `Instrument.issuer` (Law 4), and the guard is what shows it: `banks/loan.ts reagree` has to REFUSE a change of borrower to keep the two in step, which is a check standing in for a fact with two writers. `creditorOf` already reads the holder off the register rather than the terms, for exactly this reason, and who OWES a row is the same shape seen from the other side. Delete the term; `borrowerOf(i)` beside `creditorOf` reads `i.issuer`; nine sites read it instead (`banks/index.ts` ×3, `money-market/index.ts` ×2, `housing/index.ts`, `banks/loan.ts` ×3), and the `reagree` clause goes with it. Found at 17b's first design, which wanted to move a liability by the `assume` leg and could not without the terms disagreeing with the register. Nothing is wrong today — no loan has ever changed hands as a liability — which is what makes it a mirror rather than a break (17b.0).
 - [ ] 21.1 `households/decide` → `ordersFrom` throws on its own malformed row; one `wholeOrderOf(spend, price)` in `clearing/` for firms and households. **And (11.2a.2):** `PlannedOrder` declared three times (`registry/capital.ts`, `firms/decide.ts`, `households/index.ts`); the registry's is the one. **And (12.4a.2):** `firms/index.ts productionCosts` reads the seed's rows only, so a born firm's production is outside the family's check; the family should read the produce event's own line (it carries it) and not a row. **And (12b.3):** `capacityFrom` counts a fuel line's capacity in PIECES of output a period — 9.7e15 for thirty-nine million pieces of machinery over a plant need of 0.002 a unit at a million pieces a unit — and `downTick` refuses a count past 2^53 (`sb-line`, period 4). A capacity that large is not a count anybody makes: the grain of the good's piece against the grain of its plant is a RESOLUTION, and the overflow is the grid, not the capacity. **And (12c.3):** the same throw takes both `promotion.test.ts` tests and the entrant test of `growth.test.ts` at the period after a promotion in the `coalRaw` rig — a born firm's plant over its line's need — so a firm born in the scale model cannot be measured until the grid is.
 - [ ] 21.2 `money-market/resolution.ts`: the acquirer's consideration is a leg; no forced buyer (`winner = taking[0]`; none → `bank.resolution.noBank`, the insurer bridges); `writeDownRow` reports the cash written down (no `Math.round`); the Banks Capital E3 conservation family built. **And (12a.9):** a customer's payment that fails because ITS BANK is refused at the central bank — twelve levies at period 3 of the confiscatory scale model — leaves no row on anybody: settlement writes the payer's arrear only when the payer was refused, and the bank that could not settle owes nothing on the record. A bank refused at the window has failed to deliver its customer's money (Money E1, Banks Capital C1.a); the row is the bank's.
 - [ ] 21.3 Estates: rent on the space its inventory sits in (the family is wrong); a `winding` estate is not a household to the `ofKind(HOUSEHOLD)` readers; a capacity line produces to order through `Process`.
