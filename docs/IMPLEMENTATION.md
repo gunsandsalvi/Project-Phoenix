@@ -204,7 +204,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 12 | Firm birth, household formation, promotion — **done** (section removed; see `docs/RECORD.md`) | entry into the pool |
 | 12a | Households borrow, owe and fail; arrears; the immortals — **done** (section removed; see `docs/RECORD.md`; findings positioned at 12b.1, 12b.3, 17.0, 21.2) | the arrears row that housing, treasury and the sovereign wait on |
 | 12b | Employment is a standing relation — **done** (section removed; see `docs/RECORD.md`; findings positioned at 12d.1, 14, 21.1, 22.3) | duration; no absorbing state |
-| 12c | Productivity is an outcome | growth |
+| 12c | Productivity is an outcome — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.1, 21.19, 22.2) | growth |
 | 12d | Observation | diffusion; the price level's second half |
 | 14 | Insurers and pensions | a buyer, a claim, a schedule, capital |
 | 15 | Housing and land, the rest | after 12a |
@@ -253,14 +253,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 ---
 
-
----
-
-## 12c. Productivity is an outcome
-
-- [x] 12c.1 Each recipe declares, as TECHNOLOGY, the rate at which hours per unit fall with cumulative units the LINE has made (one number per recipe, log scale, `why`); a firm's hours per unit is a read of its own register history of created units. No stored level. **Done:** every recipe declares `learning` — the exponent on cumulative pieces made by which hours per unit fall (Wright's curve), a TECHNOLOGY with its `why` naming the class of work it comes from (grown or dug 0.07; process 0.15; assembly 0.32; services 0.10) — and the registry reads it (`registry/physical.ts learnedHoursPerUnit`: `base × (made + 1)^−rate`); a firm's hours per unit is that read against what it has made (`ledger.madeBy`, an index over the create legs — the record, not a level; `view.made(instrument)`), a small firm's against what a member of the cell has made. **Measured:** in eight periods of the scale model every firm that has produced takes fewer hours a unit than its recipe says, exactly by the curve (`learning.test.ts`); nothing new red across the ten suites (56 of 108).
-- [x] 12c.2 The employment row carries the trade's learned rate at the employer it came from; a hire moves it; a firm's rate is the read over its rows. **Done:** `EmploymentTerms.brought` — the pieces of the trade's output the row's people had made at the employer they left, a total for the row (a second hire onto it adds; leavers take their share). A separation reads what its people learned HERE off the employer's own ledger count over the heads in the trade (`learnedAt`) and keeps it with the people (the labour skill book, per cell); a hire moves it onto the new row (`brings`); a firm's hours per unit read over its rows add what its people brought to what the line itself has made (`EmploymentReads.learnedBy`, `firms/decide.ts broughtBy`). **Found and fixed on the way (XI-15, like 12b.2a):** the separated re-keyed onto the one standing `unemployed` cell, so every separation's people shared a cell and the last to arrive wrote its trade and its learning over everybody's — the unemployed key names the trade, the employer and the period they left (`register/employment.ts unemployedKey`); a fresh cell that never worked is `unemployed`. **Measured:** in the labour scale model ten bakers who made three hundred loaves at one firm carry three hundred loaves' worth onto the row of the firm that hires them (`labour.test.ts`); nothing new red across the ten suites (56 of 109).
-- [ ] 12c.3 Entrants (12.1) draw productivity from the line's tail above the incumbents' median; exit is the kernel's default. Test: output per hour rises over a five-year run with no parameter saying so; the size distribution's tail exponent recorded with its killer (Law 17).
 
 ---
 
@@ -388,7 +380,7 @@ After 17.9. Conditional issuance escrowed by the arranger (16.5's `transact`); t
 
 Each when its file is open for another item; file:line and the change.
 
-- [ ] 21.1 `households/decide` → `ordersFrom` throws on its own malformed row; one `wholeOrderOf(spend, price)` in `clearing/` for firms and households. **And (11.2a.2):** `PlannedOrder` declared three times (`registry/capital.ts`, `firms/decide.ts`, `households/index.ts`); the registry's is the one. **And (12.4a.2):** `firms/index.ts productionCosts` reads the seed's rows only, so a born firm's production is outside the family's check; the family should read the produce event's own line (it carries it) and not a row. **And (12b.3):** `capacityFrom` counts a fuel line's capacity in PIECES of output a period — 9.7e15 for thirty-nine million pieces of machinery over a plant need of 0.002 a unit at a million pieces a unit — and `downTick` refuses a count past 2^53 (`sb-line`, period 4). A capacity that large is not a count anybody makes: the grain of the good's piece against the grain of its plant is a RESOLUTION, and the overflow is the grid, not the capacity.
+- [ ] 21.1 `households/decide` → `ordersFrom` throws on its own malformed row; one `wholeOrderOf(spend, price)` in `clearing/` for firms and households. **And (11.2a.2):** `PlannedOrder` declared three times (`registry/capital.ts`, `firms/decide.ts`, `households/index.ts`); the registry's is the one. **And (12.4a.2):** `firms/index.ts productionCosts` reads the seed's rows only, so a born firm's production is outside the family's check; the family should read the produce event's own line (it carries it) and not a row. **And (12b.3):** `capacityFrom` counts a fuel line's capacity in PIECES of output a period — 9.7e15 for thirty-nine million pieces of machinery over a plant need of 0.002 a unit at a million pieces a unit — and `downTick` refuses a count past 2^53 (`sb-line`, period 4). A capacity that large is not a count anybody makes: the grain of the good's piece against the grain of its plant is a RESOLUTION, and the overflow is the grid, not the capacity. **And (12c.3):** the same throw takes both `promotion.test.ts` tests and the entrant test of `growth.test.ts` at the period after a promotion in the `coalRaw` rig — a born firm's plant over its line's need — so a firm born in the scale model cannot be measured until the grid is.
 - [ ] 21.2 `money-market/resolution.ts`: the acquirer's consideration is a leg; no forced buyer (`winner = taking[0]`; none → `bank.resolution.noBank`, the insurer bridges); `writeDownRow` reports the cash written down (no `Math.round`); the Banks Capital E3 conservation family built. **And (12a.9):** a customer's payment that fails because ITS BANK is refused at the central bank — twelve levies at period 3 of the confiscatory scale model — leaves no row on anybody: settlement writes the payer's arrear only when the payer was refused, and the bank that could not settle owes nothing on the record. A bank refused at the window has failed to deliver its customer's money (Money E1, Banks Capital C1.a); the row is the bank's.
 - [ ] 21.3 Estates: rent on the space its inventory sits in (the family is wrong); a `winding` estate is not a household to the `ofKind(HOUSEHOLD)` readers; a capacity line produces to order through `Process`.
 - [ ] 21.4 `estate/index.ts:608`: delete the stale `standsInFor: { noun: 'Process' }`.
@@ -406,13 +398,14 @@ Each when its file is open for another item; file:line and the change.
 - [ ] 21.16 `environment/state.ts moveOn` documents its variance; `CLIMATE_CELLS` a RESOLUTION param.
 - [ ] 21.17 Freight: the storm's loss leg emitted by `sail` or its docstring deleted; `costOf` crew cost = the carrier's wage bill; `legsBetween` computed once at assembly; `load` uses the solver's fills; `Math.ceil/exp/pow` → `core/num`.
 - [ ] 21.18 `fx-derivatives`: read a public event through `lastPublicAbout`, never a view of an arbitrary party.
+- [ ] 21.19 `securities-lending/index.ts openLoan` (and the four other `markPerUnit` reads in the file) mark the paper AT THIS PERIOD from a phase anchored `after: corporateActions`, before the paper's market has run: period 55 of the `growth` rig throws `NotYetProduced` for `treasury.us.2028-06-15` and the world stops there (12c.3). A lender lends against the last print and its age (the `worthOf` read), or the phase sits after the markets; the throw is the phase in the wrong place, as `prices/value.ts` says it is.
 
 ---
 
 ## 22. The recipe
 
 - [ ] 22.1 A line may declare more than one recipe (technology, data); the firm picks by its own cost read.
-- [ ] 22.2 A recipe declares a batch; a vintage declares an upkeep per period (technology); a line below batch stops.
+- [ ] 22.2 A recipe declares a batch; a vintage declares an upkeep per period (technology); a line below batch stops. **Finding (12c.3):** in a year of the scale model the twelve named firms produce ONCE — period 1, off the seed's work in progress — and never again: every plan after it is `batch 0, bound demand`, because the stock the seed gave them (314 million loaves at one baker) exceeds what they expect to sell (27 million a period) for longer than they live; by period 52 six of twelve are dead and thirty-seven estates are open, and output per hour has nothing to be measured on. A line that never starts is the absence this item's batch names from the other side; the seed's opening stock is 22a's.
 - [ ] 22.3 Goods A2 as specified. **Finding (12.1):** no service line has a buyer in the scale model — every capacity line's print is stale from period 0 with `noDemand` (the households' basket and the firms' overheads name no service) — so the small-firm tier sells nothing there and nothing can be founded; the demand for services is the recipe's and the basket's to state.
 
 ---

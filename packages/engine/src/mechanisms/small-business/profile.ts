@@ -47,7 +47,7 @@ import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type Pla
 } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
-import { ownPayroll, payrollSettledIn } from '../../registry/wages.js';
+import { ownPayroll, payrollSettledIn, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { findVenue } from '../../clearing/venue.js';
 import { addQty } from '../../core/tick.js';
@@ -396,7 +396,8 @@ function postForHours(
   // Labour C3, C5 (12b.2): it posts the CHANGE against what it will have — a bid for more, or a
   // cut given notice. Wanting nobody, or hours worth nothing to it, is the cut of all it has.
   const wantsNobody = wanted <= 0 || perHour <= 0;
-  const change = netChange(view.employs(), occupation, view.self.region, wantsNobody ? NO_QTY : wanted);
+  // Law 8 (12b.5, 12c.3): in whole people, like every employer's posting.
+  const change = netChange(view.employs(), occupation, view.self.region, wantsNobody ? NO_QTY : wholePeople(view, wanted));
   if (change !== undefined) {
     ctx.post(venue.id, {
       party: view.self.id,

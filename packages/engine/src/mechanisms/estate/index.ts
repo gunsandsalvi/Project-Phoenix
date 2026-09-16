@@ -154,6 +154,12 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
       continue;
     }
     if (units === 0) continue;
+    // Register D5, Firm Birth D2 (12c.3): WHAT IS PLEDGED GOES TOO, AND STAYS PLEDGED. A dead
+    // member's margin with a clearing house is bound to it, and the estate takes those units
+    // subject to the same lien — the release, the move and the new lien on the estate's book,
+    // so the secured creditor ranks on the estate as it ranked on the dead (D2). Before this the
+    // pledged lots stayed on a party that had ceased, and the next phase to touch them threw.
+    const liens = h.liens;
     const leg: Leg =
       ctx.registry.instrumentKind(i.kind).pricing === 'money'
         ? {
@@ -174,7 +180,14 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
             pricePerUnit: none(),
             accruedPerUnit: none(),
           };
-    ctx.settle({ legs: [leg], cause: 'transfer', reason: `${dead} to its estate` });
+    const release: Leg[] = liens.map((l) => ({ kind: 'release', pledgor: dead, beneficiary: l.beneficiary, instrument: h.instrument, lien: l.id }));
+    const moved = ctx.settle({ legs: [...release, leg], cause: 'transfer', reason: `${dead} to its estate` });
+    if (moved.outcome !== 'settled' || liens.length === 0) continue;
+    ctx.settle({
+      legs: liens.map((l) => ({ kind: 'pledge', pledgor: id, beneficiary: l.beneficiary, instrument: h.instrument, qty: l.qty, secures: l.reason })),
+      cause: 'transfer',
+      reason: `${id} holds what ${dead} pledged, still pledged`,
+    });
   }
   /**
    * XI-8, XI-3: IT IS WINDING BEFORE IT IS GONE, and the difference is not cosmetic. Between the

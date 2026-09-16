@@ -87,7 +87,7 @@ import {
   TENOR_WINDOW_YEARS,
 } from './data.js';
 import { downTick, type Qty, upTick } from '../../core/tick.js';
-import { ownPayrollOf, wageFacingParty } from '../../registry/wages.js';
+import { ownPayrollOf, wageFacingParty, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 
 /** The name of the store a treasury's programme phase leaves its need in (declared in the nouns). */
@@ -1015,8 +1015,9 @@ function postPublicService(ctx: MechanismContext, id: PartyId): void {
   // Law 8: the hours it keeps, counted in the pieces the venue counts somebody's time in.
   const hours = ctx.params.amount(TREASURY_PARAMS.publicService, venue.unit);
   if (hours <= 0) return;
-  // Labour C3, C5 (12b.2): the CHANGE against what it will have, like any employer.
-  const change = netChange(ctx.employment.by(id), PUBLIC_OCCUPATION, region, hours);
+  // Labour C3, C5 (12b.2): the CHANGE against what it will have, like any employer; Law 8 (12b.5,
+  // 12c.3): in whole people, like any employer's.
+  const change = netChange(ctx.employment.by(id), PUBLIC_OCCUPATION, region, wholePeople(ctx, hours));
   if (change === undefined) return;
   ctx.post(venue.id, { party: id, side: change.side, price: change.side === 'buy' ? wage : 'market', qty: change.qty });
 }

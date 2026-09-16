@@ -11643,3 +11643,50 @@ people who came from nowhere in the trade bring nothing. Nothing new is red acro
 
 **Checks.** `labour.test.ts` mobility test green; `check:opens` green; lint, typecheck, spec,
 forbids, deaths green; `lattice.test.ts` at its one red.
+
+## Item 12c.3 — Entrants enter with the line's practice
+
+A firm born of a small firm that outgrew its tier drew the hours a unit takes it from the seed's
+width, as if the day it was born were the day the world was seeded. It reads the line now: every
+live named firm making its good in its region, each at what a unit takes it TODAY — its own scale
+and what it has learned, the one read a firm's technology has — and takes one of those at or
+above the median, whole, because the practice an entrant copies is a practice somebody has. The
+draw's `why` in the parameter register says which. A line with nobody to see is entered from the
+width, like the seed's own. Exit is the kernel's default and nothing was added for it.
+
+**Found and fixed on the way (Law 8, 12b.5's claim).** 12b.5 said every employer's posting rounds
+up to whole people. Firms, small firms and the treasury did not: a baker that needed fourteen hours
+of a thirty-five-hour week posted fourteen, no whole person fits in fourteen, and it hired nobody —
+every period, for a year, which is why the scale model's firms had no payroll. All three post
+through the one registry helper now.
+
+**Found and fixed on the way (Money E4, Register D5, Firm Birth D2).** A firm that died with
+margin pledged to the clearing house left the pledged lots on its own dead book: the estate moved
+what was free and skipped the rest, and the spoilage phase of the next period addressed a party
+that had ceased and threw (period 42 of the `growth` rig). The estate takes pledged units with
+their lien — release, move and a new lien on its own book to the same beneficiary for the same
+reason — and the wire's precheck credits what an instruction frees to what it may deliver, so the
+collateral is never briefly nobody's and the secured creditor ranks on the estate as it ranked on
+the dead.
+
+**Measured, and not measured.** The five-year run the item asks for cannot yet be taken: with the
+two fixes above the `growth` rig runs to period 55 and stops there — the securities-lending desk
+marks a treasury at this period before its market has run (`NotYetProduced`; positioned at 21.19)
+— and in the fifty-four periods it does run its twelve firms produce once, in period 1, off the
+seed's work in progress: every later plan is `batch 0, bound demand` while the seed's stock
+exceeds what they expect to sell, and six of twelve are dead by period 52 (positioned at 22.2).
+Output per hour has nothing to be measured on, and the size distribution's tail exponent is not
+recorded: `growth.test.ts` carries both measurements and is red with those two reasons. The
+entrant draw itself cannot be measured in the scale model either: the period after a promotion
+throws at `capacityFrom`'s grid (21.1, the same throw that takes `promotion.test.ts`). Nothing new
+is red across the ten suites (56 of 109, the same set).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+
+## Item 12c closes
+
+Productivity is an outcome: a recipe's hours fall with what the line has made (12c.1), the
+learning travels with the people who did it (12c.2), and an entrant enters at the line's current
+practice (12c.3). No stored productivity anywhere. The item's findings are positioned at 21.1
+(the capacity grid), 21.19 (the mark before the market) and 22.2 (the firms that never start);
+its section is removed and its row marked done.

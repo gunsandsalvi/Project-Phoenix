@@ -668,9 +668,9 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     // E2: the labour that makes what it expects to sell, period after period. The stock it happens
     // to hold moves the batch, not the workforce: people are a relationship and letting them go
     // costs severance (Labour C3), so a firm does not shed a soft week's worth of them.
-    // Law 8: an hour has a smallest piece like everything else, and what it posts is a whole
-    // number of them. Down, because it is what this firm will PAY for: a posting rounded up is a
-    // wage bill it did not decide on.
+    // Law 8: an hour has a smallest piece like everything else, and this is a whole number of
+    // them — the hours the work takes. What it POSTS is whole people of them (`firms/index.ts`,
+    // 12b.5): a person sells all their hours or none.
     hours: downTick(scale(perPeriod, tech.hoursPerUnit, 'the employment it wants')),
     wageBid: perHour,
     orders,

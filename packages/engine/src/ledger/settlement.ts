@@ -956,6 +956,18 @@ export class Settlement {
         short: finite(per - free, 'collateral short'),
       };
     }
+    // Register D5, XI-8 (12c.3): what this same instruction FREES is deliverable by it — an estate
+    // takes a dead party's pledged units and their lien in one numbered pass, so the collateral is
+    // never briefly nobody's. The walk applies the release before the debit, and asks the register
+    // again (Law 4: the same question, once here and once there).
+    const freed = new Map<string, number>();
+    for (const leg of ins.legs) {
+      if (leg.kind !== 'release') continue;
+      const held = this.d.register.holding(leg.pledgor, leg.instrument);
+      const lien = held.some ? held.value.liens.find((l) => l.id === leg.lien) : undefined;
+      if (lien === undefined) continue;
+      addTo(freed, `${leg.pledgor}|${leg.instrument}`, lien.qty);
+    }
     for (const n of net.values()) {
       if (n.delta >= 0) continue;
       const free = this.d.register.free(n.party, n.instrument);
@@ -965,12 +977,14 @@ export class Settlement {
       // readers with two tolerances would let an instruction pass this check and then throw
       // inside the walk, which is one fact with two writers (Law 4).
       if (!n.money) {
-        if (this.d.register.deliverable(n.party, n.instrument, -n.delta)) continue;
+        const unbound = zeroIfNone(freed.get(`${n.party}|${n.instrument}`));
+        if (unbound >= -n.delta) continue;
+        if (this.d.register.deliverable(n.party, n.instrument, finite(-n.delta - unbound, 'what it must deliver beyond what this frees'))) continue;
         return {
           kind: 'insufficientUnits',
           party: n.party,
           instrument: n.instrument,
-          short: -after,
+          short: finite(-after - unbound, 'units short'),
         };
       }
       // Law 8: a balance is a count of the money's own smallest piece, and so is every delta that

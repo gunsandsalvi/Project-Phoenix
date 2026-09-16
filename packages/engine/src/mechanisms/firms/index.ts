@@ -41,7 +41,7 @@ import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { committedTo, DECIDED, marketsIn, nothingDecided, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
-import { ownPayroll } from '../../registry/wages.js';
+import { ownPayroll, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { publishExpectation, runLine } from './produce.js';
 import { REGISTER, bearFirms, lineOfFirm } from './born.js';
@@ -310,7 +310,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         reads: [{ kind: 'event', name: 'smallBusiness.promotion', of: 'anyPeriod' }],
         writes: [{ kind: 'event', name: 'firm.born' }],
         run: (ctx: MechanismContext) => {
-          bearFirms(ctx);
+          bearFirms(ctx, byName);
         },
       },
     ],
@@ -371,7 +371,9 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
     // Labour D1, C3, C5 (12b.2): a posting is the CHANGE it wants — more hours at the wage it
     // offers, or fewer, which is a cut given notice at its own cost. A firm whose output no longer
     // covers what it takes to make wants nobody, and what it posts is the cut of all it has.
-    const change = netChange(view.employs(), venue.key['occupation'] ?? '', view.self.region, p.hours);
+    // Law 8 (12b.5, 12c.3): in whole people — a person sells all their hours or none, and a firm
+    // that needs fourteen hours of a week and posts fourteen hires nobody, for ever.
+    const change = netChange(view.employs(), venue.key['occupation'] ?? '', view.self.region, wholePeople(view, p.hours));
     if (change !== undefined) {
       ctx.post(venue.id, {
         party: firm,

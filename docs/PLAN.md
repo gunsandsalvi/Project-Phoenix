@@ -17,13 +17,12 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 2 of 17 items closed** (8 of 118 steps).
+**The plan: 1 of 16 items closed** (5 of 116 steps).
 **Requirement coverage: 68.3%** (942 MET, 106 PARTIAL, 0 OUT OF SCOPE of 1379 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 12c — Productivity is an outcome | 3 | 3 | closed |
 | 12d — Observation | 4 | 4 | closed |
 | 14 — Insurers and pensions (§27) | 8 | 0 | open |
 | 15 — Housing and land, the rest | 7 | 0 | open |
@@ -34,7 +33,7 @@ The plan has two parts:
 | 18a — Monetary policy | 5 | 0 | open |
 | 19 — The polity (§47) | 10 | 0 | open |
 | 20 — Periodicity | 3 | 0 | open |
-| 21 — The local repairs | 18 | 0 | open |
+| 21 — The local repairs | 19 | 0 | open |
 | 22 — The recipe | 3 | 0 | open |
 | 22a — The opening is not an equilibrium | 6 | 0 | open |
 | 23 — Measure — Part XII | 5 | 0 | open |
@@ -64,6 +63,7 @@ The plan has two parts:
 | 12a | — | — | closed |
 | 12b | — | — | closed |
 | 12b.1 | — | — | closed |
+| 12c | — | — | closed |
 | 12c.1 | — | — | closed |
 | 13a | — | — | closed |
 | 13b | — | — | closed |

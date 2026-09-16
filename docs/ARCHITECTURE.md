@@ -1490,3 +1490,18 @@ the death in prose is how two of them once stayed out of the count that measures
 - **Single currency in settlement**: until the currency layer (worklist 12) revalues foreign positions
   into equity (Currency D2), an instruction may not touch an instrument in a money other than the
   party's home money; settlement throws `Mismatch` (Money A2.b). The guard is deleted in that item.
+
+### An estate takes pledged units with their lien; an instruction may free and move the same units (item 12c.3)
+
+A party that dies with margin pledged to a clearing house left those lots on its own dead book:
+the estate moved what was free and skipped the rest, and the next phase to touch the lots threw
+(Money E4). The estate now takes them in one numbered instruction — the release of each lien, the
+asset move — and binds them again on its own book to the same beneficiary for the same reason, so
+the secured creditor ranks on the estate as it ranked on the dead (Firm Birth D2) and the
+collateral is never briefly nobody's. For that the wire's precheck credits what an instruction
+FREES to what it may deliver: free units are the register's answer plus the liens the same
+instruction releases, as they were already the register's answer less what the same instruction
+takes out. The walk applies the release before the debit and asks the register again (Law 4).
+
+The same item made every employer's posting whole people (`registry/wages.ts wholePeople`): 12b.5
+said all did, and firms, small firms and the treasury did not.
