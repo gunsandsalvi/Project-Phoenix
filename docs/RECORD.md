@@ -12313,3 +12313,34 @@ reads in each — is 17.4's and is positioned there (21.49).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `treasury-default.test.ts`
 green; `treasury.test.ts` five red, all in the baseline. Suites at the end of item 16.
+
+## Item 16.5 — The swap line, and one instruction from three books
+
+**`transact`.** A participant declares a group of books for the period (`ctx.transact(party,
+markets)`); its fills in each of them are drafted by the session and handed to the kernel instead of
+settling one by one, and after the last book has run the kernel settles every leg from every book as
+ONE numbered instruction — or, when a book did not fill it or the joint instruction fails, nothing
+in any of them, and `transact.unfilled` / `transact.failed` say so (Spot FX A1, C2.a, XI-5). The FX
+desk's round trip through three pairs is the first user: it is atomic because it is one instruction,
+and its size is now the least of what it will risk and what it HOLDS of the money it hands over on
+each leg, read off its accounts. A book whose only trades were a trip's legs prints when the trip
+settles, at the level it cleared with the volume that moved, or carries the last print saying
+`nothingSettled` — a print is what somebody paid (Law 3); a book that also settled ordinary trades
+printed those, and the trip's volume there is on the record (21.51).
+
+**The swap line.** A bank short of a money it does not book in has no window in it (a central bank
+lends its own system); it has its OWN central bank, which draws that money on its swap line with the
+issuer, hands its own money across at the rate in force, and lends the foreign money on at the
+foreign window's ceiling plus its penalty — two dated rows on two central banks' books, and the
+line's size is the term of an agreement two institutions set (`centralBank.swapLine.size`, POLICY;
+Central Bank A2.b, Currency B4, E4). A draw past the line is refused and the refusal says where the
+line stood.
+
+Two stops on the way, fixed where they were: a fund manager compared rivals' books across two
+moneys (read in its own now, Currency C4); and `world.ts` was truncated by an editing slip and
+restored from the commit before the edits were re-applied.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `spot-fx.test.ts`,
+`currency.test.ts`, `money-market.test.ts` at their reds of 15.7 (none new; *carries the last real
+price, visibly stale* went red mid-item when a pending book wrote a print with nothing settled, and
+is green with the print written when the trip settles). Suites at the end of item 16.

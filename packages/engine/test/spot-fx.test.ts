@@ -12,11 +12,15 @@ describe('a spot trade is two money legs (Spot FX A1, C4; Currency C1, C2; Law 5
     const w = abroadWorld('fx-A');
     for (let i = 0; i < 6; i += 1) w.step();
     let seen = 0;
+    // 16.5: a desk's round trip is ONE instruction whose legs came from three books (XI-5), so an fx
+    // instruction is two money legs per book — read in pairs, however many books it settled.
     for (const r of w.ledger.all()) {
       if (r.outcome !== 'settled') continue;
       const legs = r.instruction.legs.filter((l) => l.kind === 'money');
-      if (legs.length !== 2 || r.instruction.legs.length !== 2) continue;
-      const [a, b] = legs;
+      if (legs.length % 2 !== 0 || legs.length !== r.instruction.legs.length) continue;
+      for (let k = 0; k + 1 < legs.length; k += 2) {
+      const a = legs[k];
+      const b = legs[k + 1];
       if (a === undefined || b === undefined) continue;
       if (a.ccy === b.ccy) continue;
       seen += 1;
@@ -32,6 +36,7 @@ describe('a spot trade is two money legs (Spot FX A1, C4; Currency C1, C2; Law 5
       // A1: and the two sides are the same two parties, the other way round.
       expect(a.from.holder).toBe(b.to.holder);
       expect(a.to.holder).toBe(b.from.holder);
+      }
     }
     expect(seen).toBeGreaterThan(0);
   });

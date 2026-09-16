@@ -154,6 +154,8 @@ export const MM_PARAMS = {
   /** Central Bank D3.b: what it charges ABOVE the window for an account that went below zero. */
   overdraftPenalty: paramId('centralBank.overdraftPenalty'),
   insuranceLimit: paramId('regulation.depositInsurance.limit'),
+  /** Central Bank A2.b (16.5): the most one central bank lends another of its money on their swap line, in the lending money's named unit. */
+  swapLine: paramId('centralBank.swapLine.size'),
 } as const;
 
 /** C-3: the rate the central bank of THIS money administers (Central Bank B1, B2). */

@@ -23,7 +23,7 @@ import {
   period,
 } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
-import { Forbidden, InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
+import { Forbidden, InvalidRegistry, Missing, Unpriced, Impossible } from '../core/errors.js';
 import {
   contractId,
   type CurrencyCode,
@@ -74,11 +74,13 @@ import {
   type MarketDecl,
   type MarketResult,
   type PrimaryOffer,
+  printAfterTransact,
+  type MarketRunDeps,
 } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind, type Event } from '../journal/journal.js';
-import type { Leg } from '../ledger/instruction.js';
+import type { InstructionDraft, Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
@@ -386,6 +388,16 @@ export class World {
   private currentCycle: Cycle;
   private lastReport: PeriodReport | undefined;
   private lastMarkets: MarketResult[] = [];
+  /** 16.5: the `transact` groups declared for this period, and the legs each book handed them. */
+  private transacts = new Map<
+    string,
+    {
+      readonly party: PartyId;
+      readonly markets: ReadonlySet<string>;
+      readonly drafts: Map<string, InstructionDraft[]>;
+      readonly volume: Map<string, number>;
+    }
+  >();
   private sealed = false;
 
   constructor(spec: WorldSpec) {
@@ -522,6 +534,7 @@ export class World {
               return !subject.some || w.instruments.get(subject.value).status.live;
             })
             .map((m) => w.runOne(m));
+          w.settleTransacts();
         },
       },
       {
@@ -2624,6 +2637,14 @@ export class World {
         );
       },
       requests: (at) => this.requestsIn(at),
+      transact: (party, markets) => {
+        this.transacts.set(String(party), {
+          party,
+          markets: new Set(markets.map(String)),
+          drafts: new Map<string, InstructionDraft[]>(),
+          volume: new Map<string, number>(),
+        });
+      },
       record: (kind, subjects, data, isPublic) =>
         this.journal.record(this.currentPeriod, this.currentCycle, kind, subjects, data, isPublic),
     };
@@ -3205,6 +3226,68 @@ export class World {
     return here === undefined ? [] : here.map((id) => this.parties.get(id));
   }
 
+  /**
+   * Spot FX A1, C2.a, XI-5 (16.5): THE TRIPS SETTLE, each as ONE instruction whose legs came from
+   * every book in its group — or not at all. A group with a book that did not fill it has no trip:
+   * nothing in any of its books settles, and the counterparties that would have been on the other
+   * side of those legs are left as a session that did not fill them (Clearing C4.b). The groups are
+   * this period's and are gone once the books have run. Law 3: a book whose only trades were a
+   * trip's legs prints when the trip settles, at the level it cleared, or carries the last print.
+   */
+  private settleTransacts(): void {
+    const settledIn = new Map<string, number>();
+    for (const group of this.transacts.values()) {
+      const legs: Leg[] = [];
+      let missing: string | undefined;
+      for (const market of group.markets) {
+        const drafts = group.drafts.get(market);
+        if (drafts === undefined || drafts.length === 0) {
+          missing = market;
+          break;
+        }
+        for (const d of drafts) legs.push(...d.legs);
+      }
+      if (missing !== undefined) {
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'transact.unfilled',
+          [group.party, ...group.markets],
+          { party: group.party, markets: [...group.markets], unfilled: missing },
+          true,
+        );
+        continue;
+      }
+      const record = this.settlement.settle(
+        { legs, cause: 'trade', reason: `${String(group.party)} settles ${group.markets.size} books as one` },
+        this.currentPeriod,
+        this.currentCycle,
+      );
+      if (record.outcome === 'settled') {
+        for (const [market, qty] of group.volume) {
+          const before = settledIn.get(market);
+          settledIn.set(market, before === undefined ? qty : before + qty);
+        }
+      }
+      this.journal.record(
+        this.currentPeriod,
+        this.currentCycle,
+        record.outcome === 'settled' ? 'transact.settled' : 'transact.failed',
+        [group.party, ...group.markets],
+        { party: group.party, markets: [...group.markets], legs: legs.length, instruction: record.instruction.id, volume: Object.fromEntries(group.volume) },
+        true,
+      );
+    }
+    this.transacts.clear();
+    for (const r of this.lastMarkets) {
+      if (r.pending === undefined) continue;
+      const m = this.marketList.find((d) => d.id === r.market);
+      if (m === undefined) continue;
+      // A pending book no trip settled in settled nothing, and says so by carrying the last print.
+      printAfterTransact(m, r.pending, settledIn.get(String(r.market)), this.currentPeriod, this.currentCycle, this.marketDeps());
+    }
+  }
+
   private runOne(m: MarketDecl): MarketResult {
     const orders: Order[] = [];
     // XI-13, Ratings A5.a: WHETHER ANYBODY IN THIS BOOK HAS A VIEW. A participant that puts its own
@@ -3249,7 +3332,12 @@ export class World {
         true,
       );
     }
-    return runMarket(m, orders, this.offer(m.id), this.currentPeriod, this.currentCycle, {
+    return runMarket(m, orders, this.offer(m.id), this.currentPeriod, this.currentCycle, this.marketDeps());
+  }
+
+  /** Law 4, 16.5: the one statement of what a session is run with, for the books and for the trips that settle after them. */
+  private marketDeps(): MarketRunDeps {
+    return {
       parties: this.parties,
       registry: this.registry,
       unitOf: (instrument) => this.instruments.get(instrument).unit,
@@ -3284,6 +3372,18 @@ export class World {
           decider.fn(this.mechanismContext(decider.owner), sale),
         );
       },
+      transact: {
+        has: (party, market) => this.transacts.get(String(party))?.markets.has(String(market)) === true,
+        defer: (party, market, draft, qty) => {
+          const group = this.transacts.get(String(party));
+          if (group === undefined) throw new Impossible('XI-5', `${String(party)} has no transact group to defer ${String(market)} into`);
+          const held = group.drafts.get(String(market)) ?? [];
+          held.push(draft);
+          group.drafts.set(String(market), held);
+          const sofar = group.volume.get(String(market));
+          group.volume.set(String(market), sofar === undefined ? qty : sofar + qty);
+        },
+      },
       kinds: {
         contract: {
           derivativeKind: (kind) => this.registry.derivativeKind(kind),
@@ -3292,7 +3392,7 @@ export class World {
             this.marginLegsOf(party, against, size, m, struck),
         },
       },
-    });
+    };
   }
 
   /**

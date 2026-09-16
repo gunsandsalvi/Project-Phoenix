@@ -406,10 +406,13 @@ export function launchToMake(
     for (const p of running) {
       const assets = netAssetsOf(ctx, p.pool);
       if (!assets.some) continue;
+      // Currency C4: a rival's book in another money is READ in this manager's own, at the rate in
+      // force — a size to compare, never a balance added across moneys (Money A2.b).
+      const book = view.inOwnMoney(assets.value);
       smallest =
         smallest === undefined
-          ? assets.value
-          : atMostCash(assets.value, smallest, 'the smallest book anybody running this has');
+          ? book
+          : atMostCash(book, smallest, 'the smallest book anybody running this has');
       cheapest =
         cheapest === undefined
           ? p.feePerAnnum

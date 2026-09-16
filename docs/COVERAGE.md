@@ -193,7 +193,7 @@ measurement is taken there is nothing to name.
 | `Currency B1` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (a party short of a money it does not issue buys it in the pair between that money and its own) |
 | `Currency B2` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (and a party holding one it has no use for sells it there, which is the same read from the other end) |
 | `Currency B3` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (the dealer: its position in a pair is what it holds of the money that is not its own), packages/engine/src/core/measure.ts (16.0: nothing converts at the ledger boundary — a foreign balance stays a foreign balance, and the one way into another money is the spot book) |
-| `Currency B4` | MET | packages/engine/src/mechanisms/money-market/index.ts (a central bank lends to its own system; a bank short of a foreign money has no window and must buy it) |
+| `Currency B4` | MET | packages/engine/src/mechanisms/money-market/index.ts (a central bank lends to its own system; a bank short of a foreign money has no window and must buy it), packages/engine/src/mechanisms/money-market/index.ts (16.5: a bank short of a money it does not book in is lent it by its own central bank off the swap line while the line has room, and refused when it is full) |
 | `Currency B5` | MET | packages/engine/src/mechanisms/spot-fx/index.ts (every pair is a market, opened at the seed from the currencies themselves) |
 | `Currency C1` | MET | packages/engine/src/clearing/market.ts (an fx trade is two money legs in two currencies at the rate the session struck) |
 | `Currency C2` | MET | packages/engine/src/clearing/market.ts (both legs settle or neither does: an instruction applies whole or not at all) |
@@ -209,7 +209,7 @@ measurement is taken there is nothing to name.
 | `Currency E1` | MET | packages/engine/src/observer/observer.ts (the rate of every pair, with whether the print is this period’s) |
 | `Currency E2` | MISSING |  |
 | `Currency E3` | MET | packages/engine/src/mechanisms/spot-fx/family.ts (the triangular gap per triple, reported only when it is bigger than the cheapest desk’s round trip) |
-| `Currency E4` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/revalue.ts (what the rate did to a holder is a journalled event with its own size) |
+| `Currency E4` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/revalue.ts (what the rate did to a holder is a journalled event with its own size), packages/engine/src/mechanisms/money-market/index.ts (16.5: a central bank's swap line reaches another region's banks through their own central bank) |
 
 ## Bond
 

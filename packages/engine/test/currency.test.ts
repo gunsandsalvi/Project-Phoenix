@@ -158,8 +158,17 @@ describe('a central bank lends to its own system (Currency D4, Central Bank D1)'
       const bank = e.data['bank'];
       const ccy = e.data['ccy'];
       if (typeof bank !== 'string' || typeof ccy !== 'string') continue;
-      // The refusal is exactly and only for a money the bank does not book in.
+      // The refusal is exactly and only for a money the bank does not book in — and since 16.5 it
+      // says where the swap line stood, because the refusal is the line being full (Central Bank A2.b).
       expect(home(bank)).not.toBe(ccy);
+      expect(typeof e.data['swapLine']).toBe('number');
+    }
+    // 16.5: a bank short abroad is lent the money by its OWN central bank, which drew the line —
+    // two rows on two central banks' books, both named (Currency B4, E4).
+    for (const e of w.journal.ofKind('centralBank.swapLine')) {
+      expect(e.public).toBe(true);
+      expect(home(String(e.data['lentTo']))).not.toBe(e.data['ccy']);
+      expect(e.data['drawnBy']).not.toBe(e.data['issuer']);
     }
     // Money B3.c: and nothing is left below zero at an issuer that never lent it.
     const family = w.last?.audit.families.find((f) => f.family === 'money');

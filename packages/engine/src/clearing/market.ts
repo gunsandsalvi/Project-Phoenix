@@ -244,6 +244,16 @@ export interface MarketRunDeps {
    * more. Asset and fx markets need nothing beyond the book, and the absence of their rows says so.
    */
   readonly kinds: MarketKindDeps;
+  /**
+   * 16.5: a party whose fills in this book are part of a `transact` group. Its trades are drafted
+   * here and handed to the kernel to settle with the group, and they are not in this session's
+   * settled volume — the print is what settled in the session; what settles with the group is
+   * counted where it settles.
+   */
+  readonly transact?: {
+    has(party: PartyId, market: MarketId): boolean;
+    defer(party: PartyId, market: MarketId, draft: InstructionDraft, qty: Qty): void;
+  };
 }
 
 export interface MarketKindDeps {
@@ -292,6 +302,17 @@ export interface MarketResult {
   readonly failedTrades: number;
   /** Sovereign C4, when the session carried a primary offer. */
   readonly auction: Option<AuctionResult>;
+  /**
+   * 16.5: the book cleared and its only trades were legs of somebody's `transact`, which settle
+   * after the last of its books. No print is written yet — a print is what somebody PAID (Law 3) —
+   * and the kernel writes it when the group settles, or carries the last one when it does not.
+   */
+  readonly pending?: {
+    readonly price: PerPiece;
+    readonly trades: number;
+    readonly demandAtPrice: number;
+    readonly supplyAtPrice: number;
+  };
 }
 
 /** What the market reads out of an auction (Sovereign C4). */
@@ -440,12 +461,20 @@ export function runMarket(
       let settledVolume = 0;
       let allotted = NO_QTY;
       let failed = 0;
+      let deferred = 0;
       for (const t of trades) {
         const draft = tradeInstruction(m, t, outcome.price, accrued, deps, period, cycle);
         // Law 8: a quantity so small that what it comes to is less than half a piece of money is
         // not a trade — there is nothing to pay for it. It does not fill, which is a real outcome
         // of a real book and is what `settledVolume` says against the cleared volume.
         if (!draft.some) continue;
+        // 16.5: a leg of somebody's round trip settles with the trip, or not at all.
+        const grouped = deps.transact?.has(t.buyer, m.id) === true ? t.buyer : deps.transact?.has(t.seller, m.id) === true ? t.seller : undefined;
+        if (grouped !== undefined && deps.transact !== undefined) {
+          deps.transact.defer(grouped, m.id, draft.value, t.qty);
+          deferred += 1;
+          continue;
+        }
         const record = deps.settlement.settle(draft.value, period, cycle);
         if (record.outcome === 'settled') {
           settledVolume = finite(settledVolume + t.qty, 'settled volume');
@@ -458,8 +487,21 @@ export function runMarket(
       // and writing it would be a price with nobody on either side of it — one that the marks, the
       // curve, every holder's equity and the next session's quotes would all then be built on. So
       // it prints nothing of its own and the last real price stands, visibly stale and saying why.
-      if (settledVolume <= 0) {
+      // 16.5: a book whose only trades were a trip's legs has printed a level and settled nothing
+      // YET; the trip settles after the last of its books, and until then the last real price stands.
+      if (settledVolume <= 0 && deferred === 0) {
         return carryLast(m, 'nothingSettled', period, cycle, deps, offer, book, outcome.fills);
+      }
+      if (settledVolume <= 0) {
+        return {
+          market: m.id,
+          outcome: 'cleared',
+          price: some(outcome.price),
+          settledVolume: 0,
+          failedTrades: failed,
+          auction: none<AuctionResult>(),
+          pending: { price: outcome.price, trades: deferred, demandAtPrice: outcome.demandAtPrice, supplyAtPrice: outcome.supplyAtPrice },
+        };
       }
       deps.prices.write({
         instrument: m.instrument,
@@ -511,6 +553,48 @@ export function runMarket(
     default:
       return assertNever(outcome, 'Outcome');
   }
+}
+
+/**
+ * 16.5, Law 3: THE PRINT OF A BOOK WHOSE TRADES SETTLED WITH A `transact` GROUP — written when the
+ * group settled, at the level the book cleared, with the volume that actually moved; or the last
+ * real price carried, saying `nothingSettled`, when the group did not settle.
+ */
+export function printAfterTransact(
+  m: MarketDecl,
+  pending: NonNullable<MarketResult['pending']>,
+  /** What the trips settled in this book, or nothing because none did. */
+  settledVolume: number | undefined,
+  period: Period,
+  cycle: Cycle,
+  deps: MarketRunDeps,
+): void {
+  if (settledVolume === undefined || settledVolume <= 0) {
+    carryLast(m, 'nothingSettled', period, cycle, deps, none<PrimaryOffer>(), [], []);
+    return;
+  }
+  deps.prices.write({
+    instrument: m.instrument,
+    market: m.id,
+    period,
+    price: pending.price,
+    ccy: m.ccy,
+    provenance: {
+      kind: 'traded',
+      qty: settledVolume,
+      trades: pending.trades,
+      demandAtPrice: pending.demandAtPrice,
+      supplyAtPrice: pending.supplyAtPrice,
+    },
+  });
+  deps.journal.record(
+    period,
+    cycle,
+    'print',
+    [m.id, m.instrument],
+    { price: pending.price, volume: settledVolume, settledVolume, failedTrades: 0, rationed: false, transact: true },
+    true,
+  );
 }
 
 /**

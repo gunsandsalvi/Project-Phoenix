@@ -87,6 +87,7 @@ import { asQty, subQty, type Qty } from '../../core/tick.js';
 import {
   type Ratio,
   asAmount,
+  asNamed,
   asRatio,
   heldAsMoney,
   minus,
@@ -109,7 +110,7 @@ export { valueBook, failedBanks, type Valuation as BookValuation } from './resol
 interface Market {
   next: number;
   /** Money B3.b: the accounts the central bank let go below zero, waiting to become rows. */
-  overdrawn: { bank: PartyId; ccy: CurrencyCode }[];
+  overdrawn: { bank: PartyId; ccy: CurrencyCode; viaSwap?: PartyId }[];
 }
 
 function market(ctx: MechanismContext): Market {
@@ -736,6 +737,16 @@ function paramsOf(): ParamDecl[] {
       why: 'Central Bank D2, D3: the haircut the window takes on the paper it lends against. Eligibility and haircuts are its choice and a policy instrument in themselves, which is why this is a policy and not a preference of anybody.',
     },
     {
+      id: MM_PARAMS.swapLine,
+      value: 50_000_000_000,
+      denominated: 'money',
+      unit: 'of the lending money, named unit',
+      dimension: 'amount',
+      kind: 'policy',
+      owner: 'centralBank',
+      why: 'Central Bank A2.b, Currency B4, E4 (16.5): A SWAP LINE IS AN AGREEMENT BETWEEN TWO CENTRAL BANKS, and its size is the term of that agreement — a policy two institutions set, not a bound on a market. A bank short of a foreign money has no window in it (a central bank lends its own system); what it has is ITS OWN central bank, which draws that money on the line, hands its own money across at the rate in force, and lends the foreign money on at the foreign window’s ceiling plus its penalty. Two rows on two central banks’ books, both dated, both priced; the line is finite and a draw past it is refused, which is a state.',
+    },
+    {
       id: MM_PARAMS.overdraftPenalty,
       value: 0.02,
       unit: 'per annum above the window rate',
@@ -1044,11 +1055,23 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
   // that cannot does not pay. Without this the second currency arrives as an unlimited foreign
   // overdraft — money issued to a holder with no lender row behind it, which is Money B3.c's
   // finding and the reason a world with two moneys would never need an FX market at all.
-  if (ctx.registry.currencyOf(ctx.parties.get(o.holder).region) !== o.ccy) {
+  const home = ctx.registry.currencyOf(ctx.parties.get(o.holder).region);
+  if (home !== o.ccy) {
+    // Central Bank A2.b, Currency E4 (16.5): THE SWAP LINE. The bank's OWN central bank draws the
+    // foreign money on its line with the issuer and lends it on; both draws become rows at the
+    // close (`bookOverdrafts`). It is allowed only while the line has room — what this issuer has
+    // already lent the home central bank on it, read off the rows, against the line's stated size.
+    const homeCb = ctx.registry.centralBankOf(home);
+    const line = ctx.registry.pieces(currencyUnit(o.ccy), asNamed(ctx.params.amount(MM_PARAMS.swapLine, currencyUnit(o.ccy)), 'the line'));
+    const drawn = drawnOnLine(ctx, o.issuer, homeCb, o.ccy);
+    if (ctx.parties.has(homeCb) && ctx.parties.get(homeCb).status.alive && drawn + o.shortfall <= line) {
+      m.overdrawn.push({ bank: o.holder, ccy: o.ccy, viaSwap: homeCb });
+      return { allow: true };
+    }
     ctx.record(
       'centralBank.refused',
       [o.issuer, o.holder],
-      { bank: o.holder, short: o.shortfall, ccy: o.ccy, foreign: true },
+      { bank: o.holder, short: o.shortfall, ccy: o.ccy, foreign: true, swapLineDrawn: drawn, swapLine: line },
       true,
     );
     return { allow: false };
@@ -1076,6 +1099,64 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
   }
   m.overdrawn.push({ bank: o.holder, ccy: o.ccy });
   return { allow: true };
+}
+
+/** Central Bank A2.b (16.5): what this issuer has lent that central bank on their swap line and not yet been repaid, off the rows. */
+function drawnOnLine(ctx: MechanismContext, issuer: PartyId, borrower: PartyId, ccy: CurrencyCode): number {
+  let out = 0;
+  for (const i of ctx.instruments.issuedBy(borrower)) {
+    if (!i.status.live || i.ccy !== ccy || !isRow(i.terms) || i.terms.lender !== issuer) continue;
+    out += ctx.register.heldTotal(i.id).value;
+  }
+  return out;
+}
+
+/**
+ * Central Bank A2.b, Currency E4, XI-5 (16.5): A DRAW ON THE SWAP LINE, as rows on two books.
+ *
+ * The issuer lends the home central bank the foreign money at its own window's ceiling (a central
+ * bank lends a central bank at the rate it lends its system), and the home central bank hands its own
+ * money across at the rate in force — that is the swap, two legs in two moneys in one instruction.
+ * Then the home central bank lends the money on to its bank at the ceiling plus its penalty, which
+ * repays the overdraft the bank ran at the issuer. The line is finite (`swapLine`), both rows are
+ * dated overnight and roll like any other, and neither central bank converted anything.
+ */
+function swapDraw(
+  ctx: MechanismContext,
+  m: Market,
+  issuer: PartyId,
+  homeCb: PartyId,
+  bank: PartyId,
+  need: Qty,
+  ccy: CurrencyCode,
+  atCeiling: Ratio,
+  atPenalty: Ratio,
+): void {
+  const book = BOOKS.find((b) => b.tenor === 'overnight' && !b.secured);
+  if (book === undefined) return;
+  const home = ctx.registry.currencyOf(ctx.parties.get(homeCb).region);
+  const n = m.next;
+  m.next += 1;
+  const line = writeRow(ctx, { lender: issuer, borrower: homeCb, amount: need, rate: atCeiling, book }, n, ccy, []);
+  if (!line.some) return;
+  // The other leg of the swap: the home central bank's own money, at the rate in force, to the issuer.
+  const across = ctx.registry.payable(ctx.valuation.inMoney(heldAsMoney(need, ccy, 'what it drew'), home, ctx.period));
+  if (across > 0) {
+    ctx.settle({
+      legs: [{ kind: 'money', from: ctx.accountOf(homeCb, home), to: ctx.accountOf(issuer, home), ccy: home, amount: across }],
+      cause: 'transfer',
+      reason: `${String(homeCb)} hands ${String(issuer)} its own money against the swap-line draw ${line.value}`,
+    });
+  }
+  const k = m.next;
+  m.next += 1;
+  const onward = writeRow(ctx, { lender: homeCb, borrower: bank, amount: need, rate: atPenalty, book }, k, ccy, []);
+  ctx.record(
+    'centralBank.swapLine',
+    [issuer, homeCb, bank],
+    { issuer, drawnBy: homeCb, lentTo: bank, amount: need, ccy, across, ccyAcross: home, atCeiling, atPenalty, line: line.value, onward: onward.some ? onward.value : null },
+    true,
+  );
 }
 
 /**
@@ -1111,6 +1192,10 @@ function bookOverdrafts(ctx: MechanismContext): void {
       ctx.params.perAnnum(MM_PARAMS.overdraftPenalty),
       'the penalty rate',
     );
+    if (d.viaSwap !== undefined) {
+      swapDraw(ctx, m, cb, d.viaSwap, d.bank, need, ccy, c.ceiling, rate);
+      continue;
+    }
     const cover = coverFor(
       advancesFrom(ctx, cb, d.bank, on),
       heldAsMoney(need, ccy, 'what it is short of'),

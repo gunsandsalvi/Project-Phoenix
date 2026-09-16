@@ -17,7 +17,8 @@
  * Law 6: nothing here bounds a rate. What is bounded is one desk's willingness, by its own capital
  * and its own stated edge, and both are its own.
  */
-import { amountOf, asRatio, minus, ratioOf, scale } from '../../core/measure.js';
+import { amountOf, asPerPiece, asRatio, heldAsMoney, minus, ratioOf, scale } from '../../core/measure.js';
+import { atMost } from '../../core/num.js';
 import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { CurrencyCode, MarketId } from '../../core/ids.js';
 import { downTick, type Qty } from '../../core/tick.js';
@@ -130,13 +131,24 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       if (Math.abs(gap) <= cost) continue;
       // D1: and only as much of it as its own capital is behind. The size is in units of A, which
       // is what both routes start from, so one number sizes all three legs.
-      const size = downTick(
+      const forward = gap > 0;
+      // 16.5: AND NO MORE THAN THE MONEY IT HOLDS IN EACH LEG'S GIVING CURRENCY. A trip that settles as
+      // one instruction fails whole if any leg is short (XI-5), so what it can trip is what it has
+      // in each money it hands over — a read of its accounts, not a limit (Law 6).
+      const risk = downTick(
         amountOf(
-          scale(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'),
-          ab.value.price,
-          'units of the base it can carry',
+          view.inMoney(scale(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'), t.a),
+          asPerPiece(1, 'a unit of the base'),
+          'units of the base it will risk',
         ),
       );
+      // Forward it gives A, then B, then C buys A back: the A it holds, the B it holds over the A/B
+      // rate, the C it holds over the A/C rate, all as units of A. Reversed, the givings swap sides.
+      const inA = view.cash(t.a);
+      const inB = downTick(amountOf(heldAsMoney(view.cash(t.b), t.b, 'what it holds of B'), ab.value.price, 'A that its B buys'));
+      const inC = downTick(amountOf(heldAsMoney(view.cash(t.c), t.c, 'what it holds of C'), ac.value.price, 'A that its C buys'));
+      const gives = forward ? [inA, inB, inC] : [inC, inB, inA];
+      const size = downTick(gives.reduce((least, g) => atMost(g, least, 'no more than it holds to give'), risk));
       if (size <= 0) continue;
       // The long way round is dearer, so it SELLS A the long way and buys it directly: it gives A
       // for B, gives B for C, and buys A back with C. The other sign is the same trip reversed.
@@ -146,7 +158,6 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       // order is the decision it took, read back rather than taken again). A phase that wrote into
       // three books would be a participant that is not one, and the arbitrage would stop being a
       // trade somebody made (Law 3).
-      const forward = gap > 0;
       const legs: readonly ArbitrageLeg[] = [
         { market: t.ab.id, side: forward ? 'sell' : 'buy', qty: size },
         { market: t.bc.id, side: forward ? 'sell' : 'buy', qty: size },
@@ -158,6 +169,8 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       const slot = ctx.workingOf(bank.id, ARBITRAGE, nothingPlanned);
       slot.at = ctx.period;
       slot.legs = legs;
+      // Spot FX A1, C2.a, XI-5 (16.5): three books, one instruction — atomic or not at all.
+      ctx.transact(bank.id, [t.ab.id, t.bc.id, t.ac.id]);
       ctx.record(
         'fx.arbitrage',
         [bank.id],

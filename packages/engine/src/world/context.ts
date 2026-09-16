@@ -1025,6 +1025,15 @@ export interface MechanismContext extends WorldReads {
    * is between a borrower and whoever lends, and the kernel is what carries it between them.
    */
   requests(at: Period): readonly CreditRequest[];
+  /**
+   * Spot FX A1, C2.a, XI-5 (16.5): ONE INSTRUCTION FROM TWO OR THREE BOOKS. A party that declares
+   * a group of markets for this period has its fills in every one of them settled TOGETHER, after
+   * the last of them has cleared, in one numbered instruction whose legs came from each session —
+   * or not at all: a book that did not fill it, or a joint instruction that fails, leaves nothing
+   * settled in any of them, and the record says so. A round trip through three pairs is atomic
+   * because it is one instruction, not because anything checked three afterwards.
+   */
+  transact(party: PartyId, markets: readonly MarketId[]): void;
   /** What every party has posted into a venue this period (the module that clears it reads this). */
   posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
