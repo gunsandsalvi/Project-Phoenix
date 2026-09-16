@@ -25,6 +25,7 @@ import {
 import { assertNever, forbid } from '../core/assert.js';
 import { Forbidden, InvalidRegistry, Missing, Unpriced, Impossible } from '../core/errors.js';
 import {
+  type EventId,
   contractId,
   type CurrencyCode,
   type CurveFamilyId,
@@ -80,6 +81,7 @@ import {
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind, type Event } from '../journal/journal.js';
+import { DISCLOSED, REPORT, type Statement, statementOf } from '../registry/statements.js';
 import type { InstructionDraft, Leg } from '../ledger/instruction.js';
 import { EVERY_PARTY_KIND } from './module.js';
 import { Ledger } from '../ledger/ledger.js';
@@ -1313,6 +1315,44 @@ export class World {
    * borrower had to be added to that list by hand, and none was — so the small-business sector
    * published nothing a bank would look at and got no credit at all (BK4).
    */
+  /**
+   * Observer A3, A4 (17.0a): the kernel's record that `from` showed `to` one of its own events.
+   * Private, with both as subjects, so exactly those two can read that it happened (`visibleTo`);
+   * the event itself is fetched by its id when the reader asks. A party cannot show what is not
+   * its own: a disclosure of somebody else's event would be a leak with a record of itself.
+   */
+  private disclose(from: PartyId, to: PartyId, event: Event): void {
+    forbid(
+      event.subjects.includes(String(from)),
+      'Observer A4',
+      `${String(from)} cannot show ${String(to)} an event it is not a subject of (${event.kind})`,
+      { from: String(from), to: String(to), kind: event.kind },
+    );
+    if (from === to) return;
+    this.journal.record(
+      this.currentPeriod,
+      this.currentCycle,
+      DISCLOSED,
+      [String(from), String(to)],
+      { from: String(from), to: String(to), kind: event.kind, event: event.id },
+      false,
+    );
+  }
+
+  private disclosedTo(party: PartyId, kind: EventKind, from: PartyId): Option<Event> {
+    const shown = this.journal.forSubject(DISCLOSED, String(party));
+    for (let i = shown.length - 1; i >= 0; i -= 1) {
+      const d = shown[i];
+      if (d === undefined) continue;
+      if (d.data['kind'] !== kind || d.data['from'] !== String(from)) continue;
+      if (d.data['to'] !== String(party)) continue;
+      const id = d.data['event'];
+      const e = typeof id === 'number' ? this.journal.get(id as EventId) : undefined;
+      return e === undefined ? none<Event>() : some(e);
+    }
+    return none<Event>();
+  }
+
   private requestsIn(at: Period): readonly CreditRequest[] {
     const out: CreditRequest[] = [];
     for (const e of this.journal.ofKindIn(CREDIT_REQUEST, at)) {
@@ -1331,6 +1371,8 @@ export class World {
         if (typeof row.instrument !== 'string' || typeof row.qty !== 'number') continue;
         security.push({ instrument: instrumentId(row.instrument), qty: asQty(row.qty) });
       }
+      const shown = e.data['statement'];
+      const report = typeof shown === 'number' ? this.journal.get(shown as EventId) : undefined;
       out.push({
         borrower: partyId(borrower),
         ccy: ccy as CurrencyCode,
@@ -1338,6 +1380,7 @@ export class World {
         security,
         repays,
         at,
+        statement: report === undefined ? none<Statement>() : some(statementOf(report)),
       });
     }
     return out;
@@ -1805,6 +1848,7 @@ export class World {
         const e = this.journal.lastOf(kind, party);
         return e === undefined || e.period < since ? none() : some(e);
       },
+      disclosedToMe: (kind, from) => this.disclosedTo(party, kind, from),
       index: (id: string) => this.index(id),
       // Law 18: asked once per money per party per period. It walks every line the party issued —
       // and a bank issues a row every time it lends — so the six pair markets asking it four times
@@ -2638,11 +2682,21 @@ export class World {
               qty: Number(sec.qty),
             })),
             repays: ask.repays,
+            // Corporate Credit A3, A4 (17.0a): a borrower that asks opens its books with the ask — the
+            // latest statement it prepared, named here so whoever lends reads that one.
+            statement: this.journal.lastOf(REPORT, String(borrower))?.id ?? null,
           },
           false,
         );
       },
       requests: (at) => this.requestsIn(at),
+      disclose: (from, to, event) => {
+        this.disclose(from, to, event);
+      },
+      latestReportOf: (party) => {
+        const e = this.journal.lastOf(REPORT, String(party));
+        return e === undefined ? none<Event>() : some(e);
+      },
       transact: (party, markets) => {
         this.transacts.set(String(party), {
           party,

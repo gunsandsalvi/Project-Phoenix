@@ -12404,3 +12404,81 @@ half of 16.4 at 17.4, Cross-Border C4 at 17b.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence, plan green.
 **Measured.** The eighteen suites run at the close of this major item; their result is the next
 entry.
+
+## Item 17.0a — Every company prepares full financials; publication and disclosure are separate acts
+
+The owner's rule: *"each and every company prepares full quarterly financials and then they are
+published or shared only when necessary"*, after two corrections — a lender reads a borrower's
+financials and the price of its traded paper, not only its own history of it; and *"you need a
+better way to screen who has access to what information"*.
+
+**What was there.** Two tiers: PUBLIC events and a party's OWN view. The kernel already carried the
+primitive for a third — `journal.visibleTo` returns public events plus the private ones a party is a
+subject of — and nothing wrote one. So modules peeked: `ctx.participant(<another party>)` at 96 sites
+in 41 files. The assessor graded every issuer from its private `earned`, `owedIn` and failed
+payments. `Reporting A1.a` made a company public by LISTED SHARES only, so a firm whose bonds the
+world holds published nothing, and the report was a trial balance — the equity movement grouped by
+instruction cause, a balance sheet, cash by counterparty, shares.
+
+**The three tiers now.** PUBLIC is a read of the register, widened to what A1.a actually says: any
+market-priced claim the company issued that somebody outside holds, so a bond-only issuer publishes.
+SHOWN is `ctx.disclose(from, to, event)` — the kernel records that one party showed another one of
+its own events, private to the two of them, read back with `view.disclosedToMe(kind, from)`; it
+refuses to show an event its shower is not a subject of. The reporting module shows a statement to
+every lender of record and to the banks that keep the company's accounts; the ratings module to the
+assessor the issuer pays (Ratings A5: that is what the fee buys, and an issuer that has prepared no
+statement is UNRATED); the kernel to whoever a borrower asks, because `CreditRequest` now names the
+statement opened with the ask. OWN is unchanged. A `PEEK` ratchet in `check:forbids` holds the count
+of cross-party view reads per file and it may only fall.
+
+**What a full statement is.** `docs/IMPLEMENTATION.md` 17.0a tables every section against what in
+this world produces it. Written: the income statement by what the money WAS — the receipt the wire
+itself wrote on each leg, so revenue, wages, rent, interest, tax, claims, dividends, production,
+wear, spoilage, write-offs and the marks are named lines that sum to the equity account's movement;
+comprehensive income, the same marks cut by what was marked; the balance sheet with cash, securities
+at their marks, inventories at cost, plant by vintage with its accumulated wear, debt at face, lease
+rent and the kernel's mark on every standing commitment; the changes in equity, whose identity is
+opening plus earned equals closing; the cash statement both classified (operating, capex,
+securities, interest, principal, financing, opening and closing cash) and by named counterparty;
+segments by product line and by geography; a debt schedule with each line's next payment, last print
+and holders; the leases; the commitments as debtor and the guarantees as creditor; every open
+derivative with its counterparty, notional, value and margin; the deals; the employees by trade and
+place; the share note; the related parties; the subsequent events; what the party published about
+its own regulation; the management's own outlooks; and EBITDA, free cash flow, debt service and net
+debt, each a sum of named lines so a covenant and a reader read one sum.
+
+Every position carries its FAIR-VALUE LEVEL, read off the print's provenance — printed this period,
+a print carried forward, or carried at cost. NO PER-SHARE FIGURE is stored (G5): earnings per share
+is income over shares, both published, and a reader divides. ABSENT and stated so, with the item
+that builds each: receivables and payables (17.5), undrawn commitments (17.3), goodwill and
+intangibles and a corporate profit tax with its deferred tax (19, the polity).
+
+**One parse.** `journal/published.ts` already held the kernel's typed read of the report and threw
+on a field its writer had not filled. It keeps that job; what a line MEANS now lives once in
+`registry/statements.ts`, which the writer writes from and every reader reads through.
+
+**Two phases ran for the first time.** `covenant.test` and `control.tender` had never been reached
+in any period of any world, because both need the target's published accounts and only listed
+companies had any. Both declared their module's whole read set as a placeholder for their own, with
+a comment saying it would narrow the first time the phase ran. It ran; they are narrowed to what
+they read.
+
+**The credit view reads them.** `banks/credit-view.ts` replaces `banks/quote.ts`: one view per bank
+per money per period, read by the quote, the overdraft's row, the provision, the refusal and the
+published reservation alike (C4). Its default frequency is annualised off the calendar; its loss
+given default is the bank's OWN recoveries on estates it was a creditor of, walked once over settled
+periods (a bank that has met no estate treats all of a claim as at risk, which is ignorance and not
+a stated recovery rate); the capital charge is at the GRADE the assessors publish on the name, asked
+through one `weightOfName` that the capital position uses too — so a downgrade consumes a bank's
+capital without the bank doing anything (Ratings C2). Three new reasons to decline, each said by
+name so declined volume is visible (C3.a): a name that prepared books and did not open them; a name
+whose earnings did not cover its debt service; and a name whose own paper the market already prices
+above the rate this bank would lend at — *nobody lends at six to a name whose bonds yield fifteen,
+it buys the bonds*.
+
+**And the floor under a bank's capital is gone.** `atLeastCash(capital, 0)` in `costOfFunds` hid
+insolvency as free capital (Law 6). An insolvent bank now says so — `bank.insolvent`, public, under
+its own name — and quotes nothing, which is what a bank in the hands of its resolver does.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green;
+`reporting` and `published` suites green (25 tests). The eighteen suites run at the close of item 17.

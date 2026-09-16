@@ -34,6 +34,31 @@ function reportsOf(w: World): readonly Event[] {
   return w.journal.ofKind('reporting.report');
 }
 
+/** A1.a: the ones anybody may read — the companies with paper outside holders hold. */
+function publicReportsOf(w: World): readonly Event[] {
+  return reportsOf(w).filter((e) => e.public);
+}
+
+/**
+ * 17.0a: one named line of one section of a statement. The parse is the kernel's (`published`);
+ * what a test reads off the RECORD it reads by name, because a section is a fixed vocabulary and a
+ * line that is not there is the writer's defect rather than a zero (Missing is Missing).
+ */
+function lineIn(e: Event, section: string, line: string): number {
+  const rows = e.data[section] as Record<string, unknown> | undefined;
+  const v = rows === undefined ? undefined : rows[line];
+  if (typeof v !== 'number') throw new Error(`${e.kind} has no ${section}.${line}`);
+  return v;
+}
+
+const sectionOf = (e: Event, name: string): Record<string, number> => {
+  const rows = e.data[name];
+  if (typeof rows !== 'object' || rows === null) throw new Error(`${e.kind} has no ${name}`);
+  return Object.fromEntries(
+    Object.entries(rows as Record<string, unknown>).filter(([, v]) => typeof v === 'number'),
+  ) as Record<string, number>;
+};
+
 /**
  * Law 18: a world of this seed and draw, stepped this far — built ONCE for the whole file and read
  * by every test that asks for the same one (`test/rig.ts`). Every test below only READS what its
@@ -95,32 +120,86 @@ describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', ()
   });
 });
 
-describe('who reports (Reporting A1, A1.a, G4)', () => {
-  it('publishes only for companies whose shares somebody outside holds', () => {
+describe('who reports, and who may read it (Reporting A1, A1.a, G4; Observer A3, A4)', () => {
+  it('has every company prepare, and publishes only what somebody outside holds paper of (17.0a)', () => {
     const w = ran('reporting', 30);
     const reports = reportsOf(w);
     expect(reports.length).toBeGreaterThan(0);
-    for (const r of reports) {
+    // A1.a: PUBLIC is a state read from the register, and it is not "listed" — a company whose
+    // BONDS somebody outside holds owes its holders the same accounts (17.0a, the owner's rule).
+    for (const r of publicReportsOf(w)) {
       const company = String(r.data['company']);
-      const line = w.instruments
+      const outside = w.instruments
         .all()
-        .find((i) => i.issuer.some && String(i.issuer.value) === company && i.market.some);
-      expect(line, `${company} reported with no listed line`).toBeDefined();
-      const outside = w.register.holdersOf(line!.id).filter((h) => String(h) !== company);
-      expect(outside.length, `${company} reported with nobody outside holding it`).toBeGreaterThan(
-        0,
-      );
+        .filter(
+          (i) =>
+            i.issuer.some &&
+            String(i.issuer.value) === company &&
+            i.market.some &&
+            w.registry.instrumentKind(i.kind).pricing === 'cleared',
+        )
+        .flatMap((i) => w.register.holdersOf(i.id))
+        .filter((h) => String(h) !== company);
+      expect(outside.length, `${company} published with nobody outside holding its paper`)
+        .toBeGreaterThan(0);
     }
-    // G4: and the firms that are not listed said nothing at all.
-    const reported = new Set(reports.map((r) => String(r.data['company'])));
-    const listed = new Set(
-      w.instruments
+    // And every company prepares one, published or not: the books exist either way, which is what
+    // makes a private company's accounts something it can OPEN to a lender (17.0a).
+    const prepared = new Set(reports.map((r) => String(r.data['company'])));
+    const published = new Set(publicReportsOf(w).map((r) => String(r.data['company'])));
+    expect(prepared.size).toBeGreaterThan(published.size);
+  });
+
+  it('shows a private company’s accounts to its lenders of record and to nobody else (A4)', () => {
+    const w = ran('reporting', 30);
+    const privateReport = reportsOf(w).find((e) => !e.public);
+    expect(privateReport, 'no company kept its accounts to itself').toBeDefined();
+    const company = partyId(String(privateReport!.data['company']));
+    // The disclosures name the two sides and nobody else: a party that was not shown it cannot
+    // reach it, however public the journal is (Observer A4).
+    const shown = w.journal
+      .ofKind('disclosed')
+      .filter((e) => e.data['from'] === String(company) && e.data['kind'] === 'reporting.report');
+    expect(shown.length, 'a private company showed its books to nobody').toBeGreaterThan(0);
+    // The REASON is read at the state it was read at: a loan since repaid and an account since
+    // closed are both real, and a disclosure made when the relationship stood is not retracted by
+    // its ending. So the reason is checked for the disclosures of the last period, against the
+    // state that stands now — like with like.
+    const latest = w.journal
+      .ofKind('disclosed')
+      .filter((e) => e.data['kind'] === 'reporting.report' && e.period === w.period);
+    expect(latest.length, 'nobody was shown anything this period').toBeGreaterThan(0);
+    for (const d of latest) {
+      const from = partyId(String(d.data['from']));
+      const to = partyId(String(d.data['to']));
+      // Banks Lending A5: whoever it owes a bilateral claim to, or the bank that keeps its account.
+      const lends = w.instruments
         .all()
-        .filter((i) => i.market.some && String(i.kind) === 'equity.share')
-        .map((i) => (i.issuer.some ? String(i.issuer.value) : '')),
-    );
-    for (const c of reported) expect(listed.has(c)).toBe(true);
-    expect(reported.size).toBeLessThan(w.parties.ofKind(FIRM).length);
+        .some(
+          (i) =>
+            i.issuer.some &&
+            String(i.issuer.value) === String(from) &&
+            !i.market.some &&
+            w.register.holdersOf(i.id).some((h) => String(h) === String(to)),
+        );
+      const banksIt = w.register.holdingsOf(from).some((h) => {
+        const i = w.instruments.get(h.instrument);
+        return (
+          w.registry.instrumentKind(i.kind).pricing === 'money' &&
+          i.issuer.some &&
+          String(i.issuer.value) === String(to)
+        );
+      });
+      // Ratings A5: and the assessor it PAYS for an opinion is shown them too — that is what the
+      // fee buys, and an assessor grading books nobody opened would be reading private state.
+      const rates = w.journal
+        .ofKind('rating.action')
+        .some((e) => e.subjects[0] === String(to) && e.subjects.includes(String(from)));
+      expect(
+        lends || banksIt || rates,
+        `${String(from)} showed its books to ${String(to)} for no reason`,
+      ).toBe(true);
+    }
   });
 
   it('reports each quarter once, and only one that opened after the world did', () => {
@@ -142,7 +221,10 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
     const w = ran('reporting', 30);
     const r = reportsOf(w)[0];
     expect(r).toBeDefined();
-    const lines = r!.data['income'] as { cause: string; amount: number; entries: number }[];
+    // 17.0a: the lines are NAMED — what the money WAS, from the receipt the wire wrote on it — so
+    // a reader asks for revenue or for wages rather than parsing the sentence somebody typed.
+    const income = sectionOf(r!, 'income');
+    const lines = Object.entries(income).map(([cause, amount]) => ({ cause, amount }));
     expect(lines.length).toBeGreaterThan(1);
     // The bottom line IS the sum of the decomposition — it is not computed a second way (Law 4).
     //
@@ -155,34 +237,78 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
     const earned = Number(r!.data['earned']);
     const scale = lines.reduce((t, l) => t + Math.abs(l.amount), Math.abs(earned));
     expect(withinDust(summed, earned, dustOf(lines.length + 1, scale))).toBe(true);
-    // And the marks are separable, because they are the part nobody was paid.
-    const marks = lines.find((l) => l.cause === 'revaluation');
-    expect(marks).toBeDefined();
+    // And the marks are separable, because they are the part nobody was paid: the write-downs and
+    // write-ups are the same entries the comprehensive-income section cuts by WHAT was marked, and
+    // both come to what `revaluation` says (Law 4: one set of entries, read once, cut two ways).
+    const marks = lineIn(r!, 'income', 'writeDowns') + lineIn(r!, 'income', 'writeUps');
     const revalued = Number(r!.data['revaluation']);
-    expect(
-      withinDust(marks!.amount, revalued, dustOf(2, Math.abs(marks!.amount) + Math.abs(revalued))),
-    ).toBe(true);
-    // Every key is a word its own writer wrote: the instruction's cause or the marks. A key this
-    // module invented would be a chart of accounts, which is what A2.a forbids.
-    for (const l of lines) expect(l.entries).toBeGreaterThan(0);
+    expect(withinDust(marks, revalued, dustOf(3, Math.abs(marks) + Math.abs(revalued)))).toBe(true);
+    const byWhat =
+      lineIn(r!, 'oci', 'fxTranslation') +
+      lineIn(r!, 'oci', 'unrealisedOnSecurities') +
+      lineIn(r!, 'oci', 'otherMarks');
+    expect(withinDust(byWhat, revalued, dustOf(4, Math.abs(byWhat) + Math.abs(revalued)))).toBe(
+      true,
+    );
+  });
+
+  it('carries the statement of changes in equity, and its identity holds (G2)', () => {
+    const w = ran('reporting', 30);
+    const r = reportsOf(w).at(-1);
+    const opening = lineIn(r!, 'equityChanges', 'opening');
+    const closing = lineIn(r!, 'equityChanges', 'closing');
+    const earned = Number(r!.data['earned']);
+    // opening + earned = closing. The dividend and share lines are components OF earned, named
+    // because a reader wants them by name — never additions to it.
+    const scale = Math.abs(opening) + Math.abs(earned) + Math.abs(closing);
+    expect(withinDust(opening + earned, closing, dustOf(3, scale))).toBe(true);
+  });
+
+  it('states the sums a covenant reads, each of its own named lines (Corporate Credit A3.b)', () => {
+    const w = ran('reporting', 30);
+    for (const r of reportsOf(w)) {
+      // A3.a: what its debt took is what it PAID — interest plus principal, both real payments.
+      const service = -lineIn(r, 'cashFlow', 'interestPaid') - lineIn(r, 'cashFlow', 'principalRepaid');
+      const said = lineIn(r, 'summary', 'service');
+      expect(withinDust(said, service, dustOf(3, Math.abs(said) + Math.abs(service)))).toBe(true);
+      const net = lineIn(r, 'balance', 'debt') - lineIn(r, 'balance', 'cash');
+      const netSaid = lineIn(r, 'summary', 'netDebt');
+      expect(withinDust(netSaid, net, dustOf(3, Math.abs(netSaid) + Math.abs(net)))).toBe(true);
+    }
   });
 
   it('carries the SAME balance sheet the accounts family checks the equity account against (Law 4)', () => {
-    const w = ran('reporting', 30);
-    const r = reportsOf(w).at(-1);
-    expect(r).toBeDefined();
     // The report is published in its own period and the sheet is read at that instant, so this
-    // compares like with like only for the last one — which is enough to say the two readers are
-    // one function. A report with its own implementation could agree here and drift anywhere else.
+    // compares like with like only for one published in THIS period — which is enough to say the
+    // two readers are one function. A report with its own implementation could agree here and
+    // drift anywhere else. Its OWN world, stepped until a quarter closes: somebody's does within
+    // the thirteen periods a quarter takes.
+    const w = ranWorld('reporting-sheet', 20, 4, 40);
+    let r: Event | undefined;
+    for (let i = 0; i < 14 && r === undefined; i += 1) {
+      w.step();
+      r = reportsOf(w).filter((e) => e.period === w.period).at(-1);
+    }
+    expect(r, 'no company reported in fourteen periods').toBeDefined();
     const company = partyId(r!.subjects[0]!);
     const sheet = balanceSheet(w, company);
-    expect(typeof r!.data['assets']).toBe('number');
+    const assets = lineIn(r!, 'balance', 'assets');
     expect(String(r!.data['ccy'])).toBe(sheet.ccy);
+    expect(
+      withinDust(
+        assets,
+        sheet.assets.value.pieces,
+        dustOf(2, Math.abs(assets) + Math.abs(sheet.assets.value.pieces)),
+      ),
+    ).toBe(true);
   });
 
   it('states the cash by named counterparty, in the money it moved (A2, Law 9)', () => {
     const w = ran('reporting', 30);
-    const r = reportsOf(w)[0];
+    // A quarter in which nothing moved between this company and anybody has no lines, which is an
+    // answer; what is asserted is what a statement that HAS them says.
+    const r = reportsOf(w).find((e) => (e.data['cash'] as unknown[]).length > 0);
+    expect(r, 'no company moved money with anybody in a whole quarter').toBeDefined();
     const cash = r!.data['cash'] as {
       counterparty: string;
       instrument: string;
@@ -203,12 +329,54 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
 
   it('states shares outstanding and stores no per-share figure anywhere (G5)', () => {
     const w = ran('reporting', 30);
-    const r = reportsOf(w)[0];
-    expect(Number(r!.data['shares'])).toBeGreaterThan(0);
+    const r = publicReportsOf(w).find((e) => e.data['shares'] !== null);
+    expect(r, 'no listed company published').toBeDefined();
+    const shares = r!.data['shares'] as { issued: number; holders: number };
+    expect(shares.issued).toBeGreaterThan(0);
     // Earnings per share is income over shares, both of them reads. A stored quotient would be an
     // outcome written down (Law 2), so the report carries the two and never their ratio.
-    const keys = Object.keys(r!.data).join(' ');
-    expect(/perShare|eps/i.test(keys)).toBe(false);
+    const keys = JSON.stringify(r!.data);
+    expect(/perShare|earningsPerShare|"eps"/i.test(keys)).toBe(false);
+  });
+
+  it('carries every section a reader of a quarterly report opens it for (17.0a)', () => {
+    const w = ran('reporting', 30);
+    const r = reportsOf(w).at(-1);
+    expect(r).toBeDefined();
+    // The sections, by name. A report missing one is not a shorter report — it is a set of accounts
+    // whose reader has to go and find the fact somewhere else, which is what 17.0a removed.
+    for (const section of [
+      'income',
+      'oci',
+      'cashFlow',
+      'balance',
+      'equityChanges',
+      'summary',
+      'byProduct',
+      'byGeography',
+      'cash',
+      'holdings',
+      'inventories',
+      'plant',
+      'debt',
+      'leases',
+      'commitments',
+      'guarantees',
+      'derivatives',
+      'deals',
+      'employees',
+      'relatedParties',
+      'subsequent',
+      'regulatory',
+      'commentary',
+      'currencies',
+    ]) {
+      expect(r!.data[section], `a statement with no ${section}`).toBeDefined();
+    }
+    // A4.a: what management says about what comes next is its OWN outlook, in the numbers its own
+    // decisions read (B4) — never a second figure composed for the audience.
+    const commentary = r!.data['commentary'] as { on: string; expected: number }[];
+    expect(Array.isArray(commentary)).toBe(true);
   });
 });
 
@@ -286,7 +454,10 @@ describe('guidance (Reporting B1, B2, B3, B4; Firm E7)', () => {
 
   it('is a READ of the journal and stores nothing (B3)', () => {
     const w = ran('reporting', 60);
-    const company = partyId(w.journal.ofKind('reporting.report')[0]!.subjects[0]!);
+    // B1: a management guides where its shares trade — that is the audience the guidance is for.
+    const guided = w.journal.ofKind('reporting.guidance')[0];
+    expect(guided, 'no management guided at all').toBeDefined();
+    const company = partyId(guided!.subjects[0]!);
     const record = guidanceRecord(w, company);
     // It pairs what a management SAID with what its books then produced, and it exists only while
     // somebody is looking: a stored record would be a second account of what a company said.

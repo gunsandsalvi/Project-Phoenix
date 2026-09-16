@@ -18,7 +18,7 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
-import { atLeastCash, atMostCash, noCash, sumCash } from '../../core/measure.js';
+import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import {
   asCash,
   asPerPiece,
@@ -68,7 +68,7 @@ import {
   sessionOrders,
   setBoard,
 } from './treasury.js';
-import { isSub, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
+import { isSub, runRaise, subordinatedKind, subordinatedOf, SUB_PARAMS } from './subordinated.js';
 import {
   advisoryOrders,
   costOfAProcess,
@@ -82,14 +82,17 @@ import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import type { Holding } from '../../register/register.js';
 import {
-  holderReservation,
+  creditInputs,
+  creditView,
+  type CreditView,
+  exposureTo,
   lossGivenDefault,
-  probabilityOfDefault,
-  quote,
   room,
   type Quote,
   type Regulation,
-} from './quote.js';
+} from './credit-view.js';
+import { weightOfName } from './capital.js';
+import { type Statement } from '../../registry/statements.js';
 import { creditDefaults } from '../../registry/banking.js';
 import { paperOfferedIn } from '../../registry/notices.js';
 import { ALLOTTED } from './lines.js';
@@ -103,15 +106,7 @@ export * from './subordinated.js';
 export * from './treasury.js';
 export * from './dealing.js';
 export * from './dealing-quote.js';
-export {
-  quote,
-  holderReservation,
-  room,
-  probabilityOfDefault,
-  lossGivenDefault,
-  exposureTo,
-} from './quote.js';
-export type { Quote, Regulation, Room } from './quote.js';
+export * from './credit-view.js';
 
 export const LENDING_PARAMS = {
   capitalRatio: paramId('regulation.capitalRatio'),
@@ -364,29 +359,36 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   // money is that residual TRANSLATED at the rate in force — a report, never a conversion (B3).
   const capital = ctx.valuation.inMoney(ctx.participant(bank).equity(), ccy, ctx.period);
   /**
-   * Banks Capital A1, XI-4: A HOLE IS NOT A SOURCE OF FUNDS.
+   * Banks Capital A1, A2, XI-4 (17.0): WHAT FUNDS THE BOOK is what it owes plus the capital layer —
+   * the equity that absorbs first and the subordinated claims that absorb next (A2.a, A2.b). The
+   * subordinated layer costs it the coupon it pays, which is in `interest` below; the equity costs
+   * it what its owners require; and neither is counted twice, because `owedBy` leaves the layer
+   * out of what it owes.
    *
-   * Capital is the residual (A1), and a bank whose residual is negative is insolvent — a real state
-   * that stays real: it is published under the bank's own name below, the audit sees it and the
-   * resolution trigger reads it. What a negative residual is NOT is money funding the book with a
-   * return its owners require on it: there is nothing there for them to require one on. So what
-   * funds the book is what it owes plus the capital there IS, and a bank with none funds itself
-   * entirely with debt.
-   *
-   * Blending the hole in made `perAnnum` NEGATIVE — measured at −0.0894 for a bank 31bn short —
-   * and a negative cost of funds reaches the dealing quote as a negative EDGE, which is a bid above
-   * the desk's own offer. Twenty-three periods into a thirty-period run the market refused it at
-   * the site: `[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices`
-   * (`13b-12`). The crossing was arithmetic that had lost its meaning, not a decision anybody took.
+   * A BANK WHOSE RESIDUAL IS A HOLE IS INSOLVENT, and an insolvent bank cannot cost its funding:
+   * there is nothing for its owners to require a return on and no book its liabilities fund. The
+   * floor that used to stand here (`atLeastCash(capital, 0)`) hid that state as free capital; Law 6
+   * says the state is the answer. It is said under the bank's own name (`bank.insolvent`, at
+   * `publishCostOfFunds`), the resolution trigger reads its published capital, and until then it
+   * quotes nothing — which is what a bank in the hands of its resolver does.
    */
-  const funded = atLeastCash(
+  if (capital.pieces < 0) {
+    return {
+      perAnnum: none<Ratio>(),
+      interest: asCash(0, ccy, 'an insolvent bank has no cost of funds to say'),
+      onCapital: noCash(ccy),
+      owed,
+      capital,
+    };
+  }
+  const layer = plus(
     capital,
-    noCash(ccy),
-    'a hole funds nothing: there is no less capital than none',
+    ctx.valuation.inMoney(subordinatedOf(ctx, bank), ccy, ctx.period),
+    'the capital layer',
   );
-  const funding = plus(owed, funded, 'what funds its book');
+  const funding = plus(owed, layer, 'what funds its book');
   const required = ctx.params.perAnnum(bankParam(bank, 'returnOnCapital'));
-  const onCapital = scale(funded, required, 'what its own capital costs it');
+  const onCapital = scale(capital, required, 'what its own capital costs it');
   const blend = (interest: Cash): FundingCost => ({
     perAnnum:
       funding.pieces <= 0
@@ -494,8 +496,10 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): C
 function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Cash {
   const terms: Cash[] = [];
   for (const i of ctx.instruments.issuedBy(bank)) {
-    if (i.ccy !== ccy) continue;
+    if (i.ccy !== ccy || !i.status.live) continue;
     if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    // Banks Capital A2.b (17.0): the subordinated layer is capital, counted there and not here.
+    if (isSub(i.terms)) continue;
     // Money A1: what a bank owes is owed AT ITS FACE, so what it has issued of a liability is what
     // it owes — one of itself for each unit (item 16: the door, said once).
     terms.push(asCash(i.issued, i.ccy, `what ${bank} owes on ${i.id}`));
@@ -555,7 +559,7 @@ function shop(
     );
     return { best: undefined, lend: noCash(want.ccy) };
   }
-  const r = room(ctx.participant(quoted.bank), decl, borrower);
+  const r = room(ctx.participant(quoted.bank), decl, exposureTo(ctx.participant(quoted.bank), borrower));
   if (r.most.pieces <= 0) {
     refuse(rows, ctx, borrower, want);
     return { best: undefined, lend: noCash(want.ccy) };
@@ -579,8 +583,10 @@ function refuse(
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive || b.id === borrower) continue;
-    const r = room(ctx.participant(b.id), decl, borrower);
-    if (r.most.pieces > 0) continue;
+    const cv = creditViewFor(rows, ctx, b.id, want.ccy);
+    const declines = cv === undefined ? none<string>() : cv.of(borrower).declines;
+    const r = room(ctx.participant(b.id), decl, cv === undefined ? exposureTo(ctx.participant(b.id), borrower) : cv.exposureTo(borrower));
+    if (r.most.pieces > 0 && !declines.some) continue;
     ctx.record(
       'credit.declined',
       [b.id, borrower],
@@ -588,7 +594,9 @@ function refuse(
         bank: b.id,
         borrower,
         asked: want.pieces,
-        binds: r.binds,
+        // C3.a: WHY — the constraint that bound, or the view's own reason (17.0): a name that would
+        // not open its books, one whose earnings do not cover its debt, one the market prices worse.
+        binds: declines.some ? declines.value : r.binds,
         capitalRoom: r.capital.some ? r.capital.value.pieces : null,
         appetiteRoom: r.appetite.pieces,
         fundingRoom: r.funding.some ? r.funding.value.pieces : null,
@@ -616,10 +624,10 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
     lend: (ctx, broker, client, amount, ccy): boolean => {
       const decl = declOf(rows, broker);
       if (decl === undefined) return false;
-      const view = ctx.participant(broker);
-      const funds = costOfFunds(ctx, broker, ccy).perAnnum;
-      if (!funds.some) return false;
-      const q = quote(view, decl, client, regulationOf(view), funds.value, seenDefaults(ctx));
+      const cv = creditViewFor(rows, ctx, broker, ccy);
+      if (cv === undefined) return false;
+      const q = cv.of(client);
+      if (q.declines.some) return false;
       // C9, F1.a: one row per (lender, borrower) — a client that comes back is drawing on what it
       // already has here, never taking a new loan every week.
       return write(ctx, broker, client, amount, q.rate, ccy, true) !== undefined;
@@ -908,7 +916,7 @@ function overdraft(
   // an estate is being wound up, and a household has no lender in this world at all (Households
   // C1.d). The kind says so and the bank reads it (Law 15); the refusal is the answer, recorded.
   const borrows = ctx.registry.partyKind(ctx.parties.get(o.holder).kind).borrows;
-  const r = room(view, decl, o.holder);
+  const r = room(view, decl, exposureTo(view, o.holder));
   /**
    * B3.a, item 0 (stop 12): AND A BANK THAT CANNOT COST ITS OWN FUNDING DOES NOT ALLOW ONE.
    *
@@ -960,7 +968,6 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
     const bank = d.issuer as PartyId;
     const decl = declOf(rows, bank);
     if (decl === undefined) continue;
-    const view = ctx.participant(bank);
     /**
      * A-45, Money B3.a: WHOEVER ALLOWED THE DRAWING WRITES THE ROW THAT PRICES IT — and a bank that
      * cannot cost its own funding cannot price it. This used to reach `quote` with a cost of zero in
@@ -971,15 +978,17 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // A-45, B3.a: whoever allowed the drawing writes the row that prices it, and `overdraft` above
     // does not allow one it cannot price — so the cost is there. The throw that used to stand here
     // was the same fact asserted twice, one phase too late (item 0, stop 12).
-    const funds = costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum;
-    if (!funds.some) continue;
+    const cv = creditViewFor(rows, ctx, bank, d.ccy as CurrencyCode);
+    if (cv === undefined) continue;
     // Register F2, Money E4 (14.1): THE BORROWER AS IT IS NOW. A party can draw in one phase and
     // cease in a later one of the same period — a fund wound up into its manager after its last
     // fee overdrew — and the row for what it drew is its successor's to owe; a drawing whose line
     // ceased into nobody is booked to nobody.
     const borrower = ctx.parties.resolve(d.holder as PartyId);
     if (!borrower.status.alive) continue;
-    const q = quote(view, decl, borrower.id, regulationOf(view), funds.value, seenDefaults(ctx));
+    // The bank already allowed the drawing (Money B3.a); what is decided here is its price, and
+    // the row is priced off the one view (Law 4) whether or not that view would open a NEW line.
+    const q = cv.of(borrower.id);
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
     write(ctx, bank, borrower.id, d.amount, q.rate, d.ccy as CurrencyCode, true);
   }
@@ -1164,6 +1173,18 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         holds:
           'what the kernel allowed as a customer drawing this period, waiting to become a loan row',
         why: 'the same interval as the money market’s: the kernel has said yes, the row does not exist yet, and by the end of the period it does (Money B3.a).',
+      },
+      {
+        name: 'banks.creditView',
+        kind: 'working',
+        holds: 'each bank’s credit view this period, per money, and the statements borrowers opened with their asks',
+        why: 'a within-period memo of one derivation read by the quote, the row, the provision and the reservation (Law 4, Law 18); it is rebuilt every period from the record and holds nothing the record does not.',
+      },
+      {
+        name: 'banks.recoveries',
+        kind: 'working',
+        holds: 'the periods walked so far and what each party’s claims on estates were paid and written off',
+        why: 'a memo of a walk over the settled ledger that a settled period cannot change (Law 18); the ledger is the source and this is not a second copy of it.',
       },
       {
         name: 'banks.couponsPaid',
@@ -1394,7 +1415,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         // with — a lag, and a real one: a bank finds out what its capital allowed after the quarter
         // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
         anchor: { after: 'revaluation' },
-        reads: [],
+        reads: [
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+        ],
         writes: [
           { kind: 'event', name: 'bank.capital' },
           { kind: 'event', name: 'bank.capitalPlan' },
@@ -1428,9 +1451,13 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
+          { kind: 'event', name: 'disclosed', of: 'anyPeriod' },
         ],
         writes: [
           { kind: 'event', name: 'bank.costOfFunds' },
+          { kind: 'event', name: 'bank.insolvent' },
           { kind: 'event', name: 'bank.reservation' },
           { kind: 'event', name: 'credit.declined' },
           { kind: 'event', name: 'credit.draw' },
@@ -1518,7 +1545,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         spec: 'Dealer Desks D5 Dealer Desks E4',
         // After the marks are in the books, so what it says the book is worth is what it is worth.
         anchor: { after: 'revaluation' },
-        reads: [],
+        reads: [
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+        ],
         writes: [{ kind: 'event', name: 'bank.dealing' }],
         run: (ctx: MechanismContext): void => {
           for (const b of ctx.parties.ofKind(BANK)) {
@@ -1538,6 +1567,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'credit.declined', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.written', of: 'thisPeriod' },
+          { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
+          { kind: 'event', name: 'disclosed', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
         ],
         writes: [
           { kind: 'event', name: 'credit.draw' },
@@ -1570,6 +1603,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         reads: [
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
+          { kind: 'event', name: 'disclosed', of: 'anyPeriod' },
+          { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
         ],
         writes: [{ kind: 'event', name: 'prime.line' }],
         run: (ctx: MechanismContext): void => {
@@ -1662,8 +1699,9 @@ function worthToItsLender(
   if (!creditor.some) return none<PerPiece>();
   const decl = declOf(rows, creditor.value);
   if (decl === undefined) return none<PerPiece>();
-  const view = ctx.participant(creditor.value);
-  const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
+  const cv = creditViewFor(rows, ctx, creditor.value, i.ccy);
+  if (cv === undefined) return none<PerPiece>();
+  const pd = cv.of(i.terms.borrower).probabilityOfDefault;
   /**
    * C5.a (13d): what stands behind it, at the MARKET's own price, read when the question is asked.
    * So a bank holding claims secured on a thing whose price is falling carries them lower, without
@@ -1672,6 +1710,7 @@ function worthToItsLender(
   const owed = ctx.register.heldTotal(i.id).value;
   const loss = scale(
     lossGivenDefault(
+      cv.lossGivenDefault,
       i.terms.security,
       (pledged) => {
         const print = ctx.prices.latest(pledged, ctx.period);
@@ -1828,14 +1867,17 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
        */
       if (!ctx.instruments.has(moneyInstrumentId(b.id, ccy))) continue;
       const view = ctx.participant(b.id);
-      const reg = regulationOf(view);
-      const r = room(view, decl, p.id);
-      if (r.most.pieces <= 0) continue;
       // A-45: a bank that cannot cost its funding does not quote. It is not the cheapest lender in
       // the world, which is what a zero made it in every opening period.
-      const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
-      if (!funds.some) continue;
-      const q = quote(view, decl, p.id, reg, funds.value, seenDefaults(ctx));
+      const cv = creditViewFor(rows, ctx, b.id, ccy);
+      if (cv === undefined) continue;
+      const r = room(view, decl, cv.exposureTo(p.id));
+      if (r.most.pieces <= 0) continue;
+      // C3 (17.0): and a bank that has a REASON not to lend to this name does not quote it — its
+      // books were not opened, its earnings do not cover its debt, or the market already prices
+      // its paper above what this bank would lend at. `refuse` says which, when the name asks.
+      const q = cv.of(p.id);
+      if (q.declines.some) continue;
       if (best === undefined || q.rate < best.rate) {
         best = q;
         most = r.most;
@@ -1871,6 +1913,10 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
  * reservation sits, and a spread below every reservation means demand is genuinely zero.
  */
 function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): void {
+  // 17.0: THE NAMES A BANK HAS A REASON TO PRICE — every issuer of live paper anybody could bring
+  // it, and every live bank: a name anybody may lend to whether or not it has paper outstanding,
+  // because somebody deciding overnight whether to place cash with it needs the answer before the
+  // first row exists (Money Market B2).
   const obligors = new Set<PartyId>();
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some) continue;
@@ -1878,53 +1924,124 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
     if (!profile.liabilityOfIssuer || profile.pricing === 'money') continue;
     obligors.add(i.issuer.value);
   }
-  // A bank is a name anybody may lend to whether or not it has paper outstanding right now, and
-  // somebody deciding overnight whether to place cash with it needs the answer before the first
-  // row exists (Money Market B2). So every live bank is an obligor here, always.
   for (const b of ctx.parties.ofKind(BANK)) if (b.status.alive) obligors.add(b.id);
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive) continue;
-    const view = ctx.participant(b.id);
     const ccy = ctx.registry.currencyOf(b.region);
     // A-45: it publishes what it would require only where it can say what money costs it.
-    const own = costOfFunds(ctx, b.id, ccy).perAnnum;
-    if (!own.some) continue;
-    const funds = own.value;
-    const reg = {
-      ...regulationOf(view),
-      riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight),
-    };
+    const cv = creditViewFor(rows, ctx, b.id, ccy);
+    if (cv === undefined) continue;
     const required: Record<string, number> = {};
     const expectedLoss: Record<string, number> = {};
     const capitalCost: Record<string, number> = {};
     const terms: Record<string, unknown> = {};
     for (const obligor of obligors) {
-      const r = holderReservation(view, decl, reg, funds);
-      required[obligor] = r.rate;
-      // C1.b, C4: THE TWO BELIEFS, published separately from any one price built out of them.
-      // What this bank expects to lose on an unsecured claim on that name is its own model — the
-      // one its loan book is priced and provisioned with, used once (Law 4) — and what the capital
-      // such a claim consumes costs it is its own required return on that capital. Somebody
-      // pricing a different claim on the same name (a week of money, say: Money Market B2) needs
-      // these two and not a rate assembled for a year-long loan, so both are said plainly here and
-      // the composing is done by whoever is asking the question.
-      const unsecured = quote(view, decl, obligor, regulationOf(view), funds, seenDefaults(ctx));
-      expectedLoss[obligor] = unsecured.expectedLoss;
-      capitalCost[obligor] = unsecured.capitalCharge;
+      // C1.b, C4, E5: ONE VIEW OF THE NAME, and its parts said plainly — what it requires to HOLD
+      // the name's paper, what it expects to lose on it and what the capital costs it — so somebody
+      // pricing a different claim on the same name (a week of money, say: Money Market B2) composes
+      // from the same beliefs rather than from a rate assembled for a year-long loan (Law 4).
+      const v = cv.of(obligor);
+      required[obligor] = v.required;
+      expectedLoss[obligor] = v.expectedLoss;
+      capitalCost[obligor] = v.capitalCharge;
       terms[obligor] = {
-        costOfFunds: r.costOfFunds,
-        expectedLoss: r.expectedLoss,
-        capitalCharge: r.capitalCharge,
+        costOfFunds: v.costOfFunds,
+        expectedLoss: v.expectedLoss,
+        capitalCharge: v.capitalCharge,
+        probabilityOfDefault: v.probabilityOfDefault,
+        lossGivenDefault: v.lossGivenDefault,
+        riskWeight: v.riskWeight,
+        grade: v.grade.some ? v.grade.value : null,
+        coverage: v.coverage.some ? v.coverage.value : null,
+        leverage: v.leverage.some ? v.leverage.value : null,
+        marketYield: v.marketYield.some ? v.marketYield.value : null,
+        declines: v.declines.some ? v.declines.value : null,
       };
     }
     ctx.record(
       'bank.reservation',
       [b.id],
-      { bank: b.id, ccy, required, expectedLoss, capitalCost, terms },
+      {
+        bank: b.id,
+        ccy,
+        required,
+        expectedLoss,
+        capitalCost,
+        lossGivenDefault: cv.lossGivenDefault,
+        terms,
+      },
       false,
     );
   }
+}
+
+/** The per-period memo of every bank's view: one derivation per bank per money per period (Law 4). */
+interface Views {
+  period: number;
+  byKey: Map<string, CreditView | undefined>;
+  asked: Map<string, Statement> | undefined;
+}
+
+/**
+ * 17.0: THIS BANK'S CREDIT VIEW THIS PERIOD, in one money — formed once and read by the quote, the
+ * overdraft's row, the provision, the refusal and the published reservation alike. Nothing where
+ * the bank cannot cost its funding (A-45) or is not one of this module's.
+ */
+function creditViewFor(
+  rows: readonly BankDecl[],
+  ctx: MechanismContext,
+  bank: PartyId,
+  ccy: CurrencyCode,
+): CreditView | undefined {
+  const memo = ctx.state<Views>('banks.creditView', () => ({
+    period: ctx.period,
+    byKey: new Map(),
+    asked: undefined,
+  }));
+  if (memo.period !== ctx.period) {
+    memo.period = ctx.period;
+    memo.byKey.clear();
+    memo.asked = undefined;
+  }
+  const key = `${String(bank)}\u0000${ccy}`;
+  if (memo.byKey.has(key)) return memo.byKey.get(key);
+  const decl = declOf(rows, bank);
+  const funds = costOfFunds(ctx, bank, ccy).perAnnum;
+  if (decl === undefined || !funds.some) {
+    memo.byKey.set(key, undefined);
+    return undefined;
+  }
+  if (memo.asked === undefined) {
+    // Corporate Credit A4: the books borrowers opened with their asks — last period's, which is
+    // what this period arranges credit against (Clearing F1), and this period's.
+    memo.asked = new Map<string, Statement>();
+    for (const at of [period(ctx.period - 1), period(ctx.period)]) {
+      if (at < 0) continue;
+      for (const r of ctx.requests(at)) {
+        if (r.statement.some) memo.asked.set(String(r.borrower), r.statement.value);
+      }
+    }
+  }
+  const view = ctx.participant(bank);
+  const reg = regulationOf(view);
+  const rules = rulesFor(rows, ctx, bank);
+  const made = creditView(
+    view,
+    decl,
+    ccy,
+    creditInputs(
+      ctx,
+      view,
+      funds.value,
+      reg,
+      seenDefaults(ctx),
+      (name) => weightOfName(ctx, name, ccy, rules),
+      memo.asked,
+    ),
+  );
+  memo.byKey.set(key, made);
+  return made;
 }
 
 /**
@@ -1976,6 +2093,17 @@ function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): v
     const alsoIn: Record<string, Record<string, unknown>> = {};
     for (const ccy of ctx.registry.currencies.keys()) {
       if (ccy !== home) alsoIn[ccy] = published(costOfFunds(ctx, b.id, ccy));
+    }
+    // Banks Capital A1, C1 (17.0): A HOLE IS SAID, under the bank's own name, once a period. The
+    // floor that hid it as free capital is gone; what stands here is the state.
+    const own = costOfFunds(ctx, b.id, home);
+    if (own.capital.pieces < 0) {
+      ctx.record(
+        'bank.insolvent',
+        [b.id],
+        { bank: b.id, ccy: home, capital: own.capital.pieces, owed: own.owed.pieces },
+        true,
+      );
     }
     ctx.record(
       'bank.costOfFunds',

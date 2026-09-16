@@ -374,7 +374,8 @@ export interface StatementsView {
   readonly income: readonly { readonly cause: string; readonly amount: number }[];
   readonly assets: number;
   readonly liabilities: number;
-  readonly shares: number;
+  /** G5: shares in issue, so a reader can divide; nothing for a company with no listed line. */
+  readonly shares: number | null;
   readonly ccy: string;
   /** B1: what management guides to for the coming quarter, if it is guiding. */
   readonly guided: number | null;
@@ -1252,13 +1253,16 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
     out.push({
       company,
       quarter: report.quarter,
-      period: report.at,
+      period: report.preparedIn,
       earned: report.earned.pieces,
       revaluation: report.revaluation.pieces,
-      income: report.income.map((l) => ({ cause: l.cause, amount: l.amount })),
-      assets: report.assets.pieces,
-      liabilities: report.liabilities.pieces,
-      shares: report.shares,
+      income: Object.entries(report.income).map(([cause, amount]) => ({
+        cause,
+        amount: amount.pieces,
+      })),
+      assets: report.balance.assets.pieces,
+      liabilities: report.balance.liabilities.pieces,
+      shares: report.notes.shares === null ? null : report.notes.shares.issued,
       ccy: report.ccy,
       guided: guidance === undefined ? null : guidance.guided.pieces,
       guidedFor: guidance === undefined ? null : guidance.quarter,
@@ -1277,7 +1281,7 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
         : null,
       surprises: w.journal
         .ofKind('research.surprise')
-        .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.at)
+        .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.preparedIn)
         .map((e) => ({ bank: text(e.data['bank']), surprise: nums(e.data['surprise']) })),
     });
   }

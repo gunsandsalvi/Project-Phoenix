@@ -320,7 +320,7 @@ function reported(ctx: MechanismContext): PartyId[] {
 function settle(ctx: MechanismContext): void {
   const all = desks(ctx);
   for (const report of ctx.published.statements()) {
-    if (report.at !== ctx.period) continue;
+    if (report.preparedIn !== ctx.period) continue;
     const company = String(report.company);
     const observed = over(
       report.earned,

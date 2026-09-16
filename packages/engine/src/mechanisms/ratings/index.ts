@@ -29,7 +29,9 @@ import type { PartyKindProfile } from '../../registry/kinds.js';
 import { BANK, FIRM, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { assess, forInstrument, type Measure } from './assess.js';
+import { assess, forInstrument, MISSED_WINDOW, type Measure } from './assess.js';
+import { creditDefaults } from '../../registry/banking.js';
+import { REPORT, statementOf } from '../../registry/statements.js';
 import { assessorChoosesBank, ASSESSOR_SWITCHING_COST } from './bank.js';
 import {
   ASSESSOR,
@@ -127,8 +129,23 @@ function assessAll(ctx: MechanismContext, rows: readonly AssessorDecl[]): void {
     if (!ctx.parties.has(me) || !ctx.parties.get(me).status.alive) continue;
     const forMe = (b[d.assessor] ??= {});
     for (const subject of subjectsOf(ctx)) {
-      const ccy = ctx.registry.currencyOf(ctx.parties.get(subject).region);
-      const measured = assess(ctx.blind(subject), d, ccy);
+      // A5, Observer A4 (17.0a): THE ISSUER OPENS ITS BOOKS TO THE ASSESSOR IT PAYS. What is graded
+      // is the latest quarterly statement it prepared, shown to this assessor and recorded as shown;
+      // an issuer that has prepared none yet is UNRATED, which is what an unrated name is and a real
+      // state for a young company — not a grade made from a peek at its ledger.
+      const report = ctx.latestReportOf(subject);
+      if (!report.some) continue;
+      const shown = statementOf(report.value);
+      const already = ctx.participant(me).disclosedToMe(REPORT, subject);
+      if (!already.some || already.value.id !== report.value.id) {
+        ctx.disclose(subject, me, report.value);
+      }
+      // A world younger than the window has only what it has: there is no period before it began.
+      const since = asPeriod(ctx.period > MISSED_WINDOW ? ctx.period - MISSED_WINDOW : 0);
+      const missed = creditDefaults(ctx.journal).filter(
+        (e) => e.period >= since && e.subjects.includes(String(subject)),
+      ).length;
+      const measured = assess(shown, missed, d);
       publishIfMoved(ctx, d, forMe, String(subject), measured, [d.assessor, String(subject)], {
         assessor: d.assessor,
         subject,
@@ -370,9 +387,12 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
         reads: [
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
+          { kind: 'event', name: 'disclosed', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
         ],
         writes: [
           { kind: 'event', name: 'credit.declined' },
+          { kind: 'event', name: 'disclosed' },
           { kind: 'event', name: 'rating.action' },
           { kind: 'event', name: 'rating.unpaid' },
         ],

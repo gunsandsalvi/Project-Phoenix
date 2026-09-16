@@ -626,6 +626,24 @@ built from are in its `Pick<>`s and the rest of each store is not.
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
 
+**THREE TIERS OF INFORMATION, not two** (Observer A3, A4; Reporting A1.a; item 17.0a). The two the
+kernel had were PUBLIC (an event recorded `isPublic`) and OWN (what a party is a subject of, through
+`lastOwn` and `visibleTo`). The third is DISCLOSED: `ctx.disclose(from, to, event)` records that one
+party showed another one of its own events, and `view.disclosedToMe(kind, from)` reads it back. The
+event itself does not move and does not become public; what is recorded is that it was shown, so
+what a lender knows about a borrower is on the record and checkable. The kernel refuses a disclosure
+of an event its shower is not a subject of.
+
+What this is FOR is credit: every company prepares a full quarterly statement
+(`mechanisms/reporting/statement.ts`, with `registry/statements.ts` settling what each line means
+and `journal/published.ts` the kernel's read face onto the one parse), and whether anybody may read
+it is a separate fact. The module that owns a RELATIONSHIP writes the disclosure, because the reason
+to show is the relationship's: reporting shows a statement to the lenders of record and the banks
+that keep the accounts, ratings to the assessor the issuer pays, the kernel to whoever a borrower
+asks. The rule that door exists for is the one a module can break silently — reading a counterparty's
+own view with `ctx.participant(x)` gives a mechanism private state no participant may have, so the
+count of those reads per file is ratcheted in `tools/check-forbids.ts` and may only fall.
+
 **The opening world is TWO seed modules, and the second one is why** (Seed A4, C1; item 12). Who
 exists and what each party is endowed with is one question; **what stands behind a bank** is another,
 and it cannot be answered until every module has handed out what it hands out. `equity` opens every

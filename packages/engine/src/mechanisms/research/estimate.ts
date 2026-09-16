@@ -46,9 +46,9 @@ export interface Seen {
 export function seenOf(ctx: MechanismContext, company: PartyId, from: Period, to: Period): Seen {
   const reports: { period: Period; perPeriod: Cash }[] = [];
   for (const said of ctx.published.statements(company)) {
-    if (said.at < from || said.at > to) continue;
+    if (said.preparedIn < from || said.preparedIn > to) continue;
     reports.push({
-      period: said.at,
+      period: said.preparedIn,
       perPeriod: over(said.earned, asRatio(said.periods, 'the periods it covers'), 'per period'),
     });
   }

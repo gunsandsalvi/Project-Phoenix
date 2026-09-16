@@ -13,9 +13,19 @@
  * what orders it is the list.
  */
 
+import { paramId, type ParamId } from '../core/ids.js';
+
 /** A3, B1: coarse and ordinal, best first. */
 export const GRADES = ['aaa', 'aa', 'a', 'bbb', 'bb', 'b', 'c'] as const;
 export type Grade = (typeof GRADES)[number];
+
+/**
+ * Ratings C2: the weight a supervisor makes a bank hold capital against, per unit of an exposure of
+ * a grade. The standard-setter DECLARES it (the ratings module carries the declaration) and every
+ * bank READS it by this one name, because a bank and an assessor that spelt the parameter apart
+ * would be two rules about one grade (Law 4).
+ */
+export const riskWeightParam = (grade: Grade): ParamId => paramId(`regulation.riskWeight.${grade}`);
 
 /** The worst grade: where an issuer that has missed a payment goes, whatever else is true of it. */
 export const WORST: Grade = 'c';

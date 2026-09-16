@@ -28,7 +28,7 @@ export const ASSESSOR = partyKindId('assessor');
  * index divides its series on the same ladder (CDS A5.a) and two copies of an ordering is how two
  * systems come to disagree about which way is better (Law 4).
  */
-import { GRADES, WORST, type Grade } from '../../registry/grades.js';
+import { GRADES, WORST, type Grade, riskWeightParam } from '../../registry/grades.js';
 
 export { GRADES, WORST, type Grade };
 
@@ -60,7 +60,8 @@ export const ratingParam = (assessor: string, what: string): ParamId =>
   paramId(`rating.${what}.${assessor}`);
 
 export const RATING_PARAMS = {
-  riskWeight: (grade: Grade): ParamId => paramId(`regulation.riskWeight.${grade}`),
+  /** C2: declared here, read by every bank through the registry's one name for it (Law 4). */
+  riskWeight: riskWeightParam,
 } as const;
 
 export const ASSESSOR_SPREAD: Readonly<Record<'patience' | 'firstBoundary' | 'boundaryStep' | 'fee', Spread>> = {

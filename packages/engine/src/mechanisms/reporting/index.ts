@@ -19,16 +19,16 @@
  * it; the periods in it are asked of the one calendar; and the lag between the close and the
  * publication is the only information asymmetry this world has.
  */
-import { forbid } from '../../core/assert.js';
 import { compareCivil } from '../../calendar/civil.js';
 import type { PartyId } from '../../core/ids.js';
-import { balanceSheet } from '../../audit/families/accounts.js';
-import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
+import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import { REPORTING_PARAMS, reportingParams } from './data.js';
 import { anchorOf, publishableOn, quarterClosedBy, spanOf } from '../../calendar/fiscal.js';
-import { cashOf, incomeOf, isPublic, listedLineOf } from './report.js';
+import { isPublic, keepsAccounts, listedLineOf } from './report.js';
+import { earnedOver, prepareStatement } from './statement.js';
+import type { Instrument } from '../../register/instruments.js';
 import { guidanceOf, hasMoved, nextQuarter, type Guidance } from './guidance.js';
 
 export * from './data.js';
@@ -66,11 +66,16 @@ function publish(seed: string, ctx: MechanismContext): void {
   const lag = ctx.params.days(REPORTING_PARAMS.lag);
   const today = ctx.calendar.endOf(ctx.period);
   const state = published(ctx);
-  for (const company of ctx.parties.ofKind(FIRM)) {
-    if (!company.status.alive) continue;
+  // 17.0a, THE OWNER'S RULE: EVERY COMPANY PREPARES FULL QUARTERLY FINANCIALS, and whether they are
+  // published or shared is a separate act. So every living party that is not an estate closes its
+  // books on its own fiscal calendar; the statement is written under its own name, PUBLIC where the
+  // company has paper anybody can buy (A1.a) and private otherwise, and then SHOWN to whoever has a
+  // reason to see it — its lenders of record and the banks that keep its accounts. G4 still holds:
+  // nothing is PUBLISHED by a company whose paper nobody outside holds.
+  for (const company of ctx.parties.all()) {
+    if (!company.status.alive || !keepsAccounts(ctx, company.id)) continue;
     const line = listedLineOf(ctx, company.id);
-    // G4: no report from a company whose shares nobody outside holds.
-    if (!isPublic(ctx, company.id, line)) continue;
+    const isOpen = isPublic(ctx, company.id);
     const quarter = quarterClosedBy(anchorOf(seed, company.id), today);
     if (compareCivil(publishableOn(quarter, lag), today) > 0) continue;
     // Seed A2, Money G3: A COMPANY CANNOT REPORT ON A QUARTER THAT STARTED BEFORE THIS WORLD DID.
@@ -88,12 +93,14 @@ function publish(seed: string, ctx: MechanismContext): void {
       restate(ctx, company.id, quarter, state);
       continue;
     }
-    const earned = report(ctx, company.id, quarter.label, quarter, line);
+    const earned = report(ctx, company.id, quarter.label, quarter, line, isOpen);
     state.said[key(company.id, quarter.label)] = earned;
     if (already === undefined) state.done[String(company.id)] = [quarter.label];
     else already.push(quarter.label);
-    // B1: and management guides to the quarter that opens next, in the lines the report carries.
-    guide(ctx, company.id, nextQuarter(anchorOf(seed, company.id), quarter), state);
+    // B1: and a PUBLIC company's management guides to the quarter that opens next, in the lines
+    // the report carries. A private company's outlook is its own.
+    if (isOpen && line !== undefined)
+      guide(ctx, company.id, nextQuarter(anchorOf(seed, company.id), quarter), state);
   }
   // B2: a revision is information, so it is looked for every period and not only on a report.
   revise(seed, ctx, state);
@@ -116,7 +123,7 @@ function restate(
   const was = state.said[key(company, quarter.label)];
   if (was === undefined) return;
   const span = spanOf(quarter, ctx.calendar);
-  const now = incomeOf(ctx, company, span.from, span.to).total.pieces;
+  const now = earnedOver(ctx, company, span.from, span.to);
   if (!hasMoved(now, was)) return;
   ctx.record(
     'reporting.restate',
@@ -165,10 +172,10 @@ function publishGuidance(
  */
 function revise(seed: string, ctx: MechanismContext, state: Published): void {
   const today = ctx.calendar.endOf(ctx.period);
-  for (const company of ctx.parties.ofKind(FIRM)) {
+  for (const company of ctx.parties.all()) {
     const standing = state.guiding.get(String(company.id));
     if (standing === undefined) continue;
-    if (!company.status.alive || !isPublic(ctx, company.id, listedLineOf(ctx, company.id))) {
+    if (!company.status.alive || !isPublic(ctx, company.id)) {
       state.guiding.delete(String(company.id));
       ctx.record('reporting.guidance.withdrawn', [company.id], { company: company.id }, true);
       continue;
@@ -187,53 +194,52 @@ function report(
   company: PartyId,
   label: string,
   quarter: ReturnType<typeof quarterClosedBy>,
-  line: ReturnType<typeof listedLineOf>,
+  line: Instrument | undefined,
+  isOpen: boolean,
 ): number {
-  forbid(line !== undefined, 'Reporting A1', `${company} reports with no share line`);
   const span = spanOf(quarter, ctx.calendar);
-  const income = incomeOf(ctx, company, span.from, span.to);
-  const sheet = balanceSheet(ctx, company);
-  const cash = cashOf(ctx, company, span.from, span.to);
-  ctx.record(
+  // A2: THE WHOLE STATEMENT IS ONE READ, prepared for every company alike (17.0a); the journal
+  // carries it in pieces beside its one currency (Law 8), and `statementOf` is the one parser.
+  const prepared = prepareStatement(ctx, company, label, span);
+  const statement = ctx.record(
     'reporting.report',
     [company],
     {
-      company,
-      quarter: label,
+      ...prepared,
       opens: `${quarter.begins.y}-${quarter.begins.m}-${quarter.begins.d}`,
       closes: `${quarter.ends.y}-${quarter.ends.m}-${quarter.ends.d}`,
-      from: span.from,
-      to: span.to,
-      // G2: the movement of the equity account, decomposed into what the instructions and the marks
-      // did. `lines` is that decomposition in the words its writers used; `total` is the bottom line
-      // and `revaluation` the part of it nobody was paid.
-      income: income.lines.map((l) => ({
-        cause: l.cause,
-        amount: l.amount.pieces,
-        entries: l.entries,
-      })),
-      earned: income.total.pieces,
-      revaluation: income.revaluation.pieces,
-      // A2, Law 4: the same read the `accounts` family checks the equity account against. A report
-      // with its own balance sheet would be a second set of accounts able to disagree with the one
-      // the audit proves (A2.a).
-      assets: sheet.assets.value.pieces,
-      liabilities: sheet.liabilities.value.pieces,
-      ccy: sheet.ccy,
-      cash: cash.map((c) => ({
-        counterparty: c.counterparty,
-        instrument: c.instrument,
-        cause: c.cause,
-        amount: c.amount.pieces,
-        legs: c.legs,
-      })),
-      // G5: shares outstanding, so a reader can divide. Earnings per share is income over shares,
-      // both of them reads; a stored quotient would be an outcome written down (Law 2).
-      shares: line.issued,
     },
-    true,
+    isOpen,
   );
-  return income.total.pieces;
+  share(ctx, company, statement);
+  return prepared.earned;
+}
+
+/**
+ * Observer A3, A4, Corporate Credit A4 (17.0a): WHO IS SHOWN THE STATEMENT, and why. A lender of
+ * record — the holder of a claim on the company that no market prices, so a bilateral one — is
+ * owed the books it lent against (Banks Lending A5: a covenant is tested on them). The bank that
+ * keeps the company's account sees its flows anyway and is the bank that quotes it. Each is a
+ * disclosure the kernel records, so what a lender knows about a name is on the record; a public
+ * company's statement is public and the disclosure is what makes the private one reachable.
+ */
+function share(ctx: MechanismContext, company: PartyId, statement: Event): void {
+  const shown = new Set<string>();
+  const showTo = (to: PartyId): void => {
+    if (to === company || shown.has(String(to))) return;
+    shown.add(String(to));
+    ctx.disclose(company, to, statement);
+  };
+  for (const i of ctx.instruments.issuedBy(company)) {
+    if (!i.status.live || i.market.some) continue;
+    if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    for (const holder of ctx.register.holdersOf(i.id)) showTo(holder);
+  }
+  for (const h of ctx.register.holdingsOf(company)) {
+    const i = ctx.instruments.get(h.instrument);
+    if (ctx.registry.instrumentKind(i.kind).pricing !== 'money' || !i.issuer.some) continue;
+    showTo(i.issuer.value);
+  }
 }
 
 /**
@@ -280,8 +286,23 @@ export function reporting(seed: string): SystemModule {
          * test before the accounts were struck is not a covenant.
          */
         anchor: { after: 'revaluation' },
-        reads: [],
+        // A2: the statement is a READ, and these are the public records it reads — the deals that
+        // named this company (§35), what it declared on its shares (Equity D3), and what a bank
+        // published about its own regulation. Everything else in it comes from the register, the
+        // ledger, the agreements, the contracts, the employment rows and the party's own outlooks.
+        reads: [
+          { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.liquidity', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.acquired', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.combined', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.contested', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.failed', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.owned', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.tender', of: 'anyPeriod' },
+          { kind: 'event', name: 'payout.declared', of: 'anyPeriod' },
+        ],
         writes: [
+          { kind: 'event', name: 'disclosed' },
           { kind: 'event', name: 'reporting.guidance' },
           { kind: 'event', name: 'reporting.report' },
         ],

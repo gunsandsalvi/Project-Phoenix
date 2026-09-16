@@ -35,6 +35,7 @@ import type {
 import type { Running } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
+import type { Statement } from '../registry/statements.js';
 import type { PublishedReads } from '../journal/published.js';
 import type { ControlBasis, ControlReads } from '../register/control.js';
 import type {
@@ -673,6 +674,15 @@ export interface ParticipantView extends KernelReads {
    */
   lastOwnSince(kind: EventKind, since: Period): Option<Event>;
   /**
+   * Observer A3, A4 (17.0a): THE LATEST EVENT OF A KIND THAT A NAMED PARTY SHOWED THIS ONE — its
+   * quarterly statement, shown to a lender of record, to the bank that keeps its account, to the
+   * assessor it pays. A disclosure is the kernel's own record (`disclose`) naming the shower, the
+   * reader and the event, so what a party knows about another is on the record: a bank that
+   * priced a name it had never been shown would be a bank reading private state (A4). A private
+   * event nobody showed this party is never reachable through here.
+   */
+  disclosedToMe(kind: EventKind, from: PartyId): Option<Event>;
+  /**
    * Labour E1, F1, Observer A4 (12b.1): THE PEOPLE IT EMPLOYS — its own live rows of the employment
    * register, and nobody else's. What its payroll is, is a read over these; it was a tally the
    * labour module published (`labour.wages`) and every employer read back a copy of its own rows.
@@ -891,6 +901,12 @@ export interface CreditRequest {
   readonly repays: 'atOption' | 'onSchedule';
   /** The period it said so in, so a lender can read last period's asks (Law 8). */
   readonly at: Period;
+  /**
+   * Corporate Credit A3, A4 (17.0a): THE BOOKS IT OPENED WITH THE ASK — its latest quarterly
+   * statement, shown to whoever it asks by the act of asking. Nothing where it has never prepared
+   * one, which is a young company and a real state; a lender prices that on its record alone.
+   */
+  readonly statement: Option<Statement>;
 }
 
 /** What a borrower publishes. The kernel stamps the borrower and the period (Law 4). */
@@ -1201,6 +1217,21 @@ export interface MechanismContext extends WorldReads {
    * which period it is short in would be a second writer of something the world already knows.
    */
   request(borrower: PartyId, ask: CreditAsk): void;
+  /**
+   * Observer A3, A4 (17.0a): ONE PARTY SHOWS ANOTHER ONE OF ITS OWN EVENTS, and the kernel records
+   * that it did — who showed what to whom, in which period. The event stays private and where it
+   * was; the reader reaches it through `disclosedToMe`. The module that owns the RELATIONSHIP
+   * writes the disclosure, because the reason to show is the relationship's: the reporting module
+   * shows a statement to the lenders of record and the banks that keep the company's accounts, the
+   * ratings module to the assessor the issuer pays, the kernel to whoever a borrower asks.
+   */
+  disclose(from: PartyId, to: PartyId, event: Event): void;
+  /**
+   * Reporting A1 (17.0a): THE LATEST QUARTERLY STATEMENT A PARTY HAS PREPARED, public or not. A
+   * module phase may see it because a phase sees any party's own view; what it may not do is hand
+   * it to another party without a disclosure, which is what `disclose` is for.
+   */
+  latestReportOf(party: PartyId): Option<Event>;
 }
 
 /** Seed A1-A5: the opening world, written directly and once, then audited. */

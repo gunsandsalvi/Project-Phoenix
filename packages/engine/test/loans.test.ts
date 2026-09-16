@@ -14,7 +14,7 @@ import {
   mul,
   upTick,
   BANK_COUNT,
-  probabilityOfDefault,
+  defaultFrequency,
   drawBanks,
   InvalidRegistry,
   LOAN,
@@ -417,9 +417,9 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     const decl = drawBanks(BANK_COUNT, 'loans').find((b) => b.bank === BANK_OF_A);
     expect(decl).toBeDefined();
     if (decl === undefined) return;
-    const never = probabilityOfDefault(view, decl, BORROWER, []);
+    const never = defaultFrequency(view, decl, BORROWER, []);
     expect(never).toBe(0);
-    const failed = probabilityOfDefault(view, decl, BORROWER, [
+    const failed = defaultFrequency(view, decl, BORROWER, [
       {
         id: 1 as never,
         period: w.period,

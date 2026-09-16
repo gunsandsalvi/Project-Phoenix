@@ -35,6 +35,7 @@ import type { MechanismContext } from '../../world/context.js';
 import { sovereignIn } from '../../world/failure.js';
 import { isLoan } from './loan.js';
 import { subordinatedOf } from './subordinated.js';
+import { gradedWeight, gradeOn } from './credit-view.js';
 
 /** What binds a bank's book: the weighted rule, the backstop, or neither (B1.c). */
 export type Binding = 'weighted' | 'leverage' | 'nothing';
@@ -119,11 +120,28 @@ export interface CapitalRules {
  */
 export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: CapitalRules): Ratio {
   if (!i.issuer.some) return rules.weight;
-  const issuer = ctx.parties.get(ctx.parties.resolve(i.issuer.value).id);
-  if (sovereignIn(ctx, issuer.id, i.ccy)) return rules.sovereignWeight;
+  return weightOfName(ctx, i.issuer.value, i.ccy, rules);
+}
+
+/**
+ * Ratings C2, Law 4: THE WEIGHT A CLAIM ON A NAME CARRIES, asked once for the capital position and
+ * for the credit view alike — a bank that charged a borrower for one weight and held capital at
+ * another would be two rules about one claim. A sovereign in its own money weighs what the standard
+ * says a sovereign weighs; anybody else weighs by the grade the assessors publish on it, and an
+ * ungraded name weighs what an ordinary exposure does.
+ */
+export function weightOfName(
+  ctx: MechanismContext,
+  name: PartyId,
+  ccy: CurrencyCode,
+  rules: Pick<CapitalRules, 'weight' | 'sovereignWeight'>,
+): Ratio {
+  const issuer = ctx.parties.get(ctx.parties.resolve(name).id);
+  if (sovereignIn(ctx, issuer.id, ccy)) return rules.sovereignWeight;
   const canFail = ctx.registry.partyKind(issuer.kind).fails ?? [];
-  if (canFail.length > 0) return rules.weight;
-  return ctx.registry.currencyOf(issuer.region) === i.ccy ? rules.sovereignWeight : rules.weight;
+  if (canFail.length === 0)
+    return ctx.registry.currencyOf(issuer.region) === ccy ? rules.sovereignWeight : rules.weight;
+  return gradedWeight(ctx.participant(issuer.id), gradeOn(ctx.journal, issuer.id), rules.weight);
 }
 
 /**

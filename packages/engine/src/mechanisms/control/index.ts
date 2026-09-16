@@ -971,11 +971,27 @@ export function control(): SystemModule {
          * balance it turns out not to have is overdrawn, and an overdraft here is a LOAN.
          */
         anchor: { before: 'lending.book' },
+        // Clearing F1.a (17.0a): THE PHASE RUNS NOW. A bid is struck on what the target published
+        // (B1: the acquirer's own valuation of the target's earnings), and until every company
+        // prepared a statement only listed companies had one — so no bid was ever formed and this
+        // phase's read set had never been tested against a run. These are the reads it makes.
         reads: [
+          { kind: 'event', name: 'advisory.quoted', of: 'anyPeriod' },
+          { kind: 'event', name: 'control.combined', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
           { kind: 'event', name: 'fund.struck', of: 'thisPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
         ],
-        writes: [],
+        writes: [
+          { kind: 'event', name: 'control.acquired' },
+          { kind: 'event', name: 'control.advisory' },
+          { kind: 'event', name: 'control.combined' },
+          { kind: 'event', name: 'control.contested' },
+          { kind: 'event', name: 'control.failed' },
+          { kind: 'event', name: 'control.owned' },
+          { kind: 'event', name: 'control.tender' },
+          { kind: 'event', name: 'tender.unfilled' },
+        ],
         run: (ctx: MechanismContext): void => {
           const lines = equityLines(ctx);
           if (lines.length === 0) return;

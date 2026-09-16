@@ -512,7 +512,7 @@ function exposed(
     // A statement is published after the period's close, so it reaches its holders the period
     // after — the lag a published thing has (A2.a) — and once: the period it is one period old.
     const statement = ctx.published.lastStatement(i.issuer.value);
-    if (statement?.at !== lagged(ctx.period)) continue;
+    if (statement?.preparedIn !== lagged(ctx.period)) continue;
     out.set(about({ on: 'reported', party: i.issuer.value }), {
       value: div(
         statement.earned.pieces,

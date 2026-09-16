@@ -9,22 +9,58 @@ import { publishedReads } from '../src/journal/published.js';
 import { Journal } from '../src/journal/journal.js';
 import { Calendar, period } from '../src/calendar/calendar.js';
 import { ranWorld } from './rig.js';
+import {
+  BALANCE_LINES,
+  CASH_LINES,
+  EQUITY_LINES,
+  INCOME_LINES,
+  OCI_LINES,
+  SUMMARY_LINES,
+} from '../src/registry/statements.js';
 
 /** Any calendar: the read does not consult one, and a cycle is only constructible from one. */
 const CYCLE = new Calendar({ epoch: { y: 2026, m: 1, d: 1 }, periodDays: 7, cyclesPerPeriod: 2 }).cycle(0);
+
+/**
+ * A statement as `reporting` writes one: every section, every line (17.0a). The test states it in
+ * full rather than the four fields the old readers happened to want — which is the point of there
+ * being one parse.
+ */
+const zeros = (keys: readonly string[]): Record<string, number> =>
+  Object.fromEntries(keys.map((k) => [k, 0]));
 
 const FULL = {
   company: 'firm.1',
   quarter: '2026Q1',
   from: 0,
   to: 12,
+  ccy: 'USD',
   earned: 500,
   revaluation: 20,
-  assets: 9000,
-  liabilities: 4000,
-  ccy: 'USD',
-  shares: 100,
-  income: [{ cause: 'sales', amount: 500, entries: 3 }],
+  income: { ...zeros(INCOME_LINES), revenue: 500, writeUps: 20 },
+  oci: { ...zeros(OCI_LINES), otherMarks: 20 },
+  cashFlow: { ...zeros(CASH_LINES), operatingIn: 500 },
+  balance: { ...zeros(BALANCE_LINES), assets: 9000, liabilities: 4000 },
+  equityChanges: { ...zeros(EQUITY_LINES), earned: 500 },
+  summary: { ...zeros(SUMMARY_LINES), ebitda: 500 },
+  byProduct: [],
+  byGeography: [],
+  holdings: [],
+  inventories: [],
+  plant: [],
+  debt: [],
+  leases: [],
+  commitments: [],
+  guarantees: [],
+  derivatives: [],
+  deals: [],
+  employees: [],
+  shares: { line: 'share.firm.1', issued: 100, holders: 2, dividendsDeclared: 0, dividendsPaid: 0, boughtBack: 0, earningsPerShare: 5 },
+  relatedParties: { controller: null, subsidiaries: [], banks: [], largestCustomer: null, largestCustomerShare: null },
+  subsequent: [],
+  regulatory: {},
+  commentary: [],
+  currencies: [],
 };
 
 function withReport(data: Record<string, unknown>): Journal {
@@ -37,14 +73,15 @@ describe('one parse of what a company published (Law 4)', () => {
   it('reads every line the writer wrote, and derives the span rather than storing it', () => {
     const said = publishedReads(withReport(FULL)).lastStatement(partyId('firm.1'));
     expect(said?.quarter).toBe('2026Q1');
-    expect(said?.earned).toBe(500);
-    expect(said?.assets).toBe(9000);
-    expect(said?.shares).toBe(100);
+    expect(said?.earned.pieces).toBe(500);
+    expect(said?.balance.assets.pieces).toBe(9000);
+    expect(said?.notes.shares?.issued).toBe(100);
     // Law 19: 13 periods, from the two dates the writer published. Not a stored quotient (Law 2).
     expect(said?.periods).toBe(13);
     // A2: WHEN it published, which is not when the quarter closed.
-    expect(said?.at).toBe(3);
-    expect(said?.income[0]?.cause).toBe('sales');
+    expect(said?.preparedIn).toBe(3);
+    // G2: the lines are NAMED, so a reader asks for one rather than parsing a sentence.
+    expect(said?.income.revenue.pieces).toBe(500);
   });
 
   it('a company that has never reported is not a company that reported nothing', () => {
@@ -60,17 +97,23 @@ describe('one parse of what a company published (Law 4)', () => {
      * this event (Law 4), so a field it did not write is its defect: naming it at the site is the
      * difference between a broken writer and a company that has not reported.
      */
-    for (const field of ['earned', 'assets', 'liabilities', 'revaluation', 'shares', 'from', 'to']) {
+    for (const field of ['earned', 'revaluation', 'from', 'to']) {
       const missing = { ...FULL, [field]: undefined };
       expect(() => publishedReads(withReport(missing)).lastStatement(partyId('firm.1'))).toThrow(
         new RegExp(field),
       );
     }
-    for (const field of ['quarter', 'ccy']) {
+    for (const field of ['quarter', 'ccy', 'company']) {
       const missing = { ...FULL, [field]: undefined };
       expect(() => publishedReads(withReport(missing)).lastStatement(partyId('firm.1'))).toThrow(
         new RegExp(field),
       );
+    }
+    // And a SECTION its writer did not fill is the same defect, named by its own name.
+    for (const section of ['income', 'balance', 'cashFlow', 'summary']) {
+      expect(() =>
+        publishedReads(withReport({ ...FULL, [section]: undefined })).lastStatement(partyId('firm.1')),
+      ).toThrow(new RegExp(section));
     }
     // Missing is Missing: a NaN is not a number here either, whatever `typeof` says.
     expect(() =>
@@ -105,12 +148,12 @@ describe('what a real world publishes, through the one read', () => {
     for (const said of all) {
       expect(said.periods).toBeGreaterThan(0);
       expect(said.quarter.length).toBeGreaterThan(0);
-      // G5: shares in issue, so a reader can divide. A listed company has some.
-      expect(said.shares).toBeGreaterThan(0);
+      // G5: shares in issue where there is a listed line, so a reader can divide.
+      if (said.notes.shares !== null) expect(said.notes.shares.issued).toBeGreaterThan(0);
       // A2.a: the accounts are ONE set. What it published is what its equity account says, so the
       // bottom line and the part nobody was paid are the same number the audit proves.
-      expect(Number.isFinite(said.earned)).toBe(true);
-      expect(Number.isFinite(said.revaluation)).toBe(true);
+      expect(Number.isFinite(said.earned.pieces)).toBe(true);
+      expect(Number.isFinite(said.revaluation.pieces)).toBe(true);
     }
   });
 

@@ -22,7 +22,9 @@
  * on what a readable one is. A statement whose `assets` went missing would vanish from the covenant
  * test and stay visible to the analyst, and nothing anywhere would say so.
  *
- * ONE READ. The parse is here, it is total, and a record that does not parse THROWS rather than
+ * ONE READ. The parse is `registry/statements.ts`'s — the file that settles what a statement's
+ * fields MEAN, so the writer and every reader share one vocabulary (17.0a) — and this is the
+ * kernel's READ FACE onto it. It is total, and a record that does not parse THROWS rather than
  * disappearing: `reporting` is the one writer of this event and a malformed one is its defect, not
  * a fact about the company (Law 4, and Missing is Missing — a dropped report is a `?? 0` in
  * disguise, since every reader treats "not there" as "never published").
@@ -35,42 +37,20 @@
 // Item 16: A PUBLISHED NUMBER RE-ENTERS THE TYPE SYSTEM HERE. `reporting` wrote it knowing what it
 // was and a journal carries `unknown`, so the field this reads into goes through the dimension's
 // own door and says which it is.
-import { asAmount, asCash, type Cash } from '../core/measure.js';
-import type { Qty } from '../core/tick.js';
+import { asCash, type Cash } from '../core/measure.js';
+import { REPORT, type Statement, statementOf } from '../registry/statements.js';
 import type { Period } from '../calendar/calendar.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
 import type { Event, Journal } from './journal.js';
 
-/** G2: one cause of the equity account's movement, with how many entries made it up. */
-export interface PublishedIncomeLine {
-  readonly cause: string;
-  readonly amount: number;
-  readonly entries: number;
-}
-
-/** Reporting G2, G5: a set of accounts as the company published it, with the date it published. */
-export interface PublishedStatement {
-  readonly company: PartyId;
-  /** B1: the period it covers, named the way the company names it. */
-  readonly quarter: string;
-  readonly from: Period;
-  readonly to: Period;
-  /** G5: how many periods the quarter covered, so a reader can annualise without re-deriving it. */
-  readonly periods: number;
-  /** G2: the bottom line, and the part of it nobody was paid. */
-  readonly earned: Cash;
-  readonly revaluation: Cash;
-  /** G2: the decomposition, in the words its writers used. What the lines say is not re-derived. */
-  readonly income: readonly PublishedIncomeLine[];
-  readonly assets: Cash;
-  readonly liabilities: Cash;
-  readonly ccy: CurrencyCode;
-  /** G5: shares in issue, so a reader can divide. The quotient is never stored (Law 2). */
-  readonly shares: Qty;
-  /** When it was published, which is not when the quarter closed (A2: reporting has a lag). */
-  readonly at: Period;
-}
+/**
+ * Reporting G2, G5: a set of accounts as the company published it. It is `registry/statements.ts`'s
+ * `Statement` under the name its readers already had: what a statement IS belongs with the
+ * vocabulary its writer writes it in, and a second definition here would be a second answer to what
+ * a line means (Law 4).
+ */
+export type PublishedStatement = Statement;
 
 /** Reporting B1: what a management said it expects, before the quarter it says it about closes. */
 export interface PublishedGuidance {
@@ -111,34 +91,12 @@ export function publishedReads(journal: JournalRead): PublishedReads {
   });
 }
 
-const STATEMENT = 'reporting.report';
+const STATEMENT = REPORT;
 const GUIDANCE = 'reporting.guidance';
 
 function forSubject(events: readonly Event[], company: PartyId | undefined): readonly Event[] {
   if (company === undefined) return events;
   return events.filter((e) => e.subjects[0] === String(company));
-}
-
-function statementOf(e: Event): PublishedStatement {
-  const from = num(e, 'from');
-  const to = num(e, 'to');
-  const ccy = str(e, 'ccy') as CurrencyCode;
-  return {
-    company: subject(e),
-    quarter: str(e, 'quarter'),
-    from: from as Period,
-    to: to as Period,
-    // Law 19: derived at the read from the two dates the writer published, never stored beside them.
-    periods: to - from + 1,
-    earned: asCash(num(e, 'earned'), ccy, 'what it published it earned'),
-    revaluation: asCash(num(e, 'revaluation'), ccy, 'what the marks did'),
-    income: lines(e),
-    assets: asCash(num(e, 'assets'), ccy, 'what it published it holds'),
-    liabilities: asCash(num(e, 'liabilities'), ccy, 'what it published it owes'),
-    ccy,
-    shares: asAmount<'piece'>(num(e, 'shares'), 'shares in issue'),
-    at: e.period,
-  };
 }
 
 function guidanceOf(e: Event): PublishedGuidance {
@@ -151,24 +109,6 @@ function guidanceOf(e: Event): PublishedGuidance {
     periods: num(e, 'periods'),
     at: e.period,
   };
-}
-
-/** G2: the income lines, each read the same total way as every other field (Law 4). */
-function lines(e: Event): readonly PublishedIncomeLine[] {
-  const rows = e.data['income'];
-  if (!Array.isArray(rows)) {
-    throw new InvalidRegistry('Reporting G2', `${e.kind} has no income lines`);
-  }
-  return rows.map((r) => {
-    const row = r as Record<string, unknown>;
-    const cause = row['cause'];
-    const amount = row['amount'];
-    const entries = row['entries'];
-    if (typeof cause !== 'string' || typeof amount !== 'number' || typeof entries !== 'number') {
-      throw new InvalidRegistry('Reporting G2', `${e.kind} has an income line it did not write`);
-    }
-    return { cause, amount, entries };
-  });
 }
 
 /**

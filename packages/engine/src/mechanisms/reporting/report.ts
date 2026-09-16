@@ -9,25 +9,7 @@
  * with their counterparties. Nothing is assembled by a formula the ledger does not already carry —
  * if a figure needs one, the equity ledger is missing a writer and not the report a calculation.
  */
-import { period as asPeriod, type Period } from '../../calendar/calendar.js';
-import { weightOf } from '../../parties/party.js';
-import {
-  type Cash,
-  type PerMember,
-  acrossMembers,
-  asCash,
-  asPerMember,
-  heldAsMoney,
-  plus,
-} from '../../core/measure.js';
-import { negQty } from '../../core/tick.js';
-import {
-  moneyInstrumentId,
-  type InstructionId,
-  type InstrumentId,
-  type PartyId,
-} from '../../core/ids.js';
-import { isMoneyLeg } from '../../ledger/instruction.js';
+import type { PartyId } from '../../core/ids.js';
 import { issuedBy, type Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
 
@@ -49,157 +31,40 @@ export function listedLineOf(ctx: MechanismContext, firm: PartyId): Instrument |
 }
 
 /**
- * A1.a: public is a STATE, read every period. A firm whose shares nobody outside holds publishes
- * nothing, and a firm that ceases to be public stops reporting in the period it stops.
+ * A1.a, 17.0a (the owner's rule): WHO PREPARES ACCOUNTS — a party somebody else's claim or job
+ * depends on. It has issued a live claim another party holds, or it employs somebody. Both are
+ * reads of the register and the employment rows, in the shape A1.a insists on — *"never a label"* —
+ * so there is no kind of party that reports and no flag anywhere saying which are companies. A
+ * household cell that has borrowed is in it, and that is right: what its lender underwrites is what
+ * it takes in against what it owes, which is this statement.
+ *
+ * An estate is not: its kind is terminal, it is being wound up, and what it owes is the waterfall's
+ * business rather than a going concern's accounts.
  */
-export function isPublic(
-  ctx: MechanismContext,
-  firm: PartyId,
-  line: Instrument | undefined,
-): boolean {
-  if (line === undefined) return false;
-  for (const holder of ctx.register.holdersOf(line.id)) {
-    if (holder !== firm) return true;
+export function keepsAccounts(ctx: MechanismContext, party: PartyId): boolean {
+  if (ctx.registry.partyKind(ctx.parties.get(party).kind).terminal === true) return false;
+  for (const i of ctx.instruments.issuedBy(party)) {
+    if (!i.status.live) continue;
+    if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    for (const holder of ctx.register.holdersOf(i.id)) if (holder !== party) return true;
+  }
+  return ctx.employment.by(party).length > 0;
+}
+
+/**
+ * A1.a: public is a STATE, read every period. A company is public when ANY claim it issued that a
+ * market prices — a share or a bond — is held by somebody outside it (17.0a, the owner's rule: a
+ * company with public instruments owes its holders its financials, and holders change hands, so
+ * what it owes them it owes everybody). A company none of whose paper anybody outside holds
+ * publishes nothing, and one that ceases to be public stops publishing in the period it stops.
+ */
+export function isPublic(ctx: MechanismContext, firm: PartyId): boolean {
+  for (const i of ctx.instruments.issuedBy(firm)) {
+    if (!i.status.live || !i.market.some) continue;
+    if (ctx.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
+    for (const holder of ctx.register.holdersOf(i.id)) {
+      if (holder !== firm) return true;
+    }
   }
   return false;
-}
-
-/** The periods a fiscal span covers, inclusive of both ends (A3, Money G3.a). */
-function periodsIn(from: Period, to: Period): Period[] {
-  const out: Period[] = [];
-  for (let p: number = from; p <= to; p += 1) out.push(asPeriod(p));
-  return out;
-}
-
-/** G2: one line of the income statement — what a kind of event did to the account over the span. */
-export interface IncomeLine {
-  /** What the instructions or the marks were doing, in the words their own writers used. */
-  readonly cause: string;
-  readonly amount: Cash;
-  readonly entries: number;
-}
-
-export interface Income {
-  readonly lines: readonly IncomeLine[];
-  /** The bottom line: the movement of the equity account over the span, itemised (G2). */
-  readonly total: Cash;
-  /** What the marks did, separately, because it is the part nobody was paid (Clearing D4). */
-  readonly revaluation: Cash;
-}
-
-/** The word the marks write on an entry, which is how the revaluation subtotal is read back. */
-const MARKS = 'revaluation';
-
-/**
- * G2: REPORTED INCOME IS THE EQUITY ACCOUNT'S MOVEMENT, decomposed into what the instructions and
- * the marks did — never a figure management chose and never smoothed.
- *
- * The grouping key is the instruction's own `cause` (Money C1.b's kind of event) where the entry
- * names one, and the marks otherwise. It is deliberately not the free-text reason: a report with a
- * line per sentence anybody ever wrote is not a decomposition, it is the ledger printed out. And it
- * is deliberately not a chart of accounts this module invented, which is the "nature flag" the
- * architecture refuses — every key here was already written by the mechanism that moved the money.
- */
-export function incomeOf(ctx: MechanismContext, firm: PartyId, from: Period, to: Period): Income {
-  const cause = new Map<InstructionId, string>();
-  for (const p of periodsIn(from, to)) {
-    for (const r of ctx.ledger.inPeriod(p)) {
-      cause.set(r.instruction.id, r.instruction.cause);
-    }
-  }
-  /**
-   * An equity entry's delta is MONEY PER MEMBER — `EquityEffect.delta`, stage 10a — because the
-   * register keeps a cell's book per member and a named party stands for one of itself. A published
-   * statement is a TOTAL, so the crossing happens once, at the end, through `acrossMembers`. A rate
-   * can never reach any of it either way.
-   */
-  const byCause = new Map<string, { amount: PerMember<'money:piece'>; entries: number }>();
-  let total = asPerMember<'money:piece'>(0, 'a period that moved nothing produced nothing');
-  let revaluation = asPerMember<'money:piece'>(0, 'and the marks did nothing');
-  for (const e of ctx.register.equityEntries(firm, from, to)) {
-    const named = e.instruction === undefined ? undefined : cause.get(e.instruction);
-    const key = named ?? MARKS;
-    const at = byCause.get(key);
-    if (at === undefined) byCause.set(key, { amount: e.delta, entries: 1 });
-    else byCause.set(key, { amount: plus(at.amount, e.delta, key), entries: at.entries + 1 });
-    total = plus(total, e.delta, 'what the period produced');
-    if (named === undefined) revaluation = plus(revaluation, e.delta, 'what the marks did');
-  }
-  // XI-15: what a company published is what all of it came to, and the weight is what crosses.
-  const members = weightOf(ctx.parties.get(firm));
-  const ccy = ctx.registry.currencyOf(ctx.parties.get(firm).region);
-  const whole = (x: PerMember<'money:piece'>, what: string): Cash =>
-    asCash(acrossMembers(x, members, what), ccy, what);
-  const lines = [...byCause]
-    .map(([c, v]) => ({ cause: c, amount: whole(v.amount, c), entries: v.entries }))
-    .sort((a, b) => (a.cause < b.cause ? -1 : 1));
-  return {
-    lines,
-    total: whole(total, 'what the period produced'),
-    revaluation: whole(revaluation, 'what the marks did'),
-  };
-}
-
-/**
- * One line of the cash statement: what moved between this company and ONE named counterparty, in
- * one money, for one kind of reason (Law 9: a counterparty is named, never bucketed).
- */
-export interface CashLine {
-  readonly counterparty: PartyId;
-  readonly instrument: InstrumentId;
-  readonly cause: string;
-  readonly amount: Cash;
-  readonly legs: number;
-}
-
-/**
- * A2: THE CASH STATEMENT IS THE WIRE'S OWN LEGS. A direct-method statement is what a world whose
- * every payment has a named payer and a named payee naturally produces — there is nothing to derive
- * and nothing to reconcile, because every line of it settled.
- *
- * It is grouped the same way income is, and for the same reason: a firm's quarter is two thousand
- * payments, and two thousand rows is the ledger printed out rather than a statement. The grouping
- * keys are all facts the wire wrote — WHO it paid, in WHICH money, for WHAT KIND of reason — so
- * nothing is bucketed and nothing is invented (Law 9, A2.a). The itemisation behind it is the
- * ledger, which anybody can read.
- */
-export function cashOf(ctx: MechanismContext, firm: PartyId, from: Period, to: Period): CashLine[] {
-  const by = new Map<string, CashLine>();
-  for (const p of periodsIn(from, to)) {
-    for (const r of ctx.ledger.inPeriod(p)) {
-      if (r.outcome !== 'settled') continue;
-      for (const leg of r.instruction.legs) {
-        if (!isMoneyLeg(leg)) continue;
-        const outgoing = leg.from.holder === firm;
-        const incoming = leg.to.holder === firm;
-        if (!outgoing && !incoming) continue;
-        const side = outgoing ? leg.from : leg.to;
-        const counterparty = outgoing ? leg.to.holder : leg.from.holder;
-        // Money A2.b: WHICH money it was. A payment in a money the firm does not book in is a
-        // different line of its cash statement, not the same one with a different number in it.
-        const instrument = moneyInstrumentId(side.issuer, leg.ccy);
-        const amount = heldAsMoney(
-          outgoing ? negQty(leg.amount, 'what this party paid out') : leg.amount,
-          leg.ccy,
-          'what moved on this leg',
-        );
-        const key = `${counterparty}|${instrument}|${r.instruction.cause}`;
-        const at = by.get(key);
-        if (at === undefined) {
-          by.set(key, { counterparty, instrument, cause: r.instruction.cause, amount, legs: 1 });
-        } else {
-          by.set(key, { ...at, amount: plus(at.amount, amount, key), legs: at.legs + 1 });
-        }
-      }
-    }
-  }
-  return [...by.values()].sort((a, b) =>
-    a.counterparty === b.counterparty
-      ? a.cause < b.cause
-        ? -1
-        : 1
-      : a.counterparty < b.counterparty
-        ? -1
-        : 1,
-  );
 }

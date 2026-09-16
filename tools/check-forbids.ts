@@ -182,6 +182,66 @@ const ZERO_FLOOR_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/treasury/index.ts': 1,
 };
 
+/**
+ * Observer A4, Corporate Credit A4 (17.0a): A MODULE READS ANOTHER PARTY'S OWN VIEW.
+ *
+ * `ctx.participant(x)` and `ctx.blind(x)` hand a phase the private view of ANY party — its
+ * holdings, its equity, what it took in, what it owes — and a module that asks for a counterparty's
+ * is reading state that party never showed it: a lender pricing a borrower's books over its
+ * shoulder, an assessor grading a ledger it was never handed. What a party may know about another
+ * is what was PUBLISHED or what was SHOWN to it (`disclose`, `disclosedToMe`), and the statement a
+ * company prepares every quarter is what there is to show. This ratchets the count of such reads
+ * per file: a site is either the module's own party deciding (which is what the door is for) or a
+ * read that should be a disclosure, and the count may only fall. The table of sites is finding
+ * 21.57; the baseline is the day the rule was written.
+ */
+const PEEK = /ctx\.(?:participant|blind)\(/g;
+
+const PEEK_BASELINE: Readonly<Record<string, number>> = {
+  'mechanisms/banks/capital.ts': 2,
+  'mechanisms/banks/dealing.ts': 2,
+  'mechanisms/banks/index.ts': 11,
+  'mechanisms/banks/prime.ts': 2,
+  'mechanisms/banks/treasury.ts': 1,
+  'mechanisms/capital-programme/index.ts': 1,
+  'mechanisms/commodities/index.ts': 1,
+  'mechanisms/control/index.ts': 3,
+  'mechanisms/derivative-layer/house.ts': 2,
+  'mechanisms/derivative-layer/index.ts': 2,
+  'mechanisms/derivative-layer/margin.ts': 2,
+  'mechanisms/equity/index.ts': 1,
+  'mechanisms/estate/index.ts': 1,
+  'mechanisms/firms/born.ts': 1,
+  'mechanisms/firms/index.ts': 2,
+  'mechanisms/firms/produce.ts': 2,
+  'mechanisms/freight/index.ts': 4,
+  'mechanisms/funds/commitment.ts': 1,
+  'mechanisms/funds/index.ts': 2,
+  'mechanisms/fx-derivatives/index.ts': 1,
+  'mechanisms/households/index.ts': 1,
+  'mechanisms/households/lifecycle.ts': 3,
+  'mechanisms/housing/index.ts': 5,
+  'mechanisms/insurers/allocate.ts': 1,
+  'mechanisms/insurers/index.ts': 1,
+  'mechanisms/insurers/pensions.ts': 1,
+  'mechanisms/money-market/index.ts': 11,
+  'mechanisms/money-market/resolution.ts': 3,
+  'mechanisms/money-market/session.ts': 2,
+  'mechanisms/property/index.ts': 1,
+  'mechanisms/ratings/index.ts': 2,
+  'mechanisms/reporting/guidance.ts': 1,
+  'mechanisms/reporting/statement.ts': 1,
+  'mechanisms/research/index.ts': 1,
+  'mechanisms/securities-lending/index.ts': 2,
+  'mechanisms/securitisation/index.ts': 2,
+  'mechanisms/short-term-debt/index.ts': 2,
+  'mechanisms/small-business/found.ts': 1,
+  'mechanisms/small-business/index.ts': 2,
+  'mechanisms/small-business/profile.ts': 3,
+  'mechanisms/spot-fx/arbitrage.ts': 1,
+  'mechanisms/treasury/index.ts': 2,
+};
+
 function ratchet(
   files: readonly string[],
   pattern: RegExp,
@@ -310,6 +370,13 @@ const broken: string[] = [
     ZERO_FLOOR_BASELINE,
     'Law 6',
     'atLeast(x, 0) is "not less than zero"; only arithmetic impossibility is admissible (item 21)',
+  ),
+  ...ratchet(
+    files,
+    PEEK,
+    PEEK_BASELINE,
+    'Observer A4',
+    'a module reading another party’s own view is reading state that party never showed it; what it may know is what was published or disclosed (17.0a, finding 21.57)',
   ),
 ];
 for (const rule of FORBIDS) {

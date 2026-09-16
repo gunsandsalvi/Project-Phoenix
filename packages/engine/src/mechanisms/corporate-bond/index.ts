@@ -454,7 +454,7 @@ function openLine(
   onto: (x: PerNamedUnit, what: string) => PerPiece,
 ): boolean {
   const said = ctx.published.lastStatement(issuer);
-  if (said === undefined || said.assets.pieces <= 0) return false;
+  if (said === undefined || said.balance.assets.pieces <= 0) return false;
   // N10: what it will owe is the FACE, which is par on every unit of it (`owes: 'face'`).
   const face = valueAt(
     onto(asPerNamedUnit(1, 'par'), 'par on the grid'),
@@ -463,8 +463,8 @@ function openLine(
     'the face it takes on',
   );
   const owes = ratioOf(
-    plus(said.liabilities, face, 'what it owes with this on it'),
-    said.assets,
+    plus(said.balance.liabilities, face, 'what it owes with this on it'),
+    said.balance.assets,
     'what it owes against what it holds',
   );
   // The same arithmetic `testCovenants` does: this line's cost per unit of face, times the face.
@@ -549,8 +549,8 @@ export function testCovenants(ctx: MechanismContext): void {
     // B2: how much it owes against what it holds. A firm with no assets has no ratio that means
     // anything and has breached, which is what the worst case IS rather than a number pushed back.
     if (
-      said.assets.pieces <= 0 ||
-      ratioOf(said.liabilities, said.assets, 'leverage') > t.covenants.leverage
+      said.balance.assets.pieces <= 0 ||
+      ratioOf(said.balance.liabilities, said.balance.assets, 'leverage') > t.covenants.leverage
     ) {
       broke.push('leverage');
     }
@@ -571,7 +571,7 @@ export function testCovenants(ctx: MechanismContext): void {
         quarter: said.quarter,
         broke: broke.join(' and '),
         leverage:
-          said.assets.pieces > 0 ? ratioOf(said.liabilities, said.assets, 'leverage') : null,
+          said.balance.assets.pieces > 0 ? ratioOf(said.balance.liabilities, said.balance.assets, 'leverage') : null,
         promised: t.covenants.leverage,
         earned: said.earned.pieces,
         owedPerYear: annual.pieces,
@@ -673,15 +673,15 @@ export function corporateBondModule(): SystemModule {
         // B2.a: on the PUBLISHED accounts, so after whatever published them this period. A covenant
         // a lender could test on private books is not a covenant, it is surveillance.
         anchor: { before: 'revaluation' },
-        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
-        // it — so what it reads is read off its module's source and not off a measurement, and
-        // it is the module's whole read set rather than this phase's. It narrows the first time
-        // the phase runs and the check can say which of these it actually wanted.
+        // Clearing F1.a (17.0a): THE PHASE RUNS NOW, and this is what it actually reads. It had the
+        // module's whole read set standing in for its own, because no period of either world had
+        // ever reached it — every issuer's accounts were private until every company prepared a
+        // statement. The first run narrowed it, which is what that stood there to allow.
         reads: [
-          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
-          { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
+          { kind: 'event', name: 'covenant.breached', of: 'anyPeriod' },
+          { kind: 'event', name: 'reporting.report', of: 'anyPeriod' },
         ],
-        writes: [],
+        writes: [{ kind: 'event', name: 'covenant.breached' }],
         run: testCovenants,
       },
     ],

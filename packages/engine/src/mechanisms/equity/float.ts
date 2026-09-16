@@ -109,7 +109,7 @@ function published(
   const said = ctx.published.lastStatement(firm);
   if (said === undefined || said.earned.pieces <= 0 || said.periods <= 0 || shares <= 0)
     return none();
-  const book = said.assets.pieces - said.liabilities.pieces;
+  const book = said.balance.assets.pieces - said.balance.liabilities.pieces;
   if (book <= 0) return none();
   // Law 8: the periodicity is part of the number. What it published covers a span of PERIODS and a
   // rate is quoted per YEAR, so the calendar puts the two in one unit — never a factor typed here.

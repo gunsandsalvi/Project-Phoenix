@@ -179,9 +179,9 @@ describe('a firm issues because a market was cheaper than its bank (A1, B1, E5.d
       // B2.a: a promise the issuer could actually make — its own published accounts, so the firm
       // that has not deteriorated since is inside it and only the one that has is not.
       const said = w.published.lastStatement(i.terms.issuer);
-      if (said === undefined || said.assets.pieces <= 0) continue;
+      if (said === undefined || said.balance.assets.pieces <= 0) continue;
       expect(i.terms.covenants.leverage).toBeGreaterThanOrEqual(
-        said.liabilities.pieces / said.assets.pieces,
+        said.balance.liabilities.pieces / said.balance.assets.pieces,
       );
     }
   });

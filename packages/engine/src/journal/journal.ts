@@ -23,6 +23,8 @@ export type EventKind =
   | 'party.ceased'
   | 'instrument.ceased'
   | 'audit'
+  /** Observer A3 (17.0a): one party showed another one of its own events. */
+  | 'disclosed'
   | `${string}.${string}`;
 
 export interface Event {
@@ -54,6 +56,8 @@ export class Journal {
    * event is written, so there is one writer of each and no copy to go stale (Law 4).
    */
   private readonly byKind = new Map<EventKind, Event[]>();
+  /** Observer A3 (17.0a): a disclosure names the event it showed, and the reader fetches it by that name. */
+  private readonly byId = new Map<number, Event>();
   private readonly byPeriod = new Map<Period, Event[]>();
   private readonly byKindPeriod = new Map<string, Event[]>();
   /**
@@ -92,6 +96,7 @@ export class Journal {
     });
     this.next += 1;
     this.events.push(ev);
+    this.byId.set(ev.id, ev);
     push(this.byKind, kind, ev);
     push(this.byPeriod, period, ev);
     push(this.byKindPeriod, keyOf(kind, period), ev);
@@ -104,6 +109,11 @@ export class Journal {
       for (const s of ev.subjects) push(mine, s, ev);
     }
     return ev;
+  }
+
+  /** The event with this id, or nothing: a disclosure that names one that was never written shows nothing. */
+  get(id: EventId): Event | undefined {
+    return this.byId.get(id);
   }
 
   all(): readonly Event[] {
