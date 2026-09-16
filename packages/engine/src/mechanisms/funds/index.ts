@@ -222,6 +222,8 @@ export const fundKind: PartyKindProfile = {
    */
   borrows: true,
   buysOnTerms: false,
+  // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+  banking: false,
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
   // is the money that leaves first, and it leaves because it chose to (`bankChoices`, bank.ts).
   depositClass: 'wholesale',
@@ -244,6 +246,8 @@ export const fundManagerKind: PartyKindProfile = {
   fails: ['cash', 'solvency'],
   borrows: true,
   buysOnTerms: false,
+  // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+  banking: false,
   // A1.c: it runs the money and it banks like the money it runs.
   depositClass: 'wholesale',
 };

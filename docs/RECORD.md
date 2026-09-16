@@ -12959,3 +12959,33 @@ with the test's shape positioned at 23.1 and each family's cause at 23.3.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
 `money-market`: two new tests, both green; the file's fifteen reds are the fifteen that were red at
 `af70a23` and are unchanged by this (verified in a worktree at that commit).
+
+## Item 17.8 — A bank loan is not distributed outside the banking system
+
+The rule was the owner's, written into COVERAGE in September and nowhere else: a loan is not a
+security (A1.a), so a syndicate is a group of BANKS and never a distribution to the public (D4.a),
+and the way credit risk reaches an investor is a NOTE issued against a pool held by a named vehicle
+(XI-11) rather than the row itself landing in a pension fund. Nothing in the engine knew it.
+
+**Who is inside the system is declared on the kind.** `PartyKindProfile.banking`, beside `borrows`
+and `buysOnTerms` and for the same reason: it is a fact about what a party IS, and a list kept inside
+the check would be a list somebody has to remember to add to (Law 15). Three kinds say yes — a bank,
+the central bank at the centre of it, and a securitisation vehicle, which exists to hold exactly
+these rows for the noteholders that funded it. It is required rather than optional, so a new kind
+answers the question instead of inheriting an answer; every one of the eighteen declarations in the
+engine now says which it is, and says why in a line.
+
+**An estate is not one of them and does not need to be.** It holds what a dead bank held, and only
+until it has sold it (XI-8, Register F2). Winding a loan book up is not running one, and a check that
+fired on a succession would be reporting the wind-down as a defect.
+
+**It is a family and not a refusal at a door, because that is what a FORBID is.** Part II: a FORBID
+that holds is as valuable as a mechanism that works, and it breaks silently — so what is wanted is
+something that says so the day a row goes somewhere it should not, not a throw at a door nobody
+walks through. It reports nothing in either scale model today. A test sells part of a bank's book to
+a firm and it names the holder, the row and how much, and moves nothing back: the audit never
+repairs.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
+unchanged.

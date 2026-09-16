@@ -350,6 +350,8 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         borrows: true,
         // §36 A4: the tier that lives on trade credit.
         buysOnTerms: true,
+        // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+        banking: false,
         /**
          * Banks Funding A1, A1.b: OPERATIONAL money — a small firm's account is where its takings
          * land and where its wages go out, which is a different deposit from a saver's, and it is

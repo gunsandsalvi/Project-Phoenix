@@ -72,6 +72,8 @@ const moverKind: PartyKindProfile = {
   fails: ['cash', 'solvency'],
   borrows: false,
   buysOnTerms: false,
+  // 17.8: it trades a book; nobody writes it a loan.
+  banking: false,
   depositClass: null,
   terminal: false,
 };

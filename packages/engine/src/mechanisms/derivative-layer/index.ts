@@ -139,6 +139,8 @@ const houseKind: PartyKindProfile = {
   // enumerable, and a lender behind them would be the guarantor of last resort C5 forbids.
   borrows: false,
   buysOnTerms: false,
+  // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+  banking: false,
   depositClass: null,
   terminal: false,
 };

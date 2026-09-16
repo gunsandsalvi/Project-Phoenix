@@ -542,6 +542,23 @@ export interface PartyKindProfile {
    */
   readonly buysOnTerms: boolean;
   /**
+   * Banks Lending A1, A1.a, D4, D4.a, XI-11 (17.8): WHETHER A PARTY OF THIS KIND IS PART OF THE
+   * BANKING SYSTEM — which is the same question as whether it may be owed a bank loan.
+   *
+   * A loan is not a security (A1.a). It has no market, no price anybody else can see and no
+   * prospectus; what it has is a lender who wrote it, watches the borrower and can enforce. That is
+   * why a syndicate is a group of BANKS and never a distribution to the public (D4.a), and why the
+   * way credit risk reaches an investor is a NOTE issued against a pool of rows held by a named
+   * vehicle (XI-11, §42 C1) rather than the rows themselves landing in a pension fund.
+   *
+   * So it is declared on the kind, like `borrows` and `buysOnTerms`, and the audit family that says
+   * so reads it rather than listing names (Law 15). Three kinds say yes: a bank, the central bank
+   * at the centre of it, and a securitisation vehicle, which exists to hold exactly these rows for
+   * the noteholders that funded it. An estate is not one of them and does not need to be — it holds
+   * what a dead bank held only until it has sold it, and the family says that in its own words.
+   */
+  readonly banking: boolean;
+  /**
    * Banks Funding A1, A1.d: WHICH KIND OF DEPOSITOR a party of this kind is, or null for one that
    * is nobody's deposit base. It is a fact about the kind — many and small, fewer and operational,
    * few and very large — so it is declared with the kind and the funding market asks the profile

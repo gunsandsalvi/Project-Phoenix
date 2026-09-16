@@ -55,6 +55,17 @@ import { lossGivenDefault } from '../src/mechanisms/banks/credit-view.js';
 import { uncoveredShare } from '../src/registry/secured.js';
 import { requiredOnClaim, requiredYieldOf } from '../src/mechanisms/banks/treasury.js';
 import { expectedLossOn } from '../src/registry/banking.js';
+import { downTick } from '../src/core/tick.js';
+import { FIRM, HOUSEHOLD } from '../src/registry/profiles.js';
+import type { AuditReport, Violation } from '../src/audit/audit.js';
+
+/** Every ownership violation this period that is about where a loan is owed (17.8). */
+function outOfTheSystem(report: { readonly audit: AuditReport }): Violation[] {
+  return report.audit.families
+    .filter((f) => f.family === 'ownership')
+    .flatMap((f) => f.violations)
+    .filter((v) => v.message.includes('outside the banking system'));
+}
 import { asPerPiece } from '../src/core/measure.js';
 import { instrumentId } from '../src/core/ids.js';
 import { loanTerms } from '../src/mechanisms/banks/loan.js';
@@ -1034,5 +1045,134 @@ describe('a pledge is worth what it covers (Banks Lending A4, C5.a)', () => {
     const onClaim = requiredOnClaim(view, plain.id);
     expect(onClaim.some).toBe(onName.some);
     if (onName.some && onClaim.some) expect(onClaim.value).toBe(onName.value);
+  });
+});
+
+/**
+ * A bank loan is not distributed outside the banking system (Banks Lending A1.a, D4.a, XI-11;
+ * item 17.8).
+ *
+ * A FORBID that holds breaks silently, which is why it is a family and not a refusal at a door:
+ * nothing in this world sells a loan anywhere it should not, and the check has to be able to say so
+ * about a world that does.
+ */
+describe('where a loan may be owed (Banks Lending D4.a, XI-11)', () => {
+  /** Sells part of a bank's loan book to a party that is not in the banking system (D4). */
+  function sellsToAFirm(at = 3): SystemModule {
+    return {
+      id: 'test.sellsLoan',
+      spec: 'Banks Lending D4',
+      requires: [],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.sellLoan',
+          spec: 'Banks Lending D4',
+          anchor: { before: 'corporateActions' },
+          reads: [],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            if (ctx.period !== at) return;
+            for (const row of ctx.instruments.ofKind(LOAN)) {
+              if (!row.status.live) continue;
+              const owed = creditorOf((h) => ctx.register.holdersOf(h), row);
+              if (!owed.some) continue;
+              // A test asks the draw for what it needs: a firm that is not the borrower — a
+              // borrower buying back its own row is repaying it, not holding it (Register E2) — and
+              // that has the money to pay for a parcel of it.
+              const buyer = ctx.parties
+                .ofKind(FIRM)
+                .find(
+                  (f) =>
+                    f.status.alive &&
+                    !(row.issuer.some && row.issuer.value === f.id) &&
+                    ctx.register.quantity(f.id, moneyInstrumentId(f.bank, row.ccy)) > 0,
+                );
+              if (buyer === undefined) continue;
+              const cash = ctx.register.quantity(
+                buyer.id,
+                moneyInstrumentId(buyer.bank, row.ccy),
+              );
+              const units = downTick(Math.min(ctx.register.quantity(owed.value, row.id), cash / 2));
+              if (units <= 0) continue;
+              // D4: a loan CAN be sold, and then it has a price and a buyer. Whether this buyer may
+              // be the one is the question the family answers, and settlement is not where it is
+              // asked — the wire moves what two parties agreed to move.
+              ctx.settle({
+                legs: [
+                  {
+                    kind: 'asset',
+                    from: owed.value,
+                    to: buyer.id,
+                    instrument: row.id,
+                    qty: asQty(units),
+                    pricePerUnit: some(asPerPiece(1, 'at what it promised')),
+                    accruedPerUnit: none(),
+                  },
+                  {
+                    kind: 'money',
+                    from: ctx.accountOf(buyer.id, row.ccy),
+                    to: ctx.accountOf(owed.value, row.ccy),
+                    ccy: row.ccy,
+                    amount: units,
+                  },
+                ],
+                cause: 'trade',
+                reason: `${String(owed.value)} sells ${String(row.id)} to ${String(buyer.id)}`,
+              });
+              return;
+            }
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+  }
+
+  it('is a fact about the KIND, and three kinds say yes', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    w.step();
+    // Law 15: a list of names here would be a list somebody has to remember to add to. What a bank,
+    // the centre of the system, and the vehicle that holds a pool for its noteholders have in common
+    // is declared on each of them.
+    const inside = [...w.registry.partyKinds.keys()].filter(
+      (k) => w.registry.partyKind(k).banking,
+    );
+    expect(inside.length).toBeGreaterThan(0);
+    for (const k of inside) expect(w.registry.partyKind(k).banking).toBe(true);
+    // And the ones that plainly are not: a household, a firm, a state.
+    expect(w.registry.partyKind(HOUSEHOLD).banking).toBe(false);
+    expect(w.registry.partyKind(FIRM).banking).toBe(false);
+  });
+
+  it('holds in this world, and says so when a row leaves it', () => {
+    const clean = world([asksFor(phx(20_000).pieces)]);
+    let saidNothing = true;
+    for (let i = 0; i < 5; i += 1) {
+      const report = clean.step();
+      if (outOfTheSystem(report).length > 0) saidNothing = false;
+    }
+    // Nothing in this world sells a loan out of the banking system, so the family reports nothing —
+    // and it is BUILT, which is what stops "nothing" from meaning "nobody checked" (Audit C2).
+    expect(saidNothing).toBe(true);
+    const built = clean
+      .step()
+      .audit.families.find((f) => f.family === 'ownership' && f.built);
+    expect(built).toBeDefined();
+
+    const sold = world([asksFor(phx(20_000).pieces), sellsToAFirm()]);
+    const said: string[] = [];
+    for (let i = 0; i < 5; i += 1) {
+      for (const v of outOfTheSystem(sold.step())) said.push(v.message);
+    }
+    // XI-11, D4.a: the row is now owed to a firm, and the audit names the holder, the row and how
+    // much of it — it does not move the units back, because the audit never repairs.
+    expect(said.length).toBeGreaterThan(0);
+    expect(said.some((m) => m.includes('not distributed outside the banking system'))).toBe(true);
   });
 });

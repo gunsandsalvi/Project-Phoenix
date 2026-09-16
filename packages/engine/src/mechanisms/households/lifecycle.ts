@@ -269,6 +269,8 @@ export const probateKind: PartyKindProfile = {
     'XI-3, XI-8, Households F1.b: it owes nobody; what it holds is the estate of the dead in the course of being divided, and nobody can call that',
   borrows: false,
   buysOnTerms: false,
+  // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+  banking: false,
   // Banks Funding E1: it does not CHOOSE a bank and it never moves — it banks where the family it
   // is winding up banked, which is what its own id says. A depositor that shops around is a
   // depositor with a decision to take, and probate has none: it is an estate in the course of

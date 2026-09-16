@@ -155,6 +155,8 @@ export const vehicleKind: PartyKindProfile = {
   fails: ['cash', 'solvency'],
   borrows: false,
   buysOnTerms: false,
+  // 17.8: XI-11, §42 C1: it exists to HOLD the rows — a named party the loans are transferred into, funded by notes its holders bought. It is how credit risk reaches an investor without the row itself leaving the banking system.
+  banking: true,
   // Banks Funding E1: it does not shop for a bank. It banks where its arranger banks, because that
   // is who set it up, and it is over when the pool is.
   depositClass: null,

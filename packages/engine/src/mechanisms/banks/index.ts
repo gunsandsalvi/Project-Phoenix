@@ -1062,6 +1062,61 @@ function bookMoves(): Family {
  * It is a MEASUREMENT and never a rule: what it finds is reported with an owner and a size, and
  * nothing here adjusts a weight or a position (the audit never repairs).
  */
+/**
+ * Banks Lending A1.a, D4, D4.a, XI-11 (17.8): NO BANK LOAN IS HELD OUTSIDE THE BANKING SYSTEM.
+ *
+ * A loan is not a security. It has no market and no price anybody but its holder can see (A1.a,
+ * D1), so what stands behind it is a lender that wrote it, watches the borrower and can enforce —
+ * and a row sitting in a pension fund has none of that. D4.a is the same fact from the other end:
+ * a loan too large for one bank is written by SEVERAL BANKS, never sold to the public, and the way
+ * credit risk actually reaches an investor is a NOTE issued against a pool held by a named vehicle
+ * (XI-11, §42 C1) rather than the row itself changing hands into a household's portfolio.
+ *
+ * IT IS A FORBID, AND A FORBID THAT HOLDS BREAKS SILENTLY (Part II) — which is exactly why it is a
+ * family and not a refusal at a door. Nothing in this world sells a loan anywhere it should not
+ * today; the day something does, this says so with the holder, the row and how much, and nobody
+ * has to have remembered the rule.
+ *
+ * WHO MAY BE OWED ONE IS THE KIND'S TO SAY (`banking`, Law 15), so adding a kind means answering
+ * the question rather than editing a list here. An ESTATE is not one of them and does not need to
+ * be: it holds what a dead bank held, and only until it has sold it (XI-8, Register F2) — winding a
+ * loan book up is not running one, and a check that fired on it would be reporting a succession.
+ */
+function loansStayInTheBankingSystem(): Family {
+  return {
+    name: 'ownership',
+    contributor: 'banks',
+    spec: 'Banks Lending A1.a Banks Lending D4 Banks Lending D4.a XI-11',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const i of view.instruments.ofKind(LOAN)) {
+        if (!i.status.live) continue;
+        for (const holder of view.register.holdersOf(i.id)) {
+          if (!view.parties.has(holder)) continue;
+          const who = view.parties.get(holder);
+          const kind = view.registry.partyKind(who.kind);
+          if (kind.banking || kind.terminal === true) continue;
+          const units = view.register.quantity(holder, i.id);
+          if (units <= 0) continue;
+          out.push({
+            family: 'ownership',
+            spec: 'Banks Lending D4.a',
+            owner: String(holder),
+            size: units,
+            unit: String(i.ccy),
+            period: view.period,
+            message:
+              `${String(holder)} is a ${String(who.kind)} and is owed ${String(units)} of ` +
+              `${String(i.id)}: a bank loan is not distributed outside the banking system`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
+
 function tradingBookIsCapitalised(): Family {
   return {
     name: 'accounts',
@@ -1720,7 +1775,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     borrowNeeds: [
       { partyKind: BANK, needs: (view: ParticipantView) => deskBorrows(view, rows, makersOf) },
     ],
-    families: [bookMoves(), tradingBookIsCapitalised()],
+    families: [bookMoves(), tradingBookIsCapitalised(), loansStayInTheBankingSystem()],
   };
 }
 

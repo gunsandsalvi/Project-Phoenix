@@ -303,7 +303,7 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [x] 17.7d **Senior notes and commercial paper as repo collateral** (§42 D3, Banks Funding C1.a, D1): what the secured market will take, and at what haircut.
 
   Split out of 17.7 and inserted here in dependency order, before 17.8: each is an instrument shape or a price that needs 17.7's terms door and nothing later. **The covered bond was in this list and is OUT OF SCOPE by the owner's decision** (17.7d, 2026-09-16): §42's securitisation of mortgages does the same work — a pool of named loans standing behind claims held by named holders — and one mechanism for it is what Law 4 asks for. Nothing was built for it; what the item had already produced is 17.7c, which stands on its own. **The index-linked schedule left 17.7 too and is inserted at 18a.1**, where the first published price level in this world is — a schedule that pays off an index cannot be written before somebody publishes one.
-- [ ] 17.8 Audit family "no bank loan held outside the banking system" reading `profile.banking: true`.
+- [x] 17.8 Audit family "no bank loan held outside the banking system" reading `profile.banking: true`.
 - [ ] 17.9 `banks/lines.ts:446`: a negative want publishes `mustShed` and the dealing line reads it; floors deleted. `banks/loan.ts`: amortisation, prepayment, write-off.
 - [ ] 17.10 A credit index and tracker over the rated universe.
 - [ ] 17.11 §7 answered 62 of 62; record.

@@ -55,6 +55,8 @@ export const insurerKind: PartyKindProfile = {
   // Banks Lending A1: nobody lends to it. What stands behind it is the state, not a creditor.
   borrows: false,
   buysOnTerms: false,
+  // 17.8: Banks Lending A1.a, D4.a: a loan is not a security and is never distributed outside the banking system, so nobody of this kind is ever owed one.
+  banking: false,
   // Its account is at the central bank, like the treasury's: the guarantee behind a banking system
   // does not sit inside one of the banks it guarantees.
   depositClass: null,
