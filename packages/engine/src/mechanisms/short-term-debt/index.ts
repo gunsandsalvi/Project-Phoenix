@@ -30,6 +30,7 @@ import {
   costOfFundsIn,
   creditQuoteThisPeriod,
 } from '../../registry/banking.js';
+import { benchmarkNow, loanRate } from '../../registry/credit.js';
 import {
   amountOf,
   asCash,
@@ -790,7 +791,9 @@ export function drawBackstops(ctx: MechanismContext): void {
         kind: LOAN,
         originator: row.creditor,
         borrower: row.debtor,
-        rate: t.rate,
+        // B4 (17d.2): the rate the line was committed at becomes a margin over the fixing, by the
+        // same derivation every other row uses (Law 4).
+        ...loanRate(t.rate, benchmarkNow(ctx.journal, ctx.calendar, row.ccy, ctx.period)),
         drawn,
         maturity: addMonths(drawn, ctx.params.months(PAPER_PARAMS.lineMonths)),
         dayCount: 'ACT/365F',
@@ -1007,6 +1010,8 @@ export function shortTermDebt(): SystemModule {
         // an offer. `before: markets` is the last position still in front of the auction.
         anchor: { before: 'markets' },
         reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
           { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
@@ -1033,7 +1038,10 @@ export function shortTermDebt(): SystemModule {
          * repayment that had already failed. A backstop drawn after the default is not a backstop.
          */
         anchor: { before: 'corporateActions' },
-        reads: [{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
+        reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
+{ kind: 'event', name: 'credit.default', of: 'anyPeriod' }],
         writes: [
           { kind: 'event', name: 'backstop.drawn' },
           { kind: 'event', name: 'credit.declined' },

@@ -21,7 +21,7 @@ import { percent } from '../../core/format.js';
 import { currencyUnit, instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { none, some } from '../../core/option.js';
-import { LOAN, isLoan, type LoanTerms } from '../../registry/credit.js';
+import { LOAN, isLoan, rateOn, type LoanTerms } from '../../registry/credit.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
@@ -33,7 +33,7 @@ import type { Namer } from '../../registry/naming.js';
  * roof it is foreclosing, and a module may not import another module to find out. Everything else
  * about a loan is here, and this re-export is what keeps one spelling.
  */
-export { LOAN, creditorOf, isLoan, loanTerms, type LoanTerms } from '../../registry/credit.js';
+export { LOAN, creditorOf, isLoan, loanTerms, rateOn, type LoanTerms } from '../../registry/credit.js';
 
 /** The period after this one; the calendar counts, this only names the next index (Money G3.a). */
 const next = (p: Period): Period => asPeriod(p + 1);
@@ -50,7 +50,7 @@ export function loanId(lender: PartyId, borrower: PartyId, n: number): Instrumen
  * it — dimensionless either way, and never a level (A-44, A-58 are both a rate read as one).
  */
 function interestTo(t: LoanTerms, from: Civil, to: Civil): Ratio {
-  return scale(t.rate, asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
+  return scale(rateOn(t), asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
 }
 
 /**
@@ -68,6 +68,14 @@ export const loanKind: InstrumentKindProfile = {
   id: LOAN,
   // D1: amortised cost. A1.a: no market, so it names none and nothing clears it.
   pricing: 'carriedAtCost',
+  /**
+   * Corporate Credit B4, Bond N5.b (17d.2): *"fixed or floating, and floating is the norm in the
+   * loan market."* A loan's coupon is a margin over what money cost over the accrual just ended, so
+   * it RESETS — and the kernel is the one writer of what a fixing does to a line (`ctx.fixCoupon`).
+   * A row written where the benchmark had never fixed floats over nothing and never resets, which
+   * its own terms say (`floatsOver`) rather than a flag anybody sets later.
+   */
+  floats: true,
   carry: 'cost',
   // The borrower owes it: it is the issuer's liability and the lender's asset.
   liabilityOfIssuer: true,
@@ -90,7 +98,7 @@ export const loanKind: InstrumentKindProfile = {
   displayName: (i: Instrument, namer: Namer) => {
     if (!isLoan(i.terms)) return String(i.id);
     const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);
-    return `${who} ${percent(i.terms.rate)} ${formatCivil(i.terms.maturity)}`;
+    return `${who} ${percent(rateOn(i.terms))} ${formatCivil(i.terms.maturity)}`;
   },
   /**
    * D3: interest accrues and is received. It falls due every period the calendar places between the

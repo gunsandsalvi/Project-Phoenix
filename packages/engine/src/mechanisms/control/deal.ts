@@ -22,10 +22,12 @@ import type { Civil } from '../../calendar/civil.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import {
+  benchmarkNow,
   FACILITY,
   facilityLoanId,
   isFacility,
   LOAN,
+  loanRate,
   type LoanTerms,
 } from '../../registry/credit.js';
 import { paramId, type ParamId } from '../../core/ids.js';
@@ -219,7 +221,9 @@ export function facilityRow(
     kind: LOAN,
     originator: facility.bank,
     borrower: target,
-    rate: facility.rate,
+    // B4 (17d.2): the rate the commitment was struck at becomes a margin over the fixing, by the
+    // same derivation every other row uses (Law 4).
+    ...loanRate(facility.rate, benchmarkNow(ctx.journal, ctx.calendar, ccy, ctx.period)),
     drawn: ctx.calendar.startOf(ctx.period),
     maturity: facility.maturity,
     dayCount: 'ACT/365F',

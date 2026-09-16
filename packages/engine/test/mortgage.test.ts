@@ -5,6 +5,7 @@
  * @spec Housing C1 Housing C2 Housing C4 XI-1 XI-15 Register F2
  */
 import { describe, expect, it } from 'vitest';
+import { rate as perAnnum } from '../src/core/rate.js';
 import { DWELLING, HOUSEHOLD, LOAN, assemble, none, some, type LoanTerms, type MechanismContext, type SystemModule } from '../src/index.js';
 import { goodId } from '../src/registry/physical.js';
 import { addMonths } from '../src/calendar/civil.js';
@@ -110,7 +111,10 @@ const lend: SystemModule = {
             kind: LOAN,
             originator: bank,
             borrower: cell.id,
-            rate: asRatio(0.05, 'rate'),
+            // 17d.2: a margin over the fixing, and a fixed row where the book has never traded.
+            margin: asRatio(0.05, 'rate'),
+            floatsOver: none<string>(),
+            coupon: perAnnum(0.05, { kind: 'annual' }),
             drawn,
             maturity: addMonths(drawn, 12),
             dayCount: 'ACT/365F',

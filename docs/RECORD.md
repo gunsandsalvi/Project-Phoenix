@@ -13811,3 +13811,52 @@ nothing to it.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green. `indices`: four new tests,
 green; the file's four reds are the four that were red at `9673da6`.
+
+## Item 17d — Loans float: closed
+
+The owner: *"loans are floaters on top of the equivalent to Xm SOFR, with X being based on the coupon
+frequency."* Every loan in this world was a rate locked at origination for a year, so nothing a
+central bank did could ever reach a borrower's payment — and Corporate Credit B4 says the opposite in
+one line: *"fixed or floating, and floating is the NORM in the loan market."*
+
+**A term rate is the fixings compounded** (17d.1). This world's benchmark is overnight and
+transacted-or-nothing; the one shape in which a term rate stays transacted is the compounding of
+those fixings over the tenor that just ended, in arrears — what a SOFR-based loan actually pays, and
+not a forecast of anything. A period nobody borrowed in has no fixing and nothing stands in for one.
+
+**A loan is a margin over it** (17d.2). `LoanTerms` carries the MARGIN — struck once, the half the
+two of them actually agree — the BOOK it floats over, and the coupon IN FORCE. `lending.fix`
+restrikes the coupon before anything falls due on it, because a coupon that fixed after the interest
+it applies to would be a rate nobody could have known they were paying (Clearing F1.a). The kernel is
+the one writer of what a fixing does to a line and records it publicly, so a holder learns what it
+pays next.
+
+**The derivation happens ONCE.** A bank quotes a NAME a rate; that rate is what money costs plus what
+this borrower costs on top, so the margin is what is left when the fixing is taken out. `loanRate` is
+that subtraction and every writer of a row uses it — a fresh loan, a drawing on a committed line, a
+backstop, a buyout's facility — so none of them can disagree about what a quoted rate meant (Law 4).
+`credit.quoted` publishes both halves, so every reader of *what borrowing costs this name* is
+unchanged.
+
+**And a fixed rate is still a real answer** (17d.3). Where the benchmark has never fixed there is no
+margin to derive and nothing to float over: the row is fixed at what it was quoted, stamped as one at
+origination, and its own terms say which it is rather than a flag anybody sets later.
+
+**The defect this found, and it was not mine to look for.** `Benchmark.rate` was documented *"per
+period"* and carries a rate PER ANNUM — the money market scales an advance's rate by the span of a
+year (`money-market/rows.ts`), so the rate its book strikes is per annum and the volume-weighted
+average of them is too. Compounding those as if each were a week's rate put the first margin at
+**minus ninety-five per cent**. Law 8 is exactly this: the periodicity is part of the number, and a
+comment that names the wrong one is not a note, it is what a reader believes. Fixed at the cause: the
+comment says per annum, and `termFixing` crosses each fixing to the share its own period earned
+before multiplying them out. The margin came back at 2.3% over a 1.9% fixing.
+
+**What it cannot show, written down.** Twelve periods of the rig publish TWO fixings, so two loans of
+fifty-two float and the rest are fixed rows. A world whose interbank market does not meet has no
+benchmark and therefore no channel from a policy rate to a payment, whatever the rows now say — that
+is finding 21.77, positioned at 23.3 beside 21.72, because "the banks stop quoting every name" and
+"the banks stop lending each other money" are plausibly one fact.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
+four new tests green (the file's four reds unchanged); `loans`: three new tests green, seven reds
+unchanged; `buyout` ten green; `backstop` and `mortgage` carry the two reds they carried before.

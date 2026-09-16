@@ -19,7 +19,9 @@ import { asCash, type Cash, asRatio, type Ratio } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
 import { middleGrade, type Grade } from './grades.js';
-import type { Period } from '../calendar/calendar.js';
+import { period, type Period } from '../calendar/calendar.js';
+import type { Civil } from '../calendar/civil.js';
+import { yearFraction } from '../calendar/daycount.js';
 import type { CurrencyCode } from '../core/ids.js';
 
 const BENCHMARK = 'index.benchmark';
@@ -143,6 +145,14 @@ export function termFixing(
   named: string,
   from: Period,
   to: Period,
+  /**
+   * Law 8: A FIXING IS PER ANNUM and a span is days, so the CALENDAR turns each one into the share
+   * of par its own period earned before they are multiplied out. Compounding the rates themselves
+   * would be compounding a year's rate once a week, which is what this did until it was read
+   * against the money market's own accrual (`money-market/rows.ts`: interest is the rate scaled by
+   * the span of a year) — and the answer came out at ninety-nine per cent.
+   */
+  calendar: { startOf(p: Period): Civil },
 ): Option<TermFixing> {
   if (to < from) return none<TermFixing>();
   const byPeriod = new Map<number, number>();
@@ -153,10 +163,16 @@ export function termFixing(
   }
   let compounded = 1;
   for (let at: number = from; at <= to; at += 1) {
-    const rate = byPeriod.get(at);
+    const perAnnum = byPeriod.get(at);
     // D3.a: a period nobody borrowed in has no fixing, and nothing stands in for one.
-    if (rate === undefined) return none<TermFixing>();
-    compounded *= 1 + rate;
+    if (perAnnum === undefined) return none<TermFixing>();
+    const ofAYear = yearFraction(
+      'ACT/365F',
+      calendar.startOf(period(at)),
+      calendar.startOf(period(at + 1)),
+    );
+    if (ofAYear <= 0) return none<TermFixing>();
+    compounded *= 1 + perAnnum * ofAYear;
   }
   return some({
     over: asRatio(compounded - 1, `what ${named} compounded to over the span`),

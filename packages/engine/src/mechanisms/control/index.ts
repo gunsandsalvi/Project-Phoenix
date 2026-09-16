@@ -1241,6 +1241,8 @@ export function control(): SystemModule {
         // prepared a statement only listed companies had one — so no bid was ever formed and this
         // phase's read set had never been tested against a run. These are the reads it makes.
         reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'advisory.quoted', of: 'anyPeriod' },
           { kind: 'event', name: 'control.combined', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'thisPeriod' },
@@ -1309,6 +1311,8 @@ export function control(): SystemModule {
         spec: 'Private Equity C2 Private Equity C3',
         anchor: { before: 'lending.book' },
         reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'control.financing', of: 'anyPeriod' },
           { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
           { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },

@@ -45,7 +45,15 @@ export interface Benchmark {
    * publish a fixing for a market that did not trade.
    */
   readonly secured: boolean;
-  /** The volume-weighted rate, per period, as the rows themselves carry it. */
+  /**
+   * The volume-weighted rate, PER ANNUM, as the rows themselves carry it: an advance's interest is
+   * its rate scaled by the span of a year the accrual covers (`money-market/rows.ts`), so the rate
+   * the book strikes is per annum and this average of them is too.
+   *
+   * It said *per period* until 17d.1 read it and compounded a year's rate as if it were a week's.
+   * Law 8: the periodicity is part of the number, and a comment that says the wrong one is a defect
+   * rather than a note — it is what a reader believes.
+   */
   readonly rate: PerPiece;
   /** What it was measured over: how much settled, and how many borrowers paid it. */
   readonly volume: Qty;

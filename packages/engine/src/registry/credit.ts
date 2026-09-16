@@ -15,6 +15,7 @@
  */
 import type { Qty } from '../core/tick.js';
 import type { Cash, Ratio } from '../core/measure.js';
+import { rate, type Periodicity, type Rate } from '../core/rate.js';
 import {
   agreementKindId,
   instrumentId,
@@ -24,12 +25,15 @@ import {
   type PartyId,
 } from '../core/ids.js';
 import type { Civil } from '../calendar/civil.js';
-import type { Period } from '../calendar/calendar.js';
+import { period, type Period } from '../calendar/calendar.js';
 import type { AgreementTerms } from '../register/agreements.js';
-import type { DayCount } from '../calendar/daycount.js';
+import { yearFraction, type DayCount } from '../calendar/daycount.js';
 import { InvalidRegistry } from '../core/errors.js';
 import type { Instrument, Terms } from '../register/instruments.js';
 import { none, some, type Option } from '../core/option.js';
+import { asRatio, minus } from '../core/measure.js';
+import { termFixing, type WireReads } from './notices.js';
+import type { CurrencyCode } from '../core/ids.js';
 
 export const LOAN = instrumentKindId('loan');
 
@@ -47,13 +51,33 @@ export interface LoanTerms extends Terms {
   readonly originator: PartyId;
   readonly borrower: PartyId;
   /**
-   * A2: the rate struck at origination, per annum. It is what the negotiation produced (C2.a).
+   * A2, B4 (17d.2): WHAT IT PAYS OVER THE BENCHMARK, per annum, struck at origination and never
+   * moved. *"Fixed or floating, and floating is the norm in the loan market"* — so what the
+   * negotiation produces (C2.a) is a MARGIN, and what the borrower actually pays is that margin
+   * plus what money cost this period. A world where the whole rate is locked at origination has no
+   * channel from a policy rate to a borrower's payment at all.
    *
    * A `Ratio`, so it can never be spent or posted as a level: what a rate earns over a span is the
    * rate SCALED by the span, and what that comes to per unit is par scaled by the result. A-44 and
    * A-58 are both this distinction read the wrong way round.
    */
-  readonly rate: Ratio;
+  readonly margin: Ratio;
+  /**
+   * B4, Bond N5.b: THE BOOK IT FLOATS OVER, by the name the benchmark publishes under — and NOTHING
+   * where it was written as a fixed row, which is what a loan is when the benchmark has never fixed
+   * (17d.3). A loan that cannot fix cannot float, and stating which it is at origination is what
+   * keeps the two apart without a flag anybody sets later.
+   */
+  readonly floatsOver: Option<string>;
+  /**
+   * A2: THE RATE IN FORCE, per annum — the margin plus the fixing, stamped at each reset by the
+   * kernel's one writer of what a fixing does to a line (`ctx.fixCoupon`, Bond N5.b). On a fixed
+   * row it is struck once and never moves, which is the same field saying the same thing.
+   *
+   * A `Rate` and not a bare ratio, because the periodicity is part of the number (Law 8) and a
+   * coupon that did not carry its own is a number two readers can disagree about.
+   */
+  readonly coupon: Rate;
   readonly drawn: Civil;
   readonly maturity: Civil;
   readonly dayCount: DayCount;
@@ -74,6 +98,81 @@ export interface LoanTerms extends Terms {
  */
 export function isLoan(t: Terms): t is LoanTerms {
   return 'originator' in t && 'borrower' in t && 'security' in t;
+}
+
+/**
+ * A2, B4 (17d.2): THE RATE IN FORCE ON THIS ROW, per annum — one read, so that the six places that
+ * want *what this loan costs its borrower* cannot disagree about whether they meant the margin or
+ * the margin plus the fixing (Law 4).
+ */
+export const rateOn = (t: LoanTerms): Ratio => asRatio(t.coupon.amount, 'the rate in force on it');
+
+/**
+ * A2, B4, XI-7 (17d.2): WHAT A QUOTE BECOMES ON A ROW — one derivation, used by every writer of a
+ * loan, so that a drawing on a line and a fresh row and a buyout's facility cannot disagree about
+ * what a quoted rate meant (Law 4).
+ *
+ * A bank quotes a NAME a rate: *seven per cent*. That rate is what money costs plus what this
+ * borrower costs on top of it, so the MARGIN is what is left when the fixing is taken out, and it
+ * is the margin that is struck at origination and never moves. What moves is the fixing, and the
+ * borrower's payment with it.
+ *
+ * WHERE THE BENCHMARK HAS NEVER FIXED there is no margin to derive and nothing to float over: the
+ * row is FIXED at what it was quoted, stamped as one at origination, and the terms say which it is
+ * rather than a flag anybody sets later (17d.3). A loan that cannot fix cannot float.
+ */
+export function loanRate(
+  quoted: Ratio,
+  over: Option<{ readonly named: string; readonly perAnnum: Ratio }>,
+): Pick<LoanTerms, 'margin' | 'floatsOver' | 'coupon'> {
+  const per: Periodicity = { kind: 'annual' };
+  if (!over.some) {
+    return { margin: quoted, floatsOver: none<string>(), coupon: rate(quoted, per) };
+  }
+  return {
+    margin: minus(quoted, over.value.perAnnum, 'what this borrower costs over what money costs'),
+    floatsOver: some(over.value.named),
+    coupon: rate(quoted, per),
+  };
+}
+
+/**
+ * XI-7, Law 8 (17d.2): THE FIXING AS A RATE PER ANNUM. `termFixing` returns the share of par the
+ * span earned, which is what a coupon in arrears IS; a row's coupon is quoted per annum, so the
+ * span is crossed to a year HERE and once — by the calendar's own fraction, never by a
+ * periods-per-year written down (Money G3.a).
+ */
+export const fixingPerAnnum = (over: Ratio, ofAYear: number): Ratio =>
+  asRatio(over / ofAYear, 'what the fixing comes to per annum');
+
+/**
+ * XI-7, Corporate Credit B4 (17d.2): WHAT MONEY COST OVER THE ACCRUAL THAT JUST ENDED, per annum —
+ * the one call every writer of a loan makes, so a drawing, a fresh row and a buyout's facility
+ * cannot disagree about which fixing they meant (Law 4).
+ *
+ * THE TENOR IS THE COUPON FREQUENCY, which is the owner's rule and in this world is ONE PERIOD:
+ * interest on a loan falls due every period for the days that period covers, so the rate it falls
+ * due at is what the overnight book compounded to over the period just ended. The read generalises
+ * the moment the frequency does (item 20), because `termFixing` already takes a span.
+ *
+ * THE SECURED BOOK, because that is what money actually changes hands at overnight against
+ * collateral — the thing SOFR is — and an unsecured overnight rate carries a bank's own credit,
+ * which is not what a corporate borrower is being charged for on top (D3, Law 4).
+ */
+export function benchmarkNow(
+  reads: Pick<WireReads, 'ofKind'>,
+  calendar: { startOf(p: Period): Civil },
+  ccy: CurrencyCode,
+  at: Period,
+): Option<{ readonly named: string; readonly perAnnum: Ratio }> {
+  if (at <= 0) return none();
+  const named = `${String(ccy)}:secured`;
+  const just = period(at - 1);
+  const said = termFixing(reads, named, just, just, calendar);
+  if (!said.some) return none();
+  const ofAYear = yearFraction('ACT/365F', calendar.startOf(just), calendar.startOf(at));
+  if (ofAYear <= 0) return none();
+  return some({ named, perAnnum: fixingPerAnnum(said.value.over, ofAYear) });
 }
 
 /**

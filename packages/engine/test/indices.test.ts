@@ -4,6 +4,7 @@
  * @spec Indices A1 Indices A2 Indices A4 Indices B1 Indices B2 Indices C1 Indices C2 Indices D1 Indices D2 Indices D3 Indices D3.a Indices D4 Indices D5 Indices D5.a Indices E1 Indices E2 Indices E3 XI-7 Law 3 Law 19
  */
 import { asRatio, type PerPiece } from '../src/core/measure.js';
+import { fromDayNumber } from '../src/calendar/civil.js';
 import { termFixing } from '../src/registry/notices.js';
 import { period } from '../src/calendar/calendar.js';
 import type { Event } from '../src/journal/journal.js';
@@ -291,6 +292,9 @@ describe('from a closed quarter to a rated index (Reporting A1, Ratings A5, Indi
 
 describe('a term rate is the fixings compounded (XI-7, Indices D3.a, 17d.1)', () => {
   /** A journal with one benchmark fixing per period, as `index.benchmark` actually carries them. */
+  /** The world's own calendar shape: seven days to a period, so a year is 365/7 of them. */
+  const weekly = { startOf: (p: number) => fromDayNumber(p * 7) };
+
   const fixed = (rows: Readonly<Record<number, number>>) => ({
     ofKind: (kind: string) =>
       kind !== 'index.benchmark'
@@ -308,12 +312,19 @@ describe('a term rate is the fixings compounded (XI-7, Indices D3.a, 17d.1)', ()
   });
 
   it('compounds what the overnight book actually paid, period by period', () => {
-    const said = termFixing(fixed({ 1: 0.001, 2: 0.002, 3: 0.003 }), 'USD:secured', period(1), period(3));
+    const said = termFixing(fixed({ 1: 0.001, 2: 0.002, 3: 0.003 }), 'USD:secured', period(1), period(3), weekly);
     expect(said.some).toBe(true);
     if (!said.some) return;
     // In arrears: the coupon IS the compounding, and it is a share of par over the span rather than
     // a rate per annum — annualising it only to scale it back down would be two crossings (Law 8).
-    expect(said.value.over).toBeCloseTo(1.001 * 1.002 * 1.003 - 1, 12);
+    // Law 8: each fixing is PER ANNUM, so what its own period earned is the rate scaled by the
+    // span of a year that period covers — and those are what compound. Compounding the rates
+    // themselves would be compounding a year's rate once a week.
+    const w = 7 / 365;
+    expect(said.value.over).toBeCloseTo(
+      (1 + 0.001 * w) * (1 + 0.002 * w) * (1 + 0.003 * w) - 1,
+      12,
+    );
     expect(said.value.fixings).toBe(3);
   });
 
@@ -321,22 +332,22 @@ describe('a term rate is the fixings compounded (XI-7, Indices D3.a, 17d.1)', ()
     // A rate nobody paid is not a fixing. Carrying the last one forward is the posted benchmark
     // Appendix B forbids, and zero would be a week of free money nobody lent — so the answer is
     // that this span has no term rate at all, and a loan that cannot fix cannot float.
-    expect(termFixing(fixed({ 1: 0.001, 3: 0.003 }), 'USD:secured', period(1), period(3)).some).toBe(
+    expect(termFixing(fixed({ 1: 0.001, 3: 0.003 }), 'USD:secured', period(1), period(3), weekly).some).toBe(
       false,
     );
-    expect(termFixing(fixed({}), 'USD:secured', period(1), period(1)).some).toBe(false);
+    expect(termFixing(fixed({}), 'USD:secured', period(1), period(1), weekly).some).toBe(false);
   });
 
   it('is the fixing itself over a single period, and nothing over none', () => {
-    const one = termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(4));
-    expect(one.some && one.value.over).toBeCloseTo(0.005, 12);
+    const one = termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(4), weekly);
+    expect(one.some && one.value.over).toBeCloseTo(0.005 * (7 / 365), 12);
     // A span that runs backwards is not a span.
-    expect(termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(3)).some).toBe(false);
+    expect(termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(3), weekly).some).toBe(false);
   });
 
   it('is one book and not the other (D3, Law 4)', () => {
     // Secured and unsecured are two benchmarks for two different things; neither stands for the
     // other, and a reader asks for one of them by name.
-    expect(termFixing(fixed({ 1: 0.001 }), 'USD:unsecured', period(1), period(1)).some).toBe(false);
+    expect(termFixing(fixed({ 1: 0.001 }), 'USD:unsecured', period(1), period(1), weekly).some).toBe(false);
   });
 });

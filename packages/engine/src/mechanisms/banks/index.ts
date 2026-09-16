@@ -41,6 +41,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
 import { period, type Period } from '../../calendar/calendar.js';
+import { rate as perAnnum } from '../../core/rate.js';
 import { addMonths } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
@@ -82,8 +83,11 @@ import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import { TERM_MONTHS } from '../../registry/credit.js';
 import {
+  benchmarkNow,
   type Covenants,
   FACILITY,
+  loanRate,
+  rateOn,
   facilityLoanId,
   type FacilityTerms,
   isFacility,
@@ -785,11 +789,18 @@ function write(
   if (existing !== undefined) return draw(ctx, existing, principal, ccy);
   const id = freeLine(ctx, (n) => loanId(bank, borrower, n));
   const drawn = ctx.calendar.startOf(ctx.period);
+  /**
+   * B4 (17d.2): WHAT THE QUOTE BECOMES ON THE ROW. A bank quotes a NAME a rate; that rate is what
+   * money costs plus what this borrower costs on top, so the margin is what is left when the
+   * fixing is taken out and it is the margin that is struck. Where the benchmark has never fixed
+   * there is nothing to float over and the row is a fixed one, which is the honest answer (17d.3).
+   */
+  const fixing = benchmarkNow(ctx.journal, ctx.calendar, ccy, ctx.period);
   const terms: LoanTerms = {
     kind: LOAN,
     originator: bank,
     borrower,
-    rate,
+    ...loanRate(rate, fixing),
     drawn,
     // A2: a year, placed by date like every other maturity in this world (Money G3.a). It is the
     // calendar's own month arithmetic and not `civil(y + 1, m, d)`, which is not a date when the
@@ -846,6 +857,42 @@ function write(
     false,
   );
   return id;
+}
+
+/**
+ * Corporate Credit B4, Bond N5.b, XI-7 (17d.2): THE ROWS RESET, and that is the whole of floating.
+ *
+ * A borrower's payment moves when money does, and this is where. Every live row that floats has its
+ * coupon restruck to the margin it was written at plus what the overnight book compounded to over
+ * the period that just ended — the kernel's one writer of what a fixing does to a line, which
+ * records it publicly (`coupon.fixed`) because a holder of the claim learns what it pays next.
+ *
+ * It runs BEFORE the period's dated actions, because a coupon that fixed after the interest it
+ * applies to fell due would be a rate nobody could have known they were paying (Clearing F1.a).
+ *
+ * A row whose benchmark did not fix this period KEEPS WHAT IT HAD, and that is not a posted
+ * benchmark: nothing was published, so nothing reset, and the row goes on paying what it last
+ * agreed to pay until the book trades again. What is forbidden is inventing a fixing, not a
+ * contract that has not reset.
+ */
+function fixFloatingRows(ctx: MechanismContext): void {
+  const byCcy = new Map<string, Option<{ readonly named: string; readonly perAnnum: Ratio }>>();
+  for (const i of ctx.instruments.ofKind(LOAN)) {
+    if (!i.status.live || !isLoan(i.terms)) continue;
+    const t = i.terms;
+    if (!t.floatsOver.some) continue;
+    // Law 18: one fixing per money, not one per row — every loan in a currency floats over the
+    // same book, and the read walks the journal.
+    let fixing = byCcy.get(i.ccy);
+    if (fixing === undefined) {
+      fixing = benchmarkNow(ctx.journal, ctx.calendar, i.ccy, ctx.period);
+      byCcy.set(i.ccy, fixing);
+    }
+    if (!fixing.some || fixing.value.named !== t.floatsOver.value) continue;
+    const now = plus(t.margin, fixing.value.perAnnum, 'the margin and what money cost');
+    if (now === rateOn(t)) continue;
+    ctx.fixCoupon(i.id, perAnnum(now, { kind: 'annual' }), fixing.value.named);
+  }
 }
 
 /**
@@ -1796,6 +1843,21 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         },
       },
       {
+        /**
+         * Corporate Credit B4, Bond N5.b (17d.2): THE ROWS RESET, before anything falls due on them.
+         * A coupon that fixed after the interest it applies to had fallen due would be a rate
+         * nobody could have known they were paying (Clearing F1.a).
+         */
+        name: 'lending.fix',
+        spec: 'Corporate Credit B4 Bond N5.b',
+        anchor: { before: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'index.benchmark', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'coupon.fixed' }],
+        run: (ctx: MechanismContext): void => {
+          fixFloatingRows(ctx);
+        },
+      },
+      {
         name: 'lending.write',
         spec: 'Banks Lending B1 Banks Lending C1 Banks Lending C2 Banks Lending C3',
         // Clearing F1: it acts on what it has already been told. A borrower says what it is short of
@@ -1804,6 +1866,8 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         anchor: { after: 'corporateActions' },
         reads: [
           { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
+          // 17d.2: a row is written as a margin over what money cost, so the writer reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
           { kind: 'event', name: 'covenant.breached', of: 'anyPeriod' },
@@ -1859,6 +1923,8 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         // before is what a lender and a borrower actually do.
         anchor: { after: 'corporateActions' },
         reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
           { kind: 'event', name: 'rating.action', of: 'anyPeriod' },
@@ -1962,6 +2028,8 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         // estate nothing to assume — so this runs first and what is left is always a loan.
         anchor: { before: 'revaluation' },
         reads: [
+          // 17d.2: a row is written as a margin over what money cost, so it reads the fixing.
+          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.declined', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
           { kind: 'event', name: 'credit.written', of: 'thisPeriod' },
@@ -2176,7 +2244,13 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // it is the estate's record, and the line itself ends when it is spent (Register E2, 17.9b).
     if (!ctx.parties.get(borrower).status.alive) continue;
     const name = cv.of(borrower);
-    const agreed: LoanTerms = { ...i.terms, rate: name.rate, maturity: until };
+    const agreed: LoanTerms = {
+      ...i.terms,
+      // E3 (17d.2): a re-agreement moves the MARGIN, which is what the two of them agree; the
+      // fixing is nobody's to agree and resets on its own.
+      ...loanRate(name.rate, benchmarkNow(ctx.journal, ctx.calendar, i.ccy, ctx.period)),
+      maturity: until,
+    };
     if (i.status.performing) {
       // 21.59: the row that is about to fall due, and not one that has a year to run. NEXT period,
       // because this period's payments have already been made or already failed by the time this
@@ -2260,7 +2334,7 @@ function runRepayments(rows: readonly BankDecl[], ctx: MechanismContext): void {
     const mine = ctx.instruments
       .issuedBy(borrower)
       .filter((i) => i.status.live && isLoan(i.terms) && i.ccy === req.short.ccy)
-      .sort((a, b) => (isLoan(b.terms) ? b.terms.rate : 0) - (isLoan(a.terms) ? a.terms.rate : 0));
+      .sort((a, b) => (isLoan(b.terms) ? rateOn(b.terms) : 0) - (isLoan(a.terms) ? rateOn(a.terms) : 0));
     for (const line of mine) {
       if (spare.pieces <= 0) break;
       const owed = creditorOf((id) => ctx.register.holdersOf(id), line);
@@ -2313,7 +2387,7 @@ function runRepayments(rows: readonly BankDecl[], ctx: MechanismContext): void {
           borrower: String(borrower),
           loan: String(line.id),
           paid: paying,
-          rate: isLoan(line.terms) ? line.terms.rate : 0,
+          rate: isLoan(line.terms) ? rateOn(line.terms) : 0,
         },
         false,
       );
@@ -2495,7 +2569,18 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
       {
         borrower: p.id,
         bank: best.bank,
+        /**
+         * B4 (17d.2): WHAT IT WOULD COST THIS NAME TODAY, all in — what money costs plus what this
+         * borrower costs on top. Every reader of *what borrowing costs* wants this one and is
+         * unchanged by the row underneath it becoming a floater (Law 4, Law 19).
+         */
         rate: best.rate,
+        /**
+         * B4: and the MARGIN, which is the half the two of them actually agree and the half that is
+         * struck on the row. A reader that wants to know what this bank thinks of this NAME wants
+         * this one, because it is the only half that is about the borrower.
+         */
+        margin: marginOf(ctx, best.rate, ccy),
         most: most.pieces,
         costOfFunds: best.costOfFunds,
         expectedLoss: best.expectedLoss,
@@ -2506,6 +2591,16 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
       false,
     );
   }
+}
+
+/**
+ * B4 (17d.2): THE HALF OF A QUOTE THAT IS ABOUT THE BORROWER. A quote is what money costs plus what
+ * this name costs on top; the margin is what is left when the fixing is taken out, and where the
+ * book has never traded there is no fixing to take out and the quote is all margin — which is what
+ * a fixed row is (17d.3).
+ */
+function marginOf(ctx: MechanismContext, quoted: Ratio, ccy: CurrencyCode): Ratio {
+  return loanRate(quoted, benchmarkNow(ctx.journal, ctx.calendar, ccy, ctx.period)).margin;
 }
 
 /**

@@ -5,6 +5,8 @@
  * @spec Banks Lending A1 Banks Lending A1.a Banks Lending A2 Banks Lending A4 Banks Lending B1 Banks Lending B1.a Banks Lending B1.b Banks Lending B1.c Banks Lending B2 Banks Lending B2.a Banks Lending B2.c Banks Lending B2.d Banks Lending C1 Banks Lending C1.a Banks Lending C1.b Banks Lending C1.c Banks Lending C1.d Banks Lending C2 Banks Lending C2.a Banks Lending C3 Banks Lending C3.a Banks Lending C4 Banks Lending D1 Banks Lending D3 Banks Lending E1 Banks Lending F1 Banks Lending F1.a Banks Lending F3 Money B3.a Money B3.c Bond N13.a Corporate Credit G8 XI-4
  */
 import { asCash, heldAsMoney, plus } from '../src/core/measure.js';
+import { rateOn } from '../src/registry/credit.js';
+import { rate as perAnnum } from '../src/core/rate.js';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -325,7 +327,7 @@ function loans(w: World): { id: string; issued: number; lender: string; rate: nu
       id: String(i.id),
       issued: i.issued,
       lender: whoIsOwed(w, i),
-      rate: isLoan(i.terms) ? i.terms.rate : 0,
+      rate: isLoan(i.terms) ? rateOn(i.terms) : 0,
     }));
 }
 
@@ -945,7 +947,9 @@ describe('the workout (Banks Lending E3, 21.59)', () => {
     const agreed: LoanTerms = {
       ...row.terms,
       maturity: addMonths(row.terms.maturity, 6),
-      rate: asRatio(0.09, 'what it now requires'),
+      // 17d.2: what the two of them agree is the MARGIN; the fixing is nobody's to agree.
+      margin: asRatio(0.09, 'what it now requires'),
+      coupon: perAnnum(0.09, { kind: 'annual' }),
     };
     w.reagreeOn(row.id, agreed, 'restructured');
     const after = w.instruments.get(row.id);
@@ -956,7 +960,7 @@ describe('the workout (Banks Lending E3, 21.59)', () => {
     expect(w.register.holdersOf(row.id).map(String)).toEqual(
       owed.some ? [String(owed.value)] : [],
     );
-    expect(isLoan(after.terms) && after.terms.rate).toBe(0.09);
+    expect(isLoan(after.terms) && rateOn(after.terms)).toBe(0.09);
   });
 
   it('rolls a relationship that reaches its maturity instead of failing it (21.59)', () => {
@@ -1688,5 +1692,56 @@ describe('the books a lender sees (Reporting A2, A3, Corporate Credit A4, 17b′
     if (terms === undefined || !isFacility(terms)) throw new Error('no commitment was written');
     expect(terms.covenant.leverage).toBeGreaterThan(0);
     expect(terms.covenant.coverage).toBeGreaterThan(0);
+  });
+});
+
+describe('a loan floats (Corporate Credit B4, Bond N5.b, 17d.2)', () => {
+  it('is written as a margin over what money cost, not as a rate locked for a year', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    w.step();
+    w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    const t = row.terms;
+    // B4: what the two of them agreed is the MARGIN; what the borrower pays is that plus the
+    // fixing, and the two are different numbers on the same row.
+    expect(t.margin).toBeGreaterThan(0);
+    expect(rateOn(t)).toBeGreaterThanOrEqual(t.margin);
+    if (t.floatsOver.some) {
+      // It floats over the SECURED book of its own money — what money actually changes hands at
+      // overnight against collateral, which is the thing SOFR is (D3, Law 4).
+      expect(t.floatsOver.value).toBe(`${row.ccy}:secured`);
+      expect(rateOn(t)).toBeGreaterThan(t.margin);
+    }
+  });
+
+  it('resets, and the reset is public (Bond N5.b)', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 6; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    if (row === undefined || !isLoan(row.terms) || !row.terms.floatsOver.some) return;
+    // A holder of the claim learns what it pays next, and so does anybody pricing it: the kernel is
+    // the one writer of what a fixing does to a line, and it records it.
+    const fixed = w.journal.ofKind('coupon.fixed').filter((e) => e.subjects[0] === String(row.id));
+    expect(fixed.length).toBeGreaterThan(0);
+    // And what it pays moved because money did — the margin never moved, so the difference is the
+    // fixing and nothing else.
+    const rates = fixed.map((e) => Number(e.data['coupon']));
+    expect(new Set(rates).size).toBeGreaterThanOrEqual(1);
+    for (const r of rates) expect(r).toBeGreaterThanOrEqual(row.terms.margin);
+  });
+
+  it('is a FIXED row where the benchmark has never fixed (17d.3)', () => {
+    // A loan that cannot fix cannot float, and the terms say which it is rather than a flag
+    // anybody sets later. In a world whose overnight book has never traded, every row is fixed at
+    // what it was quoted — which is the honest answer and not a rate invented for it.
+    const w = world([asksFor(phx(20_000).pieces)]);
+    w.step();
+    w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    if (row === undefined || !isLoan(row.terms)) return;
+    const traded = w.journal.ofKind('index.benchmark').length > 0;
+    expect(row.terms.floatsOver.some).toBe(traded && rateOn(row.terms) !== row.terms.margin);
   });
 });

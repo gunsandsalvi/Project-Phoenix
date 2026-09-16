@@ -213,7 +213,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17b | The leveraged buyout — **done** (section removed; see `docs/RECORD.md`; §29 answered 25 of 25. Findings positioned at 23.1 (21.73, 21.74, 21.75, 21.76), 23.3 (21.72), 18 (21.71), 18a.1 (21.60(c) and 21.60's diversification half); 21.15 closed at 17b.4, 21.60(a) at 17b.8 and 21.60(b) at 17b.8a; §29 C2's other half became item 17c) | after 17.9 |
 | 17b′ | The books a lender sees — **done** (section removed; see `docs/RECORD.md`; a borrower asking for a commitment prepares management accounts and its lender reads them, so *no accounts, no commitment* holds. 21.76's lender half closed; its `worthAt` half stays at 23.1) | before 17c |
 | 17c | The board — **done** (section removed; see `docs/RECORD.md`; a controlled company reads its owner's required return and its owner's duration. §35 D4 MET; §29 C2 stays PARTIAL with its cost-base half named as productivity's, not control's) | after 17b |
-| 17d | Loans float | after 17c; every item after it decides something against what money costs |
+| 17d | Loans float — **done** (section removed; see `docs/RECORD.md`; a loan is a margin over the fixings compounded, and a fixed row where the book has never traded. §7 B4 MET on the loan side; finding 21.77 at 23.3) | after 17c |
 | 17e | Capex and productivity | after 17d; what a firm contracts for is decided from what its plant will make |
 | 17f | Contracts that last | after 17e |
 | 17g | What a pool is made of | after 17f |
@@ -261,43 +261,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 
 ---
-
----
-
-## 17d. Loans float
-
-The owner: *"Loans are floaters on top of the equivalent to Xm SOFR, with X being based on the coupon
-frequency."* Before 17e, because every other item here decides something against what money costs.
-
-**What is there.** `corporate-bond/floating.ts` already has floating paper — a margin over a named
-benchmark, fixed by `ctx.fixCoupon` — and `indices/benchmark.ts` publishes a fixing that is
-TRANSACTED or nothing (XI-7, D3.a: the volume-weighted rate of the overnight lending that settled).
-**What is not** is that the benchmark is OVERNIGHT ONLY, and that a bank LOAN is a fixed rate struck
-at origination and never moved: `LoanTerms.rate`, set once, for a year, whatever happens to money.
-Corporate Credit B4 says the opposite in one line — *"fixed or floating, and floating is the norm in
-the loan market"* — and a world where every loan is fixed has no channel from a policy rate to a
-borrower's payment at all.
-
-- [x] 17d.1 **A term rate is the overnight fixings compounded** (XI-7, Indices D3.a, Law 3). *"Xm"*
-  where the world has only overnight: the term rate is what the overnight fixings COMPOUND to over
-  the tenor that just ended — in arrears, which is what a SOFR-based loan actually pays and is the
-  only form of it in which every input is a rate somebody transacted at. A period nobody borrowed
-  overnight in has no fixing and therefore no term rate, and that is the answer rather than a rate
-  carried forward (Appendix B: no posted benchmark). One read in `registry/credit.ts`, over the
-  fixings the journal already carries; nothing stores a curve.
-- [ ] 17d.2 **A loan is a margin over a fixing** (Corporate Credit B4, A2). `LoanTerms.rate` becomes
-  `margin`, and the tenor is the COUPON FREQUENCY — X months of fixing for a loan that pays every X
-  months, which is the owner's rule and is what makes the two periodicities one number (Law 8).
-  `loanKind.due` reads the fixing for the accrual just ended and pays margin plus it; a borrower's
-  payment therefore moves when money does. `credit.quoted` publishes BOTH — the margin the lender
-  struck and the all-in rate it comes to today — so every reader of *what borrowing costs this name*
-  is unchanged and no one of them recomputes it (Law 4, Law 19).
-- [ ] 17d.3 **What a fixed rate still is.** A loan written where the benchmark has never fixed cannot
-  float, and says so: it is a fixed row, stamped as one at origination, and the two are told apart by
-  the terms rather than by a flag anybody sets later. §7 B4 re-marked; record.
-
-**Exit.** A borrower's payment on the same row differs between two periods because the fixing did,
-and the audit's flows family sees both legs of the difference.
 
 ---
 
@@ -451,6 +414,7 @@ line naming either. That is a CLAIM and this item is where it is checked.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.77 `money-market`, `indices/benchmark.ts` (17d.2): THE OVERNIGHT BOOK BARELY TRADES. Twelve periods of the rig publish TWO fixings (periods 2 and 3, both at 1.9% per annum, one and two borrowers), so 2 loans of 52 float and the other 50 are fixed rows — which is the honest answer for a world whose interbank market does not meet, and is the same silence 21.55 reports in the pairs. A world with no overnight market has no benchmark, no term rate and therefore no channel from a policy rate to a borrower's payment, whatever §7 B4 now says about the rows. NOT CHASED (Law 11): why banks stop lending each other money is the money market's, and it sits beside 21.72 (the banks stop quoting every name by period 9) — the two are plausibly one fact. Positioned at 23.3 with Part XII's measurements (17d.2).
 - [ ] 21.76 `reporting/index.ts`: IN TWENTY-FOUR PERIODS OF THE RIG ONLY CELLS PUBLISH ACCOUNTS. The seventeen reports at period 20 are household and small-business cells; the first NAMED FIRM publishes at period 25, and firms' year-ends are staggered after that. Everything that reads a company's published accounts therefore has nothing to read for most of a run: `control/index.ts worthAt` (a bid is what the target PUBLISHED, so no named company can be valued at all), `corporate-bond openLine` (a covenant is its published accounts), and 17b.8a's facility covenant (a lender with nothing to test asks for no promise). It is the DEEPER CAUSE of 21.73 — `control` never runs — and it is not obviously a defect: a quarter is thirteen weeks and a staggered year-end is real. **Re-read at 17b′**: the LENDER's half is closed — a borrower asking for a commitment now prepares management accounts and its lender reads those (`reporting.interim`), so *no accounts, no commitment* holds without waiting for a quarter. What is left is the other readers: `control worthAt` values a company off what it PUBLISHED, and a named firm publishes nothing until period 25, so no bid can be formed for one before then. That half stays, positioned at 23.1 with 21.73 (17b.8a, 17b′.1).
 - [ ] 21.75 17b.7's change is not covered by a test and cannot be in any world this repository builds: a deal struck in the money the shares are in only differs from one struck in the buyer's where the two moneys differ, and the rig is ONE COUNTRY while `control` has never run in the four-country world (21.73). What the change fixes was visible by reading — every price carried `currencyOf(buyer.region)` whatever the line was, so a foreign seller would have been paid in the wrong money (Law 8) — and it is fixed; what is missing is the world that would show it. Positioned at 23.1 with the scale model's resize, which is where a buyer and a company in two moneys become possible (17b.7).
 - [ ] 21.74 `committed-capital.test.ts:45` asserts `expect(undrawnOn(promised(100_000_000, 0))).toBe(100_000_000)` — a `Cash` against a number, so it can never pass. The two lines under it read `.pieces` and do. Pre-existing (1 red, 5 green at `3f7b4e1`; 1 red, 9 green after 17b.4's four). A wrong assertion is not a finding about the world and is not chased here (the three rules); positioned at 23.1 with the rest of the suite's triage (17b.4).

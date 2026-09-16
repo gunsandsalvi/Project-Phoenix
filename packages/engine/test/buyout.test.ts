@@ -141,7 +141,8 @@ function buysACompany(): SystemModule {
         spec: 'Private Equity B2 Private Equity B3',
         // Before the banks turn this period's asks into rows, which is where the tender sits too.
         anchor: { before: 'lending.book' },
-        reads: [],
+        // 17d.2: a row is written as a margin over what money cost, so the writer reads the fixing.
+        reads: [{ kind: 'event', name: 'index.benchmark', of: 'anyPeriod' }],
         writes: [
           { kind: 'event', name: 'control.acquired' },
           { kind: 'event', name: 'control.advisory' },
