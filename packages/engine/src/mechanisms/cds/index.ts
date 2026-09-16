@@ -16,7 +16,7 @@ import { creditDefaults } from '../../registry/banking.js';
 import { absolute, asPerPiece, asRatio, minus, scale, valueAt } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
-import type { CurrencyCode, PartyId } from '../../core/ids.js';
+import { currencyCode, type CurrencyCode, type PartyId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -183,18 +183,22 @@ function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId
     const line = rankOf(grade) <= rankOf('bbb') ? 'ig' : 'hy';
     const weight = ctx.instruments.get(i.id).issued;
     if (weight <= 0) continue;
-    const names = byGrade.get(line) ?? [];
+    // 16.1, Money A2.b: a series is protection in ONE money, so the line is per grade AND per
+    // money — a euro name is not in a dollar series, and each money's series clears at its house.
+    const key = `${line}\u0000${String(i.ccy)}`;
+    const names = byGrade.get(key) ?? [];
     names.push({ reference, obligation: i.id, weight });
-    byGrade.set(line, names);
+    byGrade.set(key, names);
   }
-  const ccy = ctx.registry.currencies.keys().next().value;
-  if (ccy === undefined) return;
-  const clearer = house(ccy);
-  if (!ctx.parties.has(clearer) || !ctx.parties.get(clearer).status.alive) return;
   const window = ctx.params.periods(CDS_PARAMS.window);
-  for (const [grade, names] of byGrade.entries()) {
+  for (const [key, names] of byGrade.entries()) {
     if (names.length === 0) continue;
-    const series = `${grade}.${ctx.period}`;
+    const [grade, ccyName] = key.split('\u0000');
+    if (grade === undefined || ccyName === undefined) continue;
+    const ccy = currencyCode(ccyName);
+    const clearer = house(ccy);
+    if (!ctx.parties.has(clearer) || !ctx.parties.get(clearer).status.alive) continue;
+    const series = `${grade}.${String(ccy)}.${ctx.period}`;
     for (const tenorYears of cdsTenorsOf(ctx)) {
       const terms: CdsIndexTerms = {
         kind: CDS_INDEX,

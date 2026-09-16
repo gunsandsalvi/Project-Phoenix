@@ -273,6 +273,13 @@ export const TREASURY_US = partyId('treasury.us');
  *
  * The names are labels for clarity, not claims about the real places (Law 1 is about mechanism).
  */
+/** Seed data, Currency C4 (16.1): the money the world's one cross-region line is REPORTED in — the first country's. */
+function globalStatedIn(countries: readonly CountrySeed[]): CurrencyCode {
+  const first = countries[0];
+  if (first === undefined) throw new Missing('Seed B3', 'this world has no countries in it');
+  return first.ccy;
+}
+
 export interface CountrySeed {
   /** 13c.1: the country this row opens — what has the money, the central bank and the treasury. */
   readonly country: CountryId;
@@ -2412,7 +2419,8 @@ function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: PerNam
   // and nobody promised anything at it, so there is no side to take a direction from and the
   // nearest tick is the honest answer — but a stated level off the grid would be a level this
   // market could never print again, which is the whole defect 12b.1 exists to remove.
-  return ctx.registry.onQuoteGrid(i.kind, USD, ctx.registry.priceOf(USD, i.unit, perNamedUnit));
+  // 16.1: the level is stated in the LINE's own money, whichever region issued it.
+  return ctx.registry.onQuoteGrid(i.kind, i.ccy, ctx.registry.priceOf(i.ccy, i.unit, perNamedUnit));
 }
 
 /** The opening price the seed computed for a line; a line with none is a defect, never a default. */
@@ -2534,7 +2542,7 @@ export function foundationDraw(
       ...countries.map((c) => EQUITY_INDEX(c.region)),
       SIZE_INDEX(REGION, 'large'),
       SIZE_INDEX(REGION, 'small'),
-      GLOBAL_INDEX(USD),
+      GLOBAL_INDEX(globalStatedIn(countries)),
     ],
   );
   return {
@@ -3097,6 +3105,9 @@ export function foundationSpec(
       indices(
         countries.map((c) => c.region),
         countries.map((c) => c.ccy),
+        // Seed data, Currency C4: the money the one line that crosses regions is REPORTED in — the
+        // first country's, declared here and nowhere in a mechanism (16.1).
+        globalStatedIn(countries),
       ),
       // Index futures: after the indices, because what this settles against is an index READ
       // (Indices C3), and it is what a dealer's hedge actually is (Dealer Desks E1, E2).

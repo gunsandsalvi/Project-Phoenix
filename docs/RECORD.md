@@ -12247,3 +12247,19 @@ bank's room behind a foreign book moves with the rate and nothing hedges it (21.
 typecheck, spec, forbids, deaths, existence, plan green. `check:forbids` also caught a cross-module
 read `prettier` had hidden on two lines (`cds/index.ts` reading `credit.default` by name); it reads
 `creditDefaults` from the registry now.
+
+## Item 16.1 — Every currency literal gone
+
+The engine named a dollar in five places that were not a registry declaration: the seed's `priced()`
+put every opening level on the USD grid whichever region's line it was (a euro good's opening
+price was on the dollar's grid); the indices module defaulted the global line's money to `'USD'`;
+the CDS roll picked the FIRST currency in the registry as the money of every series and every
+name in it, so a euro name sat in a dollar series clearing at the dollar house; an M&A violation
+was sized in dollars when it counts parties; a fund parameter's unit said "one USD". The grep the
+item names returns registry declarations only now: the four currency rows of the seed, the
+money-market's per-currency data, and the doors where a `ccy` a writer published re-enters the
+type. A series is per grade AND per money, named `grade.ccy.period`, at that money's house (18.5
+carries the rest of the series design); the global index is stated in the seed's first country's
+money, declared once in the seed and passed to the module rather than assumed by it (Currency C4).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green. Suites at the end of item 16.

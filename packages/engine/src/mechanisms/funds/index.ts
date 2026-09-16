@@ -391,7 +391,7 @@ function paramsOf(managers: readonly ManagerDecl[]): ParamDecl[] {
     {
       id: FUND_PARAMS.openingShare,
       value: MONEY_PIECES,
-      unit: 'pieces of money per share at the first subscription (one USD)',
+      unit: 'pieces of the pool’s money per share at the first subscription (one named unit of it)',
       dimension: 'price',
       kind: 'resolution',
       owner: 'model',

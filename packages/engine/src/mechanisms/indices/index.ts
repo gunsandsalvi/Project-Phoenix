@@ -127,7 +127,7 @@ export function indices(
    * not a fact about the model: stating a level in a money must not make that money the vehicle
    * currency of the world by construction, and the level is a read through the period's own rates.
    */
-  statedIn: CurrencyCode = currencies[0] ?? ('USD' as CurrencyCode),
+  statedIn: CurrencyCode,
 ): SystemModule {
   return {
     id: 'indices',

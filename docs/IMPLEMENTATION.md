@@ -208,7 +208,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 12d | Observation — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.1, 21.20, 21.22, 22.3) | diffusion; the price level's second half |
 | 14 | Insurers and pensions — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.23, 21.24, 21.25, 21.26, 22.3; C5 and D4 out of scope at 17.0/17.10 and 18.3) | a buyer, a claim, a schedule, capital |
 | 15 | Housing and land, the rest — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.27, 21.28, 21.29, 21.31, 21.32, 21.33, 21.34, 21.35, 21.36, 21.37, 21.38, 21.39, 21.40, 21.41, 21.42, 21.43; 12.2 closed at 15.5; Housing B4.a and D5 measured at Part XII) | after 12a |
-| 16 | Cross-border, the rest — 16.0 **done** | 16.1 every currency literal gone |
+| 16 | Cross-border, the rest — 16.0, 16.1 **done** | 16.2 the four-country table |
 | 17 | Corporate credit, the rest | 17.0 the credit view |
 | 17b | The leveraged buyout | after 17.9 |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
@@ -259,7 +259,7 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 ## 16. Cross-border, the rest
 
 - [x] 16.0 `core/measure.ts`: `Cash` carries its currency (`{ pieces, ccy }` or a brand with a runtime tag); `plus/minus` of two monies throw `Impossible('Money A2.b')`; `sum(cash[])` across currencies fails at the site; `valueAt` yields the instrument's currency; `inMoney` the one door. One pass over every arithmetic site.
-- [ ] 16.1 Every currency literal gone: `grep -rn "'USD'\|USD as CurrencyCode\|currencies.keys().next()" src` returns only registry declarations (`seeds/foundation.ts:2146 priced()`, `control/index.ts:808`, `cds/index.ts:188`, `securitisation moneyOf`).
+- [x] 16.1 Every currency literal gone: `grep -rn "'USD'\|USD as CurrencyCode\|currencies.keys().next()" src` returns only registry declarations (`seeds/foundation.ts:2146 priced()`, `control/index.ts:808`, `cds/index.ts:188`, `securitisation moneyOf`).
 - [ ] 16.2 `abroadWorld` 30 periods: per country banks, firms, households, listed lines, sessions cleared; the table written here.
 - [ ] 16.3 Sourcing across regions: a buyer in one place buys from a seller in another; merchants bid the far print less their outlook of the freight rate on that leg with one budget across lines; producers ship only unsold stock on the dearest leg.
 - [ ] 16.4 Foreign-currency issuance: a treasury or firm issues in a money it does not print and can fail in it (12a.6).

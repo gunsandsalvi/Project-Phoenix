@@ -831,7 +831,8 @@ function deals(): Family {
           spec: 'M&A E2',
           owner: target,
           size: 1,
-          unit: currencyUnit('USD' as CurrencyCode),
+          // 16.1: a count of parties, not money — the unit says so instead of naming a currency.
+          unit: 'parties',
           period: view.period,
           message: `${named} was acquired and is still alive`,
         });
