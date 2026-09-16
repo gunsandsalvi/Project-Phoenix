@@ -71,6 +71,7 @@ import {
   strikesPublished,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
+import { askForTheOwner, drawForTheOwner } from './owner.js';
 import {
   askToFund,
   cashOf,
@@ -1256,6 +1257,36 @@ export function control(): SystemModule {
             if (byTarget.has(target)) continue;
             askToFund(ctx, target, w.hole, w.has, w.bid.buyer);
           }
+        },
+      },
+      {
+        /**
+         * §29 C2, C3 (17b.6): WHAT AN OWNER DOES WITH A COMPANY IT CONTROLS. It makes it borrow for
+         * a reason that is the owner's and not the company's, and the money leaves as the ordinary
+         * distribution a company with spare cash makes — so nothing here writes a dividend and
+         * nothing here moves money to an owner (Law 4).
+         *
+         * Before the banks turn this period's asks into rows, like the tender: what is asked for
+         * here is answered there, and what was committed last period is drawn here.
+         */
+        name: 'control.owner',
+        spec: 'Private Equity C2 Private Equity C3',
+        anchor: { before: 'lending.book' },
+        reads: [
+          { kind: 'event', name: 'control.financing', of: 'anyPeriod' },
+          { kind: 'event', name: 'firms.funding', of: 'thisPeriod' },
+          { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'control.financing' },
+          { kind: 'event', name: 'control.recapitalised' },
+          { kind: 'event', name: 'credit.request' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          // C3: what was committed for the owner last period is drawn before this period's ask, so
+          // a line already standing is used rather than a second one asked for beside it.
+          drawForTheOwner(ctx);
+          askForTheOwner(ctx);
         },
       },
     ],

@@ -13461,3 +13461,40 @@ in the bank can now see a deal it could call the money for; it still cannot bid 
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green. `buyout` five green,
 `committed-capital` nine green with the one red that is 21.74.
+
+## Item 17b.6 — The owner's hand
+
+§29 C3: *"it can RECAPITALISE — raise more debt to pay itself a distribution, which is a real
+transfer from the firm's future to the owner's present."* Every word of that was already a mechanism
+in this world except the REASON, and the reason is the only thing this step adds.
+
+**A recapitalisation is a company borrowing money it does not need.** A company borrows by publishing
+what it is short of (Corporate Credit A1); a company with money over what it must pay distributes it
+to whoever holds it (Equity D3, `decideEquity`). Put the two together and the distribution happens on
+its own: the firm's spare rose and the ordinary decision pays it out. **Nothing in `control` writes a
+dividend and nothing in it moves money to an owner**, which is Law 4 and Law 12 together — the fix is
+the two mechanisms that were already there.
+
+**Whose reason it is, is the whole of C2.** What the company asks for is what its CONTROLLER
+published it must find — a pool's shortfall to its own investors, a company's own funding gap — read
+off the wire through the registry like any other public fact. A company whose owner needs nothing
+borrows nothing extra. C2's other half (investment and costs) is not built and is marked so.
+
+**And it is still the credit market's decision.** The ask is for a commitment, priced by a bank
+against the company AS IT STANDS — by now a company carrying the buyout's debt — so a firm levered to
+the hilt is refused and the recapitalisation that would have finished it does not happen. That is
+B2.b reaching back into C3 with no line saying so.
+
+**C1 and C4 are answered, not built.** The buyout's row is an amortising term loan issued by the
+target, so interest and principal fall due every period out of the same account the wages come out of
+(C1: *"the higher leverage means less room"* is arithmetic), and a target that cannot pay defaults
+through the machinery every other borrower uses, with the loss on the bank that holds the row and the
+buyer's shares worth what is left (C4). The fund is not a party to either, which is why B2.a insists
+the debt is the company's.
+
+**A buyout's proceeds and a recapitalisation's go to different places**, and that is the one thing
+the two drawings differ by: a buyout's pay the sellers and never touch the company, a recap's land in
+its own account. The row is the same row and made in one place (`facilityRow`, Law 4).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
+one new test, six green in the file. §29 C1, C3 and C4 re-marked MET; C2 PARTIAL with its missing half.

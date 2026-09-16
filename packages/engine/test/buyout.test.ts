@@ -74,7 +74,7 @@ function dearestBasis(ctx: MechanismContext, line: InstrumentId): number {
  * The buyer, and the deal it does: it asks the company's lenders to commit in period 1 and runs the
  * tender in period 3, by which time a bank has decided. It brings a fifth of the price itself.
  */
-function buysACompany(asks = 1, tenders = 3): SystemModule {
+function buysACompany(asks = 1, tenders = 3, wants = 4): SystemModule {
   const chosen: { line?: InstrumentId; target?: PartyId; cost?: number; needs?: number } = {};
   return {
     id: 'test.lbo',
@@ -86,6 +86,35 @@ function buysACompany(asks = 1, tenders = 3): SystemModule {
     units: [],
     params: [],
     phases: [
+      {
+        /**
+         * §29 C2, C3: THE OWNER NEEDS MONEY, and it says so where a firm says so — before the
+         * channels that read it run (an equity float reads this period's, at 51). What the company
+         * it controls does about the need is what the test is for.
+         */
+        name: 'test.lboOwnerNeeds',
+        spec: 'Private Equity C2',
+        anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'firms.funding' }],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== wants) return;
+          ctx.record(
+            'firms.funding',
+            [BUYER],
+            {
+              short: 1e9,
+              shortNow: 1e9,
+              shortTerm: 0,
+              owed: 0,
+              programme: 0,
+              working: 0,
+              ccy: USD,
+            },
+            true,
+          );
+        },
+      },
       {
         name: 'test.lbo',
         spec: 'Private Equity B2 Private Equity B3',
@@ -261,5 +290,31 @@ describe('sources and uses are measured, not assumed (Private Equity B5)', () =>
     const e = w.journal.ofKind('control.acquired')[0];
     if (e === undefined) throw new Error('the deal did not happen');
     for (const key of ['paid', 'drawn', 'cheque']) expect(typeof e.data[key]).toBe('number');
+  });
+});
+
+describe('the owner’s hand (Private Equity C2, C3)', () => {
+  it('a company its owner needs money from borrows, and the money is the owner’s to take', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < 7; i += 1) w.step();
+    const done = w.journal.ofKind('control.recapitalised');
+    expect(done.length).toBeGreaterThan(0);
+    const e = done[0];
+    if (e === undefined) return;
+    // C3: "raise more debt to pay itself a distribution". The debt is raised here; the distribution
+    // is the ordinary one a company with spare cash makes, and nothing in `control` writes it.
+    expect(Number(e.data['drawn'])).toBeGreaterThan(0);
+    expect(e.data['settled']).toBe(true);
+    const company = partyId(String(e.data['company']));
+    // C3: it is the COMPANY that owes it, on the line its owner had it commit — a transfer from the
+    // firm's future to the owner's present, and the row is where the future is.
+    const row = w.instruments.get(facilityLoanId(partyId(String(e.data['bank'])), company));
+    expect(row.issuer.some && row.issuer.value === company).toBe(true);
+    expect(isLoan(row.terms)).toBe(true);
+    // And the money landed in the company's OWN account, which is what makes it distributable —
+    // where a buyout's proceeds pay the sellers and never touch it.
+    expect(w.cash(company, USD)).toBeGreaterThan(0);
+    // Its owner asked for it and this company is the one the owner controls.
+    expect(String(e.data['owner'])).toBe(String(BUYER));
   });
 });

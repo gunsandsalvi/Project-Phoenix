@@ -57,7 +57,7 @@ and neither is yet a MET a run has confirmed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 16 | 5 | 0 | 0 | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
-| Private Equity | 17 | 1 | 7 | 0 | 25 |
+| Private Equity | 20 | 2 | 3 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -323,7 +323,7 @@ already writes against an agreed line.
   accounts"*, to derived dust, never repaired. D5's read beside it: a pool's return is what it distributed
   against what it called, both actual cash, both read off the wire. E3 is an absence already kept by
   `prices/value.ts` (C5.a) and is guarded rather than built.
-- [ ] 17b.6 **The owner's hand** (C1, C2, C3). A controller decides what the firm it controls invests, what it
+- [x] 17b.6 **The owner's hand** (C1, C2, C3). A controller decides what the firm it controls invests, what it
   takes out, and whether it borrows to take it out. C3 is the one this item owes — **the recapitalisation**,
   *"raise more debt to pay itself a distribution, a real transfer from the firm's future to the owner's
   present"* — and it is 17b.1's facility drawn a second time with the proceeds distributed, so the mechanism is
