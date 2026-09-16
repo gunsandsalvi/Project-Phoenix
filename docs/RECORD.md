@@ -13993,3 +13993,41 @@ reaching the buyer is a disclosure this world cannot express, so the phase holds
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
 green. `test/supply.test.ts` is new and three green; two new cases in `test/employment.test.ts` are
 green beside its one pre-existing red.
+
+---
+
+## Item 17g — What a pool is made of: closed
+
+The owner: *"Remove covered bonds, you can use securitization for the same stuff, and securitization
+should include mortgages and CRE as type of collateral."* The covered bond was already gone. This
+item was written as a CLAIM to be checked rather than a thing to build — `saleable` is deliberately
+kind-agnostic, so a mortgage and a premises loan should already be poolable — and the first step was
+to measure it (Law 11, Law 19).
+
+**The claim holds.** Twenty-four periods of the rig leave the banks holding 42 rows that pass
+`saleable`: 7 secured on dwellings, 5 on premises, 17 on machinery and premises together, 8 on fleet
+and premises, 3 on machinery alone, 2 on nothing. Houses and shops are both in it, and no rule
+anywhere names either — `saleable` asks two facts every kind declares (no market, a named obligor)
+and nothing else. Nothing had to be built for the owner's second half.
+
+**What is not there is a DEAL.** Nought cuts and ten failures in those twenty-four periods, every one
+of them for want of a bidder for the notes. Who would buy one is a fund, an insurer or another bank
+with money to put to work, and why none of them bids is the same silence 21.72 reports in the credit
+market and 21.79 in the contract books. It is finding 21.81 and it is not chased here.
+
+**What WAS missing is what a pool says about itself** (17g.2). *"A pool of loans"* is not a
+description anybody can price: a holder of a note needs to know whether what stands behind it is
+houses, shops or nothing, because that is what decides what the note is worth when the borrowers stop
+paying. `registry/secured.ts securedOn` counts the kinds of thing the rows are pledged on, read off
+each row's own `ranking(i).secured` — the same read an estate uses — so the note's market is NAMED
+for what is behind it (Law 9) and `securitisation.cut` records it. Nothing is stored, no arranger
+types a label, and a row secured on nothing is counted as such: a pool half houses and half nothing
+is not a pool of houses, and a reader shown only the houses would be reading the better half of it.
+
+**Marked.** XI-11 carries the collateral read; Housing C6 stays PARTIAL and its note now carries the
+measurement, because what is missing there is a bidder and not a rule. §42 C6 — which the plan cited
+— is the sum-check family and not this; the honest rows are those two, and nothing was marked for a
+clause that does not ask for it.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. One new
+case in `test/securitisation.test.ts`, green beside the file's two pre-existing reds.

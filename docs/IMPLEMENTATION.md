@@ -216,7 +216,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17d | Loans float — **done** (section removed; see `docs/RECORD.md`; a loan is a margin over the fixings compounded, and a fixed row where the book has never traded. §7 B4 MET on the loan side; finding 21.77 at 23.3) | after 17c |
 | 17e | Capex and productivity — **done** (section removed; see `docs/RECORD.md`; productivity is a read of the plant a firm holds by vintage, and a thing that wears can be KEPT — one outlay for plant and one for a dwelling, sharing the share gone without. Firm A3 carries 17e.1, Capital Programme A6 the upkeep, Housing A5 PARTIAL → MET; 21.43 closed; finding 21.78 at 23.1) | after 17d |
 | 17f | Contracts that last — **done** (section removed; see `docs/RECORD.md`; a supply contract with a book, deliveries both legs and a break cost; a job struck for a term whose early end pays the wages to the day; both extended on their own row and never multiplied, with an audit family that counts them. Labour C3 and Goods C3 re-marked; findings 21.79 and 21.80 at 23.3 and 23.1) | after 17e |
-| 17g | What a pool is made of | after 17f |
+| 17g | What a pool is made of — **done** (section removed; see `docs/RECORD.md`; the claim held — houses and shops are both poolable and `saleable` names no kind — and what was missing was what a pool says about itself: `securedOn` reads the collateral off the rows and the note's market is named for it. XI-11 and Housing C6 re-marked; finding 21.81 at 23.3) | after 17f |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
 | 19 | The polity | 19.0 the government buys |
@@ -253,30 +253,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
-
----
-
-## 17g. What a pool is made of
-
-The owner: *"Remove covered bonds, you can use securitization for the same stuff, and securitization
-should include mortgages and CRE as type of collateral."* After 17f.
-
-**The covered bond is already gone** (the owner's earlier decision, recorded at item 17's close) and
-nothing in the engine names one. What is left is the second half, and most of it may already hold:
-`saleable` is deliberately KIND-AGNOSTIC — anything carried at cost that a named party owes and
-nobody makes a market in — so a mortgage row and a premises loan are both poolable today without a
-line naming either. That is a CLAIM and this item is where it is checked.
-
-- [ ] 17g.1 **Measure it before building anything** (Law 11, Law 19). Whether a mortgage and a
-  commercial-premises loan actually reach a pool in a run, and what stops them if they do not. A
-  finding, not a fix, until the answer is in.
-- [ ] 17g.2 **What a pool is made OF is visible** (§42 C6, Law 9). A deal states the collateral behind
-  it — what kinds of thing its rows are secured on — because a holder of a note pricing it needs to
-  know whether it is houses or shops, and *"a pool of loans"* is not a description anybody can price.
-  It is a READ of the rows' own security (`registry/secured.ts`), never a label the arranger types.
-- [ ] 17g.3 Whatever 17g.1 found, built or positioned; §42 re-marked; record.
-
-**Exit.** A note's holder can say what is behind it, and the answer came from the rows.
 
 ---
 
@@ -333,6 +309,7 @@ line naming either. That is a CLAIM and this item is where it is checked.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.81 `mechanisms/securitisation/index.ts` (17g.1): NOTHING EXCLUDES A MORTGAGE FROM A POOL AND NO POOL IS EVER CUT. Twenty-four periods of the rig: the banks hold 42 rows that pass `saleable` — 7 secured on `good.dwelling`, 5 on `plant.premises`, 17 on machinery and premises together, 8 on fleet and premises, 3 on machinery alone, 2 on nothing — so houses and shops are both poolable today and `saleable` names no kind, which is what 17g's claim said. What does not happen is a DEAL: 0 `securitisation.cut` and 10 `securitisation.failed`, every one for want of a bidder for the notes. Who would buy a note is a fund, an insurer or another bank with money to put to work, and why none of them bids is the same silence 21.72 and 21.79 report in the credit and contract books. NOT CHASED (Law 11). Positioned at 23.3 with Part XII's measurements (17g.1).
 - [ ] 21.80 `test/employment.test.ts` *"hires land where the register says, and nowhere else"* is RED and was red before 17f (verified at `a8b6677`): it takes the worker cell off a `labour.hire` event and expects the row it is on to name the employer that hired it, and gets `manager.bank.c` where it expected `firm.1`. A cell that was hired by one employer and is on another's row is either a cell that moved (it was separated and hired again, which the case allows for) or a REAL second job on one cell, which Labour B5 forbids and the workforce family would see. Not chased (the three rules); it is one assertion in one suite and the reading that decides between those two is a measurement. Positioned at 23.1 with the suite's triage (17f.3a).
 - [ ] 21.79 `mechanisms/supply/index.ts` (17f.1): THE CONTRACT BOOKS ARE OPEN AND THE `opens` RIG NEVER CROSSES ONE. Sixty-six books a period, sixteen periods: **0 bids, 1 ask, 0 contracts**. What a party posts is what its own outlook says it trades in a period (`bought.<good>` / `sold.<good>`, §46 A2) and almost no firm in that world has either, because almost no firm in that world trades — which is 12c.3 (the twelve named firms produce ONCE, in period 1, and never again) seen from a third side, beside 21.72 (the banks stop quoting) and 21.77 (the overnight book prints twice). The mechanism is not idle everywhere: the scale model in `test/supply.test.ts` — the same modules, a world whose firms do trade — strikes 51 contracts in six periods, delivers on them and breaks one. NOT CHASED (Law 11): why the rig's firms stop trading is 22.2's and 22a's, not this item's. Positioned at 23.3 with Part XII's measurements (17f.1).
 - [ ] 21.78 `test/capital.test.ts` DOES NOT COLLECT AT ALL — the same shape as `bank-capital.test.ts` in 21.67, one file over. Its module scope asks `firmIn(rigDraw('capital'), 'grain', 1)` for a SECOND grain firm and the draw made none (`this world has no firm 2 in grain: it drew 0`), so the file throws at import and every case in it, including the two A4/A6 reads added at 17e.1, reports “no tests”. Pre-existing and unchanged by 17e.1 (verified at `1a458d3`). It is a test asking the draw for a world it did not draw, not a fact about the world; positioned at 23.1 with the rest of the scale model's resize (17e.1).

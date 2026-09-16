@@ -14,6 +14,7 @@
  */
 import { asRatio, minus, noCash, type Cash, type PerPiece, type Ratio, ratioOf, scale, sumCash, valueAt, asCash } from '../core/measure.js';
 import type { InstrumentId } from '../core/ids.js';
+import type { Instrument } from '../register/instruments.js';
 import { asQty } from '../core/tick.js';
 import { none, some, type Option } from '../core/option.js';
 import type { ParticipantView } from '../world/context.js';
@@ -53,6 +54,45 @@ export function uncoveredShare(
   return ratioOf(uncovered, owed, 'of every unit lent');
 }
 
+
+/**
+ * §42 C6, Law 9, Law 19 (17g.2): WHAT A POOL OF CLAIMS IS SECURED ON, read off the claims themselves.
+ *
+ * *"A pool of loans"* is not a description anybody can price. A holder of a note needs to know
+ * whether what stands behind it is houses, shops or nothing, because that is what decides what it
+ * is worth when the borrowers stop paying — and the answer is already in the world: every claim's
+ * kind says what is pledged behind it (`ranking(i).secured`, the same read an estate uses), and the
+ * pledged things have kinds of their own. So this counts them, and nothing anywhere types a label.
+ *
+ * Unsecured claims are counted as such rather than left out: a pool that is half houses and half
+ * nothing is a different thing from a pool that is all houses, and a reader that saw only the
+ * houses would be reading the better half of it.
+ */
+export function securedOn(
+  rows: readonly Instrument[],
+  kinds: (i: InstrumentId) => string,
+  ranking: (i: Instrument) => { readonly secured: readonly { readonly instrument: InstrumentId }[] },
+): readonly { readonly on: string; readonly rows: number }[] {
+  const count = new Map<string, number>();
+  for (const row of rows) {
+    const pledged = ranking(row).secured;
+    const on =
+      pledged.length === 0
+        ? 'nothing'
+        : [...new Set(pledged.map((p) => kinds(p.instrument)))].sort().join(' and ');
+    const had = count.get(on);
+    count.set(on, had === undefined ? 1 : had + 1);
+  }
+  return [...count]
+    .map(([on, n]) => ({ on, rows: n }))
+    .sort((a, b) => (b.rows === a.rows ? a.on.localeCompare(b.on) : b.rows - a.rows));
+}
+
+/** Law 9: what it is secured on, in the words a market would use for it. */
+export function securedOnSaid(behind: readonly { readonly on: string; readonly rows: number }[]): string {
+  if (behind.length === 0) return 'nothing';
+  return behind.map((b) => `${b.rows} on ${b.on}`).join(', ');
+}
 
 /**
  * Banks Lending A4, D5, Corporate Credit E5 (17.7c): WHAT THIS BANK REQUIRES TO HOLD **THIS CLAIM**

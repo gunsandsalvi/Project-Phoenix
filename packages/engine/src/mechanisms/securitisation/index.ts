@@ -36,6 +36,7 @@ import { dayNumber, type Civil } from '../../calendar/civil.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { levelsUpTo, rungsUpTo } from '../../clearing/schedule.js';
 import { priceAt } from '../../prices/curve.js';
+import { securedOn, securedOnSaid } from '../../registry/secured.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import {
@@ -528,6 +529,22 @@ export function arrange(ctx: MechanismContext): void {
  * C2, C2.a, C3, C4.a: WHAT THE BOOK SAID. The arranger posts the pool's whole face and no level;
  * the bids clear at one price; the senior tranche is what cleared and the junior is the remainder.
  */
+/**
+ * §42 C6, Law 9, Law 19 (17g.2): WHAT THIS DEAL IS MADE OF, read off the rows that went into it.
+ *
+ * Not a label the arranger types and not a field anybody stores: every row says what is pledged
+ * behind it and every pledged thing has a kind, so what a pool is secured on is arithmetic over the
+ * register. A note on houses and a note on shops are different things to whoever holds one, and
+ * until this the world could not tell them apart.
+ */
+function behind(ctx: MechanismContext, rows: readonly InstrumentId[]): readonly { readonly on: string; readonly rows: number }[] {
+  return securedOn(
+    rows.map((id) => ctx.instruments.get(id)),
+    (id) => String(ctx.instruments.get(id).kind),
+    (i) => ctx.registry.instrumentKind(i.kind).ranking(i),
+  );
+}
+
 function cut(
   ctx: MechanismContext,
   d: {
@@ -606,24 +623,39 @@ function cut(
     status: { alive: true, standing: 'good' },
   });
   const senior = trancheId(d.vehicle, 'senior');
-  issueTranche(ctx, d.vehicle, d.ccy, senior, {
-    kind: TRANCHE,
-    vehicle: d.vehicle,
-    attachment,
-    detachment: asRatio(1, 'up to the whole of the pool'),
-    seniority: 0,
-    pool: d.pool,
-  });
-  const junior = juniorFace > 0 ? some(trancheId(d.vehicle, 'junior')) : none<InstrumentId>();
-  if (junior.some) {
-    issueTranche(ctx, d.vehicle, d.ccy, junior.value, {
+  const on = securedOnSaid(behind(ctx, d.rows));
+  issueTranche(
+    ctx,
+    d.vehicle,
+    d.ccy,
+    senior,
+    {
       kind: TRANCHE,
       vehicle: d.vehicle,
-      attachment: asRatio(0, 'from the first loss'),
-      detachment: attachment,
-      seniority: 1,
+      attachment,
+      detachment: asRatio(1, 'up to the whole of the pool'),
+      seniority: 0,
       pool: d.pool,
-    });
+    },
+    on,
+  );
+  const junior = juniorFace > 0 ? some(trancheId(d.vehicle, 'junior')) : none<InstrumentId>();
+  if (junior.some) {
+    issueTranche(
+      ctx,
+      d.vehicle,
+      d.ccy,
+      junior.value,
+      {
+        kind: TRANCHE,
+        vehicle: d.vehicle,
+        attachment: asRatio(0, 'from the first loss'),
+        detachment: attachment,
+        seniority: 1,
+        pool: d.pool,
+      },
+      on,
+    );
   }
   if (!settleDeal(ctx, d, outcome.price, senior, junior, seniorFace, juniorFace)) return;
   // XI-11, C4.a: the deal is the relation between the vehicle and its arranger, and the vehicle
@@ -645,6 +677,9 @@ function cut(
       arranger: String(d.arranger),
       vehicle: String(d.vehicle),
       rows: d.rows.length,
+      // 17g.2: AND WHAT THEY ARE SECURED ON, counted off the rows themselves — houses, shops, or
+      // nothing. "A pool of loans" is not a description anybody can price (§42 C6, Law 9).
+      securedOn: on,
       pool: d.pool,
       senior: seniorFace,
       junior: juniorFace,
@@ -673,12 +708,14 @@ function issueTranche(
   ccy: CurrencyCode,
   id: InstrumentId,
   terms: TrancheTerms,
+  /** 17g.2, Law 9: what the pool under it is secured on, in the words a market would use. */
+  on: string,
 ): void {
   const market = trancheMarket(id);
   ctx.issue({ id, kind: TRANCHE, issuer: some(vehicle), ccy, terms, market: some(market) });
   ctx.openMarket({
     id: market,
-    name: `${String(vehicle)} ${terms.seniority === 0 ? 'senior' : 'junior'} notes`,
+    name: `${String(vehicle)} ${terms.seniority === 0 ? 'senior' : 'junior'} notes, ${on}`,
     instrument: id,
     ccy,
     rationing: 'proRata',

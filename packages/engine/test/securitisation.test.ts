@@ -13,6 +13,7 @@ import {
   trancheTerms,
 } from '../src/mechanisms/securitisation/index.js';
 import { rigWorld } from './rig.js';
+import { securedOn, securedOnSaid } from '../src/registry/secured.js';
 
 function ran(periods: number) {
   const w = rigWorld('spv-a');
@@ -214,5 +215,45 @@ describe('the audit families are built and say so', () => {
       expect(family).toBeDefined();
       expect(family?.built).toBe(true);
     }
+  });
+});
+
+describe('a pool says what it is made OF (Securitisation C6, Law 9, 17g.2)', () => {
+  it('reads the collateral off the rows themselves — houses, shops or nothing', () => {
+    // 17g.1's reading, as a test rather than a claim: the rows a bank may pool are secured on
+    // dwellings, premises, machinery and fleet in this world, and nothing excludes any of them.
+    // `saleable` never names a kind, so a mortgage and a commercial-premises loan are poolable on
+    // exactly the same terms as any other row — which is what the owner asked securitisation to do.
+    const w = ran(24);
+    const mine: { on: string; rows: number }[] = [];
+    for (const b of w.parties.all()) {
+      if (!b.status.alive) continue;
+      const rows = [];
+      for (const h of w.register.holdingsOf(b.id)) {
+        const i = w.instruments.get(h.instrument);
+        if (!i.status.live) continue;
+        const p = w.registry.instrumentKind(i.kind);
+        if (p.pricing !== 'carriedAtCost' || !p.liabilityOfIssuer || h.liens.length > 0) continue;
+        rows.push(i);
+      }
+      if (rows.length === 0) continue;
+      mine.push(
+        ...securedOn(
+          rows,
+          (id) => String(w.instruments.get(id).kind),
+          (i) => w.registry.instrumentKind(i.kind).ranking(i),
+        ),
+      );
+    }
+    expect(mine.length).toBeGreaterThan(0);
+    // Houses are in it, and so are shops: the two the owner named, reached by no rule that names
+    // either. A pool of them says so, and a reader that only ever saw "a pool of loans" could not.
+    const said = mine.map((m) => m.on);
+    expect(said.some((s) => s.includes('good.dwelling'))).toBe(true);
+    expect(said.some((s) => s.includes('plant.premises'))).toBe(true);
+    // And what is secured on nothing is counted as such: a pool half houses and half nothing is a
+    // different thing from a pool that is all houses, and the reader is told which it has.
+    expect(securedOnSaid([{ on: 'nothing', rows: 2 }])).toBe('2 on nothing');
+    expect(securedOnSaid([])).toBe('nothing');
   });
 });
