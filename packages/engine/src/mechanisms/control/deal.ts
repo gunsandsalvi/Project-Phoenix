@@ -155,7 +155,19 @@ export const holeIn = (cost: Cash, has: Cash, committed: Cash): Cash =>
  * public fact about a party (Law 19, 0e′.3). A buyer that is not a pool has published none and its
  * equity is its balance, which is the ordinary case.
  */
-export function equityOf(ctx: MechanismContext, buyer: PartyId, cash: Cash): Cash {
+export function equityOf(
+  ctx: MechanismContext,
+  buyer: PartyId,
+  cash: Cash,
+  /**
+   * Cross-Border A2, Law 8 (17b.7): the money the buyer's own commitments are in. What its
+   * investors promised it is promised in ITS money, so it counts toward a deal struck in that money
+   * and toward no other — a pool looking at a foreign company has what it holds there and nothing
+   * else, and buying the money first is its own decision in the pair.
+   */
+  home: CurrencyCode,
+): Cash {
+  if (cash.ccy !== home) return cash;
   const struck = strikeOf(ctx.journal, String(buyer));
   if (!struck.some || struck.value.couldCall <= 0) return cash;
   return plus(

@@ -1103,22 +1103,46 @@ export function controlDealsFor(
   ctx: MechanismContext,
   lines: readonly Instrument[],
 ): { readonly bids: readonly Bid[]; readonly wanted: readonly Wanted[] } {
-  const ccy = view.registry.currencyOf(view.self.region);
-  const cash = cashOf(view.cash(ccy), ccy);
-  // B3, A2: what it could bring ITSELF — its own money, and for a pool the capital it could still
-  // call. A buyout with no equity cheque at all is not a buyout: a buyer with nothing of its own is
-  // not levering anything, it is asking a bank to buy a company and hold the shares for it.
-  const equity = equityOf(ctx, view.self.id, cash);
-  if (equity.pieces <= 0) return { bids: [], wanted: [] };
+  const home = view.registry.currencyOf(view.self.region);
   // B1: what this buyer's own money costs it, which is the same number for every company on the
   // list, and a firm nobody will lend to does not look at the list at all.
   const required = costOfMoneyOf(ctx, view.self.id);
   if (!required.some || required.value <= 0) return { bids: [], wanted: [] };
+  // Law 18: what it holds in a money, once per money rather than once per company on the list.
+  const purse = new Map<CurrencyCode, Cash>();
+  const holds = (ccy: CurrencyCode): Cash => {
+    const already = purse.get(ccy);
+    if (already !== undefined) return already;
+    const now = cashOf(view.cash(ccy), ccy);
+    purse.set(ccy, now);
+    return now;
+  };
   const bids: Bid[] = [];
   const wanted: Wanted[] = [];
   for (const i of lines) {
     const target = i.issuer.some ? i.issuer.value : view.self.id;
     if (target === view.self.id) continue;
+    /**
+     * Cross-Border C4, A2.a, Law 8 (17b.7): THE DEAL IS STRUCK IN THE MONEY THE SHARES ARE IN.
+     *
+     * *"A direct investment buys a firm outright, which is a lasting claim."* What a share of a
+     * foreign company is worth comes out of THAT company's published accounts, which are in its own
+     * money — so the price is in its money, the sellers are paid in its money, and the facility its
+     * lenders commit is in its money. It used to be labelled with the BUYER's currency whatever the
+     * line was, which is a number wearing the wrong unit (Law 8) and would have paid a foreign
+     * seller in the wrong one.
+     *
+     * A buyer holding none of that money cannot bid, and buying it first is its own decision in the
+     * pair (Spot FX) — between the two it carries an exposure it chose (A2.a), and a tender that
+     * fails leaves it holding a money it does not earn (C2.a).
+     */
+    const ccy = i.ccy;
+    const cash = holds(ccy);
+    // B3, A2: what it could bring ITSELF — its own money, and for a pool the capital it could still
+    // call. A buyout with no equity cheque at all is not a buyout: a buyer with nothing of its own
+    // is not levering anything, it is asking a bank to buy a company and hold the shares for it.
+    const equity = equityOf(ctx, view.self.id, cash, home);
+    if (equity.pieces <= 0) continue;
     const worth = worthAt(view, ctx, target, i.id, required);
     if (!worth.some) continue;
     const outstanding = ctx.register.heldTotal(i.id).value;

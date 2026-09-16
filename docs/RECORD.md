@@ -13498,3 +13498,36 @@ its own account. The row is the same row and made in one place (`facilityRow`, L
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
 one new test, six green in the file. §29 C1, C3 and C4 re-marked MET; C2 PARTIAL with its missing half.
+
+## Item 17b.7 — Across the border
+
+Cross-Border C4: *"a direct investment buys a firm outright, which is a lasting claim."* What it
+needed was not a mechanism — it was a unit.
+
+**A deal is struck in the money the shares are in.** What a share of a company is worth comes out of
+that company's published accounts, and those are in its own money: so the price is in its money, the
+sellers are paid in its money, and the facility its lenders commit is in its money. `controlDealsFor`
+labelled every price with `currencyOf(buyer.region)` whatever the line was — a number wearing the
+wrong unit (Law 8), and one that would have paid a foreign seller in the wrong one the first time a
+buyer looked across a border.
+
+**A buyer holding none of that money cannot bid**, and buying it first is its own decision in the
+pair. Between the two it carries an exposure it chose (A2.a), and a tender that fails leaves it
+holding a money it does not earn (C2.a). Nothing here buys the money for it, which is right: that is
+the FX participant's decision and not the control module's.
+
+**What a pool could CALL is in its own money and counts toward nothing else** — its investors
+promised it in that money, so a pool looking at a foreign company has what it holds there and no
+more.
+
+**It is not covered by a test and cannot be** in any world this repository builds: the change only
+differs from what was there where two moneys differ, the rig is one country, and `control` has never
+run in the four-country world at all. Written down as 21.75 and positioned at 23.1 with the scale
+model's resize. The defect it fixes was visible by reading, and it is fixed.
+
+**21.60(c) is not closed by this** and says so: a firm CHOOSING the money it issues in is a decision
+that needs the covered comparison Currency B4 names, and it is re-positioned at 18a.1 with the other
+cross-border reads.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green; `buyout`
+six green. Cross-Border C4 re-marked PARTIAL, with the half that is missing named.
