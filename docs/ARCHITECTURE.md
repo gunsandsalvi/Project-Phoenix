@@ -1636,3 +1636,12 @@ ground under a new vintage to the authority in the vintage's name (a `pledge` le
 commissioning instruction) and releases it at retirement. `groundUnder` in `registry/physical.ts`
 is the one arithmetic for ground under plant.
 
+### A port has an owner and a berth (item 15.2)
+
+`registry/ports.ts` names the quay's owner (the place's local authority), the berths it works a
+period (`PORT_BERTHS`, a placeholder dying at 22a) and the read of the calls it has worked
+(`callsAt`: settled `sail` legs from the place and `land` legs into it, off the ledger). The freight
+module asks `berthFree` before a vessel lands and before a cargo loads; what is turned away waits
+(a landed-but-not-alongside voyage stays under way) or does not sail, and is said as
+`port.congested`. Nothing is stored between the reads.
+

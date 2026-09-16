@@ -12053,3 +12053,22 @@ ground bids gone and the ground under the opening's plant its holder's: eighteen
 (21.28); a pool's rooms stand on nobody's ground (21.29). The lettings finding moves to 15.5.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.2 — A port has an owner and a berth
+
+A vessel sailed region to region with no quay, no berth, no congestion and no owner. A place's quay
+is its local authority's now, and it works so many berths a period — a call being a vessel loading
+to sail from it or landing at it. The calls it has worked this period are read off the ledger's
+settled voyage legs and never kept; a vessel arriving at a quay with every berth worked waits at
+anchor, first sailed first alongside, and a cargo that cleared a session at a quay with no berth
+left does not load. Every call turned away is public with the owner named. The berth count is a
+placeholder with its death at 22a: a berth is capital the authority builds and wears out.
+
+**Measured.** `freight.test.ts`, three new green: the berths are a placeholder naming their
+mechanism; the call count reads sails and landings off a hand-made ledger; over eight periods no
+quay works more calls than it has berths and every congestion names the owner. Three of the file's
+older tests are red before and after this step (21.31). Nothing new is red in the eighteen suites.
+
+**Findings.** Port dues have no cleared price (21.30); the three older freight reds (21.31).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

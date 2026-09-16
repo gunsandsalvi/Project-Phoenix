@@ -16,7 +16,12 @@ import {
   regionId,
 } from '../src/index.js';
 import { GOODS } from '../src/mechanisms/goods/data.js';
-import { legsBetween } from '../src/registry/geography.js';
+import { legsBetween, tilesOf } from '../src/registry/geography.js';
+import { PORT_BERTHS, callsAt, portOwnerOf } from '../src/registry/ports.js';
+import { PORT_CONGESTED } from '../src/mechanisms/freight/index.js';
+import { asQty } from '../src/core/tick.js';
+import type { Leg } from '../src/ledger/instruction.js';
+import type { TileIndex } from '../src/core/ids.js';
 import { ranWorld, rigWorld } from './rig.js';
 
 describe('a leg is read off the ground, not declared (A4, B2, 13c.1)', () => {
@@ -251,5 +256,61 @@ describe('a shipper can not ship, and that is what caps the freight (C2)', () =>
     // than saying nothing. What is asserted is that the world HAS both answers available to it,
     // never how many of each — that would be a claim about a level (Law 17).
     expect(moved + refused).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 15.2: A PORT HAS AN OWNER AND A BERTH, and congestion is an outcome of the count of calls.
+ */
+describe('a port has an owner and a berth; congestion is an outcome (15.2, Freight B2, D6)', () => {
+  it('the berths a quay works are a placeholder naming the capital that replaces them, not a technology', () => {
+    const w = rigWorld('port-a');
+    const decl = w.params.decl(PORT_BERTHS);
+    expect(decl.kind).toBe('placeholder');
+    expect(decl.standsInFor?.item).toBeDefined();
+    expect(w.params.count(PORT_BERTHS)).toBeGreaterThan(0);
+  });
+
+  it('counts the calls a quay worked off the ledger: every vessel that sailed from it and every one that landed at it', () => {
+    const w = rigWorld('port-b');
+    const g = w.registry.geography;
+    const places = [...w.registry.regions.values()].map((r) => r.id);
+    const here = places[0];
+    const there = places[1];
+    expect(here).toBeDefined();
+    expect(there).toBeDefined();
+    if (here === undefined || there === undefined) return;
+    const t0 = tilesOf(g, here)[0];
+    const t1 = tilesOf(g, there)[0];
+    if (t0 === undefined || t1 === undefined) return;
+    const sail = (tiles: readonly TileIndex[]): Leg => ({ kind: 'voyage', act: 'sail', carrier: 'c' as never, shipper: 's' as never, by: VESSEL, hullInstrument: 'h' as never, hulls: asQty(1), tiles, km: 10, cargo: 'g' as never, qty: asQty(1), freight: 1 });
+    const reads = {
+      inPeriod: () => [
+        { outcome: 'settled', instruction: { legs: [sail([t0, t1])] } },
+        { outcome: 'settled', instruction: { legs: [sail([t1, t0])] } },
+        { outcome: 'settled', instruction: { legs: [{ kind: 'voyage', act: 'land', voyage: 'v1' as never } as Leg] } },
+        { outcome: 'refused', instruction: { legs: [sail([t0, t1])] } },
+      ],
+    };
+    const voyages = { get: () => ({ tiles: [t1, t0] }) as never };
+    // One sailed from here, one landed here (v1 ends at t0), one sailed from there; the refused one is nothing.
+    expect(callsAt(reads, voyages, g, w.period, here)).toBe(2);
+    expect(callsAt(reads, voyages, g, w.period, there)).toBe(1);
+  });
+
+  it('never works more calls at a quay than it has berths, and names the owner when it turns one away', () => {
+    const w = ranWorld('port-c', 8);
+    const berths = w.params.count(PORT_BERTHS);
+    for (let p = 1; p <= 8; p += 1) {
+      for (const r of w.registry.regions.values()) {
+        expect(callsAt(w.ledger, w.voyages, w.registry.geography, p as never, r.id)).toBeLessThanOrEqual(berths);
+      }
+    }
+    for (const e of w.journal.ofKind(PORT_CONGESTED)) {
+      expect(e.public).toBe(true);
+      expect(String(e.data['owner'])).toBe(String(portOwnerOf(String(e.data['place']) as never)));
+      expect(Number(e.data['worked'])).toBeGreaterThanOrEqual(Number(e.data['berths']));
+      expect(w.parties.has(String(e.data['owner']) as never)).toBe(true);
+    }
   });
 });

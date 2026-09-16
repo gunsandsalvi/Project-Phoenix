@@ -38,7 +38,8 @@
  * is read from that party's own view (Clearing A3), and a carrier's reservation is what the voyage
  * costs IT — below which sailing is worse than staying in port.
  */
-import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, PartyId, RegionId, VoyageId } from '../../core/ids.js';
+import { PORT_BERTHS, callsAt, portOwnerOf } from '../../registry/ports.js';
 import { costOfDraw } from '../../register/register.js';
 import { instrumentId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
@@ -99,6 +100,8 @@ export const inTransit = (subUnit: string, from: RegionId, to: RegionId): Instru
 export const FREIGHT_SESSION = 'freight.session';
 export const FREIGHT_REFUSED = 'freight.refused';
 export const FREIGHT_SAIL = 'freight.sail';
+/** 15.2: a call the quay turned away this period, with its owner named. */
+export const PORT_CONGESTED = 'port.congested';
 
 /** The legs this world has for hulls: every pair of places one can get between, off the map. */
 function legs(ctx: MechanismContext): ReadonlyMap<string, Path> {
@@ -382,6 +385,9 @@ function cargo(
   if (ctx.parties.get(shipper).region !== from) return false;
   const hulls = room.get(carrier);
   if (hulls === undefined) return false;
+  // 15.2, D6: no berth to load at, no voyage — the cargo stays where it is and the session's fill
+  // goes unexecuted, which is capacity rationing quantity at the quay as hulls do at sea.
+  if (!berthFree(ctx, from, undefined, 'sail')) return false;
   let shipped = NO_QTY;
   for (const h of ctx.register.holdingsOf(shipper)) {
     const i = ctx.instruments.get(h.instrument);
@@ -537,11 +543,16 @@ function sail(ctx: MechanismContext, hardness: number): void {
  * and every unit of it had an owner the whole time.
  */
 function arrive(ctx: MechanismContext): void {
-  for (const v of ctx.voyages.underWay()) {
-    if (v.kmTravelled < v.km || v.aboard <= 0) continue;
+  // 15.2: first come, first alongside — the vessel that sailed first lands first, and the rest wait.
+  const arrived = ctx.voyages
+    .underWay()
+    .filter((v) => v.kmTravelled >= v.km && v.aboard > 0)
+    .sort((a, b) => (a.departed !== b.departed ? a.departed - b.departed : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const v of arrived) {
     const i = ctx.instruments.get(v.cargo);
     if (!isGoodTerms(i.terms)) continue;
     const to = destinationOf(v, ctx);
+    if (!berthFree(ctx, to, v.id, 'land')) continue;
     const there = goodId(i.terms.subUnit, to);
     if (!ctx.instruments.has(there)) continue;
     const held = ctx.register.holdingsOf(v.shipper).find((x) => x.instrument === v.cargo);
@@ -577,6 +588,24 @@ function arrive(ctx: MechanismContext): void {
 }
 
 /** Law 19: where a voyage is going is read off the last tile of its own path, never restated. */
+/**
+ * 15.2, Freight B2, D6: WHETHER THE QUAY HAS A BERTH LEFT THIS PERIOD — the calls it has worked,
+ * read off the ledger, against the berths it has. A call turned away is said in public with the
+ * quay's owner named (`port.congested`): congestion is this count and nothing else.
+ */
+function berthFree(ctx: MechanismContext, place: RegionId, voyage: VoyageId | undefined, call: 'sail' | 'land'): boolean {
+  const berths = ctx.params.count(PORT_BERTHS);
+  const worked = callsAt(ctx.ledger, ctx.voyages, ctx.registry.geography, ctx.period, place);
+  if (worked < berths) return true;
+  ctx.record(
+    PORT_CONGESTED,
+    voyage === undefined ? [String(place)] : [String(place), String(voyage)],
+    { place, owner: portOwnerOf(place), berths, worked, call, voyage: voyage ?? null },
+    true,
+  );
+  return false;
+}
+
 function destinationOf(v: Voyage, ctx: MechanismContext): RegionId {
   const last = v.tiles[v.tiles.length - 1];
   if (last === undefined) throw new Error(`voyage ${v.id} has no path`);
@@ -602,6 +631,19 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         kind: 'technology' as const,
         owner: 'model' as const,
         why: 'Freight B2: what one hull holds. It is a fact about the ship and not about any leg, which is why it replaced a capacity declared per route (13c.1, Law 19).',
+      },
+      {
+        id: PORT_BERTHS,
+        value: 2,
+        unit: 'berths a quay works a period',
+        dimension: 'count' as const,
+        kind: 'placeholder' as const,
+        owner: 'model' as const,
+        standsInFor: {
+          mechanism: 'Freight B1, B2: a berth is capital the port authority builds and wears out, a vintage of its own',
+          item: '22a',
+        },
+        why: 'Freight B2, D6 (15.2): how many vessels a place\u2019s quay can work in a period — load to sail, or land. A berth is capital the port authority builds and wears out (B1), and until it is a vintage of the authority\u2019s own this is a SHAPE with a scheduled death and not a number anybody believes; what it makes is real either way — a vessel that finds no berth waits at anchor, and a cargo with no berth to load at does not sail (D6: capacity rations quantity).',
       },
       {
         id: WEAR_PER_UNIT_KM,
@@ -649,10 +691,10 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
       },
       {
         name: 'freight.arrive',
-        spec: 'Freight A3 Freight A3.a Freight E3',
+        spec: 'Freight A3 Freight A3.a Freight E3 Freight D6',
         anchor: { after: 'corporateActions' },
         reads: [],
-        writes: [],
+        writes: [{ kind: 'event', name: PORT_CONGESTED }],
         run: (ctx: MechanismContext): void => {
           arrive(ctx);
         },
@@ -662,7 +704,7 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         spec: 'Freight C1 Freight C3 Freight D1 Freight D6',
         anchor: { before: 'markets' },
         reads: [],
-        writes: [{ kind: 'event', name: 'freight.session' }],
+        writes: [{ kind: 'event', name: 'freight.session' }, { kind: 'event', name: PORT_CONGESTED }],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
           // Law 18: one walk of each origin, offered on every leg out of it.
