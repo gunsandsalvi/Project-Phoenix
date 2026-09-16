@@ -14099,3 +14099,62 @@ hold and the one that does not. Coverage 74.5% → 76.0%.
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
 green. `test/commodity-chain.test.ts` is new and two green; `bond-future` six green; `irs` carries
 its two pre-existing reds, `cds` its two.
+
+---
+
+## Item 18a — Monetary policy: closed
+
+Law 3 allows exactly one administered price in this world, on one condition: that the quantity
+response behind it is real and booked on both balance sheets. The condition was met and the price
+was not administered by anybody — every policy rate was declared at assembly and never moved again,
+a mandate with a constant beside it and no decision in between.
+
+**A policy number can move now** (18a.1). `setByMandate` refuses everything but a POLICY, refuses
+anybody but the owner the declaration names, and the kernel publishes what it was and what it is,
+because a policy decision is public by construction. A technology that moved because somebody wanted
+it to would be a fact about the world changing to suit a party.
+
+**And a bank decides.** It watches the consumer basket where it sits — public, a read of prints —
+and forms an outlook of it the way every party forms one (§46 A2: its own, from what it has seen,
+and two parties can disagree). It compares that with its target and moves ONE STEP, up or down, or
+does nothing and records that too. There is no coefficient anywhere: a reaction function would be
+this world imposing a rule on the decision that is the mechanism. It meets on a DATE — every so many
+months from the day the world opened — and not on a remainder over period indices.
+
+**Finding 21.83 closed with it**: `{ on: 'index' }` is a subject, every party observes the basket
+where it lives, and `publicLevelOf` reads an index level like any other public fact. Until this,
+nobody in this world could have a view of the price level at all, so the one party whose mandate is
+about it had nothing to be wrong about.
+
+**The first step down stopped the world**, which is how 18a.4 arrived with 18a.1: a rate below zero
+met a solver that refuses a negative price. A price of a THING cannot be negative — nobody is paid
+to be handed grain — and the price of TIME can be. The refusal is dispatched on what a book quotes,
+not deleted, and the same fact serves the print store. The treasury's zero coupon STAYS and says
+why: an issuer does not promise to be paid for borrowing, so what a curve below zero issues is a
+zero coupon sold ABOVE PAR — a cleared price, not a promise — which is arithmetic about what a
+promise can be and not a bound on an outcome. The yen's reason stops apologising (18a.5).
+
+**The facilities were already the quantity response** (18a.2). The corridor is the rate plus and
+minus its spreads, derived at the read, so the period the rate moves the window and the floor move
+with it — asserted now against a rate that actually moved. A bank short of reserves draws the
+window; one long of them leaves them at the floor; both legs, both sheets. What is missing is a desk
+acting on the overnight print, and it has nothing to act on: that book prints twice in twelve
+periods (21.77).
+
+**The desk posts a level** (18a.3). `price: 'market'` from a central bank is a party saying whatever
+it takes, and it is the one participant here whose money never runs out. What stops it is its own
+rate: the price at which the line yields it, derived once with `priceAt`, on both sides.
+
+**What it cannot show, and what was inserted rather than half-built.** Finding 21.84: this world has
+no price level — `consumer.us.1` and `producer.us.1` are baskets of ZERO, because no physical good
+reaches a household in a settled instruction — so the bank meets, reads nothing and does not act.
+The mechanism is built and correct and the world gives it nothing, which sits beside 12c.3 and
+21.79 and is measured at 23.3. And 18a.3a: deleting the seed's opening holding share is a redesign
+of the opening balance sheet (it decides the size of central-bank money at period 0, and the
+treasury's buffer and every bank's reserves are shares of it), inserted at its dependency position.
+
+**Marked.** Central Bank B1 carries the decision, B2 the derived corridor, C1 the level the desk
+posts.
+
+**Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths green.
+`test/policy.test.ts` is new and four green.

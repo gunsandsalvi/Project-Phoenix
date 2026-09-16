@@ -218,7 +218,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17f | Contracts that last — **done** (section removed; see `docs/RECORD.md`; a supply contract with a book, deliveries both legs and a break cost; a job struck for a term whose early end pays the wages to the day; both extended on their own row and never multiplied, with an audit family that counts them. Labour C3 and Goods C3 re-marked; findings 21.79 and 21.80 at 23.3 and 23.1) | after 17e |
 | 17g | What a pool is made of — **done** (section removed; see `docs/RECORD.md`; the claim held — houses and shops are both poolable and `saleable` names no kind — and what was missing was what a pool says about itself: `securedOn` reads the collateral off the rows and the note's market is named for it. XI-11 and Housing C6 re-marked; finding 21.81 at 23.3) | after 17f |
 | 18 | Commodities spot and futures — **done** (section removed; see `docs/RECORD.md`; a print says which dimension it is, a future delivers at the price it was struck at, offsetting rows net, a hedger hedges what it is exposed to, books that are over close, and the protection book has one derivation per question. 18.6 became items 18.6a and 18.6b at their dependency positions; findings 21.82 and 21.83) | after 17g |
-| 18a | Monetary policy | before the polity |
+| 18a | Monetary policy — **done** (section removed; see `docs/RECORD.md`; a policy number can be set by whoever owns it, a bank decides from its own view of the basket and moves one step, the price of time may be negative, and the desk posts a level instead of taking whatever it takes. 18a.3a inserted; findings 21.83 closed and 21.84 raised) | before the polity |
 | 19 | The polity | 19.0 the government buys |
 | 20 | Periodicity | after 19 |
 | 21 | The local repairs | each when its file is open |
@@ -253,32 +253,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
-
----
-
-## 18a. Monetary policy
-
-- [x] 18a.1 `money-market/policy.ts`: the central bank's own outlook on the price level from the goods prints in its money weighted by its basket read; compared with its TARGET (policy param; owner `parliament` after 19). On its own calendar it moves the rate one STEP towards closing the gap it sees, or not. No coefficient. Journaled `centralBank.rate` with outlook and surprise. Written through `params.setByMandate` (19.1's door, granted to this module for the rate until 19). **And (12d.3):** the outlook reads the environment condition of its regions beside the prints (`registry/environment.ts conditionsIn`), so a cold winter's fuel prints reach it as weather and not as the level. **Built, and what it cannot do yet is finding 21.84: the price-level indices are EMPTY in this world, so a bank with a mandate about the basket has no basket to read.** The weather half (12d.3) is recorded beside the decision rather than taken out of the basket, which needs a decomposition of a print into its causes and is its own item. **Still open here (16.7, 16.8):** the reserve reason — a target for what a central bank holds in other moneys and the rule by which it buys or sells them in the pairs (Central Bank F1, F2) — carried here as 21.54 and 21.55: no central bank holds anything abroad since 16.7, and the pairs stop clearing by period 8 of the four-country world.
-- [x] 18a.2 The quantity response, READ and checked rather than rebuilt. The facilities re-price by
-  construction: the corridor is `policy ∓ spreads` DERIVED at the read, so the period the rate moves,
-  what a bank is paid on its reserves and charged at the window move with it and nothing holds a
-  second copy (Law 4) — asserted in `test/policy.test.ts`. The desk's supply and drain ARE those two
-  facilities: a bank short of reserves draws the window and one long of them leaves them at the
-  floor, both legs on both balance sheets, which is exactly the real quantity response Law 3 requires
-  of the one administered price. What is NOT there is an open-market desk acting on the print itself,
-  and it has nothing to act on: the overnight book prints twice in twelve periods (21.77), so there
-  is no print outside the corridor to answer. Positioned with 21.77 at 23.3 — if the book trades and
-  the print leaves the corridor, the desk is an item and the reading will say so.
-- [x] 18a.3 `central-bank-omo` posts a SCHEDULE: the price at which the line yields its OWN POLICY
-  RATE, derived once with `priceAt` off its rate and the flows the paper promises, on both sides —
-  above it the money it prints costs more than the paper pays, and below it somebody else may have
-  the paper. `price: 'market'` is gone from the one participant in this world whose money never runs
-  out, which is what Appendix B's *no buyer of last resort* means when the buyer is a central bank.
-  **What is NOT done here and why** — deleting `CB_PARAMS.targetShare` and `seed.centralBank.openingHoldingShare` is not a change to this module at all: the seed's share is what decides THE SIZE OF CENTRAL-BANK MONEY at period 0 — the treasury's buffer and every bank's reserves are shares of it — so removing it means the world opens with no central-bank money and the banks' reserves come from their own liquidity rule instead. That is a redesign of the opening balance sheet (Seed C1, Treasury D4.b), it is one bounded change of its own, and it is inserted as **18a.3a** at its dependency position: after the desk has a schedule (here) and before 23's measurements, because what the opening sheet is decides every stock the measurements read.
-- [x] 18a.4 A negative level is legal for time: `MarketDecl.levelMayBeNegative` from the kind profile (`quotedAs: 'rate'`); `settlement.ts`, `price-store.ts`, `solver.ts`, `core/tick.ts` dispatch on it; `treasury/index.ts openLine`'s zero STAYS and says why: a promise to be PAID for borrowing is not a coupon, so what a curve below zero issues is a ZERO coupon that sells above par — arithmetic about what a promise can be, not a bound on an outcome, which is what the lint rule said when the ternary was tried. Tested: a book of orders at −0.5% clears as a rate and is refused as a thing, and a print below zero is written for a rate book and refused for a money one.
-- [x] 18a.5 The JPY `why`'s apology is gone: the number is a rate somebody chose rather than the least this world could say.
-
-**Exit.** The rate moves in a 52-period run for a recorded reason; a negative rate clears; the desk never sets the sovereign price.
 
 ---
 
