@@ -13033,3 +13033,42 @@ nothing of this one, and two findings already wait there.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 three new tests, all three green; the file's seven reds are the seven that were red at `8f4d70e` and
 are unchanged.
+
+## Item 17.9a — A line is repaid at the borrower's option
+
+Only half of C9 was built. A borrower could draw on its line, and nothing it ever did brought the row
+back down again — so a firm that had a good quarter carried the debt of its worst one for ever, went
+on paying interest on it, and went on consuming its lender's capital and its own large-exposure limit
+for money it was not using. F2's *"new lending, amortisation, prepayment and write-off account for
+the change in the book"* named it, and the comment standing over that family had been claiming three
+of the four for months.
+
+**What it repays is its own published number.** A borrower publishes what it is short of through the
+one door every borrower uses, and that number is SIGNED: short of money it asks, over it publishes
+the surplus as a negative. Nothing here peeks at an account to decide a borrower has too much — it
+said so, last period, in public, to its lenders — and the repayment carries the same lag the ask
+does, because a lender acts on what it has already been told.
+
+**Dearest first**, which is what paying down debt means: of two lines it owes, the one that costs it
+more is the one it retires. In the scale model a borrower with two lines pays down the one at 158
+per cent before the one at 1.3. And it repays only what it holds; a borrower that promised more than
+it has is a failed instruction rather than a repayment.
+
+**Repayments run before new lending in the same phase.** It is the same money: a bank that lent out
+what a repayment was about to bring back would be sizing its book against a number that had already
+moved.
+
+**21.63 is answered rather than fixed.** A live loan row with nothing outstanding is an UNDRAWN LINE,
+which is exactly what C9 says a line is. The five such rows in the thirty-period rig are
+prime-brokerage and overdraft lines their borrowers had paid back, and every one of them is
+performing; a term loan that amortises to nothing does cease, at the redemption that empties it. The
+part of the original note that said two of them were still not performing was a mis-pairing of two
+reads, and no such row exists.
+
+**Split.** 17.9a carried prepayment and the write-off. The write-off is inserted as 17.9b: a
+repayment is a borrower acting and a write-off is a lender giving up, and the second needs the end of
+an estate — what is left to recover once the estate that succeeded the borrower has closed.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
+unchanged.

@@ -18,7 +18,7 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
-import { atMostCash, noCash, sumCash } from '../../core/measure.js';
+import { atMostCash, negated, noCash, sumCash } from '../../core/measure.js';
 import {
   asCash,
   asPerPiece,
@@ -36,7 +36,7 @@ import {
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { downTick, NO_QTY, type Qty } from '../../core/tick.js';
+import { asQty, downTick, NO_QTY, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -46,7 +46,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId, partyId } from '../../core/ids.js';
 import { weightOf, gridPerMember } from '../../parties/party.js';
-import { dustOf, sum, withinDust } from '../../core/num.js';
+import { atMost, dustOf, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -1540,9 +1540,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'credit.declined' },
           { kind: 'event', name: 'credit.draw' },
           { kind: 'event', name: 'credit.quoted' },
+          { kind: 'event', name: 'credit.repaid' },
           { kind: 'event', name: 'credit.written' },
         ],
         run: (ctx: MechanismContext): void => {
+          // C9: the borrowers that said they have money spare pay their lines down before the ones
+          // that said they are short are lent to — the same money, and a bank that lent out what a
+          // repayment was about to bring back would be sizing its book against a number that had
+          // already moved (Clearing F1).
+          runRepayments(rows, ctx);
           runRequests(rows, ctx);
           // Clearing F1: everything that prices off a bank's own economics this period reads it here
           // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
@@ -1924,6 +1930,103 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
       },
       false,
     );
+  }
+}
+
+/**
+ * Banks Lending C9, F2, Corporate Credit A1 (17.9a): A BORROWER WITH MORE MONEY THAN IT NEEDS PAYS
+ * ITS LINE DOWN.
+ *
+ * C9 says a line is drawn and repaid AT THE BORROWER'S OPTION, and only half of that was built: a
+ * borrower could draw, and nothing it ever did brought the row back down again. So a firm that had
+ * a good quarter carried the debt of its worst one for ever, went on paying interest on it, and
+ * went on consuming its lender's capital and its own large-exposure limit for money it was not
+ * using. F2's *"new lending, amortisation, prepayment and write-off account for the change in the
+ * book"* named this and the comment had been standing over three of the four.
+ *
+ * WHAT IT REPAYS IS ITS OWN PUBLISHED NUMBER, read the way its ask is read. A borrower publishes
+ * what it is short of through the one door every borrower uses (`ctx.request`), and that number is
+ * SIGNED: short of money it asks, and over it publishes the surplus as a negative. Nothing here
+ * peeks at a borrower's account to decide it has too much (Observer A4) — the borrower said so,
+ * last period, in public to its lenders.
+ *
+ * DEAREST FIRST, because that is what paying down debt means: of two lines it owes, the one that
+ * costs it more is the one it retires. And it repays only what it holds — settlement would refuse
+ * the rest anyway, and a borrower that promised more than it has is a failed instruction rather
+ * than a repayment (Money E1).
+ */
+function runRepayments(rows: readonly BankDecl[], ctx: MechanismContext): void {
+  if (ctx.period === 0) return;
+  const said = period(ctx.period - 1);
+  for (const req of ctx.requests(said)) {
+    if (req.short.pieces >= 0) continue;
+    const borrower = ctx.parties.resolve(req.borrower).id;
+    const who = ctx.parties.get(borrower);
+    if (!who.status.alive) continue;
+    let spare = negated(req.short, 'the money it published it does not need');
+    // C9, F1.a: its own rows, dearest first. The register says which lines it owes and the terms
+    // say what each costs it; nothing here keeps a second list of a borrower's debts (Law 19).
+    const mine = ctx.instruments
+      .issuedBy(borrower)
+      .filter((i) => i.status.live && isLoan(i.terms) && i.ccy === req.short.ccy)
+      .sort((a, b) => (isLoan(b.terms) ? b.terms.rate : 0) - (isLoan(a.terms) ? a.terms.rate : 0));
+    for (const line of mine) {
+      if (spare.pieces <= 0) break;
+      const owed = creditorOf((id) => ctx.register.holdersOf(id), line);
+      if (!owed.some) continue;
+      if (declOf(rows, owed.value) === undefined) continue;
+      const held = ctx.register.quantity(owed.value, line.id);
+      if (held <= 0) continue;
+      const cash = ctx.register.quantity(borrower, moneyInstrumentId(who.bank, req.short.ccy));
+      // Law 8: it pays whole pieces of the money, and no more than any of the three things that
+      // limit it — what it has spare, what is outstanding, and what is in its account. None of the
+      // three is a bound on an outcome: each is what paying IS (Law 6).
+      const paying = downTick(
+        atMost(
+          atMost(spare.pieces, held, 'it cannot repay more than is outstanding'),
+          cash,
+          'it cannot pay money it has not got',
+        ),
+      );
+      if (paying <= 0) continue;
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'asset',
+            from: owed.value,
+            to: borrower,
+            instrument: line.id,
+            qty: asQty(paying),
+            pricePerUnit: some(asPerPiece(1, 'at what it promised')),
+            accruedPerUnit: none(),
+          },
+          {
+            kind: 'money',
+            from: ctx.accountOf(borrower, req.short.ccy),
+            to: ctx.accountOf(owed.value, req.short.ccy),
+            receipt: { of: 'returnOfCapital' },
+            ccy: req.short.ccy,
+            amount: paying,
+          },
+        ],
+        cause: 'maturity',
+        reason: `${String(borrower)} pays down ${String(line.id)} out of money it does not need`,
+      });
+      if (r.outcome !== 'settled') continue;
+      spare = minus(spare, heldAsMoney(paying, req.short.ccy, 'what it paid down'), 'what is left spare');
+      ctx.record(
+        'credit.repaid',
+        [String(owed.value), String(borrower), String(line.id)],
+        {
+          bank: String(owed.value),
+          borrower: String(borrower),
+          loan: String(line.id),
+          paid: paying,
+          rate: isLoan(line.terms) ? line.terms.rate : 0,
+        },
+        false,
+      );
+    }
   }
 }
 

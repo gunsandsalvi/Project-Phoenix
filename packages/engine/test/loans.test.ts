@@ -1259,3 +1259,82 @@ describe('what the treasury allots can be negative (Banks Capital B3, Banks Fund
     expect(mustRaise(view, undefined, home).pieces).toBeLessThanOrEqual(0);
   });
 });
+
+/**
+ * A line is repaid at the borrower's option (Banks Lending C9, F2; item 17.9a).
+ *
+ * Only half of C9 was built: a borrower could draw and nothing it ever did brought the row back
+ * down. A firm that had a good quarter carried the debt of its worst one for ever, paid interest on
+ * it, and went on consuming its lender's capital for money it was not using.
+ */
+describe('paying a line down (Banks Lending C9, F2)', () => {
+  /** A borrower that publishes a SURPLUS: the same door an ask goes through, the other sign. */
+  function hasSpare(amount: number, at: number): SystemModule {
+    return {
+      ...asksFor(amount, at),
+      id: 'test.spare',
+      phases: [
+        {
+          name: 'test.spare',
+          spec: 'Banks Lending C9',
+          anchor: { before: 'corporateActions' },
+          reads: [],
+          writes: [{ kind: 'event', name: 'credit.request' }],
+          run: (ctx: MechanismContext) => {
+            if (ctx.period !== at) return;
+            ctx.request(BORROWER, {
+              ccy: USD,
+              short: asCash(-amount, USD, 'the money it does not need'),
+              repays: 'atOption',
+            });
+          },
+        },
+      ],
+    };
+  }
+
+  it('pays down what it said it does not need, and the row comes down with it', () => {
+    const w = world([asksFor(phx(20_000).pieces), hasSpare(phx(5_000).pieces, 3)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row, 'the rig wrote no loan').toBeDefined();
+    if (row === undefined) return;
+    const before = w.instruments.get(row.id).issued;
+    expect(before).toBeGreaterThan(0);
+    // The surplus is published in period 3 and read in period 4, the same lag an ask carries: a
+    // lender acts on what it has already been told (Clearing F1).
+    for (let i = 0; i < 2; i += 1) w.step();
+    const said = w.journal.ofKind('credit.repaid');
+    expect(said.length).toBeGreaterThan(0);
+    const paid = Number(said[0]?.data['paid']);
+    expect(paid).toBeGreaterThan(0);
+    // F1.a: the outstanding and the lender's holding are one number, and both came down by what was
+    // paid. Nothing was written off and nothing vanished: it is a redemption with two legs.
+    const after = w.instruments.get(row.id);
+    expect(after.issued).toBeCloseTo(before - paid, 6);
+    const owed = creditorOf((h) => w.register.holdersOf(h), after);
+    expect(owed.some).toBe(true);
+    if (owed.some) expect(w.register.quantity(owed.value, after.id)).toBeCloseTo(after.issued, 6);
+  });
+
+  it('never pays more than it owes, and takes the dearest line first', () => {
+    // It says it has ten times what it borrowed to spare, so what stops it is the row and not the
+    // money: a borrower cannot repay a loan twice (Money E1, Register E2).
+    const w = world([asksFor(phx(20_000).pieces), hasSpare(phx(200_000).pieces, 3)]);
+    for (let i = 0; i < 5; i += 1) w.step();
+    for (const e of w.journal.ofKind('credit.repaid')) {
+      const line = w.instruments.get(instrumentId(String(e.data['loan'])));
+      expect(Number(e.data['paid'])).toBeGreaterThan(0);
+      expect(line.issued).toBeGreaterThanOrEqual(0);
+    }
+    // C9, XI-4: of two lines it owes, the one that costs it more is the one it retires — so the
+    // rates it paid down come in the order a treasurer would take them.
+    const rates = w.journal.ofKind('credit.repaid').map((e) => Number(e.data['rate']));
+    for (let i = 1; i < rates.length; i += 1) {
+      const a = rates[i - 1];
+      const b = rates[i];
+      if (a === undefined || b === undefined) continue;
+      expect(a).toBeGreaterThanOrEqual(b);
+    }
+  });
+});
