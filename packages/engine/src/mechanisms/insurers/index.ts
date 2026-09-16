@@ -206,7 +206,7 @@ function promises(): Family {
   return {
     name: 'names',
     contributor: 'insurers',
-    spec: 'Insurers A1 Insurers B1 Insurers E1',
+    spec: 'Insurers A1 Insurers B1 Insurers E1 Insurers E2',
     built: true,
     check: (view) => {
       const out: Violation[] = [];
@@ -216,6 +216,21 @@ function promises(): Family {
         if (a.state !== 'performing' || !isPolicyTerms(a.terms)) continue;
         if (a.terms.cover <= 0) {
           out.push({ family: 'names', spec: 'Insurers B1', owner: String(a.id), size: 0, unit: String(COVER), period: view.period, message: `${String(a.id)}: cover of nothing, still standing` });
+        }
+      }
+      // E2 (14.8): NO ASSET THAT IS NOT SOMEBODY'S LIABILITY OR A REAL THING. Every unit the sector
+      // holds is of a live instrument that names its issuer, or of a kind whose profile says it is
+      // a thing and nobody's liability (plant, stock, ground). It holds by construction of the
+      // register and is guarded here because it breaks silently (Part II).
+      for (const kind of [INSURANCE, PENSION]) {
+        for (const p of view.parties.ofKind(kind)) {
+          if (!p.status.alive) continue;
+          for (const h of view.register.holdingsOf(p.id)) {
+            const i = view.instruments.get(h.instrument);
+            const real = !view.registry.instrumentKind(i.kind).liabilityOfIssuer;
+            if (i.status.live && (i.issuer.some || real)) continue;
+            out.push({ family: 'names', spec: 'Insurers E2', owner: String(p.id), size: view.register.quantity(p.id, h.instrument), unit: String(h.instrument), period: view.period, message: `${String(p.id)} holds ${String(h.instrument)}, which is ${i.status.live ? 'nobody’s liability and not a thing' : 'an instrument that has ceased'}` });
+          }
         }
       }
       return out;

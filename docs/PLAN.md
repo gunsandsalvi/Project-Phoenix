@@ -17,13 +17,12 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 0 of 15 items closed** (8 of 118 steps).
-**Requirement coverage: 68.7%** (947 MET, 110 PARTIAL, 0 OUT OF SCOPE of 1379 REASON/VERIFY/FORBID clauses).
+**The plan: 0 of 14 items closed** (1 of 110 steps).
+**Requirement coverage: 69.0%** (949 MET, 112 PARTIAL, 2 OUT OF SCOPE of 1379 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 14 — Insurers and pensions (§27) | 8 | 7 | in progress |
 | 15 — Housing and land, the rest | 7 | 0 | open |
 | 16 — Cross-border, the rest | 9 | 0 | open |
 | 17 — Corporate credit, the rest | 12 | 0 | open |
@@ -84,6 +83,7 @@ The plan has two parts:
 | 13m | — | — | moved to plan 15 (Housing and land, the rest) |
 | 13n | — | — | moved to plan 12 (Firm birth, household formation, promotion) |
 | 13o | — | — | moved to plan 17b (The leveraged buyout, and 14 for the asset managers) |
+| 14 | — | — | moved to plan 19 (The polity) |
 <!-- progress:end -->
 
 ---

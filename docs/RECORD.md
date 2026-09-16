@@ -12004,3 +12004,22 @@ came to nothing is positioned at 21.26. Nothing new is red: eighteen suites at 9
 set.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 14.8 — COVERAGE re-marked; item 14 closes
+
+The twenty-three clauses of §27 read against the code: fourteen MET, five PARTIAL (B4 the insurer
+pricing a correlation, C2 the one-way demand for long paper, C3 the illiquidity premium unmeasured,
+C4 an institution lending its own paper when it holds through pools, D5 the hedge half of the
+asymmetry), two OUT OF SCOPE with the item that owns them (C5 the mandate against a published
+grade, 17.0 and 17.10; D4 the hedge, 18.3's hedger with the promise book as its target), and E2
+built: the sector's `names` family now checks every unit an insurer or a fund holds is a live
+instrument with an issuer or a thing by its profile, and E4 is the register's own ownership family.
+
+**Item 14 closed.** The section is removed. Its findings are positioned: the listed company told its
+equity costs nothing at 21.23; the sponsor's covenant off the sponsor's books at 21.24; a promise
+indexed to a trade nobody works at 21.25; the money fund wound up at nothing at 21.26; the listed
+firm of the (4, 40) rig dying at period 21 at 22.3. The opening surplus per head is a SHAPE with
+its death at 22a, stated on the declaration.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green; eighteen
+suites at 90 of 196, the same set.
