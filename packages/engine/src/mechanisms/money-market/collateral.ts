@@ -36,17 +36,37 @@ import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
-import { requiredOf as requiredYield } from '../../registry/banking.js';
+import { expectedLossOn, requiredOf as requiredYield } from '../../registry/banking.js';
+import { requiredOnClaim } from '../../registry/secured.js';
+import { nextPeriod } from '../../calendar/calendar.js';
+import { yearFraction } from '../../calendar/daycount.js';
 
 /** One day count for what a lender advances, stated once by the module that asks the question. */
 export const COLLATERAL_DAY_COUNT: DayCount = 'ACT/ACT';
 
-/** B3.a: what a market will take as security — a priced, dated claim on a name. */
+/**
+ * B3.a: what a market will take as security — a claim on a name that a market prices.
+ *
+ * Three things, and each is asked of what the paper IS rather than of a list: somebody owes it (so
+ * there is a name to come after), a market clears it (so it can be SOLD if the borrower does not
+ * come back for it), and it is alive. A share is not a claim, a loan has no market, a tonne of grain
+ * is neither, and no list anywhere names them.
+ *
+ * §42 D3 (17.7d): A SCHEDULE IS NOT ONE OF THE THREE. It used to be — nothing was eligible unless
+ * its own terms said what it would pay and when — and that refused the senior tranche of a
+ * securitisation, which is the paper D3 says *"is used as collateral, so its liquidity matters to
+ * the funding system"*. A pass-through pays what the pool pays when the pool pays it (XI-11), so it
+ * promises no schedule and never will; what makes it good collateral is not a promise but a market,
+ * and `valueToLender` prices the two cases apart.
+ */
 export function eligible(view: ParticipantView, i: Instrument, on: Civil): boolean {
   if (!i.status.live || !i.issuer.some) return false;
   const profile = view.registry.instrumentKind(i.kind);
   if (!profile.liabilityOfIssuer || profile.pricing !== 'cleared') return false;
-  return profile.cashFlows(i, on, view.calendar, view.registry).length > 0;
+  if (profile.cashFlows(i, on, view.calendar, view.registry).length > 0) return true;
+  // C1.a: no schedule, so what it converts into is what somebody last paid for it. A line nobody
+  // has ever printed converts into nothing anybody can name, and is not taken.
+  return view.print(i.id).some;
 }
 
 /**
@@ -60,21 +80,76 @@ export function requiredOf(view: ParticipantView, issuer: PartyId): Option<numbe
   return said.some ? some(said.value as number) : none<number>();
 }
 
-/** B3.b: what one unit of this paper is worth to this lender — its own yield, that paper's flows. */
+/**
+ * B3.b: what one unit of this paper is worth to this lender, and there are two answers because there
+ * are two kinds of paper.
+ *
+ * A CLAIM THAT PROMISES A SCHEDULE is worth what that schedule is worth at what this lender requires
+ * OF THAT CLAIM — its own reservation for the name, less the part of it whatever is pledged behind
+ * the paper takes away (17.7c). So a lender that requires more advances less, a long bond is
+ * discounted further than a short one at the same yield gap, and a secured line raises more than an
+ * unsecured one from the same issuer. None of that is stated anywhere.
+ *
+ * A CLAIM THAT PROMISES NOTHING (§42 D3, 17.7d) cannot be discounted, and a schedule invented for it
+ * would be a forecast with no falsification test (Law 17) — which is exactly why the tranche kind
+ * refuses to have one. What a lender will advance against it is what it could REALISE: the market's
+ * own last print, less what this lender expects to lose on the name over the time it would be left
+ * holding it, which is the term of the loan it is making. Both numbers are published — the print by
+ * the market, the expected loss by the lender under its own name — and neither is a haircut anybody
+ * wrote down (B3.b).
+ *
+ * A lender that has published no view of the name will not take its paper either way: no view, no
+ * advance.
+ */
 export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): Option<PerPiece> {
   if (!i.issuer.some) return none<PerPiece>();
-  const required = requiredOf(view, i.issuer.value);
-  if (!required.some) return none<PerPiece>();
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
-  if (flows.length === 0) return none<PerPiece>();
-  return some(
-    priceAt(
-      flows,
-      asRatio(required.value, 'what this lender requires'),
-      on,
-      COLLATERAL_DAY_COUNT,
-      `advance against ${i.id}`,
+  if (flows.length > 0) {
+    const required = requiredOnClaim(view, i.id);
+    if (!required.some) return none<PerPiece>();
+    return some(
+      priceAt(
+        flows,
+        asRatio(required.value, 'what this lender requires of this claim'),
+        on,
+        COLLATERAL_DAY_COUNT,
+        `advance against ${i.id}`,
+      ),
+    );
+  }
+  const print = view.print(i.id);
+  if (!print.some || print.value.price <= 0) return none<PerPiece>();
+  const expected = expectedLossOn(view, String(i.issuer.value));
+  if (!expected.some) return none<PerPiece>();
+  // C4: the loan is struck for a period and re-struck, so the time it is exposed for is a period of
+  // a year, read off the calendar's own dates like every other span (Law 8).
+  const term = asRatio(
+    yearFraction(COLLATERAL_DAY_COUNT, on, view.calendar.startOf(nextPeriod(view.period))),
+    'the term it would be left holding it',
+  );
+  return some(whatItCouldRealise(print.value.price, expected.value, term));
+}
+
+/**
+ * B3.b, Banks Funding C1.a (17.7d): WHAT A CLAIM WITH NOTHING TO DISCOUNT IS WORTH TO A LENDER.
+ *
+ * C1.a says liquid assets differ in how fast and how surely they CONVERT, and for paper that
+ * promises no schedule that is the only question there is: what it converts into is what the market
+ * last paid for it, and what the lender stands to lose in the meantime is what it expects to lose on
+ * the name over the term of the loan it is making. Both are somebody's published number.
+ *
+ * It is named and separate because it is the one piece of arithmetic in the file: everything around
+ * it is a read, and this is the sentence those reads are put together into.
+ */
+export function whatItCouldRealise(print: PerPiece, expectedLoss: Ratio, term: Ratio): PerPiece {
+  return scale(
+    print,
+    minus(
+      asRatio(1, 'what the market last paid'),
+      scale(expectedLoss, term, 'what it expects to lose over the term'),
+      'what it will advance of it',
     ),
+    'what it could realise, less what it stands to lose meanwhile',
   );
 }
 

@@ -53,7 +53,8 @@ import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
-import { uncoveredShare } from './credit-view.js';
+import { requiredOnClaim } from '../../registry/secured.js';
+export { requiredOnClaim };
 import {
   bufferHeld,
   capitalCostOn,
@@ -277,53 +278,6 @@ export function liquidityTargets(
 export function requiredYieldOf(view: ParticipantView, issuer: PartyId): Option<number> {
   const said = requiredOf(view, String(issuer));
   return said.some ? some(said.value as number) : none<number>();
-}
-
-/**
- * Banks Lending A4, C5.a, Corporate Credit E5 (17.7c): WHAT THIS BANK REQUIRES TO HOLD **THIS CLAIM**
- * — which is not the same question as what it requires of the NAME, and the difference is the
- * security.
- *
- * Its published reservation is about a name: what it costs it to fund, what it expects to lose on
- * that name, and what the capital consumes. A claim on the same name with something pledged behind
- * it loses less when the name fails — as much less as the security covers, at the market's own price
- * of that security — so what it requires of the claim is what it requires of the name, less the part
- * of the expected loss the pledge takes away. Nothing new is believed here: the expected loss is the
- * bank's own published number, and the share covered is arithmetic over prints (Law 19).
- *
- * WHAT IS SECURED IS THE KIND'S TO SAY (Law 15). It is read off `ranking(i).secured` — the same
- * answer an estate reads when it decides who takes what — so a loan, a covered bond and anything
- * else with a pledge behind it are all priced by this one rule and none of them is named here.
- *
- * Nothing where the bank has published no view of the name: a claim it cannot price unsecured it
- * cannot price secured either.
- */
-export function requiredOnClaim(view: ParticipantView, instrument: InstrumentId): Option<number> {
-  const i = view.instruments.get(instrument);
-  if (!i.issuer.some) return none<number>();
-  const name = i.issuer.value;
-  const required = requiredYieldOf(view, name);
-  if (!required.some) return required;
-  const secured = view.registry.instrumentKind(i.kind).ranking(i).secured;
-  if (secured.length === 0) return required;
-  const expected = expectedLossOn(view, String(name));
-  if (!expected.some) return required;
-  // C5.a: what is owed on the claim, which is what the pledge has to cover to cover it.
-  const owed = asCash(i.issued, i.ccy, `what ${instrument} owes`);
-  const share = uncoveredShare(
-    secured,
-    (pledged: InstrumentId) => {
-      const print = view.print(pledged);
-      return print.some ? print.value.price : undefined;
-    },
-    owed,
-  );
-  const taken = scale(
-    expected.value,
-    minus(asRatio(1, 'the whole of it'), share, 'the part the pledge covers'),
-    'the expected loss the pledge takes away',
-  );
-  return some(minus(required.value as unknown as Ratio, taken, 'what it requires of this claim') as unknown as number);
 }
 
 /**

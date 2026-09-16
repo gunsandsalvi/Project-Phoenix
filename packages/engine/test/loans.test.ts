@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type Instrument,
+  type InstrumentId,
   creditorOf,
   moneyInstrumentId,
   mul,
@@ -50,7 +51,8 @@ import { pathsOf, rolls, takes } from '../src/mechanisms/banks/workout.js';
 import type { LoanTerms } from '../src/mechanisms/banks/loan.js';
 import { Forbidden } from '../src/core/errors.js';
 import { addMonths } from '../src/calendar/civil.js';
-import { lossGivenDefault, uncoveredShare } from '../src/mechanisms/banks/credit-view.js';
+import { lossGivenDefault } from '../src/mechanisms/banks/credit-view.js';
+import { uncoveredShare } from '../src/registry/secured.js';
 import { requiredOnClaim, requiredYieldOf } from '../src/mechanisms/banks/treasury.js';
 import { expectedLossOn } from '../src/registry/banking.js';
 import { asPerPiece } from '../src/core/measure.js';
@@ -1002,7 +1004,7 @@ describe('a pledge is worth what it covers (Banks Lending A4, C5.a)', () => {
     // the claim is dearer than the name by exactly the covered part of the published expected loss.
     const share = uncoveredShare(
       loanKind.ranking(secured).secured,
-      (pledged) => {
+      (pledged: InstrumentId) => {
         const print = view.print(pledged);
         return print.some ? print.value.price : undefined;
       },

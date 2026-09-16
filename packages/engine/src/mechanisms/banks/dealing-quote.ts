@@ -170,7 +170,7 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<PerPiec
   // gone is a desk whose only anchor was where the market last was.
   const issuer = view.instruments.get(instrument).issuer;
   if (issuer.some) {
-    // A4, C5.a (17.7c): what it requires of THIS CLAIM, which is what it requires of the name less
+    // Banks Lending A4, D5 (17.7c): what it requires of THIS CLAIM, which is what it requires of the name less
     // the part of the expected loss whatever is pledged behind it takes away. A secured claim on a
     // name is worth more to it than an unsecured one, and that is the desk's own arithmetic over
     // prints rather than a preference for collateral (Law 15: what is pledged is the kind's to say).

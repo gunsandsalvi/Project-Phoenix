@@ -31,6 +31,10 @@ import {
 import { rigWorld, rigSpec, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
+import { eligible, whatItCouldRealise } from '../src/mechanisms/money-market/collateral.js';
+import { LOAN } from '../src/mechanisms/banks/loan.js';
+import { asPerPiece, asRatio } from '../src/core/measure.js';
+import type { InstrumentKindId } from '../src/core/ids.js';
 
 const BANK_A = partyId('bank.a');
 const BANK_B = partyId('bank.b');
@@ -586,5 +590,77 @@ describe('what somebody outside can see (Banks Funding F1, F2, F4, Observer A5)'
       expect(b.age).toBeGreaterThanOrEqual(0);
       expect(b.asOf).toBe(said?.period);
     }
+  });
+});
+
+/**
+ * What the secured market will take, and what it will advance (Money Market B3.a, B3.b; §42 D3;
+ * Banks Funding C1.a; item 17.7d).
+ *
+ * D3 says the senior tranche of a securitisation *"is used as collateral, so its liquidity matters
+ * to the funding system"*. It could not be: eligibility asked for a schedule, and a pass-through
+ * promises none and never will — what it pays is what the pool paid, when the pool paid it.
+ */
+describe('a claim with no schedule can still be collateral (Money Market B3.a, §42 D3)', () => {
+  /** A lender with a view of its own: a bank that has published what it requires of names. */
+  function lenderIn(w: ReturnType<typeof rigWorld>) {
+    for (const b of w.parties.ofKind(BANK)) {
+      if (!b.status.alive) continue;
+      const view = w.participantView(b.id);
+      if (view.lastOwn('bank.reservation').some) return view;
+    }
+    return undefined;
+  }
+
+  it('takes what it could sell and refuses what it could not, off what the paper IS', () => {
+    const w = rigWorld('mm-collateral');
+    for (let i = 0; i < 5; i += 1) w.step();
+    const view = lenderIn(w);
+    expect(view, 'no bank published a view of anybody').toBeDefined();
+    if (view === undefined) return;
+    const on = w.calendar.startOf(w.period);
+    const kindOf = (i: { kind: InstrumentKindId }) => w.registry.instrumentKind(i.kind);
+    // B3.a: a claim on a name that a market clears. A dated one is taken — there is a name behind
+    // it and somebody to sell it to.
+    const dated = w.instruments
+      .all()
+      .find(
+        (i) =>
+          i.status.live &&
+          i.issuer.some &&
+          kindOf(i).liabilityOfIssuer &&
+          kindOf(i).pricing === 'cleared' &&
+          kindOf(i).cashFlows(i, on, w.calendar, w.registry).length > 0,
+      );
+    expect(dated, 'the rig printed no dated claim').toBeDefined();
+    if (dated !== undefined) expect(eligible(view, dated, on)).toBe(true);
+    // A loan is a claim on a name with a schedule and NO MARKET, so nothing could be sold if the
+    // borrower did not come back for it.
+    const loan = w.instruments.all().find((i) => i.kind === LOAN && i.status.live);
+    if (loan !== undefined) expect(eligible(view, loan, on)).toBe(false);
+    // And a share is not a claim on anybody at all, however well it trades.
+    const share = w.instruments
+      .all()
+      .find((i) => i.status.live && kindOf(i).pricing === 'cleared' && !kindOf(i).liabilityOfIssuer);
+    if (share !== undefined) expect(eligible(view, share, on)).toBe(false);
+  });
+
+  it('advances what it could realise, less what it expects to lose while it holds it (B3.b)', () => {
+    // §42 D3, Law 17: a pass-through promises nothing — a schedule for one would be a forecast — so
+    // what a lender advances against it is what it could SELL it for, less what it stands to lose on
+    // the name over the term of the loan. Both numbers are published; this is the sentence they are
+    // put together into, and it is checked as the arithmetic it is.
+    const print = asPerPiece(0.9, 'what the market last paid');
+    const loss = asRatio(0.052, 'what this lender expects to lose on the name, per annum');
+    const week = asRatio(7 / 365, 'a week of a year');
+    expect(whatItCouldRealise(print, loss, week)).toBeCloseTo(0.9 * (1 - 0.052 * (7 / 365)), 12);
+    // A lender that expects to lose nothing advances the whole of what it could sell it for, and one
+    // holding it for no time at all is exposed to nothing. Neither is a floor: both are arithmetic.
+    expect(whatItCouldRealise(print, asRatio(0, 'nothing at risk'), week)).toBe(0.9);
+    expect(whatItCouldRealise(print, loss, asRatio(0, 'no time at all'))).toBe(0.9);
+    // And a longer loan against the same paper raises less, which is C1.a's "how fast and how surely".
+    expect(whatItCouldRealise(print, loss, asRatio(1, 'a year of it'))).toBeLessThan(
+      whatItCouldRealise(print, loss, week),
+    );
   });
 });

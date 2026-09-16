@@ -56,16 +56,17 @@ import {
   type Ratio,
   ratioOf,
   scale,
-  sumCash,
-  valueAt,
 } from '../../core/measure.js';
 import { atMost } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty, type Qty } from '../../core/tick.js';
+import { type Qty } from '../../core/tick.js';
 import type { Event } from '../../journal/journal.js';
 import { isAssetLeg } from '../../ledger/instruction.js';
 import { couldLeave, liquidHeld } from '../../registry/banking.js';
 import { type Grade, middleGrade, riskWeightParam } from '../../registry/grades.js';
+import { uncoveredShare } from '../../registry/secured.js';
+
+export { uncoveredShare };
 import { gradesOn } from '../../registry/notices.js';
 import { coverageOf, leverageOf, type Statement, statementVisibleTo } from '../../registry/statements.js';
 import type { DayCount } from '../../calendar/daycount.js';
@@ -249,40 +250,6 @@ export function lossGivenDefault(
   owed: Cash,
 ): Ratio {
   return scale(unsecured, uncoveredShare(security, worthOf, owed), 'on the uncovered part');
-}
-
-/**
- * C5.a (17.7c): HOW MUCH OF A CLAIM ITS SECURITY DOES NOT STAND BEHIND, at the market's own price of
- * that security, as a share of what is owed.
- *
- * It is the whole of what a pledge does to a lender's arithmetic, and it is separated from the loss
- * itself because two readers need it and they need different things (Law 4). A lender provisioning a
- * row wants the loss: this share times what it expects to lose on the name. A desk pricing a claim
- * on a name it has already published an expected loss for wants the SHARE — its published number is
- * for the name, and what this claim is secured on is what makes this claim different from it.
- *
- * One with nothing pledged, nothing where the security is worth more than the claim, and everything
- * in between is arithmetic. A pledge of something nobody prices covers nothing, which is a real
- * answer and not a zero anybody chose.
- */
-export function uncoveredShare(
-  security: readonly { readonly instrument: InstrumentId; readonly qty: number }[],
-  worthOf: (instrument: InstrumentId) => PerPiece | undefined,
-  owed: Cash,
-): Ratio {
-  if (security.length === 0 || owed.pieces <= 0) return asRatio(1, 'nothing stands behind it');
-  const behind = sumCash(
-    owed.ccy,
-    security.map((row) => {
-      const price = worthOf(row.instrument);
-      if (price === undefined) return noCash(owed.ccy);
-      return valueAt(price, asQty(row.qty, 'the units pledged'), owed.ccy, 'what the security is worth');
-    }),
-    'what stands behind it',
-  ).value;
-  const uncovered = minus(owed, behind, 'the part the security does not cover');
-  if (uncovered.pieces <= 0) return asRatio(0, 'covered: nothing of it is at risk');
-  return ratioOf(uncovered, owed, 'of every unit lent');
 }
 
 /** Ratings C2, A5.a: the middle of what the assessors have published on a name, or nothing. */

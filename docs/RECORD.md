@@ -12920,3 +12920,42 @@ So it is inserted before 17.7d rather than folded into it.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 four new tests, all four green; the file's seven reds are the seven that were red at `8f4d70e` and
 are unchanged.
+
+## Item 17.7d — What the secured market will take
+
+**The covered bond left this list first.** It was 17.7's third mechanism and the owner's decision is
+that it is out of scope: §42's securitisation of mortgages does the same work — a pool of named loans
+standing behind claims held by named holders — and one mechanism for that is what Law 4 asks for.
+Nothing had been built for it. What the item had already produced is 17.7c, which stands on its own
+and is what this step is built on.
+
+**Eligibility stopped asking for a schedule.** What a market will take as security is three facts
+about what the paper IS: somebody owes it, a market clears it, it is alive. A schedule was a fourth,
+and it refused exactly the paper §42 D3 is about — the senior tranche of a securitisation, which
+*"is used as collateral, so its liquidity matters to the funding system"*. A pass-through pays what
+the pool pays when the pool pays it, so it promises no schedule and never will; the tranche kind
+refuses to invent one because a schedule for it would be a forecast with no falsification test
+(Law 17). What makes it good collateral is not a promise but a market.
+
+**So there are two advances, and both are reads.** A claim that promises a schedule is worth what
+that schedule is worth at what this lender requires OF THAT CLAIM — its reservation for the name less
+the part of it whatever is pledged behind the paper takes away, which is 17.7c arriving in the repo
+market. A claim that promises nothing is worth what it could REALISE: the market's own last print,
+less what this lender expects to lose on the name over the term of the loan it is making. The print
+is the market's number and the expected loss is the lender's, published under its own name; the
+haircut against the market is still the read it was, never a table.
+
+**Law 4, in passing.** What a pledge covers is now one derivation in `registry/secured.ts`, where the
+three modules that need it can reach it and none has to import another: the bank provisioning a loan,
+the desk pricing a claim, the lender deciding what to advance.
+
+**What the census said.** No tranche exists in the scale model at all — fourteen periods of the
+securitisation rig produce none — because this world's banks open in capital breach and shed nothing
+(21.66), so the pool is never cut. And fifteen of the sixteen tests in `money-market.test.ts` are red
+and none of them is about the money market: each asserts that the WHOLE WORLD's audit is empty, and
+the assembled world reports 79 to 325 violations a period across four families. Written up as 21.67,
+with the test's shape positioned at 23.1 and each family's cause at 23.3.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`money-market`: two new tests, both green; the file's fifteen reds are the fifteen that were red at
+`af70a23` and are unchanged by this (verified in a worktree at that commit).

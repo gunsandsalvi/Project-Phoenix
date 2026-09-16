@@ -1840,7 +1840,7 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
       );
       continue;
     }
-    // E3, C5.a: what it expects to lose of a unit of THIS row if the name fails — its own recovery
+    // E3, Housing C5.a: what it expects to lose of a unit of THIS row if the name fails — its own recovery
     // record, netted against the market's own price of whatever stands behind it.
     const owed = ctx.register.heldTotal(i.id).value;
     const loss = lossGivenDefault(
