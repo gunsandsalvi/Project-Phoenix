@@ -50,6 +50,12 @@ import { pathsOf, rolls, takes } from '../src/mechanisms/banks/workout.js';
 import type { LoanTerms } from '../src/mechanisms/banks/loan.js';
 import { Forbidden } from '../src/core/errors.js';
 import { addMonths } from '../src/calendar/civil.js';
+import { lossGivenDefault, uncoveredShare } from '../src/mechanisms/banks/credit-view.js';
+import { requiredOnClaim, requiredYieldOf } from '../src/mechanisms/banks/treasury.js';
+import { expectedLossOn } from '../src/registry/banking.js';
+import { asPerPiece } from '../src/core/measure.js';
+import { instrumentId } from '../src/core/ids.js';
+import { loanTerms } from '../src/mechanisms/banks/loan.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -938,5 +944,93 @@ describe('the workout (Banks Lending E3, 21.59)', () => {
     // written for — and the borrower never defaulted on it.
     expect(row.status.live && row.status.performing).toBe(true);
     expect(w.journal.ofKind('credit.default').filter((e) => e.subjects.includes(String(row.id)))).toEqual([]);
+  });
+});
+
+/**
+ * Security reaches the price (Banks Lending A4, C5.a; Corporate Credit E5; item 17.7c).
+ *
+ * A pledge is worth something to a lender or it is decoration. What it is worth is the part of the
+ * claim it stands behind at the market's own price of it, and what that does to a price is take the
+ * covered part of the expected loss away — so a secured claim on a name is dearer than an unsecured
+ * one on the same name, by arithmetic and not by anybody preferring collateral.
+ */
+describe('a pledge is worth what it covers (Banks Lending A4, C5.a)', () => {
+  const OWED = asCash(1000, USD, 'what is owed');
+  const PLEDGED = instrumentId('pledged.thing');
+  const worth = (per: number) => () => asPerPiece(per, 'what the market says a unit is worth');
+
+  it('covers nothing, part or all of it, and says which', () => {
+    // Nothing pledged: the whole of it is at risk, which is what an unsecured claim IS.
+    expect(uncoveredShare([], worth(1), OWED)).toBe(1);
+    // A pledge nobody prices covers nothing — a real answer, and not a zero anybody chose.
+    expect(uncoveredShare([{ instrument: PLEDGED, qty: 400 }], () => undefined, OWED)).toBe(1);
+    // Four hundred units at one covers two fifths of a thousand.
+    expect(uncoveredShare([{ instrument: PLEDGED, qty: 400 }], worth(1), OWED)).toBeCloseTo(0.6, 12);
+    // And a pledge worth more than the claim leaves none of it at risk.
+    expect(uncoveredShare([{ instrument: PLEDGED, qty: 400 }], worth(3), OWED)).toBe(0);
+  });
+
+  it('is the one derivation the loss and the price both read (Law 4)', () => {
+    const unsecured = asRatio(0.5, 'what it loses of a unit that fails');
+    const half = [{ instrument: PLEDGED, qty: 500 }];
+    // The loss a lender provisions is the share still at risk times what it loses on the name, so
+    // the two readers cannot disagree about what the pledge covers.
+    expect(lossGivenDefault(unsecured, half, worth(1), OWED)).toBeCloseTo(0.5 * 0.5, 12);
+    expect(lossGivenDefault(unsecured, [], worth(1), OWED)).toBe(unsecured);
+    expect(lossGivenDefault(unsecured, half, worth(4), OWED)).toBe(0);
+  });
+
+  it('a lender requires less of a claim with something behind it than of the name (E5)', () => {
+    const w = world([asksSecured(phx(20_000).pieces)]);
+    for (let i = 0; i < 5; i += 1) w.step();
+    const rows = w.instruments.all().filter((i) => i.kind === LOAN && isLoan(i.terms));
+    const secured = rows.find((i) => loanKind.ranking(i).secured.length > 0);
+    expect(secured, 'the rig wrote no secured row').toBeDefined();
+    if (secured === undefined) return;
+    const lender = creditorOf((h) => w.register.holdersOf(h), secured);
+    expect(lender.some).toBe(true);
+    if (!lender.some) return;
+    const view = w.participantView(lender.value);
+    const name = partyId(String(loanTerms(secured).borrower));
+    const onName = requiredYieldOf(view, name);
+    const onClaim = requiredOnClaim(view, secured.id);
+    expect(onName.some).toBe(true);
+    expect(onClaim.some).toBe(true);
+    if (!onName.some || !onClaim.some) return;
+    // What the pledge covers, at the market's own price of it, is what the difference is made of:
+    // the claim is dearer than the name by exactly the covered part of the published expected loss.
+    const share = uncoveredShare(
+      loanKind.ranking(secured).secured,
+      (pledged) => {
+        const print = view.print(pledged);
+        return print.some ? print.value.price : undefined;
+      },
+      asCash(secured.issued, secured.ccy, 'what it owes'),
+    );
+    const expected = expectedLossOn(view, String(name));
+    expect(expected.some).toBe(true);
+    if (!expected.some) return;
+    expect(onClaim.value).toBeCloseTo(onName.value - expected.value * (1 - share), 12);
+    expect(onClaim.value).toBeLessThanOrEqual(onName.value);
+  });
+
+  it('a claim with nothing behind it is priced at the name itself (E5)', () => {
+    const w = world([asksFor(phx(20_000).pieces)]);
+    for (let i = 0; i < 5; i += 1) w.step();
+    const plain = w.instruments
+      .all()
+      .find((i) => i.kind === LOAN && isLoan(i.terms) && loanKind.ranking(i).secured.length === 0);
+    expect(plain, 'the rig wrote no unsecured row').toBeDefined();
+    if (plain === undefined) return;
+    const lender = creditorOf((h) => w.register.holdersOf(h), plain);
+    expect(lender.some).toBe(true);
+    if (!lender.some) return;
+    const view = w.participantView(lender.value);
+    const name = partyId(String(loanTerms(plain).borrower));
+    const onName = requiredYieldOf(view, name);
+    const onClaim = requiredOnClaim(view, plain.id);
+    expect(onClaim.some).toBe(onName.some);
+    if (onName.some && onClaim.some) expect(onClaim.value).toBe(onName.value);
   });
 });

@@ -12891,3 +12891,32 @@ import the module that names it, so both were spelling the line out. The names a
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
 `trade-credit`: three new tests, all seventeen green.
+
+## Item 17.7c — Security reaches the price
+
+A pledge was worth something to a lender provisioning a loan and nothing to a desk pricing a claim.
+The lender's arithmetic was there — what the security covers at the market's own price of it, taken
+off what it expects to lose — and the desk asked a different question and got the name's answer: what
+this bank requires of the ISSUER, whatever the claim it is being offered. Two claims on one name
+priced identically, one of them with a building behind it.
+
+**What a security covers is now one derivation** (`uncoveredShare`), and both readers take it. The
+loss a lender provisions is that share times what it expects to lose on the name; the yield a desk
+requires of a claim is what it requires of the name less the covered part of the expected loss it has
+already published. Nothing new is believed in either: the expected loss is the bank's own published
+number and the share is arithmetic over prints.
+
+**What is pledged is the KIND's to say.** It is read off `ranking(i).secured` — the same answer an
+estate takes when it decides who gets what — so a loan, a covered bond and anything else with a
+pledge behind it are priced by one rule and none of them is named anywhere. The loan provision and
+the workout both stopped reading a loan's own terms for it, which was the read that would have had to
+be rewritten for every claim that can be secured.
+
+**Why it is an item and why it is here.** A covered bond is a bond whose pool makes it cheaper than
+the same bank's unsecured paper. Built on a desk that prices every claim at the issuer's unsecured
+yield, it would be a shape: the pool would be decoration and the saving would have to be asserted.
+So it is inserted before 17.7d rather than folded into it.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+four new tests, all four green; the file's seven reds are the seven that were red at `8f4d70e` and
+are unchanged.

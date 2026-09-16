@@ -1759,7 +1759,10 @@ function worthToItsLender(
   const loss = scale(
     lossGivenDefault(
       cv.lossGivenDefault,
-      i.terms.security,
+      // N13, Law 15 (17.7c): WHAT IS PLEDGED IS THE KIND'S TO SAY. It read the loan's own terms,
+      // which is the one read that had to be rewritten for every claim that can be secured; the
+      // ranking is the same answer an estate takes and every kind already has one.
+      ctx.registry.instrumentKind(i.kind).ranking(i).secured,
       (pledged) => {
         const print = ctx.prices.latest(pledged, ctx.period);
         return print.some ? print.value.price : undefined;
@@ -1842,7 +1845,8 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
     const owed = ctx.register.heldTotal(i.id).value;
     const loss = lossGivenDefault(
       cv.lossGivenDefault,
-      i.terms.security,
+      // N13, Law 15: what is pledged behind it, as the claim's own kind ranks it (17.7c).
+      ctx.registry.instrumentKind(i.kind).ranking(i).secured,
       (pledged) => {
         const print = ctx.prices.latest(pledged, ctx.period);
         return print.some ? print.value.price : undefined;

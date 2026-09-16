@@ -63,7 +63,7 @@ import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { atMost, material } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
-import { priceAtYield, requiredYieldOf } from './treasury.js';
+import { priceAtYield, requiredOnClaim } from './treasury.js';
 import { downTick } from '../../core/tick.js';
 import { NO_QTY, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
@@ -170,7 +170,11 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<PerPiec
   // gone is a desk whose only anchor was where the market last was.
   const issuer = view.instruments.get(instrument).issuer;
   if (issuer.some) {
-    const required = requiredYieldOf(view, issuer.value);
+    // A4, C5.a (17.7c): what it requires of THIS CLAIM, which is what it requires of the name less
+    // the part of the expected loss whatever is pledged behind it takes away. A secured claim on a
+    // name is worth more to it than an unsecured one, and that is the desk's own arithmetic over
+    // prints rather than a preference for collateral (Law 15: what is pledged is the kind's to say).
+    const required = requiredOnClaim(view, instrument);
     if (required.some) {
       const worth = priceAtYield(view, instrument, required.value);
       if (worth.some && worth.value > 0) return worth;
