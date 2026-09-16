@@ -14,12 +14,13 @@
  * (Goods D, worklist 13c) there is nobody to pay, so no such charge exists here at all.
  */
 import { InvalidRegistry } from '../../core/errors.js';
-import {
-  scale,
-} from '../../core/measure.js';
+import { asRatio, scale } from '../../core/measure.js';
+import { asQty } from '../../core/tick.js';
+import { goodId, upkeepFor, wentWithout } from '../../registry/physical.js';
+import type { Leg } from '../../ledger/instruction.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { InstrumentKindId } from '../../core/ids.js';
-import { material, sum } from '../../core/num.js';
+import { atMost, material, sum } from '../../core/num.js';
 import type { PerPiece } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
@@ -138,27 +139,64 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
   for (const h of ctx.register.allHoldings()) {
     const inst = ctx.instruments.get(h.instrument);
     if (!mine.has(inst.kind) || !inst.status.live) continue;
-    const rate = ctx.params.ratio(goodTerms(inst).spoilage);
+    const terms = goodTerms(inst);
+    const rate = ctx.params.ratio(terms.spoilage);
     if (rate === 0) continue;
     const held = sum(h.lots.map((l) => l.qty));
+    /**
+     * Housing A5, Capital Programme A6 (17e.2b): AND WHAT THE HOLDER SPENT ON KEEPING IT.
+     *
+     * Wear was a fact nobody could answer: a dwelling fell out of the stock every period and its
+     * owner's only reply was to hold fewer dwellings. Where a good states what keeping a unit of it
+     * takes, what the holder bought of that is CONSUMED here off its own shelf, and what perishes is
+     * this good's own spoilage times the share it went without — the same read the plant side
+     * answers its own wear with (Law 4: one fact, one writer, read twice). A good that states none —
+     * grain in a silo — goes the whole of its spoilage, exactly as it did before.
+     */
+    const legs: Leg[] = [];
+    let without = asRatio(1, 'a thing nothing keeps up goes without all of it');
+    if (terms.upkeep !== null) {
+      const part = goodId(terms.upkeep.subUnit, terms.region);
+      const needed = upkeepFor(
+        asQty(held.value, 'what it holds of it'),
+        ctx.params.ratio(terms.upkeep.qtyPerUnitPerPeriod),
+      );
+      const have = ctx.instruments.has(part)
+        ? ctx.register.free(h.holder, part)
+        : asQty(0, 'it holds none of what would keep them');
+      // Arithmetic impossibility and not a bound: a shelf with one plank on it mends one roof.
+      const used = atMost(have, needed, 'it cannot use more than it holds');
+      without = wentWithout(needed, used);
+      if (used > 0) {
+        legs.push({ kind: 'destroy', party: h.holder, instrument: part, qty: used, why: 'consumed' });
+      }
+    }
     // Law 8, E4: what perishes is whole pieces of the good, and for a cell whole pieces on each
     // member's own shelf. A fraction of a piece has not spoiled; it is still there, and it spoils
     // when enough of it has gone the same way.
     // 0f.1: `held` is the cell's TOTAL; what perishes is whole pieces of that, and the side is
     // derived from it.
-    const gone = ctx.registry.deliverable(scale(held.value, rate, `${inst.id} perished`));
-    if (!material(gone, h.lots.length + 1, held.value) || gone <= 0) continue;
+    const gone = ctx.registry.deliverable(
+      scale(scale(held.value, rate, `${inst.id} perished`), without, 'what its upkeep did not save'),
+    );
+    if (!material(gone, h.lots.length + 1, held.value) || gone <= 0) {
+      // It kept them, and keeping them still cost it what the materials cost: the purchase settles
+      // even in the period nothing is lost, which is the whole point of making it.
+      if (legs.length > 0) {
+        ctx.settle({ legs, cause: 'production', reason: `${h.holder} keeps ${inst.id}` });
+      }
+      continue;
+    }
     const perMember = gone;
+    legs.push({
+      kind: 'destroy',
+      party: h.holder,
+      instrument: inst.id,
+      qty: gone,
+      why: 'perished',
+    });
     const record = ctx.settle({
-      legs: [
-        {
-          kind: 'destroy',
-          party: h.holder,
-          instrument: inst.id,
-          qty: gone,
-          why: 'perished',
-        },
-      ],
+      legs,
       // The physical world acting on units it holds; the leg's own `why` says which way (E4).
       cause: 'production',
       reason: `${inst.id} perished in store`,
@@ -173,6 +211,8 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
       {
         unitsPerMember: perMember,
         rate,
+        // 17e.2b: and the share of its upkeep the holder went without, which is what let it go.
+        without,
         // 0f.5, App A: no charge is no charge, not a charge of nothing.
         chargePerMember: charge === undefined ? null : charge.delta,
       },

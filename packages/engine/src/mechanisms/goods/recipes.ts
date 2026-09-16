@@ -40,6 +40,7 @@ import type { RegionId } from '../../core/ids.js';
 import {
   goodId,
   goodKindId,
+  goodUpkeepParam,
   labourParam,
   learningParam,
   leadTimeParam,
@@ -71,6 +72,11 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
     storagePerUnit: d.storagePerUnit === null ? null : storageParam(d.subUnit),
     // 13c.2: whether it can be loaded at all. A service is made where it is bought.
     portable: d.portable,
+    // Housing A5 (17e.2b): what keeping a unit of it takes, where anything can keep it.
+    upkeep:
+      d.upkeep === undefined
+        ? null
+        : { subUnit: d.upkeep.subUnit, qtyPerUnitPerPeriod: goodUpkeepParam(d.subUnit) },
     recipe: {
       inputs: inputs.map((i) => ({
         subUnit: i.subUnit,

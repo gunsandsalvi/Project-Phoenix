@@ -70,14 +70,21 @@ import {
   type UnitId,
 } from '../../core/ids.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
-import { atMost, div, sum } from '../../core/num.js';
+import { atMost, div, material, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { addQty, asQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { keyOf, weightOf, gridPerMember } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
-import { goodId, spoilageParam } from '../../registry/physical.js';
+import {
+  goodId,
+  goodTerms,
+  spoilageParam,
+  upkeepFor,
+} from '../../registry/physical.js';
+import { expectedPriceOf } from '../../registry/expectation.js';
+import type { MarketDecl } from '../../clearing/market.js';
 import { LOAN, creditorOf, isLoan } from '../../registry/credit.js';
 import { LANDLORD } from '../../registry/property.js';
 import { addDays, compareCivil, type Civil } from '../../calendar/civil.js';
@@ -211,6 +218,34 @@ function ends(ctx: MechanismContext, lease: Lease, why: string): void {
 /** Law 8: the unit a dwelling is counted in, which is the instrument's own. */
 function goodUnitOf(view: Pick<ParticipantView, 'instruments'>, region: RegionId): UnitId {
   return view.instruments.get(goodId(DWELLING, region)).unit;
+}
+
+/**
+ * Housing A5, Capital Programme A6 (17e.2b): WHAT A HOLDER BUYS TO KEEP THE ROOFS IT HAS.
+ *
+ * A dwelling falls out of the stock every period unless somebody keeps it up (`goods.spoilage`), and
+ * until this the only reply an owner had was to hold fewer of them. What keeps one up is the timber
+ * in it, bought against what it already holds, and what it does not buy is the share of this
+ * period's decay nothing answered (`perish` is where that settles).
+ *
+ * It bids what it EXPECTS TO PAY, on the same ladder every other holder buys its upkeep on: what a
+ * plank is worth to it is the roof it keeps, and nothing in this world prices that yet.
+ */
+function upkeepOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
+  const roof = goodId(DWELLING, view.self.region);
+  if (!view.instruments.has(roof)) return [];
+  const keep = goodTerms(view.instruments.get(roof)).upkeep;
+  if (keep === null) return [];
+  const part = goodId(keep.subUnit, view.self.region);
+  if (m.instrument !== part) return [];
+  const held = view.quantity(roof);
+  if (held <= 0) return [];
+  const need = upkeepFor(held, view.params.ratio(keep.qtyPerUnitPerPeriod));
+  const buy = subQty(need, view.quantity(part), 'what it must buy to keep them');
+  if (!material(buy, 2, need) || buy <= 0) return [];
+  const level = expectedPriceOf(view, part);
+  if (!level.some) return [];
+  return [{ party: view.self.id, side: 'buy', price: level.value, qty: buy }];
 }
 
 /**
@@ -1103,7 +1138,13 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         },
       },
     ],
-    participants: [],
+    participants: [
+      // Housing A5 (17e.2b): whoever holds a roof buys what keeps it on — a household that owns the
+      // one it lives in and a landlord that owns the ones it lets, by the same read, because what a
+      // dwelling eats is a fact about the dwelling and not about who holds it (Law 15).
+      { partyKind: HOUSEHOLD, orders: (view, m) => upkeepOrders(view, m) },
+      { partyKind: LANDLORD, orders: (view, m) => upkeepOrders(view, m) },
+    ],
     // A3, Clearing B2: whoever owns a roof may let it and whoever needs one may take it, by the same
     // reads. A landlord (15.3) is in the book as an owner with nobody of its own to house.
     venueParticipants: [

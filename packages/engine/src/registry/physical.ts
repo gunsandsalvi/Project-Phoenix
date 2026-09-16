@@ -195,6 +195,15 @@ export interface GoodTerms extends Terms {
    * instrument, so a service price is LOCAL by the technology of the thing rather than by a rule.
    */
   readonly portable: boolean;
+  /**
+   * Housing A5, Capital Programme A6 (17e.2b): WHAT KEEPING A UNIT OF IT TAKES, where anything can.
+   *
+   * A dwelling falls out of the stock each period unless somebody keeps it up, and what keeps it up
+   * is materials bought from whoever makes them. `null` is a thing no upkeep saves — a tonne of
+   * grain in a silo goes the way grain goes however much is spent on it — and that is a real answer
+   * and not an unset number: what perishes is then the whole of this good's own spoilage.
+   */
+  readonly upkeep: { readonly subUnit: string; readonly qtyPerUnitPerPeriod: ParamId } | null;
   readonly recipe: Recipe;
 }
 
@@ -212,6 +221,7 @@ export const goodUnitId = (unit: string): UnitId => unitId(unit);
 export const spoilageParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.spoilage`);
 export const upkeepParam = (capitalKind: string): ParamId =>
   paramId(`capital.upkeep.${capitalKind}`);
+export const goodUpkeepParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.upkeep`);
 export const recipeParam = (output: string, input: string): ParamId =>
   paramId(`goods.${output}.recipe.${input}`);
 

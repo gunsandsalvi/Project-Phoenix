@@ -12,6 +12,8 @@ import { describe, expect, it } from 'vitest';
 import { asRatio } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { failedForWant, upkeepFor, wentWithout } from '../src/registry/physical.js';
+import { CAPITAL_KINDS } from '../src/registry/physical.js';
+import { GOODS } from '../src/mechanisms/goods/data.js';
 
 describe('what keeping a thing takes (Capital Programme A6, Housing A5)', () => {
   it('is whole pieces of what the thing is made of', () => {
@@ -46,5 +48,19 @@ describe('what keeping a thing takes (Capital Programme A6, Housing A5)', () => 
     expect(failedForWant(units, 1, asRatio(1, 'it bought none of it'))).toBeCloseTo(100, 12);
     // A vintage with nothing left is not plant in poor condition; it is plant that is gone.
     expect(failedForWant(units, 0, asRatio(1, 'it bought none of it'))).toBe(0);
+  });
+});
+
+describe('which things can be kept, and which cannot (Housing A5, Law 2)', () => {
+  it('states an upkeep on a dwelling and on every kind of plant, and on nothing else', () => {
+    // A dwelling is a GOOD (13d) and what wears it is a rate; a machine is PLANT and what wears it
+    // is two dates. Both can be KEPT, and what they share is the share gone without, not a phase.
+    const kept = GOODS.filter((g) => g.upkeep !== undefined).map((g) => g.subUnit);
+    expect(kept).toEqual(['dwelling']);
+    // Nothing keeps a tonne of grain: it goes the whole of its own spoilage, as it always did.
+    expect(GOODS.find((g) => g.subUnit === 'grain')?.upkeep).toBeUndefined();
+    // Every kind of plant this module declares takes something to stay in service, and every one of
+    // those numbers is positive: a kind that took nothing would be plant nobody could neglect.
+    for (const k of CAPITAL_KINDS) expect(k.upkeepPerUnitPerPeriod).toBeGreaterThan(0);
   });
 });

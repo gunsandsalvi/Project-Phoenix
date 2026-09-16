@@ -152,6 +152,18 @@ export interface GoodDecl {
   readonly spoilagePerPeriod: number | null;
   readonly spoilageWhy: string;
   /**
+   * Housing A5, Capital Programme A6 (17e.2b): WHAT KEEPING A UNIT OF IT TAKES EACH PERIOD, and what
+   * it takes it OF. Absent is a thing no spending saves: grain in a silo goes the way grain goes,
+   * and the whole of its spoilage is what leaves. Where it is stated, what perishes is this good's
+   * own spoilage times the share of the upkeep its holder went without — the same read the plant
+   * side uses (`wentWithout`), answering each thing's own wear (Law 4).
+   */
+  readonly upkeep?: {
+    readonly subUnit: string;
+    readonly qtyPerUnitPerPeriod: number;
+    readonly why: string;
+  };
+  /**
    * A1, Freight A3, 13c.2: WHETHER A UNIT OF THIS CAN BE SOMEWHERE OTHER THAN WHERE IT WAS MADE.
    *
    * A SHIPPING FACT, and only that. It used to be called "the one fact that divides a manufacture
@@ -1998,6 +2010,16 @@ const MAKES: readonly GoodDecl[] = [
     spoilagePerPeriod: 0.0002,
     spoilageWhy:
       'Goods A3, E4, Housing A4: what falls out of the stock each period if nobody keeps it up. About one per cent a year, which is why a dwelling is maintained rather than merely owned, and why a stock nobody spends on shrinks.',
+    // 17e.2b: and this is the keeping-up. What falls out of a dwelling is fabric, and what puts it
+    // back is the timber in it: a fiftieth of a house a year in spoilage against the twenty-five
+    // units of lumber a house takes to build comes to this. ONE material stands for the repair of a
+    // thing built from ten, which is a SHAPE with its death at 22 (the recipe): the mechanism is
+    // that keeping a thing is a purchase, and which trades are bought is the recipe's to say.
+    upkeep: {
+      subUnit: 'lumber',
+      qtyPerUnitPerPeriod: 0.005,
+      why: 'Housing A5: roof, joists and second fix, replaced as they go. It is what a dwelling eats a week to stay in the stock, and a stock nobody spends it on is a stock that shrinks at its own spoilage.',
+    },
     inputs: [
       { subUnit: 'concrete', qtyPerUnit: 60, why: 'A2.a: foundations, floors and frame.' },
       { subUnit: 'lumber', qtyPerUnit: 25, why: 'A2.a: roof, joists and second fix.' },

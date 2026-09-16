@@ -18,7 +18,7 @@
  * and who bids for it is the buyer (C3, worklist 4.6). What the firm draws when it makes something
  * is not its choice, though — the recipe is the good's own technology, and the audit says so.
  */
-import { overheadParam } from '../../registry/physical.js';
+import { goodUpkeepParam, overheadParam } from '../../registry/physical.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import {
   minus,
@@ -122,6 +122,18 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       owner: 'model',
       why: `Goods E4: ${d.spoilageWhy} It is units that leave, never a fee: a storage charge is cash to whoever stores the goods and is a different thing (E4.a).`,
     });
+    if (d.upkeep !== undefined) {
+      const keep = d.upkeep;
+      out.push({
+        id: goodUpkeepParam(d.subUnit),
+        value: keep.qtyPerUnitPerPeriod,
+        unit: `${keep.subUnit} a unit takes a period`,
+        dimension: 'ratio',
+        kind: 'technology',
+        owner: 'model',
+        why: `Housing A5, Capital Programme A6 (17e.2b): ${keep.why} What perishes is this good's own spoilage times the share of it the holder went without, which is the same read every kind of plant answers its wear with (Law 4).`,
+      });
+    }
     // Law 8: the technology is stated per NAMED unit — hours for a tonne — and the state counts
     // in pieces of each. What a piece of this good takes is therefore that ratio carried onto both
     // grids, and it is done here, once, where the number is declared (Law 4).
