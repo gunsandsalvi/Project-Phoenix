@@ -71,8 +71,16 @@ import {
   strikesPublished,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
-import { askToFund, cashOf, committedTo, type Facility, facilityFor, holeIn } from './deal.js';
-import { facilityLoanId, LOAN, type LoanTerms } from '../../registry/credit.js';
+import {
+  askToFund,
+  cashOf,
+  committedTo,
+  equityOf,
+  type Facility,
+  facilityFor,
+  facilityRow,
+  holeIn,
+} from './deal.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -726,26 +734,7 @@ function drawnLegs(
   cash: Qty,
   price: PerPiece,
 ): Leg[] {
-  const row = facilityLoanId(facility.bank, bid.target);
-  if (!ctx.instruments.has(row)) {
-    const terms: LoanTerms = {
-      kind: LOAN,
-      originator: facility.bank,
-      borrower: bid.target,
-      // A2: the rate and the term were struck when the line was committed, not when it is drawn.
-      rate: facility.rate,
-      drawn: ctx.calendar.startOf(ctx.period),
-      maturity: facility.maturity,
-      dayCount: 'ACT/365F',
-      // Bond F3: a buyout's debt is a term loan the company pays down, never a line it draws at
-      // will — which is what makes C1's *"less room out of cash flow"* a payment and not a mood.
-      amortising: true,
-      // A4: unsecured. What a lender takes security over in a buyout is a covenant it bids for,
-      // and no holder bids a covenant yet (finding 21.60(b), positioned at 17b.8).
-      security: [],
-    };
-    ctx.issue({ id: row, kind: LOAN, issuer: some(bid.target), ccy: bid.ccy, terms, market: none() });
-  }
+  const row = facilityRow(ctx, bid.target, facility, bid.ccy);
   return [
     {
       kind: 'asset',
@@ -1105,7 +1094,8 @@ export interface Wanted {
  * **What counts as money it can pay with** is its own balance PLUS what a lender has committed to
  * the target for this deal (`committedTo`), because the commitment is drawn inside the instruction
  * that completes the purchase (17b.3). A deal a bank has promised to fund is therefore bid for and
- * not asked about again.
+ * not asked about again. What it could CALL from its investors counts toward the cheque it
+ * publishes and never toward a bid: a promise is not money until it has been called (A2).
  */
 export function controlDealsFor(
   view: ParticipantView,
@@ -1113,11 +1103,12 @@ export function controlDealsFor(
   lines: readonly Instrument[],
 ): { readonly bids: readonly Bid[]; readonly wanted: readonly Wanted[] } {
   const ccy = view.registry.currencyOf(view.self.region);
-  const held = view.cash(ccy);
-  // B3: a buyout with no equity cheque at all is not a buyout. A buyer with nothing of its own is
-  // not levering anything — it is asking a bank to buy a company and hold the shares for it.
-  if (held <= 0) return { bids: [], wanted: [] };
-  const cash = cashOf(held, ccy);
+  const cash = cashOf(view.cash(ccy), ccy);
+  // B3, A2: what it could bring ITSELF — its own money, and for a pool the capital it could still
+  // call. A buyout with no equity cheque at all is not a buyout: a buyer with nothing of its own is
+  // not levering anything, it is asking a bank to buy a company and hold the shares for it.
+  const equity = equityOf(ctx, view.self.id, cash);
+  if (equity.pieces <= 0) return { bids: [], wanted: [] };
   // B1: what this buyer's own money costs it, which is the same number for every company on the
   // list, and a firm nobody will lend to does not look at the list at all.
   const required = costOfMoneyOf(ctx, view.self.id);
@@ -1150,9 +1141,31 @@ export function controlDealsFor(
      * mechanism this world does not have.
      */
     const committed = committedTo(ctx, target, ccy);
-    const hole = holeIn(cost, cash, committed);
-    if (hole.pieces <= 0) bids.push(bid);
-    else wanted.push({ bid, cost, has: cash, hole });
+    // It BIDS on what it has: its balance and what a lender has already committed to the company,
+    // because that is drawn inside the instruction that completes the purchase. What it could call
+    // is not money yet (A2) — it has to call it first, which is what the ask below is for.
+    if (holeIn(cost, cash, committed).pieces <= 0) {
+      bids.push(bid);
+      continue;
+    }
+    if (cost.pieces <= cash.pieces) continue;
+    /**
+     * B2, B3 (17b.4): THE TWO HALVES OF WHAT IT STILL HAS TO FIND. It brings what it can — its own
+     * money and what it could call — and the company's lenders are asked for the rest; a deal it
+     * could fund entirely itself asks for nothing and is published all the same, because the pool
+     * paying for it still has to call the money before the tender.
+     */
+    const cheque = cost.pieces <= equity.pieces ? cost : equity;
+    wanted.push({
+      bid,
+      cost,
+      has: cheque,
+      hole: minus(
+        minus(cost, cheque, 'what the buyer cannot bring'),
+        committed,
+        'and what a lender has already committed',
+      ),
+    });
   }
   return { bids, wanted };
 }

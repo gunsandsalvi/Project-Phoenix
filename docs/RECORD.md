@@ -13445,3 +13445,19 @@ The tolerance is arithmetic dust derived from the three magnitudes (Law 7), neve
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
 two new tests, five green in the file. §29 B5 re-marked MET.
+
+## Item 17b.4a — The half of 17b.4 that did not land
+
+17b.4's record said a buyer counts what it could call beside its balance when weighing a deal, and
+that half of the change was not in the commit: `fund.struck` published `couldCall` and nothing read
+it, so `controlDealsFor` still refused to look at a company unless the buyer held cash, and the
+cheque it published was its balance rather than what it could bring.
+
+It is here now, and it is the distinction the clause turns on. **What it COULD CALL counts toward
+the cheque it publishes and never toward a bid**: a promise is not money until it has been called
+(A2), so a buyer bids on its balance plus what a lender has already committed to the company, and
+asks for the rest naming a cheque that includes what its investors still owe it. A pool with nothing
+in the bank can now see a deal it could call the money for; it still cannot bid until it has.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green. `buyout` five green,
+`committed-capital` nine green with the one red that is 21.74.

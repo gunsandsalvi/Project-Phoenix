@@ -21,7 +21,14 @@ import { strikeOf } from '../../registry/funding.js';
 import type { Civil } from '../../calendar/civil.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { FACILITY, isFacility } from '../../registry/credit.js';
+import {
+  FACILITY,
+  facilityLoanId,
+  isFacility,
+  LOAN,
+  type LoanTerms,
+} from '../../registry/credit.js';
+import type { InstrumentId } from '../../core/ids.js';
 import type { MechanismContext } from '../../world/context.js';
 
 /** E1: one lender's standing promise to a named company, as the party that will draw it reads it. */
@@ -161,3 +168,41 @@ export function equityOf(ctx: MechanismContext, buyer: PartyId, cash: Cash): Cas
 /** A buyer's own money, as money rather than a count — one crossing, named (Law 8). */
 export const cashOf = (pieces: number, ccy: CurrencyCode): Cash =>
   asCash(pieces, ccy, 'what the buyer holds toward it');
+
+/**
+ * §29 B2, B2.a, Banks Lending A1, A2, F1.a (17b.3): THE ROW A COMMITMENT IS DRAWN INTO, made once.
+ *
+ * One row per (lender, borrower), named so the lender's own headroom read and the borrower's
+ * drawing are asking about the same number (Law 4, Law 19), and a second drawing adds to it rather
+ * than writing a new one. The rate and the term came from the promise, not from the day it was
+ * drawn: commitment papers say both, and the party that draws is not the party that decided them.
+ *
+ * It is here rather than beside either caller because a buyout draws it to pay sellers and a
+ * recapitalisation draws it to pay the owner, and a row with two sets of terms would be two rows.
+ */
+export function facilityRow(
+  ctx: MechanismContext,
+  target: PartyId,
+  facility: Facility,
+  ccy: CurrencyCode,
+): InstrumentId {
+  const row = facilityLoanId(facility.bank, target);
+  if (ctx.instruments.has(row)) return row;
+  const terms: LoanTerms = {
+    kind: LOAN,
+    originator: facility.bank,
+    borrower: target,
+    rate: facility.rate,
+    drawn: ctx.calendar.startOf(ctx.period),
+    maturity: facility.maturity,
+    dayCount: 'ACT/365F',
+    // Bond F3: a term loan the company pays down, never a line it draws at will — which is what
+    // makes C1's *"less room out of cash flow"* a payment and not a mood.
+    amortising: true,
+    // A4: unsecured. What a lender takes security over here is a covenant it bids for, and no
+    // holder bids a covenant yet (finding 21.60(b), positioned at 17b.8).
+    security: [],
+  };
+  ctx.issue({ id: row, kind: LOAN, issuer: some(target), ccy, terms, market: none() });
+  return row;
+}
