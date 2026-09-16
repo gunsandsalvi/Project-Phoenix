@@ -33,7 +33,7 @@ export interface AuditView {
   readonly voyages: VoyagesRead;
   readonly params: Pick<ParamRegister, 'report' | 'all' | 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount'>;
   readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell'>;
-  readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy' | 'version'>;
+  readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy' | 'ofKind' | 'version'>;
   readonly register: Pick<
     Register,
     | 'holding'

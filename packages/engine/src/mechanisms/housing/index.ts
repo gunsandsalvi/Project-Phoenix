@@ -1,7 +1,7 @@
 /**
  * Housing: who lives where, what they pay for it, and who owns the roof.
  *
- * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing A5 Housing B1 Housing B2 Housing B5 Housing D1 Households A2.b Households E1 Households E5 Labour A2 Clearing A2 Clearing B2 Clearing C4.b Law 2 Law 3 Law 5 Law 15 Law 19 XI-15
+ * @spec Housing A1 Housing A1.a Housing A2 Housing A3 Housing A4 Housing A5 Housing B1 Housing B2 Housing B5 Housing D1 Housing E1 Households A2.b Households E1 Households E5 Labour A2 Banks Lending A2 Clearing A2 Clearing B2 Clearing C4.b Expectations A2 Law 2 Law 3 Law 5 Law 8 Law 15 Law 19 XI-8 XI-15
  *
  * A DWELLING IS A GOOD (13d). It is built by named builders out of concrete, timber, steel and
  * glass, it takes half a year, it stands where it was built and it wears out — so there is no
@@ -33,6 +33,13 @@
  * its members live in has nothing to rent and does not bid, so it pays nobody. A household that
  * owns none rents all of them. A party that owns more than it lives in is a landlord, and that is
  * the whole of what makes one.
+ *
+ * A RENTAL STOCK HAS DWELLINGS BEHIND IT (A3, 15.5). The landlord sector (15.3) opens holding
+ * dwellings to let beside its premises, and offers in the same book a household does — the same
+ * reads, the same reason, and no kind of its own. A tenancy has a TERM: when its day passes the roof
+ * is re-let and a tenant still short bids again. And a landlord ENDS a tenancy when what it expects
+ * to be paid on it — the rent struck, at its own view of whether this tenant pays — falls below what
+ * letting the roof costs it: a comparison of two of its own reads, with no threshold anywhere.
  */
 import {
   type Cash,
@@ -54,7 +61,7 @@ import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { agreementKindId, type AgreementId, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
-import { atMost, sum } from '../../core/num.js';
+import { atMost, div, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { addQty, asQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
@@ -62,7 +69,9 @@ import type { Leg } from '../../ledger/instruction.js';
 import { keyOf, weightOf, gridPerMember } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
-import { creditorOf, isLoan } from '../../registry/credit.js';
+import { LOAN, creditorOf, isLoan } from '../../registry/credit.js';
+import { LANDLORD } from '../../registry/property.js';
+import { addDays, compareCivil, type Civil } from '../../calendar/civil.js';
 import { creditDefaults } from '../../registry/banking.js';
 import { isTenancy, type TenancyTerms as PublicTenancyTerms } from '../../registry/funding.js';
 import type { InstrumentId } from '../../core/ids.js';
@@ -98,16 +107,22 @@ export const TENANCY = agreementKindId('housing.tenancy');
  * a tenant reads what falls due on it off its own commitments, and it may not import this module.
  * What this module adds is the region the letting is in.
  */
-/** Law 15: the public shape, and this module's region on it. */
-const isOwnTenancy = (t: AgreementTerms): t is TenancyTerms => isTenancy(t) && 'region' in t;
+/** Law 15: the public shape, and this module's region and day on it. */
+const isOwnTenancy = (t: AgreementTerms): t is TenancyTerms => isTenancy(t) && 'region' in t && 'until' in t;
 
 export interface TenancyTerms extends PublicTenancyTerms {
   readonly kind: typeof TENANCY;
   readonly region: RegionId;
-  /** A2: struck at the letting and moving only by a new letting. */
+  /** A2: struck at the letting and moving only by a new letting. Money per piece of occupancy, a period. */
   readonly rentPerDwelling: PerPiece;
+  /** Law 8 (15.5): pieces of OCCUPANCY — the book's own unit (`DWELLING_WEEKS`), never the register's. */
   readonly dwellings: Qty;
+  /** A3 (15.5): the day it runs to. When it passes the roof is re-let, and a tenant still short bids again. */
+  readonly until: Civil;
 }
+
+/** 15.5: a landlord ended a tenancy, and said why — public, because a tenant put out is a fact of the place. */
+export const TENANCY_ENDED = 'housing.tenancy.ended';
 
 /**
  * One tenancy as this module reads it. The TENANT owes the rent, so it is the debtor and the
@@ -151,13 +166,14 @@ export const leasesOf = (ctx: MechanismContext): readonly Lease[] =>
  */
 function signs(
   ctx: MechanismContext,
-  d: { tenant: PartyId; landlord: PartyId; region: RegionId; rentPerDwelling: PerPiece; dwellings: Qty },
+  d: { tenant: PartyId; landlord: PartyId; region: RegionId; rentPerDwelling: PerPiece; dwellings: Qty; until: Civil },
 ): void {
   const terms: TenancyTerms = {
     kind: TENANCY,
     region: d.region,
     rentPerDwelling: d.rentPerDwelling,
     dwellings: d.dwellings,
+    until: d.until,
   };
   ctx.owes({
     debtor: d.tenant,
@@ -175,16 +191,36 @@ function ends(ctx: MechanismContext, lease: Lease, why: string): void {
 }
 
 /** Law 8: the unit a dwelling is counted in, which is the instrument's own. */
-function goodUnitOf(view: ParticipantView, region: RegionId): UnitId {
+function goodUnitOf(view: Pick<ParticipantView, 'instruments'>, region: RegionId): UnitId {
   return view.instruments.get(goodId(DWELLING, region)).unit;
 }
 
-/** A3, D1: dwellings this party OWNS in a place, IN PIECES — the register's own answer. */
+/**
+ * A2, Law 8 (15.5): THE REGISTER COUNTS DWELLINGS AND THE BOOK COUNTS OCCUPANCY, and a dwelling
+ * gives one dwelling-week of occupancy a period — so the two grids meet here, once, and every
+ * order, every tenancy and every rent in this module is in the book's own unit from here on.
+ */
+type UnitReads = Pick<ParticipantView, 'registry' | 'instruments'>;
+
+function occupancyOf(view: UnitReads, region: RegionId, held: Qty): Qty {
+  const perDwelling = view.registry.subdivision(goodUnitOf(view, region));
+  // Law 8: multiply before dividing — both counts are whole and their product is exact, where a
+  // quotient of them is not (the publish of a short of 2,112,800,000.0000002 pieces was the tell).
+  return asQty(div(held * view.registry.subdivision(DWELLING_WEEKS), perDwelling, 'the occupancy the dwellings it holds give'), 'the occupancy it holds');
+}
+
+/** The other way: occupancy back to the register's pieces, for a reader that bids for the THING (`homeBid`). */
+function dwellingsOf(view: UnitReads, region: RegionId, occupancy: number): number {
+  const perWeek = view.registry.subdivision(DWELLING_WEEKS);
+  return div(occupancy * view.registry.subdivision(goodUnitOf(view, region)), perWeek, 'the dwellings that occupancy is');
+}
+
+/** A3, D1: the occupancy this party OWNS in a place — the register's own answer, in the book's unit. */
 function owned(view: ParticipantView, region: RegionId): Qty {
   const id = goodId(DWELLING, region);
   if (!view.instruments.has(id)) return NO_QTY;
   // XI-15, 0f.1: a cell's holding IS the total the people it stands for own between them.
-  return view.free(id);
+  return occupancyOf(view, region, view.free(id));
 }
 
 /**
@@ -210,10 +246,14 @@ function taken(view: ParticipantView): Qty {
   return sum(tenancies(view).filter((l) => l.tenant === me).map((l) => l.dwellings)).value;
 }
 
-/** E1, XI-15: how many dwellings the people in this cell live in. Whole dwellings, per cell. */
+/**
+ * E1, XI-15: the occupancy the people in this cell live under, for the whole cell. Law 15: a cell
+ * whose lattice has no cohort — a landlord's — houses nobody, which is the shape of its key and not
+ * its kind.
+ */
 function needs(view: ParticipantView, rows: readonly TenureDecl[]): Qty {
   const self = view.self;
-  if (self.representation !== 'cell') return NO_QTY;
+  if (self.representation !== 'cell' || !('cohort' in self.key)) return NO_QTY;
   const cohort = keyOf(self, 'cohort');
   const row = rows.find((r) => r.cohort === cohort);
   if (row === undefined) return NO_QTY;
@@ -224,7 +264,7 @@ function needs(view: ParticipantView, rows: readonly TenureDecl[]): Qty {
    * four tenths of a DWELLING, and what a register, a venue and a price all speak is pieces of one.
    */
   return view.registry.pieces(
-    goodUnitOf(view, self.region),
+    DWELLING_WEEKS,
     asNamed(
       scale(per, asRatio(weightOf(self), 'the people in it'), 'the occupancy the people in it need between them'),
       'the occupancy they need between them',
@@ -242,7 +282,9 @@ function wearOf(view: ParticipantView, region: RegionId): PerPiece | undefined {
   if (!view.instruments.has(id)) return undefined;
   const print = view.print(id);
   if (!print.some) return undefined;
-  return scale(print.value.price, view.params.ratio(spoilageParam(DWELLING)), 'what a period of it wears');
+  // Law 8: the print is money per piece of the THING; the book asks money per piece of occupancy.
+  const wearPerDwelling = scale(print.value.price, view.params.ratio(spoilageParam(DWELLING)), 'what a period of it wears') * view.registry.subdivision(goodUnitOf(view, region));
+  return asPerPiece(div(wearPerDwelling, view.registry.subdivision(DWELLING_WEEKS), 'per piece of occupancy'), 'what a period of occupancy wears out of the roof');
 }
 
 /**
@@ -252,13 +294,13 @@ function wearOf(view: ParticipantView, region: RegionId): PerPiece | undefined {
  */
 function reservation(view: ParticipantView, rows: readonly TenureDecl[]): PerPiece | undefined {
   const self = view.self;
-  if (self.representation !== 'cell') return undefined;
+  if (self.representation !== 'cell' || !('cohort' in self.key)) return undefined;
   const row = rows.find((r) => r.cohort === keyOf(self, 'cohort'));
   if (row === undefined) return undefined;
   const income = view.outlook(about({ on: 'income' }));
   if (!income.some || income.value.expected <= 0) return undefined;
   const per = view.registry.pieces(
-    goodUnitOf(view, self.region),
+    DWELLING_WEEKS,
     asNamed(
       view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))),
       'the occupancy a member lives under',
@@ -324,6 +366,18 @@ function ordersOf(
   return out;
 }
 
+/** 15.5, Law 8: the last rent this book struck and when, off its own record — carried onto a print that struck none. */
+function lastStruck(ctx: MechanismContext, venue: VenueDecl): { readonly rentPerDwelling?: number; readonly struckIn?: number } {
+  const said = ctx.journal.forSubject(RENT_PRINT, String(venue.id));
+  for (let n = said.length - 1; n >= 0; n -= 1) {
+    const e = said[n];
+    const rent = e?.data['rentPerDwelling'];
+    const at = e?.data['struckIn'];
+    if (typeof rent === 'number' && rent > 0 && typeof at === 'number') return { rentPerDwelling: rent, struckIn: at };
+  }
+  return {};
+}
+
 /** A2, Clearing C4.b: the letting session in one place, and it says what it did either way. */
 function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   const region = venue.key['region'] as RegionId | undefined;
@@ -331,21 +385,19 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   const posted = ctx.posted(venue.id);
   const orders = posted.filter((o) => o.price !== 'market');
   const outcome = clear(orders, 'proRata', 'marginalBid');
+  // Law 8, XI-6: a session that does not clear leaves the LAST rent struck on the record with the
+  // period it was struck in, so a reader sees the level and how stale it is, never a gap.
+  const carried = lastStruck(ctx, venue);
   if (!isCleared(outcome)) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind }, true);
+    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind, ...carried, bids: orders.filter((o) => o.side === 'buy').length, asks: orders.filter((o) => o.side === 'sell').length }, true);
     return;
   }
-  let struck: PerPiece | undefined;
-  for (const f of outcome.fills) {
-    if (f.side !== 'buy' || f.qty <= 0) continue;
-    if (struck === undefined || f.at < struck) struck = f.at;
-  }
-  if (struck === undefined) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: 'noDemand' }, true);
-    return;
-  }
+  // Law 19: the rent is the level the solver cleared at, read off its outcome and never re-derived
+  // from the fills. The fills say who is under whose roof (below); the price says at what.
+  const struck = outcome.price;
+  const until = addDays(ctx.calendar.startOf(ctx.period), ctx.params.periods(HOUSING_PARAMS.tenancyTerm) * ctx.calendar.periodDays);
   // A3: who ends up under whose roof. Owners with the least to ask are let first, tenants with the
-  // most to pay are housed first, and both queues are walked a whole dwelling at a time (A1.a).
+  // most to pay are housed first, and both queues are walked in the solver's own fills.
   const owners = outcome.fills
     .filter((f) => f.side === 'sell' && f.qty > 0)
     .sort((a, b) => a.at - b.at);
@@ -354,6 +406,7 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
     .sort((a, b) => b.at - a.at);
   let at = 0;
   let left: Qty = owners[0]?.qty ?? asQty(0);
+  let signed = 0;
   for (const t of tenants) {
     let want = t.qty;
     while (want > 0 && at < owners.length) {
@@ -371,7 +424,9 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
         region,
         rentPerDwelling: struck,
         dwellings,
+        until,
       });
+      signed += 1;
       want = subQty(want, dwellings, 'what it is still short of');
       left = subQty(left, dwellings, 'what this owner has left');
     }
@@ -384,7 +439,10 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
       region,
       outcome: 'cleared',
       rentPerDwelling: struck,
+      struckIn: ctx.period,
       dwellings: outcome.volume,
+      tenancies: signed,
+      until,
       // D1: the levels the owners were prepared to let at, so the print can be checked against them.
       asks: orders.filter((o) => o.side === 'sell').map((o) => o.price),
     },
@@ -396,14 +454,42 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
  * A2, Law 5: THE RENT IS PAID, both legs, every period, by name. A tenant that cannot pay fails to
  * pay — settlement records it — and the tenancy stands, because what ends a tenancy is somebody
  * ending it and not a payment going missing (Housing C4 is the secured lender's path, not this).
+ *
+ * 15.5, A3, XI-8: WHAT ENDS ONE. Its day passes, and the roof is re-let (a tenant still short bids
+ * again in the next session). Or the LANDLORD ends it: it holds its own view of whether this tenant
+ * pays — formed from the rents that came and the rents that did not, and from nothing else
+ * (Expectations A2, Banks Lending A2) — and when the rent struck, at that view, is worth less to it
+ * a period than the wear the tenant puts on the roof, it would rather have the roof back and let it
+ * to somebody who pays. Two of its own reads compared; no count of missed rents, no threshold.
  */
 function collect(ctx: MechanismContext): void {
+  const today = ctx.calendar.startOf(ctx.period);
   for (const lease of leasesOf(ctx)) {
     const tenant = ctx.parties.get(lease.tenant);
     const landlord = ctx.parties.get(lease.landlord);
     if (!tenant.status.alive || !landlord.status.alive) {
       ends(ctx, lease, 'a side of it has ceased');
       continue;
+    }
+    if (compareCivil(lease.until, today) <= 0) {
+      ends(ctx, lease, 'the term ended');
+      continue;
+    }
+    const owner = ctx.participant(lease.landlord);
+    const pays = owner.outlook(about({ on: 'credit', party: lease.tenant }));
+    const floor = wearOf(owner, lease.region);
+    if (pays.some && floor !== undefined) {
+      const worth = scale(lease.rentPerDwelling, asRatio(pays.value.expected, 'the share of what falls due it expects to arrive'), 'what a piece of the tenancy is worth to it a period');
+      if (worth < floor) {
+        ends(ctx, lease, 'the landlord ended it: what it expects to be paid is below what letting costs it');
+        ctx.record(
+          TENANCY_ENDED,
+          [lease.tenant, lease.landlord],
+          { tenancy: lease.id, tenant: lease.tenant, landlord: lease.landlord, region: lease.region, rentPerDwelling: lease.rentPerDwelling, expectsPaid: pays.value.expected, worth, wear: floor, by: 'landlord' },
+          true,
+        );
+        continue;
+      }
     }
     const ccy = ctx.registry.currencyOf(lease.region);
     const whole = valueAt(lease.rentPerDwelling, lease.dwellings, 'the rent on this tenancy');
@@ -419,6 +505,8 @@ function collect(ctx: MechanismContext): void {
       kind: 'money',
       from: ctx.accountOf(lease.tenant, ccy),
       to: ctx.accountOf(lease.landlord, ccy),
+      // 15.5: a rent is a promise falling due, and whether it comes is what the landlord learns of the tenant.
+      receipt: { of: 'rent' },
       ccy,
       amount: share.total,
     };
@@ -461,10 +549,13 @@ function mortgagesOf(
   // register already indexes a party's own rows and this asks it. Walking every instrument in the
   // world to find one household's mortgages is a search that grows with everything the world has
   // written — every invoice, every bond, every share — while the answer is one or two rows.
+  // 15.5, Law 15: a mortgage is a loan SECURED ON THE ROOF OF THE BORROWER'S PLACE — the named
+  // line, compared by name, never a prefix of a string.
+  const roof = goodId(DWELLING, ctx.parties.get(borrower).region);
   for (const i of ctx.instruments.issuedBy(borrower)) {
     if (!i.status.live || !isLoan(i.terms)) continue;
     const t = i.terms;
-    if (!t.security.some((sec) => String(sec.instrument).startsWith(`good.${DWELLING}.`))) continue;
+    if (!t.security.some((sec) => sec.instrument === roof)) continue;
     // C5, XI-11: WHO FORECLOSES is whoever is owed the row today. A mortgage sold into a pool is
     // foreclosed by the pool, which is what makes the transfer a real one (Law 19).
     const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
@@ -649,15 +740,18 @@ function foreclose(ctx: MechanismContext): void {
     const on = e.data['instrument'];
     if (typeof on === 'string') defaulted.add(on);
   }
-  for (const i of ctx.instruments.all()) {
+  // 15.5, Law 18, Law 19: the loans, off the register's own index of the kind — never every line
+  // in the world read for the few that are loans.
+  for (const i of ctx.instruments.ofKind(LOAN)) {
     if (!i.status.live || !isLoan(i.terms)) continue;
     const t = i.terms;
-    if (!t.security.some((sec) => String(sec.instrument).startsWith(`good.${DWELLING}.`))) continue;
     if (!defaulted.has(String(i.id))) continue;
     // Register F2: the borrower as it is now — its estate, if it failed; the cell it joined, if it moved.
     const borrower = ctx.parties.resolve(t.borrower);
     const id = goodId(DWELLING, borrower.region);
     if (!ctx.instruments.has(id)) continue;
+    // Law 15: secured on the roof of its place, by name.
+    if (!t.security.some((sec) => sec.instrument === id)) continue;
     const print = ctx.prices.latest(id, ctx.period);
     if (!print.some) continue;
     // Law 19: the liens are the register's own, read where they live. What the lender may take is
@@ -668,7 +762,8 @@ function foreclose(ctx: MechanismContext): void {
     const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
     if (!owed.some) continue;
     const lender = owed.value;
-    const liens = holding.value.liens.filter((l) => l.reason.includes(String(i.id)));
+    // Register D5.b: a lien says what it secures, and this loan's liens are the ones that say this loan.
+    const liens = holding.value.liens.filter((l) => l.reason === String(i.id));
     for (const lien of liens) {
       const settled = ctx.settle({
         legs: [
@@ -703,15 +798,36 @@ function foreclose(ctx: MechanismContext): void {
 }
 
 function params(rows: readonly TenureDecl[]): ParamDecl[] {
-  return rows.map((r) => ({
-    id: HOUSING_PARAMS.perMember(r.cohort),
-    value: r.perMember,
-    unit: 'dwellings per person',
-    dimension: 'ratio' as const,
-    kind: 'preference' as const,
-    owner: 'model' as const,
-    why: `Housing A1, Households E1: ${r.why}`,
-  }));
+  return [
+    ...rows.map((r) => ({
+      id: HOUSING_PARAMS.perMember(r.cohort),
+      value: r.perMember,
+      unit: 'dwellings per person',
+      dimension: 'ratio' as const,
+      kind: 'preference' as const,
+      owner: 'model' as const,
+      why: `Housing A1, Households E1: ${r.why}`,
+    })),
+    {
+      id: HOUSING_PARAMS.tenancyTerm,
+      value: 52,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'technology',
+      owner: 'standardSetter',
+      why: 'Housing A3 (15.5): how long a tenancy runs for — a year, a convention of the contract stated with it. A tenancy has a TERM, which is what makes a rent struck once a rent the tenant is still paying (A2), and what lets the roof be re-let when it ends.',
+    },
+    {
+      id: HOUSING_PARAMS.dwellingsPerLandlord,
+      value: 20,
+      unit: 'dwellings a landlord',
+      dimension: 'count',
+      kind: 'placeholder',
+      owner: 'model',
+      standsInFor: { mechanism: 'Seed C4, Housing A4: the dwellings a landlord opens holding is a stock the opening states', item: '22a' },
+      why: 'Housing A3, A4 (15.5): what a landlord opens holding of dwellings, to let. A rental stock must have dwellings behind it, and until this the world had forty thousand households and no dwelling anybody held. A SHAPE with its death at 22a: the stock is a register of units with owners, moved by what changes hands and what is built, and the opening is where it starts.',
+    },
+  ];
 }
 
 export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
@@ -731,8 +847,9 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
     // now; there is no `ctx.state` slot left here at all, which is what a migration looks like when
     // the whole of what a module was keeping turns out to be a thing the kernel should own.
     spec: 'Housing',
-    // It needs the dwelling to be a line and the people to be cells, and nothing else.
-    requires: ['goods', 'households'],
+    // It needs the dwelling to be a line, the people to be cells, and (15.5) the landlords to exist
+    // before its seed gives them the dwellings they let.
+    requires: ['goods', 'households', 'property'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
@@ -800,19 +917,25 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       },
       {
         name: 'housing.rent',
-        spec: 'Housing A2 Households E5 Law 5',
+        spec: 'Housing A2 Housing A3 Households E5 Law 5 XI-8',
         anchor: { after: 'markets' },
         reads: [],
-        writes: [],
+        writes: [{ kind: 'event', name: TENANCY_ENDED }],
         run: (ctx: MechanismContext) => {
           collect(ctx);
         },
       },
     ],
     participants: [],
+    // A3, Clearing B2: whoever owns a roof may let it and whoever needs one may take it, by the same
+    // reads. A landlord (15.3) is in the book as an owner with nobody of its own to house.
     venueParticipants: [
       {
         partyKind: HOUSEHOLD,
+        orders: (view, venue) => ordersOf(view, venue, rows),
+      },
+      {
+        partyKind: LANDLORD,
         orders: (view, venue) => ordersOf(view, venue, rows),
       },
     ],
@@ -828,6 +951,23 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
           ccy: ctx.registry.currencyOf(region.id),
           key: { region: region.id },
         });
+      }
+      /**
+       * A3, A4, E1, Seed C4 (15.5): THE RENTAL STOCK, WITH OWNERS. Each landlord member opens holding
+       * so many whole dwellings of its place, carried at what a dwelling there was last worth — a
+       * stock the opening states and the letting book then acts on. The landlord cells are the
+       * property module's (15.3) and the foundation's (15.4); what this module adds is the roofs.
+       */
+      const per = ctx.params.count(HOUSING_PARAMS.dwellingsPerLandlord);
+      if (per <= 0) return;
+      for (const cell of ctx.parties.ofKind(LANDLORD)) {
+        if (!cell.status.alive) continue;
+        const id = goodId(DWELLING, cell.region);
+        if (!ctx.instruments.has(id)) continue;
+        const print = ctx.prices.latest(id, ctx.period);
+        if (!print.some) continue;
+        const pieces = ctx.registry.pieces(ctx.instruments.get(id).unit, asNamed(per, 'the dwellings a landlord opens with'));
+        ctx.endowUnits(cell.id, id, pieces, print.value.price);
       }
     },
   };
@@ -864,12 +1004,14 @@ function publishShortfall(
       {
         cell: p.id,
         region: p.region,
-        needs: need,
-        owns: has,
-        rents: rented,
+        // Law 8 (15.5): the book counts occupancy; a buyer of the THING bids in the register's
+        // pieces of it, so what is published is converted once, here, for that reader (`homeBid`).
+        needs: dwellingsOf(view, p.region, need),
+        owns: dwellingsOf(view, p.region, has),
+        rents: dwellingsOf(view, p.region, rented),
         // E1: what its people live in that it neither owns nor has taken a lease on. Negative is a
         // cell with more housing than its people need, which is a real state and is said as one.
-        short,
+        short: dwellingsOf(view, p.region, short),
         dwelling: goodId(DWELLING, p.region),
       },
       true,

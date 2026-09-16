@@ -21,6 +21,10 @@ export const rentVenue = (region: RegionId): VenueId => venueId(`rent.${region}`
 
 export const HOUSING_PARAMS = {
   perMember: (cohort: string): ParamId => paramId(`housing.dwellingsPerMember.${cohort}`),
+  /** 15.5, A3: a convention of the contract — how long a tenancy runs before the roof is re-let. */
+  tenancyTerm: paramId('housing.tenancyTermPeriods'),
+  /** 15.5, Seed C4: the dwellings a landlord opens holding to let. A shape with its death at 22a. */
+  dwellingsPerLandlord: paramId('housing.seed.dwellingsPerLandlord'),
 } as const;
 
 export interface TenureDecl {

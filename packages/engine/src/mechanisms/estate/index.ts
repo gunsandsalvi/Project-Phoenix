@@ -435,11 +435,24 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       pricePerUnit: some(asPerPiece(0, 'at what it promised')),
       accruedPerUnit: none(),
     };
-    ctx.settle({
+    const wrote = ctx.settle({
       legs: [leg],
       cause: 'default',
       reason: `${estate} writes off what it cannot pay of ${c.instrument}`,
     });
+    // 15.5, Money E4: a claim the holder cannot hand back — its units are bound to somebody else —
+    // is still a claim on this estate, and an estate that ceased with one standing left a line
+    // whose next maturity addressed a party that no longer existed (the run stopped there). It
+    // says so and stays open, as it does with paper nobody bought.
+    if (wrote.outcome !== 'settled') {
+      ctx.record(
+        'estate.residual',
+        [estate, c.instrument],
+        { estate, left: c.units, instrument: c.instrument, holder: c.holder, why: 'the holder could not hand it back: the estate stays open' },
+        true,
+      );
+      return;
+    }
   }
   // D6.a: a residual on a dead party is a defect and must be found and paid away in every account
   // it held. Law 7: what is left is the residue of a balance moved once per leg since the estate

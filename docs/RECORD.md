@@ -12129,3 +12129,42 @@ programme, each failed maturity writes an arrear, and each arrear matures, fails
 the control rig goes from 1,200 ledger records a period to 27,000 by period 26 (21.36).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.5 — Tenancy: a term, a landlord's view of its tenant, and dwellings behind the rental stock
+
+The lettings book printed `noSupply` in every period because no dwelling existed: forty thousand
+households, a dwelling line, and nobody holding a unit of it. The landlord sector (15.3) opens
+holding dwellings of its place now and offers them in the same book, by the same reads, a household
+does. A tenancy has a term, and the roof is re-let when its day passes. A landlord holds a view of
+whether its tenant pays — the expectations module observes, for every money leg that pays what was
+owed under a standing commitment, the share of what fell due that arrived, as `credit.<payer>` of the
+party owed it — and ends the tenancy when the rent at that view is worth less to it than the wear
+the tenant puts on the roof. The session signs at the solver's own price; everything in the module
+is in the book's own unit, occupancy; the mortgage reads compare names, never prefixes; the register
+indexes lines by kind.
+
+**Measured.** `housing.test.ts`, twelve green, four new: every landlord opens holding dwellings and
+every dwelling has a live holder; tenancies are signed at the level the book printed, run to a day,
+and the rent moves tenant to landlord every period after; a tenancy of two periods ends on its day
+and the tenant is re-let; a tenant drained of its money fails three rents, is in probate that period,
+the landlord's view of it falls from 1 to 0.62 in two periods and it ends the three tenancies at
+0.62 × 0.0032 < 0.0022 a piece, saying both numbers. In the rig's own draw the book clears in period
+2 at 3,240 a dwelling a period for 7,996 dwellings, the landlords' whole stock is let by period 5,
+and the book prints `noSupply` with bids standing after — a shortage. `property.test.ts` four green
+(the CRE drain now runs just before the landlords ask, since dwelling rents refill them);
+`mortgage.test.ts` buys the roof its row stands on by hand, and its *when it cannot pay* is red:
+the bank now draws the roof-holding cell on its line when its account is emptied (21.40). Two stops found on the way and fixed where they were: the occupancy conversion published a short
+of 2,112,800,000.0000002 pieces (Law 8: the counts are multiplied before they are divided now), and
+an estate CEASED with a claim still standing on it when the holder could not hand the claim back —
+its units were bound to somebody else, the write-off leg failed and `close` went on — so the next
+maturity addressed a party that no longer existed (Money E4); an estate whose write-off does not
+settle says so and stays open now, as it does with paper nobody bought. The eighteen suites, in two
+halves: 73 red of 200, from 73 — *bids for nothing* (`control.test.ts`) green again at eleven
+seconds, and one red that was green: the treasury *funds itself over a year when the market is
+there* has eleven failed instructions in a year of the rig (21.41).
+
+**Findings.** A renting household never buys (21.39); a singleton's rent is its whole income
+(21.38); the dwelling good is on the tonne's grid (21.37); a roof-holding cell's default cannot be
+staged from outside (21.40); the treasury fails eleven instructions in a year of the rig (21.41).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

@@ -8,7 +8,10 @@ import { describe, expect, it } from 'vitest';
 import { DWELLING, HOUSEHOLD, LOAN, assemble, none, some, type LoanTerms, type MechanismContext, type SystemModule } from '../src/index.js';
 import { goodId } from '../src/registry/physical.js';
 import { addMonths } from '../src/calendar/civil.js';
-import { asPerPiece, asRatio } from '../src/core/measure.js';
+import { asPerPiece, asRatio, valueAt } from '../src/core/measure.js';
+import { asQty, downTick } from '../src/core/tick.js';
+import { weightOf, type Party } from '../src/parties/party.js';
+import { LANDLORD } from '../src/registry/property.js';
 import { mergeModules, rigFor, rigSpec, rigWorld } from './rig.js';
 
 describe('a cell asks for a mortgage while it is short of roofs, and a lender forecloses only on a default (12a.4)', () => {
@@ -60,11 +63,43 @@ const lend: SystemModule = {
       writes: [],
       run: (ctx: MechanismContext) => {
         if (ctx.period === 2) {
-          const cell = ctx.parties.ofKind(HOUSEHOLD).find((p) => {
-            if (p.representation !== 'cell' || !p.status.alive || p.key['estate'] !== 'living') return false;
-            const id = goodId(DWELLING, p.region);
-            return ctx.instruments.has(id) && ctx.register.quantity(p.id, id) > 0;
-          });
+          const living = (p: Party): boolean => p.representation === 'cell' && p.status.alive && p.key['estate'] === 'living' && ctx.instruments.has(goodId(DWELLING, p.region));
+          let cell = ctx.parties.ofKind(HOUSEHOLD).find((p) => living(p) && ctx.register.quantity(p.id, goodId(DWELLING, p.region)) > 0);
+          if (cell === undefined) {
+            // 15.5: a household here rents and never buys (21.39), so the roof this row stands on is
+            // bought by hand — one a member from a landlord of the place, at the last print, delivery
+            // against payment — the instruction any buyer of a roof would write.
+            // The smallest cell whose money reaches a piece of a roof: a cell of a few households, so
+            // that what it holds is what a wage or two comes to and a drained account stays drained.
+            const cells = ctx.parties.ofKind(HOUSEHOLD).filter(living).sort((a, b) => weightOf(a) - weightOf(b));
+            for (const p of cells) {
+              const id = goodId(DWELLING, p.region);
+              const print = ctx.prices.latest(id, ctx.period);
+              if (!print.some) continue;
+              const ccy = ctx.registry.currencyOf(p.region);
+              const cash = ctx.participant(p.id).cash(ccy);
+              // Law 8, XI-15: the pieces of a roof one member's money reaches, whole pieces and DOWN, for every member alike.
+              const perMember = downTick(cash / weightOf(p) / print.value.price);
+              if (perMember <= 0) continue;
+              const pieces = asQty(perMember * weightOf(p), 'what the cell buys');
+              const cost = ctx.registry.payable(valueAt(print.value.price, pieces, 'what that costs it'));
+              if (cash < cost) continue;
+              const seller = ctx.parties.ofKind(LANDLORD).find((l) => l.status.alive && l.region === p.region && ctx.register.free(l.id, id) >= pieces);
+              if (seller === undefined) continue;
+              const bought = ctx.settle({
+                legs: [
+                  { kind: 'asset', from: seller.id, to: p.id, instrument: id, qty: pieces, pricePerUnit: some(print.value.price), accruedPerUnit: none() },
+                  { kind: 'money', from: ctx.accountOf(p.id, ccy), to: ctx.accountOf(seller.id, ccy), receipt: { of: 'sale' }, ccy, amount: cost },
+                ],
+                cause: 'transfer',
+                reason: `${String(p.id)} buys a roof a member from ${String(seller.id)}`,
+              });
+              if (bought.outcome === 'settled') {
+                cell = p;
+                break;
+              }
+            }
+          }
           if (cell === undefined) return;
           const ccy = ctx.registry.currencyOf(cell.region);
           const bank = ctx.accountOf(cell.id, ccy).issuer;
@@ -97,8 +132,19 @@ const lend: SystemModule = {
           built.bank = String(bank);
           built.dwelling = String(dwelling);
         }
-        if (ctx.period === built.drains && built.cell !== '') {
-          // The week before a payment falls due, the cell's money goes elsewhere.
+      },
+    },
+    {
+      name: 'test.mortgageDrain',
+      spec: 'Housing C4',
+      // 15.5: the coupon falls due in the corporate actions at the top of the period, and the money
+      // goes elsewhere just before — after every wage and rent of the period before has landed, so
+      // nothing refills the account between the drain and the payment.
+      anchor: { before: 'corporateActions' },
+      reads: [],
+      writes: [],
+      run: (ctx: MechanismContext) => {
+        if (ctx.period === built.drains + 1 && built.cell !== '') {
           const cell = ctx.parties.resolve(built.cell as never);
           const ccy = ctx.registry.currencyOf(cell.region);
           const cash = ctx.participant(cell.id).cash(ccy);

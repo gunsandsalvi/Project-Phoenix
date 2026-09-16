@@ -42,7 +42,7 @@ import { add, atLeast, div, mul, sub, sum, addTo, zeroIfNone } from '../../core/
 import { assertNever } from '../../core/assert.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
-import { isAssetLeg, isContractLeg, isMoneyLeg } from '../../ledger/instruction.js';
+import { isAssetLeg, isContractLeg, isMoneyLeg, paysWhatWasOwed } from '../../ledger/instruction.js';
 import { issuedBy } from '../../register/instruments.js';
 import { findVenue } from '../../clearing/venue.js';
 import { depositRatePostedAt } from '../../registry/banking.js';
@@ -222,6 +222,33 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
           out.set(`${p}|${line}`, { value: leg.struckAt.level, unit: leg.ccy });
       }
     }
+  }
+  /**
+   * Banks Lending A2, Expectations A2 (15.5): WHETHER WHAT IT WAS OWED CAME. A money leg carrying a
+   * receipt for a standing commitment — a wage, a rent, a coupon — is a promise falling due, and
+   * the party owed it observes the share of what fell due that arrived: the whole of it when the
+   * instruction settled, none of it when it failed for the payer's want of money. It is the one
+   * belief a party holds ABOUT ANOTHER (`credit.<party>`), and it is formed from the instructions
+   * the two were sides of and from nothing else — never from the book, never from a rating. What
+   * a trade pays is a bargain struck this period and says nothing about anybody's promise
+   * (`paysWhatWasOwed`); a failure that was not the payer's says nothing about the payer.
+   */
+  const promised = new Map<string, { due: number; arrived: number }>();
+  for (const r of ctx.ledger.inPeriod(ctx.period)) {
+    const failedPayer = r.outcome === 'failed' ? r.reason.party : undefined;
+    for (const leg of r.instruction.legs) {
+      if (!isMoneyLeg(leg) || leg.receipt === undefined || !paysWhatWasOwed(leg.receipt)) continue;
+      if (r.outcome === 'failed' && failedPayer !== leg.from.holder) continue;
+      const key = `${leg.to.holder}|${about({ on: 'credit', party: leg.from.holder })}`;
+      const seen = promised.get(key) ?? { due: 0, arrived: 0 };
+      seen.due += leg.amount;
+      if (r.outcome === 'settled') seen.arrived += leg.amount;
+      promised.set(key, seen);
+    }
+  }
+  for (const [key, seen] of promised) {
+    if (seen.due <= 0) continue;
+    out.set(key, { value: seen.arrived / seen.due, unit: 'share of what fell due that arrived' });
   }
   // What a mark did to it is its result too, and it arrives without an instruction (XI-6).
   for (const e of ctx.journal.ofKind('revaluation')) {

@@ -95,6 +95,8 @@ export class Instruments {
    * issued or redeemed, and an index of stale copies is a second register (Law 4).
    */
   private readonly byIssuer = new Map<PartyId, InstrumentId[]>();
+  /** Law 18 (15.5): the same lines under their kind, written where a line is added. A reader asking for every loan walked every line in the world. */
+  private readonly byKind = new Map<InstrumentKindId, InstrumentId[]>();
   private everything: readonly Instrument[] | undefined;
   /**
    * Law 18: HOW MANY TIMES THIS REGISTER HAS CHANGED. It is not a fact about the world and nothing
@@ -160,6 +162,9 @@ export class Instruments {
       if (list === undefined) this.byIssuer.set(i.issuer.value, [i.id]);
       else list.push(i.id);
     }
+    const ofKind = this.byKind.get(i.kind);
+    if (ofKind === undefined) this.byKind.set(i.kind, [i.id]);
+    else ofKind.push(i.id);
     return i;
   }
 
@@ -183,6 +188,13 @@ export class Instruments {
   /** Register B3: what one party has promised — the instruments whose issuer it is, by name. */
   issuedBy(party: PartyId): readonly Instrument[] {
     const ids = this.byIssuer.get(party);
+    if (ids === undefined) return [];
+    return ids.map((id) => this.get(id));
+  }
+
+  /** Law 15, Law 18 (15.5): every line of one declared kind, live or ceased — the reader says which it wants. */
+  ofKind(kind: InstrumentKindId): readonly Instrument[] {
+    const ids = this.byKind.get(kind);
     if (ids === undefined) return [];
     return ids.map((id) => this.get(id));
   }
@@ -338,7 +350,7 @@ export class Instruments {
 }
 
 /** The read-only face of the instruments store, for mechanisms and participants. */
-export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issuedBy' | 'version'>;
+export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issuedBy' | 'ofKind' | 'version'>;
 
 /**
  * Law 8, Register A1.c: WHAT IS OUTSTANDING IS A WHOLE NUMBER OF PIECES, like every holding of it.

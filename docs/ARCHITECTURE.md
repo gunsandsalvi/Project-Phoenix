@@ -1668,3 +1668,22 @@ holdings and foreign-position marks of a cell are divided by its weight before t
 moves (the register holds totals, the account is per member, 0f.1) — as `revalueRows` always did.
 `securities-lending` marks at the last print (`lastMarkOf`).
 
+### A tenancy has a term and a landlord has a view of its tenant (item 15.5)
+
+`housing/index.ts`: `TenancyTerms.until` (`housing.tenancyTermPeriods`); `collect` ends a tenancy on
+its day, or when the landlord's outlook `credit.<tenant>` makes the rent struck worth less than the
+wear (`housing.tenancy.ended`), and pays the rent with `receipt: rent`. `letIn` signs at
+`outcome.price` and carries the last rent struck onto a print that struck none. The book's unit is
+occupancy (`DWELLING_WEEKS`); `occupancyOf`/`dwellingsOf` are the one conversion from the register's
+dwellings, and `housing.shortfall` publishes the register's pieces for `homeBid`. The landlord kind
+is a `venueParticipant` of the lettings book with the same `ordersOf`; the housing seed endows each
+landlord member with `housing.seed.dwellingsPerLandlord` dwellings at the last print (placeholder,
+22a), so housing `requires: property`. `ledger/instruction.ts paysWhatWasOwed` classifies a receipt
+as a promise kept or a bargain struck (one exhaustive switch beside the union); `expectations
+observations` reads it to form, for the party owed, the share of what fell due that arrived as
+`credit.<payer>` — the first writer of the `credit` subject. `Instruments.byKind`/`ofKind` index
+lines by kind (`InstrumentsReads`, the audit and seed picks widened); `foreclose` reads
+`ofKind(LOAN)`, and both mortgage reads compare the security's instrument and the lien's `secures`
+by name.
+
+

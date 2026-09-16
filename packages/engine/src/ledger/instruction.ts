@@ -22,6 +22,7 @@ import type {
   VoyageId,
 } from '../core/ids.js';
 import type { Option } from '../core/option.js';
+import { assertNever } from '../core/assert.js';
 import type { ContractTerms, StruckAt } from '../registry/derivatives.js';
 
 /** Money B1: an account is (holder, issuer, currency). The currency is on the amount. */
@@ -120,6 +121,36 @@ export const RECEIPT_KINDS = [
   'pension',
   'contribution',
 ] as const;
+
+/**
+ * Expectations A2, Banks Lending A2 (15.5): WHICH RECEIPTS ARE A PROMISE KEPT. A wage, a rent, a
+ * coupon, a dividend, a tax, a claim, a pension and a contribution are money somebody was OWED under
+ * a standing commitment, and whether it came is what the party owed it learns about the payer. What
+ * changes hands at a trade — proceeds, a disposal, capital coming back, a drawing, a transfer — is a
+ * bargain struck this period and says nothing about a promise. One switch, exhaustive, beside the
+ * kinds it classifies (Law 15).
+ */
+export function paysWhatWasOwed(receipt: Receipt): boolean {
+  switch (receipt.of) {
+    case 'wage':
+    case 'rent':
+    case 'interest':
+    case 'dividend':
+    case 'tax':
+    case 'claim':
+    case 'pension':
+    case 'contribution':
+      return true;
+    case 'disposal':
+    case 'sale':
+    case 'returnOfCapital':
+    case 'borrowing':
+    case 'transfer':
+      return false;
+    default:
+      return assertNever(receipt, 'Expectations A2');
+  }
+}
 
 export interface MoneyLeg {
   readonly kind: 'money';

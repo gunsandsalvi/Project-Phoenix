@@ -144,7 +144,7 @@ describe('CRE lending is a secured row (15.3, Corporate Credit A1, Housing C1)',
       phases: (['before', 'after'] as const).map((phase) => ({
           name: `test.tenant2.${phase}`,
           spec: 'Housing A3',
-          anchor: phase === 'before' ? { before: 'property.let' as const } : { after: 'property.collect' as const },
+          anchor: phase === 'before' ? { before: 'property.let' as const } : { before: 'property.ask' as const },
           reads: [],
           writes: [],
           run: (ctx: MechanismContext) => {
@@ -156,9 +156,10 @@ describe('CRE lending is a secured row (15.3, Corporate Credit A1, Housing C1)',
               // Rent high enough that a building is worth building to whoever will let it.
               ctx.post(lettingsVenue(f.region), { party: f.id, side: 'buy', price: asPerPiece(1_000, 'what it will pay a room a period'), qty: asQty(1_000_000) });
             }
-            if (ctx.period === 2 && phase === 'after') {
-              // The landlords' cash goes out by hand after the period's rent came in — a piece a member
-              // stays — so the pace they build at outruns what they hold when they next ask.
+            if (ctx.period === 3 && phase === 'after') {
+              // The landlords' cash goes out by hand just before they next ask — every rent of the
+              // period before, on premises and (15.5) on dwellings, has come in, and a piece a member
+              // stays — so the pace they build at outruns what they hold when they ask.
               for (const l of ctx.parties.ofKind(LANDLORD)) {
                 if (!l.status.alive || l.region !== f.region) continue;
                 const ccy = ctx.registry.currencyOf(l.region);

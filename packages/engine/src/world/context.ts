@@ -1178,7 +1178,7 @@ export interface SeedContext {
    * rest of each store is not.
    */
   readonly parties: Pick<Parties, 'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve'>;
-  readonly instruments: Pick<Instruments, 'add' | 'get' | 'has' | 'all' | 'issuedBy' | 'adjustIssued'>;
+  readonly instruments: Pick<Instruments, 'add' | 'get' | 'has' | 'all' | 'issuedBy' | 'ofKind' | 'adjustIssued'>;
   /**
    * `moneyDelta` and `adjustIssued` are here because they are what STATING an opening balance IS:
    * `endowMoney` is the two of them together, and a seed that says who holds what has to say the
