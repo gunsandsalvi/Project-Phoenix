@@ -13418,3 +13418,30 @@ the arithmetic of the call as a read, which is where the clause actually lives.
 `committed-capital`: four new tests, all green; the file's one red (`:45` asserts a `Cash` against a
 number) is the one that was red before, written down as 21.74. §29 A2 re-marked with the pacing and
 B3 MET.
+
+## Item 17b.5 — Sources and uses, measured
+
+§29 B5: *"the sources and uses of a deal must balance exactly, and the money must come out of named
+accounts. Sellers paid the equity cheque while the debt proceeds stop at the target is a deal that
+did not balance."*
+
+They balance by construction after 17b.3 — every fill is one numbered instruction whose money leg
+pays a named seller out of either the drawing or the buyer's own account, so what the sellers were
+paid IS what was drawn plus what the buyer put up, and *"the debt proceeds stop at the target"*
+cannot happen because they were never the target's to stop.
+
+**A VERIFY that cannot fail still has to be MEASURED.** That is the whole reason this is a family
+rather than a sentence in a docstring: Part II says a FORBID that holds is as valuable as a mechanism
+that works and that it breaks silently, so what is wanted is something that says so the day somebody
+adds a third source, a fee taken out of the middle, or a leg that moves money without a counterparty.
+It reports an owner, a size, a period and a citation, and it repairs nothing.
+
+**It joins `flows` rather than opening a tenth family.** What it asks — money that reached a named
+seller, against the two places it came from — is Audit B7's question, and the audit's families are
+independent by what they ASK and not by who contributes to them; four modules already contribute to
+this one.
+
+The tolerance is arithmetic dust derived from the three magnitudes (Law 7), never a band.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
+two new tests, five green in the file. §29 B5 re-marked MET.

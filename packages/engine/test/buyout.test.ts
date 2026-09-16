@@ -228,3 +228,38 @@ describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () =
     expect(held * 2).toBeGreaterThan(inIssue);
   });
 });
+
+describe('sources and uses are measured, not assumed (Private Equity B5)', () => {
+  it('the family reports nothing on a deal that balanced', () => {
+    const w = buyoutWorld();
+    let said: string[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      const report = w.step();
+      said = report.audit.families
+        .filter((f) => f.family === 'flows')
+        .flatMap((f) => f.violations)
+        .filter((v) => v.spec === 'Private Equity B5')
+        .map((v) => v.message);
+    }
+    // It balances by construction — every fill is one instruction paying a named seller out of one
+    // of two named accounts — and the family is what would say so the day it stopped.
+    expect(w.journal.ofKind('control.acquired').length).toBeGreaterThan(0);
+    expect(said).toEqual([]);
+  });
+
+  it('is BUILT, and the deal leaves it the three numbers it reads', () => {
+    // Audit C2: an unbuilt family reports "not built" and never green, so a family that is going to
+    // hold has to say it is built — and it has to have something to read. The deal's own record
+    // carries what the sellers were paid and the two places it came from, under those names.
+    const w = buyoutWorld();
+    let built = false;
+    for (let i = 0; i < 3; i += 1) {
+      const report = w.step();
+      built = report.audit.families.some((f) => f.family === 'flows' && f.built);
+    }
+    expect(built).toBe(true);
+    const e = w.journal.ofKind('control.acquired')[0];
+    if (e === undefined) throw new Error('the deal did not happen');
+    for (const key of ['paid', 'drawn', 'cheque']) expect(typeof e.data[key]).toBe('number');
+  });
+});

@@ -47,7 +47,7 @@ import {
 } from '../../core/ids.js';
 import { currencyUnit } from '../../core/ids.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
-import { atMost, sum, zeroIfNone } from '../../core/num.js';
+import { atMost, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { sumCash } from '../../core/measure.js';
 import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -933,6 +933,58 @@ function handOver(ctx: MechanismContext, buyer: PartyId, target: PartyId): void 
  * E1, E2: what must be true of a deal that happened. A firm that was acquired has a successor, and
  * the shares somebody bought are held by the party that bought them — measured, never enforced.
  */
+/**
+ * §29 B5, Law 19 (17b.5): THE SOURCES AND USES OF EVERY DEAL, MEASURED.
+ *
+ * *"The sources and uses of a deal must balance exactly, and the money must come out of named
+ * accounts. Sellers paid the equity cheque while the debt proceeds stop at the target is a deal
+ * that did not balance."*
+ *
+ * They balance by construction: every fill is one numbered instruction whose money leg pays a named
+ * seller out of either the drawing or the buyer's own account, so what the sellers were paid IS what
+ * was drawn plus what the buyer put up. **A VERIFY that cannot fail still has to be measured**, and
+ * that is the whole reason this family exists rather than a comment saying it holds: it is what
+ * would say so the day somebody adds a third source, a fee taken out of the middle, or a leg that
+ * moves money without a counterparty. A FORBID that holds is as valuable as a mechanism that works,
+ * and it breaks silently (Part II).
+ *
+ * The tolerance is arithmetic dust derived from the three magnitudes, never a band (Law 7).
+ */
+function sourcesAndUses(): Family {
+  return {
+    // Audit B7: it is a FLOWS question — money that reached a named seller against the two places
+    // it came from — so it joins the family that owns that question rather than opening a tenth.
+    name: 'flows',
+    contributor: 'control',
+    spec: 'Private Equity B5',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const e of view.journal.ofKindIn('control.acquired', view.period)) {
+        const paid = e.data['paid'];
+        const drawn = e.data['drawn'];
+        const cheque = e.data['cheque'];
+        if (typeof paid !== 'number' || typeof drawn !== 'number' || typeof cheque !== 'number') {
+          continue;
+        }
+        const sources = sum([drawn, cheque]);
+        if (withinDust(sources.value, paid, sum([sources.value, paid]).dust)) continue;
+        const named = e.data['target'];
+        out.push({
+          family: 'flows',
+          spec: 'Private Equity B5',
+          owner: partyId(typeof named === 'string' ? named : String(e.subjects[1])),
+          size: sources.value - paid,
+          unit: 'money',
+          period: view.period,
+          message: `the deal for ${String(named)} drew ${drawn} and paid a cheque of ${cheque} against ${paid} to the sellers`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
 function deals(): Family {
   return {
     name: 'names',
@@ -1195,7 +1247,7 @@ export function control(): SystemModule {
       },
     ],
     participants: [],
-    families: [deals()],
+    families: [deals(), sourcesAndUses()],
   };
 }
 

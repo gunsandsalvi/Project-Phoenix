@@ -57,7 +57,7 @@ and neither is yet a MET a run has confirmed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 16 | 5 | 0 | 0 | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
-| Private Equity | 16 | 2 | 7 | 0 | 25 |
+| Private Equity | 17 | 1 | 7 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -317,7 +317,7 @@ already writes against an agreed line.
   (`wanted × undrawn_i / undrawn`). **A2.b is untouched and must stay untouched**: a slice sized by the DEAL is
   not a slice sized by the investor's balance, the instruction still goes for the whole of what was called, and
   `check-forbids` still refuses `atMost`/`atLeast`/`Math.min` anywhere in that file.
-- [ ] 17b.5 **Sources and uses** (B5, D5, E3). An audit family `deal` (contributor `control`): for every
+- [x] 17b.5 **Sources and uses** (B5, D5, E3). An audit family `deal` (contributor `control`): for every
   `control.acquired` in the period, what the sellers were PAID against what was drawn for it plus what the
   buyer put up plus the fee — *"sources and uses must balance exactly, and the money must come out of named
   accounts"*, to derived dust, never repaired. D5's read beside it: a pool's return is what it distributed
