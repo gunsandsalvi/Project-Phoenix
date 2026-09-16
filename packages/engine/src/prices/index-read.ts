@@ -20,7 +20,7 @@
  */
 import type { Calendar, Period } from '../calendar/calendar.js';
 import { Missing } from '../core/errors.js';
-import type { CurrencyCode, InstrumentId } from '../core/ids.js';
+import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
 import {
   asAmount,
   type Cash,
@@ -37,6 +37,7 @@ import type { Ledger } from '../ledger/ledger.js';
 import type { PartiesReads } from '../parties/party.js';
 import type { InstrumentsReads } from '../register/instruments.js';
 import type { Registry } from '../registry/registry.js';
+import type { Grade } from '../registry/grades.js';
 import { sumCash } from '../core/measure.js';
 
 /**
@@ -72,6 +73,16 @@ export interface IndexWorld {
   rate(from: CurrencyCode, to: CurrencyCode, at: Period): Ratio;
   /** Currency C4: what a value in one money reads as in another, at the rate in force — a report. */
   inMoney(value: Cash, to: CurrencyCode, at: Period): Cash;
+  /**
+   * Ratings C2, Indices A1, C2 (17.10): WHAT THE ASSESSORS HAVE PUBLISHED ABOUT A NAME, for a rule
+   * whose membership turns on a rating.
+   *
+   * It is read through the kernel like a print is, and for the same reason: a grade is a PUBLIC
+   * fact somebody else produced, so the rule reads it rather than forming one. Nothing where nobody
+   * has graded the name — an unrated issuer is in no rated index, which is what being unrated
+   * means, and is a real answer rather than a side of the line anybody chose.
+   */
+  graded(name: PartyId, at: Period): Option<Grade>;
 }
 
 /** A1: one constituent of an index, and what it counts for. */

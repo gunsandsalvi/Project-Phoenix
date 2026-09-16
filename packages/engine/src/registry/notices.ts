@@ -18,6 +18,7 @@
 import { asCash, type Cash, asRatio, type Ratio } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
+import { middleGrade, type Grade } from './grades.js';
 import type { Period } from '../calendar/calendar.js';
 import type { CurrencyCode } from '../core/ids.js';
 
@@ -136,7 +137,7 @@ export function paperOfferedIn(reads: WireReads, borrower: string, at: Period): 
  * and the disagreement is the point (§46 A3); what a reader does with several grades is its own
  * business, so this hands back all of them rather than one.
  */
-export function gradesOn(reads: WireReads, party: string): ReadonlyMap<string, string> {
+export function gradesOn(reads: Pick<WireReads, 'ofKind'>, party: string): ReadonlyMap<string, string> {
   const latest = new Map<string, string>();
   for (const e of reads.ofKind(RATING)) {
     if (!e.subjects.includes(party)) continue;
@@ -146,6 +147,17 @@ export function gradesOn(reads: WireReads, party: string): ReadonlyMap<string, s
     latest.set(assessor, grade);
   }
   return latest;
+}
+
+/**
+ * Ratings C2, A5.a: THE GRADE A NAME CARRIES, which is the middle of what its assessors have
+ * published about it. One read, where everybody reads it: a bank weighting a claim, an index
+ * deciding whether a name is in its basket, and anybody else who has to know what the market has
+ * been told. Nothing where nobody has graded it, which is what unrated means.
+ */
+export function gradeOn(reads: Pick<WireReads, 'ofKind'>, name: string): Option<Grade> {
+  const grade = middleGrade([...gradesOn(reads, name).values()]);
+  return grade === undefined ? none<Grade>() : some(grade);
 }
 
 /** XI-8: whether an estate has closed — which is when what it owed is finally known. */

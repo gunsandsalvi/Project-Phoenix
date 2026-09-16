@@ -14,6 +14,8 @@ import { none, some, type Option } from '../../core/option.js';
 import { indexCache, readIndex, type IndexCache, type IndexDeps } from '../../prices/index-read.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
+import { gradeOn } from '../../registry/notices.js';
+import type { EventKind } from '../../journal/journal.js';
 
 /**
  * Indices E3, A2, E2: THE LEVEL IS THE CONSTITUENTS AND NOTHING ELSE.
@@ -95,6 +97,12 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
       },
       rate: (from, to, at): Ratio => view.valuation.rateInForce(from, to, at),
       inMoney: (value, to, at) => view.valuation.inMoney(value, to, at),
+      // Ratings C2 (17.10): and the same third read, for a rule whose membership turns on a grade.
+      graded: (name, at) =>
+        gradeOn(
+          { ofKind: (kind: string) => view.journal.ofKind(kind as EventKind).filter((e) => e.period <= at) },
+          String(name),
+        ),
     },
     price: (instrument, at): Option<PerPiece> => {
       const p = view.prices.latest(instrument, at);

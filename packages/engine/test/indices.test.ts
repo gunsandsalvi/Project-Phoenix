@@ -20,6 +20,13 @@ import {
 } from '../src/index.js';
 import { rigFor, rigWorld } from './rig.js';
 
+import { RATED_INDEX } from '../src/mechanisms/indices/index.js';
+import { creditOf, ratedOf } from '../src/mechanisms/indices/baskets.js';
+import { GRADES, INVESTMENT_GRADE, isInvestmentGrade, type Grade } from '../src/registry/grades.js';
+import type { Cash } from '../src/core/measure.js';
+import type { InstrumentId } from '../src/core/ids.js';
+import type { Period } from '../src/calendar/calendar.js';
+import type { Option } from '../src/core/option.js';
 describe('one system of indices (Indices D5, A1)', () => {
   it('declares an index per region and per currency, and refuses a second rule for one id', () => {
     const w = rigWorld('idx-A');
@@ -85,6 +92,7 @@ describe('an index of nothing is not a number (Indices A1, D5.a)', () => {
       parties: w.parties,
       instruments: w.instruments,
       ledger: w.ledger,
+      graded: () => none(),
       price: (instrument, at) => {
         const p = w.prices.latest(instrument, at);
         return p.some ? some(p.value.price) : none<PerPiece>();
@@ -165,5 +173,73 @@ describe('what is published is an observation, not the level (Indices E1, E2)', 
       // E2: the observation and the read are the same number because the read is the only writer.
       if (read.some) expect(read.value.level).toBe(level);
     }
+  });
+});
+
+/**
+ * The rated universe (Indices A1, C2, C2.a; Ratings C2; item 17.10).
+ *
+ * A credit market is bought on ONE SIDE OF A LINE. Investment grade and high yield are one scale
+ * with a boundary across it, and everything that matters about a credit market happens there: a
+ * mandate says which side it may hold, and a name that CROSSES is sold by everybody who may not
+ * hold the other side.
+ */
+describe('a credit index over the rated universe (Indices C2, Ratings C2)', () => {
+  /** The rig's own world, with the one read a rated basket needs answered for the test. */
+  function worldWith(w: ReturnType<typeof rigWorld>, grade: Option<Grade>) {
+    return {
+      calendar: w.calendar,
+      registry: w.registry,
+      parties: w.parties,
+      instruments: w.instruments,
+      ledger: w.ledger,
+      graded: () => grade,
+      price: (instrument: InstrumentId, at: Period) => {
+        const p = w.prices.latest(instrument, at);
+        return p.some ? some(p.value.price) : none<PerPiece>();
+      },
+      rate: () => asRatio(1, 'one into one'),
+      inMoney: (value: Cash) => value,
+    };
+  }
+
+  it('cuts the scale in two and leaves nothing on neither side', () => {
+    // The boundary is DATA beside the scale itself, and it partitions it: every grade is on exactly
+    // one side, and the sides meet where the market says they meet.
+    const inside = GRADES.filter((g) => isInvestmentGrade(g));
+    const outside = GRADES.filter((g) => !isInvestmentGrade(g));
+    expect(inside.length + outside.length).toBe(GRADES.length);
+    expect(inside).toContain(INVESTMENT_GRADE);
+    expect(outside).not.toContain(INVESTMENT_GRADE);
+    expect(inside[0]).toBe('aaa');
+    // And the world declares a line on each side of it, in every money it has.
+    const w = rigWorld('idx-rated');
+    const ids = w.indexRules().map((d) => d.id);
+    expect(ids).toContain(RATED_INDEX(USD, 'investment'));
+    expect(ids).toContain(RATED_INDEX(USD, 'speculative'));
+    expect(ids).toContain(CREDIT_INDEX(USD));
+  });
+
+  it('holds what the assessors graded onto its own side, and nothing they did not grade', () => {
+    const w = rigWorld('idx-rated');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const all = creditOf(USD)(w.period, worldWith(w, none<Grade>()));
+    // A fresh rule per ask: a rule memoises its answer for as long as the register stands (Law 18),
+    // which is right in the world and wrong for a test that varies what the assessors said.
+    const side = (which: 'investment' | 'speculative', grade: Option<Grade>) =>
+      ratedOf(USD, which)(w.period, worldWith(w, grade));
+    expect(all.length).toBeGreaterThan(0);
+    // A name nobody has graded is in NEITHER basket. Being unrated is not a side of the line; it is
+    // the absence of an opinion, and an index that guessed would be an index with a credit view.
+    expect(side('investment', none<Grade>())).toHaveLength(0);
+    expect(side('speculative', none<Grade>())).toHaveLength(0);
+    // Graded inside the line, every corporate line in the money is in the investment basket and
+    // none is in the other; graded outside it, the two swap. The universe is the same either way.
+    const good = some<Grade>('a');
+    const bad = some<Grade>('b');
+    expect(side('investment', good).length).toBe(all.length);
+    expect(side('speculative', good)).toHaveLength(0);
+    expect(side('speculative', bad).length).toBe(all.length);
+    expect(side('investment', bad)).toHaveLength(0);
   });
 });

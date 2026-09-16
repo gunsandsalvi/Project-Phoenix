@@ -24,7 +24,7 @@ import type { IndexDecl } from '../../prices/index-read.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { benchmark } from './benchmark.js';
-import { creditOf, equityOf, globalEquity, goodsBoughtIn, sizeSegmentOf, type SizeSegment } from './baskets.js';
+import { creditOf, equityOf, globalEquity, goodsBoughtIn, sizeSegmentOf, type SizeSegment, ratedOf } from './baskets.js';
 
 export const INDEX_PARAMS = {
   base: paramId('index.base'),
@@ -44,6 +44,9 @@ export const SIZE_INDEX = (region: RegionId, segment: SizeSegment): string =>
 /** M9, XI-12: the one line that crosses regions, stated in one money at cleared rates. */
 export const GLOBAL_INDEX = (ccy: CurrencyCode): string => `equity.global.${String(ccy)}`;
 export const CREDIT_INDEX = (ccy: CurrencyCode): string => `credit.${String(ccy)}`;
+/** A1, C2, Ratings C2 (17.10): the rated universe, on each side of the line the market draws. */
+export const RATED_INDEX = (ccy: CurrencyCode, side: 'investment' | 'speculative'): string =>
+  `credit.${side}.${String(ccy)}`;
 export const PRODUCER_INDEX = (region: RegionId): string => `producer.${String(region)}`;
 export const CONSUMER_INDEX = (region: RegionId): string => `consumer.${String(region)}`;
 
@@ -71,6 +74,18 @@ export function indexRules(
   }
   for (const ccy of currencies) {
     out.push({ id: CREDIT_INDEX(ccy), name: `${String(ccy)} corporate credit`, constituents: creditOf(ccy), base: BASE, from, ccy });
+    // C2, C2.a: and the two sides of the line the market draws across its own rating scale, so a
+    // downgrade is a name LEAVING one index and joining the other rather than a number changing.
+    for (const side of ['investment', 'speculative'] as const) {
+      out.push({
+        id: RATED_INDEX(ccy, side),
+        name: `${String(ccy)} ${side === 'investment' ? 'investment-grade' : 'high-yield'} credit`,
+        constituents: ratedOf(ccy, side),
+        base: BASE,
+        from,
+        ccy,
+      });
+    }
   }
   return out;
 }

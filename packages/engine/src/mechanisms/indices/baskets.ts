@@ -30,6 +30,7 @@ import { addTo } from '../../core/num.js';
 import { isAssetLeg } from '../../ledger/instruction.js';
 import type { Constituent, IndexWorld } from '../../prices/index-read.js';
 import type { Instrument } from '../../register/instruments.js';
+import { isInvestmentGrade } from '../../registry/grades.js';
 
 /** D2: whether what promised this line borrows on the state's credit — the kind's own fact. */
 function onStateCredit(w: IndexWorld, i: Instrument): boolean {
@@ -145,6 +146,44 @@ export function creditOf(ccy: CurrencyCode): (at: Period, w: IndexWorld) => read
     for (const i of listed(w)) {
       if (i.ccy !== ccy || !pays(w, i, at)) continue;
       if (!i.issuer.some || onStateCredit(w, i)) continue;
+      out.push({ instrument: i.id, weight: i.issued });
+    }
+    return out;
+  });
+}
+
+/**
+ * A1, C2, C2.a, Ratings C2 (17.10): THE RATED UNIVERSE, CUT WHERE THE MARKET CUTS IT.
+ *
+ * `creditOf` is every corporate line in a money, and that is not how credit is actually bought: it
+ * is bought on ONE SIDE OF A LINE. Investment grade and high yield are one scale with a boundary
+ * across it (`registry/grades.ts INVESTMENT_GRADE`), and everything that matters about a credit
+ * market happens at that boundary — a mandate says which side it may hold, an index is built on one
+ * side, and a name that CROSSES it is sold by everybody who may not hold the other side.
+ *
+ * That crossing is why this is a basket and not a filter. C2 says a manager is measured against an
+ * index and that the measurement drives flows; C2.a says inclusion should be visible in the
+ * constituent's price. With one credit basket per money, membership changed only when a line was
+ * born or died. With two, a DOWNGRADE moves paper from one index to the other and the holders of
+ * each have to trade — which is the one thing a rating has ever actually done.
+ *
+ * WHO IS IN IT IS THE ASSESSORS' TO SAY and nobody else's: the grade is read through the kernel
+ * (`IndexWorld.graded`), the way a print is, and a name nobody has graded is in NEITHER basket.
+ * Being unrated is not a side of the line; it is the absence of an opinion, and an index that
+ * guessed which side such a name belonged on would be an index with a credit view.
+ */
+export function ratedOf(
+  ccy: CurrencyCode,
+  side: 'investment' | 'speculative',
+): (at: Period, w: IndexWorld) => readonly Constituent[] {
+  return whileTheRegisterStands((at: Period, w: IndexWorld): readonly Constituent[] => {
+    const out: Constituent[] = [];
+    for (const i of listed(w)) {
+      if (i.ccy !== ccy || !pays(w, i, at)) continue;
+      if (!i.issuer.some || onStateCredit(w, i)) continue;
+      const grade = w.graded(w.parties.resolve(i.issuer.value).id, at);
+      if (!grade.some) continue;
+      if (isInvestmentGrade(grade.value) !== (side === 'investment')) continue;
       out.push({ instrument: i.id, weight: i.issued });
     }
     return out;

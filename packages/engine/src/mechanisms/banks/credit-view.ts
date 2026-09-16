@@ -63,11 +63,12 @@ import { type Qty } from '../../core/tick.js';
 import type { Event } from '../../journal/journal.js';
 import { isAssetLeg } from '../../ledger/instruction.js';
 import { couldLeave, liquidHeld } from '../../registry/banking.js';
-import { type Grade, middleGrade, riskWeightParam } from '../../registry/grades.js';
+import { type Grade, riskWeightParam } from '../../registry/grades.js';
 import { uncoveredShare } from '../../registry/secured.js';
 
 export { uncoveredShare };
-import { gradesOn } from '../../registry/notices.js';
+export { gradeOn } from '../../registry/notices.js';
+import { gradeOn } from '../../registry/notices.js';
 import { coverageOf, leverageOf, type Statement, statementVisibleTo } from '../../registry/statements.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import { yieldOf } from '../../prices/curve.js';
@@ -250,12 +251,6 @@ export function lossGivenDefault(
   owed: Cash,
 ): Ratio {
   return scale(unsecured, uncoveredShare(security, worthOf, owed), 'on the uncovered part');
-}
-
-/** Ratings C2, A5.a: the middle of what the assessors have published on a name, or nothing. */
-export function gradeOn(reads: Parameters<typeof gradesOn>[0], name: PartyId): Option<Grade> {
-  const grade = middleGrade([...gradesOn(reads, String(name)).values()]);
-  return grade === undefined ? none<Grade>() : some(grade);
 }
 
 /**

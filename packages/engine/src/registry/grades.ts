@@ -30,6 +30,27 @@ export const riskWeightParam = (grade: Grade): ParamId => paramId(`regulation.ri
 /** The worst grade: where an issuer that has missed a payment goes, whatever else is true of it. */
 export const WORST: Grade = 'c';
 
+/**
+ * Indices A1, C2, Ratings C2 (17.10): THE LINE THE MARKET DRAWS ACROSS ITS OWN SCALE.
+ *
+ * Investment grade and high yield are not two scales: they are one scale with a line across it, and
+ * everything that matters about a credit market happens at that line. A mandate says which side it
+ * may buy, an index is built on one side of it, and a name that crosses it is sold by every holder
+ * that may not hold the other side — which is why a downgrade moves a price and a rating means
+ * anything at all (C2: an assessor's opinion has consequences because other people's rules refer to
+ * it).
+ *
+ * It is DATA and not a number: the boundary is a grade on the published scale, stated here beside
+ * the scale itself, and nothing derives it. Where a market draws it is a convention of that market
+ * — this one draws it where every real one does.
+ */
+export const INVESTMENT_GRADE: Grade = 'bbb';
+
+/** C2: whether a published grade is on the investment side of that line. */
+export function isInvestmentGrade(grade: Grade): boolean {
+  return rankOf(grade) <= rankOf(INVESTMENT_GRADE);
+}
+
 /** Where a grade sits on the scale, best first. A name that is not on it is not a grade. */
 export function rankOf(grade: string): number {
   return (GRADES as readonly string[]).indexOf(grade);

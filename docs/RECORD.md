@@ -13113,3 +13113,40 @@ treasury is the first thing that will ask.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
 unchanged.
+
+## Item 17.10 — A credit index over the rated universe
+
+A credit market is not bought as one thing. It is bought on ONE SIDE OF A LINE: investment grade and
+high yield are a single scale with a boundary across it, and everything that matters about a credit
+market happens at that boundary — a mandate says which side it may hold, an index is built on one
+side, and a name that CROSSES is sold by everybody who may not hold the other side. This world had
+one credit basket per money, so membership changed only when a line was born or died, and a rating
+had nothing to do.
+
+**The boundary is data beside the scale**, in `registry/grades.ts`, where the scale itself is. It is
+not a number: it is a grade on the published scale, and where a market draws it is that market's
+convention. `isInvestmentGrade` partitions the scale and nothing derives it.
+
+**Who is on which side is the assessors' to say.** A basket rule can now read what they published,
+through the kernel, the way it reads a print — a grade is a public fact somebody else produced, and
+a rule that formed its own opinion would be an index with a credit view. A name nobody has graded is
+in NEITHER basket: unrated is the absence of an opinion, not a side of the line, and an index that
+guessed which side such a name belonged on would be inventing the thing it exists to measure.
+
+**Law 4, in passing.** `gradeOn` — the middle of what a name's assessors have published — lived in
+the banks module, where the index and the audit could not reach it. It moved to `registry/notices.ts`
+beside `gradesOn`, and the credit view re-exports it for its own readers.
+
+**What the census said, and it is the item that follows.** THE ASSESSORS SAY NOTHING. Three assessor
+parties exist in every scale model and not one `rating.action` is ever published — zero in twenty
+periods, in four different seeds. So every name is unrated, every claim carries the regulation's
+ungraded weight, and both new lines report Missing because their baskets are empty. Written up as
+21.68 and inserted as 17.10a, before the tracker: a tracker on an empty index is nothing, and a
+rating that never happens is what makes it empty.
+
+**Split.** The tracker is 17.10b. It needs the seed to draw a CREDIT tracker — a debt blueprint and a
+basket of bond lines, where `drawTrackers` draws an equity one — which is the seed's work and not
+the index's.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `indices`:
+two new tests, both green; the file's three reds were red at `b540d35` before this change.

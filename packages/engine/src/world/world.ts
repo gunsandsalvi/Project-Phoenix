@@ -184,6 +184,7 @@ import {
   type IndexRead,
 } from '../prices/index-read.js';
 import { bandOf, UNREAD, type LatticeReads } from '../registry/lattice.js';
+import { gradeOn } from '../registry/notices.js';
 import { about } from './context.js';
 
 /** Maps are data too; the surface shows them as the entries they are (Observer D3). */
@@ -3105,6 +3106,16 @@ export class World {
         // XI-12: and what one money buys of another, for the one line that crosses regions.
         rate: (from, to, at) => this.valuation.rateInForce(from, to, at),
         inMoney: (value, to, at) => this.valuation.inMoney(value, to, at),
+        // Ratings C2 (17.10): the middle of what the assessors have published about a name, read
+        // where every other reader of a grade reads it (`registry/grades.ts`). A rule that formed
+        // its own opinion of a name would be an index with a credit view, which is nobody's job.
+        graded: (name, at) =>
+          gradeOn(
+            // The reader takes a kind as a string; the journal indexes by its own union, and what
+            // is passed in is always one of its literals (`registry/notices.ts` names it).
+            { ofKind: (kind: string) => this.journal.ofKind(kind as EventKind).filter((e) => e.period <= at) },
+            String(name),
+          ),
       },
       price: printed,
     };
