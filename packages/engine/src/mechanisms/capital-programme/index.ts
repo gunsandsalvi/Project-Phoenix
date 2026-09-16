@@ -25,7 +25,9 @@
  */
 import { asRatio, minus, pricedAt, scale, asCash, plus, valueAt, type Cash, type PerPiece } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { negQty, asQty, type Qty } from '../../core/tick.js';
+import { downTick, negQty, asQty, subQty, type Qty } from '../../core/tick.js';
+import { authorityIdFor, hectaresOf, hectaresUnder, landId } from '../../registry/land.js';
+import type { Lien } from '../../register/register.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
@@ -43,8 +45,10 @@ import type { SystemModule } from '../../world/module.js';
 // asks it rather than keeping a second copy of the answer (Law 4, Law 19).
 import {
   goodId,
+  groundUnderPlant,
   isGoodTerms,
   survivesWind,
+  vintagesHeld,
 } from '../../registry/physical.js';
 import { costOfDraw } from '../../register/register.js';
 import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
@@ -198,16 +202,21 @@ function retire(ctx: MechanismContext): void {
     const units = ctx.register.free(h.holder, i.id);
     if (!material(units, h.lots.length + 1, units)) continue;
     // 0f.1: `free` is the cell's TOTAL; the leg moves it and the side is derived from it.
+    const legs: Leg[] = [
+      {
+        kind: 'destroy',
+        party: h.holder,
+        instrument: i.id,
+        qty: units,
+        why: 'scrapped',
+      },
+    ];
+    // 15.1: the ground it stood on is free again — every lien the vintage held on it goes with it.
+    for (const lien of groundLiensFor(ctx, h.holder, terms.region, String(i.id))) {
+      legs.push({ kind: 'release', pledgor: h.holder, beneficiary: lien.beneficiary, instrument: landId(terms.region), lien: lien.id });
+    }
     const record = ctx.settle({
-      legs: [
-        {
-          kind: 'destroy',
-          party: h.holder,
-          instrument: i.id,
-          qty: units,
-          why: 'scrapped',
-        },
-      ],
+      legs,
       cause: 'corporateAction',
       reason: `${h.holder} retires ${i.id}: it is worn out`,
     });
@@ -336,6 +345,50 @@ function purchases(
 }
 
 /** C3, A6.a: one buyer's machines going into service, as a transformation on its own book. */
+/** 15.1: the liens a vintage holds on its holder's ground, by the vintage's name on each. */
+function groundLiensFor(ctx: MechanismContext, holder: PartyId, region: RegionId, vintage: string): readonly Lien[] {
+  const land = landId(region);
+  if (!ctx.instruments.has(land)) return [];
+  const holding = ctx.register.holding(holder, land);
+  if (!holding.some) return [];
+  return holding.value.liens.filter((l) => l.reason === vintage);
+}
+
+/**
+ * C1 (15.1): HOW MUCH OF WHAT IT BOUGHT ITS GROUND CARRIES. The hectares it holds beyond what its
+ * standing plant is on, against what a piece of this kind stands on — whole pieces, DOWN, because
+ * plant on a fraction of a hectare it does not hold is on ground it does not hold. Nothing is
+ * refused where the world has no ground line or the kind takes no ground.
+ */
+function groundToCarry(
+  ctx: MechanismContext,
+  d: CapitalKindDecl,
+  buyer: PartyId,
+  region: RegionId,
+  bought: Qty,
+): { readonly carries: Qty; readonly refused: Qty; readonly short: Qty; readonly pledge?: { readonly land: InstrumentId; readonly to: PartyId; readonly hectares: Qty } } {
+  const land = landId(region);
+  if (!ctx.instruments.has(land) || d.landPerUnit === null || bought <= 0) return { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short') };
+  const reads = { registry: ctx.registry, params: ctx.params };
+  const view = ctx.participant(buyer);
+  const standing = hectaresOf(groundUnderPlant(reads, vintagesHeld(view, ctx.calendar.startOf(ctx.period))));
+  const held = ctx.register.quantity(buyer, land);
+  const free = held > standing ? held - standing : 0;
+  const needed = hectaresUnder(reads, d.id, bought);
+  if (needed <= free) {
+    const authority = authorityIdFor(region);
+    const pledge = ctx.parties.has(authority) && needed > 0 ? { land, to: authority, hectares: needed } : undefined;
+    return pledge === undefined ? { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short') } : { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short'), pledge };
+  }
+  // Law 8: the pieces the free ground carries, down — one hectare carries so many pieces of it.
+  const carries = needed > 0 ? downTick((bought * free) / needed) : bought;
+  const fits = carries > 0 ? hectaresUnder(reads, d.id, carries) : asQty(0, 'nothing fits');
+  const authority = authorityIdFor(region);
+  const pledge = ctx.parties.has(authority) && fits > 0 ? { land, to: authority, hectares: fits } : undefined;
+  const out = { carries, refused: subQty(bought, carries, 'the pieces its ground does not carry'), short: subQty(needed, asQty(free, 'the hectares it holds free'), 'the hectares it is short of') };
+  return pledge === undefined ? out : { ...out, pledge };
+}
+
 function commissionOne(
   ctx: MechanismContext,
   d: CapitalKindDecl,
@@ -351,8 +404,27 @@ function commissionOne(
   const free = ctx.register.free(buyer, good);
   // It commissions what it bought, and it cannot commission what it no longer has: a firm that
   // sold the machine on before it was installed installed nothing.
-  const qty = atMost(free, ctx.registry.deliverable(bought), 'only what is unencumbered can be built into plant');
-  if (!material(qty, holding.value.lots.length + 1, bought)) return;
+  const bought_ = atMost(free, ctx.registry.deliverable(bought), 'only what is unencumbered can be built into plant');
+  /**
+   * C1, Law 8 (15.1): AND ONLY ON GROUND IT HOLDS. Plant stands on hectares, and a firm that has
+   * not bought them has nowhere to put it: what is commissioned is what its free ground carries —
+   * the hectares it holds beyond what its standing plant is on — and the rest is refused and said
+   * (`capital.refused`), the machines staying what they were, goods it holds. The ground under the
+   * new vintage is PLEDGED to it for as long as it stands — to the authority of the place, whose
+   * consent it is — so it cannot be sold from under the plant; the lien is released when the
+   * vintage retires. A world with no ground line has no ground to be short of and refuses nothing.
+   */
+  const ground = groundToCarry(ctx, d, buyer, region, bought_);
+  const qty = ground.carries;
+  if (ground.refused > 0) {
+    ctx.record(
+      'capital.refused',
+      [buyer],
+      { firm: buyer, capitalKind: d.id, units: ground.refused, hectaresShort: ground.short, why: 'no ground to stand it on' },
+      true,
+    );
+  }
+  if (qty <= 0 || !material(qty, holding.value.lots.length + 1, bought)) return;
   const cost = costOfDraw(holding.value.lots, qty);
   const serviceDate = ctx.calendar.startOf(ctx.period);
   const id = vintage(ctx, d, region, serviceDate);
@@ -375,6 +447,16 @@ function commissionOne(
       costPerUnit: pricedAt(cost, qty, 'what a unit of plant cost'),
     },
   ];
+  if (ground.pledge !== undefined && ground.pledge.hectares > 0) {
+    legs.push({
+      kind: 'pledge',
+      pledgor: buyer,
+      beneficiary: ground.pledge.to,
+      instrument: ground.pledge.land,
+      qty: ground.pledge.hectares,
+      secures: String(id),
+    });
+  }
   const record = ctx.settle({
     legs,
     cause: 'production',
@@ -534,7 +616,7 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
         // it joins is dated by when it went into service rather than when it was ordered.
         anchor: { before: 'revaluation' },
         reads: [],
-        writes: [{ kind: 'event', name: 'capital.commissioned' }],
+        writes: [{ kind: 'event', name: 'capital.commissioned' }, { kind: 'event', name: 'capital.refused' }],
         run: (ctx: MechanismContext) => {
           commission(ctx, rows);
         },

@@ -12023,3 +12023,33 @@ its death at 22a, stated on the declaration.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green; eighteen
 suites at 90 of 196, the same set.
+
+## Item 15.1 — The ground has a seller in each place, a planning policy and a residual bid
+
+A country's one treasury held every place's ground and sold it at one cent, and a firm with no
+opinion bid one cent back. A LOCAL AUTHORITY present in each place holds what nobody has built on
+there now, and offers a period what the planning policy says — parliament's number, a square
+kilometre, never everything it holds — at its own outlook of what ground here has fetched, the last
+print where it has none, and at whatever the book gives where nothing has ever fetched anything.
+The firm's bid is its project's: the whole hectares the plant it wants would stand on, less what it
+holds beyond its standing plant, at the residual — what a unit of capacity is worth to it over the
+plant it takes, spread over the hectares a unit of capacity takes — and ground before plant. The
+programme stands plant only on ground the firm holds, refuses and says the rest, pledges the ground
+under a new vintage to the authority in the vintage's name and releases it when the vintage retires.
+The seed states the plant and the ground under it together. Both one-cent asks are gone, and the
+names of the ground are the registry's.
+
+**Measured.** `land.test.ts`, six green: the authority holds the unbuilt ground and every firm what
+its plant stands on; the authority sells at most the release a period and only its own ground; a
+firm with ground and a machine commissions it with a lien on the hectares it takes, a firm with the
+machine alone is refused and keeps the machine; nobody stands plant on ground it does not hold. In
+the rig's own draw the first hectare clears in period 2 at a firm's residual bid. `capital.test.ts`
+and `housing.test.ts` green before and after. Nothing new is red, and thirteen are newly green —
+six of `small-business.test.ts`, six of `equity.test.ts`, one of `funds.test.ts` — with the one-cent
+ground bids gone and the ground under the opening's plant its holder's: eighteen suites at 77 of
+196 (Law 11: measured, not diagnosed).
+
+**Findings.** The opening plant's ground is not pledged (21.27); refused machines are bought twice
+(21.28); a pool's rooms stand on nobody's ground (21.29). The lettings finding moves to 15.5.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

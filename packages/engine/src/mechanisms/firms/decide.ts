@@ -41,7 +41,8 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
-import type { MarketId, PartyId } from '../../core/ids.js';
+import type { MarketId, PartyId, RegionId } from '../../core/ids.js';
+import { hectaresOf, hectaresUnder, landId, landMarket } from '../../registry/land.js';
 import type { InstrumentId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -62,6 +63,8 @@ import {
   rentedRoom,
   capitalChargePerUnit,
   vintagesHeld,
+  groundUnderPlant,
+  type HeldVintage,
   type PlantNeed,
 } from '../../registry/physical.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
@@ -71,6 +74,7 @@ import {
   plantOffers,
   project,
   type CostOfCapital,
+  type GroundForProject,
   type Project,
 } from '../../registry/capital.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
@@ -648,6 +652,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         view.params.periods(firmParam(line.firm, 'horizon')),
         cost.value,
         spendable(view, orders),
+        groundFor(view, tech.terms.region, vintages),
       )
     : none<Project>();
   if (decided.some) orders.push(...decided.value.orders);
@@ -769,3 +774,22 @@ export function ordersFrom(
   return out;
 }
 
+/**
+ * Capital Programme C1 (15.1): WHAT THE PROJECT KNOWS OF THE GROUND — the line of its place, what
+ * it holds of it beyond what its plant stands on, what a piece of each kind stands on, and what a
+ * hectare last fetched. Nothing where the world has no ground line (a scale model without land).
+ */
+function groundFor(view: ParticipantView, region: RegionId, vintages: readonly HeldVintage[]): GroundForProject | undefined {
+  const instrument = landId(region);
+  if (!view.instruments.has(instrument)) return undefined;
+  const reads = { registry: view.registry, params: view.params };
+  const standing = hectaresOf(groundUnderPlant(reads, vintages));
+  const held = view.quantity(instrument);
+  return {
+    market: landMarket(region),
+    instrument,
+    free: held > standing ? subQty(held, standing, 'the ground it holds beyond its plant') : NO_QTY,
+    hectaresUnder: (capitalKind, units) => hectaresUnder(reads, capitalKind, units),
+    expected: expectedPriceOf(view, instrument),
+  };
+}

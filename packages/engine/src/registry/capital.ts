@@ -37,6 +37,7 @@
 import {
   amountOf,
   asAmount,
+  asPerPiece,
   asCash,
   asRatio,
   type Cash,
@@ -60,7 +61,7 @@ import type { Period } from '../calendar/calendar.js';
 import type { RegionId } from '../core/ids.js';
 import { expectedPriceOf } from './expectation.js';
 import { CAPITAL_KINDS, capacityFrom, capitalKindOf, goodId, goodMarketId, isPlant, lifeParam, plantHeld, plantTerms, serviceLeft, type HeldVintage, type PlantNeed } from './physical.js';
-import { downTick, subQty, upTick, type Qty } from '../core/tick.js';
+import { NO_QTY, asQty, downTick, subQty, upTick, type Qty } from '../core/tick.js';
 import { about } from '../world/context.js';
 import { ownCostOfMoney } from './banking.js';
 
@@ -85,8 +86,34 @@ export interface CostOfCapital {
   readonly equityWeight: Cash;
 }
 
+/**
+ * Capital Programme C1 (15.1): WHAT A PROJECT KNOWS OF THE GROUND — the line of its place, the
+ * hectares it holds free of plant, and what a piece of each kind of plant stands on. None where
+ * the world has no ground line: a scale model without the land module builds on nothing.
+ */
+export interface GroundForProject {
+  readonly market: MarketId;
+  readonly instrument: InstrumentId;
+  /** The hectares it holds beyond what its plant already stands on. */
+  readonly free: Qty;
+  /** The whole hectares so many pieces of a kind of plant stand on. */
+  hectaresUnder(capitalKind: string, units: Qty): Qty;
+  /** What a hectare here last fetched, if anything has. */
+  readonly expected: Option<PerPiece>;
+}
+
+export interface ProjectGround {
+  readonly needed: Qty;
+  readonly free: Qty;
+  readonly short: Qty;
+  /** The most it will pay a hectare: the project's surplus over the plant, spread over the ground it takes. */
+  readonly bid: PerPiece;
+}
+
 /** B1: a project this firm could do, with everything the decision was made of on it. */
 export interface Project {
+  /** 15.1: the ground the project takes, or none where the world has no ground line. */
+  readonly ground: ProjectGround | null;
   /** B1.a, B3: the extra output per period it expects to sell and its plant cannot make. */
   readonly gap: number;
   /** B4: the rate it is sure enough of to build for — its run rate less its own surprise width. */
@@ -317,6 +344,8 @@ export function project(
   cost: CostOfCapital,
   /** B2: what it can pay with now, after what it is already about to have to pay. */
   spendable: Cash,
+  /** C1 (15.1): the ground of its place, where the world has one. */
+  ground?: GroundForProject,
 ): Option<Project> {
   if (needs.length === 0 || offers.length === 0) return none<Project>();
   // B4: the spend is irreversible, so what it builds for is what it would run at less the width of
@@ -416,6 +445,48 @@ export function project(
     });
   }
   if (wanted.length === 0) return none<Project>();
+  /**
+   * C1, Law 1, Law 3 (15.1): AND THE GROUND IT STANDS ON. A project needs ground as it needs
+   * machines: the whole hectares the plant it wants would stand on, less what it holds beyond its
+   * standing plant. What it will pay a hectare is what the ground is WORTH TO IT — the surplus of
+   * what a unit of capacity is worth over what the plant for it costs, spread over the hectares a
+   * unit of capacity takes — which is the residual land value the world this reflects prices ground
+   * at, and it is this firm's own reason and not a valuation of the ground (Clearing A2: its bid,
+   * never the print). Where it is short of ground the ground comes FIRST: it bids for the hectares
+   * this period and for the plant when it holds them, because plant on ground it does not hold is
+   * plant the programme will refuse to stand. A project whose surplus does not reach a hectare of
+   * ground has no ground to stand on and is no project.
+   */
+  let projectGround: ProjectGround | null = null;
+  if (ground !== undefined) {
+    const needed = asQty(
+      sum(wanted.map((x) => ground.hectaresUnder(kindOfOrder(offers, x.order.market), x.order.qty))).value,
+      'the hectares the plant takes',
+    );
+    const short = needed > ground.free ? subQty(needed, ground.free, 'the hectares it is short of') : NO_QTY;
+    const perCapacity = sum(
+      needs.map((n) => ground.hectaresUnder(n.capitalKind, upTick(n.unitsPerUnitPerPeriod))),
+    ).value;
+    const surplus = minus(
+      over(contributionPerAnnum, required, 'what a unit of capacity is worth to it'),
+      asked,
+      'what a unit of capacity is worth over the plant it takes',
+    );
+    const bid = perCapacity > 0
+      ? over(asPerPiece(surplus, 'the surplus a unit of capacity leaves'), asRatio(perCapacity, 'the hectares a unit of capacity takes'), 'what a hectare is worth to it')
+      : asPerPiece(0, 'plant that takes no ground');
+    projectGround = { needed, free: ground.free, short, bid };
+    if (short > 0) {
+      if (bid <= 0) return none<Project>();
+      const asking = ground.expected.some ? ground.expected.value : bid;
+      wanted.length = 0;
+      wanted.push({
+        order: { market: ground.market, side: 'buy', price: bid, qty: short },
+        outlay: valueAt(asking, short, 'what it expects to pay for the ground'),
+        asking,
+      });
+    }
+  }
   // C2: what the whole of it would cost at the level the market is asking. It is what the firm
   // wants to spend, and what it cannot pay for out of what it holds is its PROGRAMME (Firm E4.a).
   const spend = sum(wanted.map((x) => x.outlay)).value;
@@ -447,6 +518,7 @@ export function project(
   }
   const affordable = sum(funded).value;
   return some({
+    ground: projectGround,
     gap,
     cautiousRunRate: cautious,
     capacityNext,
@@ -466,6 +538,13 @@ export function project(
 }
 
 /** The asking price of one kind in the replacement bundle; a kind without one is a defect above. */
+/** 15.1: which kind of plant an order is for, off the offer list it was made from (Law 19). */
+function kindOfOrder(offers: readonly PlantOffer[], market: MarketId): string {
+  const o = offers.find((x) => x.market === market);
+  if (o === undefined) throw new Missing('Capital Programme C1', `no offer was made in ${String(market)}`, { market: String(market) });
+  return o.capitalKind;
+}
+
 function priceOfKind(build: ReadonlyMap<string, PerPiece>, capitalKind: string): PerPiece {
   const p = build.get(capitalKind);
   if (p === undefined) {

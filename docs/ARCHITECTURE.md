@@ -1622,3 +1622,17 @@ has ever been called, a quiet period as none). A door (`doors`) is live only whi
 a missed call is read for last period through the same registry read. `longestPromise` reads pension
 rows to the end of the mortality table.
 
+### The ground has a seller in each place, and a project buys it at the residual (item 15.1)
+
+`registry/land.ts` names the ground (`LAND`, `landId`, `landMarket`), the party present in each
+place that holds what nobody has built on (`LOCAL_AUTHORITY`, `authorityIdFor`, a kind the land
+module declares and seeds) and the planning policy (`PLANNING_RELEASE`, a count of hectares a
+period). The authority's ask is its own outlook of the line's price, the last print, or `'market'`;
+the firm's bid lives in its investment decision (`registry/capital.ts project` takes a
+`GroundForProject`; `firms/decide.ts groundFor` builds it): the hectares the plant wants less the
+free ground held, at the project's surplus over the plant per hectare it takes, ground before
+plant. The capital programme stands plant only on free ground (`groundToCarry`), pledges the
+ground under a new vintage to the authority in the vintage's name (a `pledge` leg in the
+commissioning instruction) and releases it at retirement. `groundUnder` in `registry/physical.ts`
+is the one arithmetic for ground under plant.
+

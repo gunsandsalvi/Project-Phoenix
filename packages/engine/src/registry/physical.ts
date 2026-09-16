@@ -537,8 +537,16 @@ export interface GroundReads {
 }
 
 export function groundUnderPlant(reads: GroundReads, vintages: readonly HeldVintage[]): number {
+  return groundUnder(reads, vintages);
+}
+
+/**
+ * Capital Programme C1 (15.1): THE GROUND SO MUCH PLANT STANDS ON, in km² — the one arithmetic for
+ * a vintage held, a vintage about to be commissioned and a project's bundle (Law 4).
+ */
+export function groundUnder(reads: GroundReads, rows: readonly { readonly capitalKind: string; readonly units: Qty }[]): number {
   const terms: number[] = [];
-  for (const v of vintages) {
+  for (const v of rows) {
     const kind = capitalKindOf(CAPITAL_KINDS, v.capitalKind);
     if (kind === undefined) continue;
     if (kind.landPerUnit === null) continue;

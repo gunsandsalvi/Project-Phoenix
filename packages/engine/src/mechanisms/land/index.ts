@@ -24,45 +24,38 @@
  * IT IS NOT MADE AND IT DOES NOT WEAR OUT, which is why it is not a capital kind. A capital kind is
  * made from a good and has a life (`CapitalKindDecl`); land is neither, and giving it a fake life
  * would put a wearing-out nobody pays into the capital charge.
+ *
+ * ITEM 15.1: WHO SELLS IT, AND AT WHAT. A LOCAL AUTHORITY present in each place holds that place's
+ * unbuilt ground — a country's one treasury selling every place's ground was a cross-border trade
+ * in this world's accounts — and it offers a period what a PLANNING POLICY says it may (parliament's
+ * number, never everything it holds), at its own outlook of what ground here has fetched, or at
+ * whatever the book gives where nothing has fetched anything yet. Nothing here posts a price of one
+ * cent to say "yes": the two asks that did are gone. The BUYER is the firm's investment decision
+ * (`registry/capital.ts project`): a project needs ground as it needs machines, and the most it
+ * will pay a hectare is what the ground is worth to it — the project's surplus over the plant it
+ * has to buy, spread over the hectares it takes — which is the residual land value the world this
+ * reflects prices ground at (Law 1). The capital programme refuses to stand plant on ground the
+ * firm does not hold, and pledges the ground to the vintage while it stands.
  */
 import type { Order } from '../../clearing/solver.js';
-import {
-  type PerPiece,
-  amountOf,
-  asPerPiece,
-  heldAsMoney,
-} from '../../core/measure.js';
+import { asPerPiece, type PerPiece } from '../../core/measure.js';
 import type { MarketDecl } from '../../clearing/market.js';
-import { atMost, div, sub, sum } from '../../core/num.js';
+import { atMost, div, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { about } from '../../world/context.js';
 import { CENT_TICK, HECTARES_PER_KM2 } from '../../registry/grid.js';
-import { asQty, downTick } from '../../core/tick.js';
-import {
-  instrumentId,
-  instrumentKindId,
-  marketId,
-  unitId,
-  type InstrumentId,
-  type MarketId,
-  type PartyId,
-  type RegionId,
-} from '../../core/ids.js';
-import type { InstrumentKindProfile } from '../../registry/kinds.js';
+import { asQty, downTick, type Qty } from '../../core/tick.js';
+import { type InstrumentId, type PartyId, type RegionId } from '../../core/ids.js';
+import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { shareOf, tilesOf } from '../../registry/geography.js';
-import { groundUnderPlant, vintagesHeld } from '../../registry/physical.js';
+import { groundUnder, isPlant, plantTerms } from '../../registry/physical.js';
 import type { GeographyDecl, RatioReads } from '../../registry/geography.js';
-
-
-import { FIRM, TREASURY } from '../../registry/profiles.js';
+import { HECTARE, LAND, LOCAL_AUTHORITY, PLANNING_RELEASE, authorityIdFor, hectaresOf, landId, landMarket } from '../../registry/land.js';
 import type { ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
-/** A place's ground, as a line. One per place: land in one place is not land in another (A1.a). */
-export const LAND = instrumentKindId('land');
-export const HECTARE = unitId('km2');
-export const landId = (region: RegionId): InstrumentId => instrumentId(`land.${region}`);
-export const landMarket = (region: RegionId): MarketId => marketId(`mkt.land.${region}`);
+// 15.1, Law 4: the names of the ground are the registry's, so a project and the programme read them.
+export { HECTARE, LAND, LOCAL_AUTHORITY, PLANNING_RELEASE, authorityIdFor, landId, landMarket } from '../../registry/land.js';
 
 /**
  * Law 3, XI-6: A CLAIM ON NOBODY, priced by whoever wants it. It is not a liability — the ground
@@ -85,7 +78,7 @@ export const landKind: InstrumentKindProfile = {
    * invariance argument cannot be stretched to cover, because an area is a physical fact and not a
    * unit anybody chose.
    *
-   * So the state carries what nobody has bought at nothing, and books what somebody pays when
+   * So the authority carries what nobody has bought at nothing, and books what somebody pays when
    * somebody pays it. A hectare that has traded has a cleared price like anything else.
    */
   carry: 'cost',
@@ -104,6 +97,23 @@ export const landKind: InstrumentKindProfile = {
   due: () => [],
   accrued: () => 0,
   cashFlows: () => [],
+};
+
+/**
+ * Item 15.1: THE LOCAL AUTHORITY. One per place, holding what nobody has built on there, selling
+ * it as its planning policy allows. It holds ground as a duty (`itsOffice`) and has nobody to
+ * enrich by keeping it, which is the reason it sells and the reason it sets no price. It fails on
+ * cash like any office; it borrows nothing and buys nothing on terms.
+ */
+export const localAuthorityKind: PartyKindProfile = {
+  id: LOCAL_AUTHORITY,
+  representation: 'named',
+  objective: 'itsOffice',
+  moneyIssuer: null,
+  fails: ['cash'],
+  borrows: false,
+  buysOnTerms: false,
+  depositClass: null,
 };
 
 /**
@@ -129,6 +139,34 @@ export function buildableKm2(g: GeographyDecl, reads: RatioReads, place: RegionI
   return sum(terms).value;
 }
 
+/**
+ * Item 15.1, C1, §46 B1, Law 3: WHAT THE AUTHORITY OFFERS, AND AT WHAT. The quantity is the
+ * planning policy's — so many hectares a period, and never more than it holds, which is arithmetic
+ * — and the level is its OWN outlook of what ground here has fetched where it has formed one, the
+ * last print where it has not, and where nothing has ever fetched anything it takes what the book
+ * gives: a seller with no opinion and no history names no level, and the first price of a place's
+ * ground is what the first buyer's reason came to. Nothing here says "one cent".
+ */
+export function authorityOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
+  if (m.instrument !== landId(view.self.region)) return [];
+  const held = view.free(m.instrument);
+  if (held <= 0) return [];
+  const release = asQty(view.params.count(PLANNING_RELEASE), 'the hectares the policy releases a period');
+  const qty = atMost(release, held, 'it cannot offer ground it does not hold');
+  if (qty <= 0) return [];
+  const outlook = view.outlook(about({ on: 'price', instrument: m.instrument }));
+  const print = view.print(m.instrument);
+  const level = outlook.some
+    ? some(asPerPiece(outlook.value.expected, 'where its own outlook puts the ground'))
+    : print.some
+      ? some(print.value.price)
+      : none<PerPiece>();
+  if (!level.some) return [{ party: view.self.id, side: 'sell', price: 'market', qty: asQty(qty, 'the hectares it releases') }];
+  const price = view.registry.onQuoteGrid(view.instruments.get(m.instrument).kind, m.ccy, level.value);
+  if (price <= 0) return [{ party: view.self.id, side: 'sell', price: 'market', qty: asQty(qty, 'the hectares it releases') }];
+  return [{ party: view.self.id, side: 'sell', price, qty: asQty(qty, 'the hectares it releases') }];
+}
+
 export function land(): SystemModule {
   return {
     id: 'land',
@@ -141,7 +179,7 @@ export function land(): SystemModule {
     requires: ['capital-programme', 'treasury', 'seed.foundation'],
     instrumentKinds: [landKind],
     derivativeKinds: [],
-    partyKinds: [],
+    partyKinds: [localAuthorityKind],
     curveFamilies: [],
     units: [
       {
@@ -152,129 +190,28 @@ export function land(): SystemModule {
         perUnit: HECTARES_PER_KM2,
       },
     ],
-    params: [],
+    params: [
+      {
+        id: PLANNING_RELEASE,
+        value: 100,
+        unit: 'hectares a period',
+        dimension: 'count',
+        kind: 'policy',
+        owner: 'parliament',
+        why: 'Capital Programme C1 (15.1): how much of a place\u2019s unbuilt ground its authority releases a period — a square kilometre. A rule about consents (POLICY, parliament\u2019s from worklist 14) and not a forecast of what anybody will build: the authority never offers everything it holds, and what a hectare fetches is what the book says.',
+      },
+    ],
     families: [],
     participants: [
       {
         /**
-         * C1: THE STATE SELLS WHAT NOBODY HAS BUILT ON. It offers the ground it holds and takes
-         * what the book gives it — no reservation, because a state holding ground it is not using
-         * has no cost of carrying it and nothing it would rather do with it. What it will not do
-         * is set the price: a posted price for land is exactly the "no posted benchmark" Appendix B
-         * forbids, and what a hectare fetches is what somebody paid.
+         * C1, 15.1: THE AUTHORITY SELLS WHAT NOBODY HAS BUILT ON — in its own place, because it is
+         * the party present there — and it sells because of what it is for (`itsOffice`), read off
+         * the kind and never off its name (Law 15).
          */
-        partyKind: TREASURY,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          /**
-           * Item 15: IT SELLS BECAUSE OF WHAT IT IS FOR, not because of what it is called. A party
-           * whose objective is `itsOffice` holds ground as a duty and has nobody to enrich by
-           * keeping it; one whose objective is `theResidual` holds it to build on. When `E-5`'s
-           * local authority arrives it will sell here with no change to this file, because the
-           * reason is declared on the kind and read here (Law 15).
-           */
-          if (view.objectiveOf(view.self.id) !== 'itsOffice') return [];
-          /**
-           * IN ITS OWN PLACE, and that is a limitation with a reason rather than an oversight.
-           *
-           * A country has one state and several places, and the state holds the ground of all of
-           * them — nothing is a residual with no holder. But a seller in one place selling ground
-           * in another is a CROSS-BORDER trade in this world's accounts (`external`'s balance of
-           * payments reads the parties' regions), and a hectare of us.2 sold to anybody is still in
-           * us.2: nothing crossed. What is missing is a party present in each place to sell its
-           * ground — a local authority, which is the same noun a port and a planning consent need
-           * and which arrives with the rest of 13m (`E-5`).
-           */
-          if (m.instrument !== landId(view.self.region)) return [];
-          const held = view.quantity(m.instrument);
-          if (held <= 0) return [];
-          /**
-           * THE LEAST IT WILL TAKE IS THE LEAST THERE IS. A state holding ground it is not using
-           * has no cost of carrying it and nothing it would rather do with it, so it takes whatever
-           * the book gives — but not NOTHING: land let go for no money is free land, which is the
-           * thing this module exists to remove. One piece of money is not a posted price and not a
-           * benchmark (Appendix B); it is the smallest number a price can be (Law 8).
-           */
-          return [{ party: view.self.id, side: 'sell', price: CENT_TICK, qty: held }];
-        },
-      },
-      {
-        /**
-         * A2, C1: A FIRM BUYS THE GROUND ITS PLANT STANDS ON, and it is short of exactly what it
-         * has built and not bought.
-         *
-         * Its own read, taken with its own view: the plant it holds, at the ground a unit of each
-         * kind takes (`landPerUnit`, declared since the capital programme was written and read
-         * until now only by the yield arithmetic — which asks how good the MARGINAL hectare is and
-         * never whether there is one).
-         *
-         * WHAT IT WILL PAY is what it has, and no more: there is no valuation of land anywhere in
-         * this file and no formula that could produce one (Law 3). A firm with nothing bids
-         * nothing and stands on the ground it already holds.
-         */
-        partyKind: FIRM,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          if (m.instrument !== landId(view.self.region)) return [];
-          const standing = groundUnderPlant(view, vintagesHeld(view, view.calendar.startOf(view.period)));
-          const short = sub(
-            standing * HECTARES_PER_KM2,
-            Number(view.quantity(m.instrument)),
-            'the ground it is standing on and has not bought',
-          );
-          /**
-           * Law 8: A BID FOR LESS THAN ONE HECTARE IS NOT A BID. A hectare is the piece and there
-           * is nothing between two of them, so a firm standing on a fraction it has not bought is
-           * standing on the piece it already holds. Without this the division below asked what it
-           * would pay for a ten-thousandth of a hectare and got 9.6 × 10²⁰ — past what an integer
-           * can hold, and the run stopped where it should have shrugged.
-           */
-          const wanted = downTick(short);
-          if (wanted < 1) return [];
-          const cash = heldAsMoney(view.cash(m.ccy), 'the money it holds of this');
-          if (cash <= 0) return [];
-          /**
-           * §46 B1, B3, Law 3: WHAT IT THINKS A HECTARE IS WORTH — its own outlook on this line
-           * where it has formed one, and the last print where it has not, which is the same read
-           * every saver in this world makes of every line it might buy (`households/portfolio.ts`).
-           *
-           * IT USED TO BID EVERYTHING IT HAD, per hectare: `cash / wanted`. That is not a
-           * reservation, it is a firm handing over its balance sheet for ground — and it did
-           * exactly that, leaving nothing for the hulls and the plant it was actually short of. A
-           * buyer with no opinion and no print to read bids one piece of money, which is the least
-           * there is and says "at that price, yes"; it does not say what the ground is worth.
-           */
-          const outlook = view.outlook(about({ on: 'price', instrument: m.instrument }));
-          const print = view.print(m.instrument);
-          const level: PerPiece = outlook.some
-            ? asPerPiece(outlook.value.expected, 'where its own outlook puts the ground')
-            : print.some
-              ? print.value.price
-              : asPerPiece(CENT_TICK, 'the least there is, which says yes and nothing more');
-          /**
-           * Law 8, item 2: A LEVEL GOES ON THE QUOTE GRID AND NOT THE QUANTITY ONE.
-           *
-           * This was `downTick(level)`, which is the door for a COUNT OF PIECES — it floored a price
-           * to a whole piece of money. A price has its own smallest increment (`onQuoteGrid`,
-           * 12b.1), and the two coincide only where a line's quote tick happens to be one piece.
-           * Both were `number` and nothing said which grid was meant.
-           */
-          const price = view.registry.onQuoteGrid(
-            view.instruments.get(m.instrument).kind,
-            m.ccy,
-            level,
-          );
-          if (price <= 0) return [];
-          /**
-           * Law 8, Money E1: AND NO MORE OF IT THAN ITS MONEY REACHES. That is arithmetic and not a
-           * bound (Law 6) — a bid it could not settle is a bid the wire would refuse, and what a
-           * buyer's money reaches at a price is the whole of what a demand curve is.
-           */
-          const affordable = downTick(
-            amountOf(cash, price, 'what its money reaches at that price'),
-          );
-          const qty = atMost(affordable, wanted, 'there is no more of it to buy than it is short of');
-          if (qty < 1) return [];
-          return [{ party: view.self.id, side: 'buy', price, qty: asQty(qty) }];
-        },
+        partyKind: LOCAL_AUTHORITY,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          view.objectiveOf(view.self.id) === 'itsOffice' ? authorityOrders(view, m) : [],
       },
     ],
     /**
@@ -310,28 +247,66 @@ export function land(): SystemModule {
         });
         /**
          * Appendix B: NO RESIDUAL WITH NO HOLDER. Every square kilometre of the place is somebody's
-         * from the first period, and the somebody is the state — which is what a state is, and
-         * which is why the first firm to want to build has a named counterparty to buy from.
+         * from the first period. What the opening's plant already stands on is its holder's, at
+         * nothing — the seed states the plant and the ground under it together (Seed C4: an opening
+         * is a stock, not a purchase) — and the rest is the authority's, which is what an authority
+         * is, and why the first firm to want to build has a named counterparty to buy from.
          */
-        const total = buildableKm2(ctx.registry.geography, ctx.params, r.id);
-        const treasury = treasuryOf(ctx, r.id);
-        if (treasury === undefined || total <= 0) continue;
-        ctx.endowUnits(treasury, id, downTick(total * HECTARES_PER_KM2), 0);
+        const total = hectaresOf(buildableKm2(ctx.registry.geography, ctx.params, r.id));
+        if (total <= 0) continue;
+        let underPlant: Qty = asQty(0, 'nothing yet');
+        for (const p of ctx.parties.all()) {
+          if (p.representation !== 'named' || p.region !== r.id) continue;
+          const standing = groundUnderAt(ctx, p.id, id);
+          if (standing <= 0) continue;
+          ctx.endowUnits(p.id, id, standing, 0);
+          underPlant = asQty(underPlant + standing, 'the ground the opening\u2019s plant stands on');
+        }
+        const authority = authorityFor(ctx, r.id);
+        if (authority === undefined) continue;
+        const rest = downTick(total - underPlant);
+        if (rest > 0) ctx.endowUnits(authority, id, rest, 0);
       }
     },
   };
 }
 
-/**
- * The state that holds this place's unbuilt ground. A country has ONE treasury and several regions,
- * so the ground of every one of them is the same state's — which is why this asks the country and
- * not the region, and why a place whose country has no state has no ground to sell and says so.
- */
-function treasuryOf(ctx: SeedContext, region: RegionId): PartyId | undefined {
-  const country = ctx.registry.regions.get(region)?.country;
-  if (country === undefined) return undefined;
-  for (const p of ctx.parties.ofKind(TREASURY)) {
-    if (ctx.registry.regions.get(p.region)?.country === country) return p.id;
+/** Seed C4: the whole hectares a named party's opening plant stands on, off its own holdings. */
+function groundUnderAt(ctx: SeedContext, party: PartyId, land: InstrumentId): Qty {
+  const rows: { readonly capitalKind: string; readonly units: Qty }[] = [];
+  for (const h of ctx.register.holdingsOf(party)) {
+    if (h.instrument === land) continue;
+    const i = ctx.instruments.get(h.instrument);
+    if (!i.status.live || !isPlant(i)) continue;
+    rows.push({ capitalKind: plantTerms(i).capitalKind, units: ctx.register.quantity(party, h.instrument) });
   }
-  return undefined;
+  if (rows.length === 0) return asQty(0, 'no plant');
+  return hectaresOf(groundUnder(ctx, rows));
+}
+
+/**
+ * 15.1: THE AUTHORITY OF A PLACE, made here if the foundation has not, banked at the first bank of
+ * the place. A place with no bank has nowhere for an office to hold its money and gets none, which
+ * is a seed finding and not a default.
+ */
+function authorityFor(ctx: SeedContext, region: RegionId): PartyId | undefined {
+  const id = authorityIdFor(region);
+  if (ctx.parties.has(id)) return id;
+  const banks = [...ctx.parties.all()].filter((p) => ctx.registry.issuesMoney(p.kind) && p.bank !== p.id);
+  const country = ctx.registry.regions.get(region)?.country;
+  // At the bank of its own place where there is one, else at a bank of its country: an office
+  // banks where its money is, and a place with no bank of its own still has a country's.
+  const bank = banks.find((p) => p.region === region) ?? banks.find((p) => ctx.registry.regions.get(p.region)?.country === country);
+  if (bank === undefined) return undefined;
+  const name = ctx.registry.regions.get(region)?.name ?? String(region);
+  ctx.parties.add({
+    id,
+    kind: LOCAL_AUTHORITY,
+    region,
+    name: `${name} Council`,
+    bank: bank.id,
+    representation: 'named',
+    status: { alive: true, standing: 'good' },
+  });
+  return id;
 }
