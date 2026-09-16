@@ -15,6 +15,7 @@
  *
  * NOTHING HERE DERIVES ANYTHING. A notice that was not published is NOTHING, never a zero (App A).
  */
+import { paramId, type ParamId } from '../core/ids.js';
 import { asCash, type Cash, asRatio, type Ratio } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
@@ -325,3 +326,13 @@ export function primeCallOn(reads: WireReads, client: string): Option<PrimeCall>
     ? some({ period: said.period, unmet })
     : none<PrimeCall>();
 }
+
+/**
+ * Central Bank B1, B2 (18a.3): THE NAME OF A MONEY'S ADMINISTERED RATE.
+ *
+ * The rate itself is the money market's to set and to publish; the NAME is public, the way a
+ * benchmark's or an index's is, because everything that prices against it has to be able to ask for
+ * it — a central bank's own desk, a bank's board, a borrower choosing between fixed and floating.
+ * Naming it here is what keeps those readers out of each other's modules (Law 15).
+ */
+export const policyRateOf = (ccy: string): ParamId => paramId(`centralBank.policyRate.${ccy}`);

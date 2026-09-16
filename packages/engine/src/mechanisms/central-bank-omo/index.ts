@@ -40,12 +40,55 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { downTick } from '../../core/tick.js';
+import { none, some, type Option } from '../../core/option.js';
+import type { PerPiece } from '../../core/measure.js';
+import type { Instrument } from '../../register/instruments.js';
+import type { DayCount } from '../../calendar/daycount.js';
+import { priceAt } from '../../prices/curve.js';
+import { policyRateOf } from '../../registry/notices.js';
 
 export const CB_PARAMS = {
   targetShare: paramId('centralBank.omo.targetHoldingShare'),
   reinvest: paramId('centralBank.reinvest'),
   remittanceMonths: paramId('centralBank.remittance.periodicity'),
 } as const;
+
+/**
+ * Central Bank C1, C1.b, Law 3 (18a.3): THE LEVEL AT WHICH ITS REASON STOPS, and it posts one.
+ *
+ * It posted `price: 'market'` — a schedule with no level in it, which in a session that clears on
+ * the marginal bid is a party saying *whatever it takes*. A central bank that will pay whatever it
+ * takes for sovereign paper is the buyer of last resort Appendix B forbids, and it is the one
+ * participant in this world whose money never runs out, so nothing else would have stopped it.
+ *
+ * What stops it is its OWN RATE. The money it buys with costs it what it pays on reserves, and the
+ * paper it buys yields what it yields, so it will not pay more than the price at which this line
+ * yields its own policy rate — one derivation (`priceAt`, the inverse of the yield everything else
+ * is derived from) off numbers that are already public: its rate, and the flows the paper promises.
+ * Above that level it is paying to hold paper, and there is no reason in its mandate for that.
+ *
+ * Nothing when the line promises nothing this reader can see: a schedule with no level is what this
+ * change exists to remove, so no level means no order.
+ */
+function willPay(view: ParticipantView, i: Instrument): Option<PerPiece> {
+  const flows = view.registry
+    .instrumentKind(i.kind)
+    .cashFlows(i, view.calendar.startOf(view.period), view.calendar, view.registry);
+  if (flows.length === 0) return none<PerPiece>();
+  const rate = view.params.perAnnum(policyRateOf(String(i.ccy)));
+  return some(
+    priceAt(
+      flows,
+      rate,
+      view.calendar.startOf(view.period),
+      OMO_DAY_COUNT,
+      'what this line is worth at its own rate',
+    ),
+  );
+}
+
+/** Law 8: the convention its own arithmetic is in, stated once. */
+const OMO_DAY_COUNT: DayCount = 'ACT/365F';
 
 export const centralBankOmo: SystemModule = {
   id: 'central-bank-omo',
@@ -132,8 +175,13 @@ export const centralBankOmo: SystemModule = {
         // is doing is closing a gap and never overshooting one.
         if (gap > 0) {
           const want = downTick(gap);
-          return want > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: want }] : [];
+          if (want <= 0) return [];
+          const level = willPay(view, i);
+          if (!level.some || level.value <= 0) return [];
+          return [{ party: view.self.id, side: 'buy', price: level.value, qty: want }];
         }
+        const asking = willPay(view, i);
+        if (!asking.some || asking.value <= 0) return [];
         const free = view.free(i.id);
         const size = downTick(
           atMost(
@@ -142,7 +190,12 @@ export const centralBankOmo: SystemModule = {
             'it sells what it holds unencumbered and no more',
           ),
         );
-        return size > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: size }] : [];
+        // C1: and it sells at the same level, for the same reason read the other way round — below
+        // it, somebody else is paying more for the paper than the money it would get back is worth
+        // to it, and it is happy to let them. One number, one reason, both sides (Law 4).
+        return size > 0
+          ? [{ party: view.self.id, side: 'sell', price: asking.value, qty: size }]
+          : [];
       },
     },
   ],

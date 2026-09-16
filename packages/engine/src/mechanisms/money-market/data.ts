@@ -159,7 +159,8 @@ export const MM_PARAMS = {
 } as const;
 
 /** C-3: the rate the central bank of THIS money administers (Central Bank B1, B2). */
-export const policyRateOf = (ccy: string): ParamId => paramId(`centralBank.policyRate.${ccy}`);
+/** 18a.3: the NAME is the kernel's, so a reader that prices against the rate needs no module. */
+export { policyRateOf } from '../../registry/notices.js';
 
 /**
  * C-3, worklist 13l, Central Bank B1, B2: FOUR CENTRAL BANKS, FOUR RATES.

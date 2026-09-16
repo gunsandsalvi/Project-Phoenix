@@ -269,7 +269,12 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   and it has nothing to act on: the overnight book prints twice in twelve periods (21.77), so there
   is no print outside the corridor to answer. Positioned with 21.77 at 23.3 — if the book trades and
   the print leaves the corridor, the desk is an item and the reading will say so.
-- [ ] 18a.3 `central-bank-omo`: a SCHEDULE (the level at which its reason stops), never `price: 'market'`; delete `CB_PARAMS.targetShare` — and with it `seed.centralBank.openingHoldingShare` (16.7's other half): the central bank opens holding what its schedule buys in the first session, and the seed sizes the banks' reserves from their own liquidity rule rather than from a stated share of every line.
+- [x] 18a.3 `central-bank-omo` posts a SCHEDULE: the price at which the line yields its OWN POLICY
+  RATE, derived once with `priceAt` off its rate and the flows the paper promises, on both sides —
+  above it the money it prints costs more than the paper pays, and below it somebody else may have
+  the paper. `price: 'market'` is gone from the one participant in this world whose money never runs
+  out, which is what Appendix B's *no buyer of last resort* means when the buyer is a central bank.
+  **What is NOT done here and why** — deleting `CB_PARAMS.targetShare` and `seed.centralBank.openingHoldingShare` is not a change to this module at all: the seed's share is what decides THE SIZE OF CENTRAL-BANK MONEY at period 0 — the treasury's buffer and every bank's reserves are shares of it — so removing it means the world opens with no central-bank money and the banks' reserves come from their own liquidity rule instead. That is a redesign of the opening balance sheet (Seed C1, Treasury D4.b), it is one bounded change of its own, and it is inserted as **18a.3a** at its dependency position: after the desk has a schedule (here) and before 23's measurements, because what the opening sheet is decides every stock the measurements read.
 - [ ] 18a.4 A negative level is legal for time: `MarketDecl.levelMayBeNegative` from the kind profile (`quotedAs: 'rate'`); `settlement.ts`, `price-store.ts`, `solver.ts`, `core/tick.ts` dispatch on it; `treasury/index.ts openLine` coupon floor deleted (a negative yield issues a zero above par). Test: −0.5 % clears and both balance sheets book negative interest.
 - [ ] 18a.5 Delete the JPY `why`'s apology (`money-market/data.ts:185`).
 
