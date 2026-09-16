@@ -15,6 +15,8 @@
  * FAILS, is journalled as a shortfall, and the next programme sees it. That is the constraint the
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
+import { about } from '../../world/context.js';
+import { fxPairId } from '../../core/ids.js';
 import {
   atMostCash,
   negated,
@@ -22,6 +24,7 @@ import {
   sumCash,
   type Cash,
   type PerPiece,
+  type Ratio,
   acrossMembers,
   amountOf,
   asAmount,
@@ -55,7 +58,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { addTo, atLeast, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
+import { addTo, atLeast, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -638,12 +641,55 @@ function arrearsStanding(ctx: MechanismContext, id: PartyId): readonly Instrumen
   );
 }
 
+/**
+ * Sovereign A4.b, B2, G2, Cross-Border C2 (16.4): WHICH MONEY IT BORROWS IN, and it is a choice.
+ *
+ * In its own money it opens at its own curve. In another's it has no curve of its own to open at,
+ * so it opens at THAT money's sovereign benchmark (Sovereign D4: other credit is a spread to it, and
+ * a debut has no spread yet) — and what that borrowing COSTS it is the benchmark yield plus what it
+ * expects its own money to do against that one over a year, read off its own outlook of the pair's
+ * print (§46 A2.a). A treasury with no view of a pair has no number to compare and stays at home
+ * (App A). It borrows where it reads the cost lowest; C2 says why a state does, and A4.b says what it
+ * has then taken on: a debt in a money it cannot create, which is the whole of its credit risk.
+ */
+function fundingCostIn(
+  ctx: MechanismContext,
+  id: PartyId,
+  home: CurrencyCode,
+  money: CurrencyCode,
+  on: Civil,
+  maturity: Civil,
+): Option<{ readonly cost: Ratio; readonly opensAt: Ratio }> {
+  if (money === home) {
+    const reading = ctx.curve(curveFamilyOf(id, home)).at(yearFraction(dayCountOn(ctx, id, home), on, maturity));
+    return reading.yield.some ? some({ cost: reading.yield.value, opensAt: reading.yield.value }) : none();
+  }
+  const benchmark = ctx.sovereignCurveIn(money);
+  if (!benchmark.some) return none();
+  const reading = ctx.curve(benchmark.value.id).at(yearFraction(benchmark.value.dayCount, on, maturity));
+  if (!reading.yield.some) return none();
+  const pair = fxPairId(home, money);
+  const view = ctx.participant(id);
+  const outlook = view.outlook(about({ on: 'price', instrument: pair }));
+  if (!outlook.some || outlook.value.expected <= 0) return none();
+  const now = ctx.valuation.rateInForce(home, money, ctx.period);
+  // What one home buys of `money` now over what it expects next period, per year: a home expected to
+  // weaken makes a debt in `money` dearer to service by that much (Cross-Border B3, A2.a).
+  const ofAYear = yearFraction(benchmark.value.dayCount, on, ctx.calendar.startOf(period(ctx.period + 1)));
+  if (ofAYear <= 0) return none();
+  const move = div(now / outlook.value.expected - 1, ofAYear, 'what it expects its money to do against that one, a year');
+  return some({
+    cost: asRatio(reading.yield.value + move, `what borrowing in ${String(money)} costs it, a year`),
+    opensAt: reading.yield.value,
+  });
+}
+
 /** Sovereign C1: announce a size on a line, at a walk-away the curve gives it (C5). */
 function announce(
   ctx: MechanismContext,
   id: PartyId,
-  ccy: CurrencyCode,
-  size: Cash,
+  home: CurrencyCode,
+  need: Cash,
   on: Civil,
 ): Option<InstrumentId> {
   const lines = linesOf(ctx, id, on);
@@ -670,20 +716,33 @@ function announce(
     throw new Impossible('Sovereign A2.c', 'the maturity mix names no tenor to bring');
   }
   const maturity = gridDate(addMonths(on, monthsOf(target)));
-  const curve = ctx.curve(curveFamilyOf(id, ccy));
-  const dayCount = dayCountOn(ctx, id, ccy);
-  const reading = curve.at(yearFraction(dayCount, on, maturity));
-  if (!reading.yield.some) {
-    // Nothing has printed anywhere on this curve, so there is no level to walk away from. The
-    // treasury does not invent one: it brings nothing this period and says so.
+  // 16.4: the money it borrows in is the one it reads the cost lowest in — its own by default.
+  let ccy: CurrencyCode = home;
+  let chosen: { readonly cost: Ratio; readonly opensAt: Ratio } | undefined;
+  for (const money of ctx.registry.currencies.keys()) {
+    const cost = fundingCostIn(ctx, id, home, money, on, maturity);
+    if (!cost.some) continue;
+    if (chosen === undefined || cost.value.cost < chosen.cost) {
+      chosen = cost.value;
+      ccy = money;
+    }
+  }
+  if (chosen === undefined) {
+    // Nothing has printed anywhere on any curve it could open at, so there is no level to walk
+    // away from. The treasury does not invent one: it brings nothing this period and says so.
     ctx.record('treasury.noCurve', [id], { reason: 'no point on the curve' }, true);
     return none<InstrumentId>();
   }
-  const y = reading.yield.value;
+  const benchmark = ctx.sovereignCurveIn(ccy);
+  const dayCount = ccy === home || !benchmark.some ? dayCountOn(ctx, id, home) : benchmark.value.dayCount;
+  // Currency C4: the need is in its own money; what it must RAISE in another is that at the rate in
+  // force — a size, and the proceeds land in its account in that money (A3, B2.a).
+  const size = ctx.valuation.inMoney(need, ccy, ctx.period);
+  const y = chosen.opensAt;
   const existing = lines.find((l) => compareCivil(l.maturity, maturity) === 0);
   const instrument =
     existing === undefined
-      ? openLine(ctx, id, ccy, maturity, y, wantShort)
+      ? openLine(ctx, id, ccy, maturity, y, wantShort, dayCount)
       : instrumentId(existing.id);
   const inst = ctx.instruments.get(instrument);
   const flows = ctx.registry
@@ -747,8 +806,9 @@ function openLine(
   maturity: Civil,
   y: number,
   short: boolean,
+  // 16.4: the convention of the money it borrows in — its own curve's at home, the benchmark's abroad.
+  dayCount: DayCount,
 ): InstrumentId {
-  const dayCount = dayCountOn(ctx, issuer, ccy);
   const on = ctx.calendar.startOf(ctx.period);
   const id = instrumentId(`${issuer}.${short ? 'bill.' : ''}${formatCivil(maturity)}`);
   const terms: SovereignBondTerms | SovereignBillTerms = short

@@ -1502,7 +1502,7 @@ measurement is taken there is nothing to name.
 | `Cross-Border B3` | MISSING |  |
 | `Cross-Border B4` | MISSING |  |
 | `Cross-Border C1` | MISSING |  |
-| `Cross-Border C2` | MISSING |  |
+| `Cross-Border C2` | PARTIAL | packages/engine/src/mechanisms/treasury/index.ts (16.4: a treasury borrows in the money it reads the cost lowest in — its own curve at home, another money's benchmark plus its own outlook of the pair abroad — and then owes a money it does not earn, failing in it as 12a.6 made it); a firm still issues in its home money only (17.4, 21.49) |
 | `Cross-Border C3` | MISSING |  |
 | `Cross-Border C4` | MISSING |  |
 | `Cross-Border C5` | MISSING |  |

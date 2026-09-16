@@ -23,7 +23,7 @@ import { deathsIn, isPensionTerms, isPolicyTerms, POLICY_ROW } from '../../regis
 import { callsOn } from '../../registry/funding.js';
 import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { fxPairId, paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
 /**
  * Item 2: THE ARITHMETIC HERE IS DELIBERATELY UNDIMENSIONED, and this is the one place in the engine
  * where that is the right answer rather than a gap.
@@ -430,6 +430,16 @@ function exposed(
           unit: 'share of the cohort a period',
         });
     }
+  }
+  // Currency B1.a, Cross-Border A2.a, B3 (16.4): A PARTY OBSERVES WHAT ITS MONEY BUYS OF EVERY OTHER
+  // — the pair's print each period, public — so a borrower weighing a foreign issue, a merchant
+  // weighing a far price or a holder of a foreign balance has ITS OWN view of the rate (§46 A2.a).
+  const home = ctx.registry.currencyOf(p.region);
+  for (const other of ctx.registry.currencies.keys()) {
+    if (other === home) continue;
+    const pair = fxPairId(home, other);
+    const struck = ctx.prices.read(pair, ctx.period);
+    if (struck.some) out.set(about({ on: 'price', instrument: pair }), { value: struck.value.price, unit: other });
   }
   // Freight C1, Cross-Border B2 (16.3): A PARTY OBSERVES WHAT CARRIAGE OUT OF ITS OWN PLACE COST this
   // period — the rate each leg's session struck, a public print — so a shipper or a merchant bids

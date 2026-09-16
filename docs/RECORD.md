@@ -12296,3 +12296,20 @@ were red before this change and are red after it, and say so.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `freight.test.ts` 13 green,
 3 red as at 15.7. Suites at the end of item 16.
+
+## Item 16.4 — Foreign-currency issuance: the treasury half
+
+A treasury borrows where it reads the cost lowest (Sovereign A4.b, B2, Cross-Border C2). At home
+that is its own curve at the tenor its mix wants; in another money it has no curve of its own, so it
+opens at that money's sovereign benchmark (Sovereign D4) and what the borrowing costs it is the
+benchmark yield plus what it expects its own money to do against that one over a year, off its own
+outlook of the pair's print — every party now observes the pairs between its money and every other,
+each period (§46 A2.a, Currency B1.a). A treasury with no view of a pair has no number to compare
+and stays at home (App A). What it must raise abroad is its need at the rate in force, the line
+carries the borrowing money's own convention, and the proceeds land in its account in that money;
+it owes a money it cannot create and fails in it as 12a.6 made it (G2). The first four-country run
+picked EUR at once (21.50). The firm half — a firm choosing its money by the lenders and the cost it
+reads in each — is 17.4's and is positioned there (21.49).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green; `treasury-default.test.ts`
+green; `treasury.test.ts` five red, all in the baseline. Suites at the end of item 16.
