@@ -25,6 +25,7 @@ import {
   buildLagParam,
   capacityFrom,
   capitalChargePerUnit,
+  plantCondition,
   goodId,
   isCreateLeg,
   nextPeriod,
@@ -273,8 +274,8 @@ describe('what capital is (Capital Programme A)', () => {
     // capital of one kind is not capital of another, so a use that needs both is limited by the
     // one it has least of, and no amount of the other makes up for it.
     const held: HeldVintage[] = [
-      { instrument: 'plant.a.1', capitalKind: 'a', units: asQty(100), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
-      { instrument: 'plant.b.1', capitalKind: 'b', units: asQty(6), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+      { instrument: 'plant.a.1', capitalKind: 'a', units: asQty(100), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, periodsWhole: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+      { instrument: 'plant.b.1', capitalKind: 'b', units: asQty(6), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, periodsWhole: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
     ];
     const needs = [
       { capitalKind: 'a', unitsPerUnitPerPeriod: asRatio(2, 'what a unit of output takes of a') },
@@ -288,6 +289,36 @@ describe('what capital is (Capital Programme A)', () => {
     // A line whose recipe needs NO plant is not limited by plant, which is a different answer from
     // being limited by a large number (Law 6): it says nothing rather than saying infinity.
     expect(capacityFrom([], held).some).toBe(false);
+  });
+
+  it('reads how worn the plant is off the vintage, at the WORST kind it needs (A6, Firm A3)', () => {
+    // 17e.1: a vintage states the life it was built with and what is left of it, so how worn it is
+    // is those two numbers and nothing else. Half a life left is a half, and no coefficient says so.
+    const half: HeldVintage[] = [
+      { instrument: 'plant.a.1', capitalKind: 'a', units: asQty(10), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 5, periodsWhole: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+    ];
+    const state = plantCondition(half, ['a']);
+    expect(state.some && state.value).toBe(0.5);
+    // Within a kind the vintages count by their UNITS: nine new machines and one nearly dead one is
+    // a line in good order, not a line at the state of its oldest machine.
+    const mostlyNew: HeldVintage[] = [
+      { instrument: 'plant.a.1', capitalKind: 'a', units: asQty(90), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, periodsWhole: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+      ...half,
+    ];
+    const mixed = plantCondition(mostlyNew, ['a']);
+    expect(mixed.some && mixed.value).toBeCloseTo(950 / 1000, 12);
+    // Across kinds it is the worst of them, for the same reason capacity is the scarcest: new
+    // presses do not make up for a worn-out kiln, and there is no mean over two different units.
+    const both: HeldVintage[] = [
+      ...mostlyNew,
+      { instrument: 'plant.b.1', capitalKind: 'b', units: asQty(4), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 1, periodsWhole: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+    ];
+    const worst = plantCondition(both, ['a', 'b']);
+    expect(worst.some && worst.value).toBeCloseTo(0.1, 12);
+    // A kind it holds NONE of says nothing rather than saying zero: it is short, not slow, and
+    // `capacityFrom` is the read that says short (Law 6 — no floor is put under an absence).
+    expect(plantCondition(half, ['b']).some).toBe(false);
+    expect(plantCondition([], ['a']).some).toBe(false);
   });
 });
 

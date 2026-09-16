@@ -392,6 +392,15 @@ export function serviceLeft(terms: PlantTerms, on: Civil, calendar: Calendar): n
 }
 
 /**
+ * A6: how many periods of service the vintage was built with — the whole of its life, from the two
+ * dates on it. A vintage that has half of this left is half worn, and nobody wrote either number.
+ */
+export function serviceWhole(terms: PlantTerms, calendar: Calendar): number {
+  const days = sub(dayNumber(terms.retires), dayNumber(terms.serviceDate), 'days of service in it');
+  return div(days, calendar.periodDays, 'periods of service in it');
+}
+
+/**
  * A3, A5: what a lot of a vintage is carried at after this period's wear.
  *
  * Straight line over what is LEFT: a lot with n periods of service ahead of it gives up one of them
@@ -477,6 +486,8 @@ export interface HeldVintage {
   readonly basisPerUnit: PerPiece;
   /** A6: periods of service it has left, from the two dates on it. */
   readonly periodsLeft: number;
+  /** A6: the periods of service it was built with, from the same two dates. */
+  readonly periodsWhole: number;
   /** A3: what a unit of it wears out by this period. */
   readonly wearPerUnit: PerPiece;
 }
@@ -497,6 +508,7 @@ export function vintagesHeld(view: PlantHolder, on: Civil): HeldVintage[] {
         units: lot.qty,
         basisPerUnit: lot.basisPerUnit,
         periodsLeft: serviceLeft(terms, on, view.calendar),
+        periodsWhole: serviceWhole(terms, view.calendar),
         wearPerUnit: wearPerUnit(terms, lot.basisPerUnit, on, view.calendar),
       });
     }
@@ -614,6 +626,39 @@ export function groundUnder(
 /** A2, A4: the units of one kind of plant this party has in service. */
 export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): Qty {
   return sum(vintages.filter((v) => v.capitalKind === capitalKind).map((v) => v.units)).value;
+}
+
+/**
+ * Firm A3, Capital Programme A6 (17e.1): WHAT STATE THE PLANT A LINE NEEDS IS IN.
+ *
+ * A vintage already states its whole life and what is left of it — two dates on the instrument — so
+ * how worn the plant is is a READ of those dates and takes no new number for "better" (Law 2). New
+ * plant is in the state new plant is in because that is what a service date MEANS; a firm that never
+ * commissions holds plant that is closer to its retirement every period, and one that does holds
+ * plant that is not.
+ *
+ * Within a kind the vintages count by their units. Across kinds the line runs at the WORST of the
+ * kinds it needs, for the same reason capacity runs at the scarcest of them (A4), and never at a
+ * mean over kinds whose units are not the same thing (Law 8, "no decision at an average").
+ *
+ * A vintage with nothing left of its life is not plant in poor condition, it is plant that is gone
+ * (`wornOut`), so it is not counted at all. `none` when the party holds none of what the line needs:
+ * what that costs it is CAPACITY, and `capacityFrom` is the read that already says so.
+ */
+export function plantCondition(
+  vintages: readonly HeldVintage[],
+  capitalKinds: readonly string[],
+): Option<Ratio> {
+  let worst = none<Ratio>();
+  for (const kind of capitalKinds) {
+    const mine = vintages.filter((v) => v.capitalKind === kind && v.periodsLeft > 0);
+    const left = sum(mine.map((v) => v.units * v.periodsLeft)).value;
+    const whole = sum(mine.map((v) => v.units * v.periodsWhole)).value;
+    if (whole <= 0) continue;
+    const state = asRatio(div(left, whole, 'what is left of it'), 'the state of the plant it holds');
+    if (!worst.some || state < worst.value) worst = some(state);
+  }
+  return worst;
 }
 
 /**

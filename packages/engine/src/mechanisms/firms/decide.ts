@@ -63,6 +63,7 @@ import {
 } from '../../registry/physical.js';
 import {
   capacityFrom,
+  plantCondition,
   rentedRoom,
   capitalChargePerUnit,
   vintagesHeld,
@@ -202,6 +203,22 @@ interface Technology {
   readonly plant: readonly PlantNeed[];
 }
 
+/**
+ * Firm A3, Capital Programme A6 (17e.1): the same work on worse plant takes longer.
+ *
+ * The state of the plant is read over the kinds the RECIPE names, and never over everything the
+ * firm happens to hold: the silo a line stores its output in is not what makes the output, and a
+ * need the recipe leases is not the holder's plant at all (15.4). A firm holding none of it is not
+ * slow, it is short — `capacityFrom` is what says so, and it says so in the same period.
+ */
+function onThePlantItHolds(view: ParticipantView, terms: GoodTerms, hours: Ratio): Ratio {
+  const state = plantCondition(
+    vintagesHeld(view, view.calendar.startOf(view.period)),
+    terms.recipe.plant.filter((r) => r.leased !== true).map((r) => r.capitalKind),
+  );
+  return state.some ? over(hours, state.value, 'hours a unit takes on the plant it holds') : hours;
+}
+
 export function technologyOf(view: ParticipantView, line: FirmDecl): Technology {
   const output = goodId(line.subUnit, view.self.region);
   const terms = goodTerms(view.instruments.get(output));
@@ -215,14 +232,22 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     // recipe's rate, read off its own history of created units. Nothing stores a level.
     // 12c.2: and what its PEOPLE brought — the pieces they had made in this trade at the employers
     // they came from, carried on their rows — counts with what this line has made.
-    hoursPerUnit: scale(
-      learnedHoursPerUnit(
-        view.params.ratio(terms.recipe.labourHoursPerUnit),
-        addQty(view.made(output), broughtBy(view, line), 'what the line and its people have made'),
-        view.params.ratio(terms.recipe.learningRate),
+    // 17e.1: and WHAT STATE ITS PLANT IS IN. The drawn scale is what the firm STARTS at; what it
+    // is now is that against the plant it actually holds, by vintage (Capital Programme A6). Plant
+    // with half its life left takes twice the hours the same work takes on new plant, and neither
+    // half of that was written down: a vintage states its own two dates and the ratio is their read.
+    hoursPerUnit: onThePlantItHolds(
+      view,
+      terms,
+      scale(
+        learnedHoursPerUnit(
+          view.params.ratio(terms.recipe.labourHoursPerUnit),
+          addQty(view.made(output), broughtBy(view, line), 'what the line and its people have made'),
+          view.params.ratio(terms.recipe.learningRate),
+        ),
+        view.params.ratio(labourScaleId(line.firm)),
+        'hours a unit takes this firm',
       ),
-      view.params.ratio(labourScaleId(line.firm)),
-      'hours a unit takes this firm',
     ),
     yieldRate: view.params.ratio(terms.recipe.yieldRate),
     leadTime: view.params.periods(terms.recipe.leadTimePeriods),
