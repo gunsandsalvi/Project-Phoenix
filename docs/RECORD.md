@@ -12651,3 +12651,42 @@ restructuring is the subject and an agreement transition is already the work.
 published; the module declares no line size and no placeholder at all; the commitment consumes less
 capital than a drawn loan would and says how much; and the headroom is the limit less what was
 drawn, answered by the kind.
+
+## Item 17.4 — Issuing reasons: a target, a service, and a tap that taps
+
+**A2.b: the target, and not one number was declared for it.** *"A target or a constraint it is
+managing towards... that target is the management's own: a lender's covenant line moderated by the
+management's own risk aversion, and approached at the management's own pace."* All three are reads
+this world already has. The LINE is the tightest leverage covenant its own lenders actually imposed
+on it, which is a fact about what it had to promise to be lent to (B2). The MODERATION is the risk
+aversion drawn per firm at the seed — the margin a management insists on before committing money it
+cannot get back — because a management cautious about a project is cautious about a balance sheet
+and runs inside its promise rather than against it. The PACE is the horizon it counts, its patience:
+it closes the gap over that many periods, so a management that will not look past two years moves
+faster than one that looks past ten. A firm nobody has lent to on terms has no covenant, no target,
+and brings what it is short of — it has made no promise to run inside. A firm already past its
+target issues nothing and stays short, which is what a target being real means.
+
+**A3.a: the service is interest PLUS scheduled principal.** The covenant test read the coupon alone,
+so a five-year bullet cost its issuer the same in its last year as in its first — and its last year
+is exactly the year a coverage covenant is for. `serviceOverAYear` reads the line's own schedule for
+what falls due within a year, whatever shape it is.
+
+**C8: a tap taps.** A line is named by its issuer and its maturity, so a firm coming back a week
+later at "today plus five years" was opening a SECOND line, with its own book and its own covenants,
+every week it was short — a market with one bond per issuer per week and no line deep enough to
+trade. Paper matures on stated dates: the tenor now lands on the end of the month it falls in, every
+issue inside that month is the same line, and the band is the calendar rather than a number.
+
+**Three of the item's reasons are NOT built, and are written up as 21.60:** tenor, size and
+diversification as separate reasons; covenants as a term of the holder's bid (B2's negotiation still
+has one side, so an issuer promises the tightest covenant a lender could ask for); and 21.49's
+Cross-Border C2 — a firm issues in the money of its published need, which is its home money, so the
+lender base and the cost in another money never enter. All three are mechanisms rather than numbers,
+and all three land at 17b, where a buyout is the first deal that needs a tranche in another money
+and a lender that bargains.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`corporate-bond`: three new tests — every maturity is a month end, the covenant's service is a real
+figure, and nothing anywhere declares what a management wants. The suite's two standing reds are
+unchanged (21.58).

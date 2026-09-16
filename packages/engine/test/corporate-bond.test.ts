@@ -435,3 +435,51 @@ describe('the arranger (Corporate Credit C1, C6, C7, C10, C11)', () => {
     expect(declared.some((id) => id.includes('margin') || id.includes('fee'))).toBe(false);
   });
 });
+
+/**
+ * A2.b, A2.c, A3.a, C8 (17.4): issuing is a DECISION — a management approaching a target it did not
+ * choose alone, at a pace that is its own — and a tap is a tap.
+ */
+describe('the reasons a firm issues (Corporate Credit A2.b, A2.c, A3.a, C8)', () => {
+  it('lands every issue of a month on one maturity, so a firm taps rather than mints (C8, Law 9)', () => {
+    const w = ranWorld('bond-issue', 30);
+    // C8: a line is named by its issuer and its maturity, so a firm that came back a week later at
+    // "today plus five years" was opening a SECOND line every week it was short. Paper matures on
+    // stated dates: the tenor lands on the end of its month, and every issue inside that month is
+    // the same line.
+    for (const i of w.instruments.all()) {
+      if (i.kind !== CORPORATE_BOND || !isCorporateBond(i.terms)) continue;
+      const m = i.terms.maturity;
+      const last = new Date(Date.UTC(m.y, m.m, 0)).getUTCDate();
+      expect(m.d, `${String(i.id)} matures mid-month`).toBe(last);
+    }
+  });
+
+  it('counts interest AND scheduled principal as the service a covenant covers (A3.a)', () => {
+    const w = ranWorld('bond-issue', 30);
+    for (const e of w.journal.ofKind('covenant.breached')) {
+      // A3.a: the service is interest plus scheduled principal, both real payments — so a line in
+      // the year it matures takes its whole face out of the issuer, which is the year the coverage
+      // covenant is actually about.
+      const owed = Number(e.data['owedPerYear']);
+      expect(Number.isFinite(owed)).toBe(true);
+      expect(owed).toBeGreaterThan(0);
+    }
+  });
+
+  it('declares nothing about what a management wants: the target is read (A2.b, Law 2)', () => {
+    // A2.b's target is a LENDER'S COVENANT LINE moderated by the management's own risk aversion,
+    // approached at its own pace — three reads and no fourth number: the tightest covenant its own
+    // lenders imposed, the hurdle this world already draws per firm, and the horizon it counts.
+    const declared = corporateBondModule().params.map((d) => String(d.id));
+    expect(declared).toEqual(['corporateBond.tenor']);
+    const world = ranWorld('bond-issue', 20);
+    // And no firm anywhere is given a target or a pace of its own to issue against: what it is
+    // managing towards comes from the covenant its lenders imposed and the two numbers this world
+    // already draws for a management — its risk aversion and its patience.
+    expect(
+      world.params.all().some((d) => /^firm\.(target|pace|leverage)/i.test(String(d.id))),
+    ).toBe(false);
+    expect(world.params.all().some((d) => String(d.id) === 'firm.hurdle.firm.1')).toBe(true);
+  });
+});

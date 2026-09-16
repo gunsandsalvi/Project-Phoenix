@@ -31,20 +31,31 @@ import {
   asRatio,
   type Cash,
   minus,
+  atMostCash,
+  over,
   type PerNamedUnit,
   type PerPiece,
   plus,
+  scale,
   type Ratio,
   ratioOf,
   valueAt,
 } from '../../core/measure.js';
-import { addMonths, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
+import {
+  addMonths,
+  compareCivil,
+  formatCivil,
+  MONTHS_IN_YEAR,
+  type Civil,
+} from '../../calendar/civil.js';
+import { endOfMonth } from '../../calendar/fiscal.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import {
   instrumentId,
   instrumentKindId,
   marketId,
   paramId,
+  type ParamId,
   partyId,
   type CurrencyCode,
   type InstrumentId,
@@ -275,10 +286,26 @@ export function issueBonds(ctx: MechanismContext): void {
     const cheaper = !quoted.some || keenest.value < quoted.value.rate;
     const enough = quoted.some && quoted.value.most >= short;
     if (!cheaper && enough) continue;
+    /**
+     * A2.b, A2.c (17.4): AND WHAT ITS MANAGEMENT WILL ADD TO WHAT IT OWES. Being short of money is
+     * why it is here; what it BRINGS is the smaller of that and the step its own target leaves it
+     * this period. A firm already past the leverage it is managing towards issues nothing and stays
+     * short — which is what a target being real means, and is the difference between issuing as a
+     * decision (A2.b) and issuing as an accounting consequence.
+     *
+     * A firm nobody has lent to on terms has no covenant and therefore no target, and brings what it
+     * is short of: it has made no promise to run inside.
+     */
+    const willing = willingToOwe(ctx, firm.id, ccy);
+    if (willing.some && willing.value.pieces <= 0) continue;
+    const bring = willing.some
+      ? atMostCash(short, willing.value, 'what its management will add to what it owes')
+      : short;
+    if (bring.pieces <= 0) continue;
     // C11.c: WHICH BASIS, and it is this distinction. A firm choosing between two channels can
     // afford a smaller deal and saves the fee; a firm whose bank will not lend it enough must have
     // the money and buys the backstop.
-    place(ctx, firm.id, ccy, short, keenest.value, quoted, !enough);
+    place(ctx, firm.id, ccy, bring, keenest.value, quoted, !enough);
   }
 }
 
@@ -340,6 +367,72 @@ const gridOf =
     ctx.registry.priceOf(ccy, CORPORATE_PAR, asPerNamedUnit(x, what));
 
 /**
+ * A2.b, A2.c (17.4): THE TARGET A MANAGEMENT IS APPROACHING, and the pace it approaches it at.
+ *
+ * *"A target or a constraint it is managing towards — leverage, coverage, a rating it wants — so
+ * that issuing is a DECISION and not an accounting consequence. That target is the management's own:
+ * a lender's covenant line moderated by the management's own risk aversion, and approached at the
+ * management's own pace."*
+ *
+ * Both halves are read and neither is declared. THE LINE is the tightest leverage covenant its own
+ * lenders actually imposed on it — a fact about what it had to promise to be lent to (B2), and a
+ * firm nobody has lent to has no line and nothing to manage towards until somebody does. THE
+ * MODERATION is its own risk aversion, which this world already draws per firm as the margin it
+ * insists on over its cost of capital before it commits money it cannot get back: a management
+ * cautious about a project is cautious about a balance sheet, and it runs that much inside the
+ * promise rather than against it. THE PACE is its own horizon, which is its patience: it closes the
+ * gap between where it is and where it wants to be over the periods it counts, so a management that
+ * will not look past two years moves faster than one that looks past ten.
+ *
+ * What comes out is what it will ADD to what it owes this period — never a size it must reach, and
+ * never a number pushed back inside a range: a firm already past its target adds nothing, which is
+ * a real answer (it does not issue) and not a bound.
+ */
+function willingToOwe(ctx: MechanismContext, issuer: PartyId, ccy: CurrencyCode): Option<Cash> {
+  const said = ctx.published.lastStatement(issuer);
+  if (said === undefined || said.balance.assets.pieces <= 0) return none<Cash>();
+  let tightest: Ratio | undefined;
+  for (const i of ctx.instruments.issuedBy(issuer)) {
+    if (!i.status.live) continue;
+    const promised = isCorporateBond(i.terms)
+      ? i.terms.covenants.leverage
+      : isLeveragedLoan(i.terms)
+        ? i.terms.covenants.leverage
+        : undefined;
+    if (promised === undefined) continue;
+    if (tightest === undefined || promised < tightest) tightest = promised;
+  }
+  // B2, A2.b: no covenant, no line. A firm nobody has lent to on terms has nothing to manage
+  // towards, and inventing one for it would be inventing the promise it never made.
+  if (tightest === undefined) return none<Cash>();
+  const caution = ctx.params.perAnnum(firmHurdle(issuer));
+  // Its own risk aversion moderates the line: it runs INSIDE what it promised, by its own margin.
+  const target = scale(
+    tightest,
+    minus(asRatio(1, 'the whole of the promise'), caution, 'moderated by its own caution'),
+    'where this management wants to be',
+  );
+  const owed = ratioOf(said.balance.liabilities, said.balance.assets, 'where it is');
+  if (target <= owed) return none<Cash>();
+  const room = scale(
+    said.balance.assets,
+    minus(target, owed, 'the gap it is closing'),
+    'what it could add and still be inside its target',
+  );
+  // A2.b: AT ITS OWN PACE — the gap closed over the periods this management counts, so its patience
+  // decides how much of it this period rather than a rate anybody wrote (Law 8: the periodicity is
+  // part of the number).
+  const horizon = ctx.params.periods(firmHorizon(issuer));
+  if (horizon <= 0) return none<Cash>();
+  const pace = over(room, asRatio(horizon, 'the periods it counts'), 'what it adds this period');
+  return pace.pieces > 0 ? some(ctx.valuation.inMoney(pace, ccy, ctx.period)) : none<Cash>();
+}
+
+/** Law 15: a firm's own numbers are its own module's, read by the name every module spells alike. */
+const firmHurdle = (firm: PartyId): ParamId => paramId(`firm.hurdle.${String(firm)}`);
+const firmHorizon = (firm: PartyId): ParamId => paramId(`firm.horizon.${String(firm)}`);
+
+/**
  * A1, C2, C2.a, C3, C4, C8, Clearing C4: THE ISSUE — a line, a market, and the paper brought to it.
  *
  * C2, C3, C5: THE BOOK IS THE KERNEL'S, and it has to be. Holders post schedules — a size at a level,
@@ -367,7 +460,20 @@ function place(
   mustHave: boolean,
 ): void {
   const on = ctx.calendar.startOf(ctx.period);
-  const maturity = addMonths(on, ctx.params.months(CORPORATE_BOND_PARAMS.tenor));
+  /**
+   * C8, Law 9 (17.4): A TAP GOES TO THE STANDING LINE, and what makes it one is the DATE.
+   *
+   * A line is named by its issuer and its maturity, so a firm that came back a week later at
+   * `today + five years` was asking for a date a week further out — a second line, at a second
+   * name, with its own book and its own covenants, every week it was short. That is not a tap; it
+   * is a market with one bond per week per issuer and no line deep enough for anybody to trade.
+   *
+   * Paper matures on stated dates, so the tenor lands on the END OF THE MONTH it falls in: every
+   * issue within a month is the same line, and the firm that comes back next month opens the next
+   * one. The band is the month rather than a number anybody declared (Money G3.a: the calendar
+   * places the date).
+   */
+  const maturity = endOfMonth(addMonths(on, ctx.params.months(CORPORATE_BOND_PARAMS.tenor)));
   /**
    * A2, A2.a, A2.c, B4 (17.1): FIXED OR FLOATING, and it is the issuer's decision. It compares the
    * coupon it would have to lock today against the rate in force plus the margin it would promise,
@@ -872,8 +978,10 @@ export function testCovenants(ctx: MechanismContext): void {
     ) {
       broke.push('leverage');
     }
-    // B2: what it earns against what falls due on this line over a year of it.
-    const owed = annualCostOf(t);
+    // B2, A3.a (17.4): what it earns against what falls due on this line over a year of it —
+    // interest AND scheduled principal, which is what the service IS. A bullet's principal falls in
+    // the year it matures, and that is the year the coverage covenant is about.
+    const owed = serviceOverAYear(ctx, i);
     const face = ctx.register.heldTotal(i.id).value;
     const annual = valueAt(owed, face, i.ccy, 'what this line costs it a year');
     if (annual.pieces > 0 && ratioOf(said.earned, annual, 'coverage') < t.covenants.coverage) {
@@ -1050,7 +1158,29 @@ export function corporateBondModule(): SystemModule {
   };
 }
 
-/** B1, A3: what a line costs its issuer a year, per unit of face — a read of its own terms. */
+/**
+ * A3, A3.a (17.4): WHAT A LINE TAKES OUT OF ITS ISSUER OVER THE COMING YEAR, per unit of face —
+ * INTEREST PLUS SCHEDULED PRINCIPAL, both real payments, which is what A3.a says the service is.
+ *
+ * It is a read of the line's own schedule and not of its coupon: a bullet's principal falls in the
+ * year it matures and in no other, an amortising line pays some of it every year, and a line that
+ * pays nothing in the coming year takes nothing out. Reading the coupon alone said a five-year
+ * bullet cost its issuer the same in its last year as in its first, which is exactly the year a
+ * coverage covenant is for.
+ */
+export function serviceOverAYear(ctx: MechanismContext, i: Instrument): PerPiece {
+  const on = ctx.calendar.startOf(ctx.period);
+  const within = addMonths(on, MONTHS_IN_YEAR);
+  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
+  let due = 0;
+  for (const f of flows) {
+    if (compareCivil(f.date, within) > 0) continue;
+    due += f.perUnit;
+  }
+  return asPerPiece(due, 'what a unit of it takes out of the issuer in a year');
+}
+
+/** B1, A3: what a line's COUPON costs its issuer a year, per unit of face. */
 export const annualCostOf = (t: CorporateBondTerms): PerPiece =>
   asPerPiece(t.coupon.amount, 'what a unit of it costs a year');
 
