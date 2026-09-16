@@ -259,7 +259,16 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 ## 18a. Monetary policy
 
 - [x] 18a.1 `money-market/policy.ts`: the central bank's own outlook on the price level from the goods prints in its money weighted by its basket read; compared with its TARGET (policy param; owner `parliament` after 19). On its own calendar it moves the rate one STEP towards closing the gap it sees, or not. No coefficient. Journaled `centralBank.rate` with outlook and surprise. Written through `params.setByMandate` (19.1's door, granted to this module for the rate until 19). **And (12d.3):** the outlook reads the environment condition of its regions beside the prints (`registry/environment.ts conditionsIn`), so a cold winter's fuel prints reach it as weather and not as the level. **Built, and what it cannot do yet is finding 21.84: the price-level indices are EMPTY in this world, so a bank with a mandate about the basket has no basket to read.** The weather half (12d.3) is recorded beside the decision rather than taken out of the basket, which needs a decomposition of a print into its causes and is its own item. **Still open here (16.7, 16.8):** the reserve reason — a target for what a central bank holds in other moneys and the rule by which it buys or sells them in the pairs (Central Bank F1, F2) — carried here as 21.54 and 21.55: no central bank holds anything abroad since 16.7, and the pairs stop clearing by period 8 of the four-country world.
-- [ ] 18a.2 The quantity response: at the new rate the facilities re-price and the desk supplies or drains reserves until the overnight print sits in the corridor; both legs on both balance sheets.
+- [x] 18a.2 The quantity response, READ and checked rather than rebuilt. The facilities re-price by
+  construction: the corridor is `policy ∓ spreads` DERIVED at the read, so the period the rate moves,
+  what a bank is paid on its reserves and charged at the window move with it and nothing holds a
+  second copy (Law 4) — asserted in `test/policy.test.ts`. The desk's supply and drain ARE those two
+  facilities: a bank short of reserves draws the window and one long of them leaves them at the
+  floor, both legs on both balance sheets, which is exactly the real quantity response Law 3 requires
+  of the one administered price. What is NOT there is an open-market desk acting on the print itself,
+  and it has nothing to act on: the overnight book prints twice in twelve periods (21.77), so there
+  is no print outside the corridor to answer. Positioned with 21.77 at 23.3 — if the book trades and
+  the print leaves the corridor, the desk is an item and the reading will say so.
 - [ ] 18a.3 `central-bank-omo`: a SCHEDULE (the level at which its reason stops), never `price: 'market'`; delete `CB_PARAMS.targetShare` — and with it `seed.centralBank.openingHoldingShare` (16.7's other half): the central bank opens holding what its schedule buys in the first session, and the seed sizes the banks' reserves from their own liquidity rule rather than from a stated share of every line.
 - [ ] 18a.4 A negative level is legal for time: `MarketDecl.levelMayBeNegative` from the kind profile (`quotedAs: 'rate'`); `settlement.ts`, `price-store.ts`, `solver.ts`, `core/tick.ts` dispatch on it; `treasury/index.ts openLine` coupon floor deleted (a negative yield issues a zero above par). Test: −0.5 % clears and both balance sheets book negative interest.
 - [ ] 18a.5 Delete the JPY `why`'s apology (`money-market/data.ts:185`).

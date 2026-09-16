@@ -20,6 +20,55 @@ function worldWith(probe: SystemModule) {
   return assemble({ ...spec, modules: mergeModules(spec.modules, [probe]) });
 }
 
+describe('the facilities re-price at the new rate (Central Bank B2, C1–C4, 18a.2)', () => {
+  it('publishes a corridor that IS the rate it set, and moves with it the period it moves', () => {
+    const probe: SystemModule = {
+      id: 'test.corridor',
+      spec: 'Central Bank B2',
+      requires: ['money-market'],
+      instrumentKinds: [],
+      partyKinds: [],
+      curveFamilies: [],
+      units: [],
+      params: [],
+      phases: [
+        {
+          name: 'test.corridor',
+          spec: 'Central Bank B2',
+          anchor: { after: 'corporateActions' },
+          reads: [],
+          writes: [],
+          run: (ctx: MechanismContext) => {
+            if (ctx.period !== 3) return;
+            ctx.setByMandate(policyRateOf('USD'), 0.05, 'centralBank', 'a test moved it.');
+          },
+        },
+      ],
+      participants: [],
+      families: [],
+    };
+    const w = worldWith(probe);
+    for (let i = 0; i < 5; i += 1) w.step();
+    const said = w.journal.ofKind('centralBank.corridor').filter((e) => e.data['ccy'] === 'USD');
+    expect(said.length).toBeGreaterThan(1);
+    const before = said.find((e) => e.period < 3);
+    const after = said.find((e) => e.period >= 3);
+    expect(before).toBeDefined();
+    expect(after).toBeDefined();
+    if (before === undefined || after === undefined) return;
+    // C1–C4: the two facilities are the rate plus and minus the spreads, DERIVED at the read — so
+    // the period the rate moves, what a bank is paid on its reserves and charged at the window move
+    // with it, and nothing anywhere holds a second copy of either (Law 4).
+    expect(Number(after.data['policy'])).toBeCloseTo(0.05, 12);
+    expect(Number(after.data['floor'])).toBeLessThan(Number(after.data['policy']));
+    expect(Number(after.data['ceiling'])).toBeGreaterThan(Number(after.data['policy']));
+    const width = (e: typeof after): number => Number(e.data['ceiling']) - Number(e.data['floor']);
+    // The WIDTH is the policy choice and it did not change; what changed is where the corridor is.
+    expect(width(after)).toBeCloseTo(width(before), 12);
+    expect(Number(after.data['policy'])).toBeGreaterThan(Number(before.data['policy']));
+  });
+});
+
 describe('a policy number is set by whoever owns it (XI-14, 18a.1)', () => {
   it('moves the rate, records it publicly, and refuses everything that is not its owner’s policy', () => {
     const refused: string[] = [];
