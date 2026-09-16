@@ -211,6 +211,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 16 | Cross-border, the rest — **done** (section removed; see `docs/RECORD.md`; findings positioned at 21.44–21.55; 16.7's other half at 18a.3; the firm half of 16.4 at 17.4; Cross-Border C4 at 17b) | after 15 |
 | 17 | Corporate credit, the rest — **done** (section removed; see `docs/RECORD.md`; §7 answered 62 of 62. Findings positioned at 23.1 (21.65, 21.67), 23.2 (21.64, 21.66), 23.3 (21.67, 21.69), 19 (21.62); 21.59 closed at 17.7, 21.61 at 17.7a, 21.63 answered at 17.9a, 21.68 answered at 17.10a; the covered bond out of scope by the owner's decision) | 17.0 the credit view |
 | 17b | The leveraged buyout — **done** (section removed; see `docs/RECORD.md`; §29 answered 25 of 25. Findings positioned at 23.1 (21.73, 21.74, 21.75, 21.76), 23.3 (21.72), 18 (21.71), 18a.1 (21.60(c) and 21.60's diversification half); 21.15 closed at 17b.4, 21.60(a) at 17b.8 and 21.60(b) at 17b.8a; §29 C2's other half became item 17c) | after 17.9 |
+| 17b′ | The books a lender sees | before 17c; 17b.8a lent large on no accounts, and the owner is right that nobody does |
 | 17c | The board | after 17b; §29 C2's other half, and it has no other home |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
@@ -256,6 +257,52 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 
 ---
+
+---
+
+## 17b′. The books a lender sees
+
+Inserted at 17b's close, at its dependency position: it repairs 17b.8a and 17c does not depend on it.
+
+**The owner's finding.** *"Lender needs to see accounts before a buyout or any type of large lending,
+even if just a current snapshot or something."* 17b.8a made the covenant an `Option` and let a bank
+commit to a name with no accounts at all, on the reasoning that only cells publish before period 25
+(21.76). That is the wrong half to give way on: **no bank underwrites a buyout on nothing**, and
+"the borrower has never published" is a fact about this world's CALENDAR rather than about what a
+lender would accept.
+
+**What is actually there.** 17.0a already had every company prepare full quarterly financials —
+`report()` runs for every living party that keeps accounts, PUBLIC where its paper is public and
+private otherwise, and `share()` shows it to the lenders of record and the bank that keeps its
+account. The mechanism is not missing. What is missing is a set of accounts in the window BEFORE a
+company's first close: the first quarter that opens on or after the epoch closes one to four quarters
+in, and until then a company has no books to show anybody.
+
+**What a real deal does in that window is hand over MANAGEMENT ACCOUNTS.** Not a published quarter —
+a snapshot as at the last close, prepared because a lender asked to see it. That is the mechanism,
+and it is the same preparation over a different span.
+
+- [ ] 17b′.1 **A borrower asked for its books prepares them** (Reporting A2, A3, Corporate Credit A4).
+  `reporting` prepares an INTERIM for every party that published a credit request for a COMMITMENT
+  this period and has no accounts covering the period that just closed: `prepareStatement` over the
+  span from its last close (or the epoch) to now, recorded as `reporting.interim` — PRIVATE, never
+  published, because a snapshot shown to a lender is not a quarter anybody may trade on — and shown
+  through the same `share()` the quarterly one uses, plus to every bank that quoted the name, which
+  is who it is asking. It is prepared in the SAME phase as the quarterly report, `after: revaluation`,
+  for the same reason: a balance sheet is struck when the marks are final (Clearing F1.a), and the
+  lender reads it in the next period when it decides — which keeps Reporting B2.a's lag, because a
+  covenant a lender could test before the accounts were struck is not a covenant.
+  **Which asks get one is not a size anybody declares**: it is `wants: 'commitment'`, which in this
+  world IS the large underwritten borrowing — a facility a lender's capital stands behind before a
+  penny moves, as against a working-capital line drawn at the borrower's option (Law 6: no threshold).
+- [ ] 17b′.2 **No accounts, no commitment** (§29 E1, Corporate Credit B2.a). `FacilityTerms.covenant`
+  goes back to being a `Covenants` and not an `Option`, and `commit()` refuses where there is nothing
+  to test — which is 17b.8a's rule restored now that a borrower can produce something to test. The
+  accounts it reads are the FRESHER of the two: `lastStatement` and `lastInterim`, through one kernel
+  read, because "what this company's books say" is one question (Law 4).
+- [ ] 17b′.3 §48 A2/A3 and §7 B2.a re-marked; 21.76 re-read in the light of it; record.
+
+**Exit.** A bank commits to a buyout against a set of accounts it was shown, or it does not commit.
 
 ---
 
