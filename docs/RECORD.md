@@ -14031,3 +14031,71 @@ clause that does not ask for it.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. One new
 case in `test/securitisation.test.ts`, green beside the file's two pre-existing reds.
+
+---
+
+## Item 18 — Commodities spot and futures: closed
+
+Nine steps, and what they had in common is that a number could not say what it WAS.
+
+**A print says which dimension it is** (18.0). Every book printed a `PerPiece` whatever it had
+cleared, so a swap book's two per cent and a bond's two cents were the same number to every reader
+and the only thing between them was a comment — the one in `irs/contract.ts` that said so and named
+itself E-11. `Print.quotedAs` carries it from the same place a contract's own level has carried it
+since item 6: a contract market asks its kind, everything else quotes money, and the store refuses a
+print whose dimension differs from what that line printed before. `moneyPrint` and `ratePrint` put
+the assertion at the READ, where a caller says which it expects. No third tag: nothing quotes a bare
+ratio, and one nothing carries would be a shape.
+
+**A future delivers at the price it was struck at** (18.1). Both deliverable futures handed the
+thing over at SPOT, so a long that had locked a bond in at 98 paid 100 when the line printed 100 —
+and margin here is posted and HELD, so nothing gave the difference back. The gain a future exists to
+lock in was nowhere. It is the row's own level now, per row, and `cashDue` says the same number a
+week ahead.
+
+**A cleared trade's two rows know each other** (18.2). One fill is two rows against the house, and
+everything that had to treat them as one trade found the sibling by comparing fields that happened
+to agree — including `struckAt === struckAt`, which compared two objects by identity. The
+instruction that wrote them says so now. And two rows that cancel each other CLOSE: same kind, same
+terms, same notional, the parties the other way round, both settled at their close-outs so the
+variation is paid rather than released. Only equal notionals net (21.82: a partial net needs a row
+split, which is a mechanism and not a line).
+
+**A hedger hedges what it is exposed to** (18.3). Every holder wanted to be short by its whole
+stock and nobody ever wanted to be long — one sign for everybody, and why 3,680 commodity sessions
+cleared nothing. `exposedTo` is the stock, less what the party means to buy, plus what it means to
+sell, each its own outlook: a mill holding a week of grain and buying a week of it every week is not
+long grain, and the parties that means to BUY are the second side these books never had. Storage got
+the same treatment: a taker's bid is a step schedule, one step per thing on its shelf, and a rent
+that fails now skips the TAKER rather than costing the letter its turn.
+
+**A book that is over is closed** (18.4). `ctx.closeMarket` refuses one with open interest and
+records the rest; expired series, worn-out vintages and protection nobody has traded for a year stop
+holding sessions. CDS books already opened on the first REASON rather than on existence, which this
+checked rather than changed.
+
+**One derivation per question** (18.5). What the cash market charges for a credit had two answers
+and the wrong one was quoting the book; what a rate over a notional for some years comes to was
+written out twice; what a naked writer will write was its capital over the SPREAD, so the tighter
+the credit the more of it a party would write; who it faces was read off its own cover rather than
+off what it has with that counterparty. And the roll is a DATE now, every so many months from the
+day the world opened, in place of a remainder on the period index.
+
+**Two halves that are items, not lines** (18.6). The basis trade's cash leg and financing are the
+BANK's, not the futures module's — one face per book, one answer per party kind to `borrowNeeds` —
+so what has to move is the `netBasis` READ into the registry. And a commodity tracker has nothing to
+track: no commodity index, and a mandate that holds contracts is a shape that does not exist. Both
+are inserted at their dependency positions with what each needs, and nothing was half-built.
+
+**Where a print goes** (18.7). Two of the three chains hold and are asserted against the world now.
+The third cannot be reached: a party's outlook is about a subject from a closed list and there is no
+subject for an INDEX, so nobody can have a view of the price level and a central bank has nothing to
+be wrong about (21.83, at 18a.1).
+
+**Marked** (18.8). §20 gains A3, B1–B5, D2 and E1 as MET, A4 and D3 as PARTIAL with what is missing
+named; §21 gains A2, A3, A4, B1–B4, C1, D2, D3, D4, E1 and F2, and E4 carries the two links that
+hold and the one that does not. Coverage 74.5% → 76.0%.
+
+**Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
+green. `test/commodity-chain.test.ts` is new and two green; `bond-future` six green; `irs` carries
+its two pre-existing reds, `cds` its two.

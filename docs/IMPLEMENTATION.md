@@ -217,7 +217,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17e | Capex and productivity — **done** (section removed; see `docs/RECORD.md`; productivity is a read of the plant a firm holds by vintage, and a thing that wears can be KEPT — one outlay for plant and one for a dwelling, sharing the share gone without. Firm A3 carries 17e.1, Capital Programme A6 the upkeep, Housing A5 PARTIAL → MET; 21.43 closed; finding 21.78 at 23.1) | after 17d |
 | 17f | Contracts that last — **done** (section removed; see `docs/RECORD.md`; a supply contract with a book, deliveries both legs and a break cost; a job struck for a term whose early end pays the wages to the day; both extended on their own row and never multiplied, with an audit family that counts them. Labour C3 and Goods C3 re-marked; findings 21.79 and 21.80 at 23.3 and 23.1) | after 17e |
 | 17g | What a pool is made of — **done** (section removed; see `docs/RECORD.md`; the claim held — houses and shops are both poolable and `saleable` names no kind — and what was missing was what a pool says about itself: `securedOn` reads the collateral off the rows and the note's market is named for it. XI-11 and Housing C6 re-marked; finding 21.81 at 23.3) | after 17f |
-| 18 | Commodities spot and futures | 18.0 a print carries its dimension |
+| 18 | Commodities spot and futures — **done** (section removed; see `docs/RECORD.md`; a print says which dimension it is, a future delivers at the price it was struck at, offsetting rows net, a hedger hedges what it is exposed to, books that are over close, and the protection book has one derivation per question. 18.6 became items 18.6a and 18.6b at their dependency positions; findings 21.82 and 21.83) | after 17g |
 | 18a | Monetary policy | before the polity |
 | 19 | The polity | 19.0 the government buys |
 | 20 | Periodicity | after 19 |
@@ -253,38 +253,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
-
----
-
-## 18. Commodities spot and futures
-
-- [x] 18.0 `Print.quotedAs: 'money' | 'rate'` (no third tag: nothing in this world quotes a bare ratio, and one nothing carries would be a shape); `PriceStore.write` refuses a level whose dimension differs from the market kind's; `ContractReads.print` returns the RATE for rate books; `struckAt` typed by the book; `priceOf`/`onQuoteGrid` never see a rate. Test: a 2 % swap marks at 2 %/yr.
-- [x] 18.1 Delivery at the STRUCK price in `bond-futures` and `commodity-futures deliver`. Test: a long that bought at 98 and takes delivery at 100 is richer by 2 × notional.
-- [x] 18.2 Contracts carry `pairedWith` from the strike (settlement writes it, in the instruction that made both rows); offsetting rows are netted by the LAYER — same kind, same terms, same notional, the two parties the other way round — and both close at their close-out values, so the variation the marks moved is settled rather than released. EQUAL notionals only; a partial net needs a row split and is 21.82.
-- [x] 18.3 Hedgers: want = −(held − target)/contractSize from the party's own target; a party with none hedges nothing (`bond-futures`, `commodity-futures`; `index-futures` is left as it was and says why — an index has no `bought`/`sold` of ITSELF, so a desk's target book is a mandate and that is the fund's, not this book's). Storage: a taker's bid is a step schedule per good; a failed payment skips the taker, not the letter.
-- [x] 18.4 `ctx.closeMarket(id, why)`: the kernel refuses a book with open interest and records the close; an expired future series closes (both books), an idle CDS book closes after a year. a worn-out VINTAGE's second-hand book closes when there is none of it left. CDS books already opened on the first reason (a holding), which this checked rather than changed.
-- [x] 18.5 CDS: `levelFor` = the bond's yield over the sovereign curve at the tenor (one derivation with `measures.ts basisFor`); naked size by the capital the weight consumes; `counterpartyTerm` reads the counterparty's book; one `annuityOf` in `registry/derivatives.ts` for irs/cds marks and margins; the series per currency (already true since 16.1, checked rather than changed); roll dates BY THE CALENDAR — every so many months from the day the world opened, and the period that crosses that day is the one that rolls, in place of a remainder on the period index.
-- [x] 18.6 **Read, and INSERTED as two items rather than half-built** (Law 10, Law 12). Neither half
-  is a line in this module and both were written as one:
-  - **18.6a — the basis trade is funded.** What exists is the FUTURES side: a party whose own
-    arithmetic says the net basis pays posts to be short the book (`futureOrders`). What does not
-    exist is the other two legs — BUYING the cash bond and FINANCING it — and neither is reachable
-    from `bond-futures`. A bank's bids in a cash bond book are its dealing desk's (`banks/dealing`,
-    one face per book, Law 4) and its cash borrowing is its own `borrowNeeds`, which exactly one
-    module answers per party kind; a second answer from here is what the kernel refuses. So the
-    trade has to be the BANK's: its view of a deliverable line includes what it can do with a future
-    on it, which means `netBasis` reaching the banks module — and a module never imports another
-    (Law 15), so what moves is the READ, into the registry, with the book found by its shape rather
-    than by the futures module's naming. That is the item, at its dependency position: after 18 and
-    before 23, because it is the demand a secured market is measured against.
-  - **18.6b — the commodity tracker.** There is no commodity INDEX to track: `indices` has no rule
-    over goods' prints, and a tracker's mandate (`funds`) holds LINES, while what a commodity
-    tracker holds is FUTURES — a pool holding contracts is a mandate shape that does not exist
-    either. Two mechanisms, in two modules, before a tracker is a tracker. At its dependency
-    position: after the index rule, which is 18.7's neighbourhood.
-  Nothing was built for either, nothing was marked, and the reading that found it is here (18.6).
-- [x] 18.7 A commodity print reaches a MARGIN (the initial margin on a lot is the grade's own measured move, Derivative Layer D1) and a CONSUMER PRICE (the basket is the goods households buy, read off their own prints, Indices D4) — both checked against the world in `test/commodity-chain.test.ts`. The CENTRAL BANK's outlook cannot be reached at all yet and says why: finding 21.83, at 18a.1.
-- [ ] 18.8 §20 and §21 clause by clause; COVERAGE; record.
 
 ---
 

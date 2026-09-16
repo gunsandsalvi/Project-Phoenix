@@ -732,22 +732,22 @@ measurement is taken there is nothing to name.
 |---|---|---|
 | `Commodity Futures A1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (the short hands over units of the grade at the place the contract names and the long pays at that place's own cleared spot price, in one instruction — XI-5, never a cash difference dressed up as a delivery) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures A2` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (a ladder of four delivery dates a quarter apart on every deliverable grade, which is what makes the book a curve rather than a price) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Commodity Futures A3` | MISSING |  |
-| `Commodity Futures A4` | MISSING |  |
-| `Commodity Futures B1` | MISSING |  |
-| `Commodity Futures B2` | MISSING |  |
-| `Commodity Futures B3` | MISSING |  |
-| `Commodity Futures B4` | MISSING |  |
-| `Commodity Futures B5` | MISSING |  |
+| `Commodity Futures A3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `openBooks` (a ladder of expiries a fixed spacing apart on every deliverable grade, so the set of books IS a curve — and 18.4: a series past its date closes, so the curve is the dates still ahead rather than every date there has ever been) |
+| `Commodity Futures A4` | PARTIAL | packages/engine/src/mechanisms/derivative-layer/margin.ts (the requirement is re-measured every period against the marks, and cash moves to meet it — a price move is a payment today and not at expiry). PARTIAL because what moves is POSTED AND HELD (C3.a: an asset swap, a claim redeemed when the row closes), so the gain is realised when the row closes or nets (18.2) rather than being cash in hand each period; the difference is visible and named, and closing the honest way round needs variation to be a settled transfer rather than collateral |
+| `Commodity Futures B1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `futureOrders` with packages/engine/src/registry/derivatives.ts `exposedTo` (18.3: a producer is short by what it EXPECTS TO SELL, its own outlook of its own sales, so it locks a price against output it will have rather than against stock it is holding) |
+| `Commodity Futures B2` | MET | packages/engine/src/registry/derivatives.ts `exposedTo` (18.3: a consumer's expected PURCHASES are a short exposure — a price rise costs it — so it wants to be long the future by what it will need. It is the missing second side of this book: every holder wanting to be short and nobody long is why 3,680 sessions cleared nothing) |
+| `Commodity Futures B3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `futureOrders` (the conviction term: its own view of the grade against where the book stands, sized by what its own capital carries — commodity exposure without a shed) |
+| `Commodity Futures B4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `futureOrders` (C3's carry trade, and it acts ONLY if it can store: the term stands behind `commodityCarryOf`, which is the room the storage session printed — an arbitrageur with nowhere to put the thing does not trade it) |
+| `Commodity Futures B5` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `futureOrders` (a party with nothing to change quotes both ways around its own number — a bid a tick inside and an ask a tick outside, sized by its own balance sheet; its number is the SPOT line's and never this book's) |
 | `Commodity Futures C1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `commodityCarryOf` — the room at the rate the storage session printed, the spoilage at the rate the good declares, and the money at the secured benchmark. Three reads and a subtraction; no convenience yield anywhere — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures C2` | MISSING |  |
 | `Commodity Futures C3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (contango is bounded ONLY by somebody who can find room selling it; backwardation is unbounded, because you cannot borrow a tonne that does not exist) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures C4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (convergence is not enforced: it happens because delivery is possible, and a short with nothing in the shed FAILS rather than settling in cash) — **UNMEASURED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures D1` | MISSING |  |
-| `Commodity Futures D2` | MISSING |  |
-| `Commodity Futures D3` | MISSING |  |
+| `Commodity Futures D2` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `openBooks` (a book opens only on a good that is PORTABLE and STORABLE and has a spot print — a thing nobody can move or keep cannot be handed over at a date, so the parties that could deliver exist by construction) |
+| `Commodity Futures D3` | PARTIAL | packages/engine/src/mechanisms/derivative-layer/index.ts `netOffsetting` (18.2: a party can CLOSE before expiry — an equal and opposite row nets and both settle at their close-outs). PARTIAL: a ROLL is not built, so a party that wants the exposure and not the delivery cannot move it out a series; and only equal notionals net (21.82) |
 | `Commodity Futures D4` | MISSING |  |
-| `Commodity Futures E1` | MISSING |  |
+| `Commodity Futures E1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `openBooks` (a book opens only where the grade itself has a cleared print, so there is no curve on a thing with no physical market underneath it — the FORBID holds by construction and breaks visibly if the spot book stops printing) |
 | `Commodity Futures E2` | MISSING |  |
 | `Commodity Futures E3` | MISSING |  |
 
@@ -756,28 +756,28 @@ measurement is taken there is nothing to name.
 | requirement | status | where / why |
 |---|---|---|
 | `Commodities Spot A1` | MET | packages/engine/src/registry/physical.ts, packages/engine/src/mechanisms/goods/data.ts (a grade, at a location, in a quantity unit; 13c.1 made the locations real and 13c.2 added the shelf as one of them) |
-| `Commodities Spot A2` | MISSING |  |
-| `Commodities Spot A3` | MISSING |  |
-| `Commodities Spot A4` | MISSING |  |
-| `Commodities Spot B1` | MISSING |  |
-| `Commodities Spot B2` | MISSING |  |
-| `Commodities Spot B3` | MISSING |  |
-| `Commodities Spot B4` | MISSING |  |
-| `Commodities Spot C1` | MISSING |  |
+| `Commodities Spot A2` | MET | packages/engine/src/mechanisms/firms/produce.ts, packages/engine/src/mechanisms/goods/index.ts (every unit is created by a NAMED firm running a recipe and consumed by a named buyer through a settled leg; nothing is produced by a sector) |
+| `Commodities Spot A3` | MET | packages/engine/src/mechanisms/commodities/index.ts (covered space is plant somebody owns, let in a session at a cleared rate, and holding a tonne costs the rent — 18.3: a taker's bid is a step schedule, one step per thing on its shelf, so what it will pay for the next piece of room is what the next thing that would go in it is worth) |
+| `Commodities Spot A4` | MET | packages/engine/src/register/register.ts (inventory is holdings of a named party in a named place: finite because it is lots, observable because it is the register, and it is never a level anybody writes) |
+| `Commodities Spot B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a line runs when what it expects to sell at covers what the batch costs it — inputs, wages and the capital charge — and it does not run when it does not) |
+| `Commodities Spot B2` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (capacity is the plant held, and new plant arrives a declared build lag after it is bought — so the short run is exactly as long as the lag) |
+| `Commodities Spot B3` | MET | packages/engine/src/mechanisms/capital-programme/index.ts `weather`, packages/engine/src/mechanisms/goods/index.ts (a storm destroys real units of plant at the place they stood and a line's yield stands in the conditions its recipe is exposed to — a loss of UNITS, not a number written down) |
+| `Commodities Spot B4` | MET | packages/engine/src/mechanisms/firms/decide.ts (a seller offers a schedule and what does not clear STAYS with it — unsold output is stock, and a seller that expects more later asks more now) |
+| `Commodities Spot C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a firm bids for an input because its recipe draws it), packages/engine/src/mechanisms/households/consume.ts (a household bids for what it consumes) |
 | `Commodities Spot C2` | MISSING |  |
 | `Commodities Spot C3` | MISSING |  |
 | `Commodities Spot C4` | MISSING |  |
 | `Commodities Spot D1` | MET | packages/engine/src/mechanisms/goods/index.ts (the same grade in two places is two instruments with two prints; 13c.1 made the places real) |
-| `Commodities Spot D2` | MISSING |  |
-| `Commodities Spot D3` | MISSING |  |
-| `Commodities Spot D4` | MISSING |  |
+| `Commodities Spot D2` | MET | packages/engine/src/mechanisms/goods/index.ts, packages/engine/src/register/register.ts (nothing balances the two sides: what is produced and not sold is stock, and what is bought beyond what was made comes out of stock — the buffer is the register and there is no market-clearing identity anywhere) |
+| `Commodities Spot D3` | MET | packages/engine/src/mechanisms/commodities/index.ts `lease` (the rent is a payment with two named sides in one instruction, to whoever owns the silo — 18.3: and a taker that cannot pay does not take the room, and the LETTER keeps it for the next taker rather than losing its turn) |
+| `Commodities Spot D4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `commodityCarryOf` (the spot-forward relationship is a CONSEQUENCE of three reads — the room the storage session printed, the spoilage the good declares, the secured rate the money market fixed — and what is left over between the future and that is the measurement, never a parity anybody imposes) |
 | `Commodities Spot D5` | PARTIAL | the identity holds for every physical kind the world has, checked from two independent records (packages/engine/src/audit/families/units.ts, packages/engine/src/mechanisms/goods/index.ts); commodities as a system arrive at worklist 13c |
-| `Commodities Spot E1` | MISSING |  |
+| `Commodities Spot E1` | MET | packages/engine/src/mechanisms/firms/decide.ts (an input's price is what a unit costs the line that draws it, through the recipe), packages/engine/src/mechanisms/indices/index.ts (the producer basket is the goods anybody buys, read off their own prints) — 18.7: checked against the world in packages/engine/test/commodity-chain.test.ts |
 | `Commodities Spot E2` | MISSING | ; 12d.3: what a household burns to stay warm is read where the basket is costed — a cold week takes more of the fuel line, in proportion, off the region's published warmth (packages/engine/src/mechanisms/households/consume.ts) |
 | `Commodities Spot E3` | MISSING |  |
-| `Commodities Spot E4` | MISSING |  |
+| `Commodities Spot E4` | PARTIAL | 18.7, packages/engine/test/commodity-chain.test.ts: two of the three links are there and are now asserted against the world rather than assumed — a commodity print reaches a MARGIN (the initial margin on a lot is the grade's own measured move, Derivative Layer D1) and reaches the CONSUMER BASKET (the goods households buy, read off their own prints, Indices D4). The third does not exist: nobody in this world can have a view of an INDEX at all, so a policy maker has nothing to be wrong about (finding 21.83, at 18a.1). The propagation itself is a MEASUREMENT and belongs to Part XII |
 | `Commodities Spot F1` | MET | packages/engine/src/ledger/settlement.ts (units enter the world only through a production event; a destroy beyond what is held fails), packages/engine/src/mechanisms/goods/index.ts (and what a batch consumed is checked against its recipe) |
-| `Commodities Spot F2` | MISSING |  |
+| `Commodities Spot F2` | MET | packages/engine/src/register/register.ts (a debit beyond what is held is refused at the register, so a holding cannot go below nothing — the FORBID is the wire's and holds for every physical kind) |
 | `Commodities Spot F3` | MISSING |  |
 
 ## Indices
