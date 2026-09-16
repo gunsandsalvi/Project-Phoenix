@@ -112,6 +112,9 @@ export interface FundDecl {
    * is. What is NOT modelled, and is not pretended to be, is WHY each institution committed: that
    * decision wants a pension with a very long liability (14.1) or a deal pipeline worth funding
    * (13.5b), and neither is built. What IS built is everything that happens after it committed.
+   *
+   * 14.1: the value is the SHARE of the money the investor holds when its promise is opened, not an
+   * amount — the amount is read off the investor's own account at that moment (`openCommitments`).
    */
   readonly commitments?: Readonly<Record<string, number>>;
   /**
@@ -532,9 +535,9 @@ export const PRIVATE_EQUITY_SPREAD: Readonly<Record<'fee' | 'carry' | 'committed
     why: '\u00a729 A3, \u00a728 A3: the carry \u2014 the share of a gain the manager takes over the highest value a share has been worth at a charge. The same asymmetric fee a strategy house charges and for the same reason: it is paid on the way up and never refunded on the way down, so a manager that has lost money earns nothing until it is back above where it last charged.',
   },
   committed: {
-    low: 40_000_000,
-    high: 140_000_000,
-    why: '\u00a729 A1, Seed A3: what one institution promised the fund this world opens with, in pieces of its money. It is an OPENING CONDITION and not a decision \u2014 a closed-end fund was raised before it existed, which is what a vintage is \u2014 and the SPREAD is what makes two investors two different sizes of obligation when the call comes, which is what decides which of them can meet one.',
+    low: 0.2,
+    high: 0.6,
+    why: '\u00a729 A1, Seed A2, Seed A3 (14.1): what one institution promised the fund this world opens with, AS A SHARE OF THE MONEY IT HAS TO PUT TO WORK when the promise is opened. It is an OPENING CONDITION and not a decision \u2014 a closed-end fund was raised before it existed, which is what a vintage is \u2014 and the SPREAD is what makes two investors two different sizes of obligation when the call comes, which is what decides which of them can meet one. A share and not an amount, because it was an amount (forty to a hundred and forty million, drawn blind) promised by an institution that opened holding nothing, so every insurer in every world defaulted on the first call in period 1 and went to its estate: a seeded promise nobody could keep is a seeded default (Seed E1).',
   },
 };
 
@@ -556,7 +559,7 @@ export function drawPrivateEquity(
   const rng = prng(seed, 'privateEquity');
   const commitments: Record<string, number> = {};
   for (const who of [...investors].sort()) {
-    commitments[who] = Math.round(between(rng, PRIVATE_EQUITY_SPREAD.committed));
+    commitments[who] = between(rng, PRIVATE_EQUITY_SPREAD.committed);
   }
   return [
     {

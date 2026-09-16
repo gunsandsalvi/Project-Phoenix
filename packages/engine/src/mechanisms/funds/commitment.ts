@@ -32,7 +32,7 @@ import {
   moneyInstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { asCash, type Cash, heldAsMoney, minus, type PerPiece, plus } from '../../core/measure.js';
+import { asCash, asRatio, type Cash, heldAsMoney, minus, type PerPiece, plus, scale } from '../../core/measure.js';
 import { sum } from '../../core/num.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -115,10 +115,17 @@ export function openCommitments(
   promised: Readonly<Record<string, number>>,
 ): void {
   const already = new Set(commitmentsTo(ctx, pool).map((c) => String(c.investor)));
-  for (const [who, amount] of Object.entries(promised)) {
-    if (already.has(who) || amount <= 0) continue;
+  for (const [who, share] of Object.entries(promised)) {
+    if (already.has(who) || share <= 0) continue;
     const investor = who as PartyId;
     if (!ctx.parties.has(investor) || !ctx.parties.get(investor).status.alive) continue;
+    // 14.1, Seed A2: WHAT IT PROMISED IS A SHARE OF WHAT IT HAD when the promise was opened — read
+    // off its own account, so no institution opens owing a call it could never meet. One that has
+    // nothing yet promises nothing yet, and is asked again next period (the phase is idempotent).
+    const amount = ctx.registry.cashFor(
+      scale(heldAsMoney(ctx.participant(investor).cash(ccy), 'what it has to put to work'), asRatio(share, 'the share of it promised'), 'what it promised'),
+    );
+    if (amount <= 0) continue;
     const terms: CommitmentTerms = {
       kind: COMMITMENT,
       committed: asCash(amount, 'what it promised this fund'),

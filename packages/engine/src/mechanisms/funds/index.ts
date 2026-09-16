@@ -22,6 +22,7 @@
  * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
+import { isMoneyLeg } from '../../ledger/instruction.js';
 import type { Period } from '../../calendar/calendar.js';
 import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -1466,7 +1467,29 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
   const issued = ctx.instruments.get(share).issued;
   const cash = ctx.register.quantity(fund.id, money);
   if (issued <= 0 || cash <= 0) return;
-  const perShare = pricedAt(heldAsMoney(cash, 'what it has to pass on'), issued, 'what it passes on per share');
+  /**
+   * B3, C1.a, Appendix B (14.1): WHAT IT PASSES ON IS WHAT IT WAS PAID ON WHAT IT HOLDS — the
+   * dividends and the interest that reached its account this period, read off the legs that
+   * carried them — and never the money a subscriber just put in. This passed on the whole account:
+   * an insurer subscribed eighty million to a tracker with an empty basket and was paid it straight
+   * back as a "payout", leaving eight hundred thousand shares on a book worth nothing; it then put
+   * the same money into the next pool, and the next, and back into the first at a NAV falling by
+   * a decade a period, until a household divided by a price of nothing and the world stopped
+   * (`seed-B`, period 19). Subscription proceeds are capital to be invested per its mandate (C1.a);
+   * a return of capital is a redemption, and it has its own door (C2).
+   */
+  const received = sum(
+    ctx.ledger
+      .inPeriod(ctx.period)
+      .filter((r) => r.outcome === 'settled')
+      .flatMap((r) => r.instruction.legs)
+      .filter(isMoneyLeg)
+      .filter((leg) => leg.to.holder === fund.id && leg.receipt !== undefined && (leg.receipt.of === 'dividend' || leg.receipt.of === 'interest'))
+      .map((leg) => leg.amount),
+  ).value;
+  if (received <= 0) return;
+  const passing = atMost(heldAsMoney(asQty(received, 'what it was paid this period'), 'what it was paid'), heldAsMoney(cash, 'what it has'), 'it passes on what it was paid, and no more than it has');
+  const perShare = pricedAt(passing, issued, 'what it passes on per share');
   if (!material(perShare, 2, perShare)) return;
   const ccy = ctx.registry.currencyOf(fund.region);
   const paid: number[] = [];
@@ -2311,6 +2334,9 @@ export function funds(
           // subscriptions to strike against, and the phase-order check said so (Clearing F1.a).
           { kind: 'event', name: CERTIFIED, of: 'anyPeriod' },
           { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
+          // A3 (14.1): its own last performance charge, for the high-water mark. Never declared,
+          // because no pool with a carry had ever struck with a live investor in it.
+          { kind: 'event', name: 'fund.performanceFee', of: 'anyPeriod' },
           { kind: 'event', name: 'prime.call', of: 'anyPeriod' },
           { kind: 'event', name: 'prime.line', of: 'thisPeriod' },
         ],

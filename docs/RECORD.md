@@ -11802,3 +11802,39 @@ capacity grid), 21.20 (the book of outlooks and cell events), 21.22 (the view ma
 order) and 22.3 (the price level's asks, the banking venue, the shops where nobody lives); its
 section is removed and its row marked done.
 
+## Item 14.1 — An insurer opens with a surplus its savers subscribed
+
+An insurer was created by its own module's seed with nothing — no cash, no line, no owner — and a
+buyout fund called it for a commitment of forty to a hundred and forty million in period 1, so
+every insurer in every world defaulted on the first call and went to its estate before it had
+done anything. The sector was assembled and dead. The foundation seed now creates one insurer per
+place that has a bank and endows its opening surplus in cash, a SHAPE per head of the region's
+households with its death named (14.8, 22a), before the equity seed runs; the equity seed floats
+its line like any company's — shares worth its book at the opening price, held by the savers at
+cost, every piece with a holder — so its equity is a positive read from the first period and the
+surplus is somebody's, subscribed, not money from nowhere (Seed A2). The manager of a pool bids
+for analysts its expected fee income over the hours it needs, not its earnings.
+
+**Found and fixed on the way.** Five defects, each in code no party had lived to reach: a
+commitment is a share of what the investor holds when the promise is opened, never an amount drawn
+blind; `funds.strike` and `insurers.allocate` read events they had not declared; a pool passed on
+its whole account as a payout, so a subscriber's eighty million came straight back as a dividend
+and went round the trackers at a NAV falling a decade a period until a household divided by
+nothing (`seed-B`, period 19) — it passes on the dividends and interest that reached it, read off
+the legs, and no more than it has; a named party's cease reseated its agreements but not the paper
+it had issued, so the arrear a wound-up fund's last fee made was redeemed against a party that had
+ceased (Register F2: live issued paper reseats to the successor, as a cell's does); a bank booked a
+drawing to the party that drew it and not to the party it is now.
+
+**Measured.** The insurer holds cash and owes nobody at the opening; its line is held by household
+cells at cost, Σ held is what is issued, what they subscribed is its cash to within a piece a
+member; it lives, allocates into the trackers and holds their shares through twelve periods
+(`insurer-float.test.ts`). Three seeds that stopped at periods 19, 21 and 23 run a year. Eighteen
+suites at 90 red of 196, as before: two greens gained (the treasury collects the tax on interest,
+`expectations.test.ts` B3) and two lost — `equity-anchor.test.ts` has nothing to measure because
+the one listed firm of the (4, 40) rig, which lived to report in period 29, now fails in period
+21 unable to pay 44.8m that fell due; the phantom income removed from every saver's account was
+holding it up (positioned at 22.3).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

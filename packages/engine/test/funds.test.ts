@@ -233,7 +233,9 @@ describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
   it('takes cash and gives shares in one instruction, at the NAV it struck (C1)', () => {
     const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) w.step();
-    const subs = w.journal.ofKind('fund.subscribed').filter((e) => e.data['settled'] === true);
+    // 14.1: the insurers subscribe at other doors from period 2, so the first settled subscription
+    // in the world is no longer this fund's; the test is about this fund's door.
+    const subs = w.journal.ofKind('fund.subscribed').filter((e) => e.data['settled'] === true && e.data['fund'] === String(FUND_ID));
     expect(subs.length).toBeGreaterThan(0);
     const at = Number(subs[0]?.period);
     const one = w.ledger

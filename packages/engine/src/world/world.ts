@@ -2448,6 +2448,14 @@ export class World {
         if (this.parties.get(party).representation === 'cell') {
           ceaseCell(party, successor, 'ceased', this.currentPeriod, this.currentCycle, this.cellDeps());
         } else {
+          // Register F2, Money E4 (14.1): WHAT THE DEAD STILL OWES IS THE SUCCESSOR'S TO OWE, for a
+          // named party as for a cell. An estate assumes every line before it gets here, so this
+          // finds nothing there; a fund wound up into its manager left the arrear its last fee
+          // made, and the kernel redeemed it the period after by addressing a party that had
+          // ceased (`seed-B`, period 21).
+          for (const i of this.instruments.issuedBy(party)) {
+            if (i.status.live) this.instruments.reseat(i.id, successor);
+          }
           this.parties.cease(party, this.currentPeriod, successor);
           succeedAgreements(party, successor, this.currentPeriod, this.currentCycle, {
             parties: this.parties,

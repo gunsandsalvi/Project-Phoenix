@@ -102,7 +102,7 @@ import {
   type Stated,
   valueAt,
 } from '../core/measure.js';
-import { add, div, positiveCount, sum, zeroIfNone } from '../core/num.js';
+import { add, addTo, div, positiveCount, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
@@ -134,7 +134,7 @@ import { shortTermDebt } from '../mechanisms/short-term-debt/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
-import { insurerIdFor, insurers } from '../mechanisms/insurers/index.js';
+import { INSURANCE, insurerIdFor, insurers } from '../mechanisms/insurers/index.js';
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
@@ -595,6 +595,7 @@ const P = {
   crossHoldingShare: paramId('seed.crossHoldingShare'),
   cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
   treasuryBufferShare: paramId('seed.treasury.bufferShare'),
+  insurerOpeningSurplusPerHead: paramId('seed.insurer.openingSurplusPerHead'),
   // Declared by another module and read here by id, because a seed may not import a mechanism
   // (phoenix/no-cross-module-import).
   leverageRatio: paramId('regulation.leverageRatio'),
@@ -750,6 +751,16 @@ export function foundationSeedFor(
         kind: 'shape',
         owner: 'model',
         why: "Treasury D4.b, Seed E2: how much of the central bank's money the treasury opens holding, with the banks holding the rest as reserves. It is a share and not an amount because the amount is not free: every unit of central-bank money was issued to buy the paper above, so what is stated is how it is divided and never how much of it there is. The mechanism that replaces it is the treasury's own funding programme, which decides its balance from period one.",
+      },
+      {
+        id: P.insurerOpeningSurplusPerHead,
+        value: 20,
+        unit: "money per head of the region's households",
+        dimension: 'amount',
+        denominated: 'money',
+        kind: 'shape',
+        owner: 'model',
+        why: "Insurers A1, A3, A4.a, Seed C4 (14.1): WHAT AN INSURER OPENS WITH TO STAND BEHIND COVER — its surplus, in cash at its bank, so that equity is a positive read from the first period and it can write anything at all (an insurer with no surplus writes nothing, A4.a). Per head of the region because that is what the book of cover it will be asked for scales with. It is a SHAPE with a scheduled death: what an insurer's capital IS is an OUTCOME of the premiums it took, the claims it paid and the shares it sold, and once the buyer (14.2), the claim (14.3) and the experience (14.4) exist the opening surplus is what 22a says every opening is — not an equilibrium, a stock the mechanisms then act on. The savers hold the line the equity seed floats against this cash at cost, so the surplus is theirs, subscribed, and not money from nowhere (Seed A2).",
       },
       {
         id: P.membersPerCohort,
@@ -1005,6 +1016,40 @@ export function foundationSeedFor(
           representation: 'named',
           status: { alive: true, standing: 'good' },
         });
+      }
+      /**
+       * Insurers A1, A3, Seed C4 (14.1): ONE INSURER PER PLACE THAT HAS A BANK, created here and not
+       * in its own module's seed because the equity seed floats its line against the book it holds
+       * when that seed runs, and a party that does not exist yet has no book. It opens holding its
+       * surplus in cash — per head of the households of its region, stated once above — and nothing
+       * else: no cover written, nothing owed. The insurers module's own seed leaves a party that is
+       * already here alone.
+       */
+      const headsIn = new Map<string, number>();
+      for (const c of ctx.parties.ofKind(HOUSEHOLD)) {
+        const at = String(c.region);
+        addTo(headsIn, at, weightOf(c));
+      }
+      // A scale model assembled without the insurers module has no such kind (test/rig.ts
+      // `withDependencies`), and a party of a kind nobody registered cannot be added.
+      const insurersHere = ctx.registry.partyKinds.has(INSURANCE);
+      for (const region of insurersHere ? new Set(banks.map((b) => b.region)) : []) {
+        const bank = banksFor(region)[0];
+        if (bank === undefined) continue;
+        const id = insurerIdFor(region);
+        if (ctx.parties.has(id)) continue;
+        const home = countryOfRegion(region);
+        ctx.parties.add(named(id, INSURANCE, `${String(region)} Assurance`, bank.id, region));
+        const heads = headsIn.get(String(region));
+        if (heads === undefined || heads <= 0) continue;
+        ctx.endowMoney(
+          id,
+          home.ccy,
+          asCash(
+            heads * ctx.params.amount(P.insurerOpeningSurplusPerHead, currencyUnit(home.ccy)),
+            'the surplus it opens with',
+          ),
+        );
       }
 
       // ------------------------------------------------------------------------------------------
@@ -2529,6 +2574,15 @@ export function foundationSpec(
   // 13j: AND WHERE EACH BANK BOOKS — with its depositors, which is where the people are. It is what
   // makes a bank American or Japanese, and it is drawn once for the same reason the firms are.
   const banked = placeBanks(drawn.geography, mapReads(), drawn.regions, countries, bankRows);
+  // Insurers A1, Equity A1 (14.1): AN INSURER HAS A RESIDUAL AND SOMEBODY OWNS IT, like any company.
+  // One row per insurer — one per place that has a bank — drawn like a firm's (public or private,
+  // its makers, its payout patience) from its own stream, so adding an insurer reshuffles nobody's
+  // firms. The equity seed floats each against the surplus the foundation gave it, to the savers.
+  const insurerEquities = drawEquity(
+    [...new Set(bankRows.map((b) => banked.get(b.bank) ?? REGION))].map((region) => ({ firm: String(insurerIdFor(region)), size: 1 })),
+    bankRows,
+    `${seed}/insurers`,
+  );
   // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
   // them their hulls. A second draw would be a second fleet wearing this one's name.
   // 13j: a hull is registered somewhere, and a world of four countries has ports in all of them.
@@ -2662,7 +2716,7 @@ export function foundationSpec(
       // Dealer Desks A3: the desks, and WHICH LINES EACH OF THEM MAKES — drawn with the listing
       // (`ListedDecl.makers`) and handed in here, because the bank that quotes and the listing that
       // drew its makers are two systems and one fact (Law 4).
-      banks(drew.banks, makersOf(drew.equities)),
+      banks(drew.banks, makersOf([...drew.equities, ...insurerEquities])),
       estate,
       // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
       // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
@@ -2708,7 +2762,7 @@ export function foundationSpec(
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
-      equity(drew.equities, seed),
+      equity([...drew.equities, ...insurerEquities], seed),
       funds([...drew.funds, ...drew.trackers], drew.managers),
       // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
       // funds, because what is lent is the paper they hold and the desks that need to deliver it

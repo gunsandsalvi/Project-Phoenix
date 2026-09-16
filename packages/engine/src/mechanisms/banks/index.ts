@@ -943,9 +943,15 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // was the same fact asserted twice, one phase too late (item 0, stop 12).
     const funds = costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum;
     if (!funds.some) continue;
-    const q = quote(view, decl, d.holder as PartyId, regulationOf(view), funds.value, seenDefaults(ctx));
+    // Register F2, Money E4 (14.1): THE BORROWER AS IT IS NOW. A party can draw in one phase and
+    // cease in a later one of the same period — a fund wound up into its manager after its last
+    // fee overdrew — and the row for what it drew is its successor's to owe; a drawing whose line
+    // ceased into nobody is booked to nobody.
+    const borrower = ctx.parties.resolve(d.holder as PartyId);
+    if (!borrower.status.alive) continue;
+    const q = quote(view, decl, borrower.id, regulationOf(view), funds.value, seenDefaults(ctx));
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
-    write(ctx, bank, d.holder as PartyId, d.amount, q.rate, d.ccy as CurrencyCode, true);
+    write(ctx, bank, borrower.id, d.amount, q.rate, d.ccy as CurrencyCode, true);
   }
 }
 

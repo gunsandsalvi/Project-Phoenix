@@ -63,7 +63,7 @@ import { asQty, type Qty } from '../../core/tick.js';
 import type { Blueprint } from '../../registry/blueprint.js';
 import { wageFacing, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
-import { expectedEarningsOf } from '../../registry/expectation.js';
+import { expectedIncomeOf } from '../../registry/expectation.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { isMandate, type Mandate, mandateOf, type Product } from './mandate.js';
 
@@ -140,7 +140,11 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   const hours = hoursNeeded(view);
   if (hours <= 0) return [];
   // §46, Labour C1 (12b.3): its own outlook on what it makes, not last week's equity moves.
-  const took = expectedEarningsOf(view);
+  // 14.1 (from 12b.5): and what it makes is WHAT THE POOLS PAY IT — the fees that reached its
+  // account — not what its equity moved by, which counts the marks on what it holds and had a
+  // manager with one good week bid four analysts more than its whole fee income and die of it.
+  // Bidding the fee over the hours it needs is the most an hour is worth to it (Labour D1).
+  const took = expectedIncomeOf(view);
   if (!took.some || took.value <= 0) return [];
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];

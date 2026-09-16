@@ -870,6 +870,10 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
        */
       const rng = prng(seed, 'equity.float');
       for (const row of rows) {
+        // 14.1: a row for a party this world did not create — an insurer's, in a scale model
+        // assembled without the insurers module — is a row about nobody, and there is no book to
+        // float a line against. The full world creates every party its rows name.
+        if (!ctx.parties.has(row.firm as PartyId)) continue;
         const firm = ctx.parties.get(row.firm as PartyId);
         const ccy = ctx.registry.currencyOf(firm.region);
         // A5: one vote per share. It is a TERM of the instrument and not a parameter: what a share

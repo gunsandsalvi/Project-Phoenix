@@ -391,6 +391,9 @@ export function insurers(): SystemModule {
         reads: [
           { kind: 'event', name: 'fund.called', of: 'thisPeriod' },
           { kind: 'event', name: 'insurer.claim', of: 'anyPeriod' },
+          // B2, Fund Shares D2 (14.1): what each pool last published a share is worth, for the
+          // doors it can subscribe at. Never declared, because no insurer had lived to allocate.
+          { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
         ],
         writes: [],
         run: (ctx: MechanismContext): void => {
@@ -459,6 +462,9 @@ export function insurers(): SystemModule {
           (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
         );
         if (bank === undefined) continue;
+        // 14.1: the foundation creates and funds it before the equity seed floats its line; a
+        // world seeded without the foundation still gets one here, unfunded, as before.
+        if (ctx.parties.has(insurerIdFor(region.id))) continue;
         ctx.parties.add({
           id: insurerIdFor(region.id),
           kind: INSURANCE,

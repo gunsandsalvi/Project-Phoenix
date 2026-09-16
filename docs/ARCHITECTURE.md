@@ -1535,3 +1535,19 @@ the condition stands — the same shape a crop's yield takes, from the other sid
 bank's and the insurers' reads of the condition go with the decisions that need them (18a.1,
 14.2), through the same doors.
 
+### Insurers are seeded like companies, and what a death leaves is the successor's (item 14.1)
+
+The foundation seed creates one insurer per place that has a bank and endows its opening surplus
+in cash (a SHAPE per head), before the equity seed runs; the equity seed then floats its line like
+any company's — shares worth its book at the opening price, held by the savers at cost. The
+insurers module's own seed leaves a party the foundation made alone, so a scale model assembled
+without the module (`test/rig.ts withDependencies`) has no insurer and the equity seed skips a row
+whose party is absent.
+
+Two rules the first living insurer forced into the open: a closed-end fund's commitment is a SHARE
+of what the investor holds when the promise is opened (an amount drawn blind was a seeded default);
+and a pool passes on the dividends and interest that reached it, read off the legs, never the money
+a subscriber put in. Two succession rules the wire now keeps for named parties as it did for cells:
+`cease` reseats a dead party's live issued paper to its successor (Register F2), and a bank books a
+drawing to the borrower as it is now (`parties.resolve`).
+
