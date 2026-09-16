@@ -12690,3 +12690,31 @@ and a lender that bargains.
 `corporate-bond`: three new tests — every maturity is a month end, the covenant's service is a real
 figure, and nothing anywhere declares what a management wants. The suite's two standing reds are
 unchanged (21.58).
+
+## Item 17.5 — Trade credit: a seller short of cash ships for cash
+
+**B2, B5: the other half of the decision.** A seller tightened terms on a buyer that had let it
+down, and on nothing else. But offering terms IS lending — the goods go now and the money comes in a
+month, funded out of the seller's own account — so a seller that has published a gap of its OWN has
+nothing to fund anybody with, and what it needs from the sale is the cash. It reads what it
+published (Law 19), so a firm whose gap closes says so the next period and its terms come back with
+it. This is the channel D3 names: a cash squeeze that travels along the supply chain rather than
+through a bank.
+
+**Law 9, Law 18: a row says when.** An invoice was named `(seller, buyer, n)` with `n` found by
+scanning from one, so a pair that had traded every week for a year scanned a year of rows to write
+this week's, and the name said nothing about when it was written. The period is in the name now.
+
+**Law 18: the ageing is walked once a seller a period.** Every sale asks whether this seller has
+been let down, and the answer walked the seller's whole book each time. It is a memo of that walk,
+declared as a `working` store, cleared when the period turns — the rows are the source and the next
+period walks them again.
+
+**Not built, and named:** *the days are the seller's preference*. They are still one number for the
+whole world. What stopped it is written up as 21.61: a seller here is a firm, a small-business cell
+or a merchant, and only firms are drawn numbers — so the preference needs a home every seller has,
+and "no preference" must not come to mean "no terms", which would delete the tier that lives on them.
+Positioned at 17.7.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green. `trade-credit`: three
+new tests, all ten green.

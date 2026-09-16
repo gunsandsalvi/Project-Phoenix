@@ -210,6 +210,10 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   // between a fixed coupon and a margin (Corporate Credit A2.c). It reads no counterparty's state,
   // which is what this ratchet is about; finding 21.57 carries the whole list.
   'mechanisms/corporate-bond/index.ts': 1,
+  // 17.5: the SELLER's own published funding gap, for the SELLER's own decision whether to ship on
+  // terms (Trade Credit B2, B5). It is asked through the view because the decision is taken inside
+  // the kernel's own session, which declares no module's reads; it sees no counterparty's state.
+  'mechanisms/trade-credit/index.ts': 1,
   'mechanisms/derivative-layer/house.ts': 2,
   'mechanisms/derivative-layer/index.ts': 2,
   'mechanisms/derivative-layer/margin.ts': 2,

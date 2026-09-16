@@ -5,8 +5,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { FIRM, HOUSEHOLD, SMALL_FIRM, displayName, paramId } from '../src/index.js';
-import { INVOICE, invoiceTerms, isInvoice } from '../src/mechanisms/trade-credit/index.js';
-import { rigWorld } from './rig.js';
+import {
+  INVOICE,
+  invoiceTerms,
+  isInvoice,
+  tradeCredit,
+} from '../src/mechanisms/trade-credit/index.js';
+import { ranWorld, rigWorld } from './rig.js';
 
 /** Every invoice this world has written, whatever wrote it. */
 function invoices(w: ReturnType<typeof rigWorld>) {
@@ -127,5 +132,53 @@ describe('terms are for buyers of a kind that takes them (Trade Credit A3, House
       // C1.d: no invoice names a household as the buyer, whatever its seller thought of it.
       expect(w.registry.partyKind(w.parties.get(t.buyer).kind).buysOnTerms).toBe(true);
     }
+  });
+});
+
+/**
+ * B2, B5, C1.a, D1 (17.5): terms are the seller's decision — about the buyer AND about itself.
+ */
+describe('a seller short of cash ships for cash (Trade Credit B2, B5, C1.a)', () => {
+  it('names every row by its pair, its period and its place in that period (Law 9)', () => {
+    const w = ranWorld('trade', 12);
+    for (const i of w.instruments.all()) {
+      if (!isInvoice(i.terms)) continue;
+      // Law 9, Law 18: seller, buyer, the week it was written and which of that week's it is —
+      // so a reader can see whose it is and when, and a pair that has traded for a year does not
+      // scan a year of rows to write this week's.
+      expect(String(i.id)).toMatch(/^invoice:[^:]+:[^:]+:\d+:\d+$/);
+    }
+  });
+
+  it('extends no terms in a period it published a gap of its own (B2, D3)', () => {
+    const w = ranWorld('trade', 12);
+    // Offering terms IS lending: the seller funds the buyer out of its own account for a month. A
+    // seller that said it is short of money this period has nothing to fund anybody with, so every
+    // invoice it wrote was written in a period it did not say so.
+    for (const i of w.instruments.all()) {
+      if (!isInvoice(i.terms)) continue;
+      const t = invoiceTerms(i);
+      const written = w.calendar.periodOf(t.due);
+      const said = w.journal
+        .ofKind('firms.funding')
+        .filter((e) => e.subjects.includes(String(t.seller)) && e.period < written);
+      const last = said.at(-1);
+      if (last === undefined) continue;
+      // If the seller had a gap NOW in the period it shipped, it should not have shipped on terms.
+      const shortNow = Number(last.data['shortNow']);
+      if (Number.isFinite(shortNow) && shortNow > 0) {
+        expect(written).not.toBe(last.period);
+      }
+    }
+  });
+
+  it('ages a seller’s book once a period, and keeps nothing the register does not (Law 18, Law 19)', () => {
+    // The ageing is a WORKING store — a memo of a walk over the rows, declared as one — so a reader
+    // knows it outlives nothing and mirrors nothing. The rows are the source and the next period
+    // walks them again; a NOUN here would be a second copy of the register.
+    const declared = tradeCredit().nouns ?? [];
+    const ageing = declared.find((n) => n.name === 'tradeCredit.overdue');
+    expect(ageing, 'the ageing memo is undeclared').toBeDefined();
+    expect(ageing?.kind).toBe('working');
   });
 });

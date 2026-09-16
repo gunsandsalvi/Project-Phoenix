@@ -45,6 +45,8 @@ import type { CashFlow, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Terms, Instrument } from '../../register/instruments.js';
 import { FIRM, SMALL_FIRM } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
+import type { Period } from '../../calendar/calendar.js';
+import { isShort, ownFundingThisPeriod } from '../../registry/funding.js';
 import type { SystemModule, TermsSale } from '../../world/module.js';
 
 export const INVOICE = instrumentKindId('invoice');
@@ -54,8 +56,12 @@ export const TRADE_CREDIT_PARAMS = {
 } as const satisfies Record<string, ParamId>;
 
 /** A1: one row per (seller, buyer, sale). Named so a reader can see whose it is (Law 9). */
-export const invoiceId = (seller: PartyId, buyer: PartyId, n: number): InstrumentId =>
-  instrumentId(`invoice:${seller}:${buyer}:${n}`);
+export const invoiceId = (
+  seller: PartyId,
+  buyer: PartyId,
+  at: Period,
+  n: number,
+): InstrumentId => instrumentId(`invoice:${seller}:${buyer}:${String(at)}:${String(n)}`);
 
 /**
  * A1, Law 4, Law 19: THE NEXT FREE ROW BETWEEN THIS PAIR, asked of the register rather than of a
@@ -67,8 +73,12 @@ export const invoiceId = (seller: PartyId, buyer: PartyId, n: number): Instrumen
  * sequence, and nothing to keep true.
  */
 function freeRow(ctx: MechanismContext, seller: PartyId, buyer: PartyId): InstrumentId {
+  // Law 9, Law 18 (17.5): the PERIOD is part of the name. One pair can trade twice in a period, so
+  // the period alone does not name a row — but a pair that has traded every week for a year had a
+  // scan of a year's rows to do before writing this week's, and the name said nothing about when.
+  // With the period in it the scan is over this period's rows alone, and a reader can see the week.
   for (let n = 1; ; n += 1) {
-    const id = invoiceId(seller, buyer, n);
+    const id = invoiceId(seller, buyer, ctx.period, n);
     if (!ctx.instruments.has(id)) return id;
   }
 }
@@ -166,6 +176,21 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
   // B5, Corporate Credit A4: the seller's own record of this buyer. A missed payment it was a side
   // of is something it saw; what other sellers saw is theirs.
   if (letDown(ctx, seller, buyer)) return none<InstrumentId>();
+  /**
+   * B2, B5, C1.a (17.5): A SELLER SHORT OF CASH SHIPS FOR CASH.
+   *
+   * Offering terms is lending: the seller hands over the goods now and is paid in a month, so it
+   * funds the buyer for a month out of its own account. A seller that has published that it is
+   * SHORT of money this period is a seller with nothing to fund anybody with — and the thing it
+   * needs from this sale is the cash, not a receivable it will have to finance or factor.
+   *
+   * It is a read of what the seller itself published (E4, Law 19), so a firm whose gap closed says
+   * so the next period and its terms come back with it. B5 is explicit that terms are the seller's
+   * decision per buyer on that buyer's condition; this is the other half — on its OWN condition —
+   * and it is what makes a cash squeeze travel along the supply chain rather than through a bank
+   * (D3: a contagion path that runs firm to firm).
+   */
+  if (shortOfCash(ctx, seller)) return none<InstrumentId>();
   const days = ctx.params.days(TRADE_CREDIT_PARAMS.days);
   const on = ctx.calendar.startOf(ctx.period);
   const id = freeRow(ctx, seller, buyer);
@@ -184,6 +209,22 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
     market: none(),
   });
   return some(id);
+}
+
+/**
+ * B2, C1.a (17.5): HAS THIS SELLER SAID IT IS SHORT OF MONEY THIS PERIOD? A read of its own funding
+ * publication — the one door every borrower in this world publishes a gap through — and nothing
+ * where it published none, which is a seller with no gap rather than a seller with no view.
+ */
+function shortOfCash(ctx: MechanismContext, seller: PartyId): boolean {
+  // Observer A4: THE SELLER'S OWN VIEW, for the seller's own decision — this is what the door is
+  // for, and the decision reads no counterparty's state (17.0a, 21.57). It is asked through the
+  // view rather than the wire because the shipping decision is taken inside the kernel's own
+  // session (`markets`), which declares no module's reads.
+  const said = ownFundingThisPeriod(ctx.participant(seller), ctx.period);
+  if (!said.some) return false;
+  // E4: what it is short of NOW is the half a receivable in a month cannot answer.
+  return isShort(said.value.shortNow, said.value.ccy, 'what it is short of now').some;
 }
 
 /**
@@ -216,7 +257,37 @@ function letDown(ctx: MechanismContext, seller: PartyId, buyer: PartyId): boolea
  * What the seller holds is the register's answer; what each row promises is the instrument's; and
  * it is overdue when the day on its own terms has gone by.
  */
+interface Ageing {
+  at: number | undefined;
+  bySeller: Map<string, readonly Written[]>;
+}
+
+/**
+ * D1, D4, Law 18 (17.5): WHAT THIS SELLER IS OWED PAST ITS DAY — walked once per seller per period.
+ *
+ * Every sale asks it, and a seller with a thousand rows on its book was walking all of them for
+ * every tonne it shipped. A settled period's invoices cannot change their due dates and a row
+ * redeemed mid-period leaves the seller's book, so the walk is taken when the period's first sale
+ * asks and read by the rest. It is a memo of a walk and never a second copy of the register: the
+ * rows are the source, and the next period walks them again.
+ */
 export function overdue(ctx: MechanismContext, seller: PartyId): readonly Written[] {
+  const held = ctx.state<Ageing>('tradeCredit.overdue', () => ({
+    at: undefined,
+    bySeller: new Map(),
+  }));
+  if (held.at !== ctx.period) {
+    held.at = ctx.period;
+    held.bySeller.clear();
+  }
+  const had = held.bySeller.get(String(seller));
+  if (had !== undefined) return had;
+  const walked = walkOverdue(ctx, seller);
+  held.bySeller.set(String(seller), walked);
+  return walked;
+}
+
+function walkOverdue(ctx: MechanismContext, seller: PartyId): readonly Written[] {
   const today = ctx.calendar.endOf(ctx.period);
   const out: Written[] = [];
   for (const h of ctx.register.holdingsOf(seller)) {
@@ -244,6 +315,14 @@ export interface Written {
 export function tradeCredit(): SystemModule {
   return {
     id: 'trade-credit',
+    nouns: [
+      {
+        name: 'tradeCredit.overdue',
+        kind: 'working',
+        holds: 'which period this ageing covers and what each seller was owed past its day in it',
+        why: 'a within-period memo of a walk over the register (Law 18): every sale asks whether this seller has been let down, and a seller with a thousand rows was walking all of them for every tonne it shipped. The rows are the source and the next period walks them again; nothing here outlives the period it was read in (17.5).',
+      },
+    ],
     // XI-8, item 9.1: NO NOUNS. The `invoices` book was declared a placeholder for `Agreement`,
     // and it was not one: an invoice is an INSTRUMENT and the register is its kernel home already.
     // What the book held — the id, the seller, the buyer, the due date — was on the instrument, so

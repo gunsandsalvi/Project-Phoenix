@@ -1265,10 +1265,10 @@ measurement is taken there is nothing to name.
 | `Trade Credit A3` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (`tradeCredit.days` is the convention; WHO gets terms is the seller's decision and never a number; 11.0b: taken among the kinds the registry says take terms at all — `PartyKindProfile.buysOnTerms` — so a household is never shipped on terms whatever its seller thinks of it, Households C1.d), packages/engine/src/world/module.ts; 12a.3: an invoice is presented from its due date every period until it is paid, and the miss is the buyer's default) |
 | `Trade Credit A4` | PARTIAL | the claim ranks unsecured in the estate (Firm Birth D2.b, stated on the kind); the estate collecting a dead firm receivables is 13f |
 | `Trade Credit B1` | PARTIAL | the buyer pays with a promise; its cash plan reading the terms is 13f |
-| `Trade Credit B2` | MISSING |  |
+| `Trade Credit B2` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (17.5: A SELLER SHORT OF CASH SHIPS FOR CASH — offering terms is lending, so a seller that published a gap of its own this period has nothing to fund a buyer with and wants the money rather than a receivable; a read of what it published and never a rule) |
 | `Trade Credit B3` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (a buyer in arrears to THIS seller buys for cash, which is stopping shipment read from the seller own book) |
 | `Trade Credit B4` | MISSING |  |
-| `Trade Credit B5` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (the seller own record of that buyer and nothing else: an opinion is somebody) |
+| `Trade Credit B5` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (the seller decides per buyer on that buyer's condition — its own record of being let down — and on its OWN condition, which is what makes terms tighten without a bank anywhere in it) |
 | `Trade Credit C1` | MISSING |  |
 | `Trade Credit C2` | MISSING | financing a receivable — pledge and factoring — positioned to 13f |
 | `Trade Credit C3` | MISSING |  |
