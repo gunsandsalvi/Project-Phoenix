@@ -18,7 +18,7 @@
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
 import { HOUSEHOLD } from '../../registry/profiles.js';
-import { deathsIn, isPolicyTerms } from '../../registry/insurance.js';
+import { deathsIn, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
 import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
@@ -276,9 +276,9 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
     }
   }
   const coverOut = new Map<PartyId, number>();
-  for (const i of ctx.instruments.all()) {
-    if (!isPolicyTerms(i.terms) || !i.status.live || i.issued <= 0 || !i.issuer.some) continue;
-    addTo(coverOut, i.issuer.value, i.issued);
+  for (const a of ctx.agreements.ofKind(POLICY_ROW)) {
+    if (a.state !== 'performing' || !isPolicyTerms(a.terms) || a.terms.cover <= 0) continue;
+    addTo(coverOut, a.debtor, a.terms.cover);
   }
   for (const [issuer, units] of coverOut) {
     if (!ctx.parties.has(issuer) || units <= 0) continue;

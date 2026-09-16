@@ -22,16 +22,16 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import { type AgreementKindDecl } from '../../register/agreements.js';
 import { about } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { costOfCapital } from '../../registry/capital.js';
 import { weatheredIn } from '../../registry/physical.js';
-import { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
-import { none, some } from '../../core/option.js';
-import { period, type Period } from '../../calendar/calendar.js';
+import { COVER, COVER_TERM, POLICY_ROW, coverVenue, isPolicyTerms, type PolicyTerms } from '../../registry/insurance.js';
+import { period } from '../../calendar/calendar.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import { valueAt } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
-import type { Fill } from '../../clearing/solver.js';
 import type { SeedContext } from '../../world/context.js';
 import type { RegionId } from '../../core/ids.js';
 import {
@@ -49,21 +49,15 @@ import {
 } from '../../core/measure.js';
 import { compareCivil, type Civil } from '../../calendar/civil.js';
 import {
-  instrumentId,
   partyKindId,
   type CurrencyCode,
-  type CurveFamilyId,
-  type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { InvalidRegistry, Unpriced } from '../../core/errors.js';
+import { Unpriced } from '../../core/errors.js';
 import { sum, atMost } from '../../core/num.js';
 import { downTick, subQty } from '../../core/tick.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
-import { FACE_TICK, MONEY_PIECES } from '../../registry/grid.js';
-import type { CashFlow, InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
-import type { Instrument, Terms } from '../../register/instruments.js';
-import { issuerName } from '../../registry/naming.js';
+import type { CashFlow, PartyKindProfile } from '../../registry/kinds.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -76,7 +70,7 @@ import { allocate, meetCalls } from './allocate.js';
  */
 export const INSURANCE = partyKindId('insurance');
 // 14.2, Law 4: the names of cover are the registry's, so a buyer in another module can post into the book.
-export { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
+export { COVER, COVER_TERM, POLICY_ROW, coverVenue, isPolicyTerms } from '../../registry/insurance.js';
 
 /** B1: how long a unit of cover runs for, which is a convention of the contract (Law 2). */
 
@@ -84,30 +78,6 @@ export { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.
 export const CLAIM_PAID = 'insurer.claim';
 
 /** Law 9: named for who owes it and which book it is on. */
-export const policyId = (insurer: PartyId, n: number): InstrumentId =>
-  instrumentId(`policy:${insurer}:${n}`);
-
-
-export interface PolicyTerms extends Terms {
-  readonly kind: typeof POLICY;
-  readonly insurer: PartyId;
-  /**
-   * B1: HOW MUCH IS OWED IN EACH FUTURE PERIOD. This is the schedule, and it is the thing B2.b says
-   * must exist: without it there is no discounting and the sector has no duration.
-   */
-  readonly schedule: readonly CashFlow[];
-  /** B2: the market whose prices say what money later is worth. Stated, so a reader can check it. */
-  readonly discountedAt: CurveFamilyId;
-}
-
-export const isPolicy = (t: Terms): t is PolicyTerms =>
-  'schedule' in t && 'discountedAt' in t && 'insurer' in t;
-
-export function policyTerms(i: Instrument): PolicyTerms {
-  if (!isPolicy(i.terms)) throw new InvalidRegistry('Insurers A2', `${i.id} is not a policy`);
-  return i.terms;
-}
-
 export const insuranceKind: PartyKindProfile = {
   /** item 15: what somebody else set it up to do, and it does not get to change it. */
   objective: 'itsMandate',
@@ -125,108 +95,40 @@ export const insuranceKind: PartyKindProfile = {
   depositClass: null,
 };
 
-export const policyKind: InstrumentKindProfile = {
-  id: POLICY,
-  /**
-   * B2, Law 3: WHAT IT IS WORTH IS ITS SCHEDULE AT A MARKET'S OWN RATE. Nobody makes a market in a
-   * pension promise, so there is no price to clear — but there IS a price for money later, and the
-   * curve is where this world keeps it. Discounting at it is reading a price, not inventing one.
-   */
-  pricing: 'derived',
-  priceTick: FACE_TICK,
-  carry: 'cost',
-  // C4, D4: it moves both ways with the rate. An insurer that could only be written up would be an
-  // insurer with a hidden guarantor on the way down.
-  fairValueThroughIncome: true,
-  liabilityOfIssuer: true,
-  /**
-   * A2.a, B2.a, D2, Register B3: THE INSTITUTION WEARS THE MOVE. What it owes IS the present value
-   * of what it promised, so when rates fall the liability rises and its equity falls — which is the
-   * sector's defining risk and the thing B2.b says must not disappear. This is the second kind in
-   * this world whose issuer owes a value rather than a face, and it is the opposite case from the
-   * first: a fund share moves because the ASSETS moved, a policy because the DISCOUNT RATE did.
-   */
-  owes: 'value',
-  /**
-   * A-9, Law 8, Appendix A: A POLICY IS COUNTED IN UNITS OF COVER, which this module declares.
-   *
-   * This returned the CURRENCY CODE where a `UnitId` is wanted, through the file's one
-   * `as unknown as` cast — so `Instruments.add` threw `Missing [Appendix A] unit USD does not
-   * exist` and NO POLICY COULD BE REGISTERED IN ANY WORLD. The module declared `COVER` in its own
-   * `units` and never used it. The cast is what let it compile; without it the type said so.
-   */
-  unit: () => COVER,
-  validateTerms: (t) => {
-    if (!isPolicy(t)) throw new InvalidRegistry('Insurers A2', 'not policy terms');
-    if (t.schedule.length === 0) {
-      // B2.b: a liability with no schedule is a cash balance, which never moves when rates move.
-      throw new InvalidRegistry('Insurers B2.b', 'a policy with no schedule has no duration');
-    }
-    for (const flow of t.schedule) {
-      if (flow.perUnit <= 0) {
-        throw new InvalidRegistry('Insurers B1', 'a scheduled payment of nothing is not a promise');
-      }
-    }
-  },
-  displayName: (i, namer) =>
-    isPolicy(i.terms)
-      ? `${issuerName(namer, i.id)} cover to ${lastDate(i.terms.schedule)}`
-      : String(i.id),
-  ranking: () => ({
-    seniority: 0,
-    // A1, E1: a beneficiary is a named creditor of the institution and ranks like one.
-    secured: [],
-    claim: 'a beneficiary of a promise to pay stated amounts on stated dates',
-  }),
-  // A4: the payments are real flows to named parties, and the kernel's own phase makes them.
-  due: (i, period, cal) => {
-    if (!isPolicy(i.terms)) return [];
-    const from = cal.startOf(period);
-    const to = cal.endOf(period);
-    return i.terms.schedule
-      .filter((f) => compareCivil(f.date, from) >= 0 && compareCivil(f.date, to) <= 0)
-      .map((f) => ({ kind: 'coupon' as const, date: f.date, amountPerUnit: f.perUnit }));
-  },
-  accrued: () => 0,
-  cashFlows: (i, after) =>
-    isPolicy(i.terms) ? i.terms.schedule.filter((f) => compareCivil(f.date, after) > 0) : [],
-  /**
-   * B2, B2.a: THE PRESENT VALUE, and it is the market's own arithmetic. `priceOf` is the same
-   * function a bond's price is checked against, so a claim discounted here and a bond priced there
-   * are reading one curve (Law 4) — and when that curve falls, this number rises.
-   */
-  derive: (i, at, reads) => {
-    if (!isPolicy(i.terms)) return 0;
-    const curve = reads.curve(i.terms.discountedAt, at);
-    const priced = curve.priceOf(i.terms.schedule, reads.on(at));
-    /**
-     * A-9, XI-6: A CURVE WITH NOTHING ON IT PRICES NOTHING, and this returned 0 directly under a
-     * comment forbidding exactly that. A zero here is not "unknown": it reads as a liability the
-     * institution has DISCHARGED, and it would flow into its equity as a solvent book.
-     *
-     * `derive` answers a number or it does not answer, so the honest form is the throw the kernel
-     * already makes for a derived kind that derives nothing — at the site, with a citation, never
-     * caught in the engine (§5).
-     */
-    if (!priced.some) {
-      throw new Unpriced('Insurers B2', `${i.id} is discounted at a curve with nothing on it`, {
-        instrument: String(i.id),
-        curve: String(i.terms.discountedAt),
-      });
-    }
-    return priced.value;
-  },
-};
-
 /**
- * B1: the last day this promise runs to. A policy with no schedule is refused at assembly (B2.b),
- * so an empty one cannot reach here — and if it ever did, a made-up date would be a lie about when
- * somebody is owed money. Missing is Missing (Law 2).
+ * A2, B1, B2, B2.a, B2.b, Law 15 (14.5): A POLICY IS A ROW, AND THE KERNEL MARKS IT. What the row
+ * is worth is the insurer's own expected claims on it — its outlook of what a unit of its cover
+ * costs it a period (A4.c), on the cover, for every period left of the term — discounted at the
+ * curve the row names: a schedule at a market rate, which is what B2 asks of a liability and why a
+ * rate move is a solvency event for this sector (B2.a). An insurer that expects no claims carries
+ * the promise at nothing; a term that has ended is worth nothing. The holder's side is the same
+ * number the other way, so the two accounts move together (Law 5). A curve with nothing on it
+ * prices nothing and says so (§5), never a zero that reads as a promise discharged.
  */
-const lastDate = (s: readonly CashFlow[]): string => {
-  const d = s[s.length - 1]?.date;
-  if (d === undefined) throw new InvalidRegistry('Insurers B1', 'a policy with no schedule');
-  return `${d.y}-${d.m}-${d.d}`;
+export const policyRowKind: AgreementKindDecl = {
+  id: POLICY_ROW,
+  what: 'cover written: what the weather takes from the holder, up to the cover, until the term ends',
+  binds: 'whoeverSucceeds',
+  valued: (row, at, reads) => {
+    if (!isPolicyTerms(row.terms) || row.terms.cover <= 0) return asCash(0, 'no cover, nothing promised');
+    const today = reads.on(at);
+    if (compareCivil(row.terms.to, today) <= 0) return asCash(0, 'a term that has ended promises nothing');
+    const expected = reads.outlook(row.debtor, about({ on: 'claims' }));
+    if (!expected.some || expected.value.expected <= 0) return asCash(0, 'it expects no claims on it');
+    const perUnit = asPerPiece(expected.value.expected, 'what a unit of cover is expected to cost a period');
+    const schedule: CashFlow[] = [];
+    for (let p = at + 1; ; p += 1) {
+      const date = reads.on(period(p));
+      if (compareCivil(date, row.terms.to) > 0) break;
+      schedule.push({ date, perUnit });
+    }
+    if (schedule.length === 0) return asCash(0, 'nothing left of the term');
+    const priced = reads.curve(row.terms.discountedAt, at).priceOf(schedule, today);
+    if (!priced.some) {
+      throw new Unpriced('Insurers B2', `${row.id} is discounted at a curve with nothing on it`, { row: String(row.id), curve: String(row.terms.discountedAt) });
+    }
+    return valueAt(priced.value, row.terms.cover, 'what the cover is expected to cost, discounted');
+  },
 };
 
 /* --------------------------------------------------------------------------------------------
@@ -299,33 +201,16 @@ function promises(): Family {
   return {
     name: 'names',
     contributor: 'insurers',
-    spec: 'Insurers A1 Insurers B2.b Insurers E1 Insurers E2',
+    spec: 'Insurers A1 Insurers B1 Insurers E1',
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      for (const i of view.instruments.all()) {
-        if (!i.status.live || !isPolicy(i.terms)) continue;
-        if (view.register.holdersOf(i.id).length === 0 && view.register.heldTotal(i.id).value > 0) {
-          out.push({
-            family: 'names',
-            spec: 'Insurers E1',
-            owner: i.id,
-            size: view.register.heldTotal(i.id).value,
-            unit: i.unit,
-            period: view.period,
-            message: `${i.id}: a promise outstanding and nobody it is owed to`,
-          });
-        }
-        if (i.terms.schedule.length === 0) {
-          out.push({
-            family: 'names',
-            spec: 'Insurers B2.b',
-            owner: i.id,
-            size: 0,
-            unit: i.unit,
-            period: view.period,
-            message: `${i.id}: a liability with no schedule, which is a cash balance`,
-          });
+      // E1 holds by construction — a row has a named creditor or it is not a row — so what is left
+      // to check is B1: a live promise of cover is a promise of SOMETHING, until a day.
+      for (const a of view.agreements.ofKind(POLICY_ROW)) {
+        if (a.state !== 'performing' || !isPolicyTerms(a.terms)) continue;
+        if (a.terms.cover <= 0) {
+          out.push({ family: 'names', spec: 'Insurers B1', owner: String(a.id), size: 0, unit: String(COVER), period: view.period, message: `${String(a.id)}: cover of nothing, still standing` });
         }
       }
       return out;
@@ -341,7 +226,8 @@ export function insurers(): SystemModule {
     // assets is hand them to a manager, so the doors it subscribes at have to exist before it looks
     // for one. It is a dependency of the ALLOCATION and not of the cover it writes.
     requires: ['sovereign-curve', 'funds'],
-    instrumentKinds: [policyKind],
+    instrumentKinds: [],
+    agreementKinds: [policyRowKind],
     partyKinds: [insuranceKind],
     curveFamilies: [],
     units: [{ id: COVER, name: 'units of cover', perUnit: MONEY_PIECES }],
@@ -404,6 +290,7 @@ export function insurers(): SystemModule {
         writes: [{ kind: 'event', name: CLAIM_PAID }],
         run: (ctx: MechanismContext): void => {
           payClaims(ctx);
+          expireCover(ctx);
         },
       },
       {
@@ -563,51 +450,57 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
    * claim on the insurer for the schedule the policy carries (B1). Both legs, one instruction, same
    * period (Law 5).
    */
+  /**
+   * Clearing C3, Law 5 (14.5): FILLS ARE PAIRED BY THE SOLVER'S ALLOCATION. Every buyer's fill is
+   * spread over the insurers that filled the other side in proportion to what each wrote, whole
+   * units, the remainder to the first; each pair is one premium paid and one row opened — the
+   * policy — in the same pass. A premium that cannot be paid opens nothing.
+   */
+  const sells = outcome.fills.filter((f) => f.side === 'sell' && f.qty > 0);
+  const soldTotal = sum(sells.map((f) => f.qty)).value;
   let written = 0;
+  if (soldTotal <= 0) return;
+  const family = ctx.sovereignCurveIn(ccy);
+  if (!family.some) throw new Missing('Insurers B2', `cover in ${ccy} has no curve to be discounted at`, { ccy });
+  const to = ctx.calendar.startOf(period(ctx.period + ctx.params.periods(COVER_TERM)));
   for (const fill of outcome.fills) {
-    if (fill.side !== 'buy') continue;
-    const insurer = sellerOf(outcome.fills, fill);
-    if (insurer === undefined) continue;
-    const qty = downTick(fill.qty);
-    if (qty <= 0) continue;
-    const premium = ctx.registry.cashFor(valueAt(outcome.price, qty, 'the premium at inception'));
-    if (premium <= 0) continue;
-    const id = policyIdFor(insurer, fill.party, ctx.period);
-    if (!ctx.instruments.has(id)) {
-      ctx.issue({
-        id,
-        kind: POLICY,
-        issuer: some(insurer),
-        ccy,
-        terms: coverTerms(ctx, insurer, ccy),
-        market: none(),
+    if (fill.side !== 'buy' || fill.qty <= 0) continue;
+    let left = downTick(fill.qty);
+    sells.forEach((sell, n) => {
+      if (left <= 0) return;
+      const share = n === sells.length - 1 ? left : atMost(downTick((fill.qty * sell.qty) / soldTotal), left, 'no more than is left of the fill');
+      if (share <= 0) return;
+      const premium = ctx.registry.cashFor(valueAt(outcome.price, share, 'the premium at inception'));
+      if (premium <= 0) return;
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'money',
+            from: ctx.accountOf(fill.party, ccy),
+            to: ctx.accountOf(sell.party, ccy),
+            // Treasury C1: what this money is to the party getting it — a premium is revenue.
+            receipt: { of: 'sale' },
+            ccy,
+            amount: premium,
+          },
+        ],
+        cause: 'corporateAction',
+        reason: `${String(fill.party)} pays ${String(sell.party)} a premium for cover`,
       });
-    }
-    const r = ctx.settle({
-      legs: [
-        {
-          kind: 'asset',
-          from: insurer,
-          to: fill.party,
-          instrument: id,
-          qty,
-          pricePerUnit: some(outcome.price),
-          accruedPerUnit: none(),
-        },
-        {
-          kind: 'money',
-          from: ctx.accountOf(fill.party, ccy),
-          to: ctx.accountOf(insurer, ccy),
-          // Treasury C1: what this money is to the party getting it — a premium is revenue.
-          receipt: { of: 'sale' },
-          ccy,
-          amount: premium,
-        },
-      ],
-      cause: 'corporateAction',
-      reason: `${String(insurer)} writes cover for ${String(fill.party)}`,
+      if (r.outcome !== 'settled') return;
+      const terms: PolicyTerms = { kind: POLICY_ROW, cover: share, to, discountedAt: family.value.id };
+      ctx.owes({
+        debtor: sell.party,
+        creditor: fill.party,
+        ccy,
+        // A2: it owes nothing NOW; what it owes is what a loss makes a claim for (14.3).
+        owed: 0,
+        terms,
+        why: `${String(sell.party)} covers ${String(fill.party)} for ${String(share)} until ${String(to.y)}-${String(to.m)}-${String(to.d)}`,
+      });
+      left = subQty(left, share, 'what is left of the fill');
+      written += 1;
     });
-    if (r.outcome === 'settled') written += 1;
   }
   ctx.record('cover.cleared', [], { ccy, outcome: outcome.kind, price: outcome.price, bids: bidders, asks: askers, written }, true);
 };
@@ -624,65 +517,64 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
  * it reaches here.
  */
 function payClaims(ctx: MechanismContext): void {
-  const insurers = ctx.parties.ofKind(INSURANCE).filter((p) => p.status.alive);
-  if (insurers.length === 0) return;
   for (const loss of weatheredIn(ctx.journal, ctx.period)) {
     const holder = ctx.parties.resolve(loss.holder as PartyId);
     if (!holder.status.alive) continue;
     const ccy = ctx.registry.currencyOf(holder.region);
     let unpaid = ctx.registry.cashFor(asCash(loss.atCost, 'what the lost plant was on its books at'));
     if (unpaid <= 0) continue;
-    for (const insurer of insurers) {
+    // Oldest cover first: the rows it holds, in the order they were opened.
+    const rows = ctx.agreements
+      .owedTo(holder.id)
+      .filter((a) => a.state === 'performing' && a.ccy === ccy && isPolicyTerms(a.terms) && a.terms.cover > 0)
+      .sort((a, b) => a.since - b.since);
+    for (const row of rows) {
       if (unpaid <= 0) break;
-      if (ctx.registry.currencyOf(insurer.region) !== ccy) continue;
-      const policies = ctx.instruments
-        .issuedBy(insurer.id)
-        .filter((i) => i.status.live && isPolicy(i.terms) && ctx.register.quantity(holder.id, i.id) > 0)
-        .sort((a, b) => String(a.id).localeCompare(String(b.id)));
-      for (const policy of policies) {
-        if (unpaid <= 0) break;
-        const held = ctx.register.quantity(holder.id, policy.id);
-        // COVER counts in the money's pieces: a unit of cover pays a unit of money.
-        const units = atMost(held, unpaid, 'it pays no more than the cover it holds, and no more than was lost');
-        if (units <= 0) continue;
-        const r = ctx.settle({
-          legs: [
-            {
-              kind: 'money',
-              from: ctx.accountOf(insurer.id, ccy),
-              to: ctx.accountOf(holder.id, ccy),
-              receipt: { of: 'claim' },
-              ccy,
-              amount: units,
-            },
-            {
-              kind: 'asset',
-              from: holder.id,
-              to: insurer.id,
-              instrument: policy.id,
-              qty: units,
-              pricePerUnit: some(asPerPiece(1, 'a unit of cover, paid')),
-              accruedPerUnit: none(),
-            },
-          ],
-          cause: 'corporateAction',
-          reason: `${String(insurer.id)} pays ${String(holder.id)}'s claim on ${loss.vintage}`,
-        });
-        ctx.record(
-          CLAIM_PAID,
-          [insurer.id, holder.id],
-          { insurer: insurer.id, holder: holder.id, policy: policy.id, vintage: loss.vintage, capitalKind: loss.capitalKind, loss: loss.atCost, amount: units, paid: r.outcome === 'settled' },
-          true,
-        );
-        if (r.outcome === 'settled') unpaid = subQty(unpaid, units, 'what is still uncovered');
-        else break;
-      }
+      const terms = row.terms;
+      if (!isPolicyTerms(terms)) continue;
+      const insurer = ctx.parties.get(row.debtor);
+      if (!insurer.status.alive) continue;
+      // COVER counts in the money's pieces: a unit of cover pays a unit of money.
+      const units = atMost(terms.cover, unpaid, 'it pays no more than the cover it holds, and no more than was lost');
+      if (units <= 0) continue;
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'money',
+            from: ctx.accountOf(insurer.id, ccy),
+            to: ctx.accountOf(holder.id, ccy),
+            receipt: { of: 'claim' },
+            ccy,
+            amount: units,
+          },
+        ],
+        cause: 'corporateAction',
+        reason: `${String(insurer.id)} pays ${String(holder.id)}'s claim on ${loss.vintage}`,
+      });
+      ctx.record(
+        CLAIM_PAID,
+        [insurer.id, holder.id],
+        { insurer: insurer.id, holder: holder.id, policy: row.id, vintage: loss.vintage, capitalKind: loss.capitalKind, loss: loss.atCost, amount: units, paid: r.outcome === 'settled' },
+        true,
+      );
+      if (r.outcome !== 'settled') break;
+      // The cover used is gone: the row carries what is left, and a row with nothing left ends.
+      const left = subQty(terms.cover, units, 'the cover left on the row');
+      const restated: PolicyTerms = { kind: POLICY_ROW, cover: left, to: terms.to, discountedAt: terms.discountedAt };
+      if (left > 0) ctx.restate(row.id, restated);
+      else ctx.endAgreement(row.id, 'the cover was paid out in full');
+      unpaid = subQty(unpaid, units, 'what is still uncovered');
     }
   }
 }
 
-function sellerOf(fills: readonly Fill[], buy: Fill): PartyId | undefined {
-  return fills.find((f) => f.side === 'sell' && f.party !== buy.party)?.party;
+/** B1 (14.5): a term that has ended promises nothing; the row ends the period its day passes. */
+function expireCover(ctx: MechanismContext): void {
+  const today = ctx.calendar.startOf(ctx.period);
+  for (const row of ctx.agreements.ofKind(POLICY_ROW)) {
+    if (row.state !== 'performing' || !isPolicyTerms(row.terms)) continue;
+    if (compareCivil(row.terms.to, today) <= 0) ctx.endAgreement(row.id, 'the term ended');
+  }
 }
 
 /**
@@ -694,25 +586,5 @@ function sellerOf(fills: readonly Fill[], buy: Fill): PartyId | undefined {
  * costs is `claimsSeen`, read off what this insurer has actually paid, and it is the PRICE that
  * carries it (A4.c). Nothing here draws from a distribution anybody stated.
  */
-function coverTerms(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): PolicyTerms {
-  const family = ctx.sovereignCurveIn(ccy);
-  if (!family.some) {
-    throw new Missing('Insurers B2', `cover in ${ccy} has no curve to be discounted at`, { ccy });
-  }
-  return {
-    kind: POLICY,
-    insurer,
-    // B1: one unit of cover promises one unit of its money, at the end of the term.
-    schedule: [
-      {
-        date: ctx.calendar.startOf(period(ctx.period + ctx.params.periods(COVER_TERM))),
-        perUnit: asPerPiece(1, 'a unit of cover promises a unit of its money'),
-      },
-    ],
-    discountedAt: family.value.id,
-  };
-}
 
 /** Law 9: a policy is named for who wrote it, for whom, and when. An id is never a display name. */
-export const policyIdFor = (insurer: PartyId, holder: PartyId, at: Period): InstrumentId =>
-  instrumentId(`policy:${insurer}:${holder}:${at}`);

@@ -14,6 +14,8 @@
  * market says (Goods E2), and a vintage of plant wears out on a schedule of its own, from what its
  * own holder paid for it (A6).
  */
+import { type AgreementId, type AgreementKindId } from '../core/ids.js';
+import { type Agreement, type AgreementKindDecl, type RowValuationReads } from '../register/agreements.js';
 import { issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
@@ -22,6 +24,7 @@ import { none, type Option } from '../core/option.js';
 import {
   absolute,
   acrossMembers,
+  asCash,
   asPerMember,
   asPerPiece,
   asRatio,
@@ -72,6 +75,14 @@ export interface RevalueDeps {
     mark(c: Contract, at: Period): Cash;
     carrying(c: Contract, at: Period): Cash;
   };
+  /** 14.5: the rows, their kinds, and the last mark on each — what `revalueRows` reads and writes. */
+  readonly agreements: {
+    all(): readonly Agreement[];
+    kind(id: AgreementKindId): AgreementKindDecl;
+    markOf(id: AgreementId): number | undefined;
+    mark(id: AgreementId, value: number): void;
+  };
+  readonly rows: RowValuationReads;
 }
 
 export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
@@ -189,6 +200,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     }
   }
   revalueContracts(period, cycle, d);
+  revalueRows(period, cycle, d);
   for (const [issuer, delta] of issuerMoves) {
     if (delta === 0) continue;
     d.register.moveEquity({
@@ -443,5 +455,55 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       { deltaPerMember: delta, ccy: inst.ccy, home, was, now: now, carried },
       false,
     );
+  }
+}
+
+/**
+ * Insurers B1, B2, B2.a, D2 (14.5): A ROW WITH A SCHEDULE IS MARKED LIKE A LINE WITH A PRICE. Its
+ * kind says what it is worth now — a schedule at a curve — and the change since its last mark moves
+ * the creditor's account up and the debtor's down by the same amount in the same pass (Law 5), each
+ * in its own money. A row that has ended is worth nothing and its last mark unwinds the same way,
+ * so nothing is left on either account for a promise that is gone. Nothing is stored but the mark.
+ */
+function revalueRows(period: Period, cycle: Cycle, d: RevalueDeps): void {
+  for (const row of d.agreements.all()) {
+    const kind = d.agreements.kind(row.terms.kind);
+    const was = d.agreements.markOf(row.id);
+    if (kind.valued === undefined && was === undefined) continue;
+    const live = row.state === 'performing' || row.state === 'breached';
+    const now = live && kind.valued !== undefined ? kind.valued(row, period, d.rows) : 0;
+    const before = zeroIfNone(was);
+    if (now === before) continue;
+    const delta = minus(asCash(now, 'what the row is worth now'), asCash(before, 'what it was marked at'), 'what the mark moved by');
+    for (const side of [
+      { party: row.creditor, sign: 1, liabilities: false },
+      { party: row.debtor, sign: -1, liabilities: true },
+    ]) {
+      const p = d.parties.get(side.party);
+      if (!p.status.alive) continue;
+      const toOwn = intoOwnMoney(side.party, row.ccy, period, d);
+      const weight = weightOf(p);
+      const moved = asPerMember<'money:piece'>(
+        (side.sign * scale(delta, toOwn, 'in its own money')) / weight,
+        'what one member’s account moves by',
+      );
+      d.register.moveEquity({
+        party: side.party,
+        period,
+        cycle,
+        delta: moved,
+        cause: `revaluation of ${row.id} in period ${period}`,
+        through: scale(asCash(now, 'what the row is worth'), toOwn, 'in its own money') / weight,
+      });
+      d.journal.record(
+        period,
+        cycle,
+        'revaluation',
+        [side.party],
+        side.liabilities ? { deltaPerMember: moved, liabilities: true, agreement: row.id } : { deltaPerMember: moved, agreement: row.id },
+        false,
+      );
+    }
+    d.agreements.mark(row.id, now);
   }
 }

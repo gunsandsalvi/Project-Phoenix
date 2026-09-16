@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { FIRM, HOUSEHOLD } from '../src/index.js';
 import { INSURANCE } from '../src/mechanisms/insurers/index.js';
-import { POLICY } from '../src/registry/insurance.js';
+import { POLICY_ROW } from '../src/registry/insurance.js';
 import { WIND } from '../src/registry/environment.js';
 import { about } from '../src/world/context.js';
 import { rigWorld } from './rig.js';
@@ -59,13 +59,13 @@ describe('who buys cover, and at what (14.2)', () => {
     expect(sessions.some((e) => Number(e.data['bids']) > 0)).toBe(true);
     const cleared = sessions.filter((e) => Number(e.data['written']) > 0);
     for (const e of cleared) {
-      const one = w.ledger.inPeriod(e.period).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'asset' && String(l.instrument).startsWith('policy:')));
+      // Law 5 (14.5): the premium is a money leg in a numbered instruction, and the row — the
+      // policy — opens in the same pass, between the buyer and the insurer that filled it.
+      const one = w.ledger.inPeriod(e.period).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'sale' && r.instruction.reason.includes('premium')));
       expect(one).toBeDefined();
-      expect(one?.instruction.legs.filter((l) => l.kind === 'money')).toHaveLength(1);
-      expect(one?.instruction.legs.filter((l) => l.kind === 'asset')).toHaveLength(1);
     }
-    for (const p of w.instruments.all().filter((i) => i.kind === POLICY && i.status.live && i.issued > 0)) {
-      expect(p.issuer.some && w.parties.get(p.issuer.value).kind).toBe(INSURANCE);
+    for (const a of w.agreements.ofKind(POLICY_ROW)) {
+      expect(w.parties.get(a.debtor).kind).toBe(INSURANCE);
     }
   });
 });

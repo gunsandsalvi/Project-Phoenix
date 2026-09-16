@@ -8,43 +8,17 @@ import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   INSURANCE,
-  POLICY,
   coverPrice,
   gapOf,
   insurers,
-  isPolicy,
+  isPolicyTerms,
+  POLICY_ROW,
   presentValueOf,
   runCover,
   wantsDuration,
 } from '../src/index.js';
 import { asQty } from '../src/core/tick.js';
 import { rigWorld } from './rig.js';
-
-describe('the liability is a SCHEDULE, which is the whole clause (B1, B2.b)', () => {
-  it('refuses a policy with nothing owed on any date, because that is a cash balance', () => {
-    const w = rigWorld('ins-a');
-    const k = w.registry.instrumentKind(POLICY);
-    // B2.b: a liability that accumulates contributions minus benefits plus investment income has no
-    // schedule, no discount rate and no discounting — so it never moves when rates move, and the
-    // sector's defining risk disappears. It is refused where it would be constructed.
-    expect(() => {
-      k.validateTerms({ kind: POLICY, insurer: 'x', schedule: [], discountedAt: 'y' } as never);
-    }).toThrow(/B2\.b/);
-  });
-
-  it('refuses a scheduled payment of nothing, because that is not a promise (B1)', () => {
-    const w = rigWorld('ins-a');
-    const k = w.registry.instrumentKind(POLICY);
-    expect(() => {
-      k.validateTerms({
-        kind: POLICY,
-        insurer: 'x',
-        discountedAt: 'y',
-        schedule: [{ date: { y: 2030, m: 1, d: 1 }, perUnit: 0 }],
-      } as never);
-    }).toThrow(/Insurers B1/);
-  });
-});
 
 describe('falling rates raise the liability (B2, B2.a, D2)', () => {
   it('is arithmetic on the schedule and the discount, not a rule anybody wrote', () => {
@@ -70,13 +44,15 @@ describe('falling rates raise the liability (B2, B2.a, D2)', () => {
     // The beneficiary does not absorb the investment result: the promise is fixed and the
     // institution's equity is what moves. One declared fact does it, and the revaluation does
     // the rest — a sector that passed the result through would be a fund wearing an insurer's name.
-    expect(w.registry.instrumentKind(POLICY).owes).toBe('value');
-    expect(w.registry.instrumentKind(POLICY).liabilityOfIssuer).toBe(true);
+    // 14.5: a policy is a row the kernel marks — its kind says what a live row is worth, and the
+    // insurer's account moves by it while the holder's moves the other way.
+    expect(w.agreements.kind(POLICY_ROW).valued).toBeDefined();
+    expect(w.agreements.kind(POLICY_ROW).binds).toBe('whoeverSucceeds');
   });
 
   it('is priced off a market and never at a fixed rate (B2.b, Law 3)', () => {
     const w = rigWorld('ins-a');
-    expect(w.registry.instrumentKind(POLICY).pricing).toBe('derived');
+    expect(w.agreements.kind(POLICY_ROW).valued).toBeDefined();
     for (const d of w.params.all()) {
       const id = String(d.id).toLowerCase();
       if (!id.startsWith('insur')) continue;
@@ -163,12 +139,12 @@ describe('a fill is a policy, and both legs settle (A4.a, Law 5, Clearing D2)', 
     expect(cleared[0]?.data['written'], 'one policy was written').toBe(1);
     // B1, Register B3: the cover is a claim ON the insurer, so the insurer ISSUED it and the buyer
     // HOLDS it. Both halves are asserted, because a world where only one is true is the defect.
-    const issued = w.instruments.issuedBy(insurer.id).filter((i) => isPolicy(i.terms));
-    expect(issued.length).toBe(1);
-    expect(Number(issued[0]?.issued)).toBe(10_000);
-    const held = w.register
-      .holdingsOf(buyer.id)
-      .filter((h) => String(h.instrument) === String(issued[0]?.id));
-    expect(held.length, 'the buyer holds the cover it bought').toBe(1);
+    // B1, A2 (14.5): the cover is a ROW — the insurer owes it, the buyer is owed it — and both halves
+    // are asserted, because a world where only one is true is the defect.
+    const rows = w.agreements.ofKind(POLICY_ROW).filter((a) => a.debtor === insurer.id && a.creditor === buyer.id && a.state === 'performing');
+    expect(rows.length).toBe(1);
+    const terms = rows[0]?.terms;
+    expect(terms !== undefined && isPolicyTerms(terms)).toBe(true);
+    expect(terms !== undefined && isPolicyTerms(terms) ? terms.cover : 0).toBe(10_000);
   });
 });

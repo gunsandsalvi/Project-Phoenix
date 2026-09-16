@@ -6,7 +6,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { FIRM, assemble, type MechanismContext, type SystemModule } from '../src/index.js';
-import { INSURANCE, isPolicy, runCover } from '../src/mechanisms/insurers/index.js';
+import { INSURANCE, runCover } from '../src/mechanisms/insurers/index.js';
+import { isPolicyTerms } from '../src/registry/insurance.js';
 import { vintagesHeld } from '../src/registry/physical.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
@@ -88,16 +89,14 @@ describe('a loss on covered plant is a claim on the insurer (14.3)', () => {
     expect(amount).toBeGreaterThan(0);
     expect(amount).toBeLessThanOrEqual(Math.round(atCost) + 1);
     expect(amount).toBeLessThanOrEqual(coverBought);
-    // Law 5: the money out and the cover back, both legs of one numbered instruction.
+    // Law 5: the claim is a money leg to the holder in a numbered instruction, and the row it was
+    // paid on carries that much less cover from the same pass (14.5) — a row paid out in full ends.
     const at = paid[0]?.period;
     const one = w.ledger.inPeriod(at as never).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'claim'));
     expect(one).toBeDefined();
-    expect(one?.instruction.legs.filter((l) => l.kind === 'asset' && String(l.instrument).startsWith('policy:'))).toHaveLength(1);
-    // The cover used is gone: the policy the claim was paid on has that much less outstanding. (The
-    // insurer may have written others in the same session — the firms' own bids of 14.2 were in the
-    // book — so it is this policy that is read, not the insurer's whole book.)
-    const policy = w.instruments.get(String(paid[0]?.data['policy']) as never);
-    expect(isPolicy(policy.terms)).toBe(true);
-    expect(policy.issued).toBe(coverBought - amount);
+    const row = w.agreements.get(String(paid[0]?.data['policy']) as never);
+    expect(isPolicyTerms(row.terms)).toBe(true);
+    const left = row.state === 'performing' && isPolicyTerms(row.terms) ? row.terms.cover : 0;
+    expect(left).toBe(coverBought - amount);
   });
 });

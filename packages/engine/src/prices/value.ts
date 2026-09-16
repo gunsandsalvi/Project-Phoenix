@@ -93,6 +93,11 @@ export class Valuation {
     ) => readonly { readonly worth: Cash; readonly ccy: CurrencyCode }[],
   ) {}
 
+  /** 14.5: the day a period's marks are struck on — the one convention every discounting reads. */
+  on(at: Period): Civil {
+    return this.dayOf(at);
+  }
+
   /** Fund Shares B1: the reads a derived value is given — the kernel's own, and nothing else. */
   private reads(): DerivedReads {
     return {

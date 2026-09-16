@@ -11915,3 +11915,27 @@ not yet earned is told its equity costs nothing. Positioned at 21.23.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 14.5 — A policy is a row, and the kernel marks it
+
+A policy was an instrument: issued in units, held by the buyer, marked at the present value of a
+promise to pay a unit of money at the end of the term whether or not anything was lost — a
+zero-coupon bond wearing an insurer's name, and one that paid twice once claims existed. It is a
+row now: what a named insurer promises a named holder — so much cover, until a day, at a curve —
+owing nothing until a loss makes a claim, and worth the insurer's own expected claims on it, its
+`claims` outlook on the cover for every period left of the term, discounted at the curve the row
+names. For that the kernel learned to mark rows: a kind may say what a live row of its is worth
+now, and the revaluation moves the creditor's account up and the debtor's down by the change since
+the last mark, in the same pass, each in its own money, unwinding the mark when the row ends;
+nothing is stored but the last mark. Claims restate the cover down and end the row when it is
+paid out; a term whose day has passed ends it. Fills are paired by the solver's allocation, every
+buyer's fill spread over the insurers that filled the other side in proportion to what each wrote,
+one premium and one row per pair in the same pass. The instrument kind and everything that read it
+are deleted.
+
+**Measured.** The four insurer suites are green (fourteen tests): the row opens with the premium,
+a claim restates it and ends it when paid out, the insurer's experience forms off the claims it
+paid, and the hand-written cover of the older test is a row the insurer owes and the buyer is owed.
+Nothing new is red: eighteen suites at 90 of 196, the same set.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

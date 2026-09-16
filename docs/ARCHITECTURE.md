@@ -1582,3 +1582,15 @@ prices a unit as that outlook over the term plus the return its capital requires
 `costOfCapital`, over the term's fraction of a year, on the surplus behind a unit of cover — and
 posts its surplus as capacity. Nothing reads the last claim; a refusal to quote is a public event.
 
+### A row with a schedule is marked like a line with a price (item 14.5)
+
+`AgreementKindDecl.valued` lets a kind say what a live row of its is worth now — a schedule at a
+curve, with the debtor's own outlook to read (`RowValuationReads`). `revalue` marks every such row
+each period: the creditor's account up and the debtor's down by the change since the last mark, in
+the same pass, each in its own money; a row that has ended unwinds its mark the same way. The
+kernel keeps nothing but the last mark (`Agreements.mark/markOf`). A policy is the first such kind
+(`registry/insurance.ts POLICY_ROW`): cover, a term and a curve, worth the insurer's expected claims
+on it; claims restate the cover down and end the row, and a term that has passed ends it. Cover
+fills are paired by the solver's allocation, one premium and one row per pair. The `POLICY`
+instrument kind is gone.
+

@@ -534,6 +534,13 @@ export class World {
             valuation: w.valuation,
             journal: w.journal,
             contracts: w.contracts,
+            // 14.5: the rows a kind values are marked here too, at the same curve and day a line is.
+            agreements: w.agreementStore,
+            rows: {
+              curve: (family, at) => w.curveAt(family, at),
+              on: (at) => w.valuation.on(at),
+              outlook: (party, variable) => w.outlookOf(party, variable),
+            },
           });
           // From here to the end of the period, what a lot is carried at is THIS period's mark: the
           // resolution slot moves a dead party's whole book, and it moves it at what the book says.

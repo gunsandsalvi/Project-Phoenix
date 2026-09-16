@@ -28,15 +28,14 @@
  * no holder: it is a relation between two named parties (Law 5). The register holds what is OWNED;
  * this holds what is OWED where the owing is not a security.
  */
+import { type Option } from '../core/option.js';
+import { type Cash } from '../core/measure.js';
+import { type Outlook, type OutlookVariable } from '../world/context.js';
+import { type Civil } from '../calendar/civil.js';
+import { type CurveRead } from '../prices/curve.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import {
-  agreementId,
-  type AgreementId,
-  type AgreementKindId,
-  type CurrencyCode,
-  type PartyId,
-} from '../core/ids.js';
+import { agreementId, type AgreementId, type AgreementKindId, type CurrencyCode, type PartyId, type CurveFamilyId } from '../core/ids.js';
 import { Missing } from '../core/errors.js';
 import { finite } from '../core/num.js';
 
@@ -91,6 +90,22 @@ export interface AgreementKindDecl {
    * recorded as the write-off it is.
    */
   readonly binds: 'whoeverSucceeds' | 'aGoingConcern';
+  /**
+   * Insurers B1, B2, B2.a (14.5): WHAT A LIVE ROW OF THIS KIND IS WORTH NOW, in its own money — a
+   * schedule of what is owed in future periods, discounted at a rate read from a market. A kind
+   * that answers is marked by the kernel at every revaluation: the creditor's asset and the
+   * debtor's liability move by the same amount in the same pass, so falling rates raise a promise
+   * and lower the promiser's equity (B2.a) with nothing stored beside the row but its last mark.
+   * A kind that does not answer is carried at what is owed and is never re-marked (a wage, a levy).
+   */
+  readonly valued?: (row: Agreement, at: Period, reads: RowValuationReads) => Cash;
+}
+
+/** Insurers B2 (14.5): what the kernel lends a kind that values its rows — a curve, a day, a party's outlook. */
+export interface RowValuationReads {
+  curve(family: CurveFamilyId, at: Period): CurveRead;
+  on(at: Period): Civil;
+  outlook(party: PartyId, variable: OutlookVariable): Option<Outlook>;
 }
 
 export interface AgreementDecl {
@@ -126,6 +141,8 @@ export class Agreements {
   private next = 1;
   /** Law 15: the kinds this world declared. An undeclared kind is refused where it is opened. */
   private readonly kinds: ReadonlyMap<AgreementKindId, AgreementKindDecl>;
+  /** 14.5: what each valued row was last marked at — the kernel's, written by revaluation alone. */
+  private readonly marks = new Map<AgreementId, number>();
 
   constructor(kinds: readonly AgreementKindDecl[] = []) {
     const m = new Map<AgreementKindId, AgreementKindDecl>();
@@ -264,6 +281,16 @@ export class Agreements {
   }
 
   /** What this party owes that is not an instrument — the question an estate has to ask (XI-8). */
+  /** 14.5: the mark revaluation left on a row, or nothing for a row never marked. */
+  markOf(id: AgreementId): number | undefined {
+    return this.marks.get(id);
+  }
+
+  mark(id: AgreementId, value: number): void {
+    if (value === 0) this.marks.delete(id);
+    else this.marks.set(id, finite(value, `the mark on ${id}`));
+  }
+
   owedBy(party: PartyId): readonly Agreement[] {
     return rowsOf(this.rows, this.byDebtor.get(party));
   }

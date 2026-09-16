@@ -10,11 +10,14 @@
  * (ARCHITECTURE 4.9b): the name of the book is the kernel's, as a good's name is.
  */
 import type { Period } from '../calendar/calendar.js';
-import { instrumentKindId, paramId, unitId, venueId, type CurrencyCode, type VenueId } from '../core/ids.js';
+import { agreementKindId, paramId, unitId, venueId, type CurrencyCode, type CurveFamilyId, type VenueId } from '../core/ids.js';
 import type { Event } from '../journal/journal.js';
-import type { Terms } from '../register/instruments.js';
+import type { AgreementTerms } from '../register/agreements.js';
+import type { Civil } from '../calendar/civil.js';
+import type { Qty } from '../core/tick.js';
 
-export const POLICY = instrumentKindId('policy');
+/** Insurers A2, B1 (14.5): a policy is an AGREEMENT — what an insurer promises a named holder, with the schedule on it. */
+export const POLICY_ROW = agreementKindId('insurers.policy');
 export const COVER = unitId('cover');
 /** Insurers B1: how long one unit of cover runs for, a convention of the contract (the insurers module declares it). */
 export const COVER_TERM = paramId('insurers.coverTermPeriods');
@@ -38,7 +41,19 @@ export function deathsIn(reads: { ofKindIn(kind: string, period: Period): readon
 }
 
 /**
- * Insurers A2, Law 15: WHAT A POLICY'S TERMS LOOK LIKE — a schedule, the curve it is discounted at,
- * and the insurer that wrote it — so a reader tells a policy by its shape and never by its kind id.
+ * Insurers A2, B1, B2 (14.5): THE TERMS OF COVER — how much is covered, until when, and the curve
+ * the promise is discounted at. What is owed NOW on the row is nothing until a loss makes a claim;
+ * what the row is WORTH is the insurer's expected claims on it over what is left of the term, at
+ * the curve — which is what the kernel marks it at (B2.a).
  */
-export const isPolicyTerms = (t: Terms): boolean => 'schedule' in t && 'discountedAt' in t && 'insurer' in t;
+export interface PolicyTerms extends AgreementTerms {
+  readonly kind: typeof POLICY_ROW;
+  /** Law 8: units of cover, each a unit of the money against a loss. */
+  readonly cover: Qty;
+  /** B1: the day the term ends; a loss after it is nobody's. */
+  readonly to: Civil;
+  readonly discountedAt: CurveFamilyId;
+}
+
+/** Law 15: a policy row is told by the shape of its terms, never by its kind id. */
+export const isPolicyTerms = (t: AgreementTerms): t is PolicyTerms => 'cover' in t && 'to' in t && 'discountedAt' in t;

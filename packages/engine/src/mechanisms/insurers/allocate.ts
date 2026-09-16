@@ -65,7 +65,7 @@ import { period as periodOf } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { MechanismContext } from '../../world/context.js';
-import { isPolicy } from './index.js';
+import { isPolicyTerms } from '../../registry/insurance.js';
 import { strikeOf } from '../../registry/funding.js';
 
 /** What a pool published about itself, as an allocator reads it off the tape (Observer A3). */
@@ -122,12 +122,11 @@ function doors(ctx: MechanismContext): readonly Door[] {
 export function longestPromise(ctx: MechanismContext, insurer: PartyId): number | undefined {
   const now = ctx.calendar.startOf(ctx.period);
   let furthest: typeof now | undefined;
-  for (const i of ctx.instruments.issuedBy(insurer)) {
-    if (!i.status.live || !isPolicy(i.terms) || i.issued <= 0) continue;
-    for (const flow of i.terms.schedule) {
-      if (compareCivil(flow.date, now) <= 0) continue;
-      if (furthest === undefined || compareCivil(flow.date, furthest) > 0) furthest = flow.date;
-    }
+  // 14.5: its promises are rows, and the furthest is the last day any of its cover runs to.
+  for (const a of ctx.agreements.owedBy(insurer)) {
+    if (a.state !== 'performing' || !isPolicyTerms(a.terms) || a.terms.cover <= 0) continue;
+    if (compareCivil(a.terms.to, now) <= 0) continue;
+    if (furthest === undefined || compareCivil(a.terms.to, furthest) > 0) furthest = a.terms.to;
   }
   return furthest === undefined ? undefined : yearFraction('ACT/365F', now, furthest);
 }

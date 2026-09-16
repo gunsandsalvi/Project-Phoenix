@@ -6,7 +6,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { FIRM, assemble, type MechanismContext, type SystemModule } from '../src/index.js';
-import { INSURANCE, isPolicy } from '../src/mechanisms/insurers/index.js';
+import { INSURANCE } from '../src/mechanisms/insurers/index.js';
+import { POLICY_ROW, isPolicyTerms } from '../src/registry/insurance.js';
 import { vintagesHeld } from '../src/registry/physical.js';
 import { about } from '../src/world/context.js';
 import { asQty } from '../src/core/tick.js';
@@ -23,10 +24,10 @@ describe('the insurer quotes, and cover clears in the world’s own book (14.4)'
     expect(written.length).toBeGreaterThan(0);
     // A4.a: where the insurer wrote nothing it said why, in public.
     for (const e of w.journal.ofKind('insurer.unquoted')) expect(String(e.data['why']).length).toBeGreaterThan(0);
-    const policies = w.instruments.all().filter((i) => isPolicy(i.terms) && i.status.live && i.issued > 0);
+    const policies = w.agreements.ofKind(POLICY_ROW).filter((a) => a.state === 'performing' && isPolicyTerms(a.terms) && a.terms.cover > 0);
     expect(policies.length).toBeGreaterThan(0);
-    for (const p of policies) expect(p.issuer.some && w.parties.get(p.issuer.value).kind).toBe(INSURANCE);
-    const holders = new Set(policies.flatMap((p) => w.register.holdersOf(p.id).map((h) => w.parties.get(h).kind)));
+    for (const a of policies) expect(w.parties.get(a.debtor).kind).toBe(INSURANCE);
+    const holders = new Set(policies.map((a) => w.parties.get(a.creditor).kind));
     expect(holders.has(FIRM)).toBe(true);
     // A4.c: with no claim ever paid, its outlook of what a unit costs it is nothing — but it exists,
     // because every period with cover out is an observation.
@@ -60,9 +61,9 @@ describe('the insurer quotes, and cover clears in the world’s own book (14.4)'
             if (ctx.period < 3) return;
             // A storm on every covered firm's first vintage, every period from the third: the loss the
             // world's own cover pays, as soon as there is cover out to pay on.
-            for (const i of ctx.instruments.all()) {
-              if (!isPolicy(i.terms) || !i.status.live || i.issued <= 0) continue;
-              for (const h of ctx.register.holdersOf(i.id)) {
+            for (const a of ctx.agreements.ofKind(POLICY_ROW)) {
+              if (a.state !== 'performing' || !isPolicyTerms(a.terms) || a.terms.cover <= 0) continue;
+              for (const h of [a.creditor]) {
                 const p = ctx.parties.get(h);
                 if (p.kind !== FIRM || !p.status.alive) continue;
                 const v = vintagesHeld(ctx.participant(h), ctx.calendar.startOf(ctx.period))[0];
