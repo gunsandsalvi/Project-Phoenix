@@ -13210,3 +13210,47 @@ without looking anything up; only the one the seed opens is named for its house.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
 `fund-manager`: two new tests, all fourteen green.
+
+## Item 17 — Corporate credit, the rest: closed
+
+Twenty-one steps, and what they changed is easier to say by what a lender can now do that it could
+not. It can form ONE view of a name out of its own record and what the name showed it (17.0). It can
+price the paper and the loan from the same belief, one term apart (17.0). It can read a company's
+full quarterly accounts if it is owed money by it, and not otherwise (17.0a). It can float a line
+over a benchmark that actually traded (17.1), bring somebody else's issue and be paid for it (17.2),
+commit a facility and hold capital against what it has promised and not lent (17.3). It can be told
+by a borrower which reason it is issuing for (17.4). It can watch a supplier decide whether to ship
+on terms at all (17.5), and read what a bank's own paper costs it rather than what somebody quoted a
+firm (17.6).
+
+And then the second half, which is what happens to a claim after it exists. It can be RE-AGREED —
+rolled while it performs, restructured when it does not — through one narrow door the kind itself
+holds the key to (17.7). A seller can set its own terms and put a price on being paid early (17.7a),
+and sell the receivable to whoever waits cheaper (17.7b). A pledge reaches the price of the claim it
+stands behind, everywhere at once (17.7c), which is what lets the secured market take a claim that
+promises no schedule at all (17.7d). A bank loan cannot leave the banking system without the audit
+saying so (17.8). A treasury can tell a line to come DOWN, and the desk sells (17.9). A borrower can
+pay its line down out of money it said it does not need (17.9a). A spent claim on a name that has
+finished existing ceases (17.9b). And credit has an index with two sides and a vehicle following
+each of them (17.10, 17.10b).
+
+**What it deleted.** Three placeholders (`seed.crossHoldingShare`, `corporateBond.margin`,
+`shortTermDebt.line`), the world-wide `tradeCredit.days`, two zero floors in `banks/lines.ts`, the
+second statement parser in `journal/published.ts`, a duplicate `gradeOn`, a duplicate ask inside
+`publishLines`, and a duplicated dealing-line name.
+
+**What the owner decided.** The covered bond is out of scope: §42's securitisation of mortgages does
+the same work, and one mechanism for it is what Law 4 asks for.
+
+**§7 is answered 62 of 62** — 49 MET, 7 PARTIAL, 6 MISSING, and every one of the six says where it
+lands. Twenty-eight of those rows had been blank, and a blank cell is not an answer; most of them
+were mechanisms this world has had for months that nobody had gone back to mark. Three of the six
+sit behind B1's early-termination regime, which nothing stamps on a line, and that is now a named
+absence rather than an empty cell.
+
+**Where the findings went.** 21.59 closed at 17.7 and 21.61 at 17.7a. 21.63 and 21.68 were ANSWERED
+rather than fixed: an undrawn line is not a spent one, and the assessors were silent because a
+quarter is thirteen weeks. The rest are positioned: 21.65 and 21.67 at 23.1, 21.64 and 21.66 at 23.2,
+21.67 and 21.69 at 23.3, 21.62 at 19.
+
+**The suites run at the end of step 19**, by the owner's instruction (2026-09-16), not at this close.
