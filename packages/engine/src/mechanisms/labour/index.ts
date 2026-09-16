@@ -36,6 +36,7 @@ import {
   payWages,
   publishGoingRate,
   release,
+  rollTerms,
   runVenue,
   SEVERANCE_IN_ARREARS,
   type LabourParams,
@@ -53,6 +54,7 @@ export const LABOUR_PARAMS = {
   retirementAge: paramId('labour.retirementAge'),
   hiringLag: paramId('labour.hiring.lagPeriods'),
   severance: paramId('labour.severance.periods'),
+  term: paramId('labour.term.periods'),
   retraining: paramId('labour.retraining.periods'),
 } as const;
 
@@ -66,6 +68,7 @@ function numbers(ctx: MechanismContext): LabourParams {
     retirementAge: ctx.params.years(LABOUR_PARAMS.retirementAge),
     hiringLagPeriods: ctx.params.periods(LABOUR_PARAMS.hiringLag),
     noticePeriods: ctx.params.periods(LABOUR_PARAMS.severance),
+    termPeriods: ctx.params.periods(LABOUR_PARAMS.term),
     retrainingPeriods: ctx.params.periods(LABOUR_PARAMS.retraining),
   };
 }
@@ -108,6 +111,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'policy',
       owner: 'parliament',
       why: 'Labour C3 (12b.2): the NOTICE a job carries — the periods a separation runs for with wages due before it ends, which is what a firing costs. It is the cost that makes a firm hold labour through a soft patch and shed it when it is sure, and the asymmetry with hiring is where the employment cycle comes from. A pair of adjustment speeds is not this.',
+    },
+    {
+      id: LABOUR_PARAMS.term,
+      value: LABOUR_NUMBERS.termPeriods,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Labour C3, 17f: THE TERM A JOB IS STRUCK FOR — a quarter, rolled at the end of one unless somebody ended it. It is what the employer and the worker agreed the job was for, and it is why firing costs more than a notice when it comes early: the wages to the day, which neither of them has to work out afterwards because they agreed it when they struck the job. A job with no term is a job neither of them ever promised anything about.',
     },
     {
       id: LABOUR_PARAMS.retraining,
@@ -435,6 +447,9 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
           release(ctx, bookOf(ctx));
           // C3 (12b.2): and the notices that ran out this period end here, paid to the end.
           endNotices(ctx, bookOf(ctx));
+          // 17f: and the jobs whose term ran out this period ROLL — the same row, a new day, for
+          // as long as neither of them ends it. Nothing multiplies and nothing is re-signed.
+          rollTerms(ctx, numbers(ctx));
         },
       },
     ],

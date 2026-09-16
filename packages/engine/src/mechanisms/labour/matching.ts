@@ -136,6 +136,7 @@ function termsOf(row: EmploymentRow): EmploymentTerms {
     headcount: row.headcount,
     leaving: row.leaving,
     ends: row.ends,
+    until: row.until,
     brought: row.brought,
   };
 }
@@ -147,6 +148,8 @@ export interface LabourParams {
   readonly hiringLagPeriods: number;
   /** C3: the periods of pay a separation runs for before it ends — the cost of a firing. */
   readonly noticePeriods: number;
+  /** 17f: the periods a job is struck for. It rolls at the end of one unless somebody ended it. */
+  readonly termPeriods: number;
   /**
    * A3.b, XI-10 (13d): periods a person who CHANGES TRADE takes to become productive in the new
    * one, on top of the ordinary hiring lag. It is what moving between occupations costs, and it is
@@ -501,6 +504,11 @@ function hire(
     headcount: weightOf(ctx.parties.get(hired)),
     leaving: 0,
     ends: none<Period>(),
+    // 17f: EVERY JOB IS STRUCK FOR A TERM, and it rolls on at the end of it unless somebody ended
+    // it (`rollTerms`). Firing before the day costs what the two of them agreed a job was for, on
+    // top of the notice — which is the owner's ask and the same shape a supply contract has: a
+    // severance for ending a job, a break cost for ending it EARLY.
+    until: some(periodOf(add(ctx.period, p.termPeriods, 'the day the job was struck to run to'))),
     // 12c.2: what the people bring from the employer they left, read off the cell they came from.
     brought: scaleQty(brings(book, worker, occupation), members, 'what these people bring'),
   };
@@ -567,6 +575,12 @@ function giveNotice(
     const ends = row.ends.some
       ? row.ends.value
       : periodOf(add(ctx.period, row.notice, 'when the notice runs out'));
+    // 17f: AND WHAT ENDING IT EARLY COSTS. A job was struck for a term; cutting people out of it
+    // before that day is breaking what the two of them agreed, and what that costs is the wages
+    // between the day the notice runs out and the day the job was to run to — pre-decided when the
+    // job was struck, not worked out now. It is the same shape a supply contract has (17f.2), and
+    // an employer that CANNOT PAY IT HAS NOT BROKEN ANYTHING: the row stands and the people stay.
+    if (!brokeEarly(ctx, row, members, ends)) continue;
     const given: EmploymentTerms = {
       ...termsOf(row),
       leaving: add(row.leaving, members, 'under notice'),
@@ -591,6 +605,82 @@ function giveNotice(
       left,
       scaleQty(row.hoursPerMember, members, 'hours given notice'),
       'hours left to cut',
+    );
+  }
+}
+
+/**
+ * 17f, Law 2, Law 5: the employer pays what leaving the term cost, in one instruction, to the people
+ * it is cutting. `true` when there is nothing to pay or it was paid; `false` when it could not be,
+ * and then nothing else happens either — a party that cannot pay what breaking costs has not broken
+ * anything (Money E1), which is the same answer a supply contract gives.
+ */
+function brokeEarly(
+  ctx: MechanismContext,
+  row: EmploymentRow,
+  members: number,
+  ends: Period,
+): boolean {
+  if (!row.until.some) return true;
+  const early = sub(row.until.value, ends, 'the periods of the term it will not run');
+  if (early <= 0) return true;
+  const perMember = scale(
+    wagePerMember(row),
+    asRatio(early, 'the periods of the term it will not run'),
+    'what ending it early costs, per member',
+  );
+  const owed = ctx.registry.deliverable(perMember.pieces) * members;
+  if (owed <= 0) return true;
+  const paid = ctx.settle({
+    legs: [
+      {
+        kind: 'money',
+        from: ctx.accountOf(row.employer, row.ccy),
+        to: ctx.accountOf(row.worker, row.ccy),
+        // C3: it reaches the people as pay for a job they were promised and will not have.
+        receipt: { of: 'wage' },
+        ccy: row.ccy,
+        amount: asQty(owed, 'what ending the term early costs'),
+      },
+    ],
+    cause: 'transfer',
+    reason: `${row.employer} ends ${row.id} before its term`,
+  });
+  ctx.record(
+    'labour.broke',
+    [row.employer, row.worker],
+    {
+      row: row.id,
+      employer: row.employer,
+      worker: row.worker,
+      members,
+      periodsEarly: early,
+      paid: paid.outcome === 'settled' ? owed : 0,
+      outcome: paid.outcome,
+    },
+    true,
+  );
+  return paid.outcome === 'settled';
+}
+
+/**
+ * 17f, Law 4: A TERM THAT RAN OUT ROLLS, and it is the SAME ROW. Neither of them ended the job, so
+ * the job goes on — a new day on the terms they have, never a second employment beside the first.
+ * A row with people under notice is not rolled: it is a job somebody has already ended.
+ */
+export function rollTerms(ctx: MechanismContext, p: LabourParams): void {
+  for (const row of ctx.employment.all()) {
+    if (row.leaving > 0 || !row.until.some) continue;
+    if (row.until.value > ctx.period) continue;
+    if (!ctx.parties.get(row.employer).status.alive) continue;
+    const until = periodOf(add(ctx.period, p.termPeriods, 'the day it now runs to'));
+    const rolled: EmploymentTerms = { ...termsOf(row), until: some(until) };
+    ctx.restate(row.id, rolled);
+    ctx.record(
+      'labour.rolled',
+      [row.employer, row.worker],
+      { row: row.id, employer: row.employer, worker: row.worker, until },
+      true,
     );
   }
 }

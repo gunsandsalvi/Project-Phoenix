@@ -23,6 +23,11 @@ export const LABOUR_NUMBERS = {
   /** C3: periods of pay a firing costs the employer, paid to the worker it separates. */
   severancePeriods: 4,
   /**
+   * 17f: the periods a job is struck for. A quarter, and it rolls at the end of one unless somebody
+   * ended it — which is what a job that goes on IS, rather than a job with no end anybody agreed.
+   */
+  termPeriods: 13,
+  /**
    * A3.b, XI-10 (13d): periods a person who changes trade takes to become productive in the new
    * one, on TOP of the hiring lag. A quarter, which is what learning a trade takes, and it is why
    * an employer fills from its own trade first and why a mover is a real cost to somebody.

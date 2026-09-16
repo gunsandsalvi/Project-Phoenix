@@ -75,3 +75,41 @@ describe('a bank with one bad period keeps its desk (Labour C1, C3, 12b.3)', () 
     expect(orders).toEqual(staffOrders(real, venue));
   });
 });
+
+describe('a job is struck for a term, and ending it early costs what was agreed (17f)', () => {
+  const w = rigWorld('term');
+  for (let i = 0; i < 8; i += 1) w.step();
+
+  it('carries the day it runs to, and rolls at the end of one rather than being re-signed', () => {
+    const live = w.agreements.ofKind(EMPLOYMENT).filter((a) => a.state === 'performing');
+    expect(live.length).toBeGreaterThan(0);
+    // Every job this world struck was struck for a term: neither side promised nothing.
+    const rows = live.map(employmentOf);
+    expect(rows.every((r) => r.until.some)).toBe(true);
+    // And the day is ahead of the period it is read in — a term that ran out rolled, on the same
+    // row, so the count of employments never grows for a reason nobody agreed to (Law 4).
+    expect(rows.every((r) => r.until.some && r.until.value > w.period - 1)).toBe(true);
+    const ids = new Set(live.map((a) => String(a.id)));
+    expect(ids.size).toBe(live.length);
+  });
+
+  it('pays the wages to the day when an employer cuts before it, and only then gives notice', () => {
+    // Law 11: whether anybody in THIS world cut anybody is the world's business. What is asserted
+    // is the shape: every break that happened paid the people it cut, for the periods of the term
+    // the job will not run — and no notice was given on a break that could not be paid.
+    const broke = w.journal.ofKind('labour.broke');
+    for (const e of broke) {
+      expect(Number(e.data['periodsEarly'])).toBeGreaterThan(0);
+      expect(Number(e.data['members'])).toBeGreaterThan(0);
+      if (e.data['outcome'] === 'settled') {
+        expect(Number(e.data['paid'])).toBeGreaterThan(0);
+      } else {
+        expect(Number(e.data['paid'])).toBe(0);
+        const notices = w.journal
+          .ofKindIn('labour.notice', e.period)
+          .filter((n) => n.data['row'] === e.data['row']);
+        expect(notices.length).toBe(0);
+      }
+    }
+  });
+});

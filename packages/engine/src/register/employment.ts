@@ -71,6 +71,16 @@ export interface EmploymentTerms extends AgreementTerms {
   readonly leaving: number;
   readonly ends: Option<Period>;
   /**
+   * 17f: THE DAY THE JOB WAS AGREED TO RUN TO, which is a different fact from `ends`: `ends` is
+   * when the people under notice stop being paid, and this is the term the two of them struck.
+   *
+   * A job with a term is a job neither side may walk away from for nothing — an employer that cuts
+   * before the day pays the wages it agreed to pay to it, which is the pre-decided cost of breaking
+   * a contract and is not a number this world applies afterwards. `none` is an open-ended job:
+   * ending one costs the NOTICE and nothing else, which is what a severance is (C3).
+   */
+  readonly until: Option<Period>;
+  /**
    * Firm A3, XI-10 (12c.2): WHAT ITS PEOPLE BROUGHT — the pieces of the trade's output the row's
    * people had made at the employer they came from, struck at the hire off that employer's own
    * ledger count, a TOTAL for the row so a second hire onto it adds. A first job, or a changed

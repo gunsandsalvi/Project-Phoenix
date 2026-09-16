@@ -155,7 +155,7 @@ describe('a pair has one contract for one thing, ever (Law 4, 17f.3)', () => {
     );
     expect(live.length).toBeGreaterThan(0);
     const keys = live.map((a) =>
-      [String(a.creditor), String(a.debtor), String((a.terms as { instrument: unknown }).instrument)].join('|'),
+      [String(a.creditor), String(a.debtor), isSupplyTerms(a.terms) ? String(a.terms.instrument) : ''].join('|'),
     );
     expect(new Set(keys).size).toBe(keys.length);
     // And the FORBID is guarded rather than asserted here: the family that would say so is built.
