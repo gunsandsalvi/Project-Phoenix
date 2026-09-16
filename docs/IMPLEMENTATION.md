@@ -264,7 +264,25 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [x] 18.3 Hedgers: want = −(held − target)/contractSize from the party's own target; a party with none hedges nothing (`bond-futures`, `commodity-futures`; `index-futures` is left as it was and says why — an index has no `bought`/`sold` of ITSELF, so a desk's target book is a mandate and that is the fund's, not this book's). Storage: a taker's bid is a step schedule per good; a failed payment skips the taker, not the letter.
 - [x] 18.4 `ctx.closeMarket(id, why)`: the kernel refuses a book with open interest and records the close; an expired future series closes (both books), an idle CDS book closes after a year. a worn-out VINTAGE's second-hand book closes when there is none of it left. CDS books already opened on the first reason (a holding), which this checked rather than changed.
 - [x] 18.5 CDS: `levelFor` = the bond's yield over the sovereign curve at the tenor (one derivation with `measures.ts basisFor`); naked size by the capital the weight consumes; `counterpartyTerm` reads the counterparty's book; one `annuityOf` in `registry/derivatives.ts` for irs/cds marks and margins; the series per currency (already true since 16.1, checked rather than changed); roll dates BY THE CALENDAR — every so many months from the day the world opened, and the period that crosses that day is the one that rolls, in place of a remainder on the period index.
-- [ ] 18.6 The basis trade posts a repo need; the commodity tracker.
+- [x] 18.6 **Read, and INSERTED as two items rather than half-built** (Law 10, Law 12). Neither half
+  is a line in this module and both were written as one:
+  - **18.6a — the basis trade is funded.** What exists is the FUTURES side: a party whose own
+    arithmetic says the net basis pays posts to be short the book (`futureOrders`). What does not
+    exist is the other two legs — BUYING the cash bond and FINANCING it — and neither is reachable
+    from `bond-futures`. A bank's bids in a cash bond book are its dealing desk's (`banks/dealing`,
+    one face per book, Law 4) and its cash borrowing is its own `borrowNeeds`, which exactly one
+    module answers per party kind; a second answer from here is what the kernel refuses. So the
+    trade has to be the BANK's: its view of a deliverable line includes what it can do with a future
+    on it, which means `netBasis` reaching the banks module — and a module never imports another
+    (Law 15), so what moves is the READ, into the registry, with the book found by its shape rather
+    than by the futures module's naming. That is the item, at its dependency position: after 18 and
+    before 23, because it is the demand a secured market is measured against.
+  - **18.6b — the commodity tracker.** There is no commodity INDEX to track: `indices` has no rule
+    over goods' prints, and a tracker's mandate (`funds`) holds LINES, while what a commodity
+    tracker holds is FUTURES — a pool holding contracts is a mandate shape that does not exist
+    either. Two mechanisms, in two modules, before a tracker is a tracker. At its dependency
+    position: after the index rule, which is 18.7's neighbourhood.
+  Nothing was built for either, nothing was marked, and the reading that found it is here (18.6).
 - [ ] 18.7 A commodity print reaches a margin, a consumer price and the central bank's outlook (18a.1).
 - [ ] 18.8 §20 and §21 clause by clause; COVERAGE; record.
 
