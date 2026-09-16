@@ -11753,3 +11753,26 @@ party and every variable (`predictors.test.ts`, two green). Nothing new is red: 
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 12d.3 — A cold week burns more
+
+The household basket was costed at a normal week's quantities whatever the weather; the world
+publishes every region's warmth every period and nobody in a house read it. A basket row now
+declares what a member takes more of to stand against the weather — the two fuel rows name the
+region's warmth, every other row nothing — and the period's need and want are the normal week's
+over how the condition stands: a week at four fifths of its warmth burns a quarter more. The
+condition is read from the cell's own view of the public event about its region, through the
+registry (`conditionsSeen`, `conditionsStanding`) — the same product a crop's yield reads through
+`conditionsFor` from a phase — and nothing in the households module parses the event.
+
+**Positioned, not built here.** The item names three readers. The central bank's read belongs to
+its outlook on the price level and the rate step (18a.1) and the insurers' to the buyer that bids
+at its own outlook of the loss (14.2); neither decision exists yet, and a read into a decision
+that does not exist is a read into nothing. Both lines carry the note and the door to use.
+
+**Measured.** Six periods of the scale model, every living cell: the fuel line's need and want are
+the row's litres over the week's warmth to twelve places; every other line is its normal week's;
+the environment moved off normal in some week, so the read bit (`heating.test.ts`, one green).
+Nothing new is red: the ten suites at 56 of 109, the same set.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

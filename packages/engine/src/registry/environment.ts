@@ -61,6 +61,29 @@ export function conditionsIn(
   return undefined;
 }
 
+/** What a participant's view offers a reader: this period's public event about a region. */
+export interface EnvironmentSeen {
+  readonly period: Period;
+  lastPublicAbout(kind: string, subject: string): { readonly some: true; readonly value: Event } | { readonly some: false };
+}
+
+/**
+ * Observer A3 (12d.3): THE SAME FACT, READ FROM A PARTICIPANT'S VIEW — a household costing its
+ * basket has no journal, and the event is public about its region, so the view's own public read
+ * is the door. `undefined` as above: a world with no environment in it, or none published yet.
+ */
+export function conditionsSeen(view: EnvironmentSeen, region: PlaceId): ReadonlyMap<string, number> | undefined {
+  const said = view.lastPublicAbout(ENVIRONMENT_STATE, String(region));
+  if (!said.some || said.value.period !== view.period) return undefined;
+  const facts = said.value.data['facts'];
+  if (typeof facts !== 'object' || facts === null) return undefined;
+  const out = new Map<string, number>();
+  for (const [id, value] of Object.entries(facts as Record<string, unknown>)) {
+    if (typeof value === 'number') out.set(id, value);
+  }
+  return out;
+}
+
 /**
  * Goods B4, Commodities Spot B3: HOW THIS PERIOD STANDS FOR A LINE EXPOSED TO THESE FACTS — the
  * product of the conditions it names, which is 1 for a line exposed to none and for a world with no
@@ -77,7 +100,16 @@ export function conditionsFor(
   facts: readonly string[],
 ): number {
   if (facts.length === 0) return 1;
-  const here = conditionsIn(reads, region);
+  return standingOf(conditionsIn(reads, region), region, facts);
+}
+
+/** 12d.3: the same product off a view's read — what a member burns against is what a crop stands in. */
+export function conditionsStanding(view: EnvironmentSeen, region: PlaceId, facts: readonly string[]): number {
+  if (facts.length === 0) return 1;
+  return standingOf(conditionsSeen(view, region), region, facts);
+}
+
+function standingOf(here: ReadonlyMap<string, number> | undefined, region: PlaceId, facts: readonly string[]): number {
   if (here === undefined) return 1;
   let standing = 1;
   for (const fact of facts) {

@@ -35,8 +35,9 @@
  * by its own surprises about that price — so a cell that has seen prices move bids across a wider
  * range than one that has not.
  */
+import { conditionsStanding } from '../../registry/environment.js';
 import { scaleQty } from '../../core/tick.js';
-import { type Ratio, absolute, asAmount, asCash, asPerPiece, asRatio, type Cash, minus, over, type PerPiece, plus, ratioOf, scale, valueAt } from '../../core/measure.js';
+import { type Amount, type Ratio, absolute, asAmount, asCash, asPerPiece, asRatio, type Cash, minus, over, type PerPiece, plus, ratioOf, scale, valueAt } from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -284,20 +285,12 @@ export function basketOf(view: ParticipantView, rows: readonly ConsumptionDecl[]
   }
   const needs = sum(
     lines.map((l) =>
-      valueAt(
-        l.perUnit,
-        asAmount<'piece'>(l.row.neededPerMember, 'what a member must have'),
-        'what it must have costs',
-      ),
+      valueAt(l.perUnit, l.needed, 'what it must have costs'),
     ),
   ).value;
   const wants = sum(
     lines.map((l) =>
-      valueAt(
-        l.perUnit,
-        asAmount<'piece'>(l.row.wantedPerMember, 'what a member wants on top'),
-        'what it wants on top costs',
-      ),
+      valueAt(l.perUnit, l.wanted, 'what it wants on top costs'),
     ),
   ).value;
   return { lines, needs, wants };
@@ -330,8 +323,8 @@ export function demandOf(
   const out: DemandStep[] = [];
   for (const l of lines) {
     const qty = plus(
-      scale(asAmount<'piece'>(l.row.neededPerMember, 'what it must have'), needScale, 'of what it must have'),
-      scale(asAmount<'piece'>(l.row.wantedPerMember, 'what it wants on top'), wantScale, 'of what it wants on top'),
+      scale(l.needed, needScale, 'of what it must have'),
+      scale(l.wanted, wantScale, 'of what it wants on top'),
       'what one member takes this period',
     );
     if (qty <= 0) continue;
@@ -366,6 +359,12 @@ interface Line {
   /** §46 B3: the price it expects, and how wrong it has been about this one. */
   readonly expected: PerPiece;
   readonly width: PerPiece;
+  /**
+   * C3, Goods B4 (12d.3): what ONE MEMBER must have and wants on top THIS PERIOD — the row's normal
+   * week over how the conditions it stands against stand, read off the region's public state.
+   */
+  readonly needed: Amount<'piece'>;
+  readonly wanted: Amount<'piece'>;
 }
 
 /**
@@ -388,10 +387,15 @@ function lineFor(
       ? print.value.price
       : undefined;
   if (expected === undefined || expected <= 0) return undefined;
+  // 12d.3: a cold week burns more. The condition is a multiple of normal, so what a member takes
+  // to stand against it is a normal week's over it — a physical relation, not a coefficient.
+  const standing = asRatio(conditionsStanding(view, self.region, row.standsAgainst), 'how the week stands for this line');
   return {
     row,
     instrument,
     market: goodMarketId(row.subUnit, self.region),
+    needed: over(asAmount<'piece'>(row.neededPerMember, 'what a member must have in a normal week'), standing, 'what a member must have this week'),
+    wanted: over(asAmount<'piece'>(row.wantedPerMember, 'what a member wants on top in a normal week'), standing, 'what a member wants on top this week'),
     perUnit: scale(
       expected,
       plus(asRatio(1, 'the price itself'), p.consumptionTax, 'and the tax on it'),

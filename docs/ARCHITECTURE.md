@@ -1524,3 +1524,14 @@ width of ITS track, and `expectations.dispersion` is the dispersion of followed 
 surprise event records the surprise the party took, the predictor it followed and both tracks'
 entries, so the switch replays off the journal.
 
+### The environment is read from a view too (item 12d.3)
+
+`registry/environment.ts` had one door, `conditionsFor(ctx, region, facts)`, for a phase with a
+journal. A participant costing its basket has a view and no journal, so the registry gained the
+same read off the view's public event about the region (`conditionsSeen`, `conditionsStanding`),
+sharing the one product. A basket row names what a member takes more of to stand against the
+weather (`ConsumptionDecl.standsAgainst`), and the period's quantity is the normal week's over how
+the condition stands — the same shape a crop's yield takes, from the other side. The central
+bank's and the insurers' reads of the condition go with the decisions that need them (18a.1,
+14.2), through the same doors.
+

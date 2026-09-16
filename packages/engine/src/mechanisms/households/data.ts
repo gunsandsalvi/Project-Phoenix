@@ -31,6 +31,8 @@
  * one no household pays (Goods G1.a, G1.b) and why the two indices can diverge at all.
  */
 
+import { WARMTH } from '../../registry/environment.js';
+
 export interface ConsumptionDecl {
   /** A2.b: whose preference this is. A cohort is a key dimension of the cell (XI-15). */
   readonly cohort: string;
@@ -47,6 +49,14 @@ export interface ConsumptionDecl {
    * Zero is a real answer: a thing nobody takes more of than they need.
    */
   readonly wantedPerMember: number;
+  /**
+   * Goods B4, Commodities Spot E2 (12d.3): the physical conditions a member takes MORE of this to
+   * stand against — what it burns to stay warm in a cold week. The quantities above are a normal
+   * week's; the period's are those over how the conditions stand (`registry/environment.ts`), so a
+   * week at four fifths of its warmth burns a quarter more. Empty for almost everything: a loaf is
+   * a loaf whatever the weather.
+   */
+  readonly standsAgainst: readonly string[];
   readonly why: string;
 }
 
@@ -60,6 +70,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailBread',
     neededPerMember: 0.0012,
     wantedPerMember: 0.0006,
+    standsAgainst: [],
     why: 'About a kilo and a quarter of bread a week, and half as much again when the money reaches. Bought in a shop, because that is where bread is bought.',
   },
   {
@@ -67,6 +78,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailBread',
     neededPerMember: 0.001,
     wantedPerMember: 0.0004,
+    standsAgainst: [],
     why: 'The same line for a household past working age: about a kilo and a quarter of bread a week, and half as much again when the money reaches. Bought in a shop, because that is where bread is bought.',
   },
   {
@@ -74,6 +86,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailMeat',
     neededPerMember: 0.0005,
     wantedPerMember: 0.0004,
+    standsAgainst: [],
     why: 'Meat and fish, about a kilo a week between what it must have and what it would like.',
   },
   {
@@ -81,6 +94,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailMeat',
     neededPerMember: 0.0004,
     wantedPerMember: 0.0003,
+    standsAgainst: [],
     why: 'The same line for a household past working age: meat and fish, about a kilo a week between what it must have and what it would like.',
   },
   {
@@ -88,6 +102,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailClothing',
     neededPerMember: 0.05,
     wantedPerMember: 0.25,
+    standsAgainst: [],
     why: 'Two or three garments a month at the top of the range and almost none at the bottom: this is the line that moves most with what a household has.',
   },
   {
@@ -95,6 +110,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailClothing',
     neededPerMember: 0.03,
     wantedPerMember: 0.1,
+    standsAgainst: [],
     why: 'The same line for a household past working age: two or three garments a month at the top of the range and almost none at the bottom: this is the line that moves most with what a household has.',
   },
   {
@@ -102,6 +118,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailMedicine',
     neededPerMember: 2e-06,
     wantedPerMember: 1e-06,
+    standsAgainst: [],
     why: 'A dose a day for somebody, and three times as much for somebody older. It is the one line where the retired cohort needs more, and it is why who the people are changes what the economy makes.',
   },
   {
@@ -109,6 +126,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailMedicine',
     neededPerMember: 6e-06,
     wantedPerMember: 2e-06,
+    standsAgainst: [],
     why: 'The same line for a household past working age: a dose a day for somebody, and three times as much for somebody older. It is the one line where the retired cohort needs more, and it is why who the people are changes what the economy makes.',
   },
   {
@@ -116,6 +134,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailFurniture',
     neededPerMember: 0.005,
     wantedPerMember: 0.02,
+    standsAgainst: [],
     why: 'A chair a year that it must have, three or four more when it can.',
   },
   {
@@ -123,6 +142,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailFurniture',
     neededPerMember: 0.002,
     wantedPerMember: 0.006,
+    standsAgainst: [],
     why: 'The same line for a household past working age: a chair a year that it must have, three or four more when it can.',
   },
   {
@@ -130,6 +150,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailAppliance',
     neededPerMember: 0.002,
     wantedPerMember: 0.006,
+    standsAgainst: [],
     why: 'Something breaks and is replaced; something else is wanted.',
   },
   {
@@ -137,6 +158,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailAppliance',
     neededPerMember: 0.0015,
     wantedPerMember: 0.003,
+    standsAgainst: [],
     why: 'The same line for a household past working age: something breaks and is replaced; something else is wanted.',
   },
   {
@@ -144,6 +166,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailElectronics',
     neededPerMember: 0.01,
     wantedPerMember: 0.05,
+    standsAgainst: [],
     why: 'The most discretionary thing in the basket and the youngest cohort’s favourite.',
   },
   {
@@ -151,6 +174,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailElectronics',
     neededPerMember: 0.004,
     wantedPerMember: 0.012,
+    standsAgainst: [],
     why: 'The same line for a household past working age: the most discretionary thing in the basket and the youngest cohort’s favourite.',
   },
   {
@@ -158,20 +182,23 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailFuel',
     neededPerMember: 8,
     wantedPerMember: 12,
-    why: 'Litres a week: the tank, and the heating. It is why a crude shock reaches a household at all.',
+    standsAgainst: [WARMTH],
+    why: 'Litres a week: the tank, and the heating. It is why a crude shock reaches a household at all. 12d.3: and the heating is what a cold week takes more of — the litres are a normal week\u2019s, over how warm the week was.',
   },
   {
     cohort: 'retired',
     subUnit: 'retailFuel',
     neededPerMember: 4,
     wantedPerMember: 6,
-    why: 'The same line for a household past working age: litres a week: the tank, and the heating. It is why a crude shock reaches a household at all.',
+    standsAgainst: [WARMTH],
+    why: 'The same line for a household past working age: litres a week: the tank, and the heating. It is why a crude shock reaches a household at all. 12d.3: and the heating is what a cold week takes more of — the litres are a normal week\u2019s, over how warm the week was.',
   },
   {
     cohort: 'working',
     subUnit: 'retailVehicle',
     neededPerMember: 0.0005,
     wantedPerMember: 0.0015,
+    standsAgainst: [],
     why: 'A car every ten years that it must have, and one every five when it can.',
   },
   {
@@ -179,6 +206,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'retailVehicle',
     neededPerMember: 0.0002,
     wantedPerMember: 0.0006,
+    standsAgainst: [],
     why: 'The same line for a household past working age: a car every ten years that it must have, and one every five when it can.',
   },
   {
@@ -186,6 +214,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'power',
     neededPerMember: 0.03,
     wantedPerMember: 0.02,
+    standsAgainst: [],
     why: 'Megawatt-hours a week. Bought from the generator through no shop, which is what a utility is — and the retired cohort is at home more, which is the whole of why its need is higher.',
   },
   {
@@ -193,6 +222,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'power',
     neededPerMember: 0.032,
     wantedPerMember: 0.015,
+    standsAgainst: [],
     why: 'The same line for a household past working age: megawatt-hours a week. Bought from the generator through no shop, which is what a utility is — and the retired cohort is at home more, which is the whole of why its need is higher.',
   },
   {
@@ -200,6 +230,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'care',
     neededPerMember: 0.02,
     wantedPerMember: 0.01,
+    standsAgainst: [],
     why: 'Courses of care a week. Three times as much for the retired cohort, which is the single largest way a population’s age changes what its economy makes.',
   },
   {
@@ -207,6 +238,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'care',
     neededPerMember: 0.06,
     wantedPerMember: 0.02,
+    standsAgainst: [],
     why: 'The same line for a household past working age: courses of care a week. Three times as much for the retired cohort, which is the single largest way a population’s age changes what its economy makes.',
   },
   {
@@ -214,6 +246,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'teaching',
     neededPerMember: 0.25,
     wantedPerMember: 0.05,
+    standsAgainst: [],
     why: 'Pupil weeks. A quarter of a working household is at school; a retired one is not, and the line goes to nearly nothing.',
   },
   {
@@ -221,6 +254,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'teaching',
     neededPerMember: 0.0,
     wantedPerMember: 0.01,
+    standsAgainst: [],
     why: 'The same line for a household past working age: pupil weeks. A quarter of a working household is at school; a retired one is not, and the line goes to nearly nothing.',
   },
   {
@@ -228,6 +262,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'hospitality',
     neededPerMember: 0.5,
     wantedPerMember: 2.5,
+    standsAgainst: [],
     why: 'Covers: meals out and nights away. Almost all of it is want rather than need, which is why it is the first thing to go when a household is squeezed and the loudest thing in a recession.',
   },
   {
@@ -235,6 +270,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'hospitality',
     neededPerMember: 0.3,
     wantedPerMember: 1.0,
+    standsAgainst: [],
     why: 'The same line for a household past working age: covers: meals out and nights away. Almost all of it is want rather than need, which is why it is the first thing to go when a household is squeezed and the loudest thing in a recession.',
   },
   {
@@ -242,6 +278,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'telecoms',
     neededPerMember: 1,
     wantedPerMember: 0.5,
+    standsAgainst: [],
     why: 'Connection weeks. One is not optional any more and the rest is.',
   },
   {
@@ -249,6 +286,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'telecoms',
     neededPerMember: 1,
     wantedPerMember: 0.2,
+    standsAgainst: [],
     why: 'The same line for a household past working age: connection weeks. One is not optional any more and the rest is.',
   },
   {
@@ -256,6 +294,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'personalCare',
     neededPerMember: 0.05,
     wantedPerMember: 0.15,
+    standsAgainst: [],
     why: 'Appointments: ten a year that it must have and thirty more when it can.',
   },
   {
@@ -263,6 +302,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'personalCare',
     neededPerMember: 0.05,
     wantedPerMember: 0.1,
+    standsAgainst: [],
     why: 'The same line for a household past working age: appointments: ten a year that it must have and thirty more when it can.',
   },
   {
@@ -270,6 +310,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'entertainment',
     neededPerMember: 0.05,
     wantedPerMember: 0.6,
+    standsAgainst: [],
     why: 'Admissions. Nearly all want, and the retired cohort has the time for it.',
   },
   {
@@ -277,6 +318,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'entertainment',
     neededPerMember: 0.05,
     wantedPerMember: 0.5,
+    standsAgainst: [],
     why: 'The same line for a household past working age: admissions. Nearly all want, and the retired cohort has the time for it.',
   },
   {
@@ -284,6 +326,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'transport',
     neededPerMember: 3,
     wantedPerMember: 4,
+    standsAgainst: [],
     why: 'Journeys a week. Getting to work is the need; the rest is not, and a retired household makes a third of them.',
   },
   {
@@ -291,6 +334,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'transport',
     neededPerMember: 1,
     wantedPerMember: 2,
+    standsAgainst: [],
     why: 'The same line for a household past working age: journeys a week. Getting to work is the need; the rest is not, and a retired household makes a third of them.',
   },
   {
@@ -298,6 +342,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'repair',
     neededPerMember: 0.01,
     wantedPerMember: 0.02,
+    standsAgainst: [],
     why: 'Jobs a week: something in the house, something on the car.',
   },
   {
@@ -305,6 +350,7 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     subUnit: 'repair',
     neededPerMember: 0.012,
     wantedPerMember: 0.015,
+    standsAgainst: [],
     why: 'The same line for a household past working age: jobs a week: something in the house, something on the car.',
   },
 ];
