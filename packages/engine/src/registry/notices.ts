@@ -109,6 +109,63 @@ export function hasFixed(reads: WireReads, named: string): boolean {
   return reads.ofKind(BENCHMARK).some((e) => e.subjects.includes(named));
 }
 
+/**
+ * XI-7, Indices D3.a, Corporate Credit B4, Law 3 (17d.1): A TERM RATE, AND EVERY INPUT TO IT IS A
+ * RATE SOMEBODY PAID.
+ *
+ * The owner's rule is *"Xm SOFR, with X based on the coupon frequency"*, and this world's benchmark
+ * is OVERNIGHT: what the overnight book actually cleared at, period by period, transacted or
+ * nothing (D3.a). A term rate over those is the one shape in which it stays transacted — the
+ * fixings COMPOUNDED over the tenor that just ended, in arrears, which is what a SOFR-based loan
+ * actually pays and is not a forecast of anything. A forward-looking term rate would be a price for
+ * a market that does not meet here, and posting one is what Appendix B forbids.
+ *
+ * WHAT IT RETURNS IS THE SHARE OF PAR THE SPAN EARNED, not a rate per annum: a coupon in arrears IS
+ * the compounding, and annualising it only to scale it back down by the same span would be two
+ * crossings where the arithmetic wants none (Law 8).
+ *
+ * A GAP IS A REFUSAL. A period inside the span in which nobody borrowed overnight has no fixing,
+ * and there is no rate to put in its place — not the last one, which would be the posted benchmark,
+ * and not zero, which would be a week of free money nobody lent. The answer is that this span has
+ * no term rate, and a loan that cannot fix cannot float (D3.a).
+ */
+export interface TermFixing {
+  /** The share of par the fixings compounded to over the span — what a coupon in arrears IS. */
+  readonly over: Ratio;
+  readonly from: Period;
+  readonly to: Period;
+  /** How many fixings went into it, which is how many periods the span covered. */
+  readonly fixings: number;
+}
+
+export function termFixing(
+  reads: Pick<WireReads, 'ofKind'>,
+  named: string,
+  from: Period,
+  to: Period,
+): Option<TermFixing> {
+  if (to < from) return none<TermFixing>();
+  const byPeriod = new Map<number, number>();
+  for (const e of reads.ofKind(BENCHMARK)) {
+    if (e.period < from || e.period > to || !e.subjects.includes(named)) continue;
+    const rate = rateOf(e, named);
+    if (rate.some) byPeriod.set(e.period, rate.value);
+  }
+  let compounded = 1;
+  for (let at: number = from; at <= to; at += 1) {
+    const rate = byPeriod.get(at);
+    // D3.a: a period nobody borrowed in has no fixing, and nothing stands in for one.
+    if (rate === undefined) return none<TermFixing>();
+    compounded *= 1 + rate;
+  }
+  return some({
+    over: asRatio(compounded - 1, `what ${named} compounded to over the span`),
+    from,
+    to,
+    fixings: byPeriod.size,
+  });
+}
+
 /* --- What an auction announced, and who offered paper -------------------------------------- */
 
 /**

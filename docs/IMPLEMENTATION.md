@@ -278,7 +278,7 @@ Corporate Credit B4 says the opposite in one line — *"fixed or floating, and f
 the loan market"* — and a world where every loan is fixed has no channel from a policy rate to a
 borrower's payment at all.
 
-- [ ] 17d.1 **A term rate is the overnight fixings compounded** (XI-7, Indices D3.a, Law 3). *"Xm"*
+- [x] 17d.1 **A term rate is the overnight fixings compounded** (XI-7, Indices D3.a, Law 3). *"Xm"*
   where the world has only overnight: the term rate is what the overnight fixings COMPOUND to over
   the tenor that just ended — in arrears, which is what a SOFR-based loan actually pays and is the
   only form of it in which every input is a rate somebody transacted at. A period nobody borrowed

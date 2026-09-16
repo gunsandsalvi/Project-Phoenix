@@ -4,6 +4,9 @@
  * @spec Indices A1 Indices A2 Indices A4 Indices B1 Indices B2 Indices C1 Indices C2 Indices D1 Indices D2 Indices D3 Indices D3.a Indices D4 Indices D5 Indices D5.a Indices E1 Indices E2 Indices E3 XI-7 Law 3 Law 19
  */
 import { asRatio, type PerPiece } from '../src/core/measure.js';
+import { termFixing } from '../src/registry/notices.js';
+import { period } from '../src/calendar/calendar.js';
+import type { Event } from '../src/journal/journal.js';
 import { describe, expect, it } from 'vitest';
 import {
   none,
@@ -283,5 +286,57 @@ describe('from a closed quarter to a rated index (Reporting A1, Ratings A5, Indi
     // because an index of nothing is not a number (D5.a).
     expect(firstLevel).toBeGreaterThanOrEqual(firstRating);
     expect(firstLevel).toBeGreaterThan(0);
+  });
+});
+
+describe('a term rate is the fixings compounded (XI-7, Indices D3.a, 17d.1)', () => {
+  /** A journal with one benchmark fixing per period, as `index.benchmark` actually carries them. */
+  const fixed = (rows: Readonly<Record<number, number>>) => ({
+    ofKind: (kind: string) =>
+      kind !== 'index.benchmark'
+        ? []
+        : Object.entries(rows).map(
+            ([at, rate]) =>
+              ({
+                kind,
+                period: Number(at),
+                subjects: ['USD', 'USD:secured'],
+                data: { ccy: 'USD', secured: true, rate },
+                public: true,
+              }) as unknown as Event,
+          ),
+  });
+
+  it('compounds what the overnight book actually paid, period by period', () => {
+    const said = termFixing(fixed({ 1: 0.001, 2: 0.002, 3: 0.003 }), 'USD:secured', period(1), period(3));
+    expect(said.some).toBe(true);
+    if (!said.some) return;
+    // In arrears: the coupon IS the compounding, and it is a share of par over the span rather than
+    // a rate per annum — annualising it only to scale it back down would be two crossings (Law 8).
+    expect(said.value.over).toBeCloseTo(1.001 * 1.002 * 1.003 - 1, 12);
+    expect(said.value.fixings).toBe(3);
+  });
+
+  it('refuses a span with a period nobody borrowed in (D3.a)', () => {
+    // A rate nobody paid is not a fixing. Carrying the last one forward is the posted benchmark
+    // Appendix B forbids, and zero would be a week of free money nobody lent — so the answer is
+    // that this span has no term rate at all, and a loan that cannot fix cannot float.
+    expect(termFixing(fixed({ 1: 0.001, 3: 0.003 }), 'USD:secured', period(1), period(3)).some).toBe(
+      false,
+    );
+    expect(termFixing(fixed({}), 'USD:secured', period(1), period(1)).some).toBe(false);
+  });
+
+  it('is the fixing itself over a single period, and nothing over none', () => {
+    const one = termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(4));
+    expect(one.some && one.value.over).toBeCloseTo(0.005, 12);
+    // A span that runs backwards is not a span.
+    expect(termFixing(fixed({ 4: 0.005 }), 'USD:secured', period(4), period(3)).some).toBe(false);
+  });
+
+  it('is one book and not the other (D3, Law 4)', () => {
+    // Secured and unsecured are two benchmarks for two different things; neither stands for the
+    // other, and a reader asks for one of them by name.
+    expect(termFixing(fixed({ 1: 0.001 }), 'USD:unsecured', period(1), period(1)).some).toBe(false);
   });
 });

@@ -13785,3 +13785,29 @@ and it is under a DIFFERENT OWNER, which is this item.
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
 three new tests, ten green in the file; `loans` at its seven reds. `capital` and `firms` fail to
 collect at HEAD and after it, for a draw that made no grain firm — untouched here.
+
+## Item 17d.1 — A term rate is the fixings compounded
+
+The owner: *"loans are floaters on top of the equivalent to Xm SOFR, with X being based on the coupon
+frequency."* This world's benchmark is OVERNIGHT and transacted-or-nothing (XI-7, Indices D3.a: the
+volume-weighted rate of the overnight lending that actually settled). There is no term rate at all.
+
+**The one shape in which a term rate stays transacted is the compounding.** The fixings over the
+tenor that just ended, multiplied out — in arrears, which is what a SOFR-based loan actually pays and
+is not a forecast of anything. A forward-looking term rate would be a price for a market that does
+not meet in this world, and posting one is exactly what Appendix B forbids.
+
+**What it returns is the share of par the span earned**, not a rate per annum: a coupon in arrears IS
+the compounding, and annualising it only to scale it back down by the same span would be two
+crossings where the arithmetic wants none (Law 8).
+
+**A gap is a refusal.** A period inside the span in which nobody borrowed overnight has no fixing,
+and nothing stands in for one — not the last rate, which is the posted benchmark; not zero, which is
+a week of free money nobody lent. The span has no term rate, and a loan that cannot fix cannot float.
+
+**It is one book and not the other.** Secured and unsecured are two benchmarks for two different
+things (D3, Law 4), so the read asks for one of them by name and a span of the other's fixings is
+nothing to it.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green. `indices`: four new tests,
+green; the file's four reds are the four that were red at `9673da6`.
