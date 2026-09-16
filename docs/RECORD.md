@@ -12482,3 +12482,47 @@ its own name — and quotes nothing, which is what a bank in the hands of its re
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green;
 `reporting` and `published` suites green (25 tests). The eighteen suites run at the close of item 17.
+
+## Item 17.0 — The credit view
+
+`banks/quote.ts` is deleted and `banks/credit-view.ts` stands where it did. What changed is not the
+four terms — a bank's cost of funds, what it expects to lose, the capital the claim consumes and
+what running a loan costs it (C1) — but that there is now ONE of them per bank per money per
+period, memoised at the module and read by the loan quote, the overdraft's row, the provision, the
+refusal and the published reservation alike. C4 says one default-probability model per borrower;
+what it is really about is that a bank cannot price a name one way and provision it another, and
+the only way to be sure of that is for there to be one derivation with one reader's door.
+
+Four things in it are new. The **default frequency** is annualised off the calendar rather than
+counted in periods, so a memory of six weeks and a memory of a year mean what they say (Law 8). The
+**loss given default** is the bank's OWN recoveries — every claim it handed to an estate, and what
+that estate paid for it against what it wrote off, walked once over settled periods and held as a
+memo of that walk. A bank that has met no estate treats the whole of a claim as at risk, which is
+what ignorance honestly says rather than a fixed recovery rate (Appendix B forbids one), and the
+first estate that pays it moves it. The **capital charge** is at the grade the assessors publish on
+the name (Ratings C2), through one `weightOfName` that the bank's own capital position asks too — so
+a downgrade consumes a bank's capital without the bank doing anything, which is what C2 is for, and
+the charge a borrower pays and the capital the bank holds cannot disagree. And **E5.b is no longer
+empty**: what a bank requires to hold a name's paper now carries its expected loss on that name,
+because the assessment it needed — somebody's opinion, named and wrong-able (A4) — exists.
+
+The reasons to decline arrived with 17.0a and are the item's other half: a name that prepared books
+and did not open them, a name whose earnings did not cover its debt service, and a name whose own
+paper the market already prices above the rate this bank would lend at. Each is said by name in
+`credit.declined`, so declined volume is visible (C3.a).
+
+`atLeastCash(capital, 0)` at `banks/index.ts` is deleted with the item, and the state it hid is
+said: an insolvent bank publishes `bank.insolvent` under its own name and does not quote, because
+there is nothing for its owners to require a return on and no book its liabilities fund (Law 6: the
+state is the answer, not a floor under it).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. The
+`loans` suite: four new tests for the view, all green — two names one bank has watched differently
+price apart; two banks that have recovered differently quote one name apart; a name that kept its
+books shut is declined where one too young to have any is quoted; and coverage below one and a
+market yield above the rate each decline with their own reason. Its seven standing reds are the
+same seven, in the same order, as at the close of item 16.
+
+**Left for the close of item 17**, where the suites run: the two stale assertions in
+`securitisation.test.ts` and the two findings at 12a.4 and 12a.7, all four parked at this item to be
+re-read against the view rather than against the world that had none.

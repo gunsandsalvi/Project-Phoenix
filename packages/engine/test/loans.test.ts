@@ -31,6 +31,18 @@ import {
   type World,
 } from '../src/index.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
+import {
+  type BankDecl,
+  type CreditInputs,
+  type Regulation,
+  nameView,
+} from '../src/index.js';
+import type { Statement } from '../src/registry/statements.js';
+import { asRatio } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
+import { none, some } from '../src/core/option.js';
+import type { Event } from '../src/journal/journal.js';
+import type { ParticipantView } from '../src/world/context.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -621,5 +633,132 @@ describe('the world it lives in', () => {
     }
     expect(w.parties.ofKind(partyId('bank') as never).length).toBeGreaterThan(0);
     expect(TREASURY_US).toBeDefined();
+  });
+});
+
+/**
+ * The credit view (item 17.0): ONE bank's opinion of a name, formed from its own record and from
+ * what the name opened to it — and read by the quote, the row, the provision and the reservation
+ * alike (C4). Asked of the function, with the inputs stated, because what is being tested is the
+ * view rather than a world that happens to produce one.
+ */
+describe('the credit view (Banks Lending C1, C3, C4; Corporate Credit A4, E5)', () => {
+  const NAME = partyId('name.one');
+  const OTHER = partyId('name.two');
+
+  function bank(): { view: ParticipantView; decl: BankDecl } {
+    const w = world();
+    w.step();
+    const rows = drawBanks(BANK_COUNT, 'loans');
+    const decl = rows[0];
+    expect(decl).toBeDefined();
+    return { view: w.participantView(partyId(decl!.bank)), decl: decl! };
+  }
+
+  const REG: Regulation = {
+    capitalRatio: asRatio(0.08, 'what the standard asks'),
+    riskWeight: asRatio(1, 'what an ordinary exposure weighs'),
+    operatingCost: asRatio(0.01, 'what running a loan costs it'),
+  };
+
+  function inputsWith(over: Partial<CreditInputs>): CreditInputs {
+    return {
+      funds: asRatio(0.02, 'what money costs it'),
+      reg: REG,
+      defaults: [],
+      recovered: { paid: asQty(0), lost: asQty(0) },
+      gradeOn: () => none(),
+      weightOf: () => REG.riskWeight,
+      statementOf: () => none(),
+      prepared: () => false,
+      marketYieldOn: () => none(),
+      ...over,
+    };
+  }
+
+  /** XI-1: a default anybody published, which is public, so every bank saw it. */
+  const failed = (who: ReturnType<typeof partyId>, at: number): Event => ({
+    id: 1 as never,
+    period: at as never,
+    cycle: 0 as never,
+    kind: 'credit.default',
+    subjects: [String(who)],
+    data: {},
+    public: true,
+  });
+
+  it('prices two names apart when it has watched one of them fail (C1.b, C4)', () => {
+    const { view, decl } = bank();
+    const inputs = inputsWith({ defaults: [failed(NAME, view.period)] });
+    const watched = nameView(view, decl, NAME, inputs);
+    const clean = nameView(view, decl, OTHER, inputs);
+    expect(watched.probabilityOfDefault).toBeGreaterThan(0);
+    expect(clean.probabilityOfDefault).toBe(0);
+    expect(watched.expectedLoss).toBeGreaterThan(clean.expectedLoss);
+    expect(watched.rate).toBeGreaterThan(clean.rate);
+    // And the same belief prices the paper as it prices the loan, one term apart: what it requires
+    // to HOLD a name is its rate less what running a loan costs it, because holding is not work.
+    expect(watched.rate - watched.required).toBeCloseTo(REG.operatingCost, 12);
+  });
+
+  it('two banks that have recovered differently quote one name differently (A4.b)', () => {
+    const { view, decl } = bank();
+    const seen = { defaults: [failed(NAME, view.period)] };
+    // One has been paid nineteen of every twenty by the estates it was a creditor of; the other has
+    // met no estate at all and treats the whole of a claim as at risk, which is what ignorance says.
+    const paidWell = nameView(
+      view,
+      decl,
+      NAME,
+      inputsWith({ ...seen, recovered: { paid: asQty(95), lost: asQty(5) } }),
+    );
+    const blind = nameView(view, decl, NAME, inputsWith(seen));
+    expect(blind.lossGivenDefault).toBe(1);
+    expect(paidWell.lossGivenDefault).toBeLessThan(blind.lossGivenDefault);
+    expect(paidWell.expectedLoss).toBeLessThan(blind.expectedLoss);
+    expect(paidWell.rate).toBeLessThan(blind.rate);
+  });
+
+  it('declines a name that kept its books shut, and quotes one too young to have any (C3, C3.a)', () => {
+    const { view, decl } = bank();
+    const shut = nameView(view, decl, NAME, inputsWith({ prepared: () => true }));
+    expect(shut.declines.some && shut.declines.value).toBe('undisclosed');
+    // A name that has never closed a quarter has nothing to open, and is priced on the record —
+    // which is all anybody has of it. A refusal there would refuse every new company in the world.
+    const young = nameView(view, decl, NAME, inputsWith({}));
+    expect(young.declines.some).toBe(false);
+  });
+
+  it('declines a name whose earnings did not cover its debt, and one the market prices worse (17.0)', () => {
+    const { view, decl } = bank();
+    const shown = (ebitda: number, service: number): Statement =>
+      ({
+        summary: {
+          ebitda: asCash(ebitda, USD, 'what it earned'),
+          service: asCash(service, USD, 'what its debt took'),
+          freeCashFlow: asCash(0, USD, 'what was left'),
+          netDebt: asCash(0, USD, 'what it owes net'),
+        },
+        balance: { debt: asCash(0, USD, 'what it owes') },
+      }) as unknown as Statement;
+    const thin = nameView(
+      view,
+      decl,
+      NAME,
+      inputsWith({ prepared: () => true, statementOf: () => some(shown(50, 100)) }),
+    );
+    expect(thin.coverage.some && thin.coverage.value).toBeLessThan(1);
+    expect(thin.declines.some && thin.declines.value).toBe('coverage');
+    // XI-4: and it does not lend below where the market already prices the name — it buys the paper.
+    const covered = { prepared: () => true, statementOf: () => some(shown(300, 100)) };
+    const dear = nameView(
+      view,
+      decl,
+      NAME,
+      inputsWith({ ...covered, marketYieldOn: () => some(asRatio(0.15, 'what the market requires')) }),
+    );
+    expect(dear.declines.some && dear.declines.value).toBe('marketYield');
+    const fine = nameView(view, decl, NAME, inputsWith(covered));
+    expect(fine.declines.some).toBe(false);
   });
 });
