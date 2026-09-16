@@ -11776,3 +11776,29 @@ Nothing new is red: the ten suites at 56 of 109, the same set.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 12d.4 — The no-view census of the goods books
+
+The test is written and it is red, and what it measured is two things. Over thirty periods of the
+scale model twenty-four of its hundred and twenty-six goods books ran without a counted view at
+least once, ten in period thirty. The wholesale books — bread, flour, power, IT services,
+facilities, chemicals, meat, cloth, steel — have firms bidding in them for inputs at what they
+think the output will fetch less the wages a unit still needs, which is a view by the kernel's own
+definition, and the census cannot count it: the mark is on the PARTICIPANT, one firm posts both its
+input bids and its asks at cost, and the firms' participant is rightly not flagged. That is a
+kernel repair — the mark belongs to the order — positioned at 21.22. The retail books of a place
+with no household in it run with sellers and nobody to buy, thirty periods of thirty; that is
+honest, and a fact about where the seed puts people (22.3).
+
+**Checks.** `no-view.test.ts` red as measured; lint and typecheck green; no engine change, so the
+opens check and the suites stand at 12d.3's.
+
+## Item 12d closes
+
+Observation: what is public about what a party is exposed to reaches its outlook (12d.1); a party
+keeps two predictors and follows the one that has surprised it less, and the aggregate never moved
+before the surprises (12d.2); a cold week burns more (12d.3); and the goods books' no-view census
+is measured and red for two named reasons (12d.4). The item's findings are positioned at 21.1 (the
+capacity grid), 21.20 (the book of outlooks and cell events), 21.22 (the view mark belongs to the
+order) and 22.3 (the price level's asks, the banking venue, the shops where nobody lives); its
+section is removed and its row marked done.
+

@@ -1641,7 +1641,7 @@ measurement is taken there is nothing to name.
 | `Expectations B5` | MISSING |  |
 | `Expectations C1` | MISSING |  |
 | `Expectations C2` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (output and hiring read the firm own outlook of what it sells and what it fetches), packages/engine/src/mechanisms/firms/produce.ts (and it publishes it); investment arrives with the capital programme (worklist 10); 12d.1, C2.a: an outlook ABOUT ANOTHER PARTY exists as a subject (`reported.<company>`): what a holder observed the company publish, formed the same way, its own and nobody's to inherit |
-| `Expectations C3` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (what a firm offers and what it will pay are its own expectation of the price); the sovereign holders required yield is still a placeholder (worklist 10) |
+| `Expectations C3` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (what a firm offers and what it will pay are its own expectation of the price); the sovereign holders required yield is still a placeholder (worklist 10); 12d.4: measured — `market.noView` on goods books over thirty periods of the rig (`no-view.test.ts`, red): the wholesale books' firm bids are views the census cannot count because the mark is per participant (21.22), and the retail books of a place with no household have only sellers (22.3) |
 | `Expectations C4` | MISSING |  |
 | `Expectations C5` | MISSING |  |
 | `Expectations C6` | MISSING |  |
