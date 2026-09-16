@@ -23,6 +23,8 @@
  * reasons D5 names — yield against risk — which a household cannot weigh until something in this
  * world a household can SEE prices risk (item 12d). Liquidity is the reason it has now, and this is the whole of it.
  */
+import type { CurrencyCode } from '../../core/ids.js';
+import { noCash } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Ratio } from '../../core/measure.js';
 import {
@@ -195,7 +197,6 @@ export function savingLines(
   return { paper, shares };
 }
 
-
 /**
  * D5, D5.a: the bids for paper, one per line, for the money the cell decided this line gets.
  * `perLine` is its own budget divided by every place its money could go, so the same money is never
@@ -216,7 +217,7 @@ export function paperBids(
   const out: PaperBid[] = [];
   for (const e of eligible) {
     const perLine = budgetFor(e);
-    if (perLine <= 0) continue;
+    if (perLine.pieces <= 0) continue;
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
     const dirty = plus(e.bid, view.accrued(e.instrument.id), 'what a unit costs it');
     // Law 8, XI-15: EVERY MEMBER holds whole units, so what one of them bids for is a whole number
@@ -234,7 +235,11 @@ export function paperBids(
     );
     if (
       perMember <= 0 ||
-      !material(qty, lines + 1, scale(whole, asRatio(weight, 'the members of the cell'), 'the cell')) ||
+      !material(
+        qty,
+        lines + 1,
+        scale(whole, asRatio(weight, 'the members of the cell'), 'the cell'),
+      ) ||
       !e.instrument.market.some
     ) {
       continue;
@@ -268,19 +273,29 @@ export function ownUncertainty(view: ParticipantView): Option<Ratio> {
     view.calendar.startOf(nextPeriod(view.period)),
   );
   if (year <= 0) return none<Ratio>();
-  return some(over(
-    asRatio(
-      // Two money magnitudes about the same variable, so how wrong it has been is a pure share.
-      ratioOf(
-        asCash(income.value.confidence, 'how wide its surprises about its income are'),
-        asCash(income.value.expected, 'what it expects to take in'),
+  return some(
+    over(
+      asRatio(
+        // Two money magnitudes about the same variable, so how wrong it has been is a pure share.
+        ratioOf(
+          asCash(
+            income.value.confidence,
+            income.value.unit as CurrencyCode,
+            'how wide its surprises about its income are',
+          ),
+          asCash(
+            income.value.expected,
+            income.value.unit as CurrencyCode,
+            'what it expects to take in',
+          ),
+          'how wrong its income has been',
+        ),
         'how wrong its income has been',
       ),
-      'how wrong its income has been',
+      asRatio(year, 'the fraction of a year that was'),
+      'per annum',
     ),
-    asRatio(year, 'the fraction of a year that was'),
-    'per annum',
-  ));
+  );
 }
 
 /** A bid or an offer in a share line, at the level this cell's own opinion puts on it. */
@@ -328,11 +343,11 @@ export function shareOrders(
     const id = line.instrument.id;
     // 0f.1: the register holds the cell's TOTAL.
     const units = view.free(id);
-    if (short > 0 || perLine <= 0 || steps < 1) {
+    if (short.pieces > 0 || perLine.pieces <= 0 || steps < 1) {
       if (!material(units, 2, units)) continue;
       // A-28: AT WHAT IT WILL TAKE. A holder short of cash sells at the market; one that is not
       // offers at its ask, which is its expectation with the margin on the SELLER's side.
-      const price = short > 0 ? ('market' as const) : line.ask;
+      const price = short.pieces > 0 ? ('market' as const) : line.ask;
       out.push({ market, instrument: id, side: 'sell', price, qty: units });
       continue;
     }
@@ -452,7 +467,11 @@ export function fundPositions(
       asks === undefined
         ? undefined
         : asCash(
-            view.params.amount(paramId(asks), currencyUnit(view.registry.currencyOf(view.self.region))),
+            view.params.amount(
+              paramId(asks),
+              currencyUnit(view.registry.currencyOf(view.self.region)),
+            ),
+            view.registry.currencyOf(view.self.region),
             'what this door asks of an entrant, per member',
           );
     out.push({
@@ -462,7 +481,14 @@ export function fundPositions(
       perShare,
       offered,
       sharesPerMember: held,
-      worthPerMember: valueAt(perShare, held, 'what its shares are worth'),
+      worthPerMember: view.inOwnMoney(
+        valueAt(
+          perShare,
+          held,
+          view.instruments.get(instrumentId(line)).ccy,
+          'what its shares are worth',
+        ),
+      ),
       asksOfEntrants,
     });
   }
@@ -495,7 +521,7 @@ export function fundOrders(
   // reason to redeem, and a rule that redeemed on a bad return would be a run written into it. A
   // cell that is short asks every fund it is in and puts nothing anywhere, which is the same
   // either/or the loop had when the two cases were one pass.
-  if (short > 0) {
+  if (short.pieces > 0) {
     for (const p of positions) {
       if (p.sharesPerMember <= 0) continue;
       // Law 8: A SHARE IS INDIVISIBLE, so what a member hands back is a whole number of them, and
@@ -508,7 +534,11 @@ export function fundOrders(
       out.push({
         venue: p.venue,
         side: 'sell',
-        sharesPerMember: atMost(want, p.sharesPerMember, 'it cannot hand back more than the position it holds'),
+        sharesPerMember: atMost(
+          want,
+          p.sharesPerMember,
+          'it cannot hand back more than the position it holds',
+        ),
       });
     }
     return out;
@@ -531,13 +561,14 @@ export function fundOrders(
    * Ties are broken by the fund's own name, so two funds offering exactly the same thing are not
    * separated by the order a list was built in.
    */
-  if (toFund > 0) {
+  if (toFund.pieces > 0) {
     let best: FundPosition | undefined;
     for (const p of positions) {
       if (p.offered < required) continue;
       // Item 10e.6: and whether it may go in at all. A cell under the line does not ask: access
       // says WHERE its money may go, and a fund it cannot enter is simply not one of the places.
-      if (p.asksOfEntrants !== undefined && wealthPerMember < p.asksOfEntrants) continue;
+      if (p.asksOfEntrants !== undefined && wealthPerMember.pieces < p.asksOfEntrants.pieces)
+        continue;
       if (best === undefined || p.offered > best.offered) best = p;
       else if (p.offered === best.offered && p.fund < best.fund) best = p;
     }
@@ -553,10 +584,10 @@ export function fundOrders(
 /** C2: how much of what it is about to spend its account cannot cover, per member (Law 7 as above). */
 export function shortForSpending(cash: Cash, spend: Cash): Cash {
   const gap = minus(spend, cash, 'what it means to spend over what it holds');
-  const magnitudes = sum([cash, spend]);
-  return gap > 0 && material(gap, magnitudes.terms, magnitudes.value)
+  const magnitudes = sum([cash.pieces, spend.pieces]);
+  return gap.pieces > 0 && material(gap.pieces, magnitudes.terms, magnitudes.value)
     ? gap
-    : asCash(0, 'it can pay for what it means to spend');
+    : noCash(cash.ccy);
 }
 
 /**
@@ -566,10 +597,10 @@ export function shortForSpending(cash: Cash, spend: Cash): Cash {
  */
 export function cushionForFund(cash: Cash, spend: Cash, spare: Cash): Cash {
   const held = minus(minus(cash, spend, 'after what it spends'), spare, 'and after what it places');
-  const magnitudes = sum([cash, spend, spare]);
-  return held > 0 && material(held, magnitudes.terms, magnitudes.value)
+  const magnitudes = sum([cash.pieces, spend.pieces, spare.pieces]);
+  return held.pieces > 0 && material(held.pieces, magnitudes.terms, magnitudes.value)
     ? held
-    : asCash(0, 'nothing over the cushion it wants');
+    : noCash(cash.ccy);
 }
 
 /**
@@ -583,10 +614,10 @@ export function cushionForFund(cash: Cash, spend: Cash, spare: Cash): Cash {
 export function sparePerMember(cash: Cash, spend: Cash, buffer: Cash): Cash {
   const left = minus(minus(cash, spend, 'after what it spends'), buffer, 'after its cushion');
   // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's.
-  const magnitudes = sum([cash, spend, buffer]);
-  return left > 0 && material(left, magnitudes.terms, magnitudes.value)
+  const magnitudes = sum([cash.pieces, spend.pieces, buffer.pieces]);
+  return left.pieces > 0 && material(left.pieces, magnitudes.terms, magnitudes.value)
     ? left
-    : asCash(0, 'a saver with nothing over has nothing to place');
+    : noCash(cash.ccy);
 }
 
 /** The total a cell of this weight commits, from a per-member decision (XI-15). */

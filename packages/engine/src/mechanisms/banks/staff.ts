@@ -42,7 +42,12 @@ import { downTick, asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { ownPayroll, payrollSince, wageFacing as facingIn, wholePeople } from '../../registry/wages.js';
+import {
+  ownPayroll,
+  payrollSince,
+  wageFacing as facingIn,
+  wholePeople,
+} from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { expectedEarningsOf } from '../../registry/expectation.js';
 import { period as periodOf } from '../../calendar/calendar.js';
@@ -115,7 +120,8 @@ export function wageFacing(view: ParticipantView, occupation: string): PerPiece 
  */
 export function operatingCostOf(view: ParticipantView): Ratio {
   const book = bookOf(view);
-  if (book.rows <= 0 || book.principal <= 0) return asRatio(0, 'a bank with no book services nothing');
+  if (book.rows <= 0 || book.principal <= 0)
+    return asRatio(0, 'a bank with no book services nothing');
   const wage = wageFacing(view, BANKING);
   if (wage === undefined) return asRatio(0, 'a bank that cannot price an hour');
   const ofAYear = yearFraction(
@@ -124,11 +130,12 @@ export function operatingCostOf(view: ParticipantView): Ratio {
     view.calendar.startOf(periodOf(view.period + 1)),
   );
   if (ofAYear <= 0) return asRatio(0, 'a period of no length costs nothing');
-  const perPeriod = valueAt(wage, hoursNeeded(view), 'what its staff cost it a period');
+  const home = view.registry.currencyOf(view.self.region);
+  const perPeriod = valueAt(wage, hoursNeeded(view), home, 'what its staff cost it a period');
   return ratioOf(
     over(perPeriod, asRatio(ofAYear, 'the fraction of a year that was'), 'a year of it'),
     // A loan's units ARE money, so what servicing costs per unit of principal is a pure rate.
-    heldAsMoney(book.principal, 'the principal it is servicing'),
+    heldAsMoney(book.principal, home, 'the principal it is servicing'),
     'what servicing costs, per unit of principal per annum',
   );
 }
@@ -148,7 +155,7 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   // the hours the book takes, its own outlook and not last week's equity moves. That read is
   // exact and stays exact — it is a price, and prices have their own grid.
   const took = expectedEarningsOf(view);
-  if (!took.some || took.value <= 0) return [];
+  if (!took.some || took.value.pieces <= 0) return [];
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   /**
@@ -164,9 +171,21 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   if (want <= 0) return [];
   // Labour C3, C5 (12b.2): the CHANGE against what it will have — more at what an hour is worth
   // to it, or fewer as a cut given notice.
-  const change = netChange(view.employs(), BANKING, view.self.region, wholePeople(view, asQty(want)));
+  const change = netChange(
+    view.employs(),
+    BANKING,
+    view.self.region,
+    wholePeople(view, asQty(want)),
+  );
   if (change === undefined) return [];
-  return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
+  return [
+    {
+      party: view.self.id,
+      side: change.side,
+      price: change.side === 'buy' ? worth : 'market',
+      qty: change.qty,
+    },
+  ];
 }
 
 /** The venue this bank's staff are hired in, or none because this world has no such trade. */
@@ -195,7 +214,6 @@ export function linesCovered(view: ParticipantView): number {
   // Hours it employs over hours one line takes: two amounts of the same unit, so a pure count.
   return Math.floor(ratioOf(own.value.hours, per, 'the lines its people can cover'));
 }
-
 
 /* --------------------------------------------------------------------------------------------
  * THE FIFTH BUSINESS LINE: CORPORATE FINANCE (item 10f.4)
@@ -257,8 +275,13 @@ export function costOfAProcess(view: ParticipantView): PerPiece | undefined {
     'the hours one process takes',
   );
   if (hours <= 0) return undefined;
-  const cost = valueAt(wage, asQty(hours), 'what running one costs it');
-  return cost > 0 ? asPerPiece(cost, 'what it charges to run one') : undefined;
+  const cost = valueAt(
+    wage,
+    asQty(hours),
+    view.registry.currencyOf(view.self.region),
+    'what running one costs it',
+  );
+  return cost.pieces > 0 ? asPerPiece(cost.pieces, 'what it charges to run one') : undefined;
 }
 
 /**
@@ -273,13 +296,26 @@ export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonl
   const ran = processesItRan(view, payrollSince(view.period));
   if (!ran.some) return [];
   const per = view.params.count(STAFF_PARAMS.hoursPerProcess);
-  const hours = asQty(scale(asAmount<'piece'>(per, 'the hours one takes'), asRatio(ran.value, 'the ones it ran'), 'the hours they took'));
+  const hours = asQty(
+    scale(
+      asAmount<'piece'>(per, 'the hours one takes'),
+      asRatio(ran.value, 'the ones it ran'),
+      'the hours they took',
+    ),
+  );
   if (hours <= 0) return [];
   const took = expectedEarningsOf(view);
-  if (!took.some || took.value <= 0) return [];
+  if (!took.some || took.value.pieces <= 0) return [];
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   const change = netChange(view.employs(), ADVISORY, view.self.region, wholePeople(view, hours));
   if (change === undefined) return [];
-  return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
+  return [
+    {
+      party: view.self.id,
+      side: change.side,
+      price: change.side === 'buy' ? worth : 'market',
+      qty: change.qty,
+    },
+  ];
 }

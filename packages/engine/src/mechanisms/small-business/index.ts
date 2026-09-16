@@ -27,6 +27,7 @@
  * (11.0c). What is still to arrive names its step: the owner's draw (11.0d), borrowing and
  * default (11.0e), plant and promotion (11.0f).
  */
+import type { CurrencyCode } from '../../core/ids.js';
 import type { RegionId } from '../../core/ids.js';
 import { paramId, partyId } from '../../core/ids.js';
 import type { Option } from '../../core/option.js';
@@ -39,7 +40,18 @@ import { weightOf } from '../../parties/party.js';
 import { isOwnership, ownerOf } from './profile.js';
 import type { SystemModule } from '../../world/module.js';
 import type { SmallFirmDecl } from './data.js';
-import { DECIDED, OWNERSHIP, SMALL_FIRM_TERMS, TERMS, decide, draw, marketsOf, ordersIn, produce, type OwnershipTerms } from './profile.js';
+import {
+  DECIDED,
+  OWNERSHIP,
+  SMALL_FIRM_TERMS,
+  TERMS,
+  decide,
+  draw,
+  marketsOf,
+  ordersIn,
+  produce,
+  type OwnershipTerms,
+} from './profile.js';
 const ownershipOf = (members: number): OwnershipTerms => ({ kind: OWNERSHIP, members });
 export { lineOf } from './profile.js';
 import { found } from './found.js';
@@ -51,7 +63,15 @@ import type { Order } from '../../clearing/solver.js';
 import type { MarketId } from '../../core/ids.js';
 import { bandOf } from '../../registry/lattice.js';
 import { currencyUnit, unitId } from '../../core/ids.js';
-import { CAPITAL_KINDS, goodId, goodTerms, lifeParam, plantKindId, SEED_PLANT_AGES, seedVintage } from '../../registry/physical.js';
+import {
+  CAPITAL_KINDS,
+  goodId,
+  goodTerms,
+  lifeParam,
+  plantKindId,
+  SEED_PLANT_AGES,
+  seedVintage,
+} from '../../registry/physical.js';
 import { addDays } from '../../calendar/civil.js';
 import { splitOnTick, upTick } from '../../core/tick.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
@@ -196,7 +216,11 @@ function paramsOf(): ParamDecl[] {
  * is the same sentence the households seed makes about where this world's people are, and a second
  * statement of it beside the draw is how the two come to disagree (Law 4, Law 19).
  */
-export const cellKeyOf = (bank: string, line: string, region: RegionId): Readonly<Record<string, string>> => ({
+export const cellKeyOf = (
+  bank: string,
+  line: string,
+  region: RegionId,
+): Readonly<Record<string, string>> => ({
   region: String(region),
   bank,
   line,
@@ -205,7 +229,10 @@ export const cellKeyOf = (bank: string, line: string, region: RegionId): Readonl
 /** 0f.3: the edges a small-firm lattice bands on — RESOLUTION, tested by invariance (0f.10). */
 export const SMALL_FIRM_EDGES = {
   size: [paramId('smallBusiness.lattice.size.1'), paramId('smallBusiness.lattice.size.2')],
-  leverage: [paramId('smallBusiness.lattice.leverage.1'), paramId('smallBusiness.lattice.leverage.2')],
+  leverage: [
+    paramId('smallBusiness.lattice.leverage.1'),
+    paramId('smallBusiness.lattice.leverage.2'),
+  ],
 } as const;
 
 /**
@@ -217,8 +244,16 @@ export const SMALL_FIRM_LATTICE: LatticeDecl = {
   kind: SMALL_FIRM,
   categorical: [
     { dim: 'region', movedBy: 'entry', why: 'a firm is somewhere, and its bank books there' },
-    { dim: 'bank', movedBy: 'bank.choice', why: 'a small firm is bank-dependent (A5); its bank is who it borrows from' },
-    { dim: 'line', movedBy: 'entry', why: 'a mill and a haulier face different prices for different things; a cell that mixed them would decide at an average' },
+    {
+      dim: 'bank',
+      movedBy: 'bank.choice',
+      why: 'a small firm is bank-dependent (A5); its bank is who it borrows from',
+    },
+    {
+      dim: 'line',
+      movedBy: 'entry',
+      why: 'a mill and a haulier face different prices for different things; a cell that mixed them would decide at an average',
+    },
     {
       dim: 'age',
       movedBy: 'entry',
@@ -281,7 +316,8 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
       {
         name: DECIDED,
         kind: 'working',
-        holds: 'the batch each cell will start and the input bids it decided, and the period it decided them in',
+        holds:
+          'the batch each cell will start and the input bids it decided, and the period it decided them in',
         why: 'it is how this module gets from its decide phase to its produce phase and its own orders (0e\u2032.4); nothing outside it has an opinion about a batch nobody has started.',
       },
     ],
@@ -345,9 +381,7 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         anchor: { before: 'labour.match' },
         // Labour C2 (11.0c): the hours it has under contract are its last wage bill (Clearing F1.a).
         // Capital Programme B1.b (11.2a.2): and what its bank last quoted it is what its money costs.
-        reads: [
-          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
-        ],
+        reads: [{ kind: 'event', name: 'credit.quoted', of: 'anyPeriod' }],
         // A5, Corporate Credit A1 (11.0e): what a period of trading needs beyond what it has, asked
         // of its bank through the one door every borrower uses.
         writes: [
@@ -416,33 +450,60 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
           // such size, and promotes nobody: a real state, measured (0d: no corporate bond has ever
           // been issued in the scale model). A failing firm's equity is not the boundary, which is
           // what "the smallest named firm" read as the first time this ran.
-          let smallest: number | undefined;
+          const smallest = new Map<CurrencyCode, number>();
           for (const f of ctx.parties.ofKind(FIRM)) {
             if (!f.status.alive) continue;
-            const paper = ctx.instruments.issuedBy(f.id).some((i) => i.status.live && i.market.some && ctx.registry.instrumentKind(i.kind).liabilityOfIssuer);
+            const paper = ctx.instruments
+              .issuedBy(f.id)
+              .some(
+                (i) =>
+                  i.status.live &&
+                  i.market.some &&
+                  ctx.registry.instrumentKind(i.kind).liabilityOfIssuer,
+              );
             if (!paper) continue;
             const e = ctx.participant(f.id).equity();
-            if (e <= 0) continue;
-            if (smallest === undefined || e < smallest) smallest = e;
+            if (e.pieces <= 0) continue;
+            // Money A2.b (16.0): a size is compared in ONE money, so the boundary is kept per money.
+            const seen = smallest.get(e.ccy);
+            if (seen === undefined || e.pieces < seen) smallest.set(e.ccy, e.pieces);
           }
-          if (smallest === undefined) return;
+          if (smallest.size === 0) return;
           for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
             if (p.representation !== 'cell' || !p.status.alive) continue;
             const view = ctx.participant(p.id);
-            const perMember = over(view.equity(), asRatio(weightOf(p), 'its members'), 'what one member is worth');
-            if (perMember < smallest) continue;
+            const perMember = over(
+              view.equity(),
+              asRatio(weightOf(p), 'its members'),
+              'what one member is worth',
+            );
+            const boundary = smallest.get(perMember.ccy);
+            if (boundary === undefined || perMember.pieces < boundary) continue;
             const owner = ownerOf(ctx, p.id);
             if (!owner.some) continue;
             ctx.record(
               'smallBusiness.promotion',
               [p.id, owner.value.owner],
-              { cell: String(p.id), members: weightOf(p), line: keyOf(p, 'line'), bank: keyOf(p, 'bank'), region: String(p.region), owner: String(owner.value.owner), perMember, smallestNamed: smallest },
+              {
+                cell: String(p.id),
+                members: weightOf(p),
+                line: keyOf(p, 'line'),
+                bank: keyOf(p, 'bank'),
+                region: String(p.region),
+                owner: String(owner.value.owner),
+                perMember: perMember.pieces,
+                ccy: perMember.ccy,
+                smallestNamed: smallest,
+              },
               true,
             );
             // A6.a: the row counted the members who ran one; they run a named firm now.
             const row = ctx.agreements.get(owner.value.row);
             if (isOwnership(row.terms)) {
-              const terms: OwnershipTerms = { kind: OWNERSHIP, members: row.terms.members - weightOf(p) };
+              const terms: OwnershipTerms = {
+                kind: OWNERSHIP,
+                members: row.terms.members - weightOf(p),
+              };
               ctx.restate(owner.value.row, terms);
             }
           }
@@ -504,7 +565,11 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         // Law 8: what one firm opens with is a whole number of pieces of its money.
         const opens = ctx.registry.payable(
           scale(
-            asCash(ctx.params.amount(SMALL_OPENING_CASH, unit), 'what the smallest opens with'),
+            asCash(
+              ctx.params.amount(SMALL_OPENING_CASH, unit),
+              ccy,
+              'what the smallest opens with',
+            ),
             asRatio(r.size, 'how big it is beside the smallest'),
             'what a firm of this size opens with',
           ),
@@ -513,7 +578,14 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         const key = `${r.bank}|${r.line}|${band}`;
         const pool = pools.get(key);
         if (pool === undefined) {
-          pools.set(key, { bank: bank.id, line: r.line, region: bank.region, band, count: 1, cash: opens });
+          pools.set(key, {
+            bank: bank.id,
+            line: r.line,
+            region: bank.region,
+            band,
+            count: 1,
+            cash: opens,
+          });
         } else {
           pool.count += 1;
           pool.cash = sum([pool.cash, opens]).value;
@@ -549,14 +621,22 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         if (ctx.instruments.has(output)) {
           const recipe = goodTerms(ctx.instruments.get(output)).recipe;
           const hours = ctx.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS);
-          const perMemberBatch = over(hours, ctx.params.ratio(recipe.labourHoursPerUnit), 'what one member can start');
+          const perMemberBatch = over(
+            hours,
+            ctx.params.ratio(recipe.labourHoursPerUnit),
+            'what one member can start',
+          );
           for (const input of recipe.inputs) {
             const line = goodId(input.subUnit, pool.region);
             if (!ctx.instruments.has(line)) continue;
             const opened = ctx.prices.latest(line, ctx.period);
             if (!opened.some) continue;
             const drawn = ctx.registry.deliverable(
-              scale(perMemberBatch, ctx.params.ratio(input.qtyPerUnit), 'what a period of starting draws'),
+              scale(
+                perMemberBatch,
+                ctx.params.ratio(input.qtyPerUnit),
+                'what a period of starting draws',
+              ),
             );
             if (drawn <= 0) continue;
             ctx.endowUnits(id, line, drawn, opened.value.price);
@@ -572,7 +652,8 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
            */
           for (const need of recipe.plant) {
             const kind = CAPITAL_KINDS.find((k) => k.id === need.capitalKind);
-            if (kind === undefined || !ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
+            if (kind === undefined || !ctx.registry.instrumentKinds.has(plantKindId(kind.id)))
+              continue;
             const built = goodId(kind.madeFrom, pool.region);
             if (!ctx.instruments.has(built)) continue;
             const newPrice = ctx.prices.latest(built, ctx.period);
@@ -582,10 +663,17 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
             // firm whose batch takes three hundredths of a room still needs the room. The odd one
             // across the vintages goes in a named vintage (core/tick.ts).
             const mine = upTick(
-              scale(perMemberBatch, ctx.params.ratio(need.unitsPerUnitPerPeriod), 'the plant a period of its batch takes'),
+              scale(
+                perMemberBatch,
+                ctx.params.ratio(need.unitsPerUnitPerPeriod),
+                'the plant a period of its batch takes',
+              ),
             );
             if (mine <= 0) continue;
-            const perVintage = splitOnTick(mine, SEED_PLANT_AGES.map(() => 1));
+            const perVintage = splitOnTick(
+              mine,
+              SEED_PLANT_AGES.map(() => 1),
+            );
             SEED_PLANT_AGES.forEach((age, at) => {
               const units = perVintage[at];
               if (units === undefined || units <= 0) return;
@@ -603,16 +691,19 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
          * with no owner named, which is a real state the draw reads as one.
          */
         const first = ctx.registry.cohorts[0];
-        const owners = first === undefined
-          ? undefined
-          : ctx.parties.ofKind(HOUSEHOLD).find(
-              (h) =>
-                h.representation === 'cell' &&
-                h.status.alive &&
-                keyOf(h, 'region') === String(pool.region) &&
-                keyOf(h, 'bank') === String(pool.bank) &&
-                keyOf(h, 'cohort') === String(first.id),
-            );
+        const owners =
+          first === undefined
+            ? undefined
+            : ctx.parties
+                .ofKind(HOUSEHOLD)
+                .find(
+                  (h) =>
+                    h.representation === 'cell' &&
+                    h.status.alive &&
+                    keyOf(h, 'region') === String(pool.region) &&
+                    keyOf(h, 'bank') === String(pool.bank) &&
+                    keyOf(h, 'cohort') === String(first.id),
+                );
         if (owners !== undefined) {
           ctx.owes({
             debtor: id,
@@ -627,13 +718,14 @@ export function smallBusiness(rows: readonly SmallFirmDecl[]): SystemModule {
         ctx.endowMoney(
           id,
           ctx.registry.currencyOf(pool.region),
-          asCash(
-            over(
-              asCash(pool.cash, 'what its members opened with between them'),
-              asRatio(pool.count, 'the firms in it'),
-              'what one of them opens with',
+          over(
+            asCash(
+              pool.cash,
+              ctx.registry.currencyOf(pool.region),
+              'what its members opened with between them',
             ),
-            'what one member opens with',
+            asRatio(pool.count, 'the firms in it'),
+            'what one of them opens with',
           ),
         );
       }

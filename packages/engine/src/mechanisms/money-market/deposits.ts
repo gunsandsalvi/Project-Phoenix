@@ -30,6 +30,7 @@
  * not, so the buffer differs between two banks with the same balance sheet size, which is what A2.a
  * asks for and what a stated ratio of deposits could never give.
  */
+import { noCash, sumCash } from '../../core/measure.js';
 import type { Qty } from '../../core/tick.js';
 import {
   type Cash,
@@ -49,14 +50,7 @@ import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId } from '../../core/ids.js';
-import {
-  
-  atMost,
-  
-  
-  sum,
-  zeroIfNone,
-} from '../../core/num.js';
+import { atMost, sum, zeroIfNone } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -121,10 +115,14 @@ export function insuredAt(
 ): Cash {
   const covered = coveredPerMember(ctx, bank, holder, ccy, limit);
   return covered <= 0
-    ? asCash(0, 'a holder with nothing covered')
-    : acrossMembers(
-        asPerMember<'money:piece'>(covered, 'what one member has covered'),
-        weightOf(ctx.parties.get(holder)),
+    ? noCash(ccy)
+    : asCash(
+        acrossMembers(
+          asPerMember<'money:piece'>(covered, 'what one member has covered'),
+          weightOf(ctx.parties.get(holder)),
+          'insured',
+        ),
+        ccy,
         'insured',
       );
 }
@@ -138,14 +136,21 @@ export function uninsuredAt(
   limit: number,
 ): Cash {
   const total = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
-  if (total <= 0) return asCash(0, 'a holder with nothing at this bank');
+  if (total <= 0) return noCash(ccy);
   // 0f.1: the register holds the TOTAL; what is uninsured is the total less what each member has
   // covered, over the members.
   return minus(
-    heldAsMoney(total, 'what it holds'),
-    acrossMembers(
-      asPerMember<'money:piece'>(coveredPerMember(ctx, bank, holder, ccy, limit), 'what one member has covered'),
-      weightOf(ctx.parties.get(holder)),
+    heldAsMoney(total, ccy, 'what it holds'),
+    asCash(
+      acrossMembers(
+        asPerMember<'money:piece'>(
+          coveredPerMember(ctx, bank, holder, ccy, limit),
+          'what one member has covered',
+        ),
+        weightOf(ctx.parties.get(holder)),
+        'what its members have covered',
+      ),
+      ccy,
       'what its members have covered',
     ),
     'uninsured',
@@ -174,7 +179,7 @@ export function couldLeave(
     // 0f.1: `uninsuredAt` is the holder's TOTAL uninsured money; nothing scales it.
     terms.push(uninsuredAt(ctx, bank, holder, ccy, limit));
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'what could leave').value;
 }
 
 /**
@@ -182,11 +187,7 @@ export function couldLeave(
  * rate and the payment simply goes the other way — the depositor pays the bank for holding it —
  * because a money leg has a payer and a payee and the sign says which is which (Money C1).
  */
-export function payDepositInterest(
-  ctx: MechanismContext,
-  bank: PartyId,
-  ccy: CurrencyCode,
-): void {
+export function payDepositInterest(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): void {
   if (ctx.period === 0) return;
   const previous = asPeriod(ctx.period - 1);
   const year = yearFraction(
@@ -220,7 +221,9 @@ export function payDepositInterest(
     // 0f.1: `balance` is the cell's TOTAL, so `wanted` is the total interest: it goes on the grid
     // as money and the leg carries it whole. `shareFor` took a PER-MEMBER number and multiplied it
     // by the weight, which with a total in was interest on the whole cell, once per member.
-    const amount = ctx.registry.payable(heldAsMoney(absolute(wanted, 'what moves, either way'), 'the interest'));
+    const amount = ctx.registry.payable(
+      heldAsMoney(absolute(wanted, 'what moves, either way'), ccy, 'the interest'),
+    );
     if (amount <= 0) continue;
     const share = { total: amount };
     const leg: Leg = {
@@ -253,7 +256,7 @@ export function depositBase(byClass: ReadonlyMap<string, number>): number {
  * leave. A bank with nothing that could leave has no ratio, and says so rather than showing one.
  */
 export function liquidityMetric(liquid: Cash, couldLeave: Cash): Option<Ratio> {
-  return couldLeave <= 0
+  return couldLeave.pieces <= 0
     ? none<Ratio>()
     : some(ratioOf(liquid, couldLeave, 'liquidity metric'));
 }

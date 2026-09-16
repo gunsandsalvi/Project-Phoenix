@@ -131,25 +131,25 @@ function observationsOf(seen: Seen): Cash[] {
     return out;
   }
   const missed = absolute(seen.managementMissedBy.value, 'how far it missed, either way');
-  const size = plus(absolute(g, 'the figure'), absolute(last, 'and what it saw'), 'the size of them');
+  const size = plus(
+    absolute(g, 'the figure'),
+    absolute(last, 'and what it saw'),
+    'the size of them',
+  );
   // How far this bank moves the management's figure towards what it already saw: the size of the
   // last miss against the size of the figures themselves. It is a ratio of two measured magnitudes
   // over their SUM, so it is between nothing and everything by construction and never by a clamp
   // (Law 6). A management that missed by nothing is believed as it stands; one that missed by far
   // more than the figure is worth almost nothing beyond what the bank had already seen.
   const whole = plus(size, missed, 'what the record is weighed against');
-  if (whole <= 0) {
+  if (whole.pieces <= 0) {
     out.push(g);
     return out;
   }
   const believed = ratioOf(size, whole, 'what its record is worth');
   const discounted = ratioOf(missed, whole, 'what its record costs it');
   out.push(
-    plus(
-      scale(g, believed, 'what it believes'),
-      scale(last, discounted, 'what it saw'),
-      'weighed',
-    ),
+    plus(scale(g, believed, 'what it believes'), scale(last, discounted, 'what it saw'), 'weighed'),
   );
   return out;
 }

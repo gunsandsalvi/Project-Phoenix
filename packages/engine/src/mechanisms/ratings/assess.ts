@@ -60,14 +60,20 @@ export function assess(blind: ParticipantView, d: AssessorDecl, ccy: CurrencyCod
   // payment ages out of it, which is what makes a grade a judgement about a party's state NOW
   // rather than a mark that never comes off (§44 A2, A3).
   const window = GRADES.length;
-  const since = asPeriod(atLeast(blind.period - window, 0, 'there is no period before the world began'));
+  const since = asPeriod(
+    atLeast(blind.period - window, 0, 'there is no period before the world began'),
+  );
   const missed = blind.failedPayments(since).length;
   const takesIn = blind.earned(window);
-  if (missed > 0 || takesIn <= 0) {
-    return { strain: atLeast(missed, 0, 'nobody misses fewer payments than none'), missed, grade: WORST };
+  if (missed > 0 || takesIn.pieces <= 0) {
+    return {
+      strain: atLeast(missed, 0, 'nobody misses fewer payments than none'),
+      missed,
+      grade: WORST,
+    };
   }
   const strain = ratioOf(
-    heldAsMoney(blind.owedIn(ccy), 'what falls due'),
+    heldAsMoney(blind.owedIn(ccy), ccy, 'what falls due'),
     takesIn,
     'what falls due against what it takes in',
   );
@@ -79,7 +85,11 @@ export function bandOf(strain: Ratio, d: AssessorDecl): Grade {
   let edge = asRatio(d.firstBoundary, 'where the first band ends');
   for (const grade of GRADES) {
     if (strain < edge) return grade;
-    edge = scale(edge, asRatio(d.boundaryStep, 'how much wider the next band is'), 'the next band is wider');
+    edge = scale(
+      edge,
+      asRatio(d.boundaryStep, 'how much wider the next band is'),
+      'the next band is wider',
+    );
   }
   return WORST;
 }
@@ -98,7 +108,11 @@ export function forInstrument(issuer: Grade, seniority: number, secured: boolean
   const moved = at - (secured ? 1 : 0) + (seniority < 0 ? -seniority : 0);
   // The queue is as long as it is: a step past either end of the scale lands on the end of it,
   // because there is no grade beyond the best and none beyond the worst (Ratings A2).
-  const step = atMost(atLeast(moved, 0, 'there is no grade above the best one'), GRADES.length - 1, 'there is no grade below the worst one');
+  const step = atMost(
+    atLeast(moved, 0, 'there is no grade above the best one'),
+    GRADES.length - 1,
+    'there is no grade below the worst one',
+  );
   return GRADES[step] ?? WORST;
 }
 

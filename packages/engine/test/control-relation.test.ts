@@ -150,12 +150,12 @@ describe('a group consolidates (M&A A4)', () => {
       [issuer, wi],
     ] as const) {
       const sheet = balanceSheet(reads, who);
-      apart.assets += sheet.assets.value * wt;
-      apart.liabilities += sheet.liabilities.value * wt;
+      apart.assets += sheet.assets.value.pieces * wt;
+      apart.liabilities += sheet.liabilities.value.pieces * wt;
     }
     const group = consolidated(reads, [holder, issuer]);
     // The claim between them is out of BOTH sides, so the group is smaller than the sum on each.
-    expect(group.assets.value).toBeLessThan(apart.assets);
+    expect(group.assets.value.pieces).toBeLessThan(apart.assets);
     expect(group.liabilities.value).toBeLessThan(apart.liabilities);
     /**
      * AND THE TWO AMOUNTS ARE NOT THE SAME, which is the whole economics of a consolidation and not
@@ -166,9 +166,9 @@ describe('a group consolidates (M&A A4)', () => {
      * marking a liability to the market, which is the fiction the balance sheet read removed.
      */
     const netApart = apart.assets - apart.liabilities;
-    const netGroup = group.assets.value - group.liabilities.value;
-    const offAssets = apart.assets - group.assets.value;
-    const offLiabilities = apart.liabilities - group.liabilities.value;
+    const netGroup = group.assets.value.pieces - group.liabilities.value.pieces;
+    const offAssets = apart.assets - group.assets.value.pieces;
+    const offLiabilities = apart.liabilities - group.liabilities.value.pieces;
     /**
      * Law 7: the tolerance is what the arithmetic did — the two consolidated sums' own dust, plus
      * one rounding per term over the magnitudes the comparison touches. Never a decimal place and
@@ -188,8 +188,8 @@ describe('a group consolidates (M&A A4)', () => {
     const group = consolidated(reads, [who.id]);
     // XI-15: a group's sheet is in TOTAL and a party's is per member, so a cell scales by its weight.
     const w8 = weightOf(who);
-    expect(group.assets.value).toBeCloseTo(alone.assets.value * w8, 6);
-    expect(group.liabilities.value).toBeCloseTo(alone.liabilities.value * w8, 6);
+    expect(group.assets.value.pieces).toBeCloseTo(alone.assets.value.pieces * w8, 6);
+    expect(group.liabilities.value.pieces).toBeCloseTo(alone.liabilities.value.pieces * w8, 6);
   });
 
   it('refuses a group with nobody in it', () => {

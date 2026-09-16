@@ -48,6 +48,7 @@ import {
 import { currencyUnit } from '../../core/ids.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { atMost, sum, zeroIfNone } from '../../core/num.js';
+import { sumCash } from '../../core/measure.js';
 import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { Missing } from '../../core/errors.js';
@@ -63,7 +64,12 @@ import { period as periodOf } from '../../calendar/calendar.js';
 import { about } from '../../world/context.js';
 import { hasEverMetAPayroll } from '../../registry/wages.js';
 import { costOfMoneyQuotedTo, namesQuotedIn } from '../../registry/banking.js';
-import { ownFundingSince, ownStrikeSince, strikeOf, strikesPublished } from '../../registry/funding.js';
+import {
+  ownFundingSince,
+  ownStrikeSince,
+  strikeOf,
+  strikesPublished,
+} from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
@@ -119,7 +125,7 @@ function worthAt(
   // Reporting A2, A2.a: the last accounts it published. Read through the kernel's one typed read,
   // never rebuilt and never re-parsed here (item 3).
   const said = ctx.published.lastStatement(target);
-  if (said === undefined || said.earned <= 0 || said.periods <= 0) return none<PerPiece>();
+  if (said === undefined || said.earned.pieces <= 0 || said.periods <= 0) return none<PerPiece>();
   // Law 8: the periodicity is part of the number. What it published covers a span of periods; what
   // a required return is quoted in is a year, so the two are put in the same unit by the calendar
   // rather than by a factor typed here.
@@ -129,7 +135,11 @@ function worthAt(
     ctx.calendar.startOf(periodOf(ctx.period + said.periods)),
   );
   if (ofAYear <= 0) return none<PerPiece>();
-  const annual = over(said.earned, asRatio(ofAYear, 'the fraction of a year that was'), 'what it earns a year, as it published it');
+  const annual = over(
+    said.earned,
+    asRatio(ofAYear, 'the fraction of a year that was'),
+    'what it earns a year, as it published it',
+  );
   const whole = over(annual, required.value, 'what that stream is worth at what it requires');
   const shares = ctx.register.heldTotal(line).value;
   if (shares <= 0) return none<PerPiece>();
@@ -187,10 +197,7 @@ export interface Bid {
  * A holder with no view posts nothing. It is not a refusal and not an acceptance — it is a holder
  * with nothing to say, and inventing an answer for it would be inventing a seller (Law 2).
  */
-export function tenders(
-  holder: ParticipantView,
-  line: InstrumentId,
-): readonly Order[] {
+export function tenders(holder: ParticipantView, line: InstrumentId): readonly Order[] {
   const units = downTick(holder.free(line));
   if (units <= 0) return [];
   /**
@@ -260,10 +267,13 @@ function wouldTakeFor(holder: ParticipantView, line: InstrumentId): Option<PerPi
   const held = holder.holdings().find((h) => h.instrument === line);
   if (held === undefined) return none<PerPiece>();
   const units = sum(held.lots.map((l) => l.qty)).value;
-  const cost = sum(
-    held.lots.map((l) => valueAt(l.basisPerUnit, l.qty, 'what it paid for them')),
+  const ccy = holder.instruments.get(line).ccy;
+  const cost = sumCash(
+    ccy,
+    held.lots.map((l) => valueAt(l.basisPerUnit, l.qty, ccy, 'what it paid for them')),
+    'what it paid for them',
   ).value;
-  if (units <= 0 || cost <= 0) return none<PerPiece>();
+  if (units <= 0 || cost.pieces <= 0) return none<PerPiece>();
   return some(pricedAt(cost, units, 'what its own books carry one at'));
 }
 
@@ -295,7 +305,11 @@ export function runProcess(ctx: MechanismContext, target: PartyId, bids: readonl
     ctx.record(
       'control.failed',
       [first.buyer, target],
-      { buyer: String(first.buyer), target: String(target), why: 'no bank had people free to run it' },
+      {
+        buyer: String(first.buyer),
+        target: String(target),
+        why: 'no bank had people free to run it',
+      },
       true,
     );
     return;
@@ -361,7 +375,10 @@ function appointments(ctx: MechanismContext): { ran: Record<string, number> } {
  * seller goes to somebody else or does not sell. That is the constraint the owner asked for: what a
  * bank can run at once is the people it employs, and nothing states a number.
  */
-function appoint(ctx: MechanismContext, ccy: CurrencyCode): { readonly bank: PartyId; readonly fee: Cash } | undefined {
+function appoint(
+  ctx: MechanismContext,
+  ccy: CurrencyCode,
+): { readonly bank: PartyId; readonly fee: Cash } | undefined {
   const ran = appointments(ctx);
   let best: { bank: PartyId; fee: Cash } | undefined;
   for (const q of advisoryQuotesIn(ctx.journal, ctx.period)) {
@@ -420,7 +437,8 @@ export function runTender(
   }
   // B4: EVERY BIDDER, in the one book. A second bidder raises the level the holders are met at
   // whether or not it wins, which is what "the price is contested" means arithmetically.
-  for (const b of bids) ctx.post(venue, { party: b.buyer, side: 'buy', price: b.price, qty: b.needs });
+  for (const b of bids)
+    ctx.post(venue, { party: b.buyer, side: 'buy', price: b.price, qty: b.needs });
   const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) {
     ctx.record(
@@ -477,7 +495,7 @@ function payTheBank(
   // Law 8: a money leg moves a count of the money's own smallest piece, and the fee was struck in
   // those pieces (`costOfAProcess`: hours at what an hour costs). Down, because what it charges is
   // what it can actually be paid in whole pieces.
-  const fee = downTick(ran.fee);
+  const fee = downTick(ran.fee.pieces);
   if (fee <= 0) return;
   const r = ctx.settle({
     legs: [
@@ -533,12 +551,11 @@ function settleTender(
      * What the cut drops is not demand left unmet somewhere: those shares simply stay where they
      * were, and the tender bought fewer of them and says so.
      */
-    const share = gridPerMember(
-      ctx.registry,
-      seller,
-      downTick(f.qty) / weightOf(seller));
+    const share = gridPerMember(ctx.registry, seller, downTick(f.qty) / weightOf(seller));
     const units = share.total;
-    const perMember = ctx.registry.payable(valueAt(price, share.perMember, 'what a member is paid'));
+    const perMember = ctx.registry.payable(
+      valueAt(price, share.perMember, bid.ccy, 'what a member is paid'),
+    );
     const cash = totalOverMembers(seller, perMember);
     if (units <= 0 || cash <= 0) {
       unfilled.push({ holder: String(f.party), wanted: f.qty, filled: NO_QTY });
@@ -908,11 +925,17 @@ export function controlBidsFor(
     const outstanding = ctx.register.heldTotal(i.id).value;
     if (outstanding <= 0) continue;
     // A1: control is more than half of what exists, read off the register rather than declared.
-    const needs = downTick(scale(outstanding, asRatio(1 / 2, 'more than half of what exists'), 'more than half of what exists'));
+    const needs = downTick(
+      scale(
+        outstanding,
+        asRatio(1 / 2, 'more than half of what exists'),
+        'more than half of what exists',
+      ),
+    );
     if (needs <= 0) continue;
     // B2: and it does not bid for what it cannot pay for. A bid it could not honour is not a bid.
-    const would = valueAt(worth.value, needs, 'what control would cost it at its own number');
-    if (would > cash) continue;
+    const would = valueAt(worth.value, needs, ccy, 'what control would cost it at its own number');
+    if (would.pieces > cash) continue;
     out.push({ buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy });
   }
   return out;
@@ -927,8 +950,7 @@ export function control(): SystemModule {
         name: 'control.advisory',
         kind: 'working',
         holds: 'how many sales each bank has been appointed to run this period',
-        why:
-          'a counter within this module’s own phase, so a bank is not appointed to more processes than it has people for (10f.4). It is not a fact about the world — what the world keeps is the `advisory.ran` event each appointment writes — and it does not survive the phase in any sense a reader could use.',
+        why: 'a counter within this module’s own phase, so a bank is not appointed to more processes than it has people for (10f.4). It is not a fact about the world — what the world keeps is the `advisory.ran` event each appointment writes — and it does not survive the phase in any sense a reader could use.',
       },
     ],
     requires: ['equity', 'firms'],
@@ -981,8 +1003,8 @@ export function control(): SystemModule {
 }
 
 /** A1: what control of a line costs at a price — a read for the observer and for a test. */
-export const costOfControl = (outstanding: Qty, price: PerPiece): Cash =>
-  valueAt(price, atMost(outstanding, outstanding, 'all of it'), 'what all of it would cost');
+export const costOfControl = (outstanding: Qty, price: PerPiece, ccy: CurrencyCode): Cash =>
+  valueAt(price, atMost(outstanding, outstanding, 'all of it'), ccy, 'what all of it would cost');
 
 /** B2.a: the premium, as the distance between two numbers rather than a percentage anybody set. */
 export const premiumOver = (paid: PerPiece, printed: PerPiece): PerPiece =>

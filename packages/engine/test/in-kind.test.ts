@@ -173,7 +173,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
     let held = 0;
     for (const h of w.register.holdingsOf(FUND)) {
       if (h.instrument === SHARE) continue;
-      held += w.valuation.valueAtMark(h.instrument, w.register.quantity(FUND, h.instrument), w.period);
+      held += w.valuation.valueAtMark(h.instrument, w.register.quantity(FUND, h.instrument), w.period).pieces;
     }
     expect(nav * issued).toBeCloseTo(held, 6);
   });

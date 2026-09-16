@@ -94,6 +94,7 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
         return p.some && p.value.period === at ? some(p.value.price) : none<PerPiece>();
       },
       rate: (from, to, at): Ratio => view.valuation.rateInForce(from, to, at),
+      inMoney: (value, to, at) => view.valuation.inMoney(value, to, at),
     },
     price: (instrument, at): Option<PerPiece> => {
       const p = view.prices.latest(instrument, at);

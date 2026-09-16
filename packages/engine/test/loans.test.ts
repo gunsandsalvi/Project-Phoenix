@@ -62,7 +62,7 @@ function asksFor(amount: number, at = 1): SystemModule {
           // Item 0e: a borrower publishes what it is short of through the one door every borrower
           // uses. It wrote `firms.funding` directly, which is the coupling that item removed — a
           // bank read two other modules' event names and a third borrower had to join that list.
-          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, 'what it is short of'), repays: 'atOption' });
+          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, USD, 'what it is short of'), repays: 'atOption' });
         },
       },
     ],
@@ -98,7 +98,7 @@ function asksSecured(amount: number, at = 1): SystemModule {
           if (pledge === undefined) throw new Error('the rig gave the borrower nothing to pledge');
           ctx.request(BORROWER, {
             ccy: USD,
-            short: asCash(amount, 'what it is short of'),
+            short: asCash(amount, USD, 'what it is short of'),
             security: [{ instrument: pledge.instrument, qty: ctx.register.quantity(BORROWER, pledge.instrument) }],
             repays: 'onSchedule',
           });
@@ -154,8 +154,8 @@ function overspendsItsLimit(at = 2): SystemModule {
             // bank ALLOWS, so it asks for one small enough that the other two are not the binding
             // constraint.
             amount: ctx.registry.payable(plus(
-                heldAsMoney(held, 'what it holds'),
-                asCash(limit / 100, 'a little over it'),
+                heldAsMoney(held, USD, 'what it holds'),
+                asCash(limit / 100, USD, 'a little over it'),
                 'a touch more than it holds',
               ),
             ),
@@ -278,7 +278,7 @@ describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
     expect(loanKind.carry).toBe('cost');
     expect(loanKind.liabilityOfIssuer).toBe(true);
     // N13.a: the ranking is stated. Unsecured here, and that is an answer rather than a gap.
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     for (let i = 0; i < 4; i += 1) w.step();
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -291,7 +291,7 @@ describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
 
 describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
   it('creates a deposit, and no reserve leaves the bank', () => {
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     // Period 1 is where it says what it is short of; period 2 is where the credit is arranged.
     w.step();
     const before = w.cash(BORROWER, USD);
@@ -317,7 +317,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
   });
 
   it('is a row with a lender of record holding every unit of it (F1, F1.a)', () => {
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -333,7 +333,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
 
 describe('the price (Banks Lending C1, C2, XI-4)', () => {
   it('is four named terms, and two banks do not quote the same', () => {
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     for (let i = 0; i < 3; i += 1) w.step();
     const written = w.journal.ofKind('credit.written')[0];
     const rate = Number(written?.data['rate']);
@@ -370,11 +370,11 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
   });
 
   it('gets dearer for a borrower its bank has watched get into difficulty (C1.b, C4)', () => {
-    const clean = world([asksFor(phx(10_000), 6)]);
+    const clean = world([asksFor(phx(10_000).pieces, 6)]);
     for (let i = 0; i < 8; i += 1) clean.step();
     // The same request from a borrower that overdrew its account four periods earlier, and whose
     // bank has carried the loan it wrote for that overdraft ever since.
-    const marked = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
+    const marked = world([overspends(2, 2), asksFor(phx(10_000).pieces, 6)]);
     for (let i = 0; i < 8; i += 1) marked.step();
     /**
      * THE SAME REQUEST, which is the whole of the comparison and what this used to get wrong.
@@ -439,7 +439,7 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
   it('carries the loan at what its lender expects to recover, and the charge is visible', () => {
     // The same borrower, seen to fail, then borrowing: the bank prices it dearer AND carries it
     // lower, off the one model (C4) — two beliefs would mean the price and the provision disagree.
-    const w = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
+    const w = world([overspends(2, 2), asksFor(phx(10_000).pieces, 6)]);
     for (let i = 0; i < 9; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -466,8 +466,8 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
 
 describe('repaying it (Bond F3, Banks Lending F2, Small-Business Pools B1, 11.2)', () => {
   it('a term loan repays a slice of its principal every period, and a line falls due once', () => {
-    const term = world([asksSecured(phx(20_000))]);
-    const line = world([asksFor(phx(20_000))]);
+    const term = world([asksSecured(phx(20_000).pieces)]);
+    const line = world([asksFor(phx(20_000).pieces)]);
     for (const w of [term, line]) {
       w.step();
       w.step();
@@ -511,7 +511,7 @@ describe('repaying it (Bond F3, Banks Lending F2, Small-Business Pools B1, 11.2)
 describe('when it says no (Banks Lending B2, C3, C3.a, F3)', () => {
   it('declines when its limit for one name binds, and the decline is recorded', () => {
     // F3: a large-exposure limit that binds is what makes concentration a thing it manages.
-    const w = world([asksFor(phx(20_000))], 0);
+    const w = world([asksFor(phx(20_000).pieces)], 0);
     for (let i = 0; i < 4; i += 1) w.step();
     expect(w.journal.ofKind('credit.written')).toHaveLength(0);
     const declined = w.journal.ofKind('credit.declined');
@@ -555,9 +555,9 @@ describe('an overdrawn customer (Money B3.a, B3.c)', () => {
 
 describe('carrying it (Banks Lending D3, E1)', () => {
   it('accrues interest that is paid to the lender, period by period', () => {
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     for (let i = 0; i < 4; i += 1) w.step();
-    const lenderBefore = w.register.equity(BANK_OF_A);
+    const lenderBefore = w.register.equity(BANK_OF_A).pieces;
     const borrowerBefore = w.cash(BORROWER, USD);
     const from = w.period;
     w.step();
@@ -579,11 +579,11 @@ describe('carrying it (Banks Lending D3, E1)', () => {
       .filter((e) => /coupon/i.test(e.cause) && e.delta > 0);
     expect(got.length, 'the lender was not paid on its loan at all').toBeGreaterThan(0);
     expect(borrowerBefore).toBeGreaterThan(0);
-    expect(lenderBefore).not.toBe(w.register.equity(BANK_OF_A));
+    expect(lenderBefore).not.toBe(w.register.equity(BANK_OF_A).pieces);
   });
 
   it('is a default when the borrower does not pay it (E1, E2)', () => {
-    const w = world([asksFor(phx(20_000))]);
+    const w = world([asksFor(phx(20_000).pieces)]);
     for (let i = 0; i < 3; i += 1) w.step();
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();

@@ -19,8 +19,19 @@
  * The book value is not a price and never becomes one (B3): it is the firm's own reservation, which
  * is what a participant brings to a market (Clearing B2). The market can refuse it (D1.c).
  */
+import type { CurrencyCode } from '../../core/ids.js';
 import type { Period } from '../../calendar/calendar.js';
-import { amountOf, asPerPiece, asRatio, negated, over, pricedAt, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
+import {
+  amountOf,
+  asPerPiece,
+  asRatio,
+  negated,
+  over,
+  pricedAt,
+  type Cash,
+  type PerPiece,
+  valueAt,
+} from '../../core/measure.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { material } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -104,7 +115,7 @@ export function decideEquity(
     issue: NO_QTY,
     reservation: book,
   };
-  if (spare < 0) {
+  if (spare.pieces < 0) {
     // E4, D1, D1.b: a funding need it prefers to meet with equity — and it prefers to when the
     // market will pay more for a share than the book says one is worth, because what it gives up
     // then is worth less than what it takes in. Short and cheap, it does not sell: it would be
@@ -118,8 +129,12 @@ export function decideEquity(
     if (size <= 0 || !material(size, 2, size)) return none();
     return some({ ...plan, issue: size });
   }
-  const payout = over(spare, asRatio(patience, 'how patient it is'), 'what it distributes this period');
-  if (!material(payout, 2, spare)) return none();
+  const payout = over(
+    spare,
+    asRatio(patience, 'how patient it is'),
+    'what it distributes this period',
+  );
+  if (!material(payout.pieces, 2, spare.pieces)) return none();
   // §29 C5, C5.a: A LINE WITH NO MARKET CANNOT BE BOUGHT BACK. `dear` is already false for it —
   // there is no print to be above the book — so without this it would bid for its own shares in a
   // book that does not meet. A private company distributes to its owners and that is the only thing
@@ -142,17 +157,13 @@ export function decideEquity(
  * the only reason a firm is in this book at all — an issuer selling is a PRIMARY offer (D1) and
  * goes through the issuer's own supply, not through an order beside its buyers.
  */
-export function buybackOrder(
-  self: PartyId,
-  shares: Qty,
-  reservation: number,
-): readonly Order[] {
+export function buybackOrder(self: PartyId, shares: Qty, reservation: number): readonly Order[] {
   // Law 8: it was decided in whole shares (`decideEquity`), which is the one place that decides it.
   if (shares <= 0 || reservation <= 0) return [];
   return [{ party: self, side: 'buy', price: reservation, qty: shares }];
 }
 
 /** D3.a: what one holder is owed of a declared dividend, per member of it (XI-15). */
-export function dividendFor(perShare: PerPiece, perMemberUnits: Qty): Cash {
-  return valueAt(perShare, perMemberUnits, 'the dividend on what it holds');
+export function dividendFor(perShare: PerPiece, perMemberUnits: Qty, ccy: CurrencyCode): Cash {
+  return valueAt(perShare, perMemberUnits, ccy, 'the dividend on what it holds');
 }

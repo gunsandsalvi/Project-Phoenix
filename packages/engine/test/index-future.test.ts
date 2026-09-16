@@ -64,7 +64,7 @@ describe('the contract (C3, D3, D3.a)', () => {
       ccy: m.ccy,
       notional: asQty(10, 'the notional'),
       struckAt: struckAs('money', 100),
-      basis: asCash(0, 'what it cost'),
+      basis: asCash(0, m.ccy, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
@@ -72,7 +72,7 @@ describe('the contract (C3, D3, D3.a)', () => {
     } as Contract;
     const reads = w.contractReads(w.period);
     expect(
-      indexFutureKind.mark(c, w.period, reads) + indexFutureKind.mark(mirrored(c, indexFutureKind), w.period, reads),
+      indexFutureKind.mark(c, w.period, reads).pieces + indexFutureKind.mark(mirrored(c, indexFutureKind), w.period, reads).pieces,
     ).toBe(0);
   });
 

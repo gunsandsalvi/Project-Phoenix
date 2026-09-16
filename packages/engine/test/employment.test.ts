@@ -4,6 +4,7 @@
  *
  * @spec Labour A4 Labour A4.a Labour B3 Labour C1 Labour F1 Labour F2 Law 4 Law 19
  */
+import { USD } from '../src/seeds/foundation.js';
 import { describe, expect, it } from 'vitest';
 import { BANK, EMPLOYMENT, employmentOf, type ParticipantView } from '../src/index.js';
 import { staffOrders, staffVenue } from '../src/mechanisms/banks/staff.js';
@@ -36,7 +37,7 @@ describe('one register answers who works where (12b.1, 12b.2a)', () => {
     // F1, E1: an employer's payroll is its rows and nothing else.
     for (const employer of new Set(all.map((r) => r.employer))) {
       const rows = w.employment.by(employer);
-      const p = w.employment.payrollOf(employer, w.period);
+      const p = w.employment.payrollOf(employer, w.period, USD);
       expect(p.headcount).toBe(rows.reduce((t, r) => t + r.headcount, 0));
       expect(p.hours).toBe(rows.reduce((t, r) => t + r.hoursPerMember * r.headcount, 0));
       expect(w.participantView(employer).employs().map((r) => r.id).sort()).toEqual(rows.map((r) => r.id).sort());

@@ -18,6 +18,7 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
+import { atLeastCash, atMostCash, noCash, sumCash } from '../../core/measure.js';
 import {
   asCash,
   asPerPiece,
@@ -45,7 +46,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId, partyId } from '../../core/ids.js';
 import { weightOf, gridPerMember } from '../../parties/party.js';
-import { atLeast, atMost, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { dustOf, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -54,13 +55,7 @@ import { BANK, FUND } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
-import {
-  bankParam,
-  lineParam,
-  DEALING,
-  TRADING_BOOK_RISK_WEIGHT,
-  type BankDecl,
-} from './data.js';
+import { bankParam, lineParam, DEALING, TRADING_BOOK_RISK_WEIGHT, type BankDecl } from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
 import { arbitrage, dealingOrders, deskBorrows, publishDealing } from './dealing.js';
 import {
@@ -108,7 +103,14 @@ export * from './subordinated.js';
 export * from './treasury.js';
 export * from './dealing.js';
 export * from './dealing-quote.js';
-export { quote, holderReservation, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
+export {
+  quote,
+  holderReservation,
+  room,
+  probabilityOfDefault,
+  lossGivenDefault,
+  exposureTo,
+} from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
 export const LENDING_PARAMS = {
@@ -254,12 +256,12 @@ function subscribes(
   if (!worth.some || worth.value <= 0) return [];
   const appetite = roomFor(view, LENDING);
   if (!appetite.some) return [];
-  const spare = atMost(
+  const spare = atMostCash(
     appetite.value,
-    heldAsMoney(view.cash(m.ccy), 'the money it holds'),
+    heldAsMoney(view.cash(m.ccy), m.ccy, 'the money it holds'),
     'it subscribes out of the money it has',
   );
-  if (spare <= 0) return [];
+  if (spare.pieces <= 0) return [];
   const qty = downTick(amountOf(spare, worth.value, 'units it bids for'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: worth.value, qty }];
@@ -358,7 +360,9 @@ export interface FundingCost {
 
 function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): FundingCost {
   const owed = owedBy(ctx, bank, ccy);
-  const capital = ctx.participant(bank).equity();
+  // Currency B1, C4 (16.0): its residual is kept in its home money; what funds a book in another
+  // money is that residual TRANSLATED at the rate in force — a report, never a conversion (B3).
+  const capital = ctx.valuation.inMoney(ctx.participant(bank).equity(), ccy, ctx.period);
   /**
    * Banks Capital A1, XI-4: A HOLE IS NOT A SOURCE OF FUNDS.
    *
@@ -375,9 +379,9 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
    * the site: `[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices`
    * (`13b-12`). The crossing was arithmetic that had lost its meaning, not a decision anybody took.
    */
-  const funded = atLeast(
+  const funded = atLeastCash(
     capital,
-    asCash(0, 'a hole funds nothing'),
+    noCash(ccy),
     'a hole funds nothing: there is no less capital than none',
   );
   const funding = plus(owed, funded, 'what funds its book');
@@ -385,9 +389,11 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   const onCapital = scale(funded, required, 'what its own capital costs it');
   const blend = (interest: Cash): FundingCost => ({
     perAnnum:
-      funding <= 0
+      funding.pieces <= 0
         ? none<Ratio>()
-        : some(ratioOf(plus(interest, onCapital, 'what its funding costs it'), funding, 'per annum')),
+        : some(
+            ratioOf(plus(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
+          ),
     interest,
     onCapital,
     owed,
@@ -395,7 +401,7 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   });
   const unknown = (why: string): FundingCost => ({
     perAnnum: none<Ratio>(),
-    interest: asCash(0, why),
+    interest: asCash(0, ccy, why),
     onCapital,
     owed,
     capital,
@@ -403,8 +409,9 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   // A-45: three states, and none of them is "money is free". A bank funded by nothing has no blend
   // to strike; the opening period has nothing paid to strike it from; a period of no length has no
   // year to annualise over. Each says so, and a reader that cannot go on without one stops.
-  if (funding <= 0) return unknown('a bank funded by nothing has no cost of funds');
-  if (ctx.period === 0) return unknown('nothing has been paid yet, so nothing says what funds cost');
+  if (funding.pieces <= 0) return unknown('a bank funded by nothing has no cost of funds');
+  if (ctx.period === 0)
+    return unknown('nothing has been paid yet, so nothing says what funds cost');
   const previous = period(ctx.period - 1);
   // Law 8: a rate is per annum, so what it paid over this period is divided by the fraction of a
   // year the period actually was — read off the calendar's own dates, never a periods-per-year.
@@ -463,8 +470,8 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): C
         held.byBank.set(
           key,
           before === undefined
-            ? asCash(leg.amount, 'a coupon it paid')
-            : plus(before, asCash(leg.amount, 'a coupon it paid'), 'coupons it paid'),
+            ? asCash(leg.amount, leg.ccy, 'a coupon it paid')
+            : plus(before, asCash(leg.amount, leg.ccy, 'a coupon it paid'), 'coupons it paid'),
         );
       }
     }
@@ -473,7 +480,8 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): C
   // A bank that paid no coupon in that period paid nothing, and nothing is a number: the walk
   // above visited every settled instruction of it, so an absence here is an answer and not a gap.
   // `zeroIfNone` is the one place that says so, and it says it for quantities only (Appendix A).
-  return zeroIfNone(held.byBank.get(`${bank}\u0000${ccy}`));
+  const paid = held.byBank.get(`${bank}\u0000${ccy}`);
+  return paid ?? noCash(ccy);
 }
 
 /**
@@ -490,9 +498,9 @@ function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Cash {
     if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
     // Money A1: what a bank owes is owed AT ITS FACE, so what it has issued of a liability is what
     // it owes — one of itself for each unit (item 16: the door, said once).
-    terms.push(asCash(i.issued, `what ${bank} owes on ${i.id}`));
+    terms.push(asCash(i.issued, i.ccy, `what ${bank} owes on ${i.id}`));
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, `what ${bank} owes`).value;
 }
 
 /**
@@ -528,7 +536,7 @@ function shop(
     // which of its OWN constraints stopped it (B2.d) — and it is asked here, where there is a
     // request with an amount on it, because what C3.a makes visible is declined VOLUME.
     refuse(rows, ctx, borrower, want);
-    return { best: undefined, lend: asCash(0, 'nobody would quote this name') };
+    return { best: undefined, lend: noCash(want.ccy) };
   }
   const decl = declOf(rows, quoted.bank);
   const bank = ctx.parties.get(quoted.bank);
@@ -536,19 +544,25 @@ function shop(
     ctx.record(
       'credit.declined',
       [quoted.bank, borrower],
-      { bank: quoted.bank, borrower, asked: want, binds: 'the bank that quoted it has gone' },
+      {
+        bank: quoted.bank,
+        borrower,
+        asked: want.pieces,
+        ccy: want.ccy,
+        binds: 'the bank that quoted it has gone',
+      },
       false,
     );
-    return { best: undefined, lend: asCash(0, 'the bank that quoted it has gone') };
+    return { best: undefined, lend: noCash(want.ccy) };
   }
   const r = room(ctx.participant(quoted.bank), decl, borrower);
-  if (r.most <= 0) {
+  if (r.most.pieces <= 0) {
     refuse(rows, ctx, borrower, want);
-    return { best: undefined, lend: asCash(0, 'it has no room for this name') };
+    return { best: undefined, lend: noCash(want.ccy) };
   }
   return {
     best: quoted,
-    lend: atMost(r.most, want, 'nobody lends more than the borrower asked for'),
+    lend: atMostCash(r.most, want, 'nobody lends more than the borrower asked for'),
   };
 }
 
@@ -566,24 +580,24 @@ function refuse(
     const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive || b.id === borrower) continue;
     const r = room(ctx.participant(b.id), decl, borrower);
-    if (r.most > 0) continue;
+    if (r.most.pieces > 0) continue;
     ctx.record(
       'credit.declined',
       [b.id, borrower],
       {
         bank: b.id,
         borrower,
-        asked: want,
+        asked: want.pieces,
         binds: r.binds,
-        capitalRoom: r.capital.some ? r.capital.value : null,
-        appetiteRoom: r.appetite,
-        fundingRoom: r.funding.some ? r.funding.value : null,
+        capitalRoom: r.capital.some ? r.capital.value.pieces : null,
+        appetiteRoom: r.appetite.pieces,
+        fundingRoom: r.funding.some ? r.funding.value.pieces : null,
+        ccy: want.ccy,
       },
       false,
     );
   }
 }
-
 
 /**
  * Prime Brokerage B1, B3, C3 (item 13.3): the three things the broker's period is allowed to do with
@@ -620,18 +634,22 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
      */
     repay: (ctx, broker, client, amount, ccy): Cash => {
       const line = lineOf(ctx, broker, client);
-      if (line === undefined) return asCash(0, 'there is no row to repay');
+      if (line === undefined) return noCash(ccy);
       const owed = ctx.register.quantity(broker, line.id);
       const account = ctx.accountOf(client, ccy);
       const cash = ctx.register.quantity(client, moneyInstrumentId(account.issuer, ccy));
       const paying = ctx.registry.payable(
-        atMost(
-          atMost(amount, heldAsMoney(owed, 'what it owes on the row'), 'it cannot repay more than it owes'),
-          heldAsMoney(cash, 'what is in its account'),
+        atMostCash(
+          atMostCash(
+            amount,
+            heldAsMoney(owed, ccy, 'what it owes on the row'),
+            'it cannot repay more than it owes',
+          ),
+          heldAsMoney(cash, ccy, 'what is in its account'),
           'it cannot pay money it has not got',
         ),
       );
-      if (paying <= 0) return asCash(0, 'it had nothing to pay with');
+      if (paying <= 0) return noCash(ccy);
       const r = ctx.settle({
         legs: [
           {
@@ -654,9 +672,7 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
         cause: 'maturity',
         reason: `${client} meets a margin call from ${broker}`,
       });
-      return r.outcome === 'settled'
-        ? heldAsMoney(paying, 'what it paid')
-        : asCash(0, 'the payment was refused');
+      return r.outcome === 'settled' ? heldAsMoney(paying, ccy, 'what it paid') : noCash(ccy);
     },
   };
 }
@@ -731,7 +747,8 @@ function write(
   const share = gridPerMember(
     ctx.registry,
     who,
-    over(wanted, asRatio(members, 'the members it has'), 'per member'));
+    over(wanted, asRatio(members, 'the members it has'), 'per member').pieces,
+  );
   const principal = share.total;
   if (principal <= 0) return undefined;
   const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
@@ -786,7 +803,11 @@ function write(
       amount: principal,
     },
   ];
-  const r = ctx.settle({ legs, cause: 'issuance', reason: `${bank} lends ${principal} to ${borrower}` });
+  const r = ctx.settle({
+    legs,
+    cause: 'issuance',
+    reason: `${bank} lends ${principal} to ${borrower}`,
+  });
   if (r.outcome !== 'settled') return undefined;
   ctx.record(
     'credit.written',
@@ -860,7 +881,12 @@ function draw(
     reason: `${borrower} draws ${amount} on its line at ${lender}`,
   });
   if (r.outcome !== 'settled') return undefined;
-  ctx.record('credit.draw', [lender, borrower, line.id], { bank: lender, borrower, loan: line.id, amount }, false);
+  ctx.record(
+    'credit.draw',
+    [lender, borrower, line.id],
+    { bank: lender, borrower, loan: line.id, amount },
+    false,
+  );
   return line.id;
 }
 
@@ -870,7 +896,11 @@ function draw(
  * a DRAWING, which becomes a row before the period closes. A bank with no room refuses, and the
  * payment fails: that is the refusal B3.c requires and it is recorded by settlement.
  */
-function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: OverdraftContext): OverdraftDecision {
+function overdraft(
+  rows: readonly BankDecl[],
+  ctx: MechanismContext,
+  o: OverdraftContext,
+): OverdraftDecision {
   const decl = declOf(rows, o.issuer);
   if (decl === undefined) return { allow: false };
   const view = ctx.participant(o.issuer);
@@ -889,7 +919,7 @@ function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: Overdraf
    * refuses it, which is an answer (C3.a) and leaves the payment to fail as B3.c says it should.
    */
   const priced = costOfFunds(ctx, o.issuer, o.ccy).perAnnum.some;
-  if (!borrows || !priced || r.most < o.shortfall) {
+  if (!borrows || !priced || r.most.pieces < o.shortfall) {
     ctx.record(
       'credit.declined',
       [o.issuer, o.holder],
@@ -912,7 +942,7 @@ function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: Overdraf
     holder: o.holder,
     issuer: o.issuer,
     ccy: o.ccy,
-    amount: asCash(o.shortfall, 'what it is overdrawn by'),
+    amount: asCash(o.shortfall, o.ccy, 'what it is overdrawn by'),
   });
   return { allow: true };
 }
@@ -986,8 +1016,7 @@ function bookMoves(): Family {
         // and what the lender holds is a sum over the lots those drawings made. The comparison is
         // entitled to both walks and to nothing else.
         const lots = holding.some ? holding.value.lots.length : 0;
-        const dust =
-          i.issuedDust + dustOf(lots + 2, Math.abs(i.issued) + Math.abs(held));
+        const dust = i.issuedDust + dustOf(lots + 2, Math.abs(i.issued) + Math.abs(held));
         // F1.a: WHOEVER IS OWED IT holds every unit of it. The check used to name the originator
         // and say a sold loan was 13f's problem; a sold loan is now an ordinary thing (XI-11), and
         // what the clause actually says — the outstanding and the holding are one number — is true
@@ -1044,6 +1073,7 @@ function tradingBookIsCapitalised(): Family {
           .filter((x) => x.period === view.period && x.subjects.includes(self));
         const lines = said[said.length - 1]?.data['lines'];
         if (typeof lines !== 'object' || lines === null) continue;
+        const bookCcy = view.registry.currencyOf(view.parties.get(self).region);
         const terms: Cash[] = [];
         for (const [id, row] of Object.entries(lines as Record<string, unknown>)) {
           if (typeof row !== 'object' || row === null) continue;
@@ -1053,8 +1083,8 @@ function tradingBookIsCapitalised(): Family {
           terms.push(
             scale(
               minus(
-                asCash(value, `what ${id} is worth`),
-                asCash(want, `what ${id} targets`),
+                asCash(value, bookCcy, `what ${id} is worth`),
+                asCash(want, bookCcy, `what ${id} targets`),
                 `${id} above its target`,
               ),
               asRatio(weight, 'what this kind weighs'),
@@ -1062,7 +1092,7 @@ function tradingBookIsCapitalised(): Family {
             ),
           );
         }
-        const asked = sum(terms);
+        const asked = sumCash(bookCcy, terms, 'what its dealing book weighs');
         // Law 7: both sides are walks over the same holdings at the same marks, so what separates
         // them is the dust of the two walks. THE OTHER SIDE'S IS THE OTHER SIDE'S: `rwa` is the
         // bank's weighting of its WHOLE book, a sum over far more terms than this check can see, so
@@ -1077,16 +1107,16 @@ function tradingBookIsCapitalised(): Family {
         const dust =
           asked.dust +
           dustOf(theirTerms, theirMagnitude) +
-          dustOf(2, Math.abs(rwa) + Math.abs(asked.value));
-        if (rwa + dust >= asked.value) continue;
+          dustOf(2, Math.abs(rwa) + Math.abs(asked.value.pieces));
+        if (rwa + dust >= asked.value.pieces) continue;
         out.push({
           family: 'accounts',
           spec: 'Dealer Desks F2',
           owner: bank,
-          size: minus(asked.value, asCash(rwa, 'what it published'), 'weighted assets its dealing book asked for and did not get'),
+          size: asked.value.pieces - rwa,
           unit: currencyUnit(view.registry.currencyOf(view.parties.get(self).region)),
           period: view.period,
-          message: `${bank}: its dealing book weighs ${asked.value} and it published ${rwa} of risk-weighted assets in total`,
+          message: `${bank}: its dealing book weighs ${asked.value.pieces} and it published ${rwa} of risk-weighted assets in total`,
         });
       }
       return out;
@@ -1112,501 +1142,500 @@ export type MakersOf = (instrument: InstrumentId) => readonly string[] | undefin
 
 export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemModule {
   return {
-  id: 'banks',
-  nouns: [
-    {
-      name: ALLOTTED,
-      kind: 'working',
-      holds: 'what each of a bank\u2019s lending lines was allotted this period, and the period it was allotted in',
-      why:
-        'it is how this module gets from its allotment phase to the line that spends the room, and nothing outside it has an opinion about a room nobody has lent out of yet (0e\u2032.4). It was the bank\u2019s own `bank.lines` event read back by its writer in the same period, with every line walking the whole row list out of `unknown[]` to find itself. The event stays as the record of the allotment.',
-    },
-    {
-      name: KEPT_BACK,
-      kind: 'working',
-      holds: 'what each bank reckoned it keeps back against a bad week, and the period it reckoned it in',
-      why:
-        'it is how this module gets from its buffer phase to its own treasury\u2019s reading of where it stands, within one period (0e\u2032.4). What the WORLD prices against is the published `bank.buffer`, which is still written and still read across modules through `registry/banking.ts`; this is the same number the same bank reads about itself in the period it reckoned it.',
-    },
-    {
-      name: 'book',
-      kind: 'working',
-      holds:
-        'what the kernel allowed as a customer drawing this period, waiting to become a loan row',
-      why:
-        'the same interval as the money market’s: the kernel has said yes, the row does not exist yet, and by the end of the period it does (Money B3.a).',
-    },
-    {
-      name: 'banks.couponsPaid',
-      kind: 'working',
-      holds:
-        'which period this walk covers and what each bank paid in it, so the walk is taken once',
-      why:
-        'a within-period memo of a walk over the settled ledger, so a read made once per bank does not re-walk the period per bank (Law 18). The ledger is the source and this is not a second copy of it.',
-    },
-  ],
-  spec: 'Banks Lending',
-  // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
-  // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
-  // not it has firms, and a bank's answer to Money B3.a exists as soon as there is a bank.
-  requires: [],
-  instrumentKinds: [loanKind, subordinatedKind],
-  // Prime Brokerage A1 (item 13.3): a named bank and a named client, with a contract that can be
-  // ended. It is the ninth kind of commitment in this world and the first between a bank and a pool.
-  agreementKinds: [
-    {
-      id: PRIME,
-      // A1, XI-8: an acquirer that bought the book took the clients with it, which is what buying
-      // a book is. An estate finances nobody (Banks Lending A1) and the relationship ends.
-      binds: 'aGoingConcern',
-      what: 'a bank holds a client\u2019s book, decides what it requires against it, and finances the rest',
-    },
-  ],
-  partyKinds: [],
-  curveFamilies: [],
-  units: [],
-  params: [
-    {
-      id: LENDING_PARAMS.loanMonths,
-      value: 12,
-      unit: 'months',
-      dimension: 'months',
-      kind: 'technology',
-      owner: 'standardSetter',
-      why: 'Banks Lending A2: how long a loan runs for. A convention of the market rather than a choice this world takes each time — a year is what a commercial facility is written for — and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It is not a forecast of how long the borrower needs the money; what it needs is what it asked for.',
-    },
-    {
-      id: LENDING_PARAMS.capitalRatio,
-      value: 0.08,
-      unit: 'ratio of risk-weighted assets',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Banks Lending B2.a: the capital a bank must hold against what it lends. It is a rule somebody wrote, not a fact about the world, and it is the number a downturn makes bind.',
-    },
-    {
-      id: LENDING_PARAMS.riskWeight,
-      value: 1,
-      unit: 'ratio',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Banks Lending B2.a: how much of the requirement a unit of unsecured lending consumes. One, because an unsecured loan to a firm is the thing the requirement was written about; a weight per security arrives when there is security to weigh (worklist 13d).',
-    },
-    {
-      id: LENDING_PARAMS.sovereignWeight,
-      value: 0,
-      unit: 'ratio',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
-    },
-    {
-      id: TRADING_BOOK_RISK_WEIGHT,
-      value: 1,
-      unit: 'ratio of the position',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Dealer Desks D2: how much of a bank capital requirement a unit of a trading position consumes. It is a rule somebody wrote, not a fact about the world, and it is the number that makes carrying inventory cost capital as well as cash. One, because a position taken with a view is the thing the requirement was written about; a weight per kind of position arrives with the derivative layer (worklist 13a).',
-    },
-    {
-      id: P_COVERAGE,
-      value: 1,
-      unit: 'ratio of what could leave',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
-    },
-    ...rows.flatMap((r): ParamDecl[] => [
-      // Law 15: ONE DECLARATION PER LINE THIS BANK RUNS, walked rather than named. A world with a
-      // third line of business registers a third row here without this loop being touched.
-      ...Object.entries(r.appetite).map((entry): ParamDecl => {
-        const [line, share] = entry;
-        return {
-          id: lineParam(r.bank, line, 'capitalAtRisk'),
-          value: share,
-          unit: 'ratio of its own capital',
+    id: 'banks',
+    nouns: [
+      {
+        name: ALLOTTED,
+        kind: 'working',
+        holds:
+          'what each of a bank\u2019s lending lines was allotted this period, and the period it was allotted in',
+        why: 'it is how this module gets from its allotment phase to the line that spends the room, and nothing outside it has an opinion about a room nobody has lent out of yet (0e\u2032.4). It was the bank\u2019s own `bank.lines` event read back by its writer in the same period, with every line walking the whole row list out of `unknown[]` to find itself. The event stays as the record of the allotment.',
+      },
+      {
+        name: KEPT_BACK,
+        kind: 'working',
+        holds:
+          'what each bank reckoned it keeps back against a bad week, and the period it reckoned it in',
+        why: 'it is how this module gets from its buffer phase to its own treasury\u2019s reading of where it stands, within one period (0e\u2032.4). What the WORLD prices against is the published `bank.buffer`, which is still written and still read across modules through `registry/banking.ts`; this is the same number the same bank reads about itself in the period it reckoned it.',
+      },
+      {
+        name: 'book',
+        kind: 'working',
+        holds:
+          'what the kernel allowed as a customer drawing this period, waiting to become a loan row',
+        why: 'the same interval as the money market’s: the kernel has said yes, the row does not exist yet, and by the end of the period it does (Money B3.a).',
+      },
+      {
+        name: 'banks.couponsPaid',
+        kind: 'working',
+        holds:
+          'which period this walk covers and what each bank paid in it, so the walk is taken once',
+        why: 'a within-period memo of a walk over the settled ledger, so a read made once per bank does not re-walk the period per bank (Law 18). The ledger is the source and this is not a second copy of it.',
+      },
+    ],
+    spec: 'Banks Lending',
+    // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
+    // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
+    // not it has firms, and a bank's answer to Money B3.a exists as soon as there is a bank.
+    requires: [],
+    instrumentKinds: [loanKind, subordinatedKind],
+    // Prime Brokerage A1 (item 13.3): a named bank and a named client, with a contract that can be
+    // ended. It is the ninth kind of commitment in this world and the first between a bank and a pool.
+    agreementKinds: [
+      {
+        id: PRIME,
+        // A1, XI-8: an acquirer that bought the book took the clients with it, which is what buying
+        // a book is. An estate finances nobody (Banks Lending A1) and the relationship ends.
+        binds: 'aGoingConcern',
+        what: 'a bank holds a client\u2019s book, decides what it requires against it, and finances the rest',
+      },
+    ],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [
+      {
+        id: LENDING_PARAMS.loanMonths,
+        value: 12,
+        unit: 'months',
+        dimension: 'months',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: 'Banks Lending A2: how long a loan runs for. A convention of the market rather than a choice this world takes each time — a year is what a commercial facility is written for — and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It is not a forecast of how long the borrower needs the money; what it needs is what it asked for.',
+      },
+      {
+        id: LENDING_PARAMS.capitalRatio,
+        value: 0.08,
+        unit: 'ratio of risk-weighted assets',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Banks Lending B2.a: the capital a bank must hold against what it lends. It is a rule somebody wrote, not a fact about the world, and it is the number a downturn makes bind.',
+      },
+      {
+        id: LENDING_PARAMS.riskWeight,
+        value: 1,
+        unit: 'ratio',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Banks Lending B2.a: how much of the requirement a unit of unsecured lending consumes. One, because an unsecured loan to a firm is the thing the requirement was written about; a weight per security arrives when there is security to weigh (worklist 13d).',
+      },
+      {
+        id: LENDING_PARAMS.sovereignWeight,
+        value: 0,
+        unit: 'ratio',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
+      },
+      {
+        id: TRADING_BOOK_RISK_WEIGHT,
+        value: 1,
+        unit: 'ratio of the position',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Dealer Desks D2: how much of a bank capital requirement a unit of a trading position consumes. It is a rule somebody wrote, not a fact about the world, and it is the number that makes carrying inventory cost capital as well as cash. One, because a position taken with a view is the thing the requirement was written about; a weight per kind of position arrives with the derivative layer (worklist 13a).',
+      },
+      {
+        id: P_COVERAGE,
+        value: 1,
+        unit: 'ratio of what could leave',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
+      },
+      ...rows.flatMap((r): ParamDecl[] => [
+        // Law 15: ONE DECLARATION PER LINE THIS BANK RUNS, walked rather than named. A world with a
+        // third line of business registers a third row here without this loop being touched.
+        ...Object.entries(r.appetite).map((entry): ParamDecl => {
+          const [line, share] = entry;
+          return {
+            id: lineParam(r.bank, line, 'capitalAtRisk'),
+            value: share,
+            unit: 'ratio of its own capital',
+            dimension: 'ratio',
+            kind: 'preference',
+            owner: 'model',
+            why: `Dealer Desks D1, F1, XI-4: the most of its own capital ${r.bank} will have standing behind its ${line} line. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is what this line ASKS ITS OWN TREASURY FOR each period, which is why every line needs one: a line whose ask is whatever is left is not competing for anything, and the treasury that serves it first hands it the lot (\`13b-7\`). It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
+          };
+        }),
+        {
+          id: lineParam(r.bank, DEALING, 'concentration'),
+          value: r.concentration,
+          unit: 'ratio of its own dealing book',
           dimension: 'ratio',
           kind: 'preference',
           owner: 'model',
-          why: `Dealer Desks D1, F1, XI-4: the most of its own capital ${r.bank} will have standing behind its ${line} line. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is what this line ASKS ITS OWN TREASURY FOR each period, which is why every line needs one: a line whose ask is whatever is left is not competing for anything, and the treasury that serves it first hands it the lot (\`13b-7\`). It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
-        };
-      }),
+          why: `Dealer Desks D1: the most of its book ${r.bank} will have in ONE line. ${r.why} A dealer without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one. It is a share rather than a count of pieces because a count would mean something different in a line quoted in shares and a line quoted in par, and would have to be restated every time a price moved.`,
+        },
+      ]),
       {
-        id: lineParam(r.bank, DEALING, 'concentration'),
-        value: r.concentration,
-        unit: 'ratio of its own dealing book',
-        dimension: 'ratio',
+        id: SUB_PARAMS.periods,
+        value: 52,
+        unit: 'periods',
+        dimension: 'periods',
         kind: 'preference',
         owner: 'model',
-        why: `Dealer Desks D1: the most of its book ${r.bank} will have in ONE line. ${r.why} A dealer without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one. It is a share rather than a count of pieces because a count would mean something different in a line quoted in shares and a line quoted in par, and would have to be restated every time a price moved.`,
-      },
-    ]),
-    {
-      id: SUB_PARAMS.periods,
-      value: 52,
-      unit: 'periods',
-      dimension: 'periods',
-      kind: 'preference',
-      owner: 'model',
-      why: 'Banks Capital A2.b, A3: how long a bank borrows the layer between its owners and its creditors for. A year, because capital that runs off next week is not capital — it is funding — and the whole point of the layer is that it is still there when the loss arrives.',
-    },
-    {
-      id: LENDING_PARAMS.leverageRatio,
-      value: 0.03,
-      unit: 'ratio of assets, unweighted',
-      dimension: 'ratio',
-      kind: 'policy',
-      owner: 'standardSetter',
-      why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
-    },
-    {
-      id: STAFF_PARAMS.hoursPerLinePeriod,
-      value: 6,
-      unit: 'hours of a dealer per line per period',
-      dimension: 'count',
-      kind: 'technology',
-      owner: 'model',
-      why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy’s clothes.',
-    },
-    {
-      id: STAFF_PARAMS.hoursPerProcess,
-      value: 120,
-      unit: 'hours of a corporate-finance banker per sale',
-      dimension: 'count',
-      kind: 'technology',
-      owner: 'model',
-      why: 'M&A B4, §29 D1 (10f.4): what it takes to RUN A SALE — preparing the company, finding the buyers, running the auction, closing it. Three weeks of somebody, which is what a small process is, and it is what makes an IBD a CAPACITY: how many a bank can run at once is the hours it employs over this, so a bank that sheds its bankers runs fewer sales and a bank that never met a wage runs none. It is also what the bank CHARGES, because what the work costs is the only thing in this world a fee could honestly be — a percentage of the deal is a fee with no work in it (Law 2), and it would make a large sale dearer to run than a small one for no reason anybody could name.',
-    },
-    {
-      id: LENDING_PARAMS.hoursPerLoanPeriod,
-      value: 0.6,
-      unit: 'hours of a lending officer per loan per period',
-      dimension: 'count',
-      kind: 'technology',
-      owner: 'model',
-      why: 'Banks Lending C1.d (13d): what it takes to keep ONE loan — the assessment, the monitoring, the collecting — in hours of somebody who is paid for them. It replaces `loan.operatingCost`, which was half a per cent a year on every principal added into every quote and paid to nobody: a wage bill charged and never paid is margin wearing the clothes of a cost (Law 5), and stating it as a share of the principal made a small loan and a large one cost the same to service, which is the opposite of true. It is per LOAN because a loan costs about the same to make whatever its size, and that is why the cost per unit of principal now falls as the loan gets bigger — out of the arithmetic rather than out of a table.',
-    },
-    ...rows.flatMap((b) => [
-      {
-        id: bankParam(b.bank, 'credit.memory'),
-        value: b.memoryPeriods,
-        unit: 'periods',
-        dimension: 'periods' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Lending C1.b, C4: how far back ${b.bank} looks when it judges a borrower. ${b.why}`,
+        why: 'Banks Capital A2.b, A3: how long a bank borrows the layer between its owners and its creditors for. A year, because capital that runs off next week is not capital — it is funding — and the whole point of the layer is that it is still there when the loss arrives.',
       },
       {
-        id: bankParam(b.bank, 'returnOnCapital'),
-        value: b.returnOnCapital,
-        unit: 'per annum',
-        dimension: 'perAnnum' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Lending C1.c: what ${b.bank} needs to earn on the capital a loan consumes.`,
+        id: LENDING_PARAMS.leverageRatio,
+        value: 0.03,
+        unit: 'ratio of assets, unweighted',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
       },
       {
-        id: bankParam(b.bank, 'capitalBuffer'),
-        value: b.capitalBuffer,
-        unit: 'ratio of risk-weighted assets',
-        dimension: 'ratio' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Lending B2.a: how far above the requirement ${b.bank} insists on running. Its own caution, which is why two banks stop lending at different moments.`,
+        id: STAFF_PARAMS.hoursPerLinePeriod,
+        value: 6,
+        unit: 'hours of a dealer per line per period',
+        dimension: 'count',
+        kind: 'technology',
+        owner: 'model',
+        why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy’s clothes.',
       },
       {
-        id: bankParam(b.bank, 'depositMargin'),
-        value: b.depositMargin,
-        unit: 'per annum',
-        dimension: 'perAnnum' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Funding B1.a, B3: what ${b.bank} keeps for itself out of what the money it takes in is worth to it. Two banks that keep the same margin are one bank, and the one that keeps less wins the deposit and earns less on it — which is what a net interest margin IS.`,
+        id: STAFF_PARAMS.hoursPerProcess,
+        value: 120,
+        unit: 'hours of a corporate-finance banker per sale',
+        dimension: 'count',
+        kind: 'technology',
+        owner: 'model',
+        why: 'M&A B4, §29 D1 (10f.4): what it takes to RUN A SALE — preparing the company, finding the buyers, running the auction, closing it. Three weeks of somebody, which is what a small process is, and it is what makes an IBD a CAPACITY: how many a bank can run at once is the hours it employs over this, so a bank that sheds its bankers runs fewer sales and a bank that never met a wage runs none. It is also what the bank CHARGES, because what the work costs is the only thing in this world a fee could honestly be — a percentage of the deal is a fee with no work in it (Law 2), and it would make a large sale dearer to run than a small one for no reason anybody could name.',
       },
       {
-        id: bankParam(b.bank, 'bufferMemory'),
-        value: b.bufferMemory,
-        unit: 'periods',
-        dimension: 'periods' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Money Market A2.a, Banks Funding C2.a: how far back ${b.bank} looks at its own account when it decides what to hold against what could leave, and how far back it looks at what its funding has been costing it. The buffer is derived from what it has actually seen, never from a ratio of its deposits.`,
+        id: LENDING_PARAMS.hoursPerLoanPeriod,
+        value: 0.6,
+        unit: 'hours of a lending officer per loan per period',
+        dimension: 'count',
+        kind: 'technology',
+        owner: 'model',
+        why: 'Banks Lending C1.d (13d): what it takes to keep ONE loan — the assessment, the monitoring, the collecting — in hours of somebody who is paid for them. It replaces `loan.operatingCost`, which was half a per cent a year on every principal added into every quote and paid to nobody: a wage bill charged and never paid is margin wearing the clothes of a cost (Law 5), and stating it as a share of the principal made a small loan and a large one cost the same to service, which is the opposite of true. It is per LOAN because a loan costs about the same to make whatever its size, and that is why the cost per unit of principal now falls as the loan gets bigger — out of the arithmetic rather than out of a table.',
+      },
+      ...rows.flatMap((b) => [
+        {
+          id: bankParam(b.bank, 'credit.memory'),
+          value: b.memoryPeriods,
+          unit: 'periods',
+          dimension: 'periods' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Lending C1.b, C4: how far back ${b.bank} looks when it judges a borrower. ${b.why}`,
+        },
+        {
+          id: bankParam(b.bank, 'returnOnCapital'),
+          value: b.returnOnCapital,
+          unit: 'per annum',
+          dimension: 'perAnnum' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Lending C1.c: what ${b.bank} needs to earn on the capital a loan consumes.`,
+        },
+        {
+          id: bankParam(b.bank, 'capitalBuffer'),
+          value: b.capitalBuffer,
+          unit: 'ratio of risk-weighted assets',
+          dimension: 'ratio' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Lending B2.a: how far above the requirement ${b.bank} insists on running. Its own caution, which is why two banks stop lending at different moments.`,
+        },
+        {
+          id: bankParam(b.bank, 'depositMargin'),
+          value: b.depositMargin,
+          unit: 'per annum',
+          dimension: 'perAnnum' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Funding B1.a, B3: what ${b.bank} keeps for itself out of what the money it takes in is worth to it. Two banks that keep the same margin are one bank, and the one that keeps less wins the deposit and earns less on it — which is what a net interest margin IS.`,
+        },
+        {
+          id: bankParam(b.bank, 'bufferMemory'),
+          value: b.bufferMemory,
+          unit: 'periods',
+          dimension: 'periods' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Money Market A2.a, Banks Funding C2.a: how far back ${b.bank} looks at its own account when it decides what to hold against what could leave, and how far back it looks at what its funding has been costing it. The buffer is derived from what it has actually seen, never from a ratio of its deposits.`,
+        },
+        {
+          id: bankParam(b.bank, 'liquidityCushion'),
+          value: b.liquidityCushion,
+          unit: 'ratio of what could leave, above the rule',
+          dimension: 'ratio' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Funding C2, Money Market A2.a: what ${b.bank} holds liquid ABOVE what the rule asks of it. Its own caution, and the reason two banks facing the same depositors carry different portfolios — a bank that runs on the floor is one bad week from the window.`,
+        },
+        {
+          id: bankParam(b.bank, 'limitPerBorrower'),
+          value: b.limitPerBorrower,
+          unit: 'ratio of its own capital',
+          dimension: 'ratio' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Banks Lending F3, B2.c: the most ${b.bank} will have out to one name. A limit that binds is what makes concentration a thing it manages rather than a thing it reports.`,
+        },
+      ]),
+    ],
+    phases: [
+      {
+        name: 'banks.capital',
+        spec: 'Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a',
+        // AFTER THE MARKS ARE TAKEN, which is the only moment its book has a value: capital is the
+        // residual (A1), and a residual computed against prints that have not happened yet is not one
+        // (Clearing F1.a). So a bank lends this period against the position it closed the last one
+        // with — a lag, and a real one: a bank finds out what its capital allowed after the quarter
+        // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
+        anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'bank.capital' },
+          { kind: 'event', name: 'bank.capitalPlan' },
+          { kind: 'event', name: 'bank.lines' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          publishCapital(rows, ctx);
+        },
       },
       {
-        id: bankParam(b.bank, 'liquidityCushion'),
-        value: b.liquidityCushion,
-        unit: 'ratio of what could leave, above the rule',
-        dimension: 'ratio' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Funding C2, Money Market A2.a: what ${b.bank} holds liquid ABOVE what the rule asks of it. Its own caution, and the reason two banks facing the same depositors carry different portfolios — a bank that runs on the floor is one bad week from the window.`,
+        name: 'banks.raise',
+        spec: 'Banks Capital A3 Banks Capital C2 Banks Capital C2.a Banks Capital C2.b',
+        // Before it decides anything about lending: a bank short of capital raises what it can first
+        // and then lends what is left of its room (C2: recapitalisation FIRST).
+        anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'bank.raise.offered' }],
+        run: (ctx: MechanismContext): void => {
+          runRaises(rows, ctx);
+        },
       },
       {
-        id: bankParam(b.bank, 'limitPerBorrower'),
-        value: b.limitPerBorrower,
-        unit: 'ratio of its own capital',
-        dimension: 'ratio' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Lending F3, B2.c: the most ${b.bank} will have out to one name. A limit that binds is what makes concentration a thing it manages rather than a thing it reports.`,
+        name: 'lending.write',
+        spec: 'Banks Lending B1 Banks Lending C1 Banks Lending C2 Banks Lending C3',
+        // Clearing F1: it acts on what it has already been told. A borrower says what it is short of
+        // in the period it finds out, and the credit is arranged in the next one — which is a lag
+        // and is stated as one, because arranging a loan takes longer than noticing you need it.
+        anchor: { after: 'corporateActions' },
+        reads: [
+          { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'bank.costOfFunds' },
+          { kind: 'event', name: 'bank.reservation' },
+          { kind: 'event', name: 'credit.declined' },
+          { kind: 'event', name: 'credit.draw' },
+          { kind: 'event', name: 'credit.quoted' },
+          { kind: 'event', name: 'credit.written' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          runRequests(rows, ctx);
+          // Clearing F1: everything that prices off a bank's own economics this period reads it here
+          // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
+          // a project clears its cost of capital, a schedule in a bond market. One number, published
+          // once, read by all of them (Law 4).
+          publishCostOfFunds(rows, ctx);
+          publishQuotes(rows, ctx);
+          publishReservations(rows, ctx);
+          publishAdvisory(ctx);
+        },
       },
-    ]),
-  ],
-  phases: [
-    {
-      name: 'banks.capital',
-      spec: 'Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a',
-      // AFTER THE MARKS ARE TAKEN, which is the only moment its book has a value: capital is the
-      // residual (A1), and a residual computed against prints that have not happened yet is not one
-      // (Clearing F1.a). So a bank lends this period against the position it closed the last one
-      // with — a lag, and a real one: a bank finds out what its capital allowed after the quarter
-      // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
-      anchor: { after: 'revaluation' },
-      reads: [],
-      writes: [
-        { kind: 'event', name: 'bank.capital' },
-        { kind: 'event', name: 'bank.capitalPlan' },
-        { kind: 'event', name: 'bank.lines' },
-      ],
-      run: (ctx: MechanismContext): void => {
-        publishCapital(rows, ctx);
+      {
+        name: 'banks.treasury',
+        spec: 'Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B3 Money Market D2',
+        // After it has published what money costs it: a board is priced off its own funding and its
+        // rivals' boards, and both are reads of what was published (Law 4, Law 19).
+        anchor: { after: 'lending.write' },
+        reads: [
+          { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+          { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
+          { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
+          { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'bank.depositRate' }],
+        run: (ctx: MechanismContext): void => {
+          const classes = classesSeen(ctx);
+          if (classes.length === 0) return;
+          for (const b of ctx.parties.ofKind(BANK)) {
+            if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
+            const ccy = ctx.registry.currencyOf(b.region);
+            setBoard(ctx, b.id, ccy, classes, ownDeposits(ctx, b.id, ccy));
+          }
+        },
       },
-    },
-    {
-      name: 'banks.raise',
-      spec: 'Banks Capital A3 Banks Capital C2 Banks Capital C2.a Banks Capital C2.b',
-      // Before it decides anything about lending: a bank short of capital raises what it can first
-      // and then lends what is left of its room (C2: recapitalisation FIRST).
-      anchor: { after: 'corporateActions' },
-      reads: [{ kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' }],
-      writes: [{ kind: 'event', name: 'bank.raise.offered' }],
-      run: (ctx: MechanismContext): void => {
-        runRaises(rows, ctx);
+      {
+        name: 'banks.arbitrage',
+        spec: 'Fund Shares E3 Fund Shares E3.a Dealer Desks D1',
+        // After it has published what money costs it: what carrying a position costs is the number
+        // that decides whether closing a gap is worth doing at all (D3), and it is that publication.
+        anchor: { after: 'lending.write' },
+        // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
+        // it — so what it reads is read off its module's source and not off a measurement, and
+        // it is the module's whole read set rather than this phase's. It narrows the first time
+        // the phase runs and the check can say which of these it actually wanted.
+        reads: [
+          { kind: 'event', name: 'advisory.ran', of: 'anyPeriod' },
+          { kind: 'event', name: 'auction.announced', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.costOfFunds', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.lines', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.liquidity', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.reservation', of: 'anyPeriod' },
+          { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
+          { kind: 'event', name: 'centralBank.corridor', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.written', of: 'anyPeriod' },
+          { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
+          { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
+          { kind: 'event', name: 'fund.listedStruck', of: 'anyPeriod' },
+          { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
+          { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
+          { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
+        ],
+        writes: [],
+        run: (ctx: MechanismContext): void => {
+          for (const b of ctx.parties.ofKind(BANK)) {
+            if (b.status.alive) arbitrage(ctx, b.id, rows);
+          }
+        },
       },
-    },
-    {
-      name: 'lending.write',
-      spec: 'Banks Lending B1 Banks Lending C1 Banks Lending C2 Banks Lending C3',
-      // Clearing F1: it acts on what it has already been told. A borrower says what it is short of
-      // in the period it finds out, and the credit is arranged in the next one — which is a lag
-      // and is stated as one, because arranging a loan takes longer than noticing you need it.
-      anchor: { after: 'corporateActions' },
-      reads: [
-        { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.request', of: 'anyPeriod' },
-      ],
-      writes: [
-        { kind: 'event', name: 'bank.costOfFunds' },
-        { kind: 'event', name: 'bank.reservation' },
-        { kind: 'event', name: 'credit.declined' },
-        { kind: 'event', name: 'credit.draw' },
-        { kind: 'event', name: 'credit.quoted' },
-        { kind: 'event', name: 'credit.written' },
-      ],
-      run: (ctx: MechanismContext): void => {
-        runRequests(rows, ctx);
-        // Clearing F1: everything that prices off a bank's own economics this period reads it here
-        // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
-        // a project clears its cost of capital, a schedule in a bond market. One number, published
-        // once, read by all of them (Law 4).
-        publishCostOfFunds(rows, ctx);
-        publishQuotes(rows, ctx);
-        publishReservations(rows, ctx);
-        publishAdvisory(ctx);
+      {
+        name: 'banks.dealing',
+        spec: 'Dealer Desks D5 Dealer Desks E4',
+        // After the marks are in the books, so what it says the book is worth is what it is worth.
+        anchor: { after: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'bank.dealing' }],
+        run: (ctx: MechanismContext): void => {
+          for (const b of ctx.parties.ofKind(BANK)) {
+            if (b.status.alive) publishDealing(ctx, b.id, rows);
+          }
+        },
       },
-    },
-    {
-      name: 'banks.treasury',
-      spec: 'Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B3 Money Market D2',
-      // After it has published what money costs it: a board is priced off its own funding and its
-      // rivals' boards, and both are reads of what was published (Law 4, Law 19).
-      anchor: { after: 'lending.write' },
-      reads: [
-        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
-        { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
-        { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
-        { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
-      ],
-      writes: [{ kind: 'event', name: 'bank.depositRate' }],
-      run: (ctx: MechanismContext): void => {
-        const classes = classesSeen(ctx);
-        if (classes.length === 0) return;
-        for (const b of ctx.parties.ofKind(BANK)) {
-          if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
-          const ccy = ctx.registry.currencyOf(b.region);
-          setBoard(ctx, b.id, ccy, classes, ownDeposits(ctx, b.id, ccy));
-        }
+      {
+        name: 'lending.book',
+        spec: 'Money B3.a Money B3.c Banks Lending B1',
+        // Before the audit sees the period, and before anything can DIE of it: an overdraft the bank
+        // allowed is a drawing, and a drawing is a row. A party that ceased still carrying a raw
+        // negative balance would leave its bank holding a claim with no instrument behind it, and the
+        // estate nothing to assume — so this runs first and what is left is always a loan.
+        anchor: { before: 'revaluation' },
+        reads: [
+          { kind: 'event', name: 'credit.declined', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'credit.written', of: 'thisPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'credit.draw' },
+          { kind: 'event', name: 'credit.standard' },
+          { kind: 'event', name: 'credit.written' },
+        ],
+        run: (ctx: MechanismContext): void => {
+          bookDraws(rows, ctx);
+          publishStandard(ctx);
+        },
       },
-    },
-    {
-      name: 'banks.arbitrage',
-      spec: 'Fund Shares E3 Fund Shares E3.a Dealer Desks D1',
-      // After it has published what money costs it: what carrying a position costs is the number
-      // that decides whether closing a gap is worth doing at all (D3), and it is that publication.
-      anchor: { after: 'lending.write' },
-      // Law 10, Clearing F1.a: this phase has never RUN — no period of either world has reached
-      // it — so what it reads is read off its module's source and not off a measurement, and
-      // it is the module's whole read set rather than this phase's. It narrows the first time
-      // the phase runs and the check can say which of these it actually wanted.
-      reads: [
-        { kind: 'event', name: 'advisory.ran', of: 'anyPeriod' },
-        { kind: 'event', name: 'auction.announced', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.buffer', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.capital', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.capitalPlan', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.costOfFunds', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.depositRate', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.lines', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.liquidity', of: 'anyPeriod' },
-        { kind: 'event', name: 'bank.reservation', of: 'anyPeriod' },
-        { kind: 'event', name: 'bond.offered', of: 'anyPeriod' },
-        { kind: 'event', name: 'centralBank.corridor', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.quoted', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.written', of: 'anyPeriod' },
-        { kind: 'event', name: 'deposit.classes', of: 'anyPeriod' },
-        { kind: 'event', name: 'firms.funding', of: 'anyPeriod' },
-        { kind: 'event', name: 'fund.listedStruck', of: 'anyPeriod' },
-        { kind: 'event', name: 'housing.funding', of: 'anyPeriod' },
-        { kind: 'event', name: 'moneyMarket.print', of: 'anyPeriod' },
-        { kind: 'event', name: 'moneyMarket.refused', of: 'anyPeriod' },
-        { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
-      ],
-      writes: [],
-      run: (ctx: MechanismContext): void => {
-        for (const b of ctx.parties.ofKind(BANK)) {
-          if (b.status.alive) arbitrage(ctx, b.id, rows);
-        }
+      {
+        /**
+         * Prime Brokerage A1, B1, C1-C3, E1 (item 13.3): THE BROKER'S PERIOD — value the client's
+         * book, decide what it requires against it, publish the line, call what is over it and lend
+         * what is under it.
+         *
+         * With the other lending, and for the same reason: a prime loan is a loan, it consumes the
+         * same capital and the same room, and it is priced by the same quote. What is different is
+         * only the DECISION about how much (C1), which is the one thing §15 calls the core.
+         */
+        name: 'banks.prime',
+        spec: 'Prime Brokerage A1 Prime Brokerage B1 Prime Brokerage B3 Prime Brokerage C1 Prime Brokerage C3 Prime Brokerage C3.b Prime Brokerage E1',
+        // After the period's lending decisions and before the session, so a client that is lent to
+        // this morning can put the money to work this afternoon, and one that is CALLED this morning
+        // knows what it must sell before the books open (C3, XI-2).
+        anchor: { after: 'lending.write' },
+        // C1.b: the broker's quote is priced off every default anybody published, like every other
+        // line this module writes — a read this phase makes for itself, so it is declared here.
+        reads: [
+          { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+          { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
+        ],
+        writes: [{ kind: 'event', name: 'prime.line' }],
+        run: (ctx: MechanismContext): void => {
+          runPrime(ctx, primeDeps(rows), FUND);
+        },
       },
-    },
-    {
-      name: 'banks.dealing',
-      spec: 'Dealer Desks D5 Dealer Desks E4',
-      // After the marks are in the books, so what it says the book is worth is what it is worth.
-      anchor: { after: 'revaluation' },
-      reads: [],
-      writes: [{ kind: 'event', name: 'bank.dealing' }],
-      run: (ctx: MechanismContext): void => {
-        for (const b of ctx.parties.ofKind(BANK)) {
-          if (b.status.alive) publishDealing(ctx, b.id, rows);
-        }
+      {
+        name: 'banks.buffer',
+        spec: 'Banks Funding C2 Banks Funding C2.a Money Market A2.a',
+        // AFTER THE FLOWS AND BEFORE THE SESSION. What its account did to it this week is only known
+        // once the week's payments have happened, and what it holds against a bad one is what every
+        // schedule it posts in the session is measured against — so it is taken here, once, and
+        // published, and the session reads it rather than deriving a second one (Law 4).
+        anchor: { before: 'lending.book' },
+        reads: [{ kind: 'event', name: 'bank.buffer', of: 'anyPeriod' }],
+        writes: [{ kind: 'event', name: 'bank.buffer' }],
+        run: (ctx: MechanismContext): void => {
+          for (const b of ctx.parties.ofKind(BANK)) {
+            if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
+            publishBuffer(ctx, b.id, ctx.registry.currencyOf(b.region));
+          }
+        },
       },
-    },
-    {
-      name: 'lending.book',
-      spec: 'Money B3.a Money B3.c Banks Lending B1',
-      // Before the audit sees the period, and before anything can DIE of it: an overdraft the bank
-      // allowed is a drawing, and a drawing is a row. A party that ceased still carrying a raw
-      // negative balance would leave its bank holding a claim with no instrument behind it, and the
-      // estate nothing to assume — so this runs first and what is left is always a loan.
-      anchor: { before: 'revaluation' },
-      reads: [
-        { kind: 'event', name: 'credit.declined', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
-        { kind: 'event', name: 'credit.written', of: 'thisPeriod' },
-      ],
-      writes: [
-        { kind: 'event', name: 'credit.draw' },
-        { kind: 'event', name: 'credit.standard' },
-        { kind: 'event', name: 'credit.written' },
-      ],
-      run: (ctx: MechanismContext): void => {
-        bookDraws(rows, ctx);
-        publishStandard(ctx);
+    ],
+    // Money Market A3, B1: and the same one face in a VENUE. Its schedule for a session reaches the
+    // book through the kernel's door (Clearing B2), so the market that clears it decides nothing.
+    venueParticipants: [
+      { partyKind: BANK, orders: sessionOrders },
+      // Labour A1, A3, Banks Lending C1.d (13d): a bank wants the hours its book takes, in a trade of
+      // its own, at what an hour is worth to it — and it is matched by the same rule as every other
+      // employer. A bank whose book earns nothing bids nothing and hires nobody, which is how a
+      // shrinking bank sheds staff without anybody writing a rule for it.
+      { partyKind: BANK, orders: staffOrders },
+      // Labour A1, A3, M&A B4 (10f.4): and the corporate-finance department, in a trade of its own —
+      // a banker who runs a sale is not a lending officer. What it wants is the hours the sales it
+      // ran last period took, so a department nobody appointed shrinks.
+      { partyKind: BANK, orders: advisoryOrders },
+    ],
+    // Law 4, Dealer Desks A1: ONE face. Every order a bank posts into any market comes from here.
+    participants: [
+      {
+        partyKind: BANK,
+        // XI-13, Dealer Desks A1: a dealer puts its own capital behind what it thinks a line is worth
+        // and carries the loss when it is wrong. Every order this face posts is that.
+        speculative: true,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          dealingOrders(view, m, rows, makersOf),
       },
-    },
-    {
-      /**
-       * Prime Brokerage A1, B1, C1-C3, E1 (item 13.3): THE BROKER'S PERIOD — value the client's
-       * book, decide what it requires against it, publish the line, call what is over it and lend
-       * what is under it.
-       *
-       * With the other lending, and for the same reason: a prime loan is a loan, it consumes the
-       * same capital and the same room, and it is priced by the same quote. What is different is
-       * only the DECISION about how much (C1), which is the one thing §15 calls the core.
-       */
-      name: 'banks.prime',
-      spec: 'Prime Brokerage A1 Prime Brokerage B1 Prime Brokerage B3 Prime Brokerage C1 Prime Brokerage C3 Prime Brokerage C3.b Prime Brokerage E1',
-      // After the period's lending decisions and before the session, so a client that is lent to
-      // this morning can put the money to work this afternoon, and one that is CALLED this morning
-      // knows what it must sell before the books open (C3, XI-2).
-      anchor: { after: 'lending.write' },
-      // C1.b: the broker's quote is priced off every default anybody published, like every other
-      // line this module writes — a read this phase makes for itself, so it is declared here.
-      reads: [
-        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
-        { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
-      ],
-      writes: [{ kind: 'event', name: 'prime.line' }],
-      run: (ctx: MechanismContext): void => {
-        runPrime(ctx, primeDeps(rows), FUND);
+      {
+        partyKind: BANK,
+        // Banks Capital C2.b (item 10d): the other bank's side of a subordinated raise. It is a
+        // separate face from the dealing desk because it is a separate reason: a desk makes a market
+        // in what it chooses to make one in, and this is a lender deciding to hold a name's capital.
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          subscribes(view, m, rows),
       },
-    },
-    {
-      name: 'banks.buffer',
-      spec: 'Banks Funding C2 Banks Funding C2.a Money Market A2.a',
-      // AFTER THE FLOWS AND BEFORE THE SESSION. What its account did to it this week is only known
-      // once the week's payments have happened, and what it holds against a bad one is what every
-      // schedule it posts in the session is measured against — so it is taken here, once, and
-      // published, and the session reads it rather than deriving a second one (Law 4).
-      anchor: { before: 'lending.book' },
-      reads: [{ kind: 'event', name: 'bank.buffer', of: 'anyPeriod' }],
-      writes: [{ kind: 'event', name: 'bank.buffer' }],
-      run: (ctx: MechanismContext): void => {
-        for (const b of ctx.parties.ofKind(BANK)) {
-          if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
-          publishBuffer(ctx, b.id, ctx.registry.currencyOf(b.region));
-        }
-      },
-    },
-  ],
-  // Money Market A3, B1: and the same one face in a VENUE. Its schedule for a session reaches the
-  // book through the kernel's door (Clearing B2), so the market that clears it decides nothing.
-  venueParticipants: [
-    { partyKind: BANK, orders: sessionOrders },
-    // Labour A1, A3, Banks Lending C1.d (13d): a bank wants the hours its book takes, in a trade of
-    // its own, at what an hour is worth to it — and it is matched by the same rule as every other
-    // employer. A bank whose book earns nothing bids nothing and hires nobody, which is how a
-    // shrinking bank sheds staff without anybody writing a rule for it.
-    { partyKind: BANK, orders: staffOrders },
-    // Labour A1, A3, M&A B4 (10f.4): and the corporate-finance department, in a trade of its own —
-    // a banker who runs a sale is not a lending officer. What it wants is the hours the sales it
-    // ran last period took, so a department nobody appointed shrinks.
-    { partyKind: BANK, orders: advisoryOrders },
-  ],
-  // Law 4, Dealer Desks A1: ONE face. Every order a bank posts into any market comes from here.
-  participants: [
-    {
-      partyKind: BANK,
-      // XI-13, Dealer Desks A1: a dealer puts its own capital behind what it thinks a line is worth
-      // and carries the loss when it is wrong. Every order this face posts is that.
-      speculative: true,
-      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
-        dealingOrders(view, m, rows, makersOf),
-    },
-    {
-      partyKind: BANK,
-      // Banks Capital C2.b (item 10d): the other bank's side of a subordinated raise. It is a
-      // separate face from the dealing desk because it is a separate reason: a desk makes a market
-      // in what it chooses to make one in, and this is a lender deciding to hold a name's capital.
-      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => subscribes(view, m, rows),
-    },
-  ],
-  marks: [
-    { instrumentKind: LOAN, value: (ctx, i) => worthToItsLender(rows, ctx, i) },
-  ],
-  creditDecisions: [{ partyKind: BANK, decide: (ctx, o) => overdraft(rows, ctx, o) }],
-  // Securities Lending B1, E1: WHY A BANK IS SHORT, answered where the desk's own view of a line
-  // lives. The lending module clears the fee and writes the loan; what it may not do is decide for
-  // a party it does not own that the party wants to be short (Observer A4).
-  borrowNeeds: [{ partyKind: BANK, needs: (view: ParticipantView) => deskBorrows(view, rows, makersOf) }],
-  families: [bookMoves(), tradingBookIsCapitalised()],
+    ],
+    marks: [{ instrumentKind: LOAN, value: (ctx, i) => worthToItsLender(rows, ctx, i) }],
+    creditDecisions: [{ partyKind: BANK, decide: (ctx, o) => overdraft(rows, ctx, o) }],
+    // Securities Lending B1, E1: WHY A BANK IS SHORT, answered where the desk's own view of a line
+    // lives. The lending module clears the fee and writes the loan; what it may not do is decide for
+    // a party it does not own that the party wants to be short (Observer A4).
+    borrowNeeds: [
+      { partyKind: BANK, needs: (view: ParticipantView) => deskBorrows(view, rows, makersOf) },
+    ],
+    families: [bookMoves(), tradingBookIsCapitalised()],
   };
 }
 
@@ -1648,7 +1677,7 @@ function worthToItsLender(
         const print = ctx.prices.latest(pledged, ctx.period);
         return print.some ? print.value.price : undefined;
       },
-      asCash(owed, 'what is owed on this row'),
+      asCash(owed, i.ccy, 'what is owed on this row'),
     ),
     pd,
     'what it expects to lose per unit',
@@ -1661,7 +1690,6 @@ function worthToItsLender(
     ),
   );
 }
-
 
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */
 function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
@@ -1677,7 +1705,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
    * through `ctx.requests`, so a sector that borrows is a sector this sees.
    */
   for (const req of ctx.requests(said)) {
-    if (req.short <= 0) continue;
+    if (req.short.pieces <= 0) continue;
     const borrower = String(req.borrower);
     const want = req.short;
     // A4 (13d): the request may name what it is secured on. A bank reading this does not learn
@@ -1698,13 +1726,22 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // failed auction (C7) and it is a lag, not a loss.
     if (broughtPaper(ctx, borrower as PartyId, said)) continue;
     const { best, lend } = shop(rows, ctx, borrower as PartyId, want);
-    if (best === undefined || lend <= 0) continue;
+    if (best === undefined || lend.pieces <= 0) continue;
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it
     // draws at is the one that was struck when the line was agreed (A2, A3).
     // C9, Bond F3 (11.2a.2): a line if it repays at its option, a term loan if on a schedule —
     // what the borrower SAID, never inferred from whether it pledged something.
-    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, req.repays === 'atOption', security);
+    write(
+      ctx,
+      best.bank,
+      borrower as PartyId,
+      lend,
+      best.rate,
+      ccy,
+      req.repays === 'atOption',
+      security,
+    );
   }
 }
 
@@ -1724,12 +1761,10 @@ function broughtPaper(ctx: MechanismContext, borrower: PartyId, said: Period): b
  * between the two of them; that it happened, and how much of it, does not.
  */
 function publishStandard(ctx: MechanismContext): void {
-  const declined = ctx.journal
-    .ofKind('credit.declined')
-    .filter((e) => e.period === ctx.period);
+  const declined = ctx.journal.ofKind('credit.declined').filter((e) => e.period === ctx.period);
   const written = ctx.journal.ofKindIn('credit.written', ctx.period);
   const volume = (rows: readonly Event[], key: string): number =>
-    sum(rows.map((e) => (typeof e.data[key] === 'number' ? (e.data[key]) : 0))).value;
+    sum(rows.map((e) => (typeof e.data[key] === 'number' ? e.data[key] : 0))).value;
   ctx.record(
     'credit.standard',
     [],
@@ -1767,7 +1802,7 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (!p.status.alive || !ctx.participant(p.id).mayBorrow()) continue;
     const ccy = ctx.registry.currencyOf(p.region);
     let best: Quote | undefined;
-    let most = 0;
+    let most = noCash(ccy);
     for (const b of ctx.parties.ofKind(BANK)) {
       const decl = declOf(rows, b.id);
       if (decl === undefined || !b.status.alive || b.id === p.id) continue;
@@ -1779,7 +1814,8 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
        * with nowhere else to go, A5.a). A population keyed on no bank is quoted by every bank
        * that issues its money, like a named borrower.
        */
-      if (p.representation === 'cell' && 'bank' in p.key && p.key['bank'] !== String(b.id)) continue;
+      if (p.representation === 'cell' && 'bank' in p.key && p.key['bank'] !== String(b.id))
+        continue;
       /**
        * Money A1, B1, B1.a, XI-12: A BANK LENDS ITS OWN MONEY INTO EXISTENCE, so a bank that issues
        * no pounds cannot write a pound loan — the drawing leg has its own account on the paying
@@ -1794,7 +1830,7 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
       const view = ctx.participant(b.id);
       const reg = regulationOf(view);
       const r = room(view, decl, p.id);
-      if (r.most <= 0) continue;
+      if (r.most.pieces <= 0) continue;
       // A-45: a bank that cannot cost its funding does not quote. It is not the cheapest lender in
       // the world, which is what a zero made it in every opening period.
       const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
@@ -1813,7 +1849,7 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
         borrower: p.id,
         bank: best.bank,
         rate: best.rate,
-        most,
+        most: most.pieces,
         costOfFunds: best.costOfFunds,
         expectedLoss: best.expectedLoss,
         capitalCharge: best.capitalCharge,
@@ -1855,7 +1891,10 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
     const own = costOfFunds(ctx, b.id, ccy).perAnnum;
     if (!own.some) continue;
     const funds = own.value;
-    const reg = { ...regulationOf(view), riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight) };
+    const reg = {
+      ...regulationOf(view),
+      riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight),
+    };
     const required: Record<string, number> = {};
     const expectedLoss: Record<string, number> = {};
     const capitalCost: Record<string, number> = {};
@@ -1904,11 +1943,13 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
  * have to know the shape of, and never a zero standing in for "it cannot say".
  */
 function published(cost: FundingCost): Record<string, unknown> {
+  // Law 8: money on the record is its pieces beside the money it is in.
   const parts = {
-    interest: cost.interest,
-    onCapital: cost.onCapital,
-    owed: cost.owed,
-    capital: cost.capital,
+    interest: cost.interest.pieces,
+    onCapital: cost.onCapital.pieces,
+    owed: cost.owed.pieces,
+    capital: cost.capital.pieces,
+    ccy: cost.owed.ccy,
   };
   return cost.perAnnum.some ? { ...parts, perAnnum: cost.perAnnum.value } : parts;
 }

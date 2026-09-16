@@ -182,7 +182,7 @@ function penalty(at: number, weeks: number, share: number): SystemModule {
             const on = period(ctx.period - 1);
             let assets = 0;
             for (const h of ctx.register.holdingsOf(bank)) {
-              assets += ctx.valuation.valueOfLots(h.instrument, h.lots, on);
+              assets += ctx.valuation.valueOfLots(h.instrument, h.lots, on).pieces;
             }
             each = Math.round(assets * share);
           }

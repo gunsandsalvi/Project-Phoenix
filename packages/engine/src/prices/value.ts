@@ -8,20 +8,19 @@
  * trade price it came in at). It is derived from (basis, acquired, price store) and never stored
  * (Law 19).
  */
+import { absolute, sumCash } from '../core/measure.js';
 import { type Period, period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
 import { Forbidden, Unpriced } from '../core/errors.js';
 import { fxPairId, type CurrencyCode, type InstrumentId, type PartyId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
 import {
-  absolute,
   asCash,
   asPerPiece,
   asRatio,
   type Cash,
   type PerPiece,
   type Ratio,
-  scale,
   valueAt,
 } from '../core/measure.js';
 import { dustOf, sum, type Running } from '../core/num.js';
@@ -77,7 +76,7 @@ export class Valuation {
      * (its region). Injected like the curve and the calendar, because the parties store is built
      * after this and a second answer to "whose money is this" would be a second answer (Law 4).
      */
-    private readonly bookMoneyOf: (party: PartyId) => CurrencyCode,
+    private readonly homeMoneyOf: (party: PartyId) => CurrencyCode,
     /**
      * Derivative X1, D1, Fund Shares A3 (item 13.6): WHAT A PARTY'S OPEN CONTRACTS ARE WORTH TO IT.
      *
@@ -105,7 +104,7 @@ export class Valuation {
       holdersOf: (instrument) => this.register.holdersOf(instrument),
       quantity: (holder, instrument) => this.register.quantity(holder, instrument),
       worthOf: (holder, instrument, at) => this.worthOf(holder, instrument, at),
-      inOwnMoney: (party, value, from, at) => this.inOwnMoney(party, value, from, at),
+      inOwnMoney: (party, value, at) => this.inOwnMoney(party, value, at),
       instruments: () => this.instruments.all(),
       issued: (instrument) => this.instruments.get(instrument).issued,
       kindOf: (instrument) => this.registry.instrumentKind(this.instruments.get(instrument).kind),
@@ -146,7 +145,7 @@ export class Valuation {
     switch (profile.pricing) {
       case 'money':
         // Money D2: a balance is worth its own face, which is the one price that is not read.
-        return some({ value: asCash(qty, `what ${instrument} is worth`), from: at, ccy });
+        return some({ value: asCash(qty, ccy, `what ${instrument} is worth`), from: at, ccy });
       case 'cleared': {
         /**
          * Observer A1.a, XI-6: `latest` HERE AND `printOrThrow` IN `markPerUnit`, and they are two
@@ -165,7 +164,7 @@ export class Valuation {
         const p = this.prices.latest(instrument, at);
         return p.some
           ? some({
-              value: valueAt(p.value.price, qty, `what ${instrument} is worth`),
+              value: valueAt(p.value.price, qty, ccy, `what ${instrument} is worth`),
               from: struckIn(p.value),
               ccy,
             })
@@ -173,7 +172,7 @@ export class Valuation {
       }
       case 'derived':
         return some({
-          value: valueAt(this.derived(instrument, at), qty, `what ${instrument} is worth`),
+          value: valueAt(this.derived(instrument, at), qty, ccy, `what ${instrument} is worth`),
           from: at,
           ccy,
         });
@@ -270,7 +269,11 @@ export class Valuation {
     if (inverse.some && inverse.value.price > 0) {
       return asRatio(1 / inverse.value.price, `the rate ${from}/${to}`);
     }
-    throw new Unpriced('Currency C5', `no rate for ${from}/${to} in force at ${at}`, { from, to, at });
+    throw new Unpriced('Currency C5', `no rate for ${from}/${to} in force at ${at}`, {
+      from,
+      to,
+      at,
+    });
   }
 
   /**
@@ -278,22 +281,33 @@ export class Valuation {
    * and never stores: nothing anywhere holds a balance in a money that is not its own (C4.a), and a
    * balance sheet that adds two currencies does it here, once, at one rate.
    */
-  inMoney(value: Cash, from: CurrencyCode, to: CurrencyCode, at: Period): Cash {
-    const held = asCash(value, `${from} in ${to}`);
-    return from === to ? held : scale(held, this.rateInForce(from, to, at), `${from} in ${to}`);
+  inMoney(value: Cash, to: CurrencyCode, at: Period): Cash {
+    const from = value.ccy;
+    if (from === to) return value;
+    // Currency C4, D2, 16.0: a TRANSLATION for a report or a mark at the rate in force — never a
+    // conversion of the balance, which stays the money it is until an FX trade moves it (B3).
+    return asCash(
+      value.pieces * this.rateInForce(from, to, at),
+      to,
+      `${String(from)} in ${String(to)}`,
+    );
   }
 
   /**
-   * Currency C4.a, A-23, A-51: WHAT THIS IS WORTH ON THAT PARTY'S OWN BOOK.
+   * Currency B1, B2.a, C4, D2 (16.0): WHAT THIS IS WORTH IN THE MONEY THAT PARTY REPORTS IN.
    *
-   * A balance sheet is kept in one money, and which money that is, is a fact about the PARTY — its
-   * region's. Every reader that walks a party's holdings and adds them up has this question, and
-   * before this each of them either asked it privately (settlement's own `inOwn`) or did not ask it
-   * at all and added two currencies (`navOf`, `holdingsWorth`, `capitalOf`, `valueBook`, `wealthOf`,
-   * `atRisk`). One door, so a new reader cannot invent a seventh answer (Law 4).
+   * A party does NOT keep its books in one money. It holds an account per currency it has been paid
+   * in (B2.a), a balance stays that money until an FX trade moves it (B3), and a foreign position is
+   * its own: it gains and loses as the rate moves (D2), it can be held, squared or hedged. What a
+   * party has is a HOME currency it reports in (B1) — its region's — and every reader that states a
+   * party's equity, a fund's asset value or a bank's capital as ONE number is stating a REPORT in
+   * that money at the rate in force: a mark, and C5 says the same rate the books settle at. Before
+   * this each such reader asked privately or added two currencies (`navOf`, `holdingsWorth`,
+   * `capitalOf`, `valueBook`, `wealthOf`, `atRisk`). One door, so a new reader cannot invent a
+   * seventh answer (Law 4) — and none of them converts anything.
    */
-  inOwnMoney(party: PartyId, value: Cash, from: CurrencyCode, at: Period): Cash {
-    return this.inMoney(value, from, this.bookMoneyOf(party), at);
+  inOwnMoney(party: PartyId, value: Cash, at: Period): Cash {
+    return this.inMoney(value, this.homeMoneyOf(party), at);
   }
 
   /**
@@ -408,15 +422,17 @@ export class Valuation {
    * (a fund, Fund Shares A3) sits on that difference every period of its life.
    */
   equityDust(party: PartyId, walk: Running, at: Period): number {
+    // Law 7: dust is a magnitude, and a magnitude has no currency — what is summed here is how big
+    // each holding's value is in its own money, which is what the arithmetic passed through.
     const sides = sum(
       this.register
         .holdingsOf(party)
-        .map((h) => absolute(this.valueOfLots(h.instrument, h.lots, at), 'what a holding is worth')),
+        .map(
+          (h) =>
+            absolute(this.valueOfLots(h.instrument, h.lots, at), 'what a holding is worth').pieces,
+        ),
     );
-    return (
-      walk.dust +
-      dustOf(sides.terms + 2, scale(sides.value, asRatio(2, 'both sides of a balance sheet'), 'both sides of the balance sheet'))
-    );
+    return walk.dust + dustOf(sides.terms + 2, sides.value * 2);
   }
 
   /** Value of a quantity at the mark in force for `at`, in the instrument's currency. */
@@ -428,7 +444,12 @@ export class Valuation {
         instrument,
       });
     }
-    return valueAt(this.markPerUnit(instrument, at), qty, `value of ${instrument}`);
+    return valueAt(
+      this.markPerUnit(instrument, at),
+      qty,
+      this.instruments.get(instrument).ccy,
+      `value of ${instrument}`,
+    );
   }
 
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
@@ -440,13 +461,15 @@ export class Valuation {
      * takes, so what this returned was a number with a rounding history nobody could read back
      * (item 13b.1).
      */
+    const ccy = this.instruments.get(instrument).ccy;
     const terms = lots.map((lot) =>
       valueAt(
         carry ? lot.basisPerUnit : this.markPerUnit(instrument, at),
         lot.qty,
+        ccy,
         `value of ${instrument}`,
       ),
     );
-    return sum(terms).value;
+    return sumCash(ccy, terms, `value of ${instrument}`).value;
   }
 }

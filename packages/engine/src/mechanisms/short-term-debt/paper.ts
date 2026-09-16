@@ -23,7 +23,7 @@
  * defect at the short end, and E2 names it separately because the short end is where it is most
  * tempting.
  */
-import { asCash, minus, type PerPiece, type Ratio, ratioOf } from '../../core/measure.js';
+import { asRatio, type PerPiece, type Ratio } from '../../core/measure.js';
 import { formatCivil, type Civil } from '../../calendar/civil.js';
 import { instrumentId, instrumentKindId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -144,5 +144,5 @@ export function yieldOn(price: PerPiece, over: number, what: string): Ratio {
   if (over <= 0) {
     throw new RangeError(`${what}: paper with no time left has a payment due, not a yield`);
   }
-  return ratioOf(minus(asCash(1, 'par'), asCash(price, what), 'the discount'), asCash(price * over, what), what);
+  return asRatio((1 - price) / (price * over), what);
 }

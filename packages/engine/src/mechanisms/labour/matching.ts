@@ -20,12 +20,13 @@
  * trade; one that has never worked can enter any occupation (A3.b, at the bottom, since it posts at
  * its own reservation and not at the going rate).
  */
+import type { CurrencyCode } from '../../core/ids.js';
 import {
   type Cash,
   type PerPiece,
-  asCash,
   asRatio,
   heldAsMoney,
+  noCash,
   ratioOf,
   scale,
 } from '../../core/measure.js';
@@ -36,7 +37,6 @@ import { agreementKindId, cohortId } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
 import { add, atMost, div, sub, sum } from '../../core/num.js';
 import type { AgreementTerms } from '../../register/agreements.js';
-
 
 /**
  * XI-8, Labour B4, Firm Birth D2.b: WHAT AN EMPLOYER OWES A WORKER IT DID NOT PAY.
@@ -96,7 +96,12 @@ export const emptySkills = (): SkillBook => ({ skill: {}, learned: {} });
  * output over the people it employs in that trade, the point on the curve its people stand at.
  * The occupation names the goods it makes (`OCCUPATION_OF`, data), and the count is the kernel's.
  */
-function learnedAt(ctx: MechanismContext, employer: PartyId, occupation: string, region: RegionId): number {
+function learnedAt(
+  ctx: MechanismContext,
+  employer: PartyId,
+  occupation: string,
+  region: RegionId,
+): number {
   const heads = sum(ctx.employment.at(employer, occupation, region).map((r) => r.headcount)).value;
   if (heads <= 0) return 0;
   let made = 0;
@@ -112,7 +117,8 @@ function learnedAt(ctx: MechanismContext, employer: PartyId, occupation: string,
 /** 12c.2: what this cell's people bring to a job in this trade — nothing for a first job or a new trade. */
 function brings(book: SkillBook, cell: PartyId, occupation: string): Qty {
   const had = book.learned[cell];
-  if (had === undefined || book.skill[cell] !== occupation) return asQty(0, 'a first job in the trade brings nothing');
+  if (had === undefined || book.skill[cell] !== occupation)
+    return asQty(0, 'a first job in the trade brings nothing');
   return downTick(had);
 }
 
@@ -164,8 +170,6 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
   if (p.representation !== 'cell' || !p.status.alive) return false;
   return ctx.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
 }
-
-
 
 /**
  * Labour B3, A3, A3.b, Observer A4 (`A-43`, item 9.6): WHICH OF THE HOURS OFFERED THIS VENUE MAY
@@ -239,7 +243,8 @@ export function runVenue(
       continue;
     }
     if (participates(ctx, ctx.parties.get(posting.party), p.retirementAge)) continue;
-    if (round === 'trade') giveNotice(ctx, posting.party, occupation, region as RegionId, posting.qty);
+    if (round === 'trade')
+      giveNotice(ctx, posting.party, occupation, region as RegionId, posting.qty);
   }
   const offers = eligible(ctx, book, v, occupation, region as RegionId, p, round);
   // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
@@ -266,7 +271,16 @@ export function runVenue(
       ctx.record(
         'labour.unsold',
         [v.id],
-        { venue: v.id, occupation, region, outcome: outcome.kind, offered, wanted, hours: offered, round },
+        {
+          venue: v.id,
+          occupation,
+          region,
+          outcome: outcome.kind,
+          offered,
+          wanted,
+          hours: offered,
+          round,
+        },
         true,
       );
     }
@@ -284,12 +298,25 @@ export function runVenue(
   const hired = match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p, round);
   // Law 8, A4.b (12b.4): the match is in WHOLE PEOPLE — a person sells all of their hours or none —
   // so the hours the book cleared that do not make one more person are unsold, and said so.
-  const remainder = subQty(asQty(outcome.volume, 'the hours the book cleared'), hired, 'the hours cleared that did not make a whole person');
+  const remainder = subQty(
+    asQty(outcome.volume, 'the hours the book cleared'),
+    hired,
+    'the hours cleared that did not make a whole person',
+  );
   if (remainder > 0) {
     ctx.record(
       'labour.unsold',
       [v.id],
-      { venue: v.id, occupation, region, outcome: 'remainder', offered, wanted, hours: remainder, round },
+      {
+        venue: v.id,
+        occupation,
+        region,
+        outcome: 'remainder',
+        offered,
+        wanted,
+        hours: remainder,
+        round,
+      },
       true,
     );
   }
@@ -353,11 +380,11 @@ function match(
   let hired = asQty(0, 'nobody hired yet');
   const queue = offers
     .filter((o) => o.price !== 'market' && o.price <= struck)
-    .sort((a, b) => (a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price)))
+    .sort((a, b) =>
+      a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price),
+    )
     .map((o) => o.party);
-  const bidsFilled = outcome.fills
-    .filter((f) => f.side === 'buy')
-    .sort((a, b) => b.at - a.at);
+  const bidsFilled = outcome.fills.filter((f) => f.side === 'buy').sort((a, b) => b.at - a.at);
   let next = 0;
   for (const f of bidsFilled) {
     let people = Math.floor(ratioOf(f.qty, p.hoursPerMember, 'people hired'));
@@ -369,9 +396,17 @@ function match(
         next += 1;
         continue;
       }
-      const taken = atMost(people, available, 'there are no more people in the cell than there are');
+      const taken = atMost(
+        people,
+        available,
+        'there are no more people in the cell than there are',
+      );
       hire(ctx, book, f.party, cell, taken, struck, occupation, region, p, round);
-      hired = addQty(hired, scaleQty(p.hoursPerMember, taken, 'the hours the hired sell'), 'hours hired');
+      hired = addQty(
+        hired,
+        scaleQty(p.hoursPerMember, taken, 'the hours the hired sell'),
+        'hours hired',
+      );
       people = sub(people, taken, 'people left to hire');
       if (taken === available) next += 1;
     }
@@ -396,24 +431,46 @@ function hire(
   // 0f.4, 12b.2a: the hired move to the standing cell of THIS JOB's key — the employer, the trade,
   // the period and the round name the row's terms, so the cell they land on holds this row and
   // no other employer's. There is no split.
-  const hired = ctx.cells.reKey(worker, members, { employment: employedKey(employer, occupation, ctx.period, round) }, `hired by ${employer}`);
+  const hired = ctx.cells.reKey(
+    worker,
+    members,
+    { employment: employedKey(employer, occupation, ctx.period, round) },
+    `hired by ${employer}`,
+  );
   // B3, A4.c: a cell holds ONE job. A second hire from another cell into the same job this period
   // lands on the same standing cell, and the row it already holds — same employer, trade, wage
   // and start — takes the people: its headcount moves, the row does not multiply.
   const standing = ctx.employment.ofWorker(hired);
-  if (standing?.employer === employer && standing.occupation === occupation && standing.since === ctx.period) {
+  if (
+    standing?.employer === employer &&
+    standing.occupation === occupation &&
+    standing.since === ctx.period
+  ) {
     const more: EmploymentTerms = {
       ...termsOf(standing),
       headcount: weightOf(ctx.parties.get(hired)),
       // 12c.2: and what these people bring adds to what the row's people already brought.
-      brought: addQty(standing.brought, scaleQty(brings(book, worker, occupation), members, 'what these people bring'), 'brought'),
+      brought: addQty(
+        standing.brought,
+        scaleQty(brings(book, worker, occupation), members, 'what these people bring'),
+        'brought',
+      ),
     };
     ctx.restate(standing.id, more);
     book.skill[hired] = occupation;
     ctx.record(
       'labour.hire',
       [employer, hired],
-      { row: standing.id, employer, worker: hired, occupation, headcount: members, wagePerHour: standing.wagePerHour, productiveFrom: standing.productiveFrom, moved: round === 'anywhere' },
+      {
+        row: standing.id,
+        employer,
+        worker: hired,
+        occupation,
+        headcount: members,
+        wagePerHour: standing.wagePerHour,
+        productiveFrom: standing.productiveFrom,
+        moved: round === 'anywhere',
+      },
       true,
     );
     return;
@@ -501,18 +558,40 @@ function giveNotice(
     if (left <= 0) break;
     const standing = sub(row.headcount, row.leaving, 'the people not yet under notice');
     if (standing <= 0) continue;
-    const members = atMost(Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate')), standing, 'the row employs no more than it employs');
+    const members = atMost(
+      Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate')),
+      standing,
+      'the row employs no more than it employs',
+    );
     if (members <= 0) break;
-    const ends = row.ends.some ? row.ends.value : periodOf(add(ctx.period, row.notice, 'when the notice runs out'));
-    const given: EmploymentTerms = { ...termsOf(row), leaving: add(row.leaving, members, 'under notice'), ends: some(ends) };
+    const ends = row.ends.some
+      ? row.ends.value
+      : periodOf(add(ctx.period, row.notice, 'when the notice runs out'));
+    const given: EmploymentTerms = {
+      ...termsOf(row),
+      leaving: add(row.leaving, members, 'under notice'),
+      ends: some(ends),
+    };
     ctx.restate(row.id, given);
     ctx.record(
       'labour.notice',
       [row.employer, row.worker],
-      { row: row.id, employer: row.employer, worker: row.worker, occupation, members, ends, cause: `${employer} cut its hours` },
+      {
+        row: row.id,
+        employer: row.employer,
+        worker: row.worker,
+        occupation,
+        members,
+        ends,
+        cause: `${employer} cut its hours`,
+      },
       true,
     );
-    left = subQty(left, scaleQty(row.hoursPerMember, members, 'hours given notice'), 'hours left to cut');
+    left = subQty(
+      left,
+      scaleQty(row.hoursPerMember, members, 'hours given notice'),
+      'hours left to cut',
+    );
   }
 }
 
@@ -555,7 +634,12 @@ export function separate(
   const worker = ctx.parties.resolve(row.worker).id;
   // 12c.2: onto the cell of the people who left THIS employer in THIS trade THIS period, so what
   // they learned there is theirs and not a standing cell's (XI-15: the key names what differs).
-  const gone = ctx.cells.reKey(worker, members, { employment: unemployedKey(row.occupation, row.employer, ctx.period) }, cause);
+  const gone = ctx.cells.reKey(
+    worker,
+    members,
+    { employment: unemployedKey(row.occupation, row.employer, ctx.period) },
+    cause,
+  );
   if (whole) {
     // XI-8: TERMINATED and not discharged — the commitment ended by its own terms, and the row
     // stays in the kernel's book saying so. A job that vanished would leave a severance nothing
@@ -566,14 +650,24 @@ export function separate(
     // It used to be `row.headcount = ...` on a mutable object in a private book; the kernel's row
     // is frozen, and a change of terms is an event with its own record (item 9.1).
     // 12b.2: the people leaving were under notice, so the notice they were under is spent with them.
-    const leaving = sub(row.leaving, atMost(members, row.leaving, 'no more leave than were under notice'), 'still under notice');
+    const leaving = sub(
+      row.leaving,
+      atMost(members, row.leaving, 'no more leave than were under notice'),
+      'still under notice',
+    );
     const fewer: EmploymentTerms = {
       ...termsOf(row),
       headcount: sub(row.headcount, members, 'headcount after separation'),
       leaving,
       ends: leaving > 0 ? row.ends : none<Period>(),
       // 12c.2: the leavers take their share of what the row's people brought with them.
-      brought: downTick(scale(row.brought, asRatio(sub(row.headcount, members, 'who stays') / row.headcount, 'the share that stays'), 'what stays')),
+      brought: downTick(
+        scale(
+          row.brought,
+          asRatio(sub(row.headcount, members, 'who stays') / row.headcount, 'the share that stays'),
+          'what stays',
+        ),
+      ),
     };
     ctx.restate(row.id, fewer);
   }
@@ -590,13 +684,17 @@ export function separate(
   // is winding up. It is recorded owed and unpaid, per member, for the notice the row carried.
   const trading = ctx.parties.get(row.employer).status.alive;
   const perMember = trading
-    ? asCash(0, 'paid through the notice')
-    : scale(wagePerMember(row), asRatio(row.notice, 'the periods of notice it could not run'), 'notice owed per member');
+    ? noCash(row.ccy)
+    : scale(
+        wagePerMember(row),
+        asRatio(row.notice, 'the periods of notice it could not run'),
+        'notice owed per member',
+      );
   const paid = false;
-  if (!trading && perMember > 0) {
-    const ccy = ctx.registry.currencyOf(ctx.parties.get(row.employer).region);
+  if (!trading && perMember.pieces > 0) {
+    const ccy = row.ccy;
     // A4.b: owed to the people on the row, not to the whole standing cell they were re-keyed onto.
-    const owed = ctx.registry.deliverable(perMember) * members;
+    const owed = ctx.registry.deliverable(perMember.pieces) * members;
     if (owed > 0) {
       ctx.owes({
         debtor: row.employer,
@@ -618,12 +716,13 @@ export function separate(
       occupation: row.occupation,
       members,
       cause,
-      noticeOwedPerMember: perMember,
+      noticeOwedPerMember: perMember.pieces,
       severancePaid: paid,
       // What is owed, per member. It said 0 whenever the employer was still trading — including
       // when its payment had just failed — which recorded "nothing owed" about a worker who worked
       // and was not paid. What is unpaid is owed, and the agreement above is where it ranks.
-      severanceRanking: perMember,
+      severanceRanking: perMember.pieces,
+      ccy: perMember.ccy,
     },
     true,
   );
@@ -649,7 +748,15 @@ export function separate(
 export function payWages(ctx: MechanismContext): void {
   for (const row of ctx.employment.all()) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
-    payFrom(ctx, row.employer, ctx.parties.resolve(row.worker).id, wagePerMember(row), row.headcount, `wages from ${row.employer}`);
+    payFrom(
+      ctx,
+      row.employer,
+      ctx.parties.resolve(row.worker).id,
+      wagePerMember(row),
+      row.headcount,
+      `wages from ${row.employer}`,
+      row.ccy,
+    );
   }
 }
 
@@ -657,22 +764,27 @@ function payFrom(
   ctx: MechanismContext,
   payer: PartyId,
   cell: PartyId,
-  perMember: number,
+  perMember: Cash,
   /** A4.b, E1 (12b.2): THE PEOPLE ON THE ROW — how many of the cell this employer pays. */
   members: number,
   reason: string,
+  ccy: CurrencyCode,
 ): Cash {
-  const nothing = asCash(0, 'nothing moved');
-  if (perMember <= 0 || members <= 0) return nothing;
-  const from = ctx.parties.get(payer);
-  const ccy = ctx.registry.currencyOf(from.region);
+  const nothing = noCash(ccy);
+  if (perMember.pieces <= 0 || members <= 0) return nothing;
   // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the row is
   // a count of people and every one of them is paid the same whole number of pieces. What the
   // fraction below one would have been is not paid, because there is no such coin. It is the ROW'S
   // headcount and not the cell's weight (12b.2): the standing cell of the employed key holds every
   // employer's people at once (0f.4), and a wage paid to the whole of it paid another employer's
   // staff — twenty-one times the bill in the labour scale model.
-  const share = { perMember: ctx.registry.deliverable(perMember), total: asQty(ctx.registry.deliverable(perMember) * members, 'the wage of the people on the row') };
+  const share = {
+    perMember: ctx.registry.deliverable(perMember.pieces),
+    total: asQty(
+      ctx.registry.deliverable(perMember.pieces) * members,
+      'the wage of the people on the row',
+    ),
+  };
   // A per-member wage below one piece of the money pays NOTHING — there is no such coin — and this
   // used to answer `true`, which is how a wage with no money leg behind it was booked as paid.
   if (share.total <= 0) return nothing;
@@ -686,9 +798,13 @@ function payFrom(
    */
   const scheme = sponsorshipOf(ctx.agreements, payer);
   const fund = scheme === undefined ? undefined : ctx.parties.resolve(scheme.creditor);
-  const into = fund?.status.alive === true
-    ? contributionsOn(share.perMember, { employee: ctx.params.ratio(PENSION_PARAMS.employeeShare), employer: ctx.params.ratio(PENSION_PARAMS.employerShare) })
-    : { employee: NO_QTY, employer: NO_QTY };
+  const into =
+    fund?.status.alive === true
+      ? contributionsOn(share.perMember, {
+          employee: ctx.params.ratio(PENSION_PARAMS.employeeShare),
+          employer: ctx.params.ratio(PENSION_PARAMS.employerShare),
+        })
+      : { employee: NO_QTY, employer: NO_QTY };
   const employee = asQty(into.employee * members, 'what the members pay in');
   const employer = asQty(into.employer * members, 'what the employer pays in beside them');
   const net = subQty(share.total, employee, 'the wage net of the member’s contribution');
@@ -705,14 +821,31 @@ function payFrom(
     },
   ];
   if (fund !== undefined) {
-    if (employee > 0) legs.push({ kind: 'money', from: ctx.accountOf(payer, ccy), to: ctx.accountOf(fund.id, ccy), receipt: { of: 'contribution' }, ccy, amount: employee });
-    if (employer > 0) legs.push({ kind: 'money', from: ctx.accountOf(payer, ccy), to: ctx.accountOf(fund.id, ccy), receipt: { of: 'contribution' }, ccy, amount: employer });
+    if (employee > 0)
+      legs.push({
+        kind: 'money',
+        from: ctx.accountOf(payer, ccy),
+        to: ctx.accountOf(fund.id, ccy),
+        receipt: { of: 'contribution' },
+        ccy,
+        amount: employee,
+      });
+    if (employer > 0)
+      legs.push({
+        kind: 'money',
+        from: ctx.accountOf(payer, ccy),
+        to: ctx.accountOf(fund.id, ccy),
+        receipt: { of: 'contribution' },
+        ccy,
+        amount: employer,
+      });
   }
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
   // The row it then owes is the ARREAR settlement writes in the same pass (Money E1, 12a.1); the
   // `labour.wagesInArrears` agreement this wrote beside it was the same debt twice (Law 4).
   const r = ctx.settle({ legs, cause: 'transfer', reason });
-  if (r.outcome === 'settled') return heldAsMoney(share.total, 'what the employer actually paid');
+  if (r.outcome === 'settled')
+    return heldAsMoney(share.total, ccy, 'what the employer actually paid');
   return nothing;
 }
 

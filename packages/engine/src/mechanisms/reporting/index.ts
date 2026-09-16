@@ -116,7 +116,7 @@ function restate(
   const was = state.said[key(company, quarter.label)];
   if (was === undefined) return;
   const span = spanOf(quarter, ctx.calendar);
-  const now = incomeOf(ctx, company, span.from, span.to).total;
+  const now = incomeOf(ctx, company, span.from, span.to).total.pieces;
   if (!hasMoved(now, was)) return;
   ctx.record(
     'reporting.restate',
@@ -153,7 +153,9 @@ function publishGuidance(
   state: Published,
 ): void {
   state.guiding.set(String(company), said.perPeriod);
-  ctx.record('reporting.guidance', [company], { company, ...said }, true);
+  // Law 8, Currency A3: what it guided is money, and money on the record names its currency.
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(company).region);
+  ctx.record('reporting.guidance', [company], { company, ...said, ccy }, true);
 }
 
 /**
@@ -205,20 +207,24 @@ function report(
       // G2: the movement of the equity account, decomposed into what the instructions and the marks
       // did. `lines` is that decomposition in the words its writers used; `total` is the bottom line
       // and `revaluation` the part of it nobody was paid.
-      income: income.lines.map((l) => ({ cause: l.cause, amount: l.amount, entries: l.entries })),
-      earned: income.total,
-      revaluation: income.revaluation,
+      income: income.lines.map((l) => ({
+        cause: l.cause,
+        amount: l.amount.pieces,
+        entries: l.entries,
+      })),
+      earned: income.total.pieces,
+      revaluation: income.revaluation.pieces,
       // A2, Law 4: the same read the `accounts` family checks the equity account against. A report
       // with its own balance sheet would be a second set of accounts able to disagree with the one
       // the audit proves (A2.a).
-      assets: sheet.assets.value,
-      liabilities: sheet.liabilities.value,
+      assets: sheet.assets.value.pieces,
+      liabilities: sheet.liabilities.value.pieces,
       ccy: sheet.ccy,
       cash: cash.map((c) => ({
         counterparty: c.counterparty,
         instrument: c.instrument,
         cause: c.cause,
-        amount: c.amount,
+        amount: c.amount.pieces,
         legs: c.legs,
       })),
       // G5: shares outstanding, so a reader can divide. Earnings per share is income over shares,
@@ -227,7 +233,7 @@ function report(
     },
     true,
   );
-  return income.total;
+  return income.total.pieces;
 }
 
 /**
@@ -244,8 +250,7 @@ export function reporting(seed: string): SystemModule {
         kind: 'working',
         holds:
           'which quarters each company has already reported, what each report SAID it earned, and the figure management is currently guiding to',
-        why:
-          'BOOKKEEPING ABOUT PUBLISHING, not the statement. The statement itself goes to the JOURNAL as `reporting.report` — income lines, earned, revaluation, assets, liabilities — where five other modules already read it (`research`, `control`, `corporate-bond`, `guidance`, the observer). What is kept here is which quarters are done, what each said so a later disagreement is a restatement, and the standing guidance: state one phase hands to a later one. It was declared a noun at item 0 on the belief that accounts were unreadable outside this module, and that belief was wrong (`docs/RECORD.md` item 3).',
+        why: 'BOOKKEEPING ABOUT PUBLISHING, not the statement. The statement itself goes to the JOURNAL as `reporting.report` — income lines, earned, revaluation, assets, liabilities — where five other modules already read it (`research`, `control`, `corporate-bond`, `guidance`, the observer). What is kept here is which quarters are done, what each said so a later disagreement is a restatement, and the standing guidance: state one phase hands to a later one. It was declared a noun at item 0 on the belief that accounts were unreadable outside this module, and that belief was wrong (`docs/RECORD.md` item 3).',
       },
     ],
     spec: 'Reporting',

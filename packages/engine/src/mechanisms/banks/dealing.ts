@@ -16,6 +16,7 @@
  * the capital the position consumes has to earn. A bank that carried inventory for free would have
  * to be a bank that paid nothing for its money.
  */
+import { atMostCash, heldAsMoney, noCash, sumCash } from '../../core/measure.js';
 import { linesCovered } from './staff.js';
 import {
   instrumentId,
@@ -40,7 +41,7 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
-import { atLeast, atMost, material, sum } from '../../core/num.js';
+import { atLeast, atMost, material } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { VenueDecl } from '../../clearing/venue.js';
@@ -77,7 +78,7 @@ function allotted(view: ParticipantView, appetite: Cash, carried: Cash): Cash {
   const room = roomFor(view, DEALING);
   if (!room.some) return appetite;
   const may = plus(carried, room.value, 'what it carries plus the room it was given');
-  return atMost(may, appetite, 'a line cannot spend room that does not exist');
+  return atMostCash(may, appetite, 'a line cannot spend room that does not exist');
 }
 
 /**
@@ -90,15 +91,21 @@ function allotted(view: ParticipantView, appetite: Cash, carried: Cash): Cash {
  * it is supposed to be with an order to place. That is the same line drawn twice: it is the trading
  * book for the limit here, and it is the trading book for the capital requirement (Dealer Desks F2).
  */
-export function bookValue(
-  view: ParticipantView,
-  targets: ReadonlyMap<InstrumentId, Cash>,
-): Cash {
+export function bookValue(view: ParticipantView, targets: ReadonlyMap<InstrumentId, Cash>): Cash {
+  const home = view.registry.currencyOf(view.self.region);
   const terms: Cash[] = [];
   for (const [id, want] of targets) {
     const mark = view.mark(id);
     if (!mark.some) continue;
-    const held = valueAt(mark.value, view.quantity(id), 'what this line is worth');
+    const held = view.inMoney(
+      valueAt(
+        mark.value,
+        view.quantity(id),
+        view.instruments.get(id).ccy,
+        'what this line is worth',
+      ),
+      home,
+    );
     /**
      * D1, D4: ONE HOLDING, TWO OWNERS, AND THE TREASURY'S CLAIM ON IT COMES FIRST.
      *
@@ -115,18 +122,23 @@ export function bookValue(
      * that leaves is the desk's, and it cannot be negative because the bank cannot be short a line
      * it has not borrowed (Register C4).
      */
-    const treasurys = atMost(want, held, 'the treasury cannot claim more of a line than there is of it');
+    // Currency C4: the treasury's want is in the line's money; the book is a report in the bank's own.
+    const treasurys = atMostCash(
+      view.inMoney(want, home),
+      held,
+      'the treasury cannot claim more of a line than there is of it',
+    );
     terms.push(minus(held, treasurys, 'what the desk is carrying of it'));
   }
-  return sum(terms).value;
+  return sumCash(home, terms, 'what its book is worth').value;
 }
 
 /** Banks Funding C1: what this bank could pay with, as the bank itself last published it (F4). */
 function liquidOf(view: ParticipantView, ccy: CurrencyCode): Cash {
   const said = liquidHeld(view);
   return said.some && said.value > 0
-    ? asCash(said.value, 'what it published it could pay with')
-    : asCash(view.cash(ccy), 'what is in the account');
+    ? asCash(said.value, ccy, 'what it published it could pay with')
+    : heldAsMoney(view.cash(ccy), ccy, 'what is in the account');
 }
 
 /**
@@ -139,8 +151,12 @@ function capitalOf(view: ParticipantView): Cash {
   const capital = said.some ? said.value.data['capital'] : undefined;
   // Item 16: money re-entering from what this bank published, at the read that knows what it is.
   return typeof capital === 'number' && capital > 0
-    ? asCash(capital, 'what it published as its capital')
-    : asCash(0, 'a bank that has published nothing');
+    ? asCash(
+        capital,
+        view.registry.currencyOf(view.self.region),
+        'what it published as its capital',
+      )
+    : noCash(view.registry.currencyOf(view.self.region));
 }
 
 /** C5: how many books it is making a market in this period — its money is spread over them. */
@@ -390,7 +406,9 @@ function toCreate(view: ParticipantView, d: BankDecl, state: DeskState): BorrowN
       // Law 8, E3: a creation unit is a WHOLE unit, so what this line must deliver is a whole
       // number of its own pieces — UP, because a basket short of a piece is a basket it cannot
       // deliver, and what it must find is what it must find.
-      const needs = upTick(scale(wanted, asRatio(perShare, 'what one unit draws of this line'), 'units'));
+      const needs = upTick(
+        scale(wanted, asRatio(perShare, 'what one unit draws of this line'), 'units'),
+      );
       const short = subQty(needs, view.free(id), 'what it has not got');
       if (short <= 0) continue;
       const pledge = pledges(view, id);
@@ -417,8 +435,13 @@ function pledges(view: ParticipantView, borrowing: InstrumentId): Option<Instrum
     if (free <= 0) continue;
     const mark = view.mark(h.instrument);
     if (!mark.some) continue;
-    const worth = valueAt(mark.value, free, 'what it has free of that line');
-    if (best === undefined || worth > best.worth) best = { id: h.instrument, worth };
+    const worth = valueAt(
+      mark.value,
+      free,
+      view.instruments.get(h.instrument).ccy,
+      'what it has free of that line',
+    );
+    if (best === undefined || worth.pieces > best.worth.pieces) best = { id: h.instrument, worth };
   }
   return best === undefined ? none<InstrumentId>() : some(best.id);
 }
@@ -509,14 +532,15 @@ export function dealingOrders(
 function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty {
   const said = refusedOvernight(view);
   if (!said.some || said.value.period + 1 !== view.period) return NO_QTY;
+  const home = view.registry.currencyOf(view.self.region);
   const owed = minus(
-    asCash(said.value.short, 'what the session refused it'),
-    asCash(said.value.buffer, 'the cushion inside it'),
+    asCash(said.value.short, home, 'what the session refused it'),
+    asCash(said.value.buffer, home, 'the cushion inside it'),
     'what it cannot pay, once the cushion is gone',
   );
-  if (owed <= 0) return NO_QTY;
+  if (owed.pieces <= 0) return NO_QTY;
   const worths: Cash[] = [];
-  let mine = asCash(0, 'what this line would fetch');
+  let mine = noCash(home);
   for (const m of view.markets) {
     const subject = delivers(m);
     if (!subject.some) continue;
@@ -525,12 +549,15 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty
     const mark = view.mark(i.id);
     const free = view.free(i.id);
     if (!mark.some || mark.value <= 0 || free <= 0) continue;
-    const worth = valueAt(mark.value, free, 'what this parcel would fetch');
+    const worth = view.inMoney(
+      valueAt(mark.value, free, i.ccy, 'what this parcel would fetch'),
+      home,
+    );
     worths.push(worth);
     if (i.id === line) mine = worth;
   }
-  const total = sum(worths).value;
-  if (total <= 0 || mine <= 0) return NO_QTY;
+  const total = sumCash(home, worths, 'what its parcels would fetch').value;
+  if (total.pieces <= 0 || mine.pieces <= 0) return NO_QTY;
   const mark = view.mark(line);
   if (!mark.some || mark.value <= 0) return NO_QTY;
   const share = scale(owed, ratioOf(mine, total, 'what this line carries'), 'raised here');
@@ -769,7 +796,7 @@ export function publishDealing(
       // the marks — the two numbers that say which part of the holding is a position it took.
       target: state.targetIn(i.id),
       worth: mark.some
-        ? valueAt(mark.value, view.quantity(i.id), 'what it holds of this line')
+        ? valueAt(mark.value, view.quantity(i.id), i.ccy, 'what it holds of this line').pieces
         : 0,
       bid: q.bid,
       offer: q.offer,
@@ -786,9 +813,10 @@ export function publishDealing(
     [bank],
     {
       bank,
-      book: state.bookValue,
+      book: state.bookValue.pieces,
       // D1, F1: how much of its capacity is used. Finite and enumerable, and here it is enumerated.
-      roomLeft: minus(state.limitAggregate, state.bookValue, 'room in the whole book'),
+      roomLeft: minus(state.limitAggregate, state.bookValue, 'room in the whole book').pieces,
+      ccy: state.bookValue.ccy,
       ratePerPeriod: state.ratePerPeriod,
       lines,
     },

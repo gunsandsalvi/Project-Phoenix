@@ -141,7 +141,7 @@ function openOne(
           notional,
           struckAt: struckAs('money', strike),
           book: instrumentId('contract:test.forward'),
-          value: asCash(0, 'struck at par, so nothing changes hands'),
+          value: asCash(0, USD, 'struck at par, so nothing changes hands'),
           house: null,
         },
       ],
@@ -196,7 +196,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', strike),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -256,7 +256,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', strike),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -297,7 +297,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
             notional: asQty(100, 'the notional'),
             struckAt: struckAs('money', 1),
             book: instrumentId('contract:test.forward'),
-            value: asCash(0, 'struck at par, so nothing changes hands'),
+            value: asCash(0, USD, 'struck at par, so nothing changes hands'),
             house: null,
           },
         ],
@@ -313,7 +313,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
     // D1: an asset to one and a liability to the other, at every instant.
     const toA = built.contractValue(row, a, built.period);
     const toB = built.contractValue(row, b, built.period);
-    expect(toA + toB).toBe(0);
+    expect(toA.pieces + toB.pieces).toBe(0);
     // D1.b: and the family checks it INDEPENDENTLY — it asks the profile for the contract as each
     // side states it (`flip`) rather than negating the kernel's own answer.
     const zero = report.audit.families.find((f) => f.family === 'zeroSum');
@@ -343,7 +343,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -356,7 +356,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
     const built = world(mod);
     const report = built.step();
     const row = built.contracts.open_()[0];
-    if (row === undefined || built.contractMark(row, built.period) === 0) return;
+    if (row === undefined || built.contractMark(row, built.period).pieces === 0) return;
     const zero = report.audit.families.find((f) => f.family === 'zeroSum');
     expect((zero?.count ?? 0) > 0).toBe(true);
     // Independence (Audit B8): the same defect does not light the accounts family, because both
@@ -389,7 +389,7 @@ describe('the underlying is something this world produces (D3, D3.a, G4)', () =>
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -432,7 +432,7 @@ describe('novation moves who faces whom (B4)', () => {
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -496,7 +496,7 @@ describe('the store guards the row it writes (Law 4, Law 8, D2, D12)', () => {
               notional: asQty(100, 'the notional'),
               struckAt: struckAs('money', 100),
               book: instrumentId('contract:test.forward'),
-              value: asCash(0, 'struck at par, so nothing changes hands'),
+              value: asCash(0, USD, 'struck at par, so nothing changes hands'),
               house: null,
             },
           ],
@@ -528,7 +528,7 @@ describe('the store guards the row it writes (Law 4, Law 8, D2, D12)', () => {
           ccy: USD,
           notional: asQty(100.5, 'the notional'),
           struckAt: struckAs('money', 100),
-          basis: asCash(0, 'what it cost'),
+          basis: asCash(0, USD, 'what it cost'),
           house: null,
         },
         period(0),

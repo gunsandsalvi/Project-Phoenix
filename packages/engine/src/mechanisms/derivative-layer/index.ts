@@ -12,12 +12,12 @@
  * kind, once, from public state. Everything here is arithmetic on it: what must be posted (D1, D2),
  * what a call is (D4), what a close-out leaves owing (D11.a, F2), what a waterfall absorbs (C4).
  */
+import { atLeastCash, atMostCash, noCash, sumCash } from '../../core/measure.js';
 import { asQty } from '../../core/tick.js';
 import {
   type Cash,
   type Ratio,
   absolute,
-  asCash,
   asPerPiece,
   heldAsMoney,
   minus,
@@ -37,7 +37,7 @@ import {
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
-import { atLeast, atMost, dustOf, sum, withinDust } from '../../core/num.js';
+import { atMost, dustOf, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -192,7 +192,7 @@ function capacity(): ClearingCapacity {
       }
       const view = ctx.participant(party);
       const room = capacityOf(view, m.ccy, ctx.params.ratio(LAYER_PARAMS.buffer));
-      if (room <= 0) return 0;
+      if (room.pieces <= 0) return 0;
       // What this trade would ask of it, per unit of notional: the kind's own initial margin on one
       // unit at the level that cleared. A trade it cannot margin is a trade it cannot make, and the
       // market cuts it to what it can (E2) rather than anybody raising the room.
@@ -213,8 +213,8 @@ function capacity(): ClearingCapacity {
       // not moved yet, so nobody can say" is not a reason. The trade is refused (E2) rather than
       // admitted at nothing.
       if (!one.some) return 0;
-      if (one.value <= 0) return wanted;
-      const affordable = ctx.registry.deliverable(room / one.value);
+      if (one.value.pieces <= 0) return wanted;
+      const affordable = ctx.registry.deliverable(room.pieces / one.value.pieces);
       return atMost(affordable, wanted, 'it posts out of the money in its account');
     },
     /**
@@ -231,12 +231,12 @@ function capacity(): ClearingCapacity {
         if (pair.ccy !== ccy) continue;
         const by = minus(
           requirement(ctx, party, pair.other, ccy),
-          heldAsMoney(posted(ctx, party, pair.other, ccy), 'what it has posted'),
+          heldAsMoney(posted(ctx, party, pair.other, ccy), ccy, 'what it has posted'),
           'the top-up',
         );
-        if (by > 0) terms.push(by);
+        if (by.pieces > 0) terms.push(by);
       }
-      return sum(terms).value;
+      return sumCash(ccy, terms, 'what its book will ask next').value;
     },
     margin(ctx, party, against, size, about): readonly Leg[] {
       const m = about.market;
@@ -257,9 +257,10 @@ function capacity(): ClearingCapacity {
       if (!need.some) return [];
       const amount = heldAsMoney(
         ctx.registry.cashFor(need.value),
+        m.ccy,
         'what the kind asks for, on the money’s own grid',
       );
-      if (amount > 0) return postedOut(ctx, party, against, m.ccy, amount);
+      if (amount.pieces > 0) return postedOut(ctx, party, against, m.ccy, amount);
       /**
        * G2, Law 8: NO EXPOSURE WITHOUT MARGIN, OR A STATED REASON THERE IS NONE — and here there
        * is one, so it is stated. A requirement of a fraction of a cent is a real requirement that
@@ -277,7 +278,7 @@ function capacity(): ClearingCapacity {
           holder: against,
           market: m.id,
           ccy: m.ccy,
-          required: need.value,
+          required: need.value.pieces,
           why: 'the requirement is smaller than one piece of this money',
         },
         true,
@@ -309,19 +310,19 @@ function marginCalls(ctx: MechanismContext): void {
         const have = posted(ctx, side, pair.other, pair.ccy);
         const by = minus(
           need,
-          heldAsMoney(have, 'what it has posted'),
+          heldAsMoney(have, pair.ccy, 'what it has posted'),
           'what the margin must move by',
         );
-        if (by === 0) continue;
+        if (by.pieces === 0) continue;
         const legs = moveMargin(ctx, side, pair.other, pair.ccy, by);
         if (legs.length === 0) continue;
         let r = ctx.settle({
           legs,
           cause: 'transfer',
           reason:
-            by > 0
-              ? `${side} posts ${by} of margin to ${pair.other}`
-              : `${pair.other} returns ${absolute(by, 'what comes back')} of margin to ${side}`,
+            by.pieces > 0
+              ? `${side} posts ${by.pieces} of margin to ${pair.other}`
+              : `${pair.other} returns ${absolute(by, 'what comes back').pieces} of margin to ${side}`,
         });
         /**
          * D4.a, D9, D9.a: A CALL HAS THREE ANSWERS, and cash is only one of them. A party that
@@ -333,17 +334,17 @@ function marginCalls(ctx: MechanismContext): void {
          * cash pays: posting securities when you have money is a choice nobody makes, and the
          * order these are tried in is what makes collateral the answer to a SHORTFALL.
          */
-        if (by > 0 && r.outcome !== 'settled') {
+        if (by.pieces > 0 && r.outcome !== 'settled') {
           const bound = pledgeInstead(ctx, side, pair.other, pair.ccy, by);
           if (bound.length > 0) {
             r = ctx.settle({
               legs: bound,
               cause: 'transfer',
-              reason: `${side} pledges what it holds against ${by} it could not pay ${pair.other}`,
+              reason: `${side} pledges what it holds against ${by.pieces} it could not pay ${pair.other}`,
             });
           }
         }
-        if (by < 0) {
+        if (by.pieces < 0) {
           // D9.a: and it comes back. What secured a requirement that has gone is free again.
           const free = releasePledges(ctx, side, pair.other, pair.ccy);
           if (free.length > 0) {
@@ -354,7 +355,7 @@ function marginCalls(ctx: MechanismContext): void {
             });
           }
         }
-        if (by > 0) {
+        if (by.pieces > 0) {
           const call = callOn(ctx, side, pair.other, pair.ccy);
           // Law 15, 0e′.4: whose call went unmet goes in this module's own working store, which is
           // what `resolveContracts` reads a phase later. The event below is the PUBLIC record of the
@@ -369,9 +370,9 @@ function marginCalls(ctx: MechanismContext): void {
               poster: side,
               holder: pair.other,
               ccy: pair.ccy,
-              asked: by,
+              asked: by.pieces,
               met: r.outcome === 'settled',
-              short: call === undefined ? 0 : call.short,
+              short: call === undefined ? 0 : call.short.pieces,
             },
             true,
           );
@@ -492,8 +493,8 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   if (owed > 0 && living) {
     legs.push({
       kind: 'money',
-      from: ctx.accountOf(value > 0 ? c.b : c.a, c.ccy),
-      to: ctx.accountOf(value > 0 ? c.a : c.b, c.ccy),
+      from: ctx.accountOf(value.pieces > 0 ? c.b : c.a, c.ccy),
+      to: ctx.accountOf(value.pieces > 0 ? c.a : c.b, c.ccy),
       ccy: c.ccy,
       amount: owed,
     });
@@ -502,7 +503,13 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   ctx.record(
     'contract.closed',
     [String(id), c.a, c.b],
-    { contract: String(id), why, value, settled: r.outcome === 'settled' },
+    {
+      contract: String(id),
+      why,
+      value: value.pieces,
+      ccy: value.ccy,
+      settled: r.outcome === 'settled',
+    },
     true,
   );
   if (r.outcome === 'settled') returnMargin(ctx, c.a, c.b, c.ccy);
@@ -534,8 +541,7 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
     return;
   }
   const value = ctx.contracts.closeOut(before, ctx.period);
-  const owedToSurvivor =
-    before.a === survivor ? value : negated(value, 'and the other side of it');
+  const owedToSurvivor = before.a === survivor ? value : negated(value, 'and the other side of it');
   const moved = ctx.settle({
     legs: [{ kind: 'contract', act: 'novate', contract: id, from: dead, to: estate }],
     cause: 'default',
@@ -548,15 +554,15 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
   if (moved.outcome !== 'settled') return;
   const collateral = posted(ctx, dead, survivor, before.ccy);
   const claim =
-    owedToSurvivor > 0
+    owedToSurvivor.pieces > 0
       ? minus(
           owedToSurvivor,
-          heldAsMoney(collateral, 'what it holds of the dead party’s margin'),
+          heldAsMoney(collateral, before.ccy, 'what it holds of the dead party’s margin'),
           'the mark less what it holds',
         )
-      : asCash(0, 'the row was in the dead party’s favour, so nothing is owed to the survivor');
+      : noCash(before.ccy);
   settleAndTearUp(ctx, id, `${dead} ceased`);
-  if (claim > 0) issueCloseOutClaim(ctx, estate, survivor, before.ccy, claim);
+  if (claim.pieces > 0) issueCloseOutClaim(ctx, estate, survivor, before.ccy, claim);
   const house = before.house;
   // C5, XI-3, Money E4: A HOUSE THAT HAS ITSELF CEASED RUNS NO WATERFALL. Running past the end of
   // one is exactly how a house fails (C5), so a member defaulting into a house that is already
@@ -568,9 +574,9 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
       house,
       dead,
       before.ccy,
-      atLeast(
+      atLeastCash(
         claim,
-        asCash(0, 'a position that was in the defaulter\u2019s favour leaves the house no hole'),
+        noCash(before.ccy),
         'a position that was in the defaulter\u2019s favour leaves the house no hole',
       ),
     );
@@ -621,7 +627,7 @@ function issueCloseOutClaim(
       },
     ],
     cause: 'default',
-    reason: `${from} owes ${to} ${amount} on a close-out`,
+    reason: `${from} owes ${to} ${amount.pieces} ${ccy} on a close-out`,
   });
 }
 
@@ -633,8 +639,8 @@ function returnMargin(ctx: MechanismContext, a: PartyId, b: PartyId, ccy: Curren
   ] as const) {
     const need = requirement(ctx, poster, holder, ccy);
     const have = posted(ctx, poster, holder, ccy);
-    const by = minus(need, heldAsMoney(have, 'what it has posted'), 'margin to return');
-    if (by >= 0) continue;
+    const by = minus(need, heldAsMoney(have, ccy, 'what it has posted'), 'margin to return');
+    if (by.pieces >= 0) continue;
     const legs = moveMargin(ctx, poster, holder, ccy, by);
     if (legs.length > 0) {
       ctx.settle({ legs, cause: 'transfer', reason: `${holder} returns margin to ${poster}` });
@@ -699,7 +705,7 @@ function contractsNameTheLiving(): Family {
             family: 'names',
             spec: 'Register F2',
             owner: String(c.id),
-            size: view.contracts.mark(c, view.period),
+            size: view.contracts.mark(c, view.period).pieces,
             unit: c.ccy,
             period: view.period,
             message: `${c.id} is open against ${side}, which has ceased`,
@@ -770,16 +776,17 @@ function postedOut(
   const legs: Leg[] = [];
   let left = want;
   for (const money of monies) {
-    if (left <= 0) break;
-    const has = heldAsMoney(view.cash(money), `the ${money} it holds`);
-    if (has <= 0) continue;
+    if (left.pieces <= 0) break;
+    const has = heldAsMoney(view.cash(money), money, `the ${money} it holds`);
+    if (has.pieces <= 0) continue;
     // What is left of the requirement, in THIS money, against what it has of it.
-    const owedHere = ctx.valuation.inMoney(left, ccy, money, ctx.period);
-    const pays = atMost(owedHere, has, 'it posts what it has of this money');
-    const posted = heldAsMoney(ctx.registry.payable(pays), 'on the money\u2019s own grid');
-    if (posted <= 0) continue;
+    // Currency B3: it posts the money it HAS, in that money; what that meets of the call is read at the rate, and nothing is converted.
+    const owedHere = ctx.valuation.inMoney(left, money, ctx.period);
+    const pays = atMostCash(owedHere, has, 'it posts what it has of this money');
+    const posted = heldAsMoney(ctx.registry.payable(pays), money, 'on the money\u2019s own grid');
+    if (posted.pieces <= 0) continue;
     legs.push(...moveMargin(ctx, poster, holder, money, posted));
-    left = minus(left, ctx.valuation.inMoney(posted, money, ccy, ctx.period), 'what is still to post');
+    left = minus(left, ctx.valuation.inMoney(posted, ccy, ctx.period), 'what is still to post');
   }
   return legs;
 }
@@ -815,11 +822,12 @@ export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: Rat
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (view.registry.instrumentKind(i.kind).pricing !== 'money') continue;
-    const held = heldAsMoney(view.cash(i.ccy), `the ${i.ccy} it holds`);
-    if (held <= 0) continue;
-    terms.push(view.inMoney(held, i.ccy, ccy));
+    const held = heldAsMoney(view.cash(i.ccy), i.ccy, `the ${i.ccy} it holds`);
+    if (held.pieces <= 0) continue;
+    // Currency C4: what it could post, REPORTED in the book's money at the rate; the balances stay what they are.
+    terms.push(view.inMoney(held, ccy));
   }
-  const cash = sum(terms).value;
+  const cash = sumCash(ccy, terms, 'what it could post').value;
   return minus(cash, scale(cash, buffer, 'what it keeps back'), 'net of what it keeps back');
 }
 
@@ -827,144 +835,145 @@ export function derivativeLayer(
   tradesContracts: readonly PartyKindId[] = TRADES_CONTRACTS,
 ): SystemModule {
   return {
-  id: 'derivative-layer',
-  nouns: [
-    {
-      name: UNMET,
-      kind: 'working',
-      holds: 'the counterparty pairs whose margin call went unmet this period',
-      why:
-        'it is one phase telling the next, within one period: the margin phase knows whether a call settled and the close-out phase needs it (0e\u2032.4). It read the period\u2019s own `margin.call` events back to recover it, which is the journal standing in for a store. The events stay as the public record of every call.',
-    },
-  ],
-  spec: 'Derivative Layer, Derivative contract',
-  // The estate is what a default resolves into (XI-8) and the money market is where a member finds
-  // the cash a call asks for; credit events are what an underlying of that shape reads. And the
-  // foundation seed, because a house is a PARTY: it has to be created after the world it clears in
-  // has banks for it to hold its money at (Seed A1: opening state runs in assembly order).
-  requires: ['credit-events', 'estate', 'money-market', 'seed.foundation'],
-  instrumentKinds: [marginKind, defaultFundKind, closeOutKind],
-  derivativeKinds: [],
-  partyKinds: [houseKind],
-  curveFamilies: [],
-  units: [],
-  params: params(),
-  clearingCapacity: capacity(),
-  phases: [
-    {
-      name: 'margin.calls',
-      spec: 'Derivative D4 Derivative D5 Derivative D6 Derivative D6.a Derivative Layer D1 Derivative Layer D2 Derivative Layer D4 Derivative Layer D5 XI-2',
-      // Requirements are re-measured against LAST CLOSE's marks, at the top of the period, so a
-      // call caused by them can be met out of this period's session (docs/PLAN.md §8). A call
-      // caused by this period's own marks is next period's, and that lag is Clearing F1 being
-      // honest rather than a second session hiding it.
-      anchor: { after: 'corporateActions' },
-      reads: [{ kind: 'event', name: 'derivatives.refused', of: 'anyPeriod' }],
-      writes: [],
-      run: (ctx: MechanismContext): void => {
-        // D4 before D2: what the terms put in this period is an obligation the contract created,
-        // and the margin is what secures what is LEFT after it. A call measured before the
-        // period's own payment moved would be securing an exposure that is about to change.
-        payLegs(ctx);
-        marginCalls(ctx);
-        trueUpFunds(ctx);
-        publishRefused(ctx);
+    id: 'derivative-layer',
+    nouns: [
+      {
+        name: UNMET,
+        kind: 'working',
+        holds: 'the counterparty pairs whose margin call went unmet this period',
+        why: 'it is one phase telling the next, within one period: the margin phase knows whether a call settled and the close-out phase needs it (0e\u2032.4). It read the period\u2019s own `margin.call` events back to recover it, which is the journal standing in for a store. The events stay as the public record of every call.',
       },
-    },
-    {
-      name: 'derivatives.resolve',
-      spec: 'Derivative D11 Derivative D11.a Derivative Layer C4 Derivative Layer F1 Derivative Layer F2 XI-3',
-      // After the estate has opened for whoever died this period: a claim has to name somebody who
-      // exists, and the successor is what the estate is (Register F2). `anchor` takes the estate's
-      // own cycle, which is the one after the marks are in (XI-8).
-      anchor: { after: 'estates.resolve' },
-      reads: [{ kind: 'event', name: 'margin.call', of: 'anyPeriod' }],
-      writes: [],
-      run: resolveContracts,
-    },
-  ],
-  /**
-   * Clearing A2, Clearing B2, Law 4, Law 15: ONE FACE PER BOOK.
-   *
-   * A contract book is the layer's, so the layer is what speaks for a party in one — once per
-   * party kind — and what it says is whatever the KIND of contract that book carries says (the
-   * profile's own `orders`). Six class modules each declaring a participant would be six modules
-   * speaking for one bank in one book, which the kernel refuses at the moment they cross and Law 4
-   * forbids before that: one fact, one writer.
-   */
-  participants: tradesContracts.map((partyKind) => ({
-    partyKind,
-    in: 'contract' as const,
-    speculative: true,
+    ],
+    spec: 'Derivative Layer, Derivative contract',
+    // The estate is what a default resolves into (XI-8) and the money market is where a member finds
+    // the cash a call asks for; credit events are what an underlying of that shape reads. And the
+    // foundation seed, because a house is a PARTY: it has to be created after the world it clears in
+    // has banks for it to hold its money at (Seed A1: opening state runs in assembly order).
+    requires: ['credit-events', 'estate', 'money-market', 'seed.foundation'],
+    instrumentKinds: [marginKind, defaultFundKind, closeOutKind],
+    derivativeKinds: [],
+    partyKinds: [houseKind],
+    curveFamilies: [],
+    units: [],
+    params: params(),
+    clearingCapacity: capacity(),
+    phases: [
+      {
+        name: 'margin.calls',
+        spec: 'Derivative D4 Derivative D5 Derivative D6 Derivative D6.a Derivative Layer D1 Derivative Layer D2 Derivative Layer D4 Derivative Layer D5 XI-2',
+        // Requirements are re-measured against LAST CLOSE's marks, at the top of the period, so a
+        // call caused by them can be met out of this period's session (docs/PLAN.md §8). A call
+        // caused by this period's own marks is next period's, and that lag is Clearing F1 being
+        // honest rather than a second session hiding it.
+        anchor: { after: 'corporateActions' },
+        reads: [{ kind: 'event', name: 'derivatives.refused', of: 'anyPeriod' }],
+        writes: [],
+        run: (ctx: MechanismContext): void => {
+          // D4 before D2: what the terms put in this period is an obligation the contract created,
+          // and the margin is what secures what is LEFT after it. A call measured before the
+          // period's own payment moved would be securing an exposure that is about to change.
+          payLegs(ctx);
+          marginCalls(ctx);
+          trueUpFunds(ctx);
+          publishRefused(ctx);
+        },
+      },
+      {
+        name: 'derivatives.resolve',
+        spec: 'Derivative D11 Derivative D11.a Derivative Layer C4 Derivative Layer F1 Derivative Layer F2 XI-3',
+        // After the estate has opened for whoever died this period: a claim has to name somebody who
+        // exists, and the successor is what the estate is (Register F2). `anchor` takes the estate's
+        // own cycle, which is the one after the marks are in (XI-8).
+        anchor: { after: 'estates.resolve' },
+        reads: [{ kind: 'event', name: 'margin.call', of: 'anyPeriod' }],
+        writes: [],
+        run: resolveContracts,
+      },
+    ],
     /**
-     * Law 18: THE CONTRACT BOOKS THIS PARTY COULD BE IN — every book of a class that has not said
-     * why a party would be in one of its books, and for a class that has, the books written on the
-     * subjects this party has a reason about.
+     * Clearing A2, Clearing B2, Law 4, Law 15: ONE FACE PER BOOK.
      *
-     * The layer speaks for a party in every contract book (one face per book, above), so it is the
-     * layer that answers which of them are worth asking about — and it answers by asking each class
-     * the same question that class's `orders` answers out of, so a book named here and a book
-     * ordered in cannot disagree (Law 4, Law 19).
+     * A contract book is the layer's, so the layer is what speaks for a party in one — once per
+     * party kind — and what it says is whatever the KIND of contract that book carries says (the
+     * profile's own `orders`). Six class modules each declaring a participant would be six modules
+     * speaking for one bank in one book, which the kernel refuses at the moment they cross and Law 4
+     * forbids before that: one fact, one writer.
      */
-    markets: (view: ParticipantView): readonly MarketId[] => {
-      const out: MarketId[] = [];
-      for (const cls of view.derivativeClasses) {
-        if (cls.orders === undefined) continue;
-        // Fund Shares A3, `B-14`: and only where this party MAY take a position at all. A pool is
-        // run under a mandate and the mandate says what it may write; a bank is under none. The
-        // layer owns the book and the party's own module owns the party, so it asks (Law 4).
-        if (!view.mayTrade(cls.kind)) continue;
-        if (cls.reasons === undefined || cls.subject === undefined) {
-          out.push(...view.contractBooks(cls.kind));
-          continue;
+    participants: tradesContracts.map((partyKind) => ({
+      partyKind,
+      in: 'contract' as const,
+      speculative: true,
+      /**
+       * Law 18: THE CONTRACT BOOKS THIS PARTY COULD BE IN — every book of a class that has not said
+       * why a party would be in one of its books, and for a class that has, the books written on the
+       * subjects this party has a reason about.
+       *
+       * The layer speaks for a party in every contract book (one face per book, above), so it is the
+       * layer that answers which of them are worth asking about — and it answers by asking each class
+       * the same question that class's `orders` answers out of, so a book named here and a book
+       * ordered in cannot disagree (Law 4, Law 19).
+       */
+      markets: (view: ParticipantView): readonly MarketId[] => {
+        const out: MarketId[] = [];
+        for (const cls of view.derivativeClasses) {
+          if (cls.orders === undefined) continue;
+          // Fund Shares A3, `B-14`: and only where this party MAY take a position at all. A pool is
+          // run under a mandate and the mandate says what it may write; a bank is under none. The
+          // layer owns the book and the party's own module owns the party, so it asks (Law 4).
+          if (!view.mayTrade(cls.kind)) continue;
+          if (cls.reasons === undefined || cls.subject === undefined) {
+            out.push(...view.contractBooks(cls.kind));
+            continue;
+          }
+          for (const on of cls.reasons(view)) out.push(...view.contractBooks(cls.kind, on));
         }
-        for (const on of cls.reasons(view)) out.push(...view.contractBooks(cls.kind, on));
+        return out;
+      },
+      /**
+       * Law 18: and the books a class says anybody could be in, whatever their own state — the half
+       * `markets` cannot answer because it is a fact about the book (`DerivativeClassDecl.openToAll`).
+       */
+      everyone: (m: MarketDecl, reads: WorldReads): boolean => {
+        const book = asContractMarket(m);
+        if (book === undefined) return false;
+        const cls = reads.derivativeClass(book.contract.kind);
+        if (cls?.orders === undefined) return false;
+        return cls.openToAll?.(book, reads) === true;
+      },
+      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+        const book = asContractMarket(m);
+        if (book === undefined) return [];
+        // The same question `markets` asks, asked again here because `everyone` can add a book that
+        // `markets` never named — a mandate that forbids a kind forbids it however the book arrived.
+        if (!view.mayTrade(book.contract.kind)) return [];
+        return view.derivativeClass(book.contract.kind)?.orders?.(view, book) ?? [];
+      },
+    })),
+    families: [marginIsHeld(), contractsNameTheLiving()],
+    seed(ctx): void {
+      // C2, C3: one house per currency this world has, named and banked like any other party. A house
+      // is not created by a trade: it is an institution that exists before anybody clears through it,
+      // and which currencies it clears in is which monies its members settle in.
+      for (const ccy of ctx.registry.currencies.keys()) {
+        const region = [...ctx.registry.regions.values()].find(
+          (r) => ctx.registry.currencyOf(r.id) === ccy,
+        );
+        if (region === undefined) continue;
+        const bank = [...ctx.parties.all()].find(
+          (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
+        );
+        if (bank === undefined) continue;
+        ctx.parties.add({
+          id: houseIdFor(ccy),
+          kind: CLEARING_HOUSE,
+          region: region.id,
+          name: `${ctx.registry.currency(ccy).name} Clearing House`,
+          bank: bank.id,
+          representation: 'named',
+          status: { alive: true, standing: 'good' },
+        });
       }
-      return out;
     },
-    /**
-     * Law 18: and the books a class says anybody could be in, whatever their own state — the half
-     * `markets` cannot answer because it is a fact about the book (`DerivativeClassDecl.openToAll`).
-     */
-    everyone: (m: MarketDecl, reads: WorldReads): boolean => {
-      const book = asContractMarket(m);
-      if (book === undefined) return false;
-      const cls = reads.derivativeClass(book.contract.kind);
-      if (cls?.orders === undefined) return false;
-      return cls.openToAll?.(book, reads) === true;
-    },
-    orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-      const book = asContractMarket(m);
-      if (book === undefined) return [];
-      // The same question `markets` asks, asked again here because `everyone` can add a book that
-      // `markets` never named — a mandate that forbids a kind forbids it however the book arrived.
-      if (!view.mayTrade(book.contract.kind)) return [];
-      return view.derivativeClass(book.contract.kind)?.orders?.(view, book) ?? [];
-    },
-  })),
-  families: [marginIsHeld(), contractsNameTheLiving()],
-  seed(ctx): void {
-    // C2, C3: one house per currency this world has, named and banked like any other party. A house
-    // is not created by a trade: it is an institution that exists before anybody clears through it,
-    // and which currencies it clears in is which monies its members settle in.
-    for (const ccy of ctx.registry.currencies.keys()) {
-      const region = [...ctx.registry.regions.values()].find((r) => ctx.registry.currencyOf(r.id) === ccy);
-      if (region === undefined) continue;
-      const bank = [...ctx.parties.all()].find(
-        (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
-      );
-      if (bank === undefined) continue;
-      ctx.parties.add({
-        id: houseIdFor(ccy),
-        kind: CLEARING_HOUSE,
-        region: region.id,
-        name: `${ctx.registry.currency(ccy).name} Clearing House`,
-        bank: bank.id,
-        representation: 'named',
-        status: { alive: true, standing: 'good' },
-      });
-    }
-  },
   };
 }
 
@@ -974,7 +983,11 @@ export function houseIdFor(ccy: CurrencyCode): PartyId {
 }
 
 /** A read for a test or the observer: what a house is holding and owes, per money (C3). */
-export function sheetOf(ctx: MechanismContext, house: PartyId, ccy: CurrencyCode): ReturnType<typeof houseSheet> {
+export function sheetOf(
+  ctx: MechanismContext,
+  house: PartyId,
+  ccy: CurrencyCode,
+): ReturnType<typeof houseSheet> {
   return houseSheet(ctx, house, ccy);
 }
 

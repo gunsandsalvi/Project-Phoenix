@@ -35,6 +35,7 @@
  * which is what Appendix B means by no collateral counted twice — so this is a requirement over the
  * REGISTER: the securities the broker holds for the client, which is what A3 says its knowledge is.
  */
+import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import {
   agreementKindId,
   type AgreementId,
@@ -42,17 +43,8 @@ import {
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
-import {
-  asCash,
-  type Cash,
-  minus,
-  plus,
-  valueAt,
-  asPerPiece,
-  heldAsMoney,
-} from '../../core/measure.js';
+import { type Cash, minus, plus, valueAt, asPerPiece, heldAsMoney } from '../../core/measure.js';
 import { callFor } from '../../registry/margin.js';
-import { atMost, sum } from '../../core/num.js';
 import { none, type Option, some } from '../../core/option.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { Terms } from '../../register/instruments.js';
@@ -111,11 +103,11 @@ function positionsOf(ctx: MechanismContext, client: PartyId, broker: PartyId): r
     // Money D2: a balance is not a position. It is what the client has to meet a call WITH.
     if (ctx.registry.instrumentKind(i.kind).pricing === 'money') continue;
     const worth = ctx.valuation.worthOf(client, h.instrument, ctx.period);
-    if (!worth.some || worth.value.value <= 0) continue;
+    if (!worth.some || worth.value.value.pieces <= 0) continue;
     out.push({
       instrument: h.instrument,
       // Currency C4.a: on the BROKER's book, because the line and the loan are in its money.
-      worth: ctx.valuation.inOwnMoney(broker, worth.value.value, worth.value.ccy, ctx.period),
+      worth: ctx.valuation.inOwnMoney(broker, worth.value.value, ctx.period),
     });
   }
   return out;
@@ -140,10 +132,9 @@ function positionsOf(ctx: MechanismContext, client: PartyId, broker: PartyId): r
  * refusal and not a bound: a lender that cannot say how wrong it has been about a thing has no basis
  * for lending against it, and `Missing` is missing (App A).
  */
-export function requirementOn(
-  broker: ParticipantView,
-  positions: readonly Position[],
-): Cash {
+export function requirementOn(broker: ParticipantView, positions: readonly Position[]): Cash {
+  // Currency B1: the broker's book is reported in its home money, and every position here is (positionsOf).
+  const home = broker.registry.currencyOf(broker.self.region);
   const terms = positions.map((p) => {
     const view = broker.outlook(about({ on: 'price', instrument: p.instrument }));
     if (!view.some) return p.worth;
@@ -153,11 +144,12 @@ export function requirementOn(
     const wide = valueAt(
       asPerPiece(view.value.confidence, 'how wide its own surprises about this line have been'),
       held,
+      p.worth.ccy,
       'what a move the size of its own surprises would cost',
     );
-    return atMost(wide, p.worth, 'a line cannot fall by more than the whole of it');
+    return atMostCash(wide, p.worth, 'a line cannot fall by more than the whole of it');
   });
-  return sum(terms).value;
+  return sumCash(home, terms, 'what it requires against the book').value;
 }
 
 /** What the broker's line arithmetic came to, in the order §15 C states it. */
@@ -189,7 +181,11 @@ export function lineFor(
   financed: Cash,
 ): Line {
   const positions = positionsOf(ctx, client, broker);
-  const portfolio = sum(positions.map((p) => p.worth)).value;
+  const portfolio = sumCash(
+    financed.ccy,
+    positions.map((p) => p.worth),
+    'what the book is worth',
+  ).value;
   const required = requirementOn(ctx.participant(broker), positions);
   return {
     portfolio,
@@ -219,9 +215,9 @@ export function financedFor(
   for (const i of ctx.instruments.issuedBy(client)) {
     if (!i.status.live || !isLoanTerms(i.terms) || i.ccy !== ccy) continue;
     const held = ctx.register.quantity(broker, i.id);
-    if (held > 0) terms.push(heldAsMoney(held, 'what this broker has lent it'));
+    if (held > 0) terms.push(heldAsMoney(held, ccy, 'what this broker has lent it'));
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'what this broker has lent it').value;
 }
 
 /**
@@ -240,7 +236,7 @@ export const callOf = (line: Line): Cash => {
     required: plus(line.required, line.financed, 'what this book has to cover'),
     covering: line.portfolio,
   });
-  return short > 0 ? short : asCash(0, 'it is inside its line');
+  return short.pieces > 0 ? short : noCash(line.portfolio.ccy);
 };
 
 /** The terms a relationship carries after this period's look at it. */
@@ -248,13 +244,12 @@ export const termsOf = (line: Line): PrimeTerms => ({ kind: PRIME, required: lin
 
 /** B1: the two sides of the account, for the record that publishes it (C2, E1). */
 export const asData = (line: Line): Record<string, number> => ({
-  portfolio: line.portfolio,
-  required: line.required,
-  financed: line.financed,
-  equity: line.equity,
-  available: line.available,
+  portfolio: line.portfolio.pieces,
+  required: line.required.pieces,
+  financed: line.financed.pieces,
+  equity: line.equity.pieces,
+  available: line.available.pieces,
 });
-
 
 /* --------------------------------------------------------------------------------------------
  * THE BROKER'S PERIOD
@@ -269,9 +264,21 @@ export interface PrimeDeps {
    * world. A prime loan is secured on a book only this broker holds (A1, A3), so the client cannot
    * take it elsewhere, and pricing it off somebody else's offer would be a rate nobody quoted.
    */
-  lend(ctx: MechanismContext, broker: PartyId, client: PartyId, amount: Cash, ccy: CurrencyCode): boolean;
+  lend(
+    ctx: MechanismContext,
+    broker: PartyId,
+    client: PartyId,
+    amount: Cash,
+    ccy: CurrencyCode,
+  ): boolean;
   /** C3: take the money back. A call met is a real payment that reduces what is owed. */
-  repay(ctx: MechanismContext, broker: PartyId, client: PartyId, amount: Cash, ccy: CurrencyCode): Cash;
+  repay(
+    ctx: MechanismContext,
+    broker: PartyId,
+    client: PartyId,
+    amount: Cash,
+    ccy: CurrencyCode,
+  ): Cash;
 }
 
 /**
@@ -324,9 +331,14 @@ export function runPrime(ctx: MechanismContext, deps: PrimeDeps, clients: PartyK
      * them — a client's line is nobody else's business (Observer A4) — and the CLIENT reads its own,
      * which is how it knows what it may draw. Everything in it is a read taken today.
      */
-    ctx.record('prime.line', [client.id, broker], { client: client.id, broker, ...asData(line) }, false);
+    ctx.record(
+      'prime.line',
+      [client.id, broker],
+      { client: client.id, broker, ...asData(line) },
+      false,
+    );
     const call = callOf(line);
-    if (call > 0) {
+    if (call.pieces > 0) {
       /**
        * C3, C5: A SHORTFALL IS A CALL — REAL MONEY, NOW, and this is what stops margin being *"only
        * a number"*. The broker takes what the client can pay out of its account; what it cannot pay
@@ -339,7 +351,14 @@ export function runPrime(ctx: MechanismContext, deps: PrimeDeps, clients: PartyK
       ctx.record(
         'prime.call',
         [client.id, broker],
-        { client: client.id, broker, called: call, paid, unmet: minus(call, paid, 'what is still owed') },
+        {
+          client: client.id,
+          broker,
+          called: call.pieces,
+          paid: paid.pieces,
+          unmet: minus(call, paid, 'what is still owed').pieces,
+          ccy: call.ccy,
+        },
         false,
       );
       settle(ctx, row, line);
@@ -349,11 +368,15 @@ export function runPrime(ctx: MechanismContext, deps: PrimeDeps, clients: PartyK
     // target, published under its own name); the ALLOWANCE is the broker's, and it changes every
     // period as the book moves (B3: *"the amount available is the lender's decision"*).
     const wants = wantedBy(ctx, client.id);
-    if (!wants.some || wants.value <= 0 || line.available <= 0) continue;
+    if (!wants.some || wants.value.pieces <= 0 || line.available.pieces <= 0) continue;
     const draw = ctx.registry.payable(
-      atMost(wants.value, line.available, 'it lends what the line leaves, never what was asked for'),
+      atMostCash(
+        wants.value,
+        line.available,
+        'it lends what the line leaves, never what was asked for',
+      ),
     );
-    if (draw > 0) deps.lend(ctx, broker, client.id, heldAsMoney(draw, 'what it draws'), ccy);
+    if (draw > 0) deps.lend(ctx, broker, client.id, heldAsMoney(draw, ccy, 'what it draws'), ccy);
     settle(ctx, row, line);
   }
 }

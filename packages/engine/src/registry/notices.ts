@@ -19,6 +19,7 @@ import { asCash, type Cash, asRatio, type Ratio } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
 import type { Period } from '../calendar/calendar.js';
+import type { CurrencyCode } from '../core/ids.js';
 
 const BENCHMARK = 'index.benchmark';
 const AUCTION = 'auction.announced';
@@ -51,7 +52,9 @@ function rateOf(e: Event | undefined, named: string): Option<Ratio> {
   if (e?.subjects.includes(named) !== true) return none<Ratio>();
   const rate = e.data['rate'];
   // Item 16: a published rate re-enters the type system here, through its dimension's own door.
-  return typeof rate === 'number' ? some(asRatio(rate, 'what the benchmark printed')) : none<Ratio>();
+  return typeof rate === 'number'
+    ? some(asRatio(rate, 'what the benchmark printed'))
+    : none<Ratio>();
 }
 
 /**
@@ -82,11 +85,7 @@ export function hasFixed(reads: WireReads, named: string): boolean {
  * obligation of the dealership and not a preference, which is why it is read off the announcement
  * rather than decided at the desk.
  */
-export function dealershipShare(
-  reads: PartyReads,
-  instrument: string,
-  at: Period,
-): Option<Ratio> {
+export function dealershipShare(reads: PartyReads, instrument: string, at: Period): Option<Ratio> {
   const said = reads.lastPublicAbout(AUCTION, instrument);
   if (!said.some || said.value.period !== at) return none<Ratio>();
   const share = said.value.data['dealershipShare'];
@@ -142,7 +141,12 @@ export function advisoryQuotesIn(reads: WireReads, at: Period): readonly Advisor
     if (typeof bank !== 'string' || typeof fee !== 'number') continue;
     if (typeof capacity !== 'number' || typeof ccy !== 'string') continue;
     // Item 16: a fee re-enters the type system here, as the money it is.
-    out.push({ bank, fee: asCash(fee, 'what it charges to run one'), capacity, ccy });
+    out.push({
+      bank,
+      fee: asCash(fee, ccy as CurrencyCode, 'what it charges to run one'),
+      capacity,
+      ccy,
+    });
   }
   return out;
 }
@@ -162,8 +166,11 @@ export function wantedToDraw(reads: WireReads, client: string): Option<Cash> {
   const said = reads.lastOf(PRIME_WANTED, client);
   if (said === undefined) return none<Cash>();
   const wants = said.data['wants'];
-  // Item 16: what a client published it wants to draw re-enters here as the money it is.
-  return typeof wants === 'number' ? some(asCash(wants, 'what it asked to draw')) : none<Cash>();
+  const ccy = said.data['ccy'];
+  // Item 16: what a client published it wants to draw re-enters here as the money it is (16.0: named).
+  return typeof wants === 'number' && typeof ccy === 'string'
+    ? some(asCash(wants, ccy as CurrencyCode, 'what it asked to draw'))
+    : none<Cash>();
 }
 
 /** What a broker published about a client's line: the book it finances, and the client's own equity. */

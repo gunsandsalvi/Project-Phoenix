@@ -45,7 +45,12 @@ import type {
 import type { Guarantee, GuaranteeDecl, GuaranteeReads } from '../register/guarantees.js';
 import type { Process, ProcessDecl, ProcessReads, ProcessState } from '../register/processes.js';
 import type { Objective } from '../registry/kinds.js';
-import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
+import type {
+  AccountRef,
+  Failed,
+  InstructionDraft,
+  SettlementRecord,
+} from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveFamilyDecl, CurveRead } from '../prices/curve.js';
@@ -184,7 +189,24 @@ export interface KernelReads {
   readonly cycle: Cycle;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount' | 'km' | 'kmPerDay' | 'decl' | 'report' | 'all'>;
+  readonly params: Pick<
+    ParamRegister,
+    | 'periods'
+    | 'days'
+    | 'months'
+    | 'years'
+    | 'count'
+    | 'ratio'
+    | 'perAnnum'
+    | 'price'
+    | 'pricePerUnit'
+    | 'amount'
+    | 'km'
+    | 'kmPerDay'
+    | 'decl'
+    | 'report'
+    | 'all'
+  >;
   readonly instruments: InstrumentsReads;
   /**
    * Derivative D1, Law 15: what the module that owns a CLASS of derivative knows — why a party
@@ -364,7 +386,8 @@ export function about(s: Subject): OutlookVariable {
  */
 export function subjectOf(v: OutlookVariable): Option<Subject> {
   const s = String(v);
-  if (s === 'income' || s === 'earnings' || s === 'claims' || s === 'called') return some({ on: s });
+  if (s === 'income' || s === 'earnings' || s === 'claims' || s === 'called')
+    return some({ on: s });
   const dot = s.indexOf('.');
   if (dot < 0) return none<Subject>();
   const on = s.slice(0, dot);
@@ -494,13 +517,13 @@ export interface ParticipantView extends KernelReads {
    * anything that walks its own holdings and sums them comes through here. The rate is a PRINT and
    * public, so nothing private is reachable by asking (Observer A4).
    */
-  inOwnMoney(value: Cash, from: CurrencyCode): Cash;
+  inOwnMoney(value: Cash): Cash;
   /**
    * Currency C4, C5: the same read between any two moneys, at the rate in force this period. A
    * member deciding what it could post against a book quoted in a money it does not hold needs it,
    * and it is the same public print `inOwnMoney` converts at (Observer A4: nothing private).
    */
-  inMoney(value: Cash, from: CurrencyCode, to: CurrencyCode): Cash;
+  inMoney(value: Cash, to: CurrencyCode): Cash;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
@@ -793,7 +816,10 @@ export interface WorldReads extends KernelReads {
     | 'inOwnMoney'
     | 'rateInForce'
   >;
-  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
+  readonly journal: Pick<
+    Journal,
+    'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'
+  >;
   readonly contracts: ContractsRead;
   /** 13c.1, Freight A3: what is on its way somewhere and where it has got to. */
   readonly voyages: VoyagesRead;
@@ -905,7 +931,10 @@ export interface MechanismContext extends WorldReads {
     | 'inOwnMoney'
     | 'rateInForce'
   >;
-  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
+  readonly journal: Pick<
+    Journal,
+    'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'
+  >;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length' | 'madeBy'>;
   readonly cells: CellEvents;
   /**
@@ -1166,7 +1195,22 @@ export interface SeedContext {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount' | 'km' | 'kmPerDay' | 'decl'>;
+  readonly params: Pick<
+    ParamRegister,
+    | 'periods'
+    | 'days'
+    | 'months'
+    | 'years'
+    | 'count'
+    | 'ratio'
+    | 'perAnnum'
+    | 'price'
+    | 'pricePerUnit'
+    | 'amount'
+    | 'km'
+    | 'kmPerDay'
+    | 'decl'
+  >;
   readonly rng: Prng;
   /**
    * ARCHITECTURE 4.9b, Law 4: THE SEED GETS FACADES LIKE EVERY OTHER CONTEXT. It was handed the
@@ -1177,8 +1221,14 @@ export interface SeedContext {
    * it names parties and instruments and says what each party holds. Those writes are here; the
    * rest of each store is not.
    */
-  readonly parties: Pick<Parties, 'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve'>;
-  readonly instruments: Pick<Instruments, 'add' | 'get' | 'has' | 'all' | 'issuedBy' | 'ofKind' | 'adjustIssued'>;
+  readonly parties: Pick<
+    Parties,
+    'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve'
+  >;
+  readonly instruments: Pick<
+    Instruments,
+    'add' | 'get' | 'has' | 'all' | 'issuedBy' | 'ofKind' | 'adjustIssued'
+  >;
   /**
    * `moneyDelta` and `adjustIssued` are here because they are what STATING an opening balance IS:
    * `endowMoney` is the two of them together, and a seed that says who holds what has to say the

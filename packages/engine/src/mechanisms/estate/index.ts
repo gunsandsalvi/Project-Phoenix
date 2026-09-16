@@ -24,13 +24,7 @@
  * that names neither cannot die, and the central bank is the one that names neither because it
  * cannot run out of what it alone issues.
  */
-import {
-  type Cash,
-  asPerPiece,
-  asRatio,
-  heldAsMoney,
-  over,
-} from '../../core/measure.js';
+import { type Cash, asPerPiece, asRatio, heldAsMoney, over } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
@@ -92,7 +86,8 @@ export const estateKind: PartyKindProfile = {
   terminal: true,
   // An estate does not fail: it is what failure resolves into.
   fails: [],
-  cannotFail: 'XI-3, XI-8: it is what failure resolves into; what it owes it pays by the waterfall out of what it holds, and the rest is the loss of whoever held the claim',
+  cannotFail:
+    'XI-3, XI-8: it is what failure resolves into; what it owes it pays by the waterfall out of what it holds, and the rest is the loss of whoever held the claim',
   // Banks Lending A1, C3: and nobody lends to it. Its whole business is being wound up — there is
   // nobody left to sign and no future income to repay out of, so a bank asked for an overdraft by
   // one declines, which is the credit decision Money B3.a wants and the refusal B3.c records.
@@ -150,7 +145,12 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
       // Money B3.c: a raw negative balance is a claim with no instrument behind it, and it should
       // not survive to here — a drawing becomes a loan row before anything can die of it. If one
       // ever does, it is named rather than carried away silently or left on a dead party.
-      ctx.record('estate.overdrawn', [id, dead], { estate: id, dead, instrument: h.instrument, short: negQty(units) }, true);
+      ctx.record(
+        'estate.overdrawn',
+        [id, dead],
+        { estate: id, dead, instrument: h.instrument, short: negQty(units) },
+        true,
+      );
       continue;
     }
     if (units === 0) continue;
@@ -180,11 +180,28 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
             pricePerUnit: none(),
             accruedPerUnit: none(),
           };
-    const release: Leg[] = liens.map((l) => ({ kind: 'release', pledgor: dead, beneficiary: l.beneficiary, instrument: h.instrument, lien: l.id }));
-    const moved = ctx.settle({ legs: [...release, leg], cause: 'transfer', reason: `${dead} to its estate` });
+    const release: Leg[] = liens.map((l) => ({
+      kind: 'release',
+      pledgor: dead,
+      beneficiary: l.beneficiary,
+      instrument: h.instrument,
+      lien: l.id,
+    }));
+    const moved = ctx.settle({
+      legs: [...release, leg],
+      cause: 'transfer',
+      reason: `${dead} to its estate`,
+    });
     if (moved.outcome !== 'settled' || liens.length === 0) continue;
     ctx.settle({
-      legs: liens.map((l) => ({ kind: 'pledge', pledgor: id, beneficiary: l.beneficiary, instrument: h.instrument, qty: l.qty, secures: l.reason })),
+      legs: liens.map((l) => ({
+        kind: 'pledge',
+        pledgor: id,
+        beneficiary: l.beneficiary,
+        instrument: h.instrument,
+        qty: l.qty,
+        secures: l.reason,
+      })),
       cause: 'transfer',
       reason: `${id} holds what ${dead} pledged, still pledged`,
     });
@@ -223,7 +240,11 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
  * down is a price nobody cleared (Appendix B: no written price path). Nothing here is a discount
  * off book: what it fetches is what somebody bids.
  */
-export function estateAsk(view: Pick<ParticipantView, 'quantity' | 'period' | 'print' | 'self'>, m: Pick<MarketDecl, 'instrument'>, closesAfter: number): readonly Order[] {
+export function estateAsk(
+  view: Pick<ParticipantView, 'quantity' | 'period' | 'print' | 'self'>,
+  m: Pick<MarketDecl, 'instrument'>,
+  closesAfter: number,
+): readonly Order[] {
   const units = view.quantity(m.instrument);
   if (!material(units, 2, units)) return [];
   const left = sub(closesAfter, view.period, 'periods left in the programme');
@@ -276,7 +297,8 @@ function distribute(ctx: MechanismContext, estate: PartyId, ccy: CurrencyCode): 
   // the same waterfall, which is the same answer as pooling them — a rank is exhausted before the
   // next is reached, from whatever account the money is in — without inventing an interbank payment
   // between them that nobody asked for.
-  for (const account of accountsOf(ctx, estate, ccy)) distributeFrom(ctx, estate, claims, account, ccy);
+  for (const account of accountsOf(ctx, estate, ccy))
+    distributeFrom(ctx, estate, claims, account, ccy);
 }
 
 /** The estate's own money accounts in one currency: one per bank the dead party banked with. */
@@ -313,13 +335,26 @@ function distributeFrom(
     // what G5.a forbids. `splitOnTick` makes the parts sum to what there was and states who gets the
     // odd piece (ties to the earlier claimant), so a rank that cannot be paid in full consumes the
     // whole pool by construction and there is nothing left to fall through.
-    const parts = cash < owed ? splitOnTick(cash, here.map((c) => c.units)) : here.map((c) => c.units);
+    const parts =
+      cash < owed
+        ? splitOnTick(
+            cash,
+            here.map((c) => c.units),
+          )
+        : here.map((c) => c.units);
     for (const [at, c] of here.entries()) {
       const pay = parts[at];
       // `splitOnTick` returns one part per claim, so an absent one is arithmetically impossible.
       if (pay === undefined) throw new Impossible('Law 8', `no share for claim ${at} of this rank`);
       if (!material(pay, 2, c.units)) continue;
-      const paid = repay(ctx, estate, c, heldAsMoney(pay, 'this claim’s share of the pool'), account, ccy);
+      const paid = repay(
+        ctx,
+        estate,
+        c,
+        heldAsMoney(pay, ccy, 'this claim’s share of the pool'),
+        account,
+        ccy,
+      );
       if (!paid.some) continue;
       cash = subQty(cash, paid.value, 'cash left to distribute');
     }
@@ -346,7 +381,8 @@ function repay(
   const share = gridPerMember(
     ctx.registry,
     holder,
-    over(amount, asRatio(weightOf(holder), 'the members it has'), 'per member'));
+    over(amount, asRatio(weightOf(holder), 'the members it has'), 'per member').pieces,
+  );
   if (share.total <= 0) return none<Qty>();
   const legs: Leg[] = [
     {
@@ -375,7 +411,13 @@ function repay(
   ctx.record(
     'estate.paid',
     [estate, claim.holder, claim.instrument],
-    { estate, holder: claim.holder, instrument: claim.instrument, paid: share.total, of: claim.units },
+    {
+      estate,
+      holder: claim.holder,
+      instrument: claim.instrument,
+      paid: share.total,
+      of: claim.units,
+    },
     false,
   );
   return some(share.total);
@@ -404,7 +446,12 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       ctx.record(
         'estate.residual',
         [estate, h.instrument],
-        { estate, left: units, instrument: h.instrument, why: 'nobody bought it and nobody can be given it: the estate stays open' },
+        {
+          estate,
+          left: units,
+          instrument: h.instrument,
+          why: 'nobody bought it and nobody can be given it: the estate stays open',
+        },
         true,
       );
       return;
@@ -422,7 +469,12 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       cause: 'corporateAction',
       reason: `${estate} abandons ${h.instrument}: the programme ended and nobody bought it`,
     });
-    ctx.record('estate.abandoned', [estate, h.instrument], { estate, instrument: h.instrument, units }, true);
+    ctx.record(
+      'estate.abandoned',
+      [estate, h.instrument],
+      { estate, instrument: h.instrument, units },
+      true,
+    );
   }
   for (const c of claimsOn(ctx, estate)) {
     const leg: Leg = {
@@ -448,7 +500,13 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       ctx.record(
         'estate.residual',
         [estate, c.instrument],
-        { estate, left: c.units, instrument: c.instrument, holder: c.holder, why: 'the holder could not hand it back: the estate stays open' },
+        {
+          estate,
+          left: c.units,
+          instrument: c.instrument,
+          holder: c.holder,
+          why: 'the holder could not hand it back: the estate stays open',
+        },
         true,
       );
       return;
@@ -480,9 +538,18 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
     );
     return;
   }
-  ctx.endProcess(p.id, 'closed', `${estate} sold what it could, paid in rank order and divided the rest`);
+  ctx.endProcess(
+    p.id,
+    'closed',
+    `${estate} sold what it could, paid in rank order and divided the rest`,
+  );
   ctx.cease(estate, estate);
-  ctx.record('estate.closed', [estate], { estate, dead: book(ctx).dead[String(estate)], opened: p.opened }, true);
+  ctx.record(
+    'estate.closed',
+    [estate],
+    { estate, dead: book(ctx).dead[String(estate)], opened: p.opened },
+    true,
+  );
 }
 
 /**
@@ -593,8 +660,7 @@ export const estate: SystemModule = {
       kind: 'noun',
       holds:
         'every estate being wound up: whose it is, when it opened, when it closes, and whether it has',
-      why:
-        'winding up is a multi-period process with states and a rule at each step, and it is the only one in this world that has any representation at all. A construction project, an auction cycle, a tender offer and a restructuring are the same shape and would each invent their own.',
+      why: 'winding up is a multi-period process with states and a rule at each step, and it is the only one in this world that has any representation at all. A construction project, an auction cycle, a tender offer and a restructuring are the same shape and would each invent their own.',
       standsInFor: { noun: 'Process', planItem: 'docs/IMPLEMENTATION.md item 21' },
     },
   ],

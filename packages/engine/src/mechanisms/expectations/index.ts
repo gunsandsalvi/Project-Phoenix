@@ -42,12 +42,23 @@ import { add, atLeast, div, mul, sub, sum, addTo, zeroIfNone } from '../../core/
 import { assertNever } from '../../core/assert.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
-import { isAssetLeg, isContractLeg, isMoneyLeg, paysWhatWasOwed } from '../../ledger/instruction.js';
+import {
+  isAssetLeg,
+  isContractLeg,
+  isMoneyLeg,
+  paysWhatWasOwed,
+} from '../../ledger/instruction.js';
 import { issuedBy } from '../../register/instruments.js';
 import { findVenue } from '../../clearing/venue.js';
 import { depositRatePostedAt } from '../../registry/banking.js';
 import { goingRatePublishedAt } from '../../registry/wages.js';
-import { about, subjectOf, type MechanismContext, type Outlook, type OutlookVariable } from '../../world/context.js';
+import {
+  about,
+  subjectOf,
+  type MechanismContext,
+  type Outlook,
+  type OutlookVariable,
+} from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Event, EventKind } from '../../journal/journal.js';
 import { weightOf } from '../../parties/party.js';
@@ -137,7 +148,11 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
 /** B2, B3: a track keeps no more surprises than the party's memory of them. */
 function keep(track: number[], memory: number): void {
   const rounded = Math.round(memory);
-  const window = atLeast(rounded, 1, 'there is no window shorter than the one surprise it just had');
+  const window = atLeast(
+    rounded,
+    1,
+    'there is no window shorter than the one surprise it just had',
+  );
   if (track.length > window) track.splice(0, track.length - window);
 }
 
@@ -153,9 +168,17 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
   const mean = ctx.params.periods(EXPECTATION_PARAMS.memoryMean);
   const spread = ctx.params.ratio(EXPECTATION_PARAMS.memoryDispersion);
   const draw = ctx.rng.derive(`memory/${party}`).next();
-  const drawn = add(mean, mul(mean, mul(spread, sub(mul(2, draw, 'draw'), 1, 'centred'), 'width'), 'spread'), 'memory');
+  const drawn = add(
+    mean,
+    mul(mean, mul(spread, sub(mul(2, draw, 'draw'), 1, 'centred'), 'width'), 'spread'),
+    'memory',
+  );
   // A memory shorter than one period is not a memory: it would be this period's observation itself.
-  return atLeast(drawn, 1, 'there is no memory shorter than one period: it would be this period itself');
+  return atLeast(
+    drawn,
+    1,
+    'there is no memory shorter than one period: it would be this period itself',
+  );
 }
 
 /**
@@ -165,10 +188,16 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
  * Nothing here is anybody else's: every one of these is read off a leg this party was a side of, or
  * off an effect on its own equity account. A party sees its own fills, not the book (A2, D1).
  */
-function observations(ctx: MechanismContext, held: Book): Map<string, { value: number; unit: string }> {
+function observations(
+  ctx: MechanismContext,
+  held: Book,
+): Map<string, { value: number; unit: string }> {
   const out = new Map<string, { value: number; unit: string }>();
   const income = new Map<PartyId, number[]>();
-  const quantities = new Map<string, { instrument: InstrumentId; party: PartyId; amounts: number[] }>();
+  const quantities = new Map<
+    string,
+    { instrument: InstrumentId; party: PartyId; amounts: number[] }
+  >();
   const earnings = new Map<PartyId, number[]>();
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
@@ -202,11 +231,24 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
         // public information, and it reaches the party as one more thing observed, not as this.
         const price = leg.pricePerUnit.value;
         const ccy = ctx.instruments.get(leg.instrument).ccy;
-        for (const p of [leg.from, leg.to]) out.set(`${p}|price.${leg.instrument}`, { value: price, unit: ccy });
+        for (const p of [leg.from, leg.to])
+          out.set(`${p}|price.${leg.instrument}`, { value: price, unit: ccy });
         // C2: a seller's own fills are what it knows of the demand for what it sells — never the
         // book, which it cannot see, and never the demand it did not win.
-        traded(quantities, leg.from, 'sold', leg.instrument, leg.qty / weightOf(ctx.parties.get(leg.from)));
-        traded(quantities, leg.to, 'bought', leg.instrument, leg.qty / weightOf(ctx.parties.get(leg.to)));
+        traded(
+          quantities,
+          leg.from,
+          'sold',
+          leg.instrument,
+          leg.qty / weightOf(ctx.parties.get(leg.from)),
+        );
+        traded(
+          quantities,
+          leg.to,
+          'bought',
+          leg.instrument,
+          leg.qty / weightOf(ctx.parties.get(leg.to)),
+        );
       } else if (isContractLeg(leg) && leg.act === 'open') {
         /**
          * A2, Derivative D7: A FILL IN A CONTRACT BOOK IS A PRICE THIS PARTY TRADED AT, like any
@@ -290,7 +332,10 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
       if (!ctx.instruments.has(instrument)) continue;
       const print = ctx.prices.read(instrument, ctx.period);
       if (!print.some) continue;
-      out.set(`${party}|${variable}`, { value: print.value.price, unit: ctx.instruments.get(instrument).ccy });
+      out.set(`${party}|${variable}`, {
+        value: print.value.price,
+        unit: ctx.instruments.get(instrument).ccy,
+      });
     }
   }
   // Insurers A4.c (14.4): WHAT A UNIT OF THE COVER IT HAS WRITTEN COST IT THIS PERIOD — the claims
@@ -301,7 +346,8 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
     for (const leg of r.instruction.legs) {
-      if (isMoneyLeg(leg) && leg.receipt?.of === 'claim') addTo(claimsPaid, leg.from.holder, leg.amount);
+      if (isMoneyLeg(leg) && leg.receipt?.of === 'claim')
+        addTo(claimsPaid, leg.from.holder, leg.amount);
     }
   }
   const coverOut = new Map<PartyId, number>();
@@ -349,14 +395,22 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
  * variable is the outlook, and from then on the print corrects it at this party's own memory like
  * any surprise. A party sees nothing private here — every read is of a print or a public event.
  */
-function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<string, number>): Map<OutlookVariable, { value: number; unit: string }> {
+function exposed(
+  ctx: MechanismContext,
+  party: PartyId,
+  cohorts: ReadonlyMap<string, number>,
+): Map<OutlookVariable, { value: number; unit: string }> {
   const out = new Map<OutlookVariable, { value: number; unit: string }>();
   const p = ctx.parties.get(party);
   // Insurers A4.b, Goods B4 (14.2): THE WEATHER OF THE PLACE IT STANDS IN — every party stands in
   // one, and a firm pricing the cover it wants prices it against what it expects of the wind.
   const here = conditionsIn(ctx, p.region);
   if (here !== undefined) {
-    for (const [fact, value] of here) out.set(about({ on: 'condition', fact, region: p.region }), { value, unit: 'multiple of normal' });
+    for (const [fact, value] of here)
+      out.set(about({ on: 'condition', fact, region: p.region }), {
+        value,
+        unit: 'multiple of normal',
+      });
   }
   // Insurers B3, Households F1.b (14.2): A CELL OBSERVES ITS COHORT'S MORTALITY — who died this
   // period, as the households module published it, over who there were; nothing here is a rate
@@ -368,7 +422,11 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
     if (cohort !== undefined && living !== undefined) {
       const died = deathsIn(ctx.journal, cohort, ctx.period);
       const were = add(living, died, 'who there were before this period took its dead');
-      if (were > 0) out.set(about({ on: 'mortality', cohort }), { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
+      if (were > 0)
+        out.set(about({ on: 'mortality', cohort }), {
+          value: div(died, were, 'the share of the cohort that died'),
+          unit: 'share of the cohort a period',
+        });
     }
   }
   // §29 A2.a (14.7): AN INVESTOR OBSERVES WHAT THE POOLS CALLED OF IT this period — its own money,
@@ -376,8 +434,17 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
   // observed as one, so what it keeps back against a call is its own experience and decays as it
   // rises (A4.c). A party nobody has ever called observes nothing and keeps nothing back.
   const calls = callsOn(ctx.journal, party, ctx.period);
-  if (calls.length > 0 || ctx.participant(party).outlookVariables().includes(about({ on: 'called' }))) {
-    out.set(about({ on: 'called' }), { value: sum(calls.map((c) => c.called)).value, unit: ctx.registry.currencyOf(p.region) });
+  if (
+    calls.length > 0 ||
+    ctx
+      .participant(party)
+      .outlookVariables()
+      .includes(about({ on: 'called' }))
+  ) {
+    out.set(about({ on: 'called' }), {
+      value: sum(calls.map((c) => c.called.pieces)).value,
+      unit: ctx.registry.currencyOf(p.region),
+    });
   }
   // Insurers B3 (14.6): A FUND THAT PROMISED A COHORT A PENSION OBSERVES THAT COHORT'S MORTALITY —
   // the same public count a cell of the cohort reads, because the schedule it owes decays at it.
@@ -389,12 +456,18 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
     if (out.has(variable)) continue;
     const died = deathsIn(ctx.journal, row.terms.cohort, ctx.period);
     const were = add(living, died, 'who there were before this period took its dead');
-    if (were > 0) out.set(variable, { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
+    if (were > 0)
+      out.set(variable, {
+        value: div(died, were, 'the share of the cohort that died'),
+        unit: 'share of the cohort a period',
+      });
   }
   const reads = {
     ofKind: (kind: EventKind): readonly Event[] => ctx.journal.ofKind(kind),
-    lastOf: (kind: EventKind, subject: string): Event | undefined => ctx.journal.lastOf(kind, subject),
-    forSubject: (kind: EventKind, subject: string): readonly Event[] => ctx.journal.forSubject(kind, subject),
+    lastOf: (kind: EventKind, subject: string): Event | undefined =>
+      ctx.journal.lastOf(kind, subject),
+    forSubject: (kind: EventKind, subject: string): readonly Event[] =>
+      ctx.journal.forSubject(kind, subject),
     lastPublic: (kind: EventKind): Option<Event> => {
       const list = ctx.journal.ofKind(kind);
       const last = list[list.length - 1];
@@ -405,7 +478,11 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
     const i = ctx.instruments.get(h.instrument);
     if (!i.status.live) continue;
     const print = ctx.prices.read(h.instrument, ctx.period);
-    if (print.some) out.set(about({ on: 'price', instrument: h.instrument }), { value: print.value.price, unit: i.ccy });
+    if (print.some)
+      out.set(about({ on: 'price', instrument: h.instrument }), {
+        value: print.value.price,
+        unit: i.ccy,
+      });
     if (!i.issuer.some || i.issuer.value === party) continue;
     // C2.a, Reporting A1: what THAT company said it made, per period of the span it reported on.
     // A statement is published after the period's close, so it reaches its holders the period
@@ -413,7 +490,11 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
     const statement = ctx.published.lastStatement(i.issuer.value);
     if (statement?.at !== lagged(ctx.period)) continue;
     out.set(about({ on: 'reported', party: i.issuer.value }), {
-      value: div(statement.earned, statement.periods, 'what it published it earned a period'),
+      value: div(
+        statement.earned.pieces,
+        statement.periods,
+        'what it published it earned a period',
+      ),
       unit: statement.ccy,
     });
   }
@@ -424,13 +505,18 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
     const venue = findVenue(ctx.venues, { region: String(r.region), occupation: r.occupation });
     if (venue === undefined) continue;
     const rate = goingRatePublishedAt(reads, venue.id, ctx.period);
-    if (rate.some) out.set(about({ on: 'wage', venue: venue.id }), { value: rate.value, unit: ctx.registry.currencyOf(r.region) });
+    if (rate.some)
+      out.set(about({ on: 'wage', venue: venue.id }), {
+        value: rate.value,
+        unit: ctx.registry.currencyOf(r.region),
+      });
   }
   // Banks Funding B1.a: the board of the bank it banks at, on the class its kind is in.
   const cls = ctx.registry.partyKind(p.kind).depositClass;
   if (cls !== null) {
     const rate = depositRatePostedAt(reads, String(p.bank), cls, ctx.period);
-    if (rate.some) out.set(about({ on: 'deposit', bank: p.bank }), { value: rate.value, unit: 'per annum' });
+    if (rate.some)
+      out.set(about({ on: 'deposit', bank: p.bank }), { value: rate.value, unit: 'per annum' });
   }
   return out;
 }
@@ -461,7 +547,9 @@ function traded(
 function width(surprises: readonly number[]): number {
   if (surprises.length === 0) return 0;
   const mean = div(sum(surprises).value, surprises.length, 'mean surprise');
-  const squares = surprises.map((s) => mul(sub(s, mean, 'deviation'), sub(s, mean, 'deviation'), 'square'));
+  const squares = surprises.map((s) =>
+    mul(sub(s, mean, 'deviation'), sub(s, mean, 'deviation'), 'square'),
+  );
   return Math.sqrt(div(sum(squares).value, surprises.length, 'variance'));
 }
 
@@ -473,8 +561,7 @@ export const expectations: SystemModule = {
       kind: 'physics',
       holds:
         'every party’s outlook on every variable it watches, with its memory, its last observation and its recent surprises',
-      why:
-        '§46 IS THIS MODULE’S SUBJECT MATTER, and a belief is private by right: Observer A4 says no party sees another’s state, and an outlook nobody else can see is the whole of what A2 means by personal. It was declared a PLACEHOLDER for a kernel `View` and the read of the code says otherwise (item 9.9b): the kernel already REACHES it, through `OutlookProvider` and `ParticipantView.outlook`, which is this architecture’s answer to “exactly one module answers for a kind”. Moving the store into the kernel would move §46 B1’s adaptive formation with it, which Law 15 puts in a module. What old item 6 built was the VOCABULARY — `Subject`, `about`, `subjectOf`, so a belief about another PARTY can be expressed at all — and its own record says the store was never what was missing.',
+      why: '§46 IS THIS MODULE’S SUBJECT MATTER, and a belief is private by right: Observer A4 says no party sees another’s state, and an outlook nobody else can see is the whole of what A2 means by personal. It was declared a PLACEHOLDER for a kernel `View` and the read of the code says otherwise (item 9.9b): the kernel already REACHES it, through `OutlookProvider` and `ParticipantView.outlook`, which is this architecture’s answer to “exactly one module answers for a kind”. Moving the store into the kernel would move §46 B1’s adaptive formation with it, which Law 15 puts in a module. What old item 6 built was the VOCABULARY — `Subject`, `about`, `subjectOf`, so a belief about another PARTY can be expressed at all — and its own record says the store was never what was missing.',
     },
   ],
   spec: 'Expectations, XI-16',
@@ -585,7 +672,10 @@ export const expectations: SystemModule = {
             h.surprises.push(own);
             keep(h.surprises, h.memory);
           }
-          const anchored = h.anchored === null ? null : sub(seen.value, h.anchored, 'surprise against the public level');
+          const anchored =
+            h.anchored === null
+              ? null
+              : sub(seen.value, h.anchored, 'surprise against the public level');
           if (anchored !== null && anchored !== 0) {
             h.anchoredSurprises.push(anchored);
             keep(h.anchoredSurprises, h.memory);
@@ -598,7 +688,20 @@ export const expectations: SystemModule = {
             // B2: a surprise is a real event, recorded. It is the party's own, so it is private.
             // `surprise` is the one it took — against the predictor it followed; both tracks are on
             // the record too, so the switch is something a reader can check against the history.
-            ctx.record('expectations.surprise', [party], { variable, observed: seen.value, expected: acted, surprise, follows: h.follows, own, anchored }, false);
+            ctx.record(
+              'expectations.surprise',
+              [party],
+              {
+                variable,
+                observed: seen.value,
+                expected: acted,
+                surprise,
+                follows: h.follows,
+                own,
+                anchored,
+              },
+              false,
+            );
           }
         }
       },

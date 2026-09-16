@@ -101,7 +101,8 @@ export function publishedReads(journal: JournalRead): PublishedReads {
       const e = journal.lastOf(STATEMENT, company);
       return e === undefined ? undefined : statementOf(e);
     },
-    statements: (company?: PartyId) => forSubject(journal.ofKind(STATEMENT), company).map(statementOf),
+    statements: (company?: PartyId) =>
+      forSubject(journal.ofKind(STATEMENT), company).map(statementOf),
     lastGuidance: (company: PartyId) => {
       const e = journal.lastOf(GUIDANCE, company);
       return e === undefined ? undefined : guidanceOf(e);
@@ -121,6 +122,7 @@ function forSubject(events: readonly Event[], company: PartyId | undefined): rea
 function statementOf(e: Event): PublishedStatement {
   const from = num(e, 'from');
   const to = num(e, 'to');
+  const ccy = str(e, 'ccy') as CurrencyCode;
   return {
     company: subject(e),
     quarter: str(e, 'quarter'),
@@ -128,23 +130,24 @@ function statementOf(e: Event): PublishedStatement {
     to: to as Period,
     // Law 19: derived at the read from the two dates the writer published, never stored beside them.
     periods: to - from + 1,
-    earned: asCash(num(e, 'earned'), 'what it published it earned'),
-    revaluation: asCash(num(e, 'revaluation'), 'what the marks did'),
+    earned: asCash(num(e, 'earned'), ccy, 'what it published it earned'),
+    revaluation: asCash(num(e, 'revaluation'), ccy, 'what the marks did'),
     income: lines(e),
-    assets: asCash(num(e, 'assets'), 'what it published it holds'),
-    liabilities: asCash(num(e, 'liabilities'), 'what it published it owes'),
-    ccy: str(e, 'ccy') as CurrencyCode,
+    assets: asCash(num(e, 'assets'), ccy, 'what it published it holds'),
+    liabilities: asCash(num(e, 'liabilities'), ccy, 'what it published it owes'),
+    ccy,
     shares: asAmount<'piece'>(num(e, 'shares'), 'shares in issue'),
     at: e.period,
   };
 }
 
 function guidanceOf(e: Event): PublishedGuidance {
+  const ccy = str(e, 'ccy') as CurrencyCode;
   return {
     company: subject(e),
     quarter: str(e, 'quarter'),
-    perPeriod: asCash(num(e, 'perPeriod'), 'what it guided it makes in a period'),
-    guided: asCash(num(e, 'guided'), 'what it guided for the span'),
+    perPeriod: asCash(num(e, 'perPeriod'), ccy, 'what it guided it makes in a period'),
+    guided: asCash(num(e, 'guided'), ccy, 'what it guided for the span'),
     periods: num(e, 'periods'),
     at: e.period,
   };
@@ -180,7 +183,6 @@ function num(e: Event, field: string): number {
   }
   return v;
 }
-
 
 function str(e: Event, field: string): string {
   const v = e.data[field];

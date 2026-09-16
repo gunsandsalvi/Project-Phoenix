@@ -3,6 +3,7 @@
  *
  * @spec Securities Lending A1 Securities Lending A2 Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending A5.a Securities Lending A5.b Securities Lending B2 Securities Lending B4 Securities Lending C1 Securities Lending C2 Securities Lending C2.a Securities Lending C4 Securities Lending D1 Securities Lending E1 Securities Lending E2 Securities Lending E3 Prime Brokerage C3.b Equity C7 Register D5.a Law 2 Law 3 Law 4
  */
+import { USD } from '../src/seeds/foundation.js';
 import { asCash, asRatio } from '../src/core/measure.js';
 import { callFor } from '../src/registry/margin.js';
 import { describe, expect, it } from 'vitest';
@@ -104,10 +105,10 @@ describe('both sides are marked and the difference is called (C1, C2, C2.a)', ()
     // A broker marking a portfolio against what it requires and a lender marking lent paper against
     // its collateral are the same sentence about two contracts. Written twice, the day one of them
     // gained a floor the other would not.
-    expect(callFor({ required: asCash(120, 'what it requires'), covering: asCash(100, 'what covers it') })).toBe(20);
+    expect(callFor({ required: asCash(120, USD, 'what it requires'), covering: asCash(100, USD, 'what covers it') }).pieces).toBe(20);
     // §15 C3.b: and it is NEVER floored. Over-covered comes back negative, which is the answer and
     // not a case — a mechanism that took margin and never returned it is a flow with one leg.
-    expect(callFor({ required: asCash(80, 'what it requires'), covering: asCash(100, 'what covers it') })).toBe(-20);
+    expect(callFor({ required: asCash(80, USD, 'what it requires'), covering: asCash(100, USD, 'what covers it') }).pieces).toBe(-20);
   });
 
   it('moves real money, both ways, and never more back than was posted', () => {

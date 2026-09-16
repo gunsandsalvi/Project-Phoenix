@@ -262,7 +262,7 @@ m.id === 'sovereign-instruments' ||
 
 describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
   it('is a named state, publicly, with the payee that did not get paid (E1.b)', () => {
-    const w = world(overpromise(phx(1_000_000)));
+    const w = world(overpromise(phx(1_000_000).pieces));
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const ev = w.journal.ofKind('credit.default').find((e) => e.data['party'] === PAYER);
     expect(ev).toBeDefined();
@@ -287,7 +287,7 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
   });
 
   it('shows a party its own failures and nobody else (Observer A4, Money E1.b)', () => {
-    const w = world(overpromise(phx(1_000_000)));
+    const w = world(overpromise(phx(1_000_000).pieces));
     for (let i = 0; i < 4; i += 1) w.step();
     const mine = w.participantView(PAYER).failedPayments(period(0));
     expect(mine.length).toBeGreaterThan(0);
@@ -323,7 +323,7 @@ function acceleratingKind(): InstrumentKindProfile {
             {
               kind: 'coupon',
               date: calendar.startOf(p),
-              amountPerUnit: asPerPiece(phx(1_000_000), 'a coupon it cannot pay'),
+              amountPerUnit: asPerPiece(phx(1_000_000).pieces, 'a coupon it cannot pay'),
             },
           ]
         : [],

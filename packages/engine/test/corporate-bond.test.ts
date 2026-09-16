@@ -3,6 +3,7 @@
  *
  * @spec Corporate Credit A1 Corporate Credit B2 Corporate Credit B2.a Corporate Credit B3 Corporate Credit G2 Bond N4 Bond N6 Bond N13 Bond N13.a Reporting A2 Law 2 Law 4 Law 6 Law 9
  */
+import { USD } from '../src/seeds/foundation.js';
 import { asCash, asRatio } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -72,11 +73,11 @@ describe('the covenant is tested on what was PUBLISHED (B2.a, Reporting A2)', ()
     const c = { leverage: asRatio(0.6, 'what it promised'), coverage: asRatio(2, 'what it promised') };
     // Headroom is what is left of the promise. Negative is a breach, and it is arithmetic on two
     // published numbers rather than a threshold anybody tuned.
-    expect(headroomOn({ assets: asCash(100, 'what it holds'), liabilities: asCash(50, 'what it owes') }, c)).toBeCloseTo(0.1, 12);
-    expect(headroomOn({ assets: asCash(100, 'what it holds'), liabilities: asCash(70, 'what it owes') }, c)).toBeLessThan(0);
+    expect(headroomOn({ assets: asCash(100, USD, 'what it holds'), liabilities: asCash(50, USD, 'what it owes') }, c)).toBeCloseTo(0.1, 12);
+    expect(headroomOn({ assets: asCash(100, USD, 'what it holds'), liabilities: asCash(70, USD, 'what it owes') }, c)).toBeLessThan(0);
     // A firm with no assets has no ratio that means anything and HAS breached — which is what the
     // worst case is, rather than a number pushed back inside a range (Law 6).
-    expect(headroomOn({ assets: asCash(0, 'what it holds'), liabilities: asCash(1, 'what it owes') }, c)).toBeLessThan(0);
+    expect(headroomOn({ assets: asCash(0, USD, 'what it holds'), liabilities: asCash(1, USD, 'what it owes') }, c)).toBeLessThan(0);
   });
 
   it('never repairs or accelerates by itself: a breach is an event and that is all', () => {
@@ -178,9 +179,9 @@ describe('a firm issues because a market was cheaper than its bank (A1, B1, E5.d
       // B2.a: a promise the issuer could actually make — its own published accounts, so the firm
       // that has not deteriorated since is inside it and only the one that has is not.
       const said = w.published.lastStatement(i.terms.issuer);
-      if (said === undefined || said.assets <= 0) continue;
+      if (said === undefined || said.assets.pieces <= 0) continue;
       expect(i.terms.covenants.leverage).toBeGreaterThanOrEqual(
-        said.liabilities / said.assets,
+        said.liabilities.pieces / said.assets.pieces,
       );
     }
   });

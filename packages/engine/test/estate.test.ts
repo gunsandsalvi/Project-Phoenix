@@ -92,7 +92,7 @@ function whatItHolds(ctx: SeedContext, party: PartyId): number {
   for (const h of ctx.register.holdingsOf(party)) {
     const i = ctx.instruments.get(h.instrument);
     if (i.ccy !== USD) continue;
-    held += ctx.valuation.valueOfLots(i.id, h.lots, ctx.period);
+    held += ctx.valuation.valueOfLots(i.id, h.lots, ctx.period).pieces;
   }
   return held;
 }
@@ -215,7 +215,7 @@ function cannotPay(): SystemModule {
         terms: { kind: SENIOR_KIND },
         market: none(),
       });
-      ctx.endowUnits(SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
+      ctx.endowUnits(SENIOR_HOLDER, SENIOR, phx(1_000_000).pieces, 1);
     },
   };
 }
@@ -466,25 +466,25 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
 
   it('writes off what it never paid, and the loss lands on the holders (D3, E5)', () => {
     const w = failingWorld(owesMoreThanItHas());
-    const seniorBefore = w.register.equity(SENIOR_HOLDER);
-    const juniorBefore = w.register.equity(JUNIOR_HOLDER);
+    const seniorBefore = w.register.equity(SENIOR_HOLDER).pieces;
+    const juniorBefore = w.register.equity(JUNIOR_HOLDER).pieces;
     // What it was carrying, read off the register before anything happens to it (Law 19).
     const juniorHeld = w.register.quantity(JUNIOR_HOLDER, JUNIOR);
     for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // D3: the loss is on named holders, in proportion to what each was owed and not paid.
     expect(w.register.quantity(SENIOR_HOLDER, SENIOR)).toBe(0);
     expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(0);
-    expect(w.register.equity(SENIOR_HOLDER)).toBeLessThan(seniorBefore);
+    expect(w.register.equity(SENIOR_HOLDER).pieces).toBeLessThan(seniorBefore);
     // The junior was paid nothing at all, so it lost AT LEAST the whole of what it was carrying.
     // Not exactly it, and this used to say so: the holder is a real firm in a running world, and
     // over the twelve periods this takes it also pays its people, buys its inputs and earns a week
     // of deposit interest — none of which is the waterfall's business. What the waterfall owes this
     // test is that the whole claim landed on the holder, and that is a floor on the fall, not a
     // window around it.
-    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeGreaterThanOrEqual(juniorHeld);
+    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER).pieces).toBeGreaterThanOrEqual(juniorHeld);
     // ...and it lost MORE than the senior did, which is the whole of what being junior means.
-    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeGreaterThan(
-      seniorBefore - w.register.equity(SENIOR_HOLDER),
+    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER).pieces).toBeGreaterThan(
+      seniorBefore - w.register.equity(SENIOR_HOLDER).pieces,
     );
   });
 });

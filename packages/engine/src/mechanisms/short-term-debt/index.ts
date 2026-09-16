@@ -27,6 +27,9 @@ import { boardPosted, bufferOf, creditQuoteThisPeriod } from '../../registry/ban
 import {
   amountOf,
   asCash,
+  atMostCash,
+  noCash,
+  sumCash,
   asPerNamedUnit,
   asPerPiece,
   asRatio,
@@ -57,7 +60,6 @@ import {
   type PartyKindId,
 } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
-import { atMost, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { asQty, downTick, upTick } from '../../core/tick.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
@@ -123,9 +125,9 @@ export function issuePaper(ctx: MechanismContext): void {
     const { ccy } = need;
     // B3.a: what it must repay, and what it is short of besides. Both are money it needs on a date
     // inside the tenor, so there is one number and one trip to the market.
-    const rolling = maturingIn(ctx, issuer, ctx.period);
+    const rolling = maturingIn(ctx, issuer, ctx.period, ccy);
     const want = plus(need.shortNow, rolling, 'what it needs, including what it must repay');
-    if (want <= 0) continue;
+    if (want.pieces <= 0) continue;
     place(ctx, issuer, ccy, want, rolling);
   }
 }
@@ -169,7 +171,11 @@ function firmNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
   const said = fundingPublishedBy(ctx.journal, String(issuer), ctx.period);
   if (!said.some) return none();
   return some({
-    shortNow: asCash(said.value.shortNow, 'what it cannot pay of what falls due soon'),
+    shortNow: asCash(
+      said.value.shortNow,
+      said.value.ccy,
+      'what it cannot pay of what falls due soon',
+    ),
     ccy: said.value.ccy,
   });
 }
@@ -199,8 +205,8 @@ function bankNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
   );
   return some({
     shortNow: minus(
-      heldAsMoney(asQty(buffer, 'what it published it keeps back'), 'the buffer it wants'),
-      heldAsMoney(held, 'the reserves it actually holds'),
+      heldAsMoney(asQty(buffer, 'what it published it keeps back'), money, 'the buffer it wants'),
+      heldAsMoney(held, money, 'the reserves it actually holds'),
       'what it is short of its own buffer',
     ),
     ccy: money,
@@ -215,16 +221,21 @@ function bankNeed(ctx: MechanismContext, issuer: PartyId): Option<Need> {
  * `DueAction` and settlement moves it — and what this answers is the other half: the issuer has to
  * KNOW it is coming, which is what makes a run a thing it can see arriving rather than a surprise.
  */
-function maturingIn(ctx: MechanismContext, issuer: PartyId, period: number): Cash {
+function maturingIn(
+  ctx: MechanismContext,
+  issuer: PartyId,
+  period: number,
+  ccy: CurrencyCode,
+): Cash {
   const due: Cash[] = [];
   for (const i of ctx.instruments.issuedBy(issuer)) {
-    if (!i.status.live || !isPaper(i.terms)) continue;
+    if (!i.status.live || !isPaper(i.terms) || i.ccy !== ccy) continue;
     if (ctx.calendar.periodOf(i.terms.maturity) !== period) continue;
     // N10: it repays PAR on every unit outstanding, which is a read of the register.
     const face = ctx.register.heldTotal(i.id).value;
-    due.push(valueAt(par(ctx, i.ccy), face, 'the par it must repay'));
+    due.push(valueAt(par(ctx, i.ccy), face, i.ccy, 'the par it must repay'));
   }
-  return sum(due).value;
+  return sumCash(ccy, due, 'the par falling due').value;
 }
 
 /** N10: par on the piece grid, in this money. One named unit of money for one of face. */
@@ -293,8 +304,9 @@ function place(
       size: units,
       reservation: walkAway,
       // B3: how much of this trip is asking for the same money again, so a reader can see a roll.
-      rolling,
-      want,
+      rolling: rolling.pieces,
+      want: want.pieces,
+      ccy: rolling.ccy,
       maturity: ctx.calendar.periodOf(maturity),
       alternative: alternative.value,
     },
@@ -410,7 +422,7 @@ function buys(view: ParticipantView, market: MarketDecl): readonly Order[] {
   const most = priceCosting(alternative.value, term);
   if (most <= 0) return [];
   const room = headroomFor(view, issuer, market.ccy);
-  if (room <= 0) return [];
+  if (room.pieces <= 0) return [];
   const afford = downTick(amountOf(room, most, 'units its room and its money reach to'));
   if (afford <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: most, qty: afford }];
@@ -458,26 +470,36 @@ function onDeposit(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
  * `Short-Term Debt C3` is marked PARTIAL for exactly that.
  */
 function headroomFor(view: ParticipantView, issuer: PartyId, ccy: CurrencyCode): Cash {
-  const book = view.equity();
-  if (book <= 0) return asCash(0, 'a buyer with no book lends to nobody');
-  const most: Cash = scale(book, view.params.ratio(PAPER_PARAMS.concentration), 'the most of one name');
-  const already = exposureTo(view, issuer);
+  // Money B1, C4 (16.0): its book is a REPORT in its home money; what it lends is in the paper's.
+  const book = view.inMoney(view.equity(), ccy);
+  if (book.pieces <= 0) return noCash(ccy);
+  const most: Cash = scale(
+    book,
+    view.params.ratio(PAPER_PARAMS.concentration),
+    'the most of one name',
+  );
+  const already = exposureTo(view, issuer, ccy);
   const room: Cash = minus(most, already, 'what is left of its room for this name');
-  const money = heldAsMoney(view.cash(ccy), 'the money it holds');
-  return atMost(room, money, 'it cannot lend money it does not hold');
+  const money = heldAsMoney(view.cash(ccy), ccy, 'the money it holds');
+  return atMostCash(room, money, 'it cannot lend money it does not hold');
 }
 
 /** Law 19: what it already has out to this name, marked, read off its own holdings. */
-function exposureTo(view: ParticipantView, issuer: PartyId): Cash {
+function exposureTo(view: ParticipantView, issuer: PartyId, ccy: CurrencyCode): Cash {
   const out: Cash[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (!i.issuer.some || i.issuer.value !== issuer) continue;
     const at = view.mark(h.instrument);
     if (!at.some) continue;
-    out.push(valueAt(at.value, view.quantity(h.instrument), 'what it has out to this name'));
+    out.push(
+      view.inMoney(
+        valueAt(at.value, view.quantity(h.instrument), i.ccy, 'what it has out to this name'),
+        ccy,
+      ),
+    );
   }
-  return sum(out).value;
+  return sumCash(ccy, out, 'what it has out to this name').value;
 }
 
 /**
@@ -499,7 +521,6 @@ function doubted(view: ParticipantView, issuer: PartyId): boolean {
 
 /** C3: the two public things that make a cash investor stop lending to a name (Law 15: a table). */
 const SOURED: readonly EventKind[] = ['credit.default', 'covenant.breached'];
-
 
 /* --------------------------------------------------------------------------------------------
  * THE BACKSTOP
@@ -550,8 +571,8 @@ function backstopLoanId(bank: PartyId, issuer: PartyId): InstrumentId {
 /** Law 19: what the issuer has drawn on this line — the outstanding of its row, or nothing yet. */
 function drawnOn(ctx: MechanismContext, row: Agreement): Cash {
   const id = backstopLoanId(row.creditor, row.debtor);
-  if (!ctx.instruments.has(id) || !ctx.instruments.get(id).status.live) return asCash(0, 'it has drawn nothing');
-  return heldAsMoney(ctx.register.heldTotal(id).value, 'what it has drawn and not repaid');
+  if (!ctx.instruments.has(id) || !ctx.instruments.get(id).status.live) return noCash(row.ccy);
+  return heldAsMoney(ctx.register.heldTotal(id).value, row.ccy, 'what it has drawn and not repaid');
 }
 
 /**
@@ -604,15 +625,15 @@ export function grantBackstops(ctx: MechanismContext): void {
     if (bank === p.id) continue;
     const quote = creditQuoteThisPeriod(ctx.journal, String(p.id), ctx.period);
     if (!quote.some) continue;
-    const book = ctx.participant(p.id).equity();
-    if (book <= 0) continue;
+    const book = ctx.participant(p.id).inMoney(ctx.participant(p.id).equity(), ccy);
+    if (book.pieces <= 0) continue;
     const terms: BackstopTerms = {
       kind: BACKSTOP,
       limit: scale(book, ctx.params.ratio(PAPER_PARAMS.line), 'the line it was granted'),
       fee: ctx.params.perAnnum(PAPER_PARAMS.commitmentFee),
       rate: quote.value.rate,
     };
-    if (terms.limit <= 0) continue;
+    if (terms.limit.pieces <= 0) continue;
     ctx.owes({
       debtor: p.id,
       creditor: bank,
@@ -634,7 +655,7 @@ export function chargeBackstops(ctx: MechanismContext): void {
     const t = row.terms;
     if (!isBackstop(t)) continue;
     const undrawn = minus(t.limit, drawnOn(ctx, row), 'the headroom it is paying to keep open');
-    if (undrawn <= 0) continue;
+    if (undrawn.pieces <= 0) continue;
     // Law 8: the fee is quoted per annum and falls per period, so it is placed on the calendar by
     // the calendar and not by a count anybody wrote down (Money G3.a).
     const on = ctx.calendar.startOf(ctx.period);
@@ -642,7 +663,9 @@ export function chargeBackstops(ctx: MechanismContext): void {
       yearFraction(PAPER_DAY_COUNT, on, addDays(on, ctx.calendar.periodDays)),
       'the part of a year this period is',
     );
-    const due = downTick(scale(scale(undrawn, t.fee, 'a year of it'), over, 'this period of it'));
+    const due = downTick(
+      scale(scale(undrawn, t.fee, 'a year of it'), over, 'this period of it').pieces,
+    );
     if (due <= 0) continue;
     ctx.settle({
       legs: [
@@ -679,19 +702,23 @@ export function drawBackstops(ctx: MechanismContext): void {
   for (const row of openLines(ctx)) {
     const t = row.terms;
     if (!isBackstop(t)) continue;
-    const owing = maturingIn(ctx, row.debtor, ctx.period);
-    if (owing <= 0) continue;
+    const owing = maturingIn(ctx, row.debtor, ctx.period, row.ccy);
+    if (owing.pieces <= 0) continue;
     const has = heldAsMoney(
-      ctx.register.quantity(row.debtor, moneyInstrumentId(ctx.accountOf(row.debtor, row.ccy).issuer, row.ccy)),
+      ctx.register.quantity(
+        row.debtor,
+        moneyInstrumentId(ctx.accountOf(row.debtor, row.ccy).issuer, row.ccy),
+      ),
+      row.ccy,
       'the money it holds against what is due',
     );
     const short = minus(owing, has, 'what it cannot repay out of what it holds');
-    if (short <= 0) continue;
+    if (short.pieces <= 0) continue;
     // B4: it may draw what it agreed and not a penny more. That is not a bound on an outcome — it
     // is the size of the promise somebody made it, and an issuer short of more than its line is
     // exactly the issuer that fails (Law 6).
     const room = minus(t.limit, drawnOn(ctx, row), 'what is left of the line');
-    const take = downTick(atMost(short, room, 'it may draw what it agreed and no more'));
+    const take = downTick(atMostCash(short, room, 'it may draw what it agreed and no more').pieces);
     if (take <= 0) continue;
     // 12a.7, Banks Lending A1, B1: A DRAWING IS A LOAN ROW ON BOTH BOOKS — the bank's money
     // created into the issuer's account against a claim on the issuer, at the line's rate, with a
@@ -741,7 +768,15 @@ export function drawBackstops(ctx: MechanismContext): void {
     ctx.record(
       'backstop.drawn',
       [row.debtor, row.creditor, id],
-      { issuer: row.debtor, bank: row.creditor, loan: id, drew: take, owing, limit: t.limit },
+      {
+        issuer: row.debtor,
+        bank: row.creditor,
+        loan: id,
+        drew: take,
+        owing: owing.pieces,
+        limit: t.limit.pieces,
+        ccy: owing.ccy,
+      },
       true,
     );
   }

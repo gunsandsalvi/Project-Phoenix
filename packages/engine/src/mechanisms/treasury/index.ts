@@ -16,6 +16,10 @@
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
 import {
+  atMostCash,
+  negated,
+  noCash,
+  sumCash,
   type Cash,
   type PerPiece,
   acrossMembers,
@@ -51,7 +55,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { addTo, atLeast, atMost, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
+import { addTo, atLeast, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -97,11 +101,12 @@ export const PROGRAMME = 'treasury.programme.need';
 export interface ProgrammeNeed {
   at: Period | undefined;
   /** Negative is what it has OVER, which is what it can buy its own paper back with (D4.b). */
-  need: number;
+  /** Missing until a programme has run this period (16.0): a need is money of a named currency. */
+  need: Cash | undefined;
 }
 
 /** An empty slot: a treasury that has published no programme this period has no period and no need. */
-export const nothingNeeded = (): ProgrammeNeed => ({ at: undefined, need: 0 });
+export const nothingNeeded = (): ProgrammeNeed => ({ at: undefined, need: undefined });
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
@@ -167,16 +172,22 @@ function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
 
 /** What the treasury must pay over its horizon out of its own paper (B2, B4, D4.a). */
 function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon: Period): Cash {
+  // Currency B1, C4: what falls due across its lines, REPORTED in the money it reports in (16.4 will let it owe in another).
+  const home = ctx.registry.currencyOf(ctx.parties.get(issuer).region);
   const terms: Cash[] = [];
   for (const i of ctx.instruments.all()) {
     if (!issuedBy(i, issuer) || !i.status.live) continue;
-    for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry)) {
+    for (const f of ctx.registry
+      .instrumentKind(i.kind)
+      .cashFlows(i, on, ctx.calendar, ctx.registry)) {
       if (ctx.calendar.periodOf(f.date) <= horizon) {
-        terms.push(valueAt(f.perUnit, i.issued, 'service'));
+        terms.push(
+          ctx.valuation.inMoney(valueAt(f.perUnit, i.issued, i.ccy, 'service'), home, ctx.period),
+        );
       }
     }
   }
-  return sum(terms).value;
+  return sumCash(home, terms, 'what its debt asks').value;
 }
 
 /**
@@ -186,31 +197,37 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
  * applied to labour): what it owes its own staff is what its own rows say.
  */
 function mandatePerPeriod(ctx: MechanismContext, id: PartyId): Cash {
-  const money = currencyUnit(ctx.registry.currencyOf(ctx.parties.get(id).region));
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
+  const money = currencyUnit(ccy);
   const transfers = heldAsMoney(
     ctx.params.amount(TREASURY_PARAMS.transfers, money),
+    ccy,
     'what it pays a member a period',
   );
   const terms: Cash[] = [
-    heldAsMoney(ctx.params.amount(TREASURY_PARAMS.purchases, money), 'what it buys with'),
-    lastWageBill(ctx, id),
+    heldAsMoney(ctx.params.amount(TREASURY_PARAMS.purchases, money), ccy, 'what it buys with'),
+    lastWageBill(ctx, id, ccy),
   ];
   for (const p of itsPeople(ctx, id)) {
     terms.push(
-      acrossMembers(
-        asPerMember<'money:piece'>(transfers, 'what one member is paid'),
-        p.weight,
+      asCash(
+        acrossMembers(
+          asPerMember<'money:piece'>(transfers.pieces, 'what one member is paid'),
+          p.weight,
+          'transfers',
+        ),
+        ccy,
         'transfers',
       ),
     );
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'what its mandate asks a period').value;
 }
 
 /** What its own payroll came to last time it was paid, read from its own record (Law 19). */
-function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
-  const own = ownPayrollOf(ctx, id, ctx.period);
-  return own.some ? own.value.due : asCash(0, 'a treasury that has published no payroll');
+function lastWageBill(ctx: MechanismContext, id: PartyId, ccy: CurrencyCode): Cash {
+  const own = ownPayrollOf(ctx, id, ctx.period, ccy);
+  return own.some ? own.value.due : noCash(ccy);
 }
 
 /**
@@ -227,13 +244,15 @@ function wageItFaces(ctx: MechanismContext, id: PartyId): PerPiece | undefined {
 }
 
 /** What it collected last period, which is what it has to go on until it has an outlook (§46 C5). */
-function lastReceipts(ctx: MechanismContext): Cash {
+function lastReceipts(ctx: MechanismContext, ccy: CurrencyCode): Cash {
   const events = ctx.journal.ofKind('treasury.receipts');
   const last = events[events.length - 1];
-  if (last === undefined) return asCash(0, 'a treasury that has collected nothing yet');
+  if (last === undefined) return noCash(ccy);
   const total = last.data['total'];
   // Item 16: money re-entering from what the treasury itself published.
-  return asCash(typeof total === 'number' ? total : 0, 'what it collected last period');
+  return typeof total === 'number'
+    ? asCash(total, ccy, 'what it collected last period')
+    : noCash(ccy);
 }
 
 /** The first grid date on or after a target date (B3.a: which line a tenor lands on). */
@@ -258,8 +277,7 @@ export const treasury: SystemModule = {
       name: PROGRAMME,
       kind: 'working',
       holds: 'what each treasury reckoned it needs this period, and the period it reckoned it in',
-      why:
-        'it is how this module gets from its programme phase to its own buy-in within one period (0e\u2032.4). What the WORLD reads is the published `treasury.programme`, which is still written and is the whole point of C1.a; this is the same number the same treasury reads about itself, and it was its own public event read back by its writer in the period it wrote it.',
+      why: 'it is how this module gets from its programme phase to its own buy-in within one period (0e\u2032.4). What the WORLD reads is the published `treasury.programme`, which is still written and is the whole point of C1.a; this is the same number the same treasury reads about itself, and it was its own public event read back by its writer in the period it wrote it.',
     },
   ],
   spec: 'Treasury, Sovereign A, C, XI-9',
@@ -333,7 +351,7 @@ export const treasury: SystemModule = {
       dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
-      why: 'Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market\'s business, and the state is rationed in it like any other buyer (Goods C4).',
+      why: "Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market's business, and the state is rationed in it like any other buyer (Goods C4).",
     },
     {
       id: TREASURY_PARAMS.taxInterest,
@@ -397,9 +415,7 @@ export const treasury: SystemModule = {
       name: 'treasury.programme',
       spec: 'Treasury D1 Treasury D4 Sovereign A2 Sovereign C1',
       anchor: { after: 'corporateActions' },
-      reads: [
-        { kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' },
-      ],
+      reads: [{ kind: 'event', name: 'treasury.receipts', of: 'anyPeriod' }],
       writes: [
         { kind: 'event', name: 'auction.announced' },
         { kind: 'event', name: 'treasury.programme' },
@@ -439,9 +455,7 @@ export const treasury: SystemModule = {
       // Before the jobs are struck: the state posts what it wants like any other employer, in the
       // same venue, and what it pays is what that venue cleared at.
       anchor: { before: 'labour.match' },
-      reads: [
-        { kind: 'event', name: 'labour.print', of: 'anyPeriod' },
-      ],
+      reads: [{ kind: 'event', name: 'labour.print', of: 'anyPeriod' }],
       writes: [],
       run: (ctx: MechanismContext): void => {
         for (const t of ctx.parties.ofKind(TREASURY)) {
@@ -536,9 +550,13 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const service = debtService(ctx, id, on, horizon);
   const perPeriod = mandatePerPeriod(ctx, id);
-  const mandate = scale(perPeriod, asRatio(horizonPeriods, 'the periods ahead'), 'mandate over horizon');
+  const mandate = scale(
+    perPeriod,
+    asRatio(horizonPeriods, 'the periods ahead'),
+    'mandate over horizon',
+  );
   const receipts = scale(
-    lastReceipts(ctx),
+    lastReceipts(ctx, ccy),
     asRatio(horizonPeriods, 'the periods ahead'),
     'receipts over horizon',
   );
@@ -549,6 +567,7 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   );
   const cash = heldAsMoney(
     ctx.register.quantity(id, accountOf(ctx, id, ccy)),
+    ccy,
     'what is in its account',
   );
   const need = minus(
@@ -560,9 +579,9 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const isAuctionPeriod = ctx.period % auctionEvery === 0;
   const auctions = Math.floor(horizonPeriods / auctionEvery);
   const size =
-    auctions > 0 && need > 0
+    auctions > 0 && need.pieces > 0
       ? over(need, asRatio(auctions, 'the auctions it will hold'), 'auction size')
-      : asCash(0, 'a treasury that needs nothing sells nothing');
+      : noCash(ccy);
 
   // Sovereign G2, G3, G5 (12a.6): a treasury IN DEFAULT is EXCLUDED FROM THE MARKET, not
   // liquidated — there is no estate and nothing to seize. A default is a miss in a money it does
@@ -573,11 +592,19 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const standing = arrearsStanding(ctx, id);
   const excluded = standing.length > 0;
   if (excluded) {
-    ctx.record('treasury.excluded', [id], { arrears: standing.map((a) => ({ instrument: a.id, ccy: a.ccy, owed: a.issued })) }, true);
+    ctx.record(
+      'treasury.excluded',
+      [id],
+      { arrears: standing.map((a) => ({ instrument: a.id, ccy: a.ccy, owed: a.issued })) },
+      true,
+    );
     const why = failedWhy(ctx, ctx.participant(id));
     if (why !== undefined) ctx.record('treasury.defaulted', [id], { why }, true);
   }
-  const planned = isAuctionPeriod && size > 0 && !excluded ? announce(ctx, id, ccy, size, on) : none<string>();
+  const planned =
+    isAuctionPeriod && size.pieces > 0 && !excluded
+      ? announce(ctx, id, ccy, size, on)
+      : none<string>();
   // Law 15, 0e′.4: what it needs goes in this treasury's own working store, which is what its own
   // buy-in reads back this period. The event below is the PUBLIC programme (C1.a) — the whole point
   // of it is that everybody can see it — and it is written from the same number.
@@ -588,15 +615,16 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
     'treasury.programme',
     [id],
     {
-      need,
-      service,
-      mandate,
-      expectedReceipts: receipts,
-      buffer,
-      cash,
+      ccy,
+      need: need.pieces,
+      service: service.pieces,
+      mandate: mandate.pieces,
+      expectedReceipts: receipts.pieces,
+      buffer: buffer.pieces,
+      cash: cash.pieces,
       horizonPeriods,
       auctionEvery,
-      plannedSize: planned.some ? size : 0,
+      plannedSize: planned.some ? size.pieces : 0,
       line: planned.some ? planned.value : null,
     },
     true,
@@ -605,7 +633,9 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
 
 /** Money E1, Sovereign G2 (12a.6): the arrears this treasury has not paid in a money it does not issue. */
 function arrearsStanding(ctx: MechanismContext, id: PartyId): readonly Instrument[] {
-  return [...ctx.instruments.issuedBy(id)].filter((i) => i.status.live && isArrear(i) && !sovereignIn(ctx, id, i.ccy));
+  return [...ctx.instruments.issuedBy(id)].filter(
+    (i) => i.status.live && isArrear(i) && !sovereignIn(ctx, id, i.ccy),
+  );
 }
 
 /** Sovereign C1: announce a size on a line, at a walk-away the curve gives it (C5). */
@@ -629,9 +659,7 @@ function announce(
   let least: number | undefined;
   for (const tenor of tenors) {
     const outstanding = sum(
-      lines
-        .filter((l) => Math.abs(l.tenorYears - tenor) < TENOR_WINDOW_YEARS)
-        .map((l) => l.issued),
+      lines.filter((l) => Math.abs(l.tenorYears - tenor) < TENOR_WINDOW_YEARS).map((l) => l.issued),
     ).value;
     if (least === undefined || outstanding < least) {
       least = outstanding;
@@ -658,10 +686,16 @@ function announce(
       ? openLine(ctx, id, ccy, maturity, y, wantShort)
       : instrumentId(existing.id);
   const inst = ctx.instruments.get(instrument);
-  const flows = ctx.registry.instrumentKind(inst.kind).cashFlows(inst, on, ctx.calendar, ctx.registry);
+  const flows = ctx.registry
+    .instrumentKind(inst.kind)
+    .cashFlows(inst, on, ctx.calendar, ctx.registry);
   const reservation = priceAt(
     flows,
-    plus(asRatio(y, 'the yield it opens at'), ctx.params.perAnnum(TREASURY_PARAMS.concession), 'walk-away yield'),
+    plus(
+      asRatio(y, 'the yield it opens at'),
+      ctx.params.perAnnum(TREASURY_PARAMS.concession),
+      'walk-away yield',
+    ),
     on,
     dayCount,
     'reservation',
@@ -718,9 +752,9 @@ function openLine(
   const on = ctx.calendar.startOf(ctx.period);
   const id = instrumentId(`${issuer}.${short ? 'bill.' : ''}${formatCivil(maturity)}`);
   const terms: SovereignBondTerms | SovereignBillTerms = short
-    // A2.a (item 10b): on the same convention its coupon lines use, because it is the same
-    // issuer quoting in the same money — and at this tenor the convention is part of the number.
-    ? { kind: SOVEREIGN_BILL, issueDate: on, maturity, dayCount }
+    ? // A2.a (item 10b): on the same convention its coupon lines use, because it is the same
+      // issuer quoting in the same money — and at this tenor the convention is part of the number.
+      { kind: SOVEREIGN_BILL, issueDate: on, maturity, dayCount }
     : {
         kind: SOVEREIGN_BOND,
         coupon: rate(atLeast(y, 0, 'an issuer cannot promise to be paid for borrowing'), ANNUAL),
@@ -786,8 +820,8 @@ function itsPeople(ctx: MechanismContext, id: PartyId): readonly CellParty[] {
 function runOutlays(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, currencyUnit(ccy));
-  let paid = asCash(0, 'nothing paid yet');
-  let short = asCash(0, 'nothing short yet');
+  let paid = noCash(ccy);
+  let short = noCash(ccy);
   for (const p of itsPeople(ctx, id)) {
     // Law 8, XI-15: each member of the cell is paid a whole number of the smallest piece of the
     // money, so what the mandate actually costs is that times the weight — and the fraction below
@@ -812,13 +846,13 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
       cause: 'transfer',
       reason: `standing mandate to ${p.id}`,
     });
-    if (r.outcome === 'settled') paid = plus(paid, heldAsMoney(total, 'what it paid'), 'paid');
-    else short = plus(short, heldAsMoney(total, 'what it could not pay'), 'short');
+    if (r.outcome === 'settled') paid = plus(paid, heldAsMoney(total, ccy, 'what it paid'), 'paid');
+    else short = plus(short, heldAsMoney(total, ccy, 'what it could not pay'), 'short');
   }
-  if (short > 0) {
+  if (short.pieces > 0) {
     // A3.a, D5: the account was empty. Nothing advanced it (D3); the mandate simply went unpaid,
     // and the next programme sees a need that did not shrink.
-    ctx.record('treasury.shortfall', [id], { unpaid: short, paid }, true);
+    ctx.record('treasury.shortfall', [id], { unpaid: short.pieces, paid: paid.pieces, ccy }, true);
   }
 }
 
@@ -844,10 +878,10 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   // Every base is MONEY — what was actually paid, in this treasury's own currency — so a rate can
   // never be added to one and a base can never be read as a rate (Law 8).
   const bases = {
-    interest: asCash(0, 'nothing received as interest yet'),
-    income: asCash(0, 'nothing received as income yet'),
-    consumption: asCash(0, 'nothing paid for goods yet'),
-    unclassified: asCash(0, 'nothing arrived unclassified yet'),
+    interest: noCash(ccy),
+    income: noCash(ccy),
+    consumption: noCash(ccy),
+    unclassified: noCash(ccy),
   };
   for (const r of ctx.ledger.inPeriod(previous)) {
     if (r.outcome !== 'settled') continue;
@@ -874,11 +908,16 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
        */
       if (leg.ccy !== ccy) continue;
       if (buyers.has(leg.from.holder)) {
-        bases.consumption = plus(bases.consumption, heldAsMoney(leg.amount, 'what moved'), 'what households paid for goods');
+        bases.consumption = plus(
+          bases.consumption,
+          heldAsMoney(leg.amount, ccy, 'what moved'),
+          'what households paid for goods',
+        );
         addTo(
           due,
           leg.from.holder,
-          scale(heldAsMoney(leg.amount, 'what it paid'), onConsumption, 'consumption tax'),
+          scale(heldAsMoney(leg.amount, ccy, 'what it paid'), onConsumption, 'consumption tax')
+            .pieces,
         );
       }
       if (leg.to.holder === id) continue;
@@ -898,17 +937,26 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       const receipt = leg.receipt;
       if (receipt === undefined) {
         if (cells.has(leg.to.holder) && leg.from.holder !== id) {
-          bases.unclassified = plus(bases.unclassified, heldAsMoney(leg.amount, 'what moved'), 'received and unclassified');
+          bases.unclassified = plus(
+            bases.unclassified,
+            heldAsMoney(leg.amount, ccy, 'what moved'),
+            'received and unclassified',
+          );
         }
         continue;
       }
       switch (receipt.of) {
         case 'interest': {
-          bases.interest = plus(bases.interest, heldAsMoney(leg.amount, 'what moved'), 'interest received');
+          bases.interest = plus(
+            bases.interest,
+            heldAsMoney(leg.amount, ccy, 'what moved'),
+            'interest received',
+          );
           addTo(
             due,
             leg.to.holder,
-            scale(heldAsMoney(leg.amount, 'what it received'), onInterest, 'tax on interest'),
+            scale(heldAsMoney(leg.amount, ccy, 'what it received'), onInterest, 'tax on interest')
+              .pieces,
           );
           break;
         }
@@ -917,11 +965,15 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'rent':
         case 'dividend': {
           if (!cells.has(leg.to.holder)) break;
-          bases.income = plus(bases.income, heldAsMoney(leg.amount, 'what moved'), 'what households were paid');
+          bases.income = plus(
+            bases.income,
+            heldAsMoney(leg.amount, ccy, 'what moved'),
+            'what households were paid',
+          );
           addTo(
             due,
             leg.to.holder,
-            scale(heldAsMoney(leg.amount, 'what it was paid'), onIncome, 'income tax'),
+            scale(heldAsMoney(leg.amount, ccy, 'what it was paid'), onIncome, 'income tax').pieces,
           );
           break;
         }
@@ -957,14 +1009,19 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
      */
     for (const made of r.realised) {
       if (!cells.has(made.party)) continue;
-      const gain = minus(made.proceeds, made.basis, 'what it made on the sale');
-      if (gain <= 0) continue;
+      // Currency C4: a gain made in another money is taxed in this one at the rate in force.
+      const gain = ctx.valuation.inMoney(
+        minus(made.proceeds, made.basis, 'what it made on the sale'),
+        ccy,
+        ctx.period,
+      );
+      if (gain.pieces <= 0) continue;
       bases.income = plus(bases.income, gain, 'gains households realised');
-      addTo(due, made.party, scale(gain, onIncome, 'tax on the gain'));
+      addTo(due, made.party, scale(gain, onIncome, 'tax on the gain').pieces);
     }
   }
-  let collected = asCash(0, 'nothing collected yet');
-  let unpaid = asCash(0, 'nothing unpaid yet');
+  let collected = noCash(ccy);
+  let unpaid = noCash(ccy);
   for (const [payer, total] of due) {
     const p = ctx.parties.get(payer);
     if (!p.status.alive || total <= 0) continue;
@@ -974,7 +1031,8 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     const share = gridPerMember(
       ctx.registry,
       p,
-      eachMember(asTotal<'money:piece'>(total, 'what the cell owes'), weightOf(p), 'per member'));
+      eachMember(asTotal<'money:piece'>(total, 'what the cell owes'), weightOf(p), 'per member'),
+    );
     if (share.total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
@@ -989,17 +1047,28 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
     // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
     if (r.outcome === 'settled') {
-      collected = plus(collected, heldAsMoney(share.total, 'what was collected'), 'collected');
+      collected = plus(collected, heldAsMoney(share.total, ccy, 'what was collected'), 'collected');
       continue;
     }
     // Money E1 (12a.3, 12a.9): the miss is the payer's arrear to the state, written by settlement in
     // the same pass; what is counted here is the measurement, not the claim.
-    unpaid = plus(unpaid, heldAsMoney(share.total, 'what was not paid'), 'unpaid');
+    unpaid = plus(unpaid, heldAsMoney(share.total, ccy, 'what was not paid'), 'unpaid');
   }
   ctx.record(
     'treasury.receipts',
     [id],
-    { total: collected, unpaid, payers: due.size, bases },
+    {
+      ccy,
+      total: collected.pieces,
+      unpaid: unpaid.pieces,
+      payers: due.size,
+      bases: {
+        interest: bases.interest.pieces,
+        income: bases.income.pieces,
+        consumption: bases.consumption.pieces,
+        unclassified: bases.unclassified.pieces,
+      },
+    },
     true,
   );
 }
@@ -1021,9 +1090,19 @@ function postPublicService(ctx: MechanismContext, id: PartyId): void {
   if (hours <= 0) return;
   // Labour C3, C5 (12b.2): the CHANGE against what it will have, like any employer; Law 8 (12b.5,
   // 12c.3): in whole people, like any employer's.
-  const change = netChange(ctx.employment.by(id), PUBLIC_OCCUPATION, region, wholePeople(ctx, hours));
+  const change = netChange(
+    ctx.employment.by(id),
+    PUBLIC_OCCUPATION,
+    region,
+    wholePeople(ctx, hours),
+  );
   if (change === undefined) return;
-  ctx.post(venue.id, { party: id, side: change.side, price: change.side === 'buy' ? wage : 'market', qty: change.qty });
+  ctx.post(venue.id, {
+    party: id,
+    side: change.side,
+    price: change.side === 'buy' ? wage : 'market',
+    qty: change.qty,
+  });
 }
 
 /**
@@ -1034,9 +1113,10 @@ function postPublicService(ctx: MechanismContext, id: PartyId): void {
 function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const budget = heldAsMoney(
     view.params.amount(TREASURY_PARAMS.purchases, currencyUnit(m.ccy)),
+    m.ccy,
     'the budget it buys real things with',
   );
-  if (budget <= 0) return [];
+  if (budget.pieces <= 0) return [];
   const terms = view.instruments.get(m.instrument).terms;
   const row = PROCUREMENT.find((p) => isGoodTerms(terms) && terms.subUnit === p.subUnit);
   if (row === undefined || !isGoodTerms(terms) || terms.region !== view.self.region) return [];
@@ -1044,9 +1124,9 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   if (!print.some || print.value.price <= 0) return [];
   const spend = scale(budget, row.share, 'what it puts into this market');
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
+  const cash = heldAsMoney(view.cash(ccy), ccy, 'what is in its account');
   // D1: it buys out of the balance it has, and an empty account buys nothing.
-  const afford = atMost(spend, cash, 'it procures with the money in its account');
+  const afford = atMostCash(spend, cash, 'it procures with the money in its account');
   // Law 8: a budget divided by a price is a fraction of a unit, and the state buys whole ones like
   // everybody else. Down: what it can afford never rounds up past the money it has.
   const qty = downTick(amountOf(afford, print.value.price, 'what the budget buys'));
@@ -1066,11 +1146,15 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const print = view.print(inst.id);
   if (!print.some) return [];
   const since = struckIn(print.value);
-  if (sub(view.period, since, 'periods since a trade') < view.params.periods(TREASURY_PARAMS.buybackStale)) return [];
+  if (
+    sub(view.period, since, 'periods since a trade') <
+    view.params.periods(TREASURY_PARAMS.buybackStale)
+  )
+    return [];
   // It buys in with money it does not need: the programme it published this period says whether it
   // has any. A treasury that is short does not buy its own paper back (A2, D4).
   const spare = sparePerProgramme(view);
-  if (spare <= 0) return [];
+  if (spare.pieces <= 0) return [];
   // Law 8: whole units of its own paper, out of money it does not need.
   const qty = downTick(amountOf(spare, print.value.price, 'units'));
   return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
@@ -1081,13 +1165,17 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
  * (C1.a), so this is a read of its own announcement and not of anything private.
  */
 function sparePerProgramme(view: ParticipantView): Cash {
-  const nothing = asCash(0, 'a treasury that needs what it has');
+  const ccy = view.registry.currencyOf(view.self.region);
+  const nothing = noCash(ccy);
   const said = view.working(PROGRAMME, nothingNeeded);
   if (said.at !== view.period) return nothing;
   const need = said.need;
   // A need that is not negative is a treasury that needs what it has, and it buys nothing in.
-  if (need >= 0) return nothing;
-  const ccy = view.registry.currencyOf(view.self.region);
-  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
-  return atMost(asCash(-need, 'what it does not need'), cash, 'it repays out of the money it has');
+  if (need === undefined || need.pieces >= 0) return nothing;
+  const cash = heldAsMoney(view.cash(ccy), ccy, 'what is in its account');
+  return atMostCash(
+    negated(need, 'what it does not need'),
+    cash,
+    'it repays out of the money it has',
+  );
 }

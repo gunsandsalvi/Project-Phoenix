@@ -15,7 +15,7 @@ import {
   type Cash,
   type PerMember,
   acrossMembers,
-  
+  asCash,
   asPerMember,
   heldAsMoney,
   plus,
@@ -82,9 +82,9 @@ export interface IncomeLine {
 export interface Income {
   readonly lines: readonly IncomeLine[];
   /** The bottom line: the movement of the equity account over the span, itemised (G2). */
-  readonly total: number;
+  readonly total: Cash;
   /** What the marks did, separately, because it is the part nobody was paid (Clearing D4). */
-  readonly revaluation: number;
+  readonly revaluation: Cash;
 }
 
 /** The word the marks write on an entry, which is how the revaluation subtotal is read back. */
@@ -127,7 +127,9 @@ export function incomeOf(ctx: MechanismContext, firm: PartyId, from: Period, to:
   }
   // XI-15: what a company published is what all of it came to, and the weight is what crosses.
   const members = weightOf(ctx.parties.get(firm));
-  const whole = (x: PerMember<'money:piece'>, what: string): Cash => acrossMembers(x, members, what);
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(firm).region);
+  const whole = (x: PerMember<'money:piece'>, what: string): Cash =>
+    asCash(acrossMembers(x, members, what), ccy, what);
   const lines = [...byCause]
     .map(([c, v]) => ({ cause: c, amount: whole(v.amount, c), entries: v.entries }))
     .sort((a, b) => (a.cause < b.cause ? -1 : 1));
@@ -178,6 +180,7 @@ export function cashOf(ctx: MechanismContext, firm: PartyId, from: Period, to: P
         const instrument = moneyInstrumentId(side.issuer, leg.ccy);
         const amount = heldAsMoney(
           outgoing ? negQty(leg.amount, 'what this party paid out') : leg.amount,
+          leg.ccy,
           'what moved on this leg',
         );
         const key = `${counterparty}|${instrument}|${r.instruction.cause}`;

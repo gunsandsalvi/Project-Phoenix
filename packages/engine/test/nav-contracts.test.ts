@@ -69,14 +69,14 @@ function reads(
 
 describe('a NAV reads the contract book as well as the register', () => {
   it('counts a contract that is worth something as an asset', () => {
-    const flat = navOf(share, AT, reads(asCash(100_000, 'the bond'), []));
+    const flat = navOf(share, AT, reads(asCash(100_000, USD, 'the bond'), []));
     const long = navOf(
       share,
       AT,
-      reads(asCash(100_000, 'the bond'), [{ worth: asCash(20_000, 'in the money'), ccy: USD }]),
+      reads(asCash(100_000, USD, 'the bond'), [{ worth: asCash(20_000, USD, 'in the money'), ccy: USD }]),
     );
-    expect(long.assets).toBe(120_000);
-    expect(long.owed).toBe(0);
+    expect(long.assets.pieces).toBe(120_000);
+    expect(long.owed.pieces).toBe(0);
     // B1: and the claim on the book moves with the book, which is the whole of why this matters —
     // the holders own the gain, and a NAV that did not see it would have left it in the fund's
     // equity, where a fund's equity may never be (A3).
@@ -87,9 +87,9 @@ describe('a NAV reads the contract book as well as the register', () => {
     const both = navOf(
       share,
       AT,
-      reads(asCash(100_000, 'the bond'), [
-        { worth: asCash(20_000, 'one it is long'), ccy: USD },
-        { worth: asCash(-15_000, 'one it is short'), ccy: USD },
+      reads(asCash(100_000, USD, 'the bond'), [
+        { worth: asCash(20_000, USD, 'one it is long'), ccy: USD },
+        { worth: asCash(-15_000, USD, 'one it is short'), ccy: USD },
       ]),
     );
     // D1: an asset to one side and a liability to the other at every instant, and Appendix B: no
@@ -103,9 +103,9 @@ describe('a NAV reads the contract book as well as the register', () => {
   });
 
   it('leaves the NAV where it was when the contract book is empty', () => {
-    const flat = navOf(share, AT, reads(asCash(100_000, 'the bond'), []));
-    expect(flat.assets).toBe(100_000);
-    expect(flat.owed).toBe(0);
+    const flat = navOf(share, AT, reads(asCash(100_000, USD, 'the bond'), []));
+    expect(flat.assets.pieces).toBe(100_000);
+    expect(flat.owed.pieces).toBe(0);
     expect(flat.perShare).toBe(100);
   });
 });

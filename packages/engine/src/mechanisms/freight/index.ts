@@ -47,16 +47,17 @@ import { atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
 import { NO_QTY, type Qty, addQty, asQty, downTick, subQty } from '../../core/tick.js';
 import {
   type PerPiece,
-  asCash,
   asPerPiece,
   asRatio,
   heldAsMoney,
   minus,
+  noCash,
   over,
   plus,
   pricedAt,
   ratioOf,
   scale,
+  sumCash,
   valueAt,
 } from '../../core/measure.js';
 import { none } from '../../core/option.js';
@@ -122,7 +123,11 @@ function roomOf(ctx: MechanismContext, view: ParticipantView): Qty {
   }
   if (free <= 0) return NO_QTY;
   return downTick(
-    scale(free, asRatio(ctx.params.count(HOLD_UNITS), 'what one hull holds'), 'what its free hulls hold'),
+    scale(
+      free,
+      asRatio(ctx.params.count(HOLD_UNITS), 'what one hull holds'),
+      'what its free hulls hold',
+    ),
   );
 }
 
@@ -357,8 +362,13 @@ function load(
       // Law 6: a carrier cannot take more than it has room for and a shipper cannot ship more
       // than it wanted. Arithmetic impossibility on both sides, named at the site.
       const moved = atMost(carrier.qty, want, 'a carrier has only the room it has');
-      const paid = ctx.registry.payable(valueAt(rate, moved, 'the freight on what it shipped'));
-      if (paid > 0 && cargo(ctx, from, to, leg, room, shipper.party, carrier.party, moved, paid, ccy)) {
+      const paid = ctx.registry.payable(
+        valueAt(rate, moved, ccy, 'the freight on what it shipped'),
+      );
+      if (
+        paid > 0 &&
+        cargo(ctx, from, to, leg, room, shipper.party, carrier.party, moved, paid, ccy)
+      ) {
         want = subQty(want, moved, 'what it still wants moved');
         carriers[at] = { ...carrier, qty: subQty(carrier.qty, moved, 'the room it has left') };
       } else {
@@ -413,8 +423,9 @@ function cargo(
       ),
     );
     if (need <= 0) continue;
-    const share = ctx.registry.payable(scale(
-        heldAsMoney(paid, 'the freight on the whole cargo'),
+    const share = ctx.registry.payable(
+      scale(
+        heldAsMoney(paid, ccy, 'the freight on the whole cargo'),
         ratioOf(take, units, 'its share'),
         'its freight',
       ),
@@ -439,19 +450,21 @@ function cargo(
      * `costOfDraw` is exported from the register for exactly this read (Law 19).
      */
     const held = ctx.register.holding(shipper, i.id);
-    const cost = held.some
-      ? costOfDraw(held.value.lots, asQty(take))
-      : asCash(0, 'a shipper with no lots of it has paid nothing for it');
+    const cost = held.some ? costOfDraw(held.value.lots, asQty(take), i.ccy) : noCash(i.ccy);
     const r = ctx.settle({
       legs: [
-        { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed'},
+        { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed' },
         {
           kind: 'create',
           party: shipper,
           instrument: transit,
           qty: asQty(take),
           costPerUnit: pricedAt(
-            plus(cost, heldAsMoney(share, 'the freight'), 'what it cost and what the voyage cost'),
+            plus(
+              cost,
+              heldAsMoney(share, ccy, 'the freight'),
+              'what it cost and what the voyage cost',
+            ),
             take,
             'what a unit cost delivered',
           ),
@@ -534,8 +547,6 @@ function sail(ctx: MechanismContext, hardness: number): void {
   if (said.length > 0) ctx.record(FREIGHT_SAIL, [], { voyages: said }, true);
 }
 
-
-
 /**
  * A3, E3: WHAT ARRIVES. A voyage that has come as far as its path is long lands: the cargo is at
  * the destination at what it cost INCLUDING the voyage (D2), and the hulls are free again. It is a
@@ -547,7 +558,9 @@ function arrive(ctx: MechanismContext): void {
   const arrived = ctx.voyages
     .underWay()
     .filter((v) => v.kmTravelled >= v.km && v.aboard > 0)
-    .sort((a, b) => (a.departed !== b.departed ? a.departed - b.departed : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .sort((a, b) =>
+      a.departed !== b.departed ? a.departed - b.departed : a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    );
   for (const v of arrived) {
     const i = ctx.instruments.get(v.cargo);
     if (!isGoodTerms(i.terms)) continue;
@@ -557,13 +570,26 @@ function arrive(ctx: MechanismContext): void {
     if (!ctx.instruments.has(there)) continue;
     const held = ctx.register.holdingsOf(v.shipper).find((x) => x.instrument === v.cargo);
     if (held === undefined) continue;
-    const units = ctx.registry.deliverable(atMost(v.aboard, ctx.register.free(v.shipper, v.cargo), 'what it still has aboard'));
+    const units = ctx.registry.deliverable(
+      atMost(v.aboard, ctx.register.free(v.shipper, v.cargo), 'what it still has aboard'),
+    );
     if (units <= 0) continue;
-    const cost = sum(held.lots.map((lot) => valueAt(lot.basisPerUnit, lot.qty, 'what it cost'))).value;
+    const cargoCcy = ctx.instruments.get(v.cargo).ccy;
+    const cost = sumCash(
+      cargoCcy,
+      held.lots.map((lot) => valueAt(lot.basisPerUnit, lot.qty, cargoCcy, 'what it cost')),
+      'what the cargo cost',
+    ).value;
     const total = sum(held.lots.map((lot) => lot.qty)).value;
     const r = ctx.settle({
       legs: [
-        { kind: 'destroy', party: v.shipper, instrument: v.cargo, qty: asQty(units), why: 'consumed'},
+        {
+          kind: 'destroy',
+          party: v.shipper,
+          instrument: v.cargo,
+          qty: asQty(units),
+          why: 'consumed',
+        },
         {
           kind: 'create',
           party: v.shipper,
@@ -581,7 +607,14 @@ function arrive(ctx: MechanismContext): void {
     ctx.record(
       'freight.arrived',
       [String(v.shipper)],
-      { holder: v.shipper, to, good: i.terms.subUnit, units, km: v.km, took: ctx.period - v.departed },
+      {
+        holder: v.shipper,
+        to,
+        good: i.terms.subUnit,
+        units,
+        km: v.km,
+        took: ctx.period - v.departed,
+      },
       true,
     );
   }
@@ -593,7 +626,12 @@ function arrive(ctx: MechanismContext): void {
  * read off the ledger, against the berths it has. A call turned away is said in public with the
  * quay's owner named (`port.congested`): congestion is this count and nothing else.
  */
-function berthFree(ctx: MechanismContext, place: RegionId, voyage: VoyageId | undefined, call: 'sail' | 'land'): boolean {
+function berthFree(
+  ctx: MechanismContext,
+  place: RegionId,
+  voyage: VoyageId | undefined,
+  call: 'sail' | 'land',
+): boolean {
   const berths = ctx.params.count(PORT_BERTHS);
   const worked = callsAt(ctx.ledger, ctx.voyages, ctx.registry.geography, ctx.period, place);
   if (worked < berths) return true;
@@ -640,7 +678,8 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         kind: 'placeholder' as const,
         owner: 'model' as const,
         standsInFor: {
-          mechanism: 'Freight B1, B2: a berth is capital the port authority builds and wears out, a vintage of its own',
+          mechanism:
+            'Freight B1, B2: a berth is capital the port authority builds and wears out, a vintage of its own',
           item: '22a',
         },
         why: 'Freight B2, D6 (15.2): how many vessels a place\u2019s quay can work in a period — load to sail, or land. A berth is capital the port authority builds and wears out (B1), and until it is a vintage of the authority\u2019s own this is a SHAPE with a scheduled death and not a number anybody believes; what it makes is real either way — a vessel that finds no berth waits at anchor, and a cargo with no berth to load at does not sail (D6: capacity rations quantity).',
@@ -704,7 +743,10 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         spec: 'Freight C1 Freight C3 Freight D1 Freight D6',
         anchor: { before: 'markets' },
         reads: [],
-        writes: [{ kind: 'event', name: 'freight.session' }, { kind: 'event', name: PORT_CONGESTED }],
+        writes: [
+          { kind: 'event', name: 'freight.session' },
+          { kind: 'event', name: PORT_CONGESTED },
+        ],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
           // Law 18: one walk of each origin, offered on every leg out of it.
@@ -723,5 +765,3 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
     ],
   };
 }
-
-

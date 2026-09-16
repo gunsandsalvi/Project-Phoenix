@@ -17,6 +17,7 @@
  * how far down the party bid at all, a grid of five and a grid of seven shared only their top
  * level, and the span of a saver's own demand was being set by a number declared a resolution.
  */
+import { USD } from '../../src/seeds/foundation.js';
 import { asCash, asPerPiece } from '../../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { downTick, levelsBelow, levelsUpTo, rungsOver, rungsUpTo, sum, type Rung } from '../../src/index.js';
@@ -28,7 +29,7 @@ import { downTick, levelsBelow, levelsUpTo, rungsOver, rungsUpTo, sum, type Rung
  * differ by at most one piece in millions, which is what "a piece is the smallest thing there is"
  * means when the thing is money. The SIZE of the budget is this test's own resolution.
  */
-const BUDGET = asCash(37_500_000, 'what a member has to place');
+const BUDGET = asCash(37_500_000, USD, 'what a member has to place');
 const OPINION = asPerPiece(2.75, 'what it thinks a unit is worth');
 const WIDTH = asPerPiece(0.5, 'how wrong it has been about this line');
 const GRAINS = [1, 2, 5, 10, 50, 200];
@@ -51,11 +52,11 @@ describe('a party own demand curve at every grain (Law 2)', () => {
       // exactly the budget divided by the price, IN WHOLE PIECES, which is the curve itself: there
       // is nothing between two pieces for the grid to have moved it to (Law 8).
       for (const level of coarse) {
-        expect(demandAt(rungs, level)).toBe(downTick(BUDGET / level));
+        expect(demandAt(rungs, level)).toBe(downTick(BUDGET.pieces / level));
       }
       // Law 7: and the money it committed is its budget, to within the one piece that a whole
       // number of them at a price cannot reach. That is not a tolerance — it is the piece.
-      expect(Math.abs(demandAt(rungs, top) * top - BUDGET)).toBeLessThanOrEqual(top);
+      expect(Math.abs(demandAt(rungs, top) * top - BUDGET.pieces)).toBeLessThanOrEqual(top);
     }
   });
 
@@ -84,7 +85,7 @@ describe('a party own demand curve at every grain (Law 2)', () => {
 
   it('posts nothing at all for an opinion of nothing, rather than a price of nothing', () => {
     expect(levelsBelow(asPerPiece(0, 'no opinion at all'), WIDTH, 5)).toEqual([]);
-    expect(rungsOver(levelsBelow(OPINION, WIDTH, 5), asCash(0, 'no money at all'))).toEqual([]);
+    expect(rungsOver(levelsBelow(OPINION, WIDTH, 5), asCash(0, USD, 'no money at all'))).toEqual([]);
     expect(
       rungsOver([asPerPiece(0, 'nothing'), asPerPiece(-1, 'less than nothing')], BUDGET),
     ).toEqual([]);

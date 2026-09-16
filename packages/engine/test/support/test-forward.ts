@@ -11,7 +11,7 @@
  * It lives under `test/` and is deleted when 13b's first class replaces it in the year-long run.
  * Nothing in `src/` may import it, which is the point of where it is.
  */
-import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, scale, valueAt } from '../../src/core/measure.js';
+import { asPerPiece, asRatio, type Cash, minus, negated, noCash, type PerPiece, scale, valueAt } from '../../src/core/measure.js';
 import { none, some, unitId, type Contract, type ContractPayment, type ContractReads, type ContractTerms, type DerivativeClassDecl, type DerivativeKindProfile, type Option, type InstrumentId, type MarketId, type Period, derivativeKindId, partyKindId, asQty, CENT_TICK } from '../../src/index.js';
 
 export const TEST_FORWARD = derivativeKindId('test.forward');
@@ -40,11 +40,11 @@ export const isForward = (t: ContractTerms): t is ForwardTerms =>
 
 /** D8: what it is worth to `a` — the print against the strike, one way or the other. */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isForward(c.terms)) return asCash(0, 'not a forward');
+  if (!isForward(c.terms)) return noCash(c.ccy);
   const p = reads.print(c.terms.underlying, at);
-  if (!p.some) return asCash(0, 'the underlying has not printed');
+  if (!p.some) return noCash(c.ccy);
   const move = minus(p.value.price, c.terms.strike, 'the print against the strike');
-  const worth = valueAt(move, c.notional, 'per contract');
+  const worth = valueAt(move, c.notional, c.ccy, 'per contract');
   return c.terms.long ? worth : negated(worth, 'to this side');
 }
 
@@ -81,7 +81,7 @@ export const testForwardKind: DerivativeKindProfile = {
     );
     return some(
       scale(
-        valueAt(move.value, c.notional, 'over the notional'),
+        valueAt(move.value, c.notional, c.ccy, 'over the notional'),
         asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),

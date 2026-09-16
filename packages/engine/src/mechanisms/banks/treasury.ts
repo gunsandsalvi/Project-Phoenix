@@ -23,7 +23,22 @@
  * is how a real treasury sells a liquidity portfolio — through its own desk, whose quote then skews
  * — and it is what keeps one bank showing one face to one market.
  */
-import { asAmount, asCash, asRatio, type Cash, heldAsMoney, minus, negated, type PerPiece, plus, type Ratio, ratioOf, scale, valueAt } from '../../core/measure.js';
+import { atLeastCash, noCash, sumCash } from '../../core/measure.js';
+import {
+  asAmount,
+  asCash,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  negated,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextPeriod, period, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
@@ -38,7 +53,17 @@ import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
-import { bufferHeld, capitalCostOn, corridorSeenBy, couldLeave as exposedToLeaving, depositClassesSeen, expectedLossOn, overnightPrints, refusedOvernightIn, requiredOf } from '../../registry/banking.js';
+import {
+  bufferHeld,
+  capitalCostOn,
+  corridorSeenBy,
+  couldLeave as exposedToLeaving,
+  depositClassesSeen,
+  expectedLossOn,
+  overnightPrints,
+  refusedOvernightIn,
+  requiredOf,
+} from '../../registry/banking.js';
 
 /** C2: the coverage a bank must hold against what could leave. A rule, and somebody wrote it. */
 export const P_COVERAGE: ParamId = paramId('regulation.liquidityCoverage');
@@ -71,8 +96,9 @@ export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<Liq
   if (!saidLeave.some || !saidBuffer.some) return none<LiquidityPlan>();
   // Item 16: a number re-entering from what this bank PUBLISHED is money again here, at the read
   // that knows what it is, and it cannot be added to a level or a ratio from here on.
-  const couldLeave = asCash(saidLeave.value, 'what a bad week would ask it for');
-  const buffer = asCash(saidBuffer.value, 'what it holds in the account');
+  const home = view.registry.currencyOf(view.self.region);
+  const couldLeave = asCash(saidLeave.value, home, 'what a bad week would ask it for');
+  const buffer = asCash(saidBuffer.value, home, 'what it holds in the account');
   const wanted = scale(
     couldLeave,
     plus(view.params.ratio(P_COVERAGE), cushion, 'the rule and its own cushion'),
@@ -86,9 +112,9 @@ export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<Liq
     couldLeave,
     wanted,
     cash: buffer,
-    paper: atLeast(
+    paper: atLeastCash(
       above,
-      asCash(0, 'nothing'),
+      noCash(home),
       'a holding of less than nothing is a short position, not a smaller target',
     ),
   });
@@ -118,7 +144,11 @@ export function liquidityLines(view: ParticipantView, d: BankDecl): readonly Ins
     // that is why a bank short of a foreign money has to buy it). Paper abroad is a POSITION, and
     // what a bank holds abroad as a position is 13h's portfolio decision, not this.
     if (i.ccy !== home) continue;
-    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length === 0) continue;
+    if (
+      view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length ===
+      0
+    )
+      continue;
     out.push(i.id);
   }
   return out;
@@ -147,7 +177,7 @@ export function liquidityTargets(
     if (!subject.some) continue;
     const i = view.instruments.get(subject.value);
     if (i.status.live && d.makes.includes(String(i.kind))) {
-      out.set(i.id, asCash(0, 'a line it holds for no liquidity reason'));
+      out.set(i.id, noCash(i.ccy));
     }
   }
   /**
@@ -169,11 +199,19 @@ export function liquidityTargets(
       // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
       // stated either. It keeps the answer it already has rather than being given a number.
       if (!mark.some) continue;
-      out.set(id, valueAt(mark.value, view.quantity(id), 'what it is holding of this line'));
+      out.set(
+        id,
+        valueAt(
+          mark.value,
+          view.quantity(id),
+          view.instruments.get(id).ccy,
+          'what it is holding of this line',
+        ),
+      );
     }
     return out;
   }
-  if (plan.value.paper <= 0 || lines.length === 0) return out;
+  if (plan.value.paper.pieces <= 0 || lines.length === 0) return out;
   /**
    * Dealer Desks D1, D4, Law 2, Law 19: WHAT THE TREASURY WANTS OF ONE LINE IS ITS SHARE OF WHAT
    * THE TREASURY HOLDS, and never an even slice of the lines that exist.
@@ -198,14 +236,22 @@ export function liquidityTargets(
     // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
     // stated either. It keeps the answer it already has (nothing) rather than being given a number.
     if (!mark.some) continue;
-    const value = valueAt(mark.value, view.quantity(id), 'what it is holding of this line');
+    const value = view.inMoney(
+      valueAt(
+        mark.value,
+        view.quantity(id),
+        view.instruments.get(id).ccy,
+        'what it is holding of this line',
+      ),
+      plan.value.paper.ccy,
+    );
     held.set(id, value);
     worth.push(value);
   }
-  const total = sum(worth).value;
+  const total = sumCash(plan.value.paper.ccy, worth, 'what it holds of the paper').value;
   // A treasury that holds no paper at all wants none of any particular line: the plan says it
   // should buy some, and what it buys is where it will be. Until then nothing here is the desk's.
-  if (total <= 0) return out;
+  if (total.pieces <= 0) return out;
   for (const [id, value] of held) {
     out.set(
       id,
@@ -440,11 +486,15 @@ export function pledgeable(view: ParticipantView): number {
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (!i.status.live || !i.issuer.some) continue;
-    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length === 0) continue;
+    if (
+      view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length ===
+      0
+    )
+      continue;
     const mark = view.mark(i.id);
     const free = view.free(i.id);
     if (!mark.some || mark.value <= 0 || free <= 0) continue;
-    terms.push(valueAt(mark.value, free, 'what it could put up'));
+    terms.push(valueAt(mark.value, free, i.ccy, 'what it could put up').pieces);
   }
   return sum(terms).value;
 }
@@ -477,7 +527,7 @@ export function comesBackNext(view: ParticipantView, ccy: CurrencyCode): number 
     ccy,
     () => true,
     (i) => view.quantity(i.id),
-  );
+  ).pieces;
 }
 
 function dueNext(
@@ -493,14 +543,16 @@ function dueNext(
     if (!i.status.live || i.ccy !== ccy || !mine(i)) continue;
     const n = units(i);
     if (n <= 0) continue;
-    const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
+    const flows = view.registry
+      .instrumentKind(i.kind)
+      .cashFlows(i, on, view.calendar, view.registry);
     const perUnit = sum(
       flows.filter((f) => view.calendar.periodOf(f.date) === next).map((f) => f.perUnit),
     ).value;
     if (perUnit === 0) continue;
-    terms.push(valueAt(perUnit, n, 'what falls due next period'));
+    terms.push(valueAt(perUnit, n, ccy, 'what falls due next period'));
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'what falls due next period').value;
 }
 
 /** Money Market A2: where this bank stands after the flows, as it reckons it itself. */
@@ -551,7 +603,6 @@ export function lenderReservation(
   );
 }
 
-
 /**
  * Money Market A3, B1, B4, C4.a: WHAT THIS BANK POSTS IN ONE BOOK OF ONE SESSION.
  *
@@ -582,13 +633,13 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
     const need = downTick(
       plus(
         plus(
-          negated(heldAsMoney(p.gap, 'its position'), 'the other way'),
+          negated(heldAsMoney(p.gap, ccy, 'its position'), 'the other way'),
           fallsDueNext(view, ccy),
           'its gap and what falls due',
         ),
         view.contracts.cashDue(ccy, nextPeriod(view.period)),
         'and what its own book will take',
-      ),
+      ).pieces,
     );
     if (need <= 0) return [];
     const power = secured ? pledgeable(view) : need;

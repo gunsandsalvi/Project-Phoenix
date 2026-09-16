@@ -20,8 +20,7 @@
  */
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { forbid } from '../../core/assert.js';
-import {
-  agreementKindId, partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
+import { agreementKindId, partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 import { scale } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -32,7 +31,14 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { assess, forInstrument, type Measure } from './assess.js';
 import { assessorChoosesBank, ASSESSOR_SWITCHING_COST } from './bank.js';
-import { ASSESSOR, GRADES, ratingParam, RATING_PARAMS, type AssessorDecl, type Grade } from './data.js';
+import {
+  ASSESSOR,
+  GRADES,
+  ratingParam,
+  RATING_PARAMS,
+  type AssessorDecl,
+  type Grade,
+} from './data.js';
 
 /** A5: it is a named party with an account, because it is paid and it can fail like anybody else. */
 export const assessorKind: PartyKindProfile = {
@@ -155,13 +161,21 @@ function rateTheLines(
     if (!i.status.live || !i.market.some) continue;
     const rank = ctx.registry.instrumentKind(i.kind).ranking(i);
     const grade = forInstrument(measured.grade, rank.seniority, rank.secured.length > 0);
-    publishIfMoved(ctx, d, forMe, String(i.id), { ...measured, grade }, [d.assessor, String(i.id)], {
-      assessor: d.assessor,
-      instrument: i.id,
-      issuer,
-      seniority: rank.seniority,
-      secured: rank.secured.length > 0,
-    });
+    publishIfMoved(
+      ctx,
+      d,
+      forMe,
+      String(i.id),
+      { ...measured, grade },
+      [d.assessor, String(i.id)],
+      {
+        assessor: d.assessor,
+        instrument: i.id,
+        issuer,
+        seniority: rank.seniority,
+        secured: rank.secured.length > 0,
+      },
+    );
   }
 }
 
@@ -238,7 +252,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
       if (!ctx.parties.has(who) || !ctx.parties.get(who).status.alive) continue;
       const ccy: CurrencyCode = ctx.registry.currencyOf(ctx.parties.get(who).region);
       const worth = ctx.participant(who).equity();
-      if (worth <= 0) continue;
+      if (worth.pieces <= 0) continue;
       const due = ctx.registry.payable(scale(worth, rate, 'what the opinion costs the issuer'));
       if (due <= 0) continue;
       const r = ctx.settle({
@@ -255,7 +269,12 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
         reason: `${subject} pays ${d.assessor} for its rating`,
       });
       if (r.outcome !== 'settled') {
-        ctx.record('rating.unpaid', [d.assessor, subject], { assessor: d.assessor, subject, due, ccy }, false);
+        ctx.record(
+          'rating.unpaid',
+          [d.assessor, subject],
+          { assessor: d.assessor, subject, due, ccy },
+          false,
+        );
         /**
          * XI-8, Money E1: THE FEE IS STILL OWED. `rating.unpaid` is a number in an event and it
          * carried nothing — the assessor had no claim, the issuer's book was not short by it, and
@@ -310,10 +329,8 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
       {
         name: 'ratings',
         kind: 'working',
-        holds:
-          'how long each assessor’s own measure has disagreed with the grade it published',
-        why:
-          'A3, item 9.9b: what is left here is the PATIENCE bookkeeping — the grade this assessor’s own measure says today and how many periods running it has said it — and that is working state between two periods of one mechanism. What it PUBLISHED is not here: a rating is an opinion sold to whoever might hold the paper, so it is announced (`rating.action`, public) and the last announcement IS the current grade, which `cds` and the observer already read that way. The private copy of it was a mirror (Law 19) and is deleted. An assessor whose wavering was visible would be publishing the grade it is thinking about, which is the opposite of A3’s stickiness — so the half that stays private stays private for a reason.',
+        holds: 'how long each assessor’s own measure has disagreed with the grade it published',
+        why: 'A3, item 9.9b: what is left here is the PATIENCE bookkeeping — the grade this assessor’s own measure says today and how many periods running it has said it — and that is working state between two periods of one mechanism. What it PUBLISHED is not here: a rating is an opinion sold to whoever might hold the paper, so it is announced (`rating.action`, public) and the last announcement IS the current grade, which `cds` and the observer already read that way. The private copy of it was a mirror (Law 19) and is deleted. An assessor whose wavering was visible would be publishing the grade it is thinking about, which is the opposite of A3’s stickiness — so the half that stays private stays private for a reason.',
       },
     ],
     spec: 'Ratings',
@@ -372,7 +389,11 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
     seed(ctx: SeedContext): void {
       for (const d of rows) {
         const bank = partyId(d.bank);
-        forbid(ctx.parties.has(bank), 'Ratings A5', `${d.assessor} banks with ${d.bank}, who is not here`);
+        forbid(
+          ctx.parties.has(bank),
+          'Ratings A5',
+          `${d.assessor} banks with ${d.bank}, who is not here`,
+        );
         ctx.parties.add({
           id: partyId(d.assessor),
           kind: ASSESSOR,
@@ -508,6 +529,13 @@ function riskWeights(): readonly ParamDecl[] {
   ];
 }
 
-export { ASSESSOR, GRADES, drawAssessors, ASSESSOR_COUNT, type Grade, type AssessorDecl } from './data.js';
+export {
+  ASSESSOR,
+  GRADES,
+  drawAssessors,
+  ASSESSOR_COUNT,
+  type Grade,
+  type AssessorDecl,
+} from './data.js';
 export { assess, bandOf, forInstrument } from './assess.js';
 export const RATINGS_FROM = asPeriod(0);

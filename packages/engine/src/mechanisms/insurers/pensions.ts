@@ -36,10 +36,23 @@ import { Unpriced } from '../../core/errors.js';
 import {
   cohortId,
   partyKindId,
+  type CurrencyCode,
   type PartyId,
   type RegionId,
 } from '../../core/ids.js';
-import { asCash, asPerPiece, asRatio, minus, plus, ratioOf, valueAt, type Cash, type PerPiece, type Ratio } from '../../core/measure.js';
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  negated,
+  noCash,
+  plus,
+  ratioOf,
+  valueAt,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+} from '../../core/measure.js';
 import { addTo, atMost, div, mul, raised, sub, sum, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { asQty, downTick, subQty, type Qty } from '../../core/tick.js';
@@ -104,6 +117,7 @@ export const pensionKind: PartyKindProfile = {
 /** The reads a pension is sized from — the same set whether the kernel marks the row or the fund pays it. */
 export interface PensionReads {
   goingRate(occupation: string, region: RegionId): PerPiece | undefined;
+  readonly registry: { currencyOf(region: RegionId): CurrencyCode };
   readonly params: Pick<RowValuationReads['params'], 'ratio' | 'amount'>;
 }
 
@@ -116,9 +130,14 @@ export interface PensionReads {
 export function pensionPerMember(reads: PensionReads, terms: PensionTerms): Option<Qty> {
   const rate = reads.goingRate(terms.indexedTo, terms.region);
   if (rate === undefined) return none();
-  const week = valueAt(rate, reads.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS), 'what a week of the trade earns');
+  const week = valueAt(
+    rate,
+    reads.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS),
+    reads.registry.currencyOf(terms.region),
+    'what a week of the trade earns',
+  );
   const share = reads.params.ratio(PENSION_PARAMS.replacementShare);
-  return some(downTick(mul(week, share, 'the pension a period')));
+  return some(downTick(mul(week.pieces, share, 'the pension a period')));
 }
 
 /**
@@ -132,15 +151,30 @@ export function pensionSchedule(
   mortalityPerPeriod: Ratio,
   dates: readonly CashFlow['date'][],
 ): CashFlow[] {
-  const survives = sub(1, mortalityPerPeriod, 'the share of the cohort that lives through a period');
+  const survives = sub(
+    1,
+    mortalityPerPeriod,
+    'the share of the cohort that lives through a period',
+  );
   return dates.map((date, n) => ({
     date,
-    perUnit: asPerPiece(mul(perMember, raised(survives, n + 1, 'the share alive by then'), 'what one member is expected to draw'), 'a member’s expected pension that period'),
+    perUnit: asPerPiece(
+      mul(
+        perMember,
+        raised(survives, n + 1, 'the share alive by then'),
+        'what one member is expected to draw',
+      ),
+      'a member’s expected pension that period',
+    ),
   }));
 }
 
 /** B1: the days the promise can still be paid on — every period from the next to the table's end. */
-function paymentDays(terms: PensionTerms, at: number, reads: RowValuationReads): CashFlow['date'][] {
+function paymentDays(
+  terms: PensionTerms,
+  at: number,
+  reads: RowValuationReads,
+): CashFlow['date'][] {
   const end = endOfMortalityTable(reads.params);
   if (end === undefined) return [];
   const today = reads.on(period(at));
@@ -164,21 +198,34 @@ function paymentDays(terms: PensionTerms, at: number, reads: RowValuationReads):
  * says so (§5).
  */
 export function promiseOf(row: Agreement, at: number, reads: RowValuationReads): Cash {
-  if (!isPensionTerms(row.terms)) return asCash(0, 'not a pension');
+  if (!isPensionTerms(row.terms)) return noCash(row.ccy);
   const members = reads.weightOf(row.creditor);
-  if (members <= 0) return asCash(0, 'nobody left to promise');
+  if (members <= 0) return noCash(row.ccy);
   const perMember = pensionPerMember(reads, row.terms);
-  if (!perMember.some || perMember.value <= 0) return asCash(0, 'no rate has cleared in the trade it is indexed to, so no pension can be sized');
+  if (!perMember.some || perMember.value <= 0) return noCash(row.ccy);
   const outlook = reads.outlook(row.debtor, about({ on: 'mortality', cohort: row.terms.cohort }));
-  const mortality = asRatio(outlook.some ? outlook.value.expected : 0, 'the share of the cohort it expects to die a period');
+  const mortality = asRatio(
+    outlook.some ? outlook.value.expected : 0,
+    'the share of the cohort it expects to die a period',
+  );
   const days = paymentDays(row.terms, at, reads);
-  if (days.length === 0) return asCash(0, 'nothing left of the table');
+  if (days.length === 0) return noCash(row.ccy);
   const schedule = pensionSchedule(perMember.value, mortality, days);
-  const priced = reads.curve(row.terms.discountedAt, period(at)).priceOf(schedule, reads.on(period(at)));
+  const priced = reads
+    .curve(row.terms.discountedAt, period(at))
+    .priceOf(schedule, reads.on(period(at)));
   if (!priced.some) {
-    throw new Unpriced('Insurers B2', `${row.id} is discounted at a curve with nothing on it`, { row: String(row.id), curve: String(row.terms.discountedAt) });
+    throw new Unpriced('Insurers B2', `${row.id} is discounted at a curve with nothing on it`, {
+      row: String(row.id),
+      curve: String(row.terms.discountedAt),
+    });
   }
-  return valueAt(priced.value, asQty(members, 'the members promised'), 'what the promise is worth, discounted');
+  return valueAt(
+    priced.value,
+    asQty(members, 'the members promised'),
+    row.ccy,
+    'what the promise is worth, discounted',
+  );
 }
 
 export const pensionRowKind: AgreementKindDecl = {
@@ -241,8 +288,18 @@ function enrolMembers(ctx: MechanismContext, worker: PartyId): void {
   const cell = ctx.parties.resolve(worker);
   if (cell.representation !== 'cell' || !cell.status.alive) return;
   if (cell.key[PENSION_DIM] !== PENSION_NONE) return;
-  const moved = ctx.cells.reKey(cell.id, weightOf(cell), { [PENSION_DIM]: PENSION_MEMBER }, 'enrolled in the pension scheme');
-  ctx.record(ENROLLED, [cell.id, moved], { cell: cell.id, now: moved, members: weightOf(cell) }, true);
+  const moved = ctx.cells.reKey(
+    cell.id,
+    weightOf(cell),
+    { [PENSION_DIM]: PENSION_MEMBER },
+    'enrolled in the pension scheme',
+  );
+  ctx.record(
+    ENROLLED,
+    [cell.id, moved],
+    { cell: cell.id, now: moved, members: weightOf(cell) },
+    true,
+  );
 }
 
 /** XI-15, Households F3: a living cell of retired MEMBERS — the only party a pension is owed to. */
@@ -254,7 +311,9 @@ function isRetiredMembers(ctx: MechanismContext, party: PartyId): boolean {
   if (p.key['estate'] !== 'living') return false;
   const cohort = p.key['cohort'];
   if (cohort === undefined) return false;
-  return ctx.registry.cohort(cohortId(cohort)).fromAge >= ctx.params.years(PEOPLE_PARAMS.retirementAge);
+  return (
+    ctx.registry.cohort(cohortId(cohort)).fromAge >= ctx.params.years(PEOPLE_PARAMS.retirementAge)
+  );
 }
 
 /** Law 9: the trade most of a place's people work in now — what a flat pension there is indexed to. */
@@ -284,11 +343,16 @@ export function keepPromises(ctx: MechanismContext): void {
     if (cell.representation !== 'cell' || !isRetiredMembers(ctx, cell.id)) continue;
     const fundId = pensionFundIdFor(cell.region);
     if (!ctx.parties.has(fundId) || !ctx.parties.get(fundId).status.alive) continue;
-    const standing = ctx.agreements.owedTo(cell.id).some((a) => a.state === 'performing' && a.debtor === fundId && isPensionTerms(a.terms));
+    const standing = ctx.agreements
+      .owedTo(cell.id)
+      .some((a) => a.state === 'performing' && a.debtor === fundId && isPensionTerms(a.terms));
     if (standing) continue;
     const ccy = ctx.registry.currencyOf(cell.region);
     const family = ctx.sovereignCurveIn(ccy);
-    if (!family.some) throw new Unpriced('Insurers B2', `a pension in ${ccy} has no curve to be discounted at`, { ccy });
+    if (!family.some)
+      throw new Unpriced('Insurers B2', `a pension in ${ccy} has no curve to be discounted at`, {
+        ccy,
+      });
     const cohort = keyOf(cell, 'cohort');
     const indexedTo = benchmarkTrade(ctx, cell.region);
     if (indexedTo === undefined) continue;
@@ -308,7 +372,12 @@ export function keepPromises(ctx: MechanismContext): void {
       terms,
       why: `${String(fundId)} promises ${String(cell.id)}'s members a pension from ${String(today.y)}-${String(today.m)}-${String(today.d)}`,
     });
-    ctx.record(PROMISED, [fundId, cell.id], { fund: fundId, cell: cell.id, cohort, members: weightOf(cell), indexedTo: terms.indexedTo }, true);
+    ctx.record(
+      PROMISED,
+      [fundId, cell.id],
+      { fund: fundId, cell: cell.id, cohort, members: weightOf(cell), indexedTo: terms.indexedTo },
+      true,
+    );
   }
 }
 
@@ -319,7 +388,11 @@ export function keepPromises(ctx: MechanismContext): void {
  * pay it has failed (A3, XI-3).
  */
 export function payPensions(ctx: MechanismContext): void {
-  const reads: PensionReads = { goingRate: (o, r) => ctx.employment.goingRate(o, r), params: ctx.params };
+  const reads: PensionReads = {
+    goingRate: (o, r) => ctx.employment.goingRate(o, r),
+    registry: ctx.registry,
+    params: ctx.params,
+  };
   for (const row of ctx.agreements.ofKind(PENSION_ROW)) {
     if (row.state !== 'performing' || !isPensionTerms(row.terms)) continue;
     const fund = ctx.parties.get(row.debtor);
@@ -330,22 +403,48 @@ export function payPensions(ctx: MechanismContext): void {
     if (!perMember.some || perMember.value <= 0 || members <= 0) continue;
     const amount = asQty(perMember.value * members, 'the pensions of the members');
     const r = ctx.settle({
-      legs: [{ kind: 'money', from: ctx.accountOf(fund.id, row.ccy), to: ctx.accountOf(cell.id, row.ccy), receipt: { of: 'pension' }, ccy: row.ccy, amount }],
+      legs: [
+        {
+          kind: 'money',
+          from: ctx.accountOf(fund.id, row.ccy),
+          to: ctx.accountOf(cell.id, row.ccy),
+          receipt: { of: 'pension' },
+          ccy: row.ccy,
+          amount,
+        },
+      ],
       cause: 'transfer',
       reason: `${String(fund.id)} pays ${String(cell.id)}'s pensions`,
     });
-    ctx.record(PENSION_PAID, [fund.id, cell.id], { fund: fund.id, cell: cell.id, row: row.id, members, perMember: perMember.value, amount, paid: r.outcome === 'settled' }, true);
+    ctx.record(
+      PENSION_PAID,
+      [fund.id, cell.id],
+      {
+        fund: fund.id,
+        cell: cell.id,
+        row: row.id,
+        members,
+        perMember: perMember.value,
+        amount,
+        paid: r.outcome === 'settled',
+      },
+      true,
+    );
   }
 }
 
 /** D1, E3: promises at the curve — the kernel's marks on the rows it owes, read and never re-derived (Law 19). */
-export function promisesOf(ctx: Pick<MechanismContext, 'agreements'>, fund: PartyId): Cash {
+export function promisesOf(
+  ctx: Pick<MechanismContext, 'agreements'>,
+  fund: PartyId,
+  ccy: CurrencyCode,
+): Cash {
   let total = 0;
   for (const row of ctx.agreements.owedBy(fund)) {
     if (row.state !== 'performing' || !isPensionTerms(row.terms)) continue;
     total += zeroIfNone(ctx.agreements.markOf(row.id));
   }
-  return asCash(total, 'what it has promised, at the curve');
+  return asCash(total, ccy, 'what it has promised, at the curve');
 }
 
 /**
@@ -354,7 +453,7 @@ export function promisesOf(ctx: Pick<MechanismContext, 'agreements'>, fund: Part
  * together, because a fund owes nothing but its promises and what it failed to pay of them.
  */
 export function fundingRatioOf(view: ParticipantView, promises: Cash): Option<Ratio> {
-  if (promises <= 0) return none();
+  if (promises.pieces <= 0) return none();
   const assets = plus(view.equity(), promises, 'what it holds, at mark');
   return some(ratioOf(assets, promises, 'assets over promises'));
 }
@@ -372,13 +471,32 @@ export function callSponsors(ctx: MechanismContext): void {
     if (!fund.status.alive) continue;
     const ccy = ctx.registry.currencyOf(fund.region);
     const view = ctx.participant(fund.id);
-    const promises = promisesOf(ctx, fund.id);
+    const promises = promisesOf(ctx, fund.id, ccy);
     const equity = view.equity();
     const ratio = fundingRatioOf(view, promises);
-    ctx.record(FUNDED, [fund.id], ratio.some ? { fund: fund.id, ccy, equity, promises, ratio: ratio.value } : { fund: fund.id, ccy, equity, promises }, true);
-    if (equity >= 0) continue;
-    const shortfall = minus(asCash(0, 'nothing'), equity, 'what it is short by');
-    const call = downTick(div(shortfall, ctx.params.periods(PENSION_PARAMS.recoveryPeriods), 'this period’s share of the recovery'));
+    ctx.record(
+      FUNDED,
+      [fund.id],
+      ratio.some
+        ? {
+            fund: fund.id,
+            ccy,
+            equity: equity.pieces,
+            promises: promises.pieces,
+            ratio: ratio.value,
+          }
+        : { fund: fund.id, ccy, equity: equity.pieces, promises: promises.pieces },
+      true,
+    );
+    if (equity.pieces >= 0) continue;
+    const shortfall = negated(equity, 'what it is short by');
+    const call = downTick(
+      div(
+        shortfall.pieces,
+        ctx.params.periods(PENSION_PARAMS.recoveryPeriods),
+        'this period’s share of the recovery',
+      ),
+    );
     if (call <= 0) continue;
     const account = ctx.accountOf(fund.id, ccy);
     const carried = new Map<PartyId, number>();
@@ -392,23 +510,61 @@ export function callSponsors(ctx: MechanismContext): void {
         addTo(carried, payer, leg.amount);
       }
     }
-    const sponsors = [...carried.entries()].filter(([sponsor, paid]) => paid > 0 && sponsorshipOf(ctx.agreements, sponsor) !== undefined);
+    const sponsors = [...carried.entries()].filter(
+      ([sponsor, paid]) => paid > 0 && sponsorshipOf(ctx.agreements, sponsor) !== undefined,
+    );
     const total = sum(sponsors.map(([, paid]) => paid)).value;
     if (total <= 0) {
-      ctx.record(SPONSOR_CALLED, [fund.id], { fund: fund.id, ccy, shortfall, call, why: 'no payroll contributed this period, so there is nobody to apportion the call on' }, true);
+      ctx.record(
+        SPONSOR_CALLED,
+        [fund.id],
+        {
+          fund: fund.id,
+          ccy,
+          shortfall: shortfall.pieces,
+          call,
+          why: 'no payroll contributed this period, so there is nobody to apportion the call on',
+        },
+        true,
+      );
       continue;
     }
     let left: Qty = call;
     sponsors.forEach(([sponsor, paid], n) => {
       if (left <= 0) return;
-      const share = n === sponsors.length - 1 ? left : atMost(downTick((call * paid) / total), left, 'no more than is left of the call');
+      const share =
+        n === sponsors.length - 1
+          ? left
+          : atMost(downTick((call * paid) / total), left, 'no more than is left of the call');
       if (share <= 0) return;
       const r = ctx.settle({
-        legs: [{ kind: 'money', from: ctx.accountOf(sponsor, ccy), to: account, receipt: { of: 'contribution' }, ccy, amount: share }],
+        legs: [
+          {
+            kind: 'money',
+            from: ctx.accountOf(sponsor, ccy),
+            to: account,
+            receipt: { of: 'contribution' },
+            ccy,
+            amount: share,
+          },
+        ],
         cause: 'transfer',
         reason: `${String(fund.id)} calls ${String(sponsor)} for its share of the shortfall`,
       });
-      ctx.record(SPONSOR_CALLED, [fund.id, sponsor], { fund: fund.id, sponsor, ccy, shortfall, call, amount: share, paid: r.outcome === 'settled' }, true);
+      ctx.record(
+        SPONSOR_CALLED,
+        [fund.id, sponsor],
+        {
+          fund: fund.id,
+          sponsor,
+          ccy,
+          shortfall: shortfall.pieces,
+          call,
+          amount: share,
+          paid: r.outcome === 'settled',
+        },
+        true,
+      );
       left = subQty(left, share, 'what is left of the call');
     });
   }

@@ -646,12 +646,12 @@ function housingOf(s: Snapshot): HTMLElement {
  */
 function sectorsOf(s: Snapshot): HTMLElement {
   const section = el('section', { id: 'sectors' }, el('h2', {}, 'The economy, by sector'));
-  const made = s.sectors.reduce((t, x) => t + x.made, 0);
-  const held = s.sectors.reduce((t, x) => t + x.held, 0);
+  const made = s.sectors.reduce((t, x) => t + x.made.pieces, 0);
+  const held = s.sectors.reduce((t, x) => t + x.held.pieces, 0);
   const ul = el('ul', {});
-  for (const x of [...s.sectors].sort((a, b) => b.made - a.made)) {
-    const ofOutput = made > 0 ? `${((x.made / made) * 100).toFixed(1)}%` : '—';
-    const ofStock = held > 0 ? `${((x.held / held) * 100).toFixed(1)}%` : '—';
+  for (const x of [...s.sectors].sort((a, b) => b.made.pieces - a.made.pieces)) {
+    const ofOutput = made > 0 ? `${((x.made.pieces / made) * 100).toFixed(1)}%` : '—';
+    const ofStock = held > 0 ? `${((x.held.pieces / held) * 100).toFixed(1)}%` : '—';
     ul.append(
       el(
         'li',

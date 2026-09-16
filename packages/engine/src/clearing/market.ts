@@ -17,8 +17,15 @@
  * bid for (Treasury D5.a): the unsold remainder is withdrawn and the withdrawal is an event (C7).
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
+import { sumCash } from '../core/measure.js';
 import { assertNever, forbid } from '../core/assert.js';
-import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
+import {
+  type CurrencyCode,
+  type InstrumentId,
+  type MarketId,
+  type PartyId,
+  type UnitId,
+} from '../core/ids.js';
 import {
   type Cash,
   type PerPiece,
@@ -35,7 +42,7 @@ import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
 import { NO_QTY, addQty, asQty, downTick, downToTick, subQty, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
-import type { AccountRef, InstructionDraft, Leg} from '../ledger/instruction.js';
+import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { type Settlement } from '../ledger/settlement.js';
 import { type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
@@ -484,7 +491,7 @@ export function runMarket(
       );
       const auction = offer.some
         ? some(
-            auctionResult(offer.value, book, outcome.fills, some(outcome.price), allotted),
+            auctionResult(offer.value, m.ccy, book, outcome.fills, some(outcome.price), allotted),
           )
         : none<AuctionResult>();
       if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
@@ -526,15 +533,29 @@ function carryLast(
   fills: readonly Fill[],
 ): MarketResult {
   const auction = offer.some
-    ? some(auctionResult(offer.value, orders, fills, none<PerPiece>(), NO_QTY))
+    ? some(auctionResult(offer.value, m.ccy, orders, fills, none<PerPiece>(), NO_QTY))
     : none<AuctionResult>();
   if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
   const last = deps.prices.latest(m.instrument, period);
   if (!last.some) {
     // Nothing traded and nothing to carry: the line has no price at all, which is what a reader is
     // told when it asks (XI-6). A print is never invented to fill the gap.
-    deps.journal.record(period, cycle, 'print', [m.id, m.instrument], { printed: false, reason }, true);
-    return { market: m.id, outcome: reason, price: none(), settledVolume: 0, failedTrades: 0, auction };
+    deps.journal.record(
+      period,
+      cycle,
+      'print',
+      [m.id, m.instrument],
+      { printed: false, reason },
+      true,
+    );
+    return {
+      market: m.id,
+      outcome: reason,
+      price: none(),
+      settledVolume: 0,
+      failedTrades: 0,
+      auction,
+    };
   }
   const from = struckIn(last.value);
   deps.prices.write({
@@ -564,10 +585,7 @@ function carryLast(
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */
-function pairFills(
-  m: MarketDecl,
-  fills: readonly Fill[],
-): Trade[] {
+function pairFills(m: MarketDecl, fills: readonly Fill[]): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
   const out: Trade[] = [];
@@ -736,7 +754,7 @@ function contractTrade(
   if (size <= 0) return none<InstructionDraft>();
   // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
   const premium = deps.registry.cashFor(
-    valueAt(profile.premiumPerUnit(struck, decl.terms), size, 'the premium at inception'),
+    valueAt(profile.premiumPerUnit(struck, decl.terms), size, m.ccy, 'the premium at inception'),
   );
   const house = decl.house;
   const legs: Leg[] = [];
@@ -758,7 +776,7 @@ function contractTrade(
   });
   // Register D4: what the two equity accounts recognise is the premium AS A VALUE, which is the
   // same cents the grid just landed it on (`heldAsMoney`, Money D2).
-  const basis = heldAsMoney(premium, 'what the position cost at inception');
+  const basis = heldAsMoney(premium, m.ccy, 'what the position cost at inception');
   if (house === null) {
     legs.push(open(t.buyer, t.seller, basis));
   } else {
@@ -810,7 +828,7 @@ function fxTrade(
 ): Option<InstructionDraft> {
   const pair = m.fx;
   // 0f.2: cash on the money's own grain; the two sides hold totals.
-  const quote = deps.registry.payable(valueAt(price, t.qty, 'what the base costs in quote'));
+  const quote = deps.registry.payable(valueAt(price, t.qty, m.ccy, 'what the base costs in quote'));
   if (quote <= 0) return none<InstructionDraft>();
   const legs: Leg[] = [
     {
@@ -843,12 +861,7 @@ function sellerIssues(m: AssetMarketDecl, t: Trade, deps: MarketRunDeps): boolea
   return issuer.some && issuer.value === t.seller;
 }
 
-function payment(
-  m: AssetMarketDecl,
-  t: Trade,
-  cash: Qty,
-  deps: MarketRunDeps,
-): Leg {
+function payment(m: AssetMarketDecl, t: Trade, cash: Qty, deps: MarketRunDeps): Leg {
   const promise =
     deps.onTerms?.({ seller: t.seller, buyer: t.buyer, ccy: m.ccy, cash, sold: m.instrument }) ??
     none<InstrumentId>();
@@ -902,7 +915,9 @@ function assetTrade(
   // money per member — which is what rounding a price to real money has always meant, and is why
   // `settledVolume` and the print are two numbers rather than one.
   // 0f.2: cash on the money's own grain; the two sides hold totals.
-  const cash = deps.registry.payable(valueAt(plus(price, accruedPerUnit, 'dirty price'), t.qty, 'trade cash'));
+  const cash = deps.registry.payable(
+    valueAt(plus(price, accruedPerUnit, 'dirty price'), t.qty, m.ccy, 'trade cash'),
+  );
   if (cash <= 0) return none<InstructionDraft>();
   const legs: Leg[] = [
     {
@@ -924,6 +939,7 @@ function assetTrade(
 /** Sovereign C4: the cover ratio and the tail are read off the book, not stated. */
 function auctionResult(
   offer: PrimaryOffer,
+  ccy: CurrencyCode,
   orders: readonly Order[],
   fills: readonly Fill[],
   stopOut: Option<PerPiece>,
@@ -933,7 +949,11 @@ function auctionResult(
   const demand = sum(bids.map((o) => o.qty)).value;
   const won = fills.filter((f) => f.side === 'buy');
   const wonQty = sum(won.map((f) => f.qty)).value;
-  const wonValue = sum(won.map((f) => valueAt(f.at, f.qty, 'bid value'))).value;
+  const wonValue = sumCash(
+    ccy,
+    won.map((f) => valueAt(f.at, f.qty, ccy, 'bid value')),
+    'bid value',
+  ).value;
   const tail =
     stopOut.some && wonQty > 0
       ? some(minus(pricedAt(wonValue, wonQty, 'average bid'), stopOut.value, 'tail'))

@@ -18,10 +18,10 @@
  * cash and owes nothing until a bank fails, so neither trigger XI-3 names can fire on it. What
  * happens when its fund is empty is not death, it is the purse.
  */
+import { noCash, sumCash } from '../../core/measure.js';
 import { currencyUnit, moneyInstrumentId, paramId, partyId, partyKindId } from '../../core/ids.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { sum } from '../../core/num.js';
-import { asCash, type Cash, scale, heldAsMoney } from '../../core/measure.js';
+import { type Cash, scale, heldAsMoney } from '../../core/measure.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import { MM_PARAMS } from './data.js';
@@ -50,7 +50,8 @@ export const insurerKind: PartyKindProfile = {
   // XI-3: neither trigger can fire on it. It holds cash and owes nothing until a bank fails, and
   // what happens when its fund is short is D5's purse rather than its own death.
   fails: [],
-  cannotFail: 'XI-3, Banks Capital D5: it owes nothing until a bank fails, and when its fund is short what pays is the purse behind it, not its death',
+  cannotFail:
+    'XI-3, Banks Capital D5: it owes nothing until a bank fails, and when its fund is short what pays is the purse behind it, not its death',
   // Banks Lending A1: nobody lends to it. What stands behind it is the state, not a creditor.
   borrows: false,
   buysOnTerms: false,
@@ -82,7 +83,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
       if (holder === bank) continue;
       covered.push(insuredAt(ctx, bank, holder, ccy, limit));
     }
-    const base = sum(covered).value;
+    const base = sumCash(ccy, covered, 'what is covered').value;
     const due = ctx.registry.payable(scale(base, rate, 'the premium on what is covered'));
     if (due <= 0) continue;
     const r = ctx.settle({
@@ -101,7 +102,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
     ctx.record(
       'insurance.premium',
       [insurer, bank],
-      { insurer, bank, covered: base, rate, due, paid: r.outcome === 'settled', ccy },
+      { insurer, bank, covered: base.pieces, rate, due, paid: r.outcome === 'settled', ccy },
       true,
     );
   }
@@ -110,10 +111,14 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
 /** What the fund has to meet a guarantee with, for the reads that need it (D4). */
 export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): Cash {
   const insurer = insurerOf(ccy);
-  if (!ctx.parties.has(insurer)) return asCash(0, 'there is no insurer in this money');
+  if (!ctx.parties.has(insurer)) return noCash(ccy);
   const p = ctx.parties.get(insurer);
   // 0f.1: the register holds the cell's TOTAL.
-  return heldAsMoney(ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)), 'the fund');
+  return heldAsMoney(
+    ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)),
+    ccy,
+    'the fund',
+  );
 }
 
 /**

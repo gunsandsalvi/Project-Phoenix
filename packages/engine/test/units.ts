@@ -14,6 +14,7 @@
  * the grid, and there is one of it. The ones that produce a PRICE are ratios and are not quantities:
  * pieces of money per piece of a good is a real number and always was.
  */
+import { USD } from '../src/seeds/foundation.js';
 import { asQty, type Qty } from '../src/core/tick.js';
 import { asPerPiece, type Cash, heldAsMoney, type PerPiece } from '../src/core/measure.js';
 import {
@@ -30,7 +31,7 @@ import {
  * in dollars and this is where the dollars become the cents everything else in the state is in.
  */
 export const phx = (amount: number): Cash =>
-  heldAsMoney(asQty(Math.round(amount * MONEY_PIECES)), 'an amount of money stated in dollars');
+  heldAsMoney(asQty(Math.round(amount * MONEY_PIECES)), USD, 'an amount of money stated in dollars');
 
 /** A weight of a good measured in tonnes, as the pieces of it the state holds. */
 export const tonnes = (weight: number): Qty => asQty(Math.round(weight * TONNE_PIECES));

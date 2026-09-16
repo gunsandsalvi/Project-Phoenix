@@ -20,7 +20,7 @@ import {
   type Cash,
   type PerPiece,
   type Ratio,
-  asCash,
+  noCash,
   asPerPiece,
   asRatio,
   heldAsMoney,
@@ -91,10 +91,11 @@ function payoff(c: Contract, t: CdsTerms, at: Period, reads: ContractReads): Cas
   const recovery = reads.mark(t.obligation, at);
   // Law 19: nobody assumes a recovery. Until the defaulted line is worth something somebody can
   // read, what protection pays is not knowable and the mark says so rather than inventing a rate.
-  if (!recovery.some) return asCash(0, 'nothing has marked the defaulted line');
+  if (!recovery.some) return noCash(c.ccy);
   return valueAt(
     minus(asPerPiece(1, 'par'), recovery.value, 'par less recovery'),
     c.notional,
+    c.ccy,
     'over the notional protected',
   );
 }
@@ -107,7 +108,7 @@ function yearsLeft(t: CdsTerms, at: Period, calendar: Calendar): number {
 
 /** A3, C2: what it is worth to `a`, from two prints and nothing else. */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isCds(c.terms)) return asCash(0, 'not a credit default swap');
+  if (!isCds(c.terms)) return noCash(c.ccy);
   const t = c.terms;
   const state = creditState(t.reference, reads);
   if (state.defaulted) {
@@ -115,7 +116,7 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
     return t.buysProtection ? owed : negated(owed, 'and the other side of it');
   }
   const now = reads.print(t.book, at);
-  if (!now.some) return asCash(0, 'this protection book has not printed');
+  if (!now.some) return noCash(c.ccy);
   /**
    * Law 8, E-10, E-11: A SPREAD IS A RATE, and a protection book clears one. `rateLevel` is where
    * this contract says so about its own level; `asRatio` beside it is the same statement about the
@@ -129,7 +130,7 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
     'the spread now against the spread struck',
   );
   const worth = scale(
-    scale(heldAsMoney(c.notional, 'the notional it protects'), richer, 'over the notional'),
+    scale(heldAsMoney(c.notional, c.ccy, 'the notional it protects'), richer, 'over the notional'),
     asRatio(yearsLeft(t, at, reads.calendar), 'the years it has left'),
     'over the years it has left',
   );
@@ -160,9 +161,7 @@ export const cdsKind: DerivativeKindProfile = {
   },
   // Law 9: a market names protection by whose credit it is on and for how long.
   displayName: (c) =>
-    isCds(c.terms)
-      ? `${c.terms.reference} ${c.terms.tenorYears}y protection`
-      : String(c.id),
+    isCds(c.terms) ? `${c.terms.reference} ${c.terms.tenorYears}y protection` : String(c.id),
   mark: markOf,
   // A3: the same contract as the other side wrote it — who is buying protection is what turns over.
   flip: (t) => (isCds(t) ? { ...t, buysProtection: !t.buysProtection } : t),
@@ -181,19 +180,30 @@ export const cdsKind: DerivativeKindProfile = {
     if (creditState(t.reference, reads).defaulted) return [];
     const from = t.buysProtection ? c.a : c.b;
     const to = t.buysProtection ? c.b : c.a;
-    const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
+    const accrual = yearFraction(
+      CDS_DAY_COUNT,
+      reads.calendar.startOf(at),
+      reads.calendar.endOf(at),
+    );
     const amount = scale(
       scale(
-        heldAsMoney(c.notional, 'the notional it protects'),
+        heldAsMoney(c.notional, c.ccy, 'the notional it protects'),
         rateLevel(c.struckAt, 'a credit default swap is struck at a spread'),
         'the spread on the notional',
       ),
       asRatio(accrual, 'this period of a year'),
       'this period',
     );
-    if (amount <= 0) return [];
+    if (amount.pieces <= 0) return [];
     return [
-      { from, to, ccy: c.ccy, amount, date: reads.calendar.endOf(at), why: 'the protection premium' },
+      {
+        from,
+        to,
+        ccy: c.ccy,
+        amount,
+        date: reads.calendar.endOf(at),
+        why: 'the protection premium',
+      },
     ];
   },
   // D7.b: struck at par. The cleared spread IS what makes it worth nothing, so nothing is paid now.
@@ -221,7 +231,7 @@ export const cdsKind: DerivativeKindProfile = {
     const life = yearsLeft(c.terms, at, reads.calendar);
     return some(
       scale(
-        valueAt(move.value, c.notional, 'over the notional'),
+        valueAt(move.value, c.notional, c.ccy, 'over the notional'),
         asRatio(life, 'the years it has left'),
         'over the years it has left',
       ),
@@ -251,7 +261,5 @@ export function heldPastMaturity(c: Contract, at: Period, reads: ContractReads):
 /** A reader's read: the implied default probability, DERIVED (C2) and stored nowhere. */
 export function impliedDefaultRate(spread: Ratio, recovery: Ratio): Option<Ratio> {
   const loss = minus(asRatio(1, 'the whole of it'), recovery, 'loss given default');
-  return loss > 0
-    ? some(ratioOf(spread, loss, 'the implied default rate'))
-    : none<Ratio>();
+  return loss > 0 ? some(ratioOf(spread, loss, 'the implied default rate')) : none<Ratio>();
 }

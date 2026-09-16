@@ -34,6 +34,7 @@
  * The only way anything is bought below is that a unit of capacity was worth more to this firm than
  * what the market is asking for the plant that makes one.
  */
+import { noCash, sumCash } from '../core/measure.js';
 import {
   amountOf,
   asAmount,
@@ -52,15 +53,28 @@ import {
 } from '../core/measure.js';
 import { yearFraction } from '../calendar/daycount.js';
 import { Missing } from '../core/errors.js';
-import type { InstrumentId, MarketId } from '../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId } from '../core/ids.js';
 import { period } from '../calendar/calendar.js';
-import { atLeast, atMost, material, sum } from '../core/num.js';
+import { atMost, material, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { ParticipantView } from '../world/context.js';
 import type { Period } from '../calendar/calendar.js';
 import type { RegionId } from '../core/ids.js';
 import { expectedPriceOf } from './expectation.js';
-import { CAPITAL_KINDS, capacityFrom, capitalKindOf, goodId, goodMarketId, isPlant, lifeParam, plantHeld, plantTerms, serviceLeft, type HeldVintage, type PlantNeed } from './physical.js';
+import {
+  CAPITAL_KINDS,
+  capacityFrom,
+  capitalKindOf,
+  goodId,
+  goodMarketId,
+  isPlant,
+  lifeParam,
+  plantHeld,
+  plantTerms,
+  serviceLeft,
+  type HeldVintage,
+  type PlantNeed,
+} from './physical.js';
 import { NO_QTY, asQty, downTick, subQty, upTick, type Qty } from '../core/tick.js';
 import { about } from '../world/context.js';
 import { ownCostOfMoney } from './banking.js';
@@ -169,7 +183,8 @@ export function costOfCapital(
     return some({ perAnnum: debt.value, debt, equity, debtWeight, equityWeight });
   }
   const capital = plus(debtWeight, equityWeight, 'its capital');
-  if (capital <= 0) return some({ perAnnum: debt.value, debt, equity, debtWeight, equityWeight });
+  if (capital.pieces <= 0)
+    return some({ perAnnum: debt.value, debt, equity, debtWeight, equityWeight });
   return some({
     perAnnum: ratioOf(
       plus(
@@ -242,6 +257,9 @@ function sovereignRate(view: ParticipantView, horizon: number): Option<Ratio> {
 
 /** Firm C2: what this firm owes — the liabilities it has issued, at what is outstanding. */
 function owes(view: ParticipantView): Cash {
+  // Currency B1, C4: what it owes across its lines, said in the money it reports in — a translation
+  // for the read at the rate in force, never a conversion of a liability (B3).
+  const home = view.registry.currencyOf(view.self.region);
   const terms: Cash[] = [];
   // Law 19: the register already indexes what a party issued, so this reads its own lines rather
   // than every line in the world to find them.
@@ -249,9 +267,9 @@ function owes(view: ParticipantView): Cash {
     if (!i.status.live) continue;
     if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
     // Money A1: a liability is owed at its face, so what is out is what it owes.
-    terms.push(asCash(i.issued, `what it owes on ${i.id}`));
+    terms.push(view.inMoney(asCash(i.issued, i.ccy, `what it owes on ${i.id}`), home));
   }
-  return sum(terms).value;
+  return sumCash(home, terms, 'what it owes').value;
 }
 
 /**
@@ -269,8 +287,13 @@ function requiredOnEquity(view: ParticipantView): Option<Ratio> {
   if (!outlook.some) return none<Ratio>();
   const shares = view.instruments.get(line.value).issued;
   if (shares <= 0) return none<Ratio>();
-  const cap = valueAt(print.value.price, shares, 'what the market says it is worth');
-  if (cap <= 0) return none<Ratio>();
+  const cap = valueAt(
+    print.value.price,
+    shares,
+    print.value.ccy,
+    'what the market says it is worth',
+  );
+  if (cap.pieces <= 0) return none<Ratio>();
   // Law 8: what it earns is per period and what a return is is per annum, so the period is turned
   // into the fraction of a year the calendar says it is, and never into a periods-per-year.
   const year = yearFraction(
@@ -282,7 +305,11 @@ function requiredOnEquity(view: ParticipantView): Option<Ratio> {
   return some(
     ratioOf(
       over(
-        asCash(outlook.value.expected, 'what it expects to earn'),
+        asCash(
+          outlook.value.expected,
+          outlook.value.unit as CurrencyCode,
+          'what it expects to earn',
+        ),
         asRatio(year, 'the fraction of a year this period is'),
         'what it earns, per annum',
       ),
@@ -392,6 +419,8 @@ export function project(
   // what it BIDS is its own reservation, which is a different number and a different question
   // (Clearing A2). Sizing the spend at its own reservation would have a dearer cost of capital buy
   // MORE of a thing it values less, because its bid would have fallen.
+  // Currency A3: a firm's plant and ground are bought where it is, in the money of its place.
+  const home = view.registry.currencyOf(view.self.region);
   const wanted: {
     readonly order: PlannedOrder;
     readonly outlay: Cash;
@@ -438,11 +467,15 @@ export function project(
     // Law 8: a machine is a whole machine, and plant that is a fraction short of what the gap
     // needs does not close it — so what it bids for is the whole ones that do.
     const qty = upTick(
-      scale(gap, asRatio(o.unitsPerUnitPerPeriod, 'the plant a unit takes'), 'units of plant the gap needs'),
+      scale(
+        gap,
+        asRatio(o.unitsPerUnitPerPeriod, 'the plant a unit takes'),
+        'units of plant the gap needs',
+      ),
     );
     wanted.push({
       order: { market: o.market, side: 'buy', price: bid, qty },
-      outlay: valueAt(o.price, qty, 'what it expects to pay for them'),
+      outlay: valueAt(o.price, qty, home, 'what it expects to pay for them'),
       asking: o.price,
     });
   }
@@ -462,10 +495,12 @@ export function project(
   let projectGround: ProjectGround | null = null;
   if (ground !== undefined) {
     const needed = asQty(
-      sum(wanted.map((x) => ground.hectaresUnder(kindOfOrder(offers, x.order.market), x.order.qty))).value,
+      sum(wanted.map((x) => ground.hectaresUnder(kindOfOrder(offers, x.order.market), x.order.qty)))
+        .value,
       'the hectares the plant takes',
     );
-    const short = needed > ground.free ? subQty(needed, ground.free, 'the hectares it is short of') : NO_QTY;
+    const short =
+      needed > ground.free ? subQty(needed, ground.free, 'the hectares it is short of') : NO_QTY;
     const perCapacity = sum(
       needs.map((n) => ground.hectaresUnder(n.capitalKind, upTick(n.unitsPerUnitPerPeriod))),
     ).value;
@@ -474,9 +509,14 @@ export function project(
       asked,
       'what a unit of capacity is worth over the plant it takes',
     );
-    const bid = perCapacity > 0
-      ? over(asPerPiece(surplus, 'the surplus a unit of capacity leaves'), asRatio(perCapacity, 'the hectares a unit of capacity takes'), 'what a hectare is worth to it')
-      : asPerPiece(0, 'plant that takes no ground');
+    const bid =
+      perCapacity > 0
+        ? over(
+            asPerPiece(surplus, 'the surplus a unit of capacity leaves'),
+            asRatio(perCapacity, 'the hectares a unit of capacity takes'),
+            'what a hectare is worth to it',
+          )
+        : asPerPiece(0, 'plant that takes no ground');
     projectGround = { needed, free: ground.free, short, bid };
     if (short > 0) {
       if (bid <= 0) return none<Project>();
@@ -484,15 +524,19 @@ export function project(
       wanted.length = 0;
       wanted.push({
         order: { market: ground.market, side: 'buy', price: bid, qty: short },
-        outlay: valueAt(asking, short, 'what it expects to pay for the ground'),
+        outlay: valueAt(asking, short, home, 'what it expects to pay for the ground'),
         asking,
       });
     }
   }
   // C2: what the whole of it would cost at the level the market is asking. It is what the firm
   // wants to spend, and what it cannot pay for out of what it holds is its PROGRAMME (Firm E4.a).
-  const spend = sum(wanted.map((x) => x.outlay)).value;
-  if (spend <= 0) return none<Project>();
+  const spend = sumCash(
+    home,
+    wanted.map((x) => x.outlay),
+    'what it wants to spend',
+  ).value;
+  if (spend.pieces <= 0) return none<Project>();
   // B2, B2.a, Clearing A2: what it POSTS is what it could actually pay for at the price it is
   // bidding — a bid it could not settle is not an order, and a firm that would have to pay its own
   // reservation for all of it can only afford a few. That is what makes its demand for plant a
@@ -503,8 +547,9 @@ export function project(
     if (x.asking <= 0) continue;
     // Its money is spread over the places the plant could come from, in the proportions those
     // places are asking for — one stated rule, applied the same way to each of them (Law 4).
+    // Law 6's one admissible case: a firm with nothing spare has nothing to spread.
     const purse = scale(
-      atLeast(spendable, asCash(0, 'nothing'), 'a firm with nothing spare has nothing to spread'),
+      spendable.pieces > 0 ? spendable : noCash(spendable.ccy),
       ratioOf(x.outlay, spend, 'this line\u2019s share'),
       'what it can put here',
     );
@@ -513,12 +558,16 @@ export function project(
     // Law 8: a machine is a whole machine, and this is what its money REACHES — down, because a
     // firm that can pay for four and two thirds of one can pay for four.
     const canPay = downTick(amountOf(purse, x.asking, 'units it can pay for'));
-    const qty = atMost(canPay, x.order.qty, 'it buys with the money it has, and only what is offered');
+    const qty = atMost(
+      canPay,
+      x.order.qty,
+      'it buys with the money it has, and only what is offered',
+    );
     if (qty <= 0 || !material(qty, wanted.length + 1, x.order.qty)) continue;
     orders.push({ ...x.order, qty });
-    funded.push(valueAt(x.asking, qty, 'what it expects to pay for them'));
+    funded.push(valueAt(x.asking, qty, home, 'what it expects to pay for them'));
   }
-  const affordable = sum(funded).value;
+  const affordable = sumCash(home, funded, 'what it can pay for').value;
   return some({
     ground: projectGround,
     gap,
@@ -528,7 +577,11 @@ export function project(
     hurdle,
     required,
     contributionPerAnnum,
-    worthPerUnitOfCapacity: over(contributionPerAnnum, required, 'what its capacity is worth a unit'),
+    worthPerUnitOfCapacity: over(
+      contributionPerAnnum,
+      required,
+      'what its capacity is worth a unit',
+    ),
     askedPerUnitOfCapacity: asked,
     spend,
     funded: affordable,
@@ -543,7 +596,10 @@ export function project(
 /** 15.1: which kind of plant an order is for, off the offer list it was made from (Law 19). */
 function kindOfOrder(offers: readonly PlantOffer[], market: MarketId): string {
   const o = offers.find((x) => x.market === market);
-  if (o === undefined) throw new Missing('Capital Programme C1', `no offer was made in ${String(market)}`, { market: String(market) });
+  if (o === undefined)
+    throw new Missing('Capital Programme C1', `no offer was made in ${String(market)}`, {
+      market: String(market),
+    });
   return o.capitalKind;
 }
 
@@ -571,9 +627,17 @@ function cheapestPerYear(
   for (const o of offers) {
     const counted = countedYears(view, o.periodsOfService, horizonPeriods);
     if (counted <= 0 || o.price <= 0) continue;
-    const perYear = over(o.price, asRatio(counted, 'the years of service it counts'), 'what a year of it asks');
+    const perYear = over(
+      o.price,
+      asRatio(counted, 'the years of service it counts'),
+      'what a year of it asks',
+    );
     const standing = best.get(o.capitalKind);
-    if (standing === undefined || perYear < standing.perYear || (perYear === standing.perYear && o.newBuild)) {
+    if (
+      standing === undefined ||
+      perYear < standing.perYear ||
+      (perYear === standing.perYear && o.newBuild)
+    ) {
       best.set(o.capitalKind, { offer: o, perYear });
     }
   }
@@ -586,7 +650,11 @@ function countedYears(
   periodsOfService: number,
   horizonPeriods: number,
 ): number {
-  const counted = atMost(periodsOfService, horizonPeriods, 'there is no service beyond the life the plant has');
+  const counted = atMost(
+    periodsOfService,
+    horizonPeriods,
+    'there is no service beyond the life the plant has',
+  );
   if (counted <= 0) return 0;
   return yearFraction(
     'ACT/365F',
@@ -662,13 +730,7 @@ export function plantOffers(
         capitalKind: need.capitalKind,
         unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
         market: i.market.value,
-        price: printed.some
-          ? printed.value
-          : scale(
-              asking.value,
-              share,
-              'what a used one asks',
-            ),
+        price: printed.some ? printed.value : scale(asking.value, share, 'what a used one asks'),
         periodsOfService: left,
         newBuild: false,
       });

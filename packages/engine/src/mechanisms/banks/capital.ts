@@ -20,18 +20,15 @@
  * and B3 is what happens when it is breached: the position is published (B3.a), which is what a
  * depositor, a rival and a lender all read, and the bank's own credit decision has less room in it.
  */
-import { currencyUnit, moneyInstrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { atLeast, atMost, sum } from '../../core/num.js';
+import { atLeastCash, atMostCash, noCash, sumCash } from '../../core/measure.js';
 import {
-  asCash,
-  type Cash,
-  minus,
-  over,
-  plus,
-  type Ratio,
-  ratioOf,
-  scale,
-} from '../../core/measure.js';
+  currencyUnit,
+  moneyInstrumentId,
+  type CurrencyCode,
+  type InstrumentId,
+  type PartyId,
+} from '../../core/ids.js';
+import { type Cash, minus, over, plus, type Ratio, ratioOf, scale } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -143,9 +140,9 @@ export function capitalOf(
   const held: Cash[] = [];
   const weighted: Cash[] = [];
   const byLine = {
-    lending: asCash(0, 'what its lending uses'),
-    liquidity: asCash(0, 'what its liquidity uses'),
-    dealing: asCash(0, 'what its dealing uses'),
+    lending: noCash(ccy),
+    liquidity: noCash(ccy),
+    dealing: noCash(ccy),
   };
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
@@ -155,10 +152,9 @@ export function capitalOf(
     const value = ctx.valuation.inOwnMoney(
       bank,
       ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
-      ctx.instruments.get(h.instrument).ccy,
       ctx.period,
     );
-    if (value === 0) continue;
+    if (value.pieces === 0) continue;
     held.push(value);
     // B1.a, Dealer Desks D2, F2: WHAT AN ASSET WEIGHS DEPENDS ON WHY IT IS HELD. A holding up to
     // where its own treasury wants the line is there because the treasury decided so, and it
@@ -172,7 +168,10 @@ export function capitalOf(
     // Only the part ABOVE. A line it is SHORT of its target is a position too — it will have to
     // buy — but it is not an asset it holds, and capital stands against what a bank owns.
     const want = rules.targets.get(h.instrument);
-    const banking = want === undefined ? value : atMost(value, want, 'the treasury cannot claim more of a line than there is of it');
+    const banking =
+      want === undefined
+        ? value
+        : atMostCash(value, want, 'the treasury cannot claim more of a line than there is of it');
     const trading = minus(value, banking, 'the part it is running as a position');
     const asBanking = scale(
       banking,
@@ -200,8 +199,8 @@ export function capitalOf(
     subordinatedOf(ctx, bank),
     'what stands in front of its creditors',
   );
-  const assets = sum(held).value;
-  const weightedSum = sum(weighted);
+  const assets = sumCash(ccy, held, 'what it holds').value;
+  const weightedSum = sumCash(ccy, weighted, 'what it holds, weighted');
   const rwa = weightedSum.value;
   const askedWeighted = plus(rules.minWeighted, rules.buffer, 'the line it runs to');
   const askedLeverage = plus(rules.minLeverage, rules.buffer, 'the backstop it runs to');
@@ -221,7 +220,11 @@ export function capitalOf(
   const inUnits =
     rules.weight > 0 ? over(byWeighted, rules.weight, 'units it could add') : byWeighted;
   const binds: Binding =
-    byLeverage < inUnits ? 'leverage' : inUnits < byLeverage ? 'weighted' : 'nothing';
+    byLeverage.pieces < inUnits.pieces
+      ? 'leverage'
+      : inUnits.pieces < byLeverage.pieces
+        ? 'weighted'
+        : 'nothing';
   return {
     bank,
     ccy,
@@ -230,21 +233,23 @@ export function capitalOf(
     weightedTerms: weightedSum.terms,
     weightedMagnitude: weightedSum.magnitude,
     assets,
-    weightedRatio: rwa > 0 ? some(ratioOf(capital, rwa, 'its weighted ratio')) : none<Ratio>(),
-    leverageRatio: assets > 0 ? some(ratioOf(capital, assets, 'its leverage ratio')) : none<Ratio>(),
+    weightedRatio:
+      rwa.pieces > 0 ? some(ratioOf(capital, rwa, 'its weighted ratio')) : none<Ratio>(),
+    leverageRatio:
+      assets.pieces > 0 ? some(ratioOf(capital, assets, 'its leverage ratio')) : none<Ratio>(),
     minWeighted: rules.minWeighted,
     minLeverage: rules.minLeverage,
     buffer: rules.buffer,
     binds,
-    headroom: atMost(byLeverage, inUnits, 'the rule that leaves it less is the room there is'),
+    headroom: atMostCash(byLeverage, inUnits, 'the rule that leaves it less is the room there is'),
     limitPerName: scale(capital, rules.limitPerName, 'the most it will fund for one name'),
     byLine,
     breach:
-      capital < scale(rwa, askedWeighted, 'what the line asks') ||
-      capital < scale(assets, askedLeverage, 'what the backstop asks'),
+      capital.pieces < scale(rwa, askedWeighted, 'what the line asks').pieces ||
+      capital.pieces < scale(assets, askedLeverage, 'what the backstop asks').pieces,
     belowRequirement:
-      capital < scale(rwa, rules.minWeighted, 'the requirement') ||
-      capital < scale(assets, rules.minLeverage, 'the backstop'),
+      capital.pieces < scale(rwa, rules.minWeighted, 'the requirement').pieces ||
+      capital.pieces < scale(assets, rules.minLeverage, 'the backstop').pieces,
   };
 }
 
@@ -256,25 +261,25 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
     {
       bank: p.bank,
       ccy: p.ccy,
-      capital: p.capital,
-      weighted: p.weighted,
+      capital: p.capital.pieces,
+      weighted: p.weighted.pieces,
       weightedTerms: p.weightedTerms,
       weightedMagnitude: p.weightedMagnitude,
-      assets: p.assets,
+      assets: p.assets.pieces,
       weightedRatio: p.weightedRatio.some ? p.weightedRatio.value : null,
       leverageRatio: p.leverageRatio.some ? p.leverageRatio.value : null,
       minWeighted: p.minWeighted,
       minLeverage: p.minLeverage,
       buffer: p.buffer,
       binds: p.binds,
-      headroom: p.headroom,
+      headroom: p.headroom.pieces,
       breach: p.breach,
       belowRequirement: p.belowRequirement,
       // F3, XI-2: THE MOST IT WILL FUND FOR ANY ONE NAME, published because the names it funds have
       // to be able to see it. It is its own capital times its own limit, so when its capital falls
       // the line falls with it — and a party carrying more than the line is carrying more than its
       // funder will stand behind, which is the third of XI-2's four doors.
-      limitPerName: p.limitPerName,
+      limitPerName: p.limitPerName.pieces,
       unit: currencyUnit(p.ccy),
     },
     true,
@@ -300,7 +305,16 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
       bank: p.bank,
       // What it would have to raise to be above BOTH lines, which is the bigger of the two — a
       // plan that answered only the rule it happened to breach first would leave it in breach.
-      short: atLeast(shortWeighted, shortLeverage, 'the rule it is further under is what it must find'),
+      short: atLeastCash(
+        shortWeighted,
+        shortLeverage,
+        'the rule it is further under is what it must find',
+      ).pieces,
+      ccy: atLeastCash(
+        shortWeighted,
+        shortLeverage,
+        'the rule it is further under is what it must find',
+      ).ccy,
       binds: p.binds,
       belowRequirement: p.belowRequirement,
     },

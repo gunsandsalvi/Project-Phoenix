@@ -25,14 +25,7 @@
 import type { CurrencyCode, PartyId, RegionId } from '../../core/ids.js';
 import { atMost, sum, zeroIfNone } from '../../core/num.js';
 import { downTick, subQty, type Qty } from '../../core/tick.js';
-import {
-  type PerPiece,
-  minus,
-  over,
-  plus,
-  
-  valueAt,
-} from '../../core/measure.js';
+import { type PerPiece, minus, over, plus, valueAt } from '../../core/measure.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import {
   isGoodTerms,
@@ -84,7 +77,6 @@ function roomFor(ctx: MechanismContext, view: ParticipantView, party: PartyId): 
     costsPerUnit: wear.some ? wear.value : undefined,
   };
 }
-
 
 /**
  * D3, Clearing A3: THE TWO SIDES, each from its own party's state.
@@ -194,7 +186,9 @@ function lease(
    * same fact with one writer and a reader (Law 4, Law 19), and it deletes the store.
    */
   const got = new Map<string, Qty>();
-  const letters = outcome.fills.filter((f) => f.side === 'sell' && f.qty > 0).map((f) => ({ ...f }));
+  const letters = outcome.fills
+    .filter((f) => f.side === 'sell' && f.qty > 0)
+    .map((f) => ({ ...f }));
   let at = 0;
   for (const taker of outcome.fills) {
     if (taker.side !== 'buy' || taker.qty <= 0) continue;
@@ -205,7 +199,9 @@ function lease(
       // Law 6: a letter cannot let more space than it has, and a taker cannot take more
       // than it is short of. Arithmetic impossibility on both sides, named at the site.
       const space = atMost(letter.qty, want, 'a letter has only the space it has');
-      const due = ctx.registry.payable(valueAt(rate, space, 'what the space costs for the period'));
+      const due = ctx.registry.payable(
+        valueAt(rate, space, ccy, 'what the space costs for the period'),
+      );
       // Law 8, Money A2: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT. Space let for nothing
       // is free storage, which is the thing this module exists to remove — so the space is NOT let,
       // the taker keeps looking and the letter keeps its room. It is the same answer the wire gives
@@ -305,8 +301,14 @@ export function commodities(): SystemModule {
         writes: [{ kind: 'event', name: 'commodities.storage' }],
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
-          for (const r of ctx.registry.regions.values()) lease(ctx, r.id, ctx.registry.currencyOf(r.id), said);
-          ctx.record(STORAGE_SESSION, [...said.keys()], { byRegion: Object.fromEntries(said) }, true);
+          for (const r of ctx.registry.regions.values())
+            lease(ctx, r.id, ctx.registry.currencyOf(r.id), said);
+          ctx.record(
+            STORAGE_SESSION,
+            [...said.keys()],
+            { byRegion: Object.fromEntries(said) },
+            true,
+          );
         },
       },
     ],

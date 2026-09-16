@@ -13,6 +13,7 @@ import type { Period } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { asCash, asRatio, type Cash, type Ratio } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
+import type { CurrencyCode } from '../core/ids.js';
 
 const HOUSEHOLD_PLAN = 'households.plan';
 
@@ -29,15 +30,20 @@ export interface SavingPublished {
 }
 
 /** The cell's last plan, if it published one. Missing is Missing: a plan without both numbers is none. */
-export function savingPublishedBy(reads: HouseholdPlanReads, cell: string): Option<SavingPublished> {
+export function savingPublishedBy(
+  reads: HouseholdPlanReads,
+  cell: string,
+): Option<SavingPublished> {
   const e = reads.lastOf(HOUSEHOLD_PLAN, cell);
   if (e === undefined) return none<SavingPublished>();
   const spare = e.data['sparePerMember'];
   const required = e.data['requiredPerAnnum'];
-  if (typeof spare !== 'number' || typeof required !== 'number') return none<SavingPublished>();
+  const ccy = e.data['ccy'];
+  if (typeof spare !== 'number' || typeof required !== 'number' || typeof ccy !== 'string')
+    return none<SavingPublished>();
   return some({
     period: e.period,
-    sparePerMember: asCash(spare, 'what one member has spare'),
+    sparePerMember: asCash(spare, ccy as CurrencyCode, 'what one member has spare'),
     requiredPerAnnum: asRatio(required, 'what it requires of a claim, per annum'),
   });
 }

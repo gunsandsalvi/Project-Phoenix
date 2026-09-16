@@ -15,6 +15,7 @@
  * arithmetic around it and the SHAPE of the vehicle, which a reader can otherwise only get by
  * believing a comment.
  */
+import { USD } from '../src/seeds/foundation.js';
 import { describe, expect, it } from 'vitest';
 import { drawPrivateEquity, drawFunds } from '../src/mechanisms/funds/data.js';
 import { undrawnOn, undrawnTo, type Commitment } from '../src/mechanisms/funds/commitment.js';
@@ -30,8 +31,8 @@ const INVESTORS = ['insurance.us', 'insurance.eu'];
 
 const promised = (committed: number, drawn: number): Commitment => ({
   kind: COMMITMENT,
-  committed: asCash(committed, 'what it promised'),
-  drawn: asCash(drawn, 'what it has paid in'),
+  committed: asCash(committed, USD, 'what it promised'),
+  drawn: asCash(drawn, USD, 'what it has paid in'),
   id: agreementId('commitment.1'),
   investor: partyId('insurance.us'),
   pool: partyId('fund.buyout'),
@@ -42,13 +43,13 @@ describe('what a commitment is', () => {
     // A2: capital is COMMITTED, not paid. What is left to call is a fact about the promise and
     // about the calls that have settled — the investor's balance is not in it, here or anywhere.
     expect(undrawnOn(promised(100_000_000, 0))).toBe(100_000_000);
-    expect(undrawnOn(promised(100_000_000, 40_000_000))).toBe(60_000_000);
-    expect(undrawnOn(promised(100_000_000, 100_000_000))).toBe(0);
+    expect(undrawnOn(promised(100_000_000, 40_000_000)).pieces).toBe(60_000_000);
+    expect(undrawnOn(promised(100_000_000, 100_000_000)).pieces).toBe(0);
   });
 
   it('adds across the investors who raised the fund', () => {
-    expect(undrawnTo([promised(100_000_000, 40_000_000), promised(50_000_000, 0)])).toBe(110_000_000);
-    expect(undrawnTo([])).toBe(0);
+    expect(undrawnTo([promised(100_000_000, 40_000_000), promised(50_000_000, 0)], USD).pieces).toBe(110_000_000);
+    expect(undrawnTo([], USD).pieces).toBe(0);
   });
 });
 

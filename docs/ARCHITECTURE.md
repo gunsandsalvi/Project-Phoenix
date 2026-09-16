@@ -66,7 +66,7 @@ Every quantity carries its unit and cannot be combined with a different one (App
 
 | Type     | Fields                                                                             | Rule                                                                                                                                     |
 | -------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `Money`  | `amount`, `ccy`                                                                    | `add` throws across currencies (Money A2.b). No implicit currency (Currency A4).                                                         |
+| `Cash`   | `pieces`, `ccy` — a value object, not a phantom (16.0)                              | `plus`/`minus`/`sumCash` throw `Impossible('Money A2.b')` where two currencies meet. No implicit currency (Currency A4): every amount names its money, and a record carries pieces beside a named `ccy` (Law 8). `inMoney`/`inOwnMoney` are TRANSLATIONS for a report or a mark at the rate in force, never conversions — a conversion is an FX trade with a counterparty (Currency B3, C4). |
 | `Qty`    | `amount`, `unit` (`par`, `shares`, `tonnes`, `contracts`, `dwellings`, `hours`, …) | `add` throws across units.                                                                                                               |
 | `Price`  | `amount`, `ccy`, `perUnit`                                                         | A price of money in itself is `1` — the only hard-coded one (Money D2).                                                                  |
 | `Rate`   | `amount`, `per: Periodicity`                                                       | A rate without its periodicity does not construct (Law 8). Conversion is an explicit call through the calendar's day count (Money G3.c). |
@@ -1222,9 +1222,18 @@ violations.
 - **The observer is READ-ONLY and holds a copy.** It takes the world's own reads, snapshots what it
   shows, and no surface changes the model (Appendix B, Observer). What it adds at 0a is the derived
   phase order with what each phase needs of the period it is in.
-- **`Cash` erases the currency.** A `Cash` is a count of pieces and does not carry which money's
-  pieces they are, so two currencies can be added by arithmetic that typechecks. Every site that
-  matters names the currency beside it today, and 16.0 is where the type carries it.
+- **`Cash` carries its currency (16.0).** A currency is DRAWN, so a phantom type cannot tell two of
+  them apart; `Cash` is `{ pieces, ccy }` at runtime and the arithmetic refuses two currencies where
+  they meet (Money A2.b). The owner's correction at 16.0 is the design rule: **a party's balance
+  sheet is not in one money.** Each party holds an account per currency at its bank (Currency
+  B2.a); nothing converts at the ledger boundary (B3) — a party that wants its own money sells the
+  other in the spot book, or keeps it, or hedges it; a numéraire is for a REPORT only (C4), so
+  `inOwnMoney`/`inMoney` translate at the rate in force and are used where a report, a mark or a
+  size in one money is what is wanted (a balance sheet, an index level, a sector total, a dealer's
+  room, a bank's capital behind a foreign book), never to move money. Foreign positions revalue at
+  the close (D2). The journal refuses a `Cash` value in event data: money on the record is its
+  pieces beside a named `ccy` (Law 8), and every reader of a money event requires the `ccy` it
+  names.
 - **`npm run coverage:reached`** is the measurement behind an `UNMEASURED` mark: it steps both
   worlds and asks the kernel's `Reach` register what every declared capability has produced. It is
   taken at item 0d.

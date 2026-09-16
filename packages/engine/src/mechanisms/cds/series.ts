@@ -18,7 +18,6 @@
  * edit: the terms still list it, the payoff already happened, and what is left is the survivors.
  */
 import {
-  asCash,
   asPerPiece,
   asRatio,
   heldAsMoney,
@@ -35,6 +34,7 @@ import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId } from '../../core/ids.js';
+import { noCash, sumCash } from '../../core/measure.js';
 import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type {
@@ -101,7 +101,11 @@ export function runningShare(t: CdsIndexTerms, reads: ContractReads): number {
 
 function yearsLeft(t: CdsIndexTerms, at: Period, reads: ContractReads): number {
   if (at >= t.maturity) return 0;
-  return yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.startOf(t.maturity));
+  return yearFraction(
+    CDS_DAY_COUNT,
+    reads.calendar.startOf(at),
+    reads.calendar.startOf(t.maturity),
+  );
 }
 
 /**
@@ -110,7 +114,7 @@ function yearsLeft(t: CdsIndexTerms, at: Period, reads: ContractReads): number {
  * nobody has settled yet.
  */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isCdsIndex(c.terms)) return asCash(0, 'not a credit index');
+  if (!isCdsIndex(c.terms)) return noCash(c.ccy);
   const t = c.terms;
   const print = reads.print(t.book, at);
   const running = runningShare(t, reads);
@@ -121,7 +125,12 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
     ? scale(
         scale(
           heldAsMoney(
-            scale(c.notional, asRatio(running, 'what is still running'), 'on the part still running'),
+            scale(
+              c.notional,
+              asRatio(running, 'what is still running'),
+              'on the part still running',
+            ),
+            c.ccy,
             'the notional still running',
           ),
           minus(
@@ -134,7 +143,7 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
         asRatio(yearsLeft(t, at, reads), 'the years it has left'),
         'over the years it has left',
       )
-    : asCash(0, 'a line with no print has no spread leg');
+    : noCash(c.ccy);
   // A name that has defaulted and not yet settled is worth par less what its own debt is worth,
   // on its share of the line — the same read a single-name row makes (D2.a: no fixed recovery).
   const claims: Cash[] = [];
@@ -152,11 +161,16 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
           asRatio(n.weight / whole, 'this name’s share of the line'),
           'on this name’s share of the line',
         ),
+        c.ccy,
         'what this name owes the line',
       ),
     );
   }
-  const worth = plus(spreadLeg, sum(claims).value, 'the spread leg and the claims on it');
+  const worth = plus(
+    spreadLeg,
+    sumCash(c.ccy, claims, 'the claims on the line').value,
+    'the spread leg and the claims on it',
+  );
   return t.buysProtection ? worth : negated(worth, 'and the other side of it');
 }
 
@@ -181,7 +195,8 @@ export const cdsIndexKind: DerivativeKindProfile = {
   validateTerms: (t) => {
     if (!isCdsIndex(t)) throw new Error('not credit index terms');
     if (t.names.length === 0) throw new Error(`series ${t.series} has no names in it`);
-    if (t.names.some((n) => !(n.weight > 0))) throw new Error(`series ${t.series} has a weightless name`);
+    if (t.names.some((n) => !(n.weight > 0)))
+      throw new Error(`series ${t.series} has a weightless name`);
   },
   displayName: (c) =>
     isCdsIndex(c.terms)
@@ -201,11 +216,16 @@ export const cdsIndexKind: DerivativeKindProfile = {
     if (running <= 0) return [];
     const from = t.buysProtection ? c.a : c.b;
     const to = t.buysProtection ? c.b : c.a;
-    const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
+    const accrual = yearFraction(
+      CDS_DAY_COUNT,
+      reads.calendar.startOf(at),
+      reads.calendar.endOf(at),
+    );
     const amount = scale(
       scale(
         heldAsMoney(
           scale(c.notional, asRatio(running, 'what is still running'), 'on what is still running'),
+          c.ccy,
           'the notional still running',
         ),
         rateLevel(c.struckAt, 'a credit index is struck at a spread'),
@@ -214,7 +234,7 @@ export const cdsIndexKind: DerivativeKindProfile = {
       asRatio(accrual, 'this period of a year'),
       'this period',
     );
-    return amount > 0
+    return amount.pieces > 0
       ? [{ from, to, ccy: c.ccy, amount, date: reads.calendar.endOf(at), why: 'the index premium' }]
       : [];
   },
@@ -232,6 +252,7 @@ export const cdsIndexKind: DerivativeKindProfile = {
             asRatio(runningShare(c.terms, reads), 'what is still running'),
             'still running',
           ),
+          c.ccy,
           'over it',
         ),
         asRatio(yearsLeft(c.terms, at, reads), 'the years it has left'),

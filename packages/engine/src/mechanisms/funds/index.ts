@@ -22,6 +22,7 @@
  * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
+import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import { isMoneyLeg } from '../../ledger/instruction.js';
 import type { Period } from '../../calendar/calendar.js';
 import { passiveOrders } from './passive.js';
@@ -134,15 +135,16 @@ export const STRUCK = 'funds.struck';
  */
 interface StruckSlot {
   at: Period | undefined;
-  shortfall: Cash;
-  spare: Cash;
+  /** Missing until the fund has struck: a pool that has never struck a value has published no money at all (16.0). */
+  shortfall: Cash | undefined;
+  spare: Cash | undefined;
 }
 
 /** An empty slot: a pool that has not struck this period has no period, no shortfall and no spare. */
 export const nothingStruck = (): StruckSlot => ({
   at: undefined,
-  shortfall: asCash(0, 'it owes nobody'),
-  spare: asCash(0, 'it has nothing spare'),
+  shortfall: undefined,
+  spare: undefined,
 });
 
 export * from './data.js';
@@ -412,7 +414,12 @@ function feeAccrued(ctx: MechanismContext, m: Mandate, share: Instrument): Qty {
   return ctx.registry.payable(
     feeOn(
       ctx,
-      valueAt(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
+      valueAt(
+        ctx.valuation.markPerUnit(share.id, ctx.period),
+        share.issued,
+        share.ccy,
+        'net assets',
+      ),
       m.feePerAnnum,
     ),
   );
@@ -473,18 +480,18 @@ function subscribe(
   const ccy = ctx.registry.currencyOf(fund.region);
   // C1.d of the buyer's own budget: it subscribes with the money it has, and what it cannot pay
   // for it does not buy. That is a budget, not a bound on the decision.
-  const cash = heldAsMoney(ctx.participant(holder).cash(ccy), 'what this holder has');
-  const wanted = valueAt(perShare, sharesAsked, 'what it asked to put in');
-  const budget = atMost(wanted, cash, 'it cannot spend money it does not hold');
+  const cash = heldAsMoney(ctx.participant(holder).cash(ccy), ccy, 'what this holder has');
+  const wanted = valueAt(perShare, sharesAsked, ccy, 'what it asked to put in');
+  const budget = atMostCash(wanted, cash, 'it cannot spend money it does not hold');
   // Law 8: SHARES ARE ISSUED IN WHOLE PIECES and paid for in whole pieces of money, per member of a
   // cell (XI-15). The shares are struck first, because they are the thing being bought, and what
   // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
   // fraction on every subscription it ever takes.
   let shares = downTick(amountOf(budget, perShare, 'shares it gets'));
-  let paid = ctx.registry.cashFor(valueAt(perShare, shares, 'what it pays'));
-  if (paid > cash) {
+  let paid = ctx.registry.cashFor(valueAt(perShare, shares, ccy, 'what it pays'));
+  if (paid > cash.pieces) {
     shares = subQty(shares, ONE_PIECE, 'a piece less');
-    paid = ctx.registry.cashFor(valueAt(perShare, shares, 'what it pays'));
+    paid = ctx.registry.cashFor(valueAt(perShare, shares, ccy, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
   const legs: Leg[] = [
@@ -533,7 +540,11 @@ function redeem(
   // holds is the read that bounds it.
   const held = asQty(downTick(ctx.register.perMember(holder, share.id)), 'what one member holds');
   const weight = weightOf(party);
-  const asked = atMost(ctx.registry.deliverable(sharesAsked), held, 'it cannot hand back shares it does not hold');
+  const asked = atMost(
+    ctx.registry.deliverable(sharesAsked),
+    held,
+    'it cannot hand back shares it does not hold',
+  );
   if (asked <= 0) return 0;
   /**
    * D4, G1 (14.7): A SHARE STRUCK AT NOTHING IS OWED NOTHING. A pool whose book has come to nothing
@@ -544,7 +555,12 @@ function redeem(
    * ceases, and the record carries the price it was met at.
    */
   if (perShare <= 0) {
-    ctx.record('fund.redeemed', [fund.id, holder], { fund: fund.id, holder, sharesPerMember: asked, perShare, paid: 0 }, false);
+    ctx.record(
+      'fund.redeemed',
+      [fund.id, holder],
+      { fund: fund.id, holder, sharesPerMember: asked, perShare, paid: 0 },
+      false,
+    );
     return 0;
   }
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
@@ -552,19 +568,21 @@ function redeem(
     fund.id,
     moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
   );
-  const owedNow = ctx.registry.payable(valueAt(perShare, totalOverMembers(party, asked), 'what it owes this holder'),
+  const owedNow = ctx.registry.payable(
+    valueAt(perShare, totalOverMembers(party, asked), ccy, 'what it owes this holder'),
   );
   const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
   // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
   const sharesNow = downTick(
     over(
-      amountOf(heldAsMoney(paying, 'what it can pay with'), perShare, 'shares it can pay for'),
+      amountOf(heldAsMoney(paying, ccy, 'what it can pay with'), perShare, 'shares it can pay for'),
       asRatio(weight, 'the members of this cell'),
       'per member',
     ),
   );
-  const perMemberCash = ctx.registry.cashFor(valueAt(perShare, sharesNow, 'what a member is paid'),
+  const perMemberCash = ctx.registry.cashFor(
+    valueAt(perShare, sharesNow, ccy, 'what a member is paid'),
   );
   /**
    * Law 8, C2.b: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT.
@@ -633,7 +651,9 @@ function lastNav(ctx: MechanismContext, fund: string): Option<PerPiece> {
   if (said === undefined) return none<PerPiece>();
   const was = said.data['perShare'];
   // Item 16: a published number re-enters the type system here, through its dimension's own door.
-  return typeof was === 'number' ? some(asPerPiece(was, 'what a share was worth then')) : none<PerPiece>();
+  return typeof was === 'number'
+    ? some(asPerPiece(was, 'what a share was worth then'))
+    : none<PerPiece>();
 }
 
 /**
@@ -720,10 +740,7 @@ function mayEnter(ctx: MechanismContext, m: Mandate, who: PartyId): boolean {
   if (typeof worth !== 'number') return false;
   const ccy = ctx.registry.currencyOf(ctx.parties.get(who).region);
   // Item 16: a published number re-entering as the money it is, against the line as it stands now.
-  return (
-    asCash(worth, 'what it published it is worth per member') >=
-    ctx.params.amount(FUND_PARAMS.accreditedWealth, currencyUnit(ccy))
-  );
+  return worth >= ctx.params.amount(FUND_PARAMS.accreditedWealth, currencyUnit(ccy));
 }
 
 /**
@@ -756,7 +773,11 @@ function chargePerformance(
   const gain = minus(now, mark, 'what a share gained over the last charge');
   if (gain <= 0) return;
   const owed = ctx.registry.payable(
-    scale(valueAt(gain, share.issued, 'what the pool gained'), m.performanceFee, "the manager's share"),
+    scale(
+      valueAt(gain, share.issued, share.ccy, 'what the pool gained'),
+      m.performanceFee,
+      "the manager's share",
+    ),
   );
   if (owed <= 0) return;
   payFee(ctx, m, owed);
@@ -804,18 +825,33 @@ function askToDraw(ctx: MechanismContext, m: Mandate, ccy: CurrencyCode): void {
   const book = said.value.portfolio;
   // Item 16: two numbers its broker published about its own account, re-entering as the money
   // they are.
-  const target = scale(asCash(said.value.equity, 'what its investors have in it'), m.targetLeverage, 'the book it means to run');
+  const target = scale(
+    asCash(said.value.equity, ccy, 'what its investors have in it'),
+    m.targetLeverage,
+    'the book it means to run',
+  );
   const cash = heldAsMoney(
     ctx.register.quantity(m.pool, moneyInstrumentId(ctx.accountOf(m.pool, ccy).issuer, ccy)),
+    ccy,
     'what is already in its account',
   );
   const wants = minus(
-    minus(target, asCash(book, 'the book it has'), 'what it is short of the book it means to run'),
+    minus(
+      target,
+      asCash(book, ccy, 'the book it has'),
+      'what it is short of the book it means to run',
+    ),
     cash,
     'and it buys with its own money first',
   );
-  if (wants <= 0) return;
-  ctx.record('prime.wanted', [m.pool], { fund: m.pool, wants, target, book, cash }, false);
+  if (wants.pieces <= 0) return;
+  // Currency A4 (16.0): what it published it wants is money of a named currency.
+  ctx.record(
+    'prime.wanted',
+    [m.pool],
+    { fund: m.pool, wants: wants.pieces, target: target.pieces, book, cash: cash.pieces, ccy },
+    false,
+  );
 }
 
 /**
@@ -846,9 +882,14 @@ function calledOn(ctx: MechanismContext, m: Mandate): Qty {
   const said = primeCallOn(ctx.journal, String(m.pool));
   if (!said.some || said.value.period + 1 < ctx.period) return NO_QTY;
   // Item 16: what its broker published it still owes, re-entering as the money it is.
-  return ctx.registry.payable(asCash(said.value.unmet, 'what its broker called and it could not pay'));
+  return ctx.registry.payable(
+    asCash(
+      said.value.unmet,
+      ctx.registry.currencyOf(ctx.parties.get(m.pool).region),
+      'what its broker called and it could not pay',
+    ),
+  );
 }
-
 
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
@@ -897,7 +938,12 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
     // so what a member can ask for or hand back is a whole number of them — whoever posted it has
     // already decided in whole shares, and this is where a posting that did not is refused rather
     // than quietly queued for ever.
-    const asked = ctx.registry.deliverable(over(o.qty, asRatio(weightOf(ctx.parties.get(o.party)), 'the members it has'), 'shares per member'),
+    const asked = ctx.registry.deliverable(
+      over(
+        o.qty,
+        asRatio(weightOf(ctx.parties.get(o.party)), 'the members it has'),
+        'shares per member',
+      ),
     );
     if (asked <= 0) continue;
     if (o.side === 'buy') {
@@ -935,7 +981,9 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
       // This is not C2.b's rationing: nothing that was ever a claim is dropped here.
       const held = ctx.register.quantity(o.party, share.id);
       const already = sum(
-        b.queued.filter((q) => q.fund === String(fundId) && q.holder === o.party).map((q) => q.sharesPerMember),
+        b.queued
+          .filter((q) => q.fund === String(fundId) && q.holder === o.party)
+          .map((q) => q.sharesPerMember),
       ).value;
       const room = subQty(held, already, 'shares it has not already asked back');
       const taking = atMost(asked, room, 'it cannot ask back shares it has already asked back');
@@ -991,11 +1039,8 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   // is then a count too, and the schedule its orders are built from is on the grid by arithmetic
   // rather than by a rounding somewhere further down.
   const buffer = upTick(
-    scale(
-      valueAt(perShare, share.issued, 'net assets'),
-      m.buffer,
-      'the cash it keeps back',
-    ),
+    scale(valueAt(perShare, share.issued, ccy, 'net assets'), m.buffer, 'the cash it keeps back')
+      .pieces,
   );
   const offer = offeredYield(ctx, m);
   const spare = subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes');
@@ -1004,8 +1049,8 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   // a control bidder all price against it — and it is written from the same two numbers.
   const slot = ctx.workingOf(fundId, STRUCK, nothingStruck);
   slot.at = ctx.period;
-  slot.shortfall = asCash(owed, 'what it published it is short of');
-  slot.spare = asCash(spare, 'what it published it has spare');
+  slot.shortfall = asCash(owed, ccy, 'what it published it is short of');
+  slot.spare = asCash(spare, ccy, 'what it published it has spare');
   ctx.record(
     'fund.struck',
     [fundId],
@@ -1129,7 +1174,14 @@ function owedOn(ctx: MechanismContext, b: Book, m: Mandate): Qty {
     // money — and what the fund must find is the piece above, because paying all but a fraction of
     // a cent is not paying. It is the same rounding a subscription takes the other way (`cashFor`).
     terms.push(
-      upTick(valueAt(q.navStruck, totalOverMembers(holder, q.sharesPerMember), 'what it is owed')),
+      upTick(
+        valueAt(
+          q.navStruck,
+          totalOverMembers(holder, q.sharesPerMember),
+          ctx.registry.currencyOf(ctx.parties.get(m.pool).region),
+          'what it is owed',
+        ).pieces,
+      ),
     );
   }
   return asQty(sum(terms).value, 'what its queue is owed');
@@ -1166,7 +1218,8 @@ function payQueue(ctx: MechanismContext, b: Book, m: Mandate): void {
   const left: Queued[] = [];
   for (const q of mine) {
     const unpaid = redeem(ctx, m, share, q.holder, q.sharesPerMember, q.navStruck);
-    if (unpaid > 0) left.push({ ...q, sharesPerMember: asQty(unpaid, 'shares still owed per member') });
+    if (unpaid > 0)
+      left.push({ ...q, sharesPerMember: asQty(unpaid, 'shares still owed per member') });
   }
   b.queued = [...b.queued.filter((q) => q.fund !== String(fundId)), ...left];
   if (left.length === 0) return;
@@ -1176,8 +1229,13 @@ function payQueue(ctx: MechanismContext, b: Book, m: Mandate): void {
     {
       fund: fundId,
       requests: left.length,
-      sharesOwed: sum(left.map((q) => totalOverMembers(ctx.parties.get(q.holder), q.sharesPerMember))).value,
-      oldest: left.reduce<number>((at, q) => atMost(q.since, at, 'the oldest of them is as old as the oldest'), ctx.period),
+      sharesOwed: sum(
+        left.map((q) => totalOverMembers(ctx.parties.get(q.holder), q.sharesPerMember)),
+      ).value,
+      oldest: left.reduce<number>(
+        (at, q) => atMost(q.since, at, 'the oldest of them is as old as the oldest'),
+        ctx.period,
+      ),
     },
     true,
   );
@@ -1274,7 +1332,9 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
     ...productOf(e, ccy),
     blueprint: {
       classes: [
-        ...new Set(Object.keys(inKindOf(e).basket).map((line) => ctx.classify(instrumentId(line)).what)),
+        ...new Set(
+          Object.keys(inKindOf(e).basket).map((line) => ctx.classify(instrumentId(line)).what),
+        ),
       ],
       currencies: [ccy],
     },
@@ -1360,15 +1420,12 @@ function launchers(ctx: MechanismContext, e: FundDecl): readonly (readonly [Part
  * cannot deliver its slice launches a smaller fund, and a world where none of them can launches
  * none.
  */
-function firstCreation(
-  ctx: MechanismContext,
-  e: FundDecl,
-  share: InstrumentId,
-  full: Qty,
-): Qty {
+function firstCreation(ctx: MechanismContext, e: FundDecl, share: InstrumentId, full: Qty): Qty {
   let made = NO_QTY;
   for (const [holder, slice] of launchers(ctx, e)) {
-    const wanted = downTick(scale(full, asRatio(slice, "this holder's slice"), "this holder's slice of the launch"));
+    const wanted = downTick(
+      scale(full, asRatio(slice, "this holder's slice"), "this holder's slice of the launch"),
+    );
     if (wanted <= 0) continue;
     if (create(ctx, e.fund as PartyId, inKindOf(e).basket, share, holder, wanted)) {
       made = addQty(made, wanted, 'shares created');
@@ -1386,7 +1443,11 @@ function couldCreate(ctx: MechanismContext, e: FundDecl, party: PartyId): Qty {
     // 0f.1: the register holds the cell's TOTAL.
     const free = ctx.register.free(party, id);
     const backs = downTick(
-      over(free, asRatio(perShare, 'what one share draws of it'), 'shares this line of its basket backs'),
+      over(
+        free,
+        asRatio(perShare, 'what one share draws of it'),
+        'shares this line of its basket backs',
+      ),
     );
     if (most === undefined || backs < most) most = backs;
   }
@@ -1442,7 +1503,8 @@ function placeSpareCash(ctx: MechanismContext, m: Mandate): void {
   );
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
   const buffer = scale(cash, m.buffer, 'what it keeps liquid');
-  const spare = ctx.registry.payable(heldAsMoney(minus(cash, buffer, 'what it can place'), 'what it can place'),
+  const spare = ctx.registry.payable(
+    heldAsMoney(minus(cash, buffer, 'what it can place'), ccy, 'what it can place'),
   );
   if (spare <= 0) return;
   const floor = floorRate(ctx);
@@ -1474,7 +1536,12 @@ function floorRate(ctx: MechanismContext): Option<number> {
  * It is declared under the one name every issuer that pays anything declares under, so that a saver
  * reads one public fact and does not have to know which system it came out of (Law 4).
  */
-function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, money: InstrumentId): void {
+function distribute(
+  ctx: MechanismContext,
+  m: Mandate,
+  share: InstrumentId,
+  money: InstrumentId,
+): void {
   const fund = ctx.parties.get(m.pool);
   const issued = ctx.instruments.get(share).issued;
   const cash = ctx.register.quantity(fund.id, money);
@@ -1496,14 +1563,23 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
       .filter((r) => r.outcome === 'settled')
       .flatMap((r) => r.instruction.legs)
       .filter(isMoneyLeg)
-      .filter((leg) => leg.to.holder === fund.id && leg.receipt !== undefined && (leg.receipt.of === 'dividend' || leg.receipt.of === 'interest'))
+      .filter(
+        (leg) =>
+          leg.to.holder === fund.id &&
+          leg.receipt !== undefined &&
+          (leg.receipt.of === 'dividend' || leg.receipt.of === 'interest'),
+      )
       .map((leg) => leg.amount),
   ).value;
   if (received <= 0) return;
-  const passing = atMost(heldAsMoney(asQty(received, 'what it was paid this period'), 'what it was paid'), heldAsMoney(cash, 'what it has'), 'it passes on what it was paid, and no more than it has');
+  const ccy = ctx.registry.currencyOf(fund.region);
+  const passing = atMostCash(
+    heldAsMoney(asQty(received, 'what it was paid this period'), ccy, 'what it was paid'),
+    heldAsMoney(cash, ccy, 'what it has'),
+    'it passes on what it was paid, and no more than it has',
+  );
   const perShare = pricedAt(passing, issued, 'what it passes on per share');
   if (!material(perShare, 2, perShare)) return;
-  const ccy = ctx.registry.currencyOf(fund.region);
   const paid: number[] = [];
   let failed = 0;
   for (const holder of ctx.register.holdersOf(share)) {
@@ -1511,14 +1587,18 @@ function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, mone
     const party = ctx.parties.get(holder);
     // 0f.1: the register holds the TOTAL; what a member is paid is on its share of it.
     if (ctx.register.quantity(holder, share) <= 0) continue;
-    const perMemberUnits = asAmount<'piece'>(ctx.register.perMember(holder, share), 'what one member holds');
+    const perMemberUnits = asAmount<'piece'>(
+      ctx.register.perMember(holder, share),
+      'what one member holds',
+    );
     // Law 8: what reaches a holder is whole pieces of money, per member. A holding whose share of
     // the pass-through is less than one piece is paid nothing this period, and the cash stays in
     // the fund for the next one — which is where it was anyway.
     const share2 = gridPerMember(
       ctx.registry,
       party,
-      valueAt(perShare, perMemberUnits, 'what a member is paid'));
+      valueAt(perShare, perMemberUnits, ccy, 'what a member is paid').pieces,
+    );
     const total = share2.total;
     if (!material(total, 2, total) || total <= 0) continue;
     const r = ctx.settle({
@@ -1566,9 +1646,8 @@ function readListed(ctx: MechanismContext, m: Mandate, d: FundDecl): void {
   const share = ctx.instruments.get(shareLineOf(d.fund));
   if (!share.status.live) return;
   const basket = basketOf(ctx, fund, inKindOf(d).basket, share.id);
-  const nav = share.issued > 0
-    ? ctx.valuation.markPerUnit(share.id, ctx.period)
-    : basketValue(basket);
+  const nav =
+    share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : basketValue(basket);
   const print = ctx.prices.latest(share.id, ctx.period);
   const premium = premiumOf(print.some ? some(print.value.price) : none<PerPiece>(), nav);
   ctx.record(
@@ -1601,7 +1680,11 @@ function readListed(ctx: MechanismContext, m: Mandate, d: FundDecl): void {
  * with the figure baked into it would be stating last year's rule for ever. A publicly offered
  * vehicle carries no such key at all, and its absence is the answer (App A).
  */
-function doorOf(share: InstrumentId, fund: string, offeredPublicly: boolean): Record<string, string> {
+function doorOf(
+  share: InstrumentId,
+  fund: string,
+  offeredPublicly: boolean,
+): Record<string, string> {
   return offeredPublicly
     ? { kind: 'fund', fund, share }
     : { kind: 'fund', fund, share, asks: String(FUND_PARAMS.accreditedWealth) };
@@ -1649,7 +1732,13 @@ function giveNotice(ctx: MechanismContext, n: Notice): void {
   ctx.record(
     'fund.notice',
     [n.pool, a.creditor],
-    { fund: n.pool, manager: a.creditor, earns: n.earns, costs: n.costs },
+    {
+      fund: n.pool,
+      manager: a.creditor,
+      earns: n.earns.pieces,
+      costs: n.costs.pieces,
+      ccy: n.earns.ccy,
+    },
     true,
   );
 }
@@ -1723,7 +1812,8 @@ function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void
    * with no shares counts them in, and what it actually gets is what its money reached.
    */
   const opening = ctx.params.price(FUND_PARAMS.openingShare);
-  const wants = opening > 0 ? downTick(amountOf(launch.seed, opening, 'shares its seed buys')) : NO_QTY;
+  const wants =
+    opening > 0 ? downTick(amountOf(launch.seed, opening, 'shares its seed buys')) : NO_QTY;
   if (wants > 0) {
     ctx.post(fundVenue(String(pool)), {
       party: manager,
@@ -1741,15 +1831,16 @@ function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void
       manager,
       name,
       // A3: what the house put in of its own, which is the whole of its exposure to this pool.
-      seed: launch.seed,
+      seed: launch.seed.pieces,
       seedShares: wants,
       // Law 3, F3: the two numbers the decision was taken on, both of them somebody else's — what a
       // rival of this product has actually gathered, and what this manager will charge to undercut
       // the cheapest of them.
       copying: launch.rival,
-      expects: launch.expects,
+      expects: launch.expects.pieces,
       feePerAnnum: launch.product.feePerAnnum,
-      earns: launch.earns,
+      earns: launch.earns.pieces,
+      ccy: launch.seed.ccy,
     },
     true,
   );
@@ -1783,7 +1874,12 @@ function finishWindUp(ctx: MechanismContext, m: Mandate): void {
   if (left > 0) payFee(ctx, m, left);
   ctx.endAgreement(m.id, `${pool} has been wound up`);
   ctx.cease(pool, m.manager);
-  ctx.record('fund.woundUp', [pool, m.manager], { fund: pool, manager: m.manager, dust: left }, true);
+  ctx.record(
+    'fund.woundUp',
+    [pool, m.manager],
+    { fund: pool, manager: m.manager, dust: left },
+    true,
+  );
 }
 
 /**
@@ -1791,17 +1887,13 @@ function finishWindUp(ctx: MechanismContext, m: Mandate): void {
  * are opposites: cash it must put to work per its mandate, and a redemption it must find the money
  * for. The second is the forced sale (XI-2): it names no price, because it has no choice.
  */
-function ordersOf(
-  view: ParticipantView,
-  mandate: Mandate,
-  m: MarketDecl,
-): readonly Order[] {
+function ordersOf(view: ParticipantView, mandate: Mandate, m: MarketDecl): readonly Order[] {
   const struck = view.working(STRUCK, nothingStruck);
   if (struck.at !== view.period) return [];
   const shortfall = struck.shortfall;
   const spare = struck.spare;
   const i = view.instruments.get(m.instrument);
-  if (shortfall > 0) {
+  if (shortfall !== undefined && shortfall.pieces > 0) {
     // Clearing C1.b, Treasury D3.a: in a primary market the seller is the ISSUER. A holder with
     // paper to sell waits for the secondary session; it does not stand beside the issuer in its
     // own auction.
@@ -1813,9 +1905,9 @@ function ordersOf(
     const worth = view.print(m.instrument);
     if (!worth.some) return [];
     const total = holdingsWorth(view);
-    if (total <= 0) return [];
+    if (total.pieces <= 0) return [];
     const fraction = ratioOf(
-      asCash(shortfall, 'what it published it is short of'),
+      view.inOwnMoney(shortfall),
       total,
       'the share of its book it must raise',
     );
@@ -1828,7 +1920,7 @@ function ordersOf(
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
   }
-  if (spare <= 0 || !eligible(view, mandate, i)) return [];
+  if (spare === undefined || spare.pieces <= 0 || !eligible(view, mandate, i)) return [];
   /**
    * C1.a, A4, Equity B1, §46 A3: what it will pay is what makes the claim return what its own
    * investors require of it (D2) — **asked at the one door that answers for every kind**, which is
@@ -1870,18 +1962,24 @@ function ordersOf(
  * sold the wrong number of units of everything.
  */
 function holdingsWorth(view: ParticipantView): Cash {
+  // Currency B1, C4: a REPORT of what it holds in the money it reports in — a translation at the rate, never a conversion.
+  const home = view.registry.currencyOf(view.self.region);
   const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
     terms.push(
       view.inOwnMoney(
-        valueAt(print.value.price, sum(h.lots.map((l) => l.qty)).value, 'what it holds'),
-        view.instruments.get(h.instrument).ccy,
+        valueAt(
+          print.value.price,
+          sum(h.lots.map((l) => l.qty)).value,
+          view.instruments.get(h.instrument).ccy,
+          'what it holds',
+        ),
       ),
     );
   }
-  return sum(terms).value;
+  return sumCash(home, terms, 'what it holds').value;
 }
 
 /**
@@ -2017,7 +2115,8 @@ function everyPoolIsRun(): Family {
           .ofKind(MANDATE)
           .find((a) => a.state === 'performing' && a.debtor === p.id);
         const gone =
-          run !== undefined && (!view.parties.has(run.creditor) || !view.parties.get(run.creditor).status.alive);
+          run !== undefined &&
+          (!view.parties.has(run.creditor) || !view.parties.get(run.creditor).status.alive);
         if (run !== undefined && !gone) continue;
         out.push({
           family: 'names',
@@ -2061,7 +2160,11 @@ function noRequestVanishes(b: Book): Family {
       }
       const queued = new Map<string, number>();
       for (const q of b.queued) {
-        addTo(queued, `${q.fund}|${q.holder}`, totalOverMembers(view.parties.get(q.holder), q.sharesPerMember));
+        addTo(
+          queued,
+          `${q.fund}|${q.holder}`,
+          totalOverMembers(view.parties.get(q.holder), q.sharesPerMember),
+        );
       }
       for (const [k, want] of asked) {
         const done = plus(
@@ -2070,12 +2173,17 @@ function noRequestVanishes(b: Book): Family {
           'what was paid and what is queued',
         );
         // Law 7: both sides are sums of the same per-member numbers at the same magnitudes.
-        if (withinDust(want, done, dustOf(asked.size + 2, Math.abs(want) + Math.abs(done)))) continue;
+        if (withinDust(want, done, dustOf(asked.size + 2, Math.abs(want) + Math.abs(done))))
+          continue;
         out.push({
           family: 'flows',
           spec: 'Fund Shares C2.b',
           owner: k.split('|')[0] ?? k,
-          size: minus(asAmount<'piece'>(want, 'shares it asked to redeem'), done, 'asked against paid and queued'),
+          size: minus(
+            asAmount<'piece'>(want, 'shares it asked to redeem'),
+            done,
+            'asked against paid and queued',
+          ),
           unit: 'shares',
           period: view.period,
           message: `${k} asked to redeem ${want} shares and only ${done} were paid or are still on the book`,
@@ -2086,13 +2194,17 @@ function noRequestVanishes(b: Book): Family {
   };
 }
 
-const key = (data: Record<string, unknown>): string => `${String(data['fund'])}|${String(data['holder'])}`;
+const key = (data: Record<string, unknown>): string =>
+  `${String(data['fund'])}|${String(data['holder'])}`;
 
 function totalAsked(view: AuditView, data: Record<string, unknown>): number {
   const per = data['sharesPerMember'];
   const holder = data['holder'];
   if (typeof per !== 'number' || typeof holder !== 'string') return 0;
-  return totalOverMembers(view.parties.get(holder as PartyId), asQty(per, 'shares asked back per member'));
+  return totalOverMembers(
+    view.parties.get(holder as PartyId),
+    asQty(per, 'shares asked back per member'),
+  );
 }
 
 /**
@@ -2165,10 +2277,14 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   // Law 8: whole shares. Each holder puts in ITS OWN slice, so a world missing the desks that would
   // have made its market launches a fund short by exactly their slices — which is Seed A3's "only
   // what somebody who EXISTS actually took" and is why this is not one split of one total.
-  const full = downTick(backs.reduce((a, b) => atMost(b, a, 'the launch reaches as far as the shortest line backs it')));
+  const full = downTick(
+    backs.reduce((a, b) => atMost(b, a, 'the launch reaches as far as the shortest line backs it')),
+  );
   if (full <= 0) return;
   const taken = holders.map(([, share]) =>
-    downTick(scale(full, asRatio(share, "this holder's slice"), "this holder's slice of the launch")),
+    downTick(
+      scale(full, asRatio(share, "this holder's slice"), "this holder's slice of the launch"),
+    ),
   );
   const launched = sum(taken).value;
   if (launched <= 0) return;
@@ -2187,19 +2303,33 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
     const units = outOfTheFloat(
       ctx,
       id,
-      scale(launched, asRatio(perShare, 'what one share draws of it'), 'units of this line the launch takes'),
+      scale(
+        launched,
+        asRatio(perShare, 'what one share draws of it'),
+        'units of this line the launch takes',
+      ),
       e.fund as PartyId,
     );
     if (units <= 0) return;
     ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
-    contributions.push(valueAt(opening.value.price, units, 'what this line put in'));
+    contributions.push(
+      valueAt(opening.value.price, units, opening.value.ccy, 'what this line put in'),
+    );
   }
   // Law 19, Fund Shares A3: WHAT ONE SHARE IS A CLAIM ON IS READ OFF THE BASKET THAT ARRIVED, never
   // off the one that was asked for. A holder gives up whole pieces per member, so a little less of
   // a line comes in — and a share issued at what a whole basket would have been worth is a claim on
   // more than the fund has: its holders carry it at that basis, the fund owes them that, and the
   // difference is equity a fund may not have (measured at -15,599,400 before this read).
-  const perShare = pricedAt(sum(contributions).value, launched, 'what one share is a claim on');
+  const perShare = pricedAt(
+    sumCash(
+      ctx.registry.currencyOf(ctx.parties.get(e.fund as PartyId).region),
+      contributions,
+      'what the lines put in',
+    ).value,
+    launched,
+    'what one share is a claim on',
+  );
   if (perShare <= 0) return;
   for (const [at, [holder]] of holders.entries()) {
     const mine = taken[at];
@@ -2238,12 +2368,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
  * none and the fund holds a little less than the arithmetic asked for — which is what its basket per
  * share is READ as anyway (`basketOf`), never stated.
  */
-function outOfTheFloat(
-  ctx: SeedContext,
-  id: InstrumentId,
-  wanted: Qty,
-  fund: PartyId,
-): Qty {
+function outOfTheFloat(ctx: SeedContext, id: InstrumentId, wanted: Qty, fund: PartyId): Qty {
   const outstanding = ctx.instruments.get(id).issued;
   if (outstanding <= 0 || wanted <= 0) return NO_QTY;
   const taken: Qty[] = [];
@@ -2251,7 +2376,13 @@ function outOfTheFloat(
     if (holder === fund) continue;
     const mine = ctx.register.quantity(holder, id);
     // 0f.1: the register holds the cell's TOTAL, and what the launch takes is a share of it.
-    const take = downTick(scale(wanted, ratioOf(mine, outstanding, 'its share of the line'), 'its share of what the launch takes'));
+    const take = downTick(
+      scale(
+        wanted,
+        ratioOf(mine, outstanding, 'its share of the line'),
+        'its share of what the launch takes',
+      ),
+    );
     if (take <= 0) continue;
     ctx.register.debit(holder, id, take);
     taken.push(take);
@@ -2284,8 +2415,7 @@ export function funds(
    */
   const listed = decls.filter((d) => d.liquidity.how === 'listed');
   /** E3.a: the vehicles the SEED launches — the ones whose index has a level from period zero. */
-  const seedsInKind = (d: FundDecl): boolean =>
-    d.liquidity.how === 'listed' && inKindOf(d).seeded;
+  const seedsInKind = (d: FundDecl): boolean => d.liquidity.how === 'listed' && inKindOf(d).seeded;
   const state = emptyBook();
   // The observer sees the book as the data it is; the slot holds this very object (Law 4).
   const book = (ctx: MechanismContext): Book => ctx.state<Book>('funds', () => state);
@@ -2302,16 +2432,14 @@ export function funds(
         kind: 'working',
         holds:
           'where each pool stood at its own strike this period — what it owes redeemers and could not pay, and what it has over its buffer',
-        why:
-          'it is how this module gets from its strike phase to its own `orders`, and nothing outside it needs a pool\u2019s position to decide anything — what the WORLD prices against is the strike itself, which is still published (0e\u2032.4). It was the pool\u2019s own `fund.struck` event read back by its writer in the same period, with two moneys going out through `unknown` and back.',
+        why: 'it is how this module gets from its strike phase to its own `orders`, and nothing outside it needs a pool\u2019s position to decide anything — what the WORLD prices against is the strike itself, which is still published (0e\u2032.4). It was the pool\u2019s own `fund.struck` event read back by its writer in the same period, with two moneys going out through `unknown` and back.',
       },
       {
         name: 'funds',
         kind: 'working',
         holds:
           'the subscriptions and redemptions queued this cycle, and the NAV struck this period',
-        why:
-          'both are state one phase hands to a later phase WITHIN a period: the queue is what asked before the strike and the strike is what the orders and the settlement both read, so they are one number (Law 4). The PREVIOUS NAV was here too and was NOT this — it was a second copy of the `perShare` the same call had already published on `fund.struck`, which is what a fund\u2019s return is measured against and is public because D2\u2019s competition cannot happen against a number nobody can see. It is read off that event now (item 9.9).',
+        why: 'both are state one phase hands to a later phase WITHIN a period: the queue is what asked before the strike and the strike is what the orders and the settlement both read, so they are one number (Law 4). The PREVIOUS NAV was here too and was NOT this — it was a second copy of the `perShare` the same call had already published on `fund.struck`, which is what a fund\u2019s return is measured against and is public because D2\u2019s competition cannot happen against a number nobody can see. It is read off that event now (item 9.9).',
       },
     ],
     spec: 'Fund Shares, XI-2',
@@ -2597,16 +2725,18 @@ export function funds(
         partyKind: FUND,
         standsBehind: (view: ParticipantView): Cash => {
           const own = view.lastOwn('fund.struck');
-          if (!own.some) return asCash(0, 'a pool that has never struck a value has nothing behind it');
+          const home = view.registry.currencyOf(view.self.region);
+          if (!own.some) return noCash(home);
           const perShare = own.value.data['perShare'];
           const shares = own.value.data['shares'];
           if (typeof perShare !== 'number' || typeof shares !== 'number') {
-            return asCash(0, 'a pool that published no value has nothing behind it');
+            return noCash(home);
           }
           // Item 16: two published numbers re-entering through their own dimensions' doors.
           return valueAt(
             asPerPiece(perShare, 'what it published a share is worth'),
             asQty(shares, 'the shares there are of it'),
+            home,
             'what its investors have behind it',
           );
         },

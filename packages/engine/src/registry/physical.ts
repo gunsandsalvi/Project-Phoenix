@@ -52,10 +52,8 @@ import {
   minus,
   over,
   plus,
-  pricedAt,
   ratioOf,
   scale,
-  valueAt,
 } from '../core/measure.js';
 import { decayed, div, raised, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
@@ -229,7 +227,10 @@ export const learningParam = (subUnit: string): ParamId => paramId(`goods.${subU
  * productivity anywhere, and an entrant's edge (12c.3) is a different base, not a different rate.
  */
 export function learnedHoursPerUnit(base: Ratio, made: Qty, rate: Ratio): Ratio {
-  return asRatio(base * raised(made + 1, -1 * rate, 'the curve at what it has made'), 'hours a unit takes after what it has made');
+  return asRatio(
+    base * raised(made + 1, -1 * rate, 'the curve at what it has made'),
+    'hours a unit takes after what it has made',
+  );
 }
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
 export const plantParam = (subUnit: string, capitalKind: string): ParamId =>
@@ -445,7 +446,6 @@ export function wornOut(terms: PlantTerms, on: Civil): boolean {
   return compareCivil(on, terms.retires) >= 0;
 }
 
-
 /* ------------------------------------------------------------------------------------------------
  * WHAT A FIRM'S PLANT LETS IT MAKE, what that plant costs it to use, and what it is short of.
  *
@@ -538,7 +538,8 @@ export interface LeaseTerms extends AgreementTerms {
 }
 
 /** Law 15: a lease is told by the shape of its terms, never by its kind id. */
-export const isLeaseTerms = (t: AgreementTerms): t is LeaseTerms => 'capitalKind' in t && 'rentPerUnit' in t && 'until' in t;
+export const isLeaseTerms = (t: AgreementTerms): t is LeaseTerms =>
+  'capitalKind' in t && 'rentPerUnit' in t && 'until' in t;
 
 /** The narrow door: a party's own last event of a kind, and (15.3) its own rows. */
 export interface LeaseReads {
@@ -584,7 +585,10 @@ export function groundUnderPlant(reads: GroundReads, vintages: readonly HeldVint
  * Capital Programme C1 (15.1): THE GROUND SO MUCH PLANT STANDS ON, in km² — the one arithmetic for
  * a vintage held, a vintage about to be commissioned and a project's bundle (Law 4).
  */
-export function groundUnder(reads: GroundReads, rows: readonly { readonly capitalKind: string; readonly units: Qty }[]): number {
+export function groundUnder(
+  reads: GroundReads,
+  rows: readonly { readonly capitalKind: string; readonly units: Qty }[],
+): number {
   const terms: number[] = [];
   for (const v of rows) {
     const kind = capitalKindOf(CAPITAL_KINDS, v.capitalKind);
@@ -600,11 +604,12 @@ export function groundUnder(reads: GroundReads, rows: readonly { readonly capita
       ),
       'the plant it holds, in its own named unit',
     );
-    terms.push(scale(units, reads.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'));
+    terms.push(
+      scale(units, reads.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'),
+    );
   }
   return sum(terms).value;
 }
-
 
 /** A2, A4: the units of one kind of plant this party has in service. */
 export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): Qty {
@@ -623,10 +628,15 @@ export function wearPerPlantUnit(
   const mine = vintages.filter((v) => v.capitalKind === capitalKind);
   const units = sum(mine.map((v) => v.units)).value;
   if (units <= 0) return none<PerPiece>();
-  const charge = sum(
-    mine.map((v) => valueAt(v.wearPerUnit, v.units, 'what this vintage wears out by')),
+  // Money per piece over pieces: the charge is summed as the number it is (price × count) and
+  // read back as a price, so no currency is named for a thing that is a rate per unit of plant.
+  const charge = sum(mine.map((v) => v.wearPerUnit * v.units));
+  return some(
+    asPerPiece(
+      div(charge.value, units, 'what a unit of plant costs it per period'),
+      'what a unit of plant costs it per period',
+    ),
   );
-  return some(pricedAt(charge.value, units, 'what a unit of plant costs it per period'));
 }
 
 /** A2, A4: what the stock lets it make per period, and which kind of plant is the scarcest. */
@@ -871,7 +881,10 @@ export const standsWindParam = (capitalKind: string): ParamId =>
  * cover it wants against its own outlook of the wind reads the same relation (Law 4).
  */
 export function survivesWind(wind: number, standsWind: number, hardness: number): number {
-  return decayed(raised(wind / standsWind, hardness, 'the stress on the plant'), 'what the weather leaves standing');
+  return decayed(
+    raised(wind / standsWind, hardness, 'the stress on the plant'),
+    'what the weather leaves standing',
+  );
 }
 /** 13c.1: the ground a unit of this kind stands on, under its own name (XI-14). */
 export const landPerUnitParam = (capitalKind: string): ParamId =>
@@ -943,13 +956,27 @@ const WEATHERED = 'capital.weathered';
  * at — read off the public events the capital programme wrote, never re-derived from the register
  * after the fact (the lots are gone by then).
  */
-export function weatheredIn(reads: { ofKindIn(kind: string, period: Period): readonly Event[] }, period: Period): readonly WeatheredLoss[] {
+export function weatheredIn(
+  reads: { ofKindIn(kind: string, period: Period): readonly Event[] },
+  period: Period,
+): readonly WeatheredLoss[] {
   const out: WeatheredLoss[] = [];
   for (const e of reads.ofKindIn(WEATHERED, period)) {
     const d = e.data;
-    if (typeof d['holder'] !== 'string' || typeof d['vintage'] !== 'string' || typeof d['capitalKind'] !== 'string') continue;
+    if (
+      typeof d['holder'] !== 'string' ||
+      typeof d['vintage'] !== 'string' ||
+      typeof d['capitalKind'] !== 'string'
+    )
+      continue;
     if (typeof d['units'] !== 'number' || typeof d['atCost'] !== 'number') continue;
-    out.push({ holder: d['holder'], vintage: d['vintage'], capitalKind: d['capitalKind'], units: d['units'], atCost: d['atCost'] });
+    out.push({
+      holder: d['holder'],
+      vintage: d['vintage'],
+      capitalKind: d['capitalKind'],
+      units: d['units'],
+      atCost: d['atCost'],
+    });
   }
   return out;
 }

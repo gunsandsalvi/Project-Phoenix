@@ -34,7 +34,6 @@
 import {
   absolute,
   amountOf,
-  asCash,
   asPerPiece,
   type PerPiece,
   heldAsMoney,
@@ -47,6 +46,9 @@ import {
   ratioOf,
   scale,
   valueAt,
+  atMostCash,
+  noCash,
+  sumCash,
 } from '../../core/measure.js';
 import { clear, isCleared, type Fill } from '../../clearing/solver.js';
 import {
@@ -75,8 +77,7 @@ import type { SystemModule } from '../../world/module.js';
 export const BORROW_TERM = paramId('securitiesLending.borrowTermPeriods');
 
 /** Law 9: one book per line, because what is being priced is the scarcity of THAT paper (A5.a). */
-export const borrowVenue = (instrument: InstrumentId): VenueId =>
-  venueId(`borrow:${instrument}`);
+export const borrowVenue = (instrument: InstrumentId): VenueId => venueId(`borrow:${instrument}`);
 
 /** A1, XI-8: a stock loan is a bilateral commitment like an employment or a lease (item 9.1). */
 export const STOCK_LOAN = agreementKindId('securitiesLending.stockLoan');
@@ -264,8 +265,10 @@ export function runBorrows(ctx: MechanismContext, wanted: readonly Borrowing[]):
     }
     // A5.a, E3: EVERY POSTING CARRIES A LEVEL. A lender with no level is not undercutting anybody,
     // which is why `price: 'market'` on the whole supply side made the fee the bidder's own number.
-    for (const o of supply) ctx.post(venue, { party: o.lender, side: 'sell', price: o.floor, qty: o.units });
-    for (const w of here) ctx.post(venue, { party: w.borrower, side: 'buy', price: w.willPay, qty: w.units });
+    for (const o of supply)
+      ctx.post(venue, { party: o.lender, side: 'sell', price: o.floor, qty: o.units });
+    for (const w of here)
+      ctx.post(venue, { party: w.borrower, side: 'buy', price: w.willPay, qty: w.units });
     const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
     if (!isCleared(outcome)) continue;
     // A5: what the borrow book cleared at is a FEE — a share of what the paper is worth, per period
@@ -390,7 +393,7 @@ function openLoan(
   if (mark === undefined) return;
   const haircut = haircutOf(ctx.participant(d.lender), d.instrument, d.collateral);
   if (!haircut.some) return;
-  const worth = valueAt(mark, d.units, 'what the borrowed paper is worth');
+  const worth = valueAt(mark, d.units, d.ccy, 'what the borrowed paper is worth');
   const needed = collateralFor(worth, haircut.value);
   const price = ctx.prices.latest(d.collateral, ctx.period);
   if (!price.some || price.value.price <= 0) return;
@@ -435,7 +438,7 @@ function openLoan(
     fee: d.fee,
     // C1, C2 (13.8): what this lender required, kept so the loan can be re-marked against it.
     haircut: haircut.value,
-    margined: asCash(0, 'nothing has been called on it yet'),
+    margined: noCash(d.ccy),
     opened: ctx.period,
   };
   // XI-8: the loan is a COMMITMENT and the kernel keeps it. It owes nothing the instant it is
@@ -490,7 +493,7 @@ function lienFor(
 export function manufacture(ctx: MechanismContext): void {
   for (const loan of loansOpen(ctx)) {
     const paid = receivedOn(ctx, loan);
-    if (paid <= 0) continue;
+    if (paid.pieces <= 0) continue;
     const r = ctx.settle({
       legs: [
         {
@@ -498,7 +501,7 @@ export function manufacture(ctx: MechanismContext): void {
           from: ctx.accountOf(loan.borrower, loan.ccy),
           to: ctx.accountOf(loan.lender, loan.ccy),
           ccy: loan.ccy,
-          amount: downTick(paid),
+          amount: downTick(paid.pieces),
         },
       ],
       cause: 'corporateAction',
@@ -512,7 +515,8 @@ export function manufacture(ctx: MechanismContext): void {
         lender: String(loan.lender),
         borrower: String(loan.borrower),
         instrument: String(loan.instrument),
-        amount: paid,
+        amount: paid.pieces,
+        ccy: paid.ccy,
       },
       true,
     );
@@ -529,15 +533,15 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
       // A3: the money that reached the registered holder on that line. `isMoneyLeg` asks what SHAPE
       // a leg is, which is the kernel's own dispatch and not a question about an instrument kind.
       if (!isMoneyLeg(leg) || leg.to.holder !== loan.borrower || leg.ccy !== loan.ccy) continue;
-      amounts.push(heldAsMoney(leg.amount, 'what reached the registered holder'));
+      amounts.push(heldAsMoney(leg.amount, loan.ccy, 'what reached the registered holder'));
     }
   }
-  const total = sum(amounts).value;
+  const total = sumCash(loan.ccy, amounts, 'what reached the registered holder').value;
   // E2: it passes on what the units it BORROWED earned, not what its whole holding earned. A
   // borrower that already owned some of the line keeps its own.
   const held = ctx.register.quantity(loan.borrower, loan.instrument);
   return held <= 0
-    ? asCash(0, 'it holds none of the line')
+    ? noCash(loan.ccy)
     : scale(total, ratioOf(loan.units, held, 'the borrowed share of what it holds'), 'passed on');
 }
 
@@ -560,7 +564,8 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
  */
 function lastMarkOf(ctx: MechanismContext, instrument: InstrumentId): PerPiece | undefined {
   const i = ctx.instruments.get(instrument);
-  if (ctx.registry.instrumentKind(i.kind).pricing === 'money') return asPerPiece(1, 'money is worth one of itself');
+  if (ctx.registry.instrumentKind(i.kind).pricing === 'money')
+    return asPerPiece(1, 'money is worth one of itself');
   const print = ctx.prices.latest(instrument, ctx.period);
   return print.some && print.value.price > 0 ? print.value.price : undefined;
 }
@@ -571,10 +576,10 @@ export function charge(ctx: MechanismContext): void {
     if (mark === undefined) continue;
     const fee = downTick(
       scale(
-        valueAt(mark, loan.units, 'what is out on loan'),
+        valueAt(mark, loan.units, loan.ccy, 'what is out on loan'),
         loan.fee,
         'what the borrow cost this period',
-      ),
+      ).pieces,
     );
     if (fee <= 0) continue;
     ctx.settle({
@@ -625,27 +630,31 @@ export function remark(ctx: MechanismContext): void {
     const onPledge = ctx.prices.latest(loan.collateral, ctx.period);
     if (onLoan === undefined || !onPledge.some || onPledge.value.price <= 0) continue;
     const call = callFor({
-        // C1: the paper at today's mark, with this lender's haircut over it.
-        required: collateralFor(
-          valueAt(onLoan, loan.units, 'what is out on loan now'),
-          loan.haircut,
-        ),
-        // C2: and what is actually there — the pledge at today's mark, and the cash called so far.
-        covering: plus(
-          valueAt(onPledge.value.price, loan.posted, 'what the pledge is worth now'),
-          loan.margined,
-          'what is covering it',
-        ),
+      // C1: the paper at today's mark, with this lender's haircut over it.
+      required: collateralFor(
+        valueAt(onLoan, loan.units, loan.ccy, 'what is out on loan now'),
+        loan.haircut,
+      ),
+      // C2: and what is actually there — the pledge at today's mark, and the cash called so far.
+      covering: plus(
+        valueAt(onPledge.value.price, loan.posted, loan.ccy, 'what the pledge is worth now'),
+        loan.margined,
+        'what is covering it',
+      ),
     });
-    if (call === 0) continue;
-    const owing = call > 0;
+    if (call.pieces === 0) continue;
+    const owing = call.pieces > 0;
     // Law 6: it cannot hand back more cover than was posted, which is impossible rather than
     // bounded — there is no further cash of the borrower's for the lender to return.
     const wanted = owing
       ? call
-      : atMost(absolute(call, 'what it is over-covered by'), loan.margined, 'it cannot give back more than was posted');
+      : atMostCash(
+          absolute(call, 'what it is over-covered by'),
+          loan.margined,
+          'it cannot give back more than was posted',
+        );
     // Law 8: money moves on the money's own grid, and it is what the call ACTUALLY reaches.
-    const moving = downTick(wanted);
+    const moving = downTick(wanted.pieces);
     if (moving <= 0) continue;
     const payer = owing ? loan.borrower : loan.lender;
     const payee = owing ? loan.lender : loan.borrower;
@@ -678,8 +687,16 @@ export function remark(ctx: MechanismContext): void {
         fee: loan.fee,
         haircut: loan.haircut,
         margined: owing
-          ? plus(loan.margined, heldAsMoney(moving, 'what this call brought in'), 'what it has posted')
-          : minus(loan.margined, heldAsMoney(moving, 'what went back'), 'what it still has posted'),
+          ? plus(
+              loan.margined,
+              heldAsMoney(moving, loan.ccy, 'what this call brought in'),
+              'what it has posted',
+            )
+          : minus(
+              loan.margined,
+              heldAsMoney(moving, loan.ccy, 'what went back'),
+              'what it still has posted',
+            ),
         opened: loan.opened,
       };
       ctx.restate(loan.id, now);
@@ -696,7 +713,8 @@ export function remark(ctx: MechanismContext): void {
         // returned are the same mechanism and the sign is what tells them apart.
         called: owing ? moving : negated(moving, 'what went back to the borrower'),
         met,
-        margined: loan.margined,
+        margined: loan.margined.pieces,
+        ccy: loan.margined.ccy,
       },
       true,
     );
@@ -772,13 +790,13 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
      * collateral — it is left to buy the line back at whatever it costs, and whether the two come
      * to the same is its outcome and not a number anybody balances (C1).
      */
-    if (!failed && loan.margined > 0) {
+    if (!failed && loan.margined.pieces > 0) {
       legs.push({
         kind: 'money',
         from: ctx.accountOf(loan.lender, loan.ccy),
         to: ctx.accountOf(loan.borrower, loan.ccy),
         ccy: loan.ccy,
-        amount: downTick(loan.margined),
+        amount: downTick(loan.margined.pieces),
       });
     }
     if (failed) {
@@ -793,7 +811,13 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         from: loan.borrower,
         to: loan.lender,
         instrument: loan.collateral,
-        qty: downTick(atMost(loan.posted, ctx.register.free(loan.borrower, loan.collateral), 'what is there to take')),
+        qty: downTick(
+          atMost(
+            loan.posted,
+            ctx.register.free(loan.borrower, loan.collateral),
+            'what is there to take',
+          ),
+        ),
         pricePerUnit: at === undefined ? none() : some(at),
         accruedPerUnit: none(),
       });
@@ -822,7 +846,8 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
         returned: back,
         owed: loan.units,
         // C2.a: and what the variation came to over the life of it, which went back or did not.
-        margined: loan.margined,
+        margined: loan.margined.pieces,
+        ccy: loan.margined.ccy,
       },
       true,
     );

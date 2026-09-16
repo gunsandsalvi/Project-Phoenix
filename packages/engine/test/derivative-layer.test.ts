@@ -153,7 +153,7 @@ function book(opts: {
         // opened with a billion would be handing a bank a billion of deposits against nothing and
         // testing the layer in a world whose banks it had just made insolvent.
         const level = print.some ? print.value.price : asPerPiece(1, 'nothing has printed');
-        ctx.endowMoney(id, USD, asCash(level * SMALL_SIZE * 40, 'what it opens with'));
+        ctx.endowMoney(id, USD, asCash(level * SMALL_SIZE * 40, USD, 'what it opens with'));
         if (n === 1) ctx.endowUnits(id, line.id, SMALL_SIZE * 4, level);
       }
     },
@@ -341,7 +341,7 @@ describe('a contract book (Derivative Layer B1, C2, E2)', () => {
     const house = houseIdFor(USD);
     const rows = w.contracts.openOf(house);
     if (rows.length === 0) return;
-    const net = rows.reduce((t, r) => t + w.contractValue(r, house, w.period), 0);
+    const net = rows.reduce((t, r) => t + w.contractValue(r, house, w.period).pieces, 0);
     // C2: it is buyer to the seller and seller to the buyer, at the same level on the same terms,
     // so its own position in the contracts is nothing. What it has instead is the margin and the
     // fund, which are its liabilities (C3).
@@ -377,7 +377,7 @@ describe('margin (D9, D9.a, C3.a, D3)', () => {
       const have = posted(ctx, m, house, USD);
       // D2: the requirement is re-measured every period and the margin is moved to meet it — up
       // when the marks went against the member, and back down when they went for it (D3).
-      expect(Math.abs(need - have)).toBeLessThanOrEqual(1);
+      expect(Math.abs(need.pieces - have)).toBeLessThanOrEqual(1);
     }
   });
 
@@ -546,7 +546,7 @@ describe('the waterfall (C4, C4.a, C4.d, C5)', () => {
     const fund = inFund(ctx, defaulter, house, USD);
     // A loss larger than everything the defaulter put up, so the waterfall has to walk past its
     // own first two lines and report what it could not fund (C5: past the end is a real event).
-    const loss = asCash((margin + fund) * 2 + 1_000_000, 'more than it put up');
+    const loss = asCash((margin + fund) * 2 + 1_000_000, USD, 'more than it put up');
     const rounds = runWaterfall(ctx, house, defaulter, USD, loss);
     const lines = rounds.map((r) => r.line);
     // C4: in order. Its margin, then its fund contribution, then the house's own capital, then the
@@ -562,7 +562,7 @@ describe('the waterfall (C4, C4.a, C4.d, C5)', () => {
     for (const e of said) expect(e.public).toBe(true);
     // C5: and what nothing could fund is said out loud rather than absorbed by somebody.
     const last = rounds[rounds.length - 1];
-    if (last !== undefined && last.left > 0) {
+    if (last !== undefined && last.left.pieces > 0) {
       expect(w.journal.ofKind('waterfall.unfunded').length).toBe(1);
     }
   });
@@ -615,7 +615,7 @@ function drain(who: PartyId, after: number): SystemModule {
           const other = MOVERS.find((m) => m !== who && ctx.parties.has(m));
           if (other === undefined) return;
           const cash = ctx.participant(who).cash(USD);
-          const amount = ctx.registry.cashFor(heldAsMoney(cash, 'what it holds'));
+          const amount = ctx.registry.cashFor(heldAsMoney(cash, USD, 'what it holds'));
           if (amount <= 0) return;
           ctx.settle({
             legs: [
@@ -652,9 +652,9 @@ describe('the payment has a cash test (D2.c, X2, Money E1)', () => {
     const cashBefore = ctx.participant(member).cash(USD);
     const postedBefore = posted(ctx, member, house, USD);
     // More than it has, by a margin nothing rounds away.
-    const tooMuch = ctx.registry.cashFor(asCash(cashBefore * 2 + 1_000_000, 'more than it has'));
+    const tooMuch = ctx.registry.cashFor(asCash(cashBefore * 2 + 1_000_000, USD, 'more than it has'));
     const r = ctx.settle({
-      legs: moveMargin(ctx, member, house, USD, heldAsMoney(tooMuch, 'more than it has')),
+      legs: moveMargin(ctx, member, house, USD, heldAsMoney(tooMuch, USD, 'more than it has')),
       cause: 'transfer',
       reason: `${member} is asked for more margin than it has`,
     });

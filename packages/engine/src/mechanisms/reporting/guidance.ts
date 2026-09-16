@@ -119,12 +119,12 @@ export interface GuidanceRecord {
  */
 export function guidanceRecord(ctx: JournalReads, firm: PartyId): GuidanceRecord {
   const guided = new Map<string, number>();
-  for (const g of ctx.published.guidances(firm)) guided.set(g.quarter, g.guided);
+  for (const g of ctx.published.guidances(firm)) guided.set(g.quarter, g.guided.pieces);
   const misses: { quarter: string; guided: number; earned: number }[] = [];
   for (const said of ctx.published.statements(firm)) {
     const g = guided.get(said.quarter);
     if (g === undefined) continue;
-    misses.push({ quarter: said.quarter, guided: g, earned: said.earned });
+    misses.push({ quarter: said.quarter, guided: g, earned: said.earned.pieces });
   }
   return { quarters: misses.length, misses };
 }

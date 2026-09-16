@@ -14,13 +14,15 @@ import type { InstrumentId } from '../core/ids.js';
 import { asCash, asPerPiece, type Cash, type PerPiece } from '../core/measure.js';
 import { none, type Option, some } from '../core/option.js';
 import { about, type ParticipantView } from '../world/context.js';
+import type { CurrencyCode } from '../core/ids.js';
 
 export function expectedPriceOf(
   view: Pick<ParticipantView, 'outlook' | 'print'>,
   instrument: InstrumentId,
 ): Option<PerPiece> {
   const own = view.outlook(about({ on: 'price', instrument }));
-  if (own.some) return some(asPerPiece(own.value.expected, `what it expects ${instrument} to fetch`));
+  if (own.some)
+    return some(asPerPiece(own.value.expected, `what it expects ${instrument} to fetch`));
   const print = view.print(instrument);
   return print.some ? some(print.value.price) : none<PerPiece>();
 }
@@ -34,7 +36,16 @@ export function expectedPriceOf(
  */
 export function expectedIncomeOf(view: Pick<ParticipantView, 'outlook'>): Option<Cash> {
   const own = view.outlook(about({ on: 'income' }));
-  return own.some ? some(asCash(own.value.expected, 'what it expects to take in a period')) : none<Cash>();
+  // Expectations A2, Currency A4: an income was observed in a money, and the outlook says which.
+  return own.some
+    ? some(
+        asCash(
+          own.value.expected,
+          own.value.unit as CurrencyCode,
+          'what it expects to take in a period',
+        ),
+      )
+    : none<Cash>();
 }
 
 /**
@@ -46,5 +57,13 @@ export function expectedIncomeOf(view: Pick<ParticipantView, 'outlook'>): Option
  */
 export function expectedEarningsOf(view: Pick<ParticipantView, 'outlook'>): Option<Cash> {
   const own = view.outlook(about({ on: 'earnings' }));
-  return own.some ? some(asCash(own.value.expected, 'what it expects to make a period')) : none<Cash>();
+  return own.some
+    ? some(
+        asCash(
+          own.value.expected,
+          own.value.unit as CurrencyCode,
+          'what it expects to make a period',
+        ),
+      )
+    : none<Cash>();
 }

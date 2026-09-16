@@ -19,6 +19,7 @@
  * past what it will have out to that name (F3). If nobody bids, the raise FAILS and the bank is
  * exactly where it was, which is C2.b: nobody has to buy.
  */
+import { sumCash } from '../../core/measure.js';
 import {
   asPerPiece,
   asRatio,
@@ -45,7 +46,6 @@ import {
   type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
@@ -196,11 +196,15 @@ export function subordinatedOf(ctx: MechanismContext, bank: PartyId): Cash {
       // Currency C4.a, A-51: on the ISSUER's book, which is where this number goes — a bank that
       // raised a layer abroad owes it in that money and carries it in its own.
       if (worth.some) {
-        terms.push(ctx.valuation.inOwnMoney(bank, worth.value.value, worth.value.ccy, ctx.period));
+        terms.push(ctx.valuation.inOwnMoney(bank, worth.value.value, ctx.period));
       }
     }
   }
-  return sum(terms).value;
+  return sumCash(
+    ctx.registry.currencyOf(ctx.parties.get(bank).region),
+    terms,
+    'what stands in front of its creditors',
+  ).value;
 }
 
 /** One venue per issuer, because what is being priced is that issuer's name (Law 9). */
@@ -269,12 +273,7 @@ export function runRaise(
     reservation: none<number>(),
     allotment: 'uniformPrice',
   });
-  ctx.record(
-    'bank.raise.offered',
-    [bank, id],
-    { bank, line: id, wanted: want, ccy },
-    true,
-  );
+  ctx.record('bank.raise.offered', [bank, id], { bank, line: id, wanted: want, ccy }, true);
 }
 
 /** A2, Law 9: a new layer, named as a market names it — the issuer and the day it is due. */
@@ -307,5 +306,3 @@ function openLine(
     rationing: 'proRata',
   });
 }
-
-

@@ -28,7 +28,23 @@
  * with the money it has (C1.d): a bid it could not settle is a trade that fails, and the failed
  * instruction is a recorded state nobody wanted.
  */
-import { amountOf, asAmount, asPerPiece, asRatio, type Cash, heldAsMoney, minus, over, type PerPiece, pricedAt, type Ratio, scale, valueAt } from '../../core/measure.js';
+import {
+  amountOf,
+  asAmount,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  noCash,
+  over,
+  type PerPiece,
+  pricedAt,
+  type Ratio,
+  scale,
+  sumCash,
+  valueAt,
+} from '../../core/measure.js';
 import type { InstrumentId, MarketId, PartyId, RegionId } from '../../core/ids.js';
 import { paramId, unitId } from '../../core/ids.js';
 import { atMost, material, sum } from '../../core/num.js';
@@ -43,7 +59,16 @@ import { expectedPriceOf } from '../../registry/expectation.js';
 import { costOfCapital, plantOffers, project } from '../../registry/capital.js';
 import { period } from '../../calendar/calendar.js';
 import { toTick } from '../../core/tick.js';
-import { capacityFrom, goodId, goodMarketId, goodTerms, type GoodTerms, type PlantNeed, rentedRoom, vintagesHeld, learnedHoursPerUnit,
+import {
+  capacityFrom,
+  goodId,
+  goodMarketId,
+  goodTerms,
+  type GoodTerms,
+  type PlantNeed,
+  rentedRoom,
+  vintagesHeld,
+  learnedHoursPerUnit,
 } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
@@ -79,10 +104,15 @@ interface DecidedThisPeriod {
    * the batch its hours can make, and the wages it owes. Its own working capital, read off its own
    * plan; the owner draws what stands above it and what falls due on what it issued.
    */
-  keeps: Cash;
+  keeps: Cash | undefined;
 }
 
-export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], batch: NO_QTY, keeps: heldAsMoney(NO_QTY, 'nothing decided') });
+export const nothingDecided = (): DecidedThisPeriod => ({
+  at: undefined,
+  orders: [],
+  batch: NO_QTY,
+  keeps: undefined,
+});
 
 /**
  * Capital Programme B1.d, XI-16 A3 (11.2a.2): THIS POPULATION'S OWN HURDLE AND HORIZON, drawn once
@@ -105,7 +135,10 @@ export const SMALL_FIRM_TERMS = {
   horizonDispersion: paramId('smallBusiness.horizonPeriods.dispersion'),
 } as const;
 
-function ownTerms(view: ParticipantView): { readonly hurdle: Ratio; readonly horizonPeriods: number } {
+function ownTerms(view: ParticipantView): {
+  readonly hurdle: Ratio;
+  readonly horizonPeriods: number;
+} {
   const own = view.working(TERMS, notYetDrawn);
   if (own.hurdle === undefined || own.horizonPeriods === undefined) {
     const self = view.self;
@@ -144,7 +177,11 @@ export function lineOf(view: ParticipantView): Option<Line> {
 }
 
 /** A2, Goods A2 (12.1): the line by name and region, for whoever asks — a founder reads it too. */
-export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params' | 'made' | 'self'>, subUnit: string, region: RegionId): Option<Line> {
+export function lineIn(
+  view: Pick<ParticipantView, 'instruments' | 'params' | 'made' | 'self'>,
+  subUnit: string,
+  region: RegionId,
+): Option<Line> {
   const output = goodId(subUnit, region);
   if (!view.instruments.has(output)) return none<Line>();
   const terms = goodTerms(view.instruments.get(output));
@@ -157,7 +194,13 @@ export function lineIn(view: Pick<ParticipantView, 'instruments' | 'params' | 'm
     hoursPerUnit: learnedHoursPerUnit(
       view.params.ratio(terms.recipe.labourHoursPerUnit),
       // Law 8: a member has made whole pieces; the share of the cell's count that is one member's rounds down.
-      downTick(over(asAmount<'piece'>(view.made(output), 'what the cell has made'), asRatio(weightOf(view.self), 'its people'), 'made per member')),
+      downTick(
+        over(
+          asAmount<'piece'>(view.made(output), 'what the cell has made'),
+          asRatio(weightOf(view.self), 'its people'),
+          'made per member',
+        ),
+      ),
       view.params.ratio(terms.recipe.learningRate),
     ),
     inputs: terms.recipe.inputs.map((i) => ({
@@ -199,15 +242,23 @@ function hoursToPlanWith(view: ParticipantView): Qty {
 function canStart(view: ParticipantView, line: Line, hours: Qty): Qty {
   const limits: number[] = [over(hours, line.hoursPerUnit, 'what its people can make')];
   for (const input of line.inputs) {
-    limits.push(over(view.free(input.instrument), input.qtyPerUnit, 'what the stock on hand reaches'));
+    limits.push(
+      over(view.free(input.instrument), input.qtyPerUnit, 'what the stock on hand reaches'),
+    );
   }
   // Capital Programme A2, Goods B1.a (11.2a): AND ITS PLANT, the same read the named firm's start
   // is limited by — a meal needs a room to be served in, and a cell with no room makes none. A line
   // whose recipe needs no plant is not limited by one, which is a different answer from a large
   // number (Law 6).
-  const capacity = capacityFrom(line.plant, vintagesHeld(view, view.calendar.startOf(view.period)), rentedRoom(view));
+  const capacity = capacityFrom(
+    line.plant,
+    vintagesHeld(view, view.calendar.startOf(view.period)),
+    rentedRoom(view),
+  );
   if (capacity.some) limits.push(capacity.value.perPeriod);
-  const least = limits.reduce((a, b) => atMost(a, b, 'a batch is no bigger than its scarcest limit'));
+  const least = limits.reduce((a, b) =>
+    atMost(a, b, 'a batch is no bigger than its scarcest limit'),
+  );
   return downTick(asAmount<'piece'>(least, 'what it can start'));
 }
 
@@ -222,7 +273,7 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
   slot.at = ctx.period;
   slot.orders = [];
   slot.batch = NO_QTY;
-  slot.keeps = heldAsMoney(NO_QTY, 'a cell with no line keeps nothing');
+  slot.keeps = undefined;
   if (!line.some) return;
   const l = line.value;
   /**
@@ -236,7 +287,11 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
   const wanted = sales.some
     ? downTick(asAmount<'piece'>(sales.value.expected, 'the units it expects to sell'))
     : asQty(1, 'one piece, to find out what it sells');
-  slot.batch = atMost(canStart(view, l, hoursToPlanWith(view)), wanted, 'it makes what it expects to sell, and no more than it can');
+  slot.batch = atMost(
+    canStart(view, l, hoursToPlanWith(view)),
+    wanted,
+    'it makes what it expects to sell, and no more than it can',
+  );
   // Expectations A2: what a unit of its output fetches, by its own outlook or the tape. A cell that
   // has never seen a price for what it makes cannot say what an input is worth to it, and does not
   // bid — it makes what it can out of what it holds and learns the price by selling.
@@ -250,21 +305,37 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     priced.push(p.value);
   }
   // The next batch is what it expects to sell, as far as its hours reach: the inputs are what it is buying.
-  const nextBatch = atMost(downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make')), wanted, 'no more than it expects to sell');
+  const nextBatch = atMost(
+    downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make')),
+    wanted,
+    'no more than it expects to sell',
+  );
   const ccy = view.registry.currencyOf(view.self.region);
   // 11.0d: A PERIOD OF TRADING AT ITS OWN SCALE, at the prices it expects — the inputs for the
   // batch its hours can make, in full, whether or not it already holds some of them, and the wages
   // it owes. That is what it keeps; a draw of everything above what it happened to bid for emptied
   // every cell to the same nothing, and the lattice merged the sector into one cell a line.
-  const capacity = downTick(over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make'));
+  const capacity = downTick(
+    over(hoursToPlanWith(view), l.hoursPerUnit, 'what its people can make'),
+  );
   const wages = ownPayroll(view, view.period);
-  slot.keeps = sum([
-    ...l.inputs.map((input, n) =>
-      valueAt(priced[n] ?? asPerPiece(0, 'priced above, one per input'), upTick(scale(capacity, input.qtyPerUnit, 'what a full batch draws')), 'what a period of this input costs'),
-    ),
-    ...(wages.some ? [wages.value.due] : []),
-  ]).value;
-  let cash: Cash = heldAsMoney(view.cash(ccy), 'the money it has to buy with');
+  const keeps = sumCash(
+    ccy,
+    [
+      ...l.inputs.map((input, n) =>
+        valueAt(
+          priced[n] ?? asPerPiece(0, 'priced above, one per input'),
+          upTick(scale(capacity, input.qtyPerUnit, 'what a full batch draws')),
+          ccy,
+          'what a period of this input costs',
+        ),
+      ),
+      ...(wages.some ? [wages.value.due] : []),
+    ],
+    'what a period of trading needs',
+  ).value;
+  slot.keeps = keeps;
+  let cash: Cash = heldAsMoney(view.cash(ccy), ccy, 'the money it has to buy with');
   const orders: PlannedOrder[] = [];
   for (const [n, input] of l.inputs.entries()) {
     const need = upTick(scale(nextBatch, input.qtyPerUnit, 'what the batch draws'));
@@ -274,7 +345,11 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
       l.inputs.map((other, m) =>
         m === n
           ? asPerPiece(0, 'the input being priced is not one of the others')
-          : scale(priced[m] ?? asPerPiece(0, 'priced above, one per input'), asRatio(other.qtyPerUnit, 'what one takes of it'), 'other inputs'),
+          : scale(
+              priced[m] ?? asPerPiece(0, 'priced above, one per input'),
+              asRatio(other.qtyPerUnit, 'what one takes of it'),
+              'other inputs',
+            ),
       ),
     ).value;
     const worth = over(
@@ -288,8 +363,20 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
     const affordable = downTick(amountOf(cash, worth, 'what its money reaches'));
     const qty = atMost(buy, affordable, 'it bids for what it can pay for');
     if (qty <= 0) continue;
-    cash = minus(cash, valueAt(worth, qty, 'what this bid commits'), 'what is left for the next input');
-    orders.push({ market: goodMarketId(goodTerms(view.instruments.get(input.instrument)).subUnit, l.terms.region), side: 'buy', price: worth, qty });
+    cash = minus(
+      cash,
+      valueAt(worth, qty, ccy, 'what this bid commits'),
+      'what is left for the next input',
+    );
+    orders.push({
+      market: goodMarketId(
+        goodTerms(view.instruments.get(input.instrument)).subUnit,
+        l.terms.region,
+      ),
+      side: 'buy',
+      price: worth,
+      qty,
+    });
   }
   /**
    * Capital Programme B1–B4 (11.2a.2): AND ITS PLANT, by the named firm's own arithmetic — one
@@ -301,14 +388,20 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
    * and whose money none of this world's states borrows in has no cost of capital and decides
    * nothing, rather than being handed a number (Law 2).
    */
-  const retained = minus(cash, slot.keeps, 'what it retains above a period of trading');
+  const retained = minus(cash, keeps, 'what it retains above a period of trading');
   const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
   const terms = ownTerms(view);
   const cost = costOfCapital(view, period(view.period - 1), terms.horizonPeriods);
-  if (cost.some && retained > 0) {
+  if (cost.some && retained.pieces > 0) {
     const capacity = capacityFrom(l.plant, vintages, rentedRoom(view));
     const inputCost = sum(
-      l.inputs.map((i, n) => scale(priced[n] ?? asPerPiece(0, 'priced above, one per input'), asRatio(i.qtyPerUnit, 'what one takes of it'), 'input cost')),
+      l.inputs.map((i, n) =>
+        scale(
+          priced[n] ?? asPerPiece(0, 'priced above, one per input'),
+          asRatio(i.qtyPerUnit, 'what one takes of it'),
+          'input cost',
+        ),
+      ),
     ).value;
     const decided = project(
       view,
@@ -317,7 +410,14 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
       capacity.some ? capacity.value.perPeriod : NO_QTY,
       plantOffers(view, l.plant, l.terms.region, price.value),
       wanted,
-      toTick(sales.some ? asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about what it sells are') : NO_QTY),
+      toTick(
+        sales.some
+          ? asAmount<'piece'>(
+              sales.value.confidence,
+              'how wide its surprises about what it sells are',
+            )
+          : NO_QTY,
+      ),
       minus(price.value, inputCost, 'what a unit brings, less what it takes to make'),
       terms.hurdle,
       terms.horizonPeriods,
@@ -337,13 +437,15 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
    * cannot pay is a missed payment like any other, and a cell that cannot cover what fell due
    * fails on cash and goes to its estate (XI-8).
    */
-  const shortOfTrading = ctx.registry.payable(minus(slot.keeps, cash, 'what a period of trading needs beyond what it has'));
+  const shortOfTrading = ctx.registry.payable(
+    minus(keeps, cash, 'what a period of trading needs beyond what it has'),
+  );
   // A4, Small-Business Pools B2 (11.2a.2): SECURED ON WHAT IT HAS — its plant, which the bank can
   // take and realise. A cell with none asks unsecured, which is a statement and not an absence.
   if (shortOfTrading > 0) {
     ctx.request(cell, {
       ccy,
-      short: heldAsMoney(shortOfTrading, 'what it asks its bank for'),
+      short: heldAsMoney(shortOfTrading, ccy, 'what it asks its bank for'),
       security: vintages.map((v) => ({ instrument: v.instrument as InstrumentId, qty: v.units })),
       // C9: working capital, drawn and repaid at its option — one line at its bank, secured.
       repays: 'atOption',
@@ -380,10 +482,18 @@ function postForHours(
   if (venue === undefined) return;
   const inputCost = sum(
     line.inputs.map((i, n) =>
-      scale(inputPrices[n] ?? asPerPiece(0, 'priced above, one per input'), asRatio(i.qtyPerUnit, 'what one takes of it'), 'input cost'),
+      scale(
+        inputPrices[n] ?? asPerPiece(0, 'priced above, one per input'),
+        asRatio(i.qtyPerUnit, 'what one takes of it'),
+        'input cost',
+      ),
     ),
   ).value;
-  const perHour = over(minus(priceOut, inputCost, 'less its inputs'), line.hoursPerUnit, 'the value of an hour');
+  const perHour = over(
+    minus(priceOut, inputCost, 'less its inputs'),
+    line.hoursPerUnit,
+    'the value of an hour',
+  );
   // The hours the batch it expects to sell would take, beyond its members' own: the hours it has
   // a use for. Nothing below zero is wanted, and wanting nobody is a real posting.
   const wanted = downTick(
@@ -397,7 +507,12 @@ function postForHours(
   // cut given notice. Wanting nobody, or hours worth nothing to it, is the cut of all it has.
   const wantsNobody = wanted <= 0 || perHour <= 0;
   // Law 8 (12b.5, 12c.3): in whole people, like every employer's posting.
-  const change = netChange(view.employs(), occupation, view.self.region, wantsNobody ? NO_QTY : wholePeople(view, wanted));
+  const change = netChange(
+    view.employs(),
+    occupation,
+    view.self.region,
+    wantsNobody ? NO_QTY : wholePeople(view, wanted),
+  );
   if (change !== undefined) {
     ctx.post(venue.id, {
       party: view.self.id,
@@ -419,21 +534,30 @@ export function produce(ctx: MechanismContext, cell: PartyId): void {
   // Labour C2: what can be started NOW is bounded by the hours actually paid for this period —
   // its members' and what its payroll settled — and by what it decided; a hire found this period
   // is paid and not yet working, and that is a real shortage rather than a plan gone wrong.
-  const settled = payrollSettledIn(ctx, cell, ctx.period);
-  const hoursNow = addQty(ownHours(view), settled.some ? settled.value.productive : NO_QTY, 'the hours it has');
-  const batch = atMost(slot.batch, canStart(view, l, hoursNow), 'it starts what its hours and its stock reach');
+  const ccy = view.registry.currencyOf(view.self.region);
+  const settled = payrollSettledIn(ctx, cell, ctx.period, ccy);
+  const hoursNow = addQty(
+    ownHours(view),
+    settled.some ? settled.value.productive : NO_QTY,
+    'the hours it has',
+  );
+  const batch = atMost(
+    slot.batch,
+    canStart(view, l, hoursNow),
+    'it starts what its hours and its stock reach',
+  );
   if (batch <= 0) return;
   const legs: Leg[] = [];
   // Goods B5: what the period's labour cost, capitalised into the batch like a named firm's wages.
-  const costs: Cash[] = [settled.some ? settled.value.paid : heldAsMoney(NO_QTY, 'it employed nobody this period')];
+  const costs: Cash[] = [settled.some ? settled.value.paid : noCash(ccy)];
   for (const input of l.inputs) {
     const qty = upTick(scale(batch, input.qtyPerUnit, 'what the recipe draws'));
     if (qty <= 0) continue;
     const held = ctx.register.holding(cell, input.instrument);
-    costs.push(held.some ? costOfDraw(held.value.lots, qty) : heldAsMoney(NO_QTY, 'nothing held cost nothing'));
+    costs.push(held.some ? costOfDraw(held.value.lots, qty, ccy) : noCash(ccy));
     legs.push({ kind: 'destroy', party: cell, instrument: input.instrument, qty, why: 'consumed' });
   }
-  const cost = sum(costs).value;
+  const cost = sumCash(ccy, costs, 'what the batch cost').value;
   legs.push({
     kind: 'create',
     party: cell,
@@ -442,11 +566,22 @@ export function produce(ctx: MechanismContext, cell: PartyId): void {
     // E1: what the inputs it drew cost, over the batch. Its members' hours cost it no cash.
     costPerUnit: pricedAt(cost, batch, 'what a unit cost to make'),
   });
-  const record = ctx.settle({ legs, cause: 'production', reason: `${String(cell)} made ${String(batch)} of ${l.terms.subUnit}` });
+  const record = ctx.settle({
+    legs,
+    cause: 'production',
+    reason: `${String(cell)} made ${String(batch)} of ${l.terms.subUnit}`,
+  });
   ctx.record(
     'smallBusiness.produced',
     [cell],
-    { cell, line: l.terms.subUnit, batch, cost, settled: record.outcome === 'settled' },
+    {
+      cell,
+      line: l.terms.subUnit,
+      batch,
+      cost: cost.pieces,
+      ccy: cost.ccy,
+      settled: record.outcome === 'settled',
+    },
     true,
   );
 }
@@ -476,11 +611,11 @@ export function ordersIn(view: ParticipantView, market: MarketId): readonly Orde
   const decided = view.working(DECIDED, nothingDecided);
   if (decided.at !== view.period) return out;
   for (const o of decided.orders) {
-    if (o.market === market) out.push({ party: view.self.id, side: o.side, price: o.price, qty: o.qty });
+    if (o.market === market)
+      out.push({ party: view.self.id, side: o.side, price: o.price, qty: o.qty });
   }
   return out;
 }
-
 
 /* --------------------------------------------------------------------------------------------
  * THE OWNER (11.0d)
@@ -520,7 +655,10 @@ export function isOwnership(t: AgreementTerms): t is OwnershipTerms {
 }
 
 /** A6.a: the row that names this cell's owner, read off the kernel's book of commitments by its kind. */
-export function ownerOf(ctx: MechanismContext, cell: PartyId): Option<{ readonly row: AgreementId; readonly owner: PartyId }> {
+export function ownerOf(
+  ctx: MechanismContext,
+  cell: PartyId,
+): Option<{ readonly row: AgreementId; readonly owner: PartyId }> {
   for (const a of ctx.agreements.ofKind(OWNERSHIP)) {
     if (a.debtor !== cell || a.state !== 'performing') continue;
     return some({ row: a.id, owner: a.creditor });
@@ -536,8 +674,16 @@ export function ownerOf(ctx: MechanismContext, cell: PartyId): Option<{ readonly
 function needed(view: ParticipantView): Cash {
   const decided = view.working(DECIDED, nothingDecided);
   const ccy = view.registry.currencyOf(view.self.region);
-  const due = heldAsMoney(addQty(view.owedIn(ccy), view.cash(ccy), 'what falls due on what it issued'), 'its dues');
-  return sum([decided.at === view.period ? decided.keeps : heldAsMoney(NO_QTY, 'no plan, nothing kept'), due]).value;
+  const due = heldAsMoney(
+    addQty(view.owedIn(ccy), view.cash(ccy), 'what falls due on what it issued'),
+    ccy,
+    'its dues',
+  );
+  return sumCash(
+    ccy,
+    [decided.at === view.period && decided.keeps !== undefined ? decided.keeps : noCash(ccy), due],
+    'what it must keep',
+  ).value;
 }
 
 /** The draw: what stands above what the cell has committed goes to its owner, whole pieces. */
@@ -547,7 +693,11 @@ export function draw(ctx: MechanismContext, cell: PartyId): void {
   if (!owner.some || !ctx.parties.get(owner.value.owner).status.alive) return;
   const ccy = view.registry.currencyOf(view.self.region);
   const spare = ctx.registry.payable(
-    minus(heldAsMoney(view.cash(ccy), 'what it holds'), needed(view), 'what it does not need to keep trading'),
+    minus(
+      heldAsMoney(view.cash(ccy), ccy, 'what it holds'),
+      needed(view),
+      'what it does not need to keep trading',
+    ),
   );
   if (spare <= 0) return;
   const record = ctx.settle({

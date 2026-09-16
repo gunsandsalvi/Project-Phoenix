@@ -82,7 +82,7 @@ const lend: SystemModule = {
               const perMember = downTick(cash / weightOf(p) / print.value.price);
               if (perMember <= 0) continue;
               const pieces = asQty(perMember * weightOf(p), 'what the cell buys');
-              const cost = ctx.registry.payable(valueAt(print.value.price, pieces, 'what that costs it'));
+              const cost = ctx.registry.payable(valueAt(print.value.price, pieces, ccy, 'what that costs it'));
               if (cash < cost) continue;
               const seller = ctx.parties.ofKind(LANDLORD).find((l) => l.status.alive && l.region === p.region && ctx.register.free(l.id, id) >= pieces);
               if (seller === undefined) continue;

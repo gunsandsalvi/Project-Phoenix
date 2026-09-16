@@ -24,7 +24,6 @@ import {
   absolute,
   amountOf,
   type Amount,
-  asCash,
   asPerPiece,
   asRatio,
   type Cash,
@@ -41,6 +40,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { atLeast, mul } from '../../core/num.js';
+import { noCash } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { asQty, negQty, NO_QTY } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
@@ -112,7 +112,7 @@ export const isOption = (t: ContractTerms): t is OptionTerms =>
  * exercised it (Law 6), which is a different statement from a number clamped at zero.
  */
 export function intrinsic(c: Contract, at: Period, reads: ContractReads): Cash {
-  const nothing = asCash(0, 'an option out of the money is worth nothing to exercise');
+  const nothing = noCash(c.ccy);
   if (!isOption(c.terms)) return nothing;
   const t = c.terms;
   const print = reads.print(t.underlying, at);
@@ -126,6 +126,7 @@ export function intrinsic(c: Contract, at: Period, reads: ContractReads): Cash {
   return valueAt(
     worth,
     scale(c.notional, asRatio(t.multiplier, 'the multiplier'), 'per contract'),
+    c.ccy,
     'of the thing each',
   );
 }
@@ -138,17 +139,22 @@ export function intrinsic(c: Contract, at: Period, reads: ContractReads): Cash {
  * it is what exercise came to. Neither is a model and neither has a volatility in it.
  */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isOption(c.terms)) return asCash(0, 'a row that is not an option is worth nothing here');
+  if (!isOption(c.terms)) return noCash(c.ccy);
   const t = c.terms;
   const worth = at >= t.expiry ? intrinsic(c, at, reads) : premiumNow(c, at, reads);
   return t.holds ? worth : negated(worth, 'and the other side of it');
 }
 
 function premiumNow(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isOption(c.terms)) return asCash(0, 'a row that is not an option is worth nothing here');
+  if (!isOption(c.terms)) return noCash(c.ccy);
   const p = reads.print(c.terms.book, at);
   if (!p.some) return intrinsic(c, at, reads);
-  return valueAt(p.value.price, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the thing each');
+  return valueAt(
+    p.value.price,
+    scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'),
+    c.ccy,
+    'of the thing each',
+  );
 }
 
 export const optionKind: DerivativeKindProfile = {
@@ -168,9 +174,7 @@ export const optionKind: DerivativeKindProfile = {
     if (!(t.multiplier > 0)) throw new Error('an option on none of the thing');
   },
   displayName: (c) =>
-    isOption(c.terms)
-      ? `${c.terms.underlying} ${c.terms.right} ${c.terms.strike}`
-      : String(c.id),
+    isOption(c.terms) ? `${c.terms.underlying} ${c.terms.right} ${c.terms.strike}` : String(c.id),
   mark: markOf,
   flip: (t) => (isOption(t) ? { ...t, holds: !t.holds } : t),
   // D2: the premium moves in `premiumPerUnit` at inception, in the same instruction as the row.
@@ -198,7 +202,12 @@ export const optionKind: DerivativeKindProfile = {
     );
     return some(
       scale(
-        valueAt(move.value, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the thing each'),
+        valueAt(
+          move.value,
+          scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'),
+          c.ccy,
+          'of the thing each',
+        ),
         asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
@@ -428,7 +437,8 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   if (mine <= 0) return [];
   let covered: Amount<'piece'> = NO_QTY;
   for (const c of view.contracts.mine()) {
-    if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
+    if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right)
+      continue;
     const iAmA = c.a === view.self.id;
     covered = plus(
       covered,
@@ -464,9 +474,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   // account, or for a pool its investors' money, which its own module answers (item 13.2b).
   const own = view.standsBehind();
   const room =
-    own > 0
-      ? view.registry.deliverable(amountOf(own, price, 'what it can write'))
-      : NO_QTY;
+    own.pieces > 0 ? view.registry.deliverable(amountOf(own, price, 'what it can write')) : NO_QTY;
   if (at.some && room > 0) {
     const book = at.value.price;
     if (price > book) {
@@ -527,7 +535,9 @@ function openBooks(
   for (const underlying of lines) {
     if (!ctx.instruments.has(underlying)) continue;
     const i = ctx.instruments.get(underlying);
-    const market = ctx.markets.find((m) => m.instrument === underlying && contractOf(m) === undefined);
+    const market = ctx.markets.find(
+      (m) => m.instrument === underlying && contractOf(m) === undefined,
+    );
     if (market === undefined) continue;
     // A LADDER, not a new book every period: everything written between two dates on the cycle
     // settles on the same one, into the same book (`nextCycle`).
@@ -536,11 +546,16 @@ function openBooks(
     // lists strikes around the price and leaves them there; one recomputed every period would put
     // a new book on the ladder every week and leave the last with one trade in it.
     const opened = expiry - life;
-    const print = ctx.prices.latest(underlying, atLeast(opened, 0, 'there is no period before the world began') as Period);
+    const print = ctx.prices.latest(
+      underlying,
+      atLeast(opened, 0, 'there is no period before the world began') as Period,
+    );
     if (!print.some) continue;
     const strike = ctx.registry.onQuoteGrid(i.kind, i.ccy, print.value.price);
     const clearer =
-      ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive ? house(i.ccy) : null;
+      ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive
+        ? house(i.ccy)
+        : null;
     for (const right of ['call', 'put'] as const) {
       const id = optionMarketOf(underlying, right, strike, expiry);
       if (open.has(String(id))) continue;
@@ -611,7 +626,11 @@ export function options(
 /** The years an option has left, for a reader taking the implied move off its premium. */
 export const lifeInYears = (c: Contract, at: Period, reads: ContractReads): number =>
   isOption(c.terms) && c.terms.expiry > at
-    ? yearFraction(OPTION_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.startOf(c.terms.expiry))
+    ? yearFraction(
+        OPTION_DAY_COUNT,
+        reads.calendar.startOf(at),
+        reads.calendar.startOf(c.terms.expiry),
+      )
     : 0;
 
 export type { PartyId };

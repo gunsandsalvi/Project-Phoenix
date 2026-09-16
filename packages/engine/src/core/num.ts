@@ -128,8 +128,7 @@ export function moved(balance: Running, delta: number, what: string, through?: n
   // A caller that names no `through` is not omitting a number: it is saying the move IS what the
   // arithmetic passed through. `= 0` said that as a numeric default, which is the one thing this
   // engine may not do with a number nobody stated (App A) — and it read as a magnitude of nothing.
-  const passed =
-    through !== undefined && Math.abs(through) > Math.abs(delta) ? through : delta;
+  const passed = through !== undefined && Math.abs(through) > Math.abs(delta) ? through : delta;
   return { value, dust: balance.dust + moveDust(balance.value, passed), moves: balance.moves + 1 };
 }
 
@@ -173,14 +172,21 @@ export function carriedDust(before: number, now: number, reads: number, legs: Su
 }
 
 /** Combine the dust of several sums that are then compared or added. */
-export function combineDust(...sums: readonly Sum[]): number {
+export function combineDust(
+  ...sums: readonly {
+    readonly dust: number;
+    readonly terms: number;
+    readonly value: number | { readonly pieces: number };
+  }[]
+): number {
   let d = 0;
   let n = 0;
   let mag = 0;
   for (const s of sums) {
     d += s.dust;
     n += s.terms;
-    mag += Math.abs(s.value);
+    // 16.0: a sum of money carries its value as pieces beside a currency; the magnitude is the pieces.
+    mag += Math.abs(typeof s.value === 'number' ? s.value : s.value.pieces);
   }
   // The comparison itself adds one rounding per term it touches.
   return d + n * EPS * mag;
@@ -367,7 +373,10 @@ export function material(value: number, terms: number, magnitude: number): boole
  */
 export function addTo<K>(acc: Map<K, number>, key: K, delta: number): void {
   const cur = acc.get(key);
-  acc.set(key, cur === undefined ? finite(delta, 'accumulator') : finite(cur + delta, 'accumulator'));
+  acc.set(
+    key,
+    cur === undefined ? finite(delta, 'accumulator') : finite(cur + delta, 'accumulator'),
+  );
 }
 
 /**

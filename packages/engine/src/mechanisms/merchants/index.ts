@@ -35,6 +35,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId, RegionId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
+import { sumCash } from '../../core/measure.js';
 import { asQty, downTick, NO_QTY } from '../../core/tick.js';
 import { FIRM } from '../../registry/profiles.js';
 import { goodId, goodMarketId, isGoodTerms } from '../../registry/physical.js';
@@ -66,11 +67,7 @@ function expected(view: ParticipantView, subUnit: string, region: RegionId): Per
 }
 
 /** D3: the best another place would pay for this line, and which place that is. */
-function dearest(
-  view: ParticipantView,
-  subUnit: string,
-  notHere: RegionId,
-): PerPiece | undefined {
+function dearest(view: ParticipantView, subUnit: string, notHere: RegionId): PerPiece | undefined {
   let best: PerPiece | undefined;
   for (const region of view.registry.regions.keys()) {
     if (region === notHere) continue;
@@ -87,7 +84,11 @@ function basisPerUnit(view: ParticipantView, market: MarketDecl): PerPiece | und
     if (h.instrument !== market.instrument) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
-    const cost = sum(h.lots.map((l) => valueAt(l.basisPerUnit, l.qty, 'what this lot cost it')));
+    const cost = sumCash(
+      market.ccy,
+      h.lots.map((l) => valueAt(l.basisPerUnit, l.qty, market.ccy, 'what this lot cost it')),
+      'what its lots cost it',
+    );
     return pricedAt(cost.value, units.value, 'what a unit of it cost it');
   }
   return undefined;
@@ -115,7 +116,7 @@ function ordersOf(view: ParticipantView, market: MarketDecl, m: MerchantDecl): r
     if (bid <= 0) return [];
     const appetite = view.params.ratio(merchantParam(m.merchant, 'appetite'));
     const behind = scale(
-      heldAsMoney(view.cash(i.ccy), 'the money it holds'),
+      heldAsMoney(view.cash(i.ccy), i.ccy, 'the money it holds'),
       appetite,
       'what it will put behind this line',
     );

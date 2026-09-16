@@ -18,7 +18,15 @@
  * cannot be revised and cannot be stale. What the publishing phase writes is an OBSERVATION of it,
  * the same way a print is a record of a trade — not a level anybody later reads back as the number.
  */
-import { asAmount, asPerPiece, type Cash, type PerPiece, pricedAt, valueAt } from '../../core/measure.js';
+import {
+  asAmount,
+  asPerPiece,
+  type Cash,
+  type PerPiece,
+  pricedAt,
+  sumCash,
+  valueAt,
+} from '../../core/measure.js';
 import type { Qty } from '../../core/tick.js';
 import type { CurrencyCode } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
@@ -59,6 +67,7 @@ export function benchmark(
       valueAt(
         asPerPiece(e.rate, 'what this borrower paid'),
         asAmount<'piece'>(e.volume, 'for what it took'),
+        ccy,
         'what this borrower paid, for what it took',
       ),
     );
@@ -69,7 +78,11 @@ export function benchmark(
   return some({
     ccy,
     secured,
-    rate: pricedAt(sum(weighted).value, volume, 'the rate the market paid'),
+    rate: pricedAt(
+      sumCash(ccy, weighted, 'what the market paid').value,
+      volume,
+      'the rate the market paid',
+    ),
     volume,
     borrowers: weighted.length,
   });

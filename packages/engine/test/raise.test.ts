@@ -109,7 +109,7 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // A2: capital is LAYERED — its own equity, and the claims that absorb after it. So the number
     // the requirement is measured against grows by what it raised, which is why raising is an
     // answer to a breach at all (C2) rather than a gesture.
-    expect(num(late, 'capital')).toBeGreaterThan(w.register.equity(BANK_A));
+    expect(num(late, 'capital')).toBeGreaterThan(w.register.equity(BANK_A).pieces);
     // Item 10d: what stands behind the requirement beyond its own equity is the FACE of the paper
     // outstanding, read off the register — which is what `owes: 'face'` means and is now the only
     // place that number lives. It used to be summed from this module's own `raised` events.
@@ -117,7 +117,7 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
       .all()
       .filter((i) => i.kind === SUBORDINATED && i.issuer.some && i.issuer.value === BANK_A)
       .reduce((a, i) => a + w.register.heldTotal(i.id).value, 0);
-    expect(num(late, 'capital') - w.register.equity(BANK_A)).toBeCloseTo(face, 6);
+    expect(num(late, 'capital') - w.register.equity(BANK_A).pieces).toBeCloseTo(face, 6);
     // ...and it took the raise to get there: the first position it published was taken before any
     // of this paper existed, when its own equity was the whole of what stood in front of its
     // creditors (A2.a).

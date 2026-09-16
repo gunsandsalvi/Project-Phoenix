@@ -344,7 +344,7 @@ export interface DerivedReads {
    * Currency C4.a, A-50: what that is worth on this party's OWN book. A book is kept in one money
    * and adding two of them is a defect, so a reader that sums a party's positions converts here.
    */
-  inOwnMoney(party: PartyId, value: Cash, from: CurrencyCode, at: Period): Cash;
+  inOwnMoney(party: PartyId, value: Cash, at: Period): Cash;
   /** Every instrument, so a book's liabilities can be found by who issued them (Register B3). */
   instruments(): readonly Instrument[];
   /** How many units of a line exist (Register B2): a share count is `issued`, never a stored total. */
@@ -394,9 +394,7 @@ export interface DerivedReads {
  * behind (D3.b) — so by the audit there is a lender, a rate and a date behind every negative, and
  * an account still below zero is a defect in whichever module allowed it.
  */
-export type OverdraftDecision =
-  | { readonly allow: true }
-  | { readonly allow: false };
+export type OverdraftDecision = { readonly allow: true } | { readonly allow: false };
 
 /**
  * WHO answers Money B3 for an issuer's customers.
@@ -412,8 +410,6 @@ export type OverdraftDecision =
  * at assembly, and for a reason: the module that answers may be declared after the kind.
  */
 export type OverdraftPolicy = ((ctx: OverdraftContext) => OverdraftDecision) | 'aCreditDecision';
-
-
 
 export interface OverdraftContext {
   readonly holder: PartyId;

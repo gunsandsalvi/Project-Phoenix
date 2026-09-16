@@ -99,7 +99,7 @@ describe('what the contract IS (A2, A3, D1.b)', () => {
       ccy: USD,
       notional: asQty(1_000_000, 'the notional'),
       struckAt: struckAs('rate', 0.01),
-      basis: asCash(0, 'what it cost'),
+      basis: asCash(0, USD, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
@@ -127,7 +127,7 @@ describe('what the contract IS (A2, A3, D1.b)', () => {
     const toB = cdsKind.mark(mirrored(c, cdsKind), w.period, reads);
     // D1.b: EXACTLY. Not within dust — the same number, negated, computed from the other side's
     // own statement of the terms.
-    expect(toA + toB).toBe(0);
+    expect(toA.pieces + toB.pieces).toBe(0);
   });
 
   it('pays a premium every period and stops the period the reference fails (A2)', () => {

@@ -79,11 +79,7 @@ function fromMap(said: Option<Event>, key: string, about: string, what: string):
  * and a named row under `alsoIn` for every other money it might lend in. This is a read of that,
  * never a re-derivation (Law 19) and never a table.
  */
-export function costOfFundsIn(
-  reads: BankReads,
-  bank: string,
-  ccy: CurrencyCode,
-): Option<Ratio> {
+export function costOfFundsIn(reads: BankReads, bank: string, ccy: CurrencyCode): Option<Ratio> {
   const said = reads.lastPublicAbout(COST_OF_FUNDS, bank);
   if (!said.some) return none<Ratio>();
   const data = said.value.data;
@@ -111,7 +107,11 @@ export function capitalPublished(reads: BankReads, bank: string): Option<Publish
   const headroom = d['headroom'];
   const minWeighted = d['minWeighted'];
   const binds = d['binds'];
-  if (typeof headroom !== 'number' || typeof minWeighted !== 'number' || typeof binds !== 'string') {
+  if (
+    typeof headroom !== 'number' ||
+    typeof minWeighted !== 'number' ||
+    typeof binds !== 'string'
+  ) {
     return none<PublishedCapital>();
   }
   return some({ headroom, minWeighted, binds });
@@ -159,7 +159,10 @@ export function bufferOf(reads: WireReads, bank: string, at: Period): Option<Pub
 }
 
 /** C2.a: every bank that published a reserve position this period, by the name it published under. */
-export function buffersPublished(reads: WireReads, at: Period): ReadonlyMap<string, PublishedBuffer> {
+export function buffersPublished(
+  reads: WireReads,
+  at: Period,
+): ReadonlyMap<string, PublishedBuffer> {
   const out = new Map<string, PublishedBuffer>();
   for (const e of reads.ofKind(BUFFER)) {
     const bank = e.data['bank'];
@@ -188,7 +191,12 @@ export function depositRateFor(reads: WireReads, bank: string, cls: string): Opt
  * §46 A2.a (12d.1): what this bank posted for this class THIS PERIOD, or nothing — the observation
  * a depositor takes the period the board goes up, and not on the weeks it stands.
  */
-export function depositRatePostedAt(reads: WireReads, bank: string, cls: string, at: Period): Option<Ratio> {
+export function depositRatePostedAt(
+  reads: WireReads,
+  bank: string,
+  cls: string,
+  at: Period,
+): Option<Ratio> {
   const said = reads.forSubject(DEPOSIT_RATE, bank);
   const last = said[said.length - 1];
   if (last?.period !== at) return none<Ratio>();
@@ -206,7 +214,9 @@ export function boardPosted(
   if (!said.some || said.value.period !== at || said.value.data['ccy'] !== ccy) return [];
   const rates = said.value.data['rates'];
   if (typeof rates !== 'object' || rates === null) return [];
-  return Object.values(rates as Record<string, unknown>).filter((r): r is number => typeof r === 'number');
+  return Object.values(rates as Record<string, unknown>).filter(
+    (r): r is number => typeof r === 'number',
+  );
 }
 
 /** A class of deposit as the money market declared it: who it covers and what the cover costs. */
@@ -229,7 +239,7 @@ export function depositClassesSeen(reads: WireReads): readonly DepositClassSeen[
   for (const r of rows) {
     if (typeof r !== 'object' || r === null) continue;
     const { id, insured, premium } = r as Record<string, unknown>;
-      if (typeof id !== 'string' || typeof insured !== 'boolean') continue;
+    if (typeof id !== 'string' || typeof insured !== 'boolean') continue;
     if (typeof premium !== 'number') continue;
     // Item 16: what the guarantee costs re-enters the type system here, through its own door.
     out.push({ id, insured, premium: asRatio(premium, `what the guarantee on ${id} costs`) });
@@ -356,8 +366,10 @@ export function overnightPrints(reads: WireReads): readonly OvernightPrint[] {
   const out: OvernightPrint[] = [];
   for (const e of reads.ofKind(MM_PRINT)) {
     const { borrower, rate, volume, ccy, tenor, secured } = e.data;
-    if (typeof borrower !== 'string' || typeof rate !== 'number' || typeof volume !== 'number') continue;
-    if (typeof ccy !== 'string' || typeof tenor !== 'string' || typeof secured !== 'boolean') continue;
+    if (typeof borrower !== 'string' || typeof rate !== 'number' || typeof volume !== 'number')
+      continue;
+    if (typeof ccy !== 'string' || typeof tenor !== 'string' || typeof secured !== 'boolean')
+      continue;
     out.push({ period: e.period, borrower, rate, volume, ccy, tenor, secured });
   }
   return out;
@@ -409,6 +421,7 @@ export function creditQuotedTo(reads: WireReads, borrower: string): Option<Event
 export interface CreditQuote {
   readonly rate: Ratio;
   readonly most: number;
+  readonly ccy: CurrencyCode;
 }
 
 /**
@@ -425,9 +438,11 @@ export function creditQuoteThisPeriod(
   if (said?.period !== at) return none<CreditQuote>();
   const rate = said.data['rate'];
   const most = said.data['most'];
-  if (typeof rate !== 'number' || typeof most !== 'number') return none<CreditQuote>();
+  const ccy = said.data['ccy'];
+  if (typeof rate !== 'number' || typeof most !== 'number' || typeof ccy !== 'string')
+    return none<CreditQuote>();
   // Item 16: two published numbers re-enter the type system here, through their own doors.
-  return some({ rate: asRatio(rate, 'what its bank quoted it'), most });
+  return some({ rate: asRatio(rate, 'what its bank quoted it'), most, ccy: ccy as CurrencyCode });
 }
 
 /** Corporate Credit A4: the rate alone, from any period — what a name last cost to borrow at. */

@@ -75,9 +75,9 @@ function reads(book: Cash, owed: Cash): DerivedReads {
 
 describe('a levered pool that is still above water', () => {
   it('gives its holders what is left after its lender', () => {
-    const read = navOf(share, AT, reads(asCash(500_000, 'its book'), asCash(400_000, 'its loan')));
-    expect(read.assets).toBe(500_000);
-    expect(read.owed).toBe(400_000);
+    const read = navOf(share, AT, reads(asCash(500_000, USD, 'its book'), asCash(400_000, USD, 'its loan')));
+    expect(read.assets.pieces).toBe(500_000);
+    expect(read.owed.pieces).toBe(400_000);
     // B1: the shares take the residual, and a small move in the book is a large move in the claim
     // — which is what leverage IS and is why §28 D1 starts where it does.
     expect(read.perShare).toBe(100);
@@ -85,7 +85,7 @@ describe('a levered pool that is still above water', () => {
 });
 
 describe('a levered pool whose book no longer covers its loan', () => {
-  const read = navOf(share, AT, reads(asCash(350_000, 'its book'), asCash(400_000, 'its loan')));
+  const read = navOf(share, AT, reads(asCash(350_000, USD, 'its book'), asCash(400_000, USD, 'its loan')));
 
   it('leaves its shares NOTHING, and never a negative', () => {
     // A3, N13.a: a residual claim on a book that is short is worth nothing. The alternative — a
@@ -107,6 +107,6 @@ describe('a levered pool whose book no longer covers its loan', () => {
     // to its holders. While the claim could go negative those three cancelled exactly and the
     // solvency test saw zero. They no longer cancel, and what is left over is the insolvency.
     const claim = read.perShare * read.shares;
-    expect(read.assets - read.owed - claim).toBe(-50_000);
+    expect(read.assets.pieces - read.owed.pieces - claim).toBe(-50_000);
   });
 });

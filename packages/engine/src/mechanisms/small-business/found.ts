@@ -29,7 +29,18 @@ import { HOUSEHOLD, SMALL_FIRM } from '../../registry/profiles.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
 import { CAPITAL_KINDS, goodId } from '../../registry/physical.js';
 import { PEOPLE_PARAMS } from '../../registry/registry.js';
-import { asRatio, type Cash, minus, over, ratioOf, scale, valueAt, asPerPiece, type Ratio } from '../../core/measure.js';
+import {
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  ratioOf,
+  scale,
+  sumCash,
+  valueAt,
+  asPerPiece,
+  type Ratio,
+} from '../../core/measure.js';
 import { sum } from '../../core/num.js';
 import { asQty, downTick, upTick, NO_QTY, type Qty } from '../../core/tick.js';
 import { atMost } from '../../core/num.js';
@@ -59,10 +70,16 @@ interface Opening {
   readonly contribution: Cash;
 }
 
-type Costed = { readonly some: true; readonly value: Opening } | { readonly some: false; readonly why: string };
+type Costed =
+  { readonly some: true; readonly value: Opening } | { readonly some: false; readonly why: string };
 const cannot = (why: string): Costed => ({ some: false, why });
 
-function openingOf(ctx: MechanismContext, view: ParticipantView, subUnit: string, region: RegionId): Costed {
+function openingOf(
+  ctx: MechanismContext,
+  view: ParticipantView,
+  subUnit: string,
+  region: RegionId,
+): Costed {
   const line = lineIn(view, subUnit, region);
   if (!line.some) return cannot('this region does not make the line');
   const l = line.value;
@@ -75,19 +92,31 @@ function openingOf(ctx: MechanismContext, view: ParticipantView, subUnit: string
   const print = view.print(l.output);
   if (!print.some) return cannot('the line has never printed');
   const short = unmetAt(print.value);
-  if (!short.some) return cannot('the line did not trade at its last print, so what its book wanted is unknown');
+  if (!short.some)
+    return cannot('the line did not trade at its last print, so what its book wanted is unknown');
   const unmet = downTick(short.value);
   const hours = view.params.amount(PEOPLE_PARAMS.hoursPerMember, HOURS);
   const batch = downTick(over(hours, l.hoursPerUnit, 'what one member can start'));
   if (batch <= 0) return cannot('one member\u2019s hours make less than a piece of it');
+  const ccy = view.registry.currencyOf(region);
   const inputs: Cash[] = [];
   let inputPerUnit = asPerPiece(0, 'what a unit takes in inputs');
   for (const input of l.inputs) {
     const p = expectedPriceOf(view, input.instrument);
     // A line whose input nobody has priced is a line nobody can cost, and it is not founded.
     if (!p.some) return cannot('an input of the line has no price');
-    inputs.push(valueAt(p.value, upTick(scale(batch, input.qtyPerUnit, 'what a period draws')), 'a period of this input'));
-    inputPerUnit = sum([inputPerUnit, scale(p.value, input.qtyPerUnit, 'what one takes of it')]).value;
+    inputs.push(
+      valueAt(
+        p.value,
+        upTick(scale(batch, input.qtyPerUnit, 'what a period draws')),
+        ccy,
+        'a period of this input',
+      ),
+    );
+    inputPerUnit = sum([
+      inputPerUnit,
+      scale(p.value, input.qtyPerUnit, 'what one takes of it'),
+    ]).value;
   }
   const plant: Cash[] = [];
   for (const need of l.plant) {
@@ -98,35 +127,66 @@ function openingOf(ctx: MechanismContext, view: ParticipantView, subUnit: string
     const p = expectedPriceOf(view, built);
     if (!p.some) return cannot('the plant the line takes has no price');
     // Law 8, Law 1: the whole machine a member's batch reaches — the room, not three hundredths of one.
-    plant.push(valueAt(p.value, upTick(scale(batch, need.unitsPerUnitPerPeriod, 'the plant a period takes')), 'the plant it opens with'));
+    plant.push(
+      valueAt(
+        p.value,
+        upTick(scale(batch, need.unitsPerUnitPerPeriod, 'the plant a period takes')),
+        ccy,
+        'the plant it opens with',
+      ),
+    );
   }
-  const cost = sum([...inputs, ...plant]).value;
+  const cost = sumCash(
+    ccy,
+    [...inputs, ...plant],
+    'what a period of inputs and the plant come to',
+  ).value;
   // A4, Firm A3: WHAT A PERIOD BRINGS, LESS THE FOUNDER'S OWN HOURS AT WHAT THEY FETCH — a
   // member who runs a firm is a member who is not paid a wage, and the wage its region printed is
   // the price of that. A line that returns less than the founder's labour is a line nobody
   // leaves a job for; and a region that has never printed a wage cannot price the hours, so it
   // founds nothing (Missing is Missing).
   const wage = wagePrintedIn(ctx.journal, region);
-  if (!wage.some) return cannot('the region has printed no wage to price the founder\u2019s own hours by');
+  if (!wage.some)
+    return cannot('the region has printed no wage to price the founder\u2019s own hours by');
   const contribution = minus(
-    valueAt(minus(price.value, inputPerUnit, 'what a unit brings'), batch, 'what a period brings'),
-    valueAt(wage.value, hours, 'what its own hours would have earned'),
+    valueAt(
+      minus(price.value, inputPerUnit, 'what a unit brings'),
+      batch,
+      ccy,
+      'what a period brings',
+    ),
+    valueAt(wage.value, hours, ccy, 'what its own hours would have earned'),
     'less its own hours',
   );
   return { some: true, value: { line: l, unmet, batch, cost, contribution } };
 }
 
 /** The live cell of this key, if one stands: the one the new members join. */
-function standingCell(ctx: MechanismContext, region: RegionId, bank: PartyId, line: string): CellParty | undefined {
+function standingCell(
+  ctx: MechanismContext,
+  region: RegionId,
+  bank: PartyId,
+  line: string,
+): CellParty | undefined {
   for (const p of ctx.parties.ofKind(SMALL_FIRM)) {
     if (p.representation !== 'cell' || !p.status.alive) continue;
-    if (keyOf(p, 'region') === String(region) && keyOf(p, 'bank') === String(bank) && keyOf(p, 'line') === line) return p;
+    if (
+      keyOf(p, 'region') === String(region) &&
+      keyOf(p, 'bank') === String(bank) &&
+      keyOf(p, 'line') === line
+    )
+      return p;
   }
   return undefined;
 }
 
 /** The row between these two, if one stands. */
-function ownershipRow(ctx: MechanismContext, cell: PartyId, owner: PartyId): Option<{ readonly id: AgreementId; readonly members: number }> {
+function ownershipRow(
+  ctx: MechanismContext,
+  cell: PartyId,
+  owner: PartyId,
+): Option<{ readonly id: AgreementId; readonly members: number }> {
   for (const a of ctx.agreements.ofKind(OWNERSHIP)) {
     if (a.debtor === cell && a.creditor === owner && a.state === 'performing') {
       return some({ id: a.id, members: isOwnership(a.terms) ? a.terms.members : 0 });
@@ -139,26 +199,37 @@ function ownershipRow(ctx: MechanismContext, cell: PartyId, owner: PartyId): Opt
 function alreadyInFirms(ctx: MechanismContext, owner: PartyId): number {
   let n = 0;
   for (const a of ctx.agreements.ofKind(OWNERSHIP)) {
-    if (a.creditor === owner && a.state === 'performing' && isOwnership(a.terms)) n += a.terms.members;
+    if (a.creditor === owner && a.state === 'performing' && isOwnership(a.terms))
+      n += a.terms.members;
   }
   return n;
 }
 
 /** A4.a: once per household cell per period; the lines it could enter are the sector's. */
 export function found(ctx: MechanismContext, lines: readonly string[]): void {
-  const year = yearFraction('ACT/365F', ctx.calendar.startOf(ctx.period), ctx.calendar.startOf(period(ctx.period + 1)));
+  const year = yearFraction(
+    'ACT/365F',
+    ctx.calendar.startOf(ctx.period),
+    ctx.calendar.startOf(period(ctx.period + 1)),
+  );
   if (year <= 0) return;
   for (const h of ctx.parties.ofKind(HOUSEHOLD)) {
     if (h.representation !== 'cell' || !h.status.alive) continue;
     const plan = savingPublishedBy(ctx.journal, String(h.id));
-    if (!plan.some || plan.value.period !== ctx.period || plan.value.sparePerMember <= 0) continue;
+    if (!plan.some || plan.value.period !== ctx.period || plan.value.sparePerMember.pieces <= 0)
+      continue;
     const required = plan.value.requiredPerAnnum;
     const view = ctx.participant(h.id);
     const ccy = ctx.registry.currencyOf(h.region);
-    const spare = scale(plan.value.sparePerMember, asRatio(weightOf(h), 'its members'), 'what the cell has spare');
+    const spare = scale(
+      plan.value.sparePerMember,
+      asRatio(weightOf(h), 'its members'),
+      'what the cell has spare',
+    );
     // A4: the line whose return on what it costs to start is highest, of those that clear what
     // this household requires — a decision at a threshold, and one line at a time.
-    let best: { readonly subUnit: string; readonly opening: Opening; readonly perAnnum: Ratio } | undefined;
+    let best:
+      { readonly subUnit: string; readonly opening: Opening; readonly perAnnum: Ratio } | undefined;
     let why = 'the sector has no lines';
     for (const subUnit of lines) {
       const opening = openingOf(ctx, view, subUnit, h.region);
@@ -166,12 +237,16 @@ export function found(ctx: MechanismContext, lines: readonly string[]): void {
         why = opening.why;
         continue;
       }
-      if (opening.value.cost <= 0) {
+      if (opening.value.cost.pieces <= 0) {
         why = 'the line costs nothing to start, which is not a line';
         continue;
       }
       const perAnnum = ratioOf(
-        over(opening.value.contribution, asRatio(year, 'the fraction of a year a period is'), 'what a year brings'),
+        over(
+          opening.value.contribution,
+          asRatio(year, 'the fraction of a year a period is'),
+          'what a year brings',
+        ),
         opening.value.cost,
         'what starting one returns, per annum',
       );
@@ -179,19 +254,35 @@ export function found(ctx: MechanismContext, lines: readonly string[]): void {
         why = 'no line returns what it requires of a claim';
         continue;
       }
-      if (best === undefined || perAnnum > best.perAnnum) best = { subUnit, opening: opening.value, perAnnum };
+      if (best === undefined || perAnnum > best.perAnnum)
+        best = { subUnit, opening: opening.value, perAnnum };
     }
     if (best === undefined) {
-      ctx.record('smallBusiness.notFounded', [h.id], { founders: String(h.id), why, spare, required }, true);
+      ctx.record(
+        'smallBusiness.notFounded',
+        [h.id],
+        { founders: String(h.id), why, spare: spare.pieces, ccy, required },
+        true,
+      );
       continue;
     }
     // A4.b, E5, XI-15: how many whole firms its spare starts — and a firm has a person in it, so
     // no more than the members who are not already running one (Law 8: a count of people).
     const free = weightOf(h) - alreadyInFirms(ctx, h.id);
-    const funded: Qty = downTick(over(spare, asRatio(best.opening.cost, 'what one costs to start'), 'firms it can fund'));
+    const funded: Qty = downTick(ratioOf(spare, best.opening.cost, 'firms it can fund'));
     // A4, A5: and no more firms than the unmet demand supports, a member's batch each.
-    const room: Qty = downTick(over(best.opening.unmet, asRatio(best.opening.batch, 'what one firm supplies a period'), 'firms the unmet demand supports'));
-    const firms: Qty = atMost(atMost(funded, asQty(free, 'members not yet in a firm'), 'one firm per founder'), room, 'no more than the book is short of');
+    const room: Qty = downTick(
+      over(
+        best.opening.unmet,
+        asRatio(best.opening.batch, 'what one firm supplies a period'),
+        'firms the unmet demand supports',
+      ),
+    );
+    const firms: Qty = atMost(
+      atMost(funded, asQty(free, 'members not yet in a firm'), 'one firm per founder'),
+      room,
+      'no more than the book is short of',
+    );
     if (firms <= 0) {
       ctx.record(
         'smallBusiness.notFounded',
@@ -199,16 +290,29 @@ export function found(ctx: MechanismContext, lines: readonly string[]): void {
         {
           founders: String(h.id),
           line: best.subUnit,
-          why: funded <= 0 ? 'its spare does not reach one starting cost' : free <= 0 ? 'every member already runs a firm' : 'the line\u2019s demand is being met',
-          spare,
-          cost: best.opening.cost,
+          why:
+            funded <= 0
+              ? 'its spare does not reach one starting cost'
+              : free <= 0
+                ? 'every member already runs a firm'
+                : 'the line\u2019s demand is being met',
+          spare: spare.pieces,
+          cost: best.opening.cost.pieces,
+          ccy,
           unmet: best.opening.unmet,
         },
         true,
       );
       continue;
     }
-    const capital = ctx.registry.payable(valueAt(asPerPiece(best.opening.cost, 'what one costs to start'), firms, 'what the founders put in'));
+    const capital = ctx.registry.payable(
+      valueAt(
+        asPerPiece(best.opening.cost.pieces, 'what one costs to start'),
+        firms,
+        ccy,
+        'what the founders put in',
+      ),
+    );
     if (capital <= 0) continue;
     const standing = standingCell(ctx, h.region, h.bank, best.subUnit);
     let cell: PartyId;
@@ -246,14 +350,27 @@ export function found(ctx: MechanismContext, lines: readonly string[]): void {
       reason: `${String(h.id)} founds ${String(firms)} ${best.subUnit} firms with ${String(capital)}`,
     });
     if (record.outcome !== 'settled') {
-      ctx.record('smallBusiness.notFounded', [h.id], { founders: String(h.id), line: best.subUnit, why: 'the founders’ money did not move', capital }, true);
+      ctx.record(
+        'smallBusiness.notFounded',
+        [h.id],
+        {
+          founders: String(h.id),
+          line: best.subUnit,
+          why: 'the founders’ money did not move',
+          capital,
+        },
+        true,
+      );
       continue;
     }
     if (standing !== undefined) ctx.cells.weight(cell, 'entry', firms, 'founded');
     // A6.a: the founders own what they founded — a row per (cell, owner), and it counts the members
     // who run one. A row that stands is the one the count moves on; there is no second row.
     const row = ownershipRow(ctx, cell, h.id);
-    const terms: OwnershipTerms = { kind: OWNERSHIP, members: (row.some ? row.value.members : 0) + firms };
+    const terms: OwnershipTerms = {
+      kind: OWNERSHIP,
+      members: (row.some ? row.value.members : 0) + firms,
+    };
     if (row.some) ctx.restate(row.value.id, terms);
     else {
       ctx.owes({
@@ -268,7 +385,16 @@ export function found(ctx: MechanismContext, lines: readonly string[]): void {
     ctx.record(
       'smallBusiness.founded',
       [h.id, cell],
-      { founders: String(h.id), cell: String(cell), line: best.subUnit, firms, capital, perAnnum: best.perAnnum, required, entered: standing === undefined },
+      {
+        founders: String(h.id),
+        cell: String(cell),
+        line: best.subUnit,
+        firms,
+        capital,
+        perAnnum: best.perAnnum,
+        required,
+        entered: standing === undefined,
+      },
       true,
     );
   }

@@ -25,7 +25,18 @@
  * there is one. What this module does is stop pricing the line: a claim on a liquidation is not the
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
-import { type Cash, type PerPiece, amountOf, asAmount, asCash, asNamed, heldAsMoney, minus, negated, plus, pricedAt } from '../../core/measure.js';
+import {
+  type Cash,
+  type PerPiece,
+  amountOf,
+  asAmount,
+  asCash,
+  asNamed,
+  negated,
+  noCash,
+  plus,
+  pricedAt,
+} from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
@@ -40,7 +51,7 @@ import {
   type PartyId,
 } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
-import { combineDust, div, sum, withinDust } from '../../core/num.js';
+import { combineDust, div, sub, sum, withinDust } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { period as periodOf } from '../../calendar/calendar.js';
@@ -64,7 +75,14 @@ import {
   equityMarketOf,
   type EquityDecl,
 } from './data.js';
-import { buybackOrder, decideEquity, dividendFor, EQUITY_PLAN, nothingDecided, type EquityPlan } from './decide.js';
+import {
+  buybackOrder,
+  decideEquity,
+  dividendFor,
+  EQUITY_PLAN,
+  nothingDecided,
+  type EquityPlan,
+} from './decide.js';
 import { floatations } from './float.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
@@ -174,7 +192,7 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
      */
     line.market,
     line.issued,
-    negated(asCash(short, 'what it is short of'), 'what it has spare'),
+    negated(asCash(short, funding.value.ccy, 'what it is short of'), 'what it has spare'),
     ctx.params.periods(equityParam(row.firm, 'payoutPatience')),
   );
   if (!decided.some) return;
@@ -295,7 +313,12 @@ function recordDividends(ctx: MechanismContext): void {
       const share = gridPerMember(
         ctx.registry,
         holder,
-        dividendFor(action.perUnit, asAmount<'piece'>(perMemberUnits, 'what one member holds')));
+        dividendFor(
+          action.perUnit,
+          asAmount<'piece'>(perMemberUnits, 'what one member holds'),
+          line.ccy,
+        ).pieces,
+      );
       if (share.total <= 0) continue;
       ctx.owes({
         debtor: firm,
@@ -374,10 +397,7 @@ function payDividend(
      * agreement carries it and it is paid when the cell can take it, rather than being rounded
      * away into a residual with no holder (Appendix B).
      */
-    const share = gridPerMember(
-      ctx.registry,
-      holder,
-      owed.owed / weightOf(holder));
+    const share = gridPerMember(ctx.registry, holder, owed.owed / weightOf(holder));
     const total = Number(share.total);
     if (total <= 0) continue;
     const leg: Leg = {
@@ -471,14 +491,14 @@ function declaredIsPaid(): Family {
         const firm = e.subjects[0];
         if (typeof line !== 'string' || typeof paid !== 'number' || firm === undefined) continue;
         // Item 16: a published number re-enters the type system here, through its own door.
-        const said = asCash(paid, 'what the declaration said was paid');
+        const said = paid;
         const moved = sum(paidOut.get(`${line}\u0000${firm}`) ?? []);
         if (withinDust(said, moved.value, combineDust(sum([said]), moved))) continue;
         out.push({
           family: 'flows',
           spec: 'Equity D3.a',
           owner: firm,
-          size: minus(said, moved.value, 'recorded paid against what left the firm'),
+          size: sub(said, moved.value, 'recorded paid against what left the firm'),
           unit: view.registry.currencyOf(view.parties.get(firm as PartyId).region),
           period: view.period,
           message: `${line}: ${paid} of payout was recorded paid and ${moved.value} left ${firm}`,
@@ -498,8 +518,8 @@ function declaredIsPaid(): Family {
  * for every line that declared one. The sums are the same sums over the same legs in the same
  * order; what changes is that the ledger is read once.
  */
-function dividendLegs(view: AuditView): ReadonlyMap<string, Cash[]> {
-  const out = new Map<string, Cash[]>();
+function dividendLegs(view: AuditView): ReadonlyMap<string, number[]> {
+  const out = new Map<string, number[]>();
   for (const r of view.ledger.inPeriod(view.period)) {
     if (r.outcome !== 'settled') continue;
     for (const leg of r.instruction.legs) {
@@ -510,7 +530,7 @@ function dividendLegs(view: AuditView): ReadonlyMap<string, Cash[]> {
       const line = leg.receipt.on;
       const key = `${line}\u0000${String(leg.from.holder)}`;
       const held = out.get(key);
-      const paidOnIt = heldAsMoney(leg.amount, 'what left the firm on this line');
+      const paidOnIt = leg.amount;
       if (held === undefined) out.set(key, [paidOnIt]);
       else held.push(paidOnIt);
     }
@@ -549,12 +569,16 @@ function publishReads(ctx: MechanismContext, rows: readonly EquityDecl[]): void 
         line: line.id,
         shares: line.issued,
         // C1.b: what is genuinely tradeable — the count less what is bound and cannot move.
-        freeFloat: freeFloat(line.issued, asAmount<'piece'>(strategic, 'what is bound and cannot move')),
+        freeFloat: freeFloat(
+          line.issued,
+          asAmount<'piece'>(strategic, 'what is bound and cannot move'),
+        ),
         strategic,
         // B4, B4.a: a read. Nothing compares it against its own two inputs and calls that a check.
         marketCapitalisation: print.some
-          ? marketCapitalisation(line.issued, print.value.price)
+          ? marketCapitalisation(line.issued, print.value.price, line.ccy).pieces
           : null,
+        ccy: line.ccy,
         // F3, A5.a: how many votes there are, and how many holders there are to cast them. Who
         // holds a majority is the register's to answer when somebody asks it (worklist 13g).
         votes: sum(voteTerms).value,
@@ -607,8 +631,12 @@ const BORN = 'equity.born';
 interface BornRows {
   readonly rows: EquityDecl[];
 }
-const bornRows = (ctx: MechanismContext): BornRows => ctx.state<BornRows>(BORN, () => ({ rows: [] }));
-const allRows = (ctx: MechanismContext, rows: readonly EquityDecl[]): readonly EquityDecl[] => [...rows, ...bornRows(ctx).rows];
+const bornRows = (ctx: MechanismContext): BornRows =>
+  ctx.state<BornRows>(BORN, () => ({ rows: [] }));
+const allRows = (ctx: MechanismContext, rows: readonly EquityDecl[]): readonly EquityDecl[] => [
+  ...rows,
+  ...bornRows(ctx).rows,
+];
 
 /**
  * Firm Birth A1, A2, A3, Equity A6, §29 C5 (12.4a.2): A BORN FIRM'S RESIDUAL HAS A LINE AND A HOLDER
@@ -622,7 +650,8 @@ function bornShares(ctx: MechanismContext): void {
   for (const b of firmsBornIn(ctx.journal, ctx.period)) {
     const firm = b.firm as PartyId;
     const owner = b.owner as PartyId;
-    if (!ctx.parties.has(firm) || !ctx.parties.get(firm).status.alive || !ctx.parties.has(owner)) continue;
+    if (!ctx.parties.has(firm) || !ctx.parties.get(firm).status.alive || !ctx.parties.has(owner))
+      continue;
     const id = equityLineOf(b.firm);
     if (ctx.instruments.has(id)) continue;
     const rng = ctx.rng.derive(`born/${b.firm}`);
@@ -647,11 +676,15 @@ function bornShares(ctx: MechanismContext): void {
     const terms: ShareTerms = { kind: SHARE, issuer: firm, votesPerShare: 1 };
     ctx.issue({ id, kind: SHARE, issuer: some(firm), ccy, terms, market: none<MarketId>() });
     const price = ctx.params.price(OPENING_SHARE);
-    let book = asCash(0, 'nothing walked yet');
+    let book = noCash(ccy);
     for (const h of ctx.register.holdingsOf(firm)) {
       book = plus(
         book,
-        ctx.valuation.inOwnMoney(firm, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), ctx.instruments.get(h.instrument).ccy, ctx.period),
+        ctx.valuation.inOwnMoney(
+          firm,
+          ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+          ctx.period,
+        ),
         'its book',
       );
     }
@@ -662,7 +695,18 @@ function bornShares(ctx: MechanismContext): void {
     );
     bornRows(ctx).rows.push(row);
     if (shares <= 0) {
-      ctx.record('equity.born', [firm, owner], { firm: b.firm, owner: b.owner, line: String(id), shares: 0, why: 'its book comes to less than one share' }, true);
+      ctx.record(
+        'equity.born',
+        [firm, owner],
+        {
+          firm: b.firm,
+          owner: b.owner,
+          line: String(id),
+          shares: 0,
+          why: 'its book comes to less than one share',
+        },
+        true,
+      );
       continue;
     }
     const r = ctx.settle({
@@ -680,7 +724,12 @@ function bornShares(ctx: MechanismContext): void {
       cause: 'issuance',
       reason: `${b.firm} issues its shares to ${b.owner} at its birth`,
     });
-    ctx.record('equity.born', [firm, owner], { firm: b.firm, owner: b.owner, line: String(id), shares, outcome: r.outcome }, true);
+    ctx.record(
+      'equity.born',
+      [firm, owner],
+      { firm: b.firm, owner: b.owner, line: String(id), shares, outcome: r.outcome },
+      true,
+    );
   }
 }
 
@@ -699,7 +748,8 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
       {
         name: BORN,
         kind: 'noun',
-        holds: 'the equity rows this module gained after the seal — a born firm’s line, private, with the patience it was born with',
+        holds:
+          'the equity rows this module gained after the seal — a born firm’s line, private, with the patience it was born with',
         why: 'Firm Birth A1 (12.4a.2): the seed’s rows are walked as a list; a firm born after it needs a row somewhere that grows.',
         standsInFor: { noun: 'EquityDecl', planItem: 'docs/IMPLEMENTATION.md item 22' },
       },
@@ -708,16 +758,14 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         kind: 'working',
         holds:
           'what each firm decided about its own shares this period — the line, the shares it bids to cancel, and its book per share',
-        why:
-          'it is how this module gets from its decide phase to its own `markets` and `orders`, and nothing outside it has an opinion about a bid nobody has posted yet (0e\u2032.4). It was a PRIVATE `equity.plan` event read back by its own writer in the same period; the event stays as the record of the decision, and the door that says a size is a COUNT now sits at the WRITE.',
+        why: 'it is how this module gets from its decide phase to its own `markets` and `orders`, and nothing outside it has an opinion about a bid nobody has posted yet (0e\u2032.4). It was a PRIVATE `equity.plan` event read back by its own writer in the same period; the event stays as the record of the decision, and the door that says a size is a COUNT now sits at the WRITE.',
       },
       {
         name: 'equity',
         kind: 'working',
         holds:
           'the lines whose issuer has been succeeded, so the wipe is announced once and not every week',
-        why:
-          'an idempotence marker within the module’s own corporate-actions phase. It is not a fact about the world; it is how this module avoids saying the same thing twice (E4).',
+        why: 'an idempotence marker within the module’s own corporate-actions phase. It is not a fact about the world; it is how this module avoids saying the same thing twice (E4).',
       },
     ],
     spec: 'Equity',
@@ -889,7 +937,14 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
          * no price to mistake for one rather than by a rule against mistaking it.
          */
         const market = row.listed ? some(equityMarketOf(row.firm)) : none<MarketId>();
-        ctx.instruments.add({ id, kind: SHARE, issuer: some(row.firm as PartyId), ccy, terms, market });
+        ctx.instruments.add({
+          id,
+          kind: SHARE,
+          issuer: some(row.firm as PartyId),
+          ccy,
+          terms,
+          market,
+        });
         // Seed C4: the line and the level it opens at.
         const price = ctx.params.price(OPENING_SHARE);
         if (market.some) {
@@ -917,7 +972,7 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
          * without one number being written down beside its name, and why doubling the opening share
          * price halves every count here and moves nothing (D4).
          */
-        let book = asCash(0, 'nothing walked yet');
+        let book = noCash(ctx.registry.currencyOf(firm.region));
         for (const h of ctx.register.holdingsOf(firm.id)) {
           // Currency C4.a, A-51: a firm's residual is one number in the money it keeps its books
           // in. A firm opening with imported stock holds it in the seller's money and this added
@@ -927,7 +982,6 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
             ctx.valuation.inOwnMoney(
               firm.id,
               ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
-              ctx.instruments.get(h.instrument).ccy,
               ctx.period,
             ),
             'its book',
@@ -935,7 +989,10 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
         }
         const shares = ctx.registry.pieces(
           ctx.instruments.get(id).unit,
-          asNamed(Math.round(amountOf(book, price, 'the shares its book comes to')), 'what is issued'),
+          asNamed(
+            Math.round(amountOf(book, price, 'the shares its book comes to')),
+            'what is issued',
+          ),
         );
         /**
          * XI-15, Law 6, Law 8: AND HOW FAR IT REACHES. A cell is homogeneous and holds WHOLE pieces
@@ -985,9 +1042,7 @@ export function strategicOf(ctx: MechanismContext, firm: string): Qty {
   const line = equityLineOf(firm);
   const terms: Qty[] = [];
   for (const holder of ctx.register.holdersOf(line)) {
-    terms.push(
-      ctx.register.encumbered(holder, line),
-    );
+    terms.push(ctx.register.encumbered(holder, line));
   }
   return sum(terms).value;
 }
@@ -996,7 +1051,7 @@ export function strategicOf(ctx: MechanismContext, firm: string): Qty {
 export function capitalisationOf(ctx: MechanismContext, firm: string): Cash | null {
   const line = ctx.instruments.get(equityLineOf(firm));
   const print = ctx.prices.latest(line.id, ctx.period);
-  return print.some ? marketCapitalisation(line.issued, print.value.price) : null;
+  return print.some ? marketCapitalisation(line.issued, print.value.price, line.ccy) : null;
 }
 
 /** D2.a, D1.a: the count, which is what a dilution raises and a cancellation lowers. */

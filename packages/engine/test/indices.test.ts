@@ -90,6 +90,7 @@ describe('an index of nothing is not a number (Indices A1, D5.a)', () => {
         return p.some ? some(p.value.price) : none<PerPiece>();
       },
       rate: () => asRatio(1, 'one into one'),
+      inMoney: (value) => value,
     });
     expect(basket.length).toBe(0);
     expect(credit.some).toBe(false);
@@ -112,7 +113,7 @@ describe('the base is a resolution (Indices A4, Law 2)', () => {
     const w = rigWorld('idx-F');
     for (let i = 0; i < 4; i += 1) w.step();
     const at = (base: number): number | undefined => {
-      const rules = indexRules([REGION], [USD], asPeriod(0), asRatio(base, 'the base under test'));
+      const rules = indexRules([REGION], [USD], asPeriod(0), asRatio(base, 'the base under test'), () => USD);
       const rule = rules.find((d) => d.id === EQUITY_INDEX(REGION));
       if (rule === undefined) return undefined;
       const read = w.index(rule.id);

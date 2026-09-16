@@ -23,19 +23,11 @@
  * never have (A3). Nothing in this world reaches it today, because every mandate drawn says
  * `mayWrite: []` — and item 13.2 is about to draw one that does not.
  */
+import { atLeastCash, noCash, sumCash } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { Unpriced } from '../../core/errors.js';
 import type { PartyId } from '../../core/ids.js';
-import {
-  asCash,
-  type Cash,
-  minus,
-  negated,
-  type PerPiece,
-  pricedAt,
-  valueAt,
-} from '../../core/measure.js';
-import { atLeast, sum } from '../../core/num.js';
+import { type Cash, minus, negated, type PerPiece, pricedAt, valueAt } from '../../core/measure.js';
 import type { Qty } from '../../core/tick.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { DerivedReads } from '../../registry/kinds.js';
@@ -73,14 +65,18 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     if (!worth.some) {
       // B2: assets are marked at cleared prices. A holding nothing has ever priced is not worth
       // zero and is not worth guessing: there is no NAV until it has a mark (XI-6).
-      throw new Unpriced('Fund Shares B2', `${fund} holds ${h.instrument}, which has never marked`, {
-        instrument: h.instrument,
-      });
+      throw new Unpriced(
+        'Fund Shares B2',
+        `${fund} holds ${h.instrument}, which has never marked`,
+        {
+          instrument: h.instrument,
+        },
+      );
     }
     // Currency C4.a, A-50: ON THE FUND'S OWN BOOK. A NAV is a price in one money, and this added
     // whatever money each holding happened to be in — a mandate with no currency in it (A-47) put
     // foreign bills here, and their face went straight into the per-share number.
-    assets.push(reads.inOwnMoney(fund, worth.value.value, worth.value.ccy, at));
+    assets.push(reads.inOwnMoney(fund, worth.value.value, at));
     if (worth.value.from < oldest) oldest = worth.value.from;
   }
   const owed: Cash[] = [];
@@ -108,9 +104,9 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
    * that line is held.
    */
   for (const position of reads.contractsOf(fund, at)) {
-    const own = reads.inOwnMoney(fund, position.worth, position.ccy, at);
-    if (own > 0) assets.push(own);
-    else if (own < 0) owed.push(negated(own, 'what this contract is a liability for'));
+    const own = reads.inOwnMoney(fund, position.worth, at);
+    if (own.pieces > 0) assets.push(own);
+    else if (own.pieces < 0) owed.push(negated(own, 'what this contract is a liability for'));
   }
   for (const other of reads.instruments()) {
     if (other.id === share.id || !other.status.live) continue;
@@ -118,11 +114,11 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     if (!reads.kindOf(other.id).liabilityOfIssuer) continue;
     for (const holder of reads.holdersOf(other.id)) {
       const worth = reads.worthOf(holder, other.id, at);
-      if (worth.some) owed.push(reads.inOwnMoney(fund, worth.value.value, worth.value.ccy, at));
+      if (worth.some) owed.push(reads.inOwnMoney(fund, worth.value.value, at));
     }
   }
-  const a = sum(assets);
-  const l = sum(owed);
+  const a = sumCash(share.ccy, assets, 'what the fund holds');
+  const l = sumCash(share.ccy, owed, 'what the fund owes');
   const net = minus(a.value, l.value, 'what the fund is worth');
   /**
    * A3, Bond N13.a, Hedge Funds E3 (item 13.4): A SHARE RANKS BEHIND EVERYTHING ELSE THE FUND OWES
@@ -144,9 +140,9 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
    * estate opens, and its broker eats the shortfall (Prime Brokerage D2, XI-3's fund row). Nothing
    * was written to make that happen — it stopped being prevented.
    */
-  const forShares = atLeast(
+  const forShares = atLeastCash(
     net,
-    asCash(0, 'a book that does not cover its senior claims leaves the shares nothing'),
+    noCash(share.ccy),
     'a share is a limited liability: its holder is not liable to the fund beyond it',
   );
   return {
@@ -168,5 +164,10 @@ export function claimOf(
   reads: DerivedReads,
 ): Cash {
   // Item 16: this was a bare `*` of a count and a level — the one shape `valueAt` exists to stop.
-  return valueAt(perShare, reads.quantity(holder, share.id), "what this holder's claim comes to");
+  return valueAt(
+    perShare,
+    reads.quantity(holder, share.id),
+    share.ccy,
+    "what this holder's claim comes to",
+  );
 }

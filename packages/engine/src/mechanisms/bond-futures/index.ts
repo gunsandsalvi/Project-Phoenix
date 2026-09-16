@@ -23,11 +23,11 @@ import {
   type PerPiece,
   absolute,
   asAmount,
-  asCash,
   asPerPiece,
   asRatio,
   minus,
   negated,
+  noCash,
   over,
   plus,
   pricedAt,
@@ -97,15 +97,20 @@ export const isBondFuture = (t: ContractTerms): t is BondFutureTerms =>
 
 /** D8: what it is worth to `a` — the future's own print against the level it was struck at. */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isBondFuture(c.terms)) return asCash(0, 'not a bond future');
+  if (!isBondFuture(c.terms)) return noCash(c.ccy);
   const p = reads.print(c.terms.book, at);
-  if (!p.some) return asCash(0, 'this book has not printed');
+  if (!p.some) return noCash(c.ccy);
   const move = minus(
     p.value.price,
     moneyLevel(c.struckAt, 'a bond future is struck at a price'),
     'the future now against the level struck',
   );
-  const worth = valueAt(move, scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'), 'of face each');
+  const worth = valueAt(
+    move,
+    scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'),
+    c.ccy,
+    'of face each',
+  );
   return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
 
@@ -144,7 +149,16 @@ export const bondFutureKind: DerivativeKindProfile = {
     );
     return some(
       scale(
-        valueAt(move.value, scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'), 'of face each'),
+        valueAt(
+          move.value,
+          scale(
+            c.notional,
+            asRatio(c.terms.contractSize, 'the face in a contract'),
+            'per contract',
+          ),
+          c.ccy,
+          'of face each',
+        ),
         asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
@@ -160,14 +174,15 @@ export const bondFutureKind: DerivativeKindProfile = {
    */
   cashDue: (c, at, reads, party): Cash => {
     const t = c.terms;
-    if (!isBondFuture(t) || at < t.expiry) return asCash(0, 'nothing is delivered yet');
+    if (!isBondFuture(t) || at < t.expiry) return noCash(c.ccy);
     const long = t.long ? c.a : c.b;
-    if (long !== party) return asCash(0, 'the short delivers the bond, not the cash');
+    if (long !== party) return noCash(c.ccy);
     const price = reads.print(t.deliverable, at);
-    if (!price.some) return asCash(0, 'the deliverable has not printed');
+    if (!price.some) return noCash(c.ccy);
     return valueAt(
       price.value.price,
       scale(c.notional, asRatio(t.contractSize, 'the face in a contract'), 'the face it takes'),
+      c.ccy,
       'at its price',
     );
   },
@@ -280,7 +295,11 @@ export function bondCarryOf(
   if (!price.some) return none<PerPiece>();
   const years = yearFraction(FUTURE_DAY_COUNT, on, until);
   const financing = scale(
-    scale(price.value.price, asRatio(rate, 'what financing it costs a year'), 'the cost of the money'),
+    scale(
+      price.value.price,
+      asRatio(rate, 'what financing it costs a year'),
+      'the cost of the money',
+    ),
     asRatio(years, 'the year this wait is a fraction of'),
     'to delivery',
   );
@@ -341,7 +360,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   /** Where the market is: the comparator that decides the side and the size, never the level. */
   const at = view.print(t.book);
   let position = NO_QTY;
-  let worth = asCash(0, 'what its book is worth before it is walked');
+  let worth = noCash(view.registry.currencyOf(view.self.region));
   for (const c of view.contracts.mine()) {
     if (!isBondFuture(c.terms) || c.terms.deliverable !== t.deliverable) continue;
     const iAmA = c.a === view.self.id;
@@ -350,7 +369,8 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
       iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'),
       'its position',
     );
-    worth = plus(worth, view.contracts.valueOf(c), 'what its book is worth');
+    // Currency C4: a row in another money is read in this party's own, at the rate in force.
+    worth = plus(worth, view.inOwnMoney(view.contracts.valueOf(c)), 'what its book is worth');
   }
   const own = view.standsBehind();
   /**
@@ -361,13 +381,15 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const tolerance = view.params.ratio(BOND_FUTURE_PARAMS.tolerance);
   if (
     position !== 0 &&
-    own > 0 &&
-    worth < 0 &&
-    absolute(worth, 'what it is down') > scale(own, tolerance, 'what it will stand')
+    own.pieces > 0 &&
+    worth.pieces < 0 &&
+    absolute(worth, 'what it is down').pieces > scale(own, tolerance, 'what it will stand').pieces
   ) {
     const qty = view.registry.deliverable(absolute(position, 'the position it would close'));
     if (qty <= 0) return [];
-    return [{ party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) }];
+    return [
+      { party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) },
+    ];
   }
   /**
    * I2: ONE PARTY, ONE POSITION. A holder of the line wants to be SHORT the future by what it
@@ -377,12 +399,16 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    */
   const held = view.free(t.deliverable);
   let want = negated(
-    over(held, asRatio(t.contractSize, 'the face one contract delivers'), 'what its holding comes to in contracts'),
+    over(
+      held,
+      asRatio(t.contractSize, 'the face one contract delivers'),
+      'what its holding comes to in contracts',
+    ),
     'so contracts it wants to be short',
   );
   const price = mine;
   const conviction =
-    own > 0
+    own.pieces > 0
       ? view.registry.deliverable(
           pricedAt(
             own,
@@ -436,7 +462,11 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
 }
 
 /** I1: a book on each benchmark line this world prints, cleared where there is a house. */
-function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId, issuer: PartyId): void {
+function openBooks(
+  ctx: MechanismContext,
+  house: (ccy: CurrencyCode) => PartyId,
+  issuer: PartyId,
+): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
   const window = ctx.params.periods(BOND_FUTURE_PARAMS.window);
   const life = ctx.params.periods(BOND_FUTURE_PARAMS.life);
@@ -464,7 +494,9 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId,
     if (last === undefined) continue;
     if (compareCivil(last.date, ctx.calendar.endOf(expiry)) <= 0) continue;
     const clearer =
-      ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive ? house(i.ccy) : null;
+      ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive
+        ? house(i.ccy)
+        : null;
     const terms: BondFutureTerms = {
       kind: BOND_FUTURE,
       deliverable: i.id,
@@ -503,7 +535,8 @@ function deliver(ctx: MechanismContext): void {
     if (!price.some) continue;
     // Register B4: and a line that has ceased since cannot be delivered at all. The row is left to
     // the layer's own resolution, which closes it at its stated value (D11.a).
-    if (!ctx.instruments.has(t.deliverable) || !ctx.instruments.get(t.deliverable).status.live) continue;
+    if (!ctx.instruments.has(t.deliverable) || !ctx.instruments.get(t.deliverable).status.live)
+      continue;
     /**
      * C2, XI-5: A CLEARED DELIVERY IS ONE INSTRUCTION. The house is buyer to the seller and seller
      * to the buyer, which is two rows — and settling them one at a time leaves the house holding a
@@ -525,7 +558,11 @@ function deliver(ctx: MechanismContext): void {
         deliverable = false;
         break;
       }
-      const face = scaleQty(row.notional, row.terms.contractSize, 'the face this contract delivers');
+      const face = scaleQty(
+        row.notional,
+        row.terms.contractSize,
+        'the face this contract delivers',
+      );
       legs.push({ kind: 'contract', act: 'close', contract: row.id, why: 'delivered' });
       if (face <= 0) continue;
       legs.push({
@@ -542,7 +579,9 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(valueAt(price.value.price, face, 'what the face costs')),
+        amount: ctx.registry.cashFor(
+          valueAt(price.value.price, face, row.ccy, 'what the face costs'),
+        ),
       });
     }
     if (!deliverable || legs.length === 0) continue;
@@ -599,10 +638,7 @@ function matching(ctx: MechanismContext, c: Contract): readonly Contract[] {
   return [c, other].sort((x, y) => receivesFirst(x) - receivesFirst(y));
 }
 
-export function bondFutures(
-  house: (ccy: CurrencyCode) => PartyId,
-  issuer: PartyId,
-): SystemModule {
+export function bondFutures(house: (ccy: CurrencyCode) => PartyId, issuer: PartyId): SystemModule {
   return {
     id: 'bond-futures',
     spec: 'Sovereign I',

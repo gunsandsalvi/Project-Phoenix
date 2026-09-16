@@ -13,6 +13,7 @@
  * asserts about it is not a number but a SHAPE — it comes from the broker's own outlook, it is the
  * whole line where the broker has no view at all, and it can never exceed what the line is worth.
  */
+import { USD } from '../src/seeds/foundation.js';
 import { describe, expect, it } from 'vitest';
 import { callOf, type Line, type Position, requirementOn } from '../src/mechanisms/banks/prime.js';
 import { asCash, type Cash } from '../src/core/measure.js';
@@ -43,26 +44,26 @@ function broker(
 
 const at = (instrument: InstrumentId, worth: number): Position => ({
   instrument,
-  worth: asCash(worth, 'what the client holds of it'),
+  worth: asCash(worth, USD, 'what the client holds of it'),
 });
 
 const lineWith = (available: Cash): Line => ({
-  portfolio: asCash(0, 'not what this asserts'),
-  required: asCash(0, 'not what this asserts'),
-  financed: asCash(0, 'not what this asserts'),
-  equity: asCash(0, 'not what this asserts'),
+  portfolio: asCash(0, USD, 'not what this asserts'),
+  required: asCash(0, USD, 'not what this asserts'),
+  financed: asCash(0, USD, 'not what this asserts'),
+  equity: asCash(0, USD, 'not what this asserts'),
   available,
 });
 
 describe('C3.b: the available line is never floored', () => {
   it('turns a client drawn past its line into a call of exactly the shortfall', () => {
     // The whole of D1 starts here: over the line by 40 is a call for 40, not a call for nothing.
-    expect(callOf(lineWith(asCash(-40, 'over its line by')))).toBe(40);
+    expect(callOf(lineWith(asCash(-40, USD, 'over its line by'))).pieces).toBe(40);
   });
 
   it('calls nothing from a client inside its line', () => {
-    expect(callOf(lineWith(asCash(60, 'room left on it')))).toBe(0);
-    expect(callOf(lineWith(asCash(0, 'exactly at it')))).toBe(0);
+    expect(callOf(lineWith(asCash(60, USD, 'room left on it'))).pieces).toBe(0);
+    expect(callOf(lineWith(asCash(0, USD, 'exactly at it'))).pieces).toBe(0);
   });
 });
 

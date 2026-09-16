@@ -24,7 +24,8 @@ import {
 } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { Forbidden, InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
-import { contractId,
+import {
+  contractId,
   type CurrencyCode,
   type CurveFamilyId,
   type DerivativeKindId,
@@ -37,7 +38,9 @@ import { contractId,
   type PartyId,
   type PartyKindId,
   type VenueId,
-  fxPairId, currencyUnit } from '../core/ids.js';
+  fxPairId,
+  currencyUnit,
+} from '../core/ids.js';
 
 import {
   acrossMembers,
@@ -52,7 +55,13 @@ import {
   plus,
   valueAt,
   type Ratio,
-  scale, eachMember, asTotal, heldAsMoney } from '../core/measure.js';
+  scale,
+  eachMember,
+  asTotal,
+  heldAsMoney,
+  noCash,
+  sumCash,
+} from '../core/measure.js';
 import { finite, addTo, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -114,11 +123,20 @@ import { classify, type Classified } from '../registry/universe.js';
 import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { type CellDeps, ceaseCell, dieCell, mergeCells, promoteCell, reKeyCell, weightEvent } from './cells.js';
+import {
+  type CellDeps,
+  ceaseCell,
+  dieCell,
+  mergeCells,
+  promoteCell,
+  reKeyCell,
+  weightEvent,
+} from './cells.js';
 import type { CellParty } from '../parties/party.js';
 import { succeedAgreements } from './succession.js';
 import { employmentReads, type EmploymentReads } from '../register/employment.js';
-import type { Subject,
+import type {
+  Subject,
   Borrowing,
   ContractsRead,
   MechanismContext,
@@ -153,11 +171,15 @@ import { refuseLateReads } from './order.js';
 /** Corporate Credit A1: the one kind a borrower publishes a funding need under (item 0e). */
 export const CREDIT_REQUEST = 'credit.request';
 import { asQty, NO_QTY, type Qty } from '../core/tick.js';
-import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
+import {
+  indexCache,
+  readIndex,
+  type IndexDecl,
+  type IndexDeps,
+  type IndexRead,
+} from '../prices/index-read.js';
 import { bandOf, UNREAD, type LatticeReads } from '../registry/lattice.js';
 import { about } from './context.js';
-
-
 
 /** Maps are data too; the surface shows them as the entries they are (Observer D3). */
 function replacer(_key: string, value: unknown): unknown {
@@ -383,7 +405,9 @@ export class World {
     this.contractStore = new Contracts({
       derivativeKind: (id) => this.registry.derivativeKind(id),
     });
-    this.store = new Register(this.parties);
+    this.store = new Register(this.parties, (p) =>
+      this.registry.currencyOf(this.parties.get(p).region),
+    );
     this.register = registerReads(this.store);
     this.valuation = new Valuation(
       this.registry,
@@ -490,7 +514,9 @@ export class World {
           // no units, so its market has nothing left to clear — the instrument's cessation is the
           // event and the venue simply stops (Bond N10).
           w.lastMarkets = [...w.marketList]
-            .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
+            .sort(
+              (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER),
+            )
             .filter((m) => {
               const subject = delivers(m);
               return !subject.some || w.instruments.get(subject.value).status.live;
@@ -510,7 +536,11 @@ export class World {
           { kind: 'print', of: 'thisPeriod' },
           { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
         ],
-        writes: [{ kind: 'event', name: 'revaluation' }, { kind: 'event', name: 'weight' }, { kind: 'event', name: 'lattice.crossed' }],
+        writes: [
+          { kind: 'event', name: 'revaluation' },
+          { kind: 'event', name: 'weight' },
+          { kind: 'event', name: 'lattice.crossed' },
+        ],
         run: (w) => {
           revalue(w.period, w.cycle, {
             marked: (instrument, at) => w.markOf(instrument, at),
@@ -543,6 +573,7 @@ export class World {
               // 14.6: a promise per member reads who is alive to be promised, and what it is indexed to.
               weightOf: (party) => weightOf(w.parties.get(party)),
               goingRate: (occupation, region) => w.employment.goingRate(occupation, region),
+              registry: w.registry,
               params: w.params,
             },
           });
@@ -835,7 +866,6 @@ export class World {
     return this.answers.answered(QUESTIONS.whoResolvesIt, String(kind));
   }
 
-
   private creditDecisionOf(kind: PartyKindId): (o: OverdraftContext) => OverdraftDecision {
     const held = this.answers.answer<CreditDecision>(
       QUESTIONS.whetherAnOverdraftIsADecision,
@@ -928,7 +958,7 @@ export class World {
             // margin does not depend on one — what it depends on is the underlying, the size and
             // the level, all of which are here.
             id: contractId('unwritten'),
-            basis: asCash(0, 'a row that has not been written cost nothing yet'),
+            basis: noCash(about.ccy),
             opened: at,
             state: 'open',
             terminated: none(),
@@ -1000,7 +1030,11 @@ export class World {
     return some(
       asPerPiece(
         Math.sqrt(
-          over(squares.value, asRatio(moves.length, 'the moves it saw'), 'the variance of the move'),
+          over(
+            squares.value,
+            asRatio(moves.length, 'the moves it saw'),
+            'the variance of the move',
+          ),
         ),
         'how far this line has been moving',
       ),
@@ -1019,7 +1053,8 @@ export class World {
         const m = this.marketList.find((x) => x.id === u.market);
         if (m === undefined) return `the market ${u.market}`;
         if (!this.instruments.has(u.instrument)) return `the line ${u.instrument}`;
-        if (m.instrument !== u.instrument) return `${u.instrument} in ${u.market}, which is not its book`;
+        if (m.instrument !== u.instrument)
+          return `${u.instrument} in ${u.market}, which is not its book`;
         return undefined;
       }
       case 'index':
@@ -1280,7 +1315,7 @@ export class World {
       out.push({
         borrower: partyId(borrower),
         ccy: ccy as CurrencyCode,
-        short: asCash(short, 'what it published it is short of'),
+        short: asCash(short, ccy as CurrencyCode, 'what it published it is short of'),
         security,
         repays,
         at,
@@ -1293,7 +1328,10 @@ export class World {
     this.heldAnswers.refuseUnanswered(EVERY_QUESTION, (scope) =>
       scope === 'partyKind'
         ? [...this.registry.partyKinds.values()].map((k) => ({ id: String(k.id), profile: k }))
-        : [...this.registry.instrumentKinds.values()].map((k) => ({ id: String(k.id), profile: k })),
+        : [...this.registry.instrumentKinds.values()].map((k) => ({
+            id: String(k.id),
+            profile: k,
+          })),
     );
   }
 
@@ -1496,13 +1534,28 @@ export class World {
     if (members >= c.weight) {
       if (standing !== undefined && standing.id !== cell) {
         this.parties.moveKey(cell, key);
-        mergeCells(standing.id, cell, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
+        mergeCells(
+          standing.id,
+          cell,
+          cause,
+          this.currentPeriod,
+          this.currentCycle,
+          this.cellDeps(),
+        );
         return standing.id;
       }
       this.parties.moveKey(cell, key);
       return cell;
     }
-    const fresh = reKeyCell(cell, members, patch, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
+    const fresh = reKeyCell(
+      cell,
+      members,
+      patch,
+      cause,
+      this.currentPeriod,
+      this.currentCycle,
+      this.cellDeps(),
+    );
     if (standing !== undefined) {
       mergeCells(standing.id, fresh, cause, this.currentPeriod, this.currentCycle, this.cellDeps());
       return standing.id;
@@ -1539,7 +1592,12 @@ export class World {
         this.currentCycle,
         'lattice.crossed',
         [p.id],
-        { cell: p.id, from: Object.fromEntries(Object.keys(patch).map((d) => [d, p.key[d]])), to: patch, members: p.weight },
+        {
+          cell: p.id,
+          from: Object.fromEntries(Object.keys(patch).map((d) => [d, p.key[d]])),
+          to: patch,
+          members: p.weight,
+        },
         true,
       );
       this.reKeyOntoStanding(p.id, p.weight, patch, 'crossed an edge');
@@ -1580,13 +1638,13 @@ export class World {
 
   private cellDeps(): CellDeps {
     return {
-        parties: this.parties,
-        registry: this.registry,
-        register: this.store,
-        instruments: this.instruments,
-        journal: this.journal,
-        agreements: this.agreementStore,
-      };
+      parties: this.parties,
+      registry: this.registry,
+      register: this.store,
+      instruments: this.instruments,
+      journal: this.journal,
+      agreements: this.agreementStore,
+    };
   }
 
   placeCellsOnLattice(): void {
@@ -1608,7 +1666,8 @@ export class World {
       if (lattice === undefined) return;
       const key: Record<string, string> = { ...p.key };
       for (const d of lattice.categorical) {
-        if (key[d.dim] === undefined && d.opening !== undefined) key[d.dim] = d.opening(reads, p.id);
+        if (key[d.dim] === undefined && d.opening !== undefined)
+          key[d.dim] = d.opening(reads, p.id);
       }
       for (const b of lattice.banded) {
         const q = b.quantity(reads, p.id);
@@ -1641,7 +1700,8 @@ export class World {
       actions: this.actions,
       guarantees: this.guarantees,
       processes: this.processes,
-      objectiveOf: (party: PartyId) => this.registry.partyKind(this.parties.get(party).kind).objective,
+      objectiveOf: (party: PartyId) =>
+        this.registry.partyKind(this.parties.get(party).kind).objective,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1667,7 +1727,7 @@ export class World {
         // where the world is younger than that — a party cannot have taken in anything before it
         // existed, and pretending the window is full would understate what it takes in a period.
         const from = period(this.currentPeriod > periods ? this.currentPeriod - periods : 0);
-        const terms: Cash[] = [];
+        const terms: number[] = [];
         for (const e of this.store.equityEntries(party, from, this.currentPeriod)) {
           // Reporting G2: what an INSTRUCTION did. An entry with no instruction behind it is a mark,
           // and a mark is not money anybody paid (Clearing D4).
@@ -1676,7 +1736,12 @@ export class World {
           // members took in — the same denomination its balance and its account are kept in.
           terms.push(acrossMembers(e.delta, 1, 'what one member took in'));
         }
-        return sum(terms).value;
+        // Currency B1: an equity account is kept in the money the party reports in.
+        return asCash(
+          sum(terms).value,
+          this.registry.currencyOf(this.parties.get(party).region),
+          'what one member took in',
+        );
       },
       equityWalk: () => this.store.equityWalk(party),
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
@@ -1684,9 +1749,8 @@ export class World {
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       worth: (instrument, required) => this.worthTo(instrument, required),
       classify: (instrument) => this.classifyAsset(instrument),
-      inOwnMoney: (value, from) =>
-        this.valuation.inOwnMoney(party, value, from, this.currentPeriod),
-      inMoney: (value, from, to) => this.valuation.inMoney(value, from, to, this.currentPeriod),
+      inOwnMoney: (value) => this.valuation.inOwnMoney(party, value, this.currentPeriod),
+      inMoney: (value, to) => this.valuation.inMoney(value, to, this.currentPeriod),
       curve: (family) => this.curve(family),
       sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
@@ -1796,12 +1860,23 @@ export class World {
         // C1.a, G3: netted with ONE named counterparty, and there is no door that adds those nets
         // up. The party's own module subtracts the collateral it holds, because which instrument a
         // margin claim is, is the module's fact and not the kernel's (Law 15).
-        exposureTo: (counterparty) =>
-          sum(
+        exposureTo: (counterparty) => {
+          // Currency C4: an exposure across contracts is a REPORT in the party's home money.
+          const home = this.registry.currencyOf(this.parties.get(party).region);
+          return sumCash(
+            home,
             this.contractStore
               .between(party, counterparty)
-              .map((c) => this.contractValue(c, party, this.currentPeriod)),
-          ).value,
+              .map((c) =>
+                this.valuation.inMoney(
+                  this.contractValue(c, party, this.currentPeriod),
+                  home,
+                  this.currentPeriod,
+                ),
+              ),
+            'its exposure',
+          ).value;
+        },
         // D4, Money Market A2: what its own rows will take out of its account at `at`, in one
         // money — the kind's own answer, so a class that settles in something other than a payment
         // can say what taking delivery of it costs (Derivative `cashDue`).
@@ -1813,23 +1888,31 @@ export class World {
           const held = this.theHouse();
           const margining =
             held?.fn.dueNext === undefined
-              ? asCash(0, 'no house asks this party to post anything')
+              ? noCash(ccy)
               : held.fn.dueNext(this.mechanismContext(held.owner), party, ccy, at);
-          return plus(margining, sum(
-            this.contractStore
-              .openOf(party)
-              .filter((c) => c.ccy === ccy)
-              .map((c) => {
-                const profile = this.registry.derivativeKind(c.kind);
-                if (profile.cashDue !== undefined) return profile.cashDue(c, at, reads, party);
-                return sum(
-                  profile
-                    .legs(c, at, reads)
-                    .filter((l) => l.from === party && l.ccy === ccy)
-                    .map((l) => l.amount),
-                ).value;
-              }),
-          ).value, 'what its book will take');
+          return plus(
+            margining,
+            sumCash(
+              ccy,
+              this.contractStore
+                .openOf(party)
+                .filter((c) => c.ccy === ccy)
+                .map((c) => {
+                  const profile = this.registry.derivativeKind(c.kind);
+                  if (profile.cashDue !== undefined) return profile.cashDue(c, at, reads, party);
+                  return sumCash(
+                    ccy,
+                    profile
+                      .legs(c, at, reads)
+                      .filter((l) => l.from === party && l.ccy === ccy)
+                      .map((l) => l.amount),
+                    'what its legs will take',
+                  ).value;
+                }),
+              'what its book will take',
+            ).value,
+            'what its book will take',
+          );
         },
       },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
@@ -1863,7 +1946,8 @@ export class World {
       actions: this.actions,
       guarantees: this.guarantees,
       processes: this.processes,
-      objectiveOf: (party: PartyId) => this.registry.partyKind(this.parties.get(party).kind).objective,
+      objectiveOf: (party: PartyId) =>
+        this.registry.partyKind(this.parties.get(party).kind).objective,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1927,7 +2011,8 @@ export class World {
     for (const family of this.registry.curveFamilies.values()) {
       if (family.ccy !== ccy) continue;
       if (!this.parties.has(family.issuer)) continue;
-      if (this.registry.partyKind(this.parties.get(family.issuer).kind).sovereign !== true) continue;
+      if (this.registry.partyKind(this.parties.get(family.issuer).kind).sovereign !== true)
+        continue;
       return some(family);
     }
     return none<CurveFamilyDecl>();
@@ -2015,7 +2100,11 @@ export class World {
     const current = held?.period === this.currentPeriod && held.cycle === this.currentCycle;
     const fresh = current ? held.ctx : this.buildMechanismContext(owner);
     if (!current) {
-      this.contexts.set(owner, { period: this.currentPeriod, cycle: this.currentCycle, ctx: fresh });
+      this.contexts.set(owner, {
+        period: this.currentPeriod,
+        cycle: this.currentCycle,
+        ctx: fresh,
+      });
     }
     /**
      * The stream is its own, and everything else is the one context BEHIND it. A copy of forty
@@ -2083,7 +2172,8 @@ export class World {
       actions: this.actions,
       guarantees: this.guarantees,
       processes: this.processes,
-      objectiveOf: (party: PartyId) => this.registry.partyKind(this.parties.get(party).kind).objective,
+      objectiveOf: (party: PartyId) =>
+        this.registry.partyKind(this.parties.get(party).kind).objective,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -2118,7 +2208,8 @@ export class World {
       contracts: this.contracts,
       voyages: this.voyages,
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
-      state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
+      state: <T extends object>(name: string, initial: () => T): T =>
+        this.slot(owner, name, initial),
       workingOf: <T extends object>(party: PartyId, name: string, initial: () => T): T =>
         this.slotFor(owner, party, name, initial),
       participant: (party) => this.participantView(party),
@@ -2167,7 +2258,13 @@ export class World {
             this.currentCycle,
             'weight',
             [party.id],
-            { kind: 'entry', members: party.weight, before: 0, after: party.weight, cause: 'entered' },
+            {
+              kind: 'entry',
+              members: party.weight,
+              before: 0,
+              after: party.weight,
+              cause: 'entered',
+            },
             true,
           );
         }
@@ -2188,7 +2285,12 @@ export class World {
           this.currentCycle,
           'party.entered',
           [party.id],
-          { party: party.id, kind: party.kind, name: party.name, ...(party.representation === 'cell' ? { weight: party.weight } : {}) },
+          {
+            party: party.id,
+            kind: party.kind,
+            name: party.name,
+            ...(party.representation === 'cell' ? { weight: party.weight } : {}),
+          },
           true,
         );
       },
@@ -2202,7 +2304,13 @@ export class World {
           this.currentCycle,
           'param.declared',
           [String(decl.id)],
-          { id: String(decl.id), kind: decl.kind, owner: decl.owner, value: decl.value, unit: decl.unit },
+          {
+            id: String(decl.id),
+            kind: decl.kind,
+            owner: decl.owner,
+            value: decl.value,
+            unit: decl.unit,
+          },
           true,
         );
       },
@@ -2457,7 +2565,14 @@ export class World {
         // XI-15, E5 (11.5): a cell ceasing is the death of its members, and that is a weight
         // event with a cause — the one the units family reads. A named party just ceases.
         if (this.parties.get(party).representation === 'cell') {
-          ceaseCell(party, successor, 'ceased', this.currentPeriod, this.currentCycle, this.cellDeps());
+          ceaseCell(
+            party,
+            successor,
+            'ceased',
+            this.currentPeriod,
+            this.currentCycle,
+            this.cellDeps(),
+          );
         } else {
           // Register F2, Money E4 (14.1): WHAT THE DEAD STILL OWES IS THE SUCCESSOR'S TO OWE, for a
           // named party as for a cell. An estate assumes every line before it gets here, so this
@@ -2498,7 +2613,7 @@ export class World {
           {
             borrower: String(borrower),
             ccy: ask.ccy,
-            short: ask.short,
+            short: ask.short.pieces,
             security: (ask.security ?? []).map((sec) => ({
               instrument: String(sec.instrument),
               qty: Number(sec.qty),
@@ -2566,7 +2681,14 @@ export class World {
         : undefined;
     this.parties.rebank(party, to);
     if (standing !== undefined && standing.id !== party) {
-      mergeCells(standing.id, party, reason, this.currentPeriod, this.currentCycle, this.cellDeps());
+      mergeCells(
+        standing.id,
+        party,
+        reason,
+        this.currentPeriod,
+        this.currentCycle,
+        this.cellDeps(),
+      );
     }
     // E2.a: that a depositor moved is observable — it is what the bank it left will see in its own
     // deposit lines next period (F1), and what the one it arrived at will see too.
@@ -2758,6 +2880,7 @@ export class World {
         price: printed,
         // XI-12: and what one money buys of another, for the one line that crosses regions.
         rate: (from, to, at) => this.valuation.rateInForce(from, to, at),
+        inMoney: (value, to, at) => this.valuation.inMoney(value, to, at),
       },
       price: printed,
     };
@@ -2781,21 +2904,31 @@ export class World {
       if (inst.ccy !== ccy || !inst.status.live) continue;
       for (const ahead of [0, 1]) {
         const at = period(this.currentPeriod + ahead);
-        for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar, this.registry)) {
+        for (const action of this.registry
+          .instrumentKind(inst.kind)
+          .due(inst, at, this.calendar, this.registry)) {
           if (action.kind === 'coupon') {
             // Law 8 (11.0e): a coupon is paid in whole pieces of the money, and what is owed is
             // what will be paid. It came off the grid here — a rate times a face — and the first
             // cell to owe one read a position that was not a count of anything.
             owed = plus(
               owed,
-              this.registry.payable(valueAt(action.amountPerUnit, inst.issued, 'a coupon it owes')),
+              this.registry.payable(
+                valueAt(action.amountPerUnit, inst.issued, inst.ccy, 'a coupon it owes'),
+              ),
               'owed',
             );
           } else if (action.kind === 'amortisation') {
             // Bond F3 (11.2): the slice of what is outstanding, in whole pieces, as it will be paid.
             owed = plus(
               owed,
-              this.registry.payable(heldAsMoney(scale(inst.issued, action.unitsPerUnit, 'the slice it repays'), 'a line is its money')),
+              this.registry.payable(
+                heldAsMoney(
+                  scale(inst.issued, action.unitsPerUnit, 'the slice it repays'),
+                  inst.ccy,
+                  'a line is its money',
+                ),
+              ),
               'owed',
             );
           } else owed = plus(owed, inst.issued, 'a line it must repay');
@@ -2990,13 +3123,7 @@ export class World {
     const flows = profile.cashFlows(i, on, this.calendar, this.registry);
     if (flows.length === 0) return none<PerPiece>();
     return some(
-      priceAt(
-        flows,
-        required,
-        on,
-        WORTH_DAY_COUNT,
-        `what ${instrument} is worth at ${required}`,
-      ),
+      priceAt(flows, required, on, WORTH_DAY_COUNT, `what ${instrument} is worth at ${required}`),
     );
   }
 
@@ -3010,7 +3137,7 @@ export class World {
         return said === undefined
           ? none()
           : some({
-              earned: asCash(said.earned, `what ${issuer} published it earned`),
+              earned: said.earned,
               periods: said.periods,
             });
       },
@@ -3031,7 +3158,9 @@ export class World {
      * which is why `curveAt` asks this rather than calling the profile a second time (Law 4).
      */
     return asPerPiece(
-      this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar, this.registry),
+      this.registry
+        .instrumentKind(i.kind)
+        .accrued(i, this.calendar.startOf(at), this.calendar, this.registry),
       `what has accrued on ${instrument}`,
     );
   }
@@ -3061,7 +3190,9 @@ export class World {
       byMarket = new Map<MarketId, PartyId[]>();
       for (const party of this.parties.ofKind(decl.partyKind)) {
         if (!party.status.alive) continue;
-        const named = this.asParticipantOf(decl.owner, () => naming(this.participantView(party.id)));
+        const named = this.asParticipantOf(decl.owner, () =>
+          naming(this.participantView(party.id)),
+        );
         for (const id of named) {
           const already = byMarket.get(id);
           if (already === undefined) byMarket.set(id, [party.id]);

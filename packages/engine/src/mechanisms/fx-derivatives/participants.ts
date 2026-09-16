@@ -65,8 +65,14 @@ export function carryOf(
   const rb = overnightRate(view, base);
   const rq = overnightRate(view, quote);
   if (!rb.some || !rq.some) return none<PerPiece>();
-  const grownQuote = Math.pow(plus(asRatio(1, 'the money itself'), rq.value, 'the quote money grows'), years);
-  const grownBase = Math.pow(plus(asRatio(1, 'the money itself'), rb.value, 'the base money grows'), years);
+  const grownQuote = Math.pow(
+    plus(asRatio(1, 'the money itself'), rq.value, 'the quote money grows'),
+    years,
+  );
+  const grownBase = Math.pow(
+    plus(asRatio(1, 'the money itself'), rb.value, 'the base money grows'),
+    years,
+  );
   return some(
     scale(
       spot,
@@ -130,7 +136,9 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   if (short !== 0) {
     const qty = view.registry.deliverable(absolute(short, 'either way'));
     if (qty <= 0) return [];
-    return [{ party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
+    return [
+      { party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) },
+    ];
   }
   /**
    * B1, B2, B2.b: THE ARBITRAGE, and a party with nothing to hedge is the one that takes it. It
@@ -144,8 +152,9 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
    */
   if (!carry.some) return [];
   const room = view.standsBehind();
-  if (room <= 0) return [];
-  const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'),
+  if (room.pieces <= 0) return [];
+  const size = view.registry.deliverable(
+    amountOf(room, spot.value.price, 'what its capital carries'),
   );
   if (size <= 0) return [];
   const bid = minus(carry.value, tick, 'a tick inside its carry');
@@ -174,7 +183,8 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
  * two sides are banks.
  */
 function ownBasis(view: ParticipantView, base: CurrencyCode, quote: CurrencyCode): Option<Ratio> {
-  const costIn = (ccy: CurrencyCode): Option<Ratio> => costOfFundsIn(view, String(view.self.id), ccy);
+  const costIn = (ccy: CurrencyCode): Option<Ratio> =>
+    costOfFundsIn(view, String(view.self.id), ccy);
   const over = (ccy: CurrencyCode): Option<Ratio> => {
     const own = costIn(ccy);
     const market = overnightRate(view, ccy);
@@ -221,8 +231,10 @@ export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order
   // §46 A3, B2.b: a party with nothing to swap quotes both ways around its own basis, and the size
   // is what stands behind a position of its own (item 13.2b). Nothing raises that room.
   const room = view.standsBehind();
-  if (room <= 0) return [];
-  const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'));
+  if (room.pieces <= 0) return [];
+  const size = view.registry.deliverable(
+    amountOf(room, spot.value.price, 'what its capital carries'),
+  );
   if (size <= 0) return [];
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   const bid = minus(mine, tick, 'a tick inside its own basis');

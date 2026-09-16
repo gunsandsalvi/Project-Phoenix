@@ -77,18 +77,28 @@ export interface Blueprint {
  * dated claims, and a share has no duration to be inside (App A — missing is missing, and it is not
  * a pass).
  */
-export function admits(b: Blueprint, a: Classified, size: (c: Classified) => Cash | undefined): boolean {
+export function admits(
+  b: Blueprint,
+  a: Classified,
+  size: (c: Classified) => Cash | undefined,
+): boolean {
   if (b.classes.length > 0 && !b.classes.includes(a.what)) return false;
   if (b.currencies.length > 0 && !b.currencies.includes(a.ccy)) return false;
-  if (b.duration !== undefined && !within(b.duration, a.durationYears.some ? a.durationYears.value : undefined)) {
+  if (
+    b.duration !== undefined &&
+    !within(b.duration, a.durationYears.some ? a.durationYears.value : undefined)
+  ) {
     return false;
   }
-  if (b.seniority !== undefined && !within(b.seniority, a.seniority.some ? a.seniority.value : undefined)) {
+  if (
+    b.seniority !== undefined &&
+    !within(b.seniority, a.seniority.some ? a.seniority.value : undefined)
+  ) {
     return false;
   }
   if (b.secured !== undefined && b.secured !== a.secured) return false;
   if (b.listed !== undefined && b.listed !== a.listed) return false;
-  if (b.size !== undefined && !within(b.size, size(a))) return false;
+  if (b.size !== undefined && !within(b.size, size(a)?.pieces)) return false;
   if (b.worstGrade !== undefined || b.unratedAllowed !== undefined) {
     if (!a.grade.some) {
       // Nobody has looked at this name. Whether that is holdable is the blueprint's to say.

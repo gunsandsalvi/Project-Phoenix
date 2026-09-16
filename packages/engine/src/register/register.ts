@@ -14,9 +14,27 @@
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
-import { asCash, asPerPiece, asRatio, type Cash, over, type PerPiece, type PerMember, valueAt, asTotal, eachMember } from '../core/measure.js';
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  over,
+  type PerPiece,
+  type PerMember,
+  valueAt,
+  asTotal,
+  eachMember,
+} from '../core/measure.js';
 import { asPerMember } from '../core/measure.js';
-import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
+import type {
+  CurrencyCode,
+  InstructionId,
+  InstrumentId,
+  LienId,
+  LotId,
+  PartyId,
+} from '../core/ids.js';
 import {
   atMost,
   finite,
@@ -31,6 +49,7 @@ import { NO_QTY, asQty, onTick, subQty, type Qty, downTick } from '../core/tick.
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
+import { sumCash } from '../core/measure.js';
 
 export interface Lot {
   readonly id: LotId;
@@ -168,7 +187,11 @@ export class Register {
   private nextLot = 1;
   private nextLien = 1;
 
-  constructor(private readonly parties: Parties) {}
+  constructor(
+    private readonly parties: Parties,
+    /** Currency B1, 16.0: the money a party reports in, which is what its equity account is kept in. */
+    private readonly homeMoneyOf: (party: PartyId) => CurrencyCode,
+  ) {}
 
   // ---- reads -------------------------------------------------------------------------------
 
@@ -262,7 +285,11 @@ export class Register {
 
   /** The stated equity account, per member (Audit B5). Missing until the seed states it. */
   equity(party: PartyId): Cash {
-    return asCash(this.equityWalk(party).value, `${party}'s equity account`);
+    return asCash(
+      this.equityWalk(party).value,
+      this.homeMoneyOf(party),
+      `${party}'s equity account`,
+    );
   }
 
   /**
@@ -442,7 +469,10 @@ export class Register {
      */
     const last = h.lots[h.lots.length - 1];
     if (last?.basisPerUnit === basisPerUnit && last.acquired === period) {
-      const joined: Lot = Object.freeze({ ...last, qty: asQty(last.qty + pieces, 'the lot joined') });
+      const joined: Lot = Object.freeze({
+        ...last,
+        qty: asQty(last.qty + pieces, 'the lot joined'),
+      });
       h.lots[h.lots.length - 1] = joined;
       return joined;
     }
@@ -479,7 +509,10 @@ export class Register {
     if (current === undefined) {
       throw new Missing('Register D3', `${holder} holds no lot ${lot} of ${instrument}`);
     }
-    h.lots[i] = Object.freeze({ ...current, basisPerUnit: asPerPiece(basisPerUnit, 'the new basis') });
+    h.lots[i] = Object.freeze({
+      ...current,
+      basisPerUnit: asPerPiece(basisPerUnit, 'the new basis'),
+    });
   }
 
   /**
@@ -524,7 +557,11 @@ export class Register {
       const lot = h.lots[0];
       if (lot === undefined) break;
       // Law 8: whole pieces meeting whole pieces. A lot is taken whole or it is split exactly.
-      const take = atMost(lot.qty, asQty(remaining, 'what is left to draw'), 'this lot has no more in it than it has');
+      const take = atMost(
+        lot.qty,
+        asQty(remaining, 'what is left to draw'),
+        'this lot has no more in it than it has',
+      );
       drawn.push({
         lot: lot.id,
         qty: take,
@@ -533,7 +570,11 @@ export class Register {
       });
       remaining = finite(remaining - take, 'debit remaining');
       if (take === lot.qty) h.lots.shift();
-      else h.lots[0] = Object.freeze({ ...lot, qty: subQty(lot.qty, take, 'what is left of the lot') });
+      else
+        h.lots[0] = Object.freeze({
+          ...lot,
+          qty: subQty(lot.qty, take, 'what is left of the lot'),
+        });
     }
     /**
      * Appendix B, Law 5, Law 8: AND WHAT IS LEFT IS LEFT. This used to clear the whole lot book
@@ -752,7 +793,9 @@ export class Register {
         for (const lot of h.lots) {
           const moved = downTick((lot.qty * members) / weight);
           if (moved > 0) {
-            lots.push(Object.freeze({ ...lot, id: this.nextLot as LotId, qty: asQty(moved, 'moved') }));
+            lots.push(
+              Object.freeze({ ...lot, id: this.nextLot as LotId, qty: asQty(moved, 'moved') }),
+            );
             this.nextLot += 1;
           }
           const left = lot.qty - moved;
@@ -777,7 +820,10 @@ export class Register {
             const key = moneyKey(to, inst);
             this.moneyAccount.set(key, opened(arrived, key));
             const walk = this.moneyWalk(from, inst);
-            this.moneyAccount.set(moneyKey(from, inst), moved(walk, -arrived, `balance of ${from}/${inst}`));
+            this.moneyAccount.set(
+              moneyKey(from, inst),
+              moved(walk, -arrived, `balance of ${from}/${inst}`),
+            );
           }
         }
         if (kept.length === 0 && heldLiens.length === 0) this.drop(from, inst);
@@ -811,7 +857,6 @@ export class Register {
     if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
     return movedByInstrument;
   }
-
 
   /**
    * XI-15, 0f.1: A MERGE ADDS TOTALS AND WEIGHTS. Two cells on one key become one cell holding what
@@ -848,7 +893,9 @@ export class Register {
         const theirs = h.lots[0];
         if (this.moneyAccount.has(moneyKey(from, inst)) && theirs !== undefined) {
           const sum = (mine === undefined ? 0 : mine.qty) + theirs.qty;
-          target.lots = [Object.freeze({ ...(mine ?? theirs), qty: asQty(sum, 'the merged balance') })];
+          target.lots = [
+            Object.freeze({ ...(mine ?? theirs), qty: asQty(sum, 'the merged balance') }),
+          ];
         } else {
           // Register D4, 0g.1: FIRST ACQUIRED, FIRST OUT is what the draw means, and a merge keeps
           // it: the two books interleave by date (stable, so equal dates keep each book's order)
@@ -884,7 +931,10 @@ export class Register {
         party: into,
         period,
         cycle,
-        delta: asPerMember<'money:piece'>(mean - ea.value, `what ${from}'s members did to ${into}'s mean`),
+        delta: asPerMember<'money:piece'>(
+          mean - ea.value,
+          `what ${from}'s members did to ${into}'s mean`,
+        ),
         cause: `merged ${from}`,
       };
       if (mine === undefined) this.equityLedger.set(into, [entry]);
@@ -892,7 +942,10 @@ export class Register {
       const ra = this.revaluationWalk(into);
       const rb = this.revaluationWalk(from);
       const rmean = (ra.value * intoWeight + rb.value * fromWeight) / people;
-      this.revaluationAccount.set(into, moved(ra, rmean - ra.value, `revaluation account of ${into}`));
+      this.revaluationAccount.set(
+        into,
+        moved(ra, rmean - ra.value, `revaluation account of ${into}`),
+      );
     }
     this.byHolder.delete(from);
     this.equityAccount.delete(from);
@@ -900,9 +953,6 @@ export class Register {
     this.revaluationAccount.delete(from);
     return absorbed;
   }
-
-
-
 
   // ---- internals ---------------------------------------------------------------------------
 
@@ -917,7 +967,10 @@ export class Register {
     for (const lot of lots) {
       const last = out[out.length - 1];
       if (last?.basisPerUnit === lot.basisPerUnit && last.acquired === lot.acquired) {
-        out[out.length - 1] = Object.freeze({ ...last, qty: asQty(last.qty + lot.qty, 'the lot joined') });
+        out[out.length - 1] = Object.freeze({
+          ...last,
+          qty: asQty(last.qty + lot.qty, 'the lot joined'),
+        });
       } else out.push(lot);
     }
     return out;
@@ -1030,16 +1083,16 @@ export function registerReads(store: Register): RegisterReads {
  * first in, first out. It is a read of the lots themselves, which are where the cost lives (E1);
  * nothing here stores or re-derives a value beside them (Law 19).
  */
-export function costOfDraw(lots: readonly Lot[], qty: Qty): Cash {
+export function costOfDraw(lots: readonly Lot[], qty: Qty, ccy: CurrencyCode): Cash {
   const terms: Cash[] = [];
   let left = qty;
   for (const lot of lots) {
     if (left <= 0) break;
     const take = atMost(lot.qty, left, 'this lot has no more in it than it has');
-    terms.push(valueAt(lot.basisPerUnit, take, 'cost of the units drawn'));
+    terms.push(valueAt(lot.basisPerUnit, take, ccy, 'cost of the units drawn'));
     left = subQty(left, take, 'units left to draw');
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'cost of the units drawn').value;
 }
 
 /**

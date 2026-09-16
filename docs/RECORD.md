@@ -12202,3 +12202,48 @@ landlord, 15.4 the shop on a lease and the cells' marks, 15.5 the tenancy and th
 21.27–21.29 and 21.31–21.43; 12.2 closed at 15.5.
 
 **Checks.** lint, typecheck, spec, forbids, deaths, existence, plan green.
+
+## Item 16.0 — Money carries its currency
+
+`Cash` was a count of pieces that did not know which money's pieces they were, so two currencies
+added by arithmetic that typechecked (K2, A-23 and its siblings). It is a value now — `{ pieces,
+ccy }` — and `plus`, `minus`, `sumCash`, `atMostCash`, `atLeastCash` and `ratioOf` refuse two
+currencies where they meet with `Impossible('Money A2.b')`; `valueAt` takes the instrument's money,
+`heldAsMoney` and `asCash` take theirs, and there is no constructor without one (Currency A3, A4).
+The journal refuses a `Cash` value in event data: money on the record is its pieces beside a named
+`ccy` (Law 8), and every reader of a money event requires the `ccy` it names — `credit.quoted`,
+`fund.called`, `reporting.guidance`, `research.estimate`, `bank.costOfFunds`, `firms.funding`,
+`households.plan` and eighty-four other fields now publish it.
+
+**The owner's correction, taken as the design rule.** A party's balance sheet is NOT in one money.
+Each party holds an account per currency at its bank (Currency B2.a); nothing converts at the ledger
+boundary (B3) — a party that wants its own money sells the other in the spot book, or keeps it, or
+hedges it; a numéraire is for a REPORT only (C4). So `inMoney`/`inOwnMoney` are translations at the
+rate in force, used where a report, a mark or a size in one money is what is wanted and nowhere
+else: a balance sheet and its dust (`accounts`), an index level (`readIndex` translates each line
+into the money the rule is stated in — `IndexDecl.ccy`, new — so a size-weighted basket no longer
+scales a COUNT by a rate), a sector total (`observer`, in the first region's money), a country's
+external accounts (`external`), a dealer's book against its treasury's want, a bank's capital behind
+a book in a foreign money (`costOfFunds`), a paper buyer's concentration room, a bond-futures desk's
+book. A central bank's window lends its own money against paper in its money and nothing else
+(Currency B4: `windowAdvances`); a firm's promotion boundary is kept per money (21.44). A test's
+`phx(x)` is USD.
+
+**Measured.** Not yet: the owner's rule from 16.0 on is that the eighteen suites run at the end of a
+major item (16, 17, …), not after each step; `check:opens` is the per-step measurement. What the
+partial run before the rule showed is on the record: `world.test.ts` fourteen red of twenty-one, all
+in the baseline but one — *is reproducible from the seed value* threw on a guidance record with no
+`ccy`, fixed in the same change; `small-business.test.ts` two red of twenty, one new — *fails
+together, by region* threw at the central bank's window summing collateral in two moneys, fixed in
+the same change (a window lends its own money against paper in it, Currency B4). The rig's period
+zero has twenty-one violations, all in the baseline: ten held equity lines with no print (Clearing
+F2) and eleven plant instruments naming a market that does not exist (Clearing D1).
+
+**Findings.** The promotion boundary is per money (21.44); the observer's and the global index's
+reporting money are declared in code rather than as a RESOLUTION with an invariance test (21.45); a
+bank's room behind a foreign book moves with the rate and nothing hedges it (21.46).
+
+**Checks.** `check:opens` green (the rig thirty periods, the four-country world twelve); lint,
+typecheck, spec, forbids, deaths, existence, plan green. `check:forbids` also caught a cross-module
+read `prettier` had hidden on two lines (`cds/index.ts` reading `credit.default` by name); it reads
+`creditDefaults` from the registry now.

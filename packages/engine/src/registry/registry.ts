@@ -18,8 +18,7 @@ import {
   type PerPiece,
 } from '../core/measure.js';
 import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
-import {
-  paramId, currencyUnit } from '../core/ids.js';
+import { paramId, currencyUnit } from '../core/ids.js';
 import type {
   CohortId,
   CountryId,
@@ -274,7 +273,10 @@ export class Registry {
     for (const k of this.partyKinds.values()) {
       // XI-3 (12a.6): an exception to "nothing is immortal" is named or it is not a kind.
       if ((k.fails ?? []).length === 0 && k.cannotFail === undefined) {
-        throw new InvalidRegistry('XI-3', `party kind ${k.id} fails on nothing and does not say why`);
+        throw new InvalidRegistry(
+          'XI-3',
+          `party kind ${k.id} fails on nothing and does not say why`,
+        );
       }
       if (k.representation !== 'cell') {
         if (k.lattice !== undefined) {
@@ -287,7 +289,10 @@ export class Registry {
       }
       const l = k.lattice;
       if (l === undefined || l.categorical.length === 0) {
-        throw new InvalidRegistry('XI-15', `party kind ${k.id} is a population and says nothing stratifies it`);
+        throw new InvalidRegistry(
+          'XI-15',
+          `party kind ${k.id} is a population and says nothing stratifies it`,
+        );
       }
       if (l.kind !== k.id) {
         throw new InvalidRegistry('XI-15', `party kind ${k.id} declares the lattice of ${l.kind}`);
@@ -357,7 +362,10 @@ export class Registry {
         );
       }
       if (k.priceTick !== undefined && !(k.priceTick > 0)) {
-        throw new InvalidRegistry('Law 8', `instrument kind ${k.id} has a price tick of ${k.priceTick}`);
+        throw new InvalidRegistry(
+          'Law 8',
+          `instrument kind ${k.id} has a price tick of ${k.priceTick}`,
+        );
       }
     }
     /**
@@ -393,7 +401,7 @@ export class Registry {
     }
   }
 
-/**
+  /**
    * Law 8: how many indivisible pieces one NAMED unit of this is — a hundred cents to the USD. It
    * is asked at the two boundaries where a person's number meets the state's: `pieces` converts a
    * declared amount into the count the state holds, and `named` converts it back for a report.
@@ -446,7 +454,10 @@ export class Registry {
     const k = this.instrumentKind(kind);
     const declared = k.priceTick;
     if (declared === undefined) {
-      throw new InvalidRegistry('Law 8', `instrument kind ${kind} is never posted at a level and has no tick`);
+      throw new InvalidRegistry(
+        'Law 8',
+        `instrument kind ${kind} is never posted at a level and has no tick`,
+      );
     }
     return this.priceOf(
       ccy,
@@ -493,7 +504,10 @@ export class Registry {
     return this.priceOf(
       quote,
       currencyUnit(base),
-      asPerNamedUnit(this.currency(quote).quoteTick / this.tickShift, `the pip of ${base}/${quote}`),
+      asPerNamedUnit(
+        this.currency(quote).quoteTick / this.tickShift,
+        `the pip of ${base}/${quote}`,
+      ),
     );
   }
 
@@ -515,7 +529,7 @@ export class Registry {
    * asks the registry for that unit's own subdivision by name.
    */
   payable(amount: Cash): Qty {
-    return downTick(amount);
+    return downTick(amount.pieces);
   }
 
   /**
@@ -524,7 +538,7 @@ export class Registry {
    * would hand the payer a fraction of a piece on every trade it ever did.
    */
   cashFor(value: Cash): Qty {
-    return toTick(value);
+    return toTick(value.pieces);
   }
 
   /** Register A1.c: the same question for units of anything else — the most that can be delivered. */

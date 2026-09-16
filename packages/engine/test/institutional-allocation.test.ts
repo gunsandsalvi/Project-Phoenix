@@ -16,6 +16,7 @@
  * promised is a risk nobody asked for, and a pool that has told it it earns less than its promises
  * require has told it something a pool that said nothing has not.
  */
+import { USD } from '../src/seeds/foundation.js';
 import { describe, expect, it } from 'vitest';
 import { acceptable } from '../src/mechanisms/insurers/allocate.js';
 import { INSURANCE } from '../src/mechanisms/insurers/index.js';
@@ -30,6 +31,7 @@ const door = (fund: string, years: number | undefined, offered?: number) => ({
   venue: venueId(`funds.${fund}`),
   fund,
   perShare: asPerPiece(100, 'what a share is worth'),
+  ccy: USD,
   years,
   offered,
   asks: undefined,

@@ -151,7 +151,7 @@ function deepPockets(...firms: readonly PartyId[]): SystemModule {
             'far deeper pockets than a firm',
           ),
         );
-        const purse = heldAsMoney(deep, 'deep pockets');
+        const purse = heldAsMoney(deep, USD, 'deep pockets');
         ctx.endowMoney(firm, USD, purse);
         ctx.endowMoney(bank, USD, purse);
       }

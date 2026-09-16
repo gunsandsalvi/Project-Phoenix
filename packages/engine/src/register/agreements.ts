@@ -35,7 +35,15 @@ import { type Civil } from '../calendar/civil.js';
 import { type CurveRead } from '../prices/curve.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { agreementId, type AgreementId, type AgreementKindId, type CurrencyCode, type PartyId, type CurveFamilyId, type RegionId } from '../core/ids.js';
+import {
+  agreementId,
+  type AgreementId,
+  type AgreementKindId,
+  type CurrencyCode,
+  type PartyId,
+  type CurveFamilyId,
+  type RegionId,
+} from '../core/ids.js';
 import type { ParamRegister } from '../registry/params.js';
 import { Missing } from '../core/errors.js';
 import { finite } from '../core/num.js';
@@ -111,6 +119,8 @@ export interface RowValuationReads {
   weightOf(party: PartyId): number;
   /** Labour D1.c (14.6): what an hour last cleared at in a trade and place, for a promise indexed to it. */
   goingRate(occupation: string, region: RegionId): PerPiece | undefined;
+  /** Money A3 (16.0): the money a place's wages clear in, for a promise indexed to them. */
+  readonly registry: { currencyOf(region: RegionId): CurrencyCode };
   /** The scheme's declared rules and the households' table, for a schedule that reads them. */
   readonly params: Pick<ParamRegister, 'ratio' | 'amount' | 'all'>;
 }
@@ -258,7 +268,11 @@ export class Agreements {
    */
   terminate(id: AgreementId): Agreement {
     const row = this.get(id);
-    forbid(row.state !== 'discharged', 'XI-8', `${id} is discharged; there is nothing to terminate`);
+    forbid(
+      row.state !== 'discharged',
+      'XI-8',
+      `${id} is discharged; there is nothing to terminate`,
+    );
     const next: Agreement = { ...row, state: 'terminated' };
     this.rows.set(id, Object.freeze(next));
     return next;
@@ -366,7 +380,8 @@ export function agreementReads(store: Agreements): AgreementReads {
     owedBy: (party: PartyId) => store.owedBy(party),
     owedTo: (party: PartyId) => store.owedTo(party),
     ofKind: (kind: AgreementKindId) => store.ofKind(kind),
-    byDebtorAndKind: (debtor: PartyId, kind: AgreementKindId) => store.byDebtorAndKind(debtor, kind),
+    byDebtorAndKind: (debtor: PartyId, kind: AgreementKindId) =>
+      store.byDebtorAndKind(debtor, kind),
     kind: (id: AgreementKindId) => store.kind(id),
     all: () => store.all(),
     // 14.6: what the kernel last marked a row at — a read of the mark, never a second valuation.

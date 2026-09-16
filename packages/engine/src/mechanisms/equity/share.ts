@@ -16,7 +16,7 @@
  * (A1.a), so an estate reaches it last, and reaching it last with nothing left is the wipe.
  */
 import { scaleQty, type Qty } from '../../core/tick.js';
-import { asCash, asRatio, over, pricedAt, type PerPiece } from '../../core/measure.js';
+import { asRatio, over, pricedAt, type PerPiece } from '../../core/measure.js';
 import type { InstrumentKindId, PartyId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
 import { period } from '../../calendar/calendar.js';
@@ -93,7 +93,8 @@ export const shareKind: InstrumentKindProfile = {
   ranking: () => ({
     seniority: 2,
     secured: [],
-    claim: 'whatever is left of the firm once every other claim on it has been paid, and nothing if nothing is',
+    claim:
+      'whatever is left of the firm once every other claim on it has been paid, and nothing if nothing is',
   }),
   validateTerms: (t: Terms) => {
     if (!isShare(t)) throw new InvalidRegistry('Equity A1', 'share terms name no issuer');
@@ -132,7 +133,8 @@ export const shareKind: InstrumentKindProfile = {
     const issuer = i.issuer;
     if (!issuer.some) return none<PerPiece>();
     const said = reads.lastReport(issuer.value);
-    if (!said.some || said.value.earned <= 0 || said.value.periods <= 0) return none<PerPiece>();
+    if (!said.some || said.value.earned.pieces <= 0 || said.value.periods <= 0)
+      return none<PerPiece>();
     // Law 8: the periodicity is part of the number. The report covers a span of PERIODS and a
     // required return is quoted per YEAR, so the calendar puts them in one unit — never a factor.
     const ofAYear = yearFraction(
@@ -142,7 +144,7 @@ export const shareKind: InstrumentKindProfile = {
     );
     if (ofAYear <= 0) return none<PerPiece>();
     const annual = over(
-      asCash(said.value.earned, 'what it published it earned'),
+      said.value.earned,
       asRatio(ofAYear, 'the fraction of a year that was'),
       'what it earns a year, as it published it',
     );

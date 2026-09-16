@@ -15,7 +15,19 @@
  * ORIGINAL RATE, and pays interest on both legs in between. What its price is, is the basis on one
  * of those legs (C4) — which is a level that clears, not a number backed out of a parity formula.
  */
-import { asCash, asPerPiece, asRatio, heldAsMoney, minus, negated, plus, scale, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
+import {
+  asPerPiece,
+  asRatio,
+  heldAsMoney,
+  minus,
+  negated,
+  noCash,
+  plus,
+  scale,
+  type Cash,
+  type PerPiece,
+  valueAt,
+} from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -89,9 +101,9 @@ function yearsLeft(maturity: Period, at: Period, reads: ContractReads): number {
 
 /** A3, D8: what a forward is worth to `a` — the forward now for the tenor it has left, against it. */
 function forwardMark(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isFxForward(c.terms)) return asCash(0, 'not a forward');
+  if (!isFxForward(c.terms)) return noCash(c.ccy);
   const now = reads.print(c.terms.book, at);
-  if (!now.some) return asCash(0, 'nothing has printed on this pair');
+  if (!now.some) return noCash(c.ccy);
   // E-10: a forward IS struck at a price — money of the quote for one of the base — and this is
   // where that is said rather than assumed of a field every kind shared.
   const better = minus(
@@ -99,7 +111,8 @@ function forwardMark(c: Contract, at: Period, reads: ContractReads): Cash {
     moneyLevel(c.struckAt, 'a money forward is struck at a rate for the pair'),
     'the forward now against the one struck',
   );
-  const worth = valueAt(better, c.notional, 'over the base it takes');
+  // A1.d: the difference of two rates is quote money for one of the base, so the mark is in the quote.
+  const worth = valueAt(better, c.notional, c.terms.quote, 'over the base it takes');
   return c.terms.buysBase ? worth : negated(worth, 'and the other side of it');
 }
 
@@ -149,7 +162,7 @@ export const fxForwardKind: DerivativeKindProfile = {
         ccy: t.base,
         // A1.d: THE NOTIONAL OF A FORWARD IS AN AMOUNT OF THE BASE MONEY, which is one of the two
         // places in this world where a count and a money are the same thing (Money A1).
-        amount: heldAsMoney(c.notional, 'the base, delivered'),
+        amount: heldAsMoney(c.notional, t.base, 'the base, delivered'),
         date,
         why: 'the base, delivered',
       },
@@ -160,6 +173,7 @@ export const fxForwardKind: DerivativeKindProfile = {
         amount: valueAt(
           moneyLevel(c.struckAt, 'a money forward is struck at a rate for the pair'),
           c.notional,
+          t.quote,
           'the quote, at the rate they struck',
         ),
         date,
@@ -173,7 +187,7 @@ export const fxForwardKind: DerivativeKindProfile = {
     if (!isFxForward(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.book, c.terms.window);
     if (!move.some) return none<Cash>();
-    return some(valueAt(move.value, c.notional, 'over the base it takes'));
+    return some(valueAt(move.value, c.notional, c.terms.quote, 'over the base it takes'));
   },
   closeOut: forwardMark,
   expires: (c, at): boolean => isFxForward(c.terms) && at >= c.terms.maturity,
@@ -181,9 +195,9 @@ export const fxForwardKind: DerivativeKindProfile = {
 
 /** C4, D8: what a cross-currency swap is worth to `a` — the basis now against the basis struck. */
 function xccyMark(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isXccy(c.terms)) return asCash(0, 'not a cross-currency swap');
+  if (!isXccy(c.terms)) return noCash(c.ccy);
   const now = reads.print(c.terms.book, at);
-  if (!now.some) return asCash(0, 'nothing has printed on this basis');
+  if (!now.some) return noCash(c.ccy);
   // E-10, E-11: a cross-currency swap is struck at a BASIS — a rate per annum — which is a
   // different dimension from the price per unit the same field carries for a forward above. The
   // print is still a `PerPiece` on every book in this world (`E-11`, item 6), so it is named here.
@@ -193,7 +207,11 @@ function xccyMark(c: Contract, at: Period, reads: ContractReads): Cash {
     'the basis now against the basis struck',
   );
   const worth = scale(
-    scale(heldAsMoney(c.notional, 'the notional it is on'), better, 'over the notional'),
+    scale(
+      heldAsMoney(c.notional, c.terms.base, 'the notional it is on'),
+      better,
+      'over the notional',
+    ),
     asRatio(yearsLeft(c.terms.maturity, at, reads), 'the years it has left'),
     'over the years it has left',
   );
@@ -223,7 +241,9 @@ export const xccyKind: DerivativeKindProfile = {
     if (!(t.exchangedAt > 0)) throw new Error('a notional exchange at no rate at all');
   },
   displayName: (c) =>
-    isXccy(c.terms) ? `${c.terms.base}/${c.terms.quote} ${c.terms.tenorYears}y basis` : String(c.id),
+    isXccy(c.terms)
+      ? `${c.terms.base}/${c.terms.quote} ${c.terms.tenorYears}y basis`
+      : String(c.id),
   mark: xccyMark,
   flip: (t) => (isXccy(t) ? { ...t, paysBase: !t.paysBase } : t),
   /**
@@ -240,20 +260,49 @@ export const xccyKind: DerivativeKindProfile = {
     const quoteNotional = valueAt(
       asPerPiece(t.exchangedAt, 'the rate they exchanged at'),
       c.notional,
+      t.quote,
       'the quote side at the rate agreed',
     );
     const date = reads.calendar.endOf(at);
     if (at === t.started) {
       return [
-        { from: takerOfQuote, to: takerOfBase, ccy: t.base, amount: heldAsMoney(c.notional, 'the base, exchanged'), date, why: 'the base, exchanged' },
-        { from: takerOfBase, to: takerOfQuote, ccy: t.quote, amount: quoteNotional, date, why: 'the quote, exchanged' },
+        {
+          from: takerOfQuote,
+          to: takerOfBase,
+          ccy: t.base,
+          amount: heldAsMoney(c.notional, t.base, 'the base, exchanged'),
+          date,
+          why: 'the base, exchanged',
+        },
+        {
+          from: takerOfBase,
+          to: takerOfQuote,
+          ccy: t.quote,
+          amount: quoteNotional,
+          date,
+          why: 'the quote, exchanged',
+        },
       ];
     }
     if (at === t.maturity) {
       // C3: BACK AT THE ORIGINAL RATE. Not at spot — that is the whole instrument.
       return [
-        { from: takerOfBase, to: takerOfQuote, ccy: t.base, amount: heldAsMoney(c.notional, 'the base, returned'), date, why: 'the base, returned' },
-        { from: takerOfQuote, to: takerOfBase, ccy: t.quote, amount: quoteNotional, date, why: 'the quote, returned' },
+        {
+          from: takerOfBase,
+          to: takerOfQuote,
+          ccy: t.base,
+          amount: heldAsMoney(c.notional, t.base, 'the base, returned'),
+          date,
+          why: 'the base, returned',
+        },
+        {
+          from: takerOfQuote,
+          to: takerOfBase,
+          ccy: t.quote,
+          amount: quoteNotional,
+          date,
+          why: 'the quote, returned',
+        },
       ];
     }
     if ((at - t.started) % t.payEvery !== 0) return [];
@@ -266,7 +315,7 @@ export const xccyKind: DerivativeKindProfile = {
     // C1.a: each leg pays on its own money, at its own rate, including the basis on one of them.
     const baseInterest = scale(
       scale(
-        heldAsMoney(c.notional, 'the base notional'),
+        heldAsMoney(c.notional, t.base, 'the base notional'),
         asRatio(t.baseRate, 'the base rate'),
         'the base rate on it',
       ),
@@ -286,11 +335,25 @@ export const xccyKind: DerivativeKindProfile = {
       asRatio(accrual, 'this period of a year'),
       'accrued',
     );
-    if (baseInterest > 0) {
-      out.push({ from: takerOfBase, to: takerOfQuote, ccy: t.base, amount: baseInterest, date, why: 'interest on the base leg' });
+    if (baseInterest.pieces > 0) {
+      out.push({
+        from: takerOfBase,
+        to: takerOfQuote,
+        ccy: t.base,
+        amount: baseInterest,
+        date,
+        why: 'interest on the base leg',
+      });
     }
-    if (quoteInterest > 0) {
-      out.push({ from: takerOfQuote, to: takerOfBase, ccy: t.quote, amount: quoteInterest, date, why: 'interest on the quote leg' });
+    if (quoteInterest.pieces > 0) {
+      out.push({
+        from: takerOfQuote,
+        to: takerOfBase,
+        ccy: t.quote,
+        amount: quoteInterest,
+        date,
+        why: 'interest on the quote leg',
+      });
     }
     return out;
   },
@@ -301,7 +364,7 @@ export const xccyKind: DerivativeKindProfile = {
     if (!move.some) return none<Cash>();
     return some(
       scale(
-        valueAt(move.value, c.notional, 'over the notional'),
+        valueAt(move.value, c.notional, c.terms.base, 'over the notional'),
         asRatio(yearsLeft(c.terms.maturity, at, reads), 'the years it has left'),
         'over the years it has left',
       ),

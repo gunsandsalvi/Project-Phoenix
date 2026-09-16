@@ -21,6 +21,7 @@
  * what a lender posts there is what it requires of THAT name — its own published reservation, which
  * is the number its bond schedules and its loan quotes are struck from too (Law 4).
  */
+import { sumCash } from '../../core/measure.js';
 import { compareCivil, addDays, type Civil } from '../../calendar/civil.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
@@ -60,7 +61,13 @@ export function sessionVenue(book: BookDecl, borrower: PartyId): VenueId {
 }
 
 export function venueKey(book: BookDecl, borrower: PartyId): Record<string, string> {
-  return { market: 'money', book: book.id, tenor: book.tenor, secured: String(book.secured), borrower };
+  return {
+    market: 'money',
+    book: book.id,
+    tenor: book.tenor,
+    secured: String(book.secured),
+    borrower,
+  };
 }
 
 export function venuesOf(ccy: CurrencyCode, borrowers: readonly PartyId[]): VenueDecl[] {
@@ -104,11 +111,16 @@ export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: Curren
     const held = ctx.register.quantity(lender, i.id);
     if (held <= 0) continue;
     const profile = ctx.registry.instrumentKind(i.kind);
-    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar, ctx.registry);
+    const flows = profile.cashFlows(
+      i,
+      ctx.calendar.startOf(ctx.period),
+      ctx.calendar,
+      ctx.registry,
+    );
     const perUnit = sum(flows.map((f) => f.perUnit)).value;
-    terms.push(valueAt(perUnit, held, 'what comes back tomorrow'));
+    terms.push(valueAt(perUnit, held, ccy, 'what comes back tomorrow'));
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'what comes back tomorrow').value;
 }
 
 /** A1: the net of what this bank's customers paid other banks' customers this period (Law 19). */
@@ -158,7 +170,12 @@ export function windowOffer(
   // Law 8: what the collateral is worth after its haircut is a valuation, and what the window
   // lends is money — whole cents of it, and down, because lending the cent above what the paper
   // covers is lending unsecured (C4).
-  const power = downTick(borrowingPower(windowAdvances(cbView, borrowerView, on, policyHaircut)));
+  const power = downTick(
+    borrowingPower(
+      windowAdvances(cbView, borrowerView, on, policyHaircut),
+      cbView.registry.currencyOf(cbView.self.region),
+    ).pieces,
+  );
   if (power <= 0) return [];
   return [{ party: cbView.self.id, side: 'sell', price: corridor.ceiling, qty: power }];
 }
@@ -214,13 +231,17 @@ export function coverFor(available: readonly Advance[], amount: Cash): readonly 
     // Law 8: a lien binds WHOLE PIECES of the paper. What it takes to cover the rest is rounded up
     // — collateral a piece short is collateral that does not cover — unless the parcel runs out
     // first, in which case it binds every whole piece of it there is.
-    if (left <= 0) break;
+    if (left.pieces <= 0) break;
     const want = amountOf(left, a.valuePerUnit, 'units to cover');
     const enough = upTick(want);
-    const units = atMost(enough, downTick(a.free), 'it binds no more of a parcel than there is of it');
+    const units = atMost(
+      enough,
+      downTick(a.free),
+      'it binds no more of a parcel than there is of it',
+    );
     if (units <= 0) continue;
     out.push({ instrument: a.instrument, qty: units, valuedAt: a.valuePerUnit });
-    left = minus(left, valueAt(a.valuePerUnit, units, 'covered'), 'left to cover');
+    left = minus(left, valueAt(a.valuePerUnit, units, amount.ccy, 'covered'), 'left to cover');
   }
   return out;
 }
@@ -270,16 +291,14 @@ export function writeRow(
       ccy,
       amount: s.amount,
     },
-    ...cover.map(
-      (c): Leg => ({
-        kind: 'pledge',
-        pledgor: s.borrower,
-        beneficiary: s.lender,
-        instrument: c.instrument,
-        qty: c.qty,
-        secures: String(id),
-      }),
-    ),
+    ...cover.map((c): Leg => ({
+      kind: 'pledge',
+      pledgor: s.borrower,
+      beneficiary: s.lender,
+      instrument: c.instrument,
+      qty: c.qty,
+      secures: String(id),
+    })),
   ];
   const r = ctx.settle({
     legs,

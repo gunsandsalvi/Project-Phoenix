@@ -28,7 +28,7 @@
  * Law 5's other half is already the wire's: the gain and the loss here are not two sides of a flow,
  * because nothing flowed. They are one holder's position being worth more in a money nobody paid.
  */
-import { asCash, asRatio, type Cash, minus, scale, valueAt } from '../../core/measure.js';
+import { sumCash, valueAt } from '../../core/measure.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { addTo, sub, sum, withinDust } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
@@ -42,9 +42,10 @@ export function revaluationAddsUp(): Family {
     built: true,
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
-      const booked = new Map<string, Cash>();
-      const implied = new Map<string, Cash>();
-      const magnitude = new Map<string, Cash>();
+      // Law 7: the three are magnitudes in one money each (the key), kept as pieces.
+      const booked = new Map<string, number>();
+      const implied = new Map<string, number>();
+      const magnitude = new Map<string, number>();
       /** The two rates the period moved between, which only the event that used them remembers. */
       const rates = new Map<string, { was: number; now: number; ccy: string }>();
       const key = (holder: PartyId, instrument: InstrumentId): string => `${holder}|${instrument}`;
@@ -57,11 +58,12 @@ export function revaluationAddsUp(): Family {
         const holder = e.subjects[0];
         const instrument = e.subjects[1];
         if (typeof ccy !== 'string' || holder === undefined || instrument === undefined) continue;
-        if (typeof delta !== 'number' || typeof was !== 'number' || typeof now !== 'number') continue;
+        if (typeof delta !== 'number' || typeof was !== 'number' || typeof now !== 'number')
+          continue;
         // WHAT ITS BOOK BOOKED. The other half is not read here, on purpose: it comes off the
         // register below, which is the second independent thing this family needs (Audit A1.a).
-        addTo(booked, ccy, asCash(delta, 'what its book booked'));
-        addTo(magnitude, ccy, asCash(Math.abs(delta), 'what the arithmetic passed through'));
+        addTo(booked, ccy, delta);
+        addTo(magnitude, ccy, Math.abs(delta));
         rates.set(key(holder as PartyId, instrument as InstrumentId), { was, now, ccy });
       }
       for (const h of view.register.allHoldings()) {
@@ -72,11 +74,18 @@ export function revaluationAddsUp(): Family {
         // carrying is derived from the period BEFORE this one, so reading it after the marks have
         // run gives the number the rate step used — and reading it from the LOTS rather than from
         // the event's copy of it is what makes this a second path.
-        const carried = sum(
+        const carried = sumCash(
+          inst.ccy,
           h.lots.map((lot) =>
-            valueAt(view.valuation.carryingPerUnit(inst.id, lot, view.period), lot.qty, 'carried'),
+            valueAt(
+              view.valuation.carryingPerUnit(inst.id, lot, view.period),
+              lot.qty,
+              inst.ccy,
+              'carried',
+            ),
           ),
-        ).value;
+          'carried',
+        ).value.pieces;
         if (carried === 0) continue;
         const moved = rates.get(key(h.holder, h.instrument));
         if (moved === undefined) {
@@ -87,27 +96,15 @@ export function revaluationAddsUp(): Family {
             family: 'money',
             spec: 'Currency D2',
             owner: String(h.holder),
-            size: scale(asCash(carried, 'what it carries'), rate, 'in its own money'),
-            unit: inst.ccy,
+            size: carried * rate,
+            unit: String(home),
             period: view.period,
             message: `${h.holder} carries ${inst.id} in ${inst.ccy} and no revaluation looked at it`,
           });
           continue;
         }
-        addTo(
-          implied,
-          moved.ccy,
-          scale(
-            asCash(carried, 'what it was carrying'),
-            asRatio(sub(moved.now, moved.was, 'what the rate moved by'), 'what the rate moved by'),
-            'what the rate move comes to on it',
-          ),
-        );
-        addTo(
-          magnitude,
-          moved.ccy,
-          asCash(Math.abs(carried * moved.now), 'what the arithmetic passed through'),
-        );
+        addTo(implied, moved.ccy, carried * sub(moved.now, moved.was, 'what the rate moved by'));
+        addTo(magnitude, moved.ccy, Math.abs(carried * moved.now));
       }
       for (const [ccy, total] of booked) {
         // Every currency in `booked` was put there with its pair in the other two maps, in the same
@@ -122,7 +119,7 @@ export function revaluationAddsUp(): Family {
           family: 'money',
           spec: 'Currency D4',
           owner: ccy,
-          size: minus(total, should, 'what the books booked beyond what the rate did'),
+          size: total - should,
           unit: ccy,
           period: view.period,
           message:

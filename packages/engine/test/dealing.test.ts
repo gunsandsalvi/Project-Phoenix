@@ -15,6 +15,7 @@
  * pay its bank as rent, the bank pays its depositors and its lenders as interest — every period,
  * to real holders — and that is the number the quote is priced off (Law 4: one cost of funds).
  */
+import { USD } from '../src/seeds/foundation.js';
 import { asCash, asRatio } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -254,14 +255,14 @@ describe('how it prices (Dealer Desks C)', () => {
     const w = dealingWorld();
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(BANK_A);
-    const empty = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: asCash(phx(10_000), 'its book limit') }));
+    const empty = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: phx(10_000) }));
     // The same desk, the same view, the same rate — and twice as much of its book allowed in one
     // line, so the position it holds is half as much of what it will carry.
     const roomier = quoteFor(
       view,
       LINE,
       stateOf(w, String(BANK_A), {
-        limitAggregate: asCash(phx(10_000), 'its book limit'),
+        limitAggregate: phx(10_000),
         concentration: asRatio(
           2 * w.params.ratio(lineParam('bank.a', DEALING, 'concentration')),
           'twice its concentration',
@@ -315,8 +316,8 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
       view,
       LINE,
       stateOf(w, String(BANK_A), {
-        bookValue: asCash(position, 'what its book is worth'),
-        limitAggregate: asCash(2 * position, 'twice its position'),
+        bookValue: asCash(position, USD, 'what its book is worth'),
+        limitAggregate: asCash(2 * position, USD, 'twice its position'),
         concentration: asRatio(1 / 2, 'half its book in one line'),
       }),
     );
@@ -329,7 +330,7 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
     }
     // A book with no room in it stops the bid in every line, which is how one line's trouble
     // reaches another (F1: capacity is finite and enumerable).
-    const noBook = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: asCash(0, 'no book at all') }));
+    const noBook = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: asCash(0, USD, 'no book at all') }));
     expect(noBook.some ? noBook.value.bidSize : -1).toBe(0);
     if (noBook.some) expect(noBook.value.binds).toBe('book');
     // And a desk with no money does not bid for what it cannot pay for (F1). It is given room in
@@ -340,9 +341,9 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
       view,
       LINE,
       stateOf(w, String(BANK_A), {
-        cash: asCash(0, 'no money'),
-        limitAggregate: asCash(phx(100_000_000), 'all the room there is'),
-        bookValue: asCash(0, 'nothing carried'),
+        cash: asCash(0, USD, 'no money'),
+        limitAggregate: phx(100_000_000),
+        bookValue: asCash(0, USD, 'nothing carried'),
       }),
     );
     expect(broke.some ? broke.value.bidSize : -1).toBe(0);

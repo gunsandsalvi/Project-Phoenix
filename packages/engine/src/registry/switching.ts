@@ -232,12 +232,15 @@ export function banksForItsBoard(view: SwitchingReads, decl: BoardChaser): Optio
   if (gap <= 0) return none<Move>();
   // E1, Law 17: what staying has ALREADY cost it, which is what happened rather than a forecast.
   const foregone = scale(
-    heldAsMoney(balance, 'the balance it keeps there'),
+    heldAsMoney(balance, ccy, 'the balance it keeps there'),
     scale(gap, asRatio(stayed(view), 'the time it has stayed'), 'over the time it has stayed'),
     'what staying cost it',
   );
-  return foregone > view.params.amount(decl.cost, currencyUnit(ccy))
-    ? some({ to, reason: `${String(view.self.id)} moves to ${String(to)}, which pays more for its money` })
+  return foregone.pieces > view.params.amount(decl.cost, currencyUnit(ccy))
+    ? some({
+        to,
+        reason: `${String(view.self.id)} moves to ${String(to)}, which pays more for its money`,
+      })
     : none<Move>();
 }
 

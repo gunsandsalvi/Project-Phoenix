@@ -17,7 +17,7 @@ import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
 import type { ContractMarketDecl, MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
+import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId, RegionId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { DerivativeKindId } from '../core/ids.js';
 import type {
@@ -373,7 +373,11 @@ export interface SystemModule {
    * two readers cannot get two levels. One system of them across the world (D5), which is what a
    * single registry at assembly gives: a second module declaring the same id is refused.
    */
-  indices?(params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount'>): readonly IndexDecl[];
+  indices?(
+    params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount'>,
+    /** Currency C4 (16.0): the money a place's lines are stated in, so a rule can name the money its level is in. */
+    registry: { currencyOf(region: RegionId): CurrencyCode },
+  ): readonly IndexDecl[];
   /**
    * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
    * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it

@@ -540,9 +540,9 @@ describe('a market with reasons on both sides', () => {
         // Sized to the cash the buyer holds: what this tests is delivery against payment, not a
         // buyer that cannot pay — that is the next test.
         if (party === 'firm.1')
-          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: asQty(phx(60_000)) }];
+          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: asQty(phx(60_000).pieces) }];
         if (party === 'bank.b')
-          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: asQty(phx(60_000)) }];
+          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: asQty(phx(60_000).pieces) }];
         return [];
       }),
     );
@@ -554,9 +554,9 @@ describe('a market with reasons on both sides', () => {
     expect(violations(w)).toEqual([]);
     const gov = r.markets.find((m) => m.market === GOV_MARKET);
     expect(gov?.outcome).toBe('cleared');
-    expect(gov?.settledVolume).toBe(phx(60_000));
-    expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(phx(60_000));
-    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(sellerHad - phx(60_000));
+    expect(gov?.settledVolume).toBe(phx(60_000).pieces);
+    expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(phx(60_000).pieces);
+    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(sellerHad - phx(60_000).pieces);
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('traded');
     // Clearing C4.c, Law 8: the level is one somebody POSTED, on this market's own grid. A buy is
@@ -578,8 +578,8 @@ describe('a market with reasons on both sides', () => {
       traders((instrument, party) => {
         if (instrument !== GOV_LINE || party !== 'bank.a') return [];
         return [
-          { party: BANK_A, side: 'buy', price: 1.2, qty: asQty(phx(10_000)) },
-          { party: BANK_A, side: 'sell', price: 0.8, qty: asQty(phx(10_000)) },
+          { party: BANK_A, side: 'buy', price: 1.2, qty: asQty(phx(10_000).pieces) },
+          { party: BANK_A, side: 'sell', price: 0.8, qty: asQty(phx(10_000).pieces) },
         ];
       }),
     );
@@ -744,7 +744,7 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
  * cents. Half a cent is not one, and the wire refuses it, which is the rule doing its job on the
  * person writing the test as much as on the engine.
  */
-const PAYMENT = asQty(phx(1));
+const PAYMENT = asQty(phx(1).pieces);
 
 describe('settlement contracts', () => {
 

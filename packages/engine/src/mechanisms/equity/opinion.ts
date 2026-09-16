@@ -10,6 +10,7 @@
  * has printed — and G3 is the rule about all of it: a derived statistic is computed FROM the
  * cleared price and is never used to set it.
  */
+import type { CurrencyCode } from '../../core/ids.js';
 import { subQty, type Qty } from '../../core/tick.js';
 import { type Cash, type PerPiece, valueAt } from '../../core/measure.js';
 
@@ -18,8 +19,8 @@ import { type Cash, type PerPiece, valueAt } from '../../core/measure.js';
  * times price and calls that a check (B4.a): that is a tautology and cannot fail. It is here so
  * that whoever reports it reports the one derivation, and so that its two inputs are named.
  */
-export function marketCapitalisation(shares: Qty, price: PerPiece): Cash {
-  return valueAt(price, shares, 'market capitalisation');
+export function marketCapitalisation(shares: Qty, price: PerPiece, ccy: CurrencyCode): Cash {
+  return valueAt(price, shares, ccy, 'market capitalisation');
 }
 
 /**

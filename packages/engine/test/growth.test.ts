@@ -114,7 +114,7 @@ describe('output per hour over five years (12c.3, Law 17)', () => {
         const party = w.parties.get(f.firm as never);
         if (!party.status.alive || party.kind !== FIRM) continue;
         const h = at(hours, f.subUnit);
-        h[year] = (h[year] ?? 0) + w.employment.payrollOf(party.id, w.period).productive;
+        h[year] = (h[year] ?? 0) + w.employment.payrollOf(party.id, w.period, w.registry.currencyOf(party.region)).productive;
       }
     }
     const perHour = (line: string, year: number): number | undefined => {
@@ -135,7 +135,7 @@ describe('output per hour over five years (12c.3, Law 17)', () => {
     // Law 17: the size distribution's tail, as the rank–size slope over the live firms' headcounts.
     const sizes = draw.firms
       .filter((f) => w.parties.has(f.firm as never) && w.parties.get(f.firm as never).status.alive)
-      .map((f) => w.employment.payrollOf(f.firm as never, w.period).headcount)
+      .map((f) => w.employment.payrollOf(f.firm as never, w.period, w.registry.currencyOf(w.parties.get(f.firm as never).region)).headcount)
       .filter((n) => n > 0)
       .sort((a, b) => b - a);
     const xs = sizes.map((_, i) => Math.log(i + 1));

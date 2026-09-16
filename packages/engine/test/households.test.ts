@@ -94,13 +94,13 @@ function payer(spreadShare: number): SystemModule {
       ctx.endowMoney(PAYER, USD, purse);
       let members = 0;
       for (const p of ctx.parties.ofKind(HOUSEHOLD)) members += weightOf(p);
-      const share = members > 0 ? div(div(purse, members, 'what one member gets'), PERIODS_OVER, 'a period of it') : 0;
+      const share = members > 0 ? div(div(purse.pieces, members, 'what one member gets'), PERIODS_OVER, 'a period of it') : 0;
       // Law 8: BOTH SIDES OF THE SPREAD ARE WHOLE PIECES, struck here rather than at the payment.
       // A spread is mean-preserving only if what it adds to one cell is exactly what it takes from
       // another, and `base × (1 ± share)` rounded at the payment is not: the two roundings do not
       // cancel, and the run paid 61,008 more into the spread world than into the flat one.
-      base = ctx.registry.payable(asCash(share, 'what each gets'));
-      off = ctx.registry.payable(scale(asCash(share, 'what each gets'), asRatio(spreadShare, 'the spread'), 'the spread on it'),
+      base = ctx.registry.payable(asCash(share, USD, 'what each gets'));
+      off = ctx.registry.payable(scale(asCash(share, USD, 'what each gets'), asRatio(spreadShare, 'the spread'), 'the spread on it'),
       );
       // Seed A4: a deposit is a bank's liability, and a bank that owes it holds something against
       // it. Without the reserves, the first payment across banks would be an overdraft this world

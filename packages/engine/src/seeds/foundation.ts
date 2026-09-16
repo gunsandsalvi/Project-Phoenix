@@ -19,6 +19,7 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
+import { noCash } from '../core/measure.js';
 import { asQty, downTick, downToNamed, toTickOf, upTick } from '../core/tick.js';
 import { prng } from '../rng/prng.js';
 import type { RegionDecl } from '../registry/registry.js';
@@ -128,8 +129,21 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { land } from '../mechanisms/land/index.js';
-import { LANDLORD, LEASE_ROW, PREMISES, PROPERTY_PARAMS, landlordIdFor, property } from '../mechanisms/property/index.js';
-import { isPlant, plantTerms, plantUnitId, type LeaseTerms, type CapitalKindDecl } from '../registry/physical.js';
+import {
+  LANDLORD,
+  LEASE_ROW,
+  PREMISES,
+  PROPERTY_PARAMS,
+  landlordIdFor,
+  property,
+} from '../mechanisms/property/index.js';
+import {
+  isPlant,
+  plantTerms,
+  plantUnitId,
+  type LeaseTerms,
+  type CapitalKindDecl,
+} from '../registry/physical.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
@@ -137,7 +151,13 @@ import { shortTermDebt } from '../mechanisms/short-term-debt/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
-import { INSURANCE, PENSION, insurerIdFor, insurers, pensionFundIdFor } from '../mechanisms/insurers/index.js';
+import {
+  INSURANCE,
+  PENSION,
+  insurerIdFor,
+  insurers,
+  pensionFundIdFor,
+} from '../mechanisms/insurers/index.js';
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
@@ -159,7 +179,11 @@ import { lifeParam, spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawEquity, equityLineOf, type EquityDecl } from '../mechanisms/equity/data.js';
-import { drawSmallBusiness, SMALL_PER_NAMED, type SmallFirmDecl } from '../mechanisms/small-business/data.js';
+import {
+  drawSmallBusiness,
+  SMALL_PER_NAMED,
+  type SmallFirmDecl,
+} from '../mechanisms/small-business/data.js';
 import { smallBusiness } from '../mechanisms/small-business/index.js';
 import { FUND, funds } from '../mechanisms/funds/index.js';
 import {
@@ -175,7 +199,11 @@ import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
 import { drawFxDesks } from '../mechanisms/spot-fx/data.js';
-import { derivativeLayer, houseIdFor, TRADES_CONTRACTS } from '../mechanisms/derivative-layer/index.js';
+import {
+  derivativeLayer,
+  houseIdFor,
+  TRADES_CONTRACTS,
+} from '../mechanisms/derivative-layer/index.js';
 import { cds } from '../mechanisms/cds/index.js';
 import { irs } from '../mechanisms/irs/index.js';
 import { fxDerivatives } from '../mechanisms/fx-derivatives/index.js';
@@ -223,7 +251,6 @@ export const HOME = countryId('us');
  * rises in its own step, where what it multiplies is the thing being measured (Law 2).
  */
 const PLACES_PER_COUNTRY = 1;
-
 
 export const CB = partyId('fed');
 export const TREASURY_US = partyId('treasury.us');
@@ -375,13 +402,18 @@ function leaseFromLandlords(
   let held = 0;
   for (const h of ctx.register.holdingsOf(landlord)) {
     const i = ctx.instruments.get(h.instrument);
-    if (i.status.live && isPlant(i) && plantTerms(i).capitalKind === kind.id) held += ctx.register.quantity(landlord, h.instrument);
+    if (i.status.live && isPlant(i) && plantTerms(i).capitalKind === kind.id)
+      held += ctx.register.quantity(landlord, h.instrument);
   }
   const let_ = zeroIfNone(letAtSeed.get(landlord));
   if (held - let_ < units) return false;
   const ccy = ctx.registry.currencyOf(region);
   const sub = ctx.registry.subdivision(plantUnitId(kind.id));
-  const perRoom = ctx.registry.onQuoteGrid(MONEY_KIND, ccy, asPerPiece(newPrice / life, 'what a room costs its landlord a period'));
+  const perRoom = ctx.registry.onQuoteGrid(
+    MONEY_KIND,
+    ccy,
+    asPerPiece(newPrice / life, 'what a room costs its landlord a period'),
+  );
   const rentPerUnit = asPerPiece(perRoom / sub, 'the rent a piece of it a period');
   if (rentPerUnit <= 0 || downTick(rentPerUnit * perMember) < 1) return false;
   const terms: LeaseTerms = {
@@ -390,9 +422,19 @@ function leaseFromLandlords(
     capitalKind: kind.id,
     units,
     rentPerUnit,
-    until: addDays(ctx.calendar.epoch, ctx.params.periods(PROPERTY_PARAMS.leaseTerm) * ctx.calendar.periodDays),
+    until: addDays(
+      ctx.calendar.epoch,
+      ctx.params.periods(PROPERTY_PARAMS.leaseTerm) * ctx.calendar.periodDays,
+    ),
   };
-  ctx.owes({ debtor: firm, creditor: landlord, ccy, owed: 0, terms, why: `${String(firm)} opens holding a lease of ${String(units)} ${kind.id} from ${String(landlord)}` });
+  ctx.owes({
+    debtor: firm,
+    creditor: landlord,
+    ccy,
+    owed: 0,
+    terms,
+    why: `${String(firm)} opens holding a lease of ${String(units)} ${kind.id} from ${String(landlord)}`,
+  });
   letAtSeed.set(landlord, let_ + units);
   return true;
 }
@@ -415,7 +457,6 @@ const CARRIER_COUNT = 6;
 const WHOLESALE = 'wholesale';
 /** B2: hulls per unit of drawn size. The smallest carrier has one ship, which is what it means. */
 const HULLS_PER_UNIT_OF_SIZE = 1;
-
 
 /**
  * Seed B1, B4: WHICH BANKS THIS WORLD HAS is the table the banks module declares, and the seed is
@@ -546,7 +587,10 @@ function onGrid(epoch: Civil, months: number): Civil {
  * same number only because every line here is issued at par. That was implicit; it is named here,
  * so the crossing goes through `amountOf` like every other money-to-units read (`E-9`'s family).
  */
-const PAR_PER_UNIT: PerNamedUnit = asPerNamedUnit(1, 'a unit of sovereign paper is one of its money');
+const PAR_PER_UNIT: PerNamedUnit = asPerNamedUnit(
+  1,
+  'a unit of sovereign paper is one of its money',
+);
 
 function seedLines(
   epoch: Civil,
@@ -558,7 +602,11 @@ function seedLines(
 ): SeedLine[] {
   const bankWeight = sum(SEED_PROFILE.map((t) => t.bankWeight)).value;
   const householdWeight = sum(SEED_PROFILE.map((t) => t.householdWeight)).value;
-  const outstanding = scale(perMember, asRatio(members, 'the people it is owed by'), 'the debt outstanding');
+  const outstanding = scale(
+    perMember,
+    asRatio(members, 'the people it is owed by'),
+    'the debt outstanding',
+  );
   const atBanks = scale(
     outstanding,
     minus(asRatio(1, 'all of it'), householdShare, 'the part the households do not hold'),
@@ -735,7 +783,10 @@ function openingLevels(): ReadonlyMap<string, number> {
       moved = true;
     }
     if (!moved) {
-      throw new Missing('Goods A2', `the recipe chain does not resolve: ${[...left.keys()].join(', ')}`);
+      throw new Missing(
+        'Goods A2',
+        `the recipe chain does not resolve: ${[...left.keys()].join(', ')}`,
+      );
     }
   }
   return out;
@@ -922,7 +973,9 @@ export function foundationSeedFor(
       // own region, which is what makes everything it holds of another country's paper FOREIGN and
       // everything that country holds of its own foreign the other way (D2).
       for (const c of countries) {
-        ctx.parties.add(named(c.centralBank, CENTRAL_BANK, c.centralBankName, c.centralBank, c.region));
+        ctx.parties.add(
+          named(c.centralBank, CENTRAL_BANK, c.centralBankName, c.centralBank, c.region),
+        );
         ctx.parties.add(named(c.treasury, TREASURY, c.treasuryName, c.centralBank, c.region));
       }
       // Seed B1, B4: as many banks as `banks.count`, each with the disposition and the size its own
@@ -939,7 +992,13 @@ export function foundationSeedFor(
       banks.forEach((b, n) => {
         const home = countryOfRegion(b.region);
         ctx.parties.add(
-          named(b.id, BANK, `Bank ${String.fromCharCode(65 + n)}, ${home.name}`, home.centralBank, b.region),
+          named(
+            b.id,
+            BANK,
+            `Bank ${String.fromCharCode(65 + n)}, ${home.name}`,
+            home.centralBank,
+            b.region,
+          ),
         );
       });
       /**
@@ -1099,6 +1158,7 @@ export function foundationSeedFor(
           home.ccy,
           asCash(
             heads * ctx.params.amount(P.insurerOpeningSurplusPerHead, currencyUnit(home.ccy)),
+            home.ccy,
             'the surplus it opens with',
           ),
         );
@@ -1149,7 +1209,11 @@ export function foundationSeedFor(
       for (const f of madeHere) {
         sizeOfLine.set(
           f.subUnit,
-          plus(zeroIfNone(sizeOfLine.get(f.subUnit)), asNamed(f.size, 'what this firm is'), 'its line'),
+          plus(
+            zeroIfNone(sizeOfLine.get(f.subUnit)),
+            asNamed(f.size, 'what this firm is'),
+            'its line',
+          ),
         );
       }
       // Law 19: the recipe is read from the ONE place that writes it — the goods registry, in the
@@ -1258,7 +1322,11 @@ export function foundationSeedFor(
         if (asked > 0) want = zeroIfNone(wantedInAPeriod.get(g));
         started.set(
           g,
-          over(want, asRatio(recipeOf(g).yieldRate, 'what survives the line'), 'started for what is wanted of it'),
+          over(
+            want,
+            asRatio(recipeOf(g).yieldRate, 'what survives the line'),
+            'started for what is wanted of it',
+          ),
         );
       }
       // Down the chain, deepest first: a line starts what everything it feeds draws from it.
@@ -1287,7 +1355,11 @@ export function foundationSeedFor(
         }
         started.set(
           next,
-          over(drawn, asRatio(recipeOf(next).yieldRate, 'what survives the line'), 'started for it'),
+          over(
+            drawn,
+            asRatio(recipeOf(next).yieldRate, 'what survives the line'),
+            'started for it',
+          ),
         );
         settled = new Set([...settled, next]);
       }
@@ -1434,7 +1506,11 @@ export function foundationSeedFor(
       const lineOfBank = new Map<PartyId, number>(
         bankRows.map((r) => [
           partyId(r.bank),
-          plus(ctx.params.ratio(P.leverageRatio), asRatio(r.capitalBuffer, 'its own buffer'), 'the line this bank runs to'),
+          plus(
+            ctx.params.ratio(P.leverageRatio),
+            asRatio(r.capitalBuffer, 'its own buffer'),
+            'the line this bank runs to',
+          ),
         ]),
       );
       const cellsIn = new Map<string, PartyId[]>();
@@ -1444,10 +1520,7 @@ export function foundationSeedFor(
         const held = cellsIn.get(where);
         if (held === undefined) cellsIn.set(where, [cell.id]);
         else held.push(cell.id);
-        membersIn.set(
-          where,
-          add(zeroIfNone(membersIn.get(where)), weightOf(cell), 'its people'),
-        );
+        membersIn.set(where, add(zeroIfNone(membersIn.get(where)), weightOf(cell), 'its people'));
       }
       const firmsIn = new Map<string, FirmDecl[]>();
       for (const f of madeHere) {
@@ -1675,7 +1748,10 @@ export function foundationSeedFor(
         // bank because of it, which is what a deposit IS.
         const all = plus(systemPaper, reserves, 'the assets there are to go round');
         const atBank = new Map<PartyId, Stated>(
-          banksHere.map((b) => [b.id, asStated(0, 'a bank nobody banks at holds nothing for them')]),
+          banksHere.map((b) => [
+            b.id,
+            asStated(0, 'a bank nobody banks at holds nothing for them'),
+          ]),
         );
         for (const f of firmsHere) {
           const bank = ctx.parties.get(partyId(f.firm)).bank;
@@ -1703,7 +1779,11 @@ export function foundationSeedFor(
         };
         const firmsPart = sum(
           banksHere.map((b) =>
-            over(zeroIfNone(atBank.get(b.id)), asRatio(fundedBy(b), 'what a deposit funds'), 'its firms'),
+            over(
+              zeroIfNone(atBank.get(b.id)),
+              asRatio(fundedBy(b), 'what a deposit funds'),
+              'its firms',
+            ),
           ),
         ).value;
         // A count over a count: what a unit of stated size has to fund, summed over the banks here.
@@ -1748,11 +1828,7 @@ export function foundationSeedFor(
           ctx.endowMoney(
             b.id,
             c.ccy,
-            cash(
-              ctx,
-              c.ccy,
-              minus(mine, scale(mine, paperShare, 'its paper'), 'its reserves'),
-            ),
+            cash(ctx, c.ccy, minus(mine, scale(mine, paperShare, 'its paper'), 'its reserves')),
           );
         }
         for (const line of seedLineRows) {
@@ -1948,8 +2024,13 @@ export function foundationSeedFor(
           });
           const newPrice = ctx.params.pricePerUnit(openingPrice(kind.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
-          const perMember = ctx.params.count(PROPERTY_PARAMS.premisesPerLandlord) * ctx.registry.subdivision(plantUnitId(kind.id));
-          const perVintage = splitOnTick(perMember, SEED_PLANT_AGES.map(() => 1));
+          const perMember =
+            ctx.params.count(PROPERTY_PARAMS.premisesPerLandlord) *
+            ctx.registry.subdivision(plantUnitId(kind.id));
+          const perVintage = splitOnTick(
+            perMember,
+            SEED_PLANT_AGES.map(() => 1),
+          );
           SEED_PLANT_AGES.forEach((age, at) => {
             const units = perVintage[at];
             if (units === undefined || units <= 0) return;
@@ -1975,7 +2056,11 @@ export function foundationSeedFor(
         // flight comes to, which is a period of starts for every period its recipe keeps it (B3); and
         // what one period of starting draws of each of its inputs. Never a hoard: a firm sitting on a
         // year of stock would produce nothing for a year and the seed would have decided that.
-        const finished = scale(starts, asRatio(recipeOf(row.subUnit).yieldRate, 'what survives the line'), 'what arrives in a period');
+        const finished = scale(
+          starts,
+          asRatio(recipeOf(row.subUnit).yieldRate, 'what survives the line'),
+          'what arrives in a period',
+        );
         const onTheLine = scale(
           starts,
           asRatio(recipeOf(row.subUnit).leadTimePeriods, 'the periods its recipe keeps a batch'),
@@ -2007,7 +2092,11 @@ export function foundationSeedFor(
             asRatio(SEED_STOCK_BASIS, 'below what the market opens at'),
             'what it cost whoever holds it',
           );
-          const drawn = scale(starts, asRatio(input.qtyPerUnit, 'what one unit draws of it'), 'what a period of starting draws');
+          const drawn = scale(
+            starts,
+            asRatio(input.qtyPerUnit, 'what one unit draws of it'),
+            'what a period of starting draws',
+          );
           if (drawn <= 0) continue;
           ctx.endowUnits(
             firm,
@@ -2043,7 +2132,11 @@ export function foundationSeedFor(
            * whose landlords cannot cover the lease leaves the shop owning its room, as before, and
            * the seed says so.
            */
-          if (need.leased === true && leaseFromLandlords(ctx, letAtSeed, firm, here, kind, mine, newPrice, life)) continue;
+          if (
+            need.leased === true &&
+            leaseFromLandlords(ctx, letAtSeed, firm, here, kind, mine, newPrice, life)
+          )
+            continue;
           // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
           // division that does not come out (core/tick.ts).
           const perVintage = splitOnTick(
@@ -2076,12 +2169,26 @@ export function foundationSeedFor(
         // A3: room for EVERYTHING it opens holding that needs room — what it made and what its
         // recipe drew. A mill holds grain it did not grow, and it keeps that under cover too.
         const space = [
-          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, here), asNamed(finished, 'its stock')), here),
+          spaceOf(
+            ctx,
+            row.subUnit,
+            held(ctx, goodId(row.subUnit, here), asNamed(finished, 'its stock')),
+            here,
+          ),
           ...recipeOf(row.subUnit).inputs.map((input) => {
             const line = goodId(input.subUnit, here);
             if (!ctx.instruments.has(line)) return NO_QTY;
-            const drawn = scale(starts, asRatio(input.qtyPerUnit, 'what one unit draws of it'), 'what a period of starting draws');
-            return spaceOf(ctx, input.subUnit, held(ctx, line, asNamed(drawn, 'what it draws')), here);
+            const drawn = scale(
+              starts,
+              asRatio(input.qtyPerUnit, 'what one unit draws of it'),
+              'what a period of starting draws',
+            );
+            return spaceOf(
+              ctx,
+              input.subUnit,
+              held(ctx, line, asNamed(drawn, 'what it draws')),
+              here,
+            );
           }),
         ].reduce((a, b) => plus(a, b, 'the room everything here takes'), NO_QTY);
         if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
@@ -2186,14 +2293,18 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         // and starts the run shrinking — which is not an opening condition, it is a bank already
         // in trouble. The buffer is its own (B2), so no two banks open at the same share and none
         // of them opens at a number this seed chose.
-        const leverage = plus(minimum, asRatio(row.capitalBuffer, 'its own buffer'), 'the line this bank runs to');
+        const leverage = plus(
+          minimum,
+          asRatio(row.capitalBuffer, 'its own buffer'),
+          'the line this bank runs to',
+        );
         // 13j, Money A2: WHOSE MONEY THIS BANK ISSUES, which is the money of the place it books in.
         // A deposit is a holding of its issuer's money and there is no such thing as a holding of a
         // money nobody issued (Money A1), so a seed with four banking systems in it has to say
         // whose — and the one writer of that is the registry, off the bank's own region.
         const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
         const own = moneyInstrumentId(bank, ccy);
-        let assets = asCash(0, 'a bank holding nothing has no assets');
+        let assets = noCash(ccy);
         for (const h of ctx.register.holdingsOf(bank)) {
           if (h.instrument === own) continue;
           assets = plus(
@@ -2212,7 +2323,7 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         // on a kind: the question is what the account holds, and the answer is the same whoever
         // opened it). Everything endowed at this bank before now counts, and the households take
         // what is left of what has to be funded.
-        let already = asCash(0, 'a bank nobody has deposited at is funded by nothing');
+        let already = noCash(ccy);
         for (const holder of ctx.register.holdersOf(own)) {
           if (holder === bank) continue;
           const held = ctx.register.quantity(holder, own);
@@ -2221,13 +2332,14 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
             // XI-15: the register holds PER MEMBER, so what a cell has between them is that times
             // how many of them there are. `acrossMembers` is the one crossing and it refuses a
             // weight that is not a count of people.
-            acrossMembers(
-              asPerMember<'money:piece'>(
-                heldAsMoney(held, 'what one of them holds of it'),
-                'what one member of it holds',
+            asCash(
+              acrossMembers(
+                asPerMember<'money:piece'>(held, 'what one member of it holds'),
+                weightOf(ctx.parties.get(holder)),
+                'in total',
               ),
-              weightOf(ctx.parties.get(holder)),
-              'in total',
+              ccy,
+              'what they hold of it between them',
             ),
             'deposits',
           );
@@ -2236,10 +2348,10 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         const cells = ctx.parties.ofKind(HOUSEHOLD).filter((c) => c.bank === bank);
         const members = cells.reduce((t, c) => t + weightOf(c), 0);
         forbid(
-          fromHouseholds > 0 && members > 0,
+          fromHouseholds.pieces > 0 && members > 0,
           'Banks Capital B1.b',
-          `${bank} opens with ${assets} of assets and ${already} already deposited at it, which leaves nothing for its households to hold`,
-          { bank, assets, already, funding },
+          `${bank} opens with ${assets.pieces} of assets and ${already.pieces} already deposited at it, which leaves nothing for its households to hold`,
+          { bank, assets: assets.pieces, already: already.pieces, funding: funding.pieces, ccy },
         );
         // XI-15: per member, and the cell carries it with its weight.
         const perMember = over(
@@ -2270,6 +2382,7 @@ function cash(ctx: SeedContext, ccy: CurrencyCode, phx: Stated): Cash {
   // out is a VALUE in those pieces, which is what money's own price being one means (Money D2).
   return heldAsMoney(
     ctx.registry.pieces(currencyUnit(ccy), asNamed(phx, 'what is stated')),
+    ccy,
     'what is stated, in the pieces the state holds',
   );
 }
@@ -2393,37 +2506,37 @@ export function foundationDraw(
   // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
   // declares it. The seed is where the two meet, because it is the only place that may know both.
   const trackers = drawTrackers(
-      // Indices A2, A3: ONLY THE PUBLIC ONES. An index is its constituents' own prints and a
-      // private line never prints, so a tracker handed one would be following a level it could
-      // not read (§29 C5.a).
-      equities.filter((r) => r.listed).map((r) => String(equityLineOf(r.firm))),
-      names,
-      seed,
-      /**
-       * M9, Indices C2, C2.a, Fund Shares E3.a: A VEHICLE ON EVERY INDEX A TRACKER SHOULD FOLLOW,
-       * and only the first of them is the SEED's to launch.
-       *
-       * A tracker on a size segment holds whatever that segment's rule says is in it, and that rule
-       * reads the constituents' own prints (A3) — which at period zero do not exist. So the seed
-       * declares the vehicles and launches one: the broad line, whose rule answers from the moment
-       * the lines are listed. The rest are launched by `funds.etf`'s own phase the period their own
-       * index first HAS a level, in kind, out of what the participants actually hold — a transfer,
-       * which is why two vehicles cannot own the same float (`12d-4`, where `etf.us` and
-       * `etf.equity.large.us` both opened with negative equity because both were endowed with it).
-       *
-       * C2's simultaneity needs more than one of them: with a single vehicle on a single line,
-       * "every tracker rebalances at once" is a market of one, and a firm crossing a size boundary
-       * is a rebalance nobody has to trade.
-       */
-      [
-        // 13j: a tracker on every country's own market, because an index with no vehicle following
-        // it is a measurement nobody trades and C2's simultaneity has nothing to be simultaneous.
-        ...countries.map((c) => EQUITY_INDEX(c.region)),
-        SIZE_INDEX(REGION, 'large'),
-        SIZE_INDEX(REGION, 'small'),
-        GLOBAL_INDEX(USD),
-      ],
-    );
+    // Indices A2, A3: ONLY THE PUBLIC ONES. An index is its constituents' own prints and a
+    // private line never prints, so a tracker handed one would be following a level it could
+    // not read (§29 C5.a).
+    equities.filter((r) => r.listed).map((r) => String(equityLineOf(r.firm))),
+    names,
+    seed,
+    /**
+     * M9, Indices C2, C2.a, Fund Shares E3.a: A VEHICLE ON EVERY INDEX A TRACKER SHOULD FOLLOW,
+     * and only the first of them is the SEED's to launch.
+     *
+     * A tracker on a size segment holds whatever that segment's rule says is in it, and that rule
+     * reads the constituents' own prints (A3) — which at period zero do not exist. So the seed
+     * declares the vehicles and launches one: the broad line, whose rule answers from the moment
+     * the lines are listed. The rest are launched by `funds.etf`'s own phase the period their own
+     * index first HAS a level, in kind, out of what the participants actually hold — a transfer,
+     * which is why two vehicles cannot own the same float (`12d-4`, where `etf.us` and
+     * `etf.equity.large.us` both opened with negative equity because both were endowed with it).
+     *
+     * C2's simultaneity needs more than one of them: with a single vehicle on a single line,
+     * "every tracker rebalances at once" is a market of one, and a firm crossing a size boundary
+     * is a rebalance nobody has to trade.
+     */
+    [
+      // 13j: a tracker on every country's own market, because an index with no vehicle following
+      // it is a measurement nobody trades and C2's simultaneity has nothing to be simultaneous.
+      ...countries.map((c) => EQUITY_INDEX(c.region)),
+      SIZE_INDEX(REGION, 'large'),
+      SIZE_INDEX(REGION, 'small'),
+      GLOBAL_INDEX(USD),
+    ],
+  );
   return {
     banks: bankRows,
     firms: firmRows,
@@ -2436,7 +2549,6 @@ export function foundationDraw(
     managers: drawManagers([...pools, ...strategies, ...privateEquity, ...trackers], seed),
   };
 }
-
 
 /**
  * 13c.1: WHAT WORLD TO DRAW. The numbers are the map's own declared parameters, read back here
@@ -2479,7 +2591,6 @@ function mapSpec(countries: readonly CountrySeed[]): MapSpec {
   };
 }
 
-
 /**
  * Dealer Desks A3: WHO MAKES A MARKET IN A LINE — the makers drawn with the listing, found by the
  * line they were drawn for.
@@ -2488,7 +2599,9 @@ function mapSpec(countries: readonly CountrySeed[]): MapSpec {
  * is shopped, and walking every listing in the world for the one that names a line is a search that
  * grows with the number of listed companies while the answer does not.
  */
-function makersOf(equities: readonly EquityDecl[]): (i: InstrumentId) => readonly string[] | undefined {
+function makersOf(
+  equities: readonly EquityDecl[],
+): (i: InstrumentId) => readonly string[] | undefined {
   const byLine = new Map<InstrumentId, readonly string[]>();
   /**
    * 10f.2: ONLY THE LINES THIS WORLD OPENED PUBLIC. A private line answers `undefined` and not an
@@ -2564,10 +2677,10 @@ function placeBanks(
   const first = countries[0];
   if (first === undefined) throw new Missing('Seed B3', 'this world has no countries in it');
   // How many people a COUNTRY holds is the ground it has to feed them on, summed over its places.
-  const ground = countries.map((c) =>
-    sum(
-      regions.filter((r) => r.country === c.country).map((r) => peopleOn(g, reads, r.id)),
-    ).value,
+  const ground = countries.map(
+    (c) =>
+      sum(regions.filter((r) => r.country === c.country).map((r) => peopleOn(g, reads, r.id)))
+        .value,
   );
   const perCountry = splitOnTick(banks.length, ground);
   const out = new Map<string, RegionId>();
@@ -2662,7 +2775,9 @@ function placeFirms(
  * place with nobody in it is a market that cannot clear paying a full sweep of every party, every
  * period (Law 18).
  */
-const settled = (placed: ReadonlyMap<string, RegionId>): RegionId[] => [...new Set(placed.values())];
+const settled = (placed: ReadonlyMap<string, RegionId>): RegionId[] => [
+  ...new Set(placed.values()),
+];
 
 export function foundationSpec(
   seed: string,
@@ -2701,7 +2816,10 @@ export function foundationSpec(
   // its makers, its payout patience) from its own stream, so adding an insurer reshuffles nobody's
   // firms. The equity seed floats each against the surplus the foundation gave it, to the savers.
   const insurerEquities = drawEquity(
-    [...new Set(bankRows.map((b) => banked.get(b.bank) ?? REGION))].map((region) => ({ firm: String(insurerIdFor(region)), size: 1 })),
+    [...new Set(bankRows.map((b) => banked.get(b.bank) ?? REGION))].map((region) => ({
+      firm: String(insurerIdFor(region)),
+      size: 1,
+    })),
     bankRows,
     `${seed}/insurers`,
   );
@@ -2934,7 +3052,12 @@ export function foundationSpec(
       // Spot FX D1, D3, C2.a: the desks draw their OWN numbers, from this world's own seed value
       // (`13b.1`). The banks module no longer carries them and this one no longer reads `BankDecl`:
       // the cycle between the two is gone, and what crosses is a bank's NAME, which is public.
-      spotFx(drawFxDesks(drew.banks.map((b) => b.bank), seed)),
+      spotFx(
+        drawFxDesks(
+          drew.banks.map((b) => b.bank),
+          seed,
+        ),
+      ),
       // The derivative layer: after the money market, because a margin call is met out of cash a
       // member funds there, and after the estate, because a default resolves into one (XI-8). It
       // brings no class of contract with it (13b does that): what it brings is the house, the
@@ -2971,7 +3094,10 @@ export function foundationSpec(
       fxDerivatives(houseIdFor),
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
-      indices(countries.map((c) => c.region), countries.map((c) => c.ccy)),
+      indices(
+        countries.map((c) => c.region),
+        countries.map((c) => c.ccy),
+      ),
       // Index futures: after the indices, because what this settles against is an index READ
       // (Indices C3), and it is what a dealer's hedge actually is (Dealer Desks E1, E2).
       // Options: after the equity book clears, because D3.a forbids an underlying that exists only
@@ -2995,7 +3121,10 @@ export function foundationSpec(
       // because anything enforces it. The carry it is measured against is three reads — the room,
       // the spoilage and the money — and there is no convenience yield anywhere.
       commodityFutures(houseIdFor),
-      indexFutures(houseIdFor, countries.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy }))),
+      indexFutures(
+        houseIdFor,
+        countries.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy })),
+      ),
       // Ratings: after everything it has an opinion about, and it reads none of them — it decides
       // from state through a view with the prices closed (Ratings A2.a).
       ratings(

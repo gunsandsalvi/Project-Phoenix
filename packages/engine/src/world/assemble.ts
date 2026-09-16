@@ -16,7 +16,7 @@ import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { QUESTIONS } from '../registry/questions.js';
 import type { ParticipantView } from './context.js';
-import { asPerMember, type Cash, negated } from '../core/measure.js';
+import { asPerMember, type Cash } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
@@ -102,7 +102,8 @@ export function assemble(spec: AssemblySpec): World {
   // that never produces an outcome is a MEASURED state and not a thing somebody has to notice.
   world.declareCapability('instrumentKind', String(moneyKind.id), 'kernel');
   for (const m of modules) {
-    for (const k of m.instrumentKinds) world.declareCapability('instrumentKind', String(k.id), m.id);
+    for (const k of m.instrumentKinds)
+      world.declareCapability('instrumentKind', String(k.id), m.id);
     for (const k of m.partyKinds) world.declareCapability('partyKind', String(k.id), m.id);
     for (const k of m.derivativeKinds ?? [])
       world.declareCapability('derivativeKind', String(k.id), m.id);
@@ -156,7 +157,7 @@ export function assemble(spec: AssemblySpec): World {
       world.answer(QUESTIONS.whatALotIsWorth, String(v.instrumentKind), m.id, v.value);
     }
     for (const c of m.derivativeClasses ?? []) world.addDerivativeClass(c, m.id);
-    for (const i of m.indices?.(world.params) ?? []) world.addIndex(i, m.id);
+    for (const i of m.indices?.(world.params, world.registry) ?? []) world.addIndex(i, m.id);
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);
@@ -165,7 +166,6 @@ export function assemble(spec: AssemblySpec): World {
   world.seal();
   return world;
 }
-
 
 /** Modules in an order that satisfies `requires` (Part XIII), stable for equal rank. */
 export function orderModules(modules: readonly SystemModule[]): SystemModule[] {
@@ -276,10 +276,7 @@ function stateEquityAsRead(w: World): void {
   };
   for (const p of w.parties.all()) {
     const sheet = balanceSheet(reads, p.id);
-    const read = sum([
-      sheet.assets.value,
-      negated(sheet.liabilities.value, 'what it owes, the other way'),
-    ]);
+    const read = sum([sheet.assets.value.pieces, -sheet.liabilities.value.pieces]);
     // Law 7: the account opens with the dust its own arithmetic earned — the two sides, the
     // subtraction between them, and the walk behind every money balance they were read off. A
     // party whose equity is zero BY CONSTRUCTION (a fund, Fund Shares A3) is nothing but that

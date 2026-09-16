@@ -39,7 +39,16 @@
  * nothing, and it is a public company whose line has never traded — which is a real state and the
  * one a failed IPO leaves behind.
  */
-import { amountOf, asCash, asRatio, over, pricedAt, type Cash, type PerPiece, type Ratio } from '../../core/measure.js';
+import {
+  amountOf,
+  asCash,
+  asRatio,
+  over,
+  pricedAt,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+} from '../../core/measure.js';
 import { asQty, upTick, type Qty } from '../../core/tick.js';
 import { type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -67,7 +76,7 @@ function shortOf(ctx: MechanismContext, firm: PartyId): Option<Need> {
   const said = fundingPublishedBy(ctx.journal, String(firm), ctx.period);
   if (!said.some) return none<Need>();
   // E4: a negative short is what it has OVER, and a firm with money to spare raises nothing.
-  const short = isShort(said.value.shortTerm, 'what it is short of');
+  const short = isShort(said.value.shortTerm, said.value.ccy, 'what it is short of');
   return short.some ? some({ short: short.value, ccy: said.value.ccy }) : none<Need>();
 }
 
@@ -80,7 +89,7 @@ function quotedTo(
   if (!said.some) return none();
   return some({
     rate: said.value.rate,
-    most: asCash(said.value.most, 'what that bank will lend it'),
+    most: asCash(said.value.most, said.value.ccy, 'what that bank will lend it'),
   });
 }
 
@@ -98,8 +107,9 @@ function published(
   shares: Qty,
 ): Option<{ readonly earns: Ratio; readonly bookPerShare: PerPiece }> {
   const said = ctx.published.lastStatement(firm);
-  if (said === undefined || said.earned <= 0 || said.periods <= 0 || shares <= 0) return none();
-  const book = said.assets - said.liabilities;
+  if (said === undefined || said.earned.pieces <= 0 || said.periods <= 0 || shares <= 0)
+    return none();
+  const book = said.assets.pieces - said.liabilities.pieces;
   if (book <= 0) return none();
   // Law 8: the periodicity is part of the number. What it published covers a span of PERIODS and a
   // rate is quoted per YEAR, so the calendar puts the two in one unit — never a factor typed here.
@@ -115,9 +125,9 @@ function published(
     'what it earns a year, as it published it',
   );
   return some({
-    earns: asRatio(annual / book, 'what a unit of its own money earns it in a year'),
+    earns: asRatio(annual.pieces / book, 'what a unit of its own money earns it in a year'),
     bookPerShare: pricedAt(
-      asCash(book, 'what it published its book comes to'),
+      asCash(book, said.ccy, 'what it published its book comes to'),
       shares,
       'what its books say a share is a claim on',
     ),
@@ -220,7 +230,8 @@ export function float(ctx: MechanismContext, f: Flotation): void {
       market: String(market),
       size: f.size,
       reservation: f.reservation,
-      raising: f.raising,
+      raising: f.raising.pieces,
+      ccy: f.raising.ccy,
       earns: f.earns,
       why: f.why,
     },

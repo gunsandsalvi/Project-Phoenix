@@ -21,16 +21,9 @@
  * balance sheet asks and has one answer.
  */
 import type { PartyId, RegionId } from '../../core/ids.js';
-import {
-  type Cash,
-  absolute,
-  heldAsMoney,
-  negated,
-  plus,
-  valueAt,
-} from '../../core/measure.js';
+import { type Cash, absolute, heldAsMoney, negated, plus, valueAt } from '../../core/measure.js';
 import { currencyUnit } from '../../core/ids.js';
-import { sum } from '../../core/num.js';
+import { sumCash } from '../../core/measure.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -65,6 +58,9 @@ export interface External {
  * again — which is what makes it impossible for this to drift away from what the wire says.
  */
 export function externalOf(ctx: ExternalReads, region: RegionId): External {
+  // Currency B1, C4 (16.0): a country's accounts are a REPORT in its own money. What crossed is
+  // translated at the rate in force to be added; nothing is converted.
+  const home = ctx.registry.currencyOf(region);
   const trade: Cash[] = [];
   const finance: Cash[] = [];
   let legs = 0;
@@ -90,7 +86,8 @@ export function externalOf(ctx: ExternalReads, region: RegionId): External {
       legs += 1;
       // Positive is INTO this region. Every instruction moves the same value both ways, which is
       // why the two halves cancel and why E3 is Law 5 seen from a country's end.
-      const signed = c.to === region ? c.amount : negated(c.amount, 'out rather than in');
+      const amount = ctx.valuation.inMoney(c.amount, home, ctx.period);
+      const signed = c.to === region ? amount : negated(amount, 'out rather than in');
       if (c.claim) finance.push(signed);
       else trade.push(signed);
       if (c.money && !delivered) {
@@ -100,7 +97,12 @@ export function externalOf(ctx: ExternalReads, region: RegionId): External {
       }
     }
   }
-  return { region, trade: sum(trade).value, finance: sum(finance).value, legs };
+  return {
+    region,
+    trade: sumCash(home, trade, 'what crossed as things').value,
+    finance: sumCash(home, finance, 'what crossed as claims').value,
+    legs,
+  };
 }
 
 /** One leg that crossed a border: between whom, for how much, and what sort of thing moved. */
@@ -115,10 +117,7 @@ interface Crossing {
 }
 
 /** Which two regions a leg was between, what it came to, and whether what moved was a promise. */
-function sidesOf(
-  ctx: ExternalReads,
-  leg: Leg,
-): Crossing | undefined {
+function sidesOf(ctx: ExternalReads, leg: Leg): Crossing | undefined {
   if (isMoneyLeg(leg)) {
     // Money A1: a deposit is a claim on the bank that issued it, so money crossing a border is
     // finance and never trade. A country that counted its own currency leaving as an export would
@@ -126,7 +125,7 @@ function sidesOf(
     return {
       from: regionOf(ctx, leg.from.holder),
       to: regionOf(ctx, leg.to.holder),
-      amount: heldAsMoney(leg.amount, 'what crossed'),
+      amount: heldAsMoney(leg.amount, leg.ccy, 'what crossed'),
       claim: true,
       money: true,
     };
@@ -147,7 +146,7 @@ function sidesOf(
   return {
     from: regionOf(ctx, leg.from),
     to: regionOf(ctx, leg.to),
-    amount: valueAt(price.value, leg.qty, 'what the cargo that crossed was worth'),
+    amount: valueAt(price.value, leg.qty, i.ccy, 'what the cargo that crossed was worth'),
     claim,
     money: false,
   };
@@ -165,7 +164,8 @@ export interface ExternalReads {
   readonly ledger: Pick<MechanismContext['ledger'], 'inPeriod'>;
   readonly parties: Pick<MechanismContext['parties'], 'get'>;
   readonly instruments: Pick<MechanismContext['instruments'], 'get'>;
-  readonly registry: Pick<MechanismContext['registry'], 'instrumentKind'>;
+  readonly registry: Pick<MechanismContext['registry'], 'instrumentKind' | 'currencyOf'>;
+  readonly valuation: Pick<MechanismContext['valuation'], 'inMoney'>;
 }
 
 /**
@@ -196,17 +196,17 @@ function accounts(): Family {
           absolute(said.finance, 'and what it lent and borrowed'),
           'what it passed through',
         );
-        const dust = (said.legs + 2) * Number.EPSILON * magnitude;
-        if (Math.abs(net) <= dust) continue;
+        const dust = (said.legs + 2) * Number.EPSILON * magnitude.pieces;
+        if (Math.abs(net.pieces) <= dust) continue;
         out.push({
           family: 'flows',
           spec: 'Cross-Border E3',
           owner: String(region),
-          size: net,
+          size: net.pieces,
           // Law 8: in the region's OWN money, because that is what both halves were summed in.
           unit: String(currencyUnit(view.registry.currencyOf(region))),
           period: view.period,
-          message: `${String(region)}: ${said.trade} crossed as goods and ${said.finance} as claims, which do not cancel`,
+          message: `${String(region)}: ${said.trade.pieces} crossed as goods and ${said.finance.pieces} as claims, which do not cancel`,
         });
       }
       return out;
@@ -230,11 +230,12 @@ export function publishExternal(ctx: MechanismContext): void {
       [],
       {
         region: String(region),
-        trade: said.trade,
-        finance: said.finance,
+        trade: said.trade.pieces,
+        finance: said.finance.pieces,
         legs: said.legs,
         // E3: stated, so a reader sees the identity rather than being told about it.
-        net: plus(said.trade, said.finance, 'the two halves'),
+        net: plus(said.trade, said.finance, 'the two halves').pieces,
+        ccy: said.trade.ccy,
       },
       true,
     );
@@ -272,4 +273,4 @@ export const financedBy = (said: External): Cash =>
   negated(said.trade, 'what somebody had to lend it to pay for what it bought');
 
 /** E1: what a region sold the world, net — the half a reader usually means by "the trade balance". */
-export const tradeBalanceOf = (said: External): number => said.trade;
+export const tradeBalanceOf = (said: External): number => said.trade.pieces;

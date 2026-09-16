@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { USD } from '../src/seeds/foundation.js';
 import { agreementId, agreementKindId, currencyCode, partyId } from '../src/core/ids.js';
 import { period } from '../src/calendar/calendar.js';
 import type { Agreement } from '../src/register/agreements.js';
@@ -38,7 +39,7 @@ describe('what falls due on a household before its basket (Households E3, 0f.7c)
         terms: { kind: agreementKindId('labour.employment') },
       },
     ];
-    expect(rentOwedBy(book, me)).toBe(60);
-    expect(rentOwedBy([], me)).toBe(0);
+    expect(rentOwedBy(book, me, USD).pieces).toBe(60);
+    expect(rentOwedBy([], me, USD).pieces).toBe(0);
   });
 });

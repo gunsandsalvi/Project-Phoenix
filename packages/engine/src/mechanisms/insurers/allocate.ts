@@ -59,8 +59,10 @@ import {
   type PerPiece,
   plus,
   valueAt,
+  noCash,
+  sumCash,
 } from '../../core/measure.js';
-import { atMost, largest, sum } from '../../core/num.js';
+import { atMost, largest } from '../../core/num.js';
 import { asQty, downTick } from '../../core/tick.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
@@ -77,6 +79,8 @@ interface Door {
   readonly venue: VenueId;
   readonly fund: string;
   readonly perShare: PerPiece;
+  /** Money A3: the money the pool's shares are struck in — the venue's. */
+  readonly ccy: CurrencyCode;
   /** B2.b: what its mandate says about duration, and none where it says nothing. */
   readonly years: number | undefined;
   /** D2, D2.a (10f.5): what it OFFERS a saver, and none where it has never claimed anything. */
@@ -107,6 +111,7 @@ function doors(ctx: MechanismContext): readonly Door[] {
       venue: v.id,
       fund,
       perShare: said.value.perShare,
+      ccy: v.ccy,
       years: typeof years === 'number' ? years : undefined,
       offered: typeof offered === 'number' ? offered : undefined,
       asks: v.key['asks'],
@@ -179,22 +184,46 @@ export function buffersOf(ctx: MechanismContext, insurer: PartyId, ccy: Currency
   const view = ctx.participant(insurer);
   let coverOut = 0;
   const pensions: Cash[] = [];
-  const reads: PensionReads = { goingRate: (o, r) => ctx.employment.goingRate(o, r), params: ctx.params };
+  const reads: PensionReads = {
+    goingRate: (o, r) => ctx.employment.goingRate(o, r),
+    registry: ctx.registry,
+    params: ctx.params,
+  };
   for (const a of ctx.agreements.owedBy(insurer)) {
     if (a.state !== 'performing' || a.ccy !== ccy) continue;
     if (isPolicyTerms(a.terms)) coverOut += a.terms.cover;
     if (isPensionTerms(a.terms)) {
       const perMember = pensionPerMember(reads, a.terms);
-      if (perMember.some) pensions.push(valueAt(asPerPiece(perMember.value, 'a member’s pension'), asQty(weightOf(ctx.parties.resolve(a.creditor)), 'the members promised'), 'what the row pays next period'));
+      if (perMember.some)
+        pensions.push(
+          valueAt(
+            asPerPiece(perMember.value, 'a member’s pension'),
+            asQty(weightOf(ctx.parties.resolve(a.creditor)), 'the members promised'),
+            ccy,
+            'what the row pays next period',
+          ),
+        );
     }
   }
   const claims = view.outlook(about({ on: 'claims' }));
-  const forClaims = claims.some && coverOut > 0
-    ? valueAt(asPerPiece(claims.value.expected, 'what a unit of its cover costs it a period'), asQty(coverOut, 'the cover it has out'), 'the claims it expects a period')
-    : asCash(0, 'nothing out, or nothing expected of it');
+  const forClaims =
+    claims.some && coverOut > 0
+      ? valueAt(
+          asPerPiece(claims.value.expected, 'what a unit of its cover costs it a period'),
+          asQty(coverOut, 'the cover it has out'),
+          ccy,
+          'the claims it expects a period',
+        )
+      : noCash(ccy);
   const called = view.outlook(about({ on: 'called' }));
-  const forCalls = called.some ? asCash(called.value.expected, 'what it expects to be called a period') : asCash(0, 'nobody has called it');
-  return { forClaims, forPensions: sum(pensions).value, forCalls };
+  const forCalls = called.some
+    ? asCash(called.value.expected, ccy, 'what it expects to be called a period')
+    : noCash(ccy);
+  return {
+    forClaims,
+    forPensions: sumCash(ccy, pensions, 'the pensions it pays next period').value,
+    forCalls,
+  };
 }
 
 /**
@@ -206,10 +235,19 @@ export function investable(ctx: MechanismContext, insurer: PartyId, ccy: Currenc
   const account = ctx.accountOf(insurer, ccy);
   const cash = heldAsMoney(
     ctx.register.quantity(insurer, moneyInstrumentId(account.issuer, ccy)),
+    ccy,
     'what is in its account',
   );
   const kept = buffersOf(ctx, insurer, ccy);
-  return minus(cash, plus(plus(kept.forClaims, kept.forPensions, 'claims and pensions'), kept.forCalls, 'what it keeps back'), 'what it can put to work');
+  return minus(
+    cash,
+    plus(
+      plus(kept.forClaims, kept.forPensions, 'claims and pensions'),
+      kept.forCalls,
+      'what it keeps back',
+    ),
+    'what it can put to work',
+  );
 }
 
 /**
@@ -237,15 +275,17 @@ export function meetCalls(ctx: MechanismContext, insurer: PartyId): void {
   // 14.7, Law 8: THE PERIOD IS IN THE ASK. It walked every call ever made of it and tested the
   // period itself; it asks the registry for last period's calls, and a stale one cannot be read as
   // current. It is every call of the period and not the last, because two pools may call at once.
-  let missed = asCash(0, 'nothing has been called of it');
+  let missed: Cash | undefined;
   for (const c of callsOn(ctx.journal, insurer, periodOf(Number(ctx.period) - 1))) {
-    if (c.paid || c.called <= 0) continue;
-    missed = plus(missed, c.called, 'what it owes');
+    if (c.paid || c.called.pieces <= 0) continue;
+    missed = missed === undefined ? c.called : plus(missed, c.called, 'what it owes');
   }
-  if (missed <= 0) return;
+  if (missed === undefined || missed.pieces <= 0) return;
   for (const d of doors(ctx)) {
+    // Money A2.b: it hands back shares struck in the money it was called in.
+    if (d.ccy !== missed.ccy) continue;
     const held = heldIn(ctx, insurer, d);
-    if (held <= 0) continue;
+    if (held.pieces <= 0) continue;
     // Law 8: a share is indivisible, so what it hands back is a whole number of them, and it is the
     // number DOWN — what it can actually give back, never a fraction of a claim.
     const want = downTick(amountOf(missed, d.perShare, 'shares it must give back'));
@@ -264,7 +304,7 @@ export function meetCalls(ctx: MechanismContext, insurer: PartyId): void {
     ctx.record(
       'insurer.raised',
       [insurer, d.fund],
-      { insurer, fund: d.fund, missed, asked },
+      { insurer, fund: d.fund, missed: missed.pieces, ccy: missed.ccy, asked },
       false,
     );
   }
@@ -317,9 +357,13 @@ export function feedTheSmallest(
   let smallest = 0;
   for (const d of open) {
     const held = heldIn(ctx, insurer, d);
-    if (best === undefined || held < smallest || (held === smallest && d.fund < best.fund)) {
+    if (
+      best === undefined ||
+      held.pieces < smallest ||
+      (held.pieces === smallest && d.fund < best.fund)
+    ) {
       best = d;
-      smallest = held;
+      smallest = held.pieces;
     }
   }
   return best;
@@ -332,9 +376,9 @@ function heldIn(ctx: MechanismContext, insurer: PartyId, d: Door): Cash {
     if (!i.status.live) continue;
     const units = ctx.register.quantity(insurer, i.id);
     if (units <= 0) continue;
-    terms.push(valueAt(d.perShare, units, 'what it holds of this pool'));
+    terms.push(valueAt(d.perShare, units, d.ccy, 'what it holds of this pool'));
   }
-  return sum(terms).value;
+  return sumCash(d.ccy, terms, 'what it holds of this pool').value;
 }
 
 /**
@@ -348,7 +392,7 @@ function heldIn(ctx: MechanismContext, insurer: PartyId, d: Door): Cash {
 export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): void {
   const kept = buffersOf(ctx, insurer, ccy);
   const spare = investable(ctx, insurer, ccy);
-  if (spare <= 0) return;
+  if (spare.pieces <= 0) return;
   const years = longestPromise(ctx, insurer);
   const requires = requiredOf(ctx, ccy, years);
   const open = doors(ctx).filter((d) => acceptable(d, years, requires));
@@ -373,16 +417,16 @@ export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyC
       // go by. One is a real answer and it is visible as one.
       doors: open.length,
       shares,
-      putToWork: spare,
+      putToWork: spare.pieces,
       // 14.7: and what it kept back, each read named, so the whole of its account is on the record.
-      keptForClaims: kept.forClaims,
-      keptForPensions: kept.forPensions,
-      keptForCalls: kept.forCalls,
+      keptForClaims: kept.forClaims.pieces,
+      keptForPensions: kept.forPensions.pieces,
+      keptForCalls: kept.forCalls.pieces,
+      ccy: spare.ccy,
     },
     false,
   );
 }
-
 
 /**
  * B2 (item 10f.5): WHAT ITS PROMISES REQUIRE — the rate they are discounted at, read off the

@@ -311,10 +311,10 @@ describe('inventory (Goods E)', () => {
       );
     const moved = (w: World): number => {
       w.step();
-      const before = w.register.equity(FIRM_1);
+      const before = w.register.equity(FIRM_1).pieces;
       const r = w.step();
       expect(r.audit.total).toBe(0);
-      return w.register.equity(FIRM_1) - before;
+      return w.register.equity(FIRM_1).pieces - before;
     };
     const down = build(1);
     const up = build(3);
@@ -405,7 +405,7 @@ m.id === 'sovereign-instruments' ||
       .filter((e) => e.subjects.includes(baker()) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['unitsPerMember']).toBe(tonnes(2.5));
-    expect(ev[0]?.data['chargePerMember']).toBe(negQty(asQty(phx(2.5 * 2))));
+    expect(ev[0]?.data['chargePerMember']).toBe(negQty(asQty(phx(2.5 * 2).pieces)));
     expect(ev[0]?.public).toBe(false);
   });
 

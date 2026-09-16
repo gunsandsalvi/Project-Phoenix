@@ -34,7 +34,6 @@ import {
   type Ratio,
   absolute,
   asAmount,
-  asCash,
   asPerPiece,
   asRatio,
   minus,
@@ -50,14 +49,11 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { div, mul } from '../../core/num.js';
+import { noCash } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { addQty, asQty, negQty, NO_QTY, scaleQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
-import {
-  isGoodTerms,
-  storageRateIn,
-  type GoodTerms,
-} from '../../registry/physical.js';
+import { isGoodTerms, storageRateIn, type GoodTerms } from '../../registry/physical.js';
 import type {
   Contract,
   ContractMeasure,
@@ -118,15 +114,20 @@ export const isCommodityFuture = (t: ContractTerms): t is CommodityFutureTerms =
 
 /** D8: what it is worth to `a` — this book's own print against the level the row was struck at. */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isCommodityFuture(c.terms)) return asCash(0, 'not a commodity future');
+  if (!isCommodityFuture(c.terms)) return noCash(c.ccy);
   const p = reads.print(c.terms.book, at);
-  if (!p.some) return asCash(0, 'this book has not printed');
+  if (!p.some) return noCash(c.ccy);
   const move = minus(
     p.value.price,
     moneyLevel(c.struckAt, 'a commodity future is struck at a price'),
     'the future now against the level struck',
   );
-  const worth = valueAt(move, scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'), 'of the grade each');
+  const worth = valueAt(
+    move,
+    scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'),
+    c.ccy,
+    'of the grade each',
+  );
   return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
 
@@ -163,7 +164,12 @@ export const commodityFutureKind: DerivativeKindProfile = {
     );
     return some(
       scale(
-        valueAt(move.value, scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'), 'of the grade each'),
+        valueAt(
+          move.value,
+          scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'),
+          c.ccy,
+          'of the grade each',
+        ),
         asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
@@ -175,14 +181,15 @@ export const commodityFutureKind: DerivativeKindProfile = {
    */
   cashDue: (c, at, reads, party): Cash => {
     const t = c.terms;
-    if (!isCommodityFuture(t) || at < t.expiry) return asCash(0, 'nothing is delivered yet');
+    if (!isCommodityFuture(t) || at < t.expiry) return noCash(c.ccy);
     const long = t.long ? c.a : c.b;
-    if (long !== party) return asCash(0, 'the short delivers the grade, not the cash');
+    if (long !== party) return noCash(c.ccy);
     const price = reads.print(t.deliverable, at);
-    if (!price.some) return asCash(0, 'the grade has not printed');
+    if (!price.some) return noCash(c.ccy);
     return valueAt(
       price.value.price,
       scale(c.notional, asRatio(t.lotUnits, 'the units in a lot'), 'the units it takes'),
+      c.ccy,
       'at their price',
     );
   },
@@ -253,7 +260,11 @@ export function commodityCarryOf(
   const rate = storageRateIn(ctx, terms.region);
   if (rate === undefined) return none<PerPiece>();
   const room = scale(
-    scale(rate, ctx.params.ratio(terms.storagePerUnit), 'what the room for one unit costs a period'),
+    scale(
+      rate,
+      ctx.params.ratio(terms.storagePerUnit),
+      'what the room for one unit costs a period',
+    ),
     asRatio(periods, 'the periods of waiting'),
     'over the wait',
   );
@@ -273,7 +284,11 @@ export function commodityCarryOf(
     ctx.calendar.startOf(to),
   );
   const money = scale(
-    scale(spot.value.price, asRatio(secured, 'what the money costs a year'), 'the cost of the money'),
+    scale(
+      spot.value.price,
+      asRatio(secured, 'what the money costs a year'),
+      'the cost of the money',
+    ),
     asRatio(years, 'the year this wait is a fraction of'),
     'over the wait',
   );
@@ -345,7 +360,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   );
   const own = view.standsBehind();
   const conviction =
-    own > 0
+    own.pieces > 0
       ? view.registry.deliverable(
           pricedAt(
             own,
@@ -631,7 +646,9 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(valueAt(price.value.price, units, 'what the lot costs')),
+        amount: ctx.registry.cashFor(
+          valueAt(price.value.price, units, row.ccy, 'what the lot costs'),
+        ),
       });
     }
     if (!deliverable || legs.length === 0) continue;
@@ -714,9 +731,7 @@ export function commodityFutures(house: (ccy: CurrencyCode) => PartyId): SystemM
         // it — so what it reads is read off its module's source and not off a measurement, and
         // it is the module's whole read set rather than this phase's. It narrows the first time
         // the phase runs and the check can say which of these it actually wanted.
-        reads: [
-          { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
-        ],
+        reads: [{ kind: 'event', name: 'index.benchmark', of: 'anyPeriod' }],
         writes: [],
         run: deliver,
       },

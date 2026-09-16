@@ -32,17 +32,17 @@ import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
 import { add, atLeast, atMost, mul, sub, zeroIfNone } from '../../core/num.js';
-import {
-  asRatio,
-  heldAsMoney,
-  over,
-  ratioOf,
-  scale,
-} from '../../core/measure.js';
+import { asRatio, heldAsMoney, over, ratioOf, scale } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { asQty, scaleQty } from '../../core/tick.js';
 import {
-  agreementKindId, partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
+  agreementKindId,
+  partyId,
+  partyKindId,
+  type CurrencyCode,
+  type PartyId,
+  type RegionId,
+} from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
 import type { FailReason, Leg, Unpaid } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
@@ -159,7 +159,11 @@ interface Waiting {
 }
 
 const waiting = (ctx: MechanismContext): Waiting =>
-  ctx.state<Waiting>('households.waiting', () => ({ toAge: new Map(), toDie: new Map(), toForm: new Map() }));
+  ctx.state<Waiting>('households.waiting', () => ({
+    toAge: new Map(),
+    toDie: new Map(),
+    toForm: new Map(),
+  }));
 
 /**
  * How many whole people cross now, and what is left standing at the boundary.
@@ -197,7 +201,12 @@ export function age(ctx: MechanismContext): void {
     // The last members of a band cross AS THEMSELVES: re-keying the whole cell is the event, and
     // skipping it pinned the tail of every band where it was (A-18's other end).
     if (crossing >= weightOf(cell)) {
-      ctx.cells.reKey(cell.id, weightOf(cell), { cohort: String(next.id) }, `reached ${String(next.id)}`);
+      ctx.cells.reKey(
+        cell.id,
+        weightOf(cell),
+        { cohort: String(next.id) },
+        `reached ${String(next.id)}`,
+      );
       waiting(ctx).toAge.delete(String(cell.id));
       ctx.record(
         LIFECYCLE,
@@ -256,7 +265,8 @@ export const probateKind: PartyKindProfile = {
   // It is not a firm and it cannot fail: it owes nobody. What it holds it owes to the living, and
   // that is not a liability anybody can call — it is an estate in the course of being divided.
   fails: [],
-  cannotFail: 'XI-3, XI-8, Households F1.b: it owes nobody; what it holds is the estate of the dead in the course of being divided, and nobody can call that',
+  cannotFail:
+    'XI-3, XI-8, Households F1.b: it owes nobody; what it holds is the estate of the dead in the course of being divided, and nobody can call that',
   borrows: false,
   buysOnTerms: false,
   // Banks Funding E1: it does not CHOOSE a bank and it never moves — it banks where the family it
@@ -303,7 +313,6 @@ function heirsOf(
   }
   return out;
 }
-
 
 /** Money D2: money moves by a money leg. A deposit is a holding, and it is not moved as one. */
 function isMoney(ctx: MechanismContext, instrument: InstrumentId): boolean {
@@ -364,7 +373,11 @@ function handToProbate(
     });
   }
   if (legs.length === 0) return [];
-  const r = ctx.settle({ legs, cause: 'corporateAction', reason: `the estate of ${from} goes to probate` });
+  const r = ctx.settle({
+    legs,
+    cause: 'corporateAction',
+    reason: `the estate of ${from} goes to probate`,
+  });
   /**
    * A-20, Money E1, Register C3.b: A FAIL IS A RECORDED STATE, AND THE MODULE HAS TO READ IT.
    *
@@ -416,7 +429,10 @@ export function cohortMortalityPerAnnum(
   const here = cohorts[at];
   if (here === undefined) return undefined;
   const next = cohorts[at + 1];
-  const endOfTable = rows.reduce((t, r) => atLeast(t, r.toAge, 'the end of the table is its last band\u2019s'), 0);
+  const endOfTable = rows.reduce(
+    (t, r) => atLeast(t, r.toAge, 'the end of the table is its last band\u2019s'),
+    0,
+  );
   const to = next === undefined ? endOfTable : next.fromAge;
   let years = 0;
   let weighted = 0;
@@ -426,7 +442,11 @@ export function cohortMortalityPerAnnum(
     const hi = atMost(r.toAge, to, 'the earlier of the two ends');
     if (hi <= lo) continue;
     years = add(years, sub(hi, lo, 'the years of this band in the cohort'), 'years covered');
-    weighted = add(weighted, mul(sub(hi, lo, 'years'), perAnnumOf(r), 'deaths a year over those years'), 'weighted');
+    weighted = add(
+      weighted,
+      mul(sub(hi, lo, 'years'), perAnnumOf(r), 'deaths a year over those years'),
+      'weighted',
+    );
   }
   if (years <= 0) return undefined;
   return weighted / years;
@@ -436,7 +456,9 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
   for (const cell of [...ctx.parties.ofKind(HOUSEHOLD)]) {
     if (cell.representation !== 'cell' || !cell.status.alive) continue;
     const cohort = keyOf(cell, 'cohort');
-    const perAnnum = cohortMortalityPerAnnum(ctx.registry.cohorts, rows, cohort, (r) => ctx.params.ratio(mortalityParam(r)));
+    const perAnnum = cohortMortalityPerAnnum(ctx.registry.cohorts, rows, cohort, (r) =>
+      ctx.params.ratio(mortalityParam(r)),
+    );
     if (perAnnum === undefined) continue;
     // Law 8, Law 2: what a year is belongs to the day count and what a period is to the calendar.
     const ofAYear = yearFraction(
@@ -540,7 +562,8 @@ export function settleEstates(ctx: MechanismContext): void {
          * the office and is divided when enough of it has arrived — nothing is rounded away, which
          * is the same rule the office already applied to one heir and now applies to all of them.
          */
-        const perMember = ctx.registry.deliverable(over(
+        const perMember = ctx.registry.deliverable(
+          over(
             scale(held, share, 'this cell share'),
             asRatio(heir.weight, 'the members it has'),
             'each of them gets',
@@ -561,8 +584,9 @@ export function settleEstates(ctx: MechanismContext): void {
       for (const ccy of monies) {
         const cash = view.cash(ccy);
         if (cash <= 0) continue;
-        const perMember = ctx.registry.payable(over(
-            scale(heldAsMoney(cash, 'what the estate holds'), share, 'this cell share'),
+        const perMember = ctx.registry.payable(
+          over(
+            scale(heldAsMoney(cash, ccy, 'what the estate holds'), share, 'this cell share'),
             asRatio(heir.weight, 'the members it has'),
             'each of them gets',
           ),
@@ -637,12 +661,20 @@ export function form(ctx: MechanismContext): void {
     if (why !== undefined || !rent.some) {
       // They wait, as whole people, and the record says why.
       const carried = waiting(ctx).toForm;
-      carried.set(String(cell.id), add(zeroIfNone(carried.get(String(cell.id))), standing, 'still standing at the boundary'));
+      carried.set(
+        String(cell.id),
+        add(zeroIfNone(carried.get(String(cell.id))), standing, 'still standing at the boundary'),
+      );
       ctx.record(LIFECYCLE, [cell.id], { event: 'notFormed', members: standing, why }, true);
       continue;
     }
     ctx.cells.weight(cell.id, 'entry', standing, 'formed');
-    ctx.record(LIFECYCLE, [cell.id], { event: 'formed', members: standing, rent: rent.value, income }, true);
+    ctx.record(
+      LIFECYCLE,
+      [cell.id],
+      { event: 'formed', members: standing, rent: rent.value, income },
+      true,
+    );
   }
 }
 
@@ -663,7 +695,12 @@ export function fail(ctx: MechanismContext): void {
     const office = probateId(cell.region, cell.bank);
     if (!ctx.parties.has(office)) continue;
     const members = weightOf(cell);
-    const estate = ctx.cells.reKey(cell.id, members, { estate: 'probate', credit: 'defaulted' }, `failed: ${why}`);
+    const estate = ctx.cells.reKey(
+      cell.id,
+      members,
+      { estate: 'probate', credit: 'defaulted' },
+      `failed: ${why}`,
+    );
     waiting(ctx).toDie.delete(String(cell.id));
     waiting(ctx).toAge.delete(String(cell.id));
     handToProbate(ctx, estate, office, cell.region);

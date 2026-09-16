@@ -61,7 +61,7 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       ccy: t.quote,
       notional: asQty(1_000_000, 'the notional'),
       struckAt: struckAs('money', 1.1),
-      basis: asCash(0, 'what it cost'),
+      basis: asCash(0, t.quote, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
@@ -100,14 +100,14 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       ccy: t.quote,
       notional: asQty(1_000_000, 'the notional'),
       struckAt: struckAs('money', 1.1),
-      basis: asCash(0, 'what it cost'),
+      basis: asCash(0, t.quote, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
       house: null,
     } as Contract;
     const reads = w.contractReads(w.period);
-    expect(fxForwardKind.mark(c, w.period, reads) + fxForwardKind.mark(mirrored(c, fxForwardKind), w.period, reads)).toBe(0);
+    expect(fxForwardKind.mark(c, w.period, reads).pieces + fxForwardKind.mark(mirrored(c, fxForwardKind), w.period, reads).pieces).toBe(0);
   });
 
   it('marks against the FORWARD for the tenor left, not against spot (A3)', () => {
@@ -162,7 +162,7 @@ describe('the cross-currency swap (C1, C1.a, C3)', () => {
       ccy: t.quote,
       notional: asQty(1_000_000, 'the notional'),
       struckAt: struckAs('rate', 0.001),
-      basis: asCash(0, 'what it cost'),
+      basis: asCash(0, t.quote, 'what it cost'),
       opened: t.started,
       state: 'open',
       terminated: { some: false },

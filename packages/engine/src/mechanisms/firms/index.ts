@@ -23,20 +23,48 @@ import { paramId } from '../../core/ids.js';
 import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
 import { WIND } from '../../registry/environment.js';
 import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
-import { standsWindParam, survivesWind, vintagesHeld, windHardnessParam } from '../../registry/physical.js';
-import { acrossMembers, asCash, type PerMember, type Cash, heldAsMoney, minus, plus, valueAt, asRatio, pricedAt, scale } from '../../core/measure.js';
+import {
+  standsWindParam,
+  survivesWind,
+  vintagesHeld,
+  windHardnessParam,
+} from '../../registry/physical.js';
+import {
+  acrossMembers,
+  atMostCash,
+  type PerMember,
+  type Cash,
+  heldAsMoney,
+  minus,
+  noCash,
+  plus,
+  valueAt,
+  asRatio,
+  pricedAt,
+  scale,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId } from '../../core/ids.js';
-import { atMost, combineDust, dustOf, sum, withinDust, raised } from '../../core/num.js';
+import { combineDust, dustOf, mul, sub, sum, withinDust, raised } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { committedTo, DECIDED, marketsIn, nothingDecided, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import {
+  committedTo,
+  DECIDED,
+  marketsIn,
+  nothingDecided,
+  ordersFrom,
+  plan,
+  venueOf,
+  type Planned,
+  type PlannedOrder,
+} from './decide.js';
 import { ownPayroll, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
 import { publishExpectation, runLine } from './produce.js';
@@ -106,7 +134,7 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           // batch — read off the create legs, which say what a unit cost (Goods E1).
           const carried = sum(
             r.instruction.legs.map((l) =>
-              isCreateLeg(l) ? Math.abs(valueAt(l.costPerUnit, l.qty, 'batch value')) : 0,
+              isCreateLeg(l) ? Math.abs(mul(l.costPerUnit, l.qty, 'batch value')) : 0,
             ),
           ).value;
           walked.set(e.party, {
@@ -124,22 +152,19 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           .ofKind('firms.started')
           .filter((e) => e.period === view.period && e.subjects.includes(firm))
           .map((e) => e.data['wages'])
-          .filter((w): w is number => typeof w === 'number')
-          // Item 16: what a firm published it capitalised re-enters here, as the money it is.
-          .map((w) => asCash(w, 'what it capitalised into the batch'));
+          .filter((w): w is number => typeof w === 'number');
         const wages = sum(capitalised);
         // XI-15: a firm is a named party, so what its equity moved by is what it made.
         const effect = sum(deltas.map((d) => acrossMembers(d, 1, 'what it made')));
         const walk = walked.get(firm) ?? { terms: 0, magnitude: 0 };
         const dust =
-          combineDust(effect, wages) +
-          dustOf(walk.terms, walk.magnitude + Math.abs(wages.value));
+          combineDust(effect, wages) + dustOf(walk.terms, walk.magnitude + Math.abs(wages.value));
         if (withinDust(effect.value, wages.value, dust)) continue;
         out.push({
           family: 'flows',
           spec: 'Goods F5.b',
           owner: firm,
-          size: minus(effect.value, wages.value, 'value production moved'),
+          size: sub(effect.value, wages.value, 'value production moved'),
           unit: view.registry.currencyOf(view.parties.get(firm).region),
           period: view.period,
           message: `${firm}: its line moved ${effect.value} of value and the period paid ${wages.value} into it`,
@@ -163,7 +188,8 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
       {
         name: REGISTER,
         kind: 'noun',
-        holds: 'the rows this module gained after the seal — which born firm is in which line, with the numbers it was born with',
+        holds:
+          'the rows this module gained after the seal — which born firm is in which line, with the numbers it was born with',
         why: 'Firm Birth A1 (12.4a.2): the seed’s rows are indexed once; a firm born after it needs a row somewhere that grows, and a firm’s line and technology are a fact about a party that the kernel does not yet keep.',
         standsInFor: { noun: 'FirmDecl', planItem: 'docs/IMPLEMENTATION.md item 22' },
       },
@@ -172,8 +198,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         kind: 'working',
         holds:
           'what each firm decided this period — the period it decided in, the batch it will start and the orders it will post',
-        why:
-          'it is how this module gets from its decide phase to its own `markets`, `orders` and `runLine`, and nothing outside it has an opinion about a plan nobody has acted on yet (0e′.4). It was a PRIVATE `firms.plan` event read back by its own writer in the same period, which is a store wearing a log\u2019s clothes: undeclared, and with every order going out through `unknown[]` and back. The event stays as the public record of the decision; this is the decision.',
+        why: 'it is how this module gets from its decide phase to its own `markets`, `orders` and `runLine`, and nothing outside it has an opinion about a plan nobody has acted on yet (0e′.4). It was a PRIVATE `firms.plan` event read back by its own writer in the same period, which is a store wearing a log\u2019s clothes: undeclared, and with every order going out through `unknown[]` and back. The event stays as the public record of the decision; this is the decision.',
       },
     ],
     spec: 'Firm, Goods B, Goods F',
@@ -233,36 +258,36 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         dimension: 'amount',
         kind: 'preference' as const,
         owner: 'model' as const,
-        why: 'Banks Funding A1.b, A1.d, E1: what it costs a firm to move the account it transacts through — the payments to redirect, the counterparties to tell. It is weighed against the money it would lose if its bank failed, which for an uninsured corporate balance is the whole of it, so a firm with its float at a bank that drew the window goes and one with little there stays. It is larger than a household\'s because an operational account is entangled with everything the firm does, and smaller than a fund\'s because a fund moves far more money at once.',
+        why: "Banks Funding A1.b, A1.d, E1: what it costs a firm to move the account it transacts through — the payments to redirect, the counterparties to tell. It is weighed against the money it would lose if its bank failed, which for an uninsured corporate balance is the whole of it, so a firm with its float at a bank that drew the window goes and one with little there stays. It is larger than a household's because an operational account is entangled with everything the firm does, and smaller than a fund's because a fund moves far more money at once.",
       },
       ...rows.flatMap((r) => [
-      {
-        id: labourScaleId(r.firm),
-        value: r.labourScale,
-        unit: 'ratio of the hours the recipe names',
-        dimension: 'ratio' as const,
-        kind: 'technology' as const,
-        owner: 'model' as const,
-        why: `Firm A3: ${r.why}`,
-      },
-      {
-        id: firmParam(r.firm, 'hurdle'),
-        value: r.hurdle,
-        unit: 'per annum over its cost of capital',
-        dimension: 'perAnnum' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Capital Programme B1.d, XI-4: the margin ${r.firm}'s management insists on before it commits money it cannot get back. It is the management's own risk aversion and it is why two firms facing the same quote do not take the same project.`,
-      },
-      {
-        id: firmParam(r.firm, 'horizon'),
-        value: r.horizonPeriods,
-        unit: 'periods of service it counts',
-        dimension: 'periods' as const,
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Capital Programme B1.d: how far ahead ${r.firm}'s management looks. It is its patience, and a short one values a machine at what the years it will look at are worth rather than at what the machine will give.`,
-      },
+        {
+          id: labourScaleId(r.firm),
+          value: r.labourScale,
+          unit: 'ratio of the hours the recipe names',
+          dimension: 'ratio' as const,
+          kind: 'technology' as const,
+          owner: 'model' as const,
+          why: `Firm A3: ${r.why}`,
+        },
+        {
+          id: firmParam(r.firm, 'hurdle'),
+          value: r.hurdle,
+          unit: 'per annum over its cost of capital',
+          dimension: 'perAnnum' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Capital Programme B1.d, XI-4: the margin ${r.firm}'s management insists on before it commits money it cannot get back. It is the management's own risk aversion and it is why two firms facing the same quote do not take the same project.`,
+        },
+        {
+          id: firmParam(r.firm, 'horizon'),
+          value: r.horizonPeriods,
+          unit: 'periods of service it counts',
+          dimension: 'periods' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Capital Programme B1.d: how far ahead ${r.firm}'s management looks. It is its patience, and a short one values a machine at what the years it will look at are worth rather than at what the machine will give.`,
+        },
       ]),
     ],
     phases: [
@@ -294,9 +319,7 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         // After the wage bill, because what the period's labour cost is part of what the batch cost
         // (Goods B5), and after the markets, because what it bought this period it can draw on.
         anchor: { after: 'labour.pay' },
-        reads: [
-          { kind: 'event', name: 'environment.state', of: 'anyPeriod' },
-        ],
+        reads: [{ kind: 'event', name: 'environment.state', of: 'anyPeriod' }],
         writes: [{ kind: 'event', name: 'firms.produced' }],
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
@@ -380,29 +403,54 @@ function insure(ctx: MechanismContext, firm: PartyId): void {
   const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
   if (vintages.length === 0) return;
   const term = view.params.periods(COVER_TERM);
-  let atRisk = asCash(0, 'nothing at risk yet');
-  let expectedLoss = asCash(0, 'nothing expected lost yet');
+  let atRisk = noCash(ccy);
+  let expectedLoss = noCash(ccy);
   for (const v of vintages) {
     const standard = view.params.ratio(standsWindParam(v.capitalKind));
     if (standard <= 0) continue;
     const hardness = view.params.ratio(windHardnessParam(v.capitalKind));
-    const value = valueAt(v.basisPerUnit, v.units, 'what this vintage is on its books at');
-    const standing = raised(survivesWind(wind.value.expected, standard, hardness), term, 'what stands through the term');
+    const value = valueAt(v.basisPerUnit, v.units, ccy, 'what this vintage is on its books at');
+    const standing = raised(
+      survivesWind(wind.value.expected, standard, hardness),
+      term,
+      'what stands through the term',
+    );
     atRisk = plus(atRisk, value, 'its plant at risk');
-    expectedLoss = plus(expectedLoss, scale(value, asRatio(1 - standing, 'the share it expects the wind to take'), 'what it expects to lose'), 'its expected loss');
+    expectedLoss = plus(
+      expectedLoss,
+      scale(
+        value,
+        asRatio(1 - standing, 'the share it expects the wind to take'),
+        'what it expects to lose',
+      ),
+      'its expected loss',
+    );
   }
-  if (atRisk <= 0 || expectedLoss <= 0) return;
+  if (atRisk.pieces <= 0 || expectedLoss.pieces <= 0) return;
   // COVER counts in the money's pieces (one unit promises one unit of money), so what it covers is
   // what it has at risk, in those pieces.
   const units = ctx.registry.cashFor(atRisk);
   if (units <= 0) return;
   const top = pricedAt(expectedLoss, units, 'what a unit of cover is worth to it');
-  const rungs = rungsUpTo(levelsBelow(top, top, view.params.count(FIRM_PARAMS.coverLadderSteps)), heldAsMoney(view.cash(ccy), 'what it can pay a premium out of'), units);
-  for (const r of rungs) ctx.post(coverVenue(ccy), { party: firm, side: 'buy', price: r.price, qty: r.qty });
+  const rungs = rungsUpTo(
+    levelsBelow(top, top, view.params.count(FIRM_PARAMS.coverLadderSteps)),
+    heldAsMoney(view.cash(ccy), ccy, 'what it can pay a premium out of'),
+    units,
+  );
+  for (const r of rungs)
+    ctx.post(coverVenue(ccy), { party: firm, side: 'buy', price: r.price, qty: r.qty });
   ctx.record(
     'firms.insured',
     [firm],
-    { firm, atRisk, expectedLoss, expectedWind: wind.value.expected, term, rungs: rungs.length },
+    {
+      firm,
+      atRisk: atRisk.pieces,
+      expectedLoss: expectedLoss.pieces,
+      ccy,
+      expectedWind: wind.value.expected,
+      term,
+      rungs: rungs.length,
+    },
     false,
   );
 }
@@ -443,7 +491,12 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
     // covers what it takes to make wants nobody, and what it posts is the cut of all it has.
     // Law 8 (12b.5, 12c.3): in whole people — a person sells all their hours or none, and a firm
     // that needs fourteen hours of a week and posts fourteen hires nobody, for ever.
-    const change = netChange(view.employs(), venue.key['occupation'] ?? '', view.self.region, wholePeople(view, p.hours));
+    const change = netChange(
+      view.employs(),
+      venue.key['occupation'] ?? '',
+      view.self.region,
+      wholePeople(view, p.hours),
+    );
     if (change !== undefined) {
       ctx.post(venue.id, {
         party: firm,
@@ -481,8 +534,9 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       costOfDebt: p.costOfCapital?.debt.some === true ? p.costOfCapital.debt.value : null,
       costOfEquity: p.costOfCapital?.equity.some === true ? p.costOfCapital.equity.value : null,
       investmentGap: p.project === null ? 0 : p.project.gap,
-      investmentSpend: p.project === null ? 0 : p.project.funded,
-      programme: p.project === null ? 0 : p.project.programme,
+      investmentSpend: p.project === null ? 0 : p.project.funded.pieces,
+      programme: p.project === null ? 0 : p.project.programme.pieces,
+      ccy: ctx.registry.currencyOf(view.self.region),
       hours: p.hours,
       wageBid: p.wageBid,
       carry: p.carry,
@@ -507,15 +561,15 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   const ccy = ctx.registry.currencyOf(view.self.region);
   // A-35, Law 4: the ONE read of what this firm's buy orders commit. This was a second copy of it,
   // with a bare `*` where the other used `mul`, and the two already differed in discipline.
-  const buying = committedTo(p.orders);
+  const buying = committedTo(p.orders, ccy);
   // Firm E4.a, Capital Programme B2: the money raised is raised INTO AN ACTUAL INVESTMENT
   // PROGRAMME. What it wants to spend on plant and cannot pay for out of what it holds is part of
   // what it is short of, so a bank lends against a programme and a share issue is raised into one —
   // and a firm with no programme is short of nothing on that account and raises nothing.
-  const programme = p.project === null ? asCash(0, 'it has no programme') : p.project.programme;
+  const programme = p.project === null ? noCash(ccy) : p.project.programme;
   const working = plus(buying, wagesPromised(view), 'what it is about to have to pay');
   const owed = plus(working, programme, 'and what it wants to build');
-  const cash = heldAsMoney(view.cash(ccy), 'the money it holds');
+  const cash = heldAsMoney(view.cash(ccy), ccy, 'the money it holds');
   const short = minus(owed, cash, 'what it is short of');
   /**
    * Short-Term Debt B1, Law 4 (item 10b): AND WHICH OF IT FALLS DUE SOON, split HERE because the
@@ -531,7 +585,11 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
    * cannot put more into the near need than the need is, nor more than it holds. The identity
    * closes exactly, `shortNow + shortTerm === short`, whichever side of zero each falls.
    */
-  const toNear = atMost(working, cash, 'it cannot put more into the near need than the need is');
+  const toNear = atMostCash(
+    working,
+    cash,
+    'it cannot put more into the near need than the need is',
+  );
   const shortNow = minus(working, toNear, 'what it cannot pay of what falls due soon');
   const left = minus(cash, toNear, 'what is left once the near need is met');
   const shortTerm = minus(programme, left, 'what it cannot fund of what it wants to build');
@@ -548,7 +606,15 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   ctx.record(
     'firms.funding',
     [view.self.id],
-    { short, owed, programme, working, shortNow, shortTerm, ccy },
+    {
+      short: short.pieces,
+      owed: owed.pieces,
+      programme: programme.pieces,
+      working: working.pieces,
+      shortNow: shortNow.pieces,
+      shortTerm: shortTerm.pieces,
+      ccy,
+    },
     false,
   );
 }
@@ -556,7 +622,7 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */
 function wagesPromised(view: ParticipantView): Cash {
   const own = ownPayroll(view, view.period);
-  return own.some ? own.value.due : asCash(0, 'it has promised nobody anything');
+  return own.some ? own.value.due : noCash(view.registry.currencyOf(view.self.region));
 }
 
 /** The orders as the data they are, so the party's own participant can read them back. */

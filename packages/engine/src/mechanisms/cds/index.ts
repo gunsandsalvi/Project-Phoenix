@@ -12,6 +12,7 @@
  * somebody fits: it is the set of levels these books cleared, and a tenor nobody traded has no
  * point on it (Law 3, Law 19).
  */
+import { creditDefaults } from '../../registry/banking.js';
 import { absolute, asPerPiece, asRatio, minus, scale, valueAt } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
@@ -32,7 +33,8 @@ import {
   seriesMarketOf,
   type CdsIndexTerms,
   type SeriesName,
-  cdsIndexClass,} from './series.js';
+  cdsIndexClass,
+} from './series.js';
 import { middleGrade, rankOf } from '../../registry/grades.js';
 import { estateClosed, gradesOn } from '../../registry/notices.js';
 
@@ -218,7 +220,12 @@ function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId
     ctx.record(
       'cds.index.rolled',
       [series],
-      { series, grade, names: names.map((n) => String(n.reference)), weights: names.map((n) => n.weight) },
+      {
+        series,
+        grade,
+        names: names.map((n) => String(n.reference)),
+        weights: names.map((n) => n.weight),
+      },
       true,
     );
   }
@@ -257,6 +264,7 @@ function settleSeriesNames(ctx: MechanismContext): void {
       const owed = valueAt(
         minus(asPerPiece(1, 'par'), recovery, 'par less recovery'),
         share,
+        c.ccy,
         'what this name owes',
       );
       const buyer = c.terms.buysProtection ? c.a : c.b;
@@ -280,7 +288,12 @@ function settleSeriesNames(ctx: MechanismContext): void {
       ctx.record(
         'cds.index.settled',
         [String(c.id), String(n.reference), c.terms.series],
-        { contract: String(c.id), reference: String(n.reference), series: c.terms.series, paid: amount },
+        {
+          contract: String(c.id),
+          reference: String(n.reference),
+          series: c.terms.series,
+          paid: amount,
+        },
         true,
       );
     }
@@ -318,8 +331,8 @@ function settleEvents(ctx: MechanismContext): void {
     if (amount > 0) {
       legs.push({
         kind: 'money',
-        from: ctx.accountOf(owed > 0 ? seller : buyer, c.ccy),
-        to: ctx.accountOf(owed > 0 ? buyer : seller, c.ccy),
+        from: ctx.accountOf(owed.pieces > 0 ? seller : buyer, c.ccy),
+        to: ctx.accountOf(owed.pieces > 0 ? buyer : seller, c.ccy),
         ccy: c.ccy,
         amount,
       });
@@ -352,9 +365,8 @@ function settleEvents(ctx: MechanismContext): void {
  * record of the same fact (Law 4, Law 19).
  */
 export function recoveryIsKnown(ctx: MechanismContext, reference: PartyId): boolean {
-  const failed = ctx.journal
-    .ofKind('credit.default')
-    .some((e) => e.subjects.includes(reference));
+  // 0e′.3, Law 15: a default is another module's fact, read through the registry's door.
+  const failed = creditDefaults(ctx.journal).some((e) => e.subjects.includes(reference));
   if (!failed) return false;
   const opened = ctx.journal
     .ofKind('estate.opened')

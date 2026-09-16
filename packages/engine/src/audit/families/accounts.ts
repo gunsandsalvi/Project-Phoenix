@@ -20,9 +20,10 @@
  * sum over accounts that moved hundreds of times, and a tolerance that saw only the sum reports a
  * violation the moment the world starts paying itself.
  */
+import { sumCash, type CashSum } from '../../core/measure.js';
 import { type Cash, heldAsMoney } from '../../core/measure.js';
 import { negated } from '../../core/measure.js';
-import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
+import { combineDust, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
@@ -67,8 +68,8 @@ export interface BalanceReads {
 
 /** The two sides and the rounding the read carries, per member of the party (XI-15). */
 export interface BalanceSheet {
-  readonly assets: Sum<Cash>;
-  readonly liabilities: Sum<Cash>;
+  readonly assets: CashSum;
+  readonly liabilities: CashSum;
   /** Law 7: the walk behind every money balance the two sides are read off, per member. */
   readonly walked: number;
   readonly ccy: CurrencyCode;
@@ -101,10 +102,11 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
     // Currency C4, C5, D2: A POSITION IN ANOTHER MONEY IS AN ASSET LIKE ANY OTHER, converted at the
     // rate in force — the same rate the same period settled at, so what a balance sheet says and
     // what a payment does cannot disagree.
+    // Currency C4, D2: a report in the party's home money — a translation at the rate in force,
+    // never a conversion of what it holds (B3).
     assetTerms.push(
       view.valuation.inMoney(
         view.valuation.valueOfLots(inst.id, h.lots, view.period),
-        inst.ccy,
         home,
         view.period,
       ),
@@ -127,11 +129,10 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
     if (inside.has(String(c.a === party ? c.b : c.a))) continue;
     const worth = view.valuation.inMoney(
       view.contracts.valueTo(c, party, view.period),
-      c.ccy,
       home,
       view.period,
     );
-    if (worth >= 0) assetTerms.push(worth);
+    if (worth.pieces >= 0) assetTerms.push(worth);
     else contractLiabilities.push(negated(worth, 'what this contract owes'));
   }
   /**
@@ -168,9 +169,9 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
       const owed =
         kind.owes === 'value'
           ? view.valuation.valueOfLots(inst.id, h.value.lots, view.period)
-          : heldAsMoney(sum(h.value.lots.map((l) => l.qty)).value, 'the face it holds');
+          : heldAsMoney(sum(h.value.lots.map((l) => l.qty)).value, inst.ccy, 'the face it holds');
       // 0f.1: the holder's lots are its TOTAL, so what this party owes on them is read straight.
-      liabilityTerms.push(view.valuation.inMoney(owed, inst.ccy, home, view.period));
+      liabilityTerms.push(view.valuation.inMoney(owed, home, view.period));
       // What this party owes IS those balances, read from the other side (Register B3), so every
       // rounding they have taken since they were opened is a rounding in this number.
       if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust;
@@ -180,8 +181,8 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
   // them so), liabilities are what others hold of its paper in total, and a contract's value is
   // what the contract is worth to the party. Per member is a READ of this, where anybody wants one.
   return {
-    assets: sum(assetTerms),
-    liabilities: sum([...liabilityTerms, ...contractLiabilities]),
+    assets: sumCash(home, assetTerms, 'what it holds'),
+    liabilities: sumCash(home, [...liabilityTerms, ...contractLiabilities], 'what it owes'),
     walked,
     ccy: home,
   };
@@ -219,12 +220,17 @@ export function consolidated(view: BalanceReads, group: readonly PartyId[]): Bal
   for (const member of group) {
     // 0f.1: a member's sheet is already its TOTAL; the group's is the sum of them.
     const sheet = sheetOf(view, member, inside);
-    assets.push(view.valuation.inMoney(sheet.assets.value, sheet.ccy, home, view.period));
-    liabilities.push(view.valuation.inMoney(sheet.liabilities.value, sheet.ccy, home, view.period));
+    assets.push(view.valuation.inMoney(sheet.assets.value, home, view.period));
+    liabilities.push(view.valuation.inMoney(sheet.liabilities.value, home, view.period));
     // Law 7: the dust the READS carried, added the way the numbers were, and never a band.
     walked += sheet.walked;
   }
-  return { assets: sum(assets), liabilities: sum(liabilities), walked, ccy: home };
+  return {
+    assets: sumCash(home, assets, 'the group holds'),
+    liabilities: sumCash(home, liabilities, 'the group owes'),
+    walked,
+    ccy: home,
+  };
 }
 
 export function accountsFamily(): Family {
@@ -249,7 +255,7 @@ export function accountsFamily(): Family {
             family: 'accounts',
             spec: 'Audit B5',
             owner: p.id,
-            size: assets.value - liabilities.value,
+            size: assets.value.pieces - liabilities.value.pieces,
             unit: home,
             period: view.period,
             message: `${p.id} has no stated equity account`,
@@ -268,7 +274,7 @@ export function accountsFamily(): Family {
         // multiplication is by a count and adds no dust (Law 7).
         const people = weightOf(p);
         const stands = sum([equity.value * people, revaluation.value * people]);
-        const read = sum([assets.value, negated(liabilities.value, 'what it owes, the other way')]);
+        const read = sum([assets.value.pieces, -liabilities.value.pieces]);
         const dust =
           combineDust(assets, liabilities, read) +
           equity.dust +
@@ -287,7 +293,7 @@ export function accountsFamily(): Family {
             size: read.value - stands.value,
             unit: home,
             period: view.period,
-            message: `${p.id}: assets ${assets.value} - liabilities ${liabilities.value} != the ${revaluation.value === 0 ? `equity account ${equity.value}` : `accounts it stands on ${stands.value} (equity ${equity.value} and revaluation ${revaluation.value})`} (per member)`,
+            message: `${p.id}: assets ${assets.value.pieces} - liabilities ${liabilities.value.pieces} != the ${revaluation.value === 0 ? `equity account ${equity.value}` : `accounts it stands on ${stands.value} (equity ${equity.value} and revaluation ${revaluation.value})`} (per member)`,
           });
         }
       }

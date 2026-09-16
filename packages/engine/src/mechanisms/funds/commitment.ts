@@ -26,14 +26,23 @@
  * door (Fund Shares C1) — so a call is a subscription the investor agreed in advance to make, and
  * there is one writer of what a share is issued at (Law 4).
  */
+import { noCash, sumCash } from '../../core/measure.js';
 import {
   agreementKindId,
   type CurrencyCode,
   moneyInstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { asCash, asRatio, type Cash, heldAsMoney, minus, type PerPiece, plus, scale } from '../../core/measure.js';
-import { sum } from '../../core/num.js';
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  type PerPiece,
+  plus,
+  scale,
+} from '../../core/measure.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { MechanismContext } from '../../world/context.js';
 
@@ -89,8 +98,8 @@ export const undrawnOn = (c: Commitment): Cash =>
   minus(c.committed, c.drawn, 'what it promised and has not yet paid');
 
 /** A2, A4: what the pool could still call in total, across everybody who committed to it. */
-export const undrawnTo = (rows: readonly Commitment[]): Cash =>
-  sum(rows.map(undrawnOn)).value;
+export const undrawnTo = (rows: readonly Commitment[], ccy: CurrencyCode): Cash =>
+  sumCash(ccy, rows.map(undrawnOn), 'what is promised and not yet paid').value;
 
 /**
  * A1, Seed A3, XI-8: OPEN THE COMMITMENTS THIS WORLD WAS RAISED WITH.
@@ -123,13 +132,17 @@ export function openCommitments(
     // off its own account, so no institution opens owing a call it could never meet. One that has
     // nothing yet promises nothing yet, and is asked again next period (the phase is idempotent).
     const amount = ctx.registry.cashFor(
-      scale(heldAsMoney(ctx.participant(investor).cash(ccy), 'what it has to put to work'), asRatio(share, 'the share of it promised'), 'what it promised'),
+      scale(
+        heldAsMoney(ctx.participant(investor).cash(ccy), ccy, 'what it has to put to work'),
+        asRatio(share, 'the share of it promised'),
+        'what it promised',
+      ),
     );
     if (amount <= 0) continue;
     const terms: CommitmentTerms = {
       kind: COMMITMENT,
-      committed: asCash(amount, 'what it promised this fund'),
-      drawn: asCash(0, 'and it has paid none of it yet'),
+      committed: asCash(amount, ccy, 'what it promised this fund'),
+      drawn: noCash(ccy),
     };
     ctx.owes({
       debtor: investor,
@@ -223,16 +236,20 @@ export function callCapital(
       const now: CommitmentTerms = {
         kind: COMMITMENT,
         committed: c.committed,
-        drawn: plus(c.drawn, heldAsMoney(wanted, 'what this call brought in'), 'what it has paid in'),
+        drawn: plus(
+          c.drawn,
+          heldAsMoney(wanted, c.drawn.ccy, 'what this call brought in'),
+          'what it has paid in',
+        ),
       };
       ctx.restate(c.id, now);
       // A3: shares against what it paid, at the NAV, through the door every subscriber uses.
-      issue(investor.id, heldAsMoney(wanted, 'what it paid'), perShare);
+      issue(investor.id, heldAsMoney(wanted, c.drawn.ccy, 'what it paid'), perShare);
     }
     ctx.record(
       'fund.called',
       [pool, investor.id],
-      { fund: pool, investor: investor.id, called: wanted, paid, perShare },
+      { fund: pool, investor: investor.id, called: wanted, ccy: c.drawn.ccy, paid, perShare },
       true,
     );
   }

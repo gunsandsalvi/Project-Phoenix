@@ -17,6 +17,7 @@
  * rather than being stated. A lender that has published no view of an issuer will not take its
  * paper: no view, no advance.
  */
+import { sumCash } from '../../core/measure.js';
 import {
   asRatio,
   type Cash,
@@ -30,8 +31,7 @@ import {
 import type { Qty } from '../../core/tick.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { DayCount } from '../../calendar/daycount.js';
-import type { InstrumentId, PartyId } from '../../core/ids.js';
-import { sum } from '../../core/num.js';
+import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -132,10 +132,16 @@ export function advances(
       instrument: i.id,
       free,
       valuePerUnit: value.value,
-      total: valueAt(value.value, free, 'what this parcel would raise'),
+      total: valueAt(value.value, free, i.ccy, 'what this parcel would raise'),
     });
   }
-  return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
+  return out.sort((a, b) =>
+    a.total.pieces === b.total.pieces
+      ? a.instrument < b.instrument
+        ? -1
+        : 1
+      : b.total.pieces - a.total.pieces,
+  );
 }
 
 /**
@@ -153,10 +159,13 @@ export function windowAdvances(
   on: Civil,
   policyHaircut: Ratio,
 ): readonly Advance[] {
+  // Currency B4: a central bank lends ITS money against paper in its money; a foreign line is not
+  // collateral at this window, however good — the bank buys the money it is short of instead.
+  const lends = cb.registry.currencyOf(cb.self.region);
   const out: Advance[] = [];
   for (const h of borrower.holdings()) {
     const i = borrower.instruments.get(h.instrument);
-    if (!eligible(cb, i, on)) continue;
+    if (i.ccy !== lends || !eligible(cb, i, on)) continue;
     const print = borrower.print(i.id);
     if (!print.some || print.value.price <= 0) continue;
     const free = borrower.free(h.instrument);
@@ -171,13 +180,23 @@ export function windowAdvances(
       instrument: i.id,
       free,
       valuePerUnit: per,
-      total: valueAt(per, free, 'what it would raise'),
+      total: valueAt(per, free, i.ccy, 'what it would raise'),
     });
   }
-  return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
+  return out.sort((a, b) =>
+    a.total.pieces === b.total.pieces
+      ? a.instrument < b.instrument
+        ? -1
+        : 1
+      : b.total.pieces - a.total.pieces,
+  );
 }
 
 /** What the borrower could raise from this lender against everything it has free (C4.b). */
-export function borrowingPower(advances: readonly Advance[]): Cash {
-  return sum(advances.map((a) => a.total)).value;
+export function borrowingPower(advances: readonly Advance[], ccy: CurrencyCode): Cash {
+  return sumCash(
+    ccy,
+    advances.map((a) => a.total),
+    'what its parcels would raise',
+  ).value;
 }

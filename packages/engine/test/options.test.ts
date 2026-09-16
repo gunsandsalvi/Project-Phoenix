@@ -43,7 +43,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: Qty): Co
     ccy: m.ccy,
     notional,
     struckAt: struckAs('money', 1),
-    basis: heldAsMoney(notional, 'what the position cost'),
+    basis: heldAsMoney(notional, m.ccy, 'what the position cost'),
     opened: w.period,
     state: 'open',
     terminated: { some: false },
@@ -105,7 +105,7 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
     if (a === undefined || b === undefined) return;
     const c = rowOn(w, m, String(a), String(b), asQty(10, 'the notional'));
     const reads = w.contractReads(w.period);
-    expect(optionKind.mark(c, w.period, reads) + optionKind.mark(mirrored(c, optionKind), w.period, reads)).toBe(0);
+    expect(optionKind.mark(c, w.period, reads).pieces + optionKind.mark(mirrored(c, optionKind), w.period, reads).pieces).toBe(0);
   });
 });
 

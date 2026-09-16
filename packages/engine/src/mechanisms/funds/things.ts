@@ -91,7 +91,11 @@ export function thingOrders(
   // — it is a quantity it has, in the way that selling units nobody holds is not a thing to do.
   const ccy = view.registry.currencyOf(view.self.region);
   const qty = downTick(
-    amountOf(heldAsMoney(view.cash(ccy), 'the money it holds'), most, 'pieces its own cash reaches'),
+    amountOf(
+      heldAsMoney(view.cash(ccy), ccy, 'the money it holds'),
+      most,
+      'pieces its own cash reaches',
+    ),
   );
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: most, qty }];

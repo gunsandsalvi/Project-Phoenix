@@ -24,9 +24,9 @@ import { none, type Option, some } from '../core/option.js';
 import type { Event } from '../journal/journal.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Agreement, AgreementTerms } from '../register/agreements.js';
-import { sum } from '../core/num.js';
 import { asAmount, valueAt } from '../core/measure.js';
 import type { PartyId } from '../core/ids.js';
+import { sumCash } from '../core/measure.js';
 
 const FUNDING = 'firms.funding';
 const STRUCK = 'fund.struck';
@@ -56,7 +56,11 @@ export const isTenancy = (t: AgreementTerms): t is TenancyTerms =>
  * book of commitments: every performing tenancy it is the tenant of, at the rent it was struck at.
  * A cell's tenancy is on the whole cell, so this is the TOTAL its members owe between them.
  */
-export function rentOwedBy(commitments: readonly Agreement[], who: PartyId): Cash {
+export function rentOwedBy(
+  commitments: readonly Agreement[],
+  who: PartyId,
+  ccy: CurrencyCode,
+): Cash {
   const terms: Cash[] = [];
   for (const a of commitments) {
     if (a.debtor !== who || a.state !== 'performing' || !isTenancy(a.terms)) continue;
@@ -64,11 +68,12 @@ export function rentOwedBy(commitments: readonly Agreement[], who: PartyId): Cas
       valueAt(
         asPerPiece(a.terms.rentPerDwelling, 'the rent a dwelling was let at'),
         asAmount<'piece'>(a.terms.dwellings, 'the dwellings it took'),
+        a.ccy,
         'the rent on this tenancy',
       ),
     );
   }
-  return sum(terms).value;
+  return sumCash(ccy, terms, 'the rent that falls due on it').value;
 }
 
 /** The phase's door: the wire, asked about a named party. */
@@ -226,8 +231,8 @@ export function shortfallOf(
 }
 
 /** A gap that is not positive is not a gap: a party with money to spare raises nothing (E4). */
-export function isShort(amount: number, what: string): Option<Cash> {
-  return amount > 0 ? some(asCash(amount, what)) : none<Cash>();
+export function isShort(amount: number, ccy: CurrencyCode, what: string): Option<Cash> {
+  return amount > 0 ? some(asCash(amount, ccy, what)) : none<Cash>();
 }
 
 /* --- What a lettings venue printed ---------------------------------------------------------- */
@@ -245,7 +250,8 @@ export function rentPrintedIn(reads: WireReads, region: string): Option<PerPiece
   for (const e of reads.ofKind(RENT_PRINT)) {
     if (e.data['region'] !== region || e.data['outcome'] !== 'cleared') continue;
     const rent = e.data['rentPerDwelling'];
-    if (typeof rent === 'number' && rent > 0) last = asPerPiece(rent, 'what a dwelling let for, per period');
+    if (typeof rent === 'number' && rent > 0)
+      last = asPerPiece(rent, 'what a dwelling let for, per period');
   }
   return last === undefined ? none<PerPiece>() : some(last);
 }
@@ -275,8 +281,13 @@ export function callsOn(
   for (const e of reads.ofKindIn(CALLED, period)) {
     if (e.data['investor'] !== investor) continue;
     const called = e.data['called'];
-    if (typeof called !== 'number') continue;
-    out.push({ fund: String(e.data['fund']), called: asCash(called, 'what it was called for'), paid: e.data['paid'] === true });
+    const ccy = e.data['ccy'];
+    if (typeof called !== 'number' || typeof ccy !== 'string') continue;
+    out.push({
+      fund: String(e.data['fund']),
+      called: asCash(called, ccy as CurrencyCode, 'what it was called for'),
+      paid: e.data['paid'] === true,
+    });
   }
   return out;
 }

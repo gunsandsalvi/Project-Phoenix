@@ -16,12 +16,8 @@
 import type { Period } from '../calendar/calendar.js';
 import type { PartyId } from '../core/ids.js';
 import { Forbidden } from '../core/errors.js';
-import { asCash, type Cash, minus, negated } from '../core/measure.js';
-import type {
-  Contract,
-  ContractReads,
-  DerivativeKindProfile,
-} from '../registry/derivatives.js';
+import { type Cash, minus, negated } from '../core/measure.js';
+import type { Contract, ContractReads, DerivativeKindProfile } from '../registry/derivatives.js';
 
 export interface ContractValueDeps {
   profile(kind: Contract['kind']): DerivativeKindProfile;
@@ -35,7 +31,7 @@ export interface ContractValueDeps {
 export function markOfContract(c: Contract, at: Period, d: ContractValueDeps): Cash {
   // Item 16: a mark is MONEY — what the contract is worth to `a` — and the door is here, at the
   // one reader of the kind's own answer. Nothing downstream can multiply two of them together.
-  return asCash(d.profile(c.kind).mark(c, at, d.reads(at)), `what ${c.id} is worth`);
+  return d.profile(c.kind).mark(c, at, d.reads(at));
 }
 
 /**
@@ -71,9 +67,7 @@ export function carryingOfContract(c: Contract, now: Period, d: ContractValueDep
   // no earlier mark of it to read, and reading one would be asking what a contract was worth in a
   // period it did not exist in. A contract opened IN the recognised period is not younger than it —
   // its mark of that period is in the accounts — which is the same `>` a lot's `acquired < now` is.
-  return c.opened > recognised
-    ? asCash(c.basis, `what ${c.id} cost`)
-    : markOfContract(c, recognised, d);
+  return c.opened > recognised ? c.basis : markOfContract(c, recognised, d);
 }
 
 /** D8.a: what the period's re-marking moves, a real gain to one side and a real loss to the other. */

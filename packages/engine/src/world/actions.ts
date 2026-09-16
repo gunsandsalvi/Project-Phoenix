@@ -85,7 +85,7 @@ function payToHolders(
     // 0f.2: A COUPON IS OWED ON THE HOLDING, and the holding is the party's total. What one piece
     // of the unit pays times the pieces held, put on the money's grid; the fraction below a piece
     // is not owed, because it is not money (Law 8). A cell and a named party are paid the same way.
-    const total = d.registry.payable(valueAt(perUnit, unitsHeld, 'coupon cash'));
+    const total = d.registry.payable(valueAt(perUnit, unitsHeld, i.ccy, 'coupon cash'));
     if (total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
@@ -226,7 +226,9 @@ function redeem(
     if (issuedBy(i, holderId)) continue;
     // 0f.1: the register holds the TOTAL, and the redemption moves the total.
     const held = d.register.quantity(holderId, i.id);
-    const units = slice.some ? downTick(scale(held, slice.value, 'the slice that falls due')) : held;
+    const units = slice.some
+      ? downTick(scale(held, slice.value, 'the slice that falls due'))
+      : held;
     if (units <= 0) continue;
     // N10: par is money, so the units and the cash are on the same grid by construction.
     const legs: Leg[] = [
@@ -249,7 +251,11 @@ function redeem(
       },
     ];
     const record = d.settlement.settle(
-      { legs, cause: 'maturity', reason: `${slice.some ? 'amortisation' : 'maturity'} of ${i.id} to ${holderId}` },
+      {
+        legs,
+        cause: 'maturity',
+        reason: `${slice.some ? 'amortisation' : 'maturity'} of ${i.id} to ${holderId}`,
+      },
       period,
       cycle,
     );
@@ -265,7 +271,6 @@ function redeem(
     d.journal.record(period, cycle, 'instrument.ceased', [i.id], { reason: 'maturity' }, true);
   }
 }
-
 
 /**
  * Money B1, A1; Currency A2, B1: an account is (holder, issuer, currency), and every party banks

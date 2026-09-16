@@ -81,7 +81,7 @@ describe('the requirement (Banks Capital B1, B1.a)', () => {
               .map((h) => w.register.quantity(h, i.id)),
           ),
       ).value;
-      expect(num(said, 'capital')).toBeCloseTo(w.register.equity(bank) + junior, 6);
+      expect(num(said, 'capital')).toBeCloseTo(w.register.equity(bank).pieces + junior, 6);
       // B1: and what it is measured against is a walk over what the bank holds, at marks.
       expect(num(said, 'assets')).toBeGreaterThan(0);
       expect(num(said, 'leverageRatio')).toBeCloseTo(num(said, 'capital') / num(said, 'assets'), 9);

@@ -276,7 +276,7 @@ function shortOf(
    * covers what falls due within weeks, a bond covers the plant (Capital Programme B2).
    */
   // E4: a negative short is what it has OVER, and a firm with money to spare does not borrow.
-  const short = isShort(said.value.shortTerm, 'what it is short of');
+  const short = isShort(said.value.shortTerm, said.value.ccy, 'what it is short of');
   return short.some ? some({ short: short.value, ccy: said.value.ccy }) : none();
 }
 
@@ -291,8 +291,7 @@ function shortOf(
  * system, and a second composition assembled here out of the private terms beside it would be this
  * module pricing a bank's book against a belief that bank does not hold (Law 4).
  */
-const wouldHold = (ctx: MechanismContext, issuer: PartyId): Option<Ratio> =>
-  ctx.requiredOf(issuer);
+const wouldHold = (ctx: MechanismContext, issuer: PartyId): Option<Ratio> => ctx.requiredOf(issuer);
 
 /** Banks Lending C3.a: the keenest quote this firm was given, and how much that bank will lend. */
 function quotedTo(
@@ -303,7 +302,7 @@ function quotedTo(
   if (!said.some) return none();
   return some({
     rate: said.value.rate,
-    most: asCash(said.value.most, 'what that bank will lend it'),
+    most: asCash(said.value.most, said.value.ccy, 'what that bank will lend it'),
   });
 }
 
@@ -401,8 +400,9 @@ function place(
       coupon: schedule.coupon.amount,
       requiredByHolders: keenest,
       quoted: quoted.some ? quoted.value.rate : null,
-      lendable: quoted.some ? quoted.value.most : null,
-      short,
+      lendable: quoted.some ? quoted.value.most.pieces : null,
+      short: short.pieces,
+      ccy: short.ccy,
     },
     true,
   );
@@ -445,9 +445,14 @@ function openLine(
   onto: (x: PerNamedUnit, what: string) => PerPiece,
 ): boolean {
   const said = ctx.published.lastStatement(issuer);
-  if (said === undefined || said.assets <= 0) return false;
+  if (said === undefined || said.assets.pieces <= 0) return false;
   // N10: what it will owe is the FACE, which is par on every unit of it (`owes: 'face'`).
-  const face = valueAt(onto(asPerNamedUnit(1, 'par'), 'par on the grid'), units, 'the face it takes on');
+  const face = valueAt(
+    onto(asPerNamedUnit(1, 'par'), 'par on the grid'),
+    units,
+    ccy,
+    'the face it takes on',
+  );
   const owes = ratioOf(
     plus(said.liabilities, face, 'what it owes with this on it'),
     said.assets,
@@ -457,16 +462,17 @@ function openLine(
   const annual = valueAt(
     asPerPiece(schedule.coupon.amount, 'what a unit of it costs a year'),
     units,
+    ccy,
     'what this line costs it a year',
   );
   // B2, B4: A LINE THAT COSTS NOTHING A YEAR HAS NO COVER TO PROMISE, so this module brings the
   // coupon-bearing senior line and nothing else. A firm whose keenest holder requires nothing of it
   // would be issuing discount paper, which is short-term debt and is item 10b's subject — not a
   // corporate bond with a covenant on it.
-  if (owes <= 0 || annual <= 0) return false;
+  if (owes <= 0 || annual.pieces <= 0) return false;
   // A firm that published a loss has no cover to promise, and promising a negative one is not a
   // promise. It says nothing rather than saying something untestable (B2, Law 2).
-  if (said.earned <= 0) return false;
+  if (said.earned.pieces <= 0) return false;
   const covers = ratioOf(said.earned, annual, 'what it earns against what this line costs it');
   const terms: CorporateBondTerms = {
     kind: CORPORATE_BOND,
@@ -533,14 +539,17 @@ export function testCovenants(ctx: MechanismContext): void {
     const broke: string[] = [];
     // B2: how much it owes against what it holds. A firm with no assets has no ratio that means
     // anything and has breached, which is what the worst case IS rather than a number pushed back.
-    if (said.assets <= 0 || ratioOf(said.liabilities, said.assets, 'leverage') > t.covenants.leverage) {
+    if (
+      said.assets.pieces <= 0 ||
+      ratioOf(said.liabilities, said.assets, 'leverage') > t.covenants.leverage
+    ) {
       broke.push('leverage');
     }
     // B2: what it earns against what falls due on this line over a year of it.
     const owed = annualCostOf(t);
     const face = ctx.register.heldTotal(i.id).value;
-    const annual = valueAt(owed, face, 'what this line costs it a year');
-    if (annual > 0 && ratioOf(said.earned, annual, 'coverage') < t.covenants.coverage) {
+    const annual = valueAt(owed, face, i.ccy, 'what this line costs it a year');
+    if (annual.pieces > 0 && ratioOf(said.earned, annual, 'coverage') < t.covenants.coverage) {
       broke.push('coverage');
     }
     if (broke.length === 0) continue;
@@ -552,10 +561,12 @@ export function testCovenants(ctx: MechanismContext): void {
         bond: String(i.id),
         quarter: said.quarter,
         broke: broke.join(' and '),
-        leverage: said.assets > 0 ? ratioOf(said.liabilities, said.assets, 'leverage') : null,
+        leverage:
+          said.assets.pieces > 0 ? ratioOf(said.liabilities, said.assets, 'leverage') : null,
         promised: t.covenants.leverage,
-        earned: said.earned,
-        owedPerYear: annual,
+        earned: said.earned.pieces,
+        owedPerYear: annual.pieces,
+        ccy: i.ccy,
       },
       true,
     );
@@ -676,6 +687,10 @@ export const annualCostOf = (t: CorporateBondTerms): PerPiece =>
 
 /** B2: how far the published accounts are the right side of what was promised. Negative is a breach. */
 export const headroomOn = (said: { assets: Cash; liabilities: Cash }, c: Covenants): Ratio =>
-  said.assets <= 0
+  said.assets.pieces <= 0
     ? asRatio(-1, 'a firm with no assets has breached')
-    : minus(c.leverage, ratioOf(said.liabilities, said.assets, 'leverage'), 'what is left of the promise');
+    : minus(
+        c.leverage,
+        ratioOf(said.liabilities, said.assets, 'leverage'),
+        'what is left of the promise',
+      );

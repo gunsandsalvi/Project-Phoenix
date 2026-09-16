@@ -30,13 +30,22 @@
  * and Law 18's "gate on behaviour, not bits" is satisfied by construction. What changes is which
  * programs compile.
  *
+ * THE ONE EXCEPTION IS MONEY (16.0). A currency in this world is DRAWN, so it is never a literal the
+ * compiler sees, and a phantom could not tell two of them apart: `Cash` erased the currency and two
+ * currencies added by arithmetic that typechecked. `Cash` is therefore a VALUE that carries its
+ * currency at runtime (`{ pieces, ccy }`, Currency A3: *a property of every amount*), and the
+ * arithmetic below refuses two currencies where they meet (Money A2.b). What it costs is an
+ * allocation per amount; what it buys is that A-23 and its siblings cannot be written.
+ *
  * HOW IT IS ADOPTED. Not as a rewrite. The dimension is already declared at all 950 sites; it moves
  * from the third argument into a type argument, and the compiler generates the migration list by
  * erroring at every site that was lying. A value with no dimension yet is a plain `number` and every
  * operation here accepts one, so a module that has not been migrated is not broken — it is simply
  * not yet checked, which is the state it was in before.
  */
-import { finite } from './num.js';
+import { finite, type Sum } from './num.js';
+import { Impossible } from './errors.js';
+import type { CurrencyCode } from './ids.js';
 
 declare const dimension: unique symbol;
 
@@ -101,12 +110,24 @@ export type Total<D extends string> = Measure<D>;
  * Law 7, Law 8: two of the SAME thing, added. Two currencies do not meet here and the compiler is
  * what says so — `add(usd, eur, …)` used to compile and produce a number with no unit at all.
  */
-export function plus<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Measure<D> {
-  return (finite(a, what) + finite(b, what)) as Measure<D>;
+export function plus(a: Cash, b: Cash, what: string): Cash;
+export function plus<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Measure<D>;
+export function plus(a: Cash | number, b: Cash | number, what: string): Cash | number {
+  if (isCash(a) || isCash(b)) {
+    const [x, y] = bothCash(a, b, what);
+    return asCash(x.pieces + y.pieces, sameMoney(x, y, what), what);
+  }
+  return finite(a, what) + finite(b, what);
 }
 
-export function minus<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Measure<D> {
-  return (finite(a, what) - finite(b, what)) as Measure<D>;
+export function minus(a: Cash, b: Cash, what: string): Cash;
+export function minus<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Measure<D>;
+export function minus(a: Cash | number, b: Cash | number, what: string): Cash | number {
+  if (isCash(a) || isCash(b)) {
+    const [x, y] = bothCash(a, b, what);
+    return asCash(x.pieces - y.pieces, sameMoney(x, y, what), what);
+  }
+  return finite(a, what) - finite(b, what);
 }
 
 /**
@@ -114,36 +135,50 @@ export function minus<D extends string>(a: Measure<D>, b: Measure<D>, what: stri
  * of the 950 sites actually wants — a share of something, a rate applied to a balance, a fraction
  * of a population — and it is the one that cannot produce money².
  */
-export function scale<D extends string>(a: Measure<D>, by: Ratio, what: string): Measure<D> {
-  return (finite(a, what) * finite(by, what)) as Measure<D>;
+export function scale(a: Cash, by: Ratio, what: string): Cash;
+export function scale<D extends string>(a: Measure<D>, by: Ratio, what: string): Measure<D>;
+export function scale(a: Cash | number, by: Ratio, what: string): Cash | number {
+  if (isCash(a)) return asCash(a.pieces * finite(by, what), a.ccy, what);
+  return finite(a, what) * finite(by, what);
 }
 
 /**
  * Law 3: WHAT A QUANTITY COMES TO AT A PRICE. `Price<C,U> × Amount<U> = Money<C>` — the unit
  * cancels, the currency survives, and there is no way to reach money² through it.
  */
-export function valueAt<C extends string, U extends string>(
-  price: Price<C, U>,
-  qty: Amount<U>,
+export function valueAt(
+  price: PerPiece,
+  qty: Amount<'piece'>,
+  ccy: CurrencyCode,
   what: string,
-): Money<C> {
-  return (finite(price, what) * finite(qty, what)) as Money<C>;
+): Cash;
+export function valueAt(price: PerNamedUnit, qty: Amount<'named'>, what: string): Stated;
+export function valueAt(
+  price: number,
+  qty: number,
+  ccyOrWhat: string,
+  what?: string,
+): Cash | number {
+  if (what === undefined) return finite(price, ccyOrWhat) * finite(qty, ccyOrWhat);
+  // Currency A3.a, 16.0: a price is money per piece OF A CURRENCY — the instrument's — and what a
+  // quantity comes to at it is money of that currency, said at the door.
+  return asCash(finite(price, what) * finite(qty, what), ccyOrWhat as CurrencyCode, what);
 }
 
 /**
  * Law 3: AND BACK. `Money<C> / Amount<U> = Price<C,U>`, which is the only way to make a price out
  * of a payment — and it is why a price cannot be made out of two payments (A-65).
  */
-export function pricedAt<C extends string, U extends string>(
-  paid: Money<C>,
-  qty: Amount<U>,
-  what: string,
-): Price<C, U> {
+export function pricedAt(paid: Cash, qty: Amount<'piece'>, what: string): PerPiece;
+export function pricedAt(paid: Stated, qty: Amount<'named'>, what: string): PerNamedUnit;
+export function pricedAt(paid: Cash | number, qty: number, what: string): number {
   const q = finite(qty, what);
   if (q === 0) {
-    throw new RangeError(`${what}: nothing was delivered, so there is no price it was delivered at`);
+    throw new RangeError(
+      `${what}: nothing was delivered, so there is no price it was delivered at`,
+    );
   }
-  return (finite(paid, what) / q) as Price<C, U>;
+  return (isCash(paid) ? paid.pieces : finite(paid, what)) / q;
 }
 
 /**
@@ -154,23 +189,29 @@ export function pricedAt<C extends string, U extends string>(
  * It does not round. Which way a fraction of a piece goes is the caller's decision and it has a
  * name (`core/tick.ts`): what a party can do rounds down, what it must do rounds up.
  */
-export function amountOf<C extends string, U extends string>(
-  paid: Measure<`money:${C}`>,
-  price: Price<C, U>,
-  what: string,
-): Amount<U> {
+export function amountOf(paid: Cash, price: PerPiece, what: string): Amount<'piece'>;
+export function amountOf(paid: Stated, price: PerNamedUnit, what: string): Amount<'named'>;
+export function amountOf(paid: Cash | number, price: number, what: string): number {
   const at = finite(price, what);
   if (at === 0) {
     throw new RangeError(`${what}: at a price of nothing there is no amount it buys`);
   }
-  return (finite(paid, what) / at) as Amount<U>;
+  return (isCash(paid) ? paid.pieces : finite(paid, what)) / at;
 }
 
 /**
  * Law 8: TWO OF THE SAME THING, DIVIDED, IS A PURE NUMBER — a share, a ratio, a multiple. It is the
  * only way to reach `Ratio` from measured things, and it is why a ratio can never be spent.
  */
-export function ratioOf<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Ratio {
+export function ratioOf(a: Cash, b: Cash, what: string): Ratio;
+export function ratioOf<D extends string>(a: Measure<D>, b: Measure<D>, what: string): Ratio;
+export function ratioOf(a: Cash | number, b: Cash | number, what: string): Ratio {
+  if (isCash(a) || isCash(b)) {
+    const [x, y] = bothCash(a, b, what);
+    sameMoney(x, y, what);
+    if (y.pieces === 0) throw new RangeError(`${what}: a share of nothing is not a number`);
+    return (x.pieces / y.pieces) as Ratio;
+  }
   const den = finite(b, what);
   if (den === 0) {
     throw new RangeError(`${what}: a share of nothing is not a number`);
@@ -224,10 +265,8 @@ export const asMoney = <C extends string>(x: number, what: string): Money<C> =>
 export const asAmount = <U extends string>(x: number, what: string): Amount<U> =>
   finite(x, what) as Amount<U>;
 
-export const asPrice = <C extends string, U extends string>(
-  x: number,
-  what: string,
-): Price<C, U> => finite(x, what) as Price<C, U>;
+export const asPrice = <C extends string, U extends string>(x: number, what: string): Price<C, U> =>
+  finite(x, what) as Price<C, U>;
 
 export const asPerMember = <D extends string>(x: number, what: string): PerMember<D> =>
   finite(x, what) as PerMember<D>;
@@ -248,7 +287,87 @@ export const asTotal = <D extends string>(x: number, what: string): Total<D> =>
  * literal. The generics are still worth carrying: a kernel function generic in `C` cannot reach its
  * return currency except through the rate, whatever a caller instantiates it at.
  */
-export type Cash = Money<'piece'>;
+export interface Cash {
+  /** Law 8: a count of the money's own smallest piece — cents — as a value, whole or not. */
+  readonly pieces: number;
+  /** Currency A3: which money's pieces they are. */
+  readonly ccy: CurrencyCode;
+}
+
+export const isCash = (x: unknown): x is Cash =>
+  typeof x === 'object' && x !== null && 'pieces' in x && 'ccy' in x;
+
+/** Money A2.b: where two amounts meet they are one money, or the meeting is refused. */
+function sameMoney(a: Cash, b: Cash, what: string): CurrencyCode {
+  if (a.ccy !== b.ccy) {
+    throw new Impossible(
+      'Money A2.b',
+      `${what}: ${String(a.ccy)} and ${String(b.ccy)} are two currencies, and two currencies are never added`,
+      { what, a: a.ccy, b: b.ccy },
+    );
+  }
+  return a.ccy;
+}
+
+function bothCash(a: Cash | number, b: Cash | number, what: string): readonly [Cash, Cash] {
+  if (!isCash(a) || !isCash(b)) {
+    throw new Impossible('Money A2.b', `${what}: money meets a number with no currency`, { what });
+  }
+  return [a, b];
+}
+
+/** The sum of money in ONE currency, with the dust the arithmetic passed through (Law 7). */
+export interface CashSum extends Omit<Sum, 'value'> {
+  readonly value: Cash;
+}
+
+/**
+ * Law 7, Money A2.b: MONEY ADDED UP, in the currency named — so a sum of nothing is nothing of
+ * that money and a sum with another money in it is refused at the term.
+ */
+export function sumCash(ccy: CurrencyCode, terms: Iterable<Cash>, what: string): CashSum {
+  let s = 0;
+  let c = 0;
+  let mag = 0;
+  let n = 0;
+  for (const t of terms) {
+    if (t.ccy !== ccy) {
+      throw new Impossible('Money A2.b', `${what}: a sum in ${String(ccy)} met ${String(t.ccy)}`, {
+        what,
+        ccy,
+        met: t.ccy,
+      });
+    }
+    const v = finite(t.pieces, what);
+    // Kahan–Neumaier, as `sum` does: the dust is what the arithmetic could not carry.
+    const y = s + v;
+    if (Math.abs(s) >= Math.abs(v)) c += s - y + v;
+    else c += v - y + s;
+    s = y;
+    mag += Math.abs(v);
+    n += 1;
+  }
+  const value = asCash(s + c, ccy, what);
+  return { value, dust: n * Number.EPSILON * mag, terms: n, magnitude: mag };
+}
+
+/**
+ * Law 6's one admissible case, for money (`core/num.ts atMost`): what a party CAN do — the smaller
+ * of two amounts of ONE money, because there is no more than there is. Two currencies are refused.
+ */
+export function atMostCash(value: Cash, limit: Cash, becauseThereIsNoMore: string): Cash {
+  sameMoney(value, limit, becauseThereIsNoMore);
+  return value.pieces < limit.pieces ? value : limit;
+}
+
+/** The same, the other way: what it cannot go below because there is nothing below it. */
+export function atLeastCash(value: Cash, floor: Cash, becauseThereIsNoLess: string): Cash {
+  sameMoney(value, floor, becauseThereIsNoLess);
+  return value.pieces > floor.pieces ? value : floor;
+}
+
+/** Nothing of a money: the only zero money has, and it says which money (Currency A4). */
+export const noCash = (ccy: CurrencyCode): Cash => asCash(0, ccy, 'nothing');
 
 /**
  * Law 8: MONEY IN ITS NAMED UNIT — dollars rather than cents — which is what a seed states, what a
@@ -287,11 +406,12 @@ export type Named = Amount<'named'>;
  * because money's own price is one — the single hard-coded price this world has. That is why the
  * crossing gets a name instead of being assumed: it is `valueAt(one, held)` with the one left out.
  */
-export const heldAsMoney = (held: Amount<'piece'>, what: string): Cash =>
-  finite(held, what) as unknown as Cash;
+export const heldAsMoney = (held: Amount<'piece'>, ccy: CurrencyCode, what: string): Cash =>
+  asCash(held, ccy, what);
 
-/** The doors for the two above, so a kernel site does not have to spell the parameters out. */
-export const asCash = (x: number, what: string): Cash => finite(x, what) as Cash;
+/** The door: money enters with its currency, at the place that knows which (Currency A4). */
+export const asCash = (pieces: number, ccy: CurrencyCode, what: string): Cash =>
+  Object.freeze({ pieces: finite(pieces, what), ccy });
 
 export const asPerPiece = (x: number, what: string): PerPiece => finite(x, what) as PerPiece;
 
@@ -308,22 +428,31 @@ export const asNamed = (x: number, what: string): Named => finite(x, what) as Na
  * the same thing through a reciprocal nobody needed to compute. A split restating a price, a total
  * shared out, a cost spread over a run: each is one of these.
  */
-export function over<D extends string>(a: Measure<D>, by: Ratio, what: string): Measure<D> {
+export function over(a: Cash, by: Ratio, what: string): Cash;
+export function over<D extends string>(a: Measure<D>, by: Ratio, what: string): Measure<D>;
+export function over(a: Cash | number, by: Ratio, what: string): Cash | number {
   const den = finite(by, what);
   if (den === 0) {
     throw new RangeError(`${what}: divided into nothing`);
   }
-  return (finite(a, what) / den) as Measure<D>;
+  if (isCash(a)) return asCash(a.pieces / den, a.ccy, what);
+  return finite(a, what) / den;
 }
 
 /** Law 8: HOW BIG IT IS, which is the same dimension as the thing. A magnitude is not a ratio. */
-export function absolute<D extends string>(a: Measure<D>, what: string): Measure<D> {
-  return Math.abs(finite(a, what)) as Measure<D>;
+export function absolute(a: Cash, what: string): Cash;
+export function absolute<D extends string>(a: Measure<D>, what: string): Measure<D>;
+export function absolute(a: Cash | number, what: string): Cash | number {
+  if (isCash(a)) return asCash(Math.abs(a.pieces), a.ccy, what);
+  return Math.abs(finite(a, what));
 }
 
 /** Law 5: the other side of it — what is owed rather than held. A direction, not a new dimension. */
-export function negated<D extends string>(a: Measure<D>, what: string): Measure<D> {
+export function negated(a: Cash, what: string): Cash;
+export function negated<D extends string>(a: Measure<D>, what: string): Measure<D>;
+export function negated(a: Cash | number, what: string): Cash | number {
+  if (isCash(a)) return asCash(a.pieces * -1, a.ccy, what);
   // Times minus one rather than a unary minus: `finite` carries the dimension out now, and a
   // dimensioned number is an intersection that the unary-minus rule will not take.
-  return (finite(a, what) * -1) as Measure<D>;
+  return finite(a, what) * -1;
 }

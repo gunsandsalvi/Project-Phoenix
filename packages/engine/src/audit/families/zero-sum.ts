@@ -25,6 +25,7 @@ import type { CurrencyCode } from '../../core/ids.js';
 import { mirrored } from '../../registry/derivatives.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
+import { plus } from '../../core/measure.js';
 
 export function zeroSumFamily(): Family {
   return {
@@ -41,19 +42,20 @@ export function zeroSumFamily(): Family {
         // The same contract as `b` states it: the sides swap and the terms are read the other way
         // round. Its mark is what `b` holds, and `toA + fromB` is the identity.
         const toB = view.contracts.mark(mirrored(c, profile), view.period);
-        if (toA + toB !== 0) {
+        const net = plus(toA, toB, 'the two sides of one contract');
+        if (net.pieces !== 0) {
           out.push({
             family: 'zeroSum',
             spec: 'Derivative D1.b',
             owner: String(c.id),
-            size: toA + toB,
+            size: net.pieces,
             unit: c.ccy,
             period: view.period,
-            message: `${c.id}: ${c.a} marks it at ${toA} and ${c.b} at ${toB}; they do not negate`,
+            message: `${c.id}: ${c.a} marks it at ${toA.pieces} and ${c.b} at ${toB.pieces} ${c.ccy}; they do not negate`,
           });
         }
         const terms = perCurrency.get(c.ccy) ?? [];
-        terms.push(toA, toB);
+        terms.push(toA.pieces, toB.pieces);
         perCurrency.set(c.ccy, terms);
         // G1, D1.a: a payoff received from nobody is invented money. Both sides exist, or the row
         // is a claim on somebody the world has forgotten.
@@ -63,7 +65,7 @@ export function zeroSumFamily(): Family {
             family: 'zeroSum',
             spec: 'Derivative Layer G1',
             owner: String(c.id),
-            size: toA,
+            size: toA.pieces,
             unit: c.ccy,
             period: view.period,
             message: `${c.id} names ${side}, which is not a party in this world`,
@@ -72,7 +74,8 @@ export function zeroSumFamily(): Family {
       }
       for (const [ccy, terms] of perCurrency) {
         const total = sum(terms);
-        if (withinDust(total.value, 0, total.dust + dustOf(terms.length, total.magnitude))) continue;
+        if (withinDust(total.value, 0, total.dust + dustOf(terms.length, total.magnitude)))
+          continue;
         out.push({
           family: 'zeroSum',
           spec: 'Derivative Layer A4',

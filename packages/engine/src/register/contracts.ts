@@ -27,6 +27,7 @@ import type { Cash } from '../core/measure.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Contract, DerivativeKindProfile, StruckAt } from '../registry/derivatives.js';
+import { asCash } from '../core/measure.js';
 
 export interface ContractDecl {
   readonly kind: DerivativeKindId;
@@ -71,7 +72,11 @@ export class Contracts {
    * appearing on two balance sheets is a change of state and goes over the wire like every other.
    */
   open(decl: ContractDecl, at: Period): Contract {
-    forbid(decl.a !== decl.b, 'Derivative D1', 'a contract has two counterparties, and they differ');
+    forbid(
+      decl.a !== decl.b,
+      'Derivative D1',
+      'a contract has two counterparties, and they differ',
+    );
     // Law 4, D12: THE TERMS ARE THE KIND'S OWN, and the store is where that is made true.
     //
     // `Instruments.add` asks the same question of an instrument and asks it here rather than at its
@@ -112,7 +117,7 @@ export class Contracts {
       ccy: decl.ccy,
       notional: decl.notional,
       struckAt: decl.struckAt,
-      basis: finite(decl.basis, 'what the contract was worth at inception'),
+      basis: asCash(decl.basis.pieces, decl.ccy, 'what the contract was worth at inception'),
       opened: at,
       state: 'open',
       terminated: none(),
@@ -139,7 +144,11 @@ export class Contracts {
    */
   novate(id: ContractId, from: PartyId, to: PartyId): Contract {
     const row = this.get(id);
-    forbid(row.state === 'open', 'Derivative Layer B4', `${id} is terminated and cannot be novated`);
+    forbid(
+      row.state === 'open',
+      'Derivative Layer B4',
+      `${id} is terminated and cannot be novated`,
+    );
     forbid(
       row.a === from || row.b === from,
       'Derivative Layer B4',
@@ -202,7 +211,9 @@ export class Contracts {
   /** C1, C1.a: the rows two named parties have with each other. The only netting door there is. */
   between(a: PartyId, b: PartyId): readonly Contract[] {
     const ids = this.byPair.get(pairOf(a, b));
-    return ids === undefined ? [] : [...ids].map((id) => this.get(id)).filter((c) => c.state === 'open');
+    return ids === undefined
+      ? []
+      : [...ids].map((id) => this.get(id)).filter((c) => c.state === 'open');
   }
 
   /** Which side of a row a party is on, or none when it is on neither. */

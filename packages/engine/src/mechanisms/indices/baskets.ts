@@ -14,19 +14,28 @@
  * is who promised it. An index built on kind ids would be a list of this world's kinds written down
  * twice, and would silently miss the next one.
  */
-import { asCash, type Cash, plus, type Ratio, scale, valueAt } from '../../core/measure.js';
+import {
+  type Cash,
+  noCash,
+  plus,
+  type Ratio,
+  scale,
+  sumCash,
+  valueAt,
+} from '../../core/measure.js';
 import type { Qty } from '../../core/tick.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, RegionId } from '../../core/ids.js';
-import { addTo, sum } from '../../core/num.js';
+import { addTo } from '../../core/num.js';
 import { isAssetLeg } from '../../ledger/instruction.js';
 import type { Constituent, IndexWorld } from '../../prices/index-read.js';
 import type { Instrument } from '../../register/instruments.js';
 
-
 /** D2: whether what promised this line borrows on the state's credit — the kind's own fact. */
 function onStateCredit(w: IndexWorld, i: Instrument): boolean {
-  return i.issuer.some && w.registry.partyKind(w.parties.get(i.issuer.value).kind).sovereign === true;
+  return (
+    i.issuer.some && w.registry.partyKind(w.parties.get(i.issuer.value).kind).sovereign === true
+  );
 }
 
 /**
@@ -68,7 +77,8 @@ function pays(w: IndexWorld, i: Instrument, at: Period): boolean {
   const held = dates.get(at);
   if (held !== undefined) return held;
   const on = w.calendar.startOf(at);
-  const does = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar, w.registry).length > 0;
+  const does =
+    w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar, w.registry).length > 0;
   dates.set(at, does);
   return does;
 }
@@ -110,9 +120,7 @@ function whileTheRegisterStands(
  * level and nothing else. B3: a split multiplies the count and divides the price in the same event
  * (Register E4), so the basket is worth what it was worth and the level does not jump.
  */
-export function equityOf(
-  region: RegionId,
-): (at: Period, w: IndexWorld) => readonly Constituent[] {
+export function equityOf(region: RegionId): (at: Period, w: IndexWorld) => readonly Constituent[] {
   return whileTheRegisterStands((at: Period, w: IndexWorld): readonly Constituent[] => {
     const out: Constituent[] = [];
     for (const i of listed(w)) {
@@ -131,9 +139,7 @@ export function equityOf(
  * A world with no corporate paper in it has an empty basket and therefore no level at all, which is
  * the honest answer until 13f issues some.
  */
-export function creditOf(
-  ccy: CurrencyCode,
-): (at: Period, w: IndexWorld) => readonly Constituent[] {
+export function creditOf(ccy: CurrencyCode): (at: Period, w: IndexWorld) => readonly Constituent[] {
   return whileTheRegisterStands((at: Period, w: IndexWorld): readonly Constituent[] => {
     const out: Constituent[] = [];
     for (const i of listed(w)) {
@@ -241,24 +247,37 @@ export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: Rat
     for (const i of here) {
       const price = w.price(i.id, at);
       if (!price.some) continue;
-      sized.push({ i, cap: valueAt(price.value, i.issued, 'what this line is worth altogether') });
+      sized.push({
+        i,
+        cap: valueAt(price.value, i.issued, i.ccy, 'what this line is worth altogether'),
+      });
     }
-    const whole = sum(sized.map((x) => x.cap)).value;
-    if (whole <= 0) return [];
+    const first = sized[0];
+    if (first === undefined) return [];
+    // Money A2.b: a region's lines are in its one money, and a second money in it is refused where it meets.
+    const whole = sumCash(
+      first.cap.ccy,
+      sized.map((x) => x.cap),
+      'what the market is worth altogether',
+    ).value;
+    if (whole.pieces <= 0) return [];
     // The boundary: the biggest lines that between them make up `share` of the market are the
     // large ones, and the rest are the small ones. Stated in advance, the same for everybody, and
     // read off nothing but the constituents' own prints.
-    const byCap = [...sized].sort((a, b) => b.cap - a.cap);
+    const byCap = [...sized].sort((a, b) => b.cap.pieces - a.cap.pieces);
     const want = scale(whole, share, 'the part of the market the large line covers');
     const large: Instrument[] = [];
-    let running = asCash(0, 'nothing counted yet');
+    let running = noCash(first.cap.ccy);
     for (const x of byCap) {
-      if (running >= want) break;
+      if (running.pieces >= want.pieces) break;
       large.push(x.i);
       running = plus(running, x.cap, 'the capitalisation of the large line so far');
     }
     const inLarge = new Set(large.map((i) => String(i.id)));
-    const chosen = segment === 'large' ? byCap.filter((x) => inLarge.has(String(x.i.id))) : byCap.filter((x) => !inLarge.has(String(x.i.id)));
+    const chosen =
+      segment === 'large'
+        ? byCap.filter((x) => inLarge.has(String(x.i.id)))
+        : byCap.filter((x) => !inLarge.has(String(x.i.id)));
     return chosen.map((x) => ({ instrument: x.i.id, weight: x.i.issued }));
   };
 }
@@ -273,21 +292,14 @@ export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: Rat
  *
  * Law 19: the conversion is the kernel's own rate read, not a second table of rates here.
  */
-export function globalEquity(regions: readonly RegionId[], statedIn: CurrencyCode) {
+export function globalEquity(regions: readonly RegionId[]) {
   const here = new Set(regions.map(String));
   return (at: Period, w: IndexWorld): readonly Constituent[] =>
     listed(w)
       .filter((i) => !pays(w, i, at))
       .filter((i) => i.issuer.some && here.has(String(w.parties.get(i.issuer.value).region)))
-      .map((i) => ({
-        instrument: i.id,
-        // B1: still a COUNT — of what one share is worth in the money the line is stated in. A
-        // share priced in another money counts for what that money buys of this one, at the rate
-        // its pair last printed, and nothing here stores a rate of its own.
-        weight: scale(
-          i.issued,
-          w.rate(i.ccy, statedIn, at),
-          `${String(i.ccy)} into ${String(statedIn)}`,
-        ),
-      }));
+      // B1, Currency C4 (16.0): the weight is a COUNT of the line; what a share in another money
+      // is worth in `statedIn` is the READ's business (`readIndex` translates each line at the
+      // rate in force), so nothing here scales a count by a rate.
+      .map((i) => ({ instrument: i.id, weight: i.issued }));
 }

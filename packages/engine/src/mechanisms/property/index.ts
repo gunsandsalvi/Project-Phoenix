@@ -38,7 +38,14 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import { period } from '../../calendar/calendar.js';
 import { addDays, compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { moneyInstrumentId, partyId, type CurrencyCode, type InstrumentId, type PartyId, type RegionId } from '../../core/ids.js';
+import {
+  moneyInstrumentId,
+  partyId,
+  type CurrencyCode,
+  type InstrumentId,
+  type PartyId,
+  type RegionId,
+} from '../../core/ids.js';
 import {
   amountOf,
   asPerPiece,
@@ -95,7 +102,14 @@ import {
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
-export { LANDLORD, LEASE_ROW, PREMISES, PROPERTY_PARAMS, RENT_PRINT as PREMISES_RENT_PRINT, lettingsVenue } from '../../registry/property.js';
+export {
+  LANDLORD,
+  LEASE_ROW,
+  PREMISES,
+  PROPERTY_PARAMS,
+  RENT_PRINT as PREMISES_RENT_PRINT,
+  lettingsVenue,
+} from '../../registry/property.js';
 
 /** Law 9: a place's landlords are named for the bank they book at, as a pool of small firms is. */
 export const landlordIdFor = (bank: PartyId): PartyId => partyId(`landlord.${String(bank)}`);
@@ -110,13 +124,22 @@ export const LANDLORD_PLAN = 'property.plan';
 export const LANDLORD_LATTICE: LatticeDecl = {
   kind: LANDLORD,
   categorical: [
-    { dim: 'region', movedBy: 'entry', why: 'a building is somewhere, and a landlord lets where its buildings are' },
-    { dim: 'bank', movedBy: 'bank.choice', why: 'a landlord borrows against its buildings from the bank it books at' },
+    {
+      dim: 'region',
+      movedBy: 'entry',
+      why: 'a building is somewhere, and a landlord lets where its buildings are',
+    },
+    {
+      dim: 'bank',
+      movedBy: 'bank.choice',
+      why: 'a landlord borrows against its buildings from the bank it books at',
+    },
   ],
   banded: [
     {
       dim: 'size',
-      quantity: (reads: LatticeReads, cell: PartyId): Option<number> => some(reads.cashPerMember(cell, reads.homeCurrency(cell))),
+      quantity: (reads: LatticeReads, cell: PartyId): Option<number> =>
+        some(reads.cashPerMember(cell, reads.homeCurrency(cell))),
       edges: PROPERTY_EDGES.size,
       why: 'a landlord with cash builds and one without borrows or waits; the size distribution is the state',
     },
@@ -159,7 +182,9 @@ function premisesHeld(view: ParticipantView): Qty {
 export function spareOf(view: ParticipantView): Qty {
   const held = premisesHeld(view);
   const out = unitsLetBy(view.commitments(), view.self.id, PREMISES);
-  return held > out ? subQty(held, asQty(out, 'what it has let'), 'what it has to let') : asQty(0, 'nothing to let');
+  return held > out
+    ? subQty(held, asQty(out, 'what it has let'), 'what it has to let')
+    : asQty(0, 'nothing to let');
 }
 
 /**
@@ -196,11 +221,24 @@ export function tenantOrders(view: ParticipantView, venue: VenueDecl): readonly 
   const gap = plan.value.runRate - plan.value.capacity;
   if (gap <= 0) return [];
   // Law 8: whole pieces of premises, and UP — a room short of what the gap needs does not close it.
-  const units = upTick(scale(asQty(gap, 'the output it is short of'), asRatio(perUnit, 'the premises a unit takes'), 'the premises it is short of'));
+  const units = upTick(
+    scale(
+      asQty(gap, 'the output it is short of'),
+      asRatio(perUnit, 'the premises a unit takes'),
+      'the premises it is short of',
+    ),
+  );
   if (units <= 0) return [];
   const margin = plan.value.expectedPrice - plan.value.unitCost;
   if (margin <= 0) return [];
-  const bid = rentOnGrid(view, venue.ccy, asPerPiece(div(margin, perUnit, 'what a piece of premises earns it a period'), 'its bid a piece a period'));
+  const bid = rentOnGrid(
+    view,
+    venue.ccy,
+    asPerPiece(
+      div(margin, perUnit, 'what a piece of premises earns it a period'),
+      'its bid a piece a period',
+    ),
+  );
   if (bid <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: bid, qty: units }];
 }
@@ -227,7 +265,11 @@ export function landlordOrders(view: ParticipantView, venue: VenueDecl): readonl
  */
 function rentOnGrid(view: ParticipantView, ccy: CurrencyCode, perPiece: PerPiece): PerPiece {
   const pieces = view.registry.subdivision(plantUnitId(PREMISES));
-  const perUnit = view.registry.onQuoteGrid(MONEY_KIND, ccy, asPerPiece(perPiece * pieces, 'the rent of a whole unit, a period'));
+  const perUnit = view.registry.onQuoteGrid(
+    MONEY_KIND,
+    ccy,
+    asPerPiece(perPiece * pieces, 'the rent of a whole unit, a period'),
+  );
   return asPerPiece(div(perUnit, pieces, 'the rent of a piece of it'), 'the rent a piece a period');
 }
 
@@ -236,13 +278,17 @@ function rentOnGrid(view: ParticipantView, ccy: CurrencyCode, perPiece: PerPiece
  * ------------------------------------------------------------------------------------------ */
 
 /** The last rent this book struck and when, off its own record — carried onto a print that struck none. */
-function lastStruck(ctx: MechanismContext, venue: VenueDecl): { readonly rentPerUnit?: number; readonly struckIn?: number } {
+function lastStruck(
+  ctx: MechanismContext,
+  venue: VenueDecl,
+): { readonly rentPerUnit?: number; readonly struckIn?: number } {
   const said = ctx.journal.forSubject(RENT_PRINT, String(venue.id));
   for (let n = said.length - 1; n >= 0; n -= 1) {
     const e = said[n];
     const rent = e?.data['rentPerUnit'];
     const at = e?.data['struckIn'];
-    if (typeof rent === 'number' && rent > 0 && typeof at === 'number') return { rentPerUnit: rent, struckIn: at };
+    if (typeof rent === 'number' && rent > 0 && typeof at === 'number')
+      return { rentPerUnit: rent, struckIn: at };
   }
   return {};
 }
@@ -257,7 +303,19 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   // period it was struck in, so a reader sees the level and how stale it is, never a gap.
   const carried = lastStruck(ctx, venue);
   if (!isCleared(outcome)) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind, ...carried, bids: orders.filter((o) => o.side === 'buy').length, asks: orders.filter((o) => o.side === 'sell').length }, true);
+    ctx.record(
+      RENT_PRINT,
+      [venue.id],
+      {
+        venue: venue.id,
+        region,
+        outcome: outcome.kind,
+        ...carried,
+        bids: orders.filter((o) => o.side === 'buy').length,
+        asks: orders.filter((o) => o.side === 'sell').length,
+      },
+      true,
+    );
     return;
   }
   let struck: PerPiece | undefined;
@@ -266,13 +324,25 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
     if (struck === undefined || f.at < struck) struck = f.at;
   }
   if (struck === undefined) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: 'noDemand', ...carried }, true);
+    ctx.record(
+      RENT_PRINT,
+      [venue.id],
+      { venue: venue.id, region, outcome: 'noDemand', ...carried },
+      true,
+    );
     return;
   }
   // Clearing C3: landlords with the least to ask are let first, tenants with the most to pay first.
-  const owners = outcome.fills.filter((f) => f.side === 'sell' && f.qty > 0).sort((a, b) => a.at - b.at);
-  const tenants = outcome.fills.filter((f) => f.side === 'buy' && f.qty > 0).sort((a, b) => b.at - a.at);
-  const until = addDays(ctx.calendar.startOf(ctx.period), ctx.params.periods(PROPERTY_PARAMS.leaseTerm) * ctx.calendar.periodDays);
+  const owners = outcome.fills
+    .filter((f) => f.side === 'sell' && f.qty > 0)
+    .sort((a, b) => a.at - b.at);
+  const tenants = outcome.fills
+    .filter((f) => f.side === 'buy' && f.qty > 0)
+    .sort((a, b) => b.at - a.at);
+  const until = addDays(
+    ctx.calendar.startOf(ctx.period),
+    ctx.params.periods(PROPERTY_PARAMS.leaseTerm) * ctx.calendar.periodDays,
+  );
   let at = 0;
   let left: Qty = owners[0]?.qty ?? asQty(0);
   let signed = 0;
@@ -295,16 +365,42 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
        * a cent.
        */
       const owner_ = ctx.parties.get(owner.party);
-      const perMember = downTick(over(asQty(offered, 'the units offered'), asRatio(weightOf(owner_), 'the landlords it stands for'), 'units a landlord'));
-      const rentPerMember = downTick(valueAt(struck, perMember, 'the rent a landlord a period'));
+      const perMember = downTick(
+        over(
+          asQty(offered, 'the units offered'),
+          asRatio(weightOf(owner_), 'the landlords it stands for'),
+          'units a landlord',
+        ),
+      );
+      const rentPerMember = downTick(
+        valueAt(struck, perMember, venue.ccy, 'the rent a landlord a period').pieces,
+      );
       if (perMember <= 0 || rentPerMember <= 0) {
-        ctx.record('property.unlet', [String(t.party), String(owner.party)], { tenant: t.party, landlord: owner.party, region, offered, why: 'below a piece a landlord' }, true);
+        ctx.record(
+          'property.unlet',
+          [String(t.party), String(owner.party)],
+          {
+            tenant: t.party,
+            landlord: owner.party,
+            region,
+            offered,
+            why: 'below a piece a landlord',
+          },
+          true,
+        );
         at += 1;
         left = owners[at]?.qty ?? asQty(0);
         continue;
       }
       const units = asQty(perMember * weightOf(owner_), 'the units let, whole a member');
-      const terms: LeaseTerms = { kind: LEASE_ROW, region, capitalKind: PREMISES, units, rentPerUnit: struck, until };
+      const terms: LeaseTerms = {
+        kind: LEASE_ROW,
+        region,
+        capitalKind: PREMISES,
+        units,
+        rentPerUnit: struck,
+        until,
+      };
       ctx.owes({
         debtor: t.party,
         creditor: owner.party,
@@ -313,7 +409,12 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
         terms,
         why: `${String(t.party)} leases ${String(units)} of premises from ${String(owner.party)} in ${String(region)}`,
       });
-      ctx.record(LEASE_SIGNED, [String(t.party), String(owner.party)], { tenant: t.party, landlord: owner.party, region, units, rentPerUnit: struck, until }, true);
+      ctx.record(
+        LEASE_SIGNED,
+        [String(t.party), String(owner.party)],
+        { tenant: t.party, landlord: owner.party, region, units, rentPerUnit: struck, until },
+        true,
+      );
       signed += 1;
       want = subQty(want, units, 'what it is still short of');
       left = subQty(left, units, 'what this owner has left');
@@ -322,7 +423,16 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   ctx.record(
     RENT_PRINT,
     [venue.id],
-    { venue: venue.id, region, outcome: 'cleared', rentPerUnit: struck, struckIn: ctx.period, units: outcome.volume, leases: signed, asks: orders.filter((o) => o.side === 'sell').map((o) => o.price) },
+    {
+      venue: venue.id,
+      region,
+      outcome: 'cleared',
+      rentPerUnit: struck,
+      struckIn: ctx.period,
+      units: outcome.volume,
+      leases: signed,
+      asks: orders.filter((o) => o.side === 'sell').map((o) => o.price),
+    },
     true,
   );
 }
@@ -347,21 +457,62 @@ function collect(ctx: MechanismContext): void {
       ctx.endAgreement(row.id, 'the term ended');
       continue;
     }
-    const whole = valueAt(row.terms.rentPerUnit, row.terms.units, 'the rent on this lease');
-    const perMember = over(whole, asRatio(weightOf(landlord), 'the landlords it stands for'), 'per landlord');
-    const share = gridPerMember(ctx.registry, landlord, perMember);
+    const whole = valueAt(
+      row.terms.rentPerUnit,
+      row.terms.units,
+      row.ccy,
+      'the rent on this lease',
+    );
+    const perMember = over(
+      whole,
+      asRatio(weightOf(landlord), 'the landlords it stands for'),
+      'per landlord',
+    );
+    const share = gridPerMember(ctx.registry, landlord, perMember.pieces);
     if (share.total <= 0) {
       // Law 8: a rent below a piece a landlord — a cell that has merged since the lease was
       // signed — cannot be paid, and the row says so rather than nothing.
-      ctx.record(RENT_PAID, [String(tenant.id), String(landlord.id)], { lease: row.id, tenant: tenant.id, landlord: landlord.id, amount: 0, paid: false, why: 'below a piece a landlord' }, false);
+      ctx.record(
+        RENT_PAID,
+        [String(tenant.id), String(landlord.id)],
+        {
+          lease: row.id,
+          tenant: tenant.id,
+          landlord: landlord.id,
+          amount: 0,
+          paid: false,
+          why: 'below a piece a landlord',
+        },
+        false,
+      );
       continue;
     }
     const r = ctx.settle({
-      legs: [{ kind: 'money', from: ctx.accountOf(tenant.id, row.ccy), to: ctx.accountOf(landlord.id, row.ccy), receipt: { of: 'rent' }, ccy: row.ccy, amount: share.total }],
+      legs: [
+        {
+          kind: 'money',
+          from: ctx.accountOf(tenant.id, row.ccy),
+          to: ctx.accountOf(landlord.id, row.ccy),
+          receipt: { of: 'rent' },
+          ccy: row.ccy,
+          amount: share.total,
+        },
+      ],
       cause: 'transfer',
       reason: `rent on ${String(row.id)}`,
     });
-    ctx.record(RENT_PAID, [String(tenant.id), String(landlord.id)], { lease: row.id, tenant: tenant.id, landlord: landlord.id, amount: share.total, paid: r.outcome === 'settled' }, false);
+    ctx.record(
+      RENT_PAID,
+      [String(tenant.id), String(landlord.id)],
+      {
+        lease: row.id,
+        tenant: tenant.id,
+        landlord: landlord.id,
+        amount: share.total,
+        paid: r.outcome === 'settled',
+      },
+      false,
+    );
   }
 }
 
@@ -402,31 +553,68 @@ export function buildOf(view: ParticipantView, ccy: CurrencyCode): Option<Build>
   const horizon = view.params.periods(PROPERTY_PARAMS.horizon);
   const cost = costOfCapital(view, period(view.period - 1), horizon);
   if (!cost.some) return none<Build>();
-  const year = yearFraction('ACT/365F', view.calendar.startOf(view.period), view.calendar.startOf(period(view.period + 1)));
+  const year = yearFraction(
+    'ACT/365F',
+    view.calendar.startOf(view.period),
+    view.calendar.startOf(period(view.period + 1)),
+  );
   const life = view.params.periods(lifeParam(PREMISES));
   // A building does not earn past its life: the periods it counts are arithmetic impossibility beyond that.
   const counted = atMost(horizon, life, 'a building earns no rent after it is worn out');
   // What a period of rent is worth today, summed to its horizon: the annuity at its own cost.
   const r = cost.value.perAnnum * year;
-  const annuity = r > 0 ? div(1 - raised(1 + r, -counted, 'what the last period of rent is worth today'), r, 'the rents to its horizon, discounted') : counted;
-  const bid = view.registry.onQuoteGrid(view.instruments.get(good).kind, ccy, asPerPiece(rent.value * annuity, 'what a building is worth to it'));
+  const annuity =
+    r > 0
+      ? div(
+          1 - raised(1 + r, -counted, 'what the last period of rent is worth today'),
+          r,
+          'the rents to its horizon, discounted',
+        )
+      : counted;
+  const bid = view.registry.onQuoteGrid(
+    view.instruments.get(good).kind,
+    ccy,
+    asPerPiece(rent.value * annuity, 'what a building is worth to it'),
+  );
   if (bid <= asking.value) return none<Build>();
-  const cash = heldAsMoney(view.cash(ccy), 'what it holds');
+  const cash = heldAsMoney(view.cash(ccy), ccy, 'what it holds');
   // XI-15, Law 8: a landlord builds a building at a time — one a member a period, the pace of a
   // sector that adds to its stock rather than doubling it — and buys what its money reaches of that.
   const pace = asQty(weightOf(view.self), 'a building a member');
   const affordable = downTick(amountOf(cash, asking.value, 'the buildings its money reaches'));
   const wanted = atMost(affordable, pace, 'no more than its pace');
-  const short = minus(valueAt(asking.value, pace, 'what its pace costs'), cash, 'what it cannot pay for');
-  if (wanted <= 0 && short <= 0) return none<Build>();
+  const short = minus(
+    valueAt(asking.value, pace, ccy, 'what its pace costs'),
+    cash,
+    'what it cannot pay for',
+  );
+  if (wanted <= 0 && short.pieces <= 0) return none<Build>();
   const reads = { registry: view.registry, params: view.params };
-  const standing = hectaresOf(groundUnderPlant(reads, vintagesHeld(view, view.calendar.startOf(view.period))));
+  const standing = hectaresOf(
+    groundUnderPlant(reads, vintagesHeld(view, view.calendar.startOf(view.period))),
+  );
   const land = landId(view.self.region);
-  const held = view.instruments.has(land) ? view.quantity(land) : asQty(0, 'a world with no ground line');
-  const free = held > standing ? subQty(held, standing, 'the ground it holds beyond its buildings') : asQty(0, 'no ground beyond its buildings');
-  const needed = view.instruments.has(land) ? hectaresUnder(reads, PREMISES, wanted) : asQty(0, 'no ground line');
-  const hectaresShort = needed > free ? subQty(needed, free, 'the hectares it is short of') : asQty(0, 'ground enough');
-  return some({ good, asking: asking.value, bid, wanted, hectaresShort, outlay: valueAt(asking.value, wanted, 'what it expects to pay'), short });
+  const held = view.instruments.has(land)
+    ? view.quantity(land)
+    : asQty(0, 'a world with no ground line');
+  const free =
+    held > standing
+      ? subQty(held, standing, 'the ground it holds beyond its buildings')
+      : asQty(0, 'no ground beyond its buildings');
+  const needed = view.instruments.has(land)
+    ? hectaresUnder(reads, PREMISES, wanted)
+    : asQty(0, 'no ground line');
+  const hectaresShort =
+    needed > free ? subQty(needed, free, 'the hectares it is short of') : asQty(0, 'ground enough');
+  return some({
+    good,
+    asking: asking.value,
+    bid,
+    wanted,
+    hectaresShort,
+    outlay: valueAt(asking.value, wanted, ccy, 'what it expects to pay'),
+    short,
+  });
 }
 
 function buildOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
@@ -441,10 +629,22 @@ function buildOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   }
   if (m.instrument === landId(view.self.region) && b.hectaresShort > 0) {
     // 15.1: the residual — what the buildings are worth over what they ask, over the ground they take.
-    const surplus = minus(valueAt(b.bid, b.wanted, 'what the buildings are worth to it'), b.outlay, 'the surplus over the asking');
-    const needed = hectaresUnder({ registry: view.registry, params: view.params }, PREMISES, b.wanted);
-    if (surplus <= 0 || needed <= 0) return [];
-    const level = view.registry.onQuoteGrid(view.instruments.get(m.instrument).kind, m.ccy, asPerPiece(div(surplus, needed, 'what a hectare is worth to it'), 'its bid a hectare'));
+    const surplus = minus(
+      valueAt(b.bid, b.wanted, m.ccy, 'what the buildings are worth to it'),
+      b.outlay,
+      'the surplus over the asking',
+    );
+    const needed = hectaresUnder(
+      { registry: view.registry, params: view.params },
+      PREMISES,
+      b.wanted,
+    );
+    if (surplus.pieces <= 0 || needed <= 0) return [];
+    const level = view.registry.onQuoteGrid(
+      view.instruments.get(m.instrument).kind,
+      m.ccy,
+      asPerPiece(div(surplus.pieces, needed, 'what a hectare is worth to it'), 'its bid a hectare'),
+    );
     if (level <= 0) return [];
     return [{ party: view.self.id, side: 'buy', price: level, qty: b.hectaresShort }];
   }
@@ -463,13 +663,28 @@ function askForLoans(ctx: MechanismContext): void {
     const view = ctx.participant(cell.id);
     const ccy = ctx.registry.currencyOf(cell.region);
     const build = buildOf(view, ccy);
-    if (!build.some || build.value.short <= 0) continue;
+    if (!build.some || build.value.short.pieces <= 0) continue;
     const security = vintagesHeld(view, ctx.calendar.startOf(ctx.period))
       .filter((v) => v.capitalKind === PREMISES)
       .map((v) => ({ instrument: v.instrument as InstrumentId, qty: v.units }));
     if (security.length === 0) continue;
     ctx.request(cell.id, { ccy, short: build.value.short, security, repays: 'onSchedule' });
-    ctx.record(LANDLORD_PLAN, [cell.id], { landlord: cell.id, region: cell.region, asking: build.value.asking, bid: build.value.bid, wanted: build.value.wanted, hectaresShort: build.value.hectaresShort, short: build.value.short, secured: security.length }, true);
+    ctx.record(
+      LANDLORD_PLAN,
+      [cell.id],
+      {
+        landlord: cell.id,
+        region: cell.region,
+        asking: build.value.asking,
+        bid: build.value.bid,
+        wanted: build.value.wanted,
+        hectaresShort: build.value.hectaresShort,
+        short: build.value.short.pieces,
+        ccy: build.value.short.ccy,
+        secured: security.length,
+      },
+      true,
+    );
   }
 }
 
@@ -486,7 +701,10 @@ function paramsOf(): ParamDecl[] {
       dimension: 'count',
       kind: 'placeholder',
       owner: 'model',
-      standsInFor: { mechanism: 'Seed C4, XI-15: the sector’s opening population is a stock the opening states', item: '22a' },
+      standsInFor: {
+        mechanism: 'Seed C4, XI-15: the sector’s opening population is a stock the opening states',
+        item: '22a',
+      },
       why: 'Housing A3, XI-15 (15.3): how many landlords bank at each bank at the opening. A SHAPE with its death at 22a: who owns the space a town lets is an outcome of who built it and who bought it, and the opening states the stock the mechanisms then act on.',
     },
     {
@@ -496,7 +714,10 @@ function paramsOf(): ParamDecl[] {
       dimension: 'count',
       kind: 'placeholder',
       owner: 'model',
-      standsInFor: { mechanism: 'Seed C4: the premises a landlord opens holding is a stock the opening states', item: '22a' },
+      standsInFor: {
+        mechanism: 'Seed C4: the premises a landlord opens holding is a stock the opening states',
+        item: '22a',
+      },
       why: 'Housing A3, A4 (15.3): what a landlord opens holding of premises — rooms, built to let. A SHAPE with its death at 22a: the stock is a register of units with owners, moved by what changes hands and what is built, and the opening is where it starts.',
     },
     {
@@ -566,7 +787,11 @@ export function property(): SystemModule {
         spec: 'Housing A3 Housing B5 Clearing C3 Clearing C4.b',
         anchor: { before: 'markets' },
         reads: [{ kind: 'event', name: 'firms.plan', of: 'thisPeriod' }],
-        writes: [{ kind: 'event', name: RENT_PRINT }, { kind: 'event', name: LEASE_SIGNED }, { kind: 'event', name: 'property.unlet' }],
+        writes: [
+          { kind: 'event', name: RENT_PRINT },
+          { kind: 'event', name: LEASE_SIGNED },
+          { kind: 'event', name: 'property.unlet' },
+        ],
         run: (ctx: MechanismContext): void => {
           for (const v of ctx.venues.filter(mine)) {
             ctx.gather(v.id);
@@ -589,14 +814,23 @@ export function property(): SystemModule {
         spec: 'Corporate Credit A1 Housing C1',
         anchor: { after: 'corporateActions' },
         reads: [{ kind: 'event', name: RENT_PRINT, of: 'anyPeriod' }],
-        writes: [{ kind: 'event', name: 'credit.request' }, { kind: 'event', name: LANDLORD_PLAN }],
+        writes: [
+          { kind: 'event', name: 'credit.request' },
+          { kind: 'event', name: LANDLORD_PLAN },
+        ],
         run: (ctx: MechanismContext): void => {
           askForLoans(ctx);
         },
       },
     ],
     // Banks Funding A1.d, E1: where a landlord banks is a decision it revisits when its bank is in trouble.
-    bankChoices: [{ partyKind: LANDLORD, chooses: (view: ParticipantView) => banksAwayFromTrouble(view, PROPERTY_PARAMS.switchingCost, 'moneyMarket.window') }],
+    bankChoices: [
+      {
+        partyKind: LANDLORD,
+        chooses: (view: ParticipantView) =>
+          banksAwayFromTrouble(view, PROPERTY_PARAMS.switchingCost, 'moneyMarket.window'),
+      },
+    ],
     participants: [
       {
         // A4, Capital Programme C1: a landlord buys buildings to let, and the ground under them first.
@@ -630,7 +864,9 @@ export function property(): SystemModule {
        * of what a new building costs — the same sentence the small-firms seed makes of a pool's
        * plant. The ground under them is the land seed's to give (15.1), which runs after this.
        */
-      for (const bank of [...ctx.parties.all()].filter((p) => ctx.registry.issuesMoney(p.kind) && p.bank !== p.id)) {
+      for (const bank of [...ctx.parties.all()].filter(
+        (p) => ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
+      )) {
         const region = bank.region;
         const good = goodId(kind.madeFrom, region);
         if (!ctx.instruments.has(good)) continue;
@@ -644,9 +880,16 @@ export function property(): SystemModule {
         // cannot give there is the cash, which comes off the bank's sheet before it is built. So the
         // cash is given here, once, to a cell that has none — and a world without the foundation
         // gets the whole landlord here, as before.
-        const opening = heldAsMoney(ctx.registry.payable(valueAt(newPrice.value.price, asQty(1, 'one building'), 'a building a member')), 'what it opens with');
+        const opening = heldAsMoney(
+          ctx.registry.payable(
+            valueAt(newPrice.value.price, asQty(1, 'one building'), ccy, 'a building a member'),
+          ),
+          ccy,
+          'what it opens with',
+        );
         if (ctx.parties.has(id)) {
-          if (ctx.register.quantity(id, moneyInstrumentId(ctx.parties.get(bank.id).id, ccy)) <= 0) ctx.endowMoney(id, ccy, opening);
+          if (ctx.register.quantity(id, moneyInstrumentId(ctx.parties.get(bank.id).id, ccy)) <= 0)
+            ctx.endowMoney(id, ccy, opening);
           continue;
         }
         ctx.parties.add({
@@ -661,8 +904,15 @@ export function property(): SystemModule {
           status: { alive: true, standing: 'good' },
         });
         const life = ctx.params.periods(lifeParam(PREMISES));
-        const perMember = asQty(ctx.params.count(PROPERTY_PARAMS.premisesPerLandlord) * ctx.registry.subdivision(plantUnitId(PREMISES)), 'the premises a landlord opens with, in pieces');
-        const perVintage = splitOnTick(perMember, SEED_PLANT_AGES.map(() => 1));
+        const perMember = asQty(
+          ctx.params.count(PROPERTY_PARAMS.premisesPerLandlord) *
+            ctx.registry.subdivision(plantUnitId(PREMISES)),
+          'the premises a landlord opens with, in pieces',
+        );
+        const perVintage = splitOnTick(
+          perMember,
+          SEED_PLANT_AGES.map(() => 1),
+        );
         SEED_PLANT_AGES.forEach((age, at) => {
           const units = perVintage[at];
           if (units === undefined || units <= 0) return;

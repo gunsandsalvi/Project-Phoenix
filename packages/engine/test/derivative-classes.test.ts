@@ -339,8 +339,8 @@ describe('what a party has behind a position (§28 C1, Fund Shares A3)', () => {
       if (!(perShare > 0 && shares > 0)) continue;
       // What stands behind it is its investors' money, at its own published value — and it is not
       // the equity account, which A3 requires to be nothing.
-      expect(view.standsBehind()).toBeGreaterThan(0);
-      expect(Math.abs(view.equity())).toBeLessThan(view.standsBehind());
+      expect(view.standsBehind().pieces).toBeGreaterThan(0);
+      expect(Math.abs(view.equity().pieces)).toBeLessThan(view.standsBehind().pieces);
     }
   });
 
@@ -367,7 +367,7 @@ describe('what a party has behind a position (§28 C1, Fund Shares A3)', () => {
      * wrong, is `test/questions.test.ts` over the register, which is where the rule lives.
      */
     expect(() => {
-      w.answer(QUESTIONS.whatStandsBehindIt, 'fund', 'probe', () => asCash(1, 'probe'));
+      w.answer(QUESTIONS.whatStandsBehindIt, 'fund', 'probe', () => asCash(1, USD, 'probe'));
     }).toThrow(/an answer to "whatStandsBehindIt" is declared at assembly/);
     // And the one that was given at assembly is still the one that stands.
     expect(w.answers.answered(QUESTIONS.whatStandsBehindIt, 'fund')).toBe(true);

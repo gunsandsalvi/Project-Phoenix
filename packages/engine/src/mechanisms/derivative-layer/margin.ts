@@ -17,11 +17,21 @@
  * a party that cannot pay it fails the instruction and is in Money E1's state — never a borrowing
  * that appears from nowhere, which is the third of the three ways XI-2's channel is silently closed.
  */
-import { absolute, amountOf, asCash, type Cash, heldAsMoney, minus, plus, valueAt , asPerPiece} from '../../core/measure.js';
+import { noCash, sumCash } from '../../core/measure.js';
+import {
+  absolute,
+  amountOf,
+  type Cash,
+  heldAsMoney,
+  minus,
+  plus,
+  valueAt,
+  asPerPiece,
+} from '../../core/measure.js';
 import { NO_QTY, type Qty } from '../../core/tick.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { atMost, sum } from '../../core/num.js';
+import { atMost } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -60,20 +70,27 @@ export function requirement(
   ccy: CurrencyCode,
 ): Cash {
   const rows = ctx.contracts.between(poster, holder).filter((c) => c.ccy === ccy);
-  if (rows.length === 0) return asCash(0, 'no rows between them, so nothing to margin');
+  if (rows.length === 0) return noCash(ccy);
   // G2: a row whose underlying has no record to measure asks for nothing here and was never
   // admitted in the first place (the layer refuses it at the strike), so `none` is not a zero
   // requirement smuggled in — it is a row that does not exist.
-  const initial = sum(
+  const initial = sumCash(
+    ccy,
     rows.map((c) => {
       const need = ctx.contracts.initialMargin(c, ctx.period);
-      return need.some ? need.value : asCash(0, 'a row whose underlying has no record asks nothing');
+      return need.some ? need.value : noCash(ccy);
     }),
+    'the initial margin',
   );
-  const net = sum(rows.map((c) => ctx.contracts.valueTo(c, poster, ctx.period)));
-  const owing = net.value < 0 ? absolute(net.value, 'what it is down by') : asCash(0, 'the marks are for it');
+  const net = sumCash(
+    ccy,
+    rows.map((c) => ctx.contracts.valueTo(c, poster, ctx.period)),
+    'the marks between them',
+  );
+  const owing = net.value.pieces < 0 ? absolute(net.value, 'what it is down by') : noCash(ccy);
   return heldAsMoney(
     ctx.registry.cashFor(plus(initial.value, owing, 'what it must have posted')),
+    ccy,
     'what it must have posted',
   );
 }
@@ -103,13 +120,13 @@ export function moveMargin(
   ccy: CurrencyCode,
   by: Cash,
 ): readonly Leg[] {
-  if (by === 0) return [];
+  if (by.pieces === 0) return [];
   const id = marginLineId(poster, holder, ccy);
   if (!ctx.instruments.has(id)) {
     const terms: MarginTerms = { kind: MARGIN_CLAIM, poster, holder };
     ctx.issue({ id, kind: MARGIN_CLAIM, issuer: some(holder), ccy, terms, market: none() });
   }
-  const up = by > 0;
+  const up = by.pieces > 0;
   // Law 8: margin is money, so what is posted is a whole number of the money's own pieces.
   const qty = ctx.registry.payable(up ? by : absolute(by, 'what comes back'));
   return [
@@ -151,8 +168,8 @@ export function callOn(
 ): Call | undefined {
   const need = requirement(ctx, poster, holder, ccy);
   const have = posted(ctx, poster, holder, ccy);
-  const short = minus(need, heldAsMoney(have, 'what it has posted'), 'what the call is for');
-  if (short <= 0) return undefined;
+  const short = minus(need, heldAsMoney(have, ccy, 'what it has posted'), 'what the call is for');
+  if (short.pieces <= 0) return undefined;
   return {
     poster,
     holder,
@@ -183,11 +200,11 @@ export function pledgeInstead(
   ccy: CurrencyCode,
   shortfall: Cash,
 ): readonly Leg[] {
-  if (shortfall <= 0) return [];
+  if (shortfall.pieces <= 0) return [];
   const legs: Leg[] = [];
   let left = shortfall;
   for (const h of ctx.participant(poster).holdings()) {
-    if (left <= 0) break;
+    if (left.pieces <= 0) break;
     const free = ctx.register.free(poster, h.instrument);
     if (free <= 0) continue;
     const i = ctx.instruments.get(h.instrument);
@@ -213,7 +230,11 @@ export function pledgeInstead(
       qty: units,
       secures: `margin with ${holder} in ${ccy}`,
     });
-    left = minus(left, valueAt(per, units, 'what these units cover'), 'the shortfall after this line');
+    left = minus(
+      left,
+      valueAt(per, units, ccy, 'what these units cover'),
+      'the shortfall after this line',
+    );
   }
   return legs;
 }

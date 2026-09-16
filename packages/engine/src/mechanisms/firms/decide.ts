@@ -24,20 +24,22 @@
  * rest of the recipe costs (Labour C1, C1.a). A bid IS the most a buyer will pay, so this is the
  * bid, and the market clears below it whenever supply is ample.
  */
+import type { CurrencyCode } from '../../core/ids.js';
 import {
   amountOf,
   asAmount,
-  asCash,
   asPerPiece,
   asRatio,
   type Cash,
   heldAsMoney,
   minus,
+  noCash,
   over,
   type PerPiece,
   plus,
   type Ratio,
   scale,
+  sumCash,
   valueAt,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
@@ -56,7 +58,8 @@ import {
   spacePerPiece,
   STORAGE,
   storageRateIn,
-  type GoodTerms, learnedHoursPerUnit,
+  type GoodTerms,
+  learnedHoursPerUnit,
 } from '../../registry/physical.js';
 import {
   capacityFrom,
@@ -168,7 +171,6 @@ export interface Planned {
   /** Commodities Spot B4: what a period of waiting cost a piece, at the rate the room let for. */
   readonly carry: number;
 }
-
 
 /** The numbers a line's own technology states, read from the good's terms (Goods A2). */
 interface Technology {
@@ -311,13 +313,15 @@ function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
  */
 function hoursUnderContract(view: ParticipantView): Qty {
   const own = ownPayroll(view, view.period);
-  return own.some ? own.value.hours : asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
+  return own.some
+    ? own.value.hours
+    : asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
 }
 
 /** D1: what it must pay out that it already knows about — the payroll it is committed to. */
 function wagesDue(view: ParticipantView): Cash {
   const own = ownPayroll(view, view.period);
-  return own.some ? own.value.due : asCash(0, 'a firm that has published no payroll owes none');
+  return own.some ? own.value.due : noCash(view.registry.currencyOf(view.self.region));
 }
 
 /**
@@ -327,7 +331,11 @@ function wagesDue(view: ParticipantView): Cash {
  * worth, which is what it expects a unit to fetch less what perishes in the meantime. Whatever
  * nobody takes stays where it is, which is what illiquidity in goods is.
  */
-function sellSchedule(view: ParticipantView, tech: Technology, price: Option<PerPiece>): PlannedOrder[] {
+function sellSchedule(
+  view: ParticipantView,
+  tech: Technology,
+  price: Option<PerPiece>,
+): PlannedOrder[] {
   const output = goodId(tech.terms.subUnit, tech.terms.region);
   const stock = view.quantity(output);
   if (!material(stock, 2, stock)) return [];
@@ -335,13 +343,17 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<Per
   const ccy = view.registry.currencyOf(view.self.region);
   const short = minus(
     wagesDue(view),
-    heldAsMoney(view.cash(ccy), 'what is in its account'),
+    heldAsMoney(view.cash(ccy), ccy, 'what is in its account'),
     'cash it is short of',
   );
   // A firm with no idea what its stock fetches cannot say how much of it covers a payroll, so what
   // it needs is all of it: it has bills and no view (Firm D1).
   const forced =
-    short <= 0 ? NO_QTY : price.some ? amountOf(short, price.value, 'units it must sell') : stock;
+    short.pieces <= 0
+      ? NO_QTY
+      : price.some
+        ? amountOf(short, price.value, 'units it must sell')
+        : stock;
   // Law 8: a piece is the smallest thing there is, so a PART of one it cannot keep is a whole one
   // it cannot keep — a loaf a quarter stale is a stale loaf, and a payroll covered by all but a
   // cent is a payroll not covered. It rounds up for both reasons, and what is left over is exactly
@@ -380,7 +392,10 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<Per
  * cases because there is no such cost, not because a number was missing (Appendix A).
  */
 /** Law 19: the lots of its own output it holds, as the register carries them — what each cost. */
-function lotsOf(view: ParticipantView, output: InstrumentId): readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[] {
+function lotsOf(
+  view: ParticipantView,
+  output: InstrumentId,
+): readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[] {
   const held = view.holdings().find((h) => h.instrument === output);
   return held === undefined ? [] : held.lots.filter((l) => l.qty > 0);
 }
@@ -393,10 +408,7 @@ function carryPerPiece(view: ParticipantView, tech: Technology): PerPiece {
   const unit = view.instruments.get(goodId(tech.terms.subUnit, tech.terms.region)).unit;
   return scale(
     rate,
-    asRatio(
-      spacePerPiece(view, unit, view.params.ratio(per)),
-      'the room a piece takes',
-    ),
+    asRatio(spacePerPiece(view, unit, view.params.ratio(per)), 'the room a piece takes'),
     'what a period under cover costs a piece',
   );
 }
@@ -565,11 +577,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         minus(
           minus(
             minus(
-              scale(
-                price.value,
-                tech.yieldRate,
-                'the output it makes possible',
-              ),
+              scale(price.value, tech.yieldRate, 'the output it makes possible'),
               wagesPerUnit.value,
               'less wages',
             ),
@@ -609,22 +617,37 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
    */
   for (const o of tech.overheads) {
     const units = sum(
-      vintages.filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0).map((v) => v.units),
+      vintages
+        .filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0)
+        .map((v) => v.units),
     ).value;
     if (units <= 0) continue;
     const need = upTick(
-      scale(asAmount<'piece'>(units, 'the plant it has in service'), o.qtyPerPlantUnitPerPeriod, 'what it takes a period'),
+      scale(
+        asAmount<'piece'>(units, 'the plant it has in service'),
+        o.qtyPerPlantUnitPerPeriod,
+        'what it takes a period',
+      ),
     );
     const buy = subQty(need, view.quantity(o.instrument), 'what it must buy');
     if (!material(buy, 2, need) || buy <= 0) continue;
     const level = expectedPriceOf(view, o.instrument);
     if (!level.some) continue;
-    orders.push({ market: marketOf(view, o.instrument), side: 'buy', price: level.value, qty: buy });
+    orders.push({
+      market: marketOf(view, o.instrument),
+      side: 'buy',
+      price: level.value,
+      qty: buy,
+    });
   }
   // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
   // against what the rest of the plan leaves it — the cash it is not about to need — and it adds
   // its own orders to the same list, because a purchase of plant is a purchase like any other.
-  const cost = costOfCapital(view, payrollSince(view.period), view.params.periods(firmParam(line.firm, 'horizon')));
+  const cost = costOfCapital(
+    view,
+    payrollSince(view.period),
+    view.params.periods(firmParam(line.firm, 'horizon')),
+  );
   const decided = cost.some
     ? project(
         view,
@@ -643,7 +666,10 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
             // A firm that has never sold has been surprised about nothing, and that is a real zero:
             // it has no history to have been wrong about. Its first batch is one unit either way.
             sales.some
-              ? asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about units sold are')
+              ? asAmount<'piece'>(
+                  sales.value.confidence,
+                  'how wide its surprises about units sold are',
+                )
               : NO_QTY,
             tech.yieldRate,
             'how wide its own surprises are, per unit started',
@@ -698,26 +724,29 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
  * discipline. Both ternaries were dead as well: the filter above them has already removed every
  * `'market'` price, so the `typeof` was a check on something that could not happen.
  */
-export function committedTo(orders: readonly PlannedOrder[]): Cash {
-  return sum(
+export function committedTo(orders: readonly PlannedOrder[], ccy: CurrencyCode): Cash {
+  return sumCash(
+    ccy,
     orders
       .filter((o) => o.side === 'buy' && typeof o.price === 'number')
       .map((o) =>
         valueAt(
           asPerPiece(o.price as number, 'the level it posted'),
           o.qty,
+          ccy,
           'what it is about to buy',
         ),
       ),
+    'what its buy orders commit',
   ).value;
 }
 
 function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): Cash {
   const ccy = view.registry.currencyOf(view.self.region);
-  const buying = committedTo(orders);
+  const buying = committedTo(orders, ccy);
   return minus(
     minus(
-      heldAsMoney(view.cash(ccy), 'what is in its account'),
+      heldAsMoney(view.cash(ccy), ccy, 'what is in its account'),
       wagesDue(view),
       'after its payroll',
     ),
@@ -763,11 +792,7 @@ export function marketsIn(decided: DecidedThisPeriod): MarketId[] {
 }
 
 /** The orders this firm decided on, in the book that is asking (Law 4: one decision, one writer). */
-export function ordersFrom(
-  decided: DecidedThisPeriod,
-  market: MarketId,
-  self: PartyId,
-): Order[] {
+export function ordersFrom(decided: DecidedThisPeriod, market: MarketId, self: PartyId): Order[] {
   const out: Order[] = [];
   for (const o of decided.orders) {
     if (o.market !== market) continue;
@@ -781,7 +806,11 @@ export function ordersFrom(
  * it holds of it beyond what its plant stands on, what a piece of each kind stands on, and what a
  * hectare last fetched. Nothing where the world has no ground line (a scale model without land).
  */
-function groundFor(view: ParticipantView, region: RegionId, vintages: readonly HeldVintage[]): GroundForProject | undefined {
+function groundFor(
+  view: ParticipantView,
+  region: RegionId,
+  vintages: readonly HeldVintage[],
+): GroundForProject | undefined {
   const instrument = landId(region);
   if (!view.instruments.has(instrument)) return undefined;
   const reads = { registry: view.registry, params: view.params };

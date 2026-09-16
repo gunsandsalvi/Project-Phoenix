@@ -8,6 +8,8 @@
  * draw and the audit's counts are public; an instruction between two parties is theirs.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
+import { isCash } from '../core/measure.js';
+import { Impossible } from '../core/errors.js';
 import type { EventId } from '../core/ids.js';
 
 /** Kernel event kinds; modules add their own as `<module>.<event>`. */
@@ -69,6 +71,16 @@ export class Journal {
     data: Record<string, unknown>,
     isPublic: boolean,
   ): Event {
+    // 16.0, Law 8: money on the record is PIECES beside a NAMED currency, never a value object a
+    // reader would stringify — the writer says `amount` and `ccy` as two facts.
+    for (const [key, v] of Object.entries(data)) {
+      if (isCash(v))
+        throw new Impossible(
+          'Law 8',
+          `event ${kind}: ${key} is money as a value; record its pieces and name its currency`,
+          { kind, key },
+        );
+    }
     const ev: Event = Object.freeze({
       id: this.next as EventId,
       period,

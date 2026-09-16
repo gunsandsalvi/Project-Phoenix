@@ -22,12 +22,19 @@
  * payWages`); what was PAID is the ledger's, not a number beside the row.
  */
 import type { Period } from '../calendar/calendar.js';
-import { agreementKindId, type AgreementId, type PartyId, type RegionId } from '../core/ids.js';
-import { asRatio, type Cash, over, type PerPiece, scale, valueAt, plus, asCash } from '../core/measure.js';
+import {
+  agreementKindId,
+  type AgreementId,
+  type CurrencyCode,
+  type PartyId,
+  type RegionId,
+} from '../core/ids.js';
+import { asRatio, type Cash, over, type PerPiece, scale, valueAt, plus } from '../core/measure.js';
 import { sum } from '../core/num.js';
 import { addQty, NO_QTY, type Qty, scaleQty, subQty } from '../core/tick.js';
 import type { Option } from '../core/option.js';
 import type { Agreement, AgreementKindDecl, AgreementTerms, Agreements } from './agreements.js';
+import { noCash } from '../core/measure.js';
 
 /** Labour A4, XI-10: one employment RELATIONSHIP, and it is a kind of agreement like the rest. */
 export const EMPLOYMENT = agreementKindId('labour.employment');
@@ -90,6 +97,8 @@ export interface EmploymentRow extends EmploymentTerms {
   readonly employer: PartyId;
   /** The named household cell whose members hold the job (A4.b: a cohort that can be told). */
   readonly worker: PartyId;
+  /** Currency A3, 16.0: the money the wage is in — the row's own, and the account it leaves. */
+  readonly ccy: CurrencyCode;
 }
 
 /** The one reader of an agreement as an employment; anything else asking is a defect in it. */
@@ -97,7 +106,7 @@ export function employmentOf(a: Agreement): EmploymentRow {
   if (!isEmployment(a.terms)) {
     throw new TypeError(`Labour A4: ${a.id} is not an employment`);
   }
-  return { ...a.terms, id: a.id, employer: a.debtor, worker: a.creditor };
+  return { ...a.terms, id: a.id, employer: a.debtor, worker: a.creditor, ccy: a.ccy };
 }
 
 /**
@@ -113,7 +122,7 @@ export const employmentKind: AgreementKindDecl = {
 
 /** What the employer owes this period on one row: the wage, per member of the worker cell. */
 export function wagePerMember(row: EmploymentRow): Cash {
-  return valueAt(row.wagePerHour, row.hoursPerMember, 'wage per member');
+  return valueAt(row.wagePerHour, row.hoursPerMember, row.ccy, 'wage per member');
 }
 
 /** E1, F1: an employer's payroll as its rows say it — never a number kept beside them. */
@@ -159,7 +168,7 @@ export interface EmploymentReads {
   /** F2: the headcount employed, which is a count of people and can never exceed the workforce. */
   employed(): number;
   /** E1: an employer's payroll off its rows, at a period (which rows are productive by then). */
-  payrollOf(employer: PartyId, at: Period): Payroll;
+  payrollOf(employer: PartyId, at: Period, ccy: CurrencyCode): Payroll;
   /** Whether this party has ever employed anybody — a row of its, live or ended. */
   everEmployed(employer: PartyId): boolean;
   /** Firm A3 (12c.2): the pieces its people had made elsewhere in this trade — what its live rows there brought. */
@@ -177,7 +186,12 @@ const live = (a: Agreement): boolean => a.state === 'performing' || a.state === 
  * so the cell a hire lands on is the cell of that row and no other's. The one writer of the value
  * is here; the lattice's opening rule and the hire both spell it through this.
  */
-export function employedKey(employer: PartyId, occupation: string, period: Period, round: string): string {
+export function employedKey(
+  employer: PartyId,
+  occupation: string,
+  period: Period,
+  round: string,
+): string {
   return `employed:${String(employer)}:${occupation}:${String(period)}:${round}`;
 }
 
@@ -193,7 +207,11 @@ export function unemployedKey(occupation: string, from: PartyId, period: Period)
 }
 
 /** C3, C5 (12b.2): the hours these rows will keep in one trade and place — not the ones under notice. */
-export function standingHours(rows: readonly EmploymentRow[], occupation: string, region: RegionId): Qty {
+export function standingHours(
+  rows: readonly EmploymentRow[],
+  occupation: string,
+  region: RegionId,
+): Qty {
   return sum(
     rows
       .filter((r) => r.occupation === occupation && r.region === region)
@@ -224,13 +242,16 @@ export function employmentReads(
 ): EmploymentReads {
   const rowsOf = (rows: readonly Agreement[]): EmploymentRow[] =>
     rows.filter((a) => live(a) && isEmployment(a.terms)).map(employmentOf);
-  const by = (employer: PartyId): EmploymentRow[] => rowsOf(store.byDebtorAndKind(employer, EMPLOYMENT));
+  const by = (employer: PartyId): EmploymentRow[] =>
+    rowsOf(store.byDebtorAndKind(employer, EMPLOYMENT));
   const at = (employer: PartyId, occupation: string, region: RegionId): EmploymentRow[] =>
     by(employer)
       .filter((r) => r.occupation === occupation && r.region === region)
       .sort((a, b) => b.since - a.since);
   const inTrade = (occupation: string, region: RegionId): EmploymentRow[] =>
-    rowsOf(store.ofKind(EMPLOYMENT)).filter((r) => r.occupation === occupation && r.region === region);
+    rowsOf(store.ofKind(EMPLOYMENT)).filter(
+      (r) => r.occupation === occupation && r.region === region,
+    );
   const all = (): EmploymentRow[] => rowsOf(store.ofKind(EMPLOYMENT));
   return Object.freeze({
     get: (id: EmploymentId) => employmentOf(store.get(id)),
@@ -241,27 +262,34 @@ export function employmentReads(
     all,
     hoursAt: (employer: PartyId, occupation: string, region: RegionId): Qty =>
       standingHours(at(employer, occupation, region), occupation, region),
-    ending: (at: Period): readonly EmploymentRow[] => all().filter((r) => r.ends.some && r.ends.value <= at),
+    ending: (at: Period): readonly EmploymentRow[] =>
+      all().filter((r) => r.ends.some && r.ends.value <= at),
     goingRate: (occupation: string, region: RegionId): PerPiece | undefined => {
       const rows = inTrade(occupation, region);
       const heads = sum(rows.map((r) => r.headcount));
       if (heads.value === 0) return undefined;
       const paid = sum(
-        rows.map((r) => scale(r.wagePerHour, asRatio(r.headcount, 'the people on it'), 'wage weight')),
+        rows.map((r) =>
+          scale(r.wagePerHour, asRatio(r.headcount, 'the people on it'), 'wage weight'),
+        ),
       );
       return over(paid.value, asRatio(heads.value, 'the people employed'), 'going rate');
     },
     employed: (): number => sum(all().map((r) => r.headcount)).value,
-    payrollOf: (employer: PartyId, at: Period): Payroll => {
+    payrollOf: (employer: PartyId, at: Period, ccy: CurrencyCode): Payroll => {
       let hours = NO_QTY;
       let productive = NO_QTY;
-      let due = asCash(0, 'nothing due yet');
+      let due = noCash(ccy);
       let headcount = 0;
       for (const r of by(employer)) {
         const rowHours = scaleQty(r.hoursPerMember, r.headcount, 'hours under contract');
         hours = addQty(hours, rowHours, 'hours');
         if (r.productiveFrom <= at) productive = addQty(productive, rowHours, 'productive hours');
-        due = plus(due, scale(wagePerMember(r), asRatio(r.headcount, 'the people on it'), 'wage bill'), 'wages due');
+        due = plus(
+          due,
+          scale(wagePerMember(r), asRatio(r.headcount, 'the people on it'), 'wage bill'),
+          'wages due',
+        );
         headcount += r.headcount;
       }
       return { hours, due, productive, headcount };

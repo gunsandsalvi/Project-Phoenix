@@ -22,20 +22,21 @@
  * that starts a small batch puts the whole period's cost on it (B5.b), which is what running a line
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
-import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import {
   type Cash,
   type Ratio,
   asAmount,
-  asCash,
   asRatio,
   minus,
+  noCash,
   over,
   plus,
   pricedAt,
   scale,
+  sumCash,
 } from '../../core/measure.js';
-import { finite, material, sub, sum, atMost} from '../../core/num.js';
+import { finite, material, sub, sum, atMost } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { NO_QTY, asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
@@ -60,9 +61,9 @@ import { DECIDED, nothingDecided, technologyOf } from './decide.js';
 import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
-function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
-  const settled = payrollSettledIn(ctx, firm, ctx.period);
-  return settled.some ? settled.value.paid : asCash(0, 'it employed nobody this period');
+function wagesThisPeriod(ctx: MechanismContext, firm: PartyId, ccy: CurrencyCode): Cash {
+  const settled = payrollSettledIn(ctx, firm, ctx.period, ccy);
+  return settled.some ? settled.value.paid : noCash(ccy);
 }
 
 /** The batch this firm said it would start, out of the store its own decide phase left it in. */
@@ -74,8 +75,8 @@ function plannedBatch(view: ParticipantView): Qty {
 }
 
 /** Labour C2, Goods B1.c: the hours it has that can make something, this period. */
-function productiveHours(ctx: MechanismContext, firm: PartyId): Qty {
-  const settled = payrollSettledIn(ctx, firm, ctx.period);
+function productiveHours(ctx: MechanismContext, firm: PartyId, ccy: CurrencyCode): Qty {
+  const settled = payrollSettledIn(ctx, firm, ctx.period, ccy);
   return settled.some
     ? settled.value.productive
     : asAmount<'piece'>(0, 'a firm that employed nobody has no hours');
@@ -84,7 +85,8 @@ function productiveHours(ctx: MechanismContext, firm: PartyId): Qty {
 /** E1, E5: what the units this draw takes cost the firm, read off the lots they come out of. */
 function heldCost(ctx: MechanismContext, firm: PartyId, instrument: InstrumentId, qty: Qty): Cash {
   const h = ctx.register.holding(firm, instrument);
-  return h.some ? costOfDraw(h.value.lots, qty) : asCash(0, 'nothing held cost nothing');
+  const ccy = ctx.instruments.get(instrument).ccy;
+  return h.some ? costOfDraw(h.value.lots, qty, ccy) : noCash(ccy);
 }
 
 /** The whole line for one firm, in one period: what it starts, and what comes off it. */
@@ -108,7 +110,8 @@ function start(
 ): void {
   const firm = line.firm as PartyId;
   const planned = plannedBatch(view);
-  const wages = wagesThisPeriod(ctx, firm);
+  const ccy = ctx.registry.currencyOf(view.self.region);
+  const wages = wagesThisPeriod(ctx, firm, ccy);
   if (planned <= 0) return;
   // B1.b, B1.c: what it can actually make is the least of what it planned, the hours it has that
   // can make something, and what each of its inputs on hand reaches. The shortage is read here and
@@ -124,10 +127,12 @@ function start(
   const limits: readonly { readonly qty: Qty; readonly bound: string }[] = [
     { qty: planned, bound: 'plan' },
     {
-      qty: over(productiveHours(ctx, firm), tech.hoursPerUnit, 'what its people can make'),
+      qty: over(productiveHours(ctx, firm, ccy), tech.hoursPerUnit, 'what its people can make'),
       bound: 'labour',
     },
-    ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }] : []),
+    ...(capacity.some
+      ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }]
+      : []),
     ...tech.inputs.map((input) => ({
       /**
        * Law 8, Law 6: WHAT THE STOCK ON HAND REACHES, which for a stock of nothing is nothing.
@@ -162,7 +167,12 @@ function start(
   const room = capacity.some ? capacity.value.perPeriod : null;
   if (!material(batch, tech.inputs.length + tech.plant.length + 2, planned)) {
     // B5.a: it started nothing, so it capitalises nothing; the wage stands as a period expense.
-    ctx.record('firms.idle', [firm], { planned, wages, bound, capacity: room, utilisation: 0 }, false);
+    ctx.record(
+      'firms.idle',
+      [firm],
+      { planned, wages: wages.pieces, ccy, bound, capacity: room, utilisation: 0 },
+      false,
+    );
     return;
   }
   const legs: Leg[] = [];
@@ -178,7 +188,9 @@ function start(
    */
   for (const o of tech.overheads) {
     const units = sum(
-      vintages.filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0).map((v) => v.units),
+      vintages
+        .filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0)
+        .map((v) => v.units),
     ).value;
     if (units <= 0) continue;
     const takes = upTick(
@@ -188,7 +200,11 @@ function start(
         'what it takes a period',
       ),
     );
-    const drawn = atMost(takes, ctx.register.free(firm, o.instrument), 'what it actually has of it');
+    const drawn = atMost(
+      takes,
+      ctx.register.free(firm, o.instrument),
+      'what it actually has of it',
+    );
     if (drawn <= 0) continue;
     costs.push(heldCost(ctx, firm, o.instrument, asQty(drawn)));
     legs.push({
@@ -210,7 +226,7 @@ function start(
       why: 'consumed',
     });
   }
-  const cost = sum(costs);
+  const cost = sumCash(ctx.instruments.get(wip).ccy, costs, 'what the batch cost');
   legs.push({
     kind: 'create',
     party: firm,
@@ -233,8 +249,9 @@ function start(
       planned,
       started,
       bound,
-      wages,
-      cost: cost.value,
+      wages: wages.pieces,
+      cost: cost.value.pieces,
+      ccy,
       settled: record.outcome === 'settled',
       // Goods B1.d, D4, Goods G4: utilisation is a READ of the outcome against capacity, taken
       // here because here is where the outcome is. Nothing decided anything with it.
@@ -262,7 +279,7 @@ function yieldBatch(
   const startedBy = sub(view.period, tech.leadTime, 'started by');
   const due = dueFromLine(holding.value.lots, startedBy);
   if (!material(due, holding.value.lots.length + 1, due)) return;
-  const cost = costOfDraw(holding.value.lots, due);
+  const cost = costOfDraw(holding.value.lots, due, ctx.instruments.get(wip).ccy);
   // Law 8, Goods B4: what comes off the line is a whole number of the smallest piece of the good.
   // The yield takes a batch to a quantity between two pieces more often than not, and what exists
   // is the piece below — a part-finished unit is scrap, not stock.
@@ -292,12 +309,19 @@ function yieldBatch(
     Math.pow(tech.yieldRate, 1 / (season * ground)),
     'what this season and this ground left of the line',
   );
-  const finished = ctx.registry.deliverable(scale(due, asRatio(survived, 'what the line left of it'), 'what came off the line'),
+  const finished = ctx.registry.deliverable(
+    scale(due, asRatio(survived, 'what the line left of it'), 'what came off the line'),
   );
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({
     legs: [
-      { kind: 'destroy', party: firm, instrument: wip, qty: asQty(due, 'the batch that came off the line'), why: 'consumed'},
+      {
+        kind: 'destroy',
+        party: firm,
+        instrument: wip,
+        qty: asQty(due, 'the batch that came off the line'),
+        why: 'consumed',
+      },
       {
         kind: 'create',
         party: firm,

@@ -16,6 +16,7 @@
  * that did not happen (XI-1, Firm Birth C2.a) — and it is the channel by which a default becomes
  * information about what the next loan costs (Corporate Credit G8).
  */
+import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import type { Qty } from '../../core/tick.js';
 import {
   asAmount,
@@ -31,9 +32,9 @@ import {
   valueAt,
   heldAsMoney,
 } from '../../core/measure.js';
-import type { PartyId, InstrumentId} from '../../core/ids.js';
+import type { PartyId, InstrumentId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { atMost, sum } from '../../core/num.js';
+import { atMost } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
@@ -155,16 +156,19 @@ export function lossGivenDefault(
   /** What is owed, in the same money. A claim secured on more than it lends loses nothing. */
   owed: Cash,
 ): Ratio {
-  if (security.length === 0 || owed <= 0) return asRatio(1, 'unsecured: all of it is at risk');
-  const behind = sum(
+  if (security.length === 0 || owed.pieces <= 0)
+    return asRatio(1, 'unsecured: all of it is at risk');
+  const behind = sumCash(
+    owed.ccy,
     security.map((row) => {
       const price = worthOf(row.instrument);
-      if (price === undefined) return asCash(0, 'nothing anybody has priced');
-      return valueAt(price, row.qty, 'what the security is worth');
+      if (price === undefined) return noCash(owed.ccy);
+      return valueAt(price, row.qty, owed.ccy, 'what the security is worth');
     }),
+    'what stands behind it',
   ).value;
   const uncovered = minus(owed, behind, 'the part the security does not cover');
-  if (uncovered <= 0) return asRatio(0, 'covered: it loses nothing');
+  if (uncovered.pieces <= 0) return asRatio(0, 'covered: it loses nothing');
   return ratioOf(uncovered, owed, 'of every unit lent');
 }
 
@@ -183,7 +187,11 @@ export function quote(
   // reaches the lender in the REQUEST, and the quote is about the borrower.
   const expectedLoss = scale(
     pd,
-    lossGivenDefault([], () => undefined, asCash(1, 'one unit lent')),
+    lossGivenDefault(
+      [],
+      () => undefined,
+      asCash(1, view.registry.currencyOf(view.self.region), 'one unit lent'),
+    ),
     'expected loss',
   );
   // C1.c: the capital this loan consumes, times what this bank needs to earn on it.
@@ -246,22 +254,27 @@ export function fundingRoom(view: ParticipantView): Option<Cash> {
   // Item 16: its own published liquidity re-enters here — two moneys it said it had and could lose.
   return some(
     minus(
-      asCash(liquid.value, 'what it published it holds liquid'),
-      asCash(exposed.value, 'what it published could leave'),
+      asCash(
+        liquid.value,
+        view.registry.currencyOf(view.self.region),
+        'what it published it holds liquid',
+      ),
+      asCash(
+        exposed.value,
+        view.registry.currencyOf(view.self.region),
+        'what it published could leave',
+      ),
       'what it can lend and still cover what could leave',
     ),
   );
 }
 
 /** Which of the three is the constraint: the smallest of them, named so a refusal says why (C3.a). */
-function bindingOf(
-  capital: Option<Cash>,
-  appetite: number,
-  funding: Option<number>,
-): Room['binds'] {
+function bindingOf(capital: Option<Cash>, appetite: Cash, funding: Option<Cash>): Room['binds'] {
   const cap = capital.some ? capital.value : appetite;
-  if (funding.some && funding.value <= cap && funding.value <= appetite) return 'funding';
-  return capital.some && cap < appetite ? 'capital' : 'appetite';
+  if (funding.some && funding.value.pieces <= cap.pieces && funding.value.pieces <= appetite.pieces)
+    return 'funding';
+  return capital.some && cap.pieces < appetite.pieces ? 'capital' : 'appetite';
 }
 
 export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): Room {
@@ -293,20 +306,23 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
   // bank has not published a position for is not a constraint it has (Appendix A), so it is skipped
   // rather than treated as zero.
   const least = (a: Cash, b: Option<Cash>): Cash =>
-    b.some ? atMost(a, b.value, 'it lends no more than the tightest of its own limits allows') : a;
+    b.some
+      ? atMostCash(a, b.value, 'it lends no more than the tightest of its own limits allows')
+      : a;
   const most = least(least(byAppetite, byCapital), byFunding);
   return {
     capital: byCapital,
     appetite: byAppetite,
     funding: byFunding,
     most,
-    binds: most <= 0 ? bindingOf(byCapital, byAppetite, byFunding) : 'nothing',
+    binds: most.pieces <= 0 ? bindingOf(byCapital, byAppetite, byFunding) : 'nothing',
   };
 }
 
 /** F3: what it already has out to this name. */
 export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
-  let total = asCash(0, 'nothing out to this name yet');
+  const home = view.registry.currencyOf(view.self.region);
+  let total = noCash(home);
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     // F3: EVERYTHING THAT NAME OWES IT, not everything of one kind. A limit that counted only loans
@@ -321,7 +337,11 @@ export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
     // quantity (mark vs face) and a cycle: a loan's mark asks the lender's own valuer, which reads
     // this exposure, which asks the mark (0d placed it under item 21; 0f.4 reached it in the
     // four-country world through a credit decision during a probate distribution).
-    total = plus(total, heldAsMoney(units, 'at the face it owes'), 'exposure to one name');
+    total = plus(
+      total,
+      view.inMoney(heldAsMoney(units, i.ccy, 'at the face it owes'), home),
+      'exposure to one name',
+    );
   }
   return total;
 }

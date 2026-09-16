@@ -480,7 +480,7 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
                 from: { holder: from, issuer: cb },
                 to: { holder: to, issuer: cb },
                 ccy: USD,
-                amount: asQty(has + phx(50_000)),
+                amount: asQty(has + phx(50_000).pieces),
               },
             ],
             cause: 'transfer',

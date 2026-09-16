@@ -23,6 +23,7 @@
  * expectation to book against a marked bond would be inventing exactly the rate XI-1 exists to
  * forbid, so this module states the exposure and stops there (Law 11).
  */
+import { noCash } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
@@ -76,7 +77,8 @@ function inDefaultOfPayment(ctx: MechanismContext, cycle: number): void {
           amountDue: owed.amount,
           ccy: owed.ccy,
           instruction: f.instruction.id,
-          definition: 'a payment fell due out of its own account and there was not the money for it',
+          definition:
+            'a payment fell due out of its own account and there was not the money for it',
           why: owed.reason,
         },
         true,
@@ -101,11 +103,18 @@ function impairments(ctx: MechanismContext): void {
       // asking for it would throw. What the book is carrying these units at is what the last mark
       // made it, which is exactly the number the holder is exposed for at this moment.
       const at = ctx.period > 0 ? period(ctx.period - 1) : ctx.period;
-      const carrying = h.some ? ctx.valuation.valueOfLots(i.id, h.value.lots, at) : 0;
+      const carrying = h.some ? ctx.valuation.valueOfLots(i.id, h.value.lots, at) : noCash(i.ccy);
       ctx.record(
         'credit.impaired',
         [holder, i.id],
-        { holder, instrument: i.id, issuer: i.issuer.some ? i.issuer.value : null, units, carrying },
+        {
+          holder,
+          instrument: i.id,
+          issuer: i.issuer.some ? i.issuer.value : null,
+          units,
+          carrying: carrying.pieces,
+          ccy: carrying.ccy,
+        },
         false,
       );
     }

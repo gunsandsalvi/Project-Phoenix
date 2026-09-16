@@ -20,18 +20,56 @@
  * and coupons on the paper it holds (B3) — all of them money that actually arrived, because income
  * a household did not receive is not income (B3.a).
  */
+import { noCash, sumCash } from '../../core/measure.js';
 import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
-import { COVER_TERM, PENSION_DIM, PENSION_MEMBER, PENSION_NONE, coverVenue } from '../../registry/insurance.js';
+import {
+  COVER_TERM,
+  PENSION_DIM,
+  PENSION_MEMBER,
+  PENSION_NONE,
+  coverVenue,
+} from '../../registry/insurance.js';
 import { none, some, type Option } from '../../core/option.js';
 import { about } from '../../world/context.js';
-import { pricedAt, asCash, asRatio, type Cash, heldAsMoney, minus, over, plus, scale, valueAt, amountOf, asAmount, asPerPiece, type PerPiece } from '../../core/measure.js';
+import {
+  pricedAt,
+  asCash,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  over,
+  plus,
+  scale,
+  valueAt,
+  amountOf,
+  asAmount,
+  asPerPiece,
+  type PerPiece,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { instrumentId, paramId, partyId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
-import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone, raised } from '../../core/num.js';
+import {
+  instrumentId,
+  paramId,
+  partyId,
+  type InstrumentId,
+  type MarketId,
+  type PartyId,
+} from '../../core/ids.js';
+import {
+  addTo,
+  atMost,
+  combineDust,
+  material,
+  sum,
+  withinDust,
+  zeroIfNone,
+  raised,
+} from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { keyOf, weightOf, type CellParty } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -87,7 +125,11 @@ export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from '
 
 /** 0f.3: the edges a household lattice bands on — RESOLUTION, each tested by invariance (0f.10). */
 export const HOUSEHOLD_EDGES = {
-  liquidWeeks: [paramId('households.lattice.liquidWeeks.1'), paramId('households.lattice.liquidWeeks.2'), paramId('households.lattice.liquidWeeks.3')],
+  liquidWeeks: [
+    paramId('households.lattice.liquidWeeks.1'),
+    paramId('households.lattice.liquidWeeks.2'),
+    paramId('households.lattice.liquidWeeks.3'),
+  ],
   illiquid: [paramId('households.lattice.illiquid.1'), paramId('households.lattice.illiquid.2')],
   leverage: [paramId('households.lattice.leverage.1'), paramId('households.lattice.leverage.2')],
   spell: [paramId('households.lattice.spell.1'), paramId('households.lattice.spell.2')],
@@ -105,9 +147,21 @@ export const HOUSEHOLD_EDGES = {
 export const HOUSEHOLD_LATTICE: LatticeDecl = {
   kind: HOUSEHOLD,
   categorical: [
-    { dim: 'region', movedBy: 'entry', why: 'a member is a real person with a real account, and an account is in a region' },
-    { dim: 'bank', movedBy: 'bank.choice', why: 'a deposit is a claim on a NAMED issuer; two cells at two banks hold two instruments (Money A1)' },
-    { dim: 'cohort', movedBy: 'households.lifecycle', why: 'people age, and a cell whose members were not all in one cohort could not be aged as one' },
+    {
+      dim: 'region',
+      movedBy: 'entry',
+      why: 'a member is a real person with a real account, and an account is in a region',
+    },
+    {
+      dim: 'bank',
+      movedBy: 'bank.choice',
+      why: 'a deposit is a claim on a NAMED issuer; two cells at two banks hold two instruments (Money A1)',
+    },
+    {
+      dim: 'cohort',
+      movedBy: 'households.lifecycle',
+      why: 'people age, and a cell whose members were not all in one cohort could not be aged as one',
+    },
     {
       dim: PENSION_DIM,
       movedBy: 'pension.enrolled',
@@ -117,7 +171,8 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
       // ARE members. The opening is a read of the record, as a hire's is: nobody the seed places
       // has paid in yet, so nobody is a member until a payroll enrols them (a scheme that owed the
       // seed's retired would be a seeded promise, 22a).
-      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('pension.enrolled', cell).some ? PENSION_MEMBER : PENSION_NONE),
+      opening: (reads: LatticeReads, cell: PartyId): string =>
+        reads.lastEvent('pension.enrolled', cell).some ? PENSION_MEMBER : PENSION_NONE,
       why: 'Insurers A2, E1: a pension is promised to a named cell of members; a cell of members and one of non-members are owed different things',
     },
     {
@@ -134,14 +189,20 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
         const hired = reads.lastEvent('labour.hire', cell);
         if (!hired.some) return 'unemployed';
         const d = hired.value.data;
-        return employedKey(partyId(String(d['employer'])), String(d['occupation']), hired.value.period, d['moved'] === true ? 'anywhere' : 'trade');
+        return employedKey(
+          partyId(String(d['employer'])),
+          String(d['occupation']),
+          hired.value.period,
+          d['moved'] === true ? 'anywhere' : 'trade',
+        );
       },
       why: 'a wage is the one receipt a job pays; a cell with jobs and a cell without face different weeks (Labour A3.a)',
     },
     {
       dim: 'credit',
       movedBy: 'credit.default',
-      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('credit.default', cell).some ? 'defaulted' : 'clean'),
+      opening: (reads: LatticeReads, cell: PartyId): string =>
+        reads.lastEvent('credit.default', cell).some ? 'defaulted' : 'clean',
       why: 'a lender reads the record (Corporate Credit E5); a cell that has defaulted and one that has not are two borrowers',
     },
   ],
@@ -175,7 +236,9 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
     {
       dim: 'tenure',
       quantity: (reads: LatticeReads, cell: PartyId): Option<number> => {
-        const dwellings = reads.holdingsOf(cell).filter((h) => String(h.instrument).startsWith('good.dwelling.'));
+        const dwellings = reads
+          .holdingsOf(cell)
+          .filter((h) => String(h.instrument).startsWith('good.dwelling.'));
         if (dwellings.length === 0) return some(0);
         return some(dwellings.reduce((t, h) => t + reads.perMember(cell, h.instrument), 0));
       },
@@ -244,14 +307,17 @@ interface DecidedThisPeriod {
 }
 
 /** An empty slot: a cell that has not decided this period has no period and no orders. */
-export const nothingDecided = (): DecidedThisPeriod => ({ at: undefined, orders: [], needsPerMember: undefined });
+export const nothingDecided = (): DecidedThisPeriod => ({
+  at: undefined,
+  orders: [],
+  needsPerMember: undefined,
+});
 
 /** Treasury C1: the rate a household pays on what it buys, which it must find on top of the price. */
 export const CONSUMPTION_TAX = paramId('treasury.tax.consumption');
 
 function paramsOf(): ParamDecl[] {
   return [
-
     {
       id: paramId('households.lattice.liquidWeeks.1'),
       value: 4,
@@ -456,7 +522,13 @@ function numbers(view: ParticipantView): HouseholdParams {
  * down from there (Clearing C3), out of the cash a member holds. A cell that owes nothing, or has
  * seen nobody die, bids for nothing.
  */
-function insureLife(ctx: MechanismContext, view: ParticipantView, self: CellParty, p: HouseholdParams, cashPerMember: Cash): void {
+function insureLife(
+  ctx: MechanismContext,
+  view: ParticipantView,
+  self: CellParty,
+  p: HouseholdParams,
+  cashPerMember: Cash,
+): void {
   const cohort = keyOf(self, 'cohort');
   const mortality = view.outlook(about({ on: 'mortality', cohort }));
   if (!mortality.some || mortality.value.expected <= 0) return;
@@ -466,15 +538,23 @@ function insureLife(ctx: MechanismContext, view: ParticipantView, self: CellPart
     if (a.debtor === self.id && a.state === 'performing' && a.ccy === ccy) owed += a.owed;
   }
   if (owed <= 0) return;
-  const perMember = ctx.registry.cashFor(asCash(owed / weightOf(self), 'what one member owes'));
+  const perMember = ctx.registry.cashFor(
+    asCash(owed / weightOf(self), ccy, 'what one member owes'),
+  );
   if (perMember <= 0) return;
   const term = view.params.periods(COVER_TERM);
-  const dies = 1 - raised(1 - mortality.value.expected, term, 'the chance a member lives out the term');
+  const dies =
+    1 - raised(1 - mortality.value.expected, term, 'the chance a member lives out the term');
   if (dies <= 0) return;
   const top = asPerPiece(dies, 'what a unit of cover on its debts is worth to a member');
   const rungs = rungsUpTo(levelsBelow(top, top, p.steps), cashPerMember, perMember);
   for (const r of rungs) {
-    ctx.post(coverVenue(ccy), { party: self.id, side: 'buy', price: r.price, qty: scaleQty(r.qty, weightOf(self), 'over its members') });
+    ctx.post(coverVenue(ccy), {
+      party: self.id,
+      side: 'buy',
+      price: r.price,
+      qty: scaleQty(r.qty, weightOf(self), 'over its members'),
+    });
   }
 }
 
@@ -495,7 +575,7 @@ function consumptionIsBought(): Family {
       const cells = new Set(view.parties.ofKind(HOUSEHOLD).map((p) => p.id));
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled') continue;
-        const bought = new Map<PartyId, Cash>();
+        const bought = new Map<PartyId, number>();
         const paid = new Map<PartyId, Qty>();
         for (const leg of r.instruction.legs) {
           if (isAssetLeg(leg) && cells.has(leg.to)) {
@@ -526,7 +606,16 @@ function consumptionIsBought(): Family {
               });
               continue;
             }
-            addTo(bought, leg.to, valueAt(leg.pricePerUnit.value, leg.qty, 'what it took'));
+            addTo(
+              bought,
+              leg.to,
+              valueAt(
+                leg.pricePerUnit.value,
+                leg.qty,
+                view.instruments.get(leg.instrument).ccy,
+                'what it took',
+              ).pieces,
+            );
           } else if (isMoneyLeg(leg) && cells.has(leg.from.holder)) {
             addTo(paid, leg.from.holder, leg.amount);
           }
@@ -534,7 +623,7 @@ function consumptionIsBought(): Family {
         for (const [cell, value] of bought) {
           // A cell that took units and paid nothing paid nothing: absence of a payment is zero
           // money, which is the one place absence becomes a number (core/num.ts).
-          const money = sum([heldAsMoney(zeroIfNone(paid.get(cell)), 'what it paid')]);
+          const money = sum([zeroIfNone(paid.get(cell))]);
           const took = sum([value]);
           // Law 8: what it paid is what the goods came to ROUNDED TO REAL MONEY — a whole number of
           // pieces for each of its members (core/tick.ts). The comparison is therefore entitled to
@@ -548,7 +637,7 @@ function consumptionIsBought(): Family {
             family: 'flows',
             spec: 'Households C5',
             owner: cell,
-            size: minus(took.value, money.value, 'goods against money'),
+            size: took.value - money.value,
             unit: view.registry.currencyOf(who.region),
             period: view.period,
             message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,
@@ -644,7 +733,11 @@ function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   // that has not decided has no basket to work for.
   const decided = view.working(DECIDED, nothingDecided);
   if (decided.at !== view.period || decided.needsPerMember === undefined) return [];
-  const mine = pricedAt(decided.needsPerMember, each, 'what an hour must bring in to feed a member');
+  const mine = pricedAt(
+    decided.needsPerMember,
+    each,
+    'what an hour must bring in to feed a member',
+  );
   if (mine <= 0) return [];
   if (going.some && going.value < mine) return [];
   return [{ party: self.id, side: 'sell', price: mine, qty: hours }];
@@ -668,8 +761,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         kind: 'working',
         holds:
           'the orders each cell decided to post this period, and the period it decided them in',
-        why:
-          'it is how this module gets from its spend phase to its own `markets` and `orders`, and nothing outside it has an opinion about an order nobody has posted yet (0e\u2032.4). It was a PRIVATE `households.plan` event read back by its own writer in the same period, with every order going out through `unknown[]` and back and any that did not survive the round trip dropped in silence. The event stays as the record of what the cell decided; this is the decision, and the door that says a size is a COUNT now sits at the WRITE.',
+        why: 'it is how this module gets from its spend phase to its own `markets` and `orders`, and nothing outside it has an opinion about an order nobody has posted yet (0e\u2032.4). It was a PRIVATE `households.plan` event read back by its own writer in the same period, with every order going out through `unknown[]` and back and any that did not survive the round trip dropped in silence. The event stays as the record of what the cell decided; this is the decision, and the door that says a size is a COUNT now sits at the WRITE.',
       },
       {
         name: PATIENCE,
@@ -840,27 +932,28 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // D2: what it can pay with is its account AND what it can ask back from a fund on demand — that
   // is what makes a money fund a substitute for a deposit rather than an investment (D2).
   const positions = fundPositions(ctx.venues, strikesPublished(ctx.journal), view);
-  const onDemand = sum(positions.map((f) => f.worthPerMember)).value;
   const ccy = view.registry.currencyOf(self.region);
+  const onDemand = sumCash(
+    ccy,
+    positions.map((f) => f.worthPerMember),
+    'what it can get back on demand',
+  ).value;
   /**
    * E3, E4, 0f.7c: WHAT FALLS DUE ON IT COMES BEFORE THE BASKET — the service on what it has issued
    * (`owedIn` is its position: what is due less what it holds, so what is due is that plus what it
    * holds) and the rent on its tenancy, both read off the kernel's own books, per member.
    */
-  const due = asCash(
-    over(
+  const due = over(
+    plus(
       plus(
-        plus(
-          heldAsMoney(view.owedIn(ccy), 'its position in its own money'),
-          heldAsMoney(view.cash(ccy), 'what it holds of it'),
-          'what falls due on what it issued',
-        ),
-        rentOwedBy(view.commitments(), cell),
-        'and the rent on its tenancy',
+        heldAsMoney(view.owedIn(ccy), ccy, 'its position in its own money'),
+        heldAsMoney(view.cash(ccy), ccy, 'what it holds of it'),
+        'what falls due on what it issued',
       ),
-      asRatio(weightOf(self), 'the members between whom it falls due'),
-      'per member',
+      rentOwedBy(view.commitments(), cell, ccy),
+      'and the rent on its tenancy',
     ),
+    asRatio(weightOf(self), 'the members between whom it falls due'),
     'what falls due on one member',
   );
   const decided = spendPerMember(view, basket, p, onDemand, due);
@@ -870,7 +963,11 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   insureLife(ctx, view, self, p, decided.value.cash);
   const spare = sparePerMember(
     // 0f.1: per member, like the spend and the buffer it is set against; 0f.7c: after what is due.
-    minus(asCash(view.cashPerMember(ccy), 'what one member has in the account'), due, 'after what falls due'),
+    minus(
+      asCash(view.cashPerMember(ccy), ccy, 'what one member has in the account'),
+      due,
+      'after what falls due',
+    ),
     decided.value.spend,
     decided.value.buffer,
   );
@@ -940,11 +1037,11 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const perTracked =
     tracking > 0
       ? over(forTracking, asRatio(tracking, 'the lines that track'), 'into one of them')
-      : asCash(0, 'it tracks nothing');
+      : noCash(ccy);
   const perPicked =
     picked > 0
       ? over(forPicked, asRatio(picked, 'the lines it picked'), 'into one line it picked')
-      : asCash(0, 'it picked nothing');
+      : noCash(ccy);
   const budgetFor = (l: { readonly tracks: boolean }): Cash => (l.tracks ? perTracked : perPicked);
   const lines = paper.length + shares.length;
   const paperOrders = paperBids(view, paper, budgetFor, lines, weightOf(self));
@@ -955,10 +1052,14 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // C1.d, Corporate Credit A1 (12a.5): CONSUMER CREDIT IS THE SAME ROW, UNSECURED. What its basket
   // needs beyond what it holds it asks its bank for, at its option, through the one door every
   // borrower uses; a bank that says no leaves it short, which is the constrained state A2.g counts.
-  if (short > 0) {
+  if (short.pieces > 0) {
     ctx.request(self.id, {
       ccy,
-      short: scale(short, asRatio(weightOf(self), 'its members'), 'what the cell is short of between them'),
+      short: scale(
+        short,
+        asRatio(weightOf(self), 'its members'),
+        'what the cell is short of between them',
+      ),
       repays: 'atOption',
     });
   }
@@ -978,7 +1079,12 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     if (o.side === 'buy' && asks !== undefined) {
       // `funds` reads this under the cell's own name (`CERTIFIED`), the way every cross-module
       // read works here: one public kind, written at one end and read at the other.
-      ctx.record('investor.wealth', [cell], { wealthPerMember: decided.value.wealth }, true);
+      ctx.record(
+        'investor.wealth',
+        [cell],
+        { wealthPerMember: decided.value.wealth.pieces, ccy: decided.value.wealth.ccy },
+        true,
+      );
     }
     ctx.post(o.venue, {
       party: cell,
@@ -1024,34 +1130,35 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     [cell],
     {
       // Per member, because that is what it decided (A2.f); the orders carry the cell's weight.
-      spendPerMember: decided.value.spend,
-      basketPerMember: decided.value.basket,
-      duePerMember: decided.value.due,
-      bufferPerMember: decided.value.buffer,
-      cashPerMember: decided.value.cash,
+      spendPerMember: decided.value.spend.pieces,
+      basketPerMember: decided.value.basket.pieces,
+      duePerMember: decided.value.due.pieces,
+      bufferPerMember: decided.value.buffer.pieces,
+      cashPerMember: decided.value.cash.pieces,
       // C1.d, D2: what it could pay with, which is its account AND what a money fund owes it on
       // demand. A reader with only the account sees a cell spending more than it holds.
-      budgetPerMember: decided.value.budget,
-      wealthPerMember: decided.value.wealth,
-      expectedIncome: decided.value.expected,
+      ccy,
+      budgetPerMember: decided.value.budget.pieces,
+      wealthPerMember: decided.value.wealth.pieces,
+      expectedIncome: decided.value.expected.pieces,
       // D5.a, Firm Birth A4 (12.1): what it requires of a claim, per annum — the number a founder
       // measures a line's margin against. Published, because the module that founds is not this one.
       requiredPerAnnum: required,
       // C1.d: its budget bound it. A2.g counts these, and a mean-preserving spread moves cells
       // across the threshold while the weighted mean of what they were paid does not move.
       constrained: decided.value.constrained,
-      sparePerMember: spare,
+      sparePerMember: spare.pieces,
       // D5: the places its money could go this period, and what goes into one of them.
       linesItMayHold: lines,
       // D5, Fund Shares A4 (13d): and how it split them — what goes into one line it picked, and
       // what goes into one that holds the market instead.
-      perPickedLinePerMember: perPicked,
-      perTrackingLinePerMember: perTracked,
-      shortForSpendingPerMember: short,
-      toFundPerMember: toFund,
+      perPickedLinePerMember: perPicked.pieces,
+      perTrackingLinePerMember: perTracked.pieces,
+      shortForSpendingPerMember: short.pieces,
+      toFundPerMember: toFund.pieces,
       // C2: what it does not spend and does not put into paper is saved where it already is.
       // D5, item 7b: what it put towards a home, and nothing when it owns what its people live in.
-      toAHomePerMember: home.some ? home.value.committedPerMember : asCash(0, 'it owns its home'),
+      toAHomePerMember: home.some ? home.value.committedPerMember.pieces : 0,
       orders: plannedOrders,
     },
     false,
@@ -1100,9 +1207,9 @@ function homeBid(
   if (market === undefined) return nothing;
   const ccy = view.registry.currencyOf(view.self.region);
   // What the roofs it is short of would cost the cell, and what its people have spare between them.
-  const cost = valueAt(level, short, 'what the roofs it is short of would cost');
+  const cost = valueAt(level, short, ccy, 'what the roofs it is short of would cost');
   const have = scale(spare, asRatio(weight, 'its members'), 'what the cell has spare between them');
-  if (cost > have) {
+  if (cost.pieces > have.pieces) {
     // Housing C1, XI-15 (12a.4): A MORTGAGE IS A ROW PER (LENDER, CELL) IN TOTALS, and a cell asks
     // for what its people's spare does not reach every period it is short of roofs. It asked only
     // while it owed nothing at all — "one mortgage at a time", read at a cell of twenty thousand
@@ -1112,12 +1219,14 @@ function homeBid(
     ctx.request(view.self.id, {
       ccy,
       short: gap,
-      security: [{ instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) }],
+      security: [
+        { instrument, qty: asQty(downTick(amountOf(gap, level, 'what the loan would buy'))) },
+      ],
       // Housing C2: a mortgage is paid down, interest and principal.
       repays: 'onSchedule',
     });
   }
-  if (spare <= 0) return nothing;
+  if (spare.pieces <= 0) return nothing;
   // Law 8, XI-15: whole pieces, per member, and DOWN — what its money actually reaches.
   const perMember = downTick(amountOf(spare, level, 'what one member\u2019s spare reaches'));
   if (perMember <= 0) return nothing;
@@ -1127,7 +1236,12 @@ function homeBid(
   return some({
     // What this actually commits is what the units it bids for come to, not the whole spare: the
     // rest is still spare and goes to the saving lines with everything else (Law 4).
-    committedPerMember: valueAt(level, asAmount<'piece'>(perMember, 'what one member bids for'), 'towards a home'),
+    committedPerMember: valueAt(
+      level,
+      asAmount<'piece'>(perMember, 'what one member bids for'),
+      ccy,
+      'towards a home',
+    ),
     order: { market, side: 'buy' as const, price: level, qty: asQty(qty) },
   });
 }

@@ -66,7 +66,7 @@ function claimKind(countsItsOwn = false): InstrumentKindProfile {
       for (const h of reads.holdingsOf(BOOK)) {
         if (h.instrument === i.id && !countsItsOwn) continue;
         const worth = reads.worthOf(BOOK, h.instrument, at);
-        if (worth.some) assets += worth.value.value;
+        if (worth.some) assets += worth.value.value.pieces;
       }
       return assets / issued;
     },
@@ -95,7 +95,7 @@ function aBookAndItsClaims(claims: number, countsItsOwn = false): SystemModule {
         terms: { kind: CLAIM_KIND },
         market: none(),
       });
-      ctx.endowMoney(BOOK, USD, asCash(1000, 'what it opens with'));
+      ctx.endowMoney(BOOK, USD, asCash(1000, USD, 'what it opens with'));
       ctx.endowUnits(HOLDER, CLAIM, claims / 2, 1);
       ctx.endowUnits(OTHER, CLAIM, claims / 2, 1);
     },
@@ -140,7 +140,7 @@ describe('a value that is derived (XI-6, Fund Shares B1)', () => {
     // interest now like any other holder, and a book with more in it than money is still a book.
     const book = w.register
       .holdingsOf(BOOK)
-      .reduce((n, h) => n + w.valuation.valueOfLots(h.instrument, h.lots, w.period), 0);
+      .reduce((n, h) => n + w.valuation.valueOfLots(h.instrument, h.lots, w.period).pieces, 0);
     expect(book).toBeGreaterThan(0);
     expect(w.valuation.markPerUnit(CLAIM, w.period)).toBeCloseTo(book / 100, 9);
     expect(w.register.quantity(HOLDER, CLAIM)).toBe(50);

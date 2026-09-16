@@ -3,6 +3,7 @@
  *
  * @spec Insurers A1 Insurers A2.a Insurers A3 Insurers A4.b Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers D1 Insurers D2 Insurers E1 XI-3 Law 2 Law 3 Law 6
  */
+import { USD } from '../src/seeds/foundation.js';
 import { asCash, asRatio } from '../src/core/measure.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
@@ -88,8 +89,8 @@ describe('it can fail, and the gap is what does it (A3, D1, XI-3)', () => {
   });
 
   it('measures the gap as what it has against what it owes, and lets it be negative (Law 6)', () => {
-    expect(gapOf(asCash(100, 'what it has'), asCash(60, 'what it owes'))).toBe(40);
-    expect(gapOf(asCash(60, 'what it has'), asCash(100, 'what it owes'))).toBe(-40);
+    expect(gapOf(asCash(100, USD, 'what it has'), asCash(60, USD, 'what it owes')).pieces).toBe(40);
+    expect(gapOf(asCash(60, USD, 'what it has'), asCash(100, USD, 'what it owes')).pieces).toBe(-40);
   });
 });
 

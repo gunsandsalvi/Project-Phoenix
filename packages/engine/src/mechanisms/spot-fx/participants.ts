@@ -98,7 +98,7 @@ function ownMoneyIsTheBase(
   if (position > 0) {
     // Short of the quote: it sells its own money to raise it, and never more than it holds.
     const want = least(
-      amountOf(heldAsMoney(position, 'what it is short of'), rate, 'base it must sell'),
+      amountOf(heldAsMoney(position, foreign, 'what it is short of'), rate, 'base it must sell'),
       view.cash(pair.base),
     );
     return want > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: want }] : [];
@@ -106,11 +106,15 @@ function ownMoneyIsTheBase(
   // Sitting on the quote: it buys its own money back with it, and never more than that balance buys.
   const spare = least(
     amountOf(
-      heldAsMoney(negQty(position, 'what it is sitting on'), 'what it is sitting on'),
+      heldAsMoney(negQty(position, 'what it is sitting on'), foreign, 'what it is sitting on'),
       rate,
       'base its spare quote buys',
     ),
-    amountOf(heldAsMoney(view.cash(foreign), 'what it holds'), rate, 'what it holds, in base'),
+    amountOf(
+      heldAsMoney(view.cash(foreign), foreign, 'what it holds'),
+      rate,
+      'what it holds, in base',
+    ),
   );
   return spare > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: spare }] : [];
 }
@@ -146,13 +150,21 @@ export function dealerOrders(
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
   const rate = print.value.price;
-  const edge = scale(rate, view.params.ratio(fxParam(d.bank, 'edge')), 'what standing in the middle costs it');
+  const edge = scale(
+    rate,
+    view.params.ratio(fxParam(d.bank, 'edge')),
+    'what standing in the middle costs it',
+  );
   // D1: what it will have behind a position in this pair — its own share of its own capital, which
   // is a read of its own account and is in its OWN money, carried across to the base at the rate
   // in force so the room is a size in the units this book trades in.
   const home = view.registry.currencyOf(view.self.region);
-  const risk = scale(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
-  const room = downTick(scale(risk, view.rateIn(home, pair.base), 'in the base'));
+  const risk = scale(
+    view.equity(),
+    view.params.ratio(fxParam(d.bank, 'inventoryLimit')),
+    'what it will risk',
+  );
+  const room = downTick(view.inMoney(risk, pair.base).pieces);
   if (room <= 0) return [];
   // D4: how far its book is from flat, as a share of the room it has — signed, because a desk can
   // be either way round. Flat is where a desk wants to be: it is paid for turning the position
@@ -160,7 +172,7 @@ export function dealerOrders(
   const held = minus(
     positionIn(view, pair.base, home),
     amountOf(
-      heldAsMoney(positionIn(view, pair.quote, home), 'the quote it is carrying'),
+      heldAsMoney(positionIn(view, pair.quote, home), pair.quote, 'the quote it is carrying'),
       rate,
       'the quote it is carrying, in base',
     ),
@@ -183,12 +195,17 @@ export function dealerOrders(
   const over = minus(sizeOf(held), room, 'how far past its own limit it is');
   if (over > 0) {
     const side = held > 0 ? 'sell' : 'buy';
-    const size = side === 'sell'
-      ? least(over, view.cash(pair.base))
-      : least(
-          over,
-          amountOf(heldAsMoney(view.cash(pair.quote), 'what it holds'), rate, 'what its quote balance buys'),
-        );
+    const size =
+      side === 'sell'
+        ? least(over, view.cash(pair.base))
+        : least(
+            over,
+            amountOf(
+              heldAsMoney(view.cash(pair.quote), pair.quote, 'what it holds'),
+              rate,
+              'what its quote balance buys',
+            ),
+          );
     if (size > 0) out.push({ party: view.self.id, side, price: 'market', qty: size });
     return out;
   }
@@ -198,11 +215,16 @@ export function dealerOrders(
   // capital and the other is the arithmetic of delivery.
   const buy = least(
     minus(room, held, 'room left long the base'),
-    amountOf(heldAsMoney(view.cash(pair.quote), 'what it holds'), rate, 'what its quote balance buys'),
+    amountOf(
+      heldAsMoney(view.cash(pair.quote), pair.quote, 'what it holds'),
+      rate,
+      'what its quote balance buys',
+    ),
   );
   const sell = least(plus(room, held, 'room left short the base'), view.cash(pair.base));
   if (bid > 0 && buy > 0) out.push({ party: view.self.id, side: 'buy', price: bid, qty: buy });
-  if (offer > 0 && sell > 0) out.push({ party: view.self.id, side: 'sell', price: offer, qty: sell });
+  if (offer > 0 && sell > 0)
+    out.push({ party: view.self.id, side: 'sell', price: offer, qty: sell });
   return out;
 }
 
@@ -224,7 +246,6 @@ function positionIn(view: ParticipantView, ccy: CurrencyCode, home: CurrencyCode
 function least(a: Amount<'piece'>, b: Amount<'piece'>): Qty {
   return downTick(atMost(a, b, 'the smaller of the two is how far both reach'));
 }
-
 
 /**
  * C2.a, E3, Clearing F1: the arbitrage legs this desk decided on this period, read back from what

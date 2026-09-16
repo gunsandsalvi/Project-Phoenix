@@ -125,7 +125,7 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
     expect(public_.length).toBeGreaterThan(0);
     expect(public_.every((r) => r.headcount > 0 && r.wagePerHour > 0)).toBe(true);
     // What it pays is what its own rows say, and it leaves its account by name.
-    expect(w.employment.payrollOf(TREASURY_US, w.period).due).toBeGreaterThan(0);
+    expect(w.employment.payrollOf(TREASURY_US, w.period, USD).due.pieces).toBeGreaterThan(0);
     const account = moneyInstrumentId(w.parties.get(TREASURY_US).bank, USD);
     const workers = new Set(public_.map((r) => r.worker));
     const paid = w.ledger

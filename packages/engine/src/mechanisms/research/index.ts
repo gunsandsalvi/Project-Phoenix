@@ -17,9 +17,10 @@
  * else. Nowhere here is a price written, nudged or scaled: holders revise their own outlooks, their
  * reservations change, the book clears, and the move is whatever the changed schedules cleared at.
  */
+import type { CurrencyCode } from '../../core/ids.js';
+import { sumCash } from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import { partyId, type PartyId } from '../../core/ids.js';
-import { sum } from '../../core/num.js';
 import {
   absolute,
   asAmount,
@@ -90,9 +91,13 @@ function coverageOf(ctx: MechanismContext, bank: PartyId, company: string): Cove
   const estimates = mine('research.estimate').filter(after);
   const last = estimates[estimates.length - 1];
   const value = last?.data['perPeriod'];
+  const ccy = last?.data['ccy'];
   return {
     // Item 16: a published number re-enters the type system through its dimension's own door.
-    said: typeof value === 'number' ? some(asCash(value, 'what it said the name makes')) : none<Cash>(),
+    said:
+      typeof value === 'number' && typeof ccy === 'string'
+        ? some(asCash(value, ccy as CurrencyCode, 'what it said the name makes'))
+        : none<Cash>(),
     since: initiated[0] === undefined ? none<number>() : some(initiated[0].period),
   };
 }
@@ -165,7 +170,10 @@ const nothingWanted = (): Wanted => ({ at: -1, names: 0 });
 /** D2: the names this desk's people can cover — its analysts' hours over what one name takes. */
 function namesItCanCover(ctx: MechanismContext, bank: PartyId): number {
   const hours = ctx.employment.hoursAt(bank, ANALYSIS, ctx.parties.get(bank).region);
-  const per = asAmount<'piece'>(ctx.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes');
+  const per = asAmount<'piece'>(
+    ctx.params.count(RESEARCH_PARAMS.hoursPerName),
+    'the hours one name takes',
+  );
   if (per <= 0 || hours <= 0) return 0;
   // Law 8: whole names — a name half covered is not covered, so what its people reach rounds down.
   return downTick(ratioOf(hours, per, 'the names its people can cover'));
@@ -181,16 +189,25 @@ export function analystOrders(view: ParticipantView, venue: VenueDecl): readonly
   if (venue.key['region'] !== String(view.self.region)) return [];
   const wanted = view.working(WANTED, nothingWanted);
   if (wanted.at !== view.period - 1) return [];
-  const per = asAmount<'piece'>(view.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes');
-  const hours = wholePeople(view, asQty(scale(per, asRatio(wanted.names, 'the names it wants covered'), 'the hours they take')));
+  const per = asAmount<'piece'>(
+    view.params.count(RESEARCH_PARAMS.hoursPerName),
+    'the hours one name takes',
+  );
+  const hours = wholePeople(
+    view,
+    asQty(scale(per, asRatio(wanted.names, 'the names it wants covered'), 'the hours they take')),
+  );
   const took = expectedEarningsOf(view);
   const worth: PerPiece | undefined =
-    took.some && hours > 0 ? pricedAt(took.value, hours, 'what an hour of this is worth to it') : undefined;
+    took.some && hours > 0
+      ? pricedAt(took.value, hours, 'what an hour of this is worth to it')
+      : undefined;
   // Hours worth nothing to it are hours it does not want: the change is then a cut of what it has.
   const wants = worth !== undefined && worth > 0 ? hours : asQty(0, 'hours worth nothing to it');
   const change = netChange(view.employs(), ANALYSIS, view.self.region, wants);
   if (change === undefined) return [];
-  if (change.side === 'sell') return [{ party: view.self.id, side: 'sell', price: 'market', qty: change.qty }];
+  if (change.side === 'sell')
+    return [{ party: view.self.id, side: 'sell', price: 'market', qty: change.qty }];
   if (worth === undefined) return [];
   return [{ party: view.self.id, side: 'buy', price: worth, qty: change.qty }];
 }
@@ -219,7 +236,16 @@ function cover(seed: string, ctx: MechanismContext): void {
         // says otherwise.
         if (!cover.since.some) continue;
         desk.seenTo.delete(String(company));
-        ctx.record('research.dropped', [bank.id, company], { bank: bank.id, company, why: wanted ? 'no analyst to cover it' : 'no longer needs the view' }, true);
+        ctx.record(
+          'research.dropped',
+          [bank.id, company],
+          {
+            bank: bank.id,
+            company,
+            why: wanted ? 'no analyst to cover it' : 'no longer needs the view',
+          },
+          true,
+        );
         continue;
       }
       covered += 1;
@@ -251,14 +277,12 @@ function cover(seed: string, ctx: MechanismContext): void {
         {
           bank: bank.id,
           company,
-          perPeriod: now.value,
+          perPeriod: now.value.pieces,
+          ccy: now.value.ccy,
           reports: seen.reports.length,
           memory,
           revision: standing !== undefined,
-          movedBy:
-            standing === undefined
-              ? asCash(0, 'a first view has not moved')
-              : minus(now.value, standing, 'the revision'),
+          movedBy: standing === undefined ? 0 : minus(now.value, standing, 'the revision').pieces,
         },
         true,
       );
@@ -272,8 +296,8 @@ function cover(seed: string, ctx: MechanismContext): void {
 /** Law 7: a view has moved when it has moved past the dust of the arithmetic that produced it. */
 function moved(now: Cash, said: Cash): boolean {
   return (
-    absolute(minus(now, said, 'the revision'), 'either way') >
-    Number.EPSILON * (Math.abs(now) + Math.abs(said))
+    absolute(minus(now, said, 'the revision'), 'either way').pieces >
+    Number.EPSILON * (Math.abs(now.pieces) + Math.abs(said.pieces))
   );
 }
 
@@ -298,7 +322,11 @@ function settle(ctx: MechanismContext): void {
   for (const report of ctx.published.statements()) {
     if (report.at !== ctx.period) continue;
     const company = String(report.company);
-    const observed = over(report.earned, asRatio(report.periods, 'the periods it covers'), 'what it made a period');
+    const observed = over(
+      report.earned,
+      asRatio(report.periods, 'the periods it covers'),
+      'what it made a period',
+    );
     // The desks that have a slot are the ones that have ever covered anything; whether THIS one
     // covers THIS name is what its published coverage says (Law 19).
     for (const bank of Object.keys(all)) {
@@ -311,9 +339,10 @@ function settle(ctx: MechanismContext): void {
           bank,
           company,
           quarter: report.quarter,
-          expected: said.value,
-          observed,
-          surprise: minus(observed, said.value, 'observed minus expected'),
+          expected: said.value.pieces,
+          observed: observed.pieces,
+          surprise: minus(observed, said.value, 'observed minus expected').pieces,
+          ccy: said.value.ccy,
         },
         true,
       );
@@ -342,9 +371,13 @@ export function consensusOf(
     if (e.subjects[1] !== String(company)) continue;
     const bank = e.data['bank'];
     const value = e.data['perPeriod'];
-    if (typeof bank !== 'string' || typeof value !== 'number') continue;
+    const ccy = e.data['ccy'];
+    if (typeof bank !== 'string' || typeof value !== 'number' || typeof ccy !== 'string') continue;
     // Item 16: a published number re-enters the type system here, through its dimension's own door.
-    latest.set(bank, { value: asCash(value, 'what a desk said it makes in a period'), period: e.period });
+    latest.set(bank, {
+      value: asCash(value, ccy as CurrencyCode, 'what a desk said it makes in a period'),
+      period: e.period,
+    });
   }
   for (const e of ctx.journal.ofKind('research.dropped')) {
     if (e.subjects[1] !== String(company)) continue;
@@ -355,7 +388,11 @@ export function consensusOf(
   const first = values[0];
   if (first === undefined) return none<ConsensusRead>();
   const mean = over(
-    sum(values.map((v) => v.value)).value,
+    sumCash(
+      first.value.ccy,
+      values.map((v) => v.value),
+      'every desk\u2019s view',
+    ).value,
     asRatio(values.length, 'the desks that have a view'),
     'the consensus',
   );
@@ -447,16 +484,15 @@ export function research(seed: string): SystemModule {
       {
         name: WANTED,
         kind: 'working',
-        holds: 'the names each bank wanted a view of this period, which is what it posts for analysts against next period',
+        holds:
+          'the names each bank wanted a view of this period, which is what it posts for analysts against next period',
         why: 'D2, Labour C5 (12b.5): what a desk decided it needs is handed from the cover phase to the bank’s own posting in the analysis venue; it is the bank’s own decision read back by the bank, and the coverage it publishes is what the world reads (Law 4).',
       },
       {
         name: 'research',
         kind: 'working',
-        holds:
-          'the last period whose observations are already in each desk’s estimate',
-        why:
-          'C4, item 9.9b: the last period whose observations are already in each estimate, so none is counted twice. It is bookkeeping about a READ that one phase hands the next, not a fact about a company, and publishing it would be telling the market which reports this desk has got round to. What it SAID and when it INITIATED were here too and both were mirrors: an estimate is published — that is what research IS — and `consensus`, in this same file, was already reading them off the journal.',
+        holds: 'the last period whose observations are already in each desk’s estimate',
+        why: 'C4, item 9.9b: the last period whose observations are already in each estimate, so none is counted twice. It is bookkeeping about a READ that one phase hands the next, not a fact about a company, and publishing it would be telling the market which reports this desk has got round to. What it SAID and when it INITIATED were here too and both were mirrors: an estimate is published — that is what research IS — and `consensus`, in this same file, was already reading them off the journal.',
       },
     ],
     spec: 'Reporting C Reporting D Reporting E Reporting F',

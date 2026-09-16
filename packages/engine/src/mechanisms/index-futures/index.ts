@@ -12,7 +12,20 @@
  * direction, and the honest way to lay that off is a contract with a named counterparty and its own
  * margin — not a coefficient that makes the position disappear from a report.
  */
-import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, plus, ratioOf, scale, valueAt, asAmount,
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  negated,
+  noCash,
+  type PerPiece,
+  plus,
+  ratioOf,
+  scale,
+  valueAt,
+  asAmount,
   absolute,
 } from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
@@ -63,9 +76,9 @@ export const isIndexFuture = (t: ContractTerms): t is IndexFutureTerms =>
 
 /** D8, C3: what it is worth to `a` — the index read now against the level it was struck at. */
 function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
-  if (!isIndexFuture(c.terms)) return asCash(0, 'not an index future');
+  if (!isIndexFuture(c.terms)) return noCash(c.ccy);
   const level = reads.index(c.terms.index);
-  if (!level.some) return asCash(0, 'the index has no level');
+  if (!level.some) return noCash(c.ccy);
   // E-10, Law 8: an index future is struck at an INDEX LEVEL, which this world quotes as money —
   // and `moneyLevel` is where that is asserted rather than assumed. `Contract.struckAt` used to be
   // a `PerPiece` for every kind, so a swap's rate and a future's price were the same type and a
@@ -75,7 +88,12 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
     moneyLevel(c.struckAt, 'an index future is struck at a level'),
     'the index now against the level struck',
   );
-  const worth = valueAt(move, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the index each');
+  const worth = valueAt(
+    move,
+    scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'),
+    c.ccy,
+    'of the index each',
+  );
   return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
 
@@ -107,7 +125,12 @@ export const indexFutureKind: DerivativeKindProfile = {
     );
     return some(
       scale(
-        valueAt(move.value, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the index each'),
+        valueAt(
+          move.value,
+          scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'),
+          c.ccy,
+          'of the index each',
+        ),
         asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
@@ -160,7 +183,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const level = view.index(t.index);
   if (!level.some || level.value.level <= 0) return [];
   // E1: the position it TOOK, at the prints its own constituents made.
-  let book = asCash(0, 'its book before it is walked');
+  let book = noCash(m.ccy);
   for (const constituent of level.value.basket) {
     const held = view.free(constituent.instrument);
     if (held <= 0) continue;
@@ -168,18 +191,26 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     if (!print.some) continue;
     book = plus(
       book,
-      valueAt(print.value.price, held, 'what it holds of this line'),
+      view.inMoney(
+        valueAt(
+          print.value.price,
+          held,
+          view.instruments.get(constituent.instrument).ccy,
+          'what it holds of this line',
+        ),
+        m.ccy,
+      ),
       'its book',
     );
   }
   // Finding E-10 again: an index LEVEL is a pure number, and what one contract covers is that
   // level in money — which is the dimension the book it hedges is in.
   const perContract = scale(
-    asCash(level.value.level, 'the index now'),
+    asCash(level.value.level, m.ccy, 'the index now'),
     asRatio(t.multiplier, 'the multiplier'),
     'what one contract covers',
   );
-  if (perContract <= 0) return [];
+  if (perContract.pieces <= 0) return [];
   let hedged = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isIndexFuture(c.terms) || c.terms.index !== t.index) continue;
@@ -213,8 +244,10 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    */
   const own = view.standsBehind();
   const room =
-    own > 0
-      ? view.registry.deliverable(ratioOf(own, perContract, 'what its capital carries'))
+    own.pieces > 0
+      ? view.registry.deliverable(
+          ratioOf(view.inMoney(own, m.ccy), perContract, 'what its capital carries'),
+        )
       : NO_QTY;
   if (want === 0) {
     if (room <= 0) return [];
@@ -233,9 +266,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   }
   const qty = view.registry.deliverable(absolute(want, 'what it has left to do either way'));
   if (qty <= 0) return [];
-  return [
-    { party: view.self.id, side: want > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) },
-  ];
+  return [{ party: view.self.id, side: want > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) }];
 }
 
 /** C3, B1: a book per index, cleared where there is a house and bilateral where there is not. */

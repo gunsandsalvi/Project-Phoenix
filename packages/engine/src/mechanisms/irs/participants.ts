@@ -76,7 +76,9 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   const decl = contractOf(m);
   if (decl === undefined || !isIrs(decl.terms)) return [];
   const t = decl.terms;
-  const fixing = floatingRate(t, { lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject) });
+  const fixing = floatingRate(t, {
+    lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject),
+  });
   /**
    * A1.c, E2, Law 3, XI-13: WHAT THIS PARTY NAMES, and it is never read off this book.
    *
@@ -169,12 +171,13 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  */
 function sizeOf(view: ParticipantView, unit: UnitId, level: PerPiece): Qty {
   const own = view.standsBehind();
-  if (own <= 0 || level <= 0) return NO_QTY;
+  if (own.pieces <= 0 || level <= 0) return NO_QTY;
   // `E-11`: THIS BOOK'S LEVEL IS A RATE EXPRESSED AS MONEY PER PIECE — two per cent a year on a
   // unit of notional is two cents, as the comment at `mine` says. So what its capital carries is
   // money over a LEVEL, which is `amountOf` and gives a notional back; `over` would have divided by
   // a pure number and given money. The book cannot say which of the two its level is, and that is
   // the finding; what this site can do is use the operation that matches what it actually holds.
-  return view.registry.deliverable(amountOf(own, level, 'what a year of this rate on its capital carries'),
+  return view.registry.deliverable(
+    amountOf(own, level, 'what a year of this rate on its capital carries'),
   );
 }

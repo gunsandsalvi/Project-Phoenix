@@ -36,7 +36,7 @@ import {
 } from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { asQty, negQty , addQty, NO_QTY, subQty, type Qty} from '../../core/tick.js';
+import { asQty, negQty, addQty, NO_QTY, subQty, type Qty } from '../../core/tick.js';
 import { add } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
@@ -76,7 +76,11 @@ function levelFor(
   const par = asPerPiece(1, 'par: one unit of the cash bond is one piece of its money');
   const belowPar = minus(par, cash.value.price, 'what the cash market discounts this credit by');
   if (belowPar <= 0) return undefined;
-  const perAnnum = over(belowPar, asRatio(t.tenorYears, 'the years of its term'), 'per year of the term it has');
+  const perAnnum = over(
+    belowPar,
+    asRatio(t.tenorYears, 'the years of its term'),
+    'per year of the term it has',
+  );
   // Law 8: A LEVEL IS HELD IN MONEY PIECES PER PIECE OF THE THING, which is not the same number as
   // the rate a person says out loud. Three basis points a year on a unit of face is three
   // hundredths of a cent, and a schedule posted at 0.0003 is a schedule below this book's own tick
@@ -157,10 +161,10 @@ function ownView(view: ParticipantView, t: CdsTerms): PerPiece | undefined {
  */
 function counterpartyTerm(view: ParticipantView, facing: Qty, against: string): Ratio {
   const own = view.standsBehind();
-  if (own <= 0) return asRatio(1, 'a party with nothing behind it discounts nothing');
+  if (own.pieces <= 0) return asRatio(1, 'a party with nothing behind it discounts nothing');
   // A fraction of its own capital, which is a read and not a limit: the more of one name it
   // already faces through one counterparty, the less the next unit of it is worth.
-  const held = heldAsMoney(facing, `facing ${against}`);
+  const held = heldAsMoney(facing, own.ccy, `facing ${against}`);
   return minus(
     asRatio(1, 'the whole of it'),
     ratioOf(held, plus(held, own, 'against its own capital'), `facing ${against}`),
@@ -253,7 +257,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  * never more than its own capital could stand behind (B3: a naked seller is capitalised).
  */
 function sizeOf(view: ParticipantView, own: Cash, spread: PerPiece): Qty {
-  if (own <= 0 || spread <= 0) return NO_QTY;
+  if (own.pieces <= 0 || spread <= 0) return NO_QTY;
   // What it would carry is what a year of that spread on its own capital comes to at the spread it
   // is quoting: a bigger book on a wider spread is the same risk, which is the arithmetic a party
   // actually does rather than a notional limit somebody wrote down.

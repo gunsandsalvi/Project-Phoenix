@@ -117,7 +117,7 @@ describe('what a fund is (Fund Shares A1, A2, A3)', () => {
     // A3: assets minus liabilities is nothing, because the holders own the assets. Nothing in the
     // module enforces it — it falls out of the wire, and the audit is what says the wire did it.
     const dust = w.valuation.equityDust(FUND_ID, w.register.equityWalk(FUND_ID), w.period);
-    expect(Math.abs(w.register.equity(FUND_ID))).toBeLessThanOrEqual(dust);
+    expect(Math.abs(w.register.equity(FUND_ID).pieces)).toBeLessThanOrEqual(dust);
   });
 
   it('holds only what its mandate allows, and it holds something (A4, C1.a, F1)', () => {
@@ -149,7 +149,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
     const assets = w.register
       .holdingsOf(FUND_ID)
       .filter((h) => h.instrument !== SHARE)
-      .reduce((t, h) => t + w.valuation.valueOfLots(h.instrument, h.lots, w.period), 0);
+      .reduce((t, h) => t + w.valuation.valueOfLots(h.instrument, h.lots, w.period).pieces, 0);
     // B1, B4: the sum of what the holders' shares are worth IS the book. Exactly — to the dust the
     // division and the multiplication back leave behind, which is what Law 7 says a tolerance is.
     expect(Math.abs(nav(w) * shares - assets)).toBeLessThanOrEqual(dustOf(3, assets));

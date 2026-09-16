@@ -220,7 +220,7 @@ describe('what capital is (Capital Programme A)', () => {
     let carried = 0;
     for (const h of view.holdings()) {
       if (!isPlant(w.instruments.get(h.instrument))) continue;
-      carried += w.valuation.valueOfLots(h.instrument, h.lots, w.period);
+      carried += w.valuation.valueOfLots(h.instrument, h.lots, w.period).pieces;
     }
     expect(carried).toBeCloseTo(net, 9);
     // Accumulated depreciation is the sum of the charges this firm has taken, read off the journal;

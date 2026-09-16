@@ -45,7 +45,7 @@ export interface Rung {
  * increments a book adds up. Levels at or below zero are not prices and are dropped.
  */
 export function rungsOver(levels: readonly PerPiece[], budget: Cash): Rung[] {
-  if (budget <= 0) return [];
+  if (budget.pieces <= 0) return [];
   const out: Rung[] = [];
   let taken = NO_QTY;
   for (const price of [...levels].sort((a, b) => b - a)) {
@@ -79,7 +79,7 @@ export function rungsOver(levels: readonly PerPiece[], budget: Cash): Rung[] {
  * arithmetic, not a cap.
  */
 export function rungsUpTo(levels: readonly PerPiece[], money: Cash, want: number): Rung[] {
-  if (money <= 0 || want <= 0) return [];
+  if (money.pieces <= 0 || want <= 0) return [];
   const out: Rung[] = [];
   let taken = NO_QTY;
   // Law 8, XI-15: whole pieces per member, and DOWN, for the reason `rungsOver` rounds down.
@@ -121,7 +121,11 @@ export function levelsBelow(top: PerPiece, width: PerPiece, steps: number): PerP
       top,
       scale(
         width,
-        ratioOf(asRatio(k, 'this step of the grid'), asRatio(steps, 'the steps there are'), 'how far down'),
+        ratioOf(
+          asRatio(k, 'this step of the grid'),
+          asRatio(steps, 'the steps there are'),
+          'how far down',
+        ),
         'how far below the most it will pay',
       ),
       'a level it would pay',
@@ -148,7 +152,11 @@ export function levelsUpTo(top: PerPiece, steps: number): PerPiece[] {
     out.push(
       scale(
         top,
-        ratioOf(asRatio(k, 'this step of the grid'), asRatio(steps, 'the steps there are'), 'this level'),
+        ratioOf(
+          asRatio(k, 'this step of the grid'),
+          asRatio(steps, 'the steps there are'),
+          'this level',
+        ),
         'a level it would pay',
       ),
     );
@@ -168,11 +176,7 @@ export function pricesOver(expected: PerPiece, width: PerPiece, steps: number): 
     // A position on a symmetric grid: two steps in, less the grid's own span, over that span — a
     // count over a count, so it is a pure number between minus one and one by construction.
     const span = asRatio(sub(steps, 1, 'steps less one'), 'the span of the grid');
-    const t = ratioOf(
-      minus(asRatio(2 * i, 'two steps in'), span, 'centred'),
-      span,
-      'position',
-    );
+    const t = ratioOf(minus(asRatio(2 * i, 'two steps in'), span, 'centred'), span, 'position');
     const price = minus(
       expected,
       scale(width, asRatio(t, 'how far along the grid'), 'how far from what it expects'),

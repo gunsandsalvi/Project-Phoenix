@@ -47,7 +47,7 @@ describe('the equity ledger (Reporting A2, G2)', () => {
       for (const p of w.parties.all()) {
         if (!w.register.hasEquityAccount(p.id)) continue;
         const seen = at.get(String(p.id));
-        const balance = w.register.equity(p.id);
+        const balance = w.register.equity(p.id).pieces;
         if (seen === undefined) at.set(String(p.id), [balance]);
         else seen.push(balance);
       }

@@ -56,18 +56,21 @@ export function indexRules(
   currencies: readonly CurrencyCode[],
   from: Period,
   base: Ratio,
+  currencyOf: (region: RegionId) => CurrencyCode,
 ): readonly IndexDecl[] {
   const BASE = base;
   const out: IndexDecl[] = [];
   for (const region of regions) {
-    out.push({ id: EQUITY_INDEX(region), name: `${String(region)} equities`, constituents: equityOf(region), base: BASE, from });
+    // Currency C4: a place's indices are stated in its own money.
+    const ccy = currencyOf(region);
+    out.push({ id: EQUITY_INDEX(region), name: `${String(region)} equities`, constituents: equityOf(region), base: BASE, from, ccy });
     // D4: the two baskets. Same goods, same prints, different weights — and what will part the two
     // levels is 13c's wedge between the factory gate and the counter (D4.a: PARTIAL until then).
-    out.push({ id: PRODUCER_INDEX(region), name: `${String(region)} producer prices`, constituents: goodsBoughtIn(region, 'anybody'), base: BASE, from });
-    out.push({ id: CONSUMER_INDEX(region), name: `${String(region)} consumer prices`, constituents: goodsBoughtIn(region, 'households'), base: BASE, from });
+    out.push({ id: PRODUCER_INDEX(region), name: `${String(region)} producer prices`, constituents: goodsBoughtIn(region, 'anybody'), base: BASE, from, ccy });
+    out.push({ id: CONSUMER_INDEX(region), name: `${String(region)} consumer prices`, constituents: goodsBoughtIn(region, 'households'), base: BASE, from, ccy });
   }
   for (const ccy of currencies) {
-    out.push({ id: CREDIT_INDEX(ccy), name: `${String(ccy)} corporate credit`, constituents: creditOf(ccy), base: BASE, from });
+    out.push({ id: CREDIT_INDEX(ccy), name: `${String(ccy)} corporate credit`, constituents: creditOf(ccy), base: BASE, from, ccy });
   }
   return out;
 }
@@ -90,6 +93,7 @@ export function sizeRules(
   share: Ratio,
   from: Period,
   base: Ratio,
+  currencyOf: (region: RegionId) => CurrencyCode,
 ): readonly IndexDecl[] {
   const out: IndexDecl[] = [];
   for (const region of regions) {
@@ -100,15 +104,17 @@ export function sizeRules(
         constituents: sizeSegmentOf(region, segment, share),
         base,
         from,
+        ccy: currencyOf(region),
       });
     }
   }
   out.push({
     id: GLOBAL_INDEX(statedIn),
     name: `global equities in ${String(statedIn)}`,
-    constituents: globalEquity(regions, statedIn),
+    constituents: globalEquity(regions),
     base,
     from,
+    ccy: statedIn,
   });
   return out;
 }
@@ -159,14 +165,15 @@ export function indices(
         why: 'Indices A1.a, A3, D5: WHERE THE SIZE BOUNDARY IS — the share of a region’s whole listed market the large-cap line covers, stated publicly and in advance by whoever publishes the rule. It is a convention of the index business and not a choice anybody in the market makes, and a firm crosses it both ways by its own capitalisation moving, which is what makes inclusion a real event with a real price effect (C2.a).',
       },
     ],
-    indices: (params) => [
-      ...indexRules(regions, currencies, asPeriod(0), params.ratio(INDEX_PARAMS.base)),
+    indices: (params, registry) => [
+      ...indexRules(regions, currencies, asPeriod(0), params.ratio(INDEX_PARAMS.base), (r) => registry.currencyOf(r)),
       ...sizeRules(
         regions,
         statedIn,
         params.ratio(INDEX_PARAMS.largeCap),
         asPeriod(0),
         params.ratio(INDEX_PARAMS.base),
+        (r) => registry.currencyOf(r),
       ),
     ],
     phases: [
@@ -212,14 +219,16 @@ function publish(
   currencies: readonly CurrencyCode[],
   statedIn: CurrencyCode,
 ): void {
+  const currencyOf = (r: RegionId): CurrencyCode => ctx.registry.currencyOf(r);
   for (const decl of [
-    ...indexRules(regions, currencies, asPeriod(0), ctx.params.ratio(INDEX_PARAMS.base)),
+    ...indexRules(regions, currencies, asPeriod(0), ctx.params.ratio(INDEX_PARAMS.base), currencyOf),
     ...sizeRules(
       regions,
       statedIn,
       ctx.params.ratio(INDEX_PARAMS.largeCap),
       asPeriod(0),
       ctx.params.ratio(INDEX_PARAMS.base),
+      currencyOf,
     ),
   ]) {
     const read = ctx.index(decl.id);

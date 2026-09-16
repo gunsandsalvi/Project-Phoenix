@@ -34,18 +34,13 @@
  * seed it chose to put in. Both are things it actually did, and neither is a balance sheet it never
  * agreed to carry.
  */
+import { atMostCash, noCash } from '../../core/measure.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import {
-  paramId,
-  partyId,
-  type ParamId,
-  type PartyId,
-} from '../../core/ids.js';
+import { paramId, partyId, type ParamId, type PartyId } from '../../core/ids.js';
 import {
   asAmount,
-  asCash,
   asRatio,
   type Cash,
   heldAsMoney,
@@ -145,13 +140,25 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
   // manager with one good week bid four analysts more than its whole fee income and die of it.
   // Bidding the fee over the hours it needs is the most an hour is worth to it (Labour D1).
   const took = expectedIncomeOf(view);
-  if (!took.some || took.value <= 0) return [];
+  if (!took.some || took.value.pieces <= 0) return [];
   const worth = pricedAt(took.value, hours, 'what an hour of this is worth to it');
   if (worth <= 0) return [];
   // Labour C3, C5 (12b.2): the change against what it will have; fewer is a cut given notice.
-  const change = netChange(view.employs(), INVESTING, view.self.region, wholePeople(view, asQty(hours)));
+  const change = netChange(
+    view.employs(),
+    INVESTING,
+    view.self.region,
+    wholePeople(view, asQty(hours)),
+  );
   if (change === undefined) return [];
-  return [{ party: view.self.id, side: change.side, price: change.side === 'buy' ? worth : 'market', qty: change.qty }];
+  return [
+    {
+      party: view.self.id,
+      side: change.side,
+      price: change.side === 'buy' ? worth : 'market',
+      qty: change.qty,
+    },
+  ];
 }
 
 /**
@@ -169,7 +176,14 @@ export function costOfAPool(view: ParticipantView): Option<Cash> {
     view.params.count(MANAGER_PARAMS.hoursPerPool),
     'the hours one pool takes to run',
   );
-  return some(valueAt(hour.value, perPool, 'what one pool costs it a period'));
+  return some(
+    valueAt(
+      hour.value,
+      perPool,
+      view.registry.currencyOf(view.self.region),
+      'what one pool costs it a period',
+    ),
+  );
 }
 
 /**
@@ -192,6 +206,7 @@ function netAssetsOf(ctx: MechanismContext, pool: PartyId): Option<Cash> {
     valueAt(
       perShare as PerPiece,
       asAmount<'piece'>(shares, 'the shares it has outstanding'),
+      ctx.registry.currencyOf(ctx.parties.get(pool).region),
       'what its book comes to',
     ),
   );
@@ -253,12 +268,13 @@ function perPeriod(ctx: Clock, perAnnum: Ratio): Ratio {
  */
 export function seedFor(ctx: Clock, view: ParticipantView, fee: Ratio, cost: Cash): Cash {
   const rate = perPeriod(ctx, fee);
-  if (rate <= 0) return asCash(0, 'a pool that charges nothing is never worth seeding');
+  if (rate <= 0) return noCash(cost.ccy);
   // The book whose fee comes to what a pool costs: what the manager would have to see in it for the
   // product to pay for itself from the day it opens.
   const needs = over(cost, rate, 'the book at which its fee covers what the pool costs it');
   const held = heldAsMoney(
     view.cash(view.registry.currencyOf(view.self.region)),
+    view.registry.currencyOf(view.self.region),
     'the money it holds',
   );
   const payroll = scale(
@@ -267,8 +283,8 @@ export function seedFor(ctx: Clock, view: ParticipantView, fee: Ratio, cost: Cas
     'what its own people cost it this period',
   );
   const spare = minus(held, payroll, 'what its own payroll does not need');
-  if (spare <= 0) return asCash(0, 'a house whose money its people are owed seeds nothing');
-  return atMost(needs, spare, 'it cannot put in money it has not got');
+  if (spare.pieces <= 0) return noCash(cost.ccy);
+  return atMostCash(needs, spare, 'it cannot put in money it has not got');
 }
 
 /**
@@ -330,10 +346,8 @@ export function noticeToGive(
     if (m.windingUp) continue;
     if (ctx.period < m.since + patience) continue;
     const assets = netAssetsOf(ctx, m.pool);
-    const earns = assets.some
-      ? feeOn(ctx, assets.value, m.feePerAnnum)
-      : asCash(0, 'a pool with no book pays its manager nothing');
-    if (earns >= cost) continue;
+    const earns = assets.some ? feeOn(ctx, assets.value, m.feePerAnnum) : noCash(cost.ccy);
+    if (earns.pieces >= cost.pieces) continue;
     out.push({ pool: m.pool, earns, costs: cost });
   }
   return out;
@@ -395,7 +409,7 @@ export function launchToMake(
       smallest =
         smallest === undefined
           ? assets.value
-          : atMost(assets.value, smallest, 'the smallest book anybody running this has');
+          : atMostCash(assets.value, smallest, 'the smallest book anybody running this has');
       cheapest =
         cheapest === undefined
           ? p.feePerAnnum

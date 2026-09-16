@@ -5,9 +5,9 @@
  *
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
+import { noCash } from '../core/measure.js';
 import { addQty, asQty, NO_QTY } from '../core/tick.js';
 import {
-  asCash,
   asRatio,
   type Cash,
   minus,
@@ -25,6 +25,7 @@ import { none, type Option } from '../core/option.js';
 import type { ParticipantView } from '../world/context.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
+import { Missing } from '../core/errors.js';
 import { placeAt, tilesOf } from '../registry/geography.js';
 import { goodId, isGoodTerms } from '../registry/physical.js';
 import { isCreateLeg } from '../ledger/instruction.js';
@@ -440,6 +441,11 @@ export interface MapView {
 export interface SectorView {
   readonly sector: string;
   readonly lines: readonly string[];
+  /**
+   * Currency C4 (16.0): a sector spans countries, so its two numbers are a REPORT in one money —
+   * every line's value translated at the rate in force, never converted. This names which.
+   */
+  readonly ccy: CurrencyCode;
   /** What its lines MADE this period, at what a unit of each last printed. A flow. */
   readonly made: Cash;
   /** What is standing in them: units held, at the same prints. A stock, and a different question. */
@@ -632,8 +638,9 @@ export function snapshot(
     if (profile.pricing === 'money') value = qty;
     // A holding carried at cost is worth what it cost whether or not its market printed (Goods E1);
     // one carried at the mark is worth nothing anyone can state until it has one (XI-6).
-    else if (profile.carry === 'cost') value = w.valuation.valueOfLots(i.id, h.lots, w.period);
-    else if (latest.some) value = w.valuation.valueOfLots(i.id, h.lots, latest.value.period);
+    else if (profile.carry === 'cost')
+      value = w.valuation.valueOfLots(i.id, h.lots, w.period).pieces;
+    else if (latest.some) value = w.valuation.valueOfLots(i.id, h.lots, latest.value.period).pieces;
     positions.push({
       holder: h.holder,
       instrument: i.id,
@@ -661,8 +668,8 @@ export function snapshot(
       notional: c.notional,
       struckAt: c.struckAt.level,
       struckAs: w.registry.derivativeKind(c.kind).quotedAs,
-      markToA: w.contractMark(c, w.period),
-      initialMargin: margin.some ? margin.value : null,
+      markToA: w.contractMark(c, w.period).pieces,
+      initialMargin: margin.some ? margin.value.pieces : null,
       opened: c.opened,
       ccy: String(c.ccy),
     });
@@ -692,7 +699,15 @@ export function snapshot(
    * how Law 9 says a thing is named — so the curve is a grouping of prints by subject, taken at
    * the read, stored nowhere, and a tenor with no print has no point on it (Law 3, Law 19).
    */
-  const bookCurves = new Map<string, { kind: string; quotedAs: 'money' | 'rate'; ccy: string; points: { tenorYears: number; level: number }[] }>();
+  const bookCurves = new Map<
+    string,
+    {
+      kind: string;
+      quotedAs: 'money' | 'rate';
+      ccy: string;
+      points: { tenorYears: number; level: number }[];
+    }
+  >();
   for (const p of contractPrints) {
     const parts = p.market.split('.');
     const tail = parts[parts.length - 1] ?? '';
@@ -700,7 +715,12 @@ export function snapshot(
     const tenorYears = Number(tail.slice(0, -1));
     if (!Number.isFinite(tenorYears) || tenorYears <= 0) continue;
     const subject = parts.slice(0, -1).join('.');
-    const held = bookCurves.get(subject) ?? { kind: p.kind, quotedAs: p.quotedAs, ccy: p.ccy, points: [] };
+    const held = bookCurves.get(subject) ?? {
+      kind: p.kind,
+      quotedAs: p.quotedAs,
+      ccy: p.ccy,
+      points: [],
+    };
     held.points.push({ tenorYears, level: p.level });
     bookCurves.set(subject, held);
   }
@@ -782,7 +802,8 @@ export function snapshot(
     mix: g.terrains.map((x) => ({ terrain: String(x.id), share: [...(g.mix.get(x.id) ?? [])] })),
     places: g.places.map((id) => ({
       id: String(id),
-      name: w.registry.regions.get(id as RegionId)?.name ??
+      name:
+        w.registry.regions.get(id as RegionId)?.name ??
         g.seaAreas.find((s) => s.id === id)?.name ??
         String(id),
       country: w.registry.regions.get(id as RegionId)?.country ?? null,
@@ -804,26 +825,37 @@ export function snapshot(
     }),
   };
 
-
   // 13c.2: the economy by sector. One walk of this period's create legs and one of the register,
   // both at the prints the markets made (Law 19: never a stored total, never a re-derived price).
   const sectorOf = new Map(OCCUPATIONS.map((o) => [o.id, o.sector]));
+  // Currency C4: the report's money is the first region's, and every line is translated into it.
+  const firstRegion = [...w.registry.regions.keys()][0];
+  if (firstRegion === undefined)
+    throw new Missing('Seed A1', 'a world with no region has no money to report in', {});
+  const reportIn = w.registry.currencyOf(firstRegion);
   const sectors = new Map<
     string,
     { lines: Set<string>; made: Cash; held: Cash; portable: boolean }
   >();
-  const lineOfInstrument = new Map<string, { sector: string; subUnit: string; portable: boolean }>();
+  const lineOfInstrument = new Map<
+    string,
+    { sector: string; subUnit: string; portable: boolean }
+  >();
   for (const i of w.instruments.all()) {
     if (!isGoodTerms(i.terms)) continue;
     const trade = OCCUPATION_OF[i.terms.subUnit];
     if (trade === undefined) continue;
     const sector = sectorOf.get(trade);
     if (sector === undefined) continue;
-    lineOfInstrument.set(String(i.id), { sector, subUnit: i.terms.subUnit, portable: i.terms.portable });
+    lineOfInstrument.set(String(i.id), {
+      sector,
+      subUnit: i.terms.subUnit,
+      portable: i.terms.portable,
+    });
     const row = sectors.get(sector) ?? {
       lines: new Set<string>(),
-      made: asCash(0, 'nothing made yet'),
-      held: asCash(0, 'nothing standing yet'),
+      made: noCash(reportIn),
+      held: noCash(reportIn),
       portable: true,
     };
     row.lines.add(i.terms.subUnit);
@@ -832,7 +864,16 @@ export function snapshot(
     if (print.some) {
       row.held = plus(
         row.held,
-        valueAt(print.value.price, w.register.heldTotal(i.id).value, 'what is standing in it'),
+        w.valuation.inMoney(
+          valueAt(
+            print.value.price,
+            w.register.heldTotal(i.id).value,
+            i.ccy,
+            'what is standing in it',
+          ),
+          reportIn,
+          w.period,
+        ),
         'the sector’s stock',
       );
     }
@@ -850,15 +891,30 @@ export function snapshot(
       if (row === undefined) continue;
       row.made = plus(
         row.made,
-        valueAt(print.value.price, leg.qty, 'what it made'),
+        w.valuation.inMoney(
+          valueAt(
+            print.value.price,
+            leg.qty,
+            w.instruments.get(leg.instrument).ccy,
+            'what it made',
+          ),
+          reportIn,
+          w.period,
+        ),
         'the sector’s output',
       );
     }
   }
   const sectorViews: SectorView[] = [...sectors.entries()]
-    .map(([sector, r]) => ({ sector, lines: [...r.lines].sort(), made: r.made, held: r.held, portable: r.portable }))
+    .map(([sector, r]) => ({
+      sector,
+      ccy: reportIn,
+      lines: [...r.lines].sort(),
+      made: r.made,
+      held: r.held,
+      portable: r.portable,
+    }))
     .sort((a, b) => a.sector.localeCompare(b.sector));
-
 
   // 13d: housing, as reads. The stock is the register's; the price is the market's; the rent is the
   // letting session's own print; the foreclosures are the journal's. Nothing here is stored.
@@ -909,7 +965,7 @@ export function snapshot(
       alive: p.status.alive,
       successor: p.status.alive ? null : p.status.successor,
       equityPerMember:
-        visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id) : null,
+        visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id).pieces : null,
       ccy: w.registry.currencyOf(p.region),
     })),
     instruments: w.instruments.all().map((i) => ({
@@ -1006,7 +1062,11 @@ function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly Hedg
   for (const p of w.parties.alive()) {
     if (!visible(p.id)) continue;
     for (const pair of pairs) {
-      const parts = hedged.fn(w.participantView(p.id), pair.base as CurrencyCode, pair.quote as CurrencyCode);
+      const parts = hedged.fn(
+        w.participantView(p.id),
+        pair.base as CurrencyCode,
+        pair.quote as CurrencyCode,
+      );
       // A party with nothing in this pair and nothing fixed in it is not in it: showing a row of
       // zeroes for every party against every pair would bury the ones that mean something.
       if (parts.exposure === 0 && parts.covered === 0) continue;
@@ -1069,7 +1129,11 @@ function trianglesOf(w: World): readonly TriangleView[] {
         const bc = rate(b, c);
         const ac = rate(a, c);
         if (ab === null || bc === null || ac === null || ac <= 0) continue;
-        const crossed = scale(ab, asRatio(bc, 'and on into the third'), `${a} through ${b} into ${c}`);
+        const crossed = scale(
+          ab,
+          asRatio(bc, 'and on into the third'),
+          `${a} through ${b} into ${c}`,
+        );
         out.push({
           through: `${a}/${b}/${c}`,
           crossed,
@@ -1091,7 +1155,8 @@ function indicesOf(w: World): readonly IndexView[] {
     const tracks = e.data['tracks'];
     const fund = e.data['fund'];
     const shares = e.data['shares'];
-    if (typeof tracks !== 'string' || typeof fund !== 'string' || typeof shares !== 'number') continue;
+    if (typeof tracks !== 'string' || typeof fund !== 'string' || typeof shares !== 'number')
+      continue;
     const held = vehicles.get(tracks) ?? [];
     held.push({ fund, shares });
     vehicles.set(tracks, held);
@@ -1166,7 +1231,10 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
   for (const said of w.published.statements()) latest.set(String(said.company), said);
   // OB5: the consensus is the research module's answer to a world question, asked once.
   const consensus = w.answers.answer<
-    (reads: { readonly journal: Pick<World['journal'], 'ofKind'> }, company: PartyId) => Option<ConsensusRead>
+    (
+      reads: { readonly journal: Pick<World['journal'], 'ofKind'> },
+      company: PartyId,
+    ) => Option<ConsensusRead>
   >(QUESTIONS.whatTheConsensusIs, 'world');
   const out: StatementsView[] = [];
   for (const [company, report] of latest) {
@@ -1179,26 +1247,34 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
         period: e.period,
       });
     }
-    const read = consensus === undefined ? none<ConsensusRead>() : consensus.fn(w, partyId(company));
+    const read =
+      consensus === undefined ? none<ConsensusRead>() : consensus.fn(w, partyId(company));
     out.push({
       company,
       quarter: report.quarter,
       period: report.at,
-      earned: report.earned,
-      revaluation: report.revaluation,
+      earned: report.earned.pieces,
+      revaluation: report.revaluation.pieces,
       income: report.income.map((l) => ({ cause: l.cause, amount: l.amount })),
-      assets: report.assets,
-      liabilities: report.liabilities,
+      assets: report.assets.pieces,
+      liabilities: report.liabilities.pieces,
       shares: report.shares,
       ccy: report.ccy,
-      guided: guidance === undefined ? null : guidance.guided,
+      guided: guidance === undefined ? null : guidance.guided.pieces,
       guidedFor: guidance === undefined ? null : guidance.quarter,
       estimates: [...estimates].map(([bank, v]) => ({
         bank,
         perPeriod: v.perPeriod,
         period: v.period,
       })),
-      consensus: read.some ? read.value : null,
+      consensus: read.some
+        ? {
+            count: read.value.count,
+            mean: read.value.mean.pieces,
+            spread: read.value.spread.pieces,
+            oldest: read.value.oldest,
+          }
+        : null,
       surprises: w.journal
         .ofKind('research.surprise')
         .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.at)

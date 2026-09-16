@@ -108,7 +108,7 @@ describe('the lattice over a year (XI-15, 0f.10)', () => {
     // The working cohort is emptied of its cash the morning of the decision, so its basket is not
     // covered; the retired cohort keeps what it has. Then EVERY cell is paid the same per member.
     const plain = assemble({ ...rigSpec(seed), modules: mergeModules(rigSpec(seed).modules, [drainsAndPays('working', 0, at)]) });
-    const paid = assemble({ ...rigSpec(seed), modules: mergeModules(rigSpec(seed).modules, [drainsAndPays('working', phx(500), at)]) });
+    const paid = assemble({ ...rigSpec(seed), modules: mergeModules(rigSpec(seed).modules, [drainsAndPays('working', phx(500).pieces, at)]) });
     for (let i = 0; i <= at; i += 1) {
       plain.step();
       paid.step();
@@ -154,7 +154,7 @@ describe('the lattice over a year (XI-15, 0f.10)', () => {
      * mechanism that reads a band, not a licence to widen this.
      */
     const decisions = (w: World): number => w.journal.ofKind('households.plan').length;
-    const dust = phx(0.01) * (decisions(coarse) + decisions(fine));
+    const dust = phx(0.01).pieces * (decisions(coarse) + decisions(fine));
     const spent = (w: World): number => {
       let total = 0;
       for (const e of w.journal.ofKind('households.plan')) {

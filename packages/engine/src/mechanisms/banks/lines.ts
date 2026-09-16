@@ -27,6 +27,7 @@
  * would price against, and no rival may see it. Its consequence is public — a bank that stops
  * quoting has stopped quoting where everyone can see.
  */
+import { atLeastCash, atMostCash, noCash } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
   acrossMembers,
@@ -42,7 +43,7 @@ import {
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { atLeast, atMost } from '../../core/num.js';
+import { atLeast } from '../../core/num.js';
 import { downTick, NO_QTY, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -113,9 +114,9 @@ export function publishLines(
       r.capital,
       'the room its appetite leaves',
     );
-    const asks = atLeast(
+    const asks = atLeastCash(
       wants,
-      asCash(0, 'a line already past its own appetite is asking for nothing'),
+      noCash(wants.ccy),
       'a line already past its own appetite is asking for nothing',
     );
     // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
@@ -125,24 +126,35 @@ export function publishLines(
     // it. Both numbers above are a capital position over a risk weight, so both land between two
     // pieces; a line cannot be given a fraction of a cent to lend, and the treasury keeps whatever
     // the rounding leaves rather than handing it to a line that did not ask for it.
-    const give = downTick(atMost(left, asks, 'the room that is left is all the room there is'));
+    const give = downTick(
+      atMostCash(left, asks, 'the room that is left is all the room there is').pieces,
+    );
     allotted.set(r.line, atLeast(give, NO_QTY, 'there is no less room to give than none'));
-    left = minus(left, heldAsMoney(give, 'what this line was allotted'), 'the room it has left');
+    left = minus(
+      left,
+      heldAsMoney(give, left.ccy, 'what this line was allotted'),
+      'the room it has left',
+    );
   }
   // Law 15, 0e′.4: what each line was allotted goes in this bank's own working store, which is what
   // the line itself reads back. The event below is the record of the allotment; it is written from
   // the same map and never read back by this module.
   const slot = ctx.workingOf(bank, ALLOTTED, nothingAllotted);
   slot.at = ctx.period;
-  slot.room = new Map(rows.map((r) => [r.line, asCash(roomOf(allotted, r.line), `the room ${r.line} was allotted`)]));
+  slot.room = new Map(
+    rows.map((r) => [
+      r.line,
+      asCash(roomOf(allotted, r.line), headroom.ccy, `the room ${r.line} was allotted`),
+    ]),
+  );
   ctx.record(
     'bank.lines',
     [bank],
     {
       bank,
       ccy,
-      headroom,
-      unattributed: earned.unattributed,
+      headroom: headroom.pieces,
+      unattributed: earned.unattributed.pieces,
       lines: rows.map((r) => ({
         line: r.line,
         capital: r.capital,
@@ -199,7 +211,8 @@ function row(line: string, capital: Cash, earned: Cash, appetite: Ratio): LineRe
     capital,
     earned,
     appetite,
-    returnOnCapital: capital > 0 ? some(ratioOf(earned, capital, `${line} on its capital`)) : none(),
+    returnOnCapital:
+      capital.pieces > 0 ? some(ratioOf(earned, capital, `${line} on its capital`)) : none(),
     room: NO_QTY,
   };
 }
@@ -222,9 +235,14 @@ interface Earned {
  * party; the instruments its legs moved say whose line it was.
  */
 function earnedByLine(ctx: MechanismContext, bank: PartyId, d: BankDecl): Earned {
-  const none_ = (why: string): Cash => asCash(0, why);
+  const home = ctx.registry.currencyOf(ctx.parties.get(bank).region);
+  const none_ = (why: string): Cash => asCash(0, home, why);
   if (ctx.period === 0) {
-    return { lending: none_('nothing yet'), dealing: none_('nothing yet'), unattributed: none_('nothing yet') };
+    return {
+      lending: none_('nothing yet'),
+      dealing: none_('nothing yet'),
+      unattributed: none_('nothing yet'),
+    };
   }
   let lending = none_('nothing lent yet');
   let dealing = none_('nothing dealt yet');
@@ -235,10 +253,14 @@ function earnedByLine(ctx: MechanismContext, bank: PartyId, d: BankDecl): Earned
     let delta = none_('nothing on this instruction');
     for (const e of r.equity) {
       if (e.party === bank) {
-        delta = plus(delta, acrossMembers(e.delta, 1, 'what it made'), 'its own equity');
+        delta = plus(
+          delta,
+          asCash(acrossMembers(e.delta, 1, 'what it made'), home, 'what it made'),
+          'its own equity',
+        );
       }
     }
-    if (delta === 0) continue;
+    if (delta.pieces === 0) continue;
     const line = lineOf(ctx, bank, d, r.instruction.legs);
     if (line === LENDING) lending = plus(lending, delta, 'what its lending made');
     else if (line === DEALING) dealing = plus(dealing, delta, 'what its dealing made');
@@ -272,10 +294,10 @@ function lineOf(
       : none<PartyId>();
     const which =
       owed.some && owed.value === bank
-      ? LENDING
-      : d.makes.includes(String(i.kind))
-        ? DEALING
-        : undefined;
+        ? LENDING
+        : d.makes.includes(String(i.kind))
+          ? DEALING
+          : undefined;
     if (which === undefined) continue;
     if (seen !== undefined && seen !== which) return undefined;
     seen = which;

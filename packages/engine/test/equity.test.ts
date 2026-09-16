@@ -138,7 +138,7 @@ function splits(line: string, ratio: number, at: number): SystemModule {
             const out: Record<string, number> = {};
             for (const h of ctx.register.holdersOf(id)) {
               const v = ctx.valuation.worthOf(h, id, ctx.period);
-              out[String(h)] = v.some ? v.value.value : 0;
+              out[String(h)] = v.some ? v.value.value.pieces : 0;
             }
             return out;
           };
@@ -572,7 +572,7 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
     const w = saversWorld('equity', [
       // The second cell is paid something it was not expecting, and it remembers being surprised.
       // Law 8: a real payment, so a whole number of cents to every member of the cell.
-      pays([{ to: jolted, amount: phx(500) }], 6),
+      pays([{ to: jolted, amount: phx(500).pieces }], 6),
     ]);
     // 12d-7: A SAVER HAS NO REASON TO NAME A PRICE FOR A SHARE UNTIL THE COMPANY PUBLISHES. 12c
     // anchored what a share is worth on the accounts (Reporting A1, A2, §48), and a company reports

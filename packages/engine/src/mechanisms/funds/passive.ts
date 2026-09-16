@@ -25,6 +25,7 @@
  * print. Nothing is remembered between periods, so a fund that was rationed last session simply
  * comes back with the same difference to close.
  */
+import { sumCash } from '../../core/measure.js';
 import {
   absolute,
   amountOf,
@@ -39,7 +40,7 @@ import {
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { InstrumentId } from '../../core/ids.js';
-import { atLeast, atMost, material, sum } from '../../core/num.js';
+import { atLeast, atMost, material } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { Mandate } from './index.js';
@@ -87,7 +88,11 @@ export function passiveOrders(
   // Law 7: a difference below what one session could have made is not a rebalance, it is the
   // rounding of the last one. `material` is the same test every other order in this world takes.
   const away = absolute(difference, 'how far it is away');
-  const against = atLeast(target, held, 'the larger of the two is what the difference is measured against');
+  const against = atLeast(
+    target,
+    held,
+    'the larger of the two is what the difference is measured against',
+  );
   if (!material(away, 2, against)) return [];
   // C2, Appendix B: AT WHAT THE LINE IS WORTH. A tracker does not decide a price — it pays what the
   // market last said and takes what the market last said — but it does not pay ANYTHING either: an
@@ -101,7 +106,11 @@ export function passiveOrders(
     // bidder for anything — that is arithmetic, not a limit, and a bid it could not have paid for
     // is a trade that fails to settle every session and a level nobody pays.
     const affordable = amountOf(
-      heldAsMoney(view.cash(view.registry.currencyOf(view.self.region)), 'the money it holds'),
+      heldAsMoney(
+        view.cash(view.registry.currencyOf(view.self.region)),
+        view.registry.currencyOf(view.self.region),
+        'the money it holds',
+      ),
       price,
       'what its cash buys',
     );
@@ -140,13 +149,27 @@ function priced(
  */
 function targetUnits(
   view: ParticipantView,
-  basket: readonly { readonly instrument: InstrumentId; readonly price: PerPiece; readonly weight: Qty }[],
+  basket: readonly {
+    readonly instrument: InstrumentId;
+    readonly price: PerPiece;
+    readonly weight: Qty;
+  }[],
   weight: Qty,
 ): Qty | undefined {
-  const cost = sum(basket.map((c) => valueAt(c.price, c.weight, 'what one basket costs'))).value;
-  if (cost <= 0) return undefined;
+  const home = view.registry.currencyOf(view.self.region);
+  const cost = sumCash(
+    home,
+    basket.map((c) =>
+      view.inMoney(
+        valueAt(c.price, c.weight, view.instruments.get(c.instrument).ccy, 'what one basket costs'),
+        home,
+      ),
+    ),
+    'what one basket costs',
+  ).value;
+  if (cost.pieces <= 0) return undefined;
   const worth = bookValue(view, basket);
-  if (worth <= 0) return undefined;
+  if (worth.pieces <= 0) return undefined;
   const baskets = ratioOf(worth, cost, 'how many of the index basket it can hold');
   return scale(weight, baskets, 'units of this line that comes to');
 }
@@ -156,10 +179,18 @@ function bookValue(
   view: ParticipantView,
   basket: readonly { readonly instrument: InstrumentId; readonly price: PerPiece }[],
 ): Cash {
-  const terms = basket.map((c) =>
-    valueAt(c.price, view.quantity(c.instrument), 'what it holds of this'),
-  );
   const ccy = view.registry.currencyOf(view.self.region);
-  terms.push(heldAsMoney(view.cash(ccy), 'and the money it holds'));
-  return sum(terms).value;
+  const terms = basket.map((c) =>
+    view.inMoney(
+      valueAt(
+        c.price,
+        view.quantity(c.instrument),
+        view.instruments.get(c.instrument).ccy,
+        'what it holds of this',
+      ),
+      ccy,
+    ),
+  );
+  terms.push(heldAsMoney(view.cash(ccy), ccy, 'and the money it holds'));
+  return sumCash(ccy, terms, 'what its book is worth').value;
 }

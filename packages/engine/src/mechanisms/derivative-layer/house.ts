@@ -14,10 +14,21 @@
  * applies to it like everything else, and the survivors' claims on it become claims on its estate.
  * Nothing tops it up.
  */
+import { atMostCash, noCash, sumCash } from '../../core/measure.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { absolute, asCash, asRatio, type Cash, heldAsMoney, minus, negated, ratioOf, scale , asPerPiece} from '../../core/measure.js';
-import { atMost, sum, zeroIfNone } from '../../core/num.js';
+import {
+  absolute,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  negated,
+  ratioOf,
+  scale,
+  asPerPiece,
+} from '../../core/measure.js';
+import { sum, zeroIfNone } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { NO_QTY, type Qty, splitOnTick } from '../../core/tick.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -53,12 +64,13 @@ export function coverOne(
   ccy: CurrencyCode,
   horizon: number,
 ): Qty {
-  let largest = asCash(0, 'no member has anything open');
+  let largest = noCash(ccy);
   for (const m of membersOf(ctx, house, ccy)) {
     const need = requirement(ctx, m, house, ccy);
-    if (need > largest) largest = need;
+    if (need.pieces > largest.pieces) largest = need;
   }
-  return ctx.registry.cashFor(scale(largest, asRatio(Math.sqrt(horizon), 'over the horizon'), 'cover one over the horizon'),
+  return ctx.registry.cashFor(
+    scale(largest, asRatio(Math.sqrt(horizon), 'over the horizon'), 'cover one over the horizon'),
   );
 }
 
@@ -86,10 +98,16 @@ export function trueUpFund(
   const members = membersOf(ctx, house, ccy);
   const target = coverOne(ctx, house, ccy, horizon);
   const margins = members.map((m) => requirement(ctx, m, house, ccy));
-  const total = sum(margins).value;
+  const total = sumCash(ccy, margins, 'what the members must have posted').value;
   // Law 8: the fund is shared out in whole pieces of money and the parts sum to exactly the whole,
   // so no member's share is a fraction of a cent nobody holds (`splitOnTick`).
-  const shares = total > 0 ? splitOnTick(target, margins) : members.map(() => NO_QTY);
+  const shares =
+    total.pieces > 0
+      ? splitOnTick(
+          target,
+          margins.map((m) => m.pieces),
+        )
+      : members.map(() => NO_QTY);
   // A member that has left is not in `members` at all, so its line is trued down to nothing by the
   // sweep below rather than by a rule about leaving (C3.b: it is refunded).
   const seen = new Set<PartyId>();
@@ -101,8 +119,8 @@ export function trueUpFund(
       house,
       ccy,
       minus(
-        heldAsMoney(zeroIfNone(shares[i]), 'its share of the fund'),
-        heldAsMoney(inFund(ctx, m, house, ccy), 'what it already has in'),
+        heldAsMoney(zeroIfNone(shares[i]), ccy, 'its share of the fund'),
+        heldAsMoney(inFund(ctx, m, house, ccy), ccy, 'what it already has in'),
         'true-up',
       ),
     );
@@ -111,7 +129,13 @@ export function trueUpFund(
     if (seen.has(p.id) || !p.status.alive) continue;
     const held = inFund(ctx, p.id, house, ccy);
     if (held > 0) {
-      moveFund(ctx, p.id, house, ccy, negated(heldAsMoney(held, 'what it has in'), 'refunded'));
+      moveFund(
+        ctx,
+        p.id,
+        house,
+        ccy,
+        negated(heldAsMoney(held, ccy, 'what it has in'), 'refunded'),
+      );
     }
   }
 }
@@ -124,13 +148,13 @@ export function moveFund(
   ccy: CurrencyCode,
   by: Cash,
 ): void {
-  if (by === 0) return;
+  if (by.pieces === 0) return;
   const id = fundLineId(member, house, ccy);
   if (!ctx.instruments.has(id)) {
     const terms: FundTerms = { kind: FUND_CONTRIBUTION, member, house };
     ctx.issue({ id, kind: FUND_CONTRIBUTION, issuer: some(house), ccy, terms, market: none() });
   }
-  const up = by > 0;
+  const up = by.pieces > 0;
   // Law 8: a contribution to the fund is money, so it is a whole number of the money's own pieces.
   const qty = ctx.registry.payable(up ? by : absolute(by, 'what comes back'));
   const legs: Leg[] = [
@@ -185,8 +209,13 @@ export function runWaterfall(
   const rounds: Round[] = [];
   let left = loss;
   const take = (line: Round['line'], from: PartyId, instrument: InstrumentId, most: Qty): void => {
-    if (left <= 0 || most <= 0) return;
-    const paid = ctx.registry.cashFor(atMost(left, heldAsMoney(most, 'what this line has in it'), 'a claim takes no more than is left of the hole'),
+    if (left.pieces <= 0 || most <= 0) return;
+    const paid = ctx.registry.cashFor(
+      atMostCash(
+        left,
+        heldAsMoney(most, ccy, 'what this line has in it'),
+        'a claim takes no more than is left of the hole',
+      ),
     );
     if (paid <= 0) return;
     // The claim is extinguished without payment: the holder loses it and the issuer stops owing it,
@@ -207,22 +236,33 @@ export function runWaterfall(
       reason: `${line} absorbs ${paid} of ${defaulter}'s default at ${house}`,
     });
     if (r.outcome !== 'settled') return;
-    const absorbed = heldAsMoney(paid, 'what this line absorbed');
+    const absorbed = heldAsMoney(paid, ccy, 'what this line absorbed');
     left = minus(left, absorbed, 'what the waterfall has left to absorb');
     rounds.push({ line, paid: absorbed, left });
   };
   const estate = ctx.parties.resolve(defaulter).id;
-  take('defaulterMargin', estate, marginLineId(defaulter, house, ccy), posted(ctx, defaulter, house, ccy));
-  take('defaulterFund', estate, fundLineId(defaulter, house, ccy), inFund(ctx, defaulter, house, ccy));
+  take(
+    'defaulterMargin',
+    estate,
+    marginLineId(defaulter, house, ccy),
+    posted(ctx, defaulter, house, ccy),
+  );
+  take(
+    'defaulterFund',
+    estate,
+    fundLineId(defaulter, house, ccy),
+    inFund(ctx, defaulter, house, ccy),
+  );
   // C4: the house's own capital is the third line and there is nothing to settle for it — it is the
   // residual (C3), and it has already fallen by whatever the house paid out and did not recover.
-  const capital = ctx.participant(house).equity();
-  if (left > 0 && capital > 0) {
-    const paid = atMost(left, capital, 'the layer has no more capital than it has');
+  // Currency C4: the house's capital is reported in its home money; the hole is in the book's, so the layer is read in the book's money at the rate in force.
+  const capital = ctx.valuation.inMoney(ctx.participant(house).equity(), ccy, ctx.period);
+  if (left.pieces > 0 && capital.pieces > 0) {
+    const paid = atMostCash(left, capital, 'the layer has no more capital than it has');
     left = minus(left, paid, 'after the house own capital');
     rounds.push({ line: 'houseCapital', paid, left });
   }
-  if (left > 0) {
+  if (left.pieces > 0) {
     // C4.a: the survivors' contributions, pro rata, and each one books the write-down against its
     // own equity — a real loss on a real sheet, arriving from somebody else's default.
     const survivors = membersOf(ctx, house, ccy).filter((m) => m !== defaulter);
@@ -232,7 +272,12 @@ export function runWaterfall(
       // Law 8: WHAT IS SPLIT IS A COUNT OF PIECES. The loss arrived as a mark and the lines above
       // paid it in whole pieces, so what is left carries the dust of those subtractions — and a
       // residue smaller than one piece is not a loss anybody can be allocated a share of.
-      const share = ctx.registry.cashFor(atMost(left, heldAsMoney(pool, 'what the fund has in it'), 'the fund pays out of what is in it'),
+      const share = ctx.registry.cashFor(
+        atMostCash(
+          left,
+          heldAsMoney(pool, ccy, 'what the fund has in it'),
+          'the fund pays out of what is in it',
+        ),
       );
       const shares = splitOnTick(share, held);
       survivors.forEach((m, i) => {
@@ -244,17 +289,17 @@ export function runWaterfall(
     ctx.record(
       'waterfall.round',
       [house, defaulter],
-      { house, defaulter, ccy, line: r.line, paid: r.paid, unfunded: r.left },
+      { house, defaulter, ccy, line: r.line, paid: r.paid.pieces, unfunded: r.left.pieces },
       true,
     );
   }
-  if (left > 0) {
+  if (left.pieces > 0) {
     // C5: past the end. The house has an unfunded loss, its equity carries it, and XI-3 takes over
     // in the resolution slot like it does for everybody else. Nothing tops it up.
     ctx.record(
       'waterfall.unfunded',
       [house, defaulter],
-      { house, defaulter, ccy, unfunded: left },
+      { house, defaulter, ccy, unfunded: left.pieces },
       true,
     );
   }
@@ -288,15 +333,18 @@ export function fundShareOf(
   ccy: CurrencyCode,
   horizon: number,
 ): Cash {
-  const total = sum(membersOf(ctx, house, ccy).map((m) => requirement(ctx, m, house, ccy))).value;
-  if (total <= 0) return asCash(0, 'nobody has any margin, so nobody has a share');
+  const total = sumCash(
+    ccy,
+    membersOf(ctx, house, ccy).map((m) => requirement(ctx, m, house, ccy)),
+    'what the members must have posted',
+  ).value;
+  if (total.pieces <= 0) return noCash(ccy);
   return scale(
-    heldAsMoney(coverOne(ctx, house, ccy, horizon), 'what the fund must cover'),
+    heldAsMoney(coverOne(ctx, house, ccy, horizon), ccy, 'what the fund must cover'),
     ratioOf(requirement(ctx, member, house, ccy), total, 'pro rata'),
     'its share of the fund',
   );
 }
 
 /** What a party is short of, for a reader that wants the two numbers rather than the difference. */
-export const shortfall = (need: Cash, have: Cash): Cash =>
-  minus(need, have, 'what it is short of');
+export const shortfall = (need: Cash, have: Cash): Cash => minus(need, have, 'what it is short of');

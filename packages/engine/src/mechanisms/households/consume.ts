@@ -35,11 +35,28 @@
  * by its own surprises about that price — so a cell that has seen prices move bids across a wider
  * range than one that has not.
  */
+import { atLeastCash, atMostCash, noCash, sumCash } from '../../core/measure.js';
 import { conditionsStanding } from '../../registry/environment.js';
 import { scaleQty } from '../../core/tick.js';
-import { type Amount, type Ratio, absolute, asAmount, asCash, asPerPiece, asRatio, type Cash, minus, over, type PerPiece, plus, ratioOf, scale, valueAt } from '../../core/measure.js';
+import {
+  type Amount,
+  type Ratio,
+  absolute,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
-import { atLeast, atMost, material, sum } from '../../core/num.js';
+import { atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { keyOf, type CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -122,7 +139,7 @@ export function spendPerMember(
   if (!income.some) return none();
   const ccy = view.registry.currencyOf(view.self.region);
   // 0f.1: a cell decides for ONE member and holds a total, so what it has is read per member.
-  const cash = asCash(view.cashPerMember(ccy), 'what one member has in the account');
+  const cash = asCash(view.cashPerMember(ccy), ccy, 'what one member has in the account');
   // E3, E4: what falls due on it comes first, because a payment that fails is an event and a loaf
   // it did not buy is not (XI-1). What is left is what it can pay with.
   const budget = minus(plus(cash, onDemand, 'what it can pay with'), due, 'after what falls due');
@@ -133,8 +150,8 @@ export function spendPerMember(
   const buffer = plus(
     scale(
       plus(
-        asCash(income.value.expected, 'what it expects to take in'),
-        asCash(income.value.confidence, 'how wrong that has been'),
+        asCash(income.value.expected, ccy, 'what it expects to take in'),
+        asCash(income.value.confidence, ccy, 'how wrong that has been'),
         'what a week could cost it',
       ),
       asRatio(p.patience, 'the weeks of cushion it wants'),
@@ -158,22 +175,22 @@ export function spendPerMember(
   // cannot be multiplied back by the weight to give the total again — below the smallest normal
   // number there is no relative precision left, so dust itself underflows to zero and every
   // identity in the wire becomes exact. A spend that is dust of what it has is nothing.
-  const affordable = atMost(wanted, budget, 'it buys with the money it has');
-  const magnitudes = sum([budget, absolute(wanted, 'what its basket costs')]);
-  const afforded = material(affordable, magnitudes.terms + 1, magnitudes.value)
+  const affordable = atMostCash(wanted, budget, 'it buys with the money it has');
+  const magnitudes = sum([budget.pieces, absolute(wanted, 'what its basket costs').pieces]);
+  const afforded = material(affordable.pieces, magnitudes.terms + 1, magnitudes.value)
     ? affordable
-    : asCash(0, 'a spend that is dust of what it has is nothing');
+    : noCash(ccy);
   return some({
-    spend: atLeast(afforded, asCash(0, 'nothing'), 'there is no less to spend than nothing'),
+    spend: atLeastCash(afforded, noCash(ccy), 'there is no less to spend than nothing'),
     basket: wanted,
     needs: basket.needs,
     buffer,
     due,
-    expected: asCash(income.value.expected, 'what it expects to take in'),
+    expected: asCash(income.value.expected, ccy, 'what it expects to take in'),
     cash,
     budget,
     wealth,
-    constrained: wanted > budget,
+    constrained: wanted.pieces > budget.pieces,
   });
 }
 
@@ -187,6 +204,7 @@ export function spendPerMember(
  * no risk aversion parameter anywhere. What it will not risk is what it has seen happen.
  */
 function atRisk(view: ParticipantView): Cash {
+  const home = view.registry.currencyOf(view.self.region);
   const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const outlook = view.outlook(about({ on: 'price', instrument: h.instrument }));
@@ -202,15 +220,14 @@ function atRisk(view: ParticipantView): Cash {
         valueAt(
           asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
           units,
+          view.instruments.get(h.instrument).ccy,
           'what this line could move by',
         ),
-        view.instruments.get(h.instrument).ccy,
       ),
     );
   }
-  return sum(terms).value;
+  return sumCash(home, terms, 'what its lines could move by').value;
 }
-
 
 /**
  * C1.b, D1, D3: what a household owns, per member: its money, and what the market last said its
@@ -219,6 +236,7 @@ function atRisk(view: ParticipantView): Cash {
  * for is not in it: a thing with no price is not wealth a household could count on.
  */
 function wealthOf(view: ParticipantView, cash: Cash): Cash {
+  // Currency B1, C4: a REPORT in the money it reports in, at the rate; what it holds stays what it is.
   const terms: Cash[] = [cash];
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
@@ -229,12 +247,16 @@ function wealthOf(view: ParticipantView, cash: Cash): Cash {
     // so every term added to it has to be in that money.
     terms.push(
       view.inOwnMoney(
-        valueAt(print.value.price, units, 'what it holds is worth'),
-        view.instruments.get(h.instrument).ccy,
+        valueAt(
+          print.value.price,
+          units,
+          view.instruments.get(h.instrument).ccy,
+          'what it holds is worth',
+        ),
       ),
     );
   }
-  return sum(terms).value;
+  return sumCash(cash.ccy, terms, 'what it owns').value;
 }
 
 /**
@@ -273,7 +295,11 @@ export interface Basket {
  * C3, Law 4, 0f.7a: THE BASKET, COSTED ONCE. Two decisions read it — what to buy and what to work
  * for — and a second costing would be a second writer of what a loaf costs this cell.
  */
-export function basketOf(view: ParticipantView, rows: readonly ConsumptionDecl[], p: HouseholdParams): Basket {
+export function basketOf(
+  view: ParticipantView,
+  rows: readonly ConsumptionDecl[],
+  p: HouseholdParams,
+): Basket {
   const self = view.self;
   const lines: Line[] = [];
   if (self.representation === 'cell') {
@@ -283,15 +309,36 @@ export function basketOf(view: ParticipantView, rows: readonly ConsumptionDecl[]
       if (line !== undefined) lines.push(line);
     }
   }
-  const needs = sum(
+  const home = view.registry.currencyOf(view.self.region);
+  const needs = sumCash(
+    home,
     lines.map((l) =>
-      valueAt(l.perUnit, l.needed, 'what it must have costs'),
+      view.inMoney(
+        valueAt(
+          l.perUnit,
+          l.needed,
+          view.instruments.get(l.instrument).ccy,
+          'what it must have costs',
+        ),
+        home,
+      ),
     ),
+    'what it must have costs',
   ).value;
-  const wants = sum(
+  const wants = sumCash(
+    home,
     lines.map((l) =>
-      valueAt(l.perUnit, l.wanted, 'what it wants on top costs'),
+      view.inMoney(
+        valueAt(
+          l.perUnit,
+          l.wanted,
+          view.instruments.get(l.instrument).ccy,
+          'what it wants on top costs',
+        ),
+        home,
+      ),
     ),
+    'what it wants on top costs',
   ).value;
   return { lines, needs, wants };
 }
@@ -306,14 +353,14 @@ export function demandOf(
   if (self.representation !== 'cell') return [];
   const { lines, needs: needCost, wants: wantCost } = basketOf(view, rows, p);
   // C1.d: it eats before it does anything else, and it eats out of money it has.
-  const toNeeds = atMost(spend, needCost, 'it needs what it needs and pays with what it has');
+  const toNeeds = atMostCash(spend, needCost, 'it needs what it needs and pays with what it has');
   const left = minus(spend, toNeeds, 'what is left when it has had what it must have');
   let needScale = asRatio(0, 'it can pay for none of what it must have');
-  if (needCost > 0) {
+  if (needCost.pieces > 0) {
     needScale = ratioOf(toNeeds, needCost, 'the fraction of what it must have it can pay for');
   }
   let wantScale = asRatio(0, 'it can pay for none of what it wants on top');
-  if (wantCost > 0) {
+  if (wantCost.pieces > 0) {
     wantScale = atMost(
       ratioOf(left, wantCost, 'the fraction of what it wants on top it can pay for'),
       asRatio(1, 'all of it'),
@@ -330,13 +377,18 @@ export function demandOf(
     if (qty <= 0) continue;
     // C4: what it set aside is what the units cost it INCLUDING the tax; what reaches the seller is
     // that less the tax, and that is the money the curve is drawn against.
-    const set = valueAt(l.perUnit, qty, 'what it set aside for this line');
+    const set = valueAt(
+      l.perUnit,
+      qty,
+      view.instruments.get(l.instrument).ccy,
+      'what it set aside for this line',
+    );
     const net = over(
       set,
       plus(asRatio(1, 'the price itself'), p.consumptionTax, 'with the tax it will owe on it'),
       'what reaches the seller',
     );
-    if (!material(net, 2, spend)) continue;
+    if (!material(net.pieces, 2, spend.pieces)) continue;
     for (const r of rungsUpTo(pricesOver(l.expected, l.width, p.steps), net, qty)) {
       out.push({
         market: l.market,
@@ -389,13 +441,24 @@ function lineFor(
   if (expected === undefined || expected <= 0) return undefined;
   // 12d.3: a cold week burns more. The condition is a multiple of normal, so what a member takes
   // to stand against it is a normal week's over it — a physical relation, not a coefficient.
-  const standing = asRatio(conditionsStanding(view, self.region, row.standsAgainst), 'how the week stands for this line');
+  const standing = asRatio(
+    conditionsStanding(view, self.region, row.standsAgainst),
+    'how the week stands for this line',
+  );
   return {
     row,
     instrument,
     market: goodMarketId(row.subUnit, self.region),
-    needed: over(asAmount<'piece'>(row.neededPerMember, 'what a member must have in a normal week'), standing, 'what a member must have this week'),
-    wanted: over(asAmount<'piece'>(row.wantedPerMember, 'what a member wants on top in a normal week'), standing, 'what a member wants on top this week'),
+    needed: over(
+      asAmount<'piece'>(row.neededPerMember, 'what a member must have in a normal week'),
+      standing,
+      'what a member must have this week',
+    ),
+    wanted: over(
+      asAmount<'piece'>(row.wantedPerMember, 'what a member wants on top in a normal week'),
+      standing,
+      'what a member wants on top this week',
+    ),
     perUnit: scale(
       expected,
       plus(asRatio(1, 'the price itself'), p.consumptionTax, 'and the tax on it'),
@@ -408,4 +471,3 @@ function lineFor(
     ),
   };
 }
-

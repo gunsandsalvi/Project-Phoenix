@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { USD } from '../src/seeds/foundation.js';
 import { Calendar, period } from '../src/calendar/calendar.js';
 import { instrumentId, partyId } from '../src/core/ids.js';
 import { none, some } from '../src/core/option.js';
@@ -72,7 +73,7 @@ describe('a share, which had no answer at all before (Equity B1, B3)', () => {
     lastReport: () =>
       earned === undefined
         ? none()
-        : some({ earned: asCash(earned, 'what it published it earned'), periods: 13 }),
+        : some({ earned: asCash(earned, USD, 'what it published it earned'), periods: 13 }),
     issued: () => asQty(shares, 'shares in issue'),
   });
 

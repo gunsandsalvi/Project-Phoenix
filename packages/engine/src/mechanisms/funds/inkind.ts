@@ -26,6 +26,7 @@
  * whose largest vehicles redeemed only in kind would have no fund-driven forced selling at all, and
  * would need some other vehicle to carry it. That vehicle is the money fund (item 8), and it does.
  */
+import { sumCash } from '../../core/measure.js';
 import {
   asRatio,
   type Cash,
@@ -125,9 +126,8 @@ function lastMark(ctx: MechanismContext, instrument: InstrumentId): Option<PerPi
 
 /** What one share's worth of basket is marked at — which is the NAV when the basket is the book. */
 export function basketValue(basket: readonly BasketLine[]): PerPiece {
-  return sum(
-    basket.map((b) => scale(b.markPerUnit, b.perShare, 'what this line contributes')),
-  ).value;
+  return sum(basket.map((b) => scale(b.markPerUnit, b.perShare, 'what this line contributes')))
+    .value;
 }
 
 /**
@@ -144,7 +144,8 @@ function onGrid(
   return gridPerMember(
     ctx.registry,
     holder,
-    over(total, asRatio(weightOf(holder), 'the members it has'), 'per member'));
+    over(total, asRatio(weightOf(holder), 'the members it has'), 'per member'),
+  );
 }
 
 /**
@@ -176,7 +177,12 @@ export function create(
   const legs: Leg[] = [];
   const delivered: Cash[] = [];
   for (const line of basket) {
-    const put = onGrid(ctx, holder, line.instrument, scale(shares, line.perShare, 'units of this line'));
+    const put = onGrid(
+      ctx,
+      holder,
+      line.instrument,
+      scale(shares, line.perShare, 'units of this line'),
+    );
     const units = put.total;
     if (!material(units, 2, units)) return false;
     // F1: it delivers what it holds. A creator that has not got the basket does not create.
@@ -193,9 +199,20 @@ export function create(
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
     });
-    delivered.push(valueAt(line.markPerUnit, units, 'what this line delivered'));
+    delivered.push(
+      valueAt(
+        line.markPerUnit,
+        units,
+        ctx.instruments.get(line.instrument).ccy,
+        'what this line delivered',
+      ),
+    );
   }
-  const perShare = pricedAt(sum(delivered).value, shares, 'what a share was issued at');
+  const perShare = pricedAt(
+    sumCash(ctx.instruments.get(share).ccy, delivered, 'what the lines delivered').value,
+    shares,
+    'what a share was issued at',
+  );
   legs.push({
     kind: 'asset',
     from: fund,
@@ -262,9 +279,20 @@ export function redeemInKind(
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
     });
-    taken.push(valueAt(line.markPerUnit, units, 'what this line gave back'));
+    taken.push(
+      valueAt(
+        line.markPerUnit,
+        units,
+        ctx.instruments.get(line.instrument).ccy,
+        'what this line gave back',
+      ),
+    );
   }
-  const perShare = pricedAt(sum(taken).value, shares, 'what a share was redeemed at');
+  const perShare = pricedAt(
+    sumCash(ctx.instruments.get(share).ccy, taken, 'what the lines gave back').value,
+    shares,
+    'what a share was redeemed at',
+  );
   legs.unshift({
     kind: 'asset',
     from: party,
@@ -287,7 +315,6 @@ export function redeemInKind(
   );
   return r.outcome === 'settled';
 }
-
 
 /**
  * E2, E4: the premium or discount — a READ of two prices, published beside both of them.

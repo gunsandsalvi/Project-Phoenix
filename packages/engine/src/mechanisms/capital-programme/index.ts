@@ -23,15 +23,34 @@
  * built it (E2), and shows up in the producer's revenue rather than in a firm's own balance sheet
  * out of nowhere.
  */
-import { asRatio, minus, pricedAt, scale, asCash, plus, valueAt, type Cash, type PerPiece } from '../../core/measure.js';
+import {
+  asRatio,
+  minus,
+  pricedAt,
+  scale,
+  noCash,
+  plus,
+  valueAt,
+  type Cash,
+  type PerPiece,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { downTick, negQty, asQty, subQty, type Qty } from '../../core/tick.js';
 import { authorityIdFor, hectaresOf, hectaresUnder, landId } from '../../registry/land.js';
 import type { Lien } from '../../register/register.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
+import {
+  addTo,
+  atMost,
+  dustOf,
+  material,
+  sub,
+  sum,
+  withinDust,
+  zeroIfNone,
+} from '../../core/num.js';
+import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
@@ -74,8 +93,6 @@ import {
 export * from './data.js';
 export * from './plant.js';
 import { buildLagParam, lifeParam } from '../../registry/physical.js';
-
-
 
 /** A4, Law 2: the numbers a kind of capital states about itself, declared with their units. */
 function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
@@ -213,7 +230,13 @@ function retire(ctx: MechanismContext): void {
     ];
     // 15.1: the ground it stood on is free again — every lien the vintage held on it goes with it.
     for (const lien of groundLiensFor(ctx, h.holder, terms.region, String(i.id))) {
-      legs.push({ kind: 'release', pledgor: h.holder, beneficiary: lien.beneficiary, instrument: landId(terms.region), lien: lien.id });
+      legs.push({
+        kind: 'release',
+        pledgor: h.holder,
+        beneficiary: lien.beneficiary,
+        instrument: landId(terms.region),
+        lien: lien.id,
+      });
     }
     const record = ctx.settle({
       legs,
@@ -258,12 +281,13 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     // 14.2, Law 4: the one relation, in the registry, read here and by the firm that insures against it.
     const survived = survivesWind(wind, standard, hardness);
     const units = ctx.register.free(h.holder, i.id);
-    const lost = ctx.registry.deliverable(scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
+    const lost = ctx.registry.deliverable(
+      scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
     );
     if (!material(lost, 2, units) || lost <= 0) continue;
     // Insurers A4 (14.3): WHAT THE LOST UNITS WERE ON THE BOOKS AT, read off the lots the destroy
     // will draw (first in, first out, as the register draws) — the amount a claim on them is for.
-    const atCost = costOfDrawing(h.lots, lost);
+    const atCost = costOfDrawing(h.lots, lost, ctx.instruments.get(h.instrument).ccy);
     const record = ctx.settle({
       legs: [
         {
@@ -281,20 +305,46 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
     ctx.record(
       'capital.weathered',
       [h.holder, i.id],
-      { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units: lost, wind, survived, atCost },
+      {
+        holder: h.holder,
+        vintage: i.id,
+        capitalKind: terms.capitalKind,
+        units: lost,
+        wind,
+        survived,
+        atCost: atCost.pieces,
+        ccy: atCost.ccy,
+      },
       true,
     );
   }
 }
 
 /** Register D4, Law 19: what drawing `units` first-in-first-out off these lots costs — the register's own order. */
-function costOfDrawing(lots: readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[], units: Qty): Cash {
+function costOfDrawing(
+  lots: readonly { readonly qty: Qty; readonly basisPerUnit: PerPiece }[],
+  units: Qty,
+  ccy: CurrencyCode,
+): Cash {
   let left: number = units;
-  let cost = asCash(0, 'nothing drawn yet');
+  let cost = noCash(ccy);
   for (const lot of lots) {
     if (left <= 0) break;
-    const take = atMost(lot.qty, asQty(left, 'what is left to draw'), 'a lot gives no more than it has');
-    cost = plus(cost, valueAt(lot.basisPerUnit, asQty(take, 'the pieces this lot gives'), 'what these pieces cost'), 'what the drawing costs');
+    const take = atMost(
+      lot.qty,
+      asQty(left, 'what is left to draw'),
+      'a lot gives no more than it has',
+    );
+    cost = plus(
+      cost,
+      valueAt(
+        lot.basisPerUnit,
+        asQty(take, 'the pieces this lot gives'),
+        ccy,
+        'what these pieces cost',
+      ),
+      'what the drawing costs',
+    );
     left -= take;
   }
   return cost;
@@ -346,7 +396,12 @@ function purchases(
 
 /** C3, A6.a: one buyer's machines going into service, as a transformation on its own book. */
 /** 15.1: the liens a vintage holds on its holder's ground, by the vintage's name on each. */
-function groundLiensFor(ctx: MechanismContext, holder: PartyId, region: RegionId, vintage: string): readonly Lien[] {
+function groundLiensFor(
+  ctx: MechanismContext,
+  holder: PartyId,
+  region: RegionId,
+  vintage: string,
+): readonly Lien[] {
   const land = landId(region);
   if (!ctx.instruments.has(land)) return [];
   const holding = ctx.register.holding(holder, land);
@@ -366,26 +421,57 @@ function groundToCarry(
   buyer: PartyId,
   region: RegionId,
   bought: Qty,
-): { readonly carries: Qty; readonly refused: Qty; readonly short: Qty; readonly pledge?: { readonly land: InstrumentId; readonly to: PartyId; readonly hectares: Qty } } {
+): {
+  readonly carries: Qty;
+  readonly refused: Qty;
+  readonly short: Qty;
+  readonly pledge?: { readonly land: InstrumentId; readonly to: PartyId; readonly hectares: Qty };
+} {
   const land = landId(region);
-  if (!ctx.instruments.has(land) || d.landPerUnit === null || bought <= 0) return { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short') };
+  if (!ctx.instruments.has(land) || d.landPerUnit === null || bought <= 0)
+    return {
+      carries: bought,
+      refused: asQty(0, 'nothing refused'),
+      short: asQty(0, 'no ground short'),
+    };
   const reads = { registry: ctx.registry, params: ctx.params };
   const view = ctx.participant(buyer);
-  const standing = hectaresOf(groundUnderPlant(reads, vintagesHeld(view, ctx.calendar.startOf(ctx.period))));
+  const standing = hectaresOf(
+    groundUnderPlant(reads, vintagesHeld(view, ctx.calendar.startOf(ctx.period))),
+  );
   const held = ctx.register.quantity(buyer, land);
   const free = held > standing ? held - standing : 0;
   const needed = hectaresUnder(reads, d.id, bought);
   if (needed <= free) {
     const authority = authorityIdFor(region);
-    const pledge = ctx.parties.has(authority) && needed > 0 ? { land, to: authority, hectares: needed } : undefined;
-    return pledge === undefined ? { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short') } : { carries: bought, refused: asQty(0, 'nothing refused'), short: asQty(0, 'no ground short'), pledge };
+    const pledge =
+      ctx.parties.has(authority) && needed > 0
+        ? { land, to: authority, hectares: needed }
+        : undefined;
+    return pledge === undefined
+      ? {
+          carries: bought,
+          refused: asQty(0, 'nothing refused'),
+          short: asQty(0, 'no ground short'),
+        }
+      : {
+          carries: bought,
+          refused: asQty(0, 'nothing refused'),
+          short: asQty(0, 'no ground short'),
+          pledge,
+        };
   }
   // Law 8: the pieces the free ground carries, down — one hectare carries so many pieces of it.
   const carries = needed > 0 ? downTick((bought * free) / needed) : bought;
   const fits = carries > 0 ? hectaresUnder(reads, d.id, carries) : asQty(0, 'nothing fits');
   const authority = authorityIdFor(region);
-  const pledge = ctx.parties.has(authority) && fits > 0 ? { land, to: authority, hectares: fits } : undefined;
-  const out = { carries, refused: subQty(bought, carries, 'the pieces its ground does not carry'), short: subQty(needed, asQty(free, 'the hectares it holds free'), 'the hectares it is short of') };
+  const pledge =
+    ctx.parties.has(authority) && fits > 0 ? { land, to: authority, hectares: fits } : undefined;
+  const out = {
+    carries,
+    refused: subQty(bought, carries, 'the pieces its ground does not carry'),
+    short: subQty(needed, asQty(free, 'the hectares it holds free'), 'the hectares it is short of'),
+  };
   return pledge === undefined ? out : { ...out, pledge };
 }
 
@@ -404,7 +490,11 @@ function commissionOne(
   const free = ctx.register.free(buyer, good);
   // It commissions what it bought, and it cannot commission what it no longer has: a firm that
   // sold the machine on before it was installed installed nothing.
-  const bought_ = atMost(free, ctx.registry.deliverable(bought), 'only what is unencumbered can be built into plant');
+  const bought_ = atMost(
+    free,
+    ctx.registry.deliverable(bought),
+    'only what is unencumbered can be built into plant',
+  );
   /**
    * C1, Law 8 (15.1): AND ONLY ON GROUND IT HOLDS. Plant stands on hectares, and a firm that has
    * not bought them has nowhere to put it: what is commissioned is what its free ground carries —
@@ -420,12 +510,18 @@ function commissionOne(
     ctx.record(
       'capital.refused',
       [buyer],
-      { firm: buyer, capitalKind: d.id, units: ground.refused, hectaresShort: ground.short, why: 'no ground to stand it on' },
+      {
+        firm: buyer,
+        capitalKind: d.id,
+        units: ground.refused,
+        hectaresShort: ground.short,
+        why: 'no ground to stand it on',
+      },
       true,
     );
   }
   if (qty <= 0 || !material(qty, holding.value.lots.length + 1, bought)) return;
-  const cost = costOfDraw(holding.value.lots, qty);
+  const cost = costOfDraw(holding.value.lots, qty, ctx.instruments.get(good).ccy);
   const serviceDate = ctx.calendar.startOf(ctx.period);
   const id = vintage(ctx, d, region, serviceDate);
   // 0f.1: `free` is the cell's TOTAL; what is built is that, and the side is derived from it.
@@ -466,7 +562,15 @@ function commissionOne(
   ctx.record(
     'capital.commissioned',
     [buyer, id],
-    { firm: buyer, vintage: id, capitalKind: d.id, units: qty, cost, serviceDate },
+    {
+      firm: buyer,
+      vintage: id,
+      capitalKind: d.id,
+      units: qty,
+      cost: cost.pieces,
+      ccy: cost.ccy,
+      serviceDate,
+    },
     false,
   );
 }
@@ -520,8 +624,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
       const held = new Map<string, Qty>();
       for (const i of view.instruments.all()) {
-        const capital =
-          isPlant(i) || (isGoodTerms(i.terms) && goods.has(i.terms.subUnit));
+        const capital = isPlant(i) || (isGoodTerms(i.terms) && goods.has(i.terms.subUnit));
         if (!capital) continue;
         for (const holder of view.register.holdersOf(i.id)) {
           const k = key(holder, i.id);
@@ -534,7 +637,8 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
         const now = zeroIfNone(held.get(k));
         const legs = sum(moved.get(k) ?? []);
         const change = minus(now, before, 'what the stock moved by');
-        const dust = legs.dust + dustOf(legs.terms + 2, Math.abs(before) + Math.abs(now) + legs.magnitude);
+        const dust =
+          legs.dust + dustOf(legs.terms + 2, Math.abs(before) + Math.abs(now) + legs.magnitude);
         if (withinDust(change, legs.value, dust)) continue;
         const [party, instrument] = k.split('|');
         out.push({
@@ -542,7 +646,10 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
           spec: 'Capital Programme A6.b',
           owner: party ?? k,
           size: minus(change, legs.value, 'plant that moved with no leg behind it'),
-          unit: instrument === undefined ? 'units' : view.instruments.get(instrument as InstrumentId).unit,
+          unit:
+            instrument === undefined
+              ? 'units'
+              : view.instruments.get(instrument as InstrumentId).unit,
           period: view.period,
           message: `${party ?? k}: ${instrument ?? 'plant'} moved by ${change} and its legs account for ${legs.value}`,
         });
@@ -560,7 +667,10 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
             spec: 'Capital Programme A6.b',
             owner: party ?? k,
             size: minus(now, legs.value, 'plant that appeared with no leg behind it'),
-            unit: instrument === undefined ? 'units' : view.instruments.get(instrument as InstrumentId).unit,
+            unit:
+              instrument === undefined
+                ? 'units'
+                : view.instruments.get(instrument as InstrumentId).unit,
             period: view.period,
             message: `${party ?? k}: ${instrument ?? 'plant'} appeared at ${now} and its legs account for ${legs.value}`,
           });
@@ -616,7 +726,10 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
         // it joins is dated by when it went into service rather than when it was ordered.
         anchor: { before: 'revaluation' },
         reads: [],
-        writes: [{ kind: 'event', name: 'capital.commissioned' }, { kind: 'event', name: 'capital.refused' }],
+        writes: [
+          { kind: 'event', name: 'capital.commissioned' },
+          { kind: 'event', name: 'capital.refused' },
+        ],
         run: (ctx: MechanismContext) => {
           commission(ctx, rows);
         },

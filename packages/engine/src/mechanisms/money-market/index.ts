@@ -10,6 +10,7 @@
  * actually take, and the rate that clears sits between them because of that and not because
  * anything clamps it (B3.a: the policy rate is never a cleared rate; C3 is a read, at 16).
  */
+import { atMostCash, sumCash } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { Order } from '../../clearing/solver.js';
@@ -23,14 +24,20 @@ import {
 } from '../../core/ids.js';
 import { atMost, dustOf, material, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { downTick , NO_QTY} from '../../core/tick.js';
+import { downTick, NO_QTY } from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { borrowingPower, windowAdvances, type Advance } from './collateral.js';
-import { collectPremiums, DEPOSIT_INSURER, insurerOf, INSURER_PARAMS, insurerKind } from './insurer.js';
+import {
+  collectPremiums,
+  DEPOSIT_INSURER,
+  insurerOf,
+  INSURER_PARAMS,
+  insurerKind,
+} from './insurer.js';
 import { failedBanks, nothingLeftBehind, resolve } from './resolution.js';
 import {
   BOOKS,
@@ -48,7 +55,16 @@ import {
   liquidityMetric,
   payDepositInterest,
 } from './deposits.js';
-import { INTERBANK, REPO, interbankKind, isRow, repoKind, rowTerms, securesAnything, type Pledged } from './rows.js';
+import {
+  INTERBANK,
+  REPO,
+  interbankKind,
+  isRow,
+  repoKind,
+  rowTerms,
+  securesAnything,
+  type Pledged,
+} from './rows.js';
 import {
   averageRate,
   banksOf,
@@ -232,8 +248,9 @@ function publishCollateral(ctx: MechanismContext): void {
     const cb = ctx.registry.centralBankOf(ccy);
     const power = borrowingPower(
       windowAdvances(ctx.participant(cb), ctx.participant(bank), on, haircut),
+      ccy,
     );
-    ctx.record('centralBank.collateral', [bank, cb], { bank, ccy, advance: power }, true);
+    ctx.record('centralBank.collateral', [bank, cb], { bank, ccy, advance: power.pieces }, true);
   }
 }
 
@@ -284,7 +301,14 @@ function runSession(ctx: MechanismContext): void {
       const venue = sessionVenue(book, borrower);
       // Clearing B2: the schedules, from whoever has one. Nothing about a bank is decided here.
       ctx.gather(venue);
-      for (const o of windowOffer(ctx.participant(cb), ctx.participant(borrower), book, c, on, haircut)) {
+      for (const o of windowOffer(
+        ctx.participant(cb),
+        ctx.participant(borrower),
+        book,
+        c,
+        on,
+        haircut,
+      )) {
         ctx.post(venue, o);
       }
     }
@@ -301,7 +325,15 @@ function runSession(ctx: MechanismContext): void {
     for (const book of cheapestFirst(ctx, borrower)) {
       if (need <= 0) break;
       const venue = sessionVenue(book, borrower);
-      const raised = clearBook(ctx, m, book, borrower, ccy, on, upTo(ctx.posted(venue), borrower, need));
+      const raised = clearBook(
+        ctx,
+        m,
+        book,
+        borrower,
+        ccy,
+        on,
+        upTo(ctx.posted(venue), borrower, need),
+      );
       need = downTick(stillNeeded(need, raised));
     }
     // Law 7: what the walk left behind is dust of the clearing, not a shortfall. A session that
@@ -399,19 +431,38 @@ function clearBook(
     // what it has already placed in this session comes off what it can still place in the next one.
     const room = capacityOf(ctx, s.lender, ccy);
     if (room <= 0) continue;
-    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(heldAsMoney(room, 'what it has left to place')) };
+    if (s.amount > room)
+      s = {
+        ...s,
+        amount: ctx.registry.payable(heldAsMoney(room, ccy, 'what it has left to place')),
+      };
     let cover: readonly Pledged[] = [];
     let amount = s.amount;
     if (book.secured) {
-      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), heldAsMoney(s.amount, 'what it asked for'));
+      cover = coverFor(
+        advancesFrom(ctx, s.lender, borrower, on),
+        heldAsMoney(s.amount, ccy, 'what it asked for'),
+      );
       // B3.c: what its remaining paper covers is what it gets, at THIS lender's valuation of it.
       // Less than it asked for is the constraint biting, not a failure of the session — and what
       // it gets is a whole number of pieces of money (Law 8), because that is what is lent.
-      const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
-      amount = ctx.registry.payable(atMost(covered, heldAsMoney(s.amount, 'what it asked for'), 'a guarantee pays no more than was owed'),
+      const covered = sumCash(
+        ccy,
+        cover.map((x) => valueAt(x.valuedAt, x.qty, ccy, 'covered')),
+        'covered',
+      ).value;
+      amount = ctx.registry.payable(
+        atMostCash(
+          covered,
+          heldAsMoney(s.amount, ccy, 'what it asked for'),
+          'a guarantee pays no more than was owed',
+        ),
       );
       if (amount <= 0) continue;
-      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), heldAsMoney(amount, 'what it is lent'));
+      cover = coverFor(
+        advancesFrom(ctx, s.lender, borrower, on),
+        heldAsMoney(amount, ccy, 'what it is lent'),
+      );
     }
     const n = m.next;
     // The count moves whether or not the row settles: a row that failed still took its name, and
@@ -492,7 +543,8 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>)
     const venue = sessionVenue(overnight, cb);
     const ask: Order = { party: bank, side: 'sell', price: c.floor, qty: spare };
     ctx.post(venue, ask);
-    for (const o of floorBid(cb, asQty(offered(ctx.posted(venue)), 'what the session offers'), c)) ctx.post(venue, o);
+    for (const o of floorBid(cb, asQty(offered(ctx.posted(venue)), 'what the session offers'), c))
+      ctx.post(venue, o);
     const struck = strike(ctx.posted(venue), cb, overnight);
     for (const s of struck) {
       if (s.lender !== bank || !material(s.amount, 2, p.reserves)) continue;
@@ -582,6 +634,7 @@ function publishFunding(ctx: MechanismContext): void {
     // already pledged is not here: it is somebody's collateral (C4.b).
     const paper = borrowingPower(
       windowAdvances(ctx.participant(cb), ctx.participant(bank), on, haircut),
+      ccy,
     );
     // C1: and what it lent overnight is liquid too — it comes back into the account tomorrow
     // morning. A bank that parked its spare cash at the floor (C1.a) still holds it, as a claim.
@@ -590,11 +643,7 @@ function publishFunding(ctx: MechanismContext): void {
     const said = standings(ctx).get(bank);
     const buffer = said === undefined ? NO_QTY : said.buffer;
     const liquid = plus(
-      plus(
-        heldAsMoney(reserves, 'the cash it holds'),
-        overnight,
-        'cash and what comes back',
-      ),
+      plus(heldAsMoney(reserves, ccy, 'the cash it holds'), overnight, 'cash and what comes back'),
       paper,
       'liquid assets',
     );
@@ -611,12 +660,12 @@ function publishFunding(ctx: MechanismContext): void {
         bank,
         ccy,
         reserves,
-        overnight,
-        paper,
-        liquid,
+        overnight: overnight.pieces,
+        paper: paper.pieces,
+        liquid: liquid.pieces,
         buffer,
         move,
-        couldLeave: exposed,
+        couldLeave: exposed.pieces,
         deposits: Object.fromEntries(byClass),
         base: depositBase(byClass),
         // F4: what somebody outside can see. Liquid assets over what could leave — both of them
@@ -650,17 +699,15 @@ function publishCorridor(ctx: MechanismContext): void {
 
 function paramsOf(): ParamDecl[] {
   return [
-    ...POLICY_RATES.map(
-      (r): ParamDecl => ({
-        id: policyRateOf(r.ccy),
-        value: r.rate,
-        unit: 'per annum',
-        dimension: 'perAnnum',
-        kind: 'policy',
-        owner: 'centralBank',
-        why: `Central Bank B1, B2: the rate ${r.ccy}'s own central bank declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14). ${r.why}`,
-      }),
-    ),
+    ...POLICY_RATES.map((r): ParamDecl => ({
+      id: policyRateOf(r.ccy),
+      value: r.rate,
+      unit: 'per annum',
+      dimension: 'perAnnum',
+      kind: 'policy',
+      owner: 'centralBank',
+      why: `Central Bank B1, B2: the rate ${r.ccy}'s own central bank declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14). ${r.why}`,
+    })),
     {
       id: MM_PARAMS.floorSpread,
       value: 0.001,
@@ -794,8 +841,7 @@ export const moneyMarket: SystemModule = {
       kind: 'working',
       holds:
         'the accounts the central bank let go below zero this period, waiting to become repo rows',
-      why:
-        'state one phase hands to a later phase in the same period. The ROW is the fact and it is written to the register; this is the interval between the kernel allowing the drawing and the row existing (Money B3.b).',
+      why: 'state one phase hands to a later phase in the same period. The ROW is the fact and it is written to the register; this is the interval between the kernel allowing the drawing and the row existing (Money B3.b).',
     },
   ],
   spec: 'Money Market, Banks Funding, Central Bank B, D',
@@ -1015,14 +1061,15 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
       on,
       ctx.params.ratio(MM_PARAMS.haircut),
     ),
+    o.ccy,
   );
-  const solvent = ctx.participant(o.holder).equity() > 0;
-  const covered = power >= o.shortfall;
+  const solvent = ctx.participant(o.holder).equity().pieces > 0;
+  const covered = power.pieces >= o.shortfall;
   if (!solvent || !covered) {
     ctx.record(
       'centralBank.refused',
       [o.issuer, o.holder],
-      { bank: o.holder, short: o.shortfall, collateral: power, solvent, ccy: o.ccy },
+      { bank: o.holder, short: o.shortfall, collateral: power.pieces, solvent, ccy: o.ccy },
       true,
     );
     return { allow: false };
@@ -1051,15 +1098,34 @@ function bookOverdrafts(ctx: MechanismContext): void {
     // C-3: the ceiling of the money it is overdrawn IN, which is the one it is penalised against.
     const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
-    const short = negQty(ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)), 'its overdraft');
-    const need = ctx.registry.payable(heldAsMoney(short, 'its overdraft'));
+    const short = negQty(
+      ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)),
+      'its overdraft',
+    );
+    const need = ctx.registry.payable(heldAsMoney(short, ccy, 'its overdraft'));
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
     if (book === undefined) continue;
-    const rate = plus(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
-    const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(need, 'what it is short of'));
-    const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
-    const amount = ctx.registry.payable(atMost(covered, heldAsMoney(need, 'what it is short of'), 'a guarantee pays no more than was owed'),
+    const rate = plus(
+      c.ceiling,
+      ctx.params.perAnnum(MM_PARAMS.overdraftPenalty),
+      'the penalty rate',
+    );
+    const cover = coverFor(
+      advancesFrom(ctx, cb, d.bank, on),
+      heldAsMoney(need, ccy, 'what it is short of'),
+    );
+    const covered = sumCash(
+      ccy,
+      cover.map((x) => valueAt(x.valuedAt, x.qty, ccy, 'covered')),
+      'covered',
+    ).value;
+    const amount = ctx.registry.payable(
+      atMostCash(
+        covered,
+        heldAsMoney(need, ccy, 'what it is short of'),
+        'a guarantee pays no more than was owed',
+      ),
     );
     if (amount <= 0) continue;
     const n = m.next;
@@ -1069,7 +1135,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
       { lender: cb, borrower: d.bank, amount, rate, book },
       n,
       ccy,
-      coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(amount, 'what it is lent')),
+      coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(amount, ccy, 'what it is lent')),
     );
     if (!id.some) continue;
     // C4.a: DRAWING THE FACILITY IS INFORMATION, and this is the dearest way of drawing it. It is

@@ -195,6 +195,9 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   3. **Tests are WRITTEN as the item goes and RUN when the module is complete.** A suite run
      mid-item measures a half-built world and reports the half that is missing (Law 11). Run it at
      the end, read what it says, and put what it says in the plan file before changing anything.
+     The owner's rule (16.0): the eighteen suites run at the end of a MAJOR item (16, 17, 18, …),
+     never after a step within one; `check:opens`, lint, typecheck and the cheap checks are what
+     gate a step's commit.
 
   The reason is Law 10 and Law 11 together: a misbehaving number is not a work item, the missing
   mechanism is — and most of what looks wrong in a world this unfinished is a mechanism nobody has

@@ -27,6 +27,7 @@ import { add, atMost, material, sum } from '../../core/num.js';
 import {
   type PerMember,
   acrossMembers,
+  asCash,
   minus,
   negated,
   scale,
@@ -92,9 +93,7 @@ export const centralBankOmo: SystemModule = {
       // it — so what it reads is read off its module's source and not off a measurement, and
       // it is the module's whole read set rather than this phase's. It narrows the first time
       // the phase runs and the check can say which of these it actually wanted.
-      reads: [
-        { kind: 'event', name: 'centralBank.remittance', of: 'anyPeriod' },
-      ],
+      reads: [{ kind: 'event', name: 'centralBank.remittance', of: 'anyPeriod' }],
       writes: [],
       run: (ctx: MechanismContext): void => {
         for (const cb of ctx.parties.ofKind(CENTRAL_BANK)) {
@@ -137,7 +136,11 @@ export const centralBankOmo: SystemModule = {
         }
         const free = view.free(i.id);
         const size = downTick(
-          atMost(negated(gap, 'the other side of the gap'), free, 'it sells what it holds unencumbered and no more'),
+          atMost(
+            negated(gap, 'the other side of the gap'),
+            free,
+            'it sells what it holds unencumbered and no more',
+          ),
         );
         return size > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: size }] : [];
       },
@@ -187,7 +190,8 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   // own books and is remitted with next period's income (E3).
   // XI-15: a central bank is a NAMED party and not a cell, so what its equity account moved by is
   // what it earned — `acrossMembers` at one is the door that says so in the type.
-  const paid = ctx.registry.payable(acrossMembers(income, 1, 'what a central bank of one earned'),
+  const paid = ctx.registry.payable(
+    asCash(acrossMembers(income, 1, 'what a central bank of one earned'), ccy, 'what it earned'),
   );
   if (paid <= 0) return;
   const leg: Leg = {

@@ -59,7 +59,7 @@ function aSwap(w: World, a: string, b: string, tenorYears: number): Contract {
     ccy: USD,
     notional: asQty(10_000_000, 'the notional'),
     struckAt: struckAs('rate', 0.02),
-    basis: asCash(0, 'what it cost'),
+    basis: asCash(0, USD, 'what it cost'),
     opened: w.period,
     state: 'open',
     terminated: { some: false },
@@ -142,7 +142,7 @@ describe('the legs (A1.b, A2, A4, E1)', () => {
     if (a === undefined || b === undefined) return;
     const c = aSwap(w, String(a), String(b), irsTenorsOf({ params: w.params })[0] ?? 1);
     const reads = w.contractReads(w.period);
-    expect(irsKind.mark(c, w.period, reads) + irsKind.mark(mirrored(c, irsKind), w.period, reads)).toBe(0);
+    expect(irsKind.mark(c, w.period, reads).pieces + irsKind.mark(mirrored(c, irsKind), w.period, reads).pieces).toBe(0);
   });
 
   it('has nothing to accrue in a period the overnight book did not trade (D3.a)', () => {

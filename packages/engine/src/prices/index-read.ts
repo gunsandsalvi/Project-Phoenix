@@ -31,12 +31,13 @@ import {
   valueAt,
 } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
-import { add, sum } from '../core/num.js';
+import { add } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { PartiesReads } from '../parties/party.js';
 import type { InstrumentsReads } from '../register/instruments.js';
 import type { Registry } from '../registry/registry.js';
+import { sumCash } from '../core/measure.js';
 
 /**
  * A1, A2: WHAT A RULE MAY LOOK AT to say what is in it. Public state and nothing else: which lines
@@ -69,6 +70,8 @@ export interface IndexWorld {
    * a label on the read rather than a table of rates this file keeps.
    */
   rate(from: CurrencyCode, to: CurrencyCode, at: Period): Ratio;
+  /** Currency C4: what a value in one money reads as in another, at the rate in force — a report. */
+  inMoney(value: Cash, to: CurrencyCode, at: Period): Cash;
 }
 
 /** A1: one constituent of an index, and what it counts for. */
@@ -99,6 +102,12 @@ export interface IndexDecl {
   readonly base: Ratio;
   /** The first period the rule was in force. Before it there is no index (D5.a). */
   readonly from: Period;
+  /**
+   * Currency C4 (16.0): THE MONEY THE INDEX IS STATED IN. A basket is worth something in one money
+   * or it is not worth a number; a constituent in another money is TRANSLATED into this one at the
+   * rate in force for the read, never converted, and the level stays a pure number.
+   */
+  readonly ccy: CurrencyCode;
 }
 
 export interface IndexRead {
@@ -201,16 +210,23 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
       // amount and not a count on the grid — the global basket restates it at a rate (`baskets.ts`)
       // and lands between two shares. So it enters as an amount, and what it comes to is money.
       const held = asAmount<'piece'>(c.weight, `${c.instrument} in the basket`);
-      terms.push(valueAt(priceNow.value, held, `${c.instrument} now`));
-      wasTerms.push(valueAt(priceWas.value, held, `${c.instrument} then`));
+      const ccy = d.world.instruments.get(c.instrument).ccy;
+      // Currency C4: each line in its own money, translated into the index's for the read.
+      terms.push(d.world.inMoney(valueAt(priceNow.value, held, ccy, `${c.instrument} now`), decl.ccy, t as Period));
+      wasTerms.push(d.world.inMoney(valueAt(priceWas.value, held, ccy, `${c.instrument} then`), decl.ccy, (t - 1) as Period));
     }
-    const then = sum(wasTerms).value;
+    if (wasTerms.length === 0) continue;
+    const then = sumCash(decl.ccy, wasTerms, 'the basket a period ago').value;
     // A basket worth nothing a period ago is a basket with no step to take: the index carries, and
     // it carries because nothing moved rather than because somebody held it there (Law 6).
-    if (then === 0) continue;
+    if (then.pieces === 0) continue;
     // Item 16: A LEVEL IS A PURE NUMBER and what the basket did is a ratio of two baskets. Neither
     // is money, which is what stops an index level being spent, printed or added to a balance.
-    level = scale(level, ratioOf(sum(terms).value, then, 'what the basket did'), 'chained');
+    level = scale(
+      level,
+      ratioOf(sumCash(decl.ccy, terms, 'the basket now').value, then, 'what the basket did'),
+      'chained',
+    );
     // Only a period that is OVER is remembered: this period's prints are still being made.
     if (t < at) d.cache?.set(decl.id, t as Period, level);
   }

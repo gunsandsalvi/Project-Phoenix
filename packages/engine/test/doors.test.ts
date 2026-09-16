@@ -420,7 +420,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
     // E2: down to the print on what it still holds, and nothing more. What its bank paid it for
     // the week's deposit is its bank's business and not the write-down's, so it comes out.
     const held = w.register.quantity(FIRM_1, WHEAT_ID);
-    expect(w.register.equity(FIRM_1) - paidTo(w, FIRM_1, 'coupon')).toBeLessThan(before);
+    expect(w.register.equity(FIRM_1).pieces - paidTo(w, FIRM_1, 'coupon')).toBeLessThan(before.pieces);
     expect(held).toBeLessThan(10);
   });
 
@@ -487,12 +487,12 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
       }),
     );
     const held = w.register.quantity(BANK_A, GOV);
-    const equity = w.register.equity(BANK_A);
+    const equity = w.register.equity(BANK_A).pieces;
     w.step();
     // The units are still held, still on the same book, and worth what they were: an encumbrance
     // moves nothing (Register D5). What changed is that a hundred of them are no longer free.
     expect(w.register.quantity(BANK_A, GOV)).toBeCloseTo(held, 9);
-    expect(w.register.equity(BANK_A)).toBeCloseTo(equity, 9);
+    expect(w.register.equity(BANK_A).pieces).toBeCloseTo(equity, 9);
     expect(w.register.encumbered(BANK_A, GOV)).toBeCloseTo(100, 9);
     expect(w.register.free(BANK_A, GOV)).toBeCloseTo(held - 100, 9);
     const lien = w.register.holding(BANK_A, GOV);

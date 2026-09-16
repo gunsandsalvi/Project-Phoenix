@@ -56,9 +56,24 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import type { Agreement, AgreementTerms } from '../../register/agreements.js';
-import { atMost, div, sum, zeroIfNone, addTo} from '../../core/num.js';
+import { atMost, div, sum, zeroIfNone, addTo } from '../../core/num.js';
 import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
-import { asRatio, heldAsMoney, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
+import {
+  asRatio,
+  heldAsMoney,
+  minus,
+  plus,
+  asPerPiece,
+  pricedAt,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+  ratioOf,
+  scale,
+  sumCash,
+  valueAt,
+  asAmount,
+} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
@@ -69,14 +84,17 @@ import type { Violation } from '../../audit/audit.js';
 import type { Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { capitalPublished, costOfFundsIn as fundingCostIn, limitPerName } from '../../registry/banking.js';
+import {
+  capitalPublished,
+  costOfFundsIn as fundingCostIn,
+  limitPerName,
+} from '../../registry/banking.js';
 
 export const VEHICLE = partyKindId('vehicle');
 export const TRANCHE = instrumentKindId('tranche');
 
 /** C1: a deal is named for who arranged it and which one it was (Law 9). */
-export const vehicleId = (arranger: PartyId, n: number): PartyId =>
-  partyId(`spv.${arranger}.${n}`);
+export const vehicleId = (arranger: PartyId, n: number): PartyId => partyId(`spv.${arranger}.${n}`);
 
 /** C2: a tranche is named by its vehicle and where it sits. Not by an internal id (Law 9). */
 export const trancheId = (vehicle: PartyId, layer: 'senior' | 'junior'): InstrumentId =>
@@ -203,8 +221,6 @@ export const trancheKind: InstrumentKindProfile = {
   due: () => [],
   accrued: () => 0,
 };
-
-
 
 /** What a party holds in money of a currency, summed over the accounts it banks in. */
 function cashOf(ctx: MechanismContext, who: PartyId, ccy: CurrencyCode): Qty {
@@ -378,13 +394,15 @@ function reasonToSell(
  * Missing rather than a zero that would make every deal look like a gain.
  */
 function carryingOf(view: ParticipantView, rows: readonly Instrument[]): Option<Cash> {
+  const first = rows[0];
+  if (first === undefined) return none<Cash>();
   const out: Cash[] = [];
   for (const i of rows) {
     const at = view.mark(i.id);
     if (!at.some) return none<Cash>();
-    out.push(valueAt(at.value, view.quantity(i.id), 'what it carries this row at'));
+    out.push(valueAt(at.value, view.quantity(i.id), i.ccy, 'what it carries this row at'));
   }
-  return out.length === 0 ? none<Cash>() : some(sum(out).value);
+  return some(sumCash(first.ccy, out, 'what it carries these rows at').value);
 }
 
 /**
@@ -711,7 +729,9 @@ function settleDeal(
     if (b.side !== 'buy') continue;
     const want = downTick(atMost(b.qty, subQty(seniorFace, placed, 'left to place'), 'its fill'));
     if (want <= 0) continue;
-    const cash = downTick(valueAt(price, want, 'what it pays for the note'));
+    const cash = downTick(
+      valueAt(price, want, ctx.instruments.get(senior).ccy, 'what it pays for the note').pieces,
+    );
     if (cash <= 0) continue;
     legs.push({
       kind: 'asset',
@@ -832,9 +852,19 @@ export function distribute(ctx: MechanismContext): void {
         // C5: each layer's share of what the pool earned is its share of what is outstanding, and
         // SENIOR FIRST when there is not enough of it — which is what a waterfall is.
         const due = downTick(
-          scale(earned, ratioOf(face, outstanding, 'its share of what is outstanding'), 'its interest'),
+          scale(
+            earned,
+            ratioOf(face, outstanding, 'its share of what is outstanding'),
+            'its interest',
+          ),
         );
-        const paid = payInterest(ctx, deal, ccy, id, atMost(due, forInterest, 'and no more than is here'));
+        const paid = payInterest(
+          ctx,
+          deal,
+          ccy,
+          id,
+          atMost(due, forInterest, 'and no more than is here'),
+        );
         forInterest = subQty(forInterest, paid, 'what is left for the layer below');
       }
       // XI-8: and what is left is PRINCIPAL, which redeems face, senior first.
@@ -891,7 +921,9 @@ function payInterest(
   for (const holder of holders) {
     const held = ctx.register.quantity(holder, id);
     if (held <= 0) continue;
-    const share = downTick(scale(available, ratioOf(held, face, 'its share of the layer'), 'its share'));
+    const share = downTick(
+      scale(available, ratioOf(held, face, 'its share of the layer'), 'its share'),
+    );
     if (share <= 0) continue;
     const r = ctx.settle({
       legs: [
@@ -929,13 +961,14 @@ function payInterest(
  */
 function windUp(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode | undefined): void {
   if (!ctx.parties.get(deal.vehicle).status.alive) return;
-  const owed = sum(layersOf(ctx, deal.vehicle).map((i) => ctx.register.heldTotal(i.id).value)).value;
+  const owed = sum(
+    layersOf(ctx, deal.vehicle).map((i) => ctx.register.heldTotal(i.id).value),
+  ).value;
   if (owed > 0) return;
   // XI-11: which of the rows it was sold are still running. The list of what was sold in is the
   // deal's own fact; whether each is still live and still held is the world's (Law 19).
   const running = deal.sold.filter(
-    (row) =>
-      ctx.instruments.get(row).status.live && ctx.register.quantity(deal.vehicle, row) > 0,
+    (row) => ctx.instruments.get(row).status.live && ctx.register.quantity(deal.vehicle, row) > 0,
   );
   if (running.length > 0) return;
   const left = ccy === undefined ? NO_QTY : cashOf(ctx, deal.vehicle, ccy);
@@ -1086,7 +1119,9 @@ function payTranche(
   for (const holder of holders) {
     const held = ctx.register.quantity(holder, id);
     if (held <= 0) continue;
-    const share = downTick(scale(toLayer, ratioOf(held, face, 'its share of the layer'), 'its share'));
+    const share = downTick(
+      scale(toLayer, ratioOf(held, face, 'its share of the layer'), 'its share'),
+    );
     if (share <= 0) continue;
     const r = ctx.settle({
       legs: [
@@ -1163,7 +1198,11 @@ function deals(): Family {
          * to any tranche whatever the borrowers did.
          */
         // C6: the layers are cut FROM the pool, so what they claim can never exceed it.
-        const claimed = scale(t.pool, minus(t.detachment, t.attachment, 'the depth of the layer'), 'its face at the cut');
+        const claimed = scale(
+          t.pool,
+          minus(t.detachment, t.attachment, 'the depth of the layer'),
+          'its face at the cut',
+        );
         if (claimed > t.pool) {
           out.push({
             family: 'ownership',
@@ -1304,7 +1343,7 @@ export function noteBids(
    */
   const steps = view.params.count(DEAL_STEPS);
   // Item 16: a balance is a COUNT of the money's own pieces; what it will buy is that as money.
-  const budget = heldAsMoney(spare, 'what it holds against what falls due');
+  const budget = heldAsMoney(spare, ccy, 'what it holds against what falls due');
   return rungsUpTo(levelsUpTo(price.value, steps), budget, limit).map((r) => ({
     party: view.self.id,
     side: 'buy' as const,
@@ -1341,8 +1380,10 @@ function poolSchedule(
     const face = faces[k];
     if (face === undefined || face <= 0) return;
     const i = view.instruments.get(id);
-    for (const f of view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry)) {
-      const paid = valueAt(f.perUnit, face, 'what this row pays on the day');
+    for (const f of view.registry
+      .instrumentKind(i.kind)
+      .cashFlows(i, on, view.calendar, view.registry)) {
+      const paid = valueAt(f.perUnit, face, i.ccy, 'what this row pays on the day');
       const at = byDate.get(dayNumber(f.date));
       byDate.set(
         dayNumber(f.date),
