@@ -13924,3 +13924,72 @@ none), pre-existing and the same shape as 21.67's `bank-capital.test.ts`, positi
 
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
 green. `test/upkeep.test.ts` is new and four green.
+
+---
+
+## Item 17f — Contracts that last: closed
+
+The owner: *"There should be long term supply contracts and employment contracts. A corporate can
+lock in supply of labour and inputs in long term contracts. Firing costs a severance, breaking a
+contract costs a pre-decided break up cost. Contracts can be extended and reopened, I don't want
+contracts to multiply infinitely."* Four sentences, four mechanisms, and one of them was already
+there.
+
+**Nobody could lock anything in** (17f.1). Every input in this world was bought in a session, every
+period, at whatever cleared: a mill facing a grain market that doubled had no answer but to pay it,
+and a grower facing one that halved no answer but to take it. A supply contract is a named buyer and
+a named seller, a quantity every period at a price, until a day — struck in a BOOK of its own, per
+input good per region, seeded from the goods' own recipes (a thing somebody buys to make something
+else) and only where the thing keeps. It is not a derivative and not a forward price: nothing is
+priced off a curve or a carry, and what makes a contract worth having is precisely that the spot
+session moves away from it. Two parties who expected the same thing would never sign one — the
+disagreement is the mechanism (§46 A3).
+
+**A delivery is both legs** (Law 5, XI-5). The seller hands over what it HAS of what it promised and
+the buyer pays for what arrived, atomically. A seller short of stock delivers what it has and the
+contract stands: what ends a contract is somebody ending it, not a period going wrong. A delivery
+worth less than one piece of the money moves nothing and SAYS so — goods for no money would be a
+one-sided flow, and silence there would have been the defect.
+
+**Breaking one costs what was agreed** (17f.2, 17f.3a). One number, struck when the contract was,
+out of the deliveries it promised. Either side may pay it and walk, and there is no branch on who:
+each compares what staying costs it over the periods left against what leaving costs, each out of
+its own reads, and the two of them reach opposite answers because they are different parties. A
+party that cannot pay what breaking costs has not broken anything (Money E1).
+
+**And the same sentence for a job.** A job is now struck for a TERM (`EmploymentTerms.until`, a
+different fact from `ends`, which is when people under notice stop being paid). Cutting people out
+of one before that day pays the wages between the end of the notice and the day it was to run to —
+pre-decided when the job was struck — and an employer that cannot pay it has not broken anything:
+the row stands and the people stay. The severance is untouched and is still what it was: what a job
+owes on NOTICE, which is the contract running out rather than being broken. That is the owner's
+sentence exactly — *firing costs a severance, breaking a contract costs a pre-decided break up cost*.
+
+**Extended, never multiplied** (17f.3). Two paths could have made a second row out of one
+relationship and neither does. The book matching the same pair for the same thing again RESTATES the
+row they have, at what they have just crossed at, for what they now promise between them — the rule
+a committed line already follows when a borrower draws on it (Corporate Credit C9). A contract that
+reaches its term is extended on the same row: one offer and one answer, which is what a bilateral
+price is when there is no book in front of them, and two whose expectations have crossed the other
+way let it run out. An employment rolls the same way. The FORBID is guarded rather than trusted: a
+new audit contribution counts live contracts per (buyer, seller, thing) and reports any pair with
+more than one, with both names and the count, and never repairs.
+
+**What the spec does not have.** There is no supply-contract system in `PROJECT_PHOENIX.md`: this is
+the owner's addition, built against the laws, and the clause it answers is Goods C3 — a buyer bidding
+for its own reasons, in a book of its own. Labour C3 carries the term and the break. Nothing was
+marked MET that the spec does not ask for.
+
+**What it cannot show yet.** Finding 21.79: the `opens` rig crosses none of its sixty-six books in
+sixteen periods — 0 bids, 1 ask — because almost no firm in that world trades at all, which is 12c.3
+seen from a third side and sits beside 21.72 and 21.77. The scale model, whose firms do trade,
+strikes fifty-one contracts in six periods, delivers on them and breaks one. Finding 21.80:
+`employment.test.ts`'s "hires land where the register says" was already red before this item.
+
+**Both reads of a party's own view in the supply module are on 21.57's list** and the ratchet carries
+the honest count: what a bilateral negotiation has no door for is the OFFER — the seller's price
+reaching the buyer is a disclosure this world cannot express, so the phase holds both views at once.
+
+**Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence
+green. `test/supply.test.ts` is new and three green; two new cases in `test/employment.test.ts` are
+green beside its one pre-existing red.

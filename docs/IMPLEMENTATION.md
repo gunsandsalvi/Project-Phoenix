@@ -215,7 +215,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17c | The board — **done** (section removed; see `docs/RECORD.md`; a controlled company reads its owner's required return and its owner's duration. §35 D4 MET; §29 C2 stays PARTIAL with its cost-base half named as productivity's, not control's) | after 17b |
 | 17d | Loans float — **done** (section removed; see `docs/RECORD.md`; a loan is a margin over the fixings compounded, and a fixed row where the book has never traded. §7 B4 MET on the loan side; finding 21.77 at 23.3) | after 17c |
 | 17e | Capex and productivity — **done** (section removed; see `docs/RECORD.md`; productivity is a read of the plant a firm holds by vintage, and a thing that wears can be KEPT — one outlay for plant and one for a dwelling, sharing the share gone without. Firm A3 carries 17e.1, Capital Programme A6 the upkeep, Housing A5 PARTIAL → MET; 21.43 closed; finding 21.78 at 23.1) | after 17d |
-| 17f | Contracts that last | after 17e |
+| 17f | Contracts that last — **done** (section removed; see `docs/RECORD.md`; a supply contract with a book, deliveries both legs and a break cost; a job struck for a term whose early end pays the wages to the day; both extended on their own row and never multiplied, with an audit family that counts them. Labour C3 and Goods C3 re-marked; findings 21.79 and 21.80 at 23.3 and 23.1) | after 17e |
 | 17g | What a pool is made of | after 17f |
 | 18 | Commodities spot and futures | 18.0 a print carries its dimension |
 | 18a | Monetary policy | before the polity |
@@ -253,54 +253,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
-
----
-
-
----
-
-## 17f. Contracts that last
-
-The owner: *"There should be long term supply contracts and employment contracts. A corporate can
-lock in supply of labour and inputs in long term contracts. Firing costs a severance, breaking a
-contract costs a pre-decided break up cost. Contracts can be extended and reopened, I don't want
-contracts to multiply infinitely."* After 17e.
-
-**What is there.** An EMPLOYMENT is already a standing relation with a notice period, an `ends` date
-and a severance an employer owes (12b, `register/employment.ts`); `ctx.owes` already holds a
-commitment of any kind with two named parties and a state, and the estate already divides them.
-**What is not**: a fixed TERM as against notice, a BREAK COST agreed at the start, a way to EXTEND or
-REOPEN one — and, on the input side, nothing at all. A firm buys its inputs in a session every
-period at whatever clears, so nobody in this world can lock anything in.
-
-- [x] 17f.1 **A supply contract** (Goods A4, Trade Credit A3, Law 5). A buyer and a seller agree a
-  QUANTITY PER PERIOD at a PRICE for a TERM: one agreement, two named parties, and a delivery every
-  period that settles like any other sale (both legs, same pass). The price is struck where the two
-  of them meet — what the buyer would otherwise expect to pay against what the seller would
-  otherwise expect to get — so it is cleared and not posted (Law 3), and the contract is worth having
-  precisely because the session's price will move away from it.
-- [x] 17f.2 **Breaking one costs what was agreed** (Law 2). A break cost is a TERM struck when the
-  contract is, never a number this world holds: the party that walks pays it, in one instruction with
-  both legs, and the agreement ends. It is the same shape for both sides of both kinds of contract —
-  an employer firing before term, a buyer walking from supply, a seller that will not deliver — so it
-  is ONE mechanism and not four. Severance stays what it is: what an employment owes on NOTICE, which
-  is the contract running out rather than being broken.
-- [x] 17f.3 **Extended and reopened, and never multiplied** (Law 4, Corporate Credit C9's lesson).
-  *"I don't want contracts to multiply infinitely."* A contract that reaches its term is EXTENDED —
-  the same row, restated, with a new end and whatever price the two of them now agree — and one
-  neither party wants ends. A party has at most one live contract per counterparty per thing, which
-  is the rule `commit` already follows for a committed line (C9: a draw taps the existing line) and
-  for the same reason: two rows for one relationship are two answers to what was agreed. The audit
-  counts them, so a world that starts multiplying says so.
-- [x] 17f.3a **A job is struck for a TERM, and ending it early costs the wages to the day** (Labour
-  C3, Law 2, 17f.2's "one mechanism and not four"). `EmploymentTerms.until`; every hire is struck for
-  one; a cut before the day pays the wages between the end of the notice and the term, to the people
-  it cuts, and an employer that cannot pay it has not broken anything; a term that runs out ROLLS on
-  the same row. The severance stays what it is: what a job owes on NOTICE.
-- [ ] 17f.4 §11 Labour's term clauses and §Goods' supply clauses re-marked; record.
-
-**Exit.** A firm that locked its inputs in pays what it agreed while the session price moves, and a
-firm that walks away pays for walking; the count of live contracts per pair never exceeds one.
 
 ---
 
