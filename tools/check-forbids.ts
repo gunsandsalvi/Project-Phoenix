@@ -242,6 +242,11 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/money-market/resolution.ts': 3,
   'mechanisms/money-market/session.ts': 2,
   'mechanisms/property/index.ts': 1,
+  // 17f: EACH SIDE'S OWN view, for that side's own decision whether to break its own contract
+  // (Law 2). The buyer reads what the buyer expects to pay and the seller what the seller expects
+  // to get; neither is shown the other's, and the two of them reaching opposite answers out of
+  // their own outlooks is the mechanism (§46 A3). It sees no counterparty's state.
+  'mechanisms/supply/index.ts': 1,
   'mechanisms/ratings/index.ts': 2,
   'mechanisms/reporting/guidance.ts': 1,
   'mechanisms/reporting/statement.ts': 1,

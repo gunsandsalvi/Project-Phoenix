@@ -160,6 +160,7 @@ import {
 } from '../mechanisms/insurers/index.js';
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
+import { supply } from '../mechanisms/supply/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
 import { PROBATE, probateId } from '../mechanisms/households/lifecycle.js';
@@ -2936,6 +2937,11 @@ export function foundationSpec(
       labour(),
       firms(drew.firms),
       households(),
+      // 17f: the book in which a buyer and a seller of an INPUT lock a quantity and a price in for
+      // a term. After the firms and the goods, because what it locks in is what a line buys to make
+      // something else and both sides are firms; before nothing, because a contract is a
+      // commitment and what it changes is what each of them takes to the spot session.
+      supply(),
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).
       commodities(),
