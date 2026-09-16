@@ -12263,3 +12263,18 @@ carries the rest of the series design); the global index is stated in the seed's
 money, declared once in the seed and passed to the module rather than assumed by it (Currency C4).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids green. Suites at the end of item 16.
+
+## Item 16.2 — The four-country world, thirty periods, tabled
+
+`abroadWorld('abroad-16-2')` steps thirty periods in 84 s; the table per money is in
+`docs/IMPLEMENTATION.md` 16.2. Two stops on the way, fixed where they were: a fund seeded in kind
+with lines in two moneys summed them and a bank drawn to hold a foreign line added it to its dollar
+book (both translated into the party's own money for the report, Currency C4, Money A2.b); and a
+second stock loan between the same lender and borrower on the same line pledged under the same
+reason as the first, so `lienFor` gave every loan the FIRST lien's id (three rows named lien 101; the
+register held 102 and 104) and the return of the second threw `Register D5` — a loan's lien is the
+one no open loan already holds (Law 4). Finding 21.47: one session in a hundred clears and a
+hundred-odd parties per money are dead by period thirty, with the US treasury refused an overdraft
+of 1.6 × 10¹¹ pieces every period from 29.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids green. Suites at the end of item 16.

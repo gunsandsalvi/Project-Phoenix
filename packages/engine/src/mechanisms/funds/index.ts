@@ -2312,8 +2312,14 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
     );
     if (units <= 0) return;
     ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
+    // Currency C4 (16.2): a basket that crosses moneys is worth ONE number in the fund's own money
+    // — each line translated at the rate in force, never added across currencies (Money A2.b).
     contributions.push(
-      valueAt(opening.value.price, units, opening.value.ccy, 'what this line put in'),
+      ctx.valuation.inOwnMoney(
+        e.fund as PartyId,
+        valueAt(opening.value.price, units, opening.value.ccy, 'what this line put in'),
+        ctx.period,
+      ),
     );
   }
   // Law 19, Fund Shares A3: WHAT ONE SHARE IS A CLAIM ON IS READ OFF THE BASKET THAT ARRIVED, never

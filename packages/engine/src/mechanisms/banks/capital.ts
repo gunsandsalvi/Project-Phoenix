@@ -171,7 +171,12 @@ export function capitalOf(
     const banking =
       want === undefined
         ? value
-        : atMostCash(value, want, 'the treasury cannot claim more of a line than there is of it');
+        : atMostCash(
+            value,
+            // Currency C4: the want is in the line's money; the book is a report in the bank's own.
+            ctx.valuation.inOwnMoney(bank, want, ctx.period),
+            'the treasury cannot claim more of a line than there is of it',
+          );
     const trading = minus(value, banking, 'the part it is running as a position');
     const asBanking = scale(
       banking,

@@ -477,7 +477,14 @@ function lienFor(
 ): Option<LienId> {
   const holding = ctx.register.holding(pledgor, instrument);
   if (!holding.some) return none<LienId>();
-  for (const l of holding.value.liens) if (l.reason.includes(secures)) return some(l.id);
+  // Law 4 (16.2): a second loan between the same two names on the same line pledges under the same
+  // reason, and the FIRST lien answered for every one of them — three rows named lien 101, the
+  // register held 102 and 104, and the return of the second threw. The lien this loan created is
+  // the one no open loan already holds.
+  const taken = new Set(loansOpen(ctx).map((l) => l.lien));
+  for (const l of holding.value.liens) {
+    if (l.reason.includes(secures) && !taken.has(l.id)) return some(l.id);
+  }
   return none<LienId>();
 }
 

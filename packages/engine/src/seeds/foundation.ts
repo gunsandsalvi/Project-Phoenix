@@ -2314,9 +2314,11 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         let assets = noCash(ccy);
         for (const h of ctx.register.holdingsOf(bank)) {
           if (h.instrument === own) continue;
+          // Currency C4: a bank's book is a REPORT in its own money; a foreign line it was drawn to
+          // hold is translated at the rate in force, never added across moneys (Money A2.b).
           assets = plus(
             assets,
-            ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+            ctx.valuation.inOwnMoney(bank, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), ctx.period),
             "the bank's opening assets",
           );
         }
