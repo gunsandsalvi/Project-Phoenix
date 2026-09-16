@@ -1,7 +1,7 @@
 /**
  * What every deciding party expects, formed from what that party itself observed.
  *
- * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations C2.a Insurers A4.b Insurers B3 Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
+ * @spec Expectations A1 Expectations A2 Expectations A2.a Expectations C2.a Insurers A4.b Insurers A4.c Insurers B3 Expectations A2.b Expectations A3 Expectations A4 Expectations A5 Expectations B1 Expectations B1.a Expectations B1.b Expectations B2 Expectations B2.a Expectations B3 Expectations B4 Expectations B5 Expectations D1 Expectations D2 Expectations D3 Expectations D4 Expectations E1 Expectations E2 Expectations E4 XI-16 Observer A5 Law 2
  *
  * An outlook is personal (A2). It is last period's outlook corrected towards what this party
  * actually observed, at this party's own speed (B1); the speed is its MEMORY, the one preference
@@ -18,7 +18,7 @@
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
 import { HOUSEHOLD } from '../../registry/profiles.js';
-import { deathsIn } from '../../registry/insurance.js';
+import { deathsIn, isPolicyTerms } from '../../registry/insurance.js';
 import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
@@ -37,7 +37,7 @@ import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
  * the mean surprise and the width below are the same arithmetic whatever the unit, and they stay
  * `add`/`sub`/`mul`/`div` so that no reader is handed a dimension this file invented.
  */
-import { add, atLeast, div, mul, sub, sum, addTo } from '../../core/num.js';
+import { add, atLeast, div, mul, sub, sum, addTo, zeroIfNone } from '../../core/num.js';
 import { assertNever } from '../../core/assert.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
@@ -125,6 +125,7 @@ function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): n
     case 'income':
     case 'earnings':
     case 'credit':
+    case 'claims':
       return null;
     default:
       return assertNever(subject.value, '§46 A2.a');
@@ -262,6 +263,30 @@ function observations(ctx: MechanismContext, held: Book): Map<string, { value: n
       if (!print.some) continue;
       out.set(`${party}|${variable}`, { value: print.value.price, unit: ctx.instruments.get(instrument).ccy });
     }
+  }
+  // Insurers A4.c (14.4): WHAT A UNIT OF THE COVER IT HAS WRITTEN COST IT THIS PERIOD — the claims
+  // it paid, read off its own legs, over the cover it has outstanding. Every period it has cover out
+  // is an observation, a period with no claim among them: an insurer's experience is its own history
+  // of what its book cost it, and never the last claim.
+  const claimsPaid = new Map<PartyId, number>();
+  for (const r of ctx.ledger.inPeriod(ctx.period)) {
+    if (r.outcome !== 'settled') continue;
+    for (const leg of r.instruction.legs) {
+      if (isMoneyLeg(leg) && leg.receipt?.of === 'claim') addTo(claimsPaid, leg.from.holder, leg.amount);
+    }
+  }
+  const coverOut = new Map<PartyId, number>();
+  for (const i of ctx.instruments.all()) {
+    if (!isPolicyTerms(i.terms) || !i.status.live || i.issued <= 0 || !i.issuer.some) continue;
+    addTo(coverOut, i.issuer.value, i.issued);
+  }
+  for (const [issuer, units] of coverOut) {
+    if (!ctx.parties.has(issuer) || units <= 0) continue;
+    const paid = claimsPaid.get(issuer);
+    out.set(`${String(issuer)}|${String(about({ on: 'claims' }))}`, {
+      value: div(zeroIfNone(paid), units, 'what a unit of its cover cost it this period'),
+      unit: 'money per unit of cover a period',
+    });
   }
   // A2.a (12d.1): WHAT IS PUBLIC ABOUT WHAT IT IS EXPOSED TO reaches it as one more thing observed.
   // 14.2: who there is in each cohort, counted once — what a cell's cohort's deaths are a share of.

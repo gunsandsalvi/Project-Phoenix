@@ -149,9 +149,12 @@ describe('a fill is a policy, and both legs settle (A4.a, Law 5, Clearing D2)', 
      * until it exists no live session of this venue clears and the settling half of A4.a is
      * reachable only from here. The orders are the test's; everything after them is the module's.
      */
+    // 14.4: the insurer's own quote stands in the book from this period's session (a few hundredths
+    // a unit); the test's ask above it loses to it, so the buyer's size is what makes a premium of
+    // whole pieces at that price.
     runCover(ctx, ccy, [
-      { party: insurer.id, side: 'sell', price: asPerPiece(5, 'what it will write cover at'), qty: asQty(100) },
-      { party: buyer.id, side: 'buy', price: asPerPiece(9, 'what it will pay'), qty: asQty(10) },
+      { party: insurer.id, side: 'sell', price: asPerPiece(5, 'what it will write cover at'), qty: asQty(100_000) },
+      { party: buyer.id, side: 'buy', price: asPerPiece(9, 'what it will pay'), qty: asQty(10_000) },
     ]);
     // 14.2: the module's own session this period is on the record too (nobody quoted, `noSupply`);
     // the one that struck is the test's.
@@ -162,7 +165,7 @@ describe('a fill is a policy, and both legs settle (A4.a, Law 5, Clearing D2)', 
     // HOLDS it. Both halves are asserted, because a world where only one is true is the defect.
     const issued = w.instruments.issuedBy(insurer.id).filter((i) => isPolicy(i.terms));
     expect(issued.length).toBe(1);
-    expect(Number(issued[0]?.issued)).toBe(10);
+    expect(Number(issued[0]?.issued)).toBe(10_000);
     const held = w.register
       .holdingsOf(buyer.id)
       .filter((h) => String(h.instrument) === String(issued[0]?.id));

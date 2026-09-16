@@ -22,6 +22,9 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import { about } from '../../world/context.js';
+import { yearFraction } from '../../calendar/daycount.js';
+import { costOfCapital } from '../../registry/capital.js';
 import { weatheredIn } from '../../registry/physical.js';
 import { COVER, COVER_TERM, POLICY, coverVenue } from '../../registry/insurance.js';
 import { none, some } from '../../core/option.js';
@@ -40,12 +43,10 @@ import {
   minus,
   type PerPiece,
   plus,
-  pricedAt,
   type Ratio,
   ratioOf,
   scale,
 } from '../../core/measure.js';
-import type { Qty } from '../../core/tick.js';
 import { compareCivil, type Civil } from '../../calendar/civil.js';
 import {
   instrumentId,
@@ -245,61 +246,49 @@ const lastDate = (s: readonly CashFlow[]): string => {
  * loses its licence, which is a consequence of having nothing to stand behind cover with rather
  * than a rule about solvency.
  */
-export function quoteCover(view: ParticipantView, ccy: CurrencyCode): readonly Order[] {
-  const surplus = view.equity();
-  // A4.a: nothing to stand behind it with, so nothing written. Not a threshold — an insurer with no
-  // surplus has no capacity, which is arithmetic (Law 6).
-  if (surplus <= 0) return [];
-  const experience = claimsSeen(view);
-  const capital = view.owedIn(ccy);
-  const required =
-    capital > 0
-      ? ratioOf(
-          heldAsMoney(capital, 'what it owes'),
-          plus(heldAsMoney(capital, 'what it owes'), surplus, 'what funds it'),
-          'what its capital costs',
-        )
-      : asRatio(0, 'it owes nothing, so its capital costs it nothing');
-  const price = coverPrice(experience, required);
-  if (price <= 0) return [];
-  const capacity = downTick(surplus);
-  if (capacity <= 0) return [];
-  // Clearing C3: it posts a price and a size, and the book decides whose cover gets written.
-  return [{ party: view.self.id, side: 'sell', price, qty: capacity }];
+export interface CoverQuote {
+  readonly orders: readonly Order[];
+  /** A4.a: why it wrote nothing, where it wrote nothing for a reason a reader should see. */
+  readonly refused?: string;
 }
 
 /**
- * A4.c, Law 19: ITS OWN CLAIMS OFF ITS OWN BOOK. What a unit of cover has actually cost it, read
- * off the payments it has made — never a loss ratio, never an industry number, never a draw from a
- * distribution somebody stated.
+ * A4.a, A4.b, A4.c, XI-4 (14.4): WHAT IT WILL WRITE COVER AT, AND HOW MUCH. The price is two things
+ * and only two: what a unit of cover is expected to cost it in claims over the term — its own
+ * outlook of what a unit of its book has cost it a period, formed from every period it had cover
+ * out (never the last claim), over the periods a unit runs — and the return required on the capital
+ * held against the premium: what its capital costs it per annum (XI-4's read: its equity where a
+ * market prices it, its debt at the margin otherwise, the sovereign curve when nothing else has
+ * said), over the term's fraction of a year, on the surplus a unit of cover stands on. Its capacity
+ * is its surplus (A4.a): a unit of money stands behind a unit of cover, and an insurer with no
+ * surplus writes nothing. Worse experience or dearer capital quotes higher (A4.b); a ratio of its
+ * capital enters as a level of the same thing per unit, and no ratio becomes a level on its own.
  */
-function claimsSeen(view: ParticipantView): PerPiece {
-  const paid: Cash[] = [];
-  const written: Qty[] = [];
-  /**
-   * A-9, Register B3, Law 19: THE POLICIES IT HAS WRITTEN ARE ITS LIABILITIES, NOT ITS HOLDINGS.
-   *
-   * This walked `view.holdings()` for policies whose `insurer` is itself — and an insurer does not
-   * HOLD the cover it wrote: the beneficiary does. So `written` was always empty, `experience` was
-   * always the claims over nothing, and the price of cover was never made of anything it had seen.
-   * What it has written is what it ISSUED, which the register indexes both ways (Register B2).
-   */
-  for (const i of view.instruments.issuedBy(view.self.id)) {
-    if (!i.status.live || !isPolicy(i.terms)) continue;
-    written.push(i.issued);
-  }
-  // A4.c: its OWN claims, which are the ones it was a side of. `lastOwn` asks that question
-  // directly rather than filtering everything public by a name (Observer A4).
-  const claim = view.lastOwn(CLAIM_PAID);
-  if (claim.some) {
-    const amount = claim.value.data['amount'];
-    if (typeof amount === 'number') paid.push(asCash(amount, 'what it paid on a claim'));
-  }
-  const cover = sum(written).value;
-  return cover > 0
-    ? pricedAt(sum(paid).value, cover, 'what a unit of cover has cost it')
-    : asPerPiece(0, 'it has written no cover, so nothing has cost it anything');
+export function quoteCover(view: ParticipantView): CoverQuote {
+  const surplus = view.equity();
+  // A4.a: nothing to stand behind it with, so nothing written. Not a threshold — an insurer with no
+  // surplus has no capacity, which is arithmetic (Law 6).
+  if (surplus <= 0) return { orders: [], refused: 'no surplus to stand behind cover with' };
+  const capacity = downTick(surplus);
+  if (capacity <= 0) return { orders: [], refused: 'a surplus below one unit of cover' };
+  const term = view.params.periods(COVER_TERM);
+  const seen = view.outlook(about({ on: 'claims' }));
+  const experience = seen.some
+    ? scale(asPerPiece(seen.value.expected, 'what a unit of its cover has cost it a period'), asRatio(term, 'the periods a unit runs'), 'what a unit is expected to cost over the term')
+    : asPerPiece(0, 'it has never had cover out, so nothing has cost it anything yet');
+  const cost = costOfCapital(view, period(view.period - 1), term);
+  if (!cost.some) return { orders: [], refused: 'nothing has said what its capital costs' };
+  const years = yearFraction('ACT/365F', view.calendar.startOf(view.period), view.calendar.startOf(period(view.period + term)));
+  // A4.b: the capital a unit of cover stands on is its surplus over its capacity — one unit of
+  // money behind one unit of cover, less what the whole pieces leave.
+  const capitalPerUnit = ratioOf(heldAsMoney(view.registry.cashFor(surplus), 'its surplus'), heldAsMoney(capacity, 'the cover it can write'), 'the capital behind a unit of cover');
+  const requiredOnCapital = asRatio(cost.value.perAnnum * years * capitalPerUnit, 'the return its capital requires over the term, per unit of cover');
+  const price = coverPrice(experience, requiredOnCapital);
+  if (price <= 0) return { orders: [], refused: 'a price of nothing is no quote' };
+  // Clearing C3: it posts a price and a size, and the book decides whose cover gets written.
+  return { orders: [{ party: view.self.id, side: 'sell', price, qty: capacity }] };
 }
+
 
 /**
  * E1, E2, A1: what must be true of this sector, MEASURED and never repaired. Each breaks silently:
@@ -430,7 +419,7 @@ export function insurers(): SystemModule {
         reads: [
           { kind: 'event', name: 'fund.struck', of: 'anyPeriod' },
         ],
-        writes: [],
+        writes: [{ kind: 'event', name: 'insurer.unquoted' }],
         run: (ctx: MechanismContext): void => {
           /**
            * B-2, A-9: THE SECTOR RUNS. `phases: []` and `participants: []` meant nothing in this
@@ -447,7 +436,10 @@ export function insurers(): SystemModule {
             const bids: Order[] = [];
             for (const p of ctx.parties.ofKind(INSURANCE)) {
               if (!p.status.alive || ctx.registry.currencyOf(p.region) !== ccy) continue;
-              bids.push(...quoteCover(ctx.participant(p.id), ccy));
+              const q = quoteCover(ctx.participant(p.id));
+              bids.push(...q.orders);
+              // A4.a (14.4): an insurer that writes nothing says why, in public.
+              if (q.refused !== undefined) ctx.record('insurer.unquoted', [p.id], { insurer: p.id, ccy, why: q.refused }, true);
             }
             runCover(ctx, ccy, bids);
           }

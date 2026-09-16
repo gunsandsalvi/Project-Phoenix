@@ -11891,3 +11891,27 @@ on both. Nothing new is red: eighteen suites at 90 of 196.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 14.4 — Experience, and the price of cover
+
+The insurer's experience was the last claim it paid over the cover it had written, and its capital
+cost it the share of its funding that was debt — nothing, for an insurer with no debt — so a fresh
+insurer quoted nothing and no cover ever cleared in the world's own book. Every party with cover
+outstanding now observes each period what a unit of its cover cost it in claims, read off its own
+legs over the cover it has out, and forms its outlook of it like any other (§46; a period with no
+claim is observed as one, so experience decays as well as rises). The quote is that outlook over
+the term plus the return its capital requires — XI-4's read of what its capital costs per annum,
+over the term's fraction of a year, on the surplus behind a unit of cover — and its capacity is its
+surplus. A refusal to quote is a public event with its reason.
+
+**Measured.** In `quote-37`, the one seed of forty whose insurer's line the draw listed, cover
+clears in the world's own book from period 2 at a few hundredths a unit, the rig's own weather pays
+four real claims in period 3, and after a hand-written storm the insurer's experience forms and it
+quotes higher (`experience.test.ts`, two green). The hand-written cover test now sizes its buyer to
+the insurer's standing quote. Nothing new is red: eighteen suites at 90 of 196, the same set.
+
+**Finding (XI-4).** The listed insurer refused to quote in two periods of six for a price of
+nothing: `requiredOnEquity` reads a company's cost of equity as its earnings yield, so one that has
+not yet earned is told its equity costs nothing. Positioned at 21.23.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

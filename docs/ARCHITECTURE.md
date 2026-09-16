@@ -1574,3 +1574,11 @@ redemption, so the cover is gone. `claim` is a receipt class of its own (`ledger
 `register/arrears.ts`: it ranks with what the state and a counterparty are owed) and is nobody's
 income (`treasury`).
 
+### The insurer's quote is its experience plus what its capital costs (item 14.4)
+
+`claims` is an outlook subject: every party with cover outstanding observes each period what a unit
+of its cover cost it in claims, off its own `claim` legs over the cover it has out. `quoteCover`
+prices a unit as that outlook over the term plus the return its capital requires — the registry's
+`costOfCapital`, over the term's fraction of a year, on the surplus behind a unit of cover — and
+posts its surplus as capacity. Nothing reads the last claim; a refusal to quote is a public event.
+

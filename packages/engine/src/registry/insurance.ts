@@ -12,6 +12,7 @@
 import type { Period } from '../calendar/calendar.js';
 import { instrumentKindId, paramId, unitId, venueId, type CurrencyCode, type VenueId } from '../core/ids.js';
 import type { Event } from '../journal/journal.js';
+import type { Terms } from '../register/instruments.js';
 
 export const POLICY = instrumentKindId('policy');
 export const COVER = unitId('cover');
@@ -35,3 +36,9 @@ export function deathsIn(reads: { ofKindIn(kind: string, period: Period): readon
   }
   return died;
 }
+
+/**
+ * Insurers A2, Law 15: WHAT A POLICY'S TERMS LOOK LIKE — a schedule, the curve it is discounted at,
+ * and the insurer that wrote it — so a reader tells a policy by its shape and never by its kind id.
+ */
+export const isPolicyTerms = (t: Terms): boolean => 'schedule' in t && 'discountedAt' in t && 'insurer' in t;
