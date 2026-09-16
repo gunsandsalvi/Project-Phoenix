@@ -12612,3 +12612,42 @@ tenor, a technology), and the count of shapes falls by one.
 30 and 20 units of room against a deal of 100 take exactly their rooms and bring 90 — because the
 tests that read a RUN are vacant while no firm in that world brings paper at all (21.58), and a test
 that iterates an empty list asserts nothing. The suite's two standing reds are unchanged.
+
+## Item 17.3 — The committed facility: the lender sets the line
+
+`shortTermDebt.line` was a tenth of the BORROWER's own book — a placeholder that named this item and
+made the size of a committed facility a fact about the borrower's equity rather than a decision its
+lender took. A bank out of capital went on committing lines; a borrower with a big balance sheet got
+a big one from a bank that would not have lent it a penny.
+
+It is deleted. C9's line is granted by the bank that QUOTED the name, at the margin that bank
+quoted, for what that bank published it will have out to it — the least of what its capital leaves
+it, what its own limit for one name allows and what its funding can carry, which is 17.0's one
+credit view read through the quote it already published. One line per lender per borrower, and the
+lender is a lender that actually wanted the name.
+
+**An undrawn commitment consumes capital (A3.a).** A committed line cannot be refused when it is
+drawn, so the capital stands behind it before it is — at the standard-setter's conversion factor,
+`regulation.creditConversion.undrawn`, a POLICY about a promise (a half: less than the loan it would
+become, because not every line is drawn). What is undrawn is asked of the commitment KIND itself,
+because only the kind knows what its own limit is and what drawing on it looks like (Law 15), and
+the kind reads the drawing where every claim lives — the register — rather than mirroring it onto
+the row (Law 19). The kernel supplies the world the kind is asked with, one statement of it shared
+with revaluation, so a kind valuing a row and a reader asking what is undrawn cannot be asking two
+different worlds.
+
+**And it is visible (A3.b).** `bank.capital` carries what the bank has committed and what those
+commitments weigh, so a reader can see that a facility costs it something before it is drawn —
+which is the whole clause: *a facility that costs nothing until drawn is a free option the bank did
+not sell.*
+
+**Not done, and named:** `ctx.restateInstrument(id, terms)` for rolling a maturity while the
+relationship performs. The item listed it; it is a kernel door for a different mechanism (a roll
+rather than a commitment) and it is left open — written up as 21.59 and positioned at 17.7, where
+restructuring is the subject and an agreement transition is already the work.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`short-term-debt`: four new tests, all thirteen green — the line is the quoting lender's at what it
+published; the module declares no line size and no placeholder at all; the commitment consumes less
+capital than a drawn loan would and says how much; and the headroom is the limit less what was
+drawn, answered by the kind.

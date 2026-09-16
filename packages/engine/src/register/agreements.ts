@@ -28,7 +28,7 @@
  * no holder: it is a relation between two named parties (Law 5). The register holds what is OWNED;
  * this holds what is OWED where the owing is not a security.
  */
-import { type Option } from '../core/option.js';
+import { none, some, type Option } from '../core/option.js';
 import { type Cash, type PerPiece } from '../core/measure.js';
 import { type Outlook, type OutlookVariable } from '../world/context.js';
 import { type Civil } from '../calendar/civil.js';
@@ -40,10 +40,12 @@ import {
   type AgreementId,
   type AgreementKindId,
   type CurrencyCode,
+  type InstrumentId,
   type PartyId,
   type CurveFamilyId,
   type RegionId,
 } from '../core/ids.js';
+import type { Qty } from '../core/tick.js';
 import type { ParamRegister } from '../registry/params.js';
 import { Missing } from '../core/errors.js';
 import { finite } from '../core/num.js';
@@ -108,6 +110,14 @@ export interface AgreementKindDecl {
    * A kind that does not answer is carried at what is owed and is never re-marked (a wage, a levy).
    */
   readonly valued?: (row: Agreement, at: Period, reads: RowValuationReads) => Cash;
+  /**
+   * Banks Lending A3.a, A3.b (17.3): WHAT IS PROMISED ON THIS ROW AND NOT YET DRAWN — the headroom
+   * a committed facility leaves. A creditor's capital has to stand behind it before the borrower
+   * draws, because the creditor cannot refuse when it does; a kind that is not a commitment answers
+   * nothing and nothing stands behind it. The kind answers because only the kind knows what its own
+   * limit is and what drawing on it looks like (Law 15).
+   */
+  readonly headroom?: (row: Agreement, at: Period, reads: RowValuationReads) => Cash;
 }
 
 /** Insurers B2 (14.5): what the kernel lends a kind that values its rows — a curve, a day, a party's outlook. */
@@ -119,6 +129,12 @@ export interface RowValuationReads {
   weightOf(party: PartyId): number;
   /** Labour D1.c (14.6): what an hour last cleared at in a trade and place, for a promise indexed to it. */
   goingRate(occupation: string, region: RegionId): PerPiece | undefined;
+  /**
+   * Banks Lending A3.a (17.3): what is OUTSTANDING of a line a kind knows the name of — how much of
+   * a committed facility has been drawn, which lives where every other claim does (the register)
+   * and is read there rather than mirrored onto the commitment row (Law 19).
+   */
+  drawnOn(instrument: InstrumentId): Qty;
   /** Money A3 (16.0): the money a place's wages clear in, for a promise indexed to them. */
   readonly registry: { currencyOf(region: RegionId): CurrencyCode };
   /** The scheme's declared rules and the households' table, for a schedule that reads them. */
@@ -301,6 +317,16 @@ export class Agreements {
     return next;
   }
 
+  /**
+   * Banks Lending A3.a (17.3): WHAT IS PROMISED ON THIS ROW AND NOT YET DRAWN, asked of the kind —
+   * only the kind knows what its own limit is and what drawing on it looks like (Law 15). Nothing
+   * for a kind that is not a commitment, which is most of them.
+   */
+  headroomOf(row: Agreement, at: Period, reads: RowValuationReads): Option<Cash> {
+    const kind = this.kind(row.terms.kind);
+    return kind.headroom === undefined ? none<Cash>() : some(kind.headroom(row, at, reads));
+  }
+
   /** What this party owes that is not an instrument — the question an estate has to ask (XI-8). */
   /** 14.5: the mark revaluation left on a row, or nothing for a row never marked. */
   markOf(id: AgreementId): number | undefined {
@@ -372,9 +398,20 @@ function rowsOf(
 export type AgreementReads = Pick<
   Agreements,
   'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'byDebtorAndKind' | 'kind' | 'all' | 'markOf'
->;
+> & {
+  /**
+   * A3.a (17.3): what a commitment kind says is promised on one of its rows and not yet drawn. The
+   * kernel supplies the world the kind is asked with, so a reader asks the QUESTION and never has
+   * to assemble the reads — which is what stops two readers asking it of two different worlds.
+   */
+  headroomOf(row: Agreement, at: Period): Option<Cash>;
+};
 
-export function agreementReads(store: Agreements): AgreementReads {
+export function agreementReads(
+  store: Agreements,
+  /** 17.3: the world a commitment kind is asked its own question with (`headroomOf`). */
+  rows: () => RowValuationReads,
+): AgreementReads {
   return Object.freeze({
     get: (id: AgreementId) => store.get(id),
     owedBy: (party: PartyId) => store.owedBy(party),
@@ -386,5 +423,7 @@ export function agreementReads(store: Agreements): AgreementReads {
     all: () => store.all(),
     // 14.6: what the kernel last marked a row at — a read of the mark, never a second valuation.
     markOf: (id: AgreementId) => store.markOf(id),
+    // A3.a (17.3): what a commitment kind says is promised and not yet drawn on one of its rows.
+    headroomOf: (row: Agreement, at: Period) => store.headroomOf(row, at, rows()),
   });
 }

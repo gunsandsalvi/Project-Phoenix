@@ -108,7 +108,7 @@ import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import {
   Agreements,
-  agreementReads,
+  agreementReads, type RowValuationReads,
   type Agreement,
   type AgreementDecl,
   type AgreementKindDecl,
@@ -406,7 +406,7 @@ export class World {
   constructor(spec: WorldSpec) {
     this.seed = spec.seed;
     this.agreementStore = new Agreements(spec.agreementKinds);
-    this.agreements = agreementReads(this.agreementStore);
+    this.agreements = agreementReads(this.agreementStore, () => this.rowReads());
     this.employment = employmentReads(this.agreementStore);
     this.registry = spec.registry;
     this.params = spec.params;
@@ -582,16 +582,7 @@ export class World {
             contracts: w.contracts,
             // 14.5: the rows a kind values are marked here too, at the same curve and day a line is.
             agreements: w.agreementStore,
-            rows: {
-              curve: (family, at) => w.curveAt(family, at),
-              on: (at) => w.valuation.on(at),
-              outlook: (party, variable) => w.outlookOf(party, variable),
-              // 14.6: a promise per member reads who is alive to be promised, and what it is indexed to.
-              weightOf: (party) => weightOf(w.parties.get(party)),
-              goingRate: (occupation, region) => w.employment.goingRate(occupation, region),
-              registry: w.registry,
-              params: w.params,
-            },
+            rows: w.rowReads(),
           });
           // From here to the end of the period, what a lot is carried at is THIS period's mark: the
           // resolution slot moves a dead party's whole book, and it moves it at what the book says.
@@ -2155,6 +2146,31 @@ export class World {
       `phase ${at.name} reads ${kind}, which it did not declare`,
       { phase: at.name, kind },
     );
+  }
+
+  /**
+   * 14.5, Banks Lending A3.a (17.3): WHAT A COMMITMENT KIND IS ASKED WITH — a curve, a day, a
+   * party's outlook, who a row stands for, what an hour clears at and what has been drawn on a
+   * line. One statement of it, because a kind valuing a row at revaluation and a reader asking the
+   * same kind what is undrawn must be asking the same world (Law 4).
+   */
+  private rowReads(): RowValuationReads {
+    return {
+      curve: (family, at) => this.curveAt(family, at),
+      on: (at) => this.valuation.on(at),
+      outlook: (party, variable) => this.outlookOf(party, variable),
+      // 14.6: a promise per member reads who is alive to be promised, and what it is indexed to.
+      weightOf: (party) => weightOf(this.parties.get(party)),
+      goingRate: (occupation, region) => this.employment.goingRate(occupation, region),
+      // A3.a (17.3): what has been drawn on a line, read off the register — nothing where the line
+      // has never been drawn, which is a count and not an absence.
+      drawnOn: (instrument) =>
+        this.instruments.has(instrument) && this.instruments.get(instrument).status.live
+          ? this.store.heldTotal(instrument).value
+          : NO_QTY,
+      registry: this.registry,
+      params: this.params,
+    };
   }
 
   mechanismContext(owner: string): MechanismContext {

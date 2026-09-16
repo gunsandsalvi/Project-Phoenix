@@ -491,6 +491,8 @@ export function creditQuotedTo(reads: WireReads, borrower: string): Option<Event
 
 /** What a bank quoted, and how much it will lend at it. */
 export interface CreditQuote {
+  /** C9: the lender that said it. A line is one lender's line, at the margin that lender quoted. */
+  readonly bank: string;
   readonly rate: Ratio;
   readonly most: number;
   readonly ccy: CurrencyCode;
@@ -514,7 +516,17 @@ export function creditQuoteThisPeriod(
   if (typeof rate !== 'number' || typeof most !== 'number' || typeof ccy !== 'string')
     return none<CreditQuote>();
   // Item 16: two published numbers re-enter the type system here, through their own doors.
-  return some({ rate: asRatio(rate, 'what its bank quoted it'), most, ccy: ccy as CurrencyCode });
+  const bank = said.data['bank'];
+  if (typeof bank !== 'string') return none<CreditQuote>();
+  // Item 16: two published numbers re-enter the type system here, through their own doors; and
+  // C9 (17.3) needs the third fact the quote already carried — WHICH LENDER said it, because the
+  // line a borrower is granted is that lender's line and nobody else's.
+  return some({
+    bank,
+    rate: asRatio(rate, 'what its bank quoted it'),
+    most,
+    ccy: ccy as CurrencyCode,
+  });
 }
 
 /** Corporate Credit A4: the rate alone, from any period — what a name last cost to borrow at. */

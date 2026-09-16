@@ -133,3 +133,73 @@ describe('what must not happen (E3)', () => {
     }
   });
 });
+
+/**
+ * Banks Lending A3, A3.a, A3.b; Corporate Credit C9 (17.3): the lender sets the line, and an
+ * undrawn commitment is a real obligation of the bank.
+ */
+describe('the committed facility (Banks Lending A3, A3.a, A3.b; Corporate Credit C9)', () => {
+  it('is granted by the lender that quoted the name, at what that lender said it would lend', () => {
+    const w = ranWorld('cp-run', 12);
+    for (const row of w.agreements.ofKind(BACKSTOP)) {
+      if (!isBackstop(row.terms)) continue;
+      // C9: ONE LINE PER LENDER PER BORROWER, at the margin that lender quoted. The limit is what
+      // that bank published it would have out to the name — the least of what its capital, its own
+      // limit for one name and its funding leave it — and never a share of the borrower's book.
+      const quoted = w.journal
+        .ofKind('credit.quoted')
+        .filter((e) => String(e.data['borrower']) === String(row.debtor))
+        .at(-1);
+      expect(quoted, `a line to ${String(row.debtor)} that no bank quoted`).toBeDefined();
+      expect(String(quoted!.data['bank'])).toBe(String(row.creditor));
+      expect(row.terms.rate).toBe(Number(quoted!.data['rate']));
+      expect(row.terms.limit.pieces).toBe(Number(quoted!.data['most']));
+    }
+  });
+
+  it('declares no line size anywhere: the size is a decision, not a share (Law 2)', () => {
+    // 17.3: `shortTermDebt.line` — a tenth of the borrower's own book — is deleted. What is left is
+    // the commitment FEE, which is a convention of the market and a technology, not a stand-in.
+    const declared = shortTermDebt().params;
+    expect(declared.map((d) => String(d.id))).not.toContain('shortTermDebt.line');
+    expect(declared.every((d) => d.kind !== 'placeholder')).toBe(true);
+  });
+
+  it('consumes the lender’s capital before it is drawn, and says how much (A3.a, A3.b)', () => {
+    const w = ranWorld('cp-run', 12);
+    const said = w.journal.ofKind('bank.capital').filter((e) => e.period === w.period);
+    expect(said.length).toBeGreaterThan(0);
+    for (const e of said) {
+      // A3.b: UNDRAWN COMMITMENTS ARE VISIBLE — what it has promised and not lent, and what that
+      // took out of its capital. A facility that costs nothing until drawn is a free option.
+      expect(typeof e.data['committed']).toBe('number');
+      expect(typeof e.data['committedWeighted']).toBe('number');
+      const committed = Number(e.data['committed']);
+      const weighted = Number(e.data['committedWeighted']);
+      expect(committed).toBeGreaterThanOrEqual(0);
+      // A3.a: it consumes SOMETHING, and less than the loan it would become — the standard-setter's
+      // conversion factor, applied to the headroom.
+      if (committed > 0) {
+        expect(weighted).toBeGreaterThan(0);
+        expect(weighted).toBeLessThan(committed);
+        // And what it weighs is inside what the bank's whole weighted position comes to.
+        expect(Number(e.data['weighted'])).toBeGreaterThanOrEqual(weighted);
+      } else {
+        expect(weighted).toBe(0);
+      }
+    }
+  });
+
+  it('counts the headroom as the limit less what has been drawn, and the kind answers it (A3.a)', () => {
+    const w = ranWorld('cp-run', 12);
+    for (const row of w.agreements.ofKind(BACKSTOP)) {
+      if (!isBackstop(row.terms)) continue;
+      const headroom = w.agreements.headroomOf(row, w.period);
+      // Only a COMMITMENT answers; that is what makes an undrawn promise findable at all.
+      expect(headroom.some).toBe(true);
+      if (!headroom.some) continue;
+      expect(headroom.value.pieces).toBeLessThanOrEqual(row.terms.limit.pieces);
+      expect(headroom.value.ccy).toBe(row.ccy);
+    }
+  });
+});

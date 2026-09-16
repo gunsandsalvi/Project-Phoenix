@@ -112,6 +112,7 @@ export const LENDING_PARAMS = {
   capitalRatio: paramId('regulation.capitalRatio'),
   riskWeight: paramId('regulation.riskWeight.loan'),
   sovereignWeight: paramId('regulation.riskWeight.sovereign'),
+  undrawnWeight: paramId('regulation.creditConversion.undrawn'),
   leverageRatio: paramId('regulation.leverageRatio'),
   hoursPerLoanPeriod: STAFF_PARAMS.hoursPerLoanPeriod,
   /** A2: how long a loan runs for, in MONTHS, because that is what the calendar places (Law 8). */
@@ -171,6 +172,7 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
     limitPerName: ctx.params.ratio(bankParam(bank, 'limitPerBorrower')),
     sovereignWeight: ctx.params.ratio(LENDING_PARAMS.sovereignWeight),
     tradingWeight: ctx.params.ratio(TRADING_BOOK_RISK_WEIGHT),
+    undrawnWeight: ctx.params.ratio(LENDING_PARAMS.undrawnWeight),
     // Dealer Desks F2: the same target the dealing line quotes around, read once and used for both
     // — what a holding weighs and what the book may be worth are one line drawn in one place.
     targets:
@@ -1223,6 +1225,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         kind: 'technology',
         owner: 'standardSetter',
         why: 'Banks Lending A2: how long a loan runs for. A convention of the market rather than a choice this world takes each time — a year is what a commercial facility is written for — and it is stated in MONTHS because that is the grain the calendar places a maturity on (Law 8, Money G3.a): a term in years would be converted somewhere, and the conversion is where a duration stops being the number it was declared as. It is not a forecast of how long the borrower needs the money; what it needs is what it asked for.',
+      },
+      {
+        id: LENDING_PARAMS.undrawnWeight,
+        value: 0.5,
+        unit: 'weight on a unit of undrawn commitment',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Banks Lending A3.a, A3.b: what a PROMISE to lend consumes of a bank\u2019s capital, per unit it has committed and not yet lent. A committed line cannot be refused when it is drawn, so the capital has to stand behind it before it is — and it consumes less than the loan it would become, because not every line is drawn. A half is the supervisor\u2019s judgement of that, and it is a POLICY about a promise rather than a measurement of anything: what it is FOR is that a facility costs a bank something before it is drawn, which is the whole of A3.b \u2014 a facility that costs nothing until drawn is a free option the bank did not sell.',
       },
       {
         id: LENDING_PARAMS.capitalRatio,

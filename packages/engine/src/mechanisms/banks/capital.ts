@@ -81,6 +81,27 @@ export interface CapitalPosition {
    * its treasury wants it for liquidity, or its dealing line is carrying it above that.
    */
   readonly byLine: LineWeights;
+  /** A3.b (17.3): what it has promised and not yet lent, and what those promises weigh. */
+  readonly committed: Cash;
+  readonly committedWeighted: Cash;
+}
+
+/** What each reason for holding something asks of the bank's capital (Dealer Desks F2). */
+/**
+ * A3.a, A3.b (17.3): WHAT THIS BANK HAS PROMISED AND NOT YET LENT, in the money each line is in and
+ * summed in the bank's own. It is a read of the commitment rows themselves (`agreements.owedTo`),
+ * which are the one place a line lives, and of what has been drawn on each — never a second tally.
+ */
+export function undrawnBy(ctx: MechanismContext, bank: PartyId): Cash {
+  const home = ctx.registry.currencyOf(ctx.parties.get(bank).region);
+  let out = noCash(home);
+  for (const row of ctx.agreements.owedTo(bank)) {
+    if (row.state === 'discharged' || row.state === 'terminated') continue;
+    const headroom = ctx.agreements.headroomOf(row, ctx.period);
+    if (!headroom.some || headroom.value.pieces <= 0) continue;
+    out = plus(out, ctx.valuation.inMoney(headroom.value, home, ctx.period), 'what it has promised');
+  }
+  return out;
 }
 
 /** What each reason for holding something asks of the bank's capital (Dealer Desks F2). */
@@ -101,6 +122,11 @@ export interface CapitalRules {
   readonly sovereignWeight: Ratio;
   /** Dealer Desks D2, F2: what a unit of a TRADING position consumes, whatever it is a claim on. */
   readonly tradingWeight: Ratio;
+  /**
+   * Banks Lending A3.a (17.3): what a promise to lend consumes, per unit of headroom it leaves
+   * undrawn — less than the loan it would become, because not every line is drawn.
+   */
+  readonly undrawnWeight: Ratio;
   /**
    * Dealer Desks C2.a, F2, Banks Funding C2: where this bank's own treasury wants each line held,
    * in its own money. It is what tells a holding it is there because the treasury decided so from
@@ -213,6 +239,28 @@ export function capitalOf(
     }
     byLine.dealing = plus(byLine.dealing, asTrading, 'what its dealing uses');
   }
+  /**
+   * Banks Lending A3.a, A3.b (17.3): AN UNDRAWN COMMITMENT IS A REAL OBLIGATION OF THE BANK AND
+   * CONSUMES SOMETHING. A committed line is a promise to lend on demand: the bank cannot refuse it
+   * when the borrower draws, so the capital has to be there before it does. It consumes LESS than a
+   * drawn loan because not every line is drawn, and how much less is the standard-setter's number
+   * (`regulation.creditConversion.undrawn`) — a POLICY about a promise, applied to what is left
+   * undrawn on every line this bank has out.
+   *
+   * Without it a facility costs a bank nothing until it is drawn, which is A3.b's free option
+   * exactly: a bank could commit lines without limit, and the constraint that is supposed to make
+   * it choose would not exist until the choice was already made.
+   */
+  const undrawn = ctx.valuation.inMoney(undrawnBy(ctx, bank), ccy, ctx.period);
+  const committedWeighted = scale(
+    undrawn,
+    rules.undrawnWeight,
+    'what its promises ask of its capital',
+  );
+  if (committedWeighted.pieces > 0) {
+    weighted.push(committedWeighted);
+    byLine.lending = plus(byLine.lending, committedWeighted, 'what its commitments use');
+  }
   // A2, A3: CAPITAL IS LAYERED, and both layers are here — the equity that absorbs first and fully
   // (A2.a) and the subordinated claims that absorb next (A2.b). A requirement met with equity alone
   // would be a requirement no bank could ever raise its way back over except by earning it, and
@@ -267,6 +315,8 @@ export function capitalOf(
     headroom: atMostCash(byLeverage, inUnits, 'the rule that leaves it less is the room there is'),
     limitPerName: scale(capital, rules.limitPerName, 'the most it will fund for one name'),
     byLine,
+    committed: undrawn,
+    committedWeighted,
     breach:
       capital.pieces < scale(rwa, askedWeighted, 'what the line asks').pieces ||
       capital.pieces < scale(assets, askedLeverage, 'what the backstop asks').pieces,
@@ -303,6 +353,11 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
       // the line falls with it — and a party carrying more than the line is carrying more than its
       // funder will stand behind, which is the third of XI-2's four doors.
       limitPerName: p.limitPerName.pieces,
+      // Banks Lending A3.b (17.3): UNDRAWN COMMITMENTS ARE VISIBLE. What this bank has promised and
+      // not yet lent, and what those promises took out of its capital — so a reader can see that a
+      // facility costs it something before it is drawn, which is what the clause is about.
+      committed: p.committed.pieces,
+      committedWeighted: p.committedWeighted.pieces,
       unit: currencyUnit(p.ccy),
     },
     true,

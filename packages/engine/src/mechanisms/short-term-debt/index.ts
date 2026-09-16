@@ -93,7 +93,6 @@ export const PAPER_PARAMS = {
   /** B4: what undrawn headroom costs its holder per annum. A term of the line it agreed. */
   commitmentFee: paramId('shortTermDebt.commitmentFee'),
   /** B4: how big the line an issuer opens with is, against its own book. A PLACEHOLDER (17.2). */
-  line: paramId('shortTermDebt.line'),
   /** B4 (12a.7): how long a drawing on the line runs for. A convention of the facility. */
   lineMonths: paramId('shortTermDebt.lineMonths'),
 };
@@ -620,16 +619,27 @@ export function grantBackstops(ctx: MechanismContext): void {
     if (!p.status.alive) continue;
     held.add(issuer);
     const ccy = ctx.registry.currencyOf(p.region);
-    const bank = ctx.accountOf(p.id, ccy).issuer;
-    // A bank banks at its central bank for reserves, and a line to yourself is not a backstop.
-    if (bank === p.id) continue;
     const quote = creditQuoteThisPeriod(ctx.journal, String(p.id), ctx.period);
     if (!quote.some) continue;
-    const book = ctx.participant(p.id).inMoney(ctx.participant(p.id).equity(), ccy);
-    if (book.pieces <= 0) continue;
+    /**
+     * Corporate Credit C9, A3 (17.3): THE LENDER SETS THE LINE, and it is the lender that QUOTED
+     * the name — one line per lender per borrower, at the margin that lender quotes now.
+     *
+     * What it grants is what it published it will have out to this name (`credit.quoted`'s `most`):
+     * the least of what its capital leaves it, what its own limit for one name allows and what its
+     * funding can carry (Banks Lending B2, and 17.0's one credit view). It used to be a SHARE OF
+     * THE BORROWER'S OWN BOOK — `shortTermDebt.line`, a placeholder that named this item — which
+     * made the size of a committed facility a fact about the borrower's equity rather than a
+     * decision its lender took, so a bank out of capital went on committing lines and a borrower
+     * with a big balance sheet got a big one from a bank that would not have lent it a penny.
+     * The parameter is deleted with this change; nothing stands in for the decision any more.
+     */
+    const bank = ctx.parties.resolve(partyId(quote.value.bank)).id;
+    // A bank banks at its central bank for reserves, and a line to yourself is not a backstop.
+    if (bank === p.id || !ctx.parties.get(bank).status.alive) continue;
     const terms: BackstopTerms = {
       kind: BACKSTOP,
-      limit: scale(book, ctx.params.ratio(PAPER_PARAMS.line), 'the line it was granted'),
+      limit: asCash(quote.value.most, quote.value.ccy, 'the line its lender granted it'),
       fee: ctx.params.perAnnum(PAPER_PARAMS.commitmentFee),
       rate: quote.value.rate,
     };
@@ -871,6 +881,18 @@ export function shortTermDebt(): SystemModule {
         // B2, XI-8: a line is a promise to lend on demand, and an estate lends nothing (Banks
         // Lending A1). An acquirer that bought the committing bank's book stands behind it.
         binds: 'aGoingConcern',
+        /**
+         * Banks Lending A3.a, A3.b (17.3): WHAT IS STILL PROMISED AND NOT DRAWN — the limit the
+         * lender granted less what has been drawn on it, read off the drawing's own row in the
+         * register (Law 19). The lender's capital stands behind this before the borrower draws,
+         * because the lender cannot refuse when it does.
+         */
+        headroom: (row, _at, reads) => {
+          const t = row.terms;
+          if (!isBackstop(t)) return noCash(row.ccy);
+          const drawn = reads.drawnOn(backstopLoanId(row.creditor, row.debtor));
+          return minus(t.limit, heldAsMoney(drawn, row.ccy, 'what it has drawn'), 'its headroom');
+        },
       },
     ],
     params: [
@@ -891,21 +913,6 @@ export function shortTermDebt(): SystemModule {
         kind: 'technology',
         owner: 'standardSetter',
         why: 'Short-Term Debt B4: what a committed line costs its holder per annum on the part it has NOT drawn. It is the price of an option the lender sold and the clause says so plainly \u2014 *\u201ca committed line with no commitment fee on undrawn headroom is a free option the lender did not sell\u201d* \u2014 which is why it is the load-bearing half of B4: without it every issuer would hold an unlimited backstop it never paid for, B3.b\u2019s run could never bite, and this world\u2019s only liquidity risk would be insured away for nothing. A convention of the market, quoted per annum and falling per period by the calendar (Money G3.a).',
-      },
-      {
-        id: PAPER_PARAMS.line,
-        value: 0.1,
-        unit: 'share of the issuer\u2019s own opening book',
-        dimension: 'ratio',
-        // Law 2: a shape that names the item which kills it IS a placeholder, and the register says
-        // so — it refused the world at assembly for as long as this said `shape` (item 0, stop 1).
-        kind: 'placeholder',
-        owner: 'model',
-        standsInFor: {
-          mechanism: 'Corporate Credit C9',
-          item: '17.3',
-        },
-        why: 'Short-Term Debt B4: how big a line an issuer is GRANTED, as a share of its own book. A committed facility is GRANTED, priced and re-sized by a lender out of its own view of the borrower and its own capital \u2014 that is Corporate Credit C9, and this world cannot yet take the decision (item 17.3 builds it, and `banks/index.ts:draw` already has the drawing half). So this is a SHAPE with a scheduled death and not a number anybody believes. Everything else about the line IS decided: whether the issuer has one at all, what the fee takes out of its account every period, and whether it draws. When 17.3 lands, the lender sets the limit and this number is deleted in the same change.',
       },
       {
         id: PAPER_PARAMS.lineMonths,
