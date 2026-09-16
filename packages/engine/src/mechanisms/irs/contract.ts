@@ -32,6 +32,7 @@ import {
 } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { ratePrint } from '../../prices/price-store.js';
+import { annuityOf } from '../../registry/derivatives.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
@@ -121,10 +122,12 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
     rateLevel(c.struckAt, 'an interest-rate swap is struck at a rate'),
     'the rate now against the rate struck',
   );
-  const worth = scale(
-    scale(heldAsMoney(c.notional, c.ccy, 'the notional it is on'), richer, 'over the notional'),
-    asRatio(yearsLeft(t, at, reads), 'the years it has left'),
-    'over the years it has left',
+  // 18.5: the one derivation a rate book marks by (`annuityOf`), which protection uses too.
+  const worth = annuityOf(
+    heldAsMoney(c.notional, c.ccy, 'the notional it is on'),
+    richer,
+    yearsLeft(t, at, reads),
+    'what the rate has moved by, over the years it has left',
   );
   return t.paysFixed ? worth : negated(worth, 'and the other side of it');
 }

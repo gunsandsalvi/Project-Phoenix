@@ -15,7 +15,7 @@
  * contract and D1.b would be checking a coincidence. `ContractReads` is therefore the kernel's own
  * reads — prints, marks, indices, curves, public events — and no view of anybody.
  */
-import { asAmount, asPerPiece, asRatio, type Cash, type PerPiece, type Ratio } from '../core/measure.js';
+import { asAmount, asPerPiece, asRatio, scale, type Cash, type PerPiece, type Ratio } from '../core/measure.js';
 import { Mismatch } from '../core/errors.js';
 import { asQty, downTick, type Qty } from '../core/tick.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
@@ -171,6 +171,21 @@ export function exposedTo(view: ParticipantView, instrument: InstrumentId): Qty 
     downTick(asAmount<'piece'>(held + flow, 'what it is exposed to in this thing')),
     'what it is exposed to in this thing',
   );
+}
+
+/**
+ * D8, Law 4 (18.5): WHAT A RATE OVER A NOTIONAL FOR SOME YEARS COMES TO — one derivation, and the
+ * two books that clear a rate both use it.
+ *
+ * A swap and a protection book mark the same way: the rate now against the rate struck, over the
+ * notional, over the years the row has left. Both wrote that out, and a reader comparing them had
+ * to check three lines twice to see they agreed. It is UNDISCOUNTED and says so: what the years
+ * ahead are worth today is a discount curve, and taking one here would make a mark depend on a
+ * curve neither book quotes — a second opinion about the same row (Law 3). The day it is
+ * discounted, this is the one line that changes.
+ */
+export function annuityOf(notional: Cash, rate: Ratio, years: number, what: string): Cash {
+  return scale(scale(notional, rate, 'over the notional'), asRatio(years, 'the years it has'), what);
 }
 
 /** The level a book of this kind struck, tagged with what that kind quotes in (Law 4, one writer). */

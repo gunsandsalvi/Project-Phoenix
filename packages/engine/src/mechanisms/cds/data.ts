@@ -30,6 +30,13 @@ export const CDS_PARAMS = {
   roll: paramId('cds.index.roll.periods'),
   idle: paramId('cds.idlePeriods'),
   riskWeightSold: paramId('regulation.riskWeight.cds.sold'),
+  /**
+   * 18.5: the capital a unit of risk-weighted exposure consumes. It is the REGULATOR's number and
+   * not this module's — the banking system's own capital rule, declared once and read here by its
+   * public name, the way a party reads any other published number (it is not another module's
+   * private parameter: nobody in this world is allowed a second capital ratio, Law 4).
+   */
+  capitalRatio: paramId('regulation.capitalRatio'),
 } as const;
 
 /** Law 9: the book for one reference at one tenor, named for the two things that make it one. */

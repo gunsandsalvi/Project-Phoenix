@@ -15,7 +15,8 @@
 import { creditDefaults } from '../../registry/banking.js';
 import { absolute, asPerPiece, asRatio, minus, scale, valueAt } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { addYears } from '../../calendar/civil.js';
+import { period } from '../../calendar/calendar.js';
+import { addMonths, addYears, compareCivil } from '../../calendar/civil.js';
 import { currencyCode, type CurrencyCode, type PartyId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -68,12 +69,12 @@ function params(): ParamDecl[] {
     },
     {
       id: CDS_PARAMS.roll,
-      value: 26,
-      unit: 'periods',
-      dimension: 'periods',
+      value: 6,
+      unit: 'months',
+      dimension: 'months',
       kind: 'technology',
       owner: 'standardSetter',
-      why: 'CDS A5: how often a new series is published. The names are fixed when it is — that is what a series IS — so this is how long a line runs before the next one starts, which is a convention of the market and not anybody’s choice within it.',
+      why: 'CDS A5, Money G3.a (18.5): how often a new series is published, IN MONTHS. The names are fixed when it is — that is what a series IS — so this is how long a line runs before the next one starts, which is a convention of the market and not anybody’s choice within it. It was a count of PERIODS and a remainder decided the roll, which is a second calendar: the roll is a DAY, walked from the day this world opened, and the period that crosses it is the one that rolls.',
     },
     {
       id: CDS_PARAMS.idle,
@@ -206,8 +207,28 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
  * and the count is what each name has outstanding of the paper the series is on.
  */
 function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId): void {
-  const every = ctx.params.periods(CDS_PARAMS.roll);
-  if (ctx.period === 0 || ctx.period % every !== 0) return;
+  /**
+   * A5, Law 8, Money G3.a (18.5): THE ROLL IS A DATE, not every nth period.
+   *
+   * `ctx.period % every === 0` is a periodicity kept in period INDICES, which is a second calendar
+   * (Law 4): change the length of a period and the series rolls on a different day of the year, and
+   * a reader asking *when* a series rolls is told a remainder. A roll is a day the market agreed on
+   * — every so many months from the day this world opened — so it is the day it falls on, and the
+   * period it falls IN is what the one calendar says (Money G3.a).
+   */
+  const months = ctx.params.months(CDS_PARAMS.roll);
+  if (ctx.period === 0 || months <= 0) return;
+  const opened = ctx.calendar.startOf(period(0));
+  const today = ctx.calendar.startOf(ctx.period);
+  const before = ctx.calendar.startOf(period(ctx.period - 1));
+  // The last roll date on or before today, walked from the day the world opened. A roll happens in
+  // the period that CROSSES it, which is one period whatever a period is long.
+  let last = opened;
+  for (let next = addMonths(opened, months); compareCivil(next, today) <= 0; ) {
+    last = next;
+    next = addMonths(last, months);
+  }
+  if (compareCivil(last, opened) === 0 || compareCivil(last, before) <= 0) return;
   const byGrade = new Map<string, SeriesName[]>();
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some) continue;

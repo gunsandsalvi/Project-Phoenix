@@ -27,12 +27,11 @@ import {
   asPerNamedUnit,
   asPerPiece,
   asRatio,
-  heldAsMoney,
   minus,
   over,
   plus,
   ratioOf,
-  scale,
+  scale, noCash,
 } from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -40,8 +39,9 @@ import { asQty, negQty, addQty, NO_QTY, subQty, type Qty } from '../../core/tick
 import { add } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
-import { cdsLineOf } from './data.js';
+import { CDS_PARAMS, cdsLineOf } from './data.js';
 import { isCdsIndex } from './series.js';
+import { cashSpreadOf, spreadsFromView } from './measures.js';
 import { about } from '../../world/context.js';
 
 /**
@@ -69,18 +69,17 @@ function levelFor(
   book: ContractBook,
   t: { readonly obligation: InstrumentId; readonly tenorYears: number },
 ): PerPiece | undefined {
-  const cash = view.print(t.obligation);
-  if (!cash.some || t.tenorYears <= 0) return undefined;
-  // PAR: a unit of the cash bond is one piece of its money. The one place a level and a share of
-  // par meet, named rather than assumed (`E-9`).
-  const par = asPerPiece(1, 'par: one unit of the cash bond is one piece of its money');
-  const belowPar = minus(par, cash.value.price, 'what the cash market discounts this credit by');
-  if (belowPar <= 0) return undefined;
-  const perAnnum = over(
-    belowPar,
-    asRatio(t.tenorYears, 'the years of its term'),
-    'per year of the term it has',
-  );
+  if (t.tenorYears <= 0) return undefined;
+  /**
+   * 18.5, Law 4: THE CASH MARKET'S CHARGE FOR THIS CREDIT IS ONE DERIVATION and this is not it any
+   * more. It was par less the bond's price over the years — which ignores the coupon, ignores the
+   * sovereign, and says a bond at par has no credit risk however dear money is — while the basis
+   * measurement two files over derived the honest number from a yield. Two answers to one question
+   * is Law 4's defect; the one that stays is `cashSpreadOf`, and both callers ask it.
+   */
+  const spread = cashSpreadOf(spreadsFromView(view), t.obligation, t.tenorYears, m.ccy);
+  if (!spread.some || spread.value <= 0) return undefined;
+  const perAnnum = asPerPiece(spread.value, 'what a year of this credit costs, per unit of face');
   // Law 8: A LEVEL IS HELD IN MONEY PIECES PER PIECE OF THE THING, which is not the same number as
   // the rate a person says out loud. Three basis points a year on a unit of face is three
   // hundredths of a cent, and a schedule posted at 0.0003 is a schedule below this book's own tick
@@ -159,12 +158,19 @@ function ownView(view: ParticipantView, t: CdsTerms): PerPiece | undefined {
  * public: the net notional on a reference is a count of rows anybody may read. Protection from
  * somebody already full of the same credit is protection that pays when its writer cannot (E2).
  */
-function counterpartyTerm(view: ParticipantView, facing: Qty, against: string): Ratio {
+function counterpartyTerm(view: ParticipantView, facing: Cash, against: string): Ratio {
   const own = view.standsBehind();
   if (own.pieces <= 0) return asRatio(1, 'a party with nothing behind it discounts nothing');
-  // A fraction of its own capital, which is a read and not a limit: the more of one name it
-  // already faces through one counterparty, the less the next unit of it is worth.
-  const held = heldAsMoney(facing, own.ccy, `facing ${against}`);
+  /**
+   * D10.a, E2, 18.5: WHAT IT ALREADY FACES WITH THIS COUNTERPARTY, which is what it was supposed
+   * to be reading. It was handed the party's own net COVER on this name — how much protection it
+   * had bought, from anybody — so a party that had never traded with this counterparty at all
+   * discounted its bid for it, and one that had a book full of it did not. What decides whether
+   * the next unit of protection from somebody is worth what it says is the exposure it ALREADY has
+   * to that somebody, which its own contract book answers (`contracts.exposureTo`, C1.a's pair).
+   */
+  const held = absolute(view.inOwnMoney(facing), `facing ${against}`);
+  if (held.pieces <= 0) return asRatio(1, 'it faces this counterparty with nothing yet');
   return minus(
     asRatio(1, 'the whole of it'),
     ratioOf(held, plus(held, own, 'against its own capital'), `facing ${against}`),
@@ -190,7 +196,11 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   if (mine === undefined) return [];
   const held = coverHeld(view, t);
   const facing = decl.house === null ? 'the other side' : String(decl.house);
-  const term = counterpartyTerm(view, absolute(held, 'what it faces'), facing);
+  const term = counterpartyTerm(
+    view,
+    decl.house === null ? noCash(m.ccy) : view.contracts.exposureTo(decl.house),
+    facing,
+  );
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   // Clearing E1: WHERE THE MARKET IS. It decides which side this party is on and how hard, and it
   // is never the level posted: a party that posted where the market last was would be agreeing with
@@ -258,11 +268,22 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  */
 function sizeOf(view: ParticipantView, own: Cash, spread: PerPiece): Qty {
   if (own.pieces <= 0 || spread <= 0) return NO_QTY;
-  // What it would carry is what a year of that spread on its own capital comes to at the spread it
-  // is quoting: a bigger book on a wider spread is the same risk, which is the arithmetic a party
-  // actually does rather than a notional limit somebody wrote down.
+  /**
+   * B3, 18.5: WHAT ITS CAPITAL WILL STAND BEHIND, and the arithmetic is the regulator's own.
+   *
+   * It was the capital divided by the SPREAD — a hundred times its own capital at a hundred basis
+   * points, which is not a balance-sheet constraint at all, and it made a naked writer's size a
+   * function of how cheap the credit was: the tighter the spread, the more of it a party would
+   * write. What writing protection actually costs a party is CAPITAL, and what a unit of it
+   * consumes is the risk weight on protection sold times the capital a unit of weighted exposure
+   * takes — both published, both read here, neither this module's to choose.
+   */
+  const weight = view.params.ratio(CDS_PARAMS.riskWeightSold);
+  const ratio = view.params.ratio(CDS_PARAMS.capitalRatio);
+  const consumed = scale(weight, ratio, 'the capital a unit of protection sold consumes');
+  if (consumed <= 0) return NO_QTY;
   return view.registry.deliverable(
-    amountOf(own, spread, 'what a year of this spread on its own capital would carry'),
+    amountOf(own, asPerPiece(consumed, 'what a unit of it consumes'), 'what its capital will stand behind'),
   );
 }
 
@@ -325,7 +346,11 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   const want = subQty(exposed, held, 'the exposure to this line it has not covered');
   const facing = scale(
     level,
-    counterpartyTerm(view, absolute(held, 'what it faces'), 'the line'),
+    counterpartyTerm(
+      view,
+      decl.house === null ? noCash(m.ccy) : view.contracts.exposureTo(decl.house),
+      'the line',
+    ),
     'facing it',
   );
   /**
