@@ -285,7 +285,7 @@ period at whatever clears, so nobody in this world can lock anything in.
   an employer firing before term, a buyer walking from supply, a seller that will not deliver — so it
   is ONE mechanism and not four. Severance stays what it is: what an employment owes on NOTICE, which
   is the contract running out rather than being broken.
-- [ ] 17f.3 **Extended and reopened, and never multiplied** (Law 4, Corporate Credit C9's lesson).
+- [x] 17f.3 **Extended and reopened, and never multiplied** (Law 4, Corporate Credit C9's lesson).
   *"I don't want contracts to multiply infinitely."* A contract that reaches its term is EXTENDED —
   the same row, restated, with a new end and whatever price the two of them now agree — and one
   neither party wants ends. A party has at most one live contract per counterparty per thing, which

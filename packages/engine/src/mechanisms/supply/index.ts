@@ -25,7 +25,7 @@ import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { addDays, compareCivil, dayNumber, formatCivil, type Civil } from '../../calendar/civil.js';
 import { asAmount, scale, valueAt, asRatio, type PerPiece } from '../../core/measure.js';
-import { asQty, downTick, subQty, type Qty } from '../../core/tick.js';
+import { addQty, asQty, downTick, subQty, type Qty } from '../../core/tick.js';
 import { atMost, div, mul, sub } from '../../core/num.js';
 import {
   agreementKindId,
@@ -46,6 +46,7 @@ import { expectedPriceOf } from '../../registry/expectation.js';
 import { FIRM } from '../../registry/profiles.js';
 import { about, type MechanismContext, type ParticipantView, type SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import type { Family, Violation } from '../../audit/audit.js';
 
 /** The kind: a standing promise to deliver, which is a RELATIONSHIP and not a debt (XI-8). */
 export const SUPPLY: AgreementKindId = agreementKindId('supply.contract');
@@ -108,6 +109,25 @@ function contractsOf(ctx: MechanismContext): readonly (Agreement & { terms: Supp
     out.push(a as Agreement & { terms: SupplyTerms });
   }
   return out;
+}
+
+/**
+ * Law 4, Corporate Credit C9's lesson (17f.3): THE LIVE CONTRACT BETWEEN THESE TWO FOR THIS THING,
+ * if there is one. There is at most one, and everything that would open a second restates it
+ * instead — two rows for one relationship are two answers to what was agreed.
+ */
+function liveBetween(
+  ctx: MechanismContext,
+  buyer: PartyId,
+  seller: PartyId,
+  instrument: InstrumentId,
+): (Agreement & { terms: SupplyTerms }) | undefined {
+  return contractsOf(ctx).find(
+    (a) =>
+      String(a.creditor) === String(buyer) &&
+      String(a.debtor) === String(seller) &&
+      String(a.terms.instrument) === String(instrument),
+  );
 }
 
 /** What this party has already locked in of one good, either way round. It never signs it twice. */
@@ -177,43 +197,68 @@ export function signContract(
 ): void {
   // Law 2: the cost of walking away is the deliveries it promised, for as many periods as the two
   // of them agreed to count — struck ONCE, on this contract, out of numbers they both just saw.
-  const breakCost = ctx.registry.payable(
-    scale(
-      valueAt(d.pricePerPiece, d.qtyPerPeriod, d.ccy, 'what a period of it comes to'),
-      asRatio(ctx.params.periods(SUPPLY_PARAMS.breakPeriods), 'the periods of it a break costs'),
-      'what walking away from it costs',
-    ),
-  );
+  const breakCost = costOfLeaving(ctx, d.qtyPerPeriod, d.pricePerPiece, d.ccy);
+  // 17f.3: THE SAME TWO, FOR THE SAME THING, ARE ONE CONTRACT. A pair that meets in the book again
+  // is not a second relationship: the row they have is restated at what they have just agreed, for
+  // what they have now promised between them, and what it costs to leave is struck again on that.
+  // Nothing multiplies, which is the owner's ask and Law 4's rule (`reagree` does it for a line).
+  const standing = liveBetween(ctx, d.buyer, d.seller, d.instrument);
+  const qtyPerPeriod =
+    standing === undefined
+      ? d.qtyPerPeriod
+      : addQty(standing.terms.qtyPerPeriod, d.qtyPerPeriod, 'what the two of them now promise');
   const terms: SupplyTerms = {
     kind: SUPPLY,
     region: d.region,
     instrument: d.instrument,
-    qtyPerPeriod: d.qtyPerPeriod,
+    qtyPerPeriod,
     pricePerPiece: d.pricePerPiece,
     until: d.until,
-    breakCost,
+    breakCost: standing === undefined ? breakCost : costOfLeaving(ctx, qtyPerPeriod, d.pricePerPiece, d.ccy),
   };
-  ctx.owes({
-    debtor: d.seller,
-    creditor: d.buyer,
-    ccy: d.ccy,
-    owed: 0,
-    terms,
-    why: `${d.seller} supplies ${d.buyer} ${d.qtyPerPeriod} of ${d.instrument} a period`,
-  });
+  if (standing === undefined) {
+    ctx.owes({
+      debtor: d.seller,
+      creditor: d.buyer,
+      ccy: d.ccy,
+      owed: 0,
+      terms,
+      why: `${d.seller} supplies ${d.buyer} ${qtyPerPeriod} of ${d.instrument} a period`,
+    });
+  } else {
+    ctx.restate(standing.id, terms);
+  }
   ctx.record(
-    SUPPLY_STRUCK,
+    standing === undefined ? SUPPLY_STRUCK : SUPPLY_EXTENDED,
     [d.buyer, d.seller, String(d.instrument)],
     {
+      contract: standing === undefined ? '' : standing.id,
       buyer: d.buyer,
       seller: d.seller,
       instrument: String(d.instrument),
-      qtyPerPeriod: d.qtyPerPeriod,
+      qtyPerPeriod,
       pricePerPiece: d.pricePerPiece,
-      breakCost,
+      breakCost: terms.breakCost,
       until: formatCivil(d.until),
+      why: standing === undefined ? 'struck' : 'the two of them met again and restated it',
     },
     true,
+  );
+}
+
+/** Law 2: what leaving it costs — the deliveries it promises, for the periods the two of them count. */
+function costOfLeaving(
+  ctx: MechanismContext,
+  qtyPerPeriod: Qty,
+  pricePerPiece: PerPiece,
+  ccy: CurrencyCode,
+): number {
+  return ctx.registry.payable(
+    scale(
+      valueAt(pricePerPiece, qtyPerPeriod, ccy, 'what a period of it comes to'),
+      asRatio(ctx.params.periods(SUPPLY_PARAMS.breakPeriods), 'the periods of it a break costs'),
+      'what walking away from it costs',
+    ),
   );
 }
 
@@ -441,6 +486,57 @@ function breaks(ctx: MechanismContext, row: Agreement & { terms: SupplyTerms }):
 }
 
 /** Law 8: how many periods of it are left, from the two dates and the one calendar. */
+/**
+ * Law 4 (17f.3): A CONTRACT THAT RAN OUT IS EXTENDED, and it is the SAME ROW.
+ *
+ * The owner's ask was that contracts not multiply. A relationship that both of them still want does
+ * not become a second row beside the first: its terms are restated — a new day, and whatever the two
+ * of them now agree the thing is worth — and its identity does not move (Register F1's rule for an
+ * instrument, and the same reason).
+ *
+ * WHAT THEY NOW AGREE is one offer and one answer, which is what a bilateral price IS when there is
+ * no book in front of them: the seller would go on at what it expects to get, and the buyer goes on
+ * if that is at or under what it expects to pay. Two parties whose expectations have crossed the
+ * other way let it run out, and either of them may meet somebody else in the session (Law 3: the
+ * price is still what two parties agreed, and no rule renewed it at the old one).
+ */
+function extended(ctx: MechanismContext, row: Agreement & { terms: SupplyTerms }): boolean {
+  const t = row.terms;
+  const asks = expectedPriceOf(ctx.participant(row.debtor), t.instrument);
+  const pays = expectedPriceOf(ctx.participant(row.creditor), t.instrument);
+  if (!asks.some || !pays.some || asks.value <= 0) return false;
+  if (pays.value < asks.value) return false;
+  const until = addDays(
+    ctx.calendar.startOf(ctx.period),
+    ctx.params.periods(SUPPLY_PARAMS.term) * ctx.calendar.periodDays,
+  );
+  const terms: SupplyTerms = {
+    ...t,
+    pricePerPiece: asks.value,
+    until,
+    breakCost: costOfLeaving(ctx, t.qtyPerPeriod, asks.value, row.ccy),
+  };
+  ctx.restate(row.id, terms);
+  ctx.record(
+    SUPPLY_EXTENDED,
+    [row.creditor, row.debtor, String(t.instrument)],
+    {
+      contract: row.id,
+      buyer: row.creditor,
+      seller: row.debtor,
+      instrument: String(t.instrument),
+      qtyPerPeriod: t.qtyPerPeriod,
+      was: t.pricePerPiece,
+      pricePerPiece: asks.value,
+      breakCost: terms.breakCost,
+      until: formatCivil(until),
+      why: 'its term ran out and both of them wanted another',
+    },
+    true,
+  );
+  return true;
+}
+
 function periodsLeft(ctx: MechanismContext, t: SupplyTerms): number {
   const today = ctx.calendar.startOf(ctx.period);
   if (compareCivil(t.until, today) <= 0) return 0;
@@ -473,6 +569,7 @@ export function supply(): SystemModule {
         writes: [
           { kind: 'event', name: SUPPLY_PRINT },
           { kind: 'event', name: SUPPLY_STRUCK },
+          { kind: 'event', name: SUPPLY_EXTENDED },
         ],
         run: (ctx: MechanismContext): void => {
           for (const v of ctx.venues.filter(mine)) {
@@ -488,6 +585,7 @@ export function supply(): SystemModule {
         anchor: { after: 'markets' },
         reads: [],
         writes: [
+          { kind: 'event', name: SUPPLY_EXTENDED },
           { kind: 'event', name: SUPPLY_DELIVERED },
           { kind: 'event', name: SUPPLY_SHORT },
           { kind: 'event', name: SUPPLY_BROKE },
@@ -502,13 +600,15 @@ export function supply(): SystemModule {
               continue;
             }
             if (periodsLeft(ctx, row.terms) <= 0) {
-              ctx.endAgreement(row.id, 'its term ran out');
-              ctx.record(
-                SUPPLY_ENDED,
-                [row.creditor, row.debtor],
-                { contract: row.id, why: 'its term ran out' },
-                true,
-              );
+              if (!extended(ctx, row)) {
+                ctx.endAgreement(row.id, 'its term ran out and neither of them wanted another');
+                ctx.record(
+                  SUPPLY_ENDED,
+                  [row.creditor, row.debtor],
+                  { contract: row.id, why: 'its term ran out and neither of them wanted another' },
+                  true,
+                );
+              }
               continue;
             }
             if (breaks(ctx, row)) continue;
@@ -519,7 +619,7 @@ export function supply(): SystemModule {
     ],
     participants: [],
     venueParticipants: [{ partyKind: FIRM, orders: (view, venue) => contractOrders(view, venue) }],
-    families: [],
+    families: [oneEach()],
     /**
      * A BOOK FOR THE THINGS ANYBODY BUYS TO MAKE SOMETHING ELSE, and for nothing else.
      *
@@ -579,4 +679,45 @@ function paramsOf(): ParamDecl[] {
       why: 'What walking away costs, as periods of what was promised — the convention the two of them strike it by, turned into a number of pieces of money ON THIS CONTRACT when it is signed. It is never applied to a contract afterwards: what a party owes for leaving is what it agreed to, and this is what both of them meant by that.',
     },
   ];
+}
+
+/**
+ * Law 4, Audit A1 (17f.3): THE COUNT SAYS SO IF THEY EVER MULTIPLY.
+ *
+ * A FORBID is as valuable as a mechanism and it breaks silently, so it is guarded: at most one live
+ * contract per (buyer, seller, thing), which is what "extended, never multiplied" means measured
+ * rather than asserted. A world that starts making two rows out of one relationship says so here,
+ * with both names and the count, and nothing repairs it (Audit D3).
+ */
+export function oneEach(): Family {
+  return {
+    name: 'names',
+    contributor: 'supply',
+    spec: 'Law 4 Goods C3',
+    built: true,
+    check: (view): Violation[] => {
+      const out: Violation[] = [];
+      const seen = new Map<string, number>();
+      for (const a of view.agreements.ofKind(SUPPLY)) {
+        if (a.state !== 'performing' || !isSupplyTerms(a.terms)) continue;
+        const key = `${String(a.creditor)}|${String(a.debtor)}|${String(a.terms.instrument)}`;
+        const had = seen.get(key);
+        seen.set(key, had === undefined ? 1 : had + 1);
+      }
+      for (const [key, n] of seen) {
+        if (n <= 1) continue;
+        const [buyer, seller, instrument] = key.split('|');
+        out.push({
+          family: 'names',
+          spec: 'Law 4',
+          owner: String(buyer),
+          size: n,
+          unit: 'contracts',
+          period: view.period,
+          message: `${String(buyer)} and ${String(seller)} have ${n} live contracts for ${String(instrument)}: one relationship with two answers to what was agreed (17f.3)`,
+        });
+      }
+      return out;
+    },
+  };
 }

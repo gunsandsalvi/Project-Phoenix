@@ -242,11 +242,14 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/money-market/resolution.ts': 3,
   'mechanisms/money-market/session.ts': 2,
   'mechanisms/property/index.ts': 1,
-  // 17f: EACH SIDE'S OWN view, for that side's own decision whether to break its own contract
-  // (Law 2). The buyer reads what the buyer expects to pay and the seller what the seller expects
-  // to get; neither is shown the other's, and the two of them reaching opposite answers out of
-  // their own outlooks is the mechanism (§46 A3). It sees no counterparty's state.
-  'mechanisms/supply/index.ts': 1,
+  // 17f: EACH SIDE'S OWN view, for that side's own decision — whether to break its own contract
+  // (Law 2) and whether to go on with it when the term runs out (17f.3). The buyer reads what the
+  // buyer expects to pay and the seller what the seller expects to get; neither is shown the
+  // other's number, and the two of them reaching opposite answers out of their own outlooks is the
+  // mechanism (§46 A3). What a BILATERAL negotiation has no door for yet is the offer itself — the
+  // seller's price reaching the buyer is a disclosure this world cannot express, so the phase holds
+  // both views at once. It is on 21.57's list and it is the honest count.
+  'mechanisms/supply/index.ts': 3,
   'mechanisms/ratings/index.ts': 2,
   'mechanisms/reporting/guidance.ts': 1,
   'mechanisms/reporting/statement.ts': 1,

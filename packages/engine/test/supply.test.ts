@@ -143,6 +143,28 @@ describe('a contract delivers every period, both legs (Law 5, XI-5)', () => {
   });
 });
 
+describe('a pair has one contract for one thing, ever (Law 4, 17f.3)', () => {
+  it('restates the row it has instead of opening a second, and the audit counts them', () => {
+    const { w, signed } = world('supply-once', false);
+    expect(signed).toBeDefined();
+    if (signed === undefined) return;
+    // Every live contract in the world, by the three things that identify one. The world strikes
+    // its own in its own books, so this is a count over all of them and not over the probe's.
+    const live = [...w.agreements.ofKind(SUPPLY)].filter(
+      (a) => a.state === 'performing' && isSupplyTerms(a.terms),
+    );
+    expect(live.length).toBeGreaterThan(0);
+    const keys = live.map((a) =>
+      [String(a.creditor), String(a.debtor), String((a.terms as { instrument: unknown }).instrument)].join('|'),
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+    // And the FORBID is guarded rather than asserted here: the family that would say so is built.
+    const report = w.step().audit.families.find((f) => f.contributions.includes('supply'));
+    expect(report?.built).toBe(true);
+    expect(report?.violations.filter((v) => v.message.includes('live contracts for')).length).toBe(0);
+  });
+});
+
 describe('breaking one costs what was agreed (Law 2)', () => {
   it('is paid in one instruction, by whichever side is worse off, and the row ends', () => {
     const { w, signed } = world('supply-dear', true);
