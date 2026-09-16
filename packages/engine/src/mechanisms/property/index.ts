@@ -38,7 +38,7 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import { period } from '../../calendar/calendar.js';
 import { addDays, compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { partyId, type CurrencyCode, type InstrumentId, type PartyId, type RegionId } from '../../core/ids.js';
+import { moneyInstrumentId, partyId, type CurrencyCode, type InstrumentId, type PartyId, type RegionId } from '../../core/ids.js';
 import {
   amountOf,
   asPerPiece,
@@ -235,14 +235,29 @@ function rentOnGrid(view: ParticipantView, ccy: CurrencyCode, perPiece: PerPiece
  * THE LETTINGS BOOK
  * ------------------------------------------------------------------------------------------ */
 
+/** The last rent this book struck and when, off its own record — carried onto a print that struck none. */
+function lastStruck(ctx: MechanismContext, venue: VenueDecl): { readonly rentPerUnit?: number; readonly struckIn?: number } {
+  const said = ctx.journal.forSubject(RENT_PRINT, String(venue.id));
+  for (let n = said.length - 1; n >= 0; n -= 1) {
+    const e = said[n];
+    const rent = e?.data['rentPerUnit'];
+    const at = e?.data['struckIn'];
+    if (typeof rent === 'number' && rent > 0 && typeof at === 'number') return { rentPerUnit: rent, struckIn: at };
+  }
+  return {};
+}
+
 function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   const region = venue.key['region'] as RegionId | undefined;
   if (region === undefined) return;
   const posted = ctx.posted(venue.id);
   const orders = posted.filter((o) => o.price !== 'market');
   const outcome = clear(orders, 'proRata', 'marginalBid');
+  // Law 8, XI-6: a session that does not clear leaves the LAST rent struck on the record with the
+  // period it was struck in, so a reader sees the level and how stale it is, never a gap.
+  const carried = lastStruck(ctx, venue);
   if (!isCleared(outcome)) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind, bids: orders.filter((o) => o.side === 'buy').length, asks: orders.filter((o) => o.side === 'sell').length }, true);
+    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind, ...carried, bids: orders.filter((o) => o.side === 'buy').length, asks: orders.filter((o) => o.side === 'sell').length }, true);
     return;
   }
   let struck: PerPiece | undefined;
@@ -251,7 +266,7 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
     if (struck === undefined || f.at < struck) struck = f.at;
   }
   if (struck === undefined) {
-    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: 'noDemand' }, true);
+    ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: 'noDemand', ...carried }, true);
     return;
   }
   // Clearing C3: landlords with the least to ask are let first, tenants with the most to pay first.
@@ -307,7 +322,7 @@ function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   ctx.record(
     RENT_PRINT,
     [venue.id],
-    { venue: venue.id, region, outcome: 'cleared', rentPerUnit: struck, units: outcome.volume, leases: signed, asks: orders.filter((o) => o.side === 'sell').map((o) => o.price) },
+    { venue: venue.id, region, outcome: 'cleared', rentPerUnit: struck, struckIn: ctx.period, units: outcome.volume, leases: signed, asks: orders.filter((o) => o.side === 'sell').map((o) => o.price) },
     true,
   );
 }
@@ -354,7 +369,7 @@ function collect(ctx: MechanismContext): void {
  * BUILDING TO LET, AND THE LOAN SECURED ON IT
  * ------------------------------------------------------------------------------------------ */
 
-interface Build {
+export interface Build {
   readonly good: InstrumentId;
   readonly asking: PerPiece;
   readonly bid: PerPiece;
@@ -374,7 +389,7 @@ interface Build {
  * the buildings its money reaches at the asking, on the ground it holds — and for the ground first
  * where it holds too little (15.1).
  */
-function buildOf(view: ParticipantView, ccy: CurrencyCode): Option<Build> {
+export function buildOf(view: ParticipantView, ccy: CurrencyCode): Option<Build> {
   if (spareOf(view) > 0) return none<Build>();
   const rent = rentStruckIn(view, view.self.region);
   if (!rent.some) return none<Build>();
@@ -624,7 +639,16 @@ export function property(): SystemModule {
         const count = ctx.params.count(PROPERTY_PARAMS.landlordsPerBank);
         if (count <= 0) continue;
         const id = landlordIdFor(bank.id);
-        if (ctx.parties.has(id)) continue;
+        const ccy = ctx.registry.currencyOf(region);
+        // 15.4: the foundation makes the cell and its rooms before the shops lease them; what it
+        // cannot give there is the cash, which comes off the bank's sheet before it is built. So the
+        // cash is given here, once, to a cell that has none — and a world without the foundation
+        // gets the whole landlord here, as before.
+        const opening = heldAsMoney(ctx.registry.payable(valueAt(newPrice.value.price, asQty(1, 'one building'), 'a building a member')), 'what it opens with');
+        if (ctx.parties.has(id)) {
+          if (ctx.register.quantity(id, moneyInstrumentId(ctx.parties.get(bank.id).id, ccy)) <= 0) ctx.endowMoney(id, ccy, opening);
+          continue;
+        }
         ctx.parties.add({
           id,
           kind: LANDLORD,
@@ -647,9 +671,9 @@ export function property(): SystemModule {
           // Capital Programme A3, A6: carried at the straight line it has been on since it went into service.
           ctx.endowUnits(id, vintage, units, (newPrice.value.price * (life - age)) / life);
         });
-        // A landlord opens with a period of rent in hand so a building it wants is not its first
+        // A landlord opens with a building's worth in hand so a building it wants is not its first
         // question to the bank: one unit's asking a member, the smallest stock that lets it act.
-        ctx.endowMoney(id, ctx.registry.currencyOf(region), heldAsMoney(ctx.registry.payable(valueAt(newPrice.value.price, asQty(1, 'one building'), 'a building a member')), 'what it opens with'));
+        ctx.endowMoney(id, ccy, opening);
       }
     },
   };

@@ -46,10 +46,14 @@ export const PROPERTY_EDGES = {
 export const RENT_PRINT = 'property.rent';
 const FIRM_PLAN = 'firms.plan';
 
-/** 15.3, Law 19: the rent a place's book last struck, per unit of premises per period, or nothing. */
+/**
+ * 15.3, Law 19, Law 8: the rent a place's book LAST STRUCK, per unit of premises per period, or
+ * nothing where it has never struck one. A print that cleared nothing carries the last level and
+ * the period it was struck in (`struckIn`), so the level is there and its age is visible.
+ */
 export function rentStruckIn(reads: { lastPublicAbout(kind: string, subject: string): Option<Event> }, region: RegionId): Option<PerPiece> {
   const said = reads.lastPublicAbout(RENT_PRINT, String(lettingsVenue(region)));
-  if (!said.some || said.value.data['outcome'] !== 'cleared') return none<PerPiece>();
+  if (!said.some) return none<PerPiece>();
   const rent = said.value.data['rentPerUnit'];
   return typeof rent === 'number' && rent > 0 ? some(asPerPiece(rent, 'the rent a unit of premises let at, per period')) : none<PerPiece>();
 }

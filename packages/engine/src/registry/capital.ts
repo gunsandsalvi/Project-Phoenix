@@ -328,7 +328,7 @@ export interface PlantOffer {
  */
 export function project(
   view: ParticipantView,
-  needs: readonly PlantNeed[],
+  allNeeds: readonly PlantNeed[],
   vintages: readonly HeldVintage[],
   /** A6, D1: what its plant will still let it run at NEXT period, computed once and read here. */
   capacityNext: Qty,
@@ -347,6 +347,8 @@ export function project(
   /** C1 (15.1): the ground of its place, where the world has one. */
   ground?: GroundForProject,
 ): Option<Project> {
+  // 15.4: what it BUILDS is the plant it owns; a need met by a lease is the lettings book's (Housing A3).
+  const needs = allNeeds.filter((n) => n.leased !== true);
   if (needs.length === 0 || offers.length === 0) return none<Project>();
   // B4: the spend is irreversible, so what it builds for is what it would run at less the width of
   // its own recent surprises. A firm whose expectation is inside its own dispersion waits, and

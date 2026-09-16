@@ -12098,3 +12098,34 @@ bank resolution's merge leaves a lease below a piece a landlord (21.33); no buil
 in the rig, so no building is built to let after the opening (21.34).
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+
+## Item 15.4 — A retail firm sells from a lease
+
+A shop owned the room it sold from. Its recipe's premises are a LEASED need now — a project never
+builds them and its bid for room is the lettings book's — and the foundation seeds the landlords of
+each bank before the firms' plant, so a shop opens holding a lease of its room from the landlords
+of its bank instead of the vintages: whole rooms a landlord, rounded up, at the landlords' cost a
+room a period until the lease term's day. Two world stops were found and fixed on the way: the
+kernel booked a cell's marks per member at the total over its lots (a landlord cell of two hundred
+wore its buildings two hundred times a period and was insolvent in five; every household cell's
+equity walk left its balance sheet by the weight on every mark), and the securities-lending module
+marked paper at this period from a phase before its market ran (21.19, closed: every mark there is
+the last print now).
+
+**Measured.** `property.test.ts`, four green: the rig's three shops open leasing 400, 200 and 200
+rooms at 159 a room a period from the landlords of their banks, own no premises, run on the leased
+room and pay every rent while the landlords live. The eighteen suites, run in two halves: 73 red of
+200, from 76 — four funds tests green now that a cell's marks are booked per member (the NAV falls
+with the book, is a read of the book over the shares, pays the manager out of the holders, and
+shows on the surface), and one red that was green: `control.test.ts` *bids for nothing* times out
+at 180 s (21.36). A third stop was found on the changed path and fixed where it was: `banks.prime`
+priced a broker's line off every published default, as every line the banks module writes does, and
+had not declared the read — the research suite threw `Clearing F1.a` at the first default that ran
+before it, and declares it now.
+
+**Findings.** Household cells' equity walks still leave their balance sheets by the weight at the
+settlement side (21.35). A dead firm's estate re-presents every claim on it each period of its
+programme, each failed maturity writes an arrear, and each arrear matures, fails and writes another:
+the control rig goes from 1,200 ledger records a period to 27,000 by period 26 (21.36).
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

@@ -28,6 +28,7 @@ import {
   asPerMember,
   asPerPiece,
   asRatio,
+  over,
   type Cash,
   minus,
   negated,
@@ -116,8 +117,20 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     } else if (written !== undefined) {
       moved = toWhatTheKindSays(inst, h, period, d);
     } else continue;
-    const { delta, through, carried } = moved;
-    if (delta === 0) continue;
+    const { delta: total, through: throughTotal, carried } = moved;
+    if (total === 0) continue;
+    /**
+     * XI-15, 0f.1 (15.4): THE REGISTER HOLDS A CELL'S TOTAL AND ITS EQUITY ACCOUNT IS PER MEMBER.
+     * A mark over the lots is over the whole cell's units, so what one member's account moves by
+     * is that over the weight — as `revalueRows` has it, and as the issuer's side below crosses
+     * back by the weight. This booked the total per member: a landlord cell of two hundred wore
+     * its buildings two hundred times over a period and was insolvent in five, and every household
+     * cell's equity walk left its own balance sheet by the weight on every mark (the `accounts`
+     * family's finding, Audit B5).
+     */
+    const perMember = asRatio(weightOf(d.parties.get(h.holder)), 'the members the holding is over');
+    const delta = over(total, perMember, 'what one member’s share moved by');
+    const through = over(throughTotal, perMember, 'what one member’s share passed through');
     // A MARK IS IN THE INSTRUMENT'S MONEY AND AN ACCOUNT IS IN ITS PARTY'S, so the move between
     // them is a conversion — the one the decomposition above already says this step makes.
     const toHolder = intoOwnMoney(h.holder, inst.ccy, period, d);
@@ -125,8 +138,6 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: h.holder,
       period,
       cycle,
-      // XI-15: a mark moves a HOLDING, and a cell's holdings are per member — so what a
-      // revaluation does to an equity account is already in that denomination.
       delta: asPerMember<'money:piece'>(
         scale(delta, toHolder, 'what it did in its holder’s money'),
         'what one member’s account moves by',
@@ -426,18 +437,20 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
     if (carried === 0) continue;
     // Currency D2: THE POSITION TIMES WHAT THE RATE DID, and a rate is a pure number — which is
     // what makes this a `scale` of the position rather than an addition of two moneys.
-    const delta = scale(carried, minus(now, was, 'what the rate moved by'), 'what it did');
-    if (delta === 0) continue;
+    const total = scale(carried, minus(now, was, 'what the rate moved by'), 'what it did');
+    if (total === 0) continue;
+    // XI-15, 0f.1 (15.4): the position is the cell's total; the account is per member.
+    const perMember = asRatio(weightOf(d.parties.get(h.holder)), 'the members the position is over');
+    const delta = over(total, perMember, 'what one member’s share moved by');
     const move = {
       party: h.holder,
       period,
       cycle,
-      // XI-15: a foreign position is a HOLDING, and a cell's holdings are per member.
       delta: asPerMember<'money:piece'>(delta, 'what one member’s account moves by'),
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.
       through: absolute(
-        scale(carried, now, 'the position in its holder\u2019s money'),
+        over(scale(carried, now, 'the position in its holder\u2019s money'), perMember, 'one member’s share of it'),
         'what it passed through',
       ),
     };

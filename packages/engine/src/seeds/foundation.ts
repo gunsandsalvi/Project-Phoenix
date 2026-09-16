@@ -19,7 +19,7 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
-import { downToNamed, toTickOf } from '../core/tick.js';
+import { asQty, downTick, downToNamed, toTickOf, upTick } from '../core/tick.js';
 import { prng } from '../rng/prng.js';
 import type { RegionDecl } from '../registry/registry.js';
 import { drawMap, type MapSpec } from './map.js';
@@ -86,6 +86,7 @@ import {
   asAmount,
   asNamed,
   asPerNamedUnit,
+  asPerPiece,
   asRatio,
   asStated,
   type Cash,
@@ -127,7 +128,8 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { land } from '../mechanisms/land/index.js';
-import { property } from '../mechanisms/property/index.js';
+import { LANDLORD, LEASE_ROW, PREMISES, PROPERTY_PARAMS, landlordIdFor, property } from '../mechanisms/property/index.js';
+import { isPlant, plantTerms, plantUnitId, type LeaseTerms, type CapitalKindDecl } from '../registry/physical.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
@@ -346,6 +348,55 @@ export const COUNTRIES: readonly CountrySeed[] = [
 export const ABROAD: readonly CountrySeed[] = COUNTRIES.filter((c) => c.country !== HOME);
 
 /** The country a region is in, off the same list. A region's money is its country's (Currency A2). */
+/**
+ * Housing A3, XI-15, Law 8 (15.4): a shop's opening lease — from the landlords of its bank, for the
+ * rooms its plant comes to rounded UP to whole rooms a landlord (a cell lets every member alike),
+ * at the landlords' cost a room a period on the money's grid, until the lease term's day. Nothing
+ * where the place has no landlords or they have no rooms left: the shop then owns its room.
+ */
+function leaseFromLandlords(
+  ctx: SeedContext,
+  letAtSeed: Map<PartyId, number>,
+  firm: PartyId,
+  region: RegionId,
+  kind: CapitalKindDecl,
+  rooms: number,
+  newPrice: number,
+  life: number,
+): boolean {
+  if (!ctx.registry.partyKinds.has(LANDLORD)) return false;
+  const landlord = landlordIdFor(ctx.parties.get(firm).bank);
+  if (!ctx.parties.has(landlord)) return false;
+  const cell = ctx.parties.get(landlord);
+  if (cell.representation !== 'cell' || cell.weight <= 0) return false;
+  const pieces = rooms * ctx.registry.subdivision(plantUnitId(kind.id));
+  const perMember = upTick(pieces / cell.weight);
+  const units = asQty(perMember * cell.weight, 'the rooms it leases, whole a landlord');
+  let held = 0;
+  for (const h of ctx.register.holdingsOf(landlord)) {
+    const i = ctx.instruments.get(h.instrument);
+    if (i.status.live && isPlant(i) && plantTerms(i).capitalKind === kind.id) held += ctx.register.quantity(landlord, h.instrument);
+  }
+  const let_ = zeroIfNone(letAtSeed.get(landlord));
+  if (held - let_ < units) return false;
+  const ccy = ctx.registry.currencyOf(region);
+  const sub = ctx.registry.subdivision(plantUnitId(kind.id));
+  const perRoom = ctx.registry.onQuoteGrid(MONEY_KIND, ccy, asPerPiece(newPrice / life, 'what a room costs its landlord a period'));
+  const rentPerUnit = asPerPiece(perRoom / sub, 'the rent a piece of it a period');
+  if (rentPerUnit <= 0 || downTick(rentPerUnit * perMember) < 1) return false;
+  const terms: LeaseTerms = {
+    kind: LEASE_ROW,
+    region,
+    capitalKind: kind.id,
+    units,
+    rentPerUnit,
+    until: addDays(ctx.calendar.epoch, ctx.params.periods(PROPERTY_PARAMS.leaseTerm) * ctx.calendar.periodDays),
+  };
+  ctx.owes({ debtor: firm, creditor: landlord, ccy, owed: 0, terms, why: `${String(firm)} opens holding a lease of ${String(units)} ${kind.id} from ${String(landlord)}` });
+  letAtSeed.set(landlord, let_ + units);
+  return true;
+}
+
 export const countryOfRegion = (region: RegionId): CountrySeed => {
   const c = COUNTRIES.find((row) => String(region).startsWith(`${row.country}.`));
   if (c === undefined) throw new Missing('13c.1', `${region} is in no country this world declares`);
@@ -1867,6 +1918,51 @@ export function foundationSeedFor(
           });
         }
       }
+      /**
+       * Housing A3, Seed C4, XI-15 (15.3, 15.4): THE LANDLORDS OF EACH BANK, before the firms' plant
+       * — because a shop opens holding a LEASE of its room from them (15.4), and a lease needs the
+       * landlord and its rooms to exist first. A cell of landlords per bank, each member holding its
+       * opening premises over three vintages at what is left of a new building's price, and a
+       * building's worth of cash. A world assembled without the property module has no such kind.
+       */
+      if (ctx.registry.partyKinds.has(LANDLORD)) {
+        const kind = CAPITAL_KINDS.find((k) => k.id === PREMISES);
+        for (const bank of banks) {
+          if (kind === undefined || !ctx.registry.instrumentKinds.has(plantKindId(kind.id))) break;
+          const region = bank.region;
+          const good = goodId(kind.madeFrom, region);
+          if (!ctx.instruments.has(good)) continue;
+          const count = ctx.params.count(PROPERTY_PARAMS.landlordsPerBank);
+          const id = landlordIdFor(bank.id);
+          if (count <= 0 || ctx.parties.has(id)) continue;
+          ctx.parties.add({
+            id,
+            kind: LANDLORD,
+            representation: 'cell',
+            region,
+            name: `${String(count)} landlords at ${String(bank.id)}`,
+            bank: bank.id,
+            weight: count,
+            key: { region: String(region), bank: String(bank.id) },
+            status: { alive: true, standing: 'good' },
+          });
+          const newPrice = ctx.params.pricePerUnit(openingPrice(kind.madeFrom));
+          const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
+          const perMember = ctx.params.count(PROPERTY_PARAMS.premisesPerLandlord) * ctx.registry.subdivision(plantUnitId(kind.id));
+          const perVintage = splitOnTick(perMember, SEED_PLANT_AGES.map(() => 1));
+          SEED_PLANT_AGES.forEach((age, at) => {
+            const units = perVintage[at];
+            if (units === undefined || units <= 0) return;
+            const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
+            const vintage = seedVintage(ctx, kind, region, serviceDate);
+            ctx.endowUnits(id, vintage, units, (newPrice * (life - age)) / life);
+          });
+          // Its opening cash is the property module's to give (its seed runs after the banks' sheets
+          // are built): money deposited here would come off what the households have to hold.
+        }
+      }
+      // 15.4: what the landlords of each bank have let at the opening, so no room is let twice.
+      const letAtSeed = new Map<PartyId, number>();
       for (const row of madeHere) {
         // A firm whose good this world does not make opens with nothing, because there is nothing
         // for it to hold: the seed endows what exists and never brings an instrument into being to
@@ -1939,6 +2035,15 @@ export function foundationSeedFor(
           if (mine <= 0) continue;
           const newPrice = ctx.params.pricePerUnit(openingPrice(kind.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
+          /**
+           * Housing A3, Seed C4 (15.4): A SHOP SELLS FROM A LEASE. Plant a recipe says is LEASED is
+           * not the firm's: it opens holding a lease of it from the landlords of its bank — a row
+           * with a term, at the landlords' cost a room a period (what a new one costs over its
+           * life, B1.a's floor), whole rooms a landlord — and the landlords hold the rooms. A place
+           * whose landlords cannot cover the lease leaves the shop owning its room, as before, and
+           * the seed says so.
+           */
+          if (need.leased === true && leaseFromLandlords(ctx, letAtSeed, firm, here, kind, mine, newPrice, life)) continue;
           // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
           // division that does not come out (core/tick.ts).
           const perVintage = splitOnTick(

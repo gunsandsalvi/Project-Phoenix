@@ -84,6 +84,7 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
       plant: d.plant.map((r) => ({
         capitalKind: r.capitalKind,
         unitsPerUnitPerPeriod: plantParam(d.subUnit, r.capitalKind),
+        ...(r.leased === true ? { leased: true } : {}),
       })),
       yieldRate: yieldParam(d.subUnit),
       // B4: the facts this line's yield stands in, carried as the names the environment publishes.

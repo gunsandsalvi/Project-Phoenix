@@ -1537,7 +1537,12 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       // this morning can put the money to work this afternoon, and one that is CALLED this morning
       // knows what it must sell before the books open (C3, XI-2).
       anchor: { after: 'lending.write' },
-      reads: [{ kind: 'event', name: 'prime.wanted', of: 'anyPeriod' }],
+      // C1.b: the broker's quote is priced off every default anybody published, like every other
+      // line this module writes — a read this phase makes for itself, so it is declared here.
+      reads: [
+        { kind: 'event', name: 'credit.default', of: 'anyPeriod' },
+        { kind: 'event', name: 'prime.wanted', of: 'anyPeriod' },
+      ],
       writes: [{ kind: 'event', name: 'prime.line' }],
       run: (ctx: MechanismContext): void => {
         runPrime(ctx, primeDeps(rows), FUND);

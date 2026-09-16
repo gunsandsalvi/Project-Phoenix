@@ -1657,3 +1657,14 @@ reason is read off its own published plan (`planOf`: `firms.plan`, bound on `pre
 seed runs after the property seed (`land` requires `property`) and gives cells the ground under
 their opening plant per member where it comes to whole hectares.
 
+### A shop sells from a lease; a cell's marks are per member (item 15.4)
+
+`RecipePlantDecl.leased` (goods data) → `RecipePlant.leased` → `PlantNeed.leased`: a need a lease
+meets and a project never builds (`registry/capital.ts project` filters it out of the bundle). The
+foundation seeds the landlord cells and their premises before the firms' plant (`seedLandlords`
+block) and `leaseFromLandlords` opens a shop's lease instead of its vintages; the landlords' cash is
+given in the property module's seed, after the banks' sheets are built. In `world/revalue.ts` the
+holdings and foreign-position marks of a cell are divided by its weight before the equity account
+moves (the register holds totals, the account is per member, 0f.1) — as `revalueRows` always did.
+`securities-lending` marks at the last print (`lastMarkOf`).
+

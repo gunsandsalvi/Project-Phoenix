@@ -74,6 +74,8 @@ export interface RecipePlantDecl {
   /** Capital Programme A4: the kind of plant. Plant of one kind is not plant of another. */
   readonly capitalKind: string;
   readonly unitsPerUnitPerPeriod: number;
+  /** 15.4: a shop sells from a LEASE — this plant is a landlord's, held under a lease, never bought. */
+  readonly leased?: boolean;
   readonly why: string;
 }
 
@@ -2128,7 +2130,7 @@ function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
     learning: 0.1,
     learningWhy: '12c.1, Firm A3: a 93% curve — hours per unit fall about a fourteenth with every doubling of what the shop has sold. A shop is a service delivered over a counter and most of its hours do not compress; what is learned is the running of the place (Dutton and Thomas 1984). TECHNOLOGY, one exponent on cumulative pieces.',
     plant: [
-      { capitalKind: 'premises', unitsPerUnitPerPeriod: d.premises, why: 'Capital Programme A2: the shop. A service is made where it is bought and so, very nearly, is a sale.' },
+      { capitalKind: 'premises', unitsPerUnitPerPeriod: d.premises, leased: true, why: 'Capital Programme A2, 15.4: the shop. A service is made where it is bought and so, very nearly, is a sale — and a shop sells from a LEASE: the room is a landlord\u2019s, held under a lease with a term, never bought.' },
     ],
     yieldRate: d.yieldRate,
     yieldWhy: 'B4: breakage, theft and what is damaged getting it onto the shelf.',

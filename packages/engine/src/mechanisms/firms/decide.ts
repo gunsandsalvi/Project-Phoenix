@@ -238,6 +238,8 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
       ...terms.recipe.plant.map((r) => ({
         capitalKind: r.capitalKind,
         unitsPerUnitPerPeriod: view.params.ratio(r.unitsPerUnitPerPeriod),
+        // 15.4: a shop's room is leased, never bought — the project does not build it.
+        ...(r.leased === true ? { leased: true } : {}),
       })),
       // Commodities Spot A3, Capital Programme A2, A4 (13c): ROOM IS PLANT AND IT BINDS LIKE PLANT.
       // A thing that takes covered space needs somewhere to be when the period ends, and the space

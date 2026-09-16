@@ -94,6 +94,8 @@ export interface RecipeInput {
 export interface RecipePlant {
   readonly capitalKind: string;
   readonly unitsPerUnitPerPeriod: ParamId;
+  /** 15.4: held under a lease from a landlord, never bought — a shop sells from a lease. */
+  readonly leased?: boolean;
 }
 
 /**
@@ -463,6 +465,8 @@ export interface PlantNeed {
   /** Units of plant of that kind that make one unit of output per period. */
   /** A count over a count — plant per unit of output per period — so a `Ratio` (Law 2, Law 8). */
   readonly unitsPerUnitPerPeriod: Ratio;
+  /** 15.4: a need met by a lease and never by a purchase; a project does not build it. */
+  readonly leased?: boolean;
 }
 
 /** One vintage a party holds, as the register has it (A6). */

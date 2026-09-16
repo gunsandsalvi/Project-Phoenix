@@ -36,6 +36,7 @@ import {
   amountOf,
   asCash,
   asPerPiece,
+  type PerPiece,
   heldAsMoney,
   asRatio,
   type Cash,
@@ -385,8 +386,8 @@ function openLoan(
 ): void {
   if (d.lender === d.borrower) return;
   // XI-6: what it is worth is what the market printed for it, at a price a reader can look up.
-  const mark = ctx.valuation.markPerUnit(d.instrument, ctx.period);
-  if (mark <= 0) return;
+  const mark = lastMarkOf(ctx, d.instrument);
+  if (mark === undefined) return;
   const haircut = haircutOf(ctx.participant(d.lender), d.instrument, d.collateral);
   if (!haircut.some) return;
   const worth = valueAt(mark, d.units, 'what the borrowed paper is worth');
@@ -549,10 +550,25 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
  * covered while it is out. Both are real money between the same two named parties every period, and
  * they are two payments because they are two obligations.
  */
+/**
+ * XI-6, Clearing F1.a (21.19, fixed at 15.4): WHAT THE PAPER IS WORTH TO A LENDER — the last print
+ * at or before now, which is the read a lender can make from a phase that sits before the paper's
+ * own market has run this period. Asking for THIS period's mark from here threw `NotYetProduced`
+ * and stopped the world (period 55 of the `growth` rig; period 10 of the opens rig once cells'
+ * marks were booked per member). Money is worth one of itself; a line nothing has ever printed is
+ * worth nothing a lender can lend against, which is a refusal and not a zero.
+ */
+function lastMarkOf(ctx: MechanismContext, instrument: InstrumentId): PerPiece | undefined {
+  const i = ctx.instruments.get(instrument);
+  if (ctx.registry.instrumentKind(i.kind).pricing === 'money') return asPerPiece(1, 'money is worth one of itself');
+  const print = ctx.prices.latest(instrument, ctx.period);
+  return print.some && print.value.price > 0 ? print.value.price : undefined;
+}
+
 export function charge(ctx: MechanismContext): void {
   for (const loan of loansOpen(ctx)) {
-    const mark = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
-    if (mark <= 0) continue;
+    const mark = lastMarkOf(ctx, loan.instrument);
+    if (mark === undefined) continue;
     const fee = downTick(
       scale(
         valueAt(mark, loan.units, 'what is out on loan'),
@@ -605,9 +621,9 @@ export function charge(ctx: MechanismContext): void {
  */
 export function remark(ctx: MechanismContext): void {
   for (const loan of loansOpen(ctx)) {
-    const onLoan = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
+    const onLoan = lastMarkOf(ctx, loan.instrument);
     const onPledge = ctx.prices.latest(loan.collateral, ctx.period);
-    if (onLoan <= 0 || !onPledge.some || onPledge.value.price <= 0) continue;
+    if (onLoan === undefined || !onPledge.some || onPledge.value.price <= 0) continue;
     const call = callFor({
         // C1: the paper at today's mark, with this lender's haircut over it.
         required: collateralFor(
@@ -735,14 +751,14 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
     // instruction runs — units the same instruction is about to free are still bound when it asks.
     const legs: Leg[] = [];
     if (back > 0) {
-      const mark = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
+      const mark = lastMarkOf(ctx, loan.instrument);
       legs.push({
         kind: 'asset',
         from: loan.borrower,
         to: loan.lender,
         instrument: loan.instrument,
         qty: back,
-        pricePerUnit: mark > 0 ? some(mark) : none(),
+        pricePerUnit: mark === undefined ? none() : some(mark),
         accruedPerUnit: none(),
       });
     }
@@ -771,14 +787,14 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
       // on securing anything, and collateral encumbered to a row that no longer exists is units
       // nobody can reach. Whether the two are worth the same is not asked — that is what a haircut
       // is for, and whether it was enough is the lender's outcome (C1).
-      const at = ctx.valuation.markPerUnit(loan.collateral, ctx.period);
+      const at = lastMarkOf(ctx, loan.collateral);
       legs.push({
         kind: 'asset',
         from: loan.borrower,
         to: loan.lender,
         instrument: loan.collateral,
         qty: downTick(atMost(loan.posted, ctx.register.free(loan.borrower, loan.collateral), 'what is there to take')),
-        pricePerUnit: at > 0 ? some(at) : none(),
+        pricePerUnit: at === undefined ? none() : some(at),
         accruedPerUnit: none(),
       });
     }
