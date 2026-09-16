@@ -62,6 +62,11 @@ import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { allocate, meetCalls } from './allocate.js';
+import { ENROLLED, FUNDED, PENSION, PENSION_PAID, PROMISED, SPONSORED, SPONSOR_CALLED, callSponsors, enrolSponsors, keepPromises, payPensions, pensionFundIdFor, pensionKind, pensionRowKind, sponsorshipRowKind } from './pensions.js';
+import { PENSION_PARAMS } from '../../registry/insurance.js';
+
+// 14.6: the second profile behind the dispatch table, and everything a test asks of it.
+export { PENSION, pensionFundIdFor, pensionKind, pensionRowKind, sponsorshipRowKind, promiseOf, pensionPerMember, pensionSchedule, fundingRatioOf, promisesOf, PENSION_PAID, SPONSOR_CALLED, FUNDED, PROMISED, SPONSORED, ENROLLED } from './pensions.js';
 
 /**
  * Law 9: AN INSURANCE COMPANY, named as the world names one. The deposit insurer this world already
@@ -225,10 +230,12 @@ export function insurers(): SystemModule {
     // Item 14.0: AND FUNDS, because an institution does not invest itself — what it does with its
     // assets is hand them to a manager, so the doors it subscribes at have to exist before it looks
     // for one. It is a dependency of the ALLOCATION and not of the cover it writes.
-    requires: ['sovereign-curve', 'funds'],
+    // 14.6: and the payroll the contributions ride on, and the people who retire.
+    requires: ['sovereign-curve', 'funds', 'labour', 'households'],
     instrumentKinds: [],
-    agreementKinds: [policyRowKind],
-    partyKinds: [insuranceKind],
+    agreementKinds: [policyRowKind, pensionRowKind, sponsorshipRowKind],
+    // Law 15: two profiles behind one dispatch table — the kernel asks the profile, never the id.
+    partyKinds: [insuranceKind, pensionKind],
     curveFamilies: [],
     units: [{ id: COVER, name: 'units of cover', perUnit: MONEY_PIECES }],
     params: [
@@ -240,6 +247,42 @@ export function insurers(): SystemModule {
         kind: 'technology',
         owner: 'standardSetter',
         why: 'Insurers B1: how long one unit of cover runs for. A convention of the contract, stated with it — a year, which is what a policy is written for. It is not a forecast of when a claim arrives: what a claim COSTS is read off what this insurer has actually paid (A4.c), and it is the price that carries it.',
+      },
+      {
+        id: PENSION_PARAMS.employeeShare,
+        value: 0.05,
+        unit: 'share of the wage',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'parliament',
+        why: 'Insurers A4, D3 (14.6): the share of a wage a member pays into the scheme, deducted at the payroll. A rule of the scheme — POLICY, parliament’s from worklist 14 — and not a forecast of anything: what the fund comes to hold is what the payrolls carry, and what it owes is the promise, and neither is this number.',
+      },
+      {
+        id: PENSION_PARAMS.employerShare,
+        value: 0.1,
+        unit: 'share of the wage',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'parliament',
+        why: 'Insurers A4, D3 (14.6): the share of a wage the employer pays into the scheme beside the member, out of its own account in the same instruction. A rule of the scheme, POLICY, parliament’s from worklist 14.',
+      },
+      {
+        id: PENSION_PARAMS.replacementShare,
+        value: 0.4,
+        unit: 'share of a week of the benchmark trade',
+        dimension: 'ratio',
+        kind: 'policy',
+        owner: 'parliament',
+        why: 'Insurers A4, B1, Households F3 (14.6): what a retired member is paid a period, as a share of what a week of the trade most of the place’s people work in earns NOW — a flat pension indexed to the going wage, which is what a national scheme pays. A rule of the scheme, POLICY, parliament’s from worklist 14; the level of the pension itself is an OUTCOME of the wage.',
+      },
+      {
+        id: PENSION_PARAMS.recoveryPeriods,
+        value: 520,
+        unit: 'periods',
+        dimension: 'periods',
+        kind: 'policy',
+        owner: 'standardSetter',
+        why: 'Insurers D3 (14.6): over how many periods a shortfall is called from the sponsors — a recovery plan of ten years, which is what a funding regulator gives a scheme. A rule, POLICY, and not a bound: the whole shortfall is called, a share of it a period, and a fund that stays short stays calling.',
       },
     ],
     phases: [
@@ -267,7 +310,8 @@ export function insurers(): SystemModule {
         ],
         writes: [],
         run: (ctx: MechanismContext): void => {
-          for (const p of ctx.parties.ofKind(INSURANCE)) {
+          // 14.6: a pension fund invests the same way — it does not invest itself either.
+          for (const p of [...ctx.parties.ofKind(INSURANCE), ...ctx.parties.ofKind(PENSION)]) {
             if (!p.status.alive) continue;
             /**
              * §29 A2.a (item 13.5c): WHAT IT OWES BEFORE WHAT IT WOULD LIKE TO OWN. A call it could
@@ -278,6 +322,44 @@ export function insurers(): SystemModule {
             meetCalls(ctx, p.id);
             allocate(ctx, p.id, ctx.registry.currencyOf(p.region));
           }
+        },
+      },
+      {
+        /**
+         * A4, D3 (14.6): EVERY EMPLOYER WITH A PAYROLL SPONSORS THE FUND OF ITS PLACE, before the
+         * payroll runs — the sponsorship row is what the wage instruction reads to carry the
+         * contributions (`labour/matching.ts payFrom`), and what the fund calls when it is short.
+         */
+        name: 'pensions.enrol',
+        spec: 'Insurers A4 Insurers D3',
+        anchor: { before: 'labour.pay' },
+        reads: [],
+        writes: [{ kind: 'event', name: SPONSORED }, { kind: 'event', name: ENROLLED }],
+        run: (ctx: MechanismContext): void => {
+          enrolSponsors(ctx);
+        },
+      },
+      {
+        /**
+         * A2, B1, D3, Households F3 (14.6): THE PROMISE, THE PENSION AND THE CALL. After the
+         * households have aged and buried this period, so the cell a promise opens to is the
+         * standing cell of retired members as it now is; after the revaluation, so the shortfall
+         * read is this period's marks.
+         */
+        name: 'pensions.promise',
+        spec: 'Insurers A2 Insurers A4 Insurers B1 Insurers D1 Insurers D3 Insurers E1 Insurers E3 Households F3 Law 5',
+        anchor: { after: 'households.lifecycle' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: PROMISED },
+          { kind: 'event', name: PENSION_PAID },
+          { kind: 'event', name: FUNDED },
+          { kind: 'event', name: SPONSOR_CALLED },
+        ],
+        run: (ctx: MechanismContext): void => {
+          keepPromises(ctx);
+          payPensions(ctx);
+          callSponsors(ctx);
         },
       },
       {
@@ -363,16 +445,29 @@ export function insurers(): SystemModule {
         if (bank === undefined) continue;
         // 14.1: the foundation creates and funds it before the equity seed floats its line; a
         // world seeded without the foundation still gets one here, unfunded, as before.
-        if (ctx.parties.has(insurerIdFor(region.id))) continue;
-        ctx.parties.add({
-          id: insurerIdFor(region.id),
-          kind: INSURANCE,
-          region: region.id,
-          name: `${region.name} Assurance`,
-          bank: bank.id,
-          representation: 'named',
-          status: { alive: true, standing: 'good' },
-        });
+        if (!ctx.parties.has(insurerIdFor(region.id))) {
+          ctx.parties.add({
+            id: insurerIdFor(region.id),
+            kind: INSURANCE,
+            region: region.id,
+            name: `${region.name} Assurance`,
+            bank: bank.id,
+            representation: 'named',
+            status: { alive: true, standing: 'good' },
+          });
+        }
+        // 14.6: and the pension fund of the place, empty — the foundation makes it first where it runs.
+        if (!ctx.parties.has(pensionFundIdFor(region.id))) {
+          ctx.parties.add({
+            id: pensionFundIdFor(region.id),
+            kind: PENSION,
+            region: region.id,
+            name: `${region.name} Pension Fund`,
+            bank: bank.id,
+            representation: 'named',
+            status: { alive: true, standing: 'good' },
+          });
+        }
       }
     },
   };

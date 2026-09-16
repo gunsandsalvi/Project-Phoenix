@@ -913,6 +913,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
           break;
         }
         case 'wage':
+        case 'pension':
         case 'rent':
         case 'dividend': {
           if (!cells.has(leg.to.holder)) break;
@@ -939,9 +940,10 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'transfer':
         case 'tax':
         case 'claim':
+        case 'contribution':
           // Its own money coming back, money it must repay, money the state itself moved, a tax
-          // paid, and an indemnity for what it lost (14.3). None is income and the first three used
-          // to be taxed as one.
+          // paid, an indemnity for what it lost (14.3), and what a payroll put into a pension fund
+          // (14.6). None is income and the first three used to be taxed as one.
           break;
         default:
           assertNever(receipt, 'Treasury C1');

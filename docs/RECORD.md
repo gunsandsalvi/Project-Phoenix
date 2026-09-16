@@ -11939,3 +11939,41 @@ Nothing new is red: eighteen suites at 90 of 196, the same set.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 14.6 — Pensions: the second profile behind the dispatch table
+
+A pension fund is the sector's second party kind, and it differs from an insurer in exactly what
+its profile says: it writes no cover, it fails on cash and not on solvency, and what stands behind
+it when it is short is not its capital but its sponsors. One fund per place, made empty. Membership
+is a fact about the person — a lattice dimension of the household, opened off the record like a
+hire — and the worker cell of every employment row is enrolled whole the period its payroll first
+runs, so a working member ages into a retired member and nobody the seed placed is promised what
+nobody paid in for. Every employer with a payroll owes the fund of its place a sponsorship row, and
+the wage instruction reads it: the wage net of the member's share, the member's share and the
+employer's share, three legs in one instruction. A member cell that reaches the last cohort is
+owed a pension row — a replacement share of what a week of the trade most of the place works in
+earns now, per member per period, read at every payment — which the kernel marks at the members
+alive times what one is expected to draw in each period to the end of the mortality table, decayed
+at the fund's own outlook of the cohort's mortality, at the sovereign curve. The pension is paid
+every period as income. The funding ratio is a read of the marks and the equity account, published
+every period, and a fund whose equity is negative calls a recovery period's share of the shortfall
+from the sponsors whose payrolls fed it, each in proportion; a call not paid is the kernel's arrear
+on the sponsor. Three new names: the `pension` and `contribution` receipts, and the `pension`
+lattice dimension. `RowValuationReads` grew the weight, the going rate and the params a schedule
+reads; `AgreementReads` grew the mark.
+
+**Measured.** `pensions.test.ts`, three green: the contribution legs ride the wage instruction and
+nothing else reaches the fund; a hand-written crossing opens one row, the pension is paid at whole
+pieces a member, the mark is positive and is what the funding event reports, equity is below nothing
+and the ratio below one, the sponsors are called for at most a recovery period's share and every
+call is money moved or an arrear owed; the schedule decays with mortality and a lower rate makes
+the same promise worth more. In the rig's own draw the first member retires in period 15. Two
+assertions were brought to the payroll's new shape — `insurers.test.ts` allowed the scheme's rules
+as POLICY beside the module's one convention, and `labour.test.ts` counts the employer's share in
+what a firing costs through the notice. Nothing new is red: eighteen suites at 90 of 196, the same
+set; the nineteenth is green.
+
+**Findings.** The sponsor's covenant is not on the sponsor's books (21.24); a promise indexed to a
+trade nobody works in any more is worth nothing until somebody does (21.25); the fund puts almost
+nothing to work, which is 14.7.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.

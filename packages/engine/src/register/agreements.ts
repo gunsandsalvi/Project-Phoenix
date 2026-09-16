@@ -29,13 +29,14 @@
  * this holds what is OWED where the owing is not a security.
  */
 import { type Option } from '../core/option.js';
-import { type Cash } from '../core/measure.js';
+import { type Cash, type PerPiece } from '../core/measure.js';
 import { type Outlook, type OutlookVariable } from '../world/context.js';
 import { type Civil } from '../calendar/civil.js';
 import { type CurveRead } from '../prices/curve.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { agreementId, type AgreementId, type AgreementKindId, type CurrencyCode, type PartyId, type CurveFamilyId } from '../core/ids.js';
+import { agreementId, type AgreementId, type AgreementKindId, type CurrencyCode, type PartyId, type CurveFamilyId, type RegionId } from '../core/ids.js';
+import type { ParamRegister } from '../registry/params.js';
 import { Missing } from '../core/errors.js';
 import { finite } from '../core/num.js';
 
@@ -106,6 +107,12 @@ export interface RowValuationReads {
   curve(family: CurveFamilyId, at: Period): CurveRead;
   on(at: Period): Civil;
   outlook(party: PartyId, variable: OutlookVariable): Option<Outlook>;
+  /** XI-15 (14.6): how many people a row's party stands for — a cell's weight, one for a named party. */
+  weightOf(party: PartyId): number;
+  /** Labour D1.c (14.6): what an hour last cleared at in a trade and place, for a promise indexed to it. */
+  goingRate(occupation: string, region: RegionId): PerPiece | undefined;
+  /** The scheme's declared rules and the households' table, for a schedule that reads them. */
+  readonly params: Pick<ParamRegister, 'ratio' | 'amount' | 'all'>;
 }
 
 export interface AgreementDecl {
@@ -350,7 +357,7 @@ function rowsOf(
 /** A real read-only facade: no write is reachable through it, at runtime as well as in the types. */
 export type AgreementReads = Pick<
   Agreements,
-  'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'byDebtorAndKind' | 'kind' | 'all'
+  'get' | 'owedBy' | 'owedTo' | 'ofKind' | 'byDebtorAndKind' | 'kind' | 'all' | 'markOf'
 >;
 
 export function agreementReads(store: Agreements): AgreementReads {
@@ -362,5 +369,7 @@ export function agreementReads(store: Agreements): AgreementReads {
     byDebtorAndKind: (debtor: PartyId, kind: AgreementKindId) => store.byDebtorAndKind(debtor, kind),
     kind: (id: AgreementKindId) => store.kind(id),
     all: () => store.all(),
+    // 14.6: what the kernel last marked a row at — a read of the mark, never a second valuation.
+    markOf: (id: AgreementId) => store.markOf(id),
   });
 }

@@ -134,7 +134,7 @@ import { shortTermDebt } from '../mechanisms/short-term-debt/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
-import { INSURANCE, insurerIdFor, insurers } from '../mechanisms/insurers/index.js';
+import { INSURANCE, PENSION, insurerIdFor, insurers, pensionFundIdFor } from '../mechanisms/insurers/index.js';
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
@@ -1050,6 +1050,22 @@ export function foundationSeedFor(
             'the surplus it opens with',
           ),
         );
+      }
+
+      /**
+       * Insurers A1, A4, D3 (14.6): AND ONE PENSION FUND PER PLACE, banked like the insurer, holding
+       * NOTHING at the opening — no member has paid in and nobody is promised anything yet; what it
+       * comes to hold is the contributions the payrolls carry to it from period one, and what it
+       * owes is the promise to the members who retire after the opening. No shape: an empty book
+       * is what a scheme that has just been founded has.
+       */
+      const fundsHere = ctx.registry.partyKinds.has(PENSION);
+      for (const region of fundsHere ? new Set(banks.map((b) => b.region)) : []) {
+        const bank = banksFor(region)[0];
+        if (bank === undefined) continue;
+        const id = pensionFundIdFor(region);
+        if (ctx.parties.has(id)) continue;
+        ctx.parties.add(named(id, PENSION, `${String(region)} Pension Fund`, bank.id, region));
       }
 
       // ------------------------------------------------------------------------------------------

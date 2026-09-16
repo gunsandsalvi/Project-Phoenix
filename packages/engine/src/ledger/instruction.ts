@@ -99,7 +99,11 @@ export type Receipt =
   /** Treasury C1, Money E1 (12a.9): a levy — what the state is owed, which ranks as such in an estate. */
   | { readonly of: 'tax' }
   /** Insurers A4 (14.3): a claim paid — indemnity for a loss, which restores what was lost and is nobody's income. */
-  | { readonly of: 'claim' };
+  | { readonly of: 'claim' }
+  /** Insurers A4 (14.6): a pension paid to a retired member — income to the cell, as a wage is. */
+  | { readonly of: 'pension' }
+  /** Insurers A4, D3 (14.6): what a payroll or a sponsor pays into a pension fund — not income to it. */
+  | { readonly of: 'contribution' };
 
 export const RECEIPT_KINDS = [
   'wage',
@@ -113,6 +117,8 @@ export const RECEIPT_KINDS = [
   'transfer',
   'tax',
   'claim',
+  'pension',
+  'contribution',
 ] as const;
 
 export interface MoneyLeg {

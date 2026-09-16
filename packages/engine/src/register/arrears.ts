@@ -34,6 +34,8 @@ export type PaymentClass =
   | 'transfer'
   | 'tax'
   | 'claim'
+  | 'pension'
+  | 'contribution'
   | 'unclassified';
 
 export interface ArrearTerms extends Terms {
@@ -70,9 +72,11 @@ export const arrearId = (failed: number, n: number): InstrumentId =>
  * owed for goods and services (an unclassified one ranks with them), and the owners' claims last.
  */
 export const CLASS_ORDER: readonly (readonly PaymentClass[])[] = [
-  ['wage'],
-  // 14.3: a policyholder's unpaid claim ranks with what the state and a counterparty are owed.
-  ['transfer', 'tax', 'claim'],
+  // 14.6: a pension not paid ranks as a wage not paid — what a person is owed for their work.
+  ['wage', 'pension'],
+  // 14.3: a policyholder's unpaid claim ranks with what the state and a counterparty are owed;
+  // 14.6: so does what a sponsor was called for and did not pay.
+  ['transfer', 'tax', 'claim', 'contribution'],
   ['rent'],
   ['interest', 'borrowing'],
   ['disposal', 'sale', 'unclassified'],

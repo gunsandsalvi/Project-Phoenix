@@ -70,7 +70,8 @@ import {
   type EmploymentRow,
   type EmploymentTerms,
 } from '../../register/employment.js';
-import { addQty, asQty, downTick, scaleQty, subQty } from '../../core/tick.js';
+import { NO_QTY, addQty, asQty, downTick, scaleQty, subQty } from '../../core/tick.js';
+import { PENSION_PARAMS, contributionsOn, sponsorshipOf } from '../../registry/insurance.js';
 import { OCCUPATION_OF } from '../../registry/occupations.js';
 import { goodId } from '../../registry/physical.js';
 import type { Qty } from '../../core/tick.js';
@@ -675,20 +676,42 @@ function payFrom(
   // A per-member wage below one piece of the money pays NOTHING — there is no such coin — and this
   // used to answer `true`, which is how a wage with no money leg behind it was booked as paid.
   if (share.total <= 0) return nothing;
-  const leg: Leg = {
-    kind: 'money',
-    from: ctx.accountOf(payer, ccy),
-    to: ctx.accountOf(cell, ccy),
-    // Treasury C1: THE PAYER SAYS WHAT THIS IS. An employer knows it is paying a wage, and the
-    // taxman working it out from the shape of the wire is what taxed a returned principal as income.
-    receipt: { of: 'wage' },
-    ccy,
-    amount: share.total,
-  };
+  /**
+   * Insurers A4, D3, Law 5 (14.6): THE PAYROLL CARRIES THE PENSION CONTRIBUTIONS. Where this
+   * employer's payroll contributes to a fund — a sponsorship row it owes, opened by the pensions
+   * phase — the wage instruction has three legs: the wage net of the member's share to the cell,
+   * the member's share to the fund, and the employer's share beside it, out of the employer's
+   * account. One instruction, so a payroll the employer cannot meet pays nobody and contributes
+   * nothing (Money E1), and the fund is never paid for people who were not.
+   */
+  const scheme = sponsorshipOf(ctx.agreements, payer);
+  const fund = scheme === undefined ? undefined : ctx.parties.resolve(scheme.creditor);
+  const into = fund?.status.alive === true
+    ? contributionsOn(share.perMember, { employee: ctx.params.ratio(PENSION_PARAMS.employeeShare), employer: ctx.params.ratio(PENSION_PARAMS.employerShare) })
+    : { employee: NO_QTY, employer: NO_QTY };
+  const employee = asQty(into.employee * members, 'what the members pay in');
+  const employer = asQty(into.employer * members, 'what the employer pays in beside them');
+  const net = subQty(share.total, employee, 'the wage net of the member’s contribution');
+  const legs: Leg[] = [
+    {
+      kind: 'money',
+      from: ctx.accountOf(payer, ccy),
+      to: ctx.accountOf(cell, ccy),
+      // Treasury C1: THE PAYER SAYS WHAT THIS IS. An employer knows it is paying a wage, and the
+      // taxman working it out from the shape of the wire is what taxed a returned principal as income.
+      receipt: { of: 'wage' },
+      ccy,
+      amount: net,
+    },
+  ];
+  if (fund !== undefined) {
+    if (employee > 0) legs.push({ kind: 'money', from: ctx.accountOf(payer, ccy), to: ctx.accountOf(fund.id, ccy), receipt: { of: 'contribution' }, ccy, amount: employee });
+    if (employer > 0) legs.push({ kind: 'money', from: ctx.accountOf(payer, ccy), to: ctx.accountOf(fund.id, ccy), receipt: { of: 'contribution' }, ccy, amount: employer });
+  }
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
   // The row it then owes is the ARREAR settlement writes in the same pass (Money E1, 12a.1); the
   // `labour.wagesInArrears` agreement this wrote beside it was the same debt twice (Law 4).
-  const r = ctx.settle({ legs: [leg], cause: 'transfer', reason });
+  const r = ctx.settle({ legs, cause: 'transfer', reason });
   if (r.outcome === 'settled') return heldAsMoney(share.total, 'what the employer actually paid');
   return nothing;
 }

@@ -66,10 +66,13 @@ describe('falling rates raise the liability (B2, B2.a, D2)', () => {
      * was a stale assertion about a module that had moved (Law 16). What it means is asserted
      * instead: every number here is technology, and none of them is a price, a rate or a ratio.
      */
+    // 14.6: and the scheme's RULES — what share of a wage goes in, what share of a week comes out,
+    // over how long a shortfall is called — which are POLICY, parliament's, and not prices either:
+    // a contribution rate is what a rule says of a wage, never what a market said of a claim.
     for (const d of insurers().params) {
-      expect(d.kind, `${d.id} is not technology`).toBe('technology');
-      expect(d.dimension, `${d.id} is a rate or a share, which is a price`).not.toBe('perAnnum');
-      expect(d.dimension, `${d.id} is a rate or a share, which is a price`).not.toBe('ratio');
+      expect(['technology', 'policy'], `${d.id} is neither technology nor policy`).toContain(d.kind);
+      expect(d.dimension, `${d.id} is a rate, which is a price`).not.toBe('perAnnum');
+      if (d.kind === 'technology') expect(d.dimension, `${d.id} is a share, which is a price`).not.toBe('ratio');
     }
   });
 });

@@ -47,15 +47,16 @@ import type { AgreementTerms } from '../../register/agreements.js';
 import type { FailReason, Leg, Unpaid } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
-import { paramId, type ParamId } from '../../core/ids.js';
+import { type ParamId } from '../../core/ids.js';
 import { MORTALITY, type MortalityDecl } from './data.js';
 import { rentPrintedIn } from '../../registry/funding.js';
 import { failedWhy } from '../../world/failure.js';
 import { issuedBy } from '../../register/instruments.js';
 
-/** F1.b: what this cohort's members die at, per period. One parameter per cohort (Law 2). */
-export const mortalityParam = (band: Pick<MortalityDecl, 'fromAge' | 'toAge'>): ParamId =>
-  paramId(`households.mortality.${String(band.fromAge)}-${String(band.toAge)}`);
+// 14.6, Law 4: the band parameter's spelling is the registry's, so the pension schedule can read
+// where the table ends without importing this module.
+import { mortalityParam } from '../../registry/insurance.js';
+export { mortalityParam };
 
 /**
  * XI-8, Register F2: WHAT AN ESTATE COULD NOT HAND TO PROBATE.

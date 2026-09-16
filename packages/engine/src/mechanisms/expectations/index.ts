@@ -18,7 +18,7 @@
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
 import { HOUSEHOLD } from '../../registry/profiles.js';
-import { deathsIn, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
+import { deathsIn, isPensionTerms, isPolicyTerms, POLICY_ROW } from '../../registry/insurance.js';
 import { ENVIRONMENT_STATE, conditionsIn } from '../../registry/environment.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
@@ -341,6 +341,18 @@ function exposed(ctx: MechanismContext, party: PartyId, cohorts: ReadonlyMap<str
       const were = add(living, died, 'who there were before this period took its dead');
       if (were > 0) out.set(about({ on: 'mortality', cohort }), { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
     }
+  }
+  // Insurers B3 (14.6): A FUND THAT PROMISED A COHORT A PENSION OBSERVES THAT COHORT'S MORTALITY —
+  // the same public count a cell of the cohort reads, because the schedule it owes decays at it.
+  for (const row of ctx.agreements.owedBy(party)) {
+    if (row.state !== 'performing' || !isPensionTerms(row.terms)) continue;
+    const living = cohorts.get(row.terms.cohort);
+    if (living === undefined) continue;
+    const variable = about({ on: 'mortality', cohort: row.terms.cohort });
+    if (out.has(variable)) continue;
+    const died = deathsIn(ctx.journal, row.terms.cohort, ctx.period);
+    const were = add(living, died, 'who there were before this period took its dead');
+    if (were > 0) out.set(variable, { value: div(died, were, 'the share of the cohort that died'), unit: 'share of the cohort a period' });
   }
   const reads = {
     ofKind: (kind: EventKind): readonly Event[] => ctx.journal.ofKind(kind),

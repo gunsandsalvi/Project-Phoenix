@@ -21,7 +21,7 @@
  * a household did not receive is not income (B3.a).
  */
 import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
-import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
+import { COVER_TERM, PENSION_DIM, PENSION_MEMBER, PENSION_NONE, coverVenue } from '../../registry/insurance.js';
 import { none, some, type Option } from '../../core/option.js';
 import { about } from '../../world/context.js';
 import { pricedAt, asCash, asRatio, type Cash, heldAsMoney, minus, over, plus, scale, valueAt, amountOf, asAmount, asPerPiece, type PerPiece } from '../../core/measure.js';
@@ -108,6 +108,18 @@ export const HOUSEHOLD_LATTICE: LatticeDecl = {
     { dim: 'region', movedBy: 'entry', why: 'a member is a real person with a real account, and an account is in a region' },
     { dim: 'bank', movedBy: 'bank.choice', why: 'a deposit is a claim on a NAMED issuer; two cells at two banks hold two instruments (Money A1)' },
     { dim: 'cohort', movedBy: 'households.lifecycle', why: 'people age, and a cell whose members were not all in one cohort could not be aged as one' },
+    {
+      dim: PENSION_DIM,
+      movedBy: 'pension.enrolled',
+      // 14.6, Insurers A2: whether a person is a member of the pension scheme is a fact about the
+      // person — somebody whose wage has carried a contribution — and a lifetime carries it: a
+      // working member ages into a retired member, and the promise is to the cell whose members
+      // ARE members. The opening is a read of the record, as a hire's is: nobody the seed places
+      // has paid in yet, so nobody is a member until a payroll enrols them (a scheme that owed the
+      // seed's retired would be a seeded promise, 22a).
+      opening: (reads: LatticeReads, cell: PartyId): string => (reads.lastEvent('pension.enrolled', cell).some ? PENSION_MEMBER : PENSION_NONE),
+      why: 'Insurers A2, E1: a pension is promised to a named cell of members; a cell of members and one of non-members are owed different things',
+    },
     {
       dim: 'estate',
       movedBy: 'households.lifecycle',

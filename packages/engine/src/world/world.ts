@@ -540,6 +540,10 @@ export class World {
               curve: (family, at) => w.curveAt(family, at),
               on: (at) => w.valuation.on(at),
               outlook: (party, variable) => w.outlookOf(party, variable),
+              // 14.6: a promise per member reads who is alive to be promised, and what it is indexed to.
+              weightOf: (party) => weightOf(w.parties.get(party)),
+              goingRate: (occupation, region) => w.employment.goingRate(occupation, region),
+              params: w.params,
             },
           });
           // From here to the end of the period, what a lot is carried at is THIS period's mark: the

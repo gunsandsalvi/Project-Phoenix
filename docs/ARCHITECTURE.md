@@ -1594,3 +1594,20 @@ on it; claims restate the cover down and end the row, and a term that has passed
 fills are paired by the solver's allocation, one premium and one row per pair. The `POLICY`
 instrument kind is gone.
 
+### A pension is the second profile, and membership is a key (item 14.6)
+
+The insurers module declares two party kinds behind one dispatch table: `insurance` (fails on cash
+and solvency, quotes cover) and `pension` (`insurers/pensions.ts pensionKind`: fails on cash only —
+a fund short of its promises has a shortfall its sponsors are called for, Insurers D3). Who is a
+member of the scheme is a lattice dimension of the household (`pension: member | none`), opened off
+the record like a hire and moved by `pension.enrolled` when a payroll first pays the cell; the key
+is carried through every job and cohort, so the standing cell of retired members is the one a fund
+owes. The payroll carries the contributions (`labour/matching.ts payFrom` reads the employer's
+sponsorship row through `registry/insurance.ts sponsorshipOf` and adds two `contribution` legs to
+the wage instruction); the promise is a valued row (`PENSION_ROW`, `promiseOf`) whose schedule reads
+the cell's weight, the going rate of the trade it is indexed to and the scheme's params — so
+`RowValuationReads` now offers `weightOf`, `goingRate` and `params` beside the curve, the day and
+the outlook — and `AgreementReads.markOf` exposes the kernel's mark so the funding ratio reads it
+rather than re-deriving it (Law 19). Two receipts join the wire: `pension` (income to the cell,
+taxed and ranked as a wage) and `contribution` (not income; ranked with a claim).
+

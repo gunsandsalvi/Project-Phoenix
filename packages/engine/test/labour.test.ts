@@ -32,6 +32,7 @@ import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
 import { upTick, type Qty } from '../src/core/tick.js';
 import { weightOf } from '../src/parties/party.js';
+import { PENSION_PARAMS } from '../src/registry/insurance.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -185,6 +186,15 @@ function hours(people: number): Qty {
  * the wage, and the account moved for two reasons; this is how the other one is taken out.
  */
 /** What this employer actually paid its people in a period, read off the wire (F1, E1). */
+/**
+ * Insurers A4, D3 (14.6): THE PAYROLL CARRIES THE EMPLOYER'S PENSION CONTRIBUTION BESIDE THE WAGE,
+ * out of the same account in the same instruction — whole pieces a member. What a firing costs
+ * through the notice is the wage bill and that share of it.
+ */
+function withEmployerShare(w: World, members: number, perMember: number): number {
+  return members * perMember + members * Math.floor(perMember * w.params.ratio(PENSION_PARAMS.employerShare));
+}
+
 function paidBy(w: World, party: PartyId, period: number): number {
   let total = 0;
   for (const r of w.ledger.inPeriod(period as never)) {
@@ -475,7 +485,7 @@ describe('the contract (Labour D2, C3)', () => {
     expect(w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1))).toHaveLength(0);
     // C3: the cost of the firing is the notice — all ten are paid through it, out of its account.
     const struck = rows(w)[0]?.wagePerHour ?? 0;
-    const wageBill = 10 * hours(1) * struck;
+    const wageBill = withEmployerShare(w, 10, hours(1) * struck);
     paidTheSame(paidBy(w, FIRM_1, r.period), wageBill, 10);
     for (const at of [5, 6, 7]) {
       const s = w.step();
@@ -490,7 +500,7 @@ describe('the contract (Labour D2, C3)', () => {
     expect(rows(w)[0]?.headcount).toBe(5);
     expect(rows(w)[0]?.leaving).toBe(0);
     const after = w.step();
-    paidTheSame(paidBy(w, FIRM_1, after.period), 5 * hours(1) * struck, 5);
+    paidTheSame(paidBy(w, FIRM_1, after.period), withEmployerShare(w, 5, hours(1) * struck), 5);
   });
 });
 
