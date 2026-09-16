@@ -57,7 +57,7 @@ and neither is yet a MET a run has confirmed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 16 | 5 | 0 | 0 | 23 |
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
-| Private Equity | 12 | 2 | 11 | 0 | 25 |
+| Private Equity | 15 | 3 | 7 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -303,7 +303,7 @@ already writes against an agreed line.
   buyout that does not happen — *"a real constraint, not a rate applied to a plan"*. A buyer does not ask
   twice while its last ask is unanswered. `controlBidsFor` then bids up to its cash PLUS what a bank has
   committed for this deal, which is the one line of this item that makes a leveraged bid possible at all.
-- [ ] 17b.3 **The tender has two payers** (B1, B2.a, B3, B4, B5, C4). `settleTender` splits each fill in the
+- [x] 17b.3 **The tender has two payers** (B1, B2.a, B3, B4, B5, C4). `settleTender` splits each fill in the
   deal's own proportion: the target's share is drawn on the facility inside the same instruction (the loan row
   issued by the target, the lender's money created against it) and buys shares that return to their issuer and
   cease; the buyer's share moves shares to the buyer. Four legs, one instruction per holder, atomic — so a

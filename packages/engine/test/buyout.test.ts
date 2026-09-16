@@ -1,0 +1,229 @@
+/**
+ * The leveraged buyout: the company borrows, its own shares are bought back with what it borrowed,
+ * and the buyer's cheque pays for the rest.
+ *
+ * @spec Private Equity B1 Private Equity B2 Private Equity B3 Private Equity B4 Private Equity B5 Private Equity E1 M&A A1 M&A A2 Banks Lending A1 Banks Lending B1 Register B3 Law 5 Law 19
+ *
+ * §29 B2.a is the sentence the whole design turns on: *"the debt is the TARGET's liability, not the
+ * fund's — which is why a failed buyout kills the firm and not the fund."* The only two-sided way
+ * for a company's own borrowing to reach its own shareholders is for it to get its shares back for
+ * the money, so the tender has TWO PAYERS: the company, drawing what a lender committed, whose
+ * shares come back to their issuer and cease, and the buyer, whose shares move to it.
+ *
+ * A test never names a party (CLAUDE.md): the target, the line and the bank are asked of the world
+ * the draw made, and what is asserted is the arithmetic of the deal rather than who was in it.
+ */
+import { describe, expect, it } from 'vitest';
+import {
+  assemble,
+  downTick,
+  FIRM,
+  instrumentId,
+  mul,
+  partyId,
+  type InstrumentId,
+  type MechanismContext,
+  type PartyId,
+  type SeedContext,
+  type SystemModule,
+  type World,
+} from '../src/index.js';
+import { REGION, USD } from '../src/seeds/foundation.js';
+import { asCash, asPerPiece } from '../src/core/measure.js';
+import { mergeModules, rigSpec } from './rig.js';
+import { equityLines, runTender, type Bid } from '../src/mechanisms/control/index.js';
+import { askToFund } from '../src/mechanisms/control/deal.js';
+import { facilityLoanId, isLoan, LOAN } from '../src/registry/credit.js';
+
+const BUYER = partyId('buyer.lbo');
+
+/** How far over what a holder's books carry a share the bid is struck, so that every holder sells. */
+const OVER = 4;
+/** What share of the price the buyer brings itself, so that the rest has to be borrowed (B3). */
+const CHEQUE = 0.2;
+
+/**
+ * Seed B1.a: THE COMPANY THE DRAW MADE, asked for rather than named — the equity line with the most
+ * holders that are not the buyer, which is the one a tender has anybody to tender into.
+ */
+function targetIn(ctx: MechanismContext): { line: InstrumentId; target: PartyId } | undefined {
+  let best: { line: InstrumentId; target: PartyId; holders: number } | undefined;
+  for (const i of equityLines(ctx)) {
+    if (!i.issuer.some || i.ccy !== USD) continue;
+    const holders = ctx.register.holdersOf(i.id).filter((h) => h !== BUYER).length;
+    if (holders < 2) continue;
+    if (best !== undefined && holders <= best.holders) continue;
+    best = { line: i.id, target: i.issuer.value, holders };
+  }
+  return best === undefined ? undefined : { line: best.line, target: best.target };
+}
+
+/** Law 19: the dearest basis anybody carries a unit of this line at, read off their own lots. */
+function dearestBasis(ctx: MechanismContext, line: InstrumentId): number {
+  let most = 0;
+  for (const h of ctx.register.holdersOf(line)) {
+    for (const holding of ctx.register.holdingsOf(h)) {
+      if (holding.instrument !== line) continue;
+      for (const lot of holding.lots) if (lot.basisPerUnit > most) most = lot.basisPerUnit;
+    }
+  }
+  return most;
+}
+
+/**
+ * The buyer, and the deal it does: it asks the company's lenders to commit in period 1 and runs the
+ * tender in period 3, by which time a bank has decided. It brings a fifth of the price itself.
+ */
+function buysACompany(asks = 1, tenders = 3): SystemModule {
+  const chosen: { line?: InstrumentId; target?: PartyId; cost?: number; needs?: number } = {};
+  return {
+    id: 'test.lbo',
+    spec: 'Private Equity B2',
+    requires: ['control', 'banks', 'equity', 'seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      {
+        name: 'test.lbo',
+        spec: 'Private Equity B2 Private Equity B3',
+        // Before the banks turn this period's asks into rows, which is where the tender sits too.
+        anchor: { before: 'lending.book' },
+        reads: [],
+        writes: [
+          { kind: 'event', name: 'control.acquired' },
+          { kind: 'event', name: 'control.advisory' },
+          { kind: 'event', name: 'control.combined' },
+          { kind: 'event', name: 'control.failed' },
+          { kind: 'event', name: 'control.financing' },
+          { kind: 'event', name: 'control.owned' },
+          { kind: 'event', name: 'control.tender' },
+          { kind: 'event', name: 'credit.request' },
+          { kind: 'event', name: 'tender.unfilled' },
+        ],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period === asks) {
+            const found = targetIn(ctx);
+            if (found === undefined) return;
+            const outstanding = ctx.register.heldTotal(found.line).value;
+            const price = mul(dearestBasis(ctx, found.line), OVER, 'well over what anybody paid');
+            const needs = downTick(outstanding);
+            const cost = mul(price, needs, 'what all of it would cost at that price');
+            chosen.line = found.line;
+            chosen.target = found.target;
+            chosen.needs = needs;
+            chosen.cost = cost;
+            // B2: it brings a fifth and asks the company's lenders to commit the rest.
+            askToFund(
+              ctx,
+              found.target,
+              asCash(cost * (1 - CHEQUE), USD, 'what the deal is short of'),
+              BUYER,
+            );
+          }
+          if (ctx.period !== tenders) return;
+          const { line, target } = chosen;
+          if (line === undefined || target === undefined || chosen.needs === undefined) return;
+          const bid: Bid = {
+            buyer: BUYER,
+            target,
+            line,
+            price: asPerPiece(
+              mul(dearestBasis(ctx, line), OVER, 'well over what anybody paid'),
+              'what it offers for one',
+            ),
+            // A1: control, and it asks for the whole of it so that a take-private is reachable.
+            needs: downTick(ctx.register.heldTotal(line).value),
+            ccy: USD,
+          };
+          runTender(ctx, bid, [bid]);
+        },
+      },
+    ],
+    seed(ctx: SeedContext) {
+      ctx.parties.add({
+        id: BUYER,
+        kind: FIRM,
+        region: REGION,
+        name: 'A buyout fund',
+        bank: partyId('bank.a'),
+        representation: 'named',
+        status: { alive: true, standing: 'good' },
+      });
+      ctx.endowMoney(BUYER, USD, asCash(1e12, USD, 'its own money, and it is not the deal'));
+    },
+    participants: [],
+    families: [],
+  };
+}
+
+function buyoutWorld(seed = 'lbo'): World {
+  const spec = rigSpec(seed);
+  return assemble({ ...spec, modules: mergeModules(spec.modules, [buysACompany()]) });
+}
+
+describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () => {
+  it('the company borrows, buys its own shares back, and the buyer pays the rest', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < 3; i += 1) w.step();
+    const done = w.journal.ofKind('control.acquired');
+    expect(done.length).toBeGreaterThan(0);
+    const e = done[0];
+    if (e === undefined) return;
+    const drawn = Number(e.data['drawn']);
+    const cheque = Number(e.data['cheque']);
+    const paid = Number(e.data['paid']);
+    // B2: most of the price is debt raised against the target itself.
+    expect(drawn).toBeGreaterThan(0);
+    // B3: and the equity cheque is the rest.
+    expect(cheque).toBeGreaterThan(0);
+    // B5: sources and uses balance exactly — what the sellers were paid is what was drawn plus what
+    // the buyer put up, leg by leg, with nothing left over anywhere.
+    expect(drawn + cheque).toBeCloseTo(paid, 6);
+  });
+
+  it('the debt is the TARGET’s liability and nobody else’s (B2.a)', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < 3; i += 1) w.step();
+    const e = w.journal.ofKind('control.acquired')[0];
+    if (e === undefined) throw new Error('the deal did not happen');
+    const target = partyId(String(e.data['target']));
+    // The deal's own row, which is the one the commitment names — the company may well have an
+    // ordinary working-capital line beside it, and that one is nothing to do with this.
+    const row = w.instruments
+      .all()
+      .find(
+        (i) =>
+          i.kind === LOAN &&
+          i.issuer.some &&
+          i.issuer.value === target &&
+          isLoan(i.terms) &&
+          String(i.id) === String(facilityLoanId(i.terms.originator, target)),
+      );
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    // The company owes it; the buyer owes nothing at all, which is why a failed buyout would kill
+    // the firm and not the fund.
+    expect(row.terms.borrower).toBe(target);
+    expect(row.issued).toBeCloseTo(Number(e.data['drawn']), 6);
+    expect(
+      w.instruments.all().filter((i) => i.kind === LOAN && i.issuer.some && i.issuer.value === BUYER),
+    ).toHaveLength(0);
+  });
+
+  it('what the company paid for ceases, so the buyer holds a majority of what is left (B4)', () => {
+    const w = buyoutWorld();
+    for (let i = 0; i < 3; i += 1) w.step();
+    const e = w.journal.ofKind('control.acquired')[0];
+    if (e === undefined) throw new Error('the deal did not happen');
+    const line = instrumentId(String(e.subjects[2]));
+    const held = w.register.quantity(BUYER, line);
+    const inIssue = w.instruments.get(line).issued;
+    // A1, B4: ownership changed in the register, and the majority is arithmetic — the buyer bought
+    // some of the shares and the company retired the rest, so the denominator is what is left.
+    expect(held).toBeGreaterThan(0);
+    expect(held * 2).toBeGreaterThan(inIssue);
+  });
+});

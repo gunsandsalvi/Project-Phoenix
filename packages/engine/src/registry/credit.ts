@@ -140,11 +140,17 @@ export interface FacilityTerms extends AgreementTerms {
    * capital is behind it for the period the deal has to happen in, and after that it is not.
    */
   readonly until: Period;
+  /**
+   * A2: how long the drawing runs for, struck when the line was committed rather than when it is
+   * drawn. Commitment papers say the term, and the party that DRAWS the line is not always the
+   * party that decided it — so the term travels with the promise (Law 4).
+   */
+  readonly maturity: Civil;
 }
 
 /** Structural, like `isLoan`: a size, a price for drawing it, and a date it stops standing. */
 export const isFacility = (t: AgreementTerms): t is FacilityTerms =>
-  'limit' in t && 'rate' in t && 'until' in t;
+  'limit' in t && 'rate' in t && 'until' in t && 'maturity' in t;
 
 /**
  * F1.a: the row a facility is drawn into — one per (lender, borrower), named so a reader sees whose

@@ -13331,3 +13331,47 @@ and it is positioned at 23.3.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 three new tests, all green.
+
+## Item 17b.3 — The tender has two payers
+
+§29 B2.a is the sentence the design turns on: *"the debt is the TARGET's liability, not the fund's —
+which is why a failed buyout kills the firm and not the fund."* The only two-sided way for a
+company's own borrowing to reach its own shareholders is for it to get its shares back for the
+money. So the tender has two payers.
+
+**One book, one cleared price, two sources.** Every holder is met at the same level. What each fill
+is paid WITH is either the facility the company draws — and the shares that buys go back to their
+ISSUER and cease, which settlement already does for any asset leg whose payee is the issuer
+(Register B3) — or the buyer's own account, and those shares move to it. Three legs in the drawn
+case, all in one numbered instruction: the shares back to the target, the row issued by the target
+to the bank that committed it, and the bank's money created against it landing in the seller's
+account. Nothing left the bank to make that loan (Banks Lending B1) and the proceeds never sat
+anywhere: they paid the shareholder they were borrowed to pay.
+
+**The buyer ends up with a majority of what is LEFT, because the denominator shrank.** That is what
+leverage is, arithmetically, and it is why B4 needed no code at all: *"leverage up, interest cost up,
+ownership changed in the register"* is what the instruction did.
+
+**Whole fills, not a share of each.** Every seller is met at the same price for the same shares and a
+share is fungible, so which of them was redeemed and which was bought is immaterial to all of them —
+where splitting each fill between two payers would put a cell's grain through the mill twice
+(XI-15). The facility is offered the biggest fills first so the least of it goes unused, and ties
+break on the name so two worlds from one seed agree.
+
+**B5 balances by construction rather than by a rule.** What the sellers were paid IS what was drawn
+plus what the buyer put up, leg by leg; `control.acquired` carries all three. It is still marked
+PARTIAL, because a VERIFY that cannot fail still has to be MEASURED — that is 17b.5.
+
+**No escrow, and none was needed.** The item's own note asked for conditional issuance escrowed by
+the arranger with a failed tender returning it. Settlement is atomic (Law 5, XI-5), so a tender that
+does not meet its acceptance condition draws nothing and moves nothing, and there is nothing to
+return. An escrow is what a world whose closings are not atomic needs.
+
+**A test never names a party.** `buyout.test.ts` asks the world the draw made for the equity line
+with the most holders, reads the dearest basis anybody carries a unit at, and bids four times it so
+that every holder sells. What is asserted is the arithmetic of the deal: the company borrowed, the
+buyer paid the rest, the two add to what the sellers got, the row is the target's and the buyer owes
+nothing, and the buyer holds a majority of what is left.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `buyout`:
+three new tests, all green. §29 B2, B4 and E1 re-marked MET; B3 and B5 PARTIAL with their step named.

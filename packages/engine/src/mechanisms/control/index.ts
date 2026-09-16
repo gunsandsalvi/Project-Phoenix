@@ -71,7 +71,8 @@ import {
   strikesPublished,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
-import { askToFund, cashOf, committedTo, holeIn } from './deal.js';
+import { askToFund, cashOf, committedTo, type Facility, facilityFor, holeIn } from './deal.js';
+import { facilityLoanId, LOAN, type LoanTerms } from '../../registry/credit.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -525,7 +526,32 @@ function payTheBank(
   );
 }
 
-/** A2, Law 5: the shares one way and the money the other, in one numbered instruction per holder. */
+/**
+ * A2, §29 B2, B2.a, B3, B4, B5, Law 5 (17b.3): THE SHARES ONE WAY AND THE MONEY THE OTHER, IN ONE
+ * NUMBERED INSTRUCTION PER HOLDER — AND THE MONEY COMES FROM TWO PLACES.
+ *
+ * *"Most of the price is debt raised against the target itself"* (B2), and *"the debt is the
+ * TARGET's liability, not the fund's"* (B2.a). The only two-sided way for a company's own borrowing
+ * to reach its own shareholders is for it to get its shares back for the money — so a fill the
+ * facility pays for is a REDEMPTION: the units go back to their issuer and cease, which settlement
+ * already does for any asset leg whose payee is the issuer (Register B3), and the drawing that pays
+ * for them is a leg of the same instruction. A fill the buyer pays for is the ordinary purchase it
+ * always was, and its shares move.
+ *
+ * The buyer ends up holding a majority of what is LEFT, because the denominator shrank. That is
+ * what leverage is, and it is arithmetic rather than a rule — and B4 is not a step anywhere:
+ * *"leverage up, interest cost up, ownership changed in the register"* is what this instruction did.
+ *
+ * WHOLE FILLS, NOT A SHARE OF EACH. Every seller is met at the same price for the same shares and a
+ * share is fungible, so which of them was redeemed and which was bought is immaterial to all of
+ * them — where splitting each fill between two payers would put a cell's grain through the mill
+ * twice (XI-15). The facility is offered the biggest fills first so that the least of it goes
+ * unused; ties break on the name, so two worlds from one seed agree (Audit D3).
+ *
+ * B5 then balances by construction rather than by a check: what the sellers were paid IS what was
+ * drawn plus what the buyer put up, leg by leg, and *"the debt proceeds stop at the target"* is the
+ * one thing that cannot happen here — they were never the target's to stop.
+ */
 function settleTender(
   ctx: MechanismContext,
   bid: Bid,
@@ -535,8 +561,14 @@ function settleTender(
   const paid: Qty[] = [];
   const unfilled: { readonly holder: string; readonly wanted: Qty; readonly filled: Qty }[] = [];
   let bought = NO_QTY;
-  for (const f of fills) {
-    if (f.side !== 'sell') continue;
+  // E1: what a lender promised the company for this deal, and nothing if none did.
+  const facility = facilityFor(ctx, bid.target, bid.ccy);
+  let room = facility.some ? facility.value.limit.pieces : 0;
+  let drawn = 0;
+  const sells = [...fills]
+    .filter((f) => f.side === 'sell')
+    .sort((a, b) => (b.qty === a.qty ? String(a.party).localeCompare(String(b.party)) : b.qty - a.qty));
+  for (const f of sells) {
     const seller = ctx.parties.get(f.party);
     /**
      * XI-15, Law 8: A CELL IS A POPULATION AND WHAT IT HANDS OVER IS STRUCK PER MEMBER, because a
@@ -565,32 +597,43 @@ function settleTender(
     if (units < downTick(f.qty)) {
       unfilled.push({ holder: String(f.party), wanted: f.qty, filled: units });
     }
-    const legs: Leg[] = [
-      {
-        kind: 'asset',
-        from: f.party,
-        to: bid.buyer,
-        instrument: bid.line,
-        qty: units,
-        pricePerUnit: some(price),
-        accruedPerUnit: none(),
-      },
-      {
-        kind: 'money',
-        from: ctx.accountOf(bid.buyer, bid.ccy),
-        to: ctx.accountOf(f.party, bid.ccy),
-        ccy: bid.ccy,
-        amount: cash,
-      },
-    ];
+    // B2, B3: WHO PAYS FOR THIS ONE. The company, out of what its lender promised, while the
+    // promise still covers the whole of it; otherwise the buyer, out of its own money (B3's equity
+    // cheque). Nothing is split and nothing is part-drawn.
+    const onTheFacility = facility.some && cash <= room;
+    const legs: Leg[] = onTheFacility
+      ? drawnLegs(ctx, bid, facility.value, f.party, units, cash, price)
+      : [
+          {
+            kind: 'asset',
+            from: f.party,
+            to: bid.buyer,
+            instrument: bid.line,
+            qty: units,
+            pricePerUnit: some(price),
+            accruedPerUnit: none(),
+          },
+          {
+            kind: 'money',
+            from: ctx.accountOf(bid.buyer, bid.ccy),
+            to: ctx.accountOf(f.party, bid.ccy),
+            ccy: bid.ccy,
+            amount: cash,
+          },
+        ];
     const r = ctx.settle({
       legs,
       cause: 'trade',
-      reason: `${String(bid.buyer)} buys ${units} of ${String(bid.line)} in its tender for ${String(bid.target)}`,
+      reason: onTheFacility
+        ? `${String(bid.target)} buys back ${units} of ${String(bid.line)} with what it drew for the tender`
+        : `${String(bid.buyer)} buys ${units} of ${String(bid.line)} in its tender for ${String(bid.target)}`,
     });
     if (r.outcome !== 'settled') continue;
     paid.push(cash);
-    bought = addQty(bought, units, 'bought');
+    if (onTheFacility) {
+      room -= cash;
+      drawn += cash;
+    } else bought = addQty(bought, units, 'bought');
   }
   // A2, Part II: WHAT THE BOOK STRUCK AND THE HOLDERS COULD NOT DELIVER. A tender that bought less
   // than it cleared is the ordinary consequence of a cell's grain, and it is the difference between
@@ -599,7 +642,7 @@ function settleTender(
   if (unfilled.length > 0) {
     ctx.record('tender.unfilled', [bid.buyer, bid.target, bid.line], { by: unfilled }, true);
   }
-  if (bought <= 0) return;
+  if (bought <= 0 && drawn <= 0) return;
   ctx.record(
     'control.acquired',
     [bid.buyer, bid.target, bid.line],
@@ -610,6 +653,11 @@ function settleTender(
       // D5: what was PAID, which is what the acquirer actually put up and can be checked against
       // the accounts of everybody who was paid (Law 19). It is not the bid and not the offer.
       paid: sum(paid).value,
+      // B5 (17b.3): THE SOURCES, beside the use they paid for. What the company borrowed against
+      // itself and what the buyer put up out of its own money add to what the sellers were paid,
+      // and the family that checks it reads these three off this one event (17b.5).
+      drawn,
+      cheque: sum(paid).value - drawn,
       price,
     },
     true,
@@ -652,6 +700,79 @@ function settleTender(
   if (held < inIssue) return;
   if (couldRunIt(ctx, bid.buyer)) combine(ctx, bid.buyer, bid.target);
   else own(ctx, bid.buyer, bid.target, bid.line);
+}
+
+/**
+ * §29 B2, B2.a, B4, Banks Lending B1, Register B3 (17b.3): THE COMPANY BORROWS AND BUYS ITS OWN
+ * SHARES BACK, in one instruction with the seller's.
+ *
+ * Three legs and every one of them two-sided. The shares go back to their ISSUER, which settlement
+ * turns into a redemption — the units cease and what is in issue falls (Register B3). The row is
+ * issued by the target to the bank that committed it, which is B2.a: *"the debt is the target's
+ * liability, not the fund's."* And the bank's own money is created against it and lands in the
+ * seller's account, which is Banks Lending B1 — nothing left the bank to make this loan, and the
+ * proceeds never sat anywhere: they paid the shareholder they were borrowed to pay (B5).
+ *
+ * The row is `facilityLoanId`, which is the same name the lender's own headroom read uses, so what
+ * has been drawn on the commitment is one number read off the register by both of them (Law 4,
+ * Law 19). A second drawing on the same deal adds to the same row rather than writing a new one.
+ */
+function drawnLegs(
+  ctx: MechanismContext,
+  bid: Bid,
+  facility: Facility,
+  seller: PartyId,
+  units: Qty,
+  cash: Qty,
+  price: PerPiece,
+): Leg[] {
+  const row = facilityLoanId(facility.bank, bid.target);
+  if (!ctx.instruments.has(row)) {
+    const terms: LoanTerms = {
+      kind: LOAN,
+      originator: facility.bank,
+      borrower: bid.target,
+      // A2: the rate and the term were struck when the line was committed, not when it is drawn.
+      rate: facility.rate,
+      drawn: ctx.calendar.startOf(ctx.period),
+      maturity: facility.maturity,
+      dayCount: 'ACT/365F',
+      // Bond F3: a buyout's debt is a term loan the company pays down, never a line it draws at
+      // will — which is what makes C1's *"less room out of cash flow"* a payment and not a mood.
+      amortising: true,
+      // A4: unsecured. What a lender takes security over in a buyout is a covenant it bids for,
+      // and no holder bids a covenant yet (finding 21.60(b), positioned at 17b.8).
+      security: [],
+    };
+    ctx.issue({ id: row, kind: LOAN, issuer: some(bid.target), ccy: bid.ccy, terms, market: none() });
+  }
+  return [
+    {
+      kind: 'asset',
+      from: seller,
+      to: bid.target,
+      instrument: bid.line,
+      qty: units,
+      pricePerUnit: some(price),
+      accruedPerUnit: none(),
+    },
+    {
+      kind: 'asset',
+      from: bid.target,
+      to: facility.bank,
+      instrument: row,
+      qty: cash,
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
+      accruedPerUnit: none(),
+    },
+    {
+      kind: 'money',
+      from: { holder: facility.bank, issuer: facility.bank },
+      to: ctx.accountOf(seller, bid.ccy),
+      ccy: bid.ccy,
+      amount: cash,
+    },
+  ];
 }
 
 /**
@@ -929,9 +1050,10 @@ export interface Wanted {
  * period's book; a deal it cannot becomes a borrowing the company is asked to arrange, and comes
  * back as a bid two periods later or not at all (§29 B2.b).
  *
- * What it can pay with is its own balance, and what it is short of is that balance against the price
- * LESS what a lender has already committed to the company (`committedTo`) — so a deal a bank has
- * promised to fund is not asked about twice while the promise stands.
+ * **What counts as money it can pay with** is its own balance PLUS what a lender has committed to
+ * the target for this deal (`committedTo`), because the commitment is drawn inside the instruction
+ * that completes the purchase (17b.3). A deal a bank has promised to fund is therefore bid for and
+ * not asked about again.
  */
 export function controlDealsFor(
   view: ParticipantView,
@@ -969,16 +1091,16 @@ export function controlDealsFor(
     const cost = valueAt(worth.value, needs, ccy, 'what control would cost it at its own number');
     const bid = { buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy };
     /**
-     * E1, B2: IT DOES NOT BID FOR WHAT IT CANNOT PAY FOR. A bid it could not honour is not a bid.
-     *
-     * What it can pay with is its OWN money, and that is still true here: a commitment is not money
-     * until it is drawn, and drawing it is 17b.3 — the instruction that completes the purchase. So
-     * a company a lender has already committed to is neither bid for nor asked about again, and
-     * waits for the step that lets the commitment pay for the shares.
+     * E1, B2 (17b.3): IT DOES NOT BID FOR WHAT IT CANNOT PAY FOR — and what it can pay with is its
+     * own money AND what a lender has committed to the company, because the commitment is drawn
+     * inside the instruction that completes the purchase. This is the line that makes a LEVERED bid
+     * possible: without it every buyer bids only what it holds, and §29 B is a section about a
+     * mechanism this world does not have.
      */
-    const hole = holeIn(cost, cash, committedTo(ctx, target, ccy));
-    if (cost.pieces <= cash.pieces) bids.push(bid);
-    else if (hole.pieces > 0) wanted.push({ bid, cost, has: cash, hole });
+    const committed = committedTo(ctx, target, ccy);
+    const hole = holeIn(cost, cash, committed);
+    if (hole.pieces <= 0) bids.push(bid);
+    else wanted.push({ bid, cost, has: cash, hole });
   }
   return { bids, wanted };
 }

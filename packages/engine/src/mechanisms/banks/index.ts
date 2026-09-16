@@ -870,6 +870,11 @@ function commit(
     rate,
     // B2.b: the period the deal has to close in, which is the one after the ask was answered.
     until: period(ctx.period + 1),
+    // A2: the term the drawing will run for, struck here because this is where it was agreed.
+    maturity: addMonths(
+      ctx.calendar.startOf(ctx.period),
+      ctx.params.months(LENDING_PARAMS.loanMonths),
+    ),
   };
   ctx.owes({
     debtor: borrower,

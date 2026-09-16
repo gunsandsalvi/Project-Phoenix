@@ -16,29 +16,53 @@
  * A company nobody will commit to is a company nobody can buy with borrowed money, and no line here
  * says so.
  */
-import { asCash, minus, type Cash, noCash, sumCash } from '../../core/measure.js';
+import { asCash, minus, type Cash, noCash, type Ratio } from '../../core/measure.js';
+import type { Civil } from '../../calendar/civil.js';
+import { none, some, type Option } from '../../core/option.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { FACILITY, isFacility } from '../../registry/credit.js';
 import type { MechanismContext } from '../../world/context.js';
 
+/** E1: one lender's standing promise to a named company, as the party that will draw it reads it. */
+export interface Facility {
+  readonly bank: PartyId;
+  readonly limit: Cash;
+  readonly rate: Ratio;
+  readonly maturity: Civil;
+}
+
 /**
- * E1, Corporate Credit C9 (17b.1): WHAT A LENDER HAS COMMITTED TO THIS NAME AND NOT YET LENT.
+ * E1, Corporate Credit C9 (17b.1): WHAT A LENDER HAS PROMISED THIS NAME FOR A DEAL AND NOT LENT.
  *
- * The commitments are read off the agreement store rather than an event, because what matters is
- * that the promise still STANDS — a lapsed one is a promise that was made and is over (Law 19). A
- * commitment past the period it was made for is not drawn here even though the lender has not yet
- * struck it off its own book: the borrower knows when its commitment papers expired.
+ * Read off the agreement store rather than an event, because what matters is that the promise still
+ * STANDS: a lapsed one is a promise that was made and is over (Law 19). A commitment past the
+ * period it was made for is not drawn here even though the lender has not yet struck it off its own
+ * book — the borrower knows when its commitment papers expired.
+ *
+ * ONE LENDER, because a drawing is one row between two parties (Banks Lending A1, F1.a) and the
+ * biggest promise is the one a buyer would use. A deal funded by several banks at once is a
+ * syndicate and it is §7 C7's mechanism, not this one.
  */
-export function committedTo(ctx: MechanismContext, target: PartyId, ccy: CurrencyCode): Cash {
-  const standing: Cash[] = [];
+export function facilityFor(
+  ctx: MechanismContext,
+  target: PartyId,
+  ccy: CurrencyCode,
+): Option<Facility> {
+  let best: Facility | undefined;
   for (const a of ctx.agreements.ofKind(FACILITY)) {
     if (a.state !== 'performing' || a.debtor !== target || a.ccy !== ccy) continue;
     const t = a.terms;
-    if (!isFacility(t) || ctx.period > t.until) continue;
-    standing.push(t.limit);
+    if (!isFacility(t) || ctx.period > t.until || t.limit.pieces <= 0) continue;
+    if (best !== undefined && t.limit.pieces <= best.limit.pieces) continue;
+    best = { bank: a.creditor, limit: t.limit, rate: t.rate, maturity: t.maturity };
   }
-  if (standing.length === 0) return noCash(ccy);
-  return sumCash(ccy, standing, 'what lenders have committed to this name for a deal').value;
+  return best === undefined ? none<Facility>() : some(best);
+}
+
+/** The same promise as a number, for the buyer working out what it still has to find. */
+export function committedTo(ctx: MechanismContext, target: PartyId, ccy: CurrencyCode): Cash {
+  const f = facilityFor(ctx, target, ccy);
+  return f.some ? f.value.limit : noCash(ccy);
 }
 
 /**
