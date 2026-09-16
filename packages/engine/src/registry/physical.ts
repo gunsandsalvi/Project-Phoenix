@@ -23,7 +23,7 @@
  * number denominated in money is refused at assembly, by name.
  */
 import { type Period } from '../calendar/calendar.js';
-import { downTick, type Qty } from '../core/tick.js';
+import { asQty, downTick, upTick, type Qty } from '../core/tick.js';
 import { Missing } from '../core/errors.js';
 import {
   instrumentId,
@@ -210,6 +210,8 @@ export const goodMarketId = (subUnit: string, region: RegionId): MarketId =>
 export const goodUnitId = (unit: string): UnitId => unitId(unit);
 
 export const spoilageParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.spoilage`);
+export const upkeepParam = (capitalKind: string): ParamId =>
+  paramId(`capital.upkeep.${capitalKind}`);
 export const recipeParam = (output: string, input: string): ParamId =>
   paramId(`goods.${output}.recipe.${input}`);
 
@@ -662,6 +664,55 @@ export function plantCondition(
 }
 
 /**
+ * Capital Programme A6, Housing A5 (17e.2): WHAT A HOLDER MUST BUY THIS PERIOD TO KEEP WHAT IT HAS.
+ *
+ * A count of whole pieces of the good the thing is made of: half a roof tile does not keep a roof
+ * on, and the piece below is the piece it has to buy (Law 8, the same rounding a batch draws by).
+ */
+export function upkeepFor(units: Qty, perUnitPerPeriod: Ratio): Qty {
+  return upTick(scale(units, perUnitPerPeriod, 'what keeping it takes this period'));
+}
+
+/**
+ * Capital Programme A6, Housing A5 (17e.2): THE SHARE OF ITS UPKEEP A HOLDER WENT WITHOUT.
+ *
+ * One read for every thing that wears, because there is one fact here and it is the same one for a
+ * machine, a silo, a hull and a roof: what was needed to keep it, what was bought, and therefore
+ * what it went without. Nothing is bounded — a holder that bought more than it needed went without
+ * nothing, which is a zero and not a clamp, and a holder that needed nothing went without nothing.
+ * What that share COSTS is the wear each thing has of its own (Law 4: one number, read twice).
+ */
+export function wentWithout(needed: Qty, got: Qty): Ratio {
+  if (needed <= 0) return asRatio(0, 'a thing that needs no upkeep goes without none');
+  if (got >= needed) return asRatio(0, 'it bought what keeping it took');
+  return asRatio(
+    div(sub(needed, got, 'what it did not buy'), needed, 'the share of its upkeep it went without'),
+    'the share of its upkeep it went without',
+  );
+}
+
+/**
+ * Capital Programme A6 (17e.2): WHAT FAILS FOR WANT OF IT, and it takes no number of its own.
+ *
+ * A vintage with `n` periods of service left holds `units × n` unit-periods of it. A period that
+ * passes with none of the upkeep bought is a period of that service gone beyond the calendar, and a
+ * period of service across the whole stock is `units / n` of the units — so a machine shop that
+ * buys nothing for its machines ages them at twice the calendar, and one that buys half of what
+ * they take ages them at half again. The share bought is `1 - wentWithout` and nothing else is
+ * declared: the ratio is the vintage's own two dates, which is where 17e.1 read it from too.
+ */
+export function failedForWant(units: Qty, periodsLeft: number, without: Ratio): Qty {
+  if (periodsLeft <= 0 || without <= 0) return asQty(0, 'nothing fails for want of nothing');
+  // It is what the arithmetic says and not yet a count of machines: the caller takes it to whole
+  // pieces on the grid the register counts in, as what perishes in store is taken (Law 8).
+  return over(
+    scale(units, without, 'the stock that went without'),
+    asRatio(periodsLeft, 'the periods it has left'),
+    'what fails for want of it',
+  );
+}
+
+/**
  * A3, Goods B5: what a unit of one kind of plant costs its holder in wear, per period, averaged
  * over what it holds. It is the capital charge that belongs in unit cost, and it is the SAME number
  * the write-down takes off the stock (A3: one schedule, charged in both places).
@@ -804,6 +855,16 @@ export interface CapitalKindDecl {
    */
   readonly windHardness: number;
   /**
+   * Capital Programme A6, Housing A5 (17e.2): WHAT A UNIT OF IT EATS OF WHAT IT IS MADE OF, each
+   * period, to stay in service. Parts for a machine, a roof and a gutter for a building — the same
+   * good it was built from, because that is what a thing is repaired with.
+   *
+   * It is TECHNOLOGY, and it is not a threshold: nothing happens AT it. What a holder does not buy
+   * of it is the share of this period's upkeep the plant went without, and what goes for want of it
+   * is the service that went with it (`wentWithout`, `failedForWant`).
+   */
+  readonly upkeepPerUnitPerPeriod: number;
+  /**
    * 13c.1, Goods B4: THE GROUND A UNIT OF IT STANDS ON, in square kilometres. It is what makes a
    * place fill up — the more plant a region carries, the poorer the ground the next unit stands on —
    * and null is plant that takes no ground worth counting, which is what a hull at sea is.
@@ -833,6 +894,9 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     // wind, and what fails above that fails quickly (13c, Commodities Spot B3).
     standsWind: 3,
     windHardness: 6,
+    // 17e.2: about a twentieth of a machine a year in parts — three years of it comes to a sixth of
+    // what the machine cost, which is what keeping one running costs and what stopping saves.
+    upkeepPerUnitPerPeriod: 0.001,
     // 13c.1: a machine and the yard around it. Small, but it is what makes a place fill up.
     landPerUnit: 0.02,
     why: 'A machine works for three years and then it is scrap. Three years is short enough that a firm which stops investing loses its capacity inside a run, and long enough that the spend and the capacity it buys are separated by more than a cycle — which is what makes investment a commitment rather than a purchase.',
@@ -851,6 +915,10 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     // A building stands up to far more than a machine shed, and what takes one down is rare.
     standsWind: 8,
     windHardness: 7,
+    // 17e.2: about a hundredth of a building a year — a roof, gutters, a boiler. Over forty years
+    // it comes to nearly half of what the building cost, which is why an owner that stops spending
+    // on one is richer for a while and has nothing at the end of it.
+    upkeepPerUnitPerPeriod: 0.0002,
     // 13c.2, 13c.1: the ground a shop, a surgery or a restaurant stands on. It is small per unit and
     // there are a great many of them, which is what makes a town fill up before a coalfield does.
     landPerUnit: 0.004,
@@ -867,6 +935,8 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     // Out in the weather the whole time, and light: a gale takes more of these than of a building.
     standsWind: 4,
     windHardness: 6,
+    // 17e.2: a lorry is worked hard and serviced often — about a twentieth of a vehicle a year.
+    upkeepPerUnitPerPeriod: 0.0008,
     // 13c.2: a yard and a parking space. Small, and there are many.
     landPerUnit: 0.0004,
     why: 'What carries a thing the last few miles and what carries a person to work. It is the plant of the lines that move things WITHIN a place, and it is not a hull: a voyage is freight’s, it is built (13c.1), and a second writer of the same fact would be a Law 4 defect.',

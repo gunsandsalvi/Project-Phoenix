@@ -59,7 +59,7 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
-import { atMost, div, largest, raised } from '../../core/num.js';
+import { atMost, div, largest, material, raised } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { asQty, downTick, splitOnTick, subQty, upTick, type Qty } from '../../core/tick.js';
 import type { AgreementKindDecl } from '../../register/agreements.js';
@@ -73,6 +73,8 @@ import type { PartyKindProfile } from '../../registry/kinds.js';
 import { hectaresOf, hectaresUnder, landId } from '../../registry/land.js';
 import {
   CAPITAL_KINDS,
+  upkeepFor,
+  upkeepParam,
   SEED_PLANT_AGES,
   capitalKindOf,
   goodId,
@@ -620,15 +622,42 @@ export function buildOf(view: ParticipantView, ccy: CurrencyCode): Option<Build>
   });
 }
 
+/**
+ * Housing A5, Capital Programme A6 (17e.2): AND KEEPING THE ONES IT ALREADY HAS UP.
+ *
+ * A landlord's buildings wear, and until now its only answer was to hold fewer of them. What keeps
+ * a building standing is the same good it was built from, bought every period against what it
+ * holds — and a landlord that stops buying it is one whose premises start failing (`capital.upkeep`
+ * is where that is settled, once, for every kind of plant this world has).
+ *
+ * It bids what it expects to pay: what a roof is worth to it is the rent the building goes on
+ * earning, and that is the schedule `buildOf` already discounts rather than a second valuation.
+ */
+function upkeepOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
+  const kind = capitalKindOf(CAPITAL_KINDS, PREMISES);
+  if (kind === undefined) return [];
+  const part = goodId(kind.madeFrom, view.self.region);
+  if (m.instrument !== part) return [];
+  const units = premisesHeld(view);
+  if (units <= 0) return [];
+  const need = upkeepFor(units, view.params.ratio(upkeepParam(kind.id)));
+  const buy = subQty(need, view.quantity(part), 'what it must buy to keep them');
+  if (!material(buy, 2, need) || buy <= 0) return [];
+  const level = expectedPriceOf(view, part);
+  if (!level.some) return [];
+  return [{ party: view.self.id, side: 'buy', price: level.value, qty: buy }];
+}
+
 function buildOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const ccy = view.registry.currencyOf(view.self.region);
+  const keep = upkeepOrders(view, m);
   const build = buildOf(view, ccy);
-  if (!build.some) return [];
+  if (!build.some) return keep;
   const b = build.value;
   if (m.instrument === b.good) {
     // Ground first: a building it has nowhere to stand is a building it does not buy yet.
-    if (b.hectaresShort > 0 || b.wanted <= 0) return [];
-    return [{ party: view.self.id, side: 'buy', price: b.bid, qty: b.wanted }];
+    if (b.hectaresShort > 0 || b.wanted <= 0) return keep;
+    return [...keep, { party: view.self.id, side: 'buy', price: b.bid, qty: b.wanted }];
   }
   if (m.instrument === landId(view.self.region) && b.hectaresShort > 0) {
     // 15.1: the residual — what the buildings are worth over what they ask, over the ground they take.
@@ -642,16 +671,16 @@ function buildOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
       PREMISES,
       b.wanted,
     );
-    if (surplus.pieces <= 0 || needed <= 0) return [];
+    if (surplus.pieces <= 0 || needed <= 0) return keep;
     const level = view.registry.onQuoteGrid(
       view.instruments.get(m.instrument).kind,
       m.ccy,
       asPerPiece(div(surplus.pieces, needed, 'what a hectare is worth to it'), 'its bid a hectare'),
     );
-    if (level <= 0) return [];
-    return [{ party: view.self.id, side: 'buy', price: level, qty: b.hectaresShort }];
+    if (level <= 0) return keep;
+    return [...keep, { party: view.self.id, side: 'buy', price: level, qty: b.hectaresShort }];
   }
-  return [];
+  return keep;
 }
 
 /**

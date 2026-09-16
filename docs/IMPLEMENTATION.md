@@ -284,11 +284,18 @@ absence on the production side and it is the bottom-up half of §12c.
   service date), so a firm that commissions raises its own productivity by holding newer plant, and
   one that does not lowers it by holding older. **No new number for "better"**: the ratio is the
   plant's remaining life against its whole life, which the vintage already states.
-- [ ] 17e.2 **Maintenance is an outlay, and not making it decays** (Capital Programme A6, Housing A5,
-  21.43). Wear is already an event; what is missing is the outlay that answers it. A holder of plant
-  buys the inputs and the hours that keep a vintage at its age, or it does not, and what it does not
-  spend shows up as a vintage ageing faster than the calendar. It is the same mechanism a dwelling
-  needs (21.43), so it is built once, in the registry, for both — and 21.43 closes here.
+- [x] 17e.2a **Maintenance is an outlay, and not making it decays — the PLANT half** (Capital
+  Programme A6, Housing A5). A kind of capital declares what a unit of it eats of what it is made of
+  each period (technology); the holder buys it or it does not; `capital.upkeep` consumes what it
+  bought off its own shelf and scraps what went without it — `units × wentWithout / periodsLeft`,
+  which is a period of service gone beyond the calendar and takes no number of its own. Firms and
+  landlords bid for the parts.
+- [ ] 17e.2b **The DWELLING half** (Housing A5, 21.43). A dwelling is not plant: it is a GOOD (13d)
+  and what wears it is `goods.spoilage`, a rate rather than two dates — so "built once for both" is
+  the SHARE GONE WITHOUT (`wentWithout`, built at 17e.2a and shared), and what it answers is each
+  thing's own wear. A good declares an upkeep where it has one (a dwelling does; grain does not, and
+  no upkeep keeps a tonne of grain), what perishes is its spoilage times what it went without, and
+  the holder — landlord or owner-occupier — bids for the materials. 21.43 closes here.
 - [ ] 17e.3 §12c's bottom-up half re-marked, Firm A3 and Capital Programme A6 re-read; 21.43 closed;
   record.
 

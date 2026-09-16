@@ -35,6 +35,9 @@ export const STORAGE_KIND: CapitalKindDecl = {
   // A silo is a heavier structure than a machine shed and is built to stand more, which is part of
   // why it lasts twenty years and a machine lasts three (13c, Commodities Spot B3).
   standsWind: 4,
+  // 17e.2: a silo is a shell with little in it to go wrong — about half a percent of a building a
+  // year in repairs, which is why space is cheap to hold and dear to build.
+  upkeepPerUnitPerPeriod: 0.0001,
   // 13c.1: A silo holding five thousand tonnes stands on a real yard, which is why covered space competes with everything else for a place.
   landPerUnit: 0.15,
   windHardness: 6,

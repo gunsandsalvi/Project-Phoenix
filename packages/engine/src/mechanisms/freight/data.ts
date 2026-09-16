@@ -48,6 +48,9 @@ export const VESSEL_KIND: CapitalKindDecl = {
   // A vessel is at sea and is built for far more weather than a shed on land; what takes one is a
   // storm it could not run from (B4, Commodities Spot B3).
   standsWind: 5,
+  // 17e.2: a hull is surveyed, painted and dry-docked — about three percent of a vessel a year, and
+  // a carrier that stops paying it is a carrier whose hulls start failing at sea.
+  upkeepPerUnitPerPeriod: 0.0006,
   // 13c.1: A hull is at sea: it stands on no ground, which is part of why shipping capacity is never a claim on a place.
   landPerUnit: null,
   windHardness: 8,

@@ -62,8 +62,11 @@ import {
   learnedHoursPerUnit,
 } from '../../registry/physical.js';
 import {
+  CAPITAL_KINDS,
   capacityFrom,
   plantCondition,
+  upkeepFor,
+  upkeepParam,
   rentedRoom,
   capitalChargePerUnit,
   vintagesHeld,
@@ -83,7 +86,7 @@ import {
   type Project,
 } from '../../registry/capital.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
-import { downTick, upTick, addQty } from '../../core/tick.js';
+import { asQty, downTick, upTick, addQty } from '../../core/tick.js';
 import { NO_QTY, subQty, toTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 import type { Period } from '../../calendar/calendar.js';
@@ -665,6 +668,33 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
       price: level.value,
       qty: buy,
     });
+  }
+  /**
+   * Capital Programme A6 (17e.2): AND WHAT KEEPING THE PLANT TAKES. Parts for the machines it holds,
+   * bought because the plant EXISTS and not because the line ran — the same shape as an overhead and
+   * a different good: an overhead is a SERVICE the site takes (cleaning, support) and going without
+   * it costs the firm nothing but the service; upkeep is the plant eating what it is made of, and
+   * going without it is machines that break (`capital.upkeep`).
+   *
+   * It bids what it expects to pay, on the same ladder it buys an input on: what a part is worth to
+   * it is the plant it keeps in service, and nothing in this world prices that yet.
+   */
+  for (const kind of CAPITAL_KINDS) {
+    const units = sum(
+      vintages.filter((v) => v.capitalKind === kind.id && v.periodsLeft > 0).map((v) => v.units),
+    ).value;
+    if (units <= 0) continue;
+    const part = goodId(kind.madeFrom, view.self.region);
+    if (!view.instruments.has(part)) continue;
+    const need = upkeepFor(
+      asQty(units, 'the plant it has in service'),
+      view.params.ratio(upkeepParam(kind.id)),
+    );
+    const buy = subQty(need, view.quantity(part), 'what it must buy');
+    if (!material(buy, 2, need) || buy <= 0) continue;
+    const level = expectedPriceOf(view, part);
+    if (!level.some) continue;
+    orders.push({ market: marketOf(view, part), side: 'buy', price: level.value, qty: buy });
   }
   // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
   // against what the rest of the plan leaves it — the cash it is not about to need — and it adds

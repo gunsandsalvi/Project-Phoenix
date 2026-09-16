@@ -74,8 +74,13 @@ import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
 import { conditionsFor, WIND } from '../../registry/environment.js';
 import {
   capitalKindOf,
+  failedForWant,
   landPerUnitParam,
+  serviceLeft,
   standsWindParam,
+  upkeepFor,
+  upkeepParam,
+  wentWithout,
   windHardnessParam,
 } from '../../registry/physical.js';
 import {
@@ -110,6 +115,15 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
             why: `Goods B4 (13c.1): the ground a unit of ${d.name} stands on. It is what makes a place fill up — the more plant a region carries, the poorer the ground the next unit of it stands on — and it is why a rent emerges instead of a cap being needed (Law 6).`,
           },
         ]),
+    {
+      id: upkeepParam(d.id),
+      value: d.upkeepPerUnitPerPeriod,
+      unit: `${d.madeFrom}s a unit takes a period`,
+      dimension: 'ratio',
+      kind: 'technology',
+      owner: 'model',
+      why: `Capital Programme A6, Housing A5 (17e.2): what a unit of ${d.name} eats of what it is made of each period to stay in service. A thing that wears can be KEPT, and keeping it is a purchase from whoever makes the parts — so a holder that stops buying is a holder whose plant starts failing, which is the outlay a depreciating world was missing.`,
+    },
     {
       id: lifeParam(d.id),
       value: d.usefulLifePeriods,
@@ -248,6 +262,92 @@ function retire(ctx: MechanismContext): void {
       'capital.retired',
       [h.holder, i.id],
       { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units, why: 'retired' },
+      false,
+    );
+  }
+}
+
+/**
+ * Capital Programme A6, Housing A5 (17e.2): KEEPING WHAT IT HAS, and what it costs not to.
+ *
+ * Wear was already an event and nobody could answer it: a holder's only reply to a machine getting
+ * older was to hold fewer machines. What was missing is the OUTLAY. A unit in service eats a little
+ * of what it is made of every period — parts for a machine, a roof for a building — and the holder
+ * either bought that or it did not. What it did buy is CONSUMED here, off its own shelf, at what
+ * the lots cost it; what it did not buy is a share of this period's upkeep the plant went without,
+ * and what goes with it is the service that went with it (`failedForWant`): a machine that nobody
+ * maintains ages at twice the calendar, and one maintained by halves at half again.
+ *
+ * NOTHING IS WRITTEN DOWN AND NOTHING IS RESCHEDULED. The vintage keeps the two dates it was made
+ * with (Law 4: one representation of how worn a thing is, and 17e.1 reads it); what neglect takes
+ * is UNITS — machines that broke and were not put right. So the carrying value, the wear charge,
+ * the capacity read and the condition read all follow with no second writer, and the loss lands on
+ * the holder's equity because settlement debits the lots at what they carried (Goods E3).
+ *
+ * It is one mechanism over every kind of plant this world has — machinery, premises, silos, hulls,
+ * fleet — and it never asks what a kind is FOR (Law 15).
+ */
+function maintain(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void {
+  const on = ctx.calendar.startOf(ctx.period);
+  for (const h of ctx.register.allHoldings()) {
+    const i = ctx.instruments.get(h.instrument);
+    if (!i.status.live || !isPlant(i)) continue;
+    const terms = plantTerms(i);
+    const kind = capitalKindOf(rows, terms.capitalKind);
+    if (kind === undefined) continue;
+    const left = serviceLeft(terms, on, ctx.calendar);
+    if (left <= 0) continue;
+    const units = ctx.register.free(h.holder, i.id);
+    if (units <= 0) continue;
+    const needed = upkeepFor(units, ctx.params.ratio(upkeepParam(kind.id)));
+    if (needed <= 0) continue;
+    const part = goodId(kind.madeFrom, terms.region);
+    // What it holds of what its plant is made of, and never more of it than keeping the plant takes:
+    // a shelf with one part on it does not repair two machines (arithmetic impossibility, Law 6).
+    const have = ctx.instruments.has(part)
+      ? ctx.register.free(h.holder, part)
+      : asQty(0, 'it holds none of what its plant is made of');
+    const used = atMost(have, needed, 'it cannot use more parts than it holds');
+    const without = wentWithout(needed, used);
+    const failed = ctx.registry.deliverable(failedForWant(units, left, without));
+    if (used <= 0 && failed <= 0) continue;
+    const legs: Leg[] = [];
+    if (used > 0) {
+      // The parts went INTO the plant: consumed, at what the lots cost it (Goods E3).
+      legs.push({ kind: 'destroy', party: h.holder, instrument: part, qty: used, why: 'consumed' });
+    }
+    if (failed > 0) {
+      legs.push({
+        kind: 'destroy',
+        party: h.holder,
+        instrument: i.id,
+        qty: failed,
+        // A machine that broke and was not put right is scrap, and it is scrap for a reason the
+        // journal carries: `capital.kept` says what it needed, what it bought and what it lost.
+        why: 'scrapped',
+      });
+    }
+    const record = ctx.settle({
+      legs,
+      // The physical world acting on units a party holds, as `perish` does; each leg's own `why`
+      // says which way (Goods E4).
+      cause: 'production',
+      reason: `${h.holder} keeps ${i.id}`,
+    });
+    if (record.outcome !== 'settled') continue;
+    ctx.record(
+      'capital.kept',
+      [h.holder, i.id],
+      {
+        holder: h.holder,
+        vintage: i.id,
+        capitalKind: terms.capitalKind,
+        units,
+        needed,
+        used,
+        without,
+        failed,
+      },
       false,
     );
   }
@@ -716,6 +816,19 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
           // B3: and what the weather took, before anybody decides what it can make with what is
           // left. A storm is not a surprise a firm hears about later: it is standing in it.
           weather(ctx, rows);
+        },
+      },
+      {
+        name: 'capital.upkeep',
+        spec: 'Capital Programme A6 Housing A5',
+        // After the session the parts were bought in and after the lines have run, so what is left
+        // on the shelf is what keeping the plant can draw on, and before the write-down looks at
+        // what survived (the same place `goods.spoilage` sits).
+        anchor: { before: 'revaluation' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'capital.kept' }],
+        run: (ctx: MechanismContext) => {
+          maintain(ctx, rows);
         },
       },
       {
