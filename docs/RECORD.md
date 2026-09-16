@@ -11729,3 +11729,27 @@ the ten suites at 56 of 109 and `expectations.test.ts` at its two, the same sets
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
 
+## Item 12d.2 — Two predictors, and the party follows the one that has surprised it less
+
+A party had one way of expecting: its own history corrected at its own memory. It has two now.
+Beside the adaptive predictor it keeps an anchored one — the last PUBLIC level of the variable,
+where the variable has one: the venue's print for a price; a going rate, a board and a statement,
+which are public and anchor themselves; nothing for its income, its earnings or its own sales.
+Each predictor keeps its own track of surprises over the same memory, and at the top of the period
+the party follows whichever track is narrower. It is a switch and never a blend: a weight between
+the two would be a second primitive (§46 B1.b), and there is none. The switch is decided from
+history only (B4) and left alone on a tie or while either track has nothing to compare. What the
+outlook read returns, what its confidence is a read of, and what the published dispersion is a
+dispersion of, are the followed predictor's. The surprise event records the surprise the party
+took, the predictor it followed and both tracks' entries, so the choice replays off the journal.
+
+**Measured — the killer held (Law 17).** Fifty-two periods of the scale model: every change in a
+variable's published dispersion follows a surprise on that variable in the period the statistic
+is about, or a party arriving in or leaving the aggregate; the aggregate never moved first (§46
+E2). Some parties follow the public level and some their own history — the histories differ, so
+the choices do (A3) — and the recorded choice replays exactly from the recorded tracks over every
+party and every variable (`predictors.test.ts`, two green). Nothing new is red: the ten suites at
+56 of 109 and `expectations.test.ts` at its two, the same sets.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green.
+

@@ -1632,8 +1632,8 @@ measurement is taken there is nothing to name.
 | `Expectations A3` | MET | packages/engine/src/mechanisms/expectations/index.ts, packages/engine/src/mechanisms/households/index.ts `patienceOf` (memory and patience are drawn per population and dispersed, so parties with the same history still move differently; 0f.7c) |
 | `Expectations A4` | MET | packages/engine/src/mechanisms/expectations/index.ts (an outlook is last period outlook corrected towards what happened; nothing runs the world forward) |
 | `Expectations A5` | MET | packages/engine/src/world/context.ts (unit and periodicity are part of an outlook) |
-| `Expectations B1` | MET | packages/engine/src/mechanisms/expectations/index.ts (corrected towards what it observed, at its own speed) |
-| `Expectations B1.b` | MET | packages/engine/src/mechanisms/expectations/index.ts (one preference — memory — and nothing else; confidence is a read of its own surprises) |
+| `Expectations B1` | MET | packages/engine/src/mechanisms/expectations/index.ts (corrected towards what it observed, at its own speed); 12d.2: and beside the adaptive predictor an ANCHORED one — the last public level of the variable where it has one — the party following whichever has surprised it less over its memory, a switch decided at the top of the period from history only |
+| `Expectations B1.b` | MET | packages/engine/src/mechanisms/expectations/index.ts (one preference — memory — and nothing else; confidence is a read of its own surprises); 12d.2: the choice between the two predictors is a switch read off the two tracks of surprises, never a weight between them |
 | `Expectations B2` | MET | packages/engine/src/mechanisms/expectations/index.ts (observed minus expected, recorded per party and variable, and the only thing that moves an outlook) |
 | `Expectations B2.a` | MET | packages/engine/src/mechanisms/expectations/index.ts (the update reads the surprise and nothing else) |
 | `Expectations B3` | MET | packages/engine/src/mechanisms/expectations/index.ts (confidence is the width of that party own recent surprises) |
@@ -1650,6 +1650,6 @@ measurement is taken there is nothing to name.
 | `Expectations D3` | MET | packages/engine/src/mechanisms/expectations/index.ts (every outlook is scored against what happened, every period it is observed) |
 | `Expectations D4` | MET | packages/engine/src/mechanisms/expectations/index.ts (the dispersion aggregate is published with a lag and nothing can read it back) |
 | `Expectations E1` | MISSING |  |
-| `Expectations E2` | MET | packages/engine/src/mechanisms/expectations/index.ts (the aggregate is a read of outlooks already formed, published about the period that closed) |
+| `Expectations E2` | MET | packages/engine/src/mechanisms/expectations/index.ts (the aggregate is a read of outlooks already formed, published about the period that closed); 12d.2, Law 17: measured over fifty-two periods as the item's killer — every move of a variable's published dispersion follows a surprise on it in the period the statistic is about, or a party arriving or leaving it (`predictors.test.ts`) |
 | `Expectations E3` | MISSING |  |
 | `Expectations E4` | MISSING |  |

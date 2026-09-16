@@ -1505,3 +1505,22 @@ takes out. The walk applies the release before the debit and asks the register a
 
 The same item made every employer's posting whole people (`registry/wages.ts wholePeople`): 12b.5
 said all did, and firms, small firms and the treasury did not.
+
+### Outlooks: the exposure set, and two predictors (items 12d.1, 12d.2)
+
+An outlook is formed from what a party observed, and what it observes is (a) the legs it was a side
+of and what they did to its account, and (b) since 12d.1 what is PUBLIC about what it is EXPOSED
+to — the print of every line it holds, what a company whose paper it holds published (the period
+after), the going rate where its employment rows put it, the board of its own bank. The exposure
+set is a read of holdings and rows; the public facts are read through the registry, never by an
+event's name; the kernel's `Subject` vocabulary grew three entries for them (`wage`, `deposit`,
+`reported`).
+
+Since 12d.2 a `Held` carries two predictors: the adaptive one (its own history corrected at its
+memory) and an anchored one (the variable's last public level, where it has one). Each keeps its
+own track of surprises over the same memory; `form` switches to the narrower track and never
+blends them (§46 B1.b). `ParticipantView.outlook` returns the FOLLOWED predictor's value and the
+width of ITS track, and `expectations.dispersion` is the dispersion of followed values. The
+surprise event records the surprise the party took, the predictor it followed and both tracks'
+entries, so the switch replays off the journal.
+

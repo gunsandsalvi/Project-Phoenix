@@ -35,6 +35,7 @@ import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
  * `add`/`sub`/`mul`/`div` so that no reader is handed a dimension this file invented.
  */
 import { add, atLeast, div, mul, sub, sum } from '../../core/num.js';
+import { assertNever } from '../../core/assert.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
 import { isAssetLeg, isContractLeg, isMoneyLeg } from '../../ledger/instruction.js';
@@ -42,7 +43,7 @@ import { issuedBy } from '../../register/instruments.js';
 import { findVenue } from '../../clearing/venue.js';
 import { depositRatePostedAt } from '../../registry/banking.js';
 import { goingRatePublishedAt } from '../../registry/wages.js';
-import { about, type MechanismContext, type Outlook, type OutlookVariable } from '../../world/context.js';
+import { about, subjectOf, type MechanismContext, type Outlook, type OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Event, EventKind } from '../../journal/journal.js';
 import { weightOf } from '../../parties/party.js';
@@ -52,7 +53,17 @@ export const EXPECTATION_PARAMS = {
   memoryDispersion: paramId('expectations.memory.dispersion'),
 } as const;
 
-/** What a party expects of one variable, and the record it formed it from. */
+/**
+ * What a party expects of one variable, and the record it formed it from.
+ *
+ * 12d.2, B1, A2.a: TWO PREDICTORS, AND IT FOLLOWS THE ONE THAT HAS SURPRISED IT LESS. The adaptive
+ * one is its own history corrected at its own memory (B1). The anchored one is the last PUBLIC
+ * level of the same variable — the venue's print, the published rate, the board — where the
+ * variable has one; a party's income or its own sales have none. Each keeps its own track of
+ * surprises over the same memory, and at the top of a period the party follows whichever track is
+ * narrower. The choice is a switch and never a blend: a weight between them would be a second
+ * primitive (B1.b), and there is none.
+ */
 interface Held {
   expected: number;
   /** B1.a: how many of its own periods this party weighs, drawn once at entry. */
@@ -63,6 +74,63 @@ interface Held {
   surprises: number[];
   unit: string;
   formed: number;
+  /** 12d.2: the public level this variable last stood at, or nothing where it has no public level. */
+  anchored: number | null;
+  /** 12d.2: how wrong the public level has been about what this party then observed, over its memory. */
+  anchoredSurprises: number[];
+  /** 12d.2: which of the two it acts on, re-read at the top of every period. */
+  follows: 'adaptive' | 'anchored';
+}
+
+/** 12d.2: the value a party acts on — the predictor it follows. */
+function followed(h: Held): number {
+  return h.follows === 'anchored' && h.anchored !== null ? h.anchored : h.expected;
+}
+
+/** 12d.2: the surprises of the predictor it follows — what its confidence is a read of (B3). */
+function followedSurprises(h: Held): readonly number[] {
+  return h.follows === 'anchored' && h.anchored !== null ? h.anchoredSurprises : h.surprises;
+}
+
+/** B3, 12d.2: how wide a track of surprises is on average — the one comparison the switch reads. */
+function meanAbsolute(surprises: readonly number[]): number {
+  return div(sum(surprises.map((x) => (x < 0 ? -x : x))).value, surprises.length, 'mean surprise');
+}
+
+/**
+ * 12d.2, A2.a: THE PUBLIC LEVEL OF A VARIABLE THIS PERIOD, or nothing. A price has the venue's
+ * print; a going rate, a board and a statement ARE public and anchor themselves; what reached a
+ * party, what it made and what it sold are its own and have no public level.
+ */
+function publicLevelOf(ctx: MechanismContext, variable: string, seen: number): number | null {
+  const subject = subjectOf(variable as OutlookVariable);
+  if (!subject.some) return null;
+  switch (subject.value.on) {
+    case 'price': {
+      if (!ctx.instruments.has(subject.value.instrument)) return null;
+      const print = ctx.prices.read(subject.value.instrument, ctx.period);
+      return print.some ? print.value.price : null;
+    }
+    case 'wage':
+    case 'deposit':
+    case 'reported':
+      return seen;
+    case 'bought':
+    case 'sold':
+    case 'income':
+    case 'earnings':
+    case 'credit':
+      return null;
+    default:
+      return assertNever(subject.value, '§46 A2.a');
+  }
+}
+
+/** B2, B3: a track keeps no more surprises than the party's memory of them. */
+function keep(track: number[], memory: number): void {
+  const rounded = Math.round(memory);
+  const window = atLeast(rounded, 1, 'there is no window shorter than the one surprise it just had');
+  if (track.length > window) track.splice(0, track.length - window);
 }
 
 type Book = Record<string, Record<string, Held>>;
@@ -346,6 +414,15 @@ export const expectations: SystemModule = {
             // what the close of the last period recorded, so nothing here reads this period.
             const gap = sub(h.observed, h.expected, 'gap');
             h.expected = add(h.expected, div(gap, h.memory, 'correction'), 'outlook');
+            // 12d.2: and it follows the predictor that has surprised it less over its memory — a
+            // switch read off the two tracks, decided here from history only (B4), and left as it
+            // was while either track has nothing to compare (a tie is no reason to move).
+            if (h.anchored !== null && h.surprises.length > 0 && h.anchoredSurprises.length > 0) {
+              const own = meanAbsolute(h.surprises);
+              const anchored = meanAbsolute(h.anchoredSurprises);
+              if (anchored < own) h.follows = 'anchored';
+              else if (own < anchored) h.follows = 'adaptive';
+            }
             h.formed = ctx.period;
           }
         }
@@ -375,6 +452,7 @@ export const expectations: SystemModule = {
           if (party === undefined || variable === undefined) continue;
           if (!ctx.parties.has(party as PartyId)) continue;
           const forParty = (held[party] ??= {});
+          const level = publicLevelOf(ctx, variable, seen.value);
           const h = (forParty[variable] ??= {
             // A party that has never seen this variable has no outlook to be surprised against:
             // its first observation IS its outlook, and it is surprised by nothing (B2).
@@ -384,17 +462,33 @@ export const expectations: SystemModule = {
             surprises: [],
             unit: seen.unit,
             formed: ctx.period,
+            anchored: level,
+            anchoredSurprises: [],
+            follows: 'adaptive',
           });
-          const surprise = sub(seen.value, h.expected, 'surprise');
+          // B2: what it acted on this period is the predictor it followed, and that is the surprise
+          // it took; the other track is scored too, so the switch above has something to read.
+          const acted = followed(h);
+          const surprise = sub(seen.value, acted, 'surprise');
+          const own = sub(seen.value, h.expected, 'surprise against its own history');
+          if (own !== 0) {
+            h.surprises.push(own);
+            keep(h.surprises, h.memory);
+          }
+          const anchored = h.anchored === null ? null : sub(seen.value, h.anchored, 'surprise against the public level');
+          if (anchored !== null && anchored !== 0) {
+            h.anchoredSurprises.push(anchored);
+            keep(h.anchoredSurprises, h.memory);
+          }
           h.observed = seen.value;
           h.unit = seen.unit;
-          if (surprise !== 0) {
-            h.surprises.push(surprise);
-            const rounded = Math.round(h.memory);
-            const keep = atLeast(rounded, 1, 'there is no window shorter than the one surprise it just had');
-            if (h.surprises.length > keep) h.surprises.splice(0, h.surprises.length - keep);
+          // 12d.2: the public level this variable now stands at, for the anchored predictor.
+          if (level !== null) h.anchored = level;
+          if (own !== 0 || (anchored !== null && anchored !== 0)) {
             // B2: a surprise is a real event, recorded. It is the party's own, so it is private.
-            ctx.record('expectations.surprise', [party], { variable, observed: seen.value, expected: h.expected, surprise }, false);
+            // `surprise` is the one it took — against the predictor it followed; both tracks are on
+            // the record too, so the switch is something a reader can check against the history.
+            ctx.record('expectations.surprise', [party], { variable, observed: seen.value, expected: acted, surprise, follows: h.follows, own, anchored }, false);
           }
         }
       },
@@ -407,10 +501,10 @@ export const expectations: SystemModule = {
       const h = book(ctx)[party]?.[variable];
       if (h === undefined) return none();
       return some<Outlook>({
-        expected: h.expected,
+        expected: followed(h),
         unit: h.unit,
         per: PER_PERIOD,
-        confidence: width(h.surprises),
+        confidence: width(followedSurprises(h)),
         formed: period(h.formed),
       });
     },
@@ -433,7 +527,7 @@ function publishDispersion(ctx: MechanismContext, held: Book): void {
   for (const forParty of Object.values(held)) {
     for (const [variable, h] of Object.entries(forParty)) {
       const list = byVariable.get(variable) ?? [];
-      list.push(h.expected);
+      list.push(followed(h));
       byVariable.set(variable, list);
     }
   }
