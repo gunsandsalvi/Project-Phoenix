@@ -449,6 +449,8 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
       security: vintages.map((v) => ({ instrument: v.instrument as InstrumentId, qty: v.units })),
       // C9: working capital, drawn and repaid at its option — one line at its bank, secured.
       repays: 'atOption',
+      // 17b.1: the money, not a promise of it — a cell short of stock needs to pay for stock.
+      wants: 'money',
     });
   }
   ctx.record(

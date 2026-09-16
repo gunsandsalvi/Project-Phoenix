@@ -604,7 +604,8 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
    * naming this module's.
    */
   // C9: working capital, drawn and repaid at its option.
-  ctx.request(view.self.id, { ccy, short, repays: 'atOption' });
+  // 17b.1: the money, not a promise of it — what a firm is short of, it is short of now.
+  ctx.request(view.self.id, { ccy, short, repays: 'atOption', wants: 'money' });
   ctx.record(
     'firms.funding',
     [view.self.id],

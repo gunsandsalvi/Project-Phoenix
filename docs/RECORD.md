@@ -13254,3 +13254,40 @@ quarter is thirteen weeks. The rest are positioned: 21.65 and 21.67 at 23.1, 21.
 21.67 and 21.69 at 23.3, 21.62 at 19.
 
 **The suites run at the end of step 19**, by the owner's instruction (2026-09-16), not at this close.
+
+## Item 17b.1 — A lender that agreed to lend
+
+§29 E1 is *"no buyout without a lender who agreed to lend"*, and this world had no way for a lender
+to agree to anything. A borrower published what it was short of and a bank wrote it a row the next
+period; there was nothing in between, and the thing a deal needs is exactly the thing in between.
+
+**Why a row will not do.** The money must not exist unless the deal closes. A loan written the
+period before a tender is money a failed tender has to hand back — an interest bill, a repayment and
+a borrower briefly holding money it had no use for — where a COMMITMENT drawn inside the instruction
+that completes the tender is money that was never made. That is the whole reason this is an
+agreement (XI-8) and not an instrument: nobody trades a promise to lend, it has no issued quantity
+and no holder, and it is one of the things an estate has to divide.
+
+**One field on the one door every borrower uses.** `CreditAsk.wants: 'money' | 'commitment'`, stated
+either way and never inferred, exactly as `repays` is. It is not a second door because the DECISION
+is the same decision — `shop` prices the name, finds which bank quoted it and how much room that
+bank has — and only what the decision produces differs. Six existing asks say `'money'` in a line
+each; a seventh kind of borrower is one word away rather than a new channel.
+
+**The lender's capital stands behind it from the moment it says yes.** `FACILITY` is declared with a
+`headroom` contribution, so what is promised and not drawn consumes the same room a drawing would
+(Banks Lending A3.a) — which is the difference between a commitment and an intention, and the reason
+a bank cannot commit to every deal in the world at once. B2.b's *"the credit market decides which
+buyouts occur"* is that sentence, and it is arithmetic rather than a rule.
+
+**And it lapses.** A commitment with no end is a free option the lender did not sell — §18 B4's
+sentence about backstops, as true here — so a facility carries the period the deal has to close in
+and is TERMINATED when it passes: ended by its own terms, not discharged by a payment, because
+nothing was ever owed on it. The room comes back before the bank decides on the next period's asks.
+
+**What it did not do.** `short-term-debt`'s `BACKSTOP` is this object with a commitment fee and no
+end date, and the two are not merged: a backstop's fee is §18's economics and changing it does not
+belong in §29's item. The duplication is written down as finding 21.71 with the item that closes it.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+two new tests, both green; the file's seven reds are unchanged.

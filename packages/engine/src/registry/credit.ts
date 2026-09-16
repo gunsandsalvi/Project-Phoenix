@@ -1,7 +1,7 @@
 /**
- * What a LOAN is, as a shape the kernel names.
+ * What a LOAN is, and what a COMMITMENT TO LEND one is, as shapes the kernel names.
  *
- * @spec Banks Lending A1 Banks Lending A2 Banks Lending A4 Banks Lending F1 Housing C1 Law 4 Law 15
+ * @spec Banks Lending A1 Banks Lending A2 Banks Lending A4 Banks Lending A3.a Corporate Credit C9 Banks Lending F1 Housing C1 Private Equity B2 Private Equity B2.b Private Equity E1 Law 4 Law 15
  *
  * The SHAPE of a credit row — who lent, who owes, at what rate, until when, and what it is secured
  * on — is kernel data for the reason a good's terms are (ARCHITECTURE 4.9b): more than one module
@@ -14,9 +14,17 @@
  * one definition and one spelling (Law 4).
  */
 import type { Qty } from '../core/tick.js';
-import type { Ratio } from '../core/measure.js';
-import { instrumentKindId, type InstrumentId, type PartyId } from '../core/ids.js';
+import type { Cash, Ratio } from '../core/measure.js';
+import {
+  agreementKindId,
+  instrumentId,
+  instrumentKindId,
+  type InstrumentId,
+  type PartyId,
+} from '../core/ids.js';
 import type { Civil } from '../calendar/civil.js';
+import type { Period } from '../calendar/calendar.js';
+import type { AgreementTerms } from '../register/agreements.js';
 import type { DayCount } from '../calendar/daycount.js';
 import { InvalidRegistry } from '../core/errors.js';
 import type { Instrument, Terms } from '../register/instruments.js';
@@ -97,4 +105,52 @@ export function loanTerms(i: Instrument): LoanTerms {
     throw new InvalidRegistry('Banks Lending A1', `${i.id} is not a loan`);
   }
   return i.terms;
+}
+
+/* --- A COMMITMENT TO LEND, which is not a loan and is not nothing --------------------------- */
+
+/**
+ * §29 B2, B2.b, E1, Corporate Credit C9: A LENDER HAS AGREED TO LEND AND HAS NOT LENT.
+ *
+ * *"No buyout without a lender who agreed to lend"* (E1), and the whole of why that has to be an
+ * agreement rather than a row is the CONDITION: the money must not exist unless the deal closes. A
+ * loan written the period before a tender is money a failed tender has to hand back; a commitment
+ * drawn inside the instruction that completes the tender is money that was never made.
+ *
+ * It is here rather than in the module that draws it because two of them name it: the lender
+ * DECIDES it — the same credit decision it takes about a row, at the size and rate it would have
+ * lent at — and the borrower DRAWS it, and a module may not import another to find out what it has
+ * been promised (ARCHITECTURE 4.9b).
+ *
+ * It is the shape `short-term-debt`'s BACKSTOP also has, and the two are NOT merged here: a
+ * backstop is a standing line with a commitment fee on undrawn headroom and this one lapses, so
+ * merging them is a change to §18's economics and does not belong in §29's item (finding 21.71).
+ */
+export const FACILITY = agreementKindId('credit.facility');
+
+export interface FacilityTerms extends AgreementTerms {
+  readonly kind: typeof FACILITY;
+  /** The most the lender committed. Its capital stands behind it before a penny is drawn. */
+  readonly limit: Cash;
+  /** What a drawing costs per annum — the rate that lender quoted this name when it committed. */
+  readonly rate: Ratio;
+  /**
+   * B2.b: A COMMITMENT IS MADE FOR A DEAL AND LAPSES IF THE DEAL DOES NOT CLOSE. It is what makes
+   * this an underwritten commitment rather than a standing line nobody pays for: the lender's
+   * capital is behind it for the period the deal has to happen in, and after that it is not.
+   */
+  readonly until: Period;
+}
+
+/** Structural, like `isLoan`: a size, a price for drawing it, and a date it stops standing. */
+export const isFacility = (t: AgreementTerms): t is FacilityTerms =>
+  'limit' in t && 'rate' in t && 'until' in t;
+
+/**
+ * F1.a: the row a facility is drawn into — one per (lender, borrower), named so a reader sees whose
+ * it is and what it stands behind. One spelling, because the lender's headroom read and the
+ * borrower's drawing are two modules asking about one row (Law 4).
+ */
+export function facilityLoanId(lender: PartyId, borrower: PartyId): InstrumentId {
+  return instrumentId(`loan:${String(lender)}:${String(borrower)}:facility`);
 }

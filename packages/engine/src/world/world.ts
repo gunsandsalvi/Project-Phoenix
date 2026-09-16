@@ -1459,6 +1459,10 @@ export class World {
       }
       const repays = e.data['repays'];
       if (repays !== 'atOption' && repays !== 'onSchedule') continue;
+      // §29 B2, E1 (17b.1): which of the two it asked for, as it said it. A request with neither is
+      // not a request a lender can answer, and nothing here supplies the missing half.
+      const wants = e.data['wants'];
+      if (wants !== 'money' && wants !== 'commitment') continue;
       const raw = e.data['security'];
       const security: { instrument: InstrumentId; qty: Qty }[] = [];
       for (const sec of Array.isArray(raw) ? (raw as unknown[]) : []) {
@@ -1474,6 +1478,7 @@ export class World {
         short: asCash(short, ccy as CurrencyCode, 'what it published it is short of'),
         security,
         repays,
+        wants,
         at,
         statement: report === undefined ? none<Statement>() : some(statementOf(report)),
       });
@@ -2826,6 +2831,8 @@ export class World {
               qty: Number(sec.qty),
             })),
             repays: ask.repays,
+            // §29 B2, E1 (17b.1): money, or a lender that has agreed to lend and has not lent.
+            wants: ask.wants,
             // Corporate Credit A3, A4 (17.0a): a borrower that asks opens its books with the ask — the
             // latest statement it prepared, named here so whoever lends reads that one.
             statement: this.journal.lastOf(REPORT, String(borrower))?.id ?? null,

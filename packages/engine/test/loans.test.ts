@@ -72,6 +72,7 @@ function outOfTheSystem(report: { readonly audit: AuditReport }): Violation[] {
 import { asPerPiece } from '../src/core/measure.js';
 import { instrumentId } from '../src/core/ids.js';
 import { loanTerms } from '../src/mechanisms/banks/loan.js';
+import { FACILITY, isFacility } from '../src/registry/credit.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -100,7 +101,13 @@ function asksFor(amount: number, at = 1): SystemModule {
           // Item 0e: a borrower publishes what it is short of through the one door every borrower
           // uses. It wrote `firms.funding` directly, which is the coupling that item removed — a
           // bank read two other modules' event names and a third borrower had to join that list.
-          ctx.request(partyId(BORROWER), { ccy: USD, short: asCash(amount, USD, 'what it is short of'), repays: 'atOption' });
+          ctx.request(partyId(BORROWER), {
+            ccy: USD,
+            short: asCash(amount, USD, 'what it is short of'),
+            repays: 'atOption',
+            // 17b.1: the money, not a promise of it.
+            wants: 'money',
+          });
         },
       },
     ],
@@ -139,6 +146,7 @@ function asksSecured(amount: number, at = 1): SystemModule {
             short: asCash(amount, USD, 'what it is short of'),
             security: [{ instrument: pledge.instrument, qty: ctx.register.quantity(BORROWER, pledge.instrument) }],
             repays: 'onSchedule',
+            wants: 'money',
           });
         },
       },
@@ -1286,6 +1294,7 @@ describe('paying a line down (Banks Lending C9, F2)', () => {
               ccy: USD,
               short: asCash(-amount, USD, 'the money it does not need'),
               repays: 'atOption',
+              wants: 'money',
             });
           },
         },
@@ -1391,5 +1400,73 @@ describe('the end of a claim (Register E2, F2, Banks Lending E5)', () => {
       undrawn += 1;
     }
     expect(undrawn).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * §29 B2, E1 (17b.1): a borrower that wants the PROMISE and not the money. Same door, same shape,
+ * one field different — which is the whole of the change, and the reason it is one field.
+ */
+function asksForCommitment(amount: number, at = 1): SystemModule {
+  return {
+    ...asksFor(amount, at),
+    id: 'test.asksCommitment',
+    phases: [
+      {
+        name: 'test.askCommitment',
+        spec: 'Private Equity B2',
+        anchor: { before: 'corporateActions' },
+        reads: [],
+        writes: [{ kind: 'event', name: 'credit.request' }],
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          ctx.request(partyId(BORROWER), {
+            ccy: USD,
+            short: asCash(amount, USD, 'what the deal is short of'),
+            repays: 'onSchedule',
+            wants: 'commitment',
+          });
+        },
+      },
+    ],
+  };
+}
+
+describe('a lender that agreed to lend (Private Equity B2, B2.b, E1)', () => {
+  it('writes a commitment and not a row: no money is made until it is drawn', () => {
+    const w = world([asksForCommitment(phx(20_000).pieces)]);
+    w.step();
+    const before = w.cash(BORROWER, USD);
+    w.step();
+    const committed = w.journal.ofKind('credit.committed');
+    expect(committed).toHaveLength(1);
+    expect(Number(committed[0]?.data['limit'])).toBeGreaterThan(0);
+    // E1: what exists is a promise. Nothing was created, nothing moved, and there is no row — the
+    // money a commitment promises is made when it is drawn and not before.
+    expect(w.journal.ofKind('credit.written')).toHaveLength(0);
+    expect(loans(w)).toHaveLength(0);
+    expect(w.cash(BORROWER, USD)).toBe(before + paidTo(w, BORROWER, 'coupon'));
+    // It is an agreement between the two of them, and the borrower owes nothing on it yet (Law 2).
+    const row = w.agreements.ofKind(FACILITY).find((a) => a.debtor === BORROWER);
+    expect(row).toBeDefined();
+    expect(row?.owed).toBe(0);
+    expect(row?.creditor).toBeDefined();
+    const terms = row?.terms;
+    expect(terms !== undefined && isFacility(terms)).toBe(true);
+    if (terms === undefined || !isFacility(terms)) return;
+    expect(terms.rate).toBeGreaterThan(0);
+    expect(terms.limit.pieces).toBeGreaterThan(0);
+  });
+
+  it('lapses when the deal it was committed for does not close (B2.b)', () => {
+    const w = world([asksForCommitment(phx(20_000).pieces)]);
+    for (let i = 0; i < 4; i += 1) w.step();
+    // Nobody drew it, so it is over — terminated by its own terms rather than discharged by a
+    // payment, because nothing was ever owed on it.
+    expect(w.journal.ofKind('credit.lapsed')).toHaveLength(1);
+    const live = w.agreements.ofKind(FACILITY).filter((a) => a.state === 'performing');
+    expect(live).toHaveLength(0);
+    // And no money was ever made for it: a deal that did not happen left the bank where it was.
+    expect(loans(w)).toHaveLength(0);
   });
 });

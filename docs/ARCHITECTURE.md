@@ -876,7 +876,14 @@ fact IS:
   0e′.5) — and is never how one module reads another.
 - **A request is an event with one kind and a kernel stamp** (`ctx.request` / `ctx.requests`, 0e):
   what a borrower is short of is published once, under one kind, with the party and the period
-  stamped by the kernel, and a lender reads one thing.
+  stamped by the kernel, and a lender reads one thing. It says WHICH OF TWO THINGS it wants
+  (`wants: 'money' | 'commitment'`, 17b.1): the money, or a lender that has agreed to lend and has
+  not lent. The decision behind the two is the same decision — the same bank, the same price, the
+  same room — and only what it produces differs, so it is one field on the one door and not a second
+  door. A commitment is a `FACILITY` agreement (`registry/credit.ts`) whose undrawn limit consumes
+  the lender's capital through `headroom` and which lapses if it is not drawn: the money it promises
+  is made inside the instruction that draws it, which is what lets a deal be conditional on it
+  (§29 B2, E1).
 
 **The observer is under the same rule and has no sibling of its own.** It imports the kernel and the
 registry and no module (`phoenix/no-cross-module-import` covers `src/observer/`); a measure it

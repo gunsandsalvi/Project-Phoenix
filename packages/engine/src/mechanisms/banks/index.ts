@@ -80,6 +80,12 @@ import {
 import { financedFor, type PrimeDeps, PRIME, runPrime } from './prime.js';
 import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
+import {
+  FACILITY,
+  facilityLoanId,
+  type FacilityTerms,
+  isFacility,
+} from '../../registry/credit.js';
 import type { Holding } from '../../register/register.js';
 import {
   CREDIT_DAY_COUNT,
@@ -831,6 +837,82 @@ function write(
 }
 
 /**
+ * §29 B2, B2.b, E1, Banks Lending A3.a, Corporate Credit C9 (17b.1): THE LENDER AGREES TO LEND AND DOES NOT LEND.
+ *
+ * Nothing moves and nothing is created. What exists after this is a named bank's promise to a named
+ * borrower, at a size and a rate that bank decided, and the bank's OWN CAPITAL STANDS BEHIND IT from
+ * now (`headroom`) — which is the whole difference between a commitment and a kind word, and the
+ * reason a bank cannot commit to every deal in the world at once. The money is made when it is
+ * drawn, inside the instruction that draws it, so a deal that does not close never made any.
+ *
+ * And it LAPSES. A commitment with no end is a free option the lender did not sell (§18 B4's
+ * sentence, as true here), and what this one is — an underwritten commitment for a deal that has to
+ * close — stands behind the borrower for the period the deal has to happen in and no longer.
+ */
+function commit(
+  ctx: MechanismContext,
+  bank: PartyId,
+  borrower: PartyId,
+  limit: Cash,
+  rate: Ratio,
+  ccy: CurrencyCode,
+): void {
+  if (bank === borrower || !ctx.parties.get(bank).status.alive) return;
+  // C9: one live commitment per (lender, borrower). A borrower that asks again while one stands is
+  // asking for the same money twice, and the second would be room this bank had already committed.
+  const already = ctx.agreements
+    .ofKind(FACILITY)
+    .find((a) => a.state === 'performing' && a.debtor === borrower && a.creditor === bank);
+  if (already !== undefined) return;
+  const terms: FacilityTerms = {
+    kind: FACILITY,
+    limit,
+    rate,
+    // B2.b: the period the deal has to close in, which is the one after the ask was answered.
+    until: period(ctx.period + 1),
+  };
+  ctx.owes({
+    debtor: borrower,
+    creditor: bank,
+    ccy,
+    // It owes nothing NOW. What it owes is what it draws, when it draws it — which is exactly the
+    // difference between a commitment and a debt (Law 2).
+    owed: 0,
+    terms,
+    why: `${String(bank)} commits ${limit.pieces} to ${String(borrower)} for a deal that has not closed`,
+  });
+  ctx.record(
+    'credit.committed',
+    [String(bank), String(borrower)],
+    { bank: String(bank), borrower: String(borrower), limit: limit.pieces, rate, ccy },
+    true,
+  );
+}
+
+/**
+ * B2.b (17b.1): A COMMITMENT NOBODY DREW LAPSES, and the lender's capital is its own again.
+ *
+ * It is TERMINATED rather than discharged: nothing was ever owed on it, and what ended it is its own
+ * terms rather than a payment (Register: `terminated` says so instead of quietly becoming a
+ * discharge). A deal that did not happen leaves the bank exactly where it was, which is what makes
+ * committing to the next one a decision it can still take.
+ */
+function lapseFacilities(ctx: MechanismContext): void {
+  for (const a of ctx.agreements.ofKind(FACILITY)) {
+    if (a.state !== 'performing') continue;
+    const t = a.terms;
+    if (!isFacility(t) || ctx.period <= t.until) continue;
+    ctx.endAgreement(a.id, 'the deal it was committed for did not close');
+    ctx.record(
+      'credit.lapsed',
+      [String(a.creditor), String(a.debtor)],
+      { bank: String(a.creditor), borrower: String(a.debtor), limit: t.limit.pieces, ccy: a.ccy },
+      true,
+    );
+  }
+}
+
+/**
  * C9: the borrower's live line at this bank, if it has one. One row, whatever it has drawn.
  *
  * D4, XI-11: AT THIS BANK means this bank is owed it NOW. A row this bank wrote and has since sold
@@ -1263,6 +1345,29 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     // ended. It is the ninth kind of commitment in this world and the first between a bank and a pool.
     agreementKinds: [
       {
+        /**
+         * §29 B2, B2.b, E1, Banks Lending A3.a, Corporate Credit C9 (17b.1): A LENDER HAS AGREED TO LEND AND HAS NOT
+         * LENT — the one thing a deal can be made conditional on, because the money it promises is
+         * only made when it is drawn.
+         */
+        id: FACILITY,
+        what: 'a bank has committed to lend a named borrower a size at a rate, until it lapses',
+        // B2, XI-8: a promise to lend on demand, and an estate lends nothing (Banks Lending A1).
+        // An acquirer that bought the committing bank's book stands behind what it promised.
+        binds: 'aGoingConcern',
+        /**
+         * Banks Lending A3.a, A3.b: WHAT IS PROMISED AND NOT DRAWN. The lender's capital stands
+         * behind it BEFORE the borrower draws, because the lender cannot refuse when it does — and
+         * what has been drawn is read off the drawing's own row in the register (Law 19).
+         */
+        headroom: (row, _at, reads) => {
+          const t = row.terms;
+          if (!isFacility(t)) return noCash(row.ccy);
+          const drawn = reads.drawnOn(facilityLoanId(row.creditor, row.debtor));
+          return minus(t.limit, heldAsMoney(drawn, row.ccy, 'what it has drawn'), 'its headroom');
+        },
+      },
+      {
         id: PRIME,
         // A1, XI-8: an acquirer that bought the book took the clients with it, which is what buying
         // a book is. An estate finances nobody (Banks Lending A1) and the relationship ends.
@@ -1537,8 +1642,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'bank.insolvent' },
           { kind: 'event', name: 'bank.reservation' },
           { kind: 'event', name: 'bank.underwriting' },
+          { kind: 'event', name: 'credit.committed' },
           { kind: 'event', name: 'credit.declined' },
           { kind: 'event', name: 'credit.draw' },
+          { kind: 'event', name: 'credit.lapsed' },
           { kind: 'event', name: 'credit.quoted' },
           { kind: 'event', name: 'credit.repaid' },
           { kind: 'event', name: 'credit.written' },
@@ -1549,6 +1656,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           // repayment was about to bring back would be sizing its book against a number that had
           // already moved (Clearing F1).
           runRepayments(rows, ctx);
+          // B2.b (17b.1): a commitment nobody drew is over before this period's are made, so the
+          // room it was holding is the bank's own again when it decides on this period's asks.
+          lapseFacilities(ctx);
           runRequests(rows, ctx);
           // Clearing F1: everything that prices off a bank's own economics this period reads it here
           // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
@@ -2068,6 +2178,19 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (broughtPaper(ctx, borrower as PartyId, said)) continue;
     const { best, lend } = shop(rows, ctx, borrower as PartyId, want);
     if (best === undefined || lend.pieces <= 0) continue;
+    /**
+     * §29 B2, B2.b, E1 (17b.1): IT ASKED FOR A PROMISE AND IT GETS A PROMISE.
+     *
+     * The same decision, a different thing produced. The borrower said which of the two it wanted,
+     * the bank priced the name and found the room exactly as it does for a row, and what it writes
+     * is a commitment its capital stands behind and its borrower may draw — which is *"the credit
+     * market decides which buyouts occur, and that is a real constraint, not a rate applied to a
+     * plan"* arriving as the ordinary answer to an ordinary ask.
+     */
+    if (req.wants === 'commitment') {
+      commit(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy);
+      continue;
+    }
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it
     // draws at is the one that was struck when the line was agreed (A2, A3).

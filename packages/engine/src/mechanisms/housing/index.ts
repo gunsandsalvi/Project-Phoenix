@@ -769,6 +769,8 @@ function askForMortgages(ctx: MechanismContext, rows: readonly TenureDecl[]): vo
       ],
       // C2: a mortgage is paid down, interest and principal.
       repays: 'onSchedule',
+      // 17b.1: the money, not a promise of it — a buyer of a roof pays for the roof.
+      wants: 'money',
     });
   }
 }

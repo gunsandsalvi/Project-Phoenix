@@ -922,6 +922,21 @@ export interface CreditRequest {
   /** A4: what it would secure the loan on, or nothing — which is an unsecured ask. */
   readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
   readonly repays: 'atOption' | 'onSchedule';
+  /**
+   * §29 B2, E1, Banks Lending C9 (17b.1): MONEY, OR A PROMISE OF IT.
+   *
+   * Every borrower until now wanted the money: it published what it was short of and a bank wrote
+   * it a row the next period. A DEAL wants the other thing — a lender that has agreed to lend and
+   * has not lent — because the money must not exist unless the deal closes: money lent the period
+   * before a tender is money a failed tender has to give back, and a commitment drawn inside the
+   * instruction that completes the tender is money that was never made.
+   *
+   * It is one field on the one door every borrower uses rather than a second door, because the
+   * DECISION is the same decision (`shop`: what this name costs and how much of it a bank has room
+   * for) and only what it produces differs — a row, or a `FACILITY` agreement at the same size and
+   * rate. Stated either way and never inferred, like `repays`.
+   */
+  readonly wants: 'money' | 'commitment';
   /** The period it said so in, so a lender can read last period's asks (Law 8). */
   readonly at: Period;
   /**
@@ -945,6 +960,21 @@ export interface CreditAsk {
    * written a new term loan every week: 414 rows in twenty periods of the scale model.
    */
   readonly repays: 'atOption' | 'onSchedule';
+  /**
+   * §29 B2, E1, Banks Lending C9 (17b.1): MONEY, OR A PROMISE OF IT.
+   *
+   * Every borrower until now wanted the money: it published what it was short of and a bank wrote
+   * it a row the next period. A DEAL wants the other thing — a lender that has agreed to lend and
+   * has not lent — because the money must not exist unless the deal closes: money lent the period
+   * before a tender is money a failed tender has to give back, and a commitment drawn inside the
+   * instruction that completes the tender is money that was never made.
+   *
+   * It is one field on the one door every borrower uses rather than a second door, because the
+   * DECISION is the same decision (`shop`: what this name costs and how much of it a bank has room
+   * for) and only what it produces differs — a row, or a `FACILITY` agreement at the same size and
+   * rate. Stated either way and never inferred, like `repays`.
+   */
+  readonly wants: 'money' | 'commitment';
 }
 
 export interface MechanismContext extends WorldReads {

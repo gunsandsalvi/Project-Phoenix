@@ -1063,6 +1063,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
         'what the cell is short of between them',
       ),
       repays: 'atOption',
+      // 17b.1: the money, not a promise of it — a household short this week is short now.
+      wants: 'money',
     });
   }
   const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);
@@ -1226,6 +1228,8 @@ function homeBid(
       ],
       // Housing C2: a mortgage is paid down, interest and principal.
       repays: 'onSchedule',
+      // 17b.1: the money, not a promise of it — a buyer of a roof pays for the roof.
+      wants: 'money',
     });
   }
   if (spare.pieces <= 0) return nothing;

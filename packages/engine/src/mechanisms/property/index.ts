@@ -670,7 +670,14 @@ function askForLoans(ctx: MechanismContext): void {
       .filter((v) => v.capitalKind === PREMISES)
       .map((v) => ({ instrument: v.instrument as InstrumentId, qty: v.units }));
     if (security.length === 0) continue;
-    ctx.request(cell.id, { ccy, short: build.value.short, security, repays: 'onSchedule' });
+    // 17b.1: the money, not a promise of it — what it cannot fund of what it wants to build.
+    ctx.request(cell.id, {
+      ccy,
+      short: build.value.short,
+      security,
+      repays: 'onSchedule',
+      wants: 'money',
+    });
     ctx.record(
       LANDLORD_PLAN,
       [cell.id],
