@@ -1883,6 +1883,8 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (cv === undefined) continue;
     const borrower = ctx.parties.resolve(i.terms.borrower).id;
     // XI-8, Firm Birth D5: an estate is winding the borrower up and there is nobody left to sign.
+    // A row whose borrower has finished existing altogether is not a workout either: what became of
+    // it is the estate's record, and the line itself ends when it is spent (Register E2, 17.9b).
     if (!ctx.parties.get(borrower).status.alive) continue;
     const name = cv.of(borrower);
     const agreed: LoanTerms = { ...i.terms, rate: name.rate, maturity: until };

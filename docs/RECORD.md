@@ -13072,3 +13072,44 @@ an estate — what is left to recover once the estate that succeeded the borrowe
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
 two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
 unchanged.
+
+## Item 17.9b — The end of a claim
+
+E5 says the loan leaves the book, on a date. Nothing in this world ever took one off. Twenty-three
+loan rows in twenty-four periods of the estate rig were live claims promising nothing, owed to
+nobody, on borrowers that had finished existing — carried, marked and counted by no one.
+
+**It is the kernel's and not a lender's, because there is no lender left to decide anything.** The
+claim has no holder: the estate settled it for whatever it fetched and the loss reached its holder's
+capital in that redemption. What is left is an empty line on a name that is gone. A terminal party
+succeeds ITSELF — an estate that has paid everything away has nobody left to succeed it — so when
+the successor is the party, the chain of references ends there and nothing it promised can be
+presented to anybody again. Every row it promised with nothing outstanding ceases with it, on that
+date, in the journal, with the reason.
+
+**A row with something still outstanding stays exactly as it is.** That is a debt nobody can pay, and
+it is a fact the audit should go on reporting rather than one this tidies away: a write-off is an
+outcome with a size and a date, never a line quietly disappearing.
+
+**And an undrawn line is untouched.** It is the same shape — nothing outstanding — with a living
+borrower, and that is a FACILITY, which is what C9 says a line is. The difference is whether there is
+anyone left to draw on it, and that is what the rule asks.
+
+**E5.a needed nothing.** The cease books no value at all, because by then the loss has already
+reached capital in the redemption that emptied the row. A cease that booked the principal again
+would be the double-count that clause names.
+
+**What was tried first and was wrong.** A lender-side write-off: the bank walks its book and gives up
+on claims on names that have ended. It fired zero times, and the reason was the answer — those rows
+have no creditor at all, so there is no bank whose book they are on and nothing for a lender to
+decide. The mechanism is a fact about the register, not a decision, and it belongs where facts about
+the register live.
+
+**21.62 moves.** An agreement still has no cure, and nothing in this world asks for one; the
+write-off's supposed sibling turned out not to need it. Building the door now would be building a
+door nobody opens, so it is repositioned to 19, where a payer given time on an arrear with the
+treasury is the first thing that will ask.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green. `loans`:
+two new tests, both green; the file's seven reds are the seven that were red at `8f4d70e` and are
+unchanged.

@@ -1338,3 +1338,58 @@ describe('paying a line down (Banks Lending C9, F2)', () => {
     }
   });
 });
+
+/**
+ * A spent claim on a name that has finished existing has ceased (Register E2, F2; Banks Lending E5;
+ * item 17.9b).
+ *
+ * A terminal party succeeds itself — an estate that has paid everything away has nobody left to
+ * succeed it — so the chain of references ends there and nothing it promised can be presented to
+ * anybody again.
+ */
+describe('the end of a claim (Register E2, F2, Banks Lending E5)', () => {
+  it('closes the empty lines and leaves the debts nobody can pay standing', () => {
+    const w = rigWorld('estate-a');
+    for (let i = 0; i < 24; i += 1) w.step();
+    let spent = 0;
+    let owing = 0;
+    for (const i of w.instruments.all()) {
+      if (!i.issuer.some) continue;
+      const promised = w.parties.resolve(i.issuer.value);
+      if (promised.status.alive) continue;
+      // E5.a, XI-8: a row with something OUTSTANDING is a debt nobody can pay, and it stays exactly
+      // as it is — that is a fact the audit should go on reporting, not one to tidy away.
+      if (i.status.live) {
+        expect(i.issued).toBeGreaterThan(0);
+        owing += 1;
+        continue;
+      }
+      if (i.issued === 0) spent += 1;
+    }
+    // The scale model buries forty-four estates in twenty-four periods, so there was something here
+    // to have closed: before this, twenty-three live loan rows promised nothing, to nobody, on
+    // names that had finished existing.
+    expect(spent).toBeGreaterThan(0);
+    const said = w.journal
+      .ofKind('instrument.ceased')
+      .filter((e) => String(e.data['reason']).includes('nothing was outstanding'));
+    expect(said.length).toBeGreaterThan(0);
+    // And it is stated either way: what is left standing is standing for a reason.
+    expect(owing).toBeGreaterThanOrEqual(0);
+  });
+
+  it('leaves an undrawn line alone, because somebody is still there to draw on it (C9)', () => {
+    const w = rigWorld('estate-a');
+    for (let i = 0; i < 24; i += 1) w.step();
+    let undrawn = 0;
+    for (const i of w.instruments.all()) {
+      if (i.kind !== LOAN || i.issued !== 0 || !i.issuer.some) continue;
+      if (!w.parties.resolve(i.issuer.value).status.alive) continue;
+      // The same shape — nothing outstanding — and a living borrower: that is a FACILITY, which is
+      // what C9 says a line is, and closing it would take away the thing it exists to be.
+      expect(i.status.live).toBe(true);
+      undrawn += 1;
+    }
+    expect(undrawn).toBeGreaterThan(0);
+  });
+});

@@ -793,6 +793,43 @@ export class World {
     );
   }
 
+  /**
+   * Register E2, F2, Banks Lending E5 (17.9b): A SPENT CLAIM ON A NAME THAT HAS FINISHED EXISTING
+   * HAS CEASED.
+   *
+   * A terminal party succeeds ITSELF — an estate that has paid everything away has nobody left to
+   * succeed it (`Parties.cease`) — so when the successor is the party, the chain of references ends
+   * here and nothing it ever promised can be presented to anybody again.
+   *
+   * What that means for its paper depends on one thing: whether anything is still outstanding. A row
+   * with something outstanding is a DEBT NOBODY CAN PAY, and it stays exactly as it is, because that
+   * is a fact the audit should go on reporting and not one this should tidy away (XI-8: a write-off
+   * is an outcome with a size and a date, never a line quietly disappearing). A row with NOTHING
+   * outstanding is spent: the estate settled it for whatever it fetched, the loss reached its
+   * holder's capital in that redemption (E5.a), and what is left is an empty line on a name that is
+   * gone. Twenty-three of them stood live in twenty-four periods of the scale model, carried and
+   * counted by nobody, owed to nobody, promised by nobody.
+   *
+   * It is the kernel's and not a lender's, because there is no lender left to decide anything: the
+   * claim has no holder. An UNDRAWN LINE is the same shape with a living borrower and is untouched
+   * (Corporate Credit C9) — the difference is whether there is anyone to draw on it.
+   */
+  private spentClaimsOf(party: PartyId, successor: PartyId): void {
+    if (successor !== party) return;
+    for (const i of this.instruments.issuedBy(party)) {
+      if (!i.status.live || i.issued !== 0) continue;
+      this.instruments.cease(i.id, this.currentPeriod);
+      this.journal.record(
+        this.currentPeriod,
+        this.currentCycle,
+        'instrument.ceased',
+        [String(i.id), String(party)],
+        { reason: 'the name that promised it has ended and nothing was outstanding' },
+        true,
+      );
+    }
+  }
+
   /** Declare a venue a module clears itself (Clearing B2); like a market, it is declared once. */
   addVenue(v: VenueDecl): void {
     forbid(!this.venueList.some((x) => x.id === v.id), 'Law 4', `venue ${v.id} declared twice`);
@@ -2751,6 +2788,7 @@ export class World {
             if (i.status.live) this.instruments.reseat(i.id, successor);
           }
           this.parties.cease(party, this.currentPeriod, successor);
+          this.spentClaimsOf(party, successor);
           succeedAgreements(party, successor, this.currentPeriod, this.currentCycle, {
             parties: this.parties,
             registry: this.registry,
