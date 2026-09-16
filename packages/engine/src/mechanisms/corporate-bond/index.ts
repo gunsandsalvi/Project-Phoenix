@@ -45,6 +45,7 @@ import {
   instrumentKindId,
   marketId,
   paramId,
+  partyId,
   type CurrencyCode,
   type InstrumentId,
   type MarketId,
@@ -54,7 +55,7 @@ import { InvalidRegistry, Missing } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
-import { upTick, type Qty } from '../../core/tick.js';
+import { asQty, upTick, type Qty } from '../../core/tick.js';
 import { priceAt } from '../../prices/curve.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import {
@@ -72,8 +73,11 @@ import { displayName, issuerName } from '../../registry/naming.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
+import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import { creditQuoteThisPeriod } from '../../registry/banking.js';
+import { appoint, mandateRecord, payFees, takeUp, type Underwriting } from './arranger.js';
+export * from './arranger.js';
 import { lastBenchmarkFix } from '../../registry/notices.js';
 import { about } from '../../world/context.js';
 import {
@@ -83,6 +87,7 @@ import {
   floatsRatherThanFixes,
   leveragedLoan,
   LEVERAGED_LOAN,
+  isLeveragedLoan,
   leveragedLoanId,
   leveragedLoanTerms,
   type LeveragedLoanTerms,
@@ -196,18 +201,22 @@ export const corporateBond: InstrumentKindProfile = {
 /** N4, C8: how long a firm's paper runs for. A convention of the market, stated with it (Law 2). */
 export const CORPORATE_BOND_PARAMS = {
   tenor: paramId('corporateBond.tenor'),
-  margin: paramId('corporateBond.margin'),
 } as const;
 
 /**
- * B4, N5.b (17.1): WHAT THIS ISSUER PROMISES OVER THE REFERENCE, if it floats. It is the same
- * question the fixed coupon answers — what this name has to pay for money beyond what money costs —
- * so it is the keenest requirement its holders published LESS what the reference is fixing at, and
- * a firm nobody requires anything of pays nothing over it. The parameter beside it is a
- * PLACEHOLDER: what an arranger actually strikes a margin at is 17.2's, where the book is built.
+ * B4, N5.b, C3 (17.2 — and the placeholder is dead): WHAT THIS ISSUER PROMISES OVER THE REFERENCE.
+ *
+ * It is the same question the fixed coupon answers, asked of two published numbers instead of one:
+ * what the keenest holder requires of this name (E5, E5.d — where a book for its paper would start)
+ * LESS what the reference is fixing at (Indices A1). The line pays what that holder asked for in
+ * the period it is drawn and moves with the rate afterwards, which is the whole of the difference
+ * between the two shapes.
+ *
+ * `corporateBond.margin` — three per cent, a number nobody could point at — is gone. Neither term
+ * here is declared: both are other people's published decisions (Law 2, Law 19).
  */
-function marginOn(ctx: MechanismContext): Ratio {
-  return ctx.params.perAnnum(CORPORATE_BOND_PARAMS.margin);
+function marginOn(keenest: Ratio, fixing: Ratio): Ratio {
+  return minus(keenest, fixing, 'what it pays over the reference');
 }
 
 /** ACT/365F, as every dated claim in this world is measured (Law 8: the day count is the number). */
@@ -266,7 +275,10 @@ export function issueBonds(ctx: MechanismContext): void {
     const cheaper = !quoted.some || keenest.value < quoted.value.rate;
     const enough = quoted.some && quoted.value.most >= short;
     if (!cheaper && enough) continue;
-    place(ctx, firm.id, ccy, short, keenest.value, quoted);
+    // C11.c: WHICH BASIS, and it is this distinction. A firm choosing between two channels can
+    // afford a smaller deal and saves the fee; a firm whose bank will not lend it enough must have
+    // the money and buys the backstop.
+    place(ctx, firm.id, ccy, short, keenest.value, quoted, !enough);
   }
 }
 
@@ -352,6 +364,7 @@ function place(
   short: Cash,
   keenest: Ratio,
   quoted: Option<{ readonly rate: Ratio; readonly most: Cash }>,
+  mustHave: boolean,
 ): void {
   const on = ctx.calendar.startOf(ctx.period);
   const maturity = addMonths(on, ctx.params.months(CORPORATE_BOND_PARAMS.tenor));
@@ -383,11 +396,11 @@ function place(
       floatsRatherThanFixes(
         keenest,
         fixing.value,
-        marginOn(ctx),
+        marginOn(keenest, fixing.value),
         outlook.some ? asRatio(outlook.value.expected, 'where it thinks the rate goes') : undefined,
       ));
   if (floats) {
-    placeFloating(ctx, issuer, ccy, short, keenest, quoted, maturity, fixing.value, benchmark);
+    placeFloating(ctx, issuer, ccy, short, keenest, quoted, maturity, fixing.value, benchmark, mustHave);
     return;
   }
   const id = fixedId;
@@ -433,11 +446,17 @@ function place(
   }
   const units = upTick(wanted);
   if (units <= 0) return;
+  // C1: A DEAL IS BROUGHT BY SOMEBODY. No arranger will take it on, no issue — which is a real
+  // outcome (a firm nobody will bring is a firm that does not reach the market) and not a gap.
+  const mandate = appoint(ctx, issuer, units, walkAway, mustHave);
+  if (!mandate.some) return;
   if (standing === undefined && !openLine(ctx, issuer, ccy, id, schedule, units, onto)) return;
   ctx.offer({
     market: marketOf(ctx, id),
     issuer,
-    size: units,
+    // C10.c: what the syndicate could carry between them, which on a backstopped deal is what it
+    // brings. A deal larger than the willing members' limits is downsized and says so.
+    size: mandate.value.size,
     reservation: some(walkAway),
     allotment: 'uniformPrice',
   });
@@ -450,7 +469,11 @@ function place(
     {
       issuer,
       line: id,
-      size: units,
+      size: mandate.value.size,
+      wanted: units,
+      // C1, C10.a, C11: who brought it, on what basis, and who agreed to carry what — all struck
+      // before the book opened, so a reader can hold them to it afterwards.
+      mandate: mandateRecord(mandate.value),
       reservation: walkAway,
       coupon: schedule.coupon.amount,
       requiredByHolders: keenest,
@@ -573,6 +596,7 @@ function placeFloating(
   maturity: Civil,
   fixing: Ratio,
   benchmark: string,
+  mustHave: boolean,
 ): void {
   const on = ctx.calendar.startOf(ctx.period);
   const id = leveragedLoanId(issuer, maturity);
@@ -581,7 +605,9 @@ function placeFloating(
   const onto = gridOf(ctx, ccy);
   // N5.b: what it promised, per annum — the line's own if it is tapping one it has.
   const margin: Ratio =
-    standing === undefined ? marginOn(ctx) : asRatio(leveragedLoanTerms(standing).margin.amount, 'its margin');
+    standing === undefined
+      ? marginOn(keenest, fixing)
+      : asRatio(leveragedLoanTerms(standing).margin.amount, 'its margin');
   const coupon =
     standing === undefined ? couponAt(fixing, rate(margin, ANNUAL)) : leveragedLoanTerms(standing).coupon;
   const schedule: CouponSchedule =
@@ -616,6 +642,8 @@ function placeFloating(
   }
   const units = upTick(wanted);
   if (units <= 0) return;
+  const mandate = appoint(ctx, issuer, units, walkAway, mustHave);
+  if (!mandate.some) return;
   if (
     standing === undefined &&
     !openFloatingLine(ctx, issuer, ccy, id, schedule, units, onto, benchmark, margin)
@@ -625,7 +653,7 @@ function placeFloating(
   ctx.offer({
     market: marketOf(ctx, id),
     issuer,
-    size: units,
+    size: mandate.value.size,
     reservation: some(walkAway),
     allotment: 'uniformPrice',
   });
@@ -635,7 +663,9 @@ function placeFloating(
     {
       issuer,
       line: id,
-      size: units,
+      size: mandate.value.size,
+      wanted: units,
+      mandate: mandateRecord(mandate.value),
       reservation: walkAway,
       coupon: schedule.coupon.amount,
       // N5.b: what it PROMISED is the margin; the coupon is what that comes to at today's fixing.
@@ -709,6 +739,91 @@ function openFloatingLine(
     rationing: 'proRata',
   });
   return true;
+}
+
+/**
+ * C6, C7, C7.a, C11.a, C11.b, C11.d (17.2): WHAT HAPPENS AFTER THE BOOK CLOSES.
+ *
+ * The auction publishes what it allotted and what was withdrawn (`auction.result`), and the mandate
+ * struck before it opened is on the record (`bond.offered`) — so this reads both rather than keeping
+ * either (Law 19). Then two things happen, in the order they happen in:
+ *
+ * 1. C7, C7.a: on a BACKSTOPPED deal the members take up what the book did not, each in its stated
+ *    share, at the price the book struck. On a BEST-EFFORT deal nothing is taken up and the
+ *    remainder is not issued (C11.a, C11.d) — the issuer raised less, which is the risk it kept.
+ * 2. C6: the fee leaves the issuer and reaches the members, so what the issuer is left with is the
+ *    proceeds NET of what it paid to have the deal brought.
+ */
+function settleMandates(ctx: MechanismContext): void {
+  for (const result of ctx.journal.ofKindIn('auction.result', ctx.period)) {
+    const line = result.data['line'];
+    if (typeof line !== 'string') continue;
+    const id = instrumentId(line);
+    if (!ctx.instruments.has(id)) continue;
+    const i = ctx.instruments.get(id);
+    if (!isCorporateBond(i.terms) && !isLeveragedLoan(i.terms)) continue;
+    const brought = ctx.journal.lastOf('bond.offered', line);
+    if (brought?.period !== ctx.period) continue;
+    const mandate = mandateFrom(ctx, brought);
+    if (!mandate.some) continue;
+    const allotted = asQty(numberIn(result.data['allotted']));
+    const withdrawn = asQty(numberIn(result.data['withdrawn']));
+    const stopOut = result.data['stopOut'];
+    const issuer = i.issuer;
+    if (!issuer.some) continue;
+    const taken =
+      typeof stopOut === 'number' && stopOut > 0
+        ? takeUp(
+            ctx,
+            issuer.value,
+            i.ccy,
+            id,
+            mandate.value,
+            withdrawn,
+            asPerPiece(stopOut, 'what the book struck'),
+          )
+        : asQty(0);
+    // C6: paid on what the deal PLACED — what the book took and what the members took up, which is
+    // the whole of what reached the issuer.
+    payFees(ctx, issuer.value, i.ccy, id, mandate.value, asQty(allotted + taken));
+  }
+}
+
+/** Law 19: the mandate as it was struck, read back off the record it was announced on. */
+function mandateFrom(ctx: MechanismContext, brought: Event): Option<Underwriting> {
+  const said = brought.data['mandate'];
+  if (typeof said !== 'object' || said === null) return none<Underwriting>();
+  const row = said as { lead?: unknown; basis?: unknown; size?: unknown; members?: unknown };
+  if (typeof row.lead !== 'string' || typeof row.size !== 'number') return none<Underwriting>();
+  if (row.basis !== 'bestEffort' && row.basis !== 'backstopped') return none<Underwriting>();
+  const members: { bank: PartyId; commits: Qty; feePerUnit: PerPiece }[] = [];
+  for (const m of Array.isArray(row.members) ? (row.members as unknown[]) : []) {
+    const one = m as { bank?: unknown; commits?: unknown; perUnit?: unknown };
+    if (typeof one.bank !== 'string' || typeof one.commits !== 'number') continue;
+    if (typeof one.perUnit !== 'number') continue;
+    const bank = ctx.parties.resolve(partyId(one.bank)).id;
+    if (!ctx.parties.get(bank).status.alive) continue;
+    members.push({
+      bank,
+      commits: asQty(one.commits),
+      feePerUnit: asPerPiece(one.perUnit, 'what it is paid a unit'),
+    });
+  }
+  if (members.length === 0) return none<Underwriting>();
+  return some({
+    lead: ctx.parties.resolve(partyId(row.lead)).id,
+    basis: row.basis,
+    members,
+    size: asQty(row.size),
+  });
+}
+
+/** A published count, read back as it was written. Missing is Missing, and nothing defaults. */
+function numberIn(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) {
+    throw new InvalidRegistry('Corporate Credit C5', 'an auction result with no count in it');
+  }
+  return v;
 }
 
 function marketOf(ctx: MechanismContext, id: InstrumentId): MarketId {
@@ -852,16 +967,6 @@ export function corporateBondModule(): SystemModule {
         owner: 'standardSetter',
         why: 'Bond N4, Corporate Credit C8: how long a firm\u2019s paper runs for. A convention of the market rather than a choice this world makes each time \u2014 five years is the tenor a company issues a first senior unsecured line at \u2014 and it is stated in MONTHS because that is what the calendar takes (Law 8): a tenor in years would be converted somewhere, and the conversion is the place a duration stops being the number it was declared as. It is not a forecast of how long the firm needs the money: what it needs is what it published it is short of, and the term is the market\u2019s.',
       },
-      {
-        id: CORPORATE_BOND_PARAMS.margin,
-        value: 0.03,
-        unit: 'per annum over the reference a floating line fixes on',
-        dimension: 'perAnnum',
-        kind: 'placeholder',
-        owner: 'model',
-        why: 'Corporate Credit B4, Bond N5.b (17.1): what a firm promises OVER the transacted overnight rate on a floating line. Three per cent: enough that a leveraged loan is dearer than the money market and cheap enough that a firm brings one, which is the band the loan market actually sits in. It is a SHAPE and it dies at 17.2, where an arranger builds a book and the margin is what the book strikes — a cleared level like any other, and the count of shapes falls by one when it does.',
-        standsInFor: { mechanism: 'Corporate Credit C2, C3 — the book strikes the margin', item: '17.2' },
-      },
     ],
     phases: [
       {
@@ -890,9 +995,37 @@ export function corporateBondModule(): SystemModule {
           // N5.b (17.1): what the reference is fixing at, which is half of what the issuer compares
           // when it chooses between locking a coupon and promising a margin over it.
           { kind: 'event', name: 'index.benchmark', of: 'anyPeriod' },
+          // C1, C6, C7, E5: what each bank charges to bring a deal, what its dealing line was
+          // allotted to commit, and what it requires of this issuer's name — the three public
+          // facts an issuer shops an arranger on (17.2).
+          { kind: 'event', name: 'bank.lines', of: 'anyPeriod' },
+          { kind: 'event', name: 'bank.reservation', of: 'thisPeriod' },
+          { kind: 'event', name: 'bank.underwriting', of: 'thisPeriod' },
         ],
-        writes: [],
+        writes: [
+          { kind: 'event', name: 'bond.offered' },
+          { kind: 'event', name: 'bond.refused' },
+        ],
         run: issueBonds,
+      },
+      {
+        name: 'bond.takeUp',
+        spec: 'Corporate Credit C6 Corporate Credit C7 Corporate Credit C7.a Corporate Credit C10.a Corporate Credit C11.a Corporate Credit C11.b Corporate Credit C11.d',
+        // C7: BETWEEN COMMITMENT AND PLACEMENT is exactly here — after the book has closed and
+        // before the period's marks are taken, so what an underwriter is left holding is on its own
+        // balance sheet when the balance sheet is struck.
+        anchor: { after: 'markets' },
+        reads: [
+          // The auction's result is the KERNEL's own record of the session (Clearing E1), not a
+          // phase's — so it is read as any period's and this period's is picked out here.
+          { kind: 'event', name: 'auction.result', of: 'anyPeriod' },
+          { kind: 'event', name: 'bond.offered', of: 'thisPeriod' },
+        ],
+        writes: [
+          { kind: 'event', name: 'bond.fee' },
+          { kind: 'event', name: 'bond.underwritten' },
+        ],
+        run: settleMandates,
       },
       {
         name: 'covenant.test',

@@ -64,6 +64,14 @@ export interface BankDecl {
   /** F3: the most it will have out to one name, as a share of its own capital. A limit that binds. */
   readonly limitPerBorrower: number;
   /**
+   * Corporate Credit C1, C6 (17.2): what it charges to BRING an issue, as a share of what the issue
+   * raises. Its own price for the work of building a book — the people it puts on it and what it
+   * thinks the relationship is worth — so two banks quote an issuer differently and the issuer
+   * takes the keener. What it charges for the RISK of a backstop is not here: that is what it
+   * requires of the issuer's name over the placement, which it already publishes (E5).
+   */
+  readonly arrangerFee: number;
+  /**
    * Dealer Desks C5, E3: the instrument kinds its DEALING line makes a market in. One posted quote
    * belongs in every book it makes, and every bank that makes a line is in that line's session — so
    * two banks that make the same lines face each other through them, which is the interdealer
@@ -161,6 +169,8 @@ export interface BankDispersion {
   readonly capitalBuffer: Spread;
   readonly liquidityCushion: Spread;
   readonly limitPerBorrower: Spread;
+  /** C1, C6 (17.2): its own price for building a book. */
+  readonly arrangerFee: Spread;
   readonly depositMargin: Spread;
   /** One spread per line of business, by name: what each line's appetite is drawn from. */
   readonly appetite: Readonly<Record<string, Spread>>;
@@ -191,6 +201,11 @@ export const BANK_SPREAD: BankDispersion = {
     low: 0.05,
     high: 0.4,
     why: 'Banks Funding C2, Money Market A2.a: what it holds liquid above what the rule asks, as a share of the money that could leave. A different caution from the capital one: a bank can be bold about capital and timid about liquidity, and the two get it into different sorts of trouble.',
+  },
+  arrangerFee: {
+    low: 0.004,
+    high: 0.02,
+    why: 'Corporate Credit C1, C6, C7.b: what a bank charges to build a book, as a share of what the issue raises. Four tenths of a per cent to two per cent: the band a bought deal is arranged in, wide enough that an issuer has a reason to shop and narrow enough that nobody arranges for nothing. It is a PREFERENCE — its own price for its own people\u2019s work — and it is the BEST-EFFORT half of what it is paid: the backstop adds what carrying the paper costs it, which is its own published credit view and not a number anybody drew (C11.e).',
   },
   limitPerBorrower: {
     low: 0.15,
@@ -257,6 +272,7 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
       capitalBuffer: between(rng, BANK_SPREAD.capitalBuffer),
       liquidityCushion: between(rng, BANK_SPREAD.liquidityCushion),
       limitPerBorrower: between(rng, BANK_SPREAD.limitPerBorrower),
+      arrangerFee: between(rng, BANK_SPREAD.arrangerFee),
       depositMargin: between(rng, BANK_SPREAD.depositMargin),
       bufferMemory: betweenWhole(rng, BANK_SPREAD.memoryPeriods),
       // Dealer Desks A1, C5: WHICH LINES IT QUOTES IS DERIVED FROM WHAT IT WILL RISK, not drawn

@@ -1395,6 +1395,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           why: `Banks Funding C2, Money Market A2.a: what ${b.bank} holds liquid ABOVE what the rule asks of it. Its own caution, and the reason two banks facing the same depositors carry different portfolios — a bank that runs on the floor is one bad week from the window.`,
         },
         {
+          id: bankParam(b.bank, 'arrangerFee'),
+          value: b.arrangerFee,
+          unit: 'share of what an issue raises',
+          dimension: 'ratio' as const,
+          kind: 'preference' as const,
+          owner: 'model' as const,
+          why: `Corporate Credit C1, C6, C7.b: what ${b.bank} charges to BRING an issue — its own price for the work of building a book. The RISK half of an underwriting fee is not here: on a backstopped deal it is what this bank requires of the issuer's name over the placement, which it publishes already (E5), so the backstop costs more than best effort as a consequence rather than by a rule (C11.e).`,
+        },
+        {
           id: bankParam(b.bank, 'limitPerBorrower'),
           value: b.limitPerBorrower,
           unit: 'ratio of its own capital',
@@ -1459,6 +1468,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           { kind: 'event', name: 'bank.costOfFunds' },
           { kind: 'event', name: 'bank.insolvent' },
           { kind: 'event', name: 'bank.reservation' },
+          { kind: 'event', name: 'bank.underwriting' },
           { kind: 'event', name: 'credit.declined' },
           { kind: 'event', name: 'credit.draw' },
           { kind: 'event', name: 'credit.quoted' },
@@ -1474,6 +1484,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           publishQuotes(rows, ctx);
           publishReservations(rows, ctx);
           publishAdvisory(ctx);
+          publishUnderwriting(rows, ctx);
         },
       },
       {
@@ -2042,6 +2053,28 @@ function creditViewFor(
   );
   memo.byKey.set(key, made);
   return made;
+}
+
+/**
+ * Corporate Credit C1, C6 (17.2): WHAT THIS BANK CHARGES TO BRING AN ISSUE, under its own name.
+ *
+ * An issuer shopping for an arranger reads what each bank published, exactly as a borrower reads
+ * what each bank quoted (Observer A3) — a module cannot see a bank's own price any other way, and
+ * should not. What it will COMMIT is its dealing line's allotted room, which it publishes already
+ * (`bank.lines`), and what the risk costs it is its published credit view of the name (E5): three
+ * public facts, and the fee for either basis is composed from them by whoever is asking.
+ */
+function publishUnderwriting(rows: readonly BankDecl[], ctx: MechanismContext): void {
+  for (const b of ctx.parties.ofKind(BANK)) {
+    const decl = declOf(rows, b.id);
+    if (decl === undefined || !b.status.alive) continue;
+    ctx.record(
+      'bank.underwriting',
+      [b.id],
+      { bank: b.id, fee: ctx.params.ratio(bankParam(b.id, 'arrangerFee')) },
+      true,
+    );
+  }
 }
 
 /**

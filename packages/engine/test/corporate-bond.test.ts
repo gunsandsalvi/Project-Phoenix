@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   annualCostOf,
   headroomOn,
+  partyId,
   instrumentId,
   isCorporateBond,
   period,
@@ -19,6 +20,9 @@ import {
 } from '../src/index.js';
 import { ranWorld, rigWorld } from './rig.js';
 import { ANNUAL, rate } from '../src/core/rate.js';
+import { asPerPiece } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
+import { syndicate } from '../src/mechanisms/corporate-bond/arranger.js';
 import {
   couponAt,
   floatsRatherThanFixes,
@@ -51,7 +55,7 @@ describe('what a corporate bond IS, beside a sovereign one', () => {
     }
   });
 
-  it('declares no covenant, no spread and no leverage — and says which number dies (Law 2)', () => {
+  it('declares no covenant, no spread and no leverage (Law 2)', () => {
     // B2: what a given firm promised is an outcome of what it had to promise to be lent to. A
     // world with a `corporate.covenant.leverage` in it would have every issuer promising the same
     // thing, which is one issuer with many names. So: no covenant number, no spread, no leverage
@@ -60,14 +64,9 @@ describe('what a corporate bond IS, beside a sovereign one', () => {
     // over its reference, which is a PLACEHOLDER with a scheduled death: 17.2 builds the book that
     // strikes a margin, and a struck margin is a cleared level rather than a number anybody typed.
     const declared = corporateBondModule().params;
-    expect(declared.map((d) => String(d.id))).toEqual([
-      'corporateBond.tenor',
-      'corporateBond.margin',
-    ]);
+    expect(declared.map((d) => String(d.id))).toEqual(['corporateBond.tenor']);
     expect(declared[0]?.kind).toBe('technology');
     expect(declared[0]?.dimension).toBe('months');
-    expect(declared[1]?.kind).toBe('placeholder');
-    expect(declared[1]?.standsInFor?.item).toBe('17.2');
   });
 });
 
@@ -98,7 +97,12 @@ describe('the covenant is tested on what was PUBLISHED (B2.a, Reporting A2)', ()
     const m = corporateBondModule();
     // N5.b (17.1): and a floating line FIXES before anything it pays or is priced at — which is a
     // third phase and still not a repair: what a fixing does is set what the line owes next.
-    expect(m.phases.map((f) => f.name)).toEqual(['loan.fix', 'bond.issue', 'covenant.test']);
+    expect(m.phases.map((f) => f.name)).toEqual([
+      'loan.fix',
+      'bond.issue',
+      'bond.takeUp',
+      'covenant.test',
+    ]);
     // What happens after a breach is the holders' decision, and a decision is not a rule.
     expect(m.families.every((f) => f.built)).toBe(true);
   });
@@ -291,5 +295,143 @@ describe('fixed or floating is a decision (Corporate Credit B4, Bond N5.b, N6)',
     // rewriting what an issuer promised. The declaration is what makes that refusal possible.
     expect(w.registry.instrumentKind(LEVERAGED_LOAN).floats).toBe(true);
     expect(w.registry.instrumentKind(CORPORATE_BOND).floats).not.toBe(true);
+  });
+});
+
+/**
+ * C1, C6, C7, C10, C11 (17.2): a deal is BROUGHT by somebody, who is paid, and who is left holding
+ * what the book did not take — or is not, which is the other basis and a different price.
+ */
+describe('the arranger (Corporate Credit C1, C6, C7, C10, C11)', () => {
+  const brought = (w: World): readonly Event[] => w.journal.ofKind('bond.offered');
+
+  it('names who brought it, on which basis, and who agreed to carry what (C1, C10.a, C11)', () => {
+    const w = ranWorld('bond-issue', 20);
+    for (const e of brought(w)) {
+      const mandate = e.data['mandate'] as {
+        lead: string;
+        basis: string;
+        size: number;
+        members: { bank: string; commits: number; perUnit: number }[];
+      };
+      expect(mandate, 'an issue nobody brought').toBeDefined();
+      // C1: a named party, alive, and not the issuer itself.
+      expect(w.parties.has(partyId(mandate.lead))).toBe(true);
+      expect(mandate.lead).not.toBe(String(e.data['issuer']));
+      expect(['bestEffort', 'backstopped']).toContain(mandate.basis);
+      expect(mandate.members.length).toBeGreaterThan(0);
+      // C10.a: the shares are struck BEFORE the book opens and they come to the deal's size.
+      const committed = mandate.members.reduce((t, m) => t + m.commits, 0);
+      expect(committed).toBe(mandate.size);
+      // C10.c: a syndicate that could not carry the whole of it brings a smaller deal, and the
+      // record says what the issuer wanted beside what it brought.
+      expect(mandate.size).toBeLessThanOrEqual(Number(e.data['wanted']));
+      for (const m of mandate.members) {
+        expect(w.parties.has(partyId(m.bank))).toBe(true);
+        expect(m.perUnit).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('pays the fee out of the proceeds, to the banks that brought it and to nobody else (C6)', () => {
+    const w = ranWorld('bond-issue', 20);
+    for (const fee of w.journal.ofKind('bond.fee')) {
+      const line = String(fee.data['line']);
+      const offered = w.journal
+        .ofKind('bond.offered')
+        .filter((e) => String(e.data['line']) === line && e.period === fee.period)
+        .at(-1);
+      expect(offered, `a fee on ${line} that no deal brought`).toBeDefined();
+      const mandate = offered!.data['mandate'] as { members: { bank: string }[] };
+      expect(mandate.members.map((m) => m.bank)).toContain(String(fee.data['bank']));
+      // C6: it is money, it moved, and it moved from the issuer to the bank — one instruction with
+      // both legs, so the issuer is left with the proceeds NET of it.
+      expect(Number(fee.data['units'])).toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves the underwriter holding what the book did not take, and the agent holding nothing (C7.a, C11.d)', () => {
+    const w = ranWorld('bond-issue', 20);
+    for (const took of w.journal.ofKind('bond.underwritten')) {
+      const line = String(took.data['line']);
+      const offered = w.journal
+        .ofKind('bond.offered')
+        .filter((e) => String(e.data['line']) === line && e.period === took.period)
+        .at(-1);
+      expect(offered).toBeDefined();
+      const mandate = offered!.data['mandate'] as { basis: string; members: { bank: string }[] };
+      // C11.d: NO BEST-EFFORT DEAL LEAVES THE AGENT HOLDING PAPER. An agent commits nothing, so
+      // what the book did not take is simply not issued.
+      expect(mandate.basis).toBe('backstopped');
+      expect(mandate.members.map((m) => m.bank)).toContain(String(took.data['bank']));
+      expect(Number(took.data['units'])).toBeGreaterThan(0);
+      // C7.a: and it is the underwriter's own position now — units it holds, bought at the strike.
+      const held = w.register.quantity(partyId(String(took.data['bank'])), instrumentId(line));
+      expect(held).toBeGreaterThan(0);
+    }
+  });
+
+  it('charges more for a backstop than for best effort, because of the risk behind it (C7.b, C11.e)', () => {
+    // C11.e is a CONSEQUENCE and not a rule: the backstop fee is the work fee plus what carrying
+    // the paper costs the bank — its own published credit view of the name over the placement — so
+    // it exceeds the best-effort fee by exactly the risk, and by nothing else.
+    const w = ranWorld('bond-issue', 20);
+    const byBasis = new Map<string, number[]>();
+    for (const e of brought(w)) {
+      const mandate = e.data['mandate'] as {
+        basis: string;
+        members: { perUnit: number }[];
+      };
+      const reservation = Number(e.data['reservation']);
+      if (reservation <= 0) continue;
+      for (const m of mandate.members) {
+        const share = byBasis.get(mandate.basis) ?? [];
+        // Per unit of par, so two deals at different prices are comparable.
+        share.push(m.perUnit / reservation);
+        byBasis.set(mandate.basis, share);
+      }
+    }
+    const best = byBasis.get('bestEffort');
+    const back = byBasis.get('backstopped');
+    if (best !== undefined && back !== undefined && best.length > 0 && back.length > 0) {
+      const mean = (xs: number[]): number => xs.reduce((t, x) => t + x, 0) / xs.length;
+      expect(mean(back)).toBeGreaterThan(mean(best));
+    }
+  });
+
+  it('never gives a member more than its own limit, and downsizes rather than exceed one (C10.b, C10.c)', () => {
+    const willing = (bank: string, fee: number, room: number) => ({
+      bank: partyId(bank),
+      feePerUnit: asPerPiece(fee, 'what it charges a unit'),
+      canCommit: asQty(room),
+    });
+    // Three banks with 40, 30 and 20 units of room, keenest first, against a deal of 100.
+    const banks = [willing('bank.1', 1, 40), willing('bank.2', 2, 30), willing('bank.3', 3, 20)];
+    const backed = syndicate(banks, asQty(100), 'backstopped');
+    // C10.b: each takes its own room and not a unit more — the lead cannot lend a member capacity
+    // it does not have, and a member cannot be assigned what it did not agree to carry.
+    expect(backed.map((m) => m.commits)).toEqual([40, 30, 20]);
+    // C10.c: ninety is what the willing members can carry, so ninety is what the deal is brought
+    // at. The largest deal this market can bring is the sum of the willing limits, and a deal
+    // bigger than that is an observable downsizing rather than one silently carried past a limit.
+    expect(backed.reduce((t, m) => t + m.commits, 0)).toBe(90);
+    // A deal inside the first member's room needs no syndicate at all.
+    expect(syndicate(banks, asQty(30), 'backstopped').map((m) => String(m.bank))).toEqual([
+      'bank.1',
+    ]);
+    // C11.a: on best effort there is no risk to share, so the agent brings the whole of it alone
+    // and commits nothing — the commitment here is the size it agreed to place, not to take.
+    const agent = syndicate(banks, asQty(100), 'bestEffort');
+    expect(agent).toHaveLength(1);
+    expect(agent[0]?.commits).toBe(100);
+  });
+
+  it('declares no fee of its own: what a bank charges is the BANK’s number (Law 2, Law 4)', () => {
+    const declared = corporateBondModule().params.map((d) => String(d.id));
+    // 17.2: `corporateBond.margin` is dead — a floating line's margin is what the keenest holder
+    // requires of the name less what the reference is fixing at, both published. What an arranger
+    // charges is a preference of the arranger, declared by the module that owns banks.
+    expect(declared).toEqual(['corporateBond.tenor']);
+    expect(declared.some((id) => id.includes('margin') || id.includes('fee'))).toBe(false);
   });
 });

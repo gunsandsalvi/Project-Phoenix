@@ -17,13 +17,13 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 0 of 12 items closed** (5 of 125 steps).
-**Requirement coverage: 70.8%** (982 MET, 123 PARTIAL, 2 OUT OF SCOPE of 1389 REASON/VERIFY/FORBID clauses).
+**The plan: 0 of 12 items closed** (6 of 125 steps).
+**Requirement coverage: 71.6%** (997 MET, 124 PARTIAL, 2 OUT OF SCOPE of 1395 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
-| 17 — Corporate credit, the rest | 13 | 3 | in progress |
+| 17 — Corporate credit, the rest | 13 | 4 | in progress |
 | 17b — The leveraged buyout | 0 | 0 | open |
 | 18 — Commodities spot and futures | 9 | 0 | open |
 | 18a — Monetary policy | 5 | 0 | open |

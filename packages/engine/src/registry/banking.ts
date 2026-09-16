@@ -41,6 +41,8 @@ const MM_PRINT = 'moneyMarket.print';
 const MM_REFUSED = 'moneyMarket.refused';
 const CREDIT_QUOTED = 'credit.quoted';
 const CREDIT_DEFAULT = 'credit.default';
+const LINES = 'bank.lines';
+const UNDERWRITING = 'bank.underwriting';
 
 /** The participant's door: what a party can see about itself and about the public record. */
 export interface BankReads {
@@ -267,6 +269,76 @@ export function expectedLossOn(reads: BankReads, about: string): Option<Ratio> {
 /** B2: what it published the capital behind a claim on a name costs it. */
 export function capitalCostOn(reads: BankReads, about: string): Option<Ratio> {
   return fromMap(reads.lastOwn(RESERVATION), 'capitalCost', about, 'what that capital costs it');
+}
+
+/**
+ * Corporate Credit E5 (17.2): WHAT ONE NAMED BANK PUBLISHED IT REQUIRES OF ONE NAME. `requiredOf`
+ * above answers for the bank whose view it is; this answers about a bank a READER names, which is
+ * what somebody shopping for an underwriter has to ask — and it is the same published number
+ * (Observer A3: what a bank said about a name is public).
+ */
+export function requiredOfName(
+  reads: Pick<WireReads, 'lastOf'>,
+  bank: string,
+  about: string,
+): Option<Ratio> {
+  const said = reads.lastOf(RESERVATION, bank);
+  return said === undefined
+    ? none<Ratio>()
+    : fromMap(some(said), 'required', about, 'what this lender requires');
+}
+
+/**
+ * Dealer Desks D1, D2, Banks Capital B3 (17.2): WHAT ONE OF A NAMED BANK'S LINES WAS LAST ALLOTTED,
+ * in money — published under the bank's own name, so somebody asking a bank to commit its balance
+ * sheet reads what that balance sheet has spare rather than guessing at it.
+ *
+ * IT IS THE LAST PUBLICATION AND NOT THIS PERIOD'S, which is what a lag is: a bank's treasury allots
+ * its lines at the close (`banks.capital`, after revaluation) and an issuer shopping for an
+ * underwriter is deciding before the session. What it commits against is what its treasury gave it
+ * at the last close, which is what an underwriter actually knows when it agrees to a deal.
+ */
+export function lineRoomOf(
+  reads: Pick<WireReads, 'lastOf'>,
+  bank: string,
+  line: string,
+): Option<number> {
+  const said = reads.lastOf(LINES, bank);
+  if (said === undefined) return none<number>();
+  const rows = said.data['lines'];
+  if (!Array.isArray(rows)) return none<number>();
+  for (const r of rows as unknown[]) {
+    const row = r as { line?: unknown; room?: unknown };
+    if (row.line !== line) continue;
+    return typeof row.room === 'number' ? some(row.room) : none<number>();
+  }
+  return none<number>();
+}
+
+/** Corporate Credit C1, C6 (17.2): what a bank charges to bring a deal, and what it will commit. */
+export interface Underwriting {
+  readonly bank: string;
+  /** C6: its own price for the work, as a share of what the issue raises. */
+  readonly fee: number;
+}
+
+/**
+ * C1, C6: EVERY BANK THAT SAID WHAT IT CHARGES this period. An issuer shopping for an arranger reads
+ * what each of them published, as it reads what each of them quotes on a loan (Observer A3).
+ */
+export function underwritingBy(
+  reads: Pick<WireReads, 'ofKind'>,
+  at: Period,
+): readonly Underwriting[] {
+  const out: Underwriting[] = [];
+  for (const e of reads.ofKind(UNDERWRITING)) {
+    if (e.period !== at) continue;
+    const bank = e.data['bank'];
+    const fee = e.data['fee'];
+    if (typeof bank !== 'string' || typeof fee !== 'number') continue;
+    out.push({ bank, fee });
+  }
+  return out;
 }
 
 /* --- The lines its desk makes a market in -------------------------------------------------- */

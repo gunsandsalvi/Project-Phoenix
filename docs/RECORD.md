@@ -12567,3 +12567,48 @@ tests were updated because the module changed under them: it now declares a seco
 placeholder) and runs a third phase (`loan.fix`). The suite's two standing reds are unchanged and
 are written up as 21.58 — no firm in that world brings paper at all, which was true at the close of
 item 16 and is where 17.2 lands.
+
+## Item 17.2 — The arranger: who brings a deal, what it is paid, and what it is left holding
+
+C1 says a new issue is BROUGHT by a named underwriter, appointed and paid. Until now a firm walked
+into a market on its own, and the eleven clauses behind C1 — the fee, the risk between commitment
+and placement, the syndicate, the two bases — had nothing to attach to.
+
+**Two bases, two prices, and the price is the risk.** On a BEST-EFFORT basis the bank is an agent:
+it commits nothing, what the book does not take is never issued, and the issuer keeps the placement
+risk (C11.a, C11.d). On a BACKSTOPPED basis the members commit, and after the session they take up
+what the book did not, at the price the book struck (C7, C7.a). What the backstop costs MORE is
+exactly what the risk costs the bank: what it requires per annum to hold that issuer's paper — its
+own published credit view (E5, and 17.0's one derivation) — over the length of the placement. So
+C11.e's "the backstop fee exceeds the best-effort fee" is a consequence of the arithmetic, and
+C7.b's relation between fee and risk is the identity itself, not a rule anybody wrote.
+
+**Which basis is the issuer's decision (C11.c),** and it is a distinction the issue path already
+made: a firm coming to market because the market is CHEAPER than its bank is choosing between two
+channels and can take a smaller deal, so it goes best effort and saves the fee; a firm whose bank
+will not lend it ENOUGH has no alternative at any price and buys the backstop. Nothing is drawn.
+
+**The syndicate is limits meeting a size (C10).** The lead takes what its own dealing line was
+allotted and names members, keenest first, each within ITS OWN room (C10.b) — and what the willing
+members can carry between them is what the deal is brought at, so a bigger one is DOWNSIZED and the
+record carries what the issuer wanted beside what it brought (C10.c). The shares are struck before
+the book opens and each member's share of what the book left is split on the kernel's own pro-rata,
+in whole units summing to exactly what was unplaced, so no unit of an issue is left with nobody.
+
+**Everything an issuer reads about a bank is public.** What it charges is published under its own
+name (`bank.underwriting`, a PREFERENCE drawn per bank — its own price for its own people's work);
+what it will commit is its dealing line's allotted room (`bank.lines`), read at the last close, which
+is what an underwriter actually knows when it agrees to a deal; what the risk costs it is its
+published reservation on the name. Three public facts, composed by whoever is asking, and no view of
+a bank is taken anywhere.
+
+**And the margin placeholder is dead, as this item promised.** What a floating line pays over its
+reference is the keenest holder's requirement LESS what the reference is fixing at — both published
+(E5.d and Indices A1). `corporateBond.margin` is gone, the module declares one number again (the
+tenor, a technology), and the count of shapes falls by one.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths, existence green.
+`corporate-bond`: six new tests. The syndicate's limits are tested directly — three banks with 40,
+30 and 20 units of room against a deal of 100 take exactly their rooms and bring 90 — because the
+tests that read a RUN are vacant while no firm in that world brings paper at all (21.58), and a test
+that iterates an empty list asserts nothing. The suite's two standing reds are unchanged.
