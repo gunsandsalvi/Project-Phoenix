@@ -15,6 +15,7 @@ import {
 } from '../src/index.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { ranWorld, rigWorld } from './rig.js';
+import { BANK, FIRM } from '../src/registry/profiles.js';
 
 describe('what commercial paper IS (A1)', () => {
   it('pays no coupon, redeems at par, and its yield comes OUT of its price (A1.a, A2)', () => {
@@ -200,6 +201,54 @@ describe('the committed facility (Banks Lending A3, A3.a, A3.b; Corporate Credit
       if (!headroom.some) continue;
       expect(headroom.value.pieces).toBeLessThanOrEqual(row.terms.limit.pieces);
       expect(headroom.value.ccy).toBe(row.ccy);
+    }
+  });
+});
+
+/**
+ * A2, C2, E3 (17.6): whose alternative is whose, and what an unpaid maturity is not.
+ */
+describe('the alternative each side compares against (A2, C2, E3)', () => {
+  it('lets a BANK issue, because what money last cost it is a number it publishes (A2, E1)', () => {
+    const w = ranWorld('cp-run', 12);
+    // A2: an issuer will not sell paper below what borrowing otherwise costs it. Nobody quotes a
+    // bank a loan, so a bank had no alternative to compare against and could not issue any — the
+    // one issuer whose whole business is borrowing short was the one this market had no price for.
+    // Its own published cost of funds is that number.
+    const said = w.journal.ofKind('bank.costOfFunds');
+    expect(said.length).toBeGreaterThan(0);
+    for (const e of w.journal.ofKind('paper.offered')) {
+      const alternative = e.data['alternative'];
+      expect(typeof alternative).toBe('number');
+      expect(Number(alternative)).toBeGreaterThan(0);
+    }
+  });
+
+  it('asks the party KIND what else the money could do, and never branches on a name (C2, Law 15)', () => {
+    const w = rigWorld('cp-alt');
+    // A bank banks at the central bank: what its money earns instead is the DEPOSIT FACILITY, the
+    // floor of the corridor. Anybody else is a depositor and compares against a bank's board. The
+    // difference is declared on the kind — a bank ISSUES money — and read, never asked by name.
+    expect(w.registry.partyKind(BANK).moneyIssuer).not.toBeNull();
+    expect(w.registry.partyKind(FIRM).moneyIssuer).toBeNull();
+  });
+
+  it('does not report an unpaid maturity against a name that is in an estate (E3, XI-8)', () => {
+    // Its own world, stepped, so the audit of each period is read as it is produced.
+    const w = rigWorld('cp-estate');
+    for (let i = 0; i < 12; i += 1) {
+      const report = w.step().audit;
+      const dead = new Set<string>();
+      for (const p of w.parties.all()) if (!p.status.alive) dead.add(String(p.id));
+      for (const v of report.families.flatMap((f) => f.violations)) {
+        if (v.family !== 'units' || !v.message.includes('still outstanding')) continue;
+        // A name whose estate is open owes what it owes into a waterfall: the paper is a claim
+        // ranking with the rest, and reporting it as cash that did not move would be the audit
+        // reporting a mechanism that is working.
+        const line = w.instruments.get(v.owner as never);
+        if (!isPaper(line.terms)) continue;
+        expect(dead.has(String(line.terms.issuer))).toBe(false);
+      }
     }
   });
 });

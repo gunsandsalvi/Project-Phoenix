@@ -12718,3 +12718,29 @@ Positioned at 17.7.
 
 **Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green. `trade-credit`: three
 new tests, all ten green.
+
+## Item 17.6 — Short-term debt: whose alternative is whose
+
+Three reads, each of them somebody else's published number.
+
+**An issuer's alternative is what money last cost IT.** A2 says an issuer will not sell paper below
+what borrowing otherwise costs it, and that was read as the loan rate a bank quoted it. Nobody
+quotes a BANK a loan — so a bank had no alternative to compare against and could not issue paper at
+all, which left the one issuer whose whole business is borrowing short with no price in this market.
+Its own blended cost of funds is that number and it publishes it every period (Banks Funding C1).
+
+**A buyer's alternative is its KIND's.** A bank does not put spare money on deposit at another bank:
+it has an account at the central bank, and what money earns there overnight, risk-free with no name
+to doubt, is the deposit facility — the floor of the corridor (Central Bank B2). A corporate
+treasurer is a depositor and compares against the keenest board anybody is showing. Which of the two
+a buyer is comes off its kind's own profile: a bank is a kind that ISSUES money, which is the same
+fact as having an account at the central bank, so nothing branches on a name (Law 15).
+
+**And an unpaid maturity is not an unpaid maturity when the issuer is dead.** E3's family reported
+paper still outstanding past its date, every period, for the life of a liquidation — but a name
+whose estate is open owes what it owes into a waterfall (XI-8): the paper is a claim ranking with the
+rest, and the cash moves when the estate distributes or never. The family skips a ceased issuer, so
+what it reports is cash that did not move rather than a mechanism doing its job.
+
+**Checks.** `check:opens` green; lint, typecheck, spec, forbids, deaths green. `short-term-debt`:
+three new tests, all sixteen green.

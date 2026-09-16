@@ -23,7 +23,13 @@
  * the book says no; it does not own a book, and a module that cleared its own would be the third
  * issuance mechanism this world is in the middle of deleting (item 10d).
  */
-import { boardPosted, bufferOf, creditQuoteThisPeriod } from '../../registry/banking.js';
+import {
+  boardPosted,
+  bufferOf,
+  corridorSeenBy,
+  costOfFundsIn,
+  creditQuoteThisPeriod,
+} from '../../registry/banking.js';
 import {
   amountOf,
   asCash,
@@ -320,10 +326,26 @@ function place(
 function costOfBorrowing(ctx: MechanismContext, issuer: PartyId): Option<Ratio> {
   const quoted = creditQuoteThisPeriod(ctx.journal, String(issuer), ctx.period);
   if (quoted.some) return some(quoted.value.rate);
-  // Corporate Credit E5: failing a quote of its own, the least anybody said they require of the
-  // name. One read, on the kernel, because three modules asked it and each scanned for itself.
+  /**
+   * A2, E1 (17.6): AN ISSUER'S ALTERNATIVE IS WHAT MONEY LAST COST IT, and for a BANK that is a
+   * number it publishes about itself every period — its own blended cost of funds (Banks Funding
+   * C1, XI-4). Nobody quotes a bank a loan, so a bank had no alternative to compare its paper
+   * against and could not issue any: the one issuer whose whole business is borrowing short was the
+   * one this market had no price for.
+   *
+   * It is the same question in both cases — what this name pays for money — asked of whichever
+   * public number answers it for that name (Law 19), and never a rate this module decides.
+   */
+  const own = costOfFundsIn(ctx.participant(issuer), String(issuer), ccyOf(ctx, issuer));
+  if (own.some) return own;
+  // Corporate Credit E5: failing both, the least anybody said they require of the name. One read,
+  // on the kernel, because three modules asked it and each scanned for itself.
   return ctx.requiredOf(issuer);
 }
+
+/** The money this party borrows in, which is the money of the place it is in (Currency A3). */
+const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
+  ctx.registry.currencyOf(ctx.parties.get(party).region);
 
 /**
  * A2: THE PRICE AT WHICH A DISCOUNT OVER THIS TERM COSTS `perAnnum` — the yield definition
@@ -412,7 +434,7 @@ function buys(view: ParticipantView, market: MarketDecl): readonly Order[] {
   // clause that makes an issuer lose funding BEFORE it loses solvency — a buyer needs no insolvency
   // to refuse, only a reason to doubt, and a public failure is the plainest reason there is.
   if (doubted(view, issuer)) return [];
-  const alternative = onDeposit(view, market.ccy);
+  const alternative = whatElseItCouldDo(view, market.ccy);
   if (!alternative.some) return [];
   const on = view.calendar.startOf(view.period);
   const term = asRatio(yearFraction(terms.dayCount, on, terms.maturity), 'what is left of it');
@@ -436,6 +458,32 @@ function lineIn(
   const i = view.instruments.get(market.instrument);
   if (!i.status.live || !isPaper(i.terms)) return none();
   return some({ issuer: i.terms.issuer, terms: i.terms });
+}
+
+/**
+ * C2 (17.6): WHAT ELSE THIS BUYER COULD DO WITH THE MONEY, which is not the same question for every
+ * buyer — and the answer belongs to the buyer's KIND rather than to this module.
+ *
+ * A BANK does not put spare money on deposit at another bank: it has an account at the central bank
+ * and the DEPOSIT FACILITY is what money earns there overnight, risk-free, with no name to doubt
+ * (Central Bank B2, Money Market A2). That is the floor of the corridor, published, and it is the
+ * rate a bank actually compares a week of somebody's paper against. Anybody else — a corporate
+ * treasurer with cash to place — is a depositor, and what it could do instead is take the keenest
+ * board anybody is showing (Banks Funding B1).
+ *
+ * The two are asked of the party kind's own profile and never branched on here (Law 15): what makes
+ * a bank different is that it banks at the central bank, which is a fact the registry already holds.
+ */
+function whatElseItCouldDo(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
+  // Law 15: what makes a bank different here is that it ISSUES money, which is the same fact that
+  // gives it an account at the central bank — declared on its kind and never asked by name.
+  if (view.registry.partyKind(view.self.kind).moneyIssuer !== null) {
+    const corridor = corridorSeenBy(view);
+    // A bank in a money whose central bank has published no corridor has no facility to compare
+    // against, and does not bid — which is the honest answer and not a rate invented for it.
+    return corridor.some ? some(corridor.value.floor) : none<Ratio>();
+  }
+  return onDeposit(view, ccy);
 }
 
 /**
@@ -828,8 +876,15 @@ function profile(): Family {
             message: `${i.id}: negative paper outstanding`,
           });
         }
-        // E3: a maturity that has passed with paper still outstanding is cash that did not move.
-        if (outstanding > 0 && view.calendar.periodOf(i.terms.maturity) < view.period) {
+        /**
+         * E3 (17.6): a maturity that has passed with paper still outstanding is cash that did not
+         * move — UNLESS the issuer is dead. A name whose estate is open owes what it owes into a
+         * waterfall (XI-8): the paper is a claim ranking with the rest, and the cash moves when the
+         * estate distributes or never. Reporting that as an unpaid maturity every period for the
+         * life of a liquidation is the audit reporting a mechanism that is working.
+         */
+        const alive = view.parties.get(view.parties.resolve(i.terms.issuer).id).status.alive;
+        if (alive && outstanding > 0 && view.calendar.periodOf(i.terms.maturity) < view.period) {
           out.push({
             family: 'units',
             spec: 'Short-Term Debt E3',
