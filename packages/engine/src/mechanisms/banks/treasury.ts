@@ -41,8 +41,7 @@ import {
 } from '../../core/measure.js';
 import { nextPeriod, period, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { moneyInstrumentId, partyId } from '../../core/ids.js';
-import { delivers } from '../../clearing/market.js';
+import { instrumentKindId, moneyInstrumentId, partyId } from '../../core/ids.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -135,23 +134,28 @@ function liquidityLines(view: ParticipantView, d: BankDecl): readonly Instrument
   const out: InstrumentId[] = [];
   const on = view.calendar.startOf(view.period);
   const home = view.registry.currencyOf(view.self.region);
-  for (const m of view.markets) {
-    const subject = delivers(m);
-    if (!subject.some) continue;
-    const i = view.instruments.get(subject.value);
-    if (!i.status.live || !d.makes.includes(String(i.kind))) continue;
-    // Currency D4, Money Market B3.a: IN ITS OWN MONEY. A liquidity portfolio is what a bank sells
-    // or pledges to raise the money it settles in, and a foreign government's bond raises a money
-    // its own central bank does not issue and will not take (the window is its own system's, and
-    // that is why a bank short of a foreign money has to buy it). Paper abroad is a POSITION, and
-    // what a bank holds abroad as a position is 13h's portfolio decision, not this.
-    if (i.ccy !== home) continue;
-    if (
-      view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length ===
-      0
-    )
-      continue;
-    out.push(i.id);
+  // Law 18, Law 19 (0g.21): THE KINDS ITS DESK MAKES, off the register's index of lines by kind.
+  // It walked every market in the world and asked each one's instrument whether its kind was one
+  // of these — and in the full world that is 1,546 markets, once per book per bank per period,
+  // inside `stateOf`, which measured **38% of period 1**. `d.makes` IS a list of kinds, so the
+  // index answers directly. A line with no market is not a book its desk makes, which the
+  // `market.some` test below is what said before and still says.
+  for (const kind of d.makes) {
+    for (const i of view.instruments.ofKind(instrumentKindId(kind))) {
+      if (!i.status.live || !i.market.some) continue;
+      // Currency D4, Money Market B3.a: IN ITS OWN MONEY. A liquidity portfolio is what a bank
+      // sells or pledges to raise the money it settles in, and a foreign government's bond raises
+      // a money its own central bank does not issue and will not take (the window is its own
+      // system's, and that is why a bank short of a foreign money has to buy it). Paper abroad is a
+      // POSITION, and what a bank holds abroad as a position is 13h's decision, not this.
+      if (i.ccy !== home) continue;
+      if (
+        view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry)
+          .length === 0
+      )
+        continue;
+      out.push(i.id);
+    }
   }
   return out;
 }
@@ -207,12 +211,11 @@ function liquidityTargets(
   // EVERY line it makes is in here, and a line it holds for no liquidity reason has a target of
   // NOTHING — which is an answer and not a missing number. So nothing downstream ever has to decide
   // what an absent target means, because there are none.
-  for (const m of view.markets) {
-    const subject = delivers(m);
-    if (!subject.some) continue;
-    const i = view.instruments.get(subject.value);
-    if (i.status.live && d.makes.includes(String(i.kind))) {
-      out.set(i.id, noCash(i.ccy));
+  // 0g.21: the second of the two walks over every market in the world, off the kind index like the
+  // first. Same set: a live line of a kind this desk makes, which had a market to be found through.
+  for (const kind of d.makes) {
+    for (const i of view.instruments.ofKind(instrumentKindId(kind))) {
+      if (i.status.live && i.market.some) out.set(i.id, noCash(i.ccy));
     }
   }
   /**

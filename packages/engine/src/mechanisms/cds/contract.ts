@@ -144,6 +144,47 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
 /** C1, C3, E3: why a party is in this book, and what its level says against the cash market. */
 export const cdsClass: DerivativeClassDecl = {
   kind: CDS,
+  /** B1: a book on this name, asked for by the name — which is what a reason about it is about. */
+  subject: (m) => {
+    const t = m.contract.terms;
+    return isCds(t) ? String(t.reference) : '';
+  },
+  /**
+   * B1, B1.a, B4, Law 18: THE NAMES THIS PARTY HAS A REASON ABOUT, and the four reasons are the
+   * four this file's own header states: it is exposed to the name, it already has cover on it, or
+   * it has a view of the name's own credit.
+   *
+   * It declared NEITHER `subject` NOR `reasons`, and absent means every book of the kind — so every
+   * party in the world was asked about every CDS book, and `cdsOrders`'s market-making branch (a
+   * party with nothing to cover quotes both ways) meant each of them answered with what its whole
+   * capital would stand behind. In the full world that was **10,851 orders in one 3-year US
+   * treasury book from 5,516 parties, 3.1×10¹⁶ pieces of face between them** — 12.5× the entire
+   * capital of the world, in one book — and the demand at a level passed 2⁵³, where an integer stops
+   * being exact, so `asQty` refused it and the world could not finish period 1 (21.121).
+   *
+   * A bakery has no reason to write protection on a sovereign, and this is where that is said. It
+   * is read off the same state `cdsOrders` decides from, so a book named here and a book ordered in
+   * cannot disagree (Law 4, Law 19).
+   */
+  reasons: (view) => {
+    const names = new Set<string>();
+    // B1.a: the names that owe it something — its exposure, which is the first reason to buy cover.
+    for (const h of view.holdings()) {
+      const i = view.instruments.get(h.instrument);
+      if (!i.status.live || !i.issuer.some) continue;
+      if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+      names.add(String(i.issuer.value));
+    }
+    // B1.a: and the names it already has cover on, because that is a position it may want to change.
+    for (const c of view.contracts.mine()) {
+      if (isCds(c.terms)) names.add(String(c.terms.reference));
+    }
+    // B1, B4: and the names it has an opinion about, which is the reason that needs no holding.
+    for (const s of view.outlookSubjects()) {
+      if (s.on === 'credit') names.add(String(s.party));
+    }
+    return [...names];
+  },
   orders: (view, m) => cdsOrders(view, m),
   measures: (m, reads) => cdsMeasures(m, reads),
 };
