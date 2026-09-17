@@ -16163,3 +16163,42 @@ list rather than being chased here (Law 11).
 
 **The declaration still posts zero orders**, as it did before any of this. That is a finding about
 a mechanism and not about its speed, and it is not this item's to chase.
+
+# 0g.25 — funds: a door where there was none, and a hypothesis measured at exactly nothing
+
+**15,828,849 reads → 5,862,161**, asks **52,360 → 3,593**, the period **123,815,780 →
+113,912,429 ops** and **49.5 → 45.6 s**. `events 178604`, `audit 356268` unchanged. **The budget
+was ≤ 1,000,000 and the step missed it by 4,862,161**, carried onto 0g.28's list. The declaration
+still posts zero orders, as it did before.
+
+## The hypothesis that was wrong, and it cost nothing to find out because it was measured
+
+The plan said the cost was the per-ask work, so the first attempt kept `priced` and the basket's
+cost behind `view.memo`. **The result was identical to the digit — 123,815,780 ops before and
+after.** The memo cannot hit: it is keyed on the prints version, a print is written every time a
+book clears, and a fund is asked about one book between two prints. The memos were reverted rather
+than left in looking useful (Law 12).
+
+A probe then attributed the declaration's reads to its three branches — `passive` 15,694,239 of
+15,828,849, over 23,100 asks — which is how the second attempt was aimed instead of guessed.
+
+## What did work
+
+- **The door, which this declaration never had.** All three branches ask `admits` (A4, and the
+  module says so in its own comment), and the two that do not sell what they hold. So the union is
+  the books whose subject the mandate ADMITS, plus the books of lines it HOLDS, plus a tracker's
+  index constituents — a read of the same tests `orders` makes, so a book left out is a book
+  `orders` returns nothing in. **52,360 asks → 3,593.**
+- **`bookValue` walking what the fund holds rather than the index.** The same defect 0g.24 found in
+  the bank: it asked the register for a quantity and the store for an instrument for every one of
+  several hundred constituents, and a constituent it holds none of contributes `price × 0`.
+  **10,005,354 → 5,862,161.**
+
+## Why the door alone was worth less than the ask count suggests
+
+Removing 48,767 asks removed only 5.8 M of 15.8 M reads, because the asks it removed were the cheap
+ones. What is left is 2,785 reads per surviving ask: a tracker genuinely re-pricing its basket
+because the prints moved under it. **That is not redundancy and no memo can remove it** — which is
+the finding written up as plan item 25: `priced`'s own comment says the target must not depend on
+which sessions have already run, and the implementation makes it depend on exactly that. Settling
+that settles the cost as a consequence, and it is a mechanism question, so 0g leaves it alone.

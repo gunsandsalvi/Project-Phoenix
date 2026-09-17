@@ -289,7 +289,7 @@ first rung), to produce four curves that do not change within the period.
 Layout and traversal only; no mechanism, no economics, no boundary changes. **THE EXIT IS THE
 OWNER'S FIGURE: 3 SECONDS PER PERIOD ON THE FULL WORLD.**
 
-**Steps closed and deleted: 14** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19, 0g.21, 0g.23 and 0g.24.
+**Steps closed and deleted: 15** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19, 0g.21, 0g.23, 0g.24 and 0g.25.
 Their outcomes and the reverted attempts are in `docs/RECORD.md`. 0g.8 (the doors), 0g.11
 (columnar state), 0g.13 (the calendar) and 0g.16 are deleted as *wrong*, not as done — 0g.22
 measured what each was worth and the answer was single digits; where a door is still the right
@@ -378,10 +378,6 @@ carried on hope.
 `audit 356,268` unchanged. A step that moves either of the latter has changed the world, not its
 layout, and is reverted (Law 18).
 
-- [ ] 0g.25 **`funds/fund#11` — 15,828,849 reads, 0 orders → ≤ 1,000,000.** 52,360 questions, no
-  door, nothing posted. Its `orders` branches three ways on the mandate (tracks an index / holds
-  things / chooses), so the door must be the union of all three or it silently loses orders
-  somebody would have posted — the door's own contract. Read all three branches first.
 - [ ] 0g.26 **`households.lifecycle` — 24,204,666 reads → ≤ 3,000,000.** `die` and
   `handToProbate`. An estate is settled per person against the whole register; what a dying
   household holds is what the register's by-holder index already answers.
@@ -392,7 +388,7 @@ layout, and is reverted (Law 18).
   traversal feeding every family is the same audit, and a family that needs its own pass says so.
   Nothing here may make the audit read a mechanism's running total.
 - [ ] 0g.28 **The tail — ~34,000,000 reads over ~150 phases, PLUS 0g.24's 1,689,055 shortfall →
-  ≤ 8,000,000.** No phase in it is
+  ≤ 8,000,000, PLUS 0g.25's 4,862,161.** No phase in it is
   above 1.4%; they are the same defect at smaller scale. `work.ts` names them in order every run,
   and this step is that list worked down until the budget is met, not a sweep.
 - [ ] 0g.29 **The surviving reads made cheaper — 271 ns → ~70 ns.** Only after 0g.23–0g.28, and
@@ -1360,3 +1356,30 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Expectations C3` PARTIAL — packages/engine/src/mechanisms/firms/decide.ts (what a firm offers and what it will pay are its own expectation of the price); the sovereign holders required yield is still a placeholder (worklist 10); 12d.4: measured — `market.noView` on goods books over thirty periods of the rig (`no-view.test.ts`, red): the wholesale books' firm bids are views the census cannot count because the mark is per participant (21.22), and the retail books of a place with no household have only sellers (22.3); 14.2: a firm's bid for cover is its expectation of the loss and a cell's its expectation of its mortality — two more books where the view is the party's own outlook (`condition.<fact>.<region>`, `mortality.<cohort>`)
 
 <!-- /plan:gaps -->
+
+## 25. A tracker's target moves with the running order of the sessions
+
+**Found at 0g.25, not chased there (Law 11): this is a mechanism, and 0g may only change layout.**
+
+`funds/passive.ts`'s `priced` says in its own comment that it reads *"the last print of each line
+at or before now. **Not** the index's own `from`, which is this period's prints and therefore
+depends on which sessions have already run: a target that moved with the running order of the
+markets would have the fund holding a different thing depending on where in the period it was
+asked."*
+
+**It does exactly what the comment says it must not.** `view.print` is
+`prices.latest(instrument, currentPeriod)`, which includes prints written by sessions that have
+already run this period — so a tracker asked about its five hundredth book prices its basket
+against a world five hundred sessions further on than the one its first book saw, and its target
+holding differs by where in the period the question arrived. The running order of the markets is
+not a fact about the index and the fund's mandate does not mention it.
+
+It surfaced as cost. A tracker re-prices its whole basket for every book it is asked about
+(5,862,161 kernel reads a period after 0g.25 took the two removable walks out), and the reason the
+answer cannot be kept between two books is precisely that the prints move under it. **Settle which
+prints a tracker sees and the recomputation goes with it** — an answer that does not depend on the
+session order is one that can be read once a period. The saving is a consequence; the reason to do
+it is that the fund's holding should not depend on the order the books ran in.
+
+Whichever way it is settled, `docs/COVERAGE.md`'s Indices C1/C2 marks are what it is measured
+against, and the choice belongs to whoever owns §Indices — not to a performance item.

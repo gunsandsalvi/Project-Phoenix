@@ -180,17 +180,37 @@ function bookValue(
   basket: readonly { readonly instrument: InstrumentId; readonly price: PerPiece }[],
 ): Cash {
   const ccy = view.registry.currencyOf(view.self.region);
-  const terms = basket.map((c) =>
-    view.inMoney(
-      valueAt(
-        c.price,
-        view.quantity(c.instrument),
-        view.instruments.get(c.instrument).ccy,
-        'what it holds of this',
+  /**
+   * Law 19, Law 18 (0g.25): IT WALKS WHAT IT HOLDS, not every line in the index.
+   *
+   * This asked the register how many units it holds of each of the index's constituents, and read
+   * each constituent's instrument to know what money it is in — for an index of several hundred
+   * lines, of which a fund holds some. A constituent it holds NONE of contributes `price × 0`,
+   * which is nothing, so the terms it was adding were zeros bought at two kernel reads each.
+   *
+   * What it holds is what the register's by-holder index answers directly, and the prices are
+   * already in hand from the basket. A holding outside the basket is not in this number either —
+   * it is what the fund's book is worth AT THE INDEX, which is what a tracking difference is
+   * measured against — so the intersection is the whole of it.
+   */
+  const at = new Map<InstrumentId, PerPiece>();
+  for (const c of basket) at.set(c.instrument, c.price);
+  const terms: Cash[] = [];
+  for (const h of view.holdings()) {
+    const price = at.get(h.instrument);
+    if (price === undefined) continue;
+    terms.push(
+      view.inMoney(
+        valueAt(
+          price,
+          view.quantity(h.instrument),
+          view.instruments.get(h.instrument).ccy,
+          'what it holds of this',
+        ),
+        ccy,
       ),
-      ccy,
-    ),
-  );
+    );
+  }
   terms.push(heldAsMoney(view.cash(ccy), ccy, 'and the money it holds'));
   return sumCash(ccy, terms, 'what its book is worth').value;
 }

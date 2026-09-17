@@ -29,7 +29,7 @@ import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { AuditView } from '../../audit/view.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import {
@@ -2806,6 +2806,48 @@ export function funds(
          *
          * A pool with no mandate is not a fund and has no reason to be anywhere (App A).
          */
+        /**
+         * Law 18, Law 19, Clearing B2 (0g.25): THE BOOKS A POOL COULD BE IN — the union of what
+         * all three reasons can answer in, and it is one test because all three ask it.
+         *
+         * Measured on the full world: **52,360 questions a period, 15,828,849 kernel reads and NOT
+         * ONE ORDER**, this declaration having no door at all. A tracker was asked about every book
+         * in the world and re-priced its whole index to answer no.
+         *
+         * The union is a READ of the same tests `orders` makes below (Law 4, Law 19), so a book
+         * this leaves out is a book `orders` returns nothing in:
+         *  - it TRACKS, and `passiveOrders` answers only where the book's subject is in the index's
+         *    basket, or is a line it holds and must sell out of (C2.a);
+         *  - its blueprint is THINGS, and `thingOrders` refuses anything its blueprint does not
+         *    `admit`;
+         *  - it CHOOSES, and `ordersOf` sells what it HOLDS and buys only what `eligible` admits.
+         *
+         * `admits` is the one door all three ask (A4) and it is asked here over the BOOKS rather
+         * than over the register: a line with no market is a line nobody is asked about anyway.
+         */
+        markets: (view: ParticipantView): readonly MarketId[] => {
+          const mandate = mandateFor(view);
+          if (!mandate.some || !view.self.status.alive) return [];
+          const mine = new Set<InstrumentId>();
+          for (const h of view.holdings()) mine.add(h.instrument);
+          if (mandate.value.tracks.some) {
+            const read = view.index(mandate.value.tracks.value);
+            if (read.some) for (const c of read.value.basket) mine.add(c.instrument);
+          }
+          const out: MarketId[] = [];
+          for (const m of view.markets) {
+            const subject = delivers(m);
+            if (!subject.some) continue;
+            if (mine.has(subject.value)) {
+              out.push(m.id);
+              continue;
+            }
+            if (admits(mandate.value.blueprint, view.classify(subject.value), () => undefined)) {
+              out.push(m.id);
+            }
+          }
+          return out;
+        },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           const mandate = mandateFor(view);
           if (!mandate.some || !view.self.status.alive) return [];
