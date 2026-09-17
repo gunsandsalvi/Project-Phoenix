@@ -23,7 +23,7 @@
 import type { ParamId } from '../core/ids.js';
 import { absolute, asRatio } from '../core/measure.js';
 import { InvalidRegistry } from '../core/errors.js';
-import type { ParamDecl } from './params.js';
+import type { Dimension, ParamDecl } from './params.js';
 
 export interface PlatformPosition {
   /** A parameter id, or a family prefix ending in a dot — `centralBank.target.` covers every money. */
@@ -38,6 +38,16 @@ export interface PlatformDecl {
   readonly name: string;
   readonly positions: readonly PlatformPosition[];
 }
+
+/**
+ * Law 8 (19.6): WHICH NUMBERS ARE COUNTED IN WHOLE THINGS. A position on one of them is a whole
+ * one, and so is the mandate a coalition's seats come to — half a hectare of consent, a third of a
+ * period of severance and two fifths of a day of reporting lag are not values the unit can hold,
+ * and the read that would have to hold one throws where it reads (`asQty`) rather than here.
+ */
+export const COUNTED: readonly Dimension[] = ['periods', 'days', 'months', 'years', 'count'];
+
+export const isCounted = (d: ParamDecl): boolean => COUNTED.includes(d.dimension);
 
 /** Whether a position covers a parameter: its own name, or the family it names. */
 const covers = (on: string, id: ParamId): boolean =>
@@ -84,6 +94,16 @@ export function platformPositions(
         throw new InvalidRegistry('Law 16', `${row.id} gives no reason for ${only.on}`, {
           platform: row.id,
         });
+      }
+      // Law 8: and it is stated in the number's own unit. A position of nine tenths on a number
+      // counted in hectares is a party that meant a share and wrote a quantity; the world does not
+      // open with it, because what it would produce is a mandate no read of that number can hold.
+      if (isCounted(d) && !Number.isInteger(only.value)) {
+        throw new InvalidRegistry(
+          'Law 8',
+          `${row.id} states ${String(only.value)} on ${String(d.id)}, which is counted in whole ${d.dimension === 'count' ? 'things' : d.dimension} ("${d.unit}")`,
+          { platform: row.id, id: String(d.id), value: only.value },
+        );
       }
       said.set(d.id, only.value);
     }
@@ -188,7 +208,7 @@ export const PLATFORMS: readonly PlatformDecl[] = [
       { on: 'regulation.riskWeight.cds.sold', value: 1.5, why: 'Writing protection is taking a risk, and this party makes it expensive to take.' },
       { on: 'funds.accreditedWealthPerMember', value: 3_000_000, why: 'Fewer households may be sold what a pool sells: it would rather they were protected than free.' },
       { on: 'reporting.lag.days', value: 30, why: 'Companies publish sooner, because what they publish is what everybody else prices on.' },
-      { on: 'land.planning.releasePerPeriod', value: 0.9, why: 'It releases land readily: a shortage of houses is a shortage of permissions.' },
+      { on: 'land.planning.releasePerPeriod', value: 140, why: 'It releases land readily: a shortage of houses is a shortage of permissions, and it grants more of them than either of the others.' },
     ],
   },
   {
@@ -214,7 +234,7 @@ export const PLATFORMS: readonly PlatformDecl[] = [
       { on: 'regulation.riskWeight.cds.sold', value: 0.8, why: 'Capital held against a written position is capital not lent to somebody who wants it.' },
       { on: 'funds.accreditedWealthPerMember', value: 800_000, why: 'More households may buy what a pool sells: it treats them as able to decide for themselves.' },
       { on: 'reporting.lag.days', value: 60, why: 'Companies publish later: an accounting deadline is a cost, and a small company feels it most.' },
-      { on: 'land.planning.releasePerPeriod', value: 0.5, why: 'Land is released slowly, which is what the people who already own houses prefer.' },
+      { on: 'land.planning.releasePerPeriod', value: 60, why: 'Land is released slowly, which is what the people who already own houses prefer.' },
     ],
   },
   {
@@ -240,7 +260,7 @@ export const PLATFORMS: readonly PlatformDecl[] = [
       { on: 'regulation.riskWeight.cds.sold', value: 1, why: 'A unit of exposure carries a unit of weight: the simplest rule, and the hardest to argue with.' },
       { on: 'funds.accreditedWealthPerMember', value: 1_500_000, why: 'Where the line is. It would rather move it slowly than argue about where it should be.' },
       { on: 'reporting.lag.days', value: 45, why: 'Long enough to close a set of books, short enough that they are still about this quarter.' },
-      { on: 'land.planning.releasePerPeriod', value: 0.7, why: 'It releases what the last parliament released, and blames the shortage on the one before.' },
+      { on: 'land.planning.releasePerPeriod', value: 100, why: 'It releases what the last parliament released, and blames the shortage on the one before.' },
     ],
   },
 ];

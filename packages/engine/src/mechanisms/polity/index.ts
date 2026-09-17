@@ -19,7 +19,15 @@ import type { ParamDecl } from '../../registry/params.js';
 import { platformPositions } from '../../registry/platforms.js';
 import { PLATFORMS } from './platforms.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
-import { BALLOTS_CAST, SEATS_TAKEN, hold } from './election.js';
+import {
+  BALLOTS_CAST,
+  MANDATE_GIVEN,
+  MANDATE_TAKEN,
+  SEATS_TAKEN,
+  hold,
+  mandateStands,
+  takeEffect,
+} from './election.js';
 import type { SystemModule } from '../../world/module.js';
 
 export * from './data.js';
@@ -96,6 +104,26 @@ export const polity: SystemModule = {
   phases: [
     {
       /**
+       * C3.a, C4 (19.6): THE MANDATE GOVERNS. Every period, before the world runs: the period the
+       * lag lands in is the one where the numbers move, and every other period this does nothing.
+       *
+       * It runs BEFORE the election phase below because that is the order the two things happen in
+       * — a parliament elected four periods ago governs this period, and the parliament elected
+       * this period governs four periods from now. A mandate applied after the count would be a
+       * government legislating before it was formed.
+       */
+      name: 'polity.mandate',
+      spec: 'Polity C3 Polity C3.a Polity C4',
+      anchor: { after: 'corporateActions' },
+      // A read of HISTORY: what an earlier parliament said, which is why it orders nothing.
+      reads: [{ kind: 'event', name: MANDATE_GIVEN, of: 'anyPeriod' }],
+      writes: [{ kind: 'event', name: MANDATE_TAKEN }],
+      run: (ctx: MechanismContext): void => {
+        takeEffect(ctx);
+      },
+    },
+    {
+      /**
        * A4, B1, B3, C4 (19.4): THE ELECTION. It falls on a DAY — every `termMonths` from the day
        * this world opened — and the period that crosses that day is the one that votes, which is
        * the same rule the credit series rolls on and the central bank meets on (Money G3.a).
@@ -111,6 +139,7 @@ export const polity: SystemModule = {
       writes: [
         { kind: 'event', name: BALLOTS_CAST },
         { kind: 'event', name: SEATS_TAKEN },
+        { kind: 'event', name: MANDATE_GIVEN },
       ],
       run: (ctx: MechanismContext): void => {
         hold(ctx);
@@ -118,7 +147,8 @@ export const polity: SystemModule = {
     },
   ],
   participants: [],
-  families: [],
+  /** C3.b: the register holds what the parliament said, every period, exactly — or the audit says so. */
+  families: [mandateStands()],
   /**
    * A2, D5 (19.3): THE PLATFORMS ARE CHECKED AGAINST THE REGISTER, at assembly, once.
    *

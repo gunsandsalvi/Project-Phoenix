@@ -48,8 +48,8 @@ and neither is yet a MET a run has confirmed.
 | CDS | 17 | 0 | 8 | **17** | 25 |
 | IRS | 14 | 1 | 5 | **13** | 20 |
 | FX Forwards | 13 | 0 | 8 | 0 | 21 |
-| Commodity Futures | 5 | 0 | 15 | **5** | 20 |
-| **Commodities Spot** | **3** | 1 | **20** | 0 | 24 |
+| Commodity Futures | 13 | 2 | 5 | **5** | 20 |
+| Commodities Spot | 16 | 2 | 6 | 0 | 24 |
 | Indices | 21 | 1 | 0 | **1** | 22 |
 | Banks Lending | 25 | 4 | 3 | 0 | 32 |
 | Banks Funding | 28 | 4 | 0 | 0 | 32 |
@@ -59,8 +59,8 @@ and neither is yet a MET a run has confirmed.
 | Hedge Funds | 13 | 2 | 9 | 0 | 24 |
 | Private Equity | 24 | 1 | 0 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
-| Central Bank | 22 | 3 | 4 | 0 | 29 |
-| **Polity** | **0** | 0 | **32** | 0 | 32 |
+| Central Bank | 22 | 3 | 4 | **1** | 29 |
+| Polity | 18 | 0 | 14 | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 13 | 7 | 5 | **1** | 25 |
@@ -69,7 +69,7 @@ and neither is yet a MET a run has confirmed.
 | Goods | 27 | 2 | 10 | 0 | 39 |
 | Freight | 17 | 3 | 0 | 0 | 20 |
 | Labour | 23 | 1 | 3 | 0 | 27 |
-| Housing | 14 | 9 | 3 | 2 | 26 |
+| Housing | 15 | 8 | 3 | **2** | 26 |
 | Households | 20 | 9 | 4 | 0 | 33 |
 | Small-Business Pools | 26 | 2 | 0 | **5** | 28 |
 | Cross-Border | 20 | 6 | 0 | 0 | 26 |
@@ -307,7 +307,17 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   The mandate is a READ of the parliament — every number parliament owns, at the seat-weighted
   position of the parties in government — so a coalition governs at what its seats between them come
   to and nobody invents a deal.
-- [ ] 19.6 The mandate journaled and written at the lag; C3.b as an audit contribution.
+- [x] 19.6 The mandate journaled at the count with the period it starts from, and WRITTEN at the lag
+  through the one door that may write it (`polity.mandate`, every period, doing something in the one
+  the lag lands in). A government is formed and then it governs, which is why a change of parliament
+  shows in the deficit later rather than the same week. C3.b is the guard on C3.a's forbid, which
+  breaks silently: an audit contribution comparing every number in the standing mandate against the
+  register, every period, EXACTLY — no dust, because a policy primitive is not the sum of anything.
+  Two defects in 19.3's own declarations were undone on their own terms (Law 13): a platform stated
+  nine tenths on a number counted in HECTARES A PERIOD, and the seat-weighted mandate of a counted
+  number was a fraction of one. Both are Law 8 — the unit is part of the number — so a position on a
+  counted number is refused at assembly unless it is a whole one, and a coalition's mandate on such a
+  number lands on the unit's own grain (the nearest, up or down: a grain is not a bound).
 - [ ] 19.7 What it controls (fiscal rates, transfers, the buffer, the outlay programme, regulatory ratios, the target, the planning release of 15.1) and never controls (the rate, a price, a quantity, an outcome — assembly throws).
 - [ ] 19.8 The arrears' `breached` writer (fiscal policy decides when an arrear is a breach).
 - [ ] 19.9 A multi-year run shows the deficit changing through named outlays after an election; approval as a lagged read; B4 and F5 tests; observer; determinism; COVERAGE; record.

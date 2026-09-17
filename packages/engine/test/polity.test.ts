@@ -251,7 +251,7 @@ describe('who governs, and what the parliament then says (Polity C2, C2.a, C3, 1
     expect(g.seats).toBeLessThanOrEqual(50);
     // C3: and a hung parliament produces NO mandate — not an empty one, which would be a mandate
     // setting every number to nothing. What governs is what was already standing.
-    expect(mandateOf(g, seats, said)).toBeUndefined();
+    expect(mandateOf(g, seats, said, w.params.all())).toBeUndefined();
   });
 
   it('reads the mandate off the parliament, seat-weighted across the coalition (C3)', () => {
@@ -261,7 +261,7 @@ describe('who governs, and what the parliament then says (Polity C2, C2.a, C3, 1
       ['lean', 30],
     ]);
     const g = formGovernment(seats, said, 1, 100);
-    const mandate = mandateOf(g, seats, said);
+    const mandate = mandateOf(g, seats, said, w.params.all());
     expect(mandate).toBeDefined();
     if (mandate === undefined) return;
     // Every number parliament owns has a value in it, and each one lies between what the parties in
@@ -277,8 +277,76 @@ describe('who governs, and what the parliament then says (Polity C2, C2.a, C3, 1
     // One party governing alone governs at its own platform, exactly.
     const alone = new Map([['lean', 60], ['broad', 40]]);
     const solo = formGovernment(alone, said, 1, 100);
-    const its = mandateOf(solo, alone, said);
+    const its = mandateOf(solo, alone, said, w.params.all());
     expect(solo.members).toEqual(['lean']);
     expect(its?.get('treasury.tax.income' as never)).toBe(said.get('lean')?.get('treasury.tax.income' as never));
+  });
+});
+
+describe('the mandate takes effect at the lag, and the register holds it (Polity C3.a, C3.b, C4, 19.6)', () => {
+  /**
+   * The constitution says forty-eight months, which is longer than any test world runs — so this
+   * one shortens the TERM (the constitution's own number, moved on the register, which is where a
+   * constitution is written) and lets the same mechanism run four times instead of never. Nothing
+   * else is touched: the platforms, the vote, the coalition and the lag are the world's.
+   */
+  function elected(): ReturnType<typeof rigWorld> {
+    const w = rigWorld('polity.mandate');
+    w.params.setByMandate(POLITY_PARAMS.termMonths, 1, 'constitution', 'a scale model votes often.');
+    for (let i = 0; i < 14; i += 1) w.step();
+    return w;
+  }
+
+  it('journals what the parliament said with the period it starts from, and writes it then', () => {
+    const w = elected();
+    const given = w.journal.ofKind('polity.mandate');
+    expect(given.length).toBeGreaterThan(0);
+    const first = given[0];
+    if (first === undefined) return;
+    // C4: a government is formed and THEN it governs — the mandate names the period it starts from,
+    // and it is the election's period plus the constitution's lag, not the election's own.
+    const lag = w.params.periods(POLITY_PARAMS.mandateLag);
+    expect(Number(first.data['from'])).toBe(Number(first.data['elected']) + lag);
+    expect(String(first.data['government']).length).toBeGreaterThan(0);
+    // C3.a: and the numbers moved in the period it starts from, through the one door — the event
+    // says which, and the period it was recorded in is the period the mandate named.
+    const taken = w.journal.ofKind('polity.mandate.inForce');
+    expect(taken.length).toBeGreaterThan(0);
+    const firstTaken = taken[0];
+    if (firstTaken === undefined) return;
+    expect(Number(firstTaken.period)).toBe(Number(first.data['from']));
+    // A government that governs moves something: the platforms differ, so the mandate does too.
+    expect(taken.some((e) => Number(e.data['moved']) > 0)).toBe(true);
+  });
+
+  it('measures that every number parliament owns stands where the mandate put it (C3.b)', () => {
+    const w = elected();
+    const family = (r: ReturnType<typeof w.step>): number => {
+      const f = r.audit.families.find((x) => x.contributions.includes('polity'));
+      expect(f?.built).toBe(true);
+      return f?.violations.filter((v) => v.spec === 'Polity C3.b').length ?? -1;
+    };
+    // With the mandate standing and nothing else touching the numbers, there is nothing to find.
+    expect(family(w.step())).toBe(0);
+    // Move one of them off the mandate and the family says so — by name, with the size of the gap,
+    // and without repairing it (Audit C4). This is C3.a's forbid guarded rather than remembered.
+    const given = w.journal.ofKind('polity.mandate');
+    const last = given[given.length - 1];
+    if (last === undefined) return;
+    const values = last.data['mandate'] as Record<string, number>;
+    const [id] = Object.keys(values);
+    if (id === undefined) return;
+    // Off the STANDING mandate, which is what the register holds while nothing else touches it.
+    const was = w.params.decl(id as ParamId).value;
+    w.params.setByMandate(id as ParamId, was + 0.01, 'parliament', 'a hand on the dial.');
+    const after = w.step();
+    const found = after.audit.families
+      .find((x) => x.contributions.includes('polity'))
+      ?.violations.filter((v) => v.spec === 'Polity C3.b');
+    expect(found?.length).toBe(1);
+    expect(found?.[0]?.owner).toBe(id);
+    expect(found?.[0]?.size).toBeCloseTo(0.01, 12);
+    // And it is still off: the audit observed, and changed nothing (Audit C4).
+    expect(w.params.decl(id as ParamId).value).toBeCloseTo(was + 0.01, 12);
   });
 });

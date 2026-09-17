@@ -21,7 +21,9 @@
  */
 import type { ParamId } from '../../core/ids.js';
 import { div, mul, sum } from '../../core/num.js';
-import { distanceBetween, spreadAcross } from '../../registry/platforms.js';
+import { distanceBetween, isCounted, spreadAcross } from '../../registry/platforms.js';
+import type { ParamDecl } from '../../registry/params.js';
+import { toGrain } from '../../core/tick.js';
 
 export interface Government {
   /** The platforms in it, largest first — the order they were added by the rule. */
@@ -89,6 +91,7 @@ export function mandateOf(
   government: Government,
   seats: ReadonlyMap<string, number>,
   positions: ReadonlyMap<string, ReadonlyMap<ParamId, number>>,
+  policies: readonly ParamDecl[],
 ): Map<ParamId, number> | undefined {
   if (government.hung || government.members.length === 0) return undefined;
   // Every member of a government holds seats — that is how it got in — so a member with none is a
@@ -111,7 +114,17 @@ export function mandateOf(
       if (said === undefined) continue;
       terms.push(mul(said, w.seats, 'what this party wants, over the seats it holds'));
     }
-    out.set(id, div(sum(terms).value, total, 'what the coalition governs at'));
+    const at = div(sum(terms).value, total, 'what the coalition governs at');
+    /**
+     * Law 8 (19.6): AND IT IS STATED IN THE NUMBER'S OWN UNIT. A number counted in whole things —
+     * hectares of consent a period, periods of severance, days of reporting lag — has a mandate
+     * that is a whole one: the coalition legislates in hectares because that is what the number is,
+     * and a seat-weighted 100.8 of them is an average and not a law. It is the grain of the unit
+     * and not a bound (Law 6): nothing is capped, and the value it lands on is the nearest the unit
+     * can hold, above or below.
+     */
+    const counted = policies.find((d) => d.id === id);
+    out.set(id, counted !== undefined && isCounted(counted) ? toGrain(at, 1) : at);
   }
   return out;
 }

@@ -22,10 +22,13 @@ import { about, type MechanismContext } from '../../world/context.js';
 import { asCash } from '../../core/measure.js';
 import { POLITY_PARAMS, ruleAt } from './data.js';
 import { ballotOf, tally, turnoutOf, type Ballot, type WhatItTurnsOn } from './vote.js';
-import { formGovernment } from './government.js';
+import { formGovernment, mandateOf } from './government.js';
+import type { Family, Violation } from '../../audit/audit.js';
 
 export const BALLOTS_CAST = 'polity.ballot';
 export const SEATS_TAKEN = 'polity.seats';
+export const MANDATE_GIVEN = 'polity.mandate';
+export const MANDATE_TAKEN = 'polity.mandate.inForce';
 
 /**
  * B2: the parliament-owned numbers a cell's own position turns on. They are named here, once,
@@ -116,6 +119,35 @@ export function hold(ctx: MechanismContext): void {
     ctx.params.ratio(POLITY_PARAMS.coalitionMaxDistance),
     house,
   );
+  /**
+   * C3, C4 (19.6): AND WHAT THE PARLIAMENT SAYS, journaled with the period it takes effect from.
+   *
+   * The mandate is read here, at the count, because it is a read OF THE PARLIAMENT and the
+   * parliament is what the count just produced. It is not applied here: a government is formed and
+   * then it governs (C4), so the numbers move `mandateLag` periods later, which is why a change of
+   * parliament shows in the deficit later rather than the same week (E3).
+   *
+   * A hung parliament journals no mandate. What is standing stays standing, and the seats event
+   * above says why — which is the difference between a government that chose the old numbers and a
+   * parliament that could not choose at all.
+   */
+  const mandate = mandateOf(government, seats, said, ctx.params.all());
+  if (mandate !== undefined) {
+    const from = period(ctx.period + ctx.params.periods(POLITY_PARAMS.mandateLag));
+    ctx.record(
+      MANDATE_GIVEN,
+      [...government.members],
+      {
+        government: government.members.join(','),
+        seats: government.seats,
+        from,
+        elected: ctx.period,
+        // C3: every number parliament owns, at the value the coalition's seats came to.
+        mandate: Object.fromEntries([...mandate].map(([id, v]) => [String(id), v])),
+      },
+      true,
+    );
+  }
   ctx.record(
     SEATS_TAKEN,
     [...seats.keys()],
@@ -133,4 +165,99 @@ export function hold(ctx: MechanismContext): void {
     },
     true,
   );
+}
+
+/**
+ * C3.a, C4 (19.6): THE MANDATE TAKES EFFECT — the numbers move, once, at the lag, through the one
+ * door that may move them.
+ *
+ * `setByMandate` refuses anything that is not a policy, anything whose owner is not parliament and
+ * any module but this one (19.1), so C3.a's *no policy set directly* is the shape of the door
+ * rather than a rule anybody remembers. What each number was and what it is now is published by the
+ * kernel, per number, so a reader can see a government arriving in the register.
+ *
+ * It runs every period and does something in one of them: the period the lag lands in. A mandate
+ * whose value is already standing is not written again — the register would take it, and the event
+ * would say a government changed something it did not.
+ */
+export function takeEffect(ctx: MechanismContext): void {
+  const said = ctx.journal.ofKind(MANDATE_GIVEN).filter((e) => Number(e.data['from']) === ctx.period);
+  for (const e of said) {
+    const values = e.data['mandate'];
+    if (typeof values !== 'object' || values === null) continue;
+    const moved: string[] = [];
+    for (const [id, value] of Object.entries(values as Record<string, unknown>)) {
+      if (typeof value !== 'number') continue;
+      const held = ctx.params.decl(id as ParamId);
+      if (held.value === value) continue;
+      ctx.setByMandate(
+        id as ParamId,
+        value,
+        'parliament',
+        `The parliament elected in period ${String(e.data['elected'])} governs: ${String(e.data['government'])}.`,
+      );
+      moved.push(id);
+    }
+    ctx.record(
+      MANDATE_TAKEN,
+      [String(e.data['government'])],
+      {
+        government: String(e.data['government']),
+        elected: e.data['elected'],
+        moved: moved.length,
+        numbers: moved.join(','),
+      },
+      true,
+    );
+  }
+}
+
+/**
+ * C3.b (19.6): THE GUARD ON C3.a — the register says what the parliament said, or the audit does.
+ *
+ * C3.a is a FORBID, and a forbid breaks silently: `setByMandate` is the only door, and a number
+ * that moved through some other door — a seed restated, a module writing its own declaration, a
+ * second mandate nobody counted — leaves the register disagreeing with the standing mandate and
+ * nothing anywhere says so. So it is MEASURED, every period, exactly: no dust, because a policy
+ * primitive is not the sum of anything (Law 7) and the only value it may hold is the one that was
+ * written into it.
+ *
+ * Before the first election there is no standing mandate and the family is not silent about that
+ * either: it is BUILT and it finds nothing, which is the true answer — nobody has voted yet, so
+ * there is nothing for the register to disagree with.
+ */
+export function mandateStands(): Family {
+  return {
+    name: 'names',
+    contributor: 'polity',
+    spec: 'Polity C3 Polity C3.a Polity C3.b',
+    built: true,
+    check: (view): Violation[] => {
+      const given = view.journal
+        .ofKind(MANDATE_GIVEN)
+        .filter((e) => Number(e.data['from']) <= view.period);
+      const standing = given[given.length - 1];
+      if (standing === undefined) return [];
+      const values = standing.data['mandate'];
+      if (typeof values !== 'object' || values === null) return [];
+      const held = new Map(view.params.all().map((d) => [String(d.id), d]));
+      const out: Violation[] = [];
+      for (const [id, value] of Object.entries(values as Record<string, unknown>)) {
+        if (typeof value !== 'number') continue;
+        const decl = held.get(id);
+        if (decl === undefined) continue;
+        if (decl.value === value) continue;
+        out.push({
+          family: 'names',
+          spec: 'Polity C3.b',
+          owner: id,
+          size: decl.value - value,
+          unit: decl.unit,
+          period: view.period,
+          message: `${id} stands at ${String(decl.value)} and the mandate of the parliament elected in period ${String(standing.data['elected'])} is ${String(value)}: a policy primitive the parliament controls moved by something that is not a mandate (C3.a)`,
+        });
+      }
+      return out;
+    },
+  };
 }
