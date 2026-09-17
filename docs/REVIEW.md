@@ -719,3 +719,42 @@ mechanisms and reads respectively. N5 and N8 belong in the worklist at their dep
 N7 rides with the ladder's repair (§2's S1).
 
 ---
+
+---
+
+## §5. One programme
+
+*The twenty proposals above are not a menu. They are four cuts through the single fact in §0, and
+they have an order that follows from it.*
+
+**The loop to break.** No history → no outlook → no order → no trade → no income → no history. Two
+proposals break it, and nothing else in this review matters until one of them lands.
+
+| # | do this | from | breaks | costs |
+|---|---|---|---|---|
+| 1 | **M3** a party with no private history follows the public record | §3.3 | the loop, at the outlook | days |
+| 2 | **N1** the liveness family, so the world says when it is asleep | §4 | the blindness that let this run for months | ~2 days |
+| 3 | **S1** repair the ladder's middle rung (21.87) | §2.5 | measurement at any scale but the smallest | hours |
+| 4 | **N6** an explainer over the journal | §4 | hand-written probes as the diagnostic method | days |
+| 5 | **22b.1–22b.2** the chronicle and its census | §1.6 | the loop, at the history | weeks |
+| 6 | **M1 + M2** protocols per venue; orders that rest | §3.1, §3.2 | 99.2% empty sessions, and S3 with it | weeks |
+| 7 | **M4 + M6** desired cover, an ask that answers the shelf, a stockist | §3.4, §3.6 | the goods chain, and 21.84 | weeks |
+| 8 | **N2** ensembles, and a finding that must reproduce | §4 | one seed standing in for a world | days |
+| 9 | **S2** 0g.7: memoise the curve, the day count, the inversion | §2.5 | 55% of the cost at the rung that matters | ~1 day |
+| 10 | **N3** the settlement queue and the gridlock pass | §4 | 1,617 failed maturities; a fifth of the deaths | weeks |
+| 11 | **N4** the network read · **N7** the metamorphic family · **S6** the ladder gate | §4, §2.5 | three cheap, independent instruments | days each |
+| 12 | **S4, S5** wake-don't-poll, then the structural passes (0g.3, 0g.11, 0g.14) | §2.5 | the remaining factor of ten | weeks |
+| 13 | **N5, N8** trade credit; the ten-clause gaps in Goods and Observer | §4 | worklist items at their dependency positions | — |
+
+**Why this order.** 1–4 are cheap and they are *instruments*: after them, the world can act, say when
+it is not acting, be measured at the scale that matters, and explain itself. Everything from 5 down
+is expensive, and every one of those is easier to do — and impossible to get wrong silently — once
+the instruments exist. 9 is out of order on purpose: it is a day's work for half the cost at the
+third rung, and it makes 5 affordable.
+
+**What it would close.** 12c.3, 21.72, 21.73, 21.76, 21.77, 21.79, 21.81, 21.84, 21.86, 21.87 and a
+share of 21.36 — which is most of the open findings register, and all of the "a mechanism that never
+fires" class.
+
+**The one-line test of whether it worked.** Run the §0 census again. *428 never-used capabilities,
+13 dead modules, 72 clears in 8,819 sessions* is the before. There is no arguing with the after.
