@@ -1088,6 +1088,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       wants: 'money',
       // Corporate Credit C9 (17b.8): a line, over the term a line is written for.
       months: ctx.params.months(TERM_MONTHS.working),
+      // 0i: it puts up nothing, and an ask that is unsecured says so.
+      security: [],
     });
   }
   const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);

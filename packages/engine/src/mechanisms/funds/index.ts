@@ -2006,7 +2006,7 @@ function finishWindUp(ctx: MechanismContext, m: Mandate): void {
   const left = ctx.register.quantity(pool, money);
   if (left > 0) payFee(ctx, m, left);
   ctx.endAgreement(m.id, `${pool} has been wound up`);
-  ctx.cease(pool, m.manager);
+  ctx.cease(pool, m.manager, 'the pool wound up and its manager answers for what is left');
   ctx.record(
     'fund.woundUp',
     [pool, m.manager],

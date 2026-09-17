@@ -10,8 +10,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { FactRegister, fact, says } from '../src/registry/facts.js';
-import { WEIGHT } from '../src/world/facts.js';
-import { InvalidRegistry } from '../src/index.js';
+import { KERNEL_FACTS, WEIGHT } from '../src/world/facts.js';
+import { refuseDisagreeingFacts } from '../src/world/order.js';
+import { InvalidRegistry, Forbidden } from '../src/index.js';
 
 const anEvent = (kind: string, data: Record<string, unknown>) => ({ kind, data });
 
@@ -95,5 +96,67 @@ describe('reading a declared fact (0i)', () => {
 
   it('refuses to read one fact as another (Law 4)', () => {
     expect(() => says(anEvent('print', whole), WEIGHT)).toThrow(/read a "print" as a "weight"/);
+  });
+});
+
+describe('assembly refuses two writers who disagree (0i.3)', () => {
+  const phase = (name: string, writes: { name: string; fact?: ReturnType<typeof fact> }[]) =>
+    ({
+      name,
+      spec: 'test',
+      anchor: { after: 'markets' },
+      reads: [],
+      writes: writes.map((w) => ({ kind: 'event' as const, name: w.name as never, ...(w.fact === undefined ? {} : { fact: w.fact }) })),
+      run: () => undefined,
+      owner: 'test',
+    }) as never;
+
+  const A = fact('x.y', 'one shape', { n: { is: 'count', what: 'a count' } });
+  const B = fact('x.y', 'another shape', { m: { is: 'count', what: 'a count' } });
+
+  it('refuses one kind declared twice, naming both phases (Law 4)', () => {
+    // This is 21.100 at the moment it could have been caught: two writers of one event kind, each
+    // with its own idea of what the event says, and a reader that can only match one of them.
+    expect(() => {
+      refuseDisagreeingFacts([phase('one', [{ name: 'x.y', fact: A }]), phase('two', [{ name: 'x.y', fact: B }])]);
+    }).toThrow(Forbidden);
+    expect(() => {
+      refuseDisagreeingFacts([phase('one', [{ name: 'x.y', fact: A }]), phase('two', [{ name: 'x.y', fact: B }])]);
+    }).toThrow(/one and by two/);
+  });
+
+  it('refuses a kind one writer declares and another does not', () => {
+    // The same disagreement with one side silent: the declared writer's readers are typed, the
+    // undeclared writer's payload is whatever it felt like, and nothing matches them.
+    expect(() => {
+      refuseDisagreeingFacts([phase('one', [{ name: 'x.y', fact: A }]), phase('two', [{ name: 'x.y' }])]);
+    }).toThrow(/declared by one and not by two/);
+  });
+
+  it('allows two writers of one kind that share the declaration, and two undeclared', () => {
+    // Sharing the declaration is the whole point: one object, imported, so they cannot drift.
+    expect(() => {
+      refuseDisagreeingFacts([phase('one', [{ name: 'x.y', fact: A }]), phase('two', [{ name: 'x.y', fact: A }])]);
+    }).not.toThrow();
+    // And a kind nobody has declared yet is COUNTED, not refused (the migration is incremental).
+    expect(() => {
+      refuseDisagreeingFacts([phase('one', [{ name: 'x.y' }]), phase('two', [{ name: 'x.y' }])]);
+    }).not.toThrow();
+  });
+});
+
+describe('the kernel’s own facts (0i.4)', () => {
+  it('are all declared once, and the register accepts them together', () => {
+    expect(() => new FactRegister([...KERNEL_FACTS])).not.toThrow();
+    expect(new FactRegister([...KERNEL_FACTS]).report().declared).toBe(KERNEL_FACTS.length);
+  });
+
+  it('cover the kinds whose payloads the audit and the kernel read back', () => {
+    // These are first because a mismatch in one of them does not stay a mismatch: the audit reads
+    // them, so it becomes a false statement about the economy.
+    const kinds = new Set(KERNEL_FACTS.map((f) => f.kind));
+    for (const k of ['weight', 'print', 'instrument.split', 'credit.request', 'disclosed']) {
+      expect(kinds.has(k as never), k).toBe(true);
+    }
   });
 });

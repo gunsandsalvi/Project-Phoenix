@@ -54,6 +54,8 @@ export type FieldKind =
   | 'agreement'
   /** Law 8: a count of a money's smallest piece. The currency is its own field (`ccy`), never a value object. */
   | 'money'
+  /** Law 8, Law 9: money PER UNIT of the thing. It is not money and never adds to it. */
+  | 'price'
   | 'currency'
   | 'count'
   | 'ratio'
@@ -73,6 +75,7 @@ export const FIELD_KINDS: readonly FieldKind[] = [
   'market',
   'agreement',
   'money',
+  'price',
   'currency',
   'count',
   'ratio',
@@ -102,7 +105,7 @@ export type FactFields = Readonly<Record<string, FieldSpec>>;
 /** What a declared field's value is. A reader gets this; a writer must produce it. */
 type Value<K extends FieldKind> = K extends 'party' | 'instrument' | 'market' | 'agreement' | 'currency' | 'text'
   ? string
-  : K extends 'money' | 'count' | 'ratio' | 'period' | 'eventRef'
+  : K extends 'money' | 'price' | 'count' | 'ratio' | 'period' | 'eventRef'
     ? number
     : K extends 'flag'
       ? boolean
@@ -276,6 +279,7 @@ function matches(is: FieldKind, v: unknown): boolean {
     case 'text':
       return typeof v === 'string';
     case 'money':
+    case 'price':
     case 'count':
     case 'ratio':
     case 'period':

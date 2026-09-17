@@ -1033,7 +1033,7 @@ function windUp(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode | undefined
   // XI-3, Money E4: it can only go when it holds nothing, and every reference to it resolves to
   // the party that took what was left (Register F2).
   if (ctx.register.holdingsOf(deal.vehicle).length > 0) return;
-  ctx.cease(deal.vehicle, deal.arranger);
+  ctx.cease(deal.vehicle, deal.arranger, 'the deal paid down and the vehicle has nothing left to hold');
   ctx.endAgreement(deal.id, 'the pool ran off, every layer was redeemed and the vehicle has gone');
   ctx.record(
     'securitisation.wound',

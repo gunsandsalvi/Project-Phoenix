@@ -21,6 +21,7 @@ import {
   type RowValuationReads,
 } from '../register/agreements.js';
 import { issuerOf } from '../register/instruments.js';
+import { REVALUATION, REVALUATION_FX } from './facts.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
 import { impossible } from '../core/assert.js';
@@ -137,18 +138,21 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       cause: `revaluation of ${inst.id} in period ${period}`,
       through: inHomeMoney(through, h.holder, period, d).pieces,
     });
-    d.journal.record(
+    d.journal.say(
       period,
       cycle,
-      'revaluation',
+      REVALUATION,
       [h.holder, inst.id],
       {
         // Law 8: the money is part of both numbers, and they are in different ones. What the
         // account moved by is in the holder's; what a unit is carried at is a price and prices are
-        // in the money the thing is priced in.
-        deltaPerMember: inHome.pieces,
-        mark: carried,
+        // in the money the thing is priced in — which is why they are two declared fields (0i).
+        what: 'holding',
+        delta: inHome.pieces,
+        markPerUnit: carried,
+        markValue: null,
         markedIn: inst.ccy,
+        subject: null,
       },
       false,
     );
@@ -192,14 +196,18 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       cause: `revaluation of own liabilities in period ${period}`,
       through: zeroIfNone(issuerThrough.get(issuer)),
     });
-    d.journal.record(
+    d.journal.say(
       period,
       cycle,
-      'revaluation',
+      REVALUATION,
       [issuer],
       {
+        what: 'liabilities',
         delta,
-        liabilities: true,
+        markPerUnit: null,
+        markValue: null,
+        markedIn: null,
+        subject: null,
       },
       false,
     );
@@ -246,12 +254,19 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
         through: inHomeMoney(through, party, period, d).pieces,
       });
     }
-    d.journal.record(
+    d.journal.say(
       period,
       cycle,
-      'revaluation',
+      REVALUATION,
       [c.a, c.b, String(c.id)],
-      { contract: String(c.id), mark: now.pieces, markedIn: c.ccy, moved: delta.pieces },
+      {
+        what: 'contract',
+        delta: delta.pieces,
+        markPerUnit: null,
+        markValue: now.pieces,
+        markedIn: c.ccy,
+        subject: String(c.id),
+      },
       false,
     );
   }
@@ -452,12 +467,12 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
     // this currency's issuer, not what sort of thing it is (Law 15).
     if (d.registry.centralBankOf(home) === h.holder) d.register.moveRevaluation(move);
     else d.register.moveEquity(move);
-    d.journal.record(
+    d.journal.say(
       period,
       cycle,
-      'revaluation.fx',
+      REVALUATION_FX,
       [h.holder, inst.id],
-      { delta: total.pieces, ccy: inst.ccy, home, was, now: now, carried: carried.pieces },
+      { delta: total.pieces, ccy: inst.ccy, home, was, now, carried: carried.pieces },
       false,
     );
   }
@@ -501,14 +516,21 @@ function revalueRows(period: Period, cycle: Cycle, d: RevalueDeps): void {
         cause: `revaluation of ${row.id} in period ${period}`,
         through: inHomeMoney(now, side.party, period, d).pieces,
       });
-      d.journal.record(
+      d.journal.say(
         period,
         cycle,
-        'revaluation',
+        REVALUATION,
         [side.party],
-        side.liabilities
-          ? { deltaPerMember: moved, liabilities: true, agreement: row.id }
-          : { deltaPerMember: moved, agreement: row.id },
+        {
+          // 0i: the side's own move, and the row it is on. `liabilities` was a field only one of
+          // the two sides wrote, so which side an entry was for depended on a key being absent.
+          what: side.liabilities ? 'agreement.owed' : 'agreement.owing',
+          delta: moved,
+          markPerUnit: null,
+          markValue: now.pieces,
+          markedIn: row.ccy,
+          subject: String(row.id),
+        },
         false,
       );
     }

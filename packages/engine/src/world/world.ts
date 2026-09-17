@@ -14,7 +14,17 @@
 import { Audit, type AuditReport, type Family, type Reads } from '../audit/audit.js';
 import { standardFamilies } from '../audit/families/index.js';
 import { balanceSheet } from '../audit/families/accounts.js';
-import { WEIGHT } from './facts.js';
+import { PRINT } from '../clearing/facts.js';
+import { says } from '../registry/facts.js';
+import {
+  AUDITED,
+  CREDIT_REQUEST,
+  DISCLOSED as DISCLOSED_FACT,
+  INSTRUMENT_CEASED,
+  INSTRUMENT_SPLIT,
+  PARTY_CEASED,
+  WEIGHT,
+} from './facts.js';
 import { type AuditMemory, emptyMemory, remember } from '../audit/memory.js';
 import type { AuditView } from '../audit/view.js';
 import {
@@ -106,6 +116,7 @@ import {
 import type { Contract, ContractReads, StruckAt, Underlying } from '../registry/derivatives.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
+import type { FactRegister } from '../registry/facts.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import { Wants, type Why, type WhyInstruction } from './wants.js';
 import {
@@ -173,10 +184,11 @@ import type {
 } from './module.js';
 import { revalue } from './revalue.js';
 import { Answers, EVERY_QUESTION, QUESTIONS, type QuestionDecl } from '../registry/questions.js';
-import { refuseLateReads } from './order.js';
+import { refuseDisagreeingFacts, refuseLateReads } from './order.js';
 
 /** Corporate Credit A1: the one kind a borrower publishes a funding need under (item 0e). */
-export const CREDIT_REQUEST = 'credit.request';
+/** 0i: the kind is the declaration's, so there is no second place that spells it. */
+const CREDIT_REQUEST_KIND = CREDIT_REQUEST.kind;
 import { asQty, NO_QTY, type Qty } from '../core/tick.js';
 import {
   indexCache,
@@ -229,6 +241,8 @@ export interface WorldSpec {
   readonly params: ParamRegister;
   /** Law 15: every store a module keeps, declared. A module cannot open one it did not declare. */
   readonly nouns: OntologyRegister;
+  /** 0i: what every event this world writes SAYS, and what is still a bag. */
+  readonly facts: FactRegister;
   readonly calendar: Calendar;
   /** XI-8, Law 15: the kinds of commitment the modules declared. An undeclared kind cannot open. */
   readonly agreementKinds: readonly AgreementKindDecl[];
@@ -256,6 +270,7 @@ export class World {
   readonly registry: Registry;
   readonly params: ParamRegister;
   readonly nouns: OntologyRegister;
+  readonly facts: FactRegister;
   readonly calendar: Calendar;
   readonly parties: Parties;
   /** What a participant is handed: who somebody is, with no way to change who is here (Law 4). */
@@ -485,6 +500,7 @@ export class World {
     this.registry = spec.registry;
     this.params = spec.params;
     this.nouns = spec.nouns;
+    this.facts = spec.facts;
     this.calendar = spec.calendar;
     // 0h.3: the clock a party's birth is stamped from. Before the seal it is the opening period.
     this.parties = new Parties(this.registry, () => this.currentPeriod);
@@ -939,10 +955,10 @@ export class World {
     for (const i of this.instruments.issuedBy(party)) {
       if (!i.status.live || i.issued !== 0) continue;
       this.instruments.cease(i.id, this.currentPeriod);
-      this.journal.record(
+      this.journal.say(
         this.currentPeriod,
         this.currentCycle,
-        'instrument.ceased',
+        INSTRUMENT_CEASED,
         [String(i.id), String(party)],
         { reason: 'the name that promised it has ended and nothing was outstanding' },
         true,
@@ -1573,10 +1589,10 @@ export class World {
       { from: String(from), to: String(to), kind: event.kind },
     );
     if (from === to) return;
-    this.journal.record(
+    this.journal.say(
       this.currentPeriod,
       this.currentCycle,
-      DISCLOSED,
+      DISCLOSED_FACT,
       [String(from), String(to)],
       { from: String(from), to: String(to), kind: event.kind, event: event.id },
       false,
@@ -1588,51 +1604,48 @@ export class World {
     for (let i = shown.length - 1; i >= 0; i -= 1) {
       const d = shown[i];
       if (d === undefined) continue;
-      if (d.data['kind'] !== kind || d.data['from'] !== String(from)) continue;
-      if (d.data['to'] !== String(party)) continue;
-      const id = d.data['event'];
-      const e = typeof id === 'number' ? this.journal.get(id as EventId) : undefined;
+      // 0i: a disclosure has one shape, so what is left here is the match itself.
+      const said = says(d, DISCLOSED_FACT);
+      if (said.kind !== kind || said.from !== String(from) || said.to !== String(party)) continue;
+      const e = this.journal.get(said.event as EventId);
       return e === undefined ? none<Event>() : some(e);
     }
     return none<Event>();
   }
 
+  /**
+   * Corporate Credit A1: EVERY ASK PUBLISHED IN A PERIOD, read back for whoever lends.
+   *
+   * 0i: THIS USED TO SKIP WHAT IT COULD NOT PARSE. Nine string keys, each with its own type test
+   * and its own `continue`, so a borrower whose ask was missing a field or carried the wrong type
+   * was silently not in the lending market — no throw, no finding, no red test, and a world that
+   * looks like a world where nobody wanted to borrow. It is the sharpest instance of what 0i is
+   * about and the reason the kernel's facts were declared first.
+   *
+   * `says` throws on a fact that does not match its declaration, and the writer's payload is typed
+   * by the same declaration, so there is nothing left here to test for. What is left is the two
+   * READS this makes of other things: the statement the ask opened with, which is an event that may
+   * have been pruned, and the pledge, whose lines are read as the instruments they name.
+   */
   private requestsIn(at: Period): readonly CreditRequest[] {
     const out: CreditRequest[] = [];
-    for (const e of this.journal.ofKindIn(CREDIT_REQUEST, at)) {
-      const borrower = e.data['borrower'];
-      const short = e.data['short'];
-      const ccy = e.data['ccy'];
-      if (typeof borrower !== 'string' || typeof short !== 'number' || typeof ccy !== 'string') {
-        continue;
-      }
-      const repays = e.data['repays'];
-      if (repays !== 'atOption' && repays !== 'onSchedule') continue;
-      // §29 B2, E1 (17b.1): which of the two it asked for, as it said it. A request with neither is
-      // not a request a lender can answer, and nothing here supplies the missing half.
-      const wants = e.data['wants'];
-      if (wants !== 'money' && wants !== 'commitment') continue;
-      // Law 8, Appendix A: a term is part of the ask, and an ask with none is not one a lender can
-      // answer — nothing here supplies a default for it.
-      const months = e.data['months'];
-      if (typeof months !== 'number' || months <= 0) continue;
-      const raw = e.data['security'];
-      const security: { instrument: InstrumentId; qty: Qty }[] = [];
-      for (const sec of Array.isArray(raw) ? (raw as unknown[]) : []) {
-        const row = sec as { instrument?: unknown; qty?: unknown };
-        if (typeof row.instrument !== 'string' || typeof row.qty !== 'number') continue;
-        security.push({ instrument: instrumentId(row.instrument), qty: asQty(row.qty) });
-      }
-      const shown = e.data['statement'];
-      const report = typeof shown === 'number' ? this.journal.get(shown as EventId) : undefined;
+    for (const e of this.journal.ofKindIn(CREDIT_REQUEST_KIND, at)) {
+      const said = says(e, CREDIT_REQUEST);
+      const ccy = said.ccy as CurrencyCode;
+      const report = said.statement === null ? undefined : this.journal.get(said.statement as EventId);
       out.push({
-        borrower: partyId(borrower),
-        ccy: ccy as CurrencyCode,
-        short: asCash(short, ccy as CurrencyCode, 'what it published it is short of'),
-        security,
-        repays,
-        wants,
-        months,
+        borrower: partyId(said.borrower),
+        ccy,
+        short: asCash(said.short, ccy, 'what it published it is short of'),
+        security: Object.entries(said.security).map(([instrument, qty]) => ({
+          instrument: instrumentId(instrument),
+          qty: asQty(qty, 'what it would put up'),
+        })),
+        // §29 B2, E1 (17b.1): which of the two it asked for, as it said it.
+        repays: said.repays as CreditRequest['repays'],
+        wants: said.wants as CreditRequest['wants'],
+        // Law 8: a term is part of the ask, and nothing here supplies one.
+        months: said.months,
         at,
         statement: report === undefined ? none<Statement>() : some(statementOf(report)),
       });
@@ -1721,14 +1734,16 @@ export class World {
     // that needs something of the period it is in runs after whoever writes it. Two of item 0's
     // stops were a phase in front of something it needed, and neither threw where it was caused.
     refuseLateReads(this.phaseList);
+    // 0i: and one fact has one shape, checked on the same list assembly already walks.
+    refuseDisagreeingFacts(this.phaseList);
     this.sealed = true;
     this.walkIndices();
     const report = this.audit.run(this.view(), this.reads());
     remember(this.view(), this.memory);
-    this.journal.record(
+    this.journal.say(
       this.currentPeriod,
       this.currentCycle,
-      'audit',
+      AUDITED,
       [],
       { total: report.total },
       true,
@@ -3047,7 +3062,7 @@ export class World {
           true,
         );
       },
-      cease: (party, successor) => {
+      cease: (party, successor, cause) => {
         // XI-15, E5 (11.5): a cell ceasing is the death of its members, and that is a weight
         // event with a cause — the one the units family reads. A named party just ceases.
         if (this.parties.get(party).representation === 'cell') {
@@ -3077,12 +3092,12 @@ export class World {
             journal: this.journal,
           });
         }
-        this.journal.record(
+        this.journal.say(
           this.currentPeriod,
           this.currentCycle,
-          'party.ceased',
+          PARTY_CEASED,
           [party, successor],
-          { successor },
+          { successor, cause },
           true,
         );
       },
@@ -3092,7 +3107,7 @@ export class World {
        * no module names another module's event (Law 15).
        */
       request: (borrower, ask) => {
-        this.journal.record(
+        this.journal.say(
           this.currentPeriod,
           this.currentCycle,
           CREDIT_REQUEST,
@@ -3101,10 +3116,6 @@ export class World {
             borrower: String(borrower),
             ccy: ask.ccy,
             short: ask.short.pieces,
-            security: (ask.security ?? []).map((sec) => ({
-              instrument: String(sec.instrument),
-              qty: Number(sec.qty),
-            })),
             repays: ask.repays,
             // §29 B2, E1 (17b.1): money, or a lender that has agreed to lend and has not lent.
             wants: ask.wants,
@@ -3114,6 +3125,10 @@ export class World {
             // Corporate Credit A3, A4 (17.0a): a borrower that asks opens its books with the ask — the
             // latest statement it prepared, named here so whoever lends reads that one.
             statement: this.journal.lastOf(REPORT, String(borrower))?.id ?? null,
+            // 0i: a pledge is instrument-to-quantity, which the register already has a kind for.
+            security: Object.fromEntries(
+              ask.security.map((sec) => [String(sec.instrument), Number(sec.qty)]),
+            ),
           },
           false,
         );
@@ -3242,10 +3257,10 @@ export class World {
     this.store.restate(instrument, ratio);
     this.instruments.restate(instrument, ratio);
     this.prices.restate(instrument, ratio);
-    this.journal.record(
+    this.journal.say(
       this.currentPeriod,
       this.currentCycle,
-      'instrument.split',
+      INSTRUMENT_SPLIT,
       [instrument, ...(before.issuer.some ? [before.issuer.value] : [])],
       {
         instrument,
@@ -3977,7 +3992,9 @@ export class World {
     return {
       moneyStock: this.moneyStock(),
       populations: Object.fromEntries(populations),
-      stalePrints: inPeriod.filter((e) => e.kind === 'print' && e.data['stale'] === true).length,
+      // 0i: every print says whether it is stale, so this is a read of a field rather than a test
+      // that three of the four print shapes failed by not having one.
+      stalePrints: inPeriod.filter((e) => e.kind === PRINT.kind && says(e, PRINT).stale).length,
       reserveOverdrafts: inPeriod.filter((e) => e.kind === 'reserve.overdraft').length,
       failedInstructions: this.ledger
         .inPeriod(this.currentPeriod)
@@ -3986,6 +4003,8 @@ export class World {
       shapes: params.counts.shape,
       reach: reachOf(this.reach()),
       nouns: this.nouns.report().counts,
+      // Appendix C, 0i: how many event kinds are still written as a bag. It may only fall.
+      factsInBags: this.facts.report().undeclared.length,
     };
   }
 }

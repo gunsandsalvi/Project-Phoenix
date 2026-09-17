@@ -132,6 +132,8 @@ export function askToFund(
       repays: 'onSchedule',
       // E1: a lender that has agreed to lend and has not lent, so a deal can be conditional on it.
       wants: 'commitment',
+      // 0i: what the buyout puts up is the target's own book, and it does not pledge it here.
+      security: [],
       months,
     });
   }

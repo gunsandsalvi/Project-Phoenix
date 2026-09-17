@@ -23,6 +23,7 @@ import { ARREAR, arrearId, isArrear, type ArrearTerms } from '../register/arrear
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
+import { FAILED, RESERVE_OVERDRAFT, SETTLED } from './facts.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import {
   type ContractId,
@@ -251,16 +252,12 @@ export class Settlement {
     if (fail !== undefined) {
       const record: SettlementRecord = { outcome: 'failed', instruction, reason: fail };
       this.d.ledger.append(record);
-      this.d.journal.record(
+      this.d.journal.say(
         period,
         cycle,
-        'instruction.failed',
+        FAILED,
         subjectsOf(instruction),
-        {
-          id: instruction.id,
-          cause: instruction.cause,
-          reason: fail,
-        },
+        { id: instruction.id, cause: instruction.cause, reason: fail.kind },
         false,
       );
       this.writeArrears(record, period, cycle);
@@ -278,16 +275,12 @@ export class Settlement {
       reserveLegs,
     };
     this.d.ledger.append(record);
-    this.d.journal.record(
+    this.d.journal.say(
       period,
       cycle,
-      'instruction.settled',
+      SETTLED,
       subjectsOf(instruction),
-      {
-        id: instruction.id,
-        cause: instruction.cause,
-        legs: instruction.legs.length,
-      },
+      { id: instruction.id, cause: instruction.cause, legs: instruction.legs.length },
       false,
     );
     return record;
@@ -1068,17 +1061,19 @@ export class Settlement {
       // answers it (Money Market D5.a) and a rival bank sees it (E2.a). What it IS, is whatever the
       // module that allowed it writes behind it before the period closes.
       forbid(decision.allow, 'Money B3.c', 'an overdraft was neither allowed nor refused');
-      this.d.journal.record(
+      this.d.journal.say(
         ins.period,
         ins.cycle,
-        'reserve.overdraft',
+        RESERVE_OVERDRAFT,
         [n.party, issuerId],
         {
           instruction: ins.id,
           holder: n.party,
           issuer: issuerId,
           ccy: inst.ccy,
-          shortfallPerMember: -after,
+          // 21a: a holding is a TOTAL, so what the account is short of is one too. This was called
+          // `shortfallPerMember` and stopped being true at that item, with nothing to catch it.
+          shortfall: -after,
         },
         true,
       );

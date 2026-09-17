@@ -28,6 +28,8 @@ import {
 import { weightOf } from '../parties/party.js';
 import { type ParamDecl, ParamRegister } from '../registry/params.js';
 import { type NounDecl, OntologyRegister } from '../registry/nouns.js';
+import { FactRegister } from '../registry/facts.js';
+import { KERNEL_FACTS } from './facts.js';
 import { KERNEL_PARTY_KINDS, moneyKind } from '../registry/profiles.js';
 import { arrearKind } from '../register/arrears.js';
 import { employmentKind } from '../register/employment.js';
@@ -88,10 +90,32 @@ export function assemble(spec: AssemblySpec): World {
   const nouns = new OntologyRegister(
     modules.flatMap((m): NounDecl[] => (m.nouns ?? []).map((n) => ({ ...n, owner: m.id }))),
   );
+  /**
+   * 0i, Law 4: THE FACT REGISTER, built the same way and for the same reason. The kernel's own
+   * facts, plus every fact a module's phase declares on what it writes — and the assembly stamps
+   * the owner, because a module naming another's would be believed.
+   *
+   * A kind declared twice is refused here (one fact, one shape); a kind declared by nobody is
+   * COUNTED and reported, which is the number `check:forbids` holds down.
+   */
+  const facts = new FactRegister([
+    ...KERNEL_FACTS,
+    ...modules.flatMap((m) =>
+      m.phases.flatMap((ph) =>
+        ph.writes.flatMap((w) => (w.fact === undefined ? [] : [{ ...w.fact, owner: m.id }])),
+      ),
+    ),
+  ]);
+  for (const m of modules) {
+    for (const ph of m.phases) {
+      for (const w of ph.writes) facts.countBag(w.name, m.id);
+    }
+  }
   const world = new World({
     seed: spec.seed,
     registry,
     params,
+    facts,
     nouns,
     calendar,
     // Labour A4, XI-10 (12b.1): the employment is the kernel's kind, read by everybody through

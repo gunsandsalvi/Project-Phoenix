@@ -218,7 +218,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
    * (`docs/RECORD.md` items 0 and 7).
    */
   ctx.standing(dead, 'winding', `estate ${id} opened: ${because}`);
-  ctx.cease(dead, id);
+  ctx.cease(dead, id, 'it failed, and its estate answers for what it held and owed');
   const closesAfter = periodOf(ctx.period + ctx.params.periods(ESTATE_PARAMS.programme));
   b.dead[id] = String(dead);
   /**
@@ -549,7 +549,7 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
     'closed',
     `${estate} sold what it could, paid in rank order and divided the rest`,
   );
-  ctx.cease(estate, estate);
+  ctx.cease(estate, estate, 'the estate is wound up and there is nothing left to answer for');
   ctx.record(
     'estate.closed',
     [estate],

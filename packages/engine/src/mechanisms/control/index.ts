@@ -868,7 +868,7 @@ export function combine(ctx: MechanismContext, buyer: PartyId, target: PartyId):
   }
   // It is inside the acquirer now, so there is no longer a party for anybody to control (Law 4).
   ctx.releaseControl(target, `combined into ${String(buyer)}`);
-  ctx.cease(target, buyer);
+  ctx.cease(target, buyer, 'it was combined into its buyer');
   ctx.record(
     'control.combined',
     [buyer, target],

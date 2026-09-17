@@ -113,6 +113,8 @@ function asksFor(amount: number, at = 1): SystemModule {
             // 17b.8: over the term a line is written for, which the borrower says — and it is
             // the world's own number, so a test that shortens it still shortens this.
             months: ctx.params.months(TERM_MONTHS.working),
+            // 0i: it puts up nothing, and an ask that is unsecured says so.
+            security: [],
           });
         },
       },
@@ -1312,6 +1314,8 @@ describe('paying a line down (Banks Lending C9, F2)', () => {
               repays: 'atOption',
               wants: 'money',
               months: ctx.params.months(TERM_MONTHS.working),
+              // 0i: it puts up nothing, and an ask that is unsecured says so.
+              security: [],
             });
           },
         },
@@ -1443,6 +1447,8 @@ function asksForCommitment(amount: number, at = 1): SystemModule {
             repays: 'onSchedule',
             wants: 'commitment',
             months: ctx.params.months(TERM_MONTHS.working),
+            // 0i: it puts up nothing, and an ask that is unsecured says so.
+            security: [],
           });
         },
       },
@@ -1611,6 +1617,7 @@ function asksForMonths(amount: number, months: number, at = 1): SystemModule {
             repays: 'onSchedule',
             wants: 'money',
             months,
+            security: [],
           });
         },
       },

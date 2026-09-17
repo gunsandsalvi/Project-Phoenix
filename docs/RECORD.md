@@ -15034,3 +15034,77 @@ that the 50th leg cannot be written silently, and 21.105's shape cannot happen a
 **Open, and named:** three stale censuses in `receipt.test.ts` (21.111); a `disposal` on a money-only
 leg promises a basis from `Settled.realised` that only an asset debit produces, which is why an FX
 spot's quote leg is the one place that reads oddly (21.112).
+
+---
+
+## 0i — Facts are declared: the third register
+
+**What.** `params` makes every declared NUMBER name its kind, its unit and its owner; `nouns` does
+it for CATEGORIES; nothing did it for FACTS, which are how every mechanism in this world reaches
+every other one. `registry/facts.ts` is the third register, built on the same construction and
+saying so.
+
+A fact is declared once, with its fields and their kinds, by whoever writes it. `Journal.say` takes
+a payload TYPED by the declaration; `says(event, decl)` reads one back with its types and THROWS if
+the fact does not match. There are no optional fields: a field that may have no value declares
+`orNone` and its writer WRITES the absence. A phase declares what it writes (`Produces.fact`), the
+assembly builds the register from the kernel's own facts plus every module's, and
+`refuseDisagreeingFacts` refuses two writers of one kind who declare different shapes — or where one
+declares and the other does not.
+
+**The thirteen kernel facts**, first because a mismatch in these does not stay a mismatch — the
+audit reads them, so it becomes a false statement about the economy: `weight`, `print`,
+`revaluation`, `revaluation.fx`, `instruction.settled`, `instruction.failed`, `reserve.overdraft`,
+`party.ceased`, `instrument.ceased`, `instrument.split`, `disclosed`, `audit`, `credit.request`.
+
+**Why, measured.** 227 event kinds written with a literal name and 49 with a computed one, 496
+distinct payload keys written, 122 read back by name, and **nothing matching a reader to a writer**.
+Twenty-two kinds were written at more than one site with more than one set of keys. I wrote two
+tools to find the unmatched pairs and both were wrong on the first case I hand-checked — if a tool
+written for the job cannot decide it, neither can a reviewer and neither can the build.
+
+**And the failure mode is a `continue`, not a throw.** `requestsIn` rebuilt a borrower's ask out of
+nine string keys and skipped it if any one was missing or of the wrong type: a borrower silently not
+in the lending market, no error, no finding, no red test. It is the shape of 21.58 (*116 funding
+needs, 539 quotes, zero bonds offered*) and of the whole class the liveness family had to be
+invented for at 0h.3.
+
+**It is the general form of 0e′.3.** That item forbade a MECHANISM reading another module's event by
+name and closed it with four files of hand-written accessors — 1,551 lines, each deciding a shape by
+hand and each answering `none()` when it does not match. And its check scans `mechanisms/` only:
+`world/`, `ledger/` and `audit/` were never covered, which is where 21.100, 21.102 and `requestsIn`
+all were.
+
+**What the declarations found on the way in** — each one a defect nothing could previously state:
+
+- `print` was written in FOUR shapes and its only reader asks `data['stale'] === true`, which was
+  `undefined` for three of them and worked by not matching. A session that printed nothing now says
+  so in the field every other session fills.
+- `rationed` is `buy | sell | none` at the clearing writer and `false` at the other three — **a
+  boolean where the reader would have found a string.**
+- `revaluation` hid a DIMENSION CONFLICT: a holding's `mark` was a price per unit and a contract's
+  was a money value, under one name (Law 8). Two fields now, and `FieldKind` gained `price`.
+- Three revaluation sites and `reserve.overdraft` called their number `deltaPerMember` /
+  `shortfallPerMember` — names that **stopped being true at 21a** when the account became a total,
+  and that nothing could catch because nobody reads them.
+- `party.ceased` had two writers, one with a cause and one without, so whether a party's ending was
+  explained depended on which door it went through. `ctx.cease` takes a cause now, and its six
+  callers each say why.
+- `CreditAsk.security` was OPTIONAL, so a borrower that pledged nothing and a caller that dropped
+  the field were the same ask — the difference between an unsecured loan and a secured one. It is
+  required, a pledge is `byInstrument` (a kind the register already had), and the three real
+  borrowers that ask unsecured now say so.
+- `units.ts` counted a weight event's `after - before` for the events that wrote both and skipped
+  those that wrote neither: **the meaning was in an absence**, and the two writers of a promotion
+  disagreed about it. It reads what the event says now.
+
+**Measured.** 13 facts declared; **219 of 232 event kinds are still bags**, published by
+`check:forbids` every run and ratcheted so it may only fall. No regression anywhere: `world`,
+`loans`, `lattice`, `estate`, `prices` and `receipt` are 23 red / 72 passed before and after;
+`treasury`, `reporting`, `estate`, `loans`, `assessment` 13 / 82 before and after. `test/facts.test.ts`
+is 15 new and green, four of which assert that a mismatch now fails loudly and three that assembly
+refuses two writers who disagree. `check:opens`, lint, typecheck and `check:spec` (583) green.
+
+**Left, and named:** 21.113 (the 165 module kinds, one sector at a time, with their accessor files
+deleted in the same change) and 21.114 (`record` is deleted and `say` takes its name when the count
+reaches zero — the second door has a scheduled death).

@@ -31,6 +31,7 @@ import type { DerivativeKindProfile, StruckAt } from '../registry/derivatives.js
 import type { ParamDecl, ParamOwner, ParamRegister } from '../registry/params.js';
 import type { NounEntry } from '../registry/nouns.js';
 import type { EventKind } from '../journal/journal.js';
+import type { FactDecl } from '../registry/facts.js';
 import type { AgreementKindDecl } from '../register/agreements.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
@@ -108,6 +109,17 @@ export type When = 'thisPeriod' | 'anyPeriod';
 export interface Produces {
   readonly kind: 'event';
   readonly name: EventKind;
+  /**
+   * 0i: WHAT THE EVENT SAYS, declared by the phase that writes it. A reader gets the payload with
+   * its types through the same declaration, so the two cannot disagree about a field's name or its
+   * kind — which is what `into` versus `to` was (21.100).
+   *
+   * It is optional only while the migration runs, and the absence is COUNTED rather than silent:
+   * `registry/facts.ts` reports every kind still written as a bag, the same construction `nouns`
+   * uses for a homeless noun, and the count is a gate that may only fall. When it reaches zero this
+   * becomes required and `record` is deleted (0i.6).
+   */
+  readonly fact?: FactDecl;
 }
 
 export interface PhaseDecl {

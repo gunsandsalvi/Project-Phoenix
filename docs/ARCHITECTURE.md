@@ -499,6 +499,15 @@ These fell out of building items 1 and 2 and are recorded here because they are 
   the record: mixing the two was the first defect the audit caught and it was still catching it at
   21.101, 21.104 and 21a. There is one denomination now, and `Total`/`PerMember` in the type system
   is what keeps it that way.
+- **A fact is declared, or it is counted** (0i). `registry/facts.ts` is the third register:
+  `params` is to numbers what `nouns` is to categories and what this is to EVENTS. A fact names its
+  fields and their kinds; `Journal.say` takes a payload typed by the declaration and `says` reads
+  one back and throws if it does not match; a phase declares what it writes (`Produces.fact`) and
+  assembly refuses two writers of one kind who disagree. There are no optional fields — a field that
+  may have no value declares `orNone` and its writer writes the absence. A kind nobody has declared
+  is counted, not refused, and `check:forbids` publishes the count and refuses a rise, so the
+  migration is incremental and monotone. The kernel's thirteen are declared; the modules' are done
+  per sector as each sector's item comes up, deleting that module's hand-written accessors with it.
 - **A weight event that moves holdings states the arriving party's account as the READ** (Seed C1,
   21a). The register partitions lots in whole pieces (`floor(total × members / weight)`, remainder
   with the people who stayed), so what arrived is not a proportion of anything — `world/cells.ts`

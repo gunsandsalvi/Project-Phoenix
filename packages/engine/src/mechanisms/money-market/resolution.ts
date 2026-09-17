@@ -288,7 +288,7 @@ export function resolve(ctx: MechanismContext, bank: PartyId, why: string): bool
   // takes on is what is left after the loss has landed on whoever ranks to bear it.
   const borne = allocate(ctx, bank, acquirer, ccy, v);
   moveBook(ctx, bank, acquirer, ccy);
-  ctx.cease(bank, acquirer);
+  ctx.cease(bank, acquirer, 'it was resolved and an acquirer took its book');
   ctx.record(
     'bank.resolution.done',
     [bank, acquirer],

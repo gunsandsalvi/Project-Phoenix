@@ -650,6 +650,8 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
     wants: 'money',
     // Corporate Credit C9 (17b.8): a working-capital line, over the term one is written for.
     months: view.params.months(TERM_MONTHS.working),
+    // 0i: it puts up nothing, and an ask that is unsecured says so.
+    security: [],
   });
   ctx.record(
     'firms.funding',

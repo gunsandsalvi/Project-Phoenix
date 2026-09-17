@@ -22,6 +22,7 @@
 import { forbid } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { Dependency, PhaseDecl, Produces } from './module.js';
+import type { FactDecl } from '../registry/facts.js';
 
 /** A phase as the world runs it: named, placed, and owned by the module that declared it. */
 export interface Placed {
@@ -85,6 +86,40 @@ export function refuseLateReads(order: readonly Placed[]): void {
           `phase ${p.name} (at ${mine}) needs ${r.name} of this period from ${w} (at ${where(w)})`,
         );
       }
+    }
+  }
+}
+
+/**
+ * Law 4, 0i: ONE FACT HAS ONE SHAPE, checked where assembly already matches writers to readers.
+ *
+ * Two phases writing one event kind must declare the SAME fact — the same object, because a fact is
+ * declared once and imported. Twenty-two kinds in this engine were written at more than one site
+ * with more than one set of keys, and nothing could say so: a merge wrote `into` where every other
+ * weight event wrote `to`, the audit read `to`, and every merge in this world was reported as a
+ * holding that moved with no leg behind it (21.100).
+ *
+ * A kind one phase declares and another does not is the same disagreement with one side silent, so
+ * it is refused too. A kind NO phase declares is not refused — it is counted (`registry/facts.ts`),
+ * because the migration is incremental by design and a count that falls is the honest measure.
+ */
+export function refuseDisagreeingFacts(order: readonly Placed[]): void {
+  const said = new Map<string, { phase: string; fact: FactDecl | undefined }>();
+  for (const p of order) {
+    for (const w of p.writes) {
+      const held = said.get(w.name);
+      if (held === undefined) {
+        said.set(w.name, { phase: p.name, fact: w.fact });
+        continue;
+      }
+      if (held.fact === w.fact) continue;
+      forbid(
+        false,
+        'Law 4',
+        held.fact === undefined || w.fact === undefined
+          ? `the fact ${w.name} is declared by ${held.fact === undefined ? p.name : held.phase} and not by ${held.fact === undefined ? held.phase : p.name}; one fact is declared once and both writers say it`
+          : `the fact ${w.name} is declared twice, by ${held.phase} and by ${p.name}; one fact has one shape`,
+      );
     }
   }
 }

@@ -15,6 +15,8 @@
 import type { Qty } from '../../core/tick.js';
 import { asRatio, minus, negated, scale } from '../../core/measure.js';
 import { carriedDust, moveDust, mul, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { says } from '../../registry/facts.js';
+import { INSTRUMENT_SPLIT } from '../../world/facts.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
 import { movedByWeightEvents } from '../weights.js';
@@ -48,14 +50,14 @@ export function flowsFamily(memory: AuditMemory): Family {
         return restated.get(instrument) ?? 1;
       };
       for (const e of view.journal.inPeriod(view.period)) {
-        if (e.kind !== 'instrument.split') continue;
-        const instrument = e.data['instrument'];
-        const ratio = e.data['ratio'];
-        if (typeof instrument !== 'string' || typeof ratio !== 'number') continue;
+        if (e.kind !== INSTRUMENT_SPLIT.kind) continue;
+        // 0i: the declaration, so a restatement whose ratio was written under another name is a
+        // throw rather than a line that was quietly not restated.
+        const said = says(e, INSTRUMENT_SPLIT);
         // Two restatements in one period compose, like two multiplications.
         restated.set(
-          instrument,
-          mul(ratioOf(instrument), ratio, 'the restatement this period'),
+          said.instrument,
+          mul(ratioOf(said.instrument), said.ratio, 'the restatement this period'),
         );
       }
       /**

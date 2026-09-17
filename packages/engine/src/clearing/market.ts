@@ -16,6 +16,7 @@
  * re-opening of an old one (B3.a) are the same act with the same book. Nobody absorbs what is not
  * bid for (Treasury D5.a): the unsold remainder is withdrawn and the withdrawal is an event (C7).
  */
+import { PRINT } from './facts.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { sumCash } from '../core/measure.js';
 import { assertNever, forbid } from '../core/assert.js';
@@ -525,17 +526,22 @@ export function runMarket(
           supplyAtPrice: outcome.supplyAtPrice,
         },
       });
-      deps.journal.record(
+      deps.journal.say(
         period,
         cycle,
-        'print',
+        PRINT,
         [m.id, m.instrument],
         {
+          printed: true,
           price: outcome.price,
           volume: outcome.volume,
           settledVolume,
           failedTrades: failed,
           rationed: outcome.rationed,
+          stale: false,
+          carriedFrom: null,
+          reason: null,
+          transact: false,
         },
         true,
       );
@@ -596,12 +602,23 @@ export function printAfterTransact(
       supplyAtPrice: pending.supplyAtPrice,
     },
   });
-  deps.journal.record(
+  deps.journal.say(
     period,
     cycle,
-    'print',
+    PRINT,
     [m.id, m.instrument],
-    { price: pending.price, volume: settledVolume, settledVolume, failedTrades: 0, rationed: false, transact: true },
+    {
+      printed: true,
+      price: pending.price,
+      volume: settledVolume,
+      settledVolume,
+      failedTrades: 0,
+      rationed: 'none',
+      stale: false,
+      carriedFrom: null,
+      reason: null,
+      transact: true,
+    },
     true,
   );
 }
@@ -647,12 +664,23 @@ function carryLast(
   if (!last.some) {
     // Nothing traded and nothing to carry: the line has no price at all, which is what a reader is
     // told when it asks (XI-6). A print is never invented to fill the gap.
-    deps.journal.record(
+    deps.journal.say(
       period,
       cycle,
-      'print',
+      PRINT,
       [m.id, m.instrument],
-      { printed: false, reason },
+      {
+        printed: false,
+        price: null,
+        volume: 0,
+        settledVolume: 0,
+        failedTrades: 0,
+        rationed: 'none',
+        stale: false,
+        carriedFrom: null,
+        reason,
+        transact: false,
+      },
       true,
     );
     return {
@@ -674,12 +702,23 @@ function carryLast(
     quotedAs: last.value.quotedAs,
     provenance: { kind: 'stale', from, reason },
   });
-  deps.journal.record(
+  deps.journal.say(
     period,
     cycle,
-    'print',
+    PRINT,
     [m.id, m.instrument],
-    { stale: true, reason, carriedFrom: from, price: last.value.price },
+    {
+      printed: false,
+      price: last.value.price,
+      volume: 0,
+      settledVolume: 0,
+      failedTrades: 0,
+      rationed: 'none',
+      stale: true,
+      carriedFrom: from,
+      reason,
+      transact: false,
+    },
     true,
   );
   return {

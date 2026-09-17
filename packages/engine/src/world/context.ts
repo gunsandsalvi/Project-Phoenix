@@ -1017,7 +1017,12 @@ export interface CreditRequest {
 export interface CreditAsk {
   readonly ccy: CurrencyCode;
   readonly short: Cash;
-  readonly security?: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
+  /**
+   * 0i: WHAT IT WOULD PUT UP, and an ask that puts up nothing says so with an empty list. It was
+   * optional, so a borrower that pledged nothing and a caller that forgot the field were the same
+   * ask — and what a lender sees is the difference between an unsecured loan and a secured one.
+   */
+  readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
   /**
    * Bond F3, Banks Lending C9 (11.2a.2): HOW IT WILL REPAY, said by the borrower. Working capital
    * is drawn and repaid at its option — one line per (lender, borrower), drawn on again and again;
@@ -1382,8 +1387,15 @@ export interface MechanismContext extends WorldReads {
   takeControl(controller: PartyId, subject: PartyId, basis: ControlBasis, why: string): void;
   /** It stops being true: the stake was sold, the contract ended, the resolution closed. */
   releaseControl(subject: PartyId, why: string): void;
-  /** A party ceases and every reference resolves to a named successor (Register F2). */
-  cease(party: PartyId, successor: PartyId): void;
+  /**
+   * A party ceases and every reference resolves to a named successor (Register F2), with WHY.
+   *
+   * 0i: a cell's death said why and the kernel's door did not, so the same fact had two shapes and
+   * whether a party's ending was explained depended on which door it went through. A party that
+   * ends is the largest thing that happens to one; nothing else in this world is allowed to happen
+   * without a cause, and this was.
+   */
+  cease(party: PartyId, successor: PartyId, cause: string): void;
   /**
    * XI-3, §25 C1, XI-8: a living party moves between the states it can be in, with a cause.
    *

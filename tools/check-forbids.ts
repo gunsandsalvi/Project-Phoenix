@@ -421,6 +421,35 @@ for (const rule of FORBIDS) {
   }
 }
 
+/**
+ * Appendix C, 0i: HOW MANY EVENT KINDS ARE STILL WRITTEN AS A BAG, and it may only fall.
+ *
+ * A fact written through `record(kind, …)` carries a `Record<string, unknown>` that no declaration
+ * matches to any reader; one written through `say(DECL, …)` carries a payload typed by the
+ * declaration its readers use. The ratchet is the same construction as the two baselines above and
+ * as `nouns`' count of homeless nouns: the number is the honest measure of how much of this world's
+ * fact-passing is still unchecked, it is published every run, and the build fails if it rises.
+ *
+ * A kind is counted ONCE however many sites write it, because a kind is what gets declared.
+ */
+const FACTS_IN_BAGS = 219;
+/** The kernel's own, declared at 0i.1 and 0i.4; a module's reach the register through its phases. */
+const declaredFacts = 13;
+const bagged = new Set<string>();
+for (const path of files) {
+  const text = readFileSync(path, 'utf8');
+  for (const m of text.matchAll(/\.record\(\s*(?:\n\s*)?[^,]*,\s*(?:\n\s*)?[^,]*,\s*(?:\n\s*)?'([\w.]+)'/g)) {
+    bagged.add(m[1] ?? '');
+  }
+  for (const m of text.matchAll(/\.record\(\s*'([\w.]+)'/g)) bagged.add(m[1] ?? '');
+}
+if (bagged.size > FACTS_IN_BAGS) {
+  broken.push(
+    `${String(bagged.size)} event kinds are still written as a bag and the ratchet stands at ${String(FACTS_IN_BAGS)}: ` +
+      `a new fact is DECLARED (registry/facts.ts) and written with \`say\`, never \`record\` (0i)`,
+  );
+}
+
 if (broken.length > 0) {
   for (const line of broken) process.stderr.write(`${line}\n`);
   process.exit(1);
@@ -429,5 +458,6 @@ process.stdout.write(
   `all ${FORBIDS.length} silent FORBIDs hold over ${files.length} files; ` +
     `${String(Object.keys(ROUNDING_BASELINE).length)} files round outside core/ and ` +
     `${String(Object.keys(ZERO_FLOOR_BASELINE).length)} floor at zero (item 21), ` +
-    `${String(CROSS_MODULE_EVENT_READS.size)} read another module's event by name (0e′.3)\n`,
+    `${String(CROSS_MODULE_EVENT_READS.size)} read another module's event by name (0e′.3); ` +
+    `${String(bagged.size)} of ${String(bagged.size + declaredFacts)} event kinds are still a bag (0i)\n`,
 );

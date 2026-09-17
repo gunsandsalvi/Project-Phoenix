@@ -97,6 +97,12 @@ export interface Reads {
   readonly reach: { readonly declared: number; readonly reached: number; readonly never: number };
   /** The ontology register's own count: how many nouns are still in a module's bag (item 0). */
   readonly nouns: Readonly<Record<string, number>>;
+  /**
+   * Appendix C, 0i: HOW MANY EVENT KINDS ARE STILL WRITTEN AS A BAG — a payload no declaration
+   * matches a reader to. It is the honest measure of how much of this world's fact-passing is still
+   * unchecked, reported the way `nouns` reports a homeless noun, and it may only fall.
+   */
+  readonly factsInBags: number;
 }
 
 export interface AuditReport {
