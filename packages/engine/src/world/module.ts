@@ -519,6 +519,21 @@ export interface SystemModule {
     readonly needs: BorrowNeeds;
   }[];
   /**
+   * Expectations A1, A2.a (0h.1): WHAT A PARTY OF THIS KIND IS ABOUT TO ACT ON — the variables the
+   * module that owns the kind knows it will ask that party about, evaluated with the party's own
+   * view because what a household buys and what a line's recipe takes are facts about THAT party.
+   *
+   * It is the same door `bankChoices` and `termsOffered` are, for the same reason: only the module
+   * that owns the kind knows what its parties do, and `expectations` may not read a consumption
+   * basket or a recipe (it may not import another module at all). What comes back is a LIST OF
+   * VARIABLES and never a level: the public print of each reaches the party as one more thing
+   * observed (A2.a), the same way the print of a line it holds already does.
+   */
+  readonly watches?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly watches: (view: ParticipantView) => readonly OutlookVariable[];
+  }[];
+  /**
    * XI-3, Banks Capital C3.b: party kinds whose FAILURE this module takes charge of itself, so the
    * estate does not open one for them. A bank is the case: its liabilities are the money everybody
    * else pays with, an estate cannot owe them (Money A1), and what happens instead is a resolution

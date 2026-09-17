@@ -15,7 +15,7 @@ import {
 } from '../src/index.js';
 import { dustOf } from '../src/core/num.js';
 import { rigWorld } from './rig.js';
-import { about, type Subject } from '../src/world/context.js';
+import { about, subjectOf, type Subject } from '../src/world/context.js';
 import { instrumentId } from '../src/core/ids.js';
 
 function expected(w: World, party: string, subject: Subject): number | null {
@@ -159,6 +159,62 @@ describe('the aggregate is a statistic (D4, E2, Observer A5)', () => {
       expect(e.public).toBe(true);
       // A5.a: a statistic available for the period it is about is not a statistic.
       expect(e.data['of']).toBe(e.period - 1);
+    }
+  });
+});
+
+describe('a party has a view of what it is about to act on (A1, A2.a, 0h.1)', () => {
+  it('forms one from the public print of everything it watches, and none where nothing printed', () => {
+    const w = rigWorld('exp-i');
+    w.step();
+    let watched = 0;
+    let formed = 0;
+    let unprinted = 0;
+    for (const p of w.parties.all()) {
+      if (!p.status.alive) continue;
+      const view = w.participantView(p.id);
+      for (const variable of view.watches()) {
+        watched += 1;
+        const subject = subjectOf(variable);
+        if (!subject.some || subject.value.on !== 'price') continue;
+        const printed = view.print(subject.value.instrument);
+        const own = view.outlook(variable);
+        if (printed.some) {
+          // A1: it is about to act on this, so it has a view of it — the level the venue printed,
+          // entering as one more thing observed (A2.a) and corrected at its own memory from here.
+          expect(own.some).toBe(true);
+          formed += 1;
+        } else {
+          // Law 3: a good nothing has ever printed a price for gets no level, not a zero.
+          unprinted += 1;
+        }
+      }
+    }
+    expect(watched).toBeGreaterThan(0);
+    expect(formed).toBeGreaterThan(0);
+    expect(formed + unprinted).toBe(watched);
+  });
+
+  it('is a household with a view of its basket before it has bought any of it', () => {
+    const w = rigWorld('exp-j');
+    w.step();
+    const cell = w.parties.ofKind(HOUSEHOLD)[0];
+    if (cell === undefined) throw new Error('no cell');
+    const view = w.participantView(cell.id);
+    const basket = view.watches();
+    expect(basket.length).toBeGreaterThan(0);
+    // What it holds of the goods it watches is nothing — it has bought none of them — and it has a
+    // view of what they cost all the same, which is the whole of what A1 asks for.
+    const withAView = basket.filter((v) => view.outlook(v).some);
+    expect(withAView.length).toBeGreaterThan(0);
+    for (const variable of withAView) {
+      const subject = subjectOf(variable);
+      if (!subject.some || subject.value.on !== 'price') throw new Error('a basket is prices');
+      const print = view.print(subject.value.instrument);
+      const own = view.outlook(variable);
+      if (!print.some || !own.some) throw new Error('watched and printed');
+      // A2.a: the public level is what it observed, so the first view of it IS that level.
+      expect(own.value.expected).toBeCloseTo(print.value.price, 9);
     }
   });
 });

@@ -310,20 +310,28 @@ engine rather than local edits.
 acting, is MEASURABLE at the scale that matters, and can EXPLAIN itself — and every item after this
 one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
 
-- [ ] 0h.1 **An outlook exists from the moment a public level does.** `expectations/index.ts` already
-  keeps two tracks per party and variable — the party's own adaptive one and an `anchored` one, *"the
-  last PUBLIC level"* — and switches to whichever has surprised it less. But the record is created
-  only on a first private observation (*"a party that has never seen this variable has no outlook"*),
-  so a party with no history **never consults the public track it is entitled to read**. Create the
-  record for any variable with a public level: expectation = that level, confidence = the dispersion
-  of the public record, the party's own observations pulling it away at its own memory from then on.
-  It is a READ of a source (Law 19), not a default (`?? 0`), and it is what a new entrant does: look
-  at the posted price. **Closes the bootstrap for 15 fail-closed decision sites** —
-  `households/consume.ts` (income, price), `households/portfolio.ts`, `firms/produce.ts`,
-  `firms/index.ts`, `supply/index.ts`, `banks/prime.ts`, `funds/things.ts`, `options`,
-  `securities-lending`, `treasury`, `housing`, `reporting/guidance.ts`, `money-market/policy.ts`,
-  `households/index.ts` — and with them the three loops in 0.7. Test: a world one period old has an
-  outlook for every variable with a print, and the 13 dead modules are asked at least once.
+- [x] 0h.1 **A party has a view of what it is ABOUT to act on.** As written this step said *"create
+  the record for any variable with a public level"*, and §46 A2.a refuses that: a published level
+  *"enters the party's outlook as one more thing observed — never as the outlook itself"*. So what
+  was built is the OBSERVATION and not the outlook. A1 says an outlook is *"a party's own forecast
+  of a variable it will act on"*, and until now the only variables a party had one of were the ones
+  it had already been a side of a leg in — a household could not form a view of the price of bread
+  until it had bought bread, and it could not decide to buy bread without one. `SystemModule.watches`
+  is the new door (one per party kind, the shape `bankChoices` and `termsOffered` are, evaluated with
+  that party's own view, because `expectations` may not read a consumption basket or a recipe): the
+  module that owns a kind says what its parties are about to act on, and `expectations.observations`
+  records each watched variable's PUBLIC PRINT exactly as it already records the print of a line the
+  party holds. `households` watches its cohort's basket; `firms` watches what its line sells and
+  everything its recipe names. The basket's own copy of the price ladder went with it — `consume.ts`
+  now reads `expectedPriceOf` (Law 4: `registry/expectation.ts` named that basket as one of its three
+  copies). **163 price outlooks that did not exist at the end of the rig's first period now do (184 →
+  347).** What it did NOT close is the fifteen fail-closed sites: those that fail on a PRICE were
+  already reading the print through `expectedPriceOf`, and the ones that fail on `sold`, `income` or
+  `earnings` fail on variables with no public level at all — there is nothing for a watcher to read,
+  and what they need is 0h.2's width and their own first act. Tests: `expectations.test.ts` *forms one
+  from the public print of everything it watches, and none where nothing printed* and *is a household
+  with a view of its basket before it has bought any of it*. The census is identical over the rig's
+  thirty periods and the four-country world's twelve.
 - [ ] 0h.2 **No schedule of zero width.** `households/consume.ts` posts
   `width: outlook.some ? outlook.value.confidence : 0`, so a party with no surprises posts a POINT and
   a point demand meets a point supply. Width becomes the dispersion the party has seen, which after
@@ -396,6 +404,16 @@ and not a periodicity, which is why it is here and not in 20.2.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.90 `test/expectations.test.ts` *is corrected towards what happened, at the party own speed,
+  and never faster* IS RED, and was before 0h.1 (verified in a stash at `5e49461`: the same one red,
+  the same figures). It asserts the first cell records more than four `income` surprises in ten
+  periods of `rigWorld('exp-c')` and it records ONE — in period 2, observing 1,023,531 against an
+  outlook of 1,239, and nothing in any period after. So a cell in the scale model is paid ONCE and
+  then never again, which is the same silence as `21.64`'s dead credit side and 0.7's 700,000 hours
+  offered against none wanted: a household with no employer has no income to be surprised by. The
+  test is not what is broken. Not chased (Law 11); positioned at 0h.3, whose liveness family is the
+  check that says "no cell has been paid" out loud rather than through one assertion about surprises
+  (0h.1).
 - [ ] 21.89 `test/credit-events.test.ts`, `test/ratings.test.ts` and `test/equity.test.ts` ARE RED IN FULL, and were before
   item 20 (verified at `8294791`: 14 red, 7 green, the same fourteen). They are two of the eighteen
   suites and the reds are of three shapes: a scale model whose payment no longer fails the way it

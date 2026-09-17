@@ -142,6 +142,9 @@ export function assemble(spec: AssemblySpec): World {
     for (const d of m.borrowNeeds ?? []) {
       world.answer(QUESTIONS.whatItMustBorrow, String(d.partyKind), m.id, d.needs);
     }
+    for (const d of m.watches ?? []) {
+      world.answer(QUESTIONS.whatItWatches, String(d.partyKind), m.id, d.watches);
+    }
     for (const d of m.tradingLimits ?? []) {
       world.answer(QUESTIONS.whatItMayTrade, String(d.partyKind), m.id, d.mayTrade);
     }

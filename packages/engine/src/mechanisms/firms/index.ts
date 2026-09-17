@@ -25,6 +25,8 @@ import { levelsBelow, rungsUpTo } from '../../clearing/schedule.js';
 import { WIND } from '../../registry/environment.js';
 import { COVER_TERM, coverVenue } from '../../registry/insurance.js';
 import {
+  goodId,
+  goodTerms,
   standsWindParam,
   survivesWind,
   vintagesHeld,
@@ -51,7 +53,12 @@ import type { MarketId, PartyId } from '../../core/ids.js';
 import { combineDust, dustOf, mul, sub, sum, withinDust, raised } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
-import { about, type MechanismContext, type ParticipantView } from '../../world/context.js';
+import {
+  about,
+  type MechanismContext,
+  type OutlookVariable,
+  type ParticipantView,
+} from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
@@ -380,6 +387,37 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     ],
     families: [productionCosts(byName)],
     bankChoices: [{ partyKind: FIRM, chooses: firmChoosesBank }],
+    /**
+     * §46 A1, Firm B1 (0h.1): WHAT A FIRM IS ABOUT TO ACT ON — what its line SELLS and everything
+     * its recipe names: the inputs a unit takes and the overheads the plant takes. `plan` refuses
+     * to plan without a price it expects for each of them, so a line that had never bought an input
+     * could never buy one, and three of this world's goods sat at zero from period zero inside that
+     * loop. What it watches is a read of the recipe the good's own terms carry (Law 4, Law 19), and
+     * what arrives is the venue's PRINT — one more thing observed (A2.a), never a level.
+     */
+    watches: [
+      {
+        partyKind: FIRM,
+        watches: (view: ParticipantView): readonly OutlookVariable[] => {
+          const line = lineOf(byName, view.self.id);
+          if (line === undefined) return [];
+          const output = goodId(line.subUnit, view.self.region);
+          if (!view.instruments.has(output)) return [];
+          // The same region the line's own technology reads the inputs in (`decide.ts`), which is
+          // the good's and not the firm's: a recipe names what it takes where the good is made.
+          const terms = goodTerms(view.instruments.get(output));
+          return [
+            about({ on: 'price', instrument: output }),
+            ...terms.recipe.inputs.map((i) =>
+              about({ on: 'price', instrument: goodId(i.subUnit, terms.region) }),
+            ),
+            ...terms.recipe.overheads.map((o) =>
+              about({ on: 'price', instrument: goodId(o.subUnit, terms.region) }),
+            ),
+          ];
+        },
+      },
+    ],
   };
 }
 

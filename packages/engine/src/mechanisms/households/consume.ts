@@ -64,6 +64,7 @@ import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
 import { pricesOver, rungsUpTo } from '../../clearing/schedule.js';
 import { about } from '../../world/context.js';
+import { expectedPriceOf } from '../../registry/expectation.js';
 
 /** One line of a cell's demand: a size at a level, in the market it is posted in. */
 export interface DemandStep {
@@ -432,12 +433,13 @@ function lineFor(
 ): Line | undefined {
   const instrument = goodId(row.subUnit, self.region);
   const outlook = view.outlook(about({ on: 'price', instrument: instrument }));
-  const print = view.print(instrument);
-  const expected = outlook.some
-    ? asPerPiece(outlook.value.expected, `what it expects ${instrument} to cost`)
-    : print.some
-      ? print.value.price
-      : undefined;
+  // Law 4, Law 19 (0h.1): ITS OWN OUTLOOK, OR WHAT THE VENUE PRINTED — one read, shared with every
+  // other party that prices off the tape (`registry/expectation.ts`), which named this basket as
+  // one of the three copies of it. The cell HAS an outlook of every good its cohort buys from the
+  // period after the world opens, because the basket is what it watches (§46 A1, `index.ts`), so
+  // what is left here is the opening period alone.
+  const level = expectedPriceOf(view, instrument);
+  const expected = level.some ? level.value : undefined;
   if (expected === undefined || expected <= 0) return undefined;
   // 12d.3: a cold week burns more. The condition is a multiple of normal, so what a member takes
   // to stand against it is a normal week's over it — a physical relation, not a coefficient.

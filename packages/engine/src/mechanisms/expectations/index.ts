@@ -578,7 +578,52 @@ function exposed(
     if (rate.some)
       out.set(about({ on: 'deposit', bank: p.bank }), { value: rate.value, unit: 'per annum' });
   }
+  /**
+   * §46 A1, A2.a (0h.1): AND WHAT IT IS ABOUT TO ACT ON. An outlook is *"a party's own forecast of
+   * a variable it will act on"* — and until this loop existed a party could only act on a variable
+   * it had already traded, because a record was created by a fill and by nothing else. A household
+   * had no view of what bread costs until it had bought bread; a firm none of what its recipe takes
+   * until it had bought it; and every decision site that fails closed on a missing outlook failed
+   * closed for ever, because the thing that would have created one was the decision it refused.
+   *
+   * What a party is about to act on is its own module's to say (`SystemModule.watches`), and what
+   * arrives here is what that thing stands at PUBLICLY: a print anybody may see, entering as one
+   * more thing observed exactly as the print of a line it holds does above — never as the outlook
+   * itself (A2.a), and never a level anybody wrote. A variable with no public print produces
+   * nothing, which is a refusal and not a zero.
+   */
+  for (const variable of ctx.watchedBy(party)) {
+    if (out.has(variable)) continue;
+    const printed = publicPrintOf(ctx, variable);
+    if (printed !== undefined) out.set(variable, printed);
+  }
   return out;
+}
+
+/**
+ * §46 A2.a (0h.1): WHAT A VARIABLE STANDS AT PUBLICLY, for a party that has never observed it. A
+ * price has the venue's print and an index is a read of prints; everything else a party watches it
+ * learns by being a side of something, and has no public level to start from.
+ */
+function publicPrintOf(
+  ctx: MechanismContext,
+  variable: OutlookVariable,
+): { value: number; unit: string } | undefined {
+  const subject = subjectOf(variable);
+  if (!subject.some) return undefined;
+  if (subject.value.on === 'price') {
+    const instrument = subject.value.instrument;
+    if (!ctx.instruments.has(instrument)) return undefined;
+    const print = ctx.prices.read(instrument, ctx.period);
+    return print.some
+      ? { value: print.value.price, unit: ctx.instruments.get(instrument).ccy }
+      : undefined;
+  }
+  if (subject.value.on === 'index') {
+    const read = ctx.index(subject.value.index);
+    return read.some ? { value: read.value.level, unit: 'of its base' } : undefined;
+  }
+  return undefined;
 }
 
 function push<K>(acc: Map<K, number[]>, key: K, value: number): void {

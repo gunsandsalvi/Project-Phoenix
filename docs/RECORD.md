@@ -14414,3 +14414,48 @@ desired cover, a stockist). Item **22d** (the payment queue and the gridlock pas
 23.6–23.9 (ensembles, the network read, a metamorphic family, the ladder as a ratchet).
 
 **The test of whether the programme worked** is Part 0.7 re-run. The before is recorded above.
+
+---
+
+## Item 0h.1 — A party has a view of what it is about to act on
+
+**What.** A new declaration on `SystemModule`: `watches` — per party kind, evaluated with that
+party's own view — saying which variables a party of that kind is ABOUT to act on. It is registered
+at assembly beside `bankChoices` and `termsOffered` under a new question `whatItWatches` (one module
+per kind), reaches the kernel as `World.watchedBy` and the parties as `ParticipantView.watches()`,
+and is read by `expectations.exposed`, which now records the PUBLIC PRINT of every watched variable
+exactly as it already records the print of a line the party holds. `households` watches the goods in
+its cohort's basket; `firms` watches what its line sells and every input and overhead its recipe
+names. `households/consume.ts` lost its own copy of the outlook-then-print ladder and reads
+`expectedPriceOf` (Law 4; `registry/expectation.ts` named that basket as one of its three copies).
+
+**Why.** §46 A1: an outlook is *"a party's own forecast of a variable it will act on"*. Until now the
+only variables a party had one of were those it had already been a side of a leg in, so a household
+had no view of what bread costs until it had bought bread — and every decision site that fails closed
+on a missing outlook failed closed for ever, because what would have created one was the decision it
+refused. `expectations` cannot read a consumption basket or a recipe (it may not import a module at
+all), so the question had to be asked of the module that owns the kind.
+
+**What the step as written got wrong.** It said *"create the record for any variable with a public
+level: expectation = that level"*. §46 A2.a refuses exactly that: a published level *"enters the
+party's outlook as one more thing observed — never as the outlook itself"*. So what was built is the
+OBSERVATION. The difference is not cosmetic: an observation is scored, surprises it, and is corrected
+at the party's own memory from the next period, and two parties that started watching in different
+periods disagree (A3). A written level would have been one number for everybody, which is A2.b.
+
+**Measured.** At the end of the rig's first period: 184 price outlooks before, 347 after — 163 that
+did not exist. The census is identical over the rig's thirty periods and the four-country world's
+twelve (the one difference abroad is 8 more journal events in period 2), because the sites that fail
+on a price were already reading the print through `expectedPriceOf`.
+
+**What it did not close.** The fifteen fail-closed sites 0h.1 was written about. Those that fail on
+`sold`, `income` or `earnings` fail on variables with NO public level — there is nothing for a
+watcher to read — and what they need is 0h.2's width and their own first act. Said in the plan.
+
+**Found.** `21.90`: `test/expectations.test.ts` *is corrected towards what happened* is red and was
+red before this change (verified in a stash at `5e49461`). The first cell of the scale model records
+ONE `income` surprise in ten periods, in period 2, and none after: it is paid once and then never
+again. Positioned at 0h.3, whose liveness family is the check that says so out loud.
+
+**Deleted.** The basket's copy of the price ladder in `consume.ts`, replaced by the read in
+`registry/expectation.ts`.

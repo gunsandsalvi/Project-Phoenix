@@ -212,6 +212,26 @@ export const QUESTIONS = {
     spec: 'Banks Funding E1',
     why: 'a depositor nobody asks is a depositor that can never leave, which is A1.d stickiness made invisible instead of paid for',
   },
+  /**
+   * Expectations A1, A2.a (0h.1): WHAT A PARTY OF THIS KIND IS ABOUT TO ACT ON — the variables its
+   * own module knows it will be asked about before it has ever traded one of them. A1 says an
+   * outlook is *"a party's own forecast of a variable it will act on"*, and until this question
+   * existed the only variables a party had an outlook of were the ones it had already been a side
+   * of a leg in: a household could not form a view of the price of bread until it had bought bread,
+   * which is the bootstrap every fail-closed decision site in this world was stuck behind.
+   *
+   * What comes back is not the outlook (A2.a forbids that): it is the list of things whose PUBLIC
+   * print reaches the party as one more thing observed, exactly as a print of a line it holds does.
+   * Exactly one module answers for a kind — the one that owns it — and a kind nobody answers for
+   * watches only what it has traded, which is what every kind did before this.
+   */
+  whatItWatches: {
+    name: 'whatItWatches',
+    scope: 'partyKind',
+    required: () => false,
+    spec: 'Expectations A1',
+    why: 'two answers would be two lists of what one party is about to act on, and a print would reach it twice',
+  },
   /** Trade Credit A3: whether a seller of this kind ships on terms, and on what. */
   whatItShipsOn: {
     name: 'whatItShipsOn',

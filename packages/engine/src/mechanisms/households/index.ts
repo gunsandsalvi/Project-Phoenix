@@ -31,7 +31,8 @@ import {
   coverVenue,
 } from '../../registry/insurance.js';
 import { none, some, type Option } from '../../core/option.js';
-import { about } from '../../world/context.js';
+import { about, type OutlookVariable } from '../../world/context.js';
+import { goodId } from '../../registry/physical.js';
 import {
   pricedAt,
   asCash,
@@ -909,6 +910,25 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // XI-3 (12a.5): the estate module leaves a household's failure to this one (`resolvesItsOwn`).
     resolves: [HOUSEHOLD],
     bankChoices: [{ partyKind: HOUSEHOLD, chooses: householdChoosesBank }],
+    /**
+     * §46 A1, Households C3 (0h.1): WHAT A CELL IS ABOUT TO ACT ON — the price of every good in the
+     * basket its cohort declares, in its own place. It is the decision it takes every period, and
+     * the first time it takes it the good is one it has never bought: without this it had no view
+     * of what a loaf costs until it had bought a loaf, and it could not buy one without a view.
+     *
+     * The list is a read of the same rows `decide` costs the basket from (Law 4) — nobody wrote a
+     * watchlist — and it carries no levels: what each good PRINTED reaches the cell as one more
+     * thing observed (A2.a), and what the cell makes of it is its own from the next period on.
+     */
+    watches: [
+      {
+        partyKind: HOUSEHOLD,
+        watches: (view: ParticipantView): readonly OutlookVariable[] =>
+          rows.map((row) =>
+            about({ on: 'price', instrument: goodId(row.subUnit, view.self.region) }),
+          ),
+      },
+    ],
   };
 }
 

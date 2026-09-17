@@ -690,6 +690,13 @@ export interface ParticipantView extends KernelReads {
    * and what it has a view of cannot disagree (Law 4).
    */
   outlookVariables(): readonly OutlookVariable[];
+  /**
+   * Expectations A1 (0h.1): WHAT THIS PARTY IS ABOUT TO ACT ON — declared by the module that owns
+   * its kind (`SystemModule.watches`), so a party has a view of the price of a thing it is about to
+   * buy before it has ever bought one. It is a list of VARIABLES, never of levels: what each of
+   * them stands at publicly reaches the party as an observation (A2.a) and never as its outlook.
+   */
+  watches(): readonly OutlookVariable[];
   /** §46 A2: what this party has a view ON, as the things they are rather than as keys. */
   outlookSubjects(): readonly Subject[];
   /**
@@ -1085,6 +1092,13 @@ export interface MechanismContext extends WorldReads {
   readonly voyages: VoyagesRead;
   /** A random stream that is this module's own, deterministic in (seed, module, period). */
   readonly rng: Prng;
+  /**
+   * §46 A1 (0h.1): WHAT A NAMED PARTY IS ABOUT TO ACT ON — the list its own module declared
+   * (`SystemModule.watches`), evaluated with that party's view by the kernel. It is a list of
+   * variables and carries no state of that party's at all: what each of them stands at publicly is
+   * a print anybody may see, which is why this is not a read over somebody's shoulder (Observer A4).
+   */
+  watchedBy(party: PartyId): readonly OutlookVariable[];
   participant(party: PartyId): ParticipantView;
   /**
    * Money A1, A2.b, Currency D2, Law 4: WHICH account a party holds a given money in. Its own

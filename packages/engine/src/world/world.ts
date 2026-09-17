@@ -1315,6 +1315,21 @@ export class World {
     return this.askedByTheKernel(() => p.fn.of(this.mechanismContext(p.owner), party, variable));
   }
 
+  /**
+   * Expectations A1 (0h.1): WHAT THIS PARTY IS ABOUT TO ACT ON — asked of the module that owns its
+   * kind, with the party's own view. A kind nobody answers for watches nothing, which is what every
+   * kind did before the question existed: it learned a variable only by trading it first.
+   */
+  watchedBy(party: PartyId): readonly OutlookVariable[] {
+    const kind = String(this.parties.get(party).kind);
+    const asked = this.answers.answer<(v: ParticipantView) => readonly OutlookVariable[]>(
+      QUESTIONS.whatItWatches,
+      kind,
+    );
+    if (asked === undefined) return [];
+    return this.asParticipantOf(asked.owner, () => asked.fn(this.participantView(party)));
+  }
+
   /** A2: what this party has an outlook of at all — nothing, for one that has observed nothing. */
   outlookVariables(party: PartyId): readonly OutlookVariable[] {
     const p = this.theOutlooks();
@@ -1999,6 +2014,7 @@ export class World {
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
       outlookVariables: () => this.outlookVariables(party),
+      watches: () => this.watchedBy(party),
       outlookSubjects: () => {
         const out: Subject[] = [];
         for (const v of this.outlookVariables(party)) {
@@ -2480,6 +2496,10 @@ export class World {
       workingOf: <T extends object>(party: PartyId, name: string, initial: () => T): T =>
         this.slotFor(owner, party, name, initial),
       participant: (party) => this.participantView(party),
+      // §46 A1 (0h.1): what a party is about to act on, asked of the module that owns its kind and
+      // evaluated with that party's OWN view inside the kernel — the asking module is handed the
+      // list and never the view, so nothing here is a read of anybody's own state (Observer A4).
+      watchedBy: (party) => this.watchedBy(party),
       accountOf: (party, ccy) => this.accountOf(party, ccy),
       settle: (draft) => this.settlement.settle(draft, this.currentPeriod, this.currentCycle),
       issue: (decl) => this.instruments.add(decl),
