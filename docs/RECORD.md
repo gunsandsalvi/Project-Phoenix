@@ -15513,3 +15513,63 @@ asking the world a question about one party — and the reason the time barely m
 that a modern array walk is nearly free. What the 46× needs is the per-party-per-period work to stop
 existing, which is 0g.11, 0g.14 and 0g.15, and the `Missing` door reads that belong to the items
 building the missing sides.
+
+---
+
+## 0g.7 — 3,536 yield inversions for 17 questions, and two steps that were already done
+
+**Two of the three items were already true.** `curveAt` is memoised per (family, period,
+prices.version/instruments.version) at `world.ts:3628`; `index()` per (id, indexThrough,
+instruments.version:prices.version) at `world.ts:3409`. Both were built before this step was read
+and nothing closed it — the same defect as 0g.3, and a stale plan entry is a defect (Law 16).
+
+**The third item was the wrong diagnosis.** `invertDecreasing` *seeded by the last yield* would buy
+almost nothing: the bisection halves a bracket of width 1 down to the dust of the numbers it is
+comparing, so about fifty passes, and a seed ten times tighter saves about three of them. Loosening
+the stop is what Law 7 forbids. The root-finder is not the problem.
+
+**What was actually there.** At period 8 of the (24, 96) rung:
+
+| | |
+|---|---|
+| `yieldOf` calls in one period | **3,536** |
+| distinct (flows, price, date, day-count) questions | **17** |
+| from `cds levelFor` | 3,491 |
+| from `curveAt` | 36 |
+| from `banks credit-view` | 9 |
+
+`levelFor` is asked once per party per book, and what it asks about is the BOOK — an obligation, a
+tenor, a money. So every party in a session inverted the same bond's price to the same yield, each
+inversion about fifty present-value passes over that bond's flows. The answer is a function of the
+prints and the lines and of nothing else, so the memo key names the question and not the asker.
+
+**3,536 → 48 calls.**
+
+`indices/baskets.ts listed()` is the same shape and goes with it: which lines a market prices is a
+fact about the REGISTER, not about prices, so it stands until something is issued, redeemed, split,
+re-seated or ceased — and every rule asked for it, so it was rebuilt once per rule per index per
+period (1,451,825 instruments walked in 432 calls, against 3,367 in the store). Weakly held on the
+world's own reads, which is the construction `paysOn` in the same file already is.
+
+**And a trap closed rather than documented (Ratings A2.a).** A memo key that does not name the asker
+is what makes the cds memo work, and it is right, because the question is about the market. But a
+BLIND view — the assessor's, whose `print` and `mark` answer Missing for everything and whose
+`curve` throws — asks that same question and is entitled to a different answer, and it is built by
+spreading the sighted view, so it shares the memo store by construction. One store per sightedness
+now. It could not have fired today, because the blind `curve` throws before the spread read is
+reached; that is exactly the kind of reason nobody finds until it breaks, so it is a guard and not a
+comment.
+
+**Measured.** (12, 48) at 26 periods **289 → 276 ms/period**. (24, 96) **875 → 838**, order
+generation 181 → 162 ms. The ladder rungs understate this one, because the rig's draw has few CDS
+books — the four-country world is where it lands: **`check:opens` abroad p12 1,989 → 984 ms**, half
+a period gone. Every shape figure byte-identical: parties 141, cells 42, people 228, small 521,
+events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08. Both censuses
+identical.
+
+**The running tally of 0g's traversal steps: 0%, 8%, 4%, 4% on the rig — and 50% of a period on the
+world that actually has the instruments in it.** Which is the sharper form of the same reading: the
+cost is never the walk, it is the number of askers, and it is invisible on a rung whose draw does
+not happen to include the book being asked about. The (24, 96) rung is not a scale model of the
+four-country world, and 0g.16's "the ladder per step at three scales" should be reading the abroad
+world too.

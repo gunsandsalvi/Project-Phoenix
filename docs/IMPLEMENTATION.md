@@ -447,7 +447,35 @@ say where the categories are:
   whole book, 573 → 554; lots coalesce on equal basis and period at 0g.1; `Parties.ofKind` cached
   per (kind, version) at 0i.)
 
-- [ ] 0g.7 `curveAt` memoised per (family, period, prices.version); `invertDecreasing` seeded by the last yield; `index()` keyed on the basket's own prints.
+- [x] 0g.7 **Two of its three items were already true, and the third was the wrong diagnosis —
+  3,536 yield inversions for 17 distinct questions, now 48.** `curveAt` is memoised per (family,
+  period, prices.version/instruments.version) at `world.ts:3628` and `index()` per (id,
+  indexThrough, instruments.version:prices.version) at `world.ts:3409`; both were built before this
+  step was read and nothing closed it (Law 16, the same shape as 0g.3). And `invertDecreasing`
+  *seeded by the last yield* would have bought almost nothing: the bisection halves a bracket of
+  width 1 down to arithmetic dust, so a tighter seed saves about seven of fifty-odd passes, and
+  Law 7 forbids widening the stop.
+  **What was actually there:** at period 8 of the (24, 96) rung, **3,536 `yieldOf` calls for 17
+  distinct (flows, price, date, day-count) questions** — 3,491 of them from `cds levelFor`, which
+  is asked once per party per book and asks about the BOOK (an obligation, a tenor, a money), so
+  every party in a session inverted the same bond's price to the same yield, each inversion about
+  fifty present-value passes over the flows. Memoised on the prints and the lines: **3,536 → 48**.
+  `indices/baskets.ts listed()` is the same shape and is fixed with it — which lines a market prices
+  is a fact about the REGISTER, so it stands until a line changes, and it was rebuilt once per rule
+  per index per period (1,451,825 instruments in 432 calls).
+  **And a trap closed rather than documented (Ratings A2.a).** A memo key that does not name the
+  asker is right for a question about the market, which is what makes the cds memo work — but a
+  BLIND view (the assessor's, whose `print` answers Missing for everything) asks the same question
+  and is entitled to a different answer, and it shares the sighted view's object by construction.
+  One store per sightedness now. It could not have fired today, because a blind `curve` throws
+  before the spread read is reached; that is a reason nobody would find until it broke.
+  **Measured:** (12, 48) at 26 periods **289 → 276 ms/period**; (24, 96) **875 → 838**, order
+  generation 181 → 162 ms. The rig rungs understate it — they draw few CDS books — and the
+  four-country world is where it lands: **`check:opens` abroad p12 1,989 → 984 ms, half a period
+  gone.** Every shape figure byte-identical (parties 141, cells 42, people 228, small 521, events
+  110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both censuses
+  identical.
+
 - [ ] 0g.8 **The narrowing — first three done, and the venue half of the door built.** A session
   asks every party of a kind whether it has an order in it, and the answer is almost always no.
   **Measured, one period of the (12, 48) rung:** market-side evaluations 166,953, of which 129,256

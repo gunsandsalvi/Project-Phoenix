@@ -49,13 +49,26 @@ function onStateCredit(w: IndexWorld, i: Instrument): boolean {
  * in the one number that is supposed to measure everything else. The kind's own profile says which
  * lines those are (`pricing: 'derived'`): it is what a claim on a book IS, not a list of them.
  */
+/**
+ * Law 18 (0g.7): THE SAME LINES WHILE NO LINE HAS CHANGED. Which lines a market prices is a fact
+ * about the REGISTER and not about prices, so it stands until something is issued, redeemed, split,
+ * re-seated or ceased — and every rule here asks for it, so it was rebuilt once per rule per index
+ * per period: 1,451,825 instruments walked in 432 calls at period 8 of the (24, 96) rung, against
+ * 3,367 in the store. Weakly held on the world's own reads, so it goes when that world does; it is
+ * the same construction `paysOn` below is.
+ */
+const listedFor = new WeakMap<IndexWorld, { version: number; lines: readonly Instrument[] }>();
+
 function listed(w: IndexWorld): readonly Instrument[] {
+  const held = listedFor.get(w);
+  if (held?.version === w.instruments.version) return held.lines;
   const out: Instrument[] = [];
   for (const i of w.instruments.all()) {
     if (!i.status.live || !i.market.some || !i.issuer.some) continue;
     if (w.registry.instrumentKind(i.kind).pricing === 'derived') continue;
     out.push(i);
   }
+  listedFor.set(w, { version: w.instruments.version, lines: out });
   return out;
 }
 

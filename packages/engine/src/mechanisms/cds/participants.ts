@@ -77,7 +77,22 @@ function levelFor(
    * measurement two files over derived the honest number from a yield. Two answers to one question
    * is Law 4's defect; the one that stays is `cashSpreadOf`, and both callers ask it.
    */
-  const spread = cashSpreadOf(spreadsFromView(view), t.obligation, t.tenorYears, m.ccy);
+  /**
+   * Law 18 (0g.7): AND IT IS DERIVED ONCE WHILE THE PRINTS AND THE LINES STAND STILL.
+   *
+   * It is asked once per party per book, and what it asks about is the BOOK — an obligation, a
+   * tenor and a money — so every party in a session was inverting the same bond's price to the same
+   * yield. Measured at period 8 of the (24, 96) rung: **3,536 `yieldOf` calls for 17 distinct
+   * questions**, 3,491 of them from here, each one about fifty present-value passes over the
+   * flows. The answer is a function of the prints and the lines and of nothing else, so the key
+   * names the question and not the asker, and the versions drop it the instant either moves.
+   */
+  const at = view.versions();
+  const spread = view.memo(
+    `cds.cashSpread|${String(t.obligation)}|${String(t.tenorYears)}|${String(m.ccy)}`,
+    [at.prices, at.instruments],
+    () => cashSpreadOf(spreadsFromView(view), t.obligation, t.tenorYears, m.ccy),
+  );
   if (!spread.some || spread.value <= 0) return undefined;
   const perAnnum = asPerPiece(spread.value, 'what a year of this credit costs, per unit of face');
   // Law 8: A LEVEL IS HELD IN MONEY PIECES PER PIECE OF THE THING, which is not the same number as

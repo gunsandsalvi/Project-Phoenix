@@ -445,6 +445,18 @@ export class World {
    */
   private readonly memos = new Map<string, { readonly at: readonly number[]; value: unknown }>();
   /**
+   * Ratings A2.a, Law 18 (0g.7): AND A BLIND VIEW KEEPS ITS ANSWERS SOMEWHERE ELSE.
+   *
+   * A memo key names the question, and a key that does not name the asker is right for a question
+   * about the MARKET rather than about a party — what a bond's spread is, which every party reads
+   * the same. A blind view asks that same question and is entitled to a different answer, because
+   * its `print` answers Missing for everything; one store would hand one of them the other's. It
+   * cannot happen today (a blind `curve` throws, so the spread read is never reached blind), and
+   * that is a reason nobody would find before it broke. One store per sightedness, and the trap is
+   * gone rather than documented.
+   */
+  private readonly blindMemos = new Map<string, { readonly at: readonly number[]; value: unknown }>();
+  /**
    * Law 18: which parties a market has to ask, for the participants that say (`ParticipantDecl`).
    *
    * Built once a cycle, per participant declaration, by asking each of its parties which books it
@@ -1839,6 +1851,7 @@ export class World {
     if (this.viewsAtPeriod !== this.currentPeriod || this.viewsAtCycle !== this.currentCycle) {
       this.views.clear();
       this.memos.clear();
+      this.blindMemos.clear();
       this.viewsAtPeriod = this.currentPeriod;
       this.viewsAtCycle = this.currentCycle;
     }
@@ -1862,6 +1875,21 @@ export class World {
    * else an assessor can see it still sees, and what it cannot see it cannot see by construction
    * rather than by discipline. An index is a price too, and it goes with them.
    */
+  private memoIn<T>(
+    store: Map<string, { readonly at: readonly number[]; value: unknown }>,
+    key: string,
+    at: readonly number[],
+    compute: () => T,
+  ): T {
+    const held = store.get(key);
+    if (held?.at.length === at.length && held.at.every((v, i) => v === at[i])) {
+      return held.value as T;
+    }
+    const made = compute();
+    store.set(key, { at: [...at], value: made });
+    return made;
+  }
+
   blindView(party: PartyId): ParticipantView {
     const open = this.participantView(party);
     return Object.freeze({
@@ -1870,6 +1898,9 @@ export class World {
       print: () => none<Print>(),
       mark: () => none<PerPiece>(),
       index: () => none<IndexRead>(),
+      // 0g.7: its own memo store, because it is entitled to its own answers (see `blindMemos`).
+      memo: <T>(key: string, at: readonly number[], compute: () => T): T =>
+        this.memoIn(this.blindMemos, key, at, compute),
       curve: (): never => {
         throw new Unpriced('Ratings A2.a', `${party} assesses from state and is shown no prices`);
       },
@@ -2106,15 +2137,8 @@ export class World {
         prices: this.prices.version,
         instruments: this.instruments.version,
       }),
-      memo: <T>(key: string, at: readonly number[], compute: () => T): T => {
-        const held = this.memos.get(key);
-        if (held?.at.length === at.length && held.at.every((v, i) => v === at[i])) {
-          return held.value as T;
-        }
-        const made = compute();
-        this.memos.set(key, { at: [...at], value: made });
-        return made;
-      },
+      memo: <T>(key: string, at: readonly number[], compute: () => T): T =>
+        this.memoIn(this.memos, key, at, compute),
       published: this.published,
       control: this.control,
       actions: this.actions,
