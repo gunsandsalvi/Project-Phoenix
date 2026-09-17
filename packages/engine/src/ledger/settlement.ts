@@ -1133,8 +1133,40 @@ export class Settlement {
     // rounding that leaves behind is the price's, not the difference's.
     const gross = new Map<PartyId, number>();
     // Currency A3 (16.0): the money a line is in, for what a leg on it comes to.
-    const ccyOf = (instrument: InstrumentId): CurrencyCode =>
-      this.d.instruments.get(instrument).ccy;
+  /**
+   * Law 4, Law 19, Law 18 (0g.26): WHAT MONEY A LINE IS IN, ASKED ONCE PER INSTRUCTION.
+   *
+   * An instruction is ATOMIC: nothing is issued, reseated or ceased while it applies, so a line's
+   * currency cannot change between two of its legs. It was read from the register two and three
+   * times per leg — once for the sum's currency, once inside the map for each drawn lot, once more
+   * in the bump — and the estate hand-over that carries a whole cell's book is one instruction with
+   * **five thousand four hundred and eighty-nine legs**. Measured: that single instruction cost
+   * **231,250 kernel reads, and sixty of them are 13,875,032 of the period's reads.**
+   *
+   * The cache lives and dies with the instruction, so there is nothing for a later period to read
+   * stale: it is a local for a loop, not a store.
+   */
+    const ccySeen = new Map<InstrumentId, CurrencyCode>();
+    const ccyOf = (instrument: InstrumentId): CurrencyCode => {
+      const had = ccySeen.get(instrument);
+      if (had !== undefined) return had;
+      const ccy = this.d.instruments.get(instrument).ccy;
+      ccySeen.set(instrument, ccy);
+      return ccy;
+    };
+    /**
+     * Currency B1, C5, Law 18 (0g.26): AND WHICH MONEY A PARTY REPORTS IN, once per party per
+     * instruction, for the same reason — a party's region does not change mid-instruction, and the
+     * estate instruction bumps ONE party's account five thousand times.
+     */
+    const homeSeen = new Map<PartyId, CurrencyCode>();
+    const homeOf = (party: PartyId): CurrencyCode => {
+      const had = homeSeen.get(party);
+      if (had !== undefined) return had;
+      const home = this.d.valuation.ownMoneyOf(party);
+      homeSeen.set(party, home);
+      return home;
+    };
     /**
      * 21a, A-1, XI-15: THE ONE DOOR TO AN EQUITY ACCOUNT, and it takes a TOTAL.
      *
@@ -1167,7 +1199,7 @@ export class Settlement {
     const inOwn = (party: PartyId, delta: Cash): Cash =>
       // A-51: through the kernel's one door. This was the same conversion written out here, and it
       // was the only place in the engine that did it — six readers of a party's own book did not.
-      this.d.valuation.inOwnMoney(party, delta, ins.period);
+      this.d.valuation.inMoney(delta, homeOf(party), ins.period);
 
     ops.forEach((op, index) => {
       switch (op.op) {

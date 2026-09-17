@@ -16202,3 +16202,40 @@ because the prints moved under it. **That is not redundancy and no memo can remo
 the finding written up as plan item 25: `priced`'s own comment says the target must not depend on
 which sessions have already run, and the implementation makes it depend on exactly that. Settling
 that settles the cost as a consequence, and it is a mechanism question, so 0g leaves it alone.
+
+# 0g.26 — killed: `households.lifecycle`'s reads are settlement's
+
+**The step was written from a wrong guess and the measurement killed it.** It said `die` and
+`handToProbate` "walk the whole register". They do not: `handToProbate` is called **60 times a
+period** and walks 5,489 holdings each — 329,340 reads in total, which is 1.4% of the phase.
+
+Probing the phase's five calls gave `die` 16,827,048, `settleEstates` 5,572,090, `age` 1,476,068.
+Probing inside `die` gave `reKey` 2,951,836 and **`ctx.settle` 13,875,032 over 60 calls**. The
+estate hand-over is ONE instruction carrying a whole cell's book — **5,489 legs, 231,250 kernel
+reads, 42 per leg** — and sixty of them are 12% of the period.
+
+**So this is the settlement unit cost, and it belongs to 0g.20**, which had only ever been measured
+on the rig. 0g.26 is deleted and 0g.20 rewritten with the world's number.
+
+## What was taken while the cause was being found
+
+Three reads of one line in `handToProbate` (inside `isMoney`, for the currency, for the issuer)
+became one: **−329,340**. Then two per-instruction caches in `apply`, both provably safe because an
+instruction is atomic and nothing is issued or reseated while it applies:
+
+- **`ccyOf`** — a line's currency, read two and three times per leg.
+- **`homeOf`** — the money a party reports in, read once per equity bump, and the estate
+  instruction bumps ONE party's account 5,489 times. `Valuation.ownMoneyOf` is the read it goes
+  through, opened for it: one answer, one writer, asked once by a caller with many amounts.
+
+**113,912,429 → 110,944,378 ops, 45.6 → 43.7 s**, `events 178604` and `audit 356268` unchanged.
+The phase itself is 24,204,666 → 21,300,710 against a ≤3,000,000 budget: **missed, and the
+remainder is not this step's to take.**
+
+## The lesson, and it is the third time in this item
+
+The census names a PHASE. A phase's reads are not necessarily its module's — `settle` is called
+from everywhere and no row in the census is its. **A step aimed at a census row must first probe
+inside it**, which is what found the funds' branch split at 0g.25 and the settlement cost here.
+Both times the step as written was aimed at the wrong thing, and both times a probe took under two
+minutes.

@@ -339,14 +339,18 @@ function handToProbate(
   const legs: Leg[] = [];
   const monies = new Set<CurrencyCode>([ctx.registry.currencyOf(region)]);
   for (const h of view.holdings()) {
-    if (isMoney(ctx, h.instrument)) {
-      monies.add(ctx.instruments.get(h.instrument).ccy);
+    // Law 4, Law 19 (0g.26): ONE READ OF THE LINE. This asked the register for the same instrument
+    // three times over — once inside `isMoney`, once for its currency, once for its issuer — and
+    // an estate's book is walked for every cell that loses anybody.
+    const i = ctx.instruments.get(h.instrument);
+    if (ctx.registry.instrumentKind(i.kind).pricing === 'money') {
+      monies.add(i.ccy);
       continue;
     }
     // Law 5, Money E1 (12a.5): A CLAIM ON ITSELF IS NOT HANDED OVER. A cell that absorbed both the
     // payer and the payee of an arrear issues the row and holds it; moving it would be an issuance
     // with no price, and there is nothing to hand to anybody — it is the estate's to extinguish.
-    if (issuedBy(ctx.instruments.get(h.instrument), from)) continue;
+    if (issuedBy(i, from)) continue;
     // 0f.1: the register holds the cell's TOTAL, and the whole of it moves to probate.
     const total = view.free(h.instrument);
     if (total <= 0) continue;

@@ -307,7 +307,20 @@ export class Valuation {
    * seventh answer (Law 4) — and none of them converts anything.
    */
   inOwnMoney(party: PartyId, value: Cash, at: Period): Cash {
-    return this.inMoney(value, this.homeMoneyOf(party), at);
+    return this.inMoney(value, this.ownMoneyOf(party), at);
+  }
+
+  /**
+   * Currency B1: THE MONEY THIS PARTY REPORTS IN, as a read — the same one `inOwnMoney` above
+   * translates into, so there is still one answer and one writer of it (Law 4).
+   *
+   * It is open because a caller with MANY amounts to put into one party's money should ask which
+   * money once and translate many times, rather than ask again per amount. Settlement is the
+   * caller that needed it: an instruction with five thousand legs bumped one party's equity account
+   * five thousand times and looked its home money up for every one of them (0g.26).
+   */
+  ownMoneyOf(party: PartyId): CurrencyCode {
+    return this.homeMoneyOf(party);
   }
 
   /**

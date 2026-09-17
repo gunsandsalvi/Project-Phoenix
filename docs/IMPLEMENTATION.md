@@ -378,9 +378,13 @@ carried on hope.
 `audit 356,268` unchanged. A step that moves either of the latter has changed the world, not its
 layout, and is reverted (Law 18).
 
-- [ ] 0g.26 **`households.lifecycle` — 24,204,666 reads → ≤ 3,000,000.** `die` and
-  `handToProbate`. An estate is settled per person against the whole register; what a dying
-  household holds is what the register's by-holder index already answers.
+- [ ] 0g.26 **KILLED AND MERGED INTO 0g.20 — `households.lifecycle`'s reads are SETTLEMENT's.**
+  The step was written as "`die` and `handToProbate` walk the whole register" and that is wrong:
+  measured, `handToProbate` is called **60 times a period** and walks 5,489 holdings each, which is
+  329,340 reads — and `die` costs **16,827,048**. Of those, **13,875,032 are inside `ctx.settle`**:
+  the estate hand-over is ONE instruction with 5,489 legs, and it costs **231,250 kernel reads, or
+  42 per leg**. Sixty such instructions are 12% of the period. Two per-instruction reads are gone
+  (below) and the rest is the settlement unit cost, which is 0g.20's and is now measured.
 - [ ] 0g.27 **The audit — 24,118,237 reads → ≤ 4,000,000.** 356,268 checks over 544,104 holdings,
   and the families traverse the register independently: `flows`, `weights`, `accounts`,
   `currency` and `units` each walk what the one before them just walked. **The audit's
@@ -403,11 +407,16 @@ layout, and is reverted (Law 18).
   period and holds 3.0 GB after one. Last N periods hot with indexes; older periods compacted to a
   columnar log readable by the observer and `coverage-reached`; **no event lost** (Law 19, Audit:
   the audit reads history, so compaction preserves every fact and never samples it).
-- [ ] 0g.20 **SETTLEMENT — after the counts, because its share is not yet known on the world.**
-  On the rig a settlement moved 1.4 legs at 23.8 µs, of which `apply` was 36–52% and contract
-  checking 20–34%. `apply` has never been opened. The wire is sequential by law (0g.10), so this
-  is the one block parallelism cannot help. Re-measure on the world before touching it: the rig's
-  shares are not this world's.
+- [ ] 0g.20 **SETTLEMENT — 42 KERNEL READS PER LEG, and it is now measured on the world rather
+  than the rig.** `settle` is 9.9% of a period by time and its reads are spread through every
+  phase, so no census row names it: 0g.26 found it by probing one phase and landing inside
+  `ctx.settle`. A 5,489-leg instruction costs 231,250 reads. Per leg that is a lot drawn, a
+  carrying value per lot (`carryingPerUnit`, a price read each), a currency, a party's home money
+  and an equity bump — call it eight — so **roughly four fifths of the 42 is repetition inside one
+  atomic instruction**, which is where 0g.26's two caches came from and where the rest is.
+  `apply` is 5.5% and `(anon) @ settlement.ts:795` — the per-op switch — another 5.2%; neither has
+  been opened. The wire is sequential by law (0g.10), so this is the one block parallelism cannot
+  help.
 - [ ] 0g.15 **PARALLEL ORDER GENERATION — last, and Amdahl caps it.** Parties of a market
   partitioned by a fixed hash; partitions on workers; orders gathered in partition order; clearing
   and settlement single-threaded. Gate: the census and the op count byte-identical single- and
