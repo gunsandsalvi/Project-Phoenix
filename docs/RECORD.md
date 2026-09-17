@@ -14352,3 +14352,36 @@ state). Both are mechanical passes over the whole engine and want to be taken de
 **A red gate, unchased and stated:** `ladder.test.ts` itself fails, and failed before any of this
 (76 small firms at grain 1 against 77 at grain 2), so the ladder's own invariance check is not
 currently trustworthy on that figure. The ladder's printed census is what these steps were gated on.
+
+## Proposal — the opening world (`docs/OPENING.md`)
+
+Not an item: a proposal, logged here because it was asked for and because it changes what item 22a
+is. Written against `41d7e66`, second draft at `235648a`.
+
+**What it measures.** At period 0 the rig has 135 living parties, **0 with an outlook of anything**,
+an **empty ledger**, and **132 markets already carrying a price** that nothing traded to produce.
+Twelve periods later, 101 living parties. `ctx.settle` is called zero times in the seed; every
+seeded line is issued at the epoch; and one baker opens holding 314 million loaves against 27
+million a period of demand (12c.3).
+
+**What it argues.** "Seeding" is three jobs. CONSISTENCY, which this world already does well — the
+audit is green at period 0. HISTORY, which it has none of — the ledger is empty, so no party has
+observed anything, and every mechanism that decides against an outlook opens blind. LIVENESS, which
+consistency cannot see — a world can be perfectly consistent and perfectly dead, which is what the
+twelve findings are, seen from twelve sides.
+
+**What it borrows.** The SFC literature's polytope of admissible openings (land in a body, never
+solve for a point) and its toolkits' practice of simulating two hundred periods prior rather than
+stating an opening; Mark-0's phase diagram, which makes the opening a choice of BASIN; the
+discrete-event literature's MSER-5, which makes the length of a past a measured truncation rather
+than a preference; the Earth-system restart file, which makes a world an ARTIFACT rather than a
+function called at t=0; and Dwarf Fortress's generate-and-REJECT with a logged reason, which is the
+one selection method that discards a world without adjusting one — so nothing is fitted and no
+outcome is seeded. It takes population synthesis (IPF) only as a warning: fitting to margins is what
+Seed B5 and C5 forbid.
+
+**What it proposes.** THE CHRONICLE — draw the physical world and the primitives; live a past
+through ordinary settlement; accept or reject against a census of named properties with a logged
+reason; snapshot the accepted world and open runs from it. Items 22b.1–22b.9, which absorb most of
+22a. It also states what it predicts will break, including that the first chronicle will be rejected
+on "every firm has produced, sold and been paid" — which is 12c.3, and the point.
