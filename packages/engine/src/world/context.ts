@@ -1255,6 +1255,19 @@ export interface MechanismContext extends WorldReads {
    * employment, a rolled borrow. Same two parties, same row, different terms; never a new kind.
    */
   restate(id: AgreementId, terms: AgreementTerms): Agreement;
+  /**
+   * Money E1, Treasury D3, Polity D3 (19.8): WHAT WAS NOT PAID FOR LONG ENOUGH IS A BREACH.
+   *
+   * `breached` was a state the register could hold and nothing could reach: an arrear stood, and
+   * the commitment it was a payment on went on reading `performing` however long it stood. What
+   * makes the difference is not arithmetic — it is the LAW, which says how long a payment may be
+   * late before the thing behind it has been broken — and a law is a POLICY somebody is
+   * answerable for (Polity D3). So the number is parliament's and this is the door the mechanism
+   * that reads it writes through.
+   *
+   * It is never the end of the row: what is owed is still owed, and an estate still divides it.
+   */
+  inBreach(id: AgreementId, why: string): Agreement;
   /** XI-8: it ended with something still owed and nobody left to pay it — a write-off, said so. */
   endAgreement(id: AgreementId, why: string): Agreement;
   /**

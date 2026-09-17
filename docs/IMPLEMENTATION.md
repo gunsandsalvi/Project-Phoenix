@@ -330,7 +330,17 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   corridor are refused by name (D4, §31 A4). So is a number declared parliament's that no clause
   grants — a module cannot quietly put a number on a ballot paper — and a power that covers nothing,
   which reads as scope this world does not actually grant.
-- [ ] 19.8 The arrears' `breached` writer (fiscal policy decides when an arrear is a breach).
+- [x] 19.8 The arrears' `breached` writer. `breached` was a state the register could hold and
+  nothing in this world could reach: a wage went unpaid, the arrear stood, and the employment behind
+  it read `performing` for ever. What decides that a late payment has become a broken commitment is
+  not arithmetic — the money owed is the same money — it is the LAW, and a law is a POLICY somebody
+  answers for: `law.arrears.gracePeriods`, parliament's (D3), on the three ballot papers with
+  everything else it owns. The writer is `credit-events`, which is the module that already says what
+  a failure to pay makes somebody: the period the grace runs out, read off its own default event, an
+  arrear still standing breaks every performing row the payer owes that payee — the rows it is
+  failing on, by name. It ends nothing and takes nothing away: what was owed is still owed, the
+  arrear still falls due every period, and an estate still divides it. `ctx.inBreach` is the door,
+  beside `owes`, `paidOn`, `restate` and `endAgreement`. Findings 21.87 and 21.88 written down.
 - [ ] 19.9 A multi-year run shows the deficit changing through named outlays after an election; approval as a lagged read; B4 and F5 tests; observer; determinism; COVERAGE; record.
 
 ---
@@ -347,6 +357,25 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.88 `test/breach.test.ts` (19.8): THE SCALE MODEL DOES NOT BREACH. Two firms the draw made,
+  a commitment between them, and a payment the payer cannot make: the fail is recorded and the arrear
+  written (`credit.default` fires, the second case is green — a parliament that allows a longer grace
+  breaks nothing), and the period the grace expires the row is still `performing`. So one of three
+  reads is wrong and which is not yet known: the period the default event is written in against the
+  period the phase looks back to (`ofKindIn(expires)` is one period and a default seen at a later
+  cycle lands in the next), whether the arrears of that instruction are still held by the payee at
+  that moment, or whether `owedBy(payer)` reaches the row the probe opened. It is a read to make
+  against a run and not a number to chase (Law 11). Positioned at 19.9, where the polity's own
+  mechanisms are measured against a long run (19.8).
+- [ ] 21.87 `mechanisms/treasury/index.ts runReceipts` (seen at 19.8): A WORLD THAT STOPS ON A SEED.
+  `rigWorld('probe')` throws at period 26 — `Forbidden: [Money C1.a] instruction 11378: a payment
+  from an account to itself is not a payment` — from `runReceipts`, and it predates this item (the
+  same seed stops at the same place on 19.7's commit, at instruction 11378 there and 10534 with the
+  breach writer in, which is the same stop one instruction stream apart). The `opens` seed reaches
+  period 30 and never hits it, which is why `check:opens` has been green throughout: a receipt whose
+  payer and payee resolve to the same account is a state some draws reach and that one does not.
+  Positioned at 21.2's neighbourhood as a treasury finding; it is a STOP, so whoever takes it takes
+  it first (19.8).
 - [ ] 21.86 `mechanisms/polity/election.ts` (19.4): NO ELECTION FALLS INSIDE A RUN. The term is 48 months — four years, which is what a term IS — and a period is a week, so the first election is around period 209 and forty periods of the rig reach none. Every part of the vote is exercised as a scale model (`test/polity.test.ts`: positions, ballots, abstention, turnout, the tally, both allotment rules) and the ASSEMBLED election has never run, which is 21.73's shape one module over. What it needs is a run long enough — 19.9's exit asks for exactly that, and a 209-period run of the rig is about two minutes — or a scale model whose constitution is shorter, which is a world-building decision and not a change to the mechanism. Positioned at 19.9 (19.4).
 - [ ] 21.85 `mechanisms/polity/vote.ts positionUnder` (19.4): A CELL VOTES ON FOUR OF THE TWENTY NUMBERS. A position is its pay, the income tax, the pension share, the transfer and the consumption tax; the platforms also differ on the tax on INTEREST and on GAINS, on the SEVERANCE a firing pays, on the RETIREMENT AGE and on the PLANNING RELEASE, and none of those is in it. Each needs a read the cell does not have: its own interest and gains receipts (it has no outlook subject for either), its own age against a threshold (a cohort key is there, the comparison is not), and what a release would do to the rent it pays (which is a housing mechanism, not a read). A cell voting on what it cannot evaluate would be voting on a number somebody handed it, which is the thing B1.a forbids — so what is missing is written down rather than guessed. Positioned at 19.9, where the vote is measured against a real run (19.4).
 - [ ] 21.84 `mechanisms/indices/baskets.ts goodsBoughtIn` (18a.1): THIS WORLD HAS NO PRICE LEVEL. Twelve periods of the rig: `equity.us.1` reads 100 over four constituents and `credit.USD` 100 over fifteen, and `consumer.us.1` and `producer.us.1` both read NONE over a basket of ZERO. The rule is what was DELIVERED this period — asset legs of physical goods, to a household cell of the region for the consumer basket, from a producer of it for the producer one — so an empty basket says no physical good changed hands in a settled instruction in that period, which sits beside 12c.3 (the named firms produce once and never again) and 21.79 (nobody crosses a supply contract). The consequence for this item is exact: 18a.1's decision rule is built, its door is tested, and the bank meets, reads the basket, finds nothing and does not act — so no rate has ever moved in this world for a reason. NOT CHASED (Law 11): why nothing is delivered is the goods market's, not the central bank's. Positioned at 23.3 with Part XII's measurements, where what this world actually produces and sells is measured (18a.1).

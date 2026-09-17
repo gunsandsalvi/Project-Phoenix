@@ -2649,6 +2649,18 @@ export class World {
         );
         return row;
       },
+      inBreach: (id, why) => {
+        const row = this.agreementStore.breached(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'agreement.breached',
+          [row.debtor, row.creditor],
+          { agreement: row.id, what: row.terms.kind, owed: row.owed, why },
+          true,
+        );
+        return row;
+      },
       endAgreement: (id, why) => {
         const row = this.agreementStore.terminate(id);
         this.journal.record(

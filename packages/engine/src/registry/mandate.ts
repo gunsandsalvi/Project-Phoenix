@@ -90,6 +90,11 @@ export const WHAT_PARLIAMENT_CONTROLS: readonly PowerDecl[] = [
   },
   {
     clause: 'Polity D3',
+    over: 'law.arrears.gracePeriods',
+    why: 'How long a payment may be late before the commitment behind it is broken (Money E1, XI-8). A grace period is a legislature’s number and a court’s instrument, and it is what separates a payer who is late from one who has defaulted on the thing itself.',
+  },
+  {
+    clause: 'Polity D3',
     over: 'labour.severance.periods',
     why: 'What a firing costs whoever ends it. A job is a household’s whole income, and how dearly that is protected is what a labour law is.',
   },

@@ -24,6 +24,8 @@
  * forbid, so this module states the exposure and stops there (Law 11).
  */
 import { noCash } from '../../core/measure.js';
+import { paramId } from '../../core/ids.js';
+import { arrearId } from '../../register/arrears.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
@@ -185,6 +187,79 @@ function eventsNameSomebody(): Family {
   };
 }
 
+/**
+ * Polity D3, Money E1, XI-8 (19.8): HOW LONG A PAYMENT MAY BE LATE BEFORE THE COMMITMENT IS BROKEN.
+ *
+ * It is the one number in this module and it is not a credit number: no probability, no loss given
+ * default, no recovery — a period of grace, which is a thing a legislature states and a court then
+ * applies. It is parliament's (Polity D3, `registry/mandate.ts`), so the parties differ about it
+ * and a mandate moves it, which is exactly what a law about late payment is.
+ */
+export const BREACH_AFTER = paramId('law.arrears.gracePeriods');
+
+/**
+ * Money E1, XI-8, Polity D3 (19.8): THE ARREAR THAT STOOD TOO LONG BREAKS WHAT IT WAS A PAYMENT ON.
+ *
+ * `breached` was a state the register could hold and nothing in this world could reach: a wage went
+ * unpaid, the arrear stood, and the employment behind it read `performing` for ever. What decides
+ * that a late payment has become a broken commitment is not arithmetic — the money owed is the same
+ * money — it is the law, and the law here is a number the parliament sets.
+ *
+ * WHEN: the period the grace runs out, read off this module's own default event, which is the one
+ * period in which the question is new. A payment made inside the grace never reaches here, and one
+ * still standing when it expires breaks every performing row the payer owes that payee — the rows
+ * it is failing on, by name, never every row it has.
+ *
+ * It does not end anything and it takes nothing away: what was owed is still owed, the arrear still
+ * falls due every period, and an estate still divides it. The state is what a party can now SEE
+ * about a counterparty that has stopped performing.
+ */
+function inBreachOfAgreement(ctx: MechanismContext): void {
+  const grace = ctx.params.periods(BREACH_AFTER);
+  if (ctx.period < grace) return;
+  const expires = period(ctx.period - grace);
+  for (const e of ctx.journal.ofKindIn('credit.default', expires)) {
+    const payer = e.data['party'];
+    const payee = e.data['payee'];
+    const instruction = e.data['instruction'];
+    if (typeof payer !== 'string' || typeof payee !== 'string' || typeof instruction !== 'number') {
+      continue;
+    }
+    // Still standing? The arrears that failed instruction wrote are held by the payee until they
+    // are paid, so what the register says about them is whether the grace ran out on anything
+    // (Law 19: the holding is the source, and "was it paid" is not a second book).
+    let standing = 0;
+    for (let n = 1; ; n += 1) {
+      const id = arrearId(instruction, n);
+      if (!ctx.instruments.has(id)) break;
+      standing += ctx.register.quantity(payee as PartyId, id);
+    }
+    if (standing <= 0) continue;
+    for (const row of ctx.agreements.owedBy(payer as PartyId)) {
+      if (row.creditor !== (payee as PartyId) || row.state !== 'performing') continue;
+      ctx.inBreach(
+        row.id,
+        `a ${String(e.data['ccy'])} payment of instruction ${String(instruction)} has stood unpaid for the ${String(grace)} periods the law allows`,
+      );
+      ctx.record(
+        'credit.breach',
+        [payer, payee, row.id],
+        {
+          party: payer,
+          payee,
+          agreement: row.id,
+          what: row.terms.kind,
+          owed: row.owed,
+          instruction,
+          since: expires,
+          grace,
+        },
+        true,
+      );
+    }
+  }
+}
+
 export const creditEvents: SystemModule = {
   id: 'credit-events',
   spec: 'XI-1',
@@ -194,9 +269,20 @@ export const creditEvents: SystemModule = {
   partyKinds: [],
   curveFamilies: [],
   units: [],
-  // Law 2: not one number. There is no probability of default here, no loss given default and no
-  // recovery rate — which is the whole of what XI-1 asks for.
-  params: [],
+  // Law 2: ONE number, and it is not a credit number. There is no probability of default here, no
+  // loss given default and no recovery rate — which is the whole of what XI-1 asks for. What there
+  // is, since 19.8, is the period of grace the law allows a late payment: a POLICY of parliament's.
+  params: [
+    {
+      id: BREACH_AFTER,
+      value: 4,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Money E1, XI-8, Polity D3 (19.8): how long a payment may stand unpaid before the commitment it was a payment on is BROKEN. It is the law of late payment — a legislature states it and a court applies it — and it is the difference between a payer who is late and a payer who has defaulted on the thing itself. Not a probability and not a recovery: the money owed does not change.',
+    },
+  ],
   phases: [
     {
       name: 'credit.events',
@@ -208,9 +294,11 @@ export const creditEvents: SystemModule = {
       writes: [
         { kind: 'event', name: 'credit.default' },
         { kind: 'event', name: 'credit.impaired' },
+        { kind: 'event', name: 'credit.breach' },
       ],
       run: (ctx: MechanismContext): void => {
         inDefaultOfPayment(ctx, 0);
+        inBreachOfAgreement(ctx);
         impairments(ctx);
       },
     },
