@@ -426,17 +426,38 @@ RESOLUTION — `SMALL_PER_NAMED`, cell granularity, 21.98), the budget, or the m
 owner's to set, not this item's; what this item owes is the measured cost of each, and that is now
 written down.
 
-- [ ] 0g.19 **THE ASSERTION BUILD — lever A, and most of the 46×.** Contract checks and defensive
-  copies leave the hot path and live under a flag the suite, `check:opens` and the chronicle set.
-  **Measured, per journal write: `Object.entries` + `isCash` validation 643 ns, two `Object.freeze`
-  457 ns, `[...subjects]` 369 ns, a template-string index key 358 ns, against a 51 ns floor.** And
-  **2,538,758 `Number.isFinite` calls in one period** — 9,802 per party — through the `finite`/`add`/
-  `sub`/`sum` wrappers, 119 of whose call sites build the `what` string with a template literal on
-  the happy path. The type system already provides at compile time what these provide at runtime
-  (`readonly`, the branded `Measure<D>`), so this is not weakening the error discipline: it is
-  declining to pay for it twice. **The one judgement the owner must make**: `PhoenixError` at the
-  site is Part I's discipline and this moves some of it to an assertion build. The invariant families
-  (the audit) are untouched — they are the measurement, not a guard.
+- [ ] 0g.19 **THE PER-OPERATION OVERHEAD — first pass done, and the step's own framing was wrong.**
+  It asked for an "assertion build": a flag the suite sets and the engine runs without. **The engine
+  cannot read one.** Its error discipline gives it `types: []` and no `process`, no `import.meta`,
+  no `Date`, no `console` — so there is nowhere for a build flag to come from, and the only way to
+  supply one is a module-level mutable in `core/` written at `assemble`, which is global state the
+  kernel does not otherwise have. **That is a decision for the owner** (it moves part of Part I's
+  *contract violations throw at the site* into a build), so it is not taken here.
+  **What needed no flag at all, and is done:**
+  - **`byId` DELETED — Law 4, not Law 18.** A `Map<number, Event>` with one entry per event, for
+    ever, beside the array. But `id` is `next`, `next` rises by one per event and the event is
+    pushed in the same call, so `events[id - 1]` IS that map's answer at every id it holds. A second
+    representation of one fact. `get` reads the array and asserts the identity it rests on.
+  - **`Object.entries` → `for…in` + a typeof guard**, the same refusal exactly: it built one outer
+    array and one two-element array per key per event to find the objects among them. **364.7 ns →
+    21.5 ns**, and it holds at 21.5 ns across 232 distinct payload shapes, which is what this engine
+    has.
+  - **`byKindPeriod` keyed by a built string → nested**, and **the instinct was wrong and measured**:
+    a string key looked cheaper (a template literal is ~3 ns) and is **6.6× dearer** — 99.4 ns
+    against 15.1 — because a fresh string must be built AND hashed on every read, with no interning.
+  **Measured back to back** (stash, measure, pop, measure — see below): **215 → 201 ms/period,
+  −6.5%**, and **968 → 896 bytes of retained heap per event, −7.4%**, which is `byId`'s unbounded
+  map no longer growing. Census byte-identical on both worlds.
+  **What is left, with its price, for the owner to weigh:** the two `Object.freeze` per event
+  (**457 ns**) and the `[...subjects]` copy (**369 ns**). Both are contract devices whose compile-time
+  half the type system already provides (`readonly`), and the runtime half is partial anyway —
+  freezing an event does not freeze its `subjects` array. Removing them is a discipline decision.
+  **AND THE PROTOCOL THIS STEP ESTABLISHED, which the next steps must follow.** 0g.17's instrument
+  reports a median and a spread, and that is not enough on its own: this step's first reading was
+  "206 baseline → 217, a regression" and its second, measured back to back, was "215 → 201, a gain".
+  The baseline had been remembered from 25 minutes earlier. **A comparison is only evidence if both
+  arms are measured in the same session**, because the band itself moves (±1.0% in one session,
+  ±4.2% in another). Stash, measure, pop, measure — and report both.
 - [ ] 0g.20 **SETTLEMENT TO ITS FLOOR — the serial wall.** A settlement moves **1.4 legs**, writes
   **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads, and costs
   **23.8 µs**. A faithful floor prototype — same validation, same random-access holdings, same event,

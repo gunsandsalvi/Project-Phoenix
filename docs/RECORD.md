@@ -16124,3 +16124,56 @@ because that was measured at assembly across five rungs. Everything else in this
 COUNTS, which do not depend on the rungs being a series — which is now the stated exit condition and
 is why it is. Positioned at 0g.15, whose gate is a scaling claim and which cannot be judged without
 it.
+
+---
+
+## 0g.19 — The step's own framing was wrong, and three exact-equivalent wins
+
+**The framing first.** 0g.19 asked for an "assertion build": a flag the suite sets and the engine runs
+without. **The engine cannot read one.** Its error discipline gives it `types: []` and no `process`,
+no `import.meta`, no `Date`, no `console` — so there is nowhere for a build flag to come from. The
+only way to supply one is a module-level mutable in `core/` written at `assemble`, which is global
+state the kernel does not otherwise have, and it would move part of Part I's *contract violations
+throw at the site* into a build. **That is the owner's decision and is not taken here.**
+
+**What needed no flag, and is done.**
+
+- **`byId` DELETED — and it is a Law 4 find, not a Law 18 one.** A `Map<number, Event>` with one
+  entry per event, for ever, beside the array. But `id` is `next`, `next` rises by one per event, and
+  the event is `push`ed in the same call — so `events[id - 1]` IS that map's answer at every id it
+  holds. A second representation of one fact, costing a `Map.set` per write and growing without
+  bound. `get` reads the array and asserts the identity it rests on rather than trusting it.
+- **`Object.entries` → `for…in` + a typeof guard.** The same refusal exactly: it built one outer
+  array and one two-element array per key per event, to find the objects among them.
+  **364.7 ns → 21.5 ns**, and it holds at 21.5 ns across 232 distinct payload shapes, which is what
+  this engine has (I checked, because `for…in` is the one that could have deoptimised on many hidden
+  classes).
+- **`byKindPeriod` keyed by a built string → nested.** **My instinct was wrong and the measurement
+  says so**: a string key looked cheaper (a template literal is ~3 ns on its own) and is **6.6×
+  dearer** — 99.4 ns against 15.1 — because the string must be built AND hashed on every read, with
+  no interning. The same shape as `bySubject`, which 0g.4 had already nested for the same reason.
+
+**Measured back to back: 215 → 201 ms/period, −6.5%.** And **968 → 896 bytes of retained heap per
+event, −7.4%**, which is `byId`'s unbounded map no longer growing — a result that belongs to 0g.14 as
+much as here. Census byte-identical on both worlds; the disclosure-facing suites red identically
+before and after (3 failed, 24 passed either way).
+
+**What is left, with its price, for the owner.** The two `Object.freeze` per event (**457 ns**) and
+the `[...subjects]` copy (**369 ns**). Both are contract devices whose compile-time half the type
+system already provides (`readonly`), and whose runtime half is partial anyway — freezing an event
+does not freeze its `subjects` array. Removing them is a discipline decision, not an optimisation.
+
+## And the protocol this step established, which the remaining steps must follow
+
+**0g.17's median and spread are not enough on their own.** This step's first reading was *"206
+baseline → 217, a regression"*. Its second, measured back to back, was *"215 → 201, a gain"*. The
+baseline had been remembered from twenty-five minutes earlier, and the band itself moves between
+sessions — ±1.0% in one, ±4.2% in another. **A comparison is only evidence if both arms are measured
+in the same session:** stash, measure, pop, measure, report both. I fell into exactly the trap 0g.17
+was built to close, one step after building it, which is worth recording because the instrument does
+not enforce the protocol and nothing but this note does.
+
+**Two of this step's three findings were my own instincts being wrong**, caught by measuring: the
+string key that should have been cheaper was 6.6× dearer, and the "regression" was a stale baseline.
+That is the third and fourth time in this item; the running count of 0g steps proposed from intuition
+and measured at nothing is now six.

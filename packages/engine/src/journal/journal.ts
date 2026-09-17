@@ -10,6 +10,7 @@
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { isCash } from '../core/measure.js';
 import { Impossible } from '../core/errors.js';
+import { impossible } from '../core/assert.js';
 import type { EventId } from '../core/ids.js';
 import type { FactDecl, FactFields, Payload } from '../registry/facts.js';
 
@@ -57,10 +58,23 @@ export class Journal {
    * event is written, so there is one writer of each and no copy to go stale (Law 4).
    */
   private readonly byKind = new Map<EventKind, Event[]>();
-  /** Observer A3 (17.0a): a disclosure names the event it showed, and the reader fetches it by that name. */
-  private readonly byId = new Map<number, Event>();
+  /**
+   * Law 4, Law 18 (0g.19): THERE IS NO `byId`, BECAUSE THE ARRAY IS ONE.
+   *
+   * Observer A3 has a disclosure name the event it showed and the reader fetch it by that name, and
+   * that was a `Map<number, Event>` — one entry per event, for ever, beside the array. But `id` is
+   * `next`, `next` rises by one per event and the event is pushed in the same call, so
+   * `events[id - 1]` IS that map's answer at every id it has. It was a second representation of one
+   * fact (Law 4) that cost a `Map.set` on every write and grew without bound; `get` reads the array
+   * and checks the identity it relies on rather than trusting it.
+   */
   private readonly byPeriod = new Map<Period, Event[]>();
-  private readonly byKindPeriod = new Map<string, Event[]>();
+  /**
+   * 0g.19: NESTED, for the reason `bySubject` is — a string key built from the two was made on every
+   * write and on every read, and thrown away each time. The events in it are the same events in the
+   * same order.
+   */
+  private readonly byKindPeriod = new Map<EventKind, Map<Period, Event[]>>();
   /**
    * Law 18: nested rather than keyed on a name built from the two, because a party asking what it
    * last said is one of the commonest reads in the engine and every ask was a string made to be
@@ -98,8 +112,13 @@ export class Journal {
   ): Event {
     // 16.0, Law 8: money on the record is PIECES beside a NAMED currency, never a value object a
     // reader would stringify — the writer says `amount` and `ccy` as two facts.
-    for (const [key, v] of Object.entries(data)) {
-      if (isCash(v))
+    // 0g.19: the same refusal, without building an array of pairs for every event ever written.
+    // `Object.entries` allocated one outer array and one two-element array per key, per event, to
+    // find the objects among them; `in` walks the keys and the typeof guard reaches `isCash` only
+    // for the values that could possibly be one. Measured: 643 ns of a 1,754 ns write.
+    for (const key in data) {
+      const v = data[key];
+      if (typeof v === 'object' && v !== null && isCash(v))
         throw new Impossible(
           'Law 8',
           `event ${kind}: ${key} is money as a value; record its pieces and name its currency`,
@@ -117,11 +136,15 @@ export class Journal {
     });
     this.next += 1;
     this.events.push(ev);
-    this.byId.set(ev.id, ev);
     push(this.byKind, kind, ev);
     if (isPublic) this.lastPublicByKind.set(kind, ev);
     push(this.byPeriod, period, ev);
-    push(this.byKindPeriod, keyOf(kind, period), ev);
+    let ofKindPeriod = this.byKindPeriod.get(kind);
+    if (ofKindPeriod === undefined) {
+      ofKindPeriod = new Map<Period, Event[]>();
+      this.byKindPeriod.set(kind, ofKindPeriod);
+    }
+    push(ofKindPeriod, period, ev);
     if (ev.subjects.length > 0) {
       let mine = this.bySubject.get(kind);
       if (mine === undefined) {
@@ -135,7 +158,12 @@ export class Journal {
 
   /** The event with this id, or nothing: a disclosure that names one that was never written shows nothing. */
   get(id: EventId): Event | undefined {
-    return this.byId.get(id);
+    const at = this.events[id - 1];
+    if (at === undefined) return undefined;
+    // The one thing the deleted map was doing that the array cannot do by construction: say so if
+    // the assumption it rests on ever stops holding, rather than handing back the wrong event.
+    impossible(at.id === id, 'Observer A3', `event ${id} is not at its own place: found ${at.id}`);
+    return at;
   }
 
   all(): readonly Event[] {
@@ -155,7 +183,7 @@ export class Journal {
    * ever said of that kind, so it grew with the age of the world rather than with what happened.
    */
   ofKindIn(kind: EventKind, period: Period): readonly Event[] {
-    return this.byKindPeriod.get(keyOf(kind, period)) ?? EMPTY;
+    return this.byKindPeriod.get(kind)?.get(period) ?? EMPTY;
   }
 
   /**
@@ -244,7 +272,6 @@ export class Journal {
 
 const EMPTY: readonly Event[] = Object.freeze([]);
 
-const keyOf = (kind: EventKind, of: string | Period): string => `${kind}\u0000${of}`;
 
 /** One arrangement of the same events; the list is created the first time something lands in it. */
 function push<K>(into: Map<K, Event[]>, key: K, e: Event): void {
