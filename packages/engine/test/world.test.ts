@@ -45,10 +45,16 @@ import { unexpected } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
 
+/**
+ * Law 4: what a green period IS has ONE representation, and it is `unexpected`. This was a second
+ * copy of it that had drifted — it read every family, so the liveness family added at 0h.3 made it
+ * report 232 things a SCALE MODEL of eleven periods has not got round to doing yet (Audit E2: a
+ * liveness finding is about completeness, and `unexpected` says why that is not this assertion's
+ * job). It reads the LAST report rather than a step's, which is the only thing it still has of
+ * its own.
+ */
 function violations(w: World): string[] {
-  const r = w.last?.audit;
-  if (r === undefined) return [];
-  return r.families.flatMap((f) => f.violations.map((v) => `${f.family}: ${v.message}`));
+  return unexpected(w.last?.audit);
 }
 
 /** A module that gives firms and banks reasons to be in the benchmark line's market. */
@@ -202,7 +208,10 @@ describe('the seed (Seed A2)', () => {
     const w = rigWorld('seed-A');
     const report = w.last?.audit;
     expect(report?.total).toBe(0);
-    expect(report?.families.map((f) => f.family)).toHaveLength(9);
+    // TEN since 0h.3: the nine of Audit B1-B8 plus `liveness`, which is this project's own and
+    // says so in its own header — nine safety families are all satisfied by a world in which
+    // nothing happens.
+    expect(report?.families.map((f) => f.family)).toHaveLength(10);
     // Audit A3: an unbuilt family reports "not built" and NEVER green — and THERE ARE NONE LEFT.
     // `crossMarket` was built at item 12 (the triangular gap and an index against its own
     // constituents); `zeroSum` is built at 13a, because the contract store is a kernel store from

@@ -14819,3 +14819,26 @@ this world, so the income tax base has been short by every payout ever made.
 **Measured.** `flows/Equity D3.a` leaves the rig's standing audit entirely. `funds.test.ts` and
 `in-kind.test.ts` have the same 15 red before and after. What is left at period 5 is
 `accounts/Audit B5` (item 21a), two `flows/Firm Birth D6` and one `names/Fund Shares F3`.
+
+---
+
+## 21.108 — A second copy of what a green period is
+
+**What.** `test/world.test.ts` kept its own `violations(w)` — every family's messages, flattened —
+alongside `test/expected.ts`'s `unexpected(report)`, which is the same read minus the liveness
+family. It now calls `unexpected`, and the file has one definition of a clean period instead of two.
+
+**Why.** Law 4: one representation per real thing, and "what a green period is" is a thing this
+suite decides once. The copy had already drifted: `unexpected` gained the liveness exclusion at
+0h.3 with its reason written out (Audit E2 — a liveness finding is about COMPLETENESS, and a scale
+model of eleven periods has not got round to most of what the full world declares), and the copy did
+not, so eight assertions in that file started reporting the seed's 150 goods markets, thirteen
+module stores and a party kind as defects of the world under test.
+
+**Measured.** `world.test.ts`: 11 red → 10. Three assertions (`toEqual([])` against 232, 232 and
+232 liveness messages) are green; what is left under `accounts/Audit B5` is item 21a's, reported
+against the same worlds before this change.
+
+**Also here.** The family census in the same file said nine families and there are ten since 0h.3.
+A count is a claim (CLAUDE.md), and the comment now names which one arrived and why it is not one
+of Audit B1–B8.
