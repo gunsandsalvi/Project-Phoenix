@@ -54,7 +54,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import type { Event } from '../../journal/journal.js';
+import { strikeOf, type WireReads } from '../../registry/funding.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { downTick, scaleQty, asQty } from '../../core/tick.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -440,7 +440,7 @@ export interface FundPosition {
  */
 export function fundPositions(
   venues: readonly VenueDecl[],
-  struck: readonly Event[],
+  reads: WireReads,
   view: ParticipantView,
 ): FundPosition[] {
   const out: FundPosition[] = [];
@@ -451,13 +451,12 @@ export function fundPositions(
     // a household has no business knowing how another module names things (Law 15).
     const line = v.key['share'];
     if (fund === undefined || line === undefined) continue;
-    const last = struck.filter((e) => e.data['fund'] === fund).pop();
-    if (last === undefined) continue;
-    const saidPerShare = last.data['perShare'];
-    const offered = last.data['offered'];
-    if (typeof saidPerShare !== 'number' || saidPerShare <= 0) continue;
-    // Item 16: a level re-entering from what the fund published, at the read that knows what it is.
-    const perShare = asPerPiece(saidPerShare, 'what the fund said a share is worth');
+    // 0g.4, Law 4: the pool's own last strike, off the subject index, through the one read that
+    // knows what the event says. It used to filter the whole history of the kind on `data.fund` —
+    // a second name for the subject the event is already recorded under.
+    const strike = strikeOf(reads, fund);
+    if (!strike.some) continue;
+    const { perShare, offered } = strike.value;
     /**
      * D5, App A: A FUND THAT PUBLISHED NO OFFER IS NOT A FUND OFFERING NOTHING.
      *

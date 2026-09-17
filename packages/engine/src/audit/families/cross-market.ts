@@ -100,7 +100,10 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
       // Ratings C2 (17.10): and the same third read, for a rule whose membership turns on a grade.
       graded: (name, at) =>
         gradeOn(
-          { ofKind: (kind: string) => view.journal.ofKind(kind as EventKind).filter((e) => e.period <= at) },
+          {
+            forSubject: (kind: string, of: string) =>
+              view.journal.forSubject(kind as EventKind, of).filter((e) => e.period <= at),
+          },
           String(name),
         ),
     },

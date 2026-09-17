@@ -80,6 +80,7 @@ export function rentOwedBy(
 /** The phase's door: the wire, asked about a named party. */
 export interface WireReads {
   ofKind(kind: string): readonly Event[];
+  ofKindIn(kind: string, at: Period): readonly Event[];
   lastOf(kind: string, subject: string): Event | undefined;
 }
 
@@ -185,9 +186,15 @@ export function ownStrikeSince(reads: PartyReads, since: Period): Option<Publish
   return said.some ? strikeFrom(said.value) : none<PublishedStrike>();
 }
 
-/** Every strike this world has published — what a saver holding several pools reads. */
-export function strikesPublished(reads: WireReads): readonly Event[] {
-  return reads.ofKind(STRUCK);
+/**
+ * Every strike published THIS PERIOD. 0g.4: it used to be every strike this world has ever
+ * published, and both callers then narrowed it — one by period and one to the last one per fund,
+ * walking the whole history of the kind to do it. A read whose cost grows with the age of the
+ * world and not with what happened is the shape 0g.4 is about; the per-fund read is `strikeOf`,
+ * which is already O(1) off the subject index.
+ */
+export function strikesPublishedIn(reads: WireReads, at: Period): readonly Event[] {
+  return reads.ofKindIn(STRUCK, at);
 }
 
 /**

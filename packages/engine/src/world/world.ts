@@ -198,7 +198,7 @@ import {
   type IndexRead,
 } from '../prices/index-read.js';
 import { bandOf, UNREAD, type LatticeReads } from '../registry/lattice.js';
-import { gradeOn } from '../registry/notices.js';
+import { gradeOn, gradesOn } from '../registry/notices.js';
 import { about } from './context.js';
 
 /** Maps are data too; the surface shows them as the entries they are (Observer D3). */
@@ -2193,8 +2193,10 @@ export class World {
         return out;
       },
       lastPublic: (kind) => {
-        const events = this.journal.ofKind(kind).filter((e) => e.public);
-        const last = events[events.length - 1];
+        // 0g.4: the journal keeps it, so this is a lookup. It used to filter a COPY of every event
+        // of the kind ever recorded in order to return the last element of it — inside the
+        // order-generation loop, and growing with the age of the world.
+        const last = this.journal.lastPublicOfKind(kind);
         return last === undefined ? none() : some(last);
       },
       mark: (instrument) =>
@@ -3453,7 +3455,10 @@ export class World {
           gradeOn(
             // The reader takes a kind as a string; the journal indexes by its own union, and what
             // is passed in is always one of its literals (`registry/notices.ts` names it).
-            { ofKind: (kind: string) => this.journal.ofKind(kind as EventKind).filter((e) => e.period <= at) },
+            {
+              forSubject: (kind: string, of: string) =>
+                this.journal.forSubject(kind as EventKind, of).filter((e) => e.period <= at),
+            },
             String(name),
           ),
       },
@@ -3698,17 +3703,7 @@ export class World {
        * announced. What to DO with several opinions is the reader's (a mandate takes the lowest, a
        * CDS index takes the middle), so this hands over all of them and combines nothing.
        */
-      gradesOn: (obligor) => {
-        const byAssessor = new Map<string, string>();
-        for (const e of this.journal.forSubject('rating.action', String(obligor))) {
-          const assessor = e.data['assessor'];
-          const grade = e.data['grade'];
-          if (typeof assessor === 'string' && typeof grade === 'string') {
-            byAssessor.set(assessor, grade);
-          }
-        }
-        return [...byAssessor.values()];
-      },
+      gradesOn: (obligor) => [...gradesOn(this.journal, String(obligor)).values()],
     });
   }
 

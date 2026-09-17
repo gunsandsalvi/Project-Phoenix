@@ -41,6 +41,7 @@ export interface WireReads {
   ofKind(kind: string): readonly Event[];
   ofKindIn(kind: string, at: Period): readonly Event[];
   lastOf(kind: string, subject: string): Event | undefined;
+  forSubject(kind: string, subject: string): readonly Event[];
 }
 
 /** The participant's door. */
@@ -83,18 +84,35 @@ export function lastFixing(reads: Pick<PartyReads, 'lastPublic'>, named: string)
  * forward would be the posted benchmark Appendix B forbids.
  */
 export function benchmarksFixedIn(
-  reads: Pick<WireReads, 'ofKind'>,
+  reads: Pick<WireReads, 'ofKindIn'>,
   at: Period,
 ): readonly { readonly named: string; readonly rate: number }[] {
   const out: { named: string; rate: number }[] = [];
-  for (const e of reads.ofKind(BENCHMARK)) {
-    if (e.period !== at) continue;
+  // 0g.4: the period's own fixings, out of the (kind, period) index. It asked for every fixing ever
+  // published and discarded all but one period of them, 515 times a period.
+  for (const e of reads.ofKindIn(BENCHMARK, at)) {
     const named = e.subjects[1];
     const rate = e.data['rate'];
     if (typeof named !== 'string' || typeof rate !== 'number') continue;
     out.push({ named, rate });
   }
   return out;
+}
+
+/**
+ * Indices D3.a: WHAT A NAMED BENCHMARK FIXED AT IN ONE PERIOD, or nothing because it did not fix in
+ * it. It is the read a span over periods is made of, and the absence is the answer (no fixing, no
+ * floating leg) rather than a rate carried forward.
+ */
+export function fixingIn(
+  reads: Pick<WireReads, 'ofKindIn'>,
+  named: string,
+  at: Period,
+): Option<Ratio> {
+  for (const e of reads.ofKindIn(BENCHMARK, at)) {
+    if (e.subjects.includes(named)) return rateOf(e, named);
+  }
+  return none<Ratio>();
 }
 
 /**
@@ -107,9 +125,14 @@ export function lastBenchmarkFix(reads: Pick<WireReads, 'lastOf'>, named: string
   return said === undefined ? none<Ratio>() : rateOf(said, named);
 }
 
-/** D3.a: whether a named benchmark has ever fixed at all. No fixing, no floating leg. */
-export function hasFixed(reads: WireReads, named: string): boolean {
-  return reads.ofKind(BENCHMARK).some((e) => e.subjects.includes(named));
+/**
+ * D3.a: whether a named benchmark has ever fixed at all. No fixing, no floating leg.
+ *
+ * 0g.4: "has this ever happened" is the last time it happened, asked without the answer. It walked
+ * every fixing this world has ever printed to find the first one that named this benchmark.
+ */
+export function hasFixed(reads: Pick<WireReads, 'lastOf'>, named: string): boolean {
+  return reads.lastOf(BENCHMARK, named) !== undefined;
 }
 
 /**
@@ -142,7 +165,7 @@ export interface TermFixing {
 }
 
 export function termFixing(
-  reads: Pick<WireReads, 'ofKind'>,
+  reads: Pick<WireReads, 'ofKindIn'>,
   named: string,
   from: Period,
   to: Period,
@@ -156,17 +179,15 @@ export function termFixing(
   calendar: { startOf(p: Period): Civil },
 ): Option<TermFixing> {
   if (to < from) return none<TermFixing>();
-  const byPeriod = new Map<number, number>();
-  for (const e of reads.ofKind(BENCHMARK)) {
-    if (e.period < from || e.period > to || !e.subjects.includes(named)) continue;
-    const rate = rateOf(e, named);
-    if (rate.some) byPeriod.set(e.period, rate.value);
-  }
   let compounded = 1;
+  // 0g.4: the span asks the periods it covers. It used to build a map of the whole history of the
+  // kind first and then read this many entries out of it, so a term rate over four periods cost
+  // every fixing the world had ever printed — and it is asked once per floating row per period.
   for (let at: number = from; at <= to; at += 1) {
-    const perAnnum = byPeriod.get(at);
+    const fixed = fixingIn(reads, named, period(at));
     // D3.a: a period nobody borrowed in has no fixing, and nothing stands in for one.
-    if (perAnnum === undefined) return none<TermFixing>();
+    if (!fixed.some) return none<TermFixing>();
+    const perAnnum = fixed.value;
     const ofAYear = yearFraction(
       'ACT/365F',
       calendar.startOf(period(at)),
@@ -179,7 +200,8 @@ export function termFixing(
     over: asRatio(compounded - 1, `what ${named} compounded to over the span`),
     from,
     to,
-    fixings: byPeriod.size,
+    // Every period in the span fixed, or the span has no term rate: the count IS the span.
+    fixings: to - from + 1,
   });
 }
 
@@ -211,10 +233,17 @@ export function paperOfferedIn(reads: WireReads, borrower: string, at: Period): 
  * and the disagreement is the point (§46 A3); what a reader does with several grades is its own
  * business, so this hands back all of them rather than one.
  */
-export function gradesOn(reads: Pick<WireReads, 'ofKind'>, party: string): ReadonlyMap<string, string> {
+export function gradesOn(
+  reads: Pick<WireReads, 'forSubject'>,
+  party: string,
+): ReadonlyMap<string, string> {
   const latest = new Map<string, string>();
-  for (const e of reads.ofKind(RATING)) {
-    if (!e.subjects.includes(party)) continue;
+  // 0g.4, Law 4: THE ONE READ OF WHAT THE ASSESSORS SAY ABOUT A NAME, off the subject index.
+  // There were three of these — this one walked every rating action ever published and filtered on
+  // the subject, `world.ts` walked the subject index and took the assessor out of `data`, and
+  // `ratings/index.ts` walked the subject index and filtered on `data.assessor`. Three formulas
+  // for one fact, two of them naming the assessor in a second place it is already a subject of.
+  for (const e of reads.forSubject(RATING, party)) {
     const assessor = e.subjects[0];
     const grade = e.data['grade'];
     if (typeof assessor !== 'string' || typeof grade !== 'string') continue;
@@ -229,14 +258,19 @@ export function gradesOn(reads: Pick<WireReads, 'ofKind'>, party: string): Reado
  * deciding whether a name is in its basket, and anybody else who has to know what the market has
  * been told. Nothing where nobody has graded it, which is what unrated means.
  */
-export function gradeOn(reads: Pick<WireReads, 'ofKind'>, name: string): Option<Grade> {
+export function gradeOn(reads: Pick<WireReads, 'forSubject'>, name: string): Option<Grade> {
   const grade = middleGrade([...gradesOn(reads, name).values()]);
   return grade === undefined ? none<Grade>() : some(grade);
 }
 
-/** XI-8: whether an estate has closed — which is when what it owed is finally known. */
-export function estateClosed(reads: WireReads, estate: string): boolean {
-  return reads.ofKind(ESTATE_CLOSED).some((e) => e.subjects.includes(estate));
+/**
+ * XI-8: whether an estate has closed — which is when what it owed is finally known.
+ *
+ * 0g.4: it is the estate's own record, asked of the estate. It walked every closing this world has
+ * ever seen to find out whether one of them was this one.
+ */
+export function estateClosed(reads: Pick<WireReads, 'lastOf'>, estate: string): boolean {
+  return reads.lastOf(ESTATE_CLOSED, estate) !== undefined;
 }
 
 /* --- What an adviser quoted, and how much of it it ran ------------------------------------- */

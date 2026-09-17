@@ -2489,7 +2489,7 @@ function broughtPaper(ctx: MechanismContext, borrower: PartyId, said: Period): b
  * between the two of them; that it happened, and how much of it, does not.
  */
 function publishStandard(ctx: MechanismContext): void {
-  const declined = ctx.journal.ofKind('credit.declined').filter((e) => e.period === ctx.period);
+  const declined = ctx.journal.ofKindIn('credit.declined', ctx.period);
   const written = ctx.journal.ofKindIn('credit.written', ctx.period);
   const volume = (rows: readonly Event[], key: string): number =>
     sum(rows.map((e) => (typeof e.data[key] === 'number' ? e.data[key] : 0))).value;

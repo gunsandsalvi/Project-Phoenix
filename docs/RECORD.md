@@ -15324,3 +15324,77 @@ matching writer cannot be decided by a reviewer or by a tool. What it did not sa
 declaration has to reach the READERS in the same change, or the register describes a fact nobody
 reads correctly. Item 21.113's per-module work carries that rule: a module's facts are declared and
 its accessors deleted in the SAME change.
+
+---
+
+## 0g.4 — The scanners are gone: 40× fewer events walked, and it bought no time
+
+**What the step asked.** Every `ofKind().filter(...)` or `ofKind().at(-1)` site reads the index that
+answers it: `lastOfKind`, `lastOf`, `ofKindIn` or `forSubject`.
+
+**What was actually there.** The claim in the plan was 3,286 calls a period walking 66,184 events.
+Counted per kind at period 8 of the (24, 96) rung, against a journal of 195,311 events:
+
+| | calls | events walked |
+|---|---|---|
+| before | **9,565** | **295,905** |
+| after | **109** | **7,457** |
+
+The top of the before list says what the shape was: `environment.state` 267,840 events in 4,185
+calls — every party asking what the weather is, each time walking every weather report this world
+has ever filed. `labour.goingRate` 10,233 in 1,901. `index.benchmark` 4,029 in 1,343. A cost that
+grows with the AGE of the world rather than with what happened in the period.
+
+**What changed.**
+
+- `lastOfKind(kind)` and `lastPublicOfKind(kind)` are O(1). `view.lastPublic` was
+  `ofKind(kind).filter((e) => e.public)` — a copy of every event of that kind ever recorded, to
+  return its last element — and it is on the participant view, so inside order generation. The
+  public one is the single fact here that is KEPT, written where the event is written, which is the
+  construction `bySubject` and `byKindPeriod` already are.
+- The period index answers `conditionsIn`, `benchmarksFixedIn`, `banks publishStandard`'s declined
+  volume (the line above it already used `ofKindIn`) and `control`'s strikes.
+- `hasFixed` and `estateClosed` are "has this ever happened", which is the last time it happened
+  asked without the answer: `lastOf(kind, subject) !== undefined`.
+- `termFixing` asks the periods its span covers. It built a map of every fixing ever printed and
+  then read four entries out of it, and it is asked once per floating row per period.
+- `fundPositions` asks each pool for its own last strike through `strikeOf`, instead of filtering
+  the whole history of `fund.struck` on `data.fund` — a second name for the subject the event is
+  already recorded under. `strikesPublished` is gone; what replaces it is `strikesPublishedIn`,
+  because both callers narrowed its answer anyway.
+- **The latest grade per (assessor, obligor) had THREE readers.** `notices.gradesOn` walked every
+  rating action ever published and filtered on the subject; `world.ts` walked the subject index and
+  took the assessor out of `data`; `ratings/index.ts` walked the subject index and filtered on
+  `data.assessor`. Three formulas for one fact, two of them naming the assessor in a second place it
+  is already the first subject of (Law 4). One read now, and the other two call it.
+
+**And the time did not move.** (12, 48) at 26 periods: **325 → 327 ms/period**, inside the noise.
+The arithmetic says why: 295,905 array elements at about 10 ns each is under a millisecond of a
+325 ms period. What DID move is **heap 391 → 342 MB (−12%)**, which is what those calls were
+allocating — every one returned a fresh filtered array, and the garbage collector is the largest
+single entry in the profile (9.7%).
+
+Every shape figure byte-identical: parties 141, cells 42, people 228, small 521, events 110,625,
+sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08. The `check:opens` census
+identical on both worlds (rig p30 events 2,531 settled 431 audit 647; abroad p12 events 9,957
+settled 1,504 audit 2,164 live 1,575).
+
+**The reading is 0g.2's again: the scanners were not what costs.** Two steps in a row have now
+measured a named category of waste, removed it, and moved nothing — which is worth more than the
+milliseconds, because it keeps saying that the 46× is in the three categories 0g's preamble names
+(71 journal events per party per period, 99 `Missing` door reads per party per period, and the
+parties × books product) and not in the traversals. What is left of the step's own list is
+whole-history reads that belong to their own items — `credit.default` 3,726 events in 2 calls,
+`estate.paid` 677 in 1, `credit.impaired` 596 in 1, `bank.underwriting` 430 in 5 — and
+`labour.goingRate` at 312 in 52 calls. None of them is a per-party read.
+
+**And a world that stops, found on the way and written down (21.115).** The (24, 96) rung at 26
+periods dies in period 9: `Missing: [Register D5] lien 613 on bank.m/ust.bill.2027-03-15 does not
+exist`, from `securities-lending returnLoans`. It is PRE-EXISTING — identical at `27312b8`, before
+any of this session's 0g work — and it is invisible to every gate, because `check:opens` steps the
+rig 30 periods at 142 parties and the four-country world 12 at 433, and neither draw reaches it. The
+check that "was missing" is missing this.
+
+**Two more pre-existing reds written down on the way (21.116).** `test/indices.test.ts` has four,
+identical at `27312b8`: no equity index is declared for three of the four regions, and a rated index
+never gets a level. One missing declaration and three consequences of an index with nothing in it.

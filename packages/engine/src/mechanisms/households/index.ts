@@ -121,7 +121,7 @@ export {
 import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
 import { goingRateIn } from '../../registry/wages.js';
 import { employedKey } from '../../register/employment.js';
-import { rentOwedBy, shortfallOf, strikesPublished } from '../../registry/funding.js';
+import { rentOwedBy, shortfallOf } from '../../registry/funding.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -954,7 +954,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   slot.needsPerMember = basket.needs;
   // D2: what it can pay with is its account AND what it can ask back from a fund on demand — that
   // is what makes a money fund a substitute for a deposit rather than an investment (D2).
-  const positions = fundPositions(ctx.venues, strikesPublished(ctx.journal), view);
+  const positions = fundPositions(ctx.venues, ctx.journal, view);
   const ccy = view.registry.currencyOf(self.region);
   const onDemand = sumCash(
     ccy,

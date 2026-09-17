@@ -35,7 +35,13 @@ export const WARMTH = 'warmth';
 /** What a reader needs of the journal: this period's events of a kind, and nothing else. */
 export interface EnvironmentReads {
   readonly period: Period;
-  readonly journal: { ofKind(kind: string): readonly Event[] };
+  /**
+   * 0g.4: BY KIND AND PERIOD. `conditionsIn` wants what was said about a region THIS period, and it
+   * asked for every `environment.state` ever recorded and walked it — 45,496 events walked in 517
+   * calls in one period of the (24, 96) rung, growing with the age of the world. The journal has
+   * indexed by (kind, period) since it was written; this read was not using it.
+   */
+  readonly journal: { ofKindIn(kind: string, at: Period): readonly Event[] };
 }
 
 /**
@@ -48,8 +54,8 @@ export function conditionsIn(
   reads: EnvironmentReads,
   region: PlaceId,
 ): ReadonlyMap<string, number> | undefined {
-  for (const e of reads.journal.ofKind(ENVIRONMENT_STATE)) {
-    if (e.period !== reads.period || e.subjects[0] !== String(region)) continue;
+  for (const e of reads.journal.ofKindIn(ENVIRONMENT_STATE, reads.period)) {
+    if (e.subjects[0] !== String(region)) continue;
     const facts = e.data['facts'];
     if (typeof facts !== 'object' || facts === null) continue;
     const out = new Map<string, number>();

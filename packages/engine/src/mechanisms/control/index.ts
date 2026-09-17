@@ -69,7 +69,7 @@ import {
   ownFundingSince,
   ownStrikeSince,
   requiredBy,
-  strikesPublished,
+  strikesPublishedIn,
 } from '../../registry/funding.js';
 import { advisoryQuotesIn } from '../../registry/notices.js';
 import { askForTheOwner, drawForTheOwner } from './owner.js';
@@ -1068,7 +1068,7 @@ function couldBuy(ctx: MechanismContext): readonly PartyId[] {
   const out = new Set<PartyId>();
   const published = [
     ...namesQuotedIn(ctx.journal, ctx.period),
-    ...strikesPublished(ctx.journal).filter((e) => e.period === ctx.period),
+    ...strikesPublishedIn(ctx.journal, ctx.period),
   ];
   for (const e of published) {
     for (const named of e.subjects) {

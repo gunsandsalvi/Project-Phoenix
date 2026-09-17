@@ -159,7 +159,7 @@ export const fixingPerAnnum = (over: Ratio, ofAYear: number): Ratio =>
  * which is not what a corporate borrower is being charged for on top (D3, Law 4).
  */
 export function benchmarkNow(
-  reads: Pick<WireReads, 'ofKind'>,
+  reads: Pick<WireReads, 'ofKindIn'>,
   calendar: { startOf(p: Period): Civil },
   ccy: CurrencyCode,
   at: Period,

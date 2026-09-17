@@ -32,6 +32,7 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { assess, forInstrument, MISSED_WINDOW, type Measure } from './assess.js';
 import { creditDefaults } from '../../registry/banking.js';
+import { gradesOn } from '../../registry/notices.js';
 import { REPORT, statementOf } from '../../registry/statements.js';
 import { assessorChoosesBank, ASSESSOR_SWITCHING_COST } from './bank.js';
 import {
@@ -84,14 +85,12 @@ interface Held {
  * announced. Nothing when it has never rated it, which is what an unrated name is.
  */
 function published(ctx: MechanismContext, assessor: string, subject: string): Option<Grade> {
-  const said = ctx.journal
-    .forSubject('rating.action', subject)
-    .filter((e) => e.data['assessor'] === assessor);
-  const last = said[said.length - 1];
-  if (last === undefined) return none<Grade>();
+  // 0g.4, Law 4: through the one read of what the assessors say about a name. This walked the
+  // subject's actions and filtered them on `data.assessor` — a second place for the assessor the
+  // event already names as its first subject.
+  const grade = gradesOn(ctx.journal, subject).get(assessor);
   // Item 16: a published value re-enters the type system here, through its own vocabulary's door.
-  const grade = last.data['grade'];
-  return typeof grade === 'string' && (GRADES as readonly string[]).includes(grade)
+  return grade !== undefined && (GRADES as readonly string[]).includes(grade)
     ? some(grade as Grade)
     : none<Grade>();
 }

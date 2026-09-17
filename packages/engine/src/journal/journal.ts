@@ -67,6 +67,8 @@ export class Journal {
    * thrown away. The events in it are the same events in the same order.
    */
   private readonly bySubject = new Map<EventKind, Map<string, Event[]>>();
+  /** 0g.4: the last PUBLIC event of each kind, kept because it cannot be read off `byKind`. */
+  private readonly lastPublicByKind = new Map<EventKind, Event>();
 
   /**
    * 0i: WRITE A DECLARED FACT. The payload is typed by the declaration, so a field left out or
@@ -117,6 +119,7 @@ export class Journal {
     this.events.push(ev);
     this.byId.set(ev.id, ev);
     push(this.byKind, kind, ev);
+    if (isPublic) this.lastPublicByKind.set(kind, ev);
     push(this.byPeriod, period, ev);
     push(this.byKindPeriod, keyOf(kind, period), ev);
     if (ev.subjects.length > 0) {
@@ -201,6 +204,32 @@ export class Journal {
   lastOf(kind: EventKind, subject: string): Event | undefined {
     const said = this.bySubject.get(kind)?.get(subject);
     return said === undefined ? undefined : said[said.length - 1];
+  }
+
+  /**
+   * 0g.4: THE LAST THING SAID OF A KIND, and the last PUBLIC thing — both O(1).
+   *
+   * Every reader that wanted one of these asked `ofKind(kind)` and walked or filtered the whole
+   * history of it. `view.lastPublic` did the worst of it: `ofKind(kind).filter((e) => e.public)`
+   * built a copy of every event of that kind ever recorded, to return the last element of it, and
+   * it is on the participant view — so it is inside the order-generation loop. Measured on the
+   * (24, 96) rung at period 8: **3,286 `ofKind` calls a period walking 66,184 events**, against a
+   * journal of 91,539 — a cost that grows with the AGE of the world rather than with what happened
+   * in the period (`ofKindIn`'s docstring says the same thing about its own predecessor).
+   *
+   * `byKind` already holds the events of a kind in writing order, so the last of them is the last
+   * element and needs no walk. The public one cannot be read off that array — most events are not
+   * public — so it is the one fact here that is KEPT, written where the event is written, which is
+   * the same construction `bySubject` and `byKindPeriod` are (Law 4: one writer, no copy to go
+   * stale).
+   */
+  lastOfKind(kind: EventKind): Event | undefined {
+    const said = this.byKind.get(kind);
+    return said === undefined ? undefined : said[said.length - 1];
+  }
+
+  lastPublicOfKind(kind: EventKind): Event | undefined {
+    return this.lastPublicByKind.get(kind);
   }
 
   publicTail(last: number): readonly Event[] {

@@ -296,19 +296,18 @@ describe('a term rate is the fixings compounded (XI-7, Indices D3.a, 17d.1)', ()
   const weekly = { startOf: (p: number) => fromDayNumber(p * 7) };
 
   const fixed = (rows: Readonly<Record<number, number>>) => ({
-    ofKind: (kind: string) =>
-      kind !== 'index.benchmark'
+    ofKindIn: (kind: string, at: number) =>
+      kind !== 'index.benchmark' || rows[at] === undefined
         ? []
-        : Object.entries(rows).map(
-            ([at, rate]) =>
-              ({
-                kind,
-                period: Number(at),
-                subjects: ['USD', 'USD:secured'],
-                data: { ccy: 'USD', secured: true, rate },
-                public: true,
-              }) as unknown as Event,
-          ),
+        : [
+            {
+              kind,
+              period: at,
+              subjects: ['USD', 'USD:secured'],
+              data: { ccy: 'USD', secured: true, rate: rows[at] },
+              public: true,
+            } as unknown as Event,
+          ],
   });
 
   it('compounds what the overnight book actually paid, period by period', () => {
