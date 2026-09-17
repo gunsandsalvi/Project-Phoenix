@@ -14772,3 +14772,28 @@ copy in the same change.
 **Measured.** `units/Capital Programme A6.b`: 131 → 0. The rig's standing audit is now
 `prices/Clearing F2×10` and `accounts/Audit B5×4–11` every period, with two `flows/Equity D3.a` from
 period 4 and one `names/Fund Shares F3` at period 5 — four causes, each its own.
+
+---
+
+## 21.103 — The prices family decided for itself what is marked
+
+**What.** The prices family asks the world's one carrying read (`valuation.atCost`) instead of
+reading the instrument KIND's rule, and the check that remains cites the clause it is actually
+about.
+
+**Why.** It read `profile.carry === 'mark'`, and every share in this world is of a kind that says
+mark — so it reported every PRIVATE line, every period, for not having a price it is not supposed to
+have. Ten a period in the scale model, for ever. The equity module's own seed says what a private
+line is: *"a line for every firm, and a market for the ones that are PUBLIC… a private line has no
+market, so it never prints, so its holders carry it at what it cost them and say so — 'marked, not
+cleared'."* And `value.ts` already holds the one read of that, with its own comment: *"Everything
+that values a position asks this, so there is one answer to it (Law 4)."* Everything but this.
+
+**And the citation was wrong.** It reported under `Clearing F2`, which says *"a rate in force for
+the period is one rate: a participant cannot value at one and settle at another"* — nothing to do
+with prints. What survives is `Audit B3`'s own sentence: a position that IS marked, with no mark
+ever printed behind it.
+
+**Measured.** `prices/Clearing F2`: 10 a period → 0. `prices.test.ts` and `equity.test.ts` have the
+same 10 red before and after. The rig's standing audit is now `accounts/Audit B5×4–11` and nothing
+else until period 4.

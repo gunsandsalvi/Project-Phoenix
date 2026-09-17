@@ -61,7 +61,17 @@ export interface AuditView {
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history' | 'instruments'>;
   readonly valuation: Pick<
     Valuation,
-    'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust' | 'inMoney' | 'rateInForce'
+    // 21.103: `atCost` — the world's ONE read of whether a position is marked or carried at what it
+    // cost. The prices family used to decide that for itself off the kind, and reported every
+    // private line in the world for not having a price it is not supposed to have.
+    | 'markPerUnit'
+    | 'carryingPerUnit'
+    | 'valueAtMark'
+    | 'valueOfLots'
+    | 'equityDust'
+    | 'inMoney'
+    | 'rateInForce'
+    | 'atCost'
   >;
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length' | 'deltasIn' | 'lastSettledFor'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
