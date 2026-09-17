@@ -84,25 +84,40 @@ then make it fast (§2).
 
 *This world should not start from scratch; it should open as one already running.*
 
-### 1.1 What the opening is, in the source
+### 1.1 The seed, inventoried
 
-`seeds/foundation.ts` (3,168 lines) and `seeds/funding.ts` run once before period 0 through
-`SeedContext`. Three properties of that door decide everything downstream.
+`seeds/foundation.ts` (3,168 lines) plus the `seed.funding` module inside it, run once before period
+0 through `SeedContext`. The whole opening is **nineteen calls**:
 
-**It writes balances; it settles nothing.** `ctx.settle` is called **zero times** in the seed.
-Holdings are written straight into the register through `moneyDelta` and `adjustIssued` — the
-exemption that lets the seed be the only writer besides settlement.
+| door | calls | what it writes |
+|---|---|---|
+| `endowMoney` | 5 | deposits and reserves, out of nowhere |
+| `endowUnits` | 10 | paper, plant, inventory, shares, land, out of nowhere |
+| `prices.write` | 3 | opening prints for every priced line |
+| `parties.add` | 9 | the population |
+| `ctx.owes` | 1 | one agreement |
+| **`ctx.settle`** | **0** | — |
+
+That last row is the whole of §1. **The seed never settles anything**, so nothing it creates has a
+counterparty, a date, a price anybody accepted, or a record. Three consequences follow mechanically:
 
 **Every line is issued at the epoch.** `issueDate: ctx.calendar.epoch` for every seeded sovereign
-line. Maturities are spread across a grid; issue dates are not. Nothing has ever accrued, nothing is
-seasoned, every bond is on-the-run.
+line. Maturities are spread across a grid; issue dates are not. Nothing has accrued, nothing is
+seasoned, every bond is on-the-run, and Seed D2's *"anything that accrues starts from a stated
+accrual position"* holds only because every position is zero.
 
 **Stocks are walked from ratios.** The seed states the scale of the world and walks it up each
-recipe: *"a world of thirty million people opens with thirty million people's worth of stock in it"*.
-Recorded at 12c.3: one baker opened holding **314 million loaves against 27 million a period** of
-expected demand — eleven periods of the whole world's consumption in one warehouse.
+recipe — *"a world of thirty million people opens with thirty million people's worth of stock in
+it"*. Recorded at 12c.3: one baker opened with **314 million loaves against 27 million a period** of
+expected demand.
 
-### 1.2 What that produces, measured
+**The banks are funded backwards.** `seed.funding` runs last, reads each bank's assets off the
+register, and *derives what its depositors hold* from the leverage line that bank declared. The
+deposits of this world are therefore a residual of the banks' asset endowment — which is the
+accounting identity satisfied and the economics inverted: in a real system the deposits came first,
+as somebody's borrowing.
+
+### 1.2 What it produces, measured
 
 | | period 0 | after 12 | after 26 |
 |---|---|---|---|
@@ -111,169 +126,248 @@ expected demand — eleven periods of the whole world's consumption in one wareh
 | instructions in the ledger | **0** | 4,167 | 11,814 |
 | markets carrying a price | 132 | 135 | — |
 
-At period 0 the ledger is empty and 132 markets already carry a price: every one of them asserted,
-none of them traded. And **not one party has an outlook**, because `observations()` reads exactly one
-source — the instructions a party was a side of — and there are none.
+An empty ledger and 132 priced markets: every one of those prices asserted, none traded. And **not
+one party has an outlook**, because `observations()` reads exactly one source — the instructions a
+party was a side of.
 
-### 1.3 The asymmetry that makes this fatal
+### 1.3 The asymmetry, which is the whole problem
 
 A seeded world is handed two kinds of thing, and they behave completely differently once the clock
 starts.
 
-**An obligation is a DATE.** A coupon, a maturity, a rent, a wage bill: they arrive whether or not
-anybody is ready. The seed writes plenty of them — and §0 measures the result: **1,617 failed
-maturities and 145 failed coupons in 26 weeks, 1,902 failures for want of money.**
+**An obligation is a DATE.** A coupon, a maturity, a rent, a payroll: it arrives whether or not
+anybody is ready, because it is written on the calendar. The seed writes plenty of them.
 
-**A relationship is a HISTORY.** A customer, a supplier, an employer, a lender: each exists in this
-model only as an accumulated record — an outlook formed from observations, a cost of funds read from
-what a bank has paid, a sales expectation read from fills. **The seed writes none of them.**
+**A relationship is a HISTORY.** A customer, a supplier, an employer, a lender, a going wage, a cost
+of funds: in this model each exists *only* as an accumulated record — an outlook formed from
+observations, a funding cost read from what a bank has paid, a sales expectation read from fills.
+**The seed writes none of them, and cannot: there is no door.**
 
-So the opening is not merely "a bit off". It is **systematically biased toward liabilities**: it
-hands over everything that takes money out on a schedule, and nothing that brings money in. Seed D1
-asks for stocks *"consistent with the flows that will run"* and D1.a warns that otherwise *"period
-one is a shock the model never recovers from"*. That is exactly what 135 → 101 parties in twelve
-weeks is.
+So the opening is not "a bit off". It is **systematically biased toward liabilities**: everything
+that takes money out on a schedule is present at full strength; everything that brings money in is
+absent. §0's measurements are that sentence: 1,617 failed maturities, 145 failed coupons, 1,902
+failures for want of money, 700,000 hours of labour offered and none wanted, 135 → 111 parties.
 
-### 1.4 What everyone else does
+Seed D1 asks for stocks *"consistent with the flows that will run"*; D1.a warns that otherwise
+*"period one is a shock the model never recovers from, and everything measured afterwards measures
+the recovery"*. That clause is not aspirational here — it is a description of every measurement this
+project has ever taken.
 
-**Stock-flow-consistent economics — land in a body, never solve for a point.** The admissible
-openings of an SFC model form a **polytope**: *"the set of solutions is a polytope, which volume
-depends on the constraints applied and reveals the potential fragility of the economic circuit, with
-no need to specify the dynamics"*, and *"not all conceivable sets of stocks are consistent with the
-model's accounting"* ([Volume of the steady-state space](https://arxiv.org/pdf/1601.00822)). Useful
-twice: the volume is a diagnostic computable without running anything, and the geometry says landing
-inside a set is a different act from solving for a point (which Seed D4 forbids).
+### 1.4 The five ways to build an opening, and which are admissible here
 
-How the toolkits actually get an opening is blunter: setting initial conditions by hand *"is
-particularly difficult if there are multiple types of financial assets within the model"*, so
-*"the solver can start a new simulation at an earlier point in time and then simulate forward until
-reaching the desired initialization point, with starting time typically set to 200 periods prior"*
-([Bond Economics, `sfc_models`](http://www.bondeconomics.com/2017/09/calculating-initial-steady-state-in.html)).
-A serious SFC engine with several financial assets **gave up on stating an opening and ran to one.**
+| | who does it | what it gives | admissible here? |
+|---|---|---|---|
+| **A. Stated stock** | today's Phoenix; most teaching ABMs | consistency only | yes, and it is what fails |
+| **B. Solved steady state** | DSGE; SFC calibration | consistency + stationarity | **no** — Seed D4: *the seed is a fixed point of nothing*; Law 2: no imported equilibrium |
+| **C. Fitted synthetic population** | microsimulation (IPF, combinatorial optimisation) | realistic cross-section | **no** — Seed B5, C5: no observed ratio copied in, no sector fitted to a target |
+| **D. Scripted past** | event-sourced systems; blockchain genesis | consistency + history | **yes**, under a grammar |
+| **E. Lived past** | DF worldgen; ocean spin-up; SFC toolkits | consistency + history + liveness | **yes**, and it is the destination |
 
-**Macro ABMs — the opening chooses a basin, not a number.** Mark-0's phase diagram shows *"the
-generic existence of a phase transition between a 'good economy' where unemployment is low, and a
-'bad economy' where unemployment is high"*, with four phases and *"a transient that can be
-surprisingly long"* ([Naumann-Woleske et al.](https://arxiv.org/pdf/2111.08654),
-[Gualdi et al.](https://arxiv.org/pdf/1307.5319)). Phoenix is in the bad phase. No adjustment to a
-stock ratio moves a world between basins; only the path does.
+**B is forbidden and worth understanding anyway.** The admissible openings of an SFC model form a
+**polytope** — *"the set of solutions is a polytope, which volume depends on the constraints applied
+and reveals the potential fragility of the economic circuit, with no need to specify the dynamics"*,
+and *"not all conceivable sets of stocks are consistent with the model's accounting"*
+([Volume of the steady-state space](https://arxiv.org/pdf/1601.00822)). Two things transfer without
+importing an equilibrium: the *volume* is a diagnostic computable without running anything, and
+"land in a body" is a different act from "solve for a point".
 
-**Discrete-event simulation — the length of a past is measured, not chosen.** Sixty years of
-literature on the initial transient: MSER-5 *"gives the truncation point as the point where the
-minimum standard error in the data occurs"* and is *"the most effective and robust method"* tested;
-Welch's graphical method is criticised precisely because *"the user decides the warm-up length by
-observing a graph… thus there is subjectivity"*
+**C is the one to name and refuse.** Population synthesis by iterative proportional fitting
+*"alters the joint distribution to fit the marginal distribution of the attributes from the
+aggregated data"*
+([IPF review](https://www.sciencedirect.com/science/article/pii/S2352146516306925)) — it changes the
+world until it matches the target. Seed B5 and C5 forbid exactly that. Take the vocabulary (a
+population is *drawn*), refuse the method.
+
+**E is what the serious practitioners do, in three different fields.**
+
+- **SFC toolkits.** Setting initial conditions by hand *"is particularly difficult if there are
+  multiple types of financial assets within the model"*, so *"the solver can start a new simulation
+  at an earlier point in time and then simulate forward until reaching the desired initialization
+  point, with starting time typically set to 200 periods prior"*
+  ([Bond Economics, `sfc_models`](http://www.bondeconomics.com/2017/09/calculating-initial-steady-state-in.html)).
+- **Earth-system models.** Ocean spin-up *"is usually in the order of a few thousand years"*;
+  *"climate drift can be caused by a not-yet-equilibrated ocean initial state"* and post-processing
+  *"has been found to be ineffective in removing it"*
+  ([UKESM1](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001933)). The practice:
+  spin up once, write a **restart file**, open every experiment from it — and when it is too
+  expensive, *accelerate the convergence* rather than shorten it
+  ([sequence acceleration](https://www.science.org/doi/10.1126/sciadv.adn2839)).
+- **Dwarf Fortress.** *"There's a giant zero-player strategy game going on with somewhat loose turn
+  rules and bad AI (but thousands of agents), and history is just a record of that. Procedurally
+  generating stories by recording a log of a simulation is a valid enough approach."*
+  ([world generation](https://dwarffortresswiki.org/index.php/World_generation)) — and nothing is
+  accepted blindly: *"if the world does not meet the requirements of any one rejection parameter the
+  world is rejected and re-randomised"*, with `LOG_MAP_REJECTS` writing *"a file… where every time a
+  world is rejected the reason will be logged"*
+  ([world rejection](https://dwarffortresswiki.org/index.php/v0.31:World_rejection)).
+
+**And one thing DF does that Phoenix must NOT copy.** DF's worldgen is a *cheaper, coarser* model
+than the fortress simulation — "loose turn rules and bad AI". A coarse pre-history here would be a
+**second model of the same economy**, which Law 4 forbids outright. Phoenix's chronicle must run the
+same engine; what makes a *scripted* past legal is not that it is a simpler model but that **it
+contains no model at all** — only stock-creating instructions, no decisions (§1.5).
+
+**The transient's length is measured, not chosen.** Sixty years of discrete-event literature on one
+question: MSER-5 *"gives the truncation point as the point where the minimum standard error in the
+data occurs"* and is *"the most effective and robust method"* tested; Welch's graphical procedure is
+criticised because *"the user decides the warm-up length by observing a graph… thus there is
+subjectivity"*
 ([AutoSimOA review](https://warwick.ac.uk/fac/soc/wbs/projects/autosimoa/current_work/website_warmup_methods_total_doc.pdf)).
 
-**Earth-system models — the world is an artifact, not a function.** Ocean spin-up *"is usually in the
-order of a few thousand years"*, *"climate drift can be caused by a not-yet-equilibrated ocean
-initial state"* and post-processing *"has been found to be ineffective in removing it"*
-([UKESM1 spin-up](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001933)). The
-practice that follows: spin up ONCE, write a **restart file**, open every experiment from it.
+**And the destination is a basin, not a number.** Mark-0's phase diagram shows *"the generic
+existence of a phase transition between a 'good economy' where unemployment is low, and a 'bad
+economy' where unemployment is high"*, with *"a transient that can be surprisingly long"*
+([Naumann-Woleske et al.](https://arxiv.org/pdf/2111.08654),
+[Gualdi et al.](https://arxiv.org/pdf/1307.5319)). No adjustment to a stock ratio moves a world
+between basins. Only a path does.
 
-**Dwarf Fortress — generate, then reject, and log why.** Worldgen *"generates a history for that
-world, tracking civilizations, sites, populations, and other events"*, and accepts nothing blindly:
-*"if the world does not meet the requirements of any one rejection parameter the world is rejected
-and re-randomised"*, with `LOG_MAP_REJECTS` writing *"a file called map_rejection_log.txt where every
-time a world is rejected the reason will be logged"*
-([world generation](https://dwarffortresswiki.org/index.php/DF2014:World_generation),
-[world rejection](https://dwarffortresswiki.org/index.php/v0.31:World_rejection)).
-
-**Microsimulation — the road to refuse.** Population synthesis by iterative proportional fitting
-*"alters the joint distribution to fit the marginal distribution of the attributes from the
-aggregated data"* ([IPF review](https://www.sciencedirect.com/science/article/pii/S2352146516306925)).
-That is fitting to targets, which Seed B5 and C5 forbid outright. Take the vocabulary (a population
-is drawn), refuse the method.
-
-### 1.5 The proposal — THE CHRONICLE
-
-**Four stages, and the third is the one nobody else in this project's history has had.**
+### 1.5 The design — THE CHRONICLE
 
 ```
-  draw       the physical world and the primitives      (declared; small; auditable)
-  chronicle  a past, lived through ordinary settlement  (produces the ledger)
-  accept     against a census, or REJECT with a reason  (logged; re-draw; never adjust)
-  snapshot   the accepted world, written as an artifact (runs open from here)
+  draw       the physical world and the primitives         declared, small, auditable
+  chronicle  a past, lived through ordinary settlement     produces the ledger
+  accept     a census of properties, or REJECT with a reason   logged; re-draw; never adjust
+  snapshot   the accepted world as an artifact             an optimisation, never the truth
 ```
 
-**`period(0)` becomes the END of the past, not its start.** The calendar epoch moves back by the
-chronicle's length, so a bond issued in chronicle period 40 carries that issue date for ever and its
-accrual at the opening is a read rather than a zero.
+**(a) The kernel surface.** One new store and one new pre-period phase:
 
-**What the seed may still state:** land and places; people, as cells with weights; technologies
-(recipes, lead times, plant lives); the primitives (preferences, policies); and the constitutional
-parties — a state, a central bank, a first bank — because a banking system cannot bootstrap itself
-from nothing inside its own rules. **Everything else arrives as an instruction with two sides and a
-date.**
+```ts
+// world/chronicle.ts
+export interface Told {                    // one moment of the past
+  readonly at: Civil;                      // a real date, before the epoch
+  readonly draft: InstructionDraft;        // settled through the ordinary path
+  readonly why: string;                    // Law 16: a reader must know why this happened
+}
+export interface Chronicle {
+  readonly from: Civil;                    // when the past begins
+  readonly told: readonly Told[];          // in date order; stable under the same seed value
+}
+```
 
-**Two sources, in order.**
+The world's epoch moves back to `chronicle.from`; `period(0)` is the first period AFTER the last
+told moment. Every date in the past is a real date on the one calendar (Money G3), so accruals,
+seasoning, anniversaries (item 20's `crossesAnniversary`) and maturity profiles are reads rather
+than statements.
 
-1. **A scripted past.** Dated `InstructionDraft`s settled through the ordinary path, under a grammar
-   that is the whole of what keeps them legal: a chronicle instruction may **create a stock** — issue,
-   buy, hire, lend, deliver — and may **never write a price, a rate, a mark or a decision**. It is an
-   endowment expressed as a flow. This alone fixes the asymmetry in §1.3: a firm that has sold for
-   forty weeks has a sales history, a bank that has funded itself has a cost of funds, and every
-   party that was ever paid has an outlook.
-2. **A lived past.** The engine's own period loop, module by module, replacing scripted events as the
-   mechanisms become able to produce them. **The migration is a measurement of whether a mechanism
-   works** — which is the thing this project keeps discovering three items too late.
+**(b) The grammar, which is what makes a scripted past legal.** A chronicle instruction may create a
+stock — issue, buy, hire, lend, deliver, pay — and may **never write a price, a rate, a mark or a
+decision**. The guard is at the door, not in a comment:
 
-**Acceptance is a census of PROPERTIES, never values.** Nine, each a statement about an existing
-world and none about a number: every market has traded; every living party has an outlook; every
-firm has produced, sold and been paid in different periods; every bank has lent and been repaid;
-every instrument kind that can exist is held by somebody who chose to hold it; the maturity profile
-spans more than one period and issue dates are dispersed; ages are dispersed; the audit is green and
-every balance sheet closes; nothing in the register is younger than the world. **A world failing any
-of them is rejected, re-drawn from the next seed, and the reason is logged** — and that log is the
-most valuable diagnostic this project could own, because a criterion that fails for every seed is a
-missing mechanism with a name.
+```ts
+forbid(draft.legs.every(notAPrint), 'Seed E1', 'a chronicle may not write a price');
+forbid(!touchesParams(draft), 'Seed E1', 'a chronicle may not set a policy number');
+```
 
-**Why rejection is legal where calibration is not.** Rejection **discards a world; it never adjusts
-one**. No number inside an accepted world was touched by the criterion, so nothing is fitted (B5)
-and no outcome is seeded (E1). IPF, by contrast, changes the world until it matches — which is why
-§1.4 takes it only as a warning.
+What something cost in the past is what that instruction says two parties agreed; what anything is
+worth from period 0 is cleared. This is an **endowment expressed as a flow**, and it is why a
+scripted past is not a scripted narrative (§45 E2): it decides nothing that a mechanism owns.
 
-**The length is measured.** Run the chronicle long, record a handful of named series, take the
-truncation point from MSER-5. The resulting length is a RESOLUTION under Law 2, and it is tested the
-way a resolution must be: double it, and the opening's properties must not move.
+**(c) Determinism, taken from the event-sourcing literature's scar tissue.** *"Your event handlers
+must be deterministic — given the same sequence of events, they should always produce the same
+result"*, and *"snapshots are an optimization, not the source of truth. The event log still is"*
+([Kurrent](https://www.kurrent.io/blog/snapshots-in-event-sourcing/),
+[replay pitfalls](https://dev.to/alex_aslam/when-event-sourcing-fails-war-stories-from-production-1nk2)).
+Three rules follow, and they are cheap to enforce:
 
-**Cost.** 554 ms/period at the first rung, so a 200-period chronicle is about two minutes at the
-scale model — and the snapshot means it is paid once per world rather than once per run. At the
-third rung it is hours, which is what the snapshot and the structural performance items are for.
+1. **The seed value plus the chronicle generator is the truth; the snapshot is a cache.** A snapshot
+   must be reproducible from the seed value, and `check:opening` regenerates one world per run to
+   prove it. Otherwise a snapshot becomes a new way to smuggle in a stated opening.
+2. **A told moment carries everything it needs.** No chronicle instruction may read a live market —
+   what it needs is in the instruction, which is the event-sourcing rule *"add the information
+   retrieved in the event"*.
+3. **The chronicle is versioned.** A told moment's shape is a schema with a version, because
+   *"if you change the meaning of an event without versioning it properly, replays can silently
+   become incorrect"*.
 
-**Two consequences worth having.** The chronicle is a journal, and the observer already renders
-journals — so *"peek inside an existing world"* becomes literal: who founded which firm, who lent to
-whom, which bank failed in chronicle period 63. And a test rig stops being built by hand: a rig is a
-small accepted world, and a test asks for *a mill that has traded for a year* instead of
-constructing one.
+**(d) What the seed may still state, after this.** Land and places; people, as cells with weights;
+technologies (recipes, lead times, plant lives); the primitives (preferences, policies); and the
+constitutional parties — a state, a central bank, a first bank — because a banking system cannot
+bootstrap itself from nothing *inside its own rules*. That last exemption is real and has a
+literature: the search-theoretic account of how a medium of exchange arises
+([Kiyotaki–Wright](https://en.wikipedia.org/wiki/Kiyotaki%E2%80%93Wright_model_of_money)) is a model
+of a different question than this project is asking, and the honest position is that **Phoenix opens
+after money exists, and says so in one place** rather than pretending an issuer appeared by
+instruction.
 
-### 1.6 The items
+**(e) Acceptance: nine properties, never values.**
+
+| # | property | what its failure means |
+|---|---|---|
+| 1 | every market has traded at least once | a book nobody uses |
+| 2 | every living party has at least one outlook | §3.3's fail-closed loop is still live |
+| 3 | every firm has produced, sold and been paid, in different periods | 12c.3 |
+| 4 | every bank has lent and been repaid | the credit channel is dead |
+| 5 | every declared instrument kind is held by somebody who chose to hold it | a dead module (there are 13) |
+| 6 | the maturity profile spans more than one period; issue dates are dispersed | a wall |
+| 7 | ages are dispersed; no cohort is the age of the world | everything was born at once |
+| 8 | the audit is green and every balance sheet closes | Seed A2 |
+| 9 | nothing in the register is younger than the world | a stock with no history |
+
+A world failing any of them is **rejected, re-drawn from the next seed value, and the reason logged**
+— `docs/rejections.log`, one line per attempt: seed value, criterion, the party or market that
+failed it. **A criterion that fails for every seed is a missing mechanism with a name**, which is
+exactly the diagnostic this project has been producing by hand.
+
+**(f) Why rejection is legal where calibration is not.** Rejection **discards a world; it never
+adjusts one.** No number inside an accepted world was touched by the criterion — nothing is fitted
+(B5), no outcome is seeded (E1), and the accepted world is a world the mechanisms themselves
+produced. IPF, by contrast, moves the world until it matches. The difference is the whole of why D
+and E are admissible and C is not.
+
+**(g) The length.** Run the chronicle long; record a handful of named series (money per member, the
+going wage, living parties, sessions cleared, the credit stock); take the truncation point from
+MSER-5. The length is then a RESOLUTION under Law 2 and is tested as one: **double it, and the
+opening's properties must not move.**
+
+### 1.6 Migration — what is replaced, in what order, and what it deletes
+
+Each step replaces endowment with instruction for one layer, and each is independently checkable
+because the census (e) tightens as the layers land.
+
+| step | layer | replaces | deletes |
+|---|---|---|---|
+| 22b.3 | money and the sovereign | reserves and bills endowed | `endowMoney` (5 sites) |
+| 22b.4 | firms, plant, inventory | stock walked from ratios | `endowUnits` (10 sites), `SEED_STOCK_BASIS` |
+| 22b.5 | households, employment, savings | deposits as a leverage residual | `seed.funding`'s inversion |
+| 22b.6 | prices | 3 `prices.write` calls | `seed.openingPrice.*`, `seed.openingWage` |
+
+**And then the second source.** Scripted moments are replaced, module by module, by **warm-up
+periods the engine runs itself** — the same machinery, a different origin for the instructions. A
+module graduates when the world can produce that behaviour on its own, which makes each graduation a
+measurement of whether a mechanism works. The goods chain cannot graduate before §3's M1–M4 land;
+that is not an obstacle, it is the dependency stated.
+
+### 1.7 What this predicts, so that it is a confirmation and not a surprise
+
+- **The first chronicle is rejected on criterion 3** — every firm has produced, sold and been paid.
+  That is 12c.3, and the rejection log naming it on attempt one is the proposal working.
+- **Money will be hard to create legally.** Every deposit must arrive as somebody's borrowing or a
+  central bank's purchase. A chronicle that cannot create this world's money stock is telling us
+  something true about the mechanism, and it will be uncomfortable.
+- **Period 0 moves, and the findings register must be re-read.** Everything measured before was
+  measured against a different world.
+- **The audit at period 0 becomes a real test** — today it tests a hand-made balance sheet; against
+  a replayed past it tests settlement, revaluation and the audit together.
+
+### 1.8 The items
 
 Before 22a, which they absorb; after item 21's stops, because a chronicle cannot run through a world
 that throws.
 
-- **22b.1** `world/chronicle.ts` — dated replay through ordinary settlement; the epoch shift; the
-  grammar guard (no price, no rate, no mark); determinism from one seed value.
-- **22b.2** `check:opening` — the nine-property census, red until it passes, with the rejection log.
-- **22b.3** Money and the sovereign through the chronicle. Deletes `endowMoney`.
-- **22b.4** Firms, plant and inventory through the chronicle. Deletes `endowUnits` and
-  `SEED_STOCK_BASIS` — and this is where 12c.3 dies, because no firm can BUY eleven periods of world
-  demand from anybody.
-- **22b.5** Households, employment and savings through the chronicle — the income history that
-  outlooks and votes are made of.
-- **22b.6** Delete the opening prints (22a.1): by then every market has traded.
-- **22b.7** The snapshot as an artifact; the rig's scale models become small accepted worlds.
+- **22b.1** `world/chronicle.ts` — the store, the pre-period replay, the epoch shift, the grammar
+  guard, the version on a told moment, determinism from one seed value.
+- **22b.2** `check:opening` — the nine properties, the rejection log, and the regeneration check that
+  keeps the snapshot an optimisation.
+- **22b.3–22b.6** the four migration steps above.
+- **22b.7** the snapshot format and `assemble()` opening from one; the rig's scale models become
+  small accepted worlds.
 - **22b.8** MSER-5 on the named series; the length becomes a tested resolution.
-- **22b.9** The first module migrated from scripted to lived.
+- **22b.9** the first module graduated from scripted to lived.
 
 **Exit.** `grep -rn "endowMoney\|endowUnits\|openingPrice\|prices\.write" src/` is empty;
-`check:opening` is green; the census of period 0 is indistinguishable in KIND from the census of
-period 100.
-
-**What it predicts will break.** The first chronicle will be rejected on *every firm has produced,
-sold and been paid* — that is 12c.3, and it is the point. Money will be hard to create legally,
-because every deposit must come from somebody's lending. And every finding recorded against the old
-opening must be re-read rather than carried over.
+`check:opening` is green; `docs/rejections.log` is empty for the chosen seed; and the census of
+period 0 is indistinguishable in KIND from the census of period 100.
 
 ## §2. Speed
 
