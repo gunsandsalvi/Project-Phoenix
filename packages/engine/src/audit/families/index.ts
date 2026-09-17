@@ -8,6 +8,7 @@ import { ownershipFamily } from './ownership.js';
 import { pricesFamily } from './prices.js';
 import { zeroSumFamily } from './zero-sum.js';
 import { unitsFamily } from './units.js';
+import { livenessFamily } from './liveness.js';
 
 /**
  * Every family the KERNEL contributes, in the order Part XII lists them.
@@ -19,7 +20,7 @@ import { unitsFamily } from './units.js';
  * every contribution (Audit C2), that stub would now make a family that IS checked report as not
  * built, which is the opposite lie to the one it used to tell (item 13b.1).
  */
-export function standardFamilies(memory: AuditMemory): Family[] {
+export function standardFamilies(memory: AuditMemory, livenessHorizon: () => number): Family[] {
   return [
     moneyFamily(memory),
     ownershipFamily(),
@@ -30,5 +31,7 @@ export function standardFamilies(memory: AuditMemory): Family[] {
     flowsFamily(memory),
     zeroSumFamily(),
     unitsFamily(memory),
+    // 0h.3: the tenth, and the only one a world where nothing happens does not satisfy.
+    livenessFamily(livenessHorizon),
   ];
 }

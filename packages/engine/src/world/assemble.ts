@@ -52,6 +52,7 @@ export const KERNEL_PARAMS = {
   periodDays: paramId('calendar.periodDays'),
   cyclesPerPeriod: paramId('calendar.cyclesPerPeriod'),
   worstInstances: paramId('audit.worstInstances'),
+  livenessHorizon: paramId('audit.livenessHorizon'),
   pieceShift: paramId('resolution.pieceShift'),
   tickShift: paramId('markets.tickShift'),
 } as const;

@@ -16,9 +16,21 @@
 import type { AuditReport, SettlementRecord } from '../src/index.js';
 
 /** Every violation the audit reported: what a green period must have none of. */
+/**
+ * Audit E2, 0h.3: every violation of CONSISTENCY, which is what a test asserting "and nothing broke"
+ * is about — and the liveness family is not one of them. E2 separates the two jobs: the audit
+ * measures consistency and completeness is the requirement document's, and a liveness finding says
+ * a thing this world declared has produced nothing yet. In a SCALE MODEL of eleven periods that is
+ * true of most of what the full world declares, by construction — a test of the money market would
+ * fail because no ship has sailed. Where the liveness family is read is the assembled world's own
+ * census (`opens.test.ts`, `live=`), against a run long enough for the answer to mean something.
+ */
 export function unexpected(report: AuditReport | undefined): string[] {
   if (report === undefined) return [];
-  return report.families.flatMap((f) => f.violations).map((v) => `${v.family}: ${v.message}`);
+  return report.families
+    .filter((f) => f.family !== 'liveness')
+    .flatMap((f) => f.violations)
+    .map((v) => `${v.family}: ${v.message}`);
 }
 
 /**

@@ -56,7 +56,12 @@ function steps(w: World, periods: number, name: string): void {
         // 16.8: the pairs that CLEARED this period, so a world with two moneys and no FX is visible.
         ` fx=${report.markets.filter((m) => m.outcome === 'cleared' && w.markets.find((d) => d.id === m.market)?.kind === 'fx').length}` +
         ` loans=${w.journal.ofKindIn('credit.written', w.period).length}` +
-        ` audit=${report.audit.total}`,
+        ` audit=${report.audit.total}` +
+        // 0h.3: and how many of them are the LIVENESS family — a declaration that has produced
+        // nothing, a living party that has been a side of nothing, a breached row nobody is
+        // working out. It is printed apart because it is the one family that is not about a
+        // number being wrong: it is about nothing happening at all.
+        ` live=${report.audit.families.find((f) => f.family === 'liveness')?.count ?? 0}`,
     );
   }
   console.log(lines.join('\n'));

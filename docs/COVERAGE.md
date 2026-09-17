@@ -151,7 +151,7 @@ measurement is taken there is nothing to name.
 | `Audit D3` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/rng/prng.ts |
 | `Audit D4` | PARTIAL | run-length comparison is a Part XII measurement |
 | `Audit E1` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/unbuilt.ts |
-| `Audit E2` | MET | packages/engine/src/audit/audit.ts |
+| `Audit E2` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/liveness.ts (0h.3: what was declared and never reached is a VIOLATION with the module that declared it as its owner, not only a count on the report) |
 | `Audit E3` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/unbuilt.ts |
 
 ## Seed

@@ -423,7 +423,8 @@ export class World {
     this.params = spec.params;
     this.nouns = spec.nouns;
     this.calendar = spec.calendar;
-    this.parties = new Parties(this.registry);
+    // 0h.3: the clock a party's birth is stamped from. Before the seal it is the opening period.
+    this.parties = new Parties(this.registry, () => this.currentPeriod);
     this.partyReads = partiesReads(this.parties);
     this.instruments = new Instruments(this.registry);
     // Law 15: the store asks the kind's own profile to guard a row it is about to write,
@@ -482,7 +483,10 @@ export class World {
     });
     this.currentCycle = this.calendar.cycle(0);
     this.audit = new Audit(
-      [...standardFamilies(this.memory), ...spec.families],
+      [
+        ...standardFamilies(this.memory, () => this.params.periods(paramId('audit.livenessHorizon'))),
+        ...spec.families,
+      ],
       this.params.count(paramId('audit.worstInstances')),
     );
     this.phaseList = [
@@ -3152,6 +3156,8 @@ export class World {
       markets: this.marketList,
       indexList: this.indexRules(),
       index: (id: string) => this.index(id),
+      // Audit E2 (0h.3): the declarations and what has come of them, for the liveness family.
+      reach: this.reach(),
     };
   }
 

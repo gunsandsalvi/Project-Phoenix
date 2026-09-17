@@ -355,17 +355,30 @@ one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
   longer read of the same history, and after 0h.1 that history is every print of everything the
   party watches. (Gode & Sunder: allocative efficiency comes from the protocol over DISPERSED
   reservation prices; the dispersion is what makes a market cross.)
-- [ ] 0h.3 **The liveness family.** All nine audit families are SAFETY properties — nothing bad ever
-  happens — and there is no LIVENESS property: something good eventually happens. That is why 428
-  never-used capabilities and 13 dead modules pass every gate. Bounded liveness IS safety (a property
-  with a horizon is refutable by a finite prefix), so an audit family that runs every period is the
-  right home and needs no new machinery: `world/reach.ts` already records every capability with its
-  owner, its `produced` count and its `lastAt`. Checks, each with its own horizon declared with a
-  reason (a RESOLUTION, tested by invariance): every declared capability has produced something;
-  every declared book has cleared; every living firm has produced, sold and been paid; every bank has
-  lent; no party has stood in arrears without a payment; every cell has been paid. Reported with
-  owner and size, never repaired. **This is the check that would have found 12c.3, 21.72, 21.73,
-  21.76, 21.77, 21.79, 21.81 and 21.84 at the item that introduced each.**
+- [x] 0h.3 **The liveness family.** All nine audit families are SAFETY properties — nothing bad ever
+  happens — and a world in which NOTHING happens satisfies every one of them. That is why 428
+  never-used capabilities, thirteen dead modules, 700,000 hours offered against none wanted and a
+  household paid once in thirty periods passed every gate this project has. The tenth family is the
+  one that fails on those. **No clause asks for it** and the family says so where it lives: §Audit's
+  own are B1–B8, so this is the project's own, and each check rests on a clause that does exist —
+  `Audit E2` for a declaration nothing came of (a market's "produced" already means it printed a
+  price real supply met real demand at, so *every declared book has cleared* is that same check),
+  `Money A3`/`XI-1` for a living party that has been a side of no settled instruction since its own
+  birth (which is *no cell has been paid*, *no firm has sold* and *no bank has lent* at once, and
+  without knowing what any of those are — Law 15), and `XI-8` for a row that has stood breached
+  longer than the horizon with nobody working it out (21.62's state). The horizon is one
+  parameter, declared a RESOLUTION and TESTED as one: lengthening it may only remove findings, never
+  add one. Bounded liveness is safety — a property with a horizon is refutable by a finite prefix —
+  which is why this needs no machinery beyond two reads that nothing recorded: `Ledger.lastSettledFor`
+  (the twin of `failedFor`, written where every settlement is appended) and `Parties.bornAt` (stamped
+  from the world's own clock at the one writer, so a seed cannot stamp a wrong one). **Measured**:
+  the rig reports `live=0` for the first four periods and 572 at period 5, 649 at period 30 — 552 of
+  them declarations, 511 owned by the seed; the four-country world reports 1,535 at period 12.
+  `unexpected()` in the test helpers excludes the family, and that is Audit E2's own separation:
+  those tests assert CONSISTENCY, and a scale model of eleven periods has not reached most of what
+  the full world declares by construction. Where the family is read is the assembled world's census
+  (`opens.test.ts`, `live=`). Tests: `test/liveness.test.ts`, five cases including the horizon's
+  invariance.
 - [ ] 0h.4 **`why(party, period)`.** Every diagnosis in `docs/RECORD.md` was a hand-written probe.
   The material is already recorded — the journal has every event with subjects, the ledger every
   instruction with its cause, `reach` what has never run — and what is missing is the query: the
@@ -421,6 +434,20 @@ and not a periodicity, which is why it is here and not in 20.2.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.92 `tools/check-citations.ts` (0h.3): **A CITATION THAT IS NOT IN AN `@spec` TAG IS NOT
+  CHECKED.** The audit's own `Family.spec` and every `Violation.spec` are runtime strings, and
+  0h.3's family was written citing `Audit B10` — a clause that does not exist, since §Audit's own
+  run B1 to B8 — with `check:spec` green throughout. It was caught by reading the spec, which is
+  the thing the checker exists to make unnecessary. The fix is one more read in the checker: the
+  string literals passed as `spec:` in `audit/families/*.ts` and in any `Violation`, resolved the
+  same way an `@spec` tag is. Positioned at 0h.4, which is the item that makes the audit's own
+  material machine-readable (0h.3).
+- [ ] 21.91 `test/reach.test.ts` *finds the sectors three reads of the source found* IS RED, and was
+  before 0h.3 (verified in a stash at `d4f5102`). It asserts `partyKind:insurance` is among the
+  never-reached and an insurer now EXISTS in the scale model — the assertion is a census of a world
+  that has since changed, which is what a test written as a list of names becomes. Not chased (Law
+  11); positioned at 23.1, where the scale model and what a test asserts are resized together
+  (0h.3).
 - [ ] 21.90 `test/expectations.test.ts` *is corrected towards what happened, at the party own speed,
   and never faster* IS RED, and was before 0h.1 (verified in a stash at `5e49461`: the same one red,
   the same figures). It asserts the first cell records more than four `income` surprises in ten

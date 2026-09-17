@@ -9,6 +9,7 @@ import type { InstructionId, InstrumentId, PartyId } from '../core/ids.js';
 import type { Qty } from '../core/tick.js';
 import { asQty, negQty } from '../core/tick.js';
 import { subjectsOf, type Failed, type SettlementRecord } from './instruction.js';
+import { none, type Option, some } from '../core/option.js';
 
 /**
  * 0g.2, Law 18: WHAT A PERIOD'S SETTLED RECORDS DID, indexed as they are appended. The audit
@@ -47,6 +48,12 @@ export class Ledger {
    * Only the failures are indexed: they are the ones a party reads back, and they are rare.
    */
   private readonly failedBy = new Map<string, Failed[]>();
+  /**
+   * 0h.3: WHEN EACH PARTY WAS LAST A SIDE OF A SETTLED INSTRUCTION — the twin of `failedBy`, written
+   * where every settlement is appended and read by nothing else. It is not a copy of a derived fact:
+   * the alternative is a walk of every record ever appended, every period, for every party.
+   */
+  private readonly settledBy = new Map<string, Period>();
   /** 0g.2: the period's deltas, written at `append`. */
   private readonly deltasBy = new Map<Period, MutableDeltas>();
   /** 12c.1, Law 18: what each party has ever created of each thing — an index over the create legs, kept as they settle. */
@@ -68,6 +75,7 @@ export class Ledger {
     if (list === undefined) this.byPeriod.set(at, [r]);
     else list.push(r);
     if (r.outcome === 'settled') {
+      for (const who of subjectsOf(r.instruction)) this.settledBy.set(who, at);
       let d = this.deltasBy.get(at);
       if (d === undefined) {
         d = { holding: new Map(), issued: new Map(), made: new Map() };
@@ -119,6 +127,16 @@ export class Ledger {
     const mine = this.failedBy.get(party);
     if (mine === undefined) return EMPTY_FAILED;
     return mine.filter((r) => r.instruction.period >= since);
+  }
+
+  /**
+   * 0h.3, Part XII: the last period this party was a side of an instruction that SETTLED, or
+   * nothing at all for one that never has. A failure is not this — the ledger already answers that
+   * separately (`failedFor`) — and the difference between the two is what a liveness check reads.
+   */
+  lastSettledFor(party: string): Option<Period> {
+    const at = this.settledBy.get(party);
+    return at === undefined ? none<Period>() : some(at);
   }
 
   all(): readonly SettlementRecord[] {

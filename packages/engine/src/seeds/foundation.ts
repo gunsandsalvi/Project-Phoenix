@@ -2885,6 +2885,15 @@ export function foundationSpec(
         why: 'Audit D2: how many worst instances a family reports; a reporting depth, not a behaviour.',
       },
       {
+        id: KERNEL_PARAMS.livenessHorizon,
+        value: 4,
+        unit: 'periods',
+        dimension: 'periods',
+        kind: 'resolution',
+        owner: 'model',
+        why: 'Part XII (0h.3): the finite prefix a bounded liveness property is refutable on — how long a declared capability may produce nothing, a living party be a side of nothing and a breached row stand unworked before the audit says so. It is a RESOLUTION and is tested as one: lengthening it may only remove findings and can never add one, and nothing in the world reads it, because the audit never repairs (Audit C4).',
+      },
+      {
         id: KERNEL_PARAMS.pieceShift,
         value: 1,
         unit: "multiple of every unit's declared subdivision",

@@ -11,6 +11,7 @@
 import { forbid } from '../core/assert.js';
 import { scaleQty, type Qty } from '../core/tick.js';
 import type { Period } from '../calendar/calendar.js';
+import { none, type Option, some } from '../core/option.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import { cohortId, type PartyId, type PartyKindId, regionId, type RegionId } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
@@ -231,8 +232,25 @@ export class Parties {
    * One writer — `add`, where a party's kind is settled and never changes again (Law 4).
    */
   private readonly byKind = new Map<PartyKindId, PartyId[]>();
+  /**
+   * 0h.3: WHEN EACH PARTY FIRST EXISTED. Nothing recorded it — a party appearing after the seed is
+   * journalled by whoever entered it, and the seed's own are not — so a check about how long a
+   * party has stood silent had no start to count from. One writer (`add`), and the period comes
+   * from the world's own clock rather than from the caller, so a seed cannot stamp a wrong one.
+   */
+  private readonly born = new Map<PartyId, Period>();
 
-  constructor(private readonly registry: Registry) {}
+  /** `now` is the world's clock: every party added before the seal is born in the opening period. */
+  constructor(
+    private readonly registry: Registry,
+    private readonly now: () => Period = () => 0 as Period,
+  ) {}
+
+  /** 0h.3: the period this party first existed in. A party this world does not have has none. */
+  bornAt(id: PartyId): Option<Period> {
+    const at = this.born.get(id);
+    return at === undefined ? none<Period>() : some(at);
+  }
 
   add(p: Party): void {
     forbid(!this.map.has(p.id), 'Seed B2', `party ${p.id} already exists`, { id: p.id });
@@ -252,6 +270,7 @@ export class Parties {
       forbid(faults.length === 0, 'XI-15', faults.join('; '), { id: p.id });
     }
     this.map.set(p.id, Object.freeze({ ...p }));
+    this.born.set(p.id, this.now());
     const ofItsKind = this.byKind.get(p.kind);
     if (ofItsKind === undefined) this.byKind.set(p.kind, [p.id]);
     else ofItsKind.push(p.id);

@@ -23,7 +23,14 @@ export type FamilyName =
   | 'names'
   | 'flows'
   | 'zeroSum'
-  | 'units';
+  | 'units'
+  /**
+   * Part XII (0h.3): the tenth family, and the only one that is not a safety property. The other
+   * nine are satisfied by a world in which nothing happens at all; this one is not. §Audit names
+   * nine (B1–B8 and the zero-sum one) and none of them is a liveness property: this is the
+   * project's own, and `families/liveness.ts` says which clause each of its checks rests on.
+   */
+  | 'liveness';
 
 export const FAMILY_NAMES: readonly FamilyName[] = [
   'money',
@@ -35,6 +42,7 @@ export const FAMILY_NAMES: readonly FamilyName[] = [
   'flows',
   'zeroSum',
   'units',
+  'liveness',
 ];
 
 export interface Violation {

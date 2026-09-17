@@ -14498,3 +14498,51 @@ period 10 shows more loans (0 → 5), fewer audit findings (1,211 → 876) and f
 
 **Deleted.** Six `outlook.some ? outlook.value.confidence : 0` defaults and the `confidence <= 0`
 conflations that stood in for them. Nothing is floored and nothing is widened by decree.
+
+---
+
+## Item 0h.3 — The liveness family
+
+**What.** A tenth audit family, `liveness`, contributed by the kernel and running every period like
+the other nine. Three checks, each with the same horizon: a declared capability that has produced
+nothing (`Audit E2`, read off `world/reach.ts`, which already carried the declaration, its owner and
+its `produced` count); a living party that has been a side of no settled instruction since its own
+birth (`Money A3`, `XI-1`); a commitment that has stood breached longer than the horizon with nobody
+working it out (`XI-8`). Two reads were built for it because nothing recorded them:
+`Ledger.lastSettledFor` — the twin of `failedFor`, written where every settlement is appended — and
+`Parties.bornAt`, stamped from the world's own clock at the one writer, so a seed cannot stamp a
+wrong one. The horizon is `audit.livenessHorizon`, four periods, declared a RESOLUTION.
+
+**Why.** The nine families are SAFETY properties: nothing bad ever happens. A world in which
+nothing happens at all satisfies every one of them, which is how 428 never-used capabilities,
+thirteen dead modules, 700,000 labour hours offered against none wanted and a household paid once in
+thirty periods passed every gate this project has. A liveness property — something good eventually
+happens — is not refutable by a finite run; a BOUNDED one is, which is why every check here carries
+a horizon and names it in what it reports.
+
+**No clause asks for this family, and it says so.** §Audit's own are B1–B8 and every one is a safety
+property. Writing the family originally cited `Audit B10`, which does not exist — caught by reading
+the spec, not by the checker, because a `Family.spec` string is not an `@spec` tag. Each check now
+rests on a clause that does exist, and the family's own comment states the difference between
+MISSING and OUT OF SCOPE: the spec does not forbid a liveness property, it never names one.
+
+**Law 15 held.** The party check knows nothing about cells, firms or banks: "every cell has been
+paid", "every firm has sold" and "every bank has lent" are one check about a party being a side of
+something, and a market's "produced" already meant it printed a price real supply met real demand at
+— so "every declared book has cleared" needed nothing of its own.
+
+**Measured.** The rig reports `live=0` for the first four periods, 572 at period 5 and 649 at period
+30 — 552 of them declarations, 511 of those owned by the seed (books that have never cleared), 15
+parties that have never been a side of anything and 7 silent since a named period. The four-country
+world reports 1,535 at period 12. `check:opens` prints the figure apart from the audit total, which
+is where the family is meant to be read.
+
+**Decision: `unexpected()` in the test helpers excludes the family.** Audit E2 separates the two
+jobs — the audit measures consistency, completeness is the requirement document's — and a scale
+model of eleven periods has not reached most of what the full world declares, by construction. A
+money-market test failing because no ship has sailed would measure the scale model, not the world.
+
+**Found.** `21.92`: a citation outside an `@spec` tag is not checked, which is how `Audit B10` got
+written; positioned at 0h.4. `21.91`: `test/reach.test.ts` *finds the sectors three reads of the
+source found* is red and was red before this change — it asserts no insurer is ever created and one
+now is; positioned at 23.1.

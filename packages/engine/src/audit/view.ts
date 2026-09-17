@@ -24,6 +24,7 @@ import type { ContractsRead } from '../world/context.js';
 import type { Option } from '../core/option.js';
 
 import type { AgreementReads } from '../register/agreements.js';
+import type { Capability } from '../world/reach.js';
 
 export interface AuditView {
   readonly period: Period;
@@ -34,7 +35,8 @@ export interface AuditView {
   readonly params: Pick<ParamRegister, 'report' | 'all' | 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount'>;
   readonly parties: Pick<
     Parties,
-    'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell' | 'predecessorsOf'
+    // 0h.3: `bornAt` — when a party first existed, so a check counts its silence from its own birth.
+    'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell' | 'predecessorsOf' | 'bornAt'
   >;
   readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy' | 'ofKind' | 'version'>;
   readonly register: Pick<
@@ -61,7 +63,7 @@ export interface AuditView {
     Valuation,
     'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
-  readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length' | 'deltasIn'>;
+  readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length' | 'deltasIn' | 'lastSettledFor'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
   readonly markets: readonly MarketDecl[];
   /**
@@ -89,6 +91,12 @@ export interface AuditView {
    */
   readonly indexList: readonly IndexDecl[];
   index(id: string): Option<IndexRead>;
+  /**
+   * Audit E2 (0h.3): WHAT THIS WORLD DECLARED IT COULD DO AND WHAT HAS COME OF IT. It was already a
+   * standing READ on the report (`Reads.reach`); the liveness family is what fails when a
+   * declaration has produced nothing, so the family needs the rows and not the three counts.
+   */
+  readonly reach: readonly Capability[];
 }
 
 /**
