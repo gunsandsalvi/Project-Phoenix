@@ -16036,3 +16036,72 @@ not enforce the protocol and nothing but this note does.
 string key that should have been cheaper was 6.6× dearer, and the "regression" was a stale baseline.
 That is the third and fourth time in this item; the running count of 0g steps proposed from intuition
 and measured at nothing is now six.
+
+# 0g.22 — What a period of the world costs, and the plan that follows from it
+
+**The item had no denominator.** Every figure in 0g was taken on a rig of ~259 parties and the
+world the target is about had never completed a period. The owner's question — how a 24× arrives —
+could not be answered because nothing measured the thing being divided.
+
+## Two instruments, both permanent
+
+`src/world/work.ts` counts the QUESTIONS a period asks: per participant declaration, per venue
+declaration, per phase and for the audit — asked, narrowed, produced, and what answering cost.
+`src/core/ops.ts` counts the elementary reads of the kernel's stores (instrument, holding, price,
+party, measure) that answering takes. `npm run world` prints both.
+
+**The op count is bit-exact reproducible** — 265,908,687 on three consecutive runs — so it joins
+`events` and `audit` as a behaviour fingerprint, and it is the gate every remaining 0g step is
+judged on. A duration has a ±4% band between sessions and needed 0g.17's median to be readable at
+all; a count has none.
+
+## The measurement
+
+One period of `foundationWorld`: **72.1 s** (median of 72.0, 72.1, 74.6), 178,604 events, 356,268
+audit checks, 1,000,921 participant questions, **265,908,687 kernel reads** against a state of
+**544,104 holdings in 657,785 lots**. That is **489 reads per holding per period** and **266 per
+question**. The world is not big; the reading of it is repetitive.
+
+`control.tender` is 34.8% of the reads, `markets` 31.8%, `households.lifecycle` 9.1%, the audit
+9.1%. Inside `markets`, the dealing desk spent **51,445,710 reads — 19.3% of everything — to post
+zero orders**, and `funds/fund` 15,828,849 for zero.
+
+## The cause, and it is one cause
+
+**A fact about ONE PARTY computed inside a loop over BOOKS, TARGETS or COUNTERPARTIES.** Found
+independently in three modules; it is Law 4 and Law 19 on the read path, and Law 12 holds every
+time — the fix removes code. `controlDealsFor` read the buyer's own equity once per listed
+company; `stateOf` read `bookValue` twice in one call and the call walks every targeted line;
+`liquidityLines`, `liquidityTargets` and `linesQuoted` each walked all 1,546 markets for a fact
+about the bank.
+
+## Three experiments, and two of them refuted a plan that was already written
+
+- **Constants are worth single digits.** Deleting one `Object.freeze` from `asCash` — 35,215,786
+  allocations a period — moved the world **72.1 → 69.1 s (−4.2%)**, op count unchanged. GC is
+  19.8% of a period, and this is what a real bite out of it looks like.
+- **A door is worth almost nothing on its own, which kills 0g.8 as it was written.** Adding the
+  missing `markets` door to the dealing desk cut its questions **92,400 → 14,269** and its reads by
+  **0.03%**. The cost was never the number of questions; it was the 3,596 reads each one took. 0g.8
+  was ranked as "lever B, worth ~15%" on a rig count of evaluations, and the evaluation count is
+  not the cost.
+- **One duplicated line was 8.5% of the world.** `stateOf` called `bookValue(view, targets)` twice;
+  reading it once took the declaration **51,303,717 → 29,239,688 reads** and the period
+  **265,841,492 → 243,369,652 ops, 65.7 → 62.9 s**, with `events 178604` and `audit 356268`
+  unchanged.
+
+## What this says about the 24×, including what it does not promise
+
+72.1 s / 265,908,687 = **271 ns per read**. The irreducible work, from the state's own size, is
+~11 M reads — **3.0 s at today's constant**. So the plan is the op count and not the constants:
+**265.9 M → ~11 M**.
+
+**And the steps written (0g.23–0g.28) account for ~201 M of it, leaving ~42 M, which is 11.5 s and
+not 3 s.** Removing redundant work makes the surviving reads denser, so the average will not fall
+on its own. Reaching 3 s needs both halves — the removals AND the surviving reads made ~3.5×
+cheaper (0g.29). That is written into the item as a risk with a named kill condition: if 0g.28
+lands at ~12 s and 0g.29 returns only 2×, the answer is 6 s and the item is redrawn against the
+evidence rather than carried on hope.
+
+**0g.11, 0g.13, 0g.16 and 0g.8 are deleted as wrong rather than done.** Each was ranked from a rig
+count. The count that ranks work is now in the repository and prints on every run.

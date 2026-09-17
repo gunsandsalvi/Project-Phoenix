@@ -1127,6 +1127,21 @@ export function controlDealsFor(
     purse.set(ccy, now);
     return now;
   };
+  /**
+   * B3, A2, Law 18 (0g.21): AND WHAT IT COULD BRING ITSELF, once per money — the same reason the
+   * purse above is once per money. It is a fact about the BUYER and the money, not about the
+   * company on the list, and it was read once per company: **9,148 buyers × 9,000 listed lines**
+   * in the full world, which is 82 million reads of one number per buyer per money, and this loop
+   * measured **13% of period 1**.
+   */
+  const brings = new Map<CurrencyCode, Cash>();
+  const couldBring = (ccy: CurrencyCode): Cash => {
+    const already = brings.get(ccy);
+    if (already !== undefined) return already;
+    const now = equityOf(ctx, view.self.id, holds(ccy), home);
+    brings.set(ccy, now);
+    return now;
+  };
   const bids: Bid[] = [];
   const wanted: Wanted[] = [];
   for (const i of lines) {
@@ -1151,7 +1166,7 @@ export function controlDealsFor(
     // B3, A2: what it could bring ITSELF — its own money, and for a pool the capital it could still
     // call. A buyout with no equity cheque at all is not a buyout: a buyer with nothing of its own
     // is not levering anything, it is asking a bank to buy a company and hold the shares for it.
-    const equity = equityOf(ctx, view.self.id, cash, home);
+    const equity = couldBring(ccy);
     if (equity.pieces <= 0) continue;
     const worth = worthAt(view, ctx, target, i.id, required);
     if (!worth.some) continue;

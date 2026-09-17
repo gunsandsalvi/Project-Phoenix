@@ -58,7 +58,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
 import { bankParam, lineParam, DEALING, TRADING_BOOK_RISK_WEIGHT, type BankDecl } from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
-import { arbitrage, dealingOrders, deskBorrows, publishDealing } from './dealing.js';
+import { arbitrage, dealingBooks, dealingOrders, deskBorrows, publishDealing } from './dealing.js';
 import {
   classesSeen,
   targetsFor,
@@ -2123,6 +2123,8 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         // XI-13, Dealer Desks A1: a dealer puts its own capital behind what it thinks a line is worth
         // and carries the loss when it is wrong. Every order this face posts is that.
         speculative: true,
+        // Law 18, Clearing B2 (0g.22): the books this desk is in, read off the lines it makes.
+        markets: (view: ParticipantView) => dealingBooks(view, rows),
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
           dealingOrders(view, m, rows, makersOf),
       },

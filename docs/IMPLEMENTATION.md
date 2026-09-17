@@ -284,189 +284,155 @@ first rung), to produce four curves that do not change within the period.
 ---
 
 ## Part 2 — The items
-
 ## 0g. The core made fast (Law 18)
 
-Layout and traversal only; every step reports the ladder before and after; a step that moves a ratio is reverted.
+Layout and traversal only; no mechanism, no economics, no boundary changes. **THE EXIT IS THE
+OWNER'S FIGURE: 3 SECONDS PER PERIOD ON THE FULL WORLD.**
 
-**THE EXIT IS THE OWNER'S FIGURE: 3–4 SECONDS PER PERIOD ON THE FULL WORLD.**
+**Steps closed and deleted: 12** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19 and 0g.21.
+Their outcomes and the reverted attempts are in `docs/RECORD.md`. 0g.8 (the doors), 0g.11
+(columnar state), 0g.13 (the calendar) and 0g.16 are deleted as *wrong*, not as done — 0g.22
+measured what each was worth and the answer was single digits; where a door is still the right
+fix it is named inside the step that needs it. 0g.12 moved to 24.1.
 
-**Steps closed and deleted: 10** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17 and 0g.18 (0g.1, the ladder, closed
-earlier and was deleted before this count existed, which is why the item's total is 15 and not 16). Their outcomes, measurements
-and the reverted attempts are in `docs/RECORD.md`; CLAUDE.md's loop deletes a step when it closes and
-the record is the ledger, so the plan carries only what is still to do. The count is declared here
-because `plan:progress` cannot otherwise tell a step that closed from one that never existed.
+### 0g.22 What a period of the world actually costs — measured, 2026-09-17
 
-### 0g.0 What the world is, measured
+Every figure below is one period of `foundationWorld` at its declared scale (`npm run world 1`).
+Nothing here is from a rig and nothing is extrapolated.
 
-`npm run world` runs `foundationWorld` at its declared scale — `BANK_COUNT = 30`, `FIRM_COUNT = 9000`,
-four countries. It is in `npm run check`, so the simulation itself is the gate.
-
-| | |
+| the world | |
 |---|---|
-| assembly | 5.7 s |
-| parties | **10,318** — 9,148 named, 1,170 cells |
-| people | 120,000,000 |
-| small firms | 108,000, inside those 1,170 cells |
-| instruments | 14,495 |
-| markets / venues | 1,546 / 1,045 |
-| heap before any period | 622 MB |
-| **period 1** | **STOPS after 32.8 s** (21.121) |
+| parties | 10,318 — 9,148 named, 1,170 cells |
+| people / small firms | 120,000,000 / 108,000 |
+| instruments / markets / venues | 16,750 / 1,546 / 1,045 |
+| **holdings / lots** | **544,104 / 657,785** |
+| period 1 | **72.1 s** (median of 3: 72.0, 72.1, 74.6) |
+| events / audit checks | 178,604 / 356,268 |
+| participant questions | 1,000,921 |
+| **elementary kernel reads** | **265,908,687** |
 
-**The cost of a period of this world is not known, because no period has completed.** Every other
-figure in this item was measured on the rig, which has 259 living parties against 10,318 and a
-different shape of draw (21.120). 3.5 s over 10,318 parties is 339 µs per party; the rig costs
-2,710 µs/party. Those are two different worlds and the ratio between them is not a multiple of
-anything.
+`src/world/work.ts` counts the questions a period asks and what each costs; `src/core/ops.ts`
+counts the elementary reads of the kernel's stores that answering them takes. **The op count is
+bit-exact reproducible** — 265,908,687 on three consecutive runs — so it is a behaviour
+fingerprint beside the event and audit totals, and it is the gate every step below is judged on.
+A duration is the shadow; the count is the cause.
 
-**So 0g has no target multiple until the world runs one period.** 21.121 is ahead of every step here.
+**489 kernel reads per holding per period. 266 per participant question.** That ratio is the
+whole of this item: the world is not big, the reading of it is repetitive.
 
-### What is measured, all of it on the rig
+**Where the period goes** (reads, and what they produced):
 
-- A period: phases 54% (113 of them, largest 8.8%, 91 summing to 10%), order generation 19%
-  (22,640 evaluations, 4,086 of which post anything), settlement 14% (2,827 at 23.8 µs), audit 10%,
-  journal 4% (9,607 at 3.26 µs).
-- A settlement, decomposed (three runs; wrapping the stages inflates 23.8 µs to 25.9–33.1 µs, so the
-  shares are firmer than the absolutes): `apply` **36–52%**, `precheck` 16–25%, `ledger.append`
-  7–10%, freezing the instruction and its legs 7–9%, `journal.record` 5–8%, `validate` 4–10%.
-  Contract checking is **20–34%** of a settlement. `apply` is the largest part and has not been opened.
-- A journal write: **1,754 ns against a 51 ns floor** — validation 643, two freezes 457, the subjects
-  copy 369, the string index key 358, six eager indexes 1,079.
-- Runtime floors: `Map<string,_>.get` 17.2 ns, `array[int]` 3.4 ns, `Float64Array[int]` 1.2 ns,
-  **a small-object allocation 0.8 ns**, `Object.freeze` 38.1 ns. Allocation being nearly free is why
-  0g.11 was deleted.
-- Nested map vs a built string key: **15.1 ns vs 99.4 ns**. `Object.entries` vs `for…in` + a typeof
-  guard: **364.7 ns vs 21.5 ns**, holding across 232 payload shapes.
-- 2,538,758 `Number.isFinite` calls in one period.
-- The journal retains ~896 bytes of heap per event and the world writes 28.4 events per party per period.
-- The rung's own spread: ±1.0% on a steady median across runs, ±10% on the cumulative statistic 0g.4
-  through 0g.11 were reported against.
+| where | reads | share | produced |
+|---|---|---|---|
+| phase `control.tender` | 92,598,968 | 34.8% | — |
+| phase `markets` | 84,513,736 | 31.8% | — |
+| ↳ `banks/bank#0`, the dealing desk | 51,445,710 | 19.3% | **0 orders** |
+| ↳ `funds/fund#11` | 15,828,849 | 6.0% | **0 orders** |
+| ↳ `derivative-layer/firm/contract#35` | 15,446,114 | 5.8% | 150,891 orders |
+| phase `households.lifecycle` | 24,204,666 | 9.1% | — |
+| the audit | 24,118,237 | 9.1% | 356,268 checks |
+| ~150 other phases | ~34,000,000 | 13% | — |
 
+### The cause, named once
 
-**The order: 21.121 first — a world that completes one period — then 0g.19, 0g.20, 0g.14, 0g.8,
-0g.15.** Nothing below 21.121 can be judged: there is no baseline and no denominator until the world
-runs. 0g.11 (columnar state, ~3% measured), 0g.13 (the whole calendar is 0.76%) and 0g.16 (it is
-0g.17) are deleted; 0g.12 moved to 24.1, the observer not being in the period loop at all.
+> **A fact about ONE PARTY is computed inside a loop over BOOKS, TARGETS or COUNTERPARTIES.**
 
-**The exit condition cannot be discussed yet.** Whether the levers reach 3–4 s a period is not
-answerable while the world stops in period 1: there is no baseline to improve on and no denominator
-to divide by. What this item owes is the measured cost of each lever ON THE WORLD THE TARGET IS
-ABOUT, and it owes none of it until 21.121 is fixed.
+It is one defect, found independently in three modules, and it is Law 4 and Law 19 on the read
+path: one writer, one read, and never re-derive what the source already holds. Law 12 applies in
+full — **the fix removes code every time**:
 
-- [ ] 0g.19 **THE PER-OPERATION OVERHEAD.** The journal write is **1,754 ns against a 51 ns floor**:
-  validation 643, two `Object.freeze` 457, the `[...subjects]` copy 369, the string index key 358,
-  six eager indexes 1,079. And **2,538,758 `Number.isFinite` calls in one period**.
-  **Done:** `byId` deleted (`events[id - 1]` is that map's answer at every id — one fact stored
-  twice, Law 4); `Object.entries` → `for…in` + a typeof guard, the same refusal at **364.7 → 21.5 ns**
-  across 232 payload shapes; `byKindPeriod`'s built string key → nested, **99.4 → 15.1 ns**, because
-  a fresh string is built and hashed on every read. Back to back: **215 → 201 ms/period** and
-  **968 → 896 bytes retained per event**, census byte-identical.
-  **Left:** the two freezes (457 ns) and the subjects copy (369 ns). Removing them is a discipline
-  decision — their compile-time half is `readonly` and their runtime half is partial, since freezing
-  an event does not freeze its `subjects` array. **An "assertion build" is not available**: the
-  engine has `types: []` and no `process` or `import.meta`, so there is nowhere for a flag to come
-  from short of a module-level mutable written at `assemble`.
-  **Measure both arms in one session** — stash, measure, pop, measure. The band moves between
-  sessions (±1.0% in one, ±4.2% in another), so a remembered baseline is not a baseline.
-- [ ] 0g.20 **SETTLEMENT.** On the rig a settlement moves **1.4 legs**, writes **1.1 journal events**
-  and **1.2 register entries**, makes 3.7 quantity reads, and costs **23.8 µs**. Where that goes,
-  three runs with the stages wrapped (which inflates the total to 25.9–33.1 µs, so the shares are
-  firmer than the absolutes):
+- `controlDealsFor` read the buyer's own equity, which is a fact about the BUYER and the money,
+  once per listed company: 9,148 buyers × 9,006 lines.
+- `stateOf` read `bookValue(view, targets)` **twice in one call**, and the call walks every line
+  the bank's treasury targets — 3,596 kernel reads to answer one question about one book.
+- `liquidityLines`, `liquidityTargets` and `linesQuoted` each walked all 1,546 markets, three
+  separate ways, for a list that is a fact about the bank.
 
-  | stage | µs | share |
-  |---|---|---|
-  | `apply` — the state change: lots with basis, liens, equity entries, contract legs | 10.0–17.3 | **36–52%** |
-  | `precheck` | 5.3–6.9 | 16–25% |
-  | `ledger.append` | 2.5–2.7 | 7–10% |
-  | settle's own body — freezing the instruction and each of its legs | 2.2–2.5 | 7–9% |
-  | `journal.record` | 1.7–1.9 | 5–8% |
-  | `validate` | 1.4–2.7 | 4–10% |
+### The arithmetic of 24×, and where it can and cannot come from
 
-  `apply` is the largest part and has never been opened; contract checking (`validate` + `precheck`)
-  is 20–34%, so taking the checks out is worth about 1.5× here. Its floor is not known — that needs
-  a prototype which draws lots with basis, moves liens and writes equity and contract legs. The wire
-  is sequential (0g.10: the order is load-bearing), so this is the one block parallelism cannot
-  help, and what that costs at full scale is unknown until 21.121.
-- [ ] 0g.14 **THE TIERED JOURNAL — a MEMORY blocker, not a 4%-of-a-period one.** The journal keeps
-  every event for ever behind six indexes; the heap grows **~896 bytes per event** and the world
-  writes **28.4 events per party per period**. The world holds **622 MB after assembly, before one
-  period runs**. What a year costs is not known until 21.121. Last N periods hot with indexes; older periods
-  compacted to a columnar log readable by the observer and `coverage-reached`; **no event lost**
-  (Law 19 and Audit: the audit reads history, so compaction must preserve every fact, not sample it).
-- [ ] 0g.8 **THE DOORS FINISHED — lever B, and its ceiling is measured.** Ten declarations doored,
-  twelve to go, counted per declaration. **The ceiling:** 22,640 evaluations a period of which
-  **4,086 post anything**, so a perfect door is 5.5× fewer evaluations — order generation 19% → 3.5%
-  of a period, worth ~15%. Real, bounded, and NOT where the 46× is, which is why it sits after
-  lever A. **And the finding that reframes the step: a door is not a yes/no.** The two biggest asks
-  in the engine both have one — `supply/firm` narrows to 39,204 venue evaluations and posts 10,
-  `derivative-layer/firm` to 82,678 and posts 13,083 — so "every declaration has a door" is the
-  wrong exit condition and *asked against posted* is the right one. A session asks every party of a kind whether it has an order in it,
-  and the answer is almost always no. **Measured at period 8 of the (24, 96) rung, per declaration,
-  asked against posted:**
+72.1 s / 265,908,687 = **271 ns per elementary read**, averaged over everything a period does.
 
-  | declaration | asked | posted | door |
-  |---|---|---|---|
-  | `derivative-layer/firm` [market] | 82,678 | 13,083 | yes |
-  | `supply/firm` [venue] | 39,204 | **10** | yes |
-  | `short-term-debt/firm` [market] | 20,230 | 9,240 | yes |
-  | `funds/fund` [market] | **9,696** | **12** | **no** |
-  | `banks/bank` [venue] ×3 | 2,760 | 8 | **no** |
-  | `banks/bank` [market] ×2 | 1,616 | 12 | **no** |
-  | `treasury/treasury` [market] | 404 | 5 | **no** |
-  | `central-bank-omo/centralBank` [market] | 404 | **0** | **no** |
+**Constants are worth single digits, and this was tested rather than assumed.** Deleting one
+`Object.freeze` from `asCash` — 35,215,786 allocations a period — moved the world
+**72.1 s → 69.1 s (−4.2%)** with the op count unchanged. Adding the missing `markets` door to the
+dealing desk cut its questions **92,400 → 14,269** and its reads by **0.03%**, because the cost
+was never the number of questions. A narrowing that does not change what a question COSTS buys
+nothing.
 
-  **Seven doored this pass, all seven a READ of what `orders` already decides from** (Law 19), and
-  every one of them the same sentence the function's own opening lines say: `estate` sells in the
-  books of what it is HOLDING (22,624 asked, 93 posted); `housing/household` and
-  `housing/landlord` buy upkeep in the one book the dwelling's own declared upkeep part trades in
-  (7,676 asked, **nothing posted** — a whole declaration asking the world about every book to buy
-  in none of them); the same two let in the lettings venue of their own place (9,052 asked, 6
-  posted); a household's people work in the labour venues of their own place (9,052 asked, 1,040
-  posted); a fund manager hires in the investing trade of its own place (3,680 asked, 1 posted);
-  a local authority sells the ground of its own place (2,424 asked, 6 posted).
-  **217,921 → 163,736 evaluations; 70,656 → 15,284 of them from an undoored declaration.**
-  (12, 48) at 26 periods **276 → 275 ms/period**; (24, 96) **838 → 809**, order generation
-  162 → 147 ms. Every shape figure byte-identical (parties 141, cells 42, people 228, small 521,
-  events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both
-  censuses identical.
-  **What is left, and why it is not done here.** `funds/fund` is 63% of what remains and its
-  `orders` branches three ways on the mandate (tracks an index / holds things / chooses), so its
-  door has to be a superset of all three — and this door's own contract is that *"what `markets`
-  leaves out must be what `orders` returns nothing in"*, so a door written without reading all
-  three branches silently loses orders somebody would have posted. It wants the funds module open,
-  which is where 21.109's pool equity is going anyway. Then `banks` (five declarations, 4,376
-  asked, 20 posted), `treasury`, `central-bank-omo` (404 asked, **0 posted** — and its own item
-  below is to name sovereign lines), `spot-fx` ×2 and `property/landlord`.
-  **And the two doors that EXIST are the two biggest asks**, which is the other half of the finding:
-  `supply/firm` narrows to 39,204 and posts 10, `derivative-layer/firm` to 82,678 and posts 13,083.
-  A door is not a yes/no — it is as wide as its read, and the narrowing is not finished when every
-  declaration has one.
-  **Still to do:** `markets`/`venues` MANDATORY (assembly refuses a declaration with neither it nor
-  `everyone`) — which is the guard that lands with the last door and cannot land before it, because
-  assembly would refuse the world; `central-bank-omo` names sovereign lines; `market.noView` one
-  event per period.
-  (Done earlier at 0g.8: `VenueParticipantDecl.venues` built — the venue side had no door at all —
-  with the kernel's per-period `askedInVenue` index, and three declarations narrowed:
-  627,543 → 44,000 evaluations, 1,923 → 1,600 ms/period.)
+**The op count is the plan.** The irreducible work of a period, from the state's own size:
+178,604 events × ~10 + 544,104 holdings revalued × ~3 + 544,104 audited × ~4 + 1,000,921
+questions × ~5 ≈ **11 M reads**. At today's 271 ns that is **3.0 s**. So:
 
-- [ ] 0g.15 **PARALLEL ORDER GENERATION — lever C, and Amdahl caps it.** Parties of a market
-  partitioned by a fixed hash of their handle; partitions run on workers (`worker_threads`; Web
-  Workers in the app); orders gathered in partition order; clearing single-threaded. Gate: the ladder
-  byte-identical single- and multi-threaded. **Measured ceiling:** order generation is 19% and the
-  phase block 54%, so ~73% of a period is per-party work that could partition — but settlement (14%)
-  and clearing are sequential by law, so eight cores give 1/(0.27 + 0.73/8) = **2.8×** and
-  sixty-four give 3.5×. Worth having and not worth expecting more from; it cannot be the plan on its
-  own, which is why it is after lever A rather than before it.
+> **3 s needs the op count to fall from 265.9 M to ~11 M — 24× — and the steps below are that
+> fall, each with a budget.**
 
-**Exit.** **The full world at 3–4 s/period**, which is the owner's figure and about 46× from here.
-On the way, and in this order because each makes the next measurable: (12, 200) one country, a
-52-period year under 60 s on CI; the (12, 48) rung under 400 ms/period; every ratio invariant at
-every step, and a step that moves one is reverted (Law 18) — which needs 0g.17 first, because the
-rung's own spread is ±5% and that rule has never had an instrument that could apply it.
+**The risk, stated now rather than discovered later.** The steps below account for ~201 M of the
+265.9 M. What survives them is ~42 M, which at 271 ns is 11.5 s, not 3 s — and removing redundant
+work makes the SURVIVING reads denser, so the average will not fall on its own. **Reaching 3 s
+therefore needs both halves: ~200 M redundant reads removed (0g.23–0g.28) and the surviving reads
+made ~3.5× cheaper (0g.29).** If 0g.28 lands the world at ~12 s and 0g.29 returns only 2×, the
+honest answer is 6 s, and this item is redrawn at that point with the evidence in hand rather than
+carried on hope.
 
-**AND THE GATES ARE NOW COUNTS, NOT MILLISECONDS.** A step's exit is the count it changed (events
-walked, instruments resolved, evaluations asked, settlements at what unit cost) plus a byte-identical
-census. The ms figure comes second and only when 0g.17 can give it a median and a spread.
+**Every step's gate is the same three numbers:** its own read budget, and `events 178,604` /
+`audit 356,268` unchanged. A step that moves either of the latter has changed the world, not its
+layout, and is reverted (Law 18).
+
+- [ ] 0g.23 **`control.tender` — 92,598,968 reads → ≤ 2,000,000.** 9,148 potential buyers × 9,006
+  listed lines is 82.4 M pairs and the phase spends 1.1 reads on each of them. A buyer does not
+  look at every company in the world: what it could buy at all is a fact it can state about
+  itself, which is the same door `ParticipantDecl.markets` is for a book, and the per-target work
+  (`worthAt`, the outstanding count, the half-of-what-exists tick) belongs per LINE, computed once
+  by the phase, not once per buyer. Neither is a decision — both are reads of what the register
+  and this period's prints already hold (Law 19).
+- [ ] 0g.24 **The dealing desk — 29,239,688 reads → ≤ 1,000,000.** `stateOf` is a fact about the
+  BANK and this cycle, and it is rebuilt for every book the bank is asked about: `targetsFor`
+  walks the lines, `bookValue` walks them again, `linesQuoted` a third time. `view.memo` with
+  `view.versions()` is the kernel's own answer to exactly this and is used in two places in the
+  engine. The per-line half (`makers`, `covers`) stays with the participant, because it is a fact
+  about the desk's people and changes within a period.
+- [ ] 0g.25 **`funds/fund#11` — 15,828,849 reads, 0 orders → ≤ 1,000,000.** 52,360 questions, no
+  door, nothing posted. Its `orders` branches three ways on the mandate (tracks an index / holds
+  things / chooses), so the door must be the union of all three or it silently loses orders
+  somebody would have posted — the door's own contract. Read all three branches first.
+- [ ] 0g.26 **`households.lifecycle` — 24,204,666 reads → ≤ 3,000,000.** `die` and
+  `handToProbate`. An estate is settled per person against the whole register; what a dying
+  household holds is what the register's by-holder index already answers.
+- [ ] 0g.27 **The audit — 24,118,237 reads → ≤ 4,000,000.** 356,268 checks over 544,104 holdings,
+  and the families traverse the register independently: `flows`, `weights`, `accounts`,
+  `currency` and `units` each walk what the one before them just walked. **The audit's
+  independence is about the SOURCE it reads, not the number of times it reads it** (Audit C3): one
+  traversal feeding every family is the same audit, and a family that needs its own pass says so.
+  Nothing here may make the audit read a mechanism's running total.
+- [ ] 0g.28 **The tail — ~34,000,000 reads over ~150 phases → ≤ 8,000,000.** No phase in it is
+  above 1.4%; they are the same defect at smaller scale. `work.ts` names them in order every run,
+  and this step is that list worked down until the budget is met, not a sweep.
+- [ ] 0g.29 **The surviving reads made cheaper — 271 ns → ~70 ns.** Only after 0g.23–0g.28, and
+  only against the op count they leave behind. GC is **19.8% of a period** and the engine
+  allocates a frozen object per measured number (35,215,786 `asCash` a period), an `Option` box
+  per absent value, and a fresh array per indexed read. The `Object.freeze` in `asCash` is already
+  gone and was worth 4.2%; the rest of the measures, `Option`, and the arrays returned by
+  `asked`/`ofKind`/`all` are the same change. `readonly` is the compile-time half and it is the
+  half that was doing the work.
+- [ ] 0g.14 **THE TIERED JOURNAL — a MEMORY blocker.** The journal keeps every event for ever
+  behind six indexes; the heap grows ~896 bytes per event and the world writes 178,604 events a
+  period and holds 3.0 GB after one. Last N periods hot with indexes; older periods compacted to a
+  columnar log readable by the observer and `coverage-reached`; **no event lost** (Law 19, Audit:
+  the audit reads history, so compaction preserves every fact and never samples it).
+- [ ] 0g.20 **SETTLEMENT — after the counts, because its share is not yet known on the world.**
+  On the rig a settlement moved 1.4 legs at 23.8 µs, of which `apply` was 36–52% and contract
+  checking 20–34%. `apply` has never been opened. The wire is sequential by law (0g.10), so this
+  is the one block parallelism cannot help. Re-measure on the world before touching it: the rig's
+  shares are not this world's.
+- [ ] 0g.15 **PARALLEL ORDER GENERATION — last, and Amdahl caps it.** Parties of a market
+  partitioned by a fixed hash; partitions on workers; orders gathered in partition order; clearing
+  and settlement single-threaded. Gate: the census and the op count byte-identical single- and
+  multi-threaded. Eight cores give at most 1/(0.27 + 0.73/8) = **2.8×**, and that ceiling is
+  against the CURRENT shape — after 0g.23–0g.28 the parallel fraction is smaller, not larger. It
+  is worth having and it can never be the plan.
+
+**Exit.** `npm run world 1` reports **≤ 12,000,000 ops and ≤ 3 s**, with `events 178604` and
+`audit 356268` unchanged.
 
 ---
 

@@ -119,6 +119,8 @@ import type { OntologyRegister } from '../registry/nouns.js';
 import type { FactRegister } from '../registry/facts.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import { Wants, type Why, type WhyInstruction } from './wants.js';
+import { Work } from './work.js';
+import { totalOps } from '../core/ops.js';
 import {
   Agreements,
   agreementReads, type RowValuationReads,
@@ -330,6 +332,8 @@ export class World {
   private readonly reachTally = new Reach();
   /** 0h.4: the other half of `reach` — what a party asked for this period and did not get. */
   private readonly wantsTally = new Wants();
+  /** Law 18 (0g.22): how many questions this period asked, per declaration. See `work.ts`. */
+  readonly work = new Work();
   /**
    * Law 18 (0h.6): the curves this world has read since the last print or issue. It is a cache of a
    * READ and never a store of a curve: the moment either version moves it is empty again, so there
@@ -1531,12 +1535,18 @@ export class World {
       // kind in every venue — and `produced` then built `kind:id` again before discovering that
       // nothing was posted and there was nothing to record.
       const capability = declId(p.owner ?? 'kernel', p.partyKind);
+      // Law 18 (0g.22): the questions this venue asks, counted where they are asked (`work.ts`).
+      const work = this.work.row(`${capability}#${at}`, 'venue', this.currentPeriod);
       for (const party of this.askedInVenue(at, p, decl)) {
         // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
         if (!party.status.alive) continue;
+        work.asks += 1;
+        const before = totalOps();
         const posted = this.asParticipantOf(p.owner, () =>
           p.orders(this.participantView(party.id), decl),
         );
+        work.reads += totalOps() - before;
+        work.orders += posted.length;
         if (posted.length > 0) {
           this.reachTally.produced('venueParticipant', capability, posted.length, this.currentPeriod);
         }
@@ -1814,12 +1824,21 @@ export class World {
     for (const phase of this.phaseList) {
       this.currentCycle = this.calendar.cycle(phase.cycle);
       this.running = phase;
+      // Law 18 (0g.22): what this phase cost in reads of the kernel's stores (`work.ts`).
+      const work = this.work.row(phase.name, 'phase', this.currentPeriod);
+      const before = totalOps();
       phase.run(this);
+      work.reads += totalOps() - before;
+      work.asks += 1;
     }
     this.running = undefined;
     this.currentCycle = this.calendar.lastCycle;
     this.walkIndices();
+    const auditWork = this.work.row('audit', 'audit', this.currentPeriod);
+    const beforeAudit = totalOps();
     const audit = this.audit.run(this.view(), this.reads());
+    auditWork.reads += totalOps() - beforeAudit;
+    auditWork.asks += 1;
     remember(this.view(), this.memory);
     this.journal.record(
       this.currentPeriod,
@@ -3816,8 +3835,11 @@ export class World {
     let byVenue = this.venueAsks.get(at);
     if (byVenue === undefined) {
       byVenue = new Map<VenueId, PartyId[]>();
+      // Law 18 (0g.22): the door's own cost — one question per party, once a cycle (`work.ts`).
+      const work = this.work.row(`${declId(p.owner ?? 'kernel', p.partyKind)}#${at}`, 'venue', this.currentPeriod);
       for (const party of this.parties.ofKind(p.partyKind)) {
         if (!party.status.alive) continue;
+        work.narrows += 1;
         const named = this.asParticipantOf(p.owner, () => naming(this.participantView(party.id)));
         for (const id of named) {
           const already = byVenue.get(id);
@@ -3845,8 +3867,11 @@ export class World {
     let byMarket = this.asks.get(at);
     if (byMarket === undefined) {
       byMarket = new Map<MarketId, PartyId[]>();
+      // Law 18 (0g.22): the door's own cost — one question per party, once a cycle (`work.ts`).
+      const work = this.work.row(`${declId(decl.owner ?? 'kernel', decl.partyKind, decl.in)}#${at}`, 'book', this.currentPeriod);
       for (const party of this.parties.ofKind(decl.partyKind)) {
         if (!party.status.alive) continue;
+        work.narrows += 1;
         const named = this.asParticipantOf(decl.owner, () =>
           naming(this.participantView(party.id)),
         );
@@ -3940,14 +3965,20 @@ export class World {
       if ((decl.in ?? 'asset') !== (m.kind ?? 'asset')) continue;
       // Law 18 (0g.2): the capability's name is the DECLARATION's — built once, not once per party.
       const capability = declId(decl.owner ?? 'kernel', decl.partyKind, decl.in);
+      // Law 18 (0g.22): the questions this book asks, counted where they are asked (`work.ts`).
+      const work = this.work.row(`${capability}#${at}`, 'book', this.currentPeriod);
       for (const party of this.asked(at, decl, m)) {
         // A ceased party takes no part (Money E4): it has no reasons, and an order in its name
         // would be an instruction addressed to somebody who is not there. What it held is its
         // estate's now, and the estate posts its own orders under its own name (XI-8).
         if (!party.status.alive) continue;
+        work.asks += 1;
+        const before = totalOps();
         const posted = this.asParticipantOf(decl.owner, () =>
           decl.orders(this.participantView(party.id), m),
         );
+        work.reads += totalOps() - before;
+        work.orders += posted.length;
         if (posted.length > 0) {
           this.reachTally.produced('participant', capability, posted.length, this.currentPeriod);
         }

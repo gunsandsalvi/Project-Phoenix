@@ -44,6 +44,7 @@ import {
 import { atLeast, atMost, material } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
+import type { MarketId } from '../../core/ids.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { wasTraded } from '../../prices/price-store.js';
@@ -57,7 +58,7 @@ import {
   type BankDecl,
 } from './data.js';
 import { DEALING, roomFor } from './lines.js';
-import { ccyOf, targetsFor } from './treasury.js';
+import { ccyOf, linesMade, targetsFor } from './treasury.js';
 import { periodOfYear, quoteFor, rateOf, type DeskQuote, type DeskState } from './dealing-quote.js';
 import { downTick, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
@@ -159,16 +160,14 @@ function capitalOf(view: ParticipantView): Cash {
     : noCash(view.registry.currencyOf(view.self.region));
 }
 
-/** C5: how many books it is making a market in this period — its money is spread over them. */
+/**
+ * C5: how many books it is making a market in this period — its money is spread over them.
+ *
+ * 0g.21: the third site that walked every market in the world to ask which lines this desk makes.
+ * One read answers all three (`linesMade`), and this is a count of it.
+ */
 function linesQuoted(view: ParticipantView, d: BankDecl): number {
-  let n = 0;
-  for (const m of view.markets) {
-    const subject = delivers(m);
-    if (!subject.some) continue;
-    const i = view.instruments.get(subject.value);
-    if (i.status.live && d.makes.includes(String(i.kind))) n += 1;
-  }
-  return n;
+  return linesMade(view, d).length;
 }
 
 /**
@@ -223,6 +222,9 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
     d,
     view.params.ratio(bankParam(view.self.id, 'liquidityCushion')),
   );
+  // Law 4, Law 18 (0g.22): ONE READ OF WHAT THE BOOK IS WORTH. It was read twice here, and the
+  // read walks every line the treasury targets — 3,596 kernel reads for one ask of this desk.
+  const book = bookValue(view, targets);
   return {
     // C2.a: where its own treasury wants each line held. The treasury posts nothing; this is how
     // what it decided reaches the market (Law 4: one decider, one face).
@@ -250,12 +252,12 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
         view.params.ratio(lineParam(view.self.id, DEALING, 'capitalAtRisk')),
         'what it will put behind its dealing book',
       ),
-      bookValue(view, targets),
+      book,
     ),
     concentration: view.params.ratio(lineParam(view.self.id, DEALING, 'concentration')),
     ratePerPeriod: rate,
     rateIn: (money) => carryRate(view, money),
-    bookValue: bookValue(view, targets),
+    bookValue: book,
     // F1: what it could actually pay for one more unit. For a DESK that was the cash in its own
     // account; for a bank it is its LIQUID ASSETS — the account, what comes back tomorrow, and what
     // its unencumbered paper would raise (Banks Funding C1) — because a bank buying inventory
@@ -868,3 +870,32 @@ export function publishDealing(
 }
 
 export type { BankDecl, InstrumentId };
+
+/**
+ * Law 18, Clearing B2 (0g.22): WHICH BOOKS THIS DESK IS IN — `ParticipantDecl.markets` for the
+ * dealing face, which never had one.
+ *
+ * Measured on the full world: 92,400 asks of this declaration a period, **51,445,710 reads of the
+ * kernel's stores — nineteen per cent of everything a period reads — and NOT ONE ORDER.** Every
+ * bank was asked about every book in the world, and `dealingOrders` answered by looking the
+ * market's subject up, reading its kind, and discovering it is not a kind this desk makes.
+ *
+ * It is a READ of the same source `orders` answers out of (Law 19, Law 4): `dealingOrders` returns
+ * nothing unless the book's subject is live and its kind is one of `d.makes`, which is exactly what
+ * `linesMade` resolves — so a book this names and a book it posts in cannot disagree, and the
+ * narrowing cannot lose an order. The per-line half of the same decision (`makers`, `covers`) is
+ * still the participant's, because it is a fact about the desk's PEOPLE and changes within a period.
+ */
+export function dealingBooks(
+  view: ParticipantView,
+  rows: readonly BankDecl[],
+): readonly MarketId[] {
+  const d = bankOf(rows, view.self.id);
+  if (d === undefined) return [];
+  const out: MarketId[] = [];
+  for (const id of linesMade(view, d)) {
+    const m = view.instruments.get(id).market;
+    if (m.some) out.push(m.value);
+  }
+  return out;
+}

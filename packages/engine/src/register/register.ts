@@ -11,6 +11,7 @@
  * The equity book is the stated equity account per party (Audit B5): a balance moved only by named
  * events (settlement's realised effects, revaluation, capital), never a stored total of anything.
  */
+import { ops } from '../core/ops.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
@@ -239,6 +240,7 @@ export class Register {
    * array `map` allocated to hand the lots to an iterator.
    */
   quantity(holder: PartyId, instrument: InstrumentId): Qty {
+    ops.holding += 1;
     const h = this.byHolder.get(holder)?.get(instrument);
     if (h === undefined) return NO_QTY;
     let held = 0;
@@ -271,6 +273,7 @@ export class Register {
 
   /** D5.a: free units are held minus encumbered, and only free units can move. */
   free(holder: PartyId, instrument: InstrumentId): Qty {
+    ops.holding += 1;
     return subQty(
       this.quantity(holder, instrument),
       this.encumbered(holder, instrument),

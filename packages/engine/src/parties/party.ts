@@ -8,6 +8,7 @@
  * The weight is a count and changes by exactly five events: entry, death, promotion, split, merge.
  * Which representation a kind takes is its profile's to say (Law 15).
  */
+import { ops } from '../core/ops.js';
 import { forbid } from '../core/assert.js';
 import { scaleQty, type Qty } from '../core/tick.js';
 import type { Period } from '../calendar/calendar.js';
@@ -307,6 +308,7 @@ export class Parties {
   }
 
   get(id: PartyId): Party {
+    ops.party += 1;
     const p = this.map.get(id);
     if (p === undefined) throw new Missing('Audit B6', `party ${id} does not exist`, { id });
     return p;

@@ -130,32 +130,54 @@ function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<LiquidityP
  * payments can be valued at a yield and pledged; a share cannot. And a line its own desk does not
  * make is a line it would have to go to a rival to sell, which is not a liquidity portfolio.
  */
+/**
+ * Dealer Desks C5, E2.a, Law 4, Law 18 (0g.21): THE LINES THIS DESK MAKES A MARKET IN. One read.
+ *
+ * It was asked three times, three different ways, each walking every market in the world and asking
+ * that market's instrument whether its kind was one this desk makes: here, in `liquidityTargets`'s
+ * zero-fill, and in `linesQuoted`. In the full world that is 1,546 markets, and `stateOf` — which
+ * is per-BANK but called once per BOOK — asks it 46,380 times a period. It measured **38% of period
+ * 1**, and it is one question about the register.
+ *
+ * Which lines a desk makes is a fact about the INSTRUMENTS (a live line of one of its kinds, with a
+ * market), so it stands while the instrument store stands — not while the prints do. That is what
+ * makes it keepable: `instruments.version` moves when something is issued, redeemed, split, reseated
+ * or ceased, and a period's worth of prints does not touch it, where the register and the price
+ * store move on every settlement.
+ */
+export function linesMade(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
+  return view.memo(`banks.linesMade|${String(view.self.id)}`, [view.versions().instruments], () => {
+    const out: InstrumentId[] = [];
+    for (const kind of d.makes) {
+      for (const i of view.instruments.ofKind(instrumentKindId(kind))) {
+        if (i.status.live && i.market.some) out.push(i.id);
+      }
+    }
+    return out;
+  });
+}
+
 function liquidityLines(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
   const out: InstrumentId[] = [];
   const on = view.calendar.startOf(view.period);
   const home = view.registry.currencyOf(view.self.region);
-  // Law 18, Law 19 (0g.21): THE KINDS ITS DESK MAKES, off the register's index of lines by kind.
-  // It walked every market in the world and asked each one's instrument whether its kind was one
-  // of these — and in the full world that is 1,546 markets, once per book per bank per period,
-  // inside `stateOf`, which measured **38% of period 1**. `d.makes` IS a list of kinds, so the
-  // index answers directly. A line with no market is not a book its desk makes, which the
-  // `market.some` test below is what said before and still says.
-  for (const kind of d.makes) {
-    for (const i of view.instruments.ofKind(instrumentKindId(kind))) {
-      if (!i.status.live || !i.market.some) continue;
-      // Currency D4, Money Market B3.a: IN ITS OWN MONEY. A liquidity portfolio is what a bank
-      // sells or pledges to raise the money it settles in, and a foreign government's bond raises
-      // a money its own central bank does not issue and will not take (the window is its own
-      // system's, and that is why a bank short of a foreign money has to buy it). Paper abroad is a
-      // POSITION, and what a bank holds abroad as a position is 13h's decision, not this.
-      if (i.ccy !== home) continue;
-      if (
-        view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry)
-          .length === 0
-      )
-        continue;
-      out.push(i.id);
-    }
+  // 0g.21: the lines it makes (one read, above), narrowed to the ones a treasury could hold a
+  // liquidity portfolio in. Both narrowings are facts about the instrument and the date, so the
+  // whole answer stands while the instrument store does.
+  for (const id of linesMade(view, d)) {
+    const i = view.instruments.get(id);
+    // Currency D4, Money Market B3.a: IN ITS OWN MONEY. A liquidity portfolio is what a bank
+    // sells or pledges to raise the money it settles in, and a foreign government's bond raises
+    // a money its own central bank does not issue and will not take (the window is its own
+    // system's, and that is why a bank short of a foreign money has to buy it). Paper abroad is a
+    // POSITION, and what a bank holds abroad as a position is 13h's decision, not this.
+    if (i.ccy !== home) continue;
+    if (
+      view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length ===
+      0
+    )
+      continue;
+    out.push(i.id);
   }
   return out;
 }
@@ -211,13 +233,8 @@ function liquidityTargets(
   // EVERY line it makes is in here, and a line it holds for no liquidity reason has a target of
   // NOTHING — which is an answer and not a missing number. So nothing downstream ever has to decide
   // what an absent target means, because there are none.
-  // 0g.21: the second of the two walks over every market in the world, off the kind index like the
-  // first. Same set: a live line of a kind this desk makes, which had a market to be found through.
-  for (const kind of d.makes) {
-    for (const i of view.instruments.ofKind(instrumentKindId(kind))) {
-      if (i.status.live && i.market.some) out.set(i.id, noCash(i.ccy));
-    }
-  }
+  // 0g.21: the same one read of the lines it makes, rather than a second walk of every market.
+  for (const id of linesMade(view, d)) out.set(id, noCash(view.instruments.get(id).ccy));
   /**
    * Seed C1, Dealer Desks D1, D4: BEFORE IT HAS A PLAN, THE TREASURY WANTS WHAT IT HAS.
    *

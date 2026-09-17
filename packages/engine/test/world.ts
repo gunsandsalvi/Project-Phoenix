@@ -4,13 +4,16 @@
  *
  * It exists because every performance and liveness figure this project has ever quoted was taken on
  * a rig of a few hundred parties, and the world the targets are about was never run. It assembles
- * into 10,314 parties and does not reach the end of period 1. That is the single most important
+ * into 10,318 parties and did not reach the end of period 1. That is the single most important
  * fact about this engine and it was invisible, because the only things that ran were scale models.
  *
- * `npm run world [periods]`. It prints what the world is and how far it got, and exits non-zero the
- * moment the simulation throws — the simulation IS the error, which is the point of it.
+ * `npm run world [periods]`. It prints what the world is, how far it got, and WHERE THE PERIOD
+ * WENT — in questions rather than milliseconds (`src/world/work.ts`), because the questions are
+ * what a period costs and the duration is only their shadow. It exits non-zero the moment the
+ * simulation throws: the simulation IS the error, which is the point of it.
  */
 import { foundationWorld, HOUSEHOLD, SMALL_FIRM } from '../src/index.js';
+import { ops, resetOps, totalOps } from '../src/core/ops.js';
 
 declare const console: { log: (l: string) => void; error: (l: string) => void };
 declare const process: {
@@ -53,6 +56,26 @@ for (let i = 1; i <= periods; i += 1) {
       `p${i} ${((Date.now() - at) / 1000).toFixed(1)}s | parties ${alive} | events ${w.journal.inPeriod(r.period).length}` +
         ` | audit ${r.audit.total} | ${mb()}`,
     );
+    console.log(
+      `   ops ${totalOps()} = instrument ${ops.instrument} + holding ${ops.holding}` +
+        ` + price ${ops.price} + party ${ops.party} + measure ${ops.measure}`,
+    );
+    resetOps();
+    const holdings = w.register.allHoldings();
+    let lots = 0;
+    for (const h of holdings) lots += h.lots.length;
+    console.log(
+      `   state holdings ${holdings.length} lots ${lots} instruments ${w.instruments.all().length}` +
+        ` prints ${w.prices.instruments().length} events ${w.journal.all().length}`,
+    );
+    const rows = w.work.all();
+    console.log(`   asks ${w.work.asks()} over ${rows.length} declarations, dearest:`);
+    for (const q of rows.slice(0, 22)) {
+      console.log(
+        `   ${String(q.asks).padStart(9)} asks ${String(q.narrows).padStart(7)} narrows` +
+          ` -> ${String(q.orders).padStart(6)} orders ${String(q.reads).padStart(10)} reads  ${q.at} ${q.capability}`,
+      );
+    }
   } catch (e) {
     // The simulation's own refusal, reported as the failure it is. No test asserts this and none
     // should: what is wrong is the world, and the world is what says so.

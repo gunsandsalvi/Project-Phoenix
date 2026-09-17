@@ -7,6 +7,7 @@
  * traded one, visibly (E4); it never silently refreshes. A read of a period the market has not yet
  * printed throws NotYetProduced: the fix is the order of phases (F1.a), never a forward reference.
  */
+import { ops } from '../core/ops.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
 import { Mismatch, NotYetProduced, Unpriced } from '../core/errors.js';
@@ -277,6 +278,7 @@ export class PriceStore {
 
   /** The latest print at or before a period, for reporting; the reader sees its provenance and age. */
   latest(instrument: InstrumentId, upTo: Period): Option<Print> {
+    ops.price += 1;
     const list = this.byInstrument.get(instrument);
     if (list === undefined) return none();
     const p = locate(list, upTo).before;

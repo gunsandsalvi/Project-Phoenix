@@ -5,6 +5,7 @@
  *
  * @spec Register A1.b Register A4 Register B1 Register B4 Register E4 Register F1 Register F1.a Fund Shares E1 Fund Shares E2 Bond N1 Bond N2 Bond N3 Bond N14 Equity A2.a Equity D4 Money D2 Law 15
  */
+import { ops } from '../core/ops.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Forbidden, Missing } from '../core/errors.js';
@@ -170,10 +171,12 @@ export class Instruments {
   }
 
   has(id: InstrumentId): boolean {
+    ops.instrument += 1;
     return this.map.has(id);
   }
 
   get(id: InstrumentId): Instrument {
+    ops.instrument += 1;
     const i = this.map.get(id);
     if (i === undefined) {
       throw new Missing('Register A4', `instrument ${id} does not exist`, { id });

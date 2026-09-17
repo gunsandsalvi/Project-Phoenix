@@ -43,6 +43,7 @@
  * operation here accepts one, so a module that has not been migrated is not broken — it is simply
  * not yet checked, which is the state it was in before.
  */
+import { ops } from './ops.js';
 import { finite, type Sum } from './num.js';
 import { Impossible } from './errors.js';
 import type { CurrencyCode } from './ids.js';
@@ -410,8 +411,10 @@ export const heldAsMoney = (held: Amount<'piece'>, ccy: CurrencyCode, what: stri
   asCash(held, ccy, what);
 
 /** The door: money enters with its currency, at the place that knows which (Currency A4). */
-export const asCash = (pieces: number, ccy: CurrencyCode, what: string): Cash =>
-  Object.freeze({ pieces: finite(pieces, what), ccy });
+export const asCash = (pieces: number, ccy: CurrencyCode, what: string): Cash => {
+  ops.measure += 1;
+  return { pieces: finite(pieces, what), ccy };
+};
 
 export const asPerPiece = (x: number, what: string): PerPiece => finite(x, what) as PerPiece;
 
