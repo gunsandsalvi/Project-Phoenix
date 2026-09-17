@@ -160,13 +160,13 @@ it, never made to require it in place.
 | 4.4 parties/cells | **wrong design** | cannot merge, cannot trade cell↔cell, contradicts Part XII (R2, M3, W5, H2, A1) → 0f |
 | 4.5 prices | one gap | a print has no dimension; rate-quoted marks ×100 (IR6) → 18.0 |
 | 4.6 clearing | three gaps | offer at no level dropped (M1); negative level refused for time (K6, V1); markets never close (CP4, CF2, CD1) → 0.9, 18a.4, 18.4 |
-| 4.7 calendar | modules count periods | FD12, CD2, SL5, OM5 → 0g.13 |
+| 4.7 calendar | modules count periods | FD12, CD2, SL5, OM5 → 0g.13, DELETED at 0g.0 (the whole calendar is 0.76% of a period) |
 | 4.8 period loop | **claim false** | an unproduced read returns last period's, never throws; order by anchor at insertion (WK1) → 0a |
 | 4.9 audit | one contradiction; wrong cost | units family fires on every split (A1); prices family vs valuer (A2); five full passes (A3) → 0f, 0g |
 | 4.9b kernel/modules | **wrong design (admitted)** | fourteen single-answer hooks; only one required at seal (W6, A7); registry reads a module event (CO4); observer imports four modules (OB5); modules read each other by event name (BK4) → 0e |
 | 4.10 registry | not in `seeds/`, `*/data.ts` | S3, SB2, FR5, CO5, EN3 → 0c.7 |
 | 4.10a module state | journal used as a store | H7, H9, RP10, CD5, FD3 → 0e.3 |
-| 4.11 observer | wrong cost, wrong dependency | OB1–OB8 → 0g.12, 21.14 |
+| 4.11 observer | wrong cost, wrong dependency | OB1–OB8 → 24.1 (moved from 0g.12 at 0g.0), 21.14 |
 | 5 errors | `core/measure.ts` throws `RangeError` | K1 → 21.10 |
 | 9 lint | spellings, not rules | `Math.*` in 11 mechanism files; `atLeast(x, 0)` floors in 7; literals in data files → 0c.7 |
 
@@ -352,6 +352,22 @@ a richer agent (double-entry settlement, a full instrument register, a live audi
 at or beyond the published state of the art**, and that is worth the owner knowing before it is
 treated as a routine engineering goal.
 
+**What was DELETED from this item, and why (Law 16: a stale plan entry is a defect).**
+
+- **0g.11 (columnar state: interning, CSR typed arrays, typed-array prints and weights).** Measured
+  at ~3% of a period, for a rewrite of the kernel's core stores. Allocating a small object is 0.8 ns
+  and this access pattern is random over an evolving graph, so struct-of-arrays buys neither
+  coalescing nor vectorisation. The one piece worth having was taken at 0g.11's pass (`issuedBy`/
+  `ofKind` keep their resolved lists, 388,560 → 320,906 lookups). Deleted rather than deferred, so
+  nobody re-proposes it from intuition; the measurement is above and in `docs/RECORD.md` under 0g.0.
+- **0g.13 (calendar reads).** The WHOLE calendar is **0.76% of a period** — `yearFraction` 0.31%,
+  `quarterClosedBy` 0.17%, nothing else above 0.07%. Deleted.
+- **0g.16 (record the ladder per step at three scales).** Merged into 0g.17, which is the same thing
+  done properly: a median and a spread, without which none of it is evidence.
+- **0g.12 (the observer from the period's slice)** is MOVED to item 24 (the app and the APK). It does
+  not appear in the profile at any depth because the observer is not in the period loop — it is a
+  surface, and its cost is the app's responsiveness, not the world's speed. Real work, wrong home.
+
 ### 0g.0 The four levers, with what each is worth
 
 | lever | measured basis | worth |
@@ -373,8 +389,8 @@ the engine runs without them.
 generation 0.53 s + audit 0.96 s ≈ 1.8 s serial-plus-parallel, with the phase block the open
 question. That is the first version of this budget that closes, and it closes on tested floors.
 
-**Revised order.** 0g.11 as written (interning, CSR typed arrays) is **NOT next and is not worth 46×**
-— it is worth ~3% and the measurement is above. The order the budget implies:
+**Revised order — SEVEN STEPS, three of them new, three deleted and one rehomed.** The order the
+budget implies, and every step below now carries the measured reason it is where it is:
 
 1. **0g.17 (NEW, inserted here — the instrument, 21.118).** `runRung` reports a median and a spread.
    The rung's own run-to-run spread is **±5%** (274, 274, 286, 287, 303 ms on identical code), so
@@ -386,8 +402,13 @@ question. That is the first version of this budget that closes, and it closes on
    kept under a flag the suite and `check:opens` set. This is lever A and it is most of the 46×.
 4. **0g.20 (NEW).** Settlement to its floor: 23.8 µs → <1 µs. The serial wall, and the single
    biggest number in the budget.
-5. **0g.14** the tiered journal, **0g.8** finished (the doors), **0g.15** parallel order generation.
-6. **0g.11/0g.12/0g.13** last, as the ~3% they are measured to be.
+5. **0g.14** the tiered journal — and it moved UP the order because it is not a speed step at all:
+   at ~968 bytes of retained heap per event and 28.4 events per party per period, the full world
+   writes 1.99M events a period and **103M a year, on the order of 100 GB**. A year of it cannot be
+   held in memory at any speed. That is a hard blocker, not an optimisation.
+6. **0g.8** finished (the doors) — lever B, ceiling measured at 5.5× on 19% of a period.
+7. **0g.15** parallel order generation — lever C, Amdahl-capped at 2.8× on eight cores because
+   settlement and clearing are sequential by law.
 
 **And the exit condition needs the owner.** If A–D land and the phase block behaves, this reaches a
 few seconds a period at ~70,000 parties. If it does not, the three terms are the party count (a
@@ -548,8 +569,53 @@ written down.
   110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both censuses
   identical.
 
-- [ ] 0g.8 **The narrowing — ten declarations doored, twelve to go, and the count is now
-  measured per declaration.** A session asks every party of a kind whether it has an order in it,
+- [ ] 0g.17 **THE INSTRUMENT FIRST (21.118).** `runRung` takes a repeat count and reports the MEDIAN
+  and the spread. Measured: the (12, 48) rung at 26 periods gives 274, 274, 286, 287, 303 ms/period
+  on IDENTICAL code — **±5%** — so 0g's own rule that a step moving a ratio is reverted has nothing
+  to test against, and six records (0g.4–0g.10) carry ms deltas that were inside the noise. Nothing
+  after this can be judged without it, which is why it is first.
+- [ ] 0g.18 **DECOMPOSE THE PHASE BLOCK — 54% of a period and never opened.** Module phases
+  excluding order generation are **380 ms of the (24, 96) rung's 702 ms, 1,467 µs per party**, and
+  no measurement in this item has ever gone inside them. The four blocks that HAVE been decomposed
+  (order generation, settlement, the journal, the audit) come to 46%. Planning the remaining levers
+  around an unmeasured majority is what 0g has been doing for seven steps. Same instrument as
+  0g.0's: counts and unit costs per phase, not percentages.
+- [ ] 0g.19 **THE ASSERTION BUILD — lever A, and most of the 46×.** Contract checks and defensive
+  copies leave the hot path and live under a flag the suite, `check:opens` and the chronicle set.
+  **Measured, per journal write: `Object.entries` + `isCash` validation 643 ns, two `Object.freeze`
+  457 ns, `[...subjects]` 369 ns, a template-string index key 358 ns, against a 51 ns floor.** And
+  **2,538,758 `Number.isFinite` calls in one period** — 9,802 per party — through the `finite`/`add`/
+  `sub`/`sum` wrappers, 119 of whose call sites build the `what` string with a template literal on
+  the happy path. The type system already provides at compile time what these provide at runtime
+  (`readonly`, the branded `Measure<D>`), so this is not weakening the error discipline: it is
+  declining to pay for it twice. **The one judgement the owner must make**: `PhoenixError` at the
+  site is Part I's discipline and this moves some of it to an assertion build. The invariant families
+  (the audit) are untouched — they are the measurement, not a guard.
+- [ ] 0g.20 **SETTLEMENT TO ITS FLOOR — the serial wall.** A settlement moves **1.4 legs**, writes
+  **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads, and costs
+  **23.8 µs**. A faithful floor prototype — same validation, same random-access holdings, same event,
+  same ledger row, no defensive copying or freezing or string keys — costs **276 ns**. **86×.** It
+  matters more than any other number here because the wire is intrinsically sequential (one numbered
+  two-sided instruction at a time, and 0g.10 established the order is load-bearing), so this is the
+  one block parallelism cannot help: **770,000 settlements a period at the full world is 18.3 s at
+  today's cost and 0.21 s at the floor.** The budget closes or fails here.
+- [ ] 0g.14 **THE TIERED JOURNAL — and it is a HARD BLOCKER for MEMORY, not a 4% of period time.**
+  Measured: the journal keeps every event for ever behind six indexes, and the heap grows **~968
+  bytes per event** (an upper bound: it is all retained growth over eight periods). At **28.4 events
+  per party per period**, the full world at 70,000 parties writes **1.99M events a period, 103M a
+  year — on the order of 100 GB**, and at a generous 200 bytes an event it is still 20 GB. **A year
+  of the full world cannot be held in memory at any speed**, so this is not an optimisation and its
+  4% share of a period is not the reason to do it. Last N periods hot with indexes; older periods
+  compacted to a columnar log readable by the observer and `coverage-reached`; **no event lost**
+  (Law 19 and Audit: the audit reads history, so compaction must preserve every fact, not sample it).
+- [ ] 0g.8 **THE DOORS FINISHED — lever B, and its ceiling is measured.** Ten declarations doored,
+  twelve to go, counted per declaration. **The ceiling:** 22,640 evaluations a period of which
+  **4,086 post anything**, so a perfect door is 5.5× fewer evaluations — order generation 19% → 3.5%
+  of a period, worth ~15%. Real, bounded, and NOT where the 46× is, which is why it sits after
+  lever A. **And the finding that reframes the step: a door is not a yes/no.** The two biggest asks
+  in the engine both have one — `supply/firm` narrows to 39,204 venue evaluations and posts 10,
+  `derivative-layer/firm` to 82,678 and posts 13,083 — so "every declaration has a door" is the
+  wrong exit condition and *asked against posted* is the right one. A session asks every party of a kind whether it has an order in it,
   and the answer is almost always no. **Measured at period 8 of the (24, 96) rung, per declaration,
   asked against posted:**
 
@@ -659,84 +725,24 @@ written down.
   **Capacity per (party, ccy, period) decremented within the session: measured and not built.**
   `capacityOf` is 0.26% of a period inclusive.
 
-- [ ] 0g.17 **THE INSTRUMENT FIRST (21.118).** `runRung` takes a repeat count and reports the MEDIAN
-  and the spread. Measured: the (12, 48) rung at 26 periods gives 274, 274, 286, 287, 303 ms/period
-  on IDENTICAL code — **±5%** — so 0g's own rule that a step moving a ratio is reverted has nothing
-  to test against, and six records (0g.4–0g.10) carry ms deltas that were inside the noise. Nothing
-  after this can be judged without it, which is why it is first.
-- [ ] 0g.18 **DECOMPOSE THE PHASE BLOCK — 54% of a period and never opened.** Module phases
-  excluding order generation are **380 ms of the (24, 96) rung's 702 ms, 1,467 µs per party**, and
-  no measurement in this item has ever gone inside them. The four blocks that HAVE been decomposed
-  (order generation, settlement, the journal, the audit) come to 46%. Planning the remaining levers
-  around an unmeasured majority is what 0g has been doing for seven steps. Same instrument as
-  0g.0's: counts and unit costs per phase, not percentages.
-- [ ] 0g.19 **THE ASSERTION BUILD — lever A, and most of the 46×.** Contract checks and defensive
-  copies leave the hot path and live under a flag the suite, `check:opens` and the chronicle set.
-  **Measured, per journal write: `Object.entries` + `isCash` validation 643 ns, two `Object.freeze`
-  457 ns, `[...subjects]` 369 ns, a template-string index key 358 ns, against a 51 ns floor.** And
-  **2,538,758 `Number.isFinite` calls in one period** — 9,802 per party — through the `finite`/`add`/
-  `sub`/`sum` wrappers, 119 of whose call sites build the `what` string with a template literal on
-  the happy path. The type system already provides at compile time what these provide at runtime
-  (`readonly`, the branded `Measure<D>`), so this is not weakening the error discipline: it is
-  declining to pay for it twice. **The one judgement the owner must make**: `PhoenixError` at the
-  site is Part I's discipline and this moves some of it to an assertion build. The invariant families
-  (the audit) are untouched — they are the measurement, not a guard.
-- [ ] 0g.20 **SETTLEMENT TO ITS FLOOR — the serial wall.** A settlement moves **1.4 legs**, writes
-  **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads, and costs
-  **23.8 µs**. A faithful floor prototype — same validation, same random-access holdings, same event,
-  same ledger row, no defensive copying or freezing or string keys — costs **276 ns**. **86×.** It
-  matters more than any other number here because the wire is intrinsically sequential (one numbered
-  two-sided instruction at a time, and 0g.10 established the order is load-bearing), so this is the
-  one block parallelism cannot help: **770,000 settlements a period at the full world is 18.3 s at
-  today's cost and 0.21 s at the floor.** The budget closes or fails here.
-- [ ] 0g.11 **Measured and scoped, and one bounded piece of it done. The full columnar rewrite
-  buys ~3% today and is the difference between five seconds and nothing at the target scale — so it
-  stays open, with the arithmetic rather than the intuition.**
-  **What the string-keyed layout actually costs**, counted at period 8 of the (24, 96) rung:
-  `instruments.get` **388,560 calls**, `parties.get` **213,127**, `register.quantity` **74,928**.
-  Self time: 1.86%, 0.93%, 1.27% — **4.1% together**, and the garbage collector is 11.5%, the
-  largest single entry in the profile. A `Map.get` on a string key is 20–40 ns; an array index
-  behind an interning table is 1–2 ns. So the interning half of this step is worth about 3% of a
-  period **now**, which is not worth rewriting the kernel's core stores for.
-  **At the target scale it is not 3%.** 388,560 lookups at 260 parties is ~1,500 per party per
-  period. At 120,000 parties that is **180 million lookups a period, about 5.4 seconds by itself** —
-  more than the whole 3–4 s budget, in lookups alone. This is 0g.9's lesson again: the step is worth
-  little today and decisive at the scale the exit is written for.
-  **And `quantity` is NOT the lot walk**, which is worth recording because it kills the obvious
-  fix: holdings average **2.05 lots** (5,052 holdings, 10,375 lots, most 12), so walking them is
-  nothing and a stored per-holding total would buy nothing while adding a second representation of
-  what the lots already say (Law 4).
-  **The piece that was worth doing now, because 0g.6 created it.** The top single caller of
-  `instruments.get` was `instruments.ts` itself — **92,408 calls, 24% of all of them** — inside
-  `issuedBy` and `ofKind`, which hold IDS and resolved every one through `get` into a fresh array on
-  every call. That is right about staleness (a record is replaced on issue, redemption, split,
-  reseat or cease, and an index of stale copies is a second register) and wrong about repetition:
-  once 0g.6 pointed fourteen callers at those two doors, the index was doing the walking it had
-  replaced. The RESOLVED list is now kept and dropped the instant `changes` moves — the same
-  construction `all()` already was, and `changes` is bumped wherever `everything` is dropped, which
-  is exactly when a record could have been replaced. **388,560 → 320,906 lookups (−17%).** It is not
-  the full 92,408 because settlement bumps the version constantly, and that is correct.
-  **What is left of the step:** the interning table (parties, instruments, units, currencies to
-  dense integers at registration); holdings as CSR typed arrays with lots in a side array; equity,
-  weights, `latest` prints and the period index as typed arrays; `RegisterReads`, `PriceStore` and
-  `Parties` keeping their string-keyed signatures so nothing above the read faces changes.
-  **A MEASUREMENT NOTE THAT APPLIES BACKWARDS (21.118).** Five runs of the (12, 48) rung at 26
-  periods on IDENTICAL code: 274, 274, 286, 287, 303 ms/period — a spread of **±5%**. Every
-  per-step ms delta 0g.4 through 0g.11 that was 1–4% was therefore inside the noise and is not
-  evidence. What IS evidence is the counts, which are exact and reproducible, and the large
-  deltas: `margin.calls` 66 → 31 ms, the four-country world's p12 1,989 → 984 ms, the solver's ×126.
-  The record has been corrected to say so rather than leaving seven confident small numbers in it.
-
-- [ ] 0g.12 Observer from the period's slice: `snapshot` reads `journal.inPeriod`; static parts cached by `instruments.version`; a party scope walks its own holdings; `numOf` → `null` on a missing field.
-- [ ] 0g.13 Calendar reads: `isAnniversary(epoch, months, period)`, `periodsUntil(date)`, one `yearFractionOfPeriod`; sites: `funds/mandate.ts:816`, `cds/index.ts:171`, `securities-lending due`, `central-bank-omo dueThisPeriod`, the six copies of the year fraction (`banks/dealing-quote.ts`, `staff.ts`, `deposits.ts`, `index.ts costOfFunds`, `treasury.ts`, `funds/manager.ts:201`).
-- [ ] 0g.14 Tiered journal: last N periods hot with indexes; older periods compacted to a columnar log readable by the observer and `coverage-reached`; no event lost.
-- [ ] 0g.15 Parallel order generation: parties of a market partitioned by a fixed hash of their handle; partitions run on workers (`worker_threads`; Web Workers in the app); orders gathered in partition order; clearing single-threaded. Gate: the ladder byte-identical single- and multi-threaded.
-- [ ] 0g.16 Record: the ladder per step at three scales.
+- [ ] 0g.15 **PARALLEL ORDER GENERATION — lever C, and Amdahl caps it.** Parties of a market
+  partitioned by a fixed hash of their handle; partitions run on workers (`worker_threads`; Web
+  Workers in the app); orders gathered in partition order; clearing single-threaded. Gate: the ladder
+  byte-identical single- and multi-threaded. **Measured ceiling:** order generation is 19% and the
+  phase block 54%, so ~73% of a period is per-party work that could partition — but settlement (14%)
+  and clearing are sequential by law, so eight cores give 1/(0.27 + 0.73/8) = **2.8×** and
+  sixty-four give 3.5×. Worth having and not worth expecting more from; it cannot be the plan on its
+  own, which is why it is after lever A rather than before it.
 
 **Exit.** **The full world at 3–4 s/period**, which is the owner's figure and about 46× from here.
 On the way, and in this order because each makes the next measurable: (12, 200) one country, a
 52-period year under 60 s on CI; the (12, 48) rung under 400 ms/period; every ratio invariant at
-every step, and a step that moves one is reverted (Law 18).
+every step, and a step that moves one is reverted (Law 18) — which needs 0g.17 first, because the
+rung's own spread is ±5% and that rule has never had an instrument that could apply it.
+
+**AND THE GATES ARE NOW COUNTS, NOT MILLISECONDS.** A step's exit is the count it changed (events
+walked, instruments resolved, evaluations asked, settlements at what unit cost) plus a byte-identical
+census. The ms figure comes second and only when 0g.17 can give it a median and a spread.
 
 ---
 
@@ -1144,6 +1150,13 @@ failure, not a default, and resolving it needs no new money.*
 ## 24. The app and the APK
 
 §45 A4 (inspector vs participant) is the owner's decision. A year in under two minutes on the device is the gate.
+
+- [ ] 24.1 **The observer from the period's slice (moved here from 0g.12 at 0g.0).** `snapshot` reads
+  `journal.inPeriod`; the static parts are cached by `instruments.version`; a party scope walks its
+  own holdings; `numOf` answers `null` on a missing field. It was in 0g as a speed step and it does
+  not belong there: the observer does not appear in a profile of the period at any depth, because it
+  is not in the period loop. What it costs is the time between a tap and a screen, which is this
+  item's own gate and not the world's.
 
 ---
 

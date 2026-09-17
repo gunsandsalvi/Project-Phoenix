@@ -15955,3 +15955,40 @@ Models for Realizing 1:1 Scale Simulations of Large Economies* (IEEE Access, 202
 High-Performance Agent-Based Macroeconomics Made Easy* (Banca d'Italia, arXiv:2502.13267); FLAME GPU
 (NVIDIA technical blog, Boids 1000× / Schelling ~18×); Datseris et al., *Agents.jl* (SIMULATION,
 2024); *A Survey on Agent-based Simulation using Hardware Accelerators* (arXiv:1807.01014).
+
+---
+
+## 0g.0b — Are the rest of the steps still good? Three were not: deleted, one rehomed
+
+The owner asked. Each remaining step judged against the measured budget, not against opinion.
+
+| step | verdict | measured basis |
+|---|---|---|
+| **0g.17** the instrument | **KEEP, first** | the rung's own spread is ±5% (274, 274, 286, 287, 303 ms on identical code) |
+| **0g.18** decompose the phase block | **KEEP, second** | 54% of a period, 1,467 µs/party, never opened |
+| **0g.19** the assertion build | **KEEP — lever A** | journal write 34× its floor; settlement 86×; 2.5M guard calls a period |
+| **0g.20** settlement to its floor | **KEEP — the wall** | 23.8 µs against a 276 ns prototype; 770,000 a period is 18.3 s vs 0.21 s |
+| **0g.14** tiered journal | **KEEP, moved UP** | not speed: **~968 bytes/event, 103M events and ~100 GB a year** |
+| **0g.8** the doors | **KEEP, bounded** | 4,086 of 22,640 evaluations post ⇒ 5.5× ceiling on 19% of a period |
+| **0g.15** parallel order generation | **KEEP, last** | 73% parallel, 2.8× on eight cores (Amdahl); settlement serial by law |
+| **0g.11** columnar state | **DELETED** | ~3% of a period; allocation is 0.8 ns, access is random-graph |
+| **0g.13** calendar reads | **DELETED** | the WHOLE calendar is **0.76%** — `yearFraction` 0.31%, nothing else above 0.07% |
+| **0g.16** ladder at three scales | **DELETED (merged)** | it is 0g.17 done properly |
+| **0g.12** observer from the slice | **MOVED to 24.1** | absent from a profile of the period at any depth — it is not in the period loop |
+
+**0g.14 changed character, which is the most useful thing in this pass.** It was in the list as a 4%
+speed step. Measured, the journal retains **~968 bytes of heap per event** and the world writes
+**28.4 events per party per period**, so the full world at 70,000 parties writes 1.99M a period and
+**103M a year — on the order of 100 GB**, and at a generous 200 bytes an event it is still 20 GB.
+**A year of the full world cannot be held in memory at any speed.** So it is a hard blocker sitting
+in the list behind three optional-looking steps, and it moved up.
+
+**Two deletions are the same mistake twice**: 0g.11 and 0g.13 were both written from an intuition
+about where time goes (string keys are slow; date arithmetic is slow) and both are worth ~1–3%
+measured. 0g.2, 0g.3 and 0g.5's thirteen sites were the same. **Six of this item's steps have now
+been found to be worth nothing, and every one of them was proposed without a measurement** — which
+is the argument for 0g.17 being first and for the gate being a COUNT rather than a millisecond.
+
+**The gates changed with the order.** A step's exit is now the count it moved — events walked,
+instruments resolved, evaluations asked, the unit cost of a settlement — plus a byte-identical
+census. The ms figure is second, and only once 0g.17 can give it a median and a spread.
