@@ -217,6 +217,8 @@ const EMPTY_PARTIES: readonly Party[] = [];
 
 export class Parties {
   private readonly map = new Map<PartyId, Party>();
+  /** 0g.6c: who resolves to whom, the other way round — written by `cease` and by nothing else. */
+  private readonly predecessors = new Map<PartyId, PartyId[]>();
   /**
    * Law 18: the same parties under a second arrangement — their IDS by kind, in the order they were
    * added. `ofKind` used to spread the whole map into an array and filter it twice on every call,
@@ -343,6 +345,35 @@ export class Parties {
         status: { alive: false as const, ceasedIn: period, successor },
       }),
     );
+    /**
+     * Law 18, Law 19 (0g.6c): AND THE OTHER DIRECTION OF THE SAME FACT — who resolves to this name.
+     *
+     * `resolve` walks a name forward to whoever succeeded it, and there was no way to ask the
+     * question backwards, so anything that wanted "every line this name owes, under whatever name
+     * it was issued" had to walk every line in the world and resolve each one. The chain is written
+     * here and read there; it is the same succession, indexed, and never a second record of it.
+     */
+    if (successor !== id) {
+      const held = this.predecessors.get(successor);
+      if (held === undefined) this.predecessors.set(successor, [id]);
+      else held.push(id);
+    }
+  }
+
+  /**
+   * Register F2 (0g.6c): the names that resolve to this one, nearest first, following the chain —
+   * a party that succeeded a party that succeeded a party answers for all of them.
+   */
+  predecessorsOf(id: PartyId): readonly PartyId[] {
+    const out: PartyId[] = [];
+    const queue = [...(this.predecessors.get(id) ?? [])];
+    while (queue.length > 0) {
+      const one = queue.shift();
+      if (one === undefined) continue;
+      out.push(one);
+      queue.push(...(this.predecessors.get(one) ?? []));
+    }
+    return out;
   }
 
   /**
@@ -457,7 +488,7 @@ export class Parties {
 /** The read-only face of the party store. */
 export type PartiesReads = Pick<
   Parties,
-  'has' | 'get' | 'cell' | 'all' | 'alive' | 'ofKind' | 'resolve'
+  'has' | 'get' | 'cell' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'predecessorsOf'
 >;
 
 /**
@@ -475,6 +506,7 @@ export function partiesReads(parties: Parties): PartiesReads {
     alive: () => parties.alive(),
     ofKind: (kind: PartyKindId) => parties.ofKind(kind),
     resolve: (id: PartyId) => parties.resolve(id),
+    predecessorsOf: (id: PartyId) => parties.predecessorsOf(id),
   });
 }
 

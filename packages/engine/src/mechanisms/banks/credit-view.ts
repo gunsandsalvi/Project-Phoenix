@@ -607,24 +607,37 @@ export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
 function walkExposure(view: ParticipantView, borrower: PartyId): Cash {
   const home = view.registry.currencyOf(view.self.region);
   let total = noCash(home);
-  for (const h of view.holdings()) {
-    const i = view.instruments.get(h.instrument);
-    // F3: EVERYTHING THAT NAME OWES IT, not everything of one kind. A limit that counted only loans
-    // would be a limit a bank could go round by lending the same name money in another shape — a
-    // week of unsecured money, a claim behind every other claim on it, a balance at it — and the
-    // limit would bind on the one exposure it happened to be written about (Law 15, Law 19).
-    if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    if (!i.issuer.some || view.parties.resolve(i.issuer.value).id !== borrower) continue;
-    const units = view.quantity(h.instrument);
-    if (units <= 0) continue;
+  /**
+   * Law 18, Law 19 (0g.6c): THE NAME'S OWN LINES, not the bank's whole book.
+   *
+   * It walked every holding the bank had and resolved each one's issuer to see whether it was this
+   * name — O(the book) to answer a question about one borrower, and the book grows all year. The
+   * register already indexes lines by who promised them, so the lines to look at are this name's
+   * own and those of every name that resolves to it: `reseat` moves a line's issuer of record when
+   * an estate succeeds one, and a party succeeded WITHOUT reseating keeps its lines under its old
+   * name, which is what the predecessor chain is for. Same rows, same arithmetic, in the order the
+   * issuer's lines are held rather than the order the bank's book is.
+   */
+  const names = [borrower, ...view.parties.predecessorsOf(borrower)];
+  for (const name of names) {
+    for (const i of view.instruments.issuedBy(name)) {
+      // F3: EVERYTHING THAT NAME OWES IT, not everything of one kind. A limit that counted only
+      // loans would be a limit a bank could go round by lending the same name money in another
+      // shape — a week of unsecured money, a claim behind every other claim on it, a balance at
+      // it — and the limit would bind on the one exposure it happened to be written about.
+      if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+      if (!i.issuer.some || view.parties.resolve(i.issuer.value).id !== borrower) continue;
+      const units = view.quantity(i.id);
+      if (units <= 0) continue;
     // F3, Law 19: WHAT THE NAME OWES IT is the FACE. Reading the lender's mark here was the wrong
     // quantity (mark vs face) and a cycle: a loan's mark asks the lender's own valuer, which reads
     // this exposure, which asks the mark.
-    total = plus(
-      total,
-      view.inMoney(heldAsMoney(units, i.ccy, 'at the face it owes'), home),
-      'exposure to one name',
-    );
+      total = plus(
+        total,
+        view.inMoney(heldAsMoney(units, i.ccy, 'at the face it owes'), home),
+        'exposure to one name',
+      );
+    }
   }
   return total;
 }

@@ -1442,7 +1442,7 @@ export interface SeedContext {
    */
   readonly parties: Pick<
     Parties,
-    'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve'
+    'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve' | 'predecessorsOf'
   >;
   readonly instruments: Pick<
     Instruments,
