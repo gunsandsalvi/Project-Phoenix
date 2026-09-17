@@ -489,6 +489,40 @@ each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here
 
 ---
 
+## 21a. The equity account is a TOTAL (0f.2, inserted here)
+
+**Three source files point at an item that was never in this list.** `world/assemble.ts` — *"the
+sheet is a TOTAL; the account is per member UNTIL 0f.2"*; `parties/party.ts` and `world/actions.ts`
+say the same. 0f.1 gave a cell totals in the register and a `perMember` read, and left the equity
+account per member; every settlement since divides a total by the weight to book it and every reader
+multiplies it back.
+
+**What it costs, measured (21.104).** The `accounts` family reports four household cells every
+period whose sheet and equity account differ by **0.18 to 1.0 pieces against assets of three hundred
+and forty billion** — eight parts in ten trillion. It is not the walk's rounding: the walk is exact
+against its own twenty-two entries, and the entries' own reconstruction error is three orders of
+magnitude smaller. It is the divide-and-multiply path itself, and it is the one thing a per-member
+account cannot do: hold a total that is not a multiple of the weight.
+
+It cannot be closed by widening anything — Law 7: a check that only passes with a band is reporting
+a defect, and this check is right.
+
+- [ ] 21a.1 `register/register.ts`: the equity account holds a TOTAL, like every other thing the
+  register holds since 0f.1, and `perMember` is a read of it over the weight (0f.1's own pattern).
+  The five weight events move it the way they move a holding: a share goes with the members that
+  moved, a merge adds, and nothing is averaged.
+- [ ] 21a.2 `ledger/settlement.ts`: `bumpTotal` and `bumpPerMember` become one door that takes the
+  total, because after 21a.1 there is only one denomination and the distinction 13d.1 built is gone.
+  **Delete** names the read that replaces it: `perMemberOf` goes with them.
+- [ ] 21a.3 Every reader of `equityWalk`/`equity` stops multiplying by the weight: the `accounts`
+  family, the observer, the reporting statement, the bank's capital, `ownUncertainty`. Each one
+  either wants the total (most) or asks `perMember` (a decision a member takes).
+- [ ] 21a.4 Tests: the identity holds EXACTLY for a cell whose total is not a multiple of its
+  weight; a merge of two cells leaves the sum of the two accounts; a death takes its share to the
+  estate; and the `accounts` family reports nothing on the rig for thirty periods.
+
+---
+
 ## 22. The recipe
 
 - [ ] 22.1 A line may declare more than one recipe (technology, data); the firm picks by its own cost read.

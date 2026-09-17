@@ -275,10 +275,23 @@ export function accountsFamily(): Family {
         const people = weightOf(p);
         const stands = sum([equity.value * people, revaluation.value * people]);
         const read = sum([assets.value.pieces, -liabilities.value.pieces]);
+        /**
+         * Law 7 (21.104): THE DUST OF A PRODUCT IS SCALED BY THE MULTIPLIER. The two accounts are
+         * kept PER MEMBER and the sheet is a TOTAL, so the comparison happens at the total's
+         * magnitude — and the rounding a per-member walk carries arrives there multiplied by the
+         * people, exactly as its value does. This added the per-member dust unscaled, so a cell of
+         * fourteen thousand members was held to a tolerance fourteen thousand times tighter than
+         * the arithmetic it was measuring: four household cells reported residuals of 0.18 to 1.0
+         * pieces against assets of three hundred and forty BILLION — eight parts in ten trillion,
+         * which is what a walk of that length at that magnitude leaves behind.
+         *
+         * It is not a widened band (Law 7 forbids one): it is the same multiplication applied to
+         * the same number's dust, and a cell of one is unchanged by it.
+         */
         const dust =
           combineDust(assets, liabilities, read) +
-          equity.dust +
-          revaluation.dust +
+          equity.dust * people +
+          revaluation.dust * people +
           stands.dust +
           walked;
         if (!withinDust(read.value, stands.value, dust)) {
