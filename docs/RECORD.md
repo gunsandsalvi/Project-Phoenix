@@ -14299,3 +14299,56 @@ in full and were red before this item, all verified against the commit before it
 
 **Marked.** Money G3 carries the one calendar read, Treasury C3 the two periodicities, Equity D2 the
 programme. `test/periodicity.test.ts` is new and seven green.
+
+## Item 0g — The core made fast: four steps, and then parked
+
+**The ladder said what the profile could not.** (3 banks, 12 firms, 52 periods, grain 1.) The rung
+cost **1354 ms/period** at the 52 mark when this session opened — 0g.1 left it at 5.1 s for the
+whole year, and everything built since had multiplied it. A CPU profile of the run named four reads:
+`exposureTo` 11.2%, `instruments.get` 10.2%, `register.snapshot` 9.3%, `register.quantity` 8.4% —
+about half the year in four of them, and none of them the audit walks 0g.2 predicted.
+
+**0g.6a — a holding is handed out, not copied.** Reading a holding copied its lots and its liens,
+every time, for every caller. The arrays are now replaced rather than mutated, typed `readonly`, so
+a read hands out what the store holds; the compiler found all seven mutation sites. 1354 → 1132.
+
+**0g.6b — one walk of the book answers every name.** `exposuresByIssuer` groups the face by issuer
+once; the per-period credit view answers every name from that map. 1132 → 1085. A correctness point
+came with it: the empty answer is nothing in the BANK'S OWN money, not the currency of the request —
+returning the latter stopped the four-country world at `Money A2.b`.
+
+**0g.5a — `view.memo`.** An answer kept while every version it was computed at still stands, with
+`view.versions()` giving the register's write count, the price store's and the instrument store's.
+Two things made it safe and the ladder found both: the register had no write count (it has one,
+bumped by all twelve writers, with `test/register-version.test.ts` holding them to it), and
+`versions` is a CALL — a view is kept for a whole cycle and every payment that settles writes the
+register, so a version read at construction is a world several instructions old. 1085 → 573.
+
+**0g.6c — what one name owes is read off that name's lines.** The exposure walk reads the register's
+index of lines by promiser instead of the bank's whole book; `Parties.predecessorsOf` is the other
+direction of the succession `resolve` already walked, and it is needed because an estate has a line
+RESEATED under its own name while a party succeeded without reseating keeps its lines under the old
+one. 573 → 554.
+
+**One step reverted, which is the section's own rule.** Routing the two callers that hold no credit
+view — the shop that picks the quoted bank, and the overdraft decision — through `creditViewFor` was
+1085 → 797 and MOVED THE WORLD: cells 43 → 44, events 288210 → 257344, audit 4941 → 4912, money per
+member 176879 → 6390296. Building a credit view has consequences (a cost of funds is read; the
+bank's `asked` list is what it publishes quotes from), so asking for one where the code did not is a
+mechanism change wearing a traversal's clothes. Undone, and written into the step.
+
+**2.4× in all, with every shape figure identical to the digit at every step** — parties 112, cells
+43, people 265, small 76, events 288210, sessions 158 cleared, audit 4941, money/member 176879, wage
+per hour 17212.64. That identity is the Law 18 gate and it is what caught both mistakes.
+
+**PARKED HERE, and why.** The profile is now FLAT: nothing above 3% except the garbage collector at
+8.7%. The remaining cost is not a walk to remove, it is the world getting bigger — 26 periods cost
+9.0 s and 52 cost 33.9 s, and the growth is spread across everything (GC +2.07 s, `instruments.get`
++1.65 s, `walkExposure` +1.42 s, `quantity` +1.29 s). So the local wins in 0g.5 and 0g.6 are spent,
+and the remaining factor of ten to the exit lives in the two structural steps: 0g.3 (`Measure` a
+number brand rather than an object, which is where the collector's time is) and 0g.11 (columnar
+state). Both are mechanical passes over the whole engine and want to be taken deliberately.
+
+**A red gate, unchased and stated:** `ladder.test.ts` itself fails, and failed before any of this
+(76 small firms at grain 1 against 77 at grain 2), so the ladder's own invariance check is not
+currently trustworthy on that figure. The ladder's printed census is what these steps were gated on.

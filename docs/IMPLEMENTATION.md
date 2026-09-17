@@ -236,6 +236,13 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 
 Layout and traversal only; every step reports the ladder before and after; a step that moves a ratio is reverted.
 
+**PARKED after 0g.6a, 0g.6b, 0g.5a and 0g.6c (see `docs/RECORD.md`): 1354 → 554 ms/period at the
+first rung, every shape figure identical.** The profile is now flat — nothing above 3% but the
+garbage collector at 8.7% — and the remaining cost is the world getting bigger rather than a walk to
+remove (26 periods 9.0 s, 52 periods 33.9 s, the growth spread across everything). What is left to
+the exit is the two structural steps, 0g.3 and 0g.11, and they are mechanical passes over the whole
+engine rather than local edits.
+
 - [x] 0g.1 `test/ladder.ts` (a script, one rung per process: `npm run ladder -- <banks> <firms> <grain>`) and `test/ladder.test.ts` (the invariants, first rung). **Findings at the first run.** `equity/share.ts votesOf` multiplied a cell's TOTAL shares by its weight (a 0f.1 site no opens run reached — votes are counted only where a listed line has a record date) and the first rung cast more votes than there are safe integers; fixed (votes = units held × votes per share). The run then died of HEAP at 8 GB before the third rung: the journal keeps every event of every period in one array and the ladder holds two worlds at once — the measurement 0g.14 (tiered journal) and 0g.2 (the period index) exist for; the per-rung figures are in the record. **Third build stop (second rung, period 32):** `accelerate` guarded only the calling line, so an issuer's lines were redeemed once per ordering — factorial — and 1.2 million failed maturities of one firm's paper ate the heap in one period; every line is called once per pass whoever calls it. **Fourth (third rung, period 3): 4.4 million lots** — a fill per lot, a copy per re-key, a concatenation per merge; a lot is a basis and a date and equal ones join (0g.6's coalescing, done here; a merge orders by date first). The ladder is in the record: (12, 200) a year in 37 s, (3, 12) in 5.1 s. Steps: 52 periods at (3, 12), (6, 60), (12, 200) banks/firms; per scale: ms/period at 1, 13, 26, 52; parties; events; sessions cleared; audit total; money per member; wage per hour; band counts ×1, ×2. Assert scale-invariant ratios within derived dust; time reported, never asserted.
 - [ ] 0g.2 **The period index** — **first sub-step done (0g.2a):** `Ledger.deltasIn(period)` (holding deltas by holder|instrument, issued deltas by line, units made/destroyed by line), written at `append`, read by the `flows`, `money` and `units` families in place of three walks of the period's records; first rung 94 → 88 ms/period, behaviour byte-identical. The rest, as listed, moves when a profile names the walk (the third-rung profile is flat: no family above 3%): (`world/period-index.ts`), written by settlement and revaluation as they write: legs by instrument, legs by party, equity delta by party, reserve flow by bank, `heldTotal` per instrument, dirty parties, the due heap (next due period per instrument, maintained at issue/restate). Readers, each deleting its own walk: audit families (`accounts`, `flows`, `money`, `units`, `names`, `currency`, goods `unitsIdentity`, capital `plantMoves`, banks `bookMoves`), `reporting/report.ts incomeOf/cashOf` (with `cause` on the equity entry at write), `external/index.ts externalOf` (once; the family reads the published event), `banks/lines.ts earnedByLine`, `banks/treasury.ts reserveFlow` and `money-market/session.ts netReserveFlow` (one read), `securitisation interestCollected`, `capital-programme purchases`, `runCorporateActions` and `owedIn` (the heap), `world.ts reach()` (first-traded per market), `equityLedgerFamily` (running sums), `equityDust` once per party.
 - [ ] 0g.3 `Measure<D>` → `number & { __d: D }`; `Qty` an integer-checked brand; `core/measure.ts` throws `Impossible('Law 8', …)`; arithmetic and dust unchanged. Mechanical pass over every site.
@@ -420,6 +427,13 @@ Each when its file is open for another item; file:line and the change.
 ---
 
 ## 22a. The opening is not an equilibrium
+
+**See `docs/OPENING.md` (proposal, at `2ec6b4c`).** It argues that the steps below are the right
+demands arrived at from the wrong side: the opening's defect is not only that it CLAIMS too much but
+that it is a stock with no history behind it — the seed settles nothing, so at period 0 no party has
+observed anything and no party has an outlook, which is why so much of this world is silent. The
+proposal's items 22b.1–22b.7 absorb most of what is below; this section stands until the owner
+decides between them.
 
 - [ ] 22a.1 Delete `prices.write` from `SeedContext`; delete `seed.openingPrice.*`, `seed.openingYield`, `seed.openingRate`. Opening holdings at cost; the first sessions print from posted reasons (sellers from cost plus required return; buyers from their own outlook of worth); `markOf` is `none` until a print; `rateInForce` for an untraded pair is `none`.
 - [ ] 22a.2 Delete `PUBLIC_AT_THE_OPENING`; flotation is 10f's decision over the first year.
