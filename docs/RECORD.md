@@ -16134,3 +16134,32 @@ anybody would have made is lost — and the identical event and audit totals are
 **The step's budget was ≤ 2,000,000 and it came in under a quarter of that.** The census named the
 phase, the cause was the one this item is about — a fact about one party computed inside a loop
 over counterparties — and the fix was to move four reads up one level.
+
+# 0g.24 — the dealing desk: 51,445,710 reads → 2,689,055, and the budget was ≤ 1,000,000
+
+**The step missed its budget by 1,689,055 reads and the remainder is carried into 0g.28.** What it
+did remove is 95% of the declaration: 51,445,710 → 2,689,055, the period **150,770,684 →
+123,815,780 ops** and **52.3 → 49.5 s**, `events 178604` and `audit 356268` unchanged.
+
+**The memo was the wrong answer and measuring said so before it was written.** `stateOf` is a fact
+about the bank and the cycle, so `view.memo` on `[register, prices, instruments]` looked like the
+fix. It is not: the register moves on every settled trade and the desk is asked once per book, so
+the memo would have been invalid on almost every ask and bought nothing. Two real causes instead:
+
+- **`bookValue` walked what the treasury has an opinion about, not what the bank holds.** The
+  target list is every line of every kind the bank deals — over a thousand — and a bank holds a few
+  dozen. For each of the rest it read a mark, a quantity and an instrument to compute a term that
+  is exactly zero, because the desk's position is `held − min(want, held)` and with nothing held
+  both halves are nothing. It walks `view.holdings()` now, which is the read that replaces it
+  (Law 19), intersected with the targets. **51,445,710 → 7,294,409.**
+- **`targetsFor`'s memo was keyed too broadly.** The targets depend on the bank's holdings, so the
+  memo is held only while the register stands still — but its ZERO-FILL does not: which lines the
+  bank makes and what money each is in are facts about the INSTRUMENTS. Kept against that version
+  alone it survives between books in which nothing was issued. **7,294,409 → 2,689,055.**
+
+**What is left is 188 reads per ask and 2% of the period** — `liquidityLines` and `liquidityPlan`,
+still per ask. It is real and it is no longer where the remaining 49 s is, so it goes on the tail's
+list rather than being chased here (Law 11).
+
+**The declaration still posts zero orders**, as it did before any of this. That is a finding about
+a mechanism and not about its speed, and it is not this item's to chase.

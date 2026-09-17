@@ -95,7 +95,26 @@ function allotted(view: ParticipantView, appetite: Cash, carried: Cash): Cash {
 export function bookValue(view: ParticipantView, targets: ReadonlyMap<InstrumentId, Cash>): Cash {
   const home = view.registry.currencyOf(view.self.region);
   const terms: Cash[] = [];
-  for (const [id, want] of targets) {
+  /**
+   * Law 19, Law 18 (0g.24): IT WALKS WHAT IT HOLDS, not what its treasury has an opinion about.
+   *
+   * This ran over the TARGET list — every line the bank's treasury has a want for, which is every
+   * line of every kind it deals — and asked the register about each one. A bank holds a few dozen
+   * lines and its treasury has a want for over a thousand, so the walk read a mark, a quantity and
+   * an instrument for line after line it holds NONE of, and every one of those terms is exactly
+   * zero: the desk's position is `held − min(want, held)`, and with nothing held both halves are
+   * nothing. Measured on the full world: **3,596 kernel reads to answer one question about one
+   * book, 29,239,688 in a period, and not one order posted.**
+   *
+   * The register's by-holder index already answers "what does this bank hold", which is the read
+   * that replaces the walk. A line it holds and its treasury has no want for is not this desk's
+   * position either — the treasury's want is what separates the two owners of one holding (below),
+   * and without one there is nothing to separate.
+   */
+  for (const h of view.holdings()) {
+    const id = h.instrument;
+    const want = targets.get(id);
+    if (want === undefined) continue;
     const mark = view.mark(id);
     if (!mark.some) continue;
     const held = view.inMoney(

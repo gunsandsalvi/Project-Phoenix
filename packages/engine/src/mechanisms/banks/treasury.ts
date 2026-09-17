@@ -228,13 +228,28 @@ function liquidityTargets(
   d: BankDecl,
   plan: Option<LiquidityPlan>,
 ): ReadonlyMap<InstrumentId, Cash> {
-  const out = new Map<InstrumentId, Cash>();
   const lines = liquidityLines(view, d);
   // EVERY line it makes is in here, and a line it holds for no liquidity reason has a target of
   // NOTHING — which is an answer and not a missing number. So nothing downstream ever has to decide
   // what an absent target means, because there are none.
-  // 0g.21: the same one read of the lines it makes, rather than a second walk of every market.
-  for (const id of linesMade(view, d)) out.set(id, noCash(view.instruments.get(id).ccy));
+  /**
+   * Law 18 (0g.24): WHICH LINES, AND IN WHAT MONEY, MOVES WHEN THE REGISTER DOES NOT.
+   *
+   * The targets themselves are a function of the bank's holdings, so `targetsFor` keeps them only
+   * while the register stands still — and the register moves on every settled trade, so this ran
+   * again for book after book. But the zero-fill is not about holdings at all: it is which lines
+   * this bank makes and what money each is in, and both are facts about the INSTRUMENTS. Kept
+   * against that version alone, it stops being read a thousand lines at a time between two books
+   * in which nothing was issued.
+   */
+  const at = view.versions();
+  const out = new Map<InstrumentId, Cash>(
+    view.memo(`banks.zeroTargets|${String(view.self.id)}`, [at.instruments], () => {
+      const zero = new Map<InstrumentId, Cash>();
+      for (const id of linesMade(view, d)) zero.set(id, noCash(view.instruments.get(id).ccy));
+      return zero;
+    }),
+  );
   /**
    * Seed C1, Dealer Desks D1, D4: BEFORE IT HAS A PLAN, THE TREASURY WANTS WHAT IT HAS.
    *

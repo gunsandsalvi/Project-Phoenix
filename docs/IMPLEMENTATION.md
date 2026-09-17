@@ -289,7 +289,7 @@ first rung), to produce four curves that do not change within the period.
 Layout and traversal only; no mechanism, no economics, no boundary changes. **THE EXIT IS THE
 OWNER'S FIGURE: 3 SECONDS PER PERIOD ON THE FULL WORLD.**
 
-**Steps closed and deleted: 13** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19, 0g.21 and 0g.23.
+**Steps closed and deleted: 14** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19, 0g.21, 0g.23 and 0g.24.
 Their outcomes and the reverted attempts are in `docs/RECORD.md`. 0g.8 (the doors), 0g.11
 (columnar state), 0g.13 (the calendar) and 0g.16 are deleted as *wrong*, not as done — 0g.22
 measured what each was worth and the answer was single digits; where a door is still the right
@@ -378,12 +378,6 @@ carried on hope.
 `audit 356,268` unchanged. A step that moves either of the latter has changed the world, not its
 layout, and is reverted (Law 18).
 
-- [ ] 0g.24 **The dealing desk — 29,239,688 reads → ≤ 1,000,000.** `stateOf` is a fact about the
-  BANK and this cycle, and it is rebuilt for every book the bank is asked about: `targetsFor`
-  walks the lines, `bookValue` walks them again, `linesQuoted` a third time. `view.memo` with
-  `view.versions()` is the kernel's own answer to exactly this and is used in two places in the
-  engine. The per-line half (`makers`, `covers`) stays with the participant, because it is a fact
-  about the desk's people and changes within a period.
 - [ ] 0g.25 **`funds/fund#11` — 15,828,849 reads, 0 orders → ≤ 1,000,000.** 52,360 questions, no
   door, nothing posted. Its `orders` branches three ways on the mandate (tracks an index / holds
   things / chooses), so the door must be the union of all three or it silently loses orders
@@ -397,7 +391,8 @@ layout, and is reverted (Law 18).
   independence is about the SOURCE it reads, not the number of times it reads it** (Audit C3): one
   traversal feeding every family is the same audit, and a family that needs its own pass says so.
   Nothing here may make the audit read a mechanism's running total.
-- [ ] 0g.28 **The tail — ~34,000,000 reads over ~150 phases → ≤ 8,000,000.** No phase in it is
+- [ ] 0g.28 **The tail — ~34,000,000 reads over ~150 phases, PLUS 0g.24's 1,689,055 shortfall →
+  ≤ 8,000,000.** No phase in it is
   above 1.4%; they are the same defect at smaller scale. `work.ts` names them in order every run,
   and this step is that list worked down until the budget is met, not a sweep.
 - [ ] 0g.29 **The surviving reads made cheaper — 271 ns → ~70 ns.** Only after 0g.23–0g.28, and
