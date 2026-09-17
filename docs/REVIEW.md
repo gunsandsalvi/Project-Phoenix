@@ -918,37 +918,43 @@ the ladder's repair (§2's S1). N7 and N8 are worklist items at their dependency
 
 ## §5. One programme
 
-*The twenty proposals above are not a menu. They are four cuts through the single fact in §0, and
-they have an order that follows from it.*
+*The proposals are four cuts through the single fact in §0, so they have one order.*
 
-**The loop to break.** No history → no outlook → no order → no trade → no income → no history. Two
-proposals break it, and nothing else in this review matters until one of them lands.
+**The loop to break.** No history → no outlook → no order → no trade → no income → no history.
+Two changes break it; nothing else matters until one lands.
 
-| # | do this | from | breaks | costs |
+| # | do | from | why here | cost |
 |---|---|---|---|---|
-| 1 | **M3** a party with no private history follows the public record | §3.3 | the loop, at the outlook | days |
-| 2 | **N1** the liveness family, so the world says when it is asleep | §4 | the blindness that let this run for months | ~2 days |
-| 3 | **S1** repair the ladder's middle rung (21.87) | §2.5 | measurement at any scale but the smallest | hours |
-| 4 | **N6** an explainer over the journal | §4 | hand-written probes as the diagnostic method | days |
-| 5 | **22b.1–22b.2** the chronicle and its census | §1.6 | the loop, at the history | weeks |
-| 6 | **M1 + M2** protocols per venue; orders that rest | §3.1, §3.2 | 99.2% empty sessions, and S3 with it | weeks |
-| 7 | **M4 + M6** desired cover, an ask that answers the shelf, a stockist | §3.4, §3.6 | the goods chain, and 21.84 | weeks |
-| 8 | **N2** ensembles, and a finding that must reproduce | §4 | one seed standing in for a world | days |
-| 9 | **S2** 0g.7: memoise the curve, the day count, the inversion | §2.5 | 55% of the cost at the rung that matters | ~1 day |
-| 10 | **N3** the settlement queue and the gridlock pass | §4 | 1,617 failed maturities; a fifth of the deaths | weeks |
-| 11 | **N4** the network read · **N7** the metamorphic family · **S6** the ladder gate | §4, §2.5 | three cheap, independent instruments | days each |
-| 12 | **S4, S5** wake-don't-poll, then the structural passes (0g.3, 0g.11, 0g.14) | §2.5 | the remaining factor of ten | weeks |
-| 13 | **N5, N8** trade credit; the ten-clause gaps in Goods and Observer | §4 | worklist items at their dependency positions | — |
+| 1 | **M1** an outlook exists from the moment a public level does | §3.1 | breaks the loop at the outlook; unblocks 13 dead modules and 1,141 credit refusals | days |
+| 2 | **N1** the liveness family | §4 | without it, nothing here is verifiable and the next dead mechanism is found by hand in six months | ~2 days |
+| 3 | **S1** repair the ladder's middle rung (21.87) | §2.6 | measurement above the smallest scale | hours |
+| 4 | **S2** memoise `curveAt` | §2.6 | 53% of a run at the rung that matters, through the memo already built | hours |
+| 5 | **N2** `why(party, period)` | §4 | the owner's diagnostic time is the scarcest resource in the project | days |
+| 6 | **M5** width from dispersion seen | §3.5 | rides with M1 | hours |
+| 7 | **22b.1–22b.2** the chronicle and its census | §1.8 | breaks the loop at the history; makes the opening a world rather than a claim | weeks |
+| 8 | **M2 + M3** protocols per venue; orders that rest | §3.2, §3.3 | the 99.2% empty sessions, and S4 with them | weeks |
+| 9 | **N3** ensembles; a finding must reproduce | §4 | decides what a finding is — and §1's rejection needs many worlds anyway | days |
+| 10 | **M4 + M6** desired cover, an ask that answers the shelf, a stockist | §3.4, §3.6 | the goods chain; 21.84; the 1,648 perished lots | weeks |
+| 11 | **N4** the settlement queue and the gridlock pass | §4 | 1,617 failed maturities; a share of the deaths | weeks |
+| 12 | **S3** day-count memo and warm-started inversion · **N5** the network read · **N6** metamorphic family · **S7** the ladder gate | §2.6, §4 | four cheap independent instruments | days each |
+| 13 | **S5, S6** wake-don't-poll; then `Measure` as a brand, columnar state, tiered journal | §2.6 | the remaining factor of ten, once it is worth having | weeks |
+| 14 | **N7, N8, 22b.3–22b.9** trade credit; the Goods and Observer gaps; the rest of the chronicle | §4, §1.8 | worklist items at their dependency positions | — |
 
-**Why this order.** 1–4 are cheap and they are *instruments*: after them, the world can act, say when
-it is not acting, be measured at the scale that matters, and explain itself. Everything from 5 down
-is expensive, and every one of those is easier to do — and impossible to get wrong silently — once
-the instruments exist. 9 is out of order on purpose: it is a day's work for half the cost at the
-third rung, and it makes 5 affordable.
+**Why this order and not the obvious one.** Items 1–6 are days of work and they are *instruments*:
+after them the world can act, says when it is not acting, can be measured at the scale that matters,
+and can explain itself. Everything from 7 down is weeks, and every one of those is easier to build —
+and impossible to get wrong silently — once the instruments exist. Item 4 sits out of order on
+purpose: it is hours of work for half the cost of a third-rung run, and it is what makes item 7
+affordable.
 
-**What it would close.** 12c.3, 21.72, 21.73, 21.76, 21.77, 21.79, 21.81, 21.84, 21.86, 21.87 and a
-share of 21.36 — which is most of the open findings register, and all of the "a mechanism that never
-fires" class.
+**What it closes.** 12c.3, 21.72, 21.73, 21.76, 21.77, 21.79, 21.81, 21.84, 21.86, 21.87, and a
+share of 21.36 — which is the whole *"a mechanism that never fires"* class, and most of the open
+register.
 
-**The one-line test of whether it worked.** Run the §0 census again. *428 never-used capabilities,
-13 dead modules, 72 clears in 8,819 sessions* is the before. There is no arguing with the after.
+**The test of whether it worked.** Re-run the §0 census. The before is on the record:
+
+> 428 never-used capabilities of 648 · 13 modules that have never run · 72 clears in 8,819 sessions ·
+> 1,902 failures for want of money · 700,000 hours offered and 0 wanted · 1,648 lots perished ·
+> 135 → 111 parties.
+
+There is no arguing with the after.
