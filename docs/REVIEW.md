@@ -413,8 +413,170 @@ first-rung micro-optimisation.
 
 ## §3. What it does, done badly
 
-*The mechanisms that exist and are weaker than the best available: what each does today, what the
-best practice is, and the change.*
+*The mechanisms that exist and are weaker than the best available.*
+
+Two of these are the machinery between the decisions and four are the decisions themselves. The
+first two matter more.
+
+### 3.1 One market microstructure, for everything
+
+**Today.** `clearing/solver.ts` is *"one solver for every market"*: participants post limit
+schedules, the solver takes the uniform price that executes the most volume. `VenueDecl`
+(`clearing/venue.ts`) declares an id, a name, the clearing module, a unit, a currency and a key —
+**there is no protocol field**. The only variation anywhere is a tie-break (`sellersCompete` |
+`marginalBid`). A household buying bread and a treasury auctioning ten-year paper run identical code.
+
+**Why it is wrong on this project's own terms.** Law 1 is *reflect the real mechanism: real named
+counterparties, intermediaries, lags, fees, refusals*. A Walrasian auctioneer for bread is the one
+intermediary that has never existed. Nobody has ever bought a loaf at a uniform price struck against
+every other buyer in the region that week.
+
+**What it costs.** §0: 8,819 sessions, 72 cleared, 7,903 finding no demand at all. A call auction
+with no resting orders clears only when two parties independently want opposite sides of the same
+book in the same week — which, in a world of 350 books and 127 parties, is almost never.
+
+**What the best practice is.** The dominant protocol in macroeconomic ABMs is not an auction: demand
+agents *"observe the prices or interest rates charged by a random subset of suppliers"* and *"switch
+from the old partner to the best potential partner selected in this random subset with a probability…
+as a non-linear function of the percentage difference in their prices"*, applied *"in four markets:
+goods, labour, credit and deposit — according to a fully decentralized matching mechanism"*
+([Caiani et al. 2016](https://www.sciencedirect.com/science/article/abs/pii/S0165188915301020),
+[Riccetti, Russo & Gallegati](https://link.springer.com/article/10.1007/s11403-014-0130-8)).
+Exchanges went the other way — *"progressively adopted continuous double auctions"* — keeping the
+call for openings and closings ([Walras to CDA](https://arxiv.org/pdf/1506.03758)).
+
+**Proposal M1 — `VenueDecl.protocol`, as DATA behind a dispatch table (Law 15).** Three rows:
+
+- `call` — today's solver, unchanged: sovereign auctions, fixings, anything a real market strikes at
+  one price at one moment.
+- `posted` — the seller posts an ask it stands behind; a buyer sees a random subset of sellers (the
+  size of the subset is a TECHNOLOGY: how much of a market a buyer can see) and buys the best it saw,
+  at that seller's price. **Still cleared from real supply meeting real demand (Law 3)**: a trade
+  happens because a buyer accepted a price a seller was standing behind, which is what a price in a
+  shop is.
+- `book` — resting limit orders with continuous matching, for exchanges (needs M2).
+
+The engine keeps one solver *for auctions* and stops pretending a grocery is one.
+
+### 3.2 Nothing rests
+
+**Today.** `World.runOne` builds a book by asking every eligible participant for orders, clears, and
+throws the orders away. Nothing survives the session.
+
+**Why it matters more than it looks.** This is why `noDemand` is 90% of outcomes rather than
+`noOverlap`: the two sides are not failing to agree on a price — **they are failing to be in the room
+in the same week.** In every real market an offer stands until it is taken, withdrawn or expires: a
+limit order on a book, a price on a shelf, a bank's standing quote, a firm's price list.
+
+**Proposal M2 — a standing-order register**, beside agreements and processes: an order is
+`(party, venue, side, level, quantity, from, until, why)`, entered by a participant, cancelled by its
+owner, expired by the calendar, consumed by a match. Every session opens with the standing book. This
+is not a cache: it is the fact that **an offer is a commitment with a date**, which is this project's
+ontology everywhere else.
+
+### 3.3 Every mechanism fails closed
+
+**Today.** **39 decision sites read an outlook; at least 21 of them return nothing when it is
+missing.** The pattern, from `mechanisms/supply/index.ts:164`:
+
+```ts
+const seen = view.outlook(about({ on: makes ? 'sold' : 'bought', instrument: good }));
+if (!seen.some || seen.value.expected <= 0) return [];
+```
+
+The same shape decides whether a bank quotes (1,141 refusals in §0 say *"it cannot cost its own
+funding"*), whether a firm starts a batch, whether a household posts a demand curve. Each refusal is
+individually correct — a party may not invent a number it does not have — and collectively they are
+why 13 modules have never run.
+
+**The mechanism to fix it already exists and is used for something else.** `expectations/index.ts`
+keeps **two tracks** per party and variable: its own adaptive outlook, and an `anchored` one — *"the
+last PUBLIC level"* — and it switches to whichever has surprised the party less. But a party with no
+private observation has **no entry at all**, so the public track it is entitled to read is never
+consulted.
+
+**Proposal M3 — a party with no private history follows the public one.** Not a default and not an
+invention: a READ of the public record, which is Law 19 rather than `?? 0`. A new entrant in a real
+market looks at the posted price, the published index, the policy rate — and that is precisely what
+`anchored` already is. Concretely: an outlook exists for any variable with a public level, from the
+moment that level exists; its expectation is the public level and its confidence is the dispersion of
+the public record; the party's own observations then pull it away, exactly as they do now.
+
+*This is the single smallest change in this review with the largest reach.* It turns on supply
+contracts, dealer quotes, firm batches and household schedules simultaneously, and it is how the
+chronicle (§1) and the mechanisms meet: the chronicle supplies the history, and this supplies the
+behaviour for anything the chronicle has not touched.
+
+### 3.4 A firm with a full warehouse stops existing instead of cutting its price
+
+**Today** (`mechanisms/firms/decide.ts`): `wanted = (expectsToSell − stock) / yield`. A
+stock-adjustment rule whose **desired buffer is exactly zero**. And the ask is *"what it expects a
+unit to fetch, less what perishes before it could"* — an expectation formed from its own past fills,
+with **no feedback at all from unsold stock into the price**. 12c.3 records the consequence: every
+plan after period 1 is `batch 0, bound demand`, for ever.
+
+**What the best practice is.** In the K+S and AB-SFC families a firm carries a desired inventory as a
+share of expected demand, and adjusts its PRICE on two signals: did it sell out, and are inventories
+above or below that desire
+([Caiani et al.](https://www.sciencedirect.com/science/article/abs/pii/S0165188915301020)). The
+adjustment is bounded in size, never in direction. It is what makes a glut clear.
+
+**Proposal M4 — two changes, both reasons rather than levels.** A **desired cover** drawn per firm as
+a PREFERENCE (how many periods of expected sales it wants on the shelf), dispersed like
+`payoutPatience`, nothing stated globally. And **the ask answers the shelf**: what a unit is worth to
+the firm is what it expects to fetch *if it can sell it*, and a firm holding more cover than it wants
+is one whose alternative to selling today is selling later at a carrying cost it can already read
+(storage, perishing, the money tied up). Subtracting that is not a markdown rule — it is the value of
+holding, which the docstring claims to compute and currently computes as if the shelf were empty.
+
+### 3.5 Nobody may post a schedule of zero width
+
+**Today.** The expectation machinery is genuinely strong — adaptive at a per-party memory with a
+switch to the public anchor, which is heuristic switching built honestly. But *"a party that has
+never seen this variable has no outlook… its first observation IS its outlook, and it is surprised by
+nothing"*, and confidence is the mean absolute surprise. So a party's first schedule has **width
+zero** (`households/consume.ts`: `width: outlook.some ? outlook.value.confidence : 0`), and a point
+demand meets a point supply.
+
+**Why that is fatal in a thin market.** Gode and Sunder's result is that *"allocative efficiency of a
+double auction derives largely from its structure"* and that a budget constraint over **dispersed**
+reservation prices reaches *"close to 100 percent"* efficiency with zero-intelligence traders
+([JPE 1993](https://ideas.repec.org/a/ucp/jpolec/v101y1993i1p119-37.html)). The dispersion is not
+noise; it is what makes a market cross.
+
+**Proposal M5 — width is a read of the dispersion the party has seen, and what it has seen includes
+the public record.** No floor is introduced and nothing is widened by decree: what changes is that
+*how uncertain am I?* is answered from a longer source than *how often have I personally been
+surprised?*. Falls out of M3 almost for free.
+
+### 3.6 Nobody holds the stock
+
+**Today.** Producers sell what they made; `merchants` buy in one place to sell in another (and have
+never once run); banks quote credit. **No party's business is to hold goods and stand on both sides
+of one book.**
+
+**What the world does.** Between a mill and a household there is a wholesaler and a shop, and what
+they are for is exactly the timing gap in §3.2: they buy when the producer wants to sell and sell
+when the household wants to buy. Microstructure prices the same role the same way — a dealer's spread
+is the cost of carrying inventory and the risk of being adversely selected
+([Glosten–Milgrom onward](https://ideas.repec.org/p/arx/papers/1902.10743.html)).
+
+**Proposal M6 — a `stockist` in the goods chain.** Buys from producers at what it expects to sell for
+less its own required return on the money tied up; posts an ask to households out of the lots it
+holds; wears the loss when the gap closes the wrong way. Its margin is an OUTCOME of turnover,
+carrying cost and the prices it actually meets — no spread table, no fee schedule, which is how
+`merchants` is already written. It is the missing intermediary Law 1 asks for, and it is what makes a
+consumer price index possible at all (21.84).
+
+### 3.7 What these close
+
+M1+M2 between them are the demand side of 12c.3 and most of 21.79, 21.81 and 21.73. M3 is the
+enabling change for all thirteen dead modules and for the banks' 1,141 refusals. M4 is the supply
+side of 12c.3. M6 is 21.84 directly. M5 rides with M3.
+
+**Order:** M3 first — it is the smallest and it unblocks measurement of everything else. Then M1+M2
+together (a protocol table is worth little while every order evaporates). Then M4 and M6, which are
+the goods chain. M5 falls out of M3.
 
 ## §4. What it does not do at all
 
