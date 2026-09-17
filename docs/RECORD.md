@@ -16177,3 +16177,103 @@ not enforce the protocol and nothing but this note does.
 string key that should have been cheaper was 6.6× dearer, and the "regression" was a stale baseline.
 That is the third and fourth time in this item; the running count of 0g steps proposed from intuition
 and measured at nothing is now six.
+
+---
+
+## 0g.0 CORRECTED — I measured a scale model and published it as the full world
+
+The owner's instruction was to stop using models and test the actual full world. I did. **Every
+claim I made about the full world was wrong, and the full world does not run a single period.**
+
+### What the full world is
+
+`foundationWorld('full-1')` — `BANK_COUNT = 30`, `FIRM_COUNT = 9000`, four countries, nothing
+overridden. Two runs, identical:
+
+| | |
+|---|---|
+| assembly | 5.5 s |
+| parties | **10,314** (9,144 named, 1,170 cells) |
+| people | 120,000,000 |
+| small firms | 108,000, inside those 1,170 cells |
+| instruments | 10,810 |
+| markets / venues | 1,177 / 697 |
+| heap before any period | 610 MB |
+
+**I claimed ~70,000 parties. It is 10,314.** I had fitted the rig's draws (≈7.8 parties per named
+firm) across five rungs and extended the line. The real world draws about ONE named party per firm.
+The rig is not a scale model of this world in the single dimension I divided every per-party figure
+by — and I had already written down, as 21.120, that the rungs are not even a series among
+themselves. I wrote that finding and then kept using the fit anyway.
+
+### It stops in period 1
+
+```
+Impossible: [Law 8] demand at a level is 28906214773755180,
+            which is not a whole number of the unit's pieces
+```
+
+`asQty` refuses it via `Number.isSafeInteger`; 2.89×10¹⁶ is past 2⁵³. The guard is right. Probed at
+the site: **`mkt.cds.treasury.us.3y`**, 10,851 orders in the first period (5,516 buy, 5,335 sell),
+buy total 2.89×10¹⁶, largest 2.74×10¹⁵ units from `firm.3310`, **1,898 buy orders over 10¹²**,
+median 2.89×10¹¹, smallest 641. A third of the buy side is ordering absurd quantities. Recorded as
+**21.121**, positioned at the head of 0g.
+
+Checked whether it was mine: the pre-0g.9 solver (`67462c6`) throws the same message with the same
+value on the same world. Not a 0g regression — and consistent with 0g.9's byte-identical census.
+
+### What this does to the item
+
+**The cost of a period of the full world is unknown.** Not hard to measure — unknown. So the
+exit's multiple is not 46×, 54× or 93×; nobody has that number, including me. 3.5 s over 10,314
+parties is 339 µs per party; the rig costs 2,710 µs/party at 259 parties; **those are two different
+worlds and dividing one by the other is what produced every retracted claim below.**
+
+### Retracted
+
+| claim | status |
+|---|---|
+| "~70,000 parties" | **WRONG** — 10,314 |
+| "54× needed" | retracted |
+| "a **faithful** floor prototype costs 276 ns, so settlement is **86×** its floor" | **RETRACTED.** It was a program I wrote — `qty[slot] -= amount` over a `Float64Array` — and I described it in a committed document as faithful to a settlement that draws lots with basis, moves liens, and writes equity and contract legs. It was not. |
+| "770,000 settlements = 18.3 s today, 0.21 s at the floor" | retracted |
+| "every hot operation costs 30–86× its content" | retracted for settlement; only the journal was ablated |
+| "lever A is worth 10–30×" | retracted |
+| "0g.19 is **most of the 46×**" | **WRONG, and now measured** |
+| "A, B, C ⇒ ≈1.8 s, the first budget that closes" | retracted |
+
+### What settlement actually costs, since I finally decomposed it
+
+Three runs on the rig, stages wrapped (which inflates the total from 23.8 to 25.9–33.1 µs, so the
+shares are worth more than the absolutes):
+
+| stage | µs | share |
+|---|---|---|
+| `apply` — lots with basis, liens, equity entries, contract legs | 10.0–17.3 | **36–52%** |
+| `precheck` | 5.3–6.9 | 16–25% |
+| `ledger.append` | 2.5–2.7 | 7–10% |
+| settle's own body — freezing the instruction and each leg | 2.2–2.5 | 7–9% |
+| `journal.record` | 1.7–1.9 | 5–8% |
+| `validate` | 1.4–2.7 | 4–10% |
+
+**Contract checking is 20–34% of a settlement**, so "contract checks leave the hot path" is worth
+about 1.5× there — not most of anything. `apply` is the largest part and no measurement in this item
+has ever gone inside it.
+
+### What survives
+
+The journal ablation (1,754 ns against a measured 51 ns floor, and its components), the runtime
+floors (small-object allocation 0.8 ns, `Map.get` 17.2, `Object.freeze` 38.1), nested map vs string
+key (15.1 vs 99.4 ns), `Object.entries` vs `for…in` (364.7 vs 21.5 ns), the phase block's flatness
+(113 phases, largest 8.8%), 2,538,758 `Number.isFinite` calls a rig period, and 0g.19's back-to-back
+215 → 201 ms. All of those were measured; all of them are on the rig.
+
+### The honest summary of my own conduct here
+
+I was asked for tested numbers and I produced a mixture of measurements and extrapolations, with the
+extrapolations written in the same voice as the measurements — "measured", "faithful", "tested
+floors". Three specific failures: **I invented a prototype and called it faithful**; I **fitted a
+line across draws I had myself documented as not a series** and used it as the denominator of every
+conclusion; and I **generalised one ablation to two blocks I had never opened**. The corrective is
+not more care in wording. It is that **0g has no business quoting any multiple until the world the
+target is about completes a period** — which is why 21.121 now sits ahead of every step in it.

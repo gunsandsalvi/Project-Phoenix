@@ -297,134 +297,165 @@ and the reverted attempts are in `docs/RECORD.md`; CLAUDE.md's loop deletes a st
 the record is the ledger, so the plan carries only what is still to do. The count is declared here
 because `plan:progress` cannot otherwise tell a step that closed from one that never existed.
 
-### 0g.0 The budget, measured (2026-09-17)
+### 0g.0 RETRACTED AND REPLACED — THE FULL WORLD DOES NOT RUN A PERIOD
 
-Seven traversal steps (0g.4–0g.10) came to a bit over 2× and the record said six times that the
-rest was not in traversal. That was true and it was not a plan. **This is the plan, and every number
-in it is measured on this machine rather than reasoned about.** The measurements are in
-`docs/RECORD.md` under "0g.0".
+**Everything the first version of this section claimed about the full world was extrapolated from a
+SCALE MODEL, and the extrapolation was wrong. The owner made me run the real thing. It stops in
+period 1.** Below is only what the full world itself was measured doing; the retractions are listed
+at the end so the next reader can see which numbers were invented and not repeat them.
 
-**Where a period goes**, at the (24, 96) rung — 259 living parties, 981 books, 702 ms/period:
+#### What the full world IS, measured
 
-| block | ms | share | count | unit cost | per party |
-|---|---|---|---|---|---|
-| module phases (excl. order generation) | 380 | **54%** | — | — | 1,467 µs |
-| participant order generation | 133 | 19% | 22,640 evaluations (4,086 posted) | **5.87 µs** | 511 µs |
-| settlement | 96 | 14% | 2,827 instructions | **23.8 µs** | 371 µs |
-| the audit | 71 | 10% | — | — | 274 µs |
-| the journal | 31 | 4% | 9,607 events | **3.26 µs** | 121 µs |
-| | | | | | **2,710 µs/party** |
+`foundationWorld('full-1')` — `BANK_COUNT = 30`, `FIRM_COUNT = 9000`, four countries, the declared
+scale with nothing overridden. Two runs, identical:
 
-**What the target requires.** Party count grows LINEARLY with named firms — measured at assembly:
-99 parties at 8 firms, 248 at 24, 446 at 48, 878 at 96, 1,506 at 192, so ≈7.8 parties per named
-firm, and the full model's 9,006 named firms is **~70,000 parties** (the small firms are cells, but
-there are ~6 cells per firm, so aggregation does not rescue the count). 3.5 s over 70,000 parties is
-**50 µs per party per period**, against 2,710 measured: **54×**. At the 120,000 figure, 93×.
+| | |
+|---|---|
+| assembly | **5.5 s** |
+| parties | **10,314** — 9,144 named, 1,170 cells |
+| people | 120,000,000 |
+| small firms | 108,000, inside those 1,170 cells |
+| instruments | 10,810 |
+| markets / venues | 1,177 / 697 |
+| heap after assembly, before any period | **610 MB** |
 
-**EVERY HOT OPERATION COSTS 30–86× ITS OWN CONTENT, and that is where the 46× is.** Not in layout.
+**The party count is 10,314, not the ~70,000 this section used to claim.** That came from fitting the
+rig's draws (≈7.8 parties per named firm) and extending it. The real world draws about ONE named
+party per firm and holds 108,000 small firms and 120 million people inside 1,170 cells. **The rig is
+not a scale model of this world in the one dimension every per-party figure was divided by.**
 
-- A **settlement** moves **1.4 legs**, writes **1.1 journal events** and **1.2 register entries**, and
-  makes 3.7 quantity reads — and costs **23.8 µs**. A faithful floor prototype (same validation, same
-  random-access holdings, same event, same ledger row, written without defensive copying, freezing or
-  string keys) costs **276 ns**. **86×.**
-- A **journal write** costs 1,754 ns in isolation against a **51 ns** floor. Ablated: the
-  `Object.entries` + `isCash` validation loop **643 ns**, two `Object.freeze` **457 ns**, the
-  `[...subjects]` copy **369 ns**, the `byKindPeriod` template-string key **358 ns**, and the six
-  eager indexes **1,079 ns**. None of that is the event.
-- The **arithmetic guard layer** runs **2,538,758 `Number.isFinite` calls in one period** — 9,802 per
-  party — through `finite`/`add`/`sub`/`sum` wrappers, each taking a `what` string (119 sites build
-  it with a template literal on the happy path).
+#### And it stops in period 1
 
-**THE RUNTIME FLOOR, measured, which is what kills 0g.11 as written:** `Map<string,_>.get` **17 ns**,
-`array[int]` **3.4 ns**, `Float64Array[int]` **1.2 ns**, **allocating a small object 0.8 ns**,
-`Object.freeze` **38 ns**, a spread **12 ns**. Allocation is nearly free in V8's young generation and
-Phoenix's access pattern is random over an evolving graph, which is the case where struct-of-arrays
-gains least — the literature agrees (FLAME GPU reports ~1000× for homogeneous Boids and **~18× for
-Schelling**, and the 1:1-scale papers characterise this workload as *memory-bound with random access
-over dense evolving graphs*). **Interning and typed arrays are worth ~3% here and were measured, not
-guessed.**
+```
+Impossible: [Law 8] demand at a level is 28906214773755180,
+            which is not a whole number of the unit's pieces
+  at asQty (core/tick.ts:76) <- clear (clearing/solver.ts) <- runMarket <- World.step
+```
 
-**THE SERIAL WALL, and it is the fact that decides the whole question.** The wire is intrinsically
-sequential: one numbered two-sided instruction at a time, order load-bearing (0g.10 established that
-margin settles inside its own loop and which call is met depends on which came first). At 70,000
-parties and 10.9 settlements each, that is **770,000 settlements a period that cannot be
-parallelised**. At today's 23.8 µs that is **18.3 s**; at the measured 276 ns floor it is **0.21 s**,
-which fits. **So the budget closes only if settlement gets to within ~3× of its floor.**
+`asQty` refuses it through `Number.isSafeInteger`, and it is right to: 2.89×10¹⁶ is past 2⁵³, where
+integer arithmetic in a double stops being exact. Probed at the site, the book is named:
+**`mkt.cds.treasury.us.3y`** — protection on three-year US treasury credit — with **10,851 orders**
+in the first period (5,516 buy, 5,335 sell), buy total 2.89×10¹⁶, largest single order **2.74×10¹⁵
+units from `firm.3310`**, **1,898 buy orders over 10¹²**, median 2.89×10¹¹, smallest 641. Not one
+rogue order: a third of the buy side is ordering absurd quantities. Written down as **21.121** and
+not chased here (Law 11).
 
-**What the state of the art spends.** Gill & Lalith simulate 127 million agents, one period in 110 s
-on 64 CPU cores — **55 µs of CPU per agent per period**, with distributed + shared-memory hybrid
-parallelism. Phoenix's target is 29–50 µs per party per period, on one machine, in TypeScript, with
-a richer agent (double-entry settlement, a full instrument register, a live audit). **The target is
-at or beyond the published state of the art**, and that is worth the owner knowing before it is
-treated as a routine engineering goal.
+**It is pre-existing and it is not 0g's.** The pre-0g.9 solver (`67462c6`) was checked out and the
+full world run again: same message, same value. 0g.9's rewrite preserved the behaviour exactly,
+which is what its byte-identical census said.
 
-**What was DELETED from this item, and why (Law 16: a stale plan entry is a defect).**
+#### Therefore the cost of a period of the full world is UNKNOWN
 
-- **0g.11 (columnar state: interning, CSR typed arrays, typed-array prints and weights).** Measured
-  at ~3% of a period, for a rewrite of the kernel's core stores. Allocating a small object is 0.8 ns
-  and this access pattern is random over an evolving graph, so struct-of-arrays buys neither
-  coalescing nor vectorisation. The one piece worth having was taken at 0g.11's pass (`issuedBy`/
-  `ofKind` keep their resolved lists, 388,560 → 320,906 lookups). Deleted rather than deferred, so
-  nobody re-proposes it from intuition; the measurement is above and in `docs/RECORD.md` under 0g.0.
-- **0g.13 (calendar reads).** The WHOLE calendar is **0.76% of a period** — `yearFraction` 0.31%,
-  `quarterClosedBy` 0.17%, nothing else above 0.07%. Deleted.
-- **0g.16 (record the ladder per step at three scales).** Merged into 0g.17, which is the same thing
-  done properly: a median and a spread, without which none of it is evidence.
-- **0g.12 (the observer from the period's slice)** is MOVED to item 24 (the app and the APK). It does
-  not appear in the profile at any depth because the observer is not in the period loop — it is a
-  surface, and its cost is the app's responsiveness, not the world's speed. Real work, wrong home.
+Not hard to measure — unknown, because no period of it has ever completed, including in this
+session. Every figure in this item was measured on the rig, which has 259 living parties against the
+full world's 10,314, a seventh of its instruments, and a different shape of draw (21.120: the rungs
+are not a series even among themselves).
 
-### 0g.0 The four levers, with what each is worth
+**So the exit condition's multiple is not 46×, 54× or 93×. It is not a number anyone has.** What is
+known: 3.5 s over 10,314 parties is **339 µs per party per period**. The rig costs 2,710 µs/party at
+259 parties — but those are two different worlds, and dividing one by the other is exactly what
+produced the retracted claims below.
 
-| lever | measured basis | worth |
+**The first thing 0g needs is not an optimisation. It is a full world that completes one period**, so
+the target has a denominator and the levers have a baseline. That is 21.121, positioned ahead of
+every remaining step here.
+
+#### RETRACTED — claims this section made that were never tested
+
+| claim | status |
+|---|---|
+| "the full model is ~70,000 parties" | **WRONG.** Measured: 10,314. |
+| "3.5 s over 70,000 is 50 µs/party against 2,710 measured: **54×**" | **RETRACTED** — two different worlds divided by each other. |
+| "a faithful floor prototype costs **276 ns**, so settlement is **86×** its floor" | **RETRACTED.** That prototype was a program I wrote (`qty[slot] -= amount` over a `Float64Array`), not the engine's settlement, which draws lots with basis, moves liens and writes equity and contract legs. Calling it *faithful* was false. |
+| "770,000 settlements a period: **18.3 s** today, **0.21 s** at the floor" | **RETRACTED** — rests on 70,000 parties and on the 276 ns fiction. |
+| "**every hot operation costs 30–86×** its own content, and that is where the 46× is" | **RETRACTED for settlement.** Only the journal was ever ablated (34× against a measured 51 ns floor — that part stands). Settlement's ratio was assumed. |
+| "lever A is worth **10–30×**" | **RETRACTED** — derived from the 86×. |
+| "0g.19, the assertion build, is **most of the 46×**" | **WRONG, and now measured.** Settlement decomposed on the rig, three runs: `apply` 36–52%, `precheck` 16–25%, `validate` 4–10%, `ledger.append` 7–10%, `journal.record` 5–8%, the freezes in settle's own body 7–9%. **Contract checking is 20–34% of a settlement**, so removing all of it is about 1.5× on that block. |
+| "if A, B and C land: **≈1.8 s** — the first version of this budget that closes" | **RETRACTED** — built on all of the above. |
+
+#### What survives, because it was actually measured
+
+- The journal write: **1,754 ns against a 51 ns floor**, ablated — validation 643, two freezes 457,
+  the subjects copy 369, the string index key 358, six eager indexes 1,079 — on real payload shapes.
+  0g.19 then took **215 → 201 ms/period back to back** on the rig.
+- The runtime floors: `Map<string,_>.get` 17.2 ns, `array[int]` 3.4 ns, `Float64Array[int]` 1.2 ns,
+  **a small-object allocation 0.8 ns**, `Object.freeze` 38.1 ns. This is what killed 0g.11.
+- Nested map against a built string key: **15.1 ns vs 99.4 ns**.
+- `Object.entries` against `for…in` + a typeof guard: **364.7 ns vs 21.5 ns**, across 232 shapes.
+- The phase block on the rig: 113 phases, 51–58% of a period, largest 8.8%, 91 summing to 10%.
+- 2,538,758 `Number.isFinite` calls in one rig period.
+
+#### The state of the art, and a comparison I should not have drawn
+
+Gill & Lalith simulate 127 million agents, one period in 110 s on 64 CPU cores — **55 µs of CPU per
+agent per period**. Phoenix's full world is 10,314 parties, so per PARTY its target is far less
+demanding; but a Phoenix party is enormously richer (a cell standing for 100,000 people, double-entry
+settlement over a full instrument register, a live audit), so the two are not comparable per agent
+and I implied they were.
+
+
+### 0g.0 The four levers — REPRICED, and three of the four prices were fiction
+
+| lever | what is actually measured | worth |
 |---|---|---|
-| **A. Unit costs to within 3× of floor** | settlement 86×, journal 34×, guards everywhere | **10–30×** |
-| **B. Counts down** | 87 evaluations/party, 4,086 of 22,640 posted; doors unfinished (0g.8) | **1.5–4×** |
-| **C. Parallelism** (0g.15) | ~80% of a period is per-party; settlement and clearing are serial | **2.8–4×** (Amdahl) |
-| **D. The phase block** | opened at 0g.18: **113 phases, 51–58% of a period, largest 8.8%, 91 of them summing to 10%** | **not worse than the rest** — it answers to A and C |
+| **A. Unit costs down** | journal write **1,754 ns vs a 51 ns floor** (ablated). Settlement's floor is **NOT MEASURED** — the 276 ns "prototype" was a toy. | **unknown; the journal says 34× is available on ONE block that is 4–8% of a period** |
+| **B. Counts down** | 22,640 evaluations a rig period, **4,086 of them post anything** | **ceiling 5.5× on 19% of a period** |
+| **C. Parallelism** (0g.15) | ~73% of a rig period is per-party; settlement and clearing are serial by law | **2.8× on eight cores** (Amdahl) |
+| **D. The phase block** | opened at 0g.18: 113 phases, 51–58% of a period, largest 8.8%, 91 summing to 10% | **flat — no phase to fix; answers to A and C** |
 
-A × B × C is 40–480× on paper and the honest reading is that **A is the whole programme**. D is
-no longer unmeasured: 0g.18 opened it and found it FLAT — 113 phases, no single one above 8.8% of a
-period, ninety-one of them summing to 10% — so there is no phase to fix and the block answers to the
-same two levers as everything else. Its per-party cost is 794–1,537 µs across three rungs, which
-rises with the world's size, so it carries the same party × book and party × instrument products
-order generation does: lever B reaches inside the phases too, not only into the participant doors. What A means concretely, and it is not a list of local fixes but one decision applied
-everywhere: **contract checks and defensive copies leave the hot path.** Freeze, `[...]` copies,
-`Object.entries` validation loops, eagerly-built error strings and eager indexes are discipline
-devices that the TYPE SYSTEM already provides at compile time (`readonly`, the branded `Measure<D>`),
-and they are costing 30–86× at runtime. An assertion build keeps them for the suite and the chronicle;
-the engine runs without them.
+**A × B × C is not a number I can give, and the earlier "40–480×" was arithmetic on a fiction.** What
+lever A is made of, measured properly at last, is the settlement decomposition — three runs on the rig:
 
-**If A, B and C land and D is no worse than the rest**: settlement 0.21 s + journal 0.13 s + order
-generation 0.53 s + audit 0.96 s ≈ 1.8 s serial-plus-parallel, with the phase block the open
-question. That is the first version of this budget that closes, and it closes on tested floors.
+| stage | µs | share of a settlement |
+|---|---|---|
+| `apply` (the state change: lots, liens, equity, contracts) | 10.0–17.3 | **36–52%** |
+| `precheck` | 5.3–6.9 | 16–25% |
+| `ledger.append` | 2.5–2.7 | 7–10% |
+| settle's own body (freezing the instruction and its legs) | 2.2–2.5 | 7–9% |
+| `journal.record` | 1.7–1.9 | 5–8% |
+| `validate` | 1.4–2.7 | 4–10% |
+
+**Contract checking — `validate` plus `precheck` — is 20–34% of a settlement.** So "contract checks
+and defensive copies leave the hot path" is worth about **1.5× on settlement**, not most of anything.
+The state change itself is the largest part, and nothing in this item has yet looked inside `apply`.
+(The spread is wide because these are single-period runs with eleven wrapped methods; the harness
+inflates the total from 23.8 µs to 25.9–33.1 µs, which is itself a reason to trust the shares more
+than the absolutes.)
+
+**And none of it can be priced against the target until a full world completes a period (21.121),**
+because the rig is not a scale model of it in the dimension that matters: 259 parties against 10,314,
+and about one named party per firm there against 7.8 here.
+
 
 **Revised order — SEVEN STEPS, three of them new, three deleted and one rehomed.** The order the
 budget implies, and every step below now carries the measured reason it is where it is:
 
-1. **0g.17 (NEW, inserted here — the instrument, 21.118).** `runRung` reports a median and a spread.
-   The rung's own run-to-run spread is **±5%** (274, 274, 286, 287, 303 ms on identical code), so
-   0g's rule *"a step that moves a ratio is reverted"* currently has nothing to test against, and six
-   records carry ms deltas that were inside the noise.
-2. **0g.18 (NEW).** Decompose the **phase block** — 54% of a period, never opened. Nothing else can
-   be planned around it.
-3. **0g.19 (NEW).** The assertion build: contract checks and defensive copies out of the hot path,
-   kept under a flag the suite and `check:opens` set. This is lever A and it is most of the 46×.
-4. **0g.20 (NEW).** Settlement to its floor: 23.8 µs → <1 µs. The serial wall, and the single
-   biggest number in the budget.
-5. **0g.14** the tiered journal — and it moved UP the order because it is not a speed step at all:
-   at ~968 bytes of retained heap per event and 28.4 events per party per period, the full world
-   writes 1.99M events a period and **103M a year, on the order of 100 GB**. A year of it cannot be
-   held in memory at any speed. That is a hard blocker, not an optimisation.
+0. **21.121 FIRST, AND BEFORE EVERY STEP BELOW: a full world that completes one period.** It stops
+   in period 1 at `mkt.cds.treasury.us.3y` with a demand of 2.89×10¹⁶ units. Until it runs, this
+   item has no denominator, no baseline, and no way to tell whether any step below matters.
+1. **0g.17 — CLOSED.** The instrument: a median and a spread.
+2. **0g.18 — CLOSED.** The phase block is flat.
+3. **0g.19 (open).** The per-operation overhead. Its first pass took 215 → 201 ms/period on the rig.
+   **It is NOT "most of the 46×"** — that claim is retracted above: contract checking is 20–34% of a
+   settlement, so this lever is worth about 1.5× there. What is left of it needs the owner's decision
+   on the error discipline, and the engine cannot read a build flag at all.
+4. **0g.20 (open).** Settlement. Its floor is **unmeasured** — the 276 ns figure is retracted — and
+   what the decomposition says is that `apply` is 36–52% of it and has never been opened.
+5. **0g.14** the tiered journal. Measured on the rig: **~968 bytes of retained heap per event**
+   (896 after 0g.19) and 28.4 events per party per period. **The per-year total is NOT known**, because
+   it was computed from the retracted 70,000-party figure; what IS measured is that the full world
+   holds **610 MB after assembly, before a single period**, and that the journal keeps every event for
+   ever. A memory blocker on that evidence, with the year figure withdrawn.
 6. **0g.8** finished (the doors) — lever B, ceiling measured at 5.5× on 19% of a period.
 7. **0g.15** parallel order generation — lever C, Amdahl-capped at 2.8× on eight cores because
    settlement and clearing are sequential by law.
 
-**And the exit condition needs the owner.** If A–D land and the phase block behaves, this reaches a
-few seconds a period at ~70,000 parties. If it does not, the three terms are the party count (a
-RESOLUTION — `SMALL_PER_NAMED`, cell granularity, 21.98), the budget, or the machine. Those are the
-owner's to set, not this item's; what this item owes is the measured cost of each, and that is now
-written down.
+**And the exit condition cannot be discussed yet.** Whether A–D reach 3–4 s a period is not
+answerable while the full world stops in period 1: there is no baseline to improve on and no
+denominator to divide by. The earlier version of this paragraph offered the owner three terms to
+choose between (the party count, the budget, the machine) on the strength of a projection that is now
+retracted. **What this item owes is the measured cost of each lever ON THE WORLD THE TARGET IS
+ABOUT**, and it owes none of it until 21.121 is fixed.
 
 - [ ] 0g.19 **THE PER-OPERATION OVERHEAD — first pass done, and the step's own framing was wrong.**
   It asked for an "assertion build": a flag the suite sets and the engine runs without. **The engine
@@ -458,21 +489,36 @@ written down.
   The baseline had been remembered from 25 minutes earlier. **A comparison is only evidence if both
   arms are measured in the same session**, because the band itself moves (±1.0% in one session,
   ±4.2% in another). Stash, measure, pop, measure — and report both.
-- [ ] 0g.20 **SETTLEMENT TO ITS FLOOR — the serial wall.** A settlement moves **1.4 legs**, writes
-  **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads, and costs
-  **23.8 µs**. A faithful floor prototype — same validation, same random-access holdings, same event,
-  same ledger row, no defensive copying or freezing or string keys — costs **276 ns**. **86×.** It
-  matters more than any other number here because the wire is intrinsically sequential (one numbered
-  two-sided instruction at a time, and 0g.10 established the order is load-bearing), so this is the
-  one block parallelism cannot help: **770,000 settlements a period at the full world is 18.3 s at
-  today's cost and 0.21 s at the floor.** The budget closes or fails here.
+- [ ] 0g.20 **SETTLEMENT — decomposed, and its floor is NOT KNOWN.** On the rig a settlement moves
+  **1.4 legs**, writes **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads,
+  and costs **23.8 µs**. Where that goes, three runs with the stages wrapped (which inflates the
+  total to 25.9–33.1 µs, so trust the shares over the absolutes):
+
+  | stage | µs | share |
+  |---|---|---|
+  | `apply` — the state change: lots with basis, liens, equity entries, contract legs | 10.0–17.3 | **36–52%** |
+  | `precheck` | 5.3–6.9 | 16–25% |
+  | `ledger.append` | 2.5–2.7 | 7–10% |
+  | settle's own body — freezing the instruction and each of its legs | 2.2–2.5 | 7–9% |
+  | `journal.record` | 1.7–1.9 | 5–8% |
+  | `validate` | 1.4–2.7 | 4–10% |
+
+  **THE "276 ns FLOOR, 86×" CLAIM IS RETRACTED** — it came from a toy program (`qty[slot] -= amount`
+  over a `Float64Array`), not from this. A real floor needs a prototype that draws lots with basis,
+  moves liens and writes equity, and that has not been built. **What the decomposition does say is
+  that `apply` is the largest part and has never been opened**, and that contract checking
+  (`validate` + `precheck`) is 20–34% — so the assertion-build idea is worth about 1.5× here.
+  The wire is still intrinsically sequential (0g.10 established the order is load-bearing), so this
+  block is the one parallelism cannot help; how much that costs at full scale is unknown until
+  21.121.
 - [ ] 0g.14 **THE TIERED JOURNAL — and it is a HARD BLOCKER for MEMORY, not a 4% of period time.**
   Measured: the journal keeps every event for ever behind six indexes, and the heap grows **~968
-  bytes per event** (an upper bound: it is all retained growth over eight periods). At **28.4 events
-  per party per period**, the full world at 70,000 parties writes **1.99M events a period, 103M a
-  year — on the order of 100 GB**, and at a generous 200 bytes an event it is still 20 GB. **A year
-  of the full world cannot be held in memory at any speed**, so this is not an optimisation and its
-  4% share of a period is not the reason to do it. Last N periods hot with indexes; older periods
+  bytes per event** (896 after 0g.19; an upper bound, it is all retained growth over eight periods)
+  and **28.4 events per party per period**. **The 103M-events-and-100 GB-a-year figure is WITHDRAWN**:
+  it was computed from the retracted 70,000-party count. What is measured instead: the full world
+  holds **610 MB after assembly, before one period runs**, and the journal keeps every event for ever
+  behind its indexes. That is the evidence this is a memory blocker; the year figure is not known and
+  cannot be until 21.121. Last N periods hot with indexes; older periods
   compacted to a columnar log readable by the observer and `coverage-reached`; **no event lost**
   (Law 19 and Audit: the audit reads history, so compaction must preserve every fact, not sample it).
 - [ ] 0g.8 **THE DOORS FINISHED — lever B, and its ceiling is measured.** Ten declarations doored,
@@ -734,6 +780,7 @@ each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here
 - [ ] 21.116 `test/indices.test.ts` (four red, PRE-EXISTING: identical at `27312b8`, measured at 0g.4 because the step touched the fixing reads this suite covers): **NO EQUITY INDEX EXISTS PER REGION and no rated index ever gets a level.** *declares an index per region and per currency* has ten declared ids and `equity.eu.1` is not among them (Indices D1: four regions, four equity indices); *reads FROM its constituents* finds a basket whose constituent weight is 0, where B1 says a weight is a COUNT of the line; *reports Missing for a basket with nothing in it* finds six constituents where it expects an empty basket, so the empty-basket refusal is not being exercised at all (D5.a); and *reports, shows, grades and indexes, in that order and on the calendar* gets `firstLevel` 0 against a `firstRating` of 20 — the chain from a closed quarter to a rated index stops at the grade. The first is a DECLARATION absent for three of four regions and the others are consequences of an index with nothing in it, so it is one cause and probably one fix. Unpositioned: it wants the indices module open, and which item that is has not been decided — named here so it is not lost (Law 11: the missing declaration is the work item, not the four numbers).
 - [ ] 21.117 `world/world.ts contractValue`, `mechanisms/cds/contract.ts creditState`, `mechanisms/irs/contract.ts floatingRate` (measured at 0g.10): **WHAT A CONTRACT IS WORTH DEPENDS ON AN EVENT, AND NOTHING CAN TELL WHEN THAT MOVED.** The kernel publishes three version counters a reader can watch — the register's writes, the prints, the lines (`view.versions`, 0g.5) — and a derivative's value is not a function of those three: a CDS is worth one thing before `credit.default` lands on its reference and another after, and reads `estate.opened` and `estate.closed` besides; an IRS's floating leg is the last `index.benchmark` fixing. So the one read in the engine that is asked the same question thousands of times a period (`valueTo`, via `requirement`, via `marginCalls` and `dueNext`) is the one read that CANNOT be memoised: keyed on prices and lines it goes stale the moment a reference defaults, and keyed on the journal it is invalidated by every settlement in a phase that settles. 0g.10's own second and third items ask for exactly those two caches and both would be wrong. **The fix is not a cache: it is for the facts these valuations read to be DECLARED (0i, 21.113) and for the journal to carry a version per declared kind**, so "has anything I read moved" is answerable for an event the way it already is for a print. Then `valueTo` is memoisable on (prices, lines, the kinds it reads) and says which kinds those are. Positioned with 21.113, whose per-module declaration is the thing this is waiting for; it is what makes 0g.10's remaining items possible rather than a hazard, and it is also the honest reason `margin.calls` is still 4% of a period after this step.
 - [ ] 21.120 `test/rig.ts rigSpec` (measured at 0g.18 and again at 0g.0): **THE LADDER'S RUNGS ARE NOT A SCALING SERIES, so no exponent in this item can be trusted.** `rigSpec(name, banks, firms)` DRAWS the world, and the draw is keyed on the name, so the rungs differ in more than their size: (6, 24) has 108 parties and 1,324 instruments, (12, 48) has 163 parties and **538** instruments — fewer instruments for twice the firms — and (24, 96) has 259 and 2,070. So the phase block's per-party cost reads 908, 794 and 1,537 µs and the apparent exponent between the last two rungs is 2.4 and between the first two 0.6. **Neither is a scaling law; both are the draw.** Every scaling claim in 0g rests on this, including "party count is linear in firms" (which was measured at assembly across five rungs and is the one that held). What is needed is a rung series that holds the world's SHAPE fixed and varies only its size — the same instruments per firm, the same books per instrument — or an x-axis that is the product the work is actually over (parties × books) rather than parties. Positioned at **0g.15**, because parallel order generation is the step whose gate is a scaling claim and it cannot be judged without this; until then a 0g step's exit is its COUNTS, which do not depend on the rung being a series.
+- [ ] 21.121 `mechanisms/cds` demand sizing — **THE FULL WORLD DOES NOT COMPLETE PERIOD 1, and until it does this project has no measured cost for the thing every performance target is about.** `foundationWorld('full-1')` (`BANK_COUNT = 30`, `FIRM_COUNT = 9000`, four countries) assembles in 5.5 s into **10,314 parties** (9,144 named, 1,170 cells holding 120,000,000 people and 108,000 small firms), 10,810 instruments, 1,177 markets, 697 venues, 610 MB — and then `World.step` throws: `Impossible: [Law 8] demand at a level is 28906214773755180, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`. `asQty` refuses it through `Number.isSafeInteger` and is right to: 2.89×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact, so the guard is Law 8 doing its job on a nonsense quantity rather than a defect in the guard. **Probed at the site the book is `mkt.cds.treasury.us.3y`** — protection on three-year US treasury credit — with **10,851 orders in the first period** (5,516 buy, 5,335 sell), buy total 2.89×10¹⁶, largest single order **2.74×10¹⁵ units from `firm.3310`**, **1,898 buy orders over 10¹²**, median 2.89×10¹¹, smallest 641. So it is not one rogue party: a third of the buy side is ordering absurd quantities of protection, and whatever sizes CDS demand overscales systemically once the world is full — every firm and bank in it is in that one book. **PRE-EXISTING and not 0g's**: the pre-0g.9 solver (`67462c6`) was checked out and the full world run again, and it throws with the same message and the same value, which is what 0g.9's byte-identical census said. **It is invisible to every gate**, because `check:opens` runs the rig (142 parties) and the four-country world (433), and the scale models never reach a book with ten thousand orders in it. Not chased here (Law 11: the missing mechanism is the work item, and this is a quantity nobody bounds — Law 6 says the compensating mechanism is missing, not that the number needs a cap). **Positioned at the head of 0g**, before every remaining step, because a performance item whose target world cannot run one period is measuring the wrong world — which is exactly what 0g did for eleven steps.
 - [ ] 21.119 `tools/test/plan-progress.test.ts` *counts the PLAN items, which have no worklist row at all (item 0c)* (PRE-EXISTING: red at `e568cf7` before the completed steps were deleted, verified in a stash): it asserts `itemProgress()` has a PRESENT section for item **0a** with more than zero steps, and 0a closed long ago, so CLAUDE.md's own loop deleted its section — *delete the item file when it closes*. The test encodes the state of the plan on the day it was written, so it goes red every time an item it names closes, which is the opposite of what it is for: what it should assert is the RULE (an item with a section is counted from its section; one without is counted from the worklist's `done`), against a fixture, not against today's plan. It is the same shape as 21.111, a census of an older world. Fix it where `plan:progress` is next opened. **0g.17 has since closed WITHOUT it** — it added two fixture-based cases beside this one (a declared "Steps closed and deleted: N" count, and that the line is not read as the next item's step) which show the shape this should take, and left the stale assertion alone rather than widening that step (Law 14). It is the next thing that touches `tools/`.
 - [ ] 21.115 `securities-lending/index.ts returnLoans` → `register.release` (measured at 0g.4, PRE-EXISTING: identical at `27312b8` before any of this session's 0g work, so 0g did not cause it): **a (24, 96) world STOPS in period 9** with `Missing: [Register D5] lien 613 on bank.m/ust.bill.2027-03-15 does not exist` — a loan being returned releases a lien that is already gone, so either the lien was released twice or something else released it and the loan's row still names it. A lien has one writer and a return is a two-sided instruction, so this is a fact with two ways to end (Law 4), and the engine will not run past it. **It is invisible to every gate**: `check:opens` steps the rig 30 periods (142 parties) and the four-country world 12 (433 parties), and neither draw reaches it — the ladder's (24, 96) rung at 26 periods is the smallest run that does, which is why it surfaced under a performance step and not under a test. Two things, and they are one change each: the release in `returnLoans` reads the lien the register holds rather than the one the row remembers, and `check:opens` gains a third world deep enough to reach period 9 of a heavier draw (the check that "was missing" is missing this). Positioned here, before 21b, because it is the first thing that stops a world and everything measured beyond period 8 of a real draw is unmeasurable until it is fixed.
 - [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3).
