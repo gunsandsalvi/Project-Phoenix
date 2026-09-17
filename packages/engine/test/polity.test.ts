@@ -10,6 +10,7 @@ import { rigWorld } from './rig.js';
 import { PLATFORMS } from '../src/mechanisms/polity/platforms.js';
 import { platformPositions, distanceBetween, spreadAcross } from '../src/registry/platforms.js';
 import { ballotOf, tally, turnoutOf } from '../src/mechanisms/polity/vote.js';
+import { formGovernment, mandateOf } from '../src/mechanisms/polity/government.js';
 import { asCash } from '../src/core/measure.js';
 import { USD, type ParamId } from '../src/index.js';
 
@@ -212,5 +213,72 @@ describe('a cell votes from its own state, or stays home (Polity B1, B2, B2.b, B
     // Σ vote(xᵢ)·wᵢ and never a sector's mean voter: the mean of these three cells' pay would have
     // voted one way, and what they actually did was 7 to 4 the other.
     expect([...votes.values()].reduce((x, y) => x + y, 0)).toBe(11);
+  });
+});
+
+describe('who governs, and what the parliament then says (Polity C2, C2.a, C3, 19.5)', () => {
+  const w = rigWorld('government');
+  const said = platformPositions(PLATFORMS, w.params.all());
+
+  it('is the largest party plus the nearest it may sit with, until it has a majority', () => {
+    const seats = new Map([
+      ['broad', 45],
+      ['steady', 35],
+      ['lean', 20],
+    ]);
+    const g = formGovernment(seats, said, 1, 100);
+    expect(g.hung).toBe(false);
+    // C2: the largest is in it, and it stopped as soon as it had a majority — a rule that kept
+    // adding would be a grand coalition nobody's arithmetic asked for.
+    expect(g.members[0]).toBe('broad');
+    expect(g.seats).toBeGreaterThan(50);
+    expect(g.members.length).toBeLessThan(3);
+    // A majority is MORE than half: a party with exactly half the house does not govern alone.
+    const split = formGovernment(new Map([['broad', 50], ['lean', 50]]), said, 1, 100);
+    expect(split.members.length).toBeGreaterThan(1);
+  });
+
+  it('is HUNG when nobody may sit with anybody, and the standing mandate continues (C2.a)', () => {
+    // Every platform too far from every other: the largest is short, there is nobody it may add,
+    // and the answer is that there is no government — reported, not repaired.
+    const seats = new Map([
+      ['broad', 40],
+      ['steady', 35],
+      ['lean', 25],
+    ]);
+    const g = formGovernment(seats, said, 0, 100);
+    expect(g.hung).toBe(true);
+    expect(g.seats).toBeLessThanOrEqual(50);
+    // C3: and a hung parliament produces NO mandate — not an empty one, which would be a mandate
+    // setting every number to nothing. What governs is what was already standing.
+    expect(mandateOf(g, seats, said)).toBeUndefined();
+  });
+
+  it('reads the mandate off the parliament, seat-weighted across the coalition (C3)', () => {
+    const seats = new Map([
+      ['broad', 40],
+      ['steady', 30],
+      ['lean', 30],
+    ]);
+    const g = formGovernment(seats, said, 1, 100);
+    const mandate = mandateOf(g, seats, said);
+    expect(mandate).toBeDefined();
+    if (mandate === undefined) return;
+    // Every number parliament owns has a value in it, and each one lies between what the parties in
+    // government wanted — a coalition governs at what its seats between them come to, which is the
+    // only honest reading of "what this coalition would do" when nobody may invent a deal.
+    const mine = w.params.all().filter((d) => d.kind === 'policy' && d.owner === 'parliament');
+    expect(mandate.size).toBe(mine.length);
+    for (const [id, value] of mandate) {
+      const wanted = g.members.map((m) => said.get(m)?.get(id) ?? Number.NaN);
+      expect(value).toBeGreaterThanOrEqual(Math.min(...wanted));
+      expect(value).toBeLessThanOrEqual(Math.max(...wanted));
+    }
+    // One party governing alone governs at its own platform, exactly.
+    const alone = new Map([['lean', 60], ['broad', 40]]);
+    const solo = formGovernment(alone, said, 1, 100);
+    const its = mandateOf(solo, alone, said);
+    expect(solo.members).toEqual(['lean']);
+    expect(its?.get('treasury.tax.income' as never)).toBe(said.get('lean')?.get('treasury.tax.income' as never));
   });
 });

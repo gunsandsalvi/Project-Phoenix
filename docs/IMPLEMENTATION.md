@@ -299,7 +299,14 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   (interest, gains, severance, the retirement age, planning) are not in a position yet, because each
   needs a read a cell does not have. **Finding 21.86**: the term is four years, so no election falls
   inside any run this world does today.
-- [ ] 19.5 Seats by the rule; coalition; a hung parliament continues the standing mandate.
+- [x] 19.5 Seats by the rule the constitution names; the coalition is C2's rule and not a version of
+  it — the largest party adds the party whose platform is NEAREST its own until it holds a majority,
+  where nearest is measured against how far apart the platforms all are and a majority is MORE than
+  half the house. A parliament where nobody may sit with anybody is HUNG: reported, never repaired,
+  and it produces no mandate at all rather than an empty one (what governs is what was standing).
+  The mandate is a READ of the parliament — every number parliament owns, at the seat-weighted
+  position of the parties in government — so a coalition governs at what its seats between them come
+  to and nobody invents a deal.
 - [ ] 19.6 The mandate journaled and written at the lag; C3.b as an audit contribution.
 - [ ] 19.7 What it controls (fiscal rates, transfers, the buffer, the outlay programme, regulatory ratios, the target, the planning release of 15.1) and never controls (the rate, a price, a quantity, an outcome — assembly throws).
 - [ ] 19.8 The arrears' `breached` writer (fiscal policy decides when an arrear is a breach).

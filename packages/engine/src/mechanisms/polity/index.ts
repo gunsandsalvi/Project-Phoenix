@@ -25,6 +25,8 @@ import type { SystemModule } from '../../world/module.js';
 export * from './data.js';
 export * from './platforms.js';
 export * from './vote.js';
+export * from './government.js';
+export * from './election.js';
 
 function paramsOf(): ParamDecl[] {
   return [

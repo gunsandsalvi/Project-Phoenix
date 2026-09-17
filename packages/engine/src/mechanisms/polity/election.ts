@@ -22,6 +22,7 @@ import { about, type MechanismContext } from '../../world/context.js';
 import { asCash } from '../../core/measure.js';
 import { POLITY_PARAMS, ruleAt } from './data.js';
 import { ballotOf, tally, turnoutOf, type Ballot, type WhatItTurnsOn } from './vote.js';
+import { formGovernment } from './government.js';
 
 export const BALLOTS_CAST = 'polity.ballot';
 export const SEATS_TAKEN = 'polity.seats';
@@ -103,6 +104,18 @@ export function hold(ctx: MechanismContext): void {
     ctx.params.count(POLITY_PARAMS.seats),
   );
   const out = turnoutOf(ballots);
+  /**
+   * C2, C2.a: WHO GOVERNS. The largest party adds the nearest platform it may sit with until it
+   * holds a majority, and a parliament where no such coalition exists is HUNG — reported, never
+   * repaired, because a parliament that cannot form a government is a thing that happens.
+   */
+  const house = ctx.params.count(POLITY_PARAMS.seats);
+  const government = formGovernment(
+    seats,
+    said,
+    ctx.params.ratio(POLITY_PARAMS.coalitionMaxDistance),
+    house,
+  );
   ctx.record(
     SEATS_TAKEN,
     [...seats.keys()],
@@ -112,6 +125,11 @@ export function hold(ctx: MechanismContext): void {
       cast: out.cast,
       able: out.able,
       cells: ballots.length,
+      house,
+      // C4: which parties, how many seats, and whether anybody could govern at all.
+      government: government.members.join(','),
+      governmentSeats: government.seats,
+      hung: government.hung,
     },
     true,
   );
