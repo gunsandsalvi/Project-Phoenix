@@ -32,7 +32,6 @@ import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
 import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
-import { issuedBy } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { floatingRate, isIrs, type IrsTerms } from './contract.js';
 import { irsLineOf } from './data.js';
@@ -44,9 +43,12 @@ import { about } from '../../world/context.js';
  */
 function fixedDebtOf(view: ParticipantView, t: IrsTerms): Qty {
   let owed = NO_QTY;
-  for (const i of view.instruments.all()) {
+  // Law 18, Law 19 (0g.6): ITS OWN LINES, off the register's index of who promised what. It
+  // walked every instrument in the world to find the ones this party issued, and it is asked
+  // once per party per swap book per period: 19.8 million instruments in one period of the
+  // (24, 96) rung, against 3,367 in the store.
+  for (const i of view.instruments.issuedBy(view.self.id)) {
     if (!i.status.live || i.ccy !== t.ccy) continue;
-    if (!issuedBy(i, view.self.id)) continue;
     const kind = view.registry.instrumentKind(i.kind);
     if (!kind.liabilityOfIssuer) continue;
     // A1.d: what makes a liability FIXED is that its own terms name a rate. One that reprices is

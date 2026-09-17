@@ -68,9 +68,9 @@ import {
   capitalKindOf,
   goodId,
   goodMarketId,
-  isPlant,
   lifeParam,
   plantHeld,
+  plantKindId,
   plantTerms,
   serviceLeft,
   type HeldVintage,
@@ -731,10 +731,20 @@ export function plantOffers(
       periodsOfService: life,
       newBuild: true,
     });
-    for (const i of view.instruments.all()) {
-      if (!i.status.live || !isPlant(i) || !i.market.some) continue;
+    /**
+     * Law 18, Law 19 (0g.6): THE VINTAGES OF THIS CAPITAL KIND, off the register's index of lines
+     * by kind. It walked every instrument in the world, once per need per firm per period — 6.2
+     * million instruments in one period of the (24, 96) rung, against 3,367 in the store.
+     *
+     * A vintage's KIND is its capital kind (`plantKindId(d.id)` is written beside
+     * `capitalKind: d.id` at both writers, `capital-programme/index.ts` and `physical.ts`), so
+     * asking the index for that kind is the same set the `capitalKind` test selected — and it is
+     * the read Law 19 asks for rather than a second pass over terms.
+     */
+    for (const i of view.instruments.ofKind(plantKindId(need.capitalKind))) {
+      if (!i.status.live || !i.market.some) continue;
       const terms = plantTerms(i);
-      if (terms.capitalKind !== need.capitalKind || terms.region !== view.self.region) continue;
+      if (terms.region !== view.self.region) continue;
       const left = serviceLeft(terms, view.calendar.startOf(view.period), view.calendar);
       if (left <= 0 || life <= 0) continue;
       // Two counts of periods, so what is left of its service is a pure share of a new one's.

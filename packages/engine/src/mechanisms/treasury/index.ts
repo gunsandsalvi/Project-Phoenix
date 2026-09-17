@@ -163,8 +163,10 @@ function dayCountOn(
 /** Every live line this issuer has out, with what it owes on it (E1: read from the register). */
 function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
   const out: Line[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!issuedBy(i, issuer) || !i.status.live) continue;
+  // 0g.6: off the issuer index, which is what "read from the register" is: the walk asked every
+  // line in the world whether this issuer had issued it, once per read of its own curve.
+  for (const i of ctx.instruments.issuedBy(issuer)) {
+    if (!i.status.live) continue;
     const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
     const last = flows[flows.length - 1];
     if (last === undefined) continue;
@@ -185,8 +187,9 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
   // Currency B1, C4: what falls due across its lines, REPORTED in the money it reports in (16.4 will let it owe in another).
   const home = ctx.registry.currencyOf(ctx.parties.get(issuer).region);
   const terms: Cash[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!issuedBy(i, issuer) || !i.status.live) continue;
+  // 0g.6: its own lines, off the issuer index.
+  for (const i of ctx.instruments.issuedBy(issuer)) {
+    if (!i.status.live) continue;
     for (const f of ctx.registry
       .instrumentKind(i.kind)
       .cashFlows(i, on, ctx.calendar, ctx.registry)) {

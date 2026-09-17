@@ -72,24 +72,29 @@ function pointsMatchPrints(families: readonly CurveFamilyDecl[]): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      for (const i of view.instruments.all()) {
-        if (!i.status.live) continue;
-        if (!families.some((f) => issuedBy(i, f.issuer) && i.ccy === f.ccy)) continue;
-        const print = view.prices.read(i.id, view.period);
-        const traded = print.some && tradedIn(print.value, view.period);
-        const carried = view.prices.latest(i.id, view.period);
-        if (!carried.some) continue;
-        const labelled = tradedIn(carried.value, view.period);
-        if (labelled !== traded) {
-          out.push({
-            family: 'prices',
-            spec: 'Sovereign D3.b',
-            owner: i.id,
-            size: 1,
-            unit: 'point',
-            period: view.period,
-            message: `${i.id}: the curve would call this point ${labelled ? 'traded' : 'stale'} and the price store says otherwise`,
-          });
+      // 0g.6: the families' own issuers' lines, off the issuer index. An instrument has ONE
+      // issuer, so it appears in exactly one of these lists and is seen exactly once — and what
+      // decides whether it is in a family is still the family's own test, unchanged.
+      for (const issuer of new Set(families.map((f) => f.issuer))) {
+        for (const i of view.instruments.issuedBy(issuer)) {
+          if (!i.status.live) continue;
+          if (!families.some((f) => issuedBy(i, f.issuer) && i.ccy === f.ccy)) continue;
+          const print = view.prices.read(i.id, view.period);
+          const traded = print.some && tradedIn(print.value, view.period);
+          const carried = view.prices.latest(i.id, view.period);
+          if (!carried.some) continue;
+          const labelled = tradedIn(carried.value, view.period);
+          if (labelled !== traded) {
+            out.push({
+              family: 'prices',
+              spec: 'Sovereign D3.b',
+              owner: i.id,
+              size: 1,
+              unit: 'point',
+              period: view.period,
+              message: `${i.id}: the curve would call this point ${labelled ? 'traded' : 'stale'} and the price store says otherwise`,
+            });
+          }
         }
       }
       return out;

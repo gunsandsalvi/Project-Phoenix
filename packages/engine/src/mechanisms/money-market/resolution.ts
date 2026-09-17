@@ -145,8 +145,9 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
     insured.push(insuredAt(ctx, bank, holder, ccy, limit));
   }
   const borrowings: Cash[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
+  // 0g.6: this bank's own lines, off the register's index of who promised what.
+  for (const i of ctx.instruments.issuedBy(bank)) {
+    if (!i.status.live || i.id === own) continue;
     // Register B3: a liability is worth what the party on the other side of it carries it at. The
     // holders are named and there are few of them, so this is a read of their books rather than a
     // second valuation of the same claim (Law 4).
@@ -357,8 +358,9 @@ function allocate(
     const owed = uninsuredAt(ctx, bank, holder, ccy, limit);
     if (owed.pieces > 0) exposed.push({ holder, owed, rank: rankOf(own) });
   }
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
+  // 0g.6: this bank's own lines, off the register's index of who promised what.
+  for (const i of ctx.instruments.issuedBy(bank)) {
+    if (!i.status.live || i.id === own) continue;
     // A2.c, Appendix B: A SECURED LENDER IS NOT IN THIS POOL FOR WHAT ITS PAPER COVERS. It has the
     // collateral in its hand — the acquirer takes the book WITH the liens on it — so what it stands
     // to lose is the part its own security does not reach, and only that part ranks with an
@@ -664,8 +666,9 @@ function moveBook(
   // the units go back to whoever owed them, at nothing, which is what a claim being extinguished IS
   // (Banks Lending E5). Its share of the loss it already took with everybody else's above; what it
   // gives up here is the rest of a claim on a bank it is about to become.
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
+  // 0g.6: this bank's own lines, off the register's index of who promised what.
+  for (const i of ctx.instruments.issuedBy(bank)) {
+    if (!i.status.live || i.id === own) continue;
     const mine = ctx.register.quantity(acquirer, i.id);
     if (mine > 0) {
       // 0f.1: the register holds the TOTAL.
@@ -973,8 +976,9 @@ export function nothingLeftBehind(): Family {
               `${p.id} has ceased and still holds ${qty} of ${h.instrument}`,
             );
         }
-        for (const i of view.instruments.all()) {
-          if (!i.status.live || !i.issuer.some || i.issuer.value !== p.id) continue;
+        // 0g.6: that party's own lines, off the issuer index.
+        for (const i of view.instruments.issuedBy(p.id)) {
+          if (!i.status.live) continue;
           const held = view.register.heldTotal(i.id).value;
           if (held !== 0)
             say(

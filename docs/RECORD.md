@@ -15450,3 +15450,66 @@ here rather than left for the next step to find.
 `instruments.get` 1.6%; `parties.get` 1.5%. Nothing else above 1.7%. Three steps in a row have now
 measured a named category, and the two that were traversal were worth 0% and 8%. The 46× is where
 0g's preamble says it is.
+
+---
+
+## 0g.6 — Fourteen sites asking the same wrong question
+
+**What was there.** Counted per call site at period 8 of the (24, 96) rung, against **3,367
+instruments in the store**: 8,517 `instruments.all()` calls handing back **28,625,412** instruments
+in ONE PERIOD. The biggest single read in the engine:
+
+| | calls | instruments walked |
+|---|---|---|
+| `irs fixedDebtOf` | 5,875 | **19,763,500** |
+| `registry/capital.ts` second-hand plant | 1,843 | 6,175,893 |
+| `indices/baskets.ts listed()` | 432 | 1,451,825 |
+| `reporting listedLineOf` | 117 | 393,939 |
+| `estate claimsOn` | 83 | 279,212 |
+| everything else | 167 | ~561,000 |
+
+**And fourteen of them were one question.** "What has this party issued" — asked of every instrument
+in the world, by a walk, when the register has indexed lines by issuer since 0g.6's own first half
+and `reseat` maintains that index. The sites: `irs fixedDebtOf`, `estate claimsOn` and the dead
+party's lines, `reporting listedLineOf`, `world/actions.ts` cross-default, `treasury linesOf` and
+`debtService`, `cds defaultableDebtOf`, the `sovereign-curve` price family, and four in
+`money-market/resolution.ts`. Several of them carry a comment saying they read *from the register* —
+which was true of the fact and not of the read (Law 19).
+
+A fifteenth, `registry/capital.ts`'s second-hand plant, walked the world for the vintages of one
+capital kind. A vintage's registered KIND is its capital kind — `plantKindId(d.id)` is written beside
+`capitalKind: d.id` at both writers — so the kind index is the same set the `terms.capitalKind` test
+was selecting, and the test is gone with the walk.
+
+**8,517 → 572 calls; 28,625,412 → 1,921,995 instruments, a factor of 15.**
+
+**Measured.** (12, 48) at 26 periods **300 → 289 ms/period**. (24, 96) **910 → 875**, order
+generation 203 → 181 ms, and `derivative-layer/firm` orders **96 → 71 ms** — the swap book asking
+what its own party owes at a fixed rate was most of that participant. Every shape figure
+byte-identical: parties 141, cells 42, people 228, small 521, events 110,625, sessions 60, audit
+13,616, money/member 23,787,064, wage/h 1591.08. `check:opens` census identical on both worlds.
+
+**Where order is load-bearing, it is preserved.** `defaultableDebtOf` and `listedLineOf` return the
+FIRST match. A per-issuer list is a subsequence of the store's insertion order, so the first match of
+the narrowed walk is the first match of the whole one — the same instrument, not merely one of the
+same set.
+
+**`holdingsOf` returning a frozen view: measured and not built.** 0g.6a already stopped it copying
+the lots and the liens. What is left is one small object per holding, and `holdingsOf` plus
+`snapshot` come to 0.9% of a period inclusive, 0.37% of that the allocation itself. Handing out the
+store's own records to recover 0.4% weakens the one-writer boundary for nothing (Law 4).
+
+**What still walks everything, and where it belongs.** `indices/baskets.ts listed()` — the same list
+of every live priced line, rebuilt once per index rule per period, 1.45M instruments — is 0g.7's
+`index()` keyed on the basket's own prints, so it is left there rather than fixed twice. And
+`prices/value.ts`'s `instruments: () => all()` is a read handed to the derived-value door for its
+consumer to walk, not a filter.
+
+**The reading, against 0g.4 and 0g.5.** Three traversal steps: 0% (the journal scanners, 40× fewer
+events), 8% (one memo of fourteen), 4% (15× fewer instruments). The pattern is consistent and it is
+worth stating plainly: **this engine's waste is not in how it walks, it is in how many times it
+asks.** 28.6 million reads of a 3,367-row store is not a slow loop, it is fourteen callers each
+asking the world a question about one party — and the reason the time barely moves when they stop is
+that a modern array walk is nearly free. What the 46× needs is the per-party-per-period work to stop
+existing, which is 0g.11, 0g.14 and 0g.15, and the `Missing` door reads that belong to the items
+building the missing sides.

@@ -14,7 +14,6 @@ import { asRatio, minus } from '../../core/measure.js';
 import { NO_QTY, subQty } from '../../core/tick.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
-import { issuedBy } from '../../register/instruments.js';
 import { curveFamilyOf, yieldOf } from '../../prices/curve.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { ContractMeasure } from '../../registry/derivatives.js';
@@ -31,9 +30,10 @@ import { isCds } from './contract.js';
 
 /** A4, A4.a: a reference is a party somebody can watch fail — one with debt that can default. */
 export function defaultableDebtOf(ctx: WorldReads, party: PartyId): Option<InstrumentId> {
-  for (const i of ctx.instruments.all()) {
+  // 0g.6: the name's own promises, off the issuer index — the question is whether THIS party has
+  // debt that can default, and it was asked of every line in the world.
+  for (const i of ctx.instruments.issuedBy(party)) {
     if (!i.status.live) continue;
-    if (!issuedBy(i, party)) continue;
     if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
     if (ctx.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
     return some(i.id);

@@ -132,8 +132,9 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
   // BEFORE the assets move, because what a liability is worth is read off the book behind it: a
   // claim ON this party's book (Fund Shares B1) is worth nothing once the book has gone to the
   // estate, and the estate would assume nothing while its holders still carried the old value.
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== dead) continue;
+  // 0g.6: the dead party's own lines, off the issuer index.
+  for (const i of ctx.instruments.issuedBy(dead)) {
+    if (!i.status.live) continue;
     ctx.settle({
       legs: [{ kind: 'assume', from: dead, to: id, instrument: i.id }],
       cause: 'corporateAction',
@@ -274,8 +275,10 @@ interface Claim {
  */
 function claimsOn(ctx: MechanismContext, estate: PartyId): Claim[] {
   const out: Claim[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== estate) continue;
+  // 0g.6: off the register's index of who promised what, which is what "read from the register"
+  // means here — the walk asked every line in the world whether this estate issued it.
+  for (const i of ctx.instruments.issuedBy(estate)) {
+    if (!i.status.live) continue;
     const seniority = ctx.registry.instrumentKind(i.kind).ranking(i).seniority;
     for (const holder of ctx.register.holdersOf(i.id)) {
       if (holder === estate) continue;

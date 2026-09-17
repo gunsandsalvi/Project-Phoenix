@@ -191,9 +191,10 @@ function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: Ac
   passDepth += 1;
   called.add(String(defaultedOn.id));
   const issuer = issuerOf(defaultedOn);
-  for (const other of d.instruments.all()) {
+  // 0g.6: cross-default is about ONE issuer's other promises, so it asks the issuer index for
+  // them rather than every line in the world.
+  for (const other of d.instruments.issuedBy(issuer)) {
     if (called.has(String(other.id)) || !other.status.live) continue;
-    if (!issuedBy(other, issuer)) continue;
     if (d.registry.instrumentKind(other.kind).accelerates !== true) continue;
     called.add(String(other.id));
     d.journal.record(

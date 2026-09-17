@@ -10,7 +10,7 @@
  * if a figure needs one, the equity ledger is missing a writer and not the report a calculation.
  */
 import type { PartyId } from '../../core/ids.js';
-import { issuedBy, type Instrument } from '../../register/instruments.js';
+import { type Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
 
 /**
@@ -21,8 +21,10 @@ import type { MechanismContext } from '../../world/context.js';
  * (Law 15), so a world that one day lists something else is not a world this has to be told about.
  */
 export function listedLineOf(ctx: MechanismContext, firm: PartyId): Instrument | undefined {
-  for (const i of ctx.instruments.all()) {
-    if (!issuedBy(i, firm) || !i.status.live || !i.market.some) continue;
+  // 0g.6: the firm's own lines, off the issuer index. "The one instrument a party issues" is a
+  // question about that party, and it was asked of every line in the world.
+  for (const i of ctx.instruments.issuedBy(firm)) {
+    if (!i.status.live || !i.market.some) continue;
     const profile = ctx.registry.instrumentKind(i.kind);
     if (profile.liabilityOfIssuer || profile.pricing !== 'cleared') continue;
     return i;

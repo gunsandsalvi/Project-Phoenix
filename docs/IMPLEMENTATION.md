@@ -415,7 +415,38 @@ say where the categories are:
   2.5%, `wants.missed` + `postedNothing` 2.6% (the `Missing` door reads), `instruments.get` 1.6%,
   `parties.get` 1.5%. Nothing else is above 1.7%. The categories in 0g's preamble, again.
 
-- [ ] 0g.6 Register: **holdings are handed out, not copied — done at 0g.6a:** the lots and the liens of a holding are REPLACED and never mutated, so the type says `readonly` and every read returns the arrays the store holds instead of two copies of them. A bank asking what one name owes it walks every holding it has, once per name, and the copying was 9.3% of a year in `snapshot` alone plus most of the 11.2% above it in `exposureTo`. First rung: 1354 → 1132 ms/period at the 52 mark, every shape figure identical to the digit (parties 112, cells 43, people 265, small 76, events 288210, sessions 158, audit 4941, money/member 176879, wage/h 17212.64). (lots coalesce on equal basis and period — done at 0g.1) `issuedBy`/`ofKind` used at every `instruments.all()` filter (`firms/produce.ts`, `registry/capital.ts`, `treasury/index.ts`, `reporting listedLineOf`, `estate claimsOn`, `funds eligibleLines`, `funds/nav.ts`, `banks/dealing.ts coveredLines`, `money-market fallsDueToIt`, `merchants marketsOf`, `indices listed`, `cds openBooks`, `housing foreclose`, `corporate-bond testCovenants`, `sovereign-curve` family, `world.ts curveAt`); lots coalesce on equal basis and period; `holdingsOf` returns a frozen view; `Parties.ofKind` cached per (kind, version).
+- [x] 0g.6 **28.6 million instruments walked in one period, down to 1.9 — and fourteen sites were
+  asking the same wrong question.** Counted per call site at period 8 of the (24, 96) rung, against
+  **3,367 instruments in the store**: 8,517 `all()` calls handing back **28,625,412** instruments.
+  Fourteen of them walked the whole world to find ONE PARTY'S OWN LINES, which the register has
+  indexed by issuer since 0g.6's own first half — `irs fixedDebtOf` (19,763,500 in 5,875 calls, the
+  single largest read in the engine), `estate claimsOn` and the dead party's lines, `reporting
+  listedLineOf`, `world/actions.ts` cross-default, `treasury linesOf` and `debtService`, `cds
+  defaultableDebtOf`, the `sovereign-curve` price family, and four in `money-market/resolution.ts`.
+  A fifteenth, `registry/capital.ts`'s second-hand plant (6,175,893 in 1,843 calls), walked the
+  world for vintages of one capital kind, which IS the line's registered kind
+  (`plantKindId(d.id)` is written beside `capitalKind: d.id` at both writers), so it reads the kind
+  index. **8,517 → 572 calls, 28,625,412 → 1,921,995 instruments (15×).**
+  **Measured:** (12, 48) at 26 periods **300 → 289 ms/period**; (24, 96) **910 → 875**, order
+  generation 203 → 181 ms, and `derivative-layer/firm` orders **96 → 71 ms** — the swap book's
+  own-debt read was most of it. Every shape figure byte-identical (parties 141, cells 42, people
+  228, small 521, events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h
+  1591.08); `check:opens` census identical on both worlds. Order is preserved where it is
+  load-bearing: a per-issuer list is a subsequence of the store's order, so the two sites that
+  return the FIRST match return the same instrument.
+  **`holdingsOf` returning a frozen view: measured and not built.** 0g.6a already stopped it copying
+  the lots and the liens; what is left is one small object per holding, and `holdingsOf` plus
+  `snapshot` come to 0.9% of a period inclusive, 0.37% of it the allocation. Handing out the store's
+  own records to save 0.4% weakens the one-writer boundary for nothing (Law 4).
+  **What still walks everything, and where it belongs:** `indices/baskets.ts listed()` — 1,451,825
+  in 432 calls, the same list of every live priced line rebuilt once per index rule per period,
+  which is 0g.7's `index()` keyed on the basket's own prints — and `prices/value.ts`'s
+  `instruments: () => all()`, a read handed to the derived-value door for its consumer to walk.
+  (Earlier halves: **0g.6a** holdings handed out not copied, 1354 → 1132 ms/period; **0g.6b**
+  exposure by issuer grouped in one walk; **0g.6c** the name's own lines rather than the bank's
+  whole book, 573 → 554; lots coalesce on equal basis and period at 0g.1; `Parties.ofKind` cached
+  per (kind, version) at 0i.)
+
 - [ ] 0g.7 `curveAt` memoised per (family, period, prices.version); `invertDecreasing` seeded by the last yield; `index()` keyed on the basket's own prints.
 - [ ] 0g.8 **The narrowing — first three done, and the venue half of the door built.** A session
   asks every party of a kind whether it has an order in it, and the answer is almost always no.
