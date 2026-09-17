@@ -16,6 +16,32 @@ describe('steps are read from the plan sections (Law 19)', () => {
     expect(s.size).toBe(1);
   });
 
+  /**
+   * An item that closes some steps and STAYS OPEN has no ticked lines left once they are deleted
+   * (CLAUDE.md: tick a step, delete it when it closes; the record is the ledger). 0g had closed
+   * eight of fifteen and the generated table read "7 steps, 0 done, open" — a figure that lies. The
+   * plan declares the count and this reads it.
+   */
+  it('reads a declared count of steps that closed and were deleted', () => {
+    const s = planSections(
+      [
+        '## 0g. The core made fast',
+        '**Steps closed and deleted: 8** — their outcomes are in the record.',
+        '- [ ] 0g.17 the instrument',
+        '- [ ] 0g.18 the phase block',
+      ].join('\n'),
+    );
+    expect(s.get('0g')).toEqual({ title: 'The core made fast', checked: 8, unchecked: 2 });
+  });
+
+  it('does not count a declared line as a step of the next item', () => {
+    const s = planSections(
+      ['## 1. One', '- [ ] 1.1 a', '## 2. Two', '**Steps closed and deleted: 3**', '- [ ] 2.1 b'].join('\n'),
+    );
+    expect(s.get('1')).toEqual({ title: 'One', checked: 0, unchecked: 1 });
+    expect(s.get('2')).toEqual({ title: 'Two', checked: 3, unchecked: 1 });
+  });
+
   it('accepts inserted ids with a suffix or a dot', () => {
     const s = planSections(
       ['## 0a. Phases', '- [ ] x', '## 12a. Households', '- [ ] y', '- [ ] z'].join('\n'),

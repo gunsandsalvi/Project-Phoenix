@@ -15992,3 +15992,39 @@ is the argument for 0g.17 being first and for the gate being a COUNT rather than
 **The gates changed with the order.** A step's exit is now the count it moved — events walked,
 instruments resolved, evaluations asked, the unit cost of a settlement — plus a byte-identical
 census. The ms figure is second, and only once 0g.17 can give it a median and a spread.
+
+---
+
+## 0g.0c — Every completed step deleted from the plan, and the figure that went with them
+
+**What.** The eight closed steps of 0g — 0g.2 through 0g.7, 0g.9 and 0g.10 — are gone from
+`docs/IMPLEMENTATION.md`, with their bodies: 214 lines of measurement, reverted attempts and
+before/after tables. CLAUDE.md's loop is *tick the steps, delete the section when the item closes*
+and *the record is a ledger of outcomes*, so the plan now carries only what is still to do and the
+outcomes live here, where each of those eight already has its own entry.
+
+**And deleting them broke the completion figure, which is the part worth recording.** `plan:progress`
+counts an item's `- [ ]` and `- [x]` lines. Delete the ticked ones from an item that is still OPEN
+and there is nothing left to count: the generated table in `docs/PLAN.md` read
+
+> `| 0g — The core made fast (Law 18) | 7 | 0 | open |`
+
+when eight of fifteen steps had closed. **A generated figure that lies is worse than no figure**, and
+it lies in the direction that hides work rather than inventing it, which is the harder kind to
+notice.
+
+The tool had two states and needed a third. It could already count a step that is ticked, and a whole
+item whose section was deleted on closing (off the worklist's `done`). It had no way to hear *"this
+open item has already closed eight"*. So the plan declares it, once, in the item's own section —
+`**Steps closed and deleted: 8**` — and `planSections` reads it (Law 19: read the source, do not infer
+it from an absence). Two cases added to `tools/test/plan-progress.test.ts`, both fixture-based: the
+declared count is added to `checked`, and the line is not mistaken for a step of the next item.
+`| 0g … | 15 | 8 | in progress |` again.
+
+**A pre-existing red found on the way (21.119).** `tools/test/plan-progress.test.ts` *counts the PLAN
+items, which have no worklist row at all* asserts that item **0a** has a present section with steps
+in it — and 0a closed long ago, so the loop deleted its section. Verified red at `e568cf7` in a
+stash, before any of this. The test encodes the state of the plan on the day it was written, so it
+goes red every time an item it names closes, which is the opposite of its purpose: it should assert
+the RULE against a fixture, which is what the two cases added beside it do. Positioned at 0g.17,
+which opens the same instrument family. Not chased (Law 11).

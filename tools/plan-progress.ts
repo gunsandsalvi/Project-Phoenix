@@ -67,6 +67,21 @@ export interface PlanSection {
   readonly unchecked: number;
 }
 
+/**
+ * Law 4, Law 16: WHO SAYS HOW MANY STEPS AN OPEN ITEM HAS ALREADY CLOSED.
+ *
+ * CLAUDE.md's loop is *tick the steps, delete the section when the item closes* — so a step that
+ * closes is ticked and a whole item that closes is deleted, and until now those were the only two
+ * states this could count. An item that closes EIGHT steps and stays open has no way to say so once
+ * the ticked lines are deleted: 0g had closed eight of fifteen and the generated table read "7
+ * steps, 0 done, open", which is a figure that lies.
+ *
+ * So the plan declares it, once, in the item's own section, and this READS it (Law 19) rather than
+ * inferring it from an absence. The outcomes themselves are in `docs/RECORD.md`, which is the
+ * ledger; this is only the count.
+ */
+const CLOSED_LINE = /^\*\*Steps closed and deleted:\s*([0-9]+)\*\*/;
+
 /** The plan's sections by item id: `## <id>. <title>` down to the next `## ` heading. */
 export function planSections(text: string): Map<string, PlanSection> {
   const out = new Map<string, PlanSection>();
@@ -92,6 +107,11 @@ export function planSections(text: string): Map<string, PlanSection> {
       continue;
     }
     if (current === undefined) continue;
+    const said = CLOSED_LINE.exec(line);
+    if (said?.[1] !== undefined) {
+      current.checked += Number(said[1]);
+      continue;
+    }
     if (line.toLowerCase().startsWith('- [x]')) current.checked += 1;
     else if (line.startsWith('- [ ]')) current.unchecked += 1;
   }

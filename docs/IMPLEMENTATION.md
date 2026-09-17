@@ -291,6 +291,12 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 **THE EXIT IS THE OWNER'S FIGURE: 3–4 SECONDS PER PERIOD ON THE FULL WORLD.**
 
+**Steps closed and deleted: 8** — 0g.2 through 0g.7, 0g.9 and 0g.10 (0g.1, the ladder, closed
+earlier and was deleted before this count existed, which is why the item's total is 15 and not 16). Their outcomes, measurements
+and the reverted attempts are in `docs/RECORD.md`; CLAUDE.md's loop deletes a step when it closes and
+the record is the ledger, so the plan carries only what is still to do. The count is declared here
+because `plan:progress` cannot otherwise tell a step that closed from one that never existed.
+
 ### 0g.0 The budget, measured (2026-09-17)
 
 Seven traversal steps (0g.4–0g.10) came to a bit over 2× and the record said six times that the
@@ -416,159 +422,6 @@ RESOLUTION — `SMALL_PER_NAMED`, cell granularity, 21.98), the budget, or the m
 owner's to set, not this item's; what this item owes is the measured cost of each, and that is now
 written down.
 
-- [x] 0g.2 **The period index — MEASURED AND NOT BUILT.** Its own condition was *"moves when a
-  profile names the walk"*, and a profile now says it does not: **every reader 0g.2 names comes to
-  2.63% of a run, and 1.91 of those points is `reach.produced`, which is a TALLY and not a walk.**
-  The walks themselves — `incomeOf`, `cashOf`, `externalOf`, `earnedByLine`, `reserveFlow`,
-  `netReserveFlow`, `interestCollected`, `purchases`, `runCorporateActions`, `owedIn`, `reach()`,
-  `equityLedger`, `equityDust`, `heldTotal` — are **0.7% together**, the largest of them 0.19%. And
-  the whole AUDIT is 5% of a period and scales LINEARLY (84 → 167 ms as parties went 1,182 → 2,213),
-  so the families the index was for are not what grows. A new kernel store with two writers, to buy
-  0.7%, is not worth what it costs to keep true (Law 4). 0g.2a's `Ledger.deltasIn` stays: it is
-  built, it is read, and it deleted three walks.
-  **What the profile named instead was the tallies beside the walks, and those are fixed:** the
-  capability name is the DECLARATION's, so it is built once per declaration instead of once per
-  party per book (three loops), and nothing is recorded when nothing was posted; `slot()` asks the
-  ontology register whether a store is declared WHEN IT OPENS rather than on every read of it,
-  which was three string keys built on the path of every `view.working` in the engine. Behaviour
-  byte-identical; the gain is inside the noise, which is itself the finding.
-- [x] 0g.3 **ALREADY TRUE — a stale step, and the check is the reading.** All three of its halves
-  hold today and no pass was needed: `Measure<D>` is `number & { readonly [dimension]: (d: D) => D }`
-  (`core/measure.ts:69`) — a COMPILE-TIME brand with no runtime representation at all, so there is
-  no wrapper to unbox; `Qty` is `Amount<'piece'>` and `asQty` refuses a non-integer with
-  `Impossible('Law 8', …)` (`core/tick.ts:73`); and `core/measure.ts` throws that error where the
-  dimension doors are. Whatever made it true happened before this step was written down and nothing
-  closed it (Law 16: a stale doc is a defect). `core/measure.js` is 1.2% of a period and what is in
-  it is `finite()` — a CONTRACT check for NaN and Infinity that the error discipline requires, not
-  overhead to remove.
-  **What the step really lacked was the instrument, and that is built:** `npm run ladder -- <banks>
-  <firms> --where`. 0g's preamble asks that every step report the ladder before and after, and the
-  rung said how long a period took and never what it was spent on — so every step so far built a
-  throwaway harness (three of them in this session alone) and no two measurements were comparable.
-  `whereItGoes` instruments the spec before the world is assembled, which is the only way to see
-  participant order generation: a participant's `orders` is called by the kernel's market and venue
-  sessions, so it is module code that appears nowhere in the phase list, and it is a fifth of a
-  period. Brought forward from 0g.16 because every remaining step needs it to start.
-- [x] 0g.4 **The scanners are gone — 40× fewer events walked, and it bought no time.** The
-  measured claim was 3,286 `ofKind` calls a period walking 66,184 events at the (24, 96) rung; the
-  honest figure, counted per kind at period 8 of that rung, was **9,565 calls walking 295,905
-  events** against a journal of 195,311 — a cost that grows with the AGE of the world rather than
-  with what happened in it. It is now **109 calls walking 7,457 events**. `lastOfKind` and
-  `lastPublicOfKind` are O(1) (`view.lastPublic` was `ofKind(kind).filter(e => e.public)`, on the
-  participant view, inside the order-generation loop); `conditionsIn`, `benchmarksFixedIn`,
-  `banks publishStandard`'s declined volume and `control`'s strikes read the (kind, period) index;
-  `hasFixed` and `estateClosed` are "has this ever happened", which is the last time it happened
-  asked without the answer, off the subject index; `termFixing` asks the periods its span covers
-  instead of building a map of every fixing ever printed (it is asked once per floating row per
-  period); and `fundPositions` asks each pool for its own last strike through `strikeOf` instead of
-  filtering the whole history of the kind on `data.fund` — a second name for the subject the event
-  is already recorded under. **The latest grade per (assessor, obligor) had THREE readers** —
-  `notices.gradesOn` walked every rating action ever published and filtered on the subject,
-  `world.ts` walked the subject index and took the assessor out of `data`, and `ratings/index.ts`
-  walked the subject index and filtered on `data.assessor` — three formulas for one fact, two of
-  them naming the assessor in a second place it is already the first subject of (Law 4). One read
-  now, on the subject index, and the other two call it.
-  **And the time did not move.** (12, 48) at 26 periods: 325 → 327 ms/period, inside the noise —
-  because 295,905 array elements at ~10 ns each is under a millisecond of a 325 ms period. What DID
-  move is **heap 391 → 342 MB (−12%)**, which is the allocation those calls were doing: every one
-  returned a fresh filtered array, and the garbage collector is the largest single entry in the
-  profile (9.7%). Every shape figure byte-identical (parties 141, cells 42, people 228, small 521,
-  events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); the
-  `check:opens` census identical on both worlds. Same reading as 0g.2: **the scanners were not what
-  costs**, and the 46× is still in the three categories above. What is left of the step's list is
-  whole-history reads that belong to their own items (`credit.default` 3,726 in 2 calls,
-  `estate.paid` 677 in 1, `credit.impaired` 596 in 1, `bank.underwriting` 430 in 5) and
-  `labour.goingRate` at 312 in 52 calls — none of them a per-party read.
-- [x] 0g.5 **`view.memo` built at 0g.5a; of the fourteen sites it was built for, ONE was worth
-  memoising and thirteen were measured and not built.** Profiled per function on the (24, 96) rung,
-  eight periods, inclusive time: `stateOf` **1.14%**, `earnedByLine` 0.33%, `equityWalk` 0.16%,
-  `dearest` 0.14%, `equity()` 0.10%, `regulationOf` 0.09%, `coveredLines` 0.07% — and
-  `earned(window)`, `eligibleLines`, `holdingsWorth`, `overdue(seller)`, `goodsBoughtIn`,
-  `sizeSegmentOf`, `claimsSeen`, `longestPromise` and `blindView` do not appear in the profile at
-  all, at any depth. Thirteen memos to recover under 1% of a period, each of them a place a cache
-  could hand back a world that has moved, is not a trade worth making (Law 4; and 0g.5a's own
-  finding was that the danger is real — a version taken when a view was built is the version of a
-  world several instructions ago).
-  **The one that was worth it is now one door instead of two.** `liquidityTargets` walks every
-  market the bank is in TWICE — once for the lines it makes and once inside `liquidityLines`, which
-  asks each of them for its cash flows — and it had two callers passing the identical three
-  arguments: the bank's capital read and `stateOf`, which the dealing line calls once per book it
-  quotes. So one walk over 442 markets ran once per book per bank per period and produced the same
-  map every time. `targetsFor(view, d, cushion)` is the one door (Law 4), memoised on the register,
-  the price store and the instrument store, with the PLAN in the key rather than the versions
-  because it comes off what the bank itself published: a treasury that publishes a new plan is
-  asking a different question, not entitled to the old answer. `liquidityPlan`, `liquidityTargets`
-  and `liquidityLines` are no longer exported.
-  **Measured:** (12, 48) at 26 periods **327 → 300 ms/period (−8%)**; (24, 96) **997 → 910
-  ms/period**, and `banks/bank [market]` left the top of the order-generation list. Every shape
-  figure byte-identical (parties 141, cells 42, people 228, small 521, events 110,625, sessions 60,
-  audit 13,616, money/member 23,787,064, wage/h 1591.08); `check:opens` census identical on both
-  worlds. Heap at the 26 mark 342 → 382 MB, which is the memo holding its maps for a cycle.
-  **Where the profile actually points after it:** the garbage collector 10.5%, `journal.record`
-  2.5%, `wants.missed` + `postedNothing` 2.6% (the `Missing` door reads), `instruments.get` 1.6%,
-  `parties.get` 1.5%. Nothing else is above 1.7%. The categories in 0g's preamble, again.
-
-- [x] 0g.6 **28.6 million instruments walked in one period, down to 1.9 — and fourteen sites were
-  asking the same wrong question.** Counted per call site at period 8 of the (24, 96) rung, against
-  **3,367 instruments in the store**: 8,517 `all()` calls handing back **28,625,412** instruments.
-  Fourteen of them walked the whole world to find ONE PARTY'S OWN LINES, which the register has
-  indexed by issuer since 0g.6's own first half — `irs fixedDebtOf` (19,763,500 in 5,875 calls, the
-  single largest read in the engine), `estate claimsOn` and the dead party's lines, `reporting
-  listedLineOf`, `world/actions.ts` cross-default, `treasury linesOf` and `debtService`, `cds
-  defaultableDebtOf`, the `sovereign-curve` price family, and four in `money-market/resolution.ts`.
-  A fifteenth, `registry/capital.ts`'s second-hand plant (6,175,893 in 1,843 calls), walked the
-  world for vintages of one capital kind, which IS the line's registered kind
-  (`plantKindId(d.id)` is written beside `capitalKind: d.id` at both writers), so it reads the kind
-  index. **8,517 → 572 calls, 28,625,412 → 1,921,995 instruments (15×).**
-  **Measured:** (12, 48) at 26 periods **300 → 289 ms/period**; (24, 96) **910 → 875**, order
-  generation 203 → 181 ms, and `derivative-layer/firm` orders **96 → 71 ms** — the swap book's
-  own-debt read was most of it. Every shape figure byte-identical (parties 141, cells 42, people
-  228, small 521, events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h
-  1591.08); `check:opens` census identical on both worlds. Order is preserved where it is
-  load-bearing: a per-issuer list is a subsequence of the store's order, so the two sites that
-  return the FIRST match return the same instrument.
-  **`holdingsOf` returning a frozen view: measured and not built.** 0g.6a already stopped it copying
-  the lots and the liens; what is left is one small object per holding, and `holdingsOf` plus
-  `snapshot` come to 0.9% of a period inclusive, 0.37% of it the allocation. Handing out the store's
-  own records to save 0.4% weakens the one-writer boundary for nothing (Law 4).
-  **What still walks everything, and where it belongs:** `indices/baskets.ts listed()` — 1,451,825
-  in 432 calls, the same list of every live priced line rebuilt once per index rule per period,
-  which is 0g.7's `index()` keyed on the basket's own prints — and `prices/value.ts`'s
-  `instruments: () => all()`, a read handed to the derived-value door for its consumer to walk.
-  (Earlier halves: **0g.6a** holdings handed out not copied, 1354 → 1132 ms/period; **0g.6b**
-  exposure by issuer grouped in one walk; **0g.6c** the name's own lines rather than the bank's
-  whole book, 573 → 554; lots coalesce on equal basis and period at 0g.1; `Parties.ofKind` cached
-  per (kind, version) at 0i.)
-
-- [x] 0g.7 **Two of its three items were already true, and the third was the wrong diagnosis —
-  3,536 yield inversions for 17 distinct questions, now 48.** `curveAt` is memoised per (family,
-  period, prices.version/instruments.version) at `world.ts:3628` and `index()` per (id,
-  indexThrough, instruments.version:prices.version) at `world.ts:3409`; both were built before this
-  step was read and nothing closed it (Law 16, the same shape as 0g.3). And `invertDecreasing`
-  *seeded by the last yield* would have bought almost nothing: the bisection halves a bracket of
-  width 1 down to arithmetic dust, so a tighter seed saves about seven of fifty-odd passes, and
-  Law 7 forbids widening the stop.
-  **What was actually there:** at period 8 of the (24, 96) rung, **3,536 `yieldOf` calls for 17
-  distinct (flows, price, date, day-count) questions** — 3,491 of them from `cds levelFor`, which
-  is asked once per party per book and asks about the BOOK (an obligation, a tenor, a money), so
-  every party in a session inverted the same bond's price to the same yield, each inversion about
-  fifty present-value passes over the flows. Memoised on the prints and the lines: **3,536 → 48**.
-  `indices/baskets.ts listed()` is the same shape and is fixed with it — which lines a market prices
-  is a fact about the REGISTER, so it stands until a line changes, and it was rebuilt once per rule
-  per index per period (1,451,825 instruments in 432 calls).
-  **And a trap closed rather than documented (Ratings A2.a).** A memo key that does not name the
-  asker is right for a question about the market, which is what makes the cds memo work — but a
-  BLIND view (the assessor's, whose `print` answers Missing for everything) asks the same question
-  and is entitled to a different answer, and it shares the sighted view's object by construction.
-  One store per sightedness now. It could not have fired today, because a blind `curve` throws
-  before the spread read is reached; that is a reason nobody would find until it broke.
-  **Measured:** (12, 48) at 26 periods **289 → 276 ms/period**; (24, 96) **875 → 838**, order
-  generation 181 → 162 ms. The rig rungs understate it — they draw few CDS books — and the
-  four-country world is where it lands: **`check:opens` abroad p12 1,989 → 984 ms, half a period
-  gone.** Every shape figure byte-identical (parties 141, cells 42, people 228, small 521, events
-  110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both censuses
-  identical.
-
 - [ ] 0g.17 **THE INSTRUMENT FIRST (21.118).** `runRung` takes a repeat count and reports the MEDIAN
   and the spread. Measured: the (12, 48) rung at 26 periods gives 274, 274, 286, 287, 303 ms/period
   on IDENTICAL code — **±5%** — so 0g's own rule that a step moving a ratio is reverted has nothing
@@ -663,67 +516,6 @@ written down.
   (Done earlier at 0g.8: `VenueParticipantDecl.venues` built — the venue side had no door at all —
   with the kernel's per-period `askedInVenue` index, and three declarations narrowed:
   627,543 → 44,000 evaluations, 1,923 → 1,600 ms/period.)
-
-- [x] 0g.9 **The first step that changes a SCALING LAW rather than a constant: the solver was
-  O(n²) and is O(n log n).** `clear` asked each candidate level what the whole book did at it —
-  `buys.filter(...).map(...).sum()` and the same for sells — so a book of n orders over n distinct
-  levels did n passes over n orders and allocated four arrays per level. Demand at a level only
-  FALLS as the level rises and supply only RISES, so one pass up the candidates carries both: the
-  buys already excluded and the sells already included. Two pointers, no allocation, one sort a
-  side.
-  **It is the same arithmetic and not merely a close one.** An `Order.qty` is a `Qty` — a whole
-  count of the unit's pieces, refused at the door if it is not — so every partial sum is an integer
-  and integer addition is exact in any order. `test/solver.test.ts` holds it to EQUAL and not to a
-  tolerance, which is the only way the claim means anything (Law 7).
-  **Measured on a fixed book, before against after, with the struck price and both sides compared
-  at every size:**
-
-  | orders in the book | before | after | |
-  |---|---|---|---|
-  | 200 | 1.20 ms | 0.40 ms | ×3 |
-  | 1,000 | 15.90 ms | 1.10 ms | ×14 |
-  | 4,000 | 176.70 ms | 3.30 ms | ×54 |
-  | 12,000 | **1,551.85 ms** | **12.30 ms** | **×126** |
-
-  The before column quadruples in time when n doubles; the after column is linear plus the sort.
-  Same struck price, same `demandAtPrice`, same `supplyAtPrice` at every size.
-  **On today's rungs it is worth almost nothing**, which is the honest other half: the solver is
-  0.4% of a period because this world's books hold a handful of orders each. (12, 48) at 26
-  periods 275 → 275 ms/period; (24, 96) 809 → 800. Every shape figure byte-identical (parties 141,
-  cells 42, people 228, small 521, events 110,625, sessions 60, audit 13,616, money/member
-  23,787,064, wage/h 1591.08); both censuses identical. **It is banked against the 120,000-party
-  world, where a book with twelve thousand orders in it is a second and a half by itself** — and
-  0g's preamble is explicit that the n² laws come first because no constant matters until they are
-  gone.
-
-- [x] 0g.10 **`marginCalls` over pairs — done, and the phase halved. The other three items are
-  NOT SAFE as stated, for one reason, and it is a finding (21.117).**
-  `marginCalls` walked every open contract and, for each side of each one, asked `marginPairsOf` —
-  which walks that party's WHOLE open book — and then threw almost all of the answer away against
-  a `done` set. A book of C contracts did 2C walks of the book to build a list of pairs that does
-  not change while it is being built; `marginPairsOf` alone was **1.4% of a period**. The pairs are
-  collected in one pass now and the calls made in a second.
-  **The ORDER is exactly the order it was**, and that is not a nicety: margin SETTLES inside this
-  loop, so a party that pays one counterparty may have nothing left for the next, and which call is
-  met depends on which came first. The collecting pass keeps the nested shape — contract, then side,
-  then that side's pairs, first encounter wins — and only the repeated walk is gone, memoised per
-  party because a party's pairs cannot change while the list is being read.
-  **Measured:** `derivative-layer/margin.calls` **66 → 31 ms a period (8% → 4%)** on the (24, 96)
-  rung; the whole period **800 → 777 ms**. (12, 48) at 26 periods 275 → 280 ms, which is inside that
-  rung's own ±5 ms spread and reflects a draw with few contracts in it. Every shape figure
-  byte-identical (parties 141, cells 42, people 228, small 521, events 110,625, sessions 60, audit
-  13,616, money/member 23,787,064, wage/h 1591.08); both censuses identical.
-  **`valueTo` memoised per (contract, period) would be WRONG, and so would `requirement` per
-  (poster, holder, ccy, period).** A contract's value does not depend only on prices: `cds`
-  values off `credit.default`, `estate.opened` and `estate.closed`, and `irs` off the
-  `index.benchmark` fixing — all of them EVENTS, and all of them landing mid-period inside the very
-  phase that would read the memo. A CDS is worth one thing before the reference defaults and
-  another after; a cache keyed on the price and instrument versions would hand back the first for
-  the rest of the period. Keying on the journal instead invalidates on every instruction, which is
-  every settlement in a settling phase, so the memo would never hit where it is wanted. **This is
-  21.117, and it is a gap in what the kernel can SEE move, not a caching problem.**
-  **Capacity per (party, ccy, period) decremented within the session: measured and not built.**
-  `capacityOf` is 0.26% of a period inclusive.
 
 - [ ] 0g.15 **PARALLEL ORDER GENERATION — lever C, and Amdahl caps it.** Parties of a market
   partitioned by a fixed hash of their handle; partitions run on workers (`worker_threads`; Web
@@ -923,6 +715,7 @@ each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here
 - [ ] 21.110 `probate`/`estate` (the `accounts` family, Audit B5), measured at 21a: `probate.us.1.bank.b` closes a year of `rigWorld('seed-E2')` with **assets 5,633,457,772 against liabilities 15,770,083,588 and an equity account of 5,633,457,772** — the account equals the assets exactly and the liabilities are not in it at all. An estate that takes on what the dead party owed (`instruments.reseat`, `succeedAgreements`) gains a liability with no entry against it, so the account it opened with is the one it still has. It is the same shape as 21c (a tax on an estate is a claim on it) and the same place in the code, so it is positioned WITH 21c rather than on its own; 21c's step that makes a claim on an estate a ranked claim is where the estate's account learns it owes anything (21a).
 - [ ] 21.116 `test/indices.test.ts` (four red, PRE-EXISTING: identical at `27312b8`, measured at 0g.4 because the step touched the fixing reads this suite covers): **NO EQUITY INDEX EXISTS PER REGION and no rated index ever gets a level.** *declares an index per region and per currency* has ten declared ids and `equity.eu.1` is not among them (Indices D1: four regions, four equity indices); *reads FROM its constituents* finds a basket whose constituent weight is 0, where B1 says a weight is a COUNT of the line; *reports Missing for a basket with nothing in it* finds six constituents where it expects an empty basket, so the empty-basket refusal is not being exercised at all (D5.a); and *reports, shows, grades and indexes, in that order and on the calendar* gets `firstLevel` 0 against a `firstRating` of 20 — the chain from a closed quarter to a rated index stops at the grade. The first is a DECLARATION absent for three of four regions and the others are consequences of an index with nothing in it, so it is one cause and probably one fix. Unpositioned: it wants the indices module open, and which item that is has not been decided — named here so it is not lost (Law 11: the missing declaration is the work item, not the four numbers).
 - [ ] 21.117 `world/world.ts contractValue`, `mechanisms/cds/contract.ts creditState`, `mechanisms/irs/contract.ts floatingRate` (measured at 0g.10): **WHAT A CONTRACT IS WORTH DEPENDS ON AN EVENT, AND NOTHING CAN TELL WHEN THAT MOVED.** The kernel publishes three version counters a reader can watch — the register's writes, the prints, the lines (`view.versions`, 0g.5) — and a derivative's value is not a function of those three: a CDS is worth one thing before `credit.default` lands on its reference and another after, and reads `estate.opened` and `estate.closed` besides; an IRS's floating leg is the last `index.benchmark` fixing. So the one read in the engine that is asked the same question thousands of times a period (`valueTo`, via `requirement`, via `marginCalls` and `dueNext`) is the one read that CANNOT be memoised: keyed on prices and lines it goes stale the moment a reference defaults, and keyed on the journal it is invalidated by every settlement in a phase that settles. 0g.10's own second and third items ask for exactly those two caches and both would be wrong. **The fix is not a cache: it is for the facts these valuations read to be DECLARED (0i, 21.113) and for the journal to carry a version per declared kind**, so "has anything I read moved" is answerable for an event the way it already is for a print. Then `valueTo` is memoisable on (prices, lines, the kinds it reads) and says which kinds those are. Positioned with 21.113, whose per-module declaration is the thing this is waiting for; it is what makes 0g.10's remaining items possible rather than a hazard, and it is also the honest reason `margin.calls` is still 4% of a period after this step.
+- [ ] 21.119 `tools/test/plan-progress.test.ts` *counts the PLAN items, which have no worklist row at all (item 0c)* (PRE-EXISTING: red at `e568cf7` before the completed steps were deleted, verified in a stash): it asserts `itemProgress()` has a PRESENT section for item **0a** with more than zero steps, and 0a closed long ago, so CLAUDE.md's own loop deleted its section — *delete the item file when it closes*. The test encodes the state of the plan on the day it was written, so it goes red every time an item it names closes, which is the opposite of what it is for: what it should assert is the RULE (an item with a section is counted from its section; one without is counted from the worklist's `done`), against a fixture, not against today's plan. It is the same shape as 21.111, a census of an older world. Fix it where `plan:progress` is next opened — which is **0g.17**, since that step touches the same instrument family, and the two new cases added there (a declared "Steps closed and deleted: N" count, and that the line is not read as the next item's step) are already fixture-based and show the shape.
 - [ ] 21.118 `test/ladder.ts` (measured at 0g.11): **THE RUNG'S ms/period IS WORTH ±5% AND EVERY 0g STEP WAS REPORTED TO 1%.** Five runs of the (12, 48) rung at 26 periods on identical code gave 274, 274, 286, 287 and 303 ms/period. So a single-run figure cannot support a claim of "275 → 276" or "289 → 276", and several 0g records made one. The counts those same steps reported — events walked, instruments resolved, participant evaluations, `yieldOf` calls — are exact and were the real evidence; the ms was decoration that read as proof. **The fix is in the instrument, not in the prose**: `runRung` should take a repeat count and report the MEDIAN and the spread, so a step that moves a ratio can be told from a step that moved the weather, and 0g's own rule ("a step that moves a ratio is reverted") has something to test against. Until it does, a 0g step's exit is its counts. Positioned at 0g.16, which is the step that says "the ladder per step at three scales" and is where the instrument is finished — and it should be done BEFORE the remaining steps, because 0g.11, 0g.14 and 0g.15 are the ones whose gains are supposed to be large enough to see.
 - [ ] 21.115 `securities-lending/index.ts returnLoans` → `register.release` (measured at 0g.4, PRE-EXISTING: identical at `27312b8` before any of this session's 0g work, so 0g did not cause it): **a (24, 96) world STOPS in period 9** with `Missing: [Register D5] lien 613 on bank.m/ust.bill.2027-03-15 does not exist` — a loan being returned releases a lien that is already gone, so either the lien was released twice or something else released it and the loan's row still names it. A lien has one writer and a return is a two-sided instruction, so this is a fact with two ways to end (Law 4), and the engine will not run past it. **It is invisible to every gate**: `check:opens` steps the rig 30 periods (142 parties) and the four-country world 12 (433 parties), and neither draw reaches it — the ladder's (24, 96) rung at 26 periods is the smallest run that does, which is why it surfaced under a performance step and not under a test. Two things, and they are one change each: the release in `returnLoans` reads the lien the register holds rather than the one the row remembers, and `check:opens` gains a third world deep enough to reach period 9 of a heavier draw (the check that "was missing" is missing this). Positioned here, before 21b, because it is the first thing that stops a world and everything measured beyond period 8 of a real draw is unmeasurable until it is fixed.
 - [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3).

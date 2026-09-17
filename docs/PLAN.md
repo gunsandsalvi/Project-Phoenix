@@ -18,12 +18,12 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 304 clauses this world does not meet** — 176 MISSING, 128 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.2% are met or out of scope.
-**The items broken out of that so far: 0 of 11 closed** (8 of 147 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 11 closed** (8 of 148 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 15 | 8 | in progress |
-| 21 — The local repairs | 92 | 0 | open |
+| 21 — The local repairs | 93 | 0 | open |
 | 21b — A pool whose manager died (Fund Shares F3, inserted after 21a) | 3 | 0 | open |
 | 21c — A tax on an estate is a claim on it (XI-8, inserted after 21b) | 2 | 0 | open |
 | 22 — The recipe | 3 | 0 | open |
