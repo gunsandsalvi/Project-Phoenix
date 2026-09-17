@@ -586,6 +586,7 @@ function shop(
   };
 }
 
+
 /**
  * C3, C3.a, B2.d: what each bank says when it will not have this name, and WHY — its own binding
  * constraint, which is the whole of what a credit standard is. A bank that never says no has none.
@@ -601,7 +602,11 @@ function refuse(
     if (decl === undefined || !b.status.alive || b.id === borrower) continue;
     const cv = creditViewFor(rows, ctx, b.id, want.ccy);
     const declines = cv === undefined ? none<string>() : cv.of(borrower).declines;
-    const r = room(ctx.participant(b.id), decl, cv === undefined ? exposureTo(ctx.participant(b.id), borrower) : cv.exposureTo(borrower));
+    const r = room(
+      ctx.participant(b.id),
+      decl,
+      cv === undefined ? exposureTo(ctx.participant(b.id), borrower) : cv.exposureTo(borrower),
+    );
     if (r.most.pieces > 0 && !declines.some) continue;
     ctx.record(
       'credit.declined',

@@ -343,7 +343,7 @@ export function creditView(
   inputs: CreditInputs,
 ): CreditView {
   const names = new Map<string, NameView>();
-  const exposures = new Map<string, Cash>();
+  let byIssuer: Map<string, Cash> | undefined;
   return {
     bank: view.self.id,
     ccy,
@@ -356,12 +356,19 @@ export function creditView(
       names.set(String(name), made);
       return made;
     },
+    /**
+     * F3 (0g.6b): one walk of the book, the first time anybody asks, and a lookup after that. A
+     * name this bank holds nothing of owes it nothing, which is a real answer and not a gap.
+     */
     exposureTo: (name) => {
-      const had = exposures.get(String(name));
-      if (had !== undefined) return had;
-      const made = exposureTo(view, name);
-      exposures.set(String(name), made);
-      return made;
+      byIssuer ??= exposuresByIssuer(view);
+      /**
+       * A name this bank holds nothing of owes it nothing: a real answer and not a missing one —
+       * and it is nothing IN THE BANK'S OWN MONEY, which is the money the walk above adds in and
+       * the money every caller compares against a limit. The credit view's own `ccy` is the money
+       * of the REQUEST and the two differ for a bank asked about a loan abroad (Law 8).
+       */
+      return byIssuer.get(String(name)) ?? noCash(view.registry.currencyOf(view.self.region));
     },
     asked: () => [...names.keys()].map((k) => k as PartyId),
   };
@@ -539,6 +546,42 @@ export function room(view: ParticipantView, decl: BankDecl, exposure: Cash): Roo
 }
 
 /** F3: what it already has out to this name. */
+/**
+ * F3, Law 18 (0g.6b): EVERY NAME'S EXPOSURE, IN ONE WALK OF THE BOOK.
+ *
+ * `exposureTo` below answers for ONE name and walks every holding the bank has to do it, so a bank
+ * asked about forty names walked its book forty times — 12.1% of a year at the first rung, with the
+ * `instruments.get` and `quantity` inside it accounting for most of another 20%. The book is the
+ * same book for every name: what changes is which issuer's rows are counted, so this walks it once
+ * and groups by issuer, and a name is then a lookup.
+ *
+ * It is the same arithmetic in the same order — the holdings are walked in the order the register
+ * holds them and each issuer's rows accumulate in that order — so what it answers for a name is
+ * what `exposureTo` answers for it, to the bit (Law 18: gate on behaviour).
+ */
+export function exposuresByIssuer(view: ParticipantView): Map<string, Cash> {
+  const home = view.registry.currencyOf(view.self.region);
+  const out = new Map<string, Cash>();
+  for (const h of view.holdings()) {
+    const i = view.instruments.get(h.instrument);
+    if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    if (!i.issuer.some) continue;
+    const units = view.quantity(h.instrument);
+    if (units <= 0) continue;
+    const name = String(view.parties.resolve(i.issuer.value).id);
+    const had = out.get(name);
+    out.set(
+      name,
+      plus(
+        had ?? noCash(home),
+        view.inMoney(heldAsMoney(units, i.ccy, 'at the face it owes'), home),
+        'exposure to one name',
+      ),
+    );
+  }
+  return out;
+}
+
 export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
   const home = view.registry.currencyOf(view.self.region);
   let total = noCash(home);
