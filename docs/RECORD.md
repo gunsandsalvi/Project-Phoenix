@@ -16028,3 +16028,46 @@ stash, before any of this. The test encodes the state of the plan on the day it 
 goes red every time an item it names closes, which is the opposite of its purpose: it should assert
 the RULE against a fixture, which is what the two cases added beside it do. Positioned at 0g.17,
 which opens the same instrument family. Not chased (Law 11).
+
+---
+
+## 0g.17 — The instrument, and my own finding was half wrong
+
+**What.** `npm run ladder -- <banks> <firms> <grain> <periods> --repeat=N [--warm=K]` builds a fresh
+world N times, times every period, and reports the **median of each run's own steady median** with
+the range beside it, the shape of every run, and one line telling the reader what the band means.
+`Rung` now carries `each` — every period's own time, in order — and `steadyOf(rung, warm)` reads a
+median and a range off its tail. `msPerPeriodAt` and `line()` are untouched, because earlier 0g
+records quote them.
+
+**And the diagnosis in 21.118 was half wrong, which is the finding.** That entry said the rung's
+ms/period is worth ±5% and blamed the machine. The instrument says **the statistic was the noise.**
+`msPerPeriodAt` is CUMULATIVE elapsed divided by the mark, so it carries the opening periods — a
+world still filling up, 636 ms against a steady 206 — into every figure after them. Three identical
+runs of the (12, 48) rung, same process, same code:
+
+| | run 1 | run 2 | run 3 | band |
+|---|---|---|---|---|
+| `msPerPeriodAt[14]` (what six records quoted) | 302 | 257 | 247 | **±10%** |
+| steady median (what this reports) | 203 | 207 | 206 | **±1.0%** |
+
+So the six 0g deltas of 1–4% were **measured against the wrong number**, not unmeasurable. On the
+right one a 4% claim is well outside the band and 0g's rule — *a step that moves a ratio is reverted*
+— has an instrument that can apply it for the first time. The cumulative figure also explains the
+apparent machine noise: the in-process repeats get faster as the JIT warms (period 1: 636 → 405 →
+313 ms), and a cumulative mean is dominated by exactly those periods.
+
+**What is asserted, in `ladder.test.ts`**: the shape of the read and not a duration — the steady
+window is the tail, its median lies inside its own range, dropping the warm periods cannot widen the
+range, and a window past the end is empty rather than a number nobody measured (Appendix A). Plus
+the rung's shape is reproducible across runs, which is what Law 18 gates on.
+
+**One caveat printed rather than left to be found**: under `--repeat` the heap figure is unreliable
+(76 → 159 → 559 MB across three runs of the same world), because the collector's timing differs
+between repeats in one process. Heap is read from a single run.
+
+**21.118 is closed and deleted from the plan; item 21 now declares its own closed count** for the
+same reason 0g does. **21.119 stays open and its position moved**: it pointed at 0g.17 as "where
+`plan:progress` is next opened", and 0g.17 closed *without* fixing it — it added two fixture-based
+cases beside the stale one, which show the shape the fix should take, and left the stale assertion
+alone rather than widening the step (Law 14).

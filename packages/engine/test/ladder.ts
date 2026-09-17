@@ -48,6 +48,13 @@ export interface Rung {
   readonly auditTotal: number;
   readonly moneyPerMember: number;
   readonly wagePerHour: number;
+  /**
+   * 0g.17: EVERY PERIOD'S OWN TIME, in order, so a claim about ms/period can be a distribution
+   * rather than one number. `msPerPeriodAt` is CUMULATIVE elapsed over the mark — it carries
+   * period 1's cost (640 ms against a steady 280) into every figure after it — and it is kept
+   * unchanged because earlier 0g records quote it. This is what a step should be judged on.
+   */
+  readonly each: readonly number[];
 }
 
 export function runRung(banks: number, firms: number, grain: 1 | 2, periods = YEAR): Rung {
@@ -59,8 +66,11 @@ export function runRung(banks: number, firms: number, grain: 1 | 2, periods = YE
   let auditTotal = 0;
   let events = 0;
   const started = Date.now();
+  const each: number[] = [];
   for (let i = 1; i <= periods; i += 1) {
+    const at = Date.now();
     const report = w.step();
+    each.push(Date.now() - at);
     sessionsCleared += report.markets.filter((m) => m.outcome === 'cleared').length;
     auditTotal += report.audit.total;
     events += w.journal.inPeriod(report.period).length;
@@ -103,6 +113,69 @@ export function runRung(banks: number, firms: number, grain: 1 | 2, periods = YE
     auditTotal,
     moneyPerMember: people > 0 ? money / people : 0,
     wagePerHour,
+    each,
+  };
+}
+
+/**
+ * 0g.17, Law 18 (21.118): A MEDIAN AND A SPREAD, because one run is not a measurement.
+ *
+ * Five runs of the (12, 48) rung at 26 periods on IDENTICAL code gave 274, 274, 286, 287 and
+ * 303 ms/period — **±5%**. Every 0g step from 0g.4 to 0g.11 reported a single run against a single
+ * run, and six of those deltas were 1–4%: inside the noise, and reported as if they were not. 0g's
+ * own rule is that a step which moves a ratio is reverted, and that rule has never had an instrument
+ * that could tell a moved ratio from moved weather.
+ *
+ * TWO distributions, because they answer different questions. WITHIN a run, the steady periods'
+ * own times say what a period costs once the world has filled up — the first periods are a world
+ * still being built and belong to no steady state. ACROSS runs, a fresh world per repeat catches
+ * what differs between processes: the collector's mood, where the JIT got to, what the machine was
+ * doing. A step is judged on the across-run median, and the spread is printed beside it so a
+ * reader can see whether the claim is bigger than the noise.
+ */
+export interface Spread {
+  readonly median: number;
+  readonly lo: number;
+  readonly hi: number;
+  readonly n: number;
+}
+
+function spreadOf(xs: readonly number[]): Spread {
+  const sorted = [...xs].sort((a, b) => a - b);
+  const mid = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  return { median: mid, lo: sorted[0] ?? 0, hi: sorted[sorted.length - 1] ?? 0, n: sorted.length };
+}
+
+/** The steady periods of one run: everything after the world has stopped filling up. */
+export function steadyOf(r: Rung, warm: number): Spread {
+  return spreadOf(r.each.slice(warm));
+}
+
+export interface Rungs {
+  readonly runs: readonly Rung[];
+  /** The across-run distribution of each run's own steady median — what a step is judged on. */
+  readonly steady: Spread;
+  /** Whether every run agreed on the shape of the world; a step that moves one of these is reverted. */
+  readonly sameShape: boolean;
+}
+
+export function runRungs(
+  banks: number,
+  firms: number,
+  grain: 1 | 2,
+  periods: number,
+  repeats: number,
+  warm: number,
+): Rungs {
+  const runs: Rung[] = [];
+  for (let i = 0; i < repeats; i += 1) runs.push(runRung(banks, firms, grain, periods));
+  const shape = (r: Rung): string =>
+    `${r.parties}|${r.cells}|${r.people}|${r.smallFirms}|${r.events}|${r.sessionsCleared}|${r.auditTotal}|${r.moneyPerMember.toFixed(6)}|${r.wagePerHour.toFixed(6)}`;
+  const first = runs[0];
+  return {
+    runs,
+    steady: spreadOf(runs.map((r) => steadyOf(r, warm).median)),
+    sameShape: first === undefined || runs.every((r) => shape(r) === shape(first)),
   };
 }
 
@@ -198,9 +271,35 @@ export function line(r: Rung): string {
 
 const args = process.argv.slice(2);
 const where = args.includes('--where');
+/** 0g.17: `--repeat N` builds a fresh world N times and reports the median and the spread. */
+const repeatArg = args.find((a) => a.startsWith('--repeat'))?.split('=')[1];
+const repeats = repeatArg === undefined ? (args.includes('--repeat') ? 3 : 1) : Number(repeatArg);
+/** How many opening periods are a world still filling up rather than a steady state. */
+const warmArg = args.find((a) => a.startsWith('--warm='))?.split('=')[1];
 const [banksArg, firmsArg, grainArg, periodsArg] = args.filter((a) => !a.startsWith('--'));
 if (banksArg !== undefined && firmsArg !== undefined) {
-  if (where) {
+  if (repeats > 1) {
+    const grain: 1 | 2 = grainArg === '2' ? 2 : 1;
+    const periods = periodsArg === undefined ? YEAR : Number(periodsArg);
+    const warm = warmArg === undefined ? Math.min(4, periods - 1) : Number(warmArg);
+    const rs = runRungs(Number(banksArg), Number(firmsArg), grain, periods, repeats, warm);
+    const s = rs.steady;
+    // The band as a share of the median, so a reader can see at once whether a claim can be heard.
+    const band = s.median > 0 ? (100 * (s.hi - s.lo)) / s.median : 0;
+    console.log(
+      `LADDER ${banksArg}b/${firmsArg}f ×${grain}: steady ms/period MEDIAN ${s.median.toFixed(0)}` +
+        ` (${s.lo.toFixed(0)}–${s.hi.toFixed(0)}, ±${(band / 2).toFixed(1)}%, ${s.n} runs of ${periods} periods, ${warm} warm)`,
+    );
+    for (const r of rs.runs) {
+      const st = steadyOf(r, warm);
+      console.log(`  run: steady ${st.median.toFixed(0)} (${st.lo}–${st.hi}) | ${line(r)}`);
+    }
+    // Law 18: the shape is the gate. A step that moves one of these is reverted, whatever the ms did.
+    console.log(rs.sameShape ? '  SHAPE: identical across runs' : '  SHAPE: **DIFFERS ACROSS RUNS** — this rung is not deterministic');
+    console.log(
+      `  READ IT AS: a change smaller than ±${(band / 2).toFixed(1)}% on this rung is NOT evidence; judge the step on its counts.`,
+    );
+  } else if (where) {
     const w = whereItGoes(Number(banksArg), Number(firmsArg));
     const pct = (ms: number): string => `${((100 * ms) / w.perPeriod).toFixed(0)}%`;
     console.log(`WHERE ${banksArg}b/${firmsArg}f: ${w.perPeriod.toFixed(0)}ms/period`);
@@ -211,5 +310,6 @@ if (banksArg !== undefined && firmsArg !== undefined) {
     const grain: 1 | 2 = grainArg === '2' ? 2 : 1;
     const periods = periodsArg === undefined ? YEAR : Number(periodsArg);
     console.log(`LADDER ${line(runRung(Number(banksArg), Number(firmsArg), grain, periods))}`);
+    console.log('  (one run: no median, no spread. Use --repeat=3 before claiming a delta — 0g.17.)');
   }
 }
