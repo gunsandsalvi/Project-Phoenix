@@ -526,7 +526,38 @@ say where the categories are:
   with the kernel's per-period `askedInVenue` index, and three declarations narrowed:
   627,543 → 44,000 evaluations, 1,923 → 1,600 ms/period.)
 
-- [ ] 0g.9 Solver: sort once, sweep with running sums; outcomes byte-identical on a fixed book.
+- [x] 0g.9 **The first step that changes a SCALING LAW rather than a constant: the solver was
+  O(n²) and is O(n log n).** `clear` asked each candidate level what the whole book did at it —
+  `buys.filter(...).map(...).sum()` and the same for sells — so a book of n orders over n distinct
+  levels did n passes over n orders and allocated four arrays per level. Demand at a level only
+  FALLS as the level rises and supply only RISES, so one pass up the candidates carries both: the
+  buys already excluded and the sells already included. Two pointers, no allocation, one sort a
+  side.
+  **It is the same arithmetic and not merely a close one.** An `Order.qty` is a `Qty` — a whole
+  count of the unit's pieces, refused at the door if it is not — so every partial sum is an integer
+  and integer addition is exact in any order. `test/solver.test.ts` holds it to EQUAL and not to a
+  tolerance, which is the only way the claim means anything (Law 7).
+  **Measured on a fixed book, before against after, with the struck price and both sides compared
+  at every size:**
+
+  | orders in the book | before | after | |
+  |---|---|---|---|
+  | 200 | 1.20 ms | 0.40 ms | ×3 |
+  | 1,000 | 15.90 ms | 1.10 ms | ×14 |
+  | 4,000 | 176.70 ms | 3.30 ms | ×54 |
+  | 12,000 | **1,551.85 ms** | **12.30 ms** | **×126** |
+
+  The before column quadruples in time when n doubles; the after column is linear plus the sort.
+  Same struck price, same `demandAtPrice`, same `supplyAtPrice` at every size.
+  **On today's rungs it is worth almost nothing**, which is the honest other half: the solver is
+  0.4% of a period because this world's books hold a handful of orders each. (12, 48) at 26
+  periods 275 → 275 ms/period; (24, 96) 809 → 800. Every shape figure byte-identical (parties 141,
+  cells 42, people 228, small 521, events 110,625, sessions 60, audit 13,616, money/member
+  23,787,064, wage/h 1591.08); both censuses identical. **It is banked against the 120,000-party
+  world, where a book with twelve thousand orders in it is a second and a half by itself** — and
+  0g's preamble is explicit that the n² laws come first because no constant matters until they are
+  gone.
+
 - [ ] 0g.10 Derivatives: `marginCalls` over pairs; `valueTo` memoised per (contract, period); `requirement` per (poster, holder, ccy, period); capacity per (party, ccy, period) decremented within the session.
 - [ ] 0g.11 Columnar state behind the read faces: an interning table gives parties, instruments, units and currencies dense integers at registration; holdings as CSR typed arrays with lots in a side array; equity, weights, `latest` prints, the period index as typed arrays; `RegisterReads`, `PriceStore`, `Parties` keep string-keyed signatures.
 - [ ] 0g.12 Observer from the period's slice: `snapshot` reads `journal.inPeriod`; static parts cached by `instruments.version`; a party scope walks its own holdings; `numOf` → `null` on a missing field.

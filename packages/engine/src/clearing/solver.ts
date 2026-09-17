@@ -16,6 +16,7 @@ import type { PartyId } from '../core/ids.js';
 import {
   atMost,
   finite,
+  sub,
   sum,
   zeroIfNone,
 } from '../core/num.js';
@@ -202,12 +203,47 @@ export function clear(
   if (sells.length === 0) return { kind: 'noSupply' };
 
   const candidates = [...new Set(orders.map((o) => o.price))].sort((a, b) => a - b);
+  /**
+   * Law 18 (0g.9): SORTED ONCE, SWEPT WITH RUNNING SUMS.
+   *
+   * This asked each level what the whole book did at it — `buys.filter(...).map(...).sum()` and the
+   * same for sells — so a book of n orders over n levels was **O(n²)** with four arrays allocated
+   * per level. The books in this world are small today and it cost 0.4% of a period; n² is the
+   * shape that stops being a constant, and Law 18 is where it is allowed to be fixed.
+   *
+   * Demand at a level only FALLS as the level rises, and supply only RISES, so one pass up the
+   * candidates carries both: the buys already excluded (priced below this level) and the sells
+   * already included (priced at or below it). Two pointers, no allocation, one sort a side.
+   *
+   * **AND IT IS THE SAME ARITHMETIC, not merely a close one.** An `Order.qty` is a `Qty` — a whole
+   * count of the unit's pieces, refused at the door if it is not (`core/tick.ts`) — so every
+   * partial sum here is an integer and integer addition is exact whatever order it is done in.
+   * That is what makes a running total identical to a re-summed filter rather than nearly so, and
+   * it is the same reason this loop's own note gave for calling the result a quantity (Law 8).
+   */
+  const buysUp = [...buys].sort((a, b) => a.price - b.price);
+  const sellsUp = [...sells].sort((a, b) => a.price - b.price);
+  const demanded = sum(buys.map((o) => o.qty)).value;
+  let bi = 0;
+  let excluded = 0;
+  let si = 0;
+  let included = 0;
   let best: { price: PerPiece; volume: Qty; imbalance: number; d: Qty; s: Qty } | undefined;
   for (const p of candidates) {
+    for (; bi < buysUp.length; bi += 1) {
+      const o = buysUp[bi];
+      if (o === undefined || o.price >= p) break;
+      excluded += o.qty;
+    }
+    for (; si < sellsUp.length; si += 1) {
+      const o = sellsUp[si];
+      if (o === undefined || o.price > p) break;
+      included += o.qty;
+    }
     // Law 8: adding counts of pieces gives a count of pieces — no rounding is involved, so the
     // sum is still a quantity and says so.
-    const d = asQty(sum(buys.filter((o) => o.price >= p).map((o) => o.qty)).value, 'demand at a level');
-    const s = asQty(sum(sells.filter((o) => o.price <= p).map((o) => o.qty)).value, 'supply at a level');
+    const d = asQty(sub(demanded, excluded, 'demand at a level'), 'demand at a level');
+    const s = asQty(finite(included, 'supply at a level'), 'supply at a level');
     const v = executable(d, s);
     const imbalance = Math.abs(d - s);
     const tie = v === best?.volume && imbalance === best.imbalance;

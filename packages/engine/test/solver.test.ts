@@ -75,6 +75,35 @@ describe('clearing solver (Clearing C1-C5)', () => {
     );
   });
 
+  /**
+   * 0g.9, Law 18: THE SWEEP ANSWERS WHAT THE FILTER ANSWERED. `clear` used to ask each candidate
+   * level what the whole book did at it, which is O(n²); it carries running sums up the levels now.
+   * The two are the same arithmetic because an `Order.qty` is a whole count of pieces and integer
+   * addition is exact in any order — so this holds it to EQUAL and not to a tolerance, which is the
+   * only way the claim means anything (Law 7: a check that needs a band is reporting a defect).
+   */
+  it('sweeps to the same demand and supply the filter summed (0g.9)', () => {
+    fc.assert(
+      fc.property(fc.array(orderArb, { maxLength: 60 }), (orders) => {
+        const r = clear(orders, 'proRata');
+        if (r.kind !== 'cleared') return true;
+        const at: number = r.price;
+        const atLevel = (side: 'buy' | 'sell'): number =>
+          sum(
+            orders
+              .filter((o) => {
+                if (o.side !== side || o.price === 'market') return false;
+                return side === 'buy' ? o.price >= at : o.price <= at;
+              })
+              .map((o) => o.qty),
+          ).value;
+        expect(r.demandAtPrice).toBe(atLevel('buy'));
+        expect(r.supplyAtPrice).toBe(atLevel('sell'));
+        return true;
+      }),
+    );
+  });
+
   it('adds no demand of its own (B5): volume never exceeds either side', () => {
     fc.assert(
       fc.property(fc.array(orderArb, { maxLength: 40 }), (orders) => {

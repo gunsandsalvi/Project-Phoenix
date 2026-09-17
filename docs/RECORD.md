@@ -15630,3 +15630,60 @@ nothing in"* — a door written without reading all three branches silently lose
 would have posted, which is worse than the cost it saves. It wants the funds module open, which is
 where 21.109's pool equity is going anyway. And `markets`/`venues` MANDATORY is the guard that lands
 with the LAST door, not before: assembly would refuse this world today, which is the point of it.
+
+---
+
+## 0g.9 — The first scaling law broken: the solver was O(n²)
+
+**What was there.** `clear` walked the candidate levels and asked each one what the whole book did
+at it:
+
+```
+for (const p of candidates) {
+  const d = sum(buys.filter((o) => o.price >= p).map((o) => o.qty)).value;
+  const s = sum(sells.filter((o) => o.price <= p).map((o) => o.qty)).value;
+```
+
+A book of n orders posts up to n distinct levels, so that is n passes over n orders — **O(n²)** —
+with four arrays allocated per level.
+
+**What it is now.** Demand at a level only FALLS as the level rises, and supply only RISES. So one
+pass up the candidates carries both: the buys already excluded (priced below this level) and the
+sells already included (priced at or below it). Two pointers, no allocation, one sort a side —
+O(n log n), and the sort is the only part that is not linear.
+
+**It is the same arithmetic, and that had to be argued rather than hoped.** An `Order.qty` is a
+`Qty`: a whole count of the unit's own pieces, refused at the door if it is not (`core/tick.ts`). So
+every partial sum here is an integer, and integer addition is exact in whatever order it is done —
+which is what makes a running total *identical* to a re-summed filter rather than nearly so. It is
+the same reason the loop's own existing note gave for calling its result a quantity (Law 8).
+`test/solver.test.ts` holds the swept `demandAtPrice` and `supplyAtPrice` to EQUAL what the filter
+sums, with no tolerance, because a check that needs a band would be reporting a defect (Law 7).
+
+**Measured on a fixed book, before against after, comparing the struck price and both sides at every
+size:**
+
+| orders in the book | before | after | |
+|---|---|---|---|
+| 200 | 1.20 ms | 0.40 ms | ×3 |
+| 1,000 | 15.90 ms | 1.10 ms | ×14 |
+| 4,000 | 176.70 ms | 3.30 ms | ×54 |
+| 12,000 | **1,551.85 ms** | **12.30 ms** | **×126** |
+
+The before column roughly quadruples when n doubles; the after column is linear plus the sort. Same
+struck price, same `demandAtPrice`, same `supplyAtPrice` at every size.
+
+**And on today's rungs it is worth almost nothing.** That is the honest other half: the solver is
+0.4% of a period because this world's books hold a handful of orders each. (12, 48) at 26 periods
+275 → 275 ms/period; (24, 96) 809 → 800. Every shape figure byte-identical (parties 141, cells 42,
+people 228, small 521, events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h
+1591.08); both censuses identical.
+
+**It is banked, and that is the right reason to do it.** 0g's preamble says the n² laws come first
+because no constant matters until they are gone, and this is the first of them to actually fall. A
+book with twelve thousand orders in it — which is what a 120,000-party world's sovereign auction
+looks like — was a second and a half of a period by itself, in a function that is 0.4% today. A
+measurement taken at the current scale would have said to skip this step, and it would have been
+wrong: the four preceding steps were constants worth 0–8%, and this one is worth a factor of a
+hundred at the scale the exit condition is written for. **Both readings belong in the record,
+because the lesson is that a flat profile at the wrong scale is not evidence.**
