@@ -311,6 +311,13 @@ engine rather than local edits.
 
 Each when its file is open for another item; file:line and the change.
 
+**21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
+prints what the assembled world actually does, period by period, in words: who is in it, what
+cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money
+moved and under which receipt, what the world SAID, what every living party asked for and did not
+get (0h.4), the audit by family, and at the end what has never been reached at all and one party of
+each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here is read off.
+
 - [ ] 21.94 `test/treasury.test.ts` (seven of ten) and `test/treasury-default.test.ts` (two of two)
   ARE RED, and were before 0h.5 and before 20a (the same ten on both sides of each). They are a
   second shape of 21.67's problem and a first of their own: *announces on its own calendar*, *pays
