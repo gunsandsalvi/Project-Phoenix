@@ -161,6 +161,7 @@ import {
 import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { supply } from '../mechanisms/supply/index.js';
+import { polity } from '../mechanisms/polity/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
 import { PROBATE, probateId } from '../mechanisms/households/lifecycle.js';
@@ -2964,6 +2965,9 @@ export function foundationSpec(
       // period and not the thing itself. Rent clears between what letting WEARS the owner and what
       // a household can pay rather than have nowhere, and nothing in either is a coefficient.
       housing(),
+      // §47, XI-17 (19.2): the body that owns the numbers parliament owns. It is assembled after
+      // the households it is elected by and the treasury whose programme it decides.
+      polity,
       // 13e, Trade Credit A1-A3: MOST OF THE CREDIT IN AN ECONOMY IS NOT A BANK'S. After the firms
       // and the goods, because what it decides is whether a SALE between two of them settles in
       // money or in a promise; the kernel writes the leg either way, in the one instruction.

@@ -124,6 +124,9 @@ export const TREASURY_PARAMS = {
   taxInterest: paramId('treasury.tax.interestIncome'),
   taxIncome: paramId('treasury.tax.income'),
   taxConsumption: paramId('treasury.tax.consumption'),
+  /** §30 C1, §47 D1 (19.2): the two bases this world assessed at somebody else's rate, or not at all. */
+  taxProfits: paramId('treasury.tax.profits'),
+  taxGains: paramId('treasury.tax.gains'),
   concession: paramId('treasury.walkAway.concession'),
   dealershipShare: paramId('sovereign.primaryDealers.minBidShare'),
   buybackStale: paramId('treasury.buyback.stalePeriods'),
@@ -388,6 +391,24 @@ export const treasury: SystemModule = {
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury C1: a tax on consumption, on what a household actually paid a seller for real things. A household finds it on top of the price when it decides what to spend (Households C4), and it is remitted out of its own account.',
+    },
+    {
+      id: TREASURY_PARAMS.taxProfits,
+      value: 0.25,
+      unit: 'of what a company published it earned',
+      dimension: 'ratio',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury C1, §30 C1, §47 D1 (19.2): THE CORPORATE BASE. §30 C1 names three bases — income, consumption, profit — and this world had no mechanism for the third: a comment in `runReceipts` said so and pointed at this item. What is taxed is what the company ITSELF PUBLISHED it earned (§48, Law 19: the statement is the source and a re-derived profit would be a second writer), once per statement, so a company that reports nothing is assessed nothing and the base follows the economy the way C2 requires.',
+    },
+    {
+      id: TREASURY_PARAMS.taxGains,
+      value: 0.18,
+      unit: 'of a realised gain',
+      dimension: 'ratio',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury C1, §47 D1 (19.2): A GAIN IS NOT A WAGE. Realised gains were taxed at the INCOME rate and counted in the income base — one rate on two different things (Law 4), and every real polity separates them, usually at a lower rate, which is itself a political decision worth having. It is read off what settlement published as realised (proceeds against basis), which is the one place both halves are known.',
     },
     {
       id: TREASURY_PARAMS.concession,
@@ -952,6 +973,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const onInterest = ctx.params.ratio(TREASURY_PARAMS.taxInterest);
   const onIncome = ctx.params.ratio(TREASURY_PARAMS.taxIncome);
   const onConsumption = ctx.params.ratio(TREASURY_PARAMS.taxConsumption);
+  const onGains = ctx.params.ratio(TREASURY_PARAMS.taxGains);
   const cells = new Set(itsPeople(ctx, id).map((p) => p.id));
   const due = new Map<PartyId, number>();
   // Every base is MONEY — what was actually paid, in this treasury's own currency — so a rate can
@@ -960,6 +982,9 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     interest: noCash(ccy),
     income: noCash(ccy),
     consumption: noCash(ccy),
+    // 19.2: two bases of their own. A gain is not a wage and a company's profit is neither.
+    gains: noCash(ccy),
+    profits: noCash(ccy),
     unclassified: noCash(ccy),
   };
   for (const r of ctx.ledger.inPeriod(previous)) {
@@ -1095,9 +1120,42 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         ctx.period,
       );
       if (gain.pieces <= 0) continue;
-      bases.income = plus(bases.income, gain, 'gains households realised');
-      addTo(due, made.party, scale(gain, onIncome, 'tax on the gain').pieces);
+      // 19.2: ITS OWN BASE AT ITS OWN RATE. It was added to the income base and taxed at the wage
+      // rate — one rate on two different things (Law 4) — and what a polity charges on a gain
+      // against what it charges on a wage is one of the things an election is actually about.
+      bases.gains = plus(bases.gains, gain, 'gains households realised');
+      addTo(due, made.party, scale(gain, onGains, 'tax on the gain').pieces);
     }
+  }
+  /**
+   * C1, §30 C1, §47 D1, Law 19 (19.2): THE CORPORATE BASE, read off what a company PUBLISHED.
+   *
+   * §30 C1 names three bases and this world had two: the comment in the `sale` branch above said
+   * *"what it nets to is a firm's profit, which is a different tax on a different base, and this
+   * world has no mechanism for one"*, and pointed here. What a company earned is not something the
+   * treasury may work out for itself — the statement is the source (§48, Law 19), a re-derivation
+   * would be a second writer of one fact (Law 4), and a company that has published nothing is
+   * assessed nothing, which is the honest answer for one that has not closed a set of books yet.
+   *
+   * THE BASE IS WHAT IT EARNED LESS WHAT THE MARKS DID. `revaluation` is the part of `earned`
+   * nobody was paid, and taxing it would be charging a company for a price that moved — what every
+   * real system taxes is the rest. Both numbers are on the statement; neither is computed here.
+   *
+   * ONCE PER STATEMENT: the assessment is made in the period after the one it was prepared in, the
+   * same lag a reader of accounts gets (A2.a), so a quarter is taxed once and not every week of it.
+   */
+  const onProfits = ctx.params.ratio(TREASURY_PARAMS.taxProfits);
+  for (const p of ctx.parties.all()) {
+    if (!p.status.alive || cells.has(p.id)) continue;
+    const said = ctx.published.lastStatement(p.id);
+    if (said?.preparedIn !== previous || said.ccy !== ccy) continue;
+    const made = minus(said.earned, said.revaluation, 'what it earned that the marks did not make');
+    // A company that lost money is not owed money by the state. What a loss DOES — carry against
+    // later profit, or not — is a fiscal rule the polity owns, and inventing one here would be the
+    // outcome-written-as-a-rule the method forbids (the same answer the gains base gives).
+    if (made.pieces <= 0) continue;
+    bases.profits = plus(bases.profits, made, 'what companies published they earned');
+    addTo(due, p.id, scale(made, onProfits, 'tax on the profit it published').pieces);
   }
   let collected = noCash(ccy);
   let unpaid = noCash(ccy);
@@ -1145,6 +1203,8 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         interest: bases.interest.pieces,
         income: bases.income.pieces,
         consumption: bases.consumption.pieces,
+        gains: bases.gains.pieces,
+        profits: bases.profits.pieces,
         unclassified: bases.unclassified.pieces,
       },
     },
