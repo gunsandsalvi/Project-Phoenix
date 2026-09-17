@@ -373,9 +373,9 @@ period 0 is indistinguishable in KIND from the census of period 100.
 
 *What a run costs, where the cost actually is, and what is worth doing in what order.*
 
-### 2.1 What it costs, at three scales
+### 2.1 The three rungs, and the one that does not run
 
-The ladder's own three rungs, 26 periods each, at `ab18535`:
+26 periods each, at `ab18535`:
 
 | rung (banks, firms) | parties | markets | 26 periods | ms/period |
 |---|---|---|---|---|
@@ -383,127 +383,147 @@ The ladder's own three rungs, 26 periods each, at `ab18535`:
 | (6, 60) | 229 | 661 | **stops at period 20** | ~750 |
 | (12, 200) | 866 | 765 | 236 s | **9,078** |
 
-Two facts, and the second is worse than the first.
-
 **Cost grows as about the 1.7th power of the population.** Parties ×6.8 from the first rung to the
-third; cost per period ×27. A world ten times bigger costs fifty times more. The exit criterion 0g
-sets — *"(12, 200) one country: a 52-period year under 60 s"* — is 8 minutes away at that rung, and
-the gap is structural, not constant-factor.
+third, cost per period ×27. 0g's exit — *"(12, 200) one country: a 52-period year under 60 s"* — is a
+**factor of eight** away, and the gap is structural rather than constant-factor.
 
-**The middle rung does not run.** `(6, 60)` stops at period 20 with
-`[Money C1.a] instruction 23596: a payment from an account to itself is not a payment`, from the
-treasury's receipts — the same stop recorded as 21.87. So **the project's own performance instrument
-cannot produce its own three-rung comparison**, and the one measurement that would show a scaling
-exponent has been unavailable the whole time.
+**The middle rung stops** at period 20 with `[Money C1.a] instruction 23596: a payment from an
+account to itself is not a payment`, from the treasury's receipts: finding 21.87. So the performance
+programme's own instrument cannot produce its own three-rung comparison, and every published speed
+number in this project is a first-rung number.
 
-### 2.2 Where the time is — and it is not where the first rung said
+### 2.2 Where the time goes, at the scale that matters
 
-A CPU profile of eight periods at the **third** rung:
+A CPU profile of eight periods at the **third** rung, attributed by inclusive time to the nearest
+source directory on the stack:
 
 ```
-21.9%  yearFraction        calendar/daycount.ts
-14.9%  (anon)              prices/curve.ts
-10.2%  dayNumber           calendar/civil.ts
- 6.3%  garbage collector
- 4.3%  invertDecreasing    core/num.ts
- 2.2%  readCurve           prices/curve.ts
+34.4%  calendar/     20.7%  prices/      7.2%  core/      5.9%  world/
+ 3.7%  register/      3.0%  registry/    1.9%  expectations   <1% everything else
 ```
 
-**More than half of a run at the scale that matters is yield-curve arithmetic** — a numerical
-inversion (`invertDecreasing`) calling a discount function that calls a day-count fraction that
-walks a civil date into a day number, over and over, with nothing remembered between calls.
+**Over half the run is date arithmetic and curve reading, and the economics is under a tenth of it.**
+Walking up from every sample inside `calendar/` and `prices/` to the first frame outside them gives
+one caller:
 
-At the **first** rung, the same week, the profile was `exposureTo` 11%, `instruments.get` 10%,
-`register.snapshot` 9%, `register.quantity` 8% — a completely different hot set, which is what the
-four steps of 0g removed (1,354 → 554 ms/period, 2.4×). **Those steps were real and they were aimed
-at the wrong world.** The lesson is general and belongs in the record: *profile at the scale whose
-cost you care about, because the hot set is a function of scale.*
+```
+53.2% of the entire run is inside World.curveAt
+```
 
-The plan already predicted this and never built it. 0g.7, still open, reads:
-*"`curveAt` memoised per (family, period, prices.version); `invertDecreasing` seeded by the last
-yield; `index()` keyed on the basket's own prints."*
+### 2.3 What `curveAt` actually does
 
-### 2.3 What the engine spends its effort on
+`world.ts:3412` → `prices/curve.ts readCurve`, and the body is this, **on every call, with nothing
+remembered**:
 
-From §0: **8,819 market sessions, 72 cleared.** The engine opens 350–765 books every period, asks
-every eligible participant in each, runs a solver over the answers, and 99.2% of the time nothing
-happens. No constant-factor work on the solver can touch this; the saving is **not holding the
-auction**, which is a modelling change (§3) that happens to be the largest performance item on the
-list.
+```ts
+for (const i of inputs.instruments()) {          // EVERY instrument in the world
+  if (!issuedBy(i, family.issuer) || i.ccy !== family.ccy || !i.status.live) continue;
+  const flows = inputs.cashFlows(i, on);          // rebuild the schedule
+  const print = inputs.prices.latest(i.id, at);
+  const tenorYears = yearFraction(family.dayCount, on, last.date);
+  const y = yieldOf(flows, dirty, on, family.dayCount, …);   // a ROOT-FIND, per instrument
+}
+points.sort(…);
+```
 
-### 2.4 How this class of simulator is made fast elsewhere
+Measured call counts, over four periods:
 
-**Entities sleep, and something wakes them.** In Factorio *"entities not in the 'Active' section
-don't get touched during normal tick updates"*, and the wake is caused rather than polled: *"an
-inserter that is supposed to fill an assembler will be deactivated if the assembler's input is
-filled. Once the assembler produces an item, the assembler activates the inserter"*
+| rung | instruments | curve reads / period |
+|---|---|---|
+| (3, 12) | 853 | **28** |
+| (12, 200) | 1,387 | **1,079** |
+
+Instruments ×1.6 between the rungs; curve reads ×38, because the callers are parties and valuations
+rather than lines. At the third rung that is **~1.5 million instrument-visits per period, each with a
+yield inversion**, to produce four curves that do not change within a period.
+
+This also explains why the first rung's profile never showed it: at 28 reads a period the curve is
+invisible, and at 1,079 it is the program. **The hot set is a function of scale** — which is the
+general lesson, and it means the 2.4× this week's 0g work bought (1,354 → 554 ms/period at the first
+rung) was real work aimed at a world nobody will run.
+
+### 2.4 The other half: the engine's effort goes into auctions nobody attends
+
+From §0: **8,819 market sessions, 72 cleared, 7,903 finding no demand at all.** The loop opens 350
+books at the first rung and 765 at the third, asks every eligible participant in each, and runs a
+solver over the answers. No constant-factor work touches this; the saving is **not holding the
+auction**, which is §3's M1–M3 and happens to be the largest performance item in the review.
+
+### 2.5 How this class of engine is made fast elsewhere
+
+**Cache what does not change within a step.** This is not exotic — it is what every risk system does
+with a discount curve: build it once per valuation date, from the prints of that date, and hand out
+the same object. Phoenix already has the machinery, built this week: `view.memo(key, at, compute)`
+with `versions()` giving the register's write count, the price store's and the instrument store's.
+A curve is a pure function of (family, period, prices.version, instruments.version).
+
+**Entities sleep, and something wakes them.** Factorio: *"entities not in the 'Active' section don't
+get touched during normal tick updates"*, and the wake is caused rather than polled — *"an inserter…
+will be deactivated if the assembler's input is filled. Once the assembler produces an item, the
+assembler activates the inserter"*
 ([diagnosing performance](https://wiki.factorio.com/Tutorial:Diagnosing_performance_issues),
-[active entities](https://forums.factorio.com/viewtopic.php?t=38047)). Their other lessons are about
-memory rather than logic — *"all active entities are read at every tick… this is too much data for
-caches"*, answered with prefetching and per-chunk allocators
-([FFF-204](https://factorio.com/blog/post/fff-204), [FFF-215](https://factorio.com/blog/post/fff-215))
-— and multithreading is gated by the same constraint Phoenix has: *"the game needs to remain fully
-deterministic"* ([FFF-421](https://www.factorio.com/blog/post/fff-421)).
+[active entities](https://forums.factorio.com/viewtopic.php?t=38047)). Their memory lessons are the
+other half — *"all active entities are read at every tick… too much data for caches"*, answered with
+prefetching and per-chunk allocators ([FFF-204](https://factorio.com/blog/post/fff-204),
+[FFF-215](https://factorio.com/blog/post/fff-215)) — and multithreading is gated by the constraint
+Phoenix shares: *"the game needs to remain fully deterministic"*
+([FFF-421](https://www.factorio.com/blog/post/fff-421)).
 
-**Process what happens, not what might.** *"The default execution scheme of agent-based modeling
+**Process what happened, not what might.** *"The default execution scheme of agent-based modeling
 relies on fixed-increment time advances, whereas discrete event simulation… is assessed at specific
 time points triggered by an event"*, and the discrete-event implementation *"performs better on
-CPU"* ([JASSS](https://www.jasss.org/27/1/10.html)). Phoenix's week is a real unit and should stay —
-the audit closes on it — but *within* a period the same idea applies exactly.
+CPU"* ([JASSS](https://www.jasss.org/27/1/10.html)). The week stays — the audit closes on it — but
+*within* a period the same rule applies exactly.
 
-**Layout is the algorithm.** Structure-of-arrays with archetype storage is reported at *"10-100x
-performance improvements over object-oriented architectures"*
-([ECS in C++](https://cppcat.com/entity-component-system-implementation/)). That is 0g.11, and it is
-the ceiling for an engine that allocates an object per addition — the garbage collector is 6.3% of
-the third rung and was 8.7% of the first.
+**In a JavaScript engine specifically**, the ceiling is set by allocation and object shape: *"assign
+all of an object's properties in its constructor"* because *"adding properties after instantiation
+will force a hidden class change"*; *"for numeric data, typed arrays are 3-10x faster than regular
+arrays because they use contiguous memory"*; and *"code that executes the same method repeatedly will
+run faster… due to inline caching"* ([V8 hidden classes](https://v8.dev/blog/fast-properties),
+[optimising for V8](https://medium.com/@zlatkov/how-javascript-works-inside-the-v8-engine-5-tips-on-how-to-write-optimized-code-ac089e62b12e)).
+That is the honest frame for 0g.3 and 0g.11: this engine allocates a `Cash` object per addition, and
+the collector is 6.3% of the third rung and was 8.7% of the first.
 
-**Spin up once, save the world.** Ocean models write **restart files** rather than re-deriving a
-state every experiment ([UKESM1](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001933)).
-That is §1's snapshot, and it is also a performance item: the chronicle is paid once per world.
-
-**Not applicable, and worth saying so.** FLAME GPU's *"hundreds of millions of agents"* and
-*"1000x speedup"* are for local, homogeneous, embarrassingly parallel agent rules
+**Not applicable, and worth saying.** FLAME GPU's *"hundreds of millions of agents"* and *"1000x
+speedup"* are for local, homogeneous, embarrassingly parallel rules
 ([FLAME GPU 2](https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3207)). A Phoenix period is a
-sequence of global serialisations — one solver, one settlement, one audit. GPUs are not the answer
-here, and neither is threading until the determinism story is settled.
+sequence of global serialisations — one solver, one settlement, one audit.
 
-### 2.5 Proposals
+### 2.6 Proposals
 
-**S1 — Fix the ladder before optimising anything else.** The performance programme's own exit is
-defined at a rung that stops. 21.87 (the treasury self-payment) blocks it; it is one guard in
-`runReceipts` away from being measurable. *Cost: hours. Without it every speed number in this
-project is a first-rung number, and §2.2 shows what first-rung numbers are worth.*
+**S1 — Repair the ladder's middle rung (21.87).** One guard in `runReceipts`. Until it lands, the
+performance programme cannot measure the thing its exit is written about. *Hours.*
 
-**S2 — Build 0g.7, which the profile has now named twice.** Memoise `curveAt` per
-(family, period, prices.version) — `view.memo` already exists from this week's 0g.5a and takes
-exactly this key; seed `invertDecreasing` from the last yield rather than from a cold bracket; and
-memoise `yearFraction` and `dayNumber`, which are pure functions of (date, date, convention) and are
-**55% of the third rung between them**. *Expected: a factor of about two at the scale that matters,
-for a day's work, with no mechanism touched.*
+**S2 — Memoise the curve.** `curveAt` keyed on (family, period, `prices.version`,
+`instruments.version`), through the `view.memo` built at 0g.5a. 1,079 reads a period become four.
+*Expected: ~2× at the third rung, for hours of work, with no mechanism touched — this is the single
+best-value item in the whole review.*
 
-**S3 — A book opens when somebody has a reason to be in it.** Today every declared market is asked
-every period. Let a participant register an interest in a venue when it has one, and open the
-session only where interests exist; the books that never open become a measured fact (§4's liveness
-read) instead of invisible work. *Expected: most of the 99.2%. This is a modelling change and it
-belongs to §3 — it is listed here because it is also the largest speed item there is.*
+**S3 — Memoise the day count and warm-start the inversion.** `yearFraction` and `dayNumber` are pure
+functions of (date, date, convention) and are **34% of the third rung between them**; `yieldOf`'s
+`invertDecreasing` starts from a cold bracket every time and should start from that instrument's last
+yield (0g.7 says so and is unbuilt). *Expected: most of what S2 leaves.*
 
-**S4 — Wake, don't poll, inside a period.** Factorio's rule, applied to phases: a phase should visit
-the parties something happened to. The kernel already has the raw material — the register's write
-count from 0g.5a, the period's ledger slice — so a "dirty party" set is a read away.
-*Expected: large at scale, where most parties are idle in most periods; it is 0g.2's period index
-with a purpose.*
+**S4 — Open a book only where somebody has a reason to be in it.** A participant registers an
+interest in a venue; the session opens where interests exist; the books that never open become a
+measured fact (§4's liveness read) instead of invisible work. *Expected: most of the 99.2%. It is a
+modelling change (§3) and is listed here because it is also the largest speed item.*
 
-**S5 — Then the structural items, in this order:** 0g.3 (`Measure` as a number brand rather than an
-object — the allocator is 6-9% everywhere), 0g.11 (columnar state), 0g.14 (tiered journal — 105,186
-events in eight periods at the third rung). *These are mechanical passes over the whole engine and
-should be taken after S1–S4, not before.*
+**S5 — Wake, don't poll, inside a period.** A phase visits the parties something happened to. The raw
+material exists: the register's write count (0g.5a) and the period's ledger slice. *This is 0g.2's
+period index with a purpose.*
 
-**S6 — Gate it.** The ladder exists and is wired to nothing: the first rung went from 5.1 s a year
-at 0g.1 to 70 s a year this week with no check noticing. `check:forbids` already demonstrates the
-pattern — a baseline that may only fall. *Cost: an hour.*
+**S6 — Then the structural passes, in this order:** 0g.3 (`Measure` as a number brand rather than an
+object — the allocator, everywhere), 0g.11 (columnar state; typed arrays where the data is numeric),
+0g.14 (tiered journal — 105,186 events in eight periods at the third rung). *Mechanical passes over
+the whole engine; they belong after S1–S5, not before.*
 
-**What not to do:** GPUs, threads (until determinism is settled and measured), and any further
-first-rung micro-optimisation.
+**S7 — Gate it.** The ladder is wired to nothing: the first rung went from 5.1 s a year at 0g.1 to
+70 s a year this week with no check noticing. `check:forbids` already demonstrates the pattern — a
+baseline that may only fall. *An hour.*
+
+**What not to do:** GPUs; threads, until determinism is settled and measured; and any further
+first-rung micro-optimisation, which §2.3 shows is optimisation of a world nobody runs.
 
 ## §3. What it does, done badly
 
