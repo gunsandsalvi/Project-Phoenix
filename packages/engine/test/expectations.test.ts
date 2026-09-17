@@ -25,7 +25,9 @@ function expected(w: World, party: string, subject: Subject): number | null {
 
 function confidence(w: World, party: string, subject: Subject): number | null {
   const o = w.participantView(partyId(party)).outlook(about(subject));
-  return o.some ? o.value.confidence : null;
+  // 0h.2: null for a party with no outlook AND for one whose outlook has never been scored — this
+  // helper asks "what is its confidence", and both answers to that are "it has none".
+  return o.some && o.value.confidence.some ? o.value.confidence.value : null;
 }
 
 describe('an outlook is personal (Expectations A2)', () => {

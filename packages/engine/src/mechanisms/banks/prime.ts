@@ -138,16 +138,21 @@ export function requirementOn(broker: ParticipantView, positions: readonly Posit
   const terms = positions.map((p) => {
     const view = broker.outlook(about({ on: 'price', instrument: p.instrument }));
     if (!view.some) return p.worth;
+    // 0h.2: and a line it has a view of but has never been SCORED on is the same refusal — it has
+    // no width to lend against, and an untested outlook read as a width of zero would have financed
+    // the whole position for nothing (§46 B3, App A).
+    const wide = view.value.confidence;
+    if (!wide.some) return p.worth;
     const held = broker.quantity(p.instrument);
     if (held <= 0) return p.worth;
     // §46 B3: the width of its own surprises about this line, per piece, over what the client holds.
-    const wide = valueAt(
-      asPerPiece(view.value.confidence, 'how wide its own surprises about this line have been'),
+    const wideValue = valueAt(
+      asPerPiece(wide.value, 'how wide its own surprises about this line have been'),
       held,
       p.worth.ccy,
       'what a move the size of its own surprises would cost',
     );
-    return atMostCash(wide, p.worth, 'a line cannot fall by more than the whole of it');
+    return atMostCash(wideValue, p.worth, 'a line cannot fall by more than the whole of it');
   });
   return sumCash(home, terms, 'what it requires against the book').value;
 }

@@ -371,6 +371,9 @@ function worthToIt(view: ParticipantView, t: OptionTerms): PerPiece {
   const nothing = asPerPiece(0, 'it has no view of what optionality on this is worth');
   const outlook = view.outlook(about({ on: 'price', instrument: t.underlying }));
   if (!outlook.some) return nothing;
+  // 0h.2: what optionality is worth to it is the distance PLUS what it thinks the thing MOVES, and
+  // a party whose outlook has never been scored has no read of the move (§46 B3). It is worth
+  // nothing to it — the same answer as having no view at all, and never a move of zero.
   const years = yearFraction(
     OPTION_DAY_COUNT,
     view.calendar.startOf(view.period),
@@ -383,8 +386,10 @@ function worthToIt(view: ParticipantView, t: OptionTerms): PerPiece {
     t.right === 'call'
       ? minus(expected, strike, 'the price it expects, above the strike')
       : minus(strike, expected, 'the strike, above the price it expects');
+  const moves = outlook.value.confidence;
+  if (!moves.some) return nothing;
   const width = scale(
-    asPerPiece(outlook.value.confidence, 'how wide its own surprises about the line have been'),
+    asPerPiece(moves.value, 'how wide its own surprises about the line have been'),
     asRatio(Math.sqrt(years), 'over the root of the time this runs'),
     'what it thinks the thing moves before this expires',
   );

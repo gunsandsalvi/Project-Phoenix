@@ -311,7 +311,8 @@ export interface Commentary {
   readonly on: string;
   readonly expected: number;
   readonly unit: string;
-  readonly confidence: number;
+  /** §46 B3 (0h.2): absent where this outlook has never been scored — never a width of zero. */
+  readonly confidence?: number;
   readonly formed: number;
 }
 export interface CurrencyExposure {

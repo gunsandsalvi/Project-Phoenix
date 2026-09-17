@@ -41,8 +41,12 @@ export interface Guidance {
   readonly periods: number;
   /** B1: the same number stated for the quarter, which is the line the report will carry. */
   readonly guided: number;
-  /** §46 B3: how wide this management's own recent surprises have been. A read, never stated. */
-  readonly confidence: number;
+  /**
+   * §46 B3: how wide this management's own recent surprises have been. A read, never stated, and
+   * ABSENT where its own outlook has never been scored (0h.2) — a management that has not yet been
+   * judged against its own guidance publishes the figure and no width, which is not a width of zero.
+   */
+  readonly confidence?: number;
   readonly formed: Period;
 }
 
@@ -73,7 +77,7 @@ function shape(o: Outlook, quarter: string, periods: number): Guidance {
     // Law 8: the periodicity is part of the number, so stating a per-period figure for a quarter is
     // a conversion and not a second opinion. Both sides of it are published.
     guided: o.expected * periods,
-    confidence: o.confidence,
+    ...(o.confidence.some ? { confidence: o.confidence.value } : {}),
     formed: o.formed,
   };
 }

@@ -332,11 +332,28 @@ one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
   from the public print of everything it watches, and none where nothing printed* and *is a household
   with a view of its basket before it has bought any of it*. The census is identical over the rig's
   thirty periods and the four-country world's twelve.
-- [ ] 0h.2 **No schedule of zero width.** `households/consume.ts` posts
-  `width: outlook.some ? outlook.value.confidence : 0`, so a party with no surprises posts a POINT and
-  a point demand meets a point supply. Width becomes the dispersion the party has seen, which after
-  0h.1 includes the public record. No floor and nothing widened by decree — a longer source for the
-  same question. (Gode & Sunder: allocative efficiency comes from the protocol over DISPERSED
+- [x] 0h.2 **No schedule of zero width.** The cause was one line in the one writer: `width()` returned
+  0 for an empty surprise track, so a party that had NEVER BEEN TESTED on a variable and a party
+  that had been tested every period and never wrong reported the same number — and every reader took
+  it for the second. A cell bid a POINT for a loaf, a saver wanted no margin on a claim, a broker
+  financed a whole position against a line it had never seen move, a desk quoted a line it could not
+  say the width of, and an insurer of optionality priced a move of zero. Two changes, both
+  deletions of a default: **(a)** every scored surprise goes on the track, the zeros included — a
+  period a party was exactly right is a period its outlook was TESTED and held, and keeping only the
+  non-zero ones made the track the dispersion of the periods it was wrong in; only the FIRST sight
+  of a variable scores nothing, because there was no outlook to test. **(b)** `Outlook.confidence`
+  is an `Option<number>`: a read where there is a track, and `Missing` where there is not. The
+  nineteen readers each answer as their own clause already said they should — `prime.ts` requires
+  the whole position (*"a lender that cannot say how wrong it has been about a thing has no basis
+  for lending against it"*), `dealing-quote.ts` does not quote the line (D4, the same refusal as a
+  money whose funding cost it cannot read), `securities-lending` does not lend, `options` prices no
+  optionality, the basket posts ONE level, and the published statement, guidance and observer row
+  carry no width rather than a zero. `pricesOver` takes the option, so a party with no width posts
+  a point BY NAME. **Measured** (rig, six periods): 2,115 outlooks — 748 never scored, 740 scored
+  and never wrong (a true zero), 627 with a width. Before, all 2,115 reported a number and 1,488 of
+  them reported certainty. Nothing is floored and nothing is widened by decree: the width is a
+  longer read of the same history, and after 0h.1 that history is every print of everything the
+  party watches. (Gode & Sunder: allocative efficiency comes from the protocol over DISPERSED
   reservation prices; the dispersion is what makes a market cross.)
 - [ ] 0h.3 **The liveness family.** All nine audit families are SAFETY properties — nothing bad ever
   happens — and there is no LIVENESS property: something good eventually happens. That is why 428

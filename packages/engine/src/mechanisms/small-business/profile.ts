@@ -412,9 +412,11 @@ export function decide(ctx: MechanismContext, cell: PartyId): void {
       plantOffers(view, l.plant, l.terms.region, price.value),
       wanted,
       toTick(
-        sales.some
+        // 0h.2: and none at all where that outlook has never been scored — a line it has sold once
+        // has no width, which is not a width of nothing (§46 B3).
+        sales.some && sales.value.confidence.some
           ? asAmount<'piece'>(
-              sales.value.confidence,
+              sales.value.confidence.value,
               'how wide its surprises about what it sells are',
             )
           : NO_QTY,

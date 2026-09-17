@@ -148,11 +148,20 @@ export function spendPerMember(
   // C1.c, §46 B3: the target is so many weeks of what it expects, widened by how wrong that
   // expectation has recently been. Confidence is in the same unit as the variable, so a cell whose
   // income has been unpredictable by a given amount wants that much more in hand per week.
+  /**
+   * 0h.2: AND A CELL THAT HAS NEVER BEEN SCORED ON ITS INCOME HAS NOTHING TO WIDEN BY. It is not a
+   * cell that is certain of what it takes in — it is one that has been paid once and never tested —
+   * so what it wants in hand is what it expects, and the widening appears the first period its
+   * outlook is scored. A zero here would have said it had been tested and had been right (§46 B3).
+   */
+  const wrong = income.value.confidence;
   const buffer = plus(
     scale(
       plus(
         asCash(income.value.expected, ccy, 'what it expects to take in'),
-        asCash(income.value.confidence, ccy, 'how wrong that has been'),
+        wrong.some
+          ? asCash(wrong.value, ccy, 'how wrong that has been')
+          : noCash(ccy),
         'what a week could cost it',
       ),
       asRatio(p.patience, 'the weeks of cushion it wants'),
@@ -209,7 +218,11 @@ function atRisk(view: ParticipantView): Cash {
   const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const outlook = view.outlook(about({ on: 'price', instrument: h.instrument }));
-    if (!outlook.some || outlook.value.confidence <= 0) continue;
+    if (!outlook.some) continue;
+    // 0h.2: a line whose outlook has never been scored puts nothing measurable at risk — it is a
+    // line this cell cannot say how far moves, not one it knows to be still.
+    const moves = outlook.value.confidence;
+    if (!moves.some || moves.value <= 0) continue;
     // 0f.7d: PER MEMBER, like the cash it is set against. `h.lots` is the cell's total (0f.1).
     const units = asAmount<'piece'>(view.perMember(h.instrument), 'what one member holds of it');
     if (units <= 0) continue;
@@ -219,7 +232,7 @@ function atRisk(view: ParticipantView): Cash {
     terms.push(
       view.inOwnMoney(
         valueAt(
-          asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
+          asPerPiece(moves.value, 'how far it thinks this line can move'),
           units,
           view.instruments.get(h.instrument).ccy,
           'what this line could move by',
@@ -411,7 +424,13 @@ interface Line {
   readonly perUnit: PerPiece;
   /** §46 B3: the price it expects, and how wrong it has been about this one. */
   readonly expected: PerPiece;
-  readonly width: PerPiece;
+  /**
+   * 0h.2: HOW WIDE ITS OWN SURPRISES ABOUT THIS GOOD HAVE BEEN, or nothing at all. A cell that has
+   * watched this good for one period has not been scored on it yet and posts ONE level; from the
+   * next period its ladder is as wide as it has been wrong (§46 B3, C3), which is what gives a book
+   * of these two sides that do not agree (§46 A3). Nothing here is widened by decree.
+   */
+  readonly width: Option<PerPiece>;
   /**
    * C3, Goods B4 (12d.3): what ONE MEMBER must have and wants on top THIS PERIOD — the row's normal
    * week over how the conditions it stands against stand, read off the region's public state.
@@ -467,9 +486,11 @@ function lineFor(
       'what a unit costs it',
     ),
     expected,
-    width: asPerPiece(
-      outlook.some ? outlook.value.confidence : 0,
-      'how wrong it has been about this one',
-    ),
+    width:
+      outlook.some && outlook.value.confidence.some
+        ? some(
+            asPerPiece(outlook.value.confidence.value, 'how wrong it has been about this one'),
+          )
+        : none<PerPiece>(),
   };
 }

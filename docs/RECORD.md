@@ -14459,3 +14459,42 @@ again. Positioned at 0h.3, whose liveness family is the check that says so out l
 
 **Deleted.** The basket's copy of the price ladder in `consume.ts`, replaced by the read in
 `registry/expectation.ts`.
+
+---
+
+## Item 0h.2 — No schedule of zero width
+
+**What.** Two deletions of a default in `expectations/index.ts` and the nineteen sites that read
+what it produced. (a) Every scored surprise now goes on a party's track, **including the zeros**;
+only the first sight of a variable scores nothing, because there was no outlook to test. (b)
+`Outlook.confidence` is an `Option<number>` — a read where there is a track, `Missing` where there
+is not. `pricesOver` takes the option, so a party with no width posts one level by name.
+
+**Why.** `width()` returned 0 for an empty track, so a party that had NEVER BEEN TESTED on a
+variable and a party tested every period and never wrong reported the same number. Every reader took
+it for the second: a cell bid a POINT for a loaf, a saver wanted no margin on a claim, a broker
+financed a whole position against a line it had never seen move, a desk quoted a line it could not
+say the width of, an insurer of optionality priced a move of zero. §46 B3 says confidence is a read
+of the party's own recent surprises; a party with no surprises to read has none, and App A says
+missing is missing. Keeping only the non-zero surprises was the second half of the same defect: it
+made the track the dispersion of the periods a party was WRONG in, which overstates every width.
+
+**What each reader now does** — its own clause, already written down and contradicted by the zero:
+`banks/prime.ts` requires the whole position (*"a lender that cannot say how wrong it has been about
+a thing has no basis for lending against it"*); `banks/dealing-quote.ts` does not quote the line
+(D4, the same refusal it already makes for a money whose funding cost it cannot read);
+`securities-lending` does not lend it; `options` prices no optionality; `households/consume.ts`
+posts one level and wants no extra cushion it cannot measure; `households/portfolio.ts` asks no
+margin and `ownUncertainty` answers `none` (which is what its own comment already said it should);
+`firms/decide.ts` and `small-business/profile.ts` start one unit; `reporting/guidance.ts`,
+`reporting/statement.ts` and the observer row publish the figure with **no width** rather than a
+zero.
+
+**Measured.** Rig at six periods: 2,115 outlooks — 748 never scored, 740 scored and never wrong (a
+true zero), 627 with a width. Before, all 2,115 reported a number and 1,488 of them reported
+certainty. `check:opens` green; the rig's census moves by single events; the four-country world at
+period 10 shows more loans (0 → 5), fewer audit findings (1,211 → 876) and fewer surviving parties
+(694 → 672) — a measurement for Part XII, not a number to chase (Law 11).
+
+**Deleted.** Six `outlook.some ? outlook.value.confidence : 0` defaults and the `confidence <= 0`
+conflations that stood in for them. Nothing is floored and nothing is widened by decree.

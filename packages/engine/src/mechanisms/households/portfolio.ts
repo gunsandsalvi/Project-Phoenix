@@ -177,10 +177,15 @@ export function savingLines(
      * different prices for it because one of them has been surprised and the other has not, and a
      * book whose two sides agreed on a number would not be a market.
      */
-    const spread = asPerPiece(
-      outlook.some ? outlook.value.confidence : 0,
-      'how wrong it has been about this line',
-    );
+    /**
+     * 0h.2: AND A LINE IT HAS NEVER BEEN SCORED ON HAS NO MARGIN EITHER WAY. A saver that cannot
+     * say how wrong it has been about a claim bids what it expects and no less — it is not a saver
+     * that knows the line to be still, and a zero would have said it was (§46 B3).
+     */
+    const wrong = outlook.some ? outlook.value.confidence : none<number>();
+    const spread = wrong.some
+      ? asPerPiece(wrong.value, 'how wrong it has been about this line')
+      : asPerPiece(0, 'a line it has never been scored on: it has no margin to ask for');
     const bid = minus(expected, spread, 'what it will pay');
     const ask = plus(expected, spread, 'what it will take');
     if (bid <= 0) continue;
@@ -267,6 +272,10 @@ export function ownUncertainty(view: ParticipantView): Option<Ratio> {
    */
   const income = view.outlook(about({ on: 'income' }));
   if (!income.some || income.value.expected <= 0) return none<Ratio>();
+  // 0h.2: and the same answer for a cell whose income outlook has never been SCORED — it is one
+  // that has been paid once, which is exactly the "no history" this comment is about.
+  const surprises = income.value.confidence;
+  if (!surprises.some) return none<Ratio>();
   const year = yearFraction(
     'ACT/365F',
     view.calendar.startOf(view.period),
@@ -279,7 +288,7 @@ export function ownUncertainty(view: ParticipantView): Option<Ratio> {
         // Two money magnitudes about the same variable, so how wrong it has been is a pure share.
         ratioOf(
           asCash(
-            income.value.confidence,
+            surprises.value,
             income.value.unit as CurrencyCode,
             'how wide its surprises about its income are',
           ),

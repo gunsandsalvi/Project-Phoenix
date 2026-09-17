@@ -1654,7 +1654,7 @@ measurement is taken there is nothing to name.
 | `Expectations B1.b` | MET | packages/engine/src/mechanisms/expectations/index.ts (one preference — memory — and nothing else; confidence is a read of its own surprises); 12d.2: the choice between the two predictors is a switch read off the two tracks of surprises, never a weight between them |
 | `Expectations B2` | MET | packages/engine/src/mechanisms/expectations/index.ts (observed minus expected, recorded per party and variable, and the only thing that moves an outlook) |
 | `Expectations B2.a` | MET | packages/engine/src/mechanisms/expectations/index.ts (the update reads the surprise and nothing else) |
-| `Expectations B3` | MET | packages/engine/src/mechanisms/expectations/index.ts (confidence is the width of that party own recent surprises) |
+| `Expectations B3` | MET | packages/engine/src/mechanisms/expectations/index.ts (confidence is the width of that party own recent surprises, every surprise including the zeros, and NOTHING where the outlook has never been scored — 0h.2), packages/engine/src/world/context.ts (`Outlook.confidence` is an Option) |
 | `Expectations B4` | MET | packages/engine/src/mechanisms/expectations/index.ts (form runs at the top of the period on what the close of the last one recorded) |
 | `Expectations B5` | MISSING |  |
 | `Expectations C1` | MISSING |  |

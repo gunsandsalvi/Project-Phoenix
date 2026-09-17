@@ -200,8 +200,12 @@ export interface OutlookView {
   readonly expected: number;
   readonly unit: string;
   readonly per: string;
-  /** B3: how wide this party's own recent surprises have been — a read, never a stated number. */
-  readonly confidence: number;
+  /**
+   * B3: how wide this party's own recent surprises have been — a read, never a stated number, and
+   * ABSENT for an outlook that has never been scored (0h.2). The surface shows what the party has,
+   * which is an expectation it has not yet been tested on: a zero here would show it as certain.
+   */
+  readonly confidence?: number;
   readonly formed: number;
 }
 
@@ -786,7 +790,7 @@ export function snapshot(
         expected: o.value.expected,
         unit: o.value.unit,
         per: periodicityLabel(o.value.per),
-        confidence: o.value.confidence,
+        ...(o.value.confidence.some ? { confidence: o.value.confidence.value } : {}),
         formed: o.value.formed,
       });
     }

@@ -631,7 +631,15 @@ export function prepareStatement(
   const commentary = view.outlookVariables().flatMap((v) => {
     const o = view.outlook(v);
     return o.some
-      ? [{ on: String(v), expected: o.value.expected, unit: o.value.unit, confidence: o.value.confidence, formed: o.value.formed }]
+      ? [
+          {
+            on: String(v),
+            expected: o.value.expected,
+            unit: o.value.unit,
+            ...(o.value.confidence.some ? { confidence: o.value.confidence.value } : {}),
+            formed: o.value.formed,
+          },
+        ]
       : [];
   });
 

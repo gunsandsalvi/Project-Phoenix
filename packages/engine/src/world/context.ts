@@ -307,8 +307,14 @@ export interface Outlook {
   readonly expected: number;
   readonly unit: string;
   readonly per: Periodicity;
-  /** B3: a read of how wide this party's own recent surprises have been, never a stated number. */
-  readonly confidence: number;
+  /**
+   * B3: a read of how wide this party's own recent surprises have been, never a stated number —
+   * and NOTHING for a variable the party has observed once and never been scored on (0h.2). An
+   * outlook that has never been tested is not a certain one, and every reader that took the zero
+   * for a width acted on a confidence nobody had: a cell bidding a POINT for a loaf, a saver
+   * wanting no margin on a claim, a broker charging nothing for a line it has never seen move.
+   */
+  readonly confidence: Option<number>;
   readonly formed: Period;
 }
 

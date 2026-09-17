@@ -701,7 +701,9 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
     expect(own.outlooks.length).toBeGreaterThan(0);
     expect(inspector.outlooks.some((o) => o.party !== firm)).toBe(true);
     // A2.b: what it expects is its own number, with its own confidence — there is no consensus row.
-    expect(own.outlooks.every((o) => o.unit.length > 0 && o.confidence >= 0)).toBe(true);
+    expect(
+      own.outlooks.every((o) => o.unit.length > 0 && (o.confidence === undefined || o.confidence >= 0)),
+    ).toBe(true);
   });
 
   it('reaches what is said once a period however much else was said (B1, D1)', () => {

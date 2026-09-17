@@ -648,14 +648,19 @@ function traded(
 
 /** XI-15: a cell observes what a member of it did, which is what the leg was struck at. */
 
-/** B3: how wide this party's own recent surprises have been. A read, never a number anybody stated. */
-function width(surprises: readonly number[]): number {
-  if (surprises.length === 0) return 0;
+/**
+ * B3: how wide this party's own recent surprises have been. A read, never a number anybody stated,
+ * and NOTHING at all for a track with no surprise in it (0h.2): a party that has observed a variable
+ * once has never been tested on it, and reporting that as a width of zero says it has never been
+ * wrong. Those are different facts and every reader of them acted on the wrong one.
+ */
+function width(surprises: readonly number[]): Option<number> {
+  if (surprises.length === 0) return none<number>();
   const mean = div(sum(surprises).value, surprises.length, 'mean surprise');
   const squares = surprises.map((s) =>
     mul(sub(s, mean, 'deviation'), sub(s, mean, 'deviation'), 'square'),
   );
-  return Math.sqrt(div(sum(squares).value, surprises.length, 'variance'));
+  return some(Math.sqrt(div(sum(squares).value, surprises.length, 'variance')));
 }
 
 export const expectations: SystemModule = {
@@ -758,6 +763,10 @@ export const expectations: SystemModule = {
           if (!ctx.parties.has(party as PartyId)) continue;
           const forParty = (held[party] ??= {});
           const level = publicLevelOf(ctx, variable, seen.value);
+          // 0h.2: whether this is the first sight of the variable, which is the one period there is
+          // nothing to score — neither track has been tested yet, and a track of one zero would say
+          // it had been and had been right.
+          const first = forParty[variable] === undefined;
           const h = (forParty[variable] ??= {
             // A party that has never seen this variable has no outlook to be surprised against:
             // its first observation IS its outlook, and it is surprised by nothing (B2).
@@ -776,7 +785,15 @@ export const expectations: SystemModule = {
           const acted = followed(h);
           const surprise = sub(seen.value, acted, 'surprise');
           const own = sub(seen.value, h.expected, 'surprise against its own history');
-          if (own !== 0) {
+          /**
+           * B2, B3 (0h.2): EVERY SURPRISE GOES ON THE TRACK, INCLUDING THE ZEROS. A period in which
+           * a party was exactly right is a period its outlook was TESTED and held, and it is the
+           * larger half of what "how wide have my surprises been" asks. Keeping only the non-zero
+           * ones made the track the dispersion of the periods it was wrong in — which overstates
+           * every width — and, worse, made a party that had never been tested (an empty track, read
+           * as a width of zero) indistinguishable from one that had never been wrong.
+           */
+          if (!first) {
             h.surprises.push(own);
             keep(h.surprises, h.memory);
           }
@@ -784,7 +801,7 @@ export const expectations: SystemModule = {
             h.anchored === null
               ? null
               : sub(seen.value, h.anchored, 'surprise against the public level');
-          if (anchored !== null && anchored !== 0) {
+          if (anchored !== null && !first) {
             h.anchoredSurprises.push(anchored);
             keep(h.anchoredSurprises, h.memory);
           }
@@ -855,7 +872,8 @@ function publishDispersion(ctx: MechanismContext, held: Book): void {
   const rows: Record<string, number> = {};
   for (const [variable, values] of byVariable) {
     if (values.length < 2) continue;
-    rows[variable] = width(values);
+    const spread = width(values);
+    if (spread.some) rows[variable] = spread.value;
   }
   if (Object.keys(rows).length === 0) return;
   ctx.record('expectations.dispersion', [], { of: lagged(ctx.period), dispersion: rows }, true);

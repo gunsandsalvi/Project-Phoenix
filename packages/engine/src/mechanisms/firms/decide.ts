@@ -722,11 +722,12 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         // can or must do (`toTick`, core/tick.ts).
         toTick(
           over(
-            // A firm that has never sold has been surprised about nothing, and that is a real zero:
-            // it has no history to have been wrong about. Its first batch is one unit either way.
-            sales.some
+            // 0h.2: a firm that has never sold, and one that has sold once and never been scored,
+            // both have NO width — they have no history to have been wrong about, which is not a
+            // history of never being wrong (§46 B3). Either way the first batch is one unit.
+            sales.some && sales.value.confidence.some
               ? asAmount<'piece'>(
-                  sales.value.confidence,
+                  sales.value.confidence.value,
                   'how wide its surprises about units sold are',
                 )
               : NO_QTY,

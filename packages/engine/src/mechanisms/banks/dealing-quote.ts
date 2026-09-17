@@ -193,15 +193,21 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<PerPiec
 
 /**
  * C3: how wrong this desk's own view of this line has recently been, in the line's own money. A
- * read of its own surprises (Expectations B3) and never a stated volatility. A desk that has never
- * been surprised about a line is not thereby certain of it — it has no history — so what it charges
- * for risk is nothing extra and what it charges for CARRY is still there.
+ * read of its own surprises (Expectations B3) and never a stated volatility.
+ *
+ * 0h.2: AND NOTHING AT ALL WHERE ITS OUTLOOK HAS NEVER BEEN SCORED. This said that a desk which had
+ * never been surprised "is not thereby certain of it — it has no history — so what it charges for
+ * risk is nothing extra", and that is the sentence the zero contradicted: a desk quoting a line it
+ * cannot say how far moves was quoting it as if it could not move. It does not quote that line,
+ * which is D4's own answer for a line it cannot price, and a desk scored every period and never
+ * wrong charges a real zero.
  */
-function riskOf(view: ParticipantView, instrument: InstrumentId): PerPiece {
+function riskOf(view: ParticipantView, instrument: InstrumentId): Option<PerPiece> {
   const own = view.outlook(about({ on: 'price', instrument: instrument }));
+  if (!own.some || !own.value.confidence.some) return none<PerPiece>();
   // §46: confidence is a spread around a LEVEL and is stated in the same money per piece it is a
   // spread around — which is why it adds to the edge and could never be a share of anything.
-  return asPerPiece(own.some ? own.value.confidence : 0, `how sure it is of ${instrument}`);
+  return some(asPerPiece(own.value.confidence.value, `how sure it is of ${instrument}`));
 }
 
 /**
@@ -246,7 +252,10 @@ export function quoteFor(
   // C2.a: where its own treasury wants the line, in the same pieces the inventory is counted in.
   const target = amountOf(state.targetIn(instrument), mine, 'units its treasury wants held');
   const risk = riskOf(view, instrument);
-  const adverse = adverseOf(view, instrument, risk);
+  // 0h.2: a line whose width this desk cannot read is a line it does not make a market in — the
+  // same refusal as a money it cannot say the funding cost of, three lines down (D4).
+  if (!risk.some) return none();
+  const adverse = adverseOf(view, instrument, risk.value);
   // D3, D2: what carrying one more unit costs it for the period it is quoting in — the money it
   // ties up and the capital it consumes, at the rate its own bank charged it this morning. How
   // long it ends up holding it is not a number it has to guess: it pays this again next period,
@@ -257,7 +266,7 @@ export function quoteFor(
   if (rate === undefined) return none();
   const carry = scale(mine, rate, 'what a unit costs it for a period');
   const edge = plus(
-    plus(carry, risk, 'what it must earn on a unit'),
+    plus(carry, risk.value, 'what it must earn on a unit'),
     adverse,
     'and for who it faces',
   );

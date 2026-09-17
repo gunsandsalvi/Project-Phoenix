@@ -227,7 +227,7 @@ describe('what a party expects (Expectations A2)', () => {
                 expected: v,
                 unit: 'USD',
                 per: ANNUAL,
-                confidence: 0,
+                confidence: some(0),
                 formed: ctx.period,
               });
         },

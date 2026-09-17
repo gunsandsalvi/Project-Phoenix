@@ -32,6 +32,7 @@ import {
   scale,
 } from '../core/measure.js';
 import { material, sub } from '../core/num.js';
+import type { Option } from '../core/option.js';
 import { downTick, NO_QTY, subQty, type Qty } from '../core/tick.js';
 
 /** One limit order of a curve: a level, and the extra this level adds to what the party wants. */
@@ -168,9 +169,18 @@ export function levelsUpTo(top: PerPiece, steps: number): PerPiece[] {
  * §46 B3, Goods C1: the levels a party posts ACROSS its own range, highest first — what it expects,
  * spread by how wrong it has been about this line. Both ends are its own numbers and `steps` only
  * samples between them, which is the same statement `levelsBelow` makes on one side.
+ *
+ * 0h.2: A PARTY WITH NO WIDTH POSTS ONE LEVEL, and there are two ways to have none — an outlook
+ * that has never been scored (`Missing`: it cannot say how wrong it has been) and one scored every
+ * period and never wrong (a width of zero, which is a true reading). They come to the same order
+ * and they are not the same fact, so the second is a number here and the first is not.
  */
-export function pricesOver(expected: PerPiece, width: PerPiece, steps: number): PerPiece[] {
-  if (width <= 0 || steps <= 1) return [expected];
+export function pricesOver(
+  expected: PerPiece,
+  width: Option<PerPiece>,
+  steps: number,
+): PerPiece[] {
+  if (!width.some || width.value <= 0 || steps <= 1) return [expected];
   const out: PerPiece[] = [];
   for (let i = 0; i < steps; i += 1) {
     // A position on a symmetric grid: two steps in, less the grid's own span, over that span — a
@@ -179,7 +189,7 @@ export function pricesOver(expected: PerPiece, width: PerPiece, steps: number): 
     const t = ratioOf(minus(asRatio(2 * i, 'two steps in'), span, 'centred'), span, 'position');
     const price = minus(
       expected,
-      scale(width, asRatio(t, 'how far along the grid'), 'how far from what it expects'),
+      scale(width.value, asRatio(t, 'how far along the grid'), 'how far from what it expects'),
       'a level it would pay',
     );
     if (price > 0) out.push(price);

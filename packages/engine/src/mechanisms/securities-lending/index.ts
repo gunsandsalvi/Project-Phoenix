@@ -166,10 +166,14 @@ export interface Offer {
  */
 function floorOf(view: ParticipantView, instrument: InstrumentId): Option<Ratio> {
   const own = view.outlook(about({ on: 'price', instrument }));
-  if (!own.some || own.value.expected <= 0 || own.value.confidence <= 0) return none<Ratio>();
+  if (!own.some || own.value.expected <= 0) return none<Ratio>();
+  // 0h.2: a holder whose outlook on the line has never been SCORED is in the same position as one
+  // with no outlook — it cannot say how far the line moves on it, so it has no number to lend at.
+  const moves = own.value.confidence;
+  if (!moves.some || moves.value <= 0) return none<Ratio>();
   return some(
     ratioOf(
-      asPerPiece(own.value.confidence, 'how wide its own surprises on this line have been'),
+      asPerPiece(moves.value, 'how wide its own surprises on this line have been'),
       asPerPiece(own.value.expected, 'what it thinks a unit of it is worth'),
       'what a period of the loan puts at risk, as a share of what is out',
     ),
