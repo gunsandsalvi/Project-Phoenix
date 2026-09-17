@@ -17,8 +17,8 @@ import { asRatio, minus, negated, scale } from '../../core/measure.js';
 import { carriedDust, moveDust, mul, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
+import { movedByWeightEvents } from '../weights.js';
 import type { AuditView } from '../view.js';
-import { asQty, negQty } from '../../core/tick.js';
 
 export function flowsFamily(memory: AuditMemory): Family {
   return {
@@ -79,28 +79,16 @@ export function flowsFamily(memory: AuditMemory): Family {
       // the mover lost it and the destination gained it. A cell that merged away has no book to
       // measure and is skipped; everything else is measured like any holding (Law 19: the record,
       // never an inferred copy).
-      const vanished = new Set<string>();
-      for (const e of view.journal.inPeriod(view.period)) {
-        if (e.kind !== 'weight') continue;
-        const kind = e.data['kind'];
-        const to = e.data['to'];
-        const from = e.data['from'];
-        const moved = e.data['moved'];
-        if (kind === 'merge' && typeof from === 'string') vanished.add(from);
-        if (typeof moved !== 'object' || moved === null) continue;
-        for (const [instrument, qty] of Object.entries(moved as Record<string, unknown>)) {
-          if (typeof qty !== 'number') continue;
-          if (typeof to === 'string') {
-            const list = holdingDeltas.get(holdingKey(to as never, instrument as never)) ?? [];
-            list.push(asQty(qty, 'what arrived with the members'));
-            holdingDeltas.set(holdingKey(to as never, instrument as never), list);
-          }
-          if (typeof from === 'string' && kind !== 'merge') {
-            const list = holdingDeltas.get(holdingKey(from as never, instrument as never)) ?? [];
-            list.push(negQty(asQty(qty, 'what left with the members'), 'what left'));
-            holdingDeltas.set(holdingKey(from as never, instrument as never), list);
-          }
-        }
+      // 21.102: the one reading of what a weight event moved (`audit/weights.ts`), shared with the
+      // capital programme's own units family — two copies of "what came with the members" is the
+      // second one going stale the day a sixth event is added (Law 4).
+      const weights = movedByWeightEvents(view, (holder: string, instrument: string) =>
+        holdingKey(holder as never, instrument as never),
+      );
+      const vanished = weights.vanished;
+      for (const [k, list] of weights.byHolding) {
+        const held = holdingDeltas.get(k) ?? [];
+        holdingDeltas.set(k, [...held, ...list]);
       }
 
       const keys = new Set<string>([...memory.holdings.keys(), ...holdingDeltas.keys()]);

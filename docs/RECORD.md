@@ -14750,3 +14750,25 @@ are red, and were before this item and before 0h.5 — positioned at 23.1. Its s
 this record: 0h.5's entry claimed those suites GREEN on a comparison that extracted no test lines at
 all and so compared two empty files. That entry is corrected above. A check that cannot fail is not
 a check.
+
+---
+
+## 21.102 — A book moves with its members, and only one family knew
+
+**What.** `audit/weights.ts`: the one reading of what a weight event moved, per holder and per line.
+The kernel's `flows` family and the capital programme's `units` family both use it.
+
+**Why.** XI-15's five weight events — entry, death, promotion, split, merge — move holdings with no
+instruction behind them, and the event says what moved per instrument precisely so that those moves
+are READABLE rather than an exemption. `flows` read it. `units` counted legs alone, so every merge
+of a cell that holds plant reported as plant appearing from nowhere: three landlord cells merging in
+period 3 of the scale model produced **131 violations** — `-1800`, `-1800` and `+3600` of one
+vintage, and the same of every other line they held.
+
+**Law 4.** The reading is in the kernel once rather than in each family: two copies of "what came
+with the members" is the second one going stale the day a sixth event is added. `flows` lost its own
+copy in the same change.
+
+**Measured.** `units/Capital Programme A6.b`: 131 → 0. The rig's standing audit is now
+`prices/Clearing F2×10` and `accounts/Audit B5×4–11` every period, with two `flows/Equity D3.a` from
+period 4 and one `names/Fund Shares F3` at period 5 — four causes, each its own.

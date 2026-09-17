@@ -35,6 +35,7 @@ import {
   type PerPiece,
 } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
+import { movedByWeightEvents } from '../../audit/weights.js';
 import { downTick, negQty, asQty, subQty, type Qty } from '../../core/tick.js';
 import { authorityIdFor, hectaresOf, hectaresUnder, landId } from '../../registry/land.js';
 import type { Lien } from '../../register/register.js';
@@ -723,6 +724,19 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
           }
         }
       }
+      /**
+       * XI-15, 21.102: AND WHAT MOVED WITH THE MEMBERS. A book moves with no instruction behind it
+       * exactly five times — XI-15's five weight events — and this family counted only the legs, so
+       * every merge of a cell that holds plant reported as plant appearing from nowhere: three
+       * landlord cells merging in period 3 of the scale model produced 131 violations, `-1800`,
+       * `-1800` and `+3600` of one vintage and the same of every other line they held. It is the
+       * kernel's own reading (`audit/weights.ts`), the one the flows family uses (Law 4).
+       */
+      const weights = movedByWeightEvents(view, key);
+      for (const [k, list] of weights.byHolding) {
+        const held = moved.get(k) ?? [];
+        moved.set(k, [...held, ...list]);
+      }
       // A-42: no weight exemption, for the reason `goods/index.ts:unitsIdentity` gives at length —
       // this counted every weight event in the world and a household ages every period, so the
       // family had been switched off since the first ageing. This one compares PER HOLDER and per
@@ -740,6 +754,9 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
       }
       const comparable = consecutive;
       for (const [k, before] of comparable ? seen.held : new Map<string, Qty>()) {
+        // The absorbed cell's book is the other one's now: there is nothing of its own left to
+        // measure, which is the one holder this reads past rather than explains.
+        if (weights.vanished.has(k.split('|')[0] ?? k)) continue;
         const now = zeroIfNone(held.get(k));
         const legs = sum(moved.get(k) ?? []);
         const change = minus(now, before, 'what the stock moved by');
