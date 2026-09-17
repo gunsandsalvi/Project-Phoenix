@@ -16071,3 +16071,56 @@ same reason 0g does. **21.119 stays open and its position moved**: it pointed at
 `plan:progress` is next opened", and 0g.17 closed *without* fixing it — it added two fixture-based
 cases beside the stale one, which show the shape the fix should take, and left the stale assertion
 alone rather than widening the step (Law 14).
+
+---
+
+## 0g.18 — The phase block opened: 113 phases, flat, and it answers to the same two levers
+
+54% of a period had never been looked inside. It is now, with order generation separated out so a
+phase's own cost is its own (the kernel calls participants from inside some phases, which is why the
+two were tangled).
+
+**(24, 96) rung, 259 parties, 729 ms/period, 113 phases, own time 397 ms (54%):**
+
+| own ms | % period | phase |
+|---|---|---|
+| 64.1 | **8.8** | `expectations/expectations.score` |
+| 31.2 | 4.3 | `households/households.lifecycle` |
+| 28.6 | 3.9 | `expectations/expectations.form` |
+| 24.2 | 3.3 | `derivative-layer/margin.calls` |
+| 21.6 | 3.0 | `banks/lending.write` |
+| 15.6 | 2.1 | `households/households.decide` |
+| 14.3 | 2.0 | `firms/firms.decide` |
+| 14.0 | 1.9 | `derivative-layer/derivatives.net` |
+| 13.6 | 1.9 | `derivative-layer/derivatives.resolve` |
+| **73.2** | **10.0** | **the other 91 phases** |
+
+**It is FLAT.** The largest phase in the engine is 8.8% of a period; ninety-one phases together are
+10%. So **there is no phase to fix**, and the answer to 0g.0's open question D is that the block is
+no worse than the rest of the engine: it answers to lever A (per-operation overhead) and lever C
+(parallelism), which is what the budget assumed of it. The one coherent block worth naming is
+expectations at **12.7%** (`score` plus `form`), and that is §46 working as specified — every
+deciding party forms its own outlook from its own history and is scored against it, so it is
+per-party by law, not by accident.
+
+**Measured across three rungs**, which is the part that matters for the plan:
+
+| rung | parties | period | phase own | share | µs/party |
+|---|---|---|---|---|---|
+| (6, 24) | 108 | 191 ms | 98 ms | 51% | 908 |
+| (12, 48) | 163 | 224 ms | 129 ms | 58% | 794 |
+| (24, 96) | 259 | 714 ms | 398 ms | 56% | 1,537 |
+
+The share is stable at 51–58%. The per-party cost is **not** constant, so the block carries the same
+party × book and party × instrument products order generation does — which means **lever B reaches
+inside the phases too**, not only into the participant doors, and that is new.
+
+**And a finding that limits every scaling claim in this item (21.120).** The rungs are not a scaling
+series. `rigSpec` DRAWS the world from its name, so they differ in more than size: (12, 48) has
+**538 instruments against (6, 24)'s 1,324** — fewer instruments for twice the firms. The apparent
+exponent is 2.4 between the last two rungs and 0.6 between the first two; **neither is a scaling
+law, both are the draw.** The one scaling claim in 0g that does hold is party count against firms,
+because that was measured at assembly across five rungs. Everything else in this item rests on
+COUNTS, which do not depend on the rungs being a series — which is now the stated exit condition and
+is why it is. Positioned at 0g.15, whose gate is a scaling claim and which cannot be judged without
+it.
