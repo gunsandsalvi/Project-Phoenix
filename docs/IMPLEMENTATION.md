@@ -336,6 +336,24 @@ Each when its file is open for another item; file:line and the change.
   machine the world opened with are sold in the same place. `names` goes 11 → 0 in the rig every
   period; `doors.test.ts` 6 red → 4.
 
+- [x] 21.97 `seeds/foundation.ts` the households seed (21, read off the full model's own census):
+  **A WORLD OF FOUR COUNTRIES HELD THIRTY MILLION PEOPLE BETWEEN THEM.** `membersPerCohort` is
+  declared *"fifteen million a cohort and two cohorts, thirty million in the region — A COUNTRY,
+  and the scale every other number in this seed is a ratio against"*, and the seed split it across
+  every bank IN THE WORLD: seven and a half million a nation since 13j opened the other three. The
+  rig has one country and never saw it. The split within a country is unchanged — the banks' own
+  sizes, two draws and no share anybody chose — and it is now made once per country. `abroad` goes
+  160,000 people to 640,000; the rig is identical to the digit; the three four-country suites have
+  the same red/green set before and after.
+- [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
+  **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
+  firms and 108,036 small ones; the world it is a model of has *a few million* SMEs against
+  thousands of named firms, which is a multiple in the hundreds rather than twelve. It is a SHAPE
+  (a claim about the answer) and the count it produces is the one every per-firm cost in this world
+  is paid over — and multiplying it by forty multiplies the run, which is why it is written down
+  here rather than changed on the way past: it is a resizing, and 23.1 is where the scale model and
+  what a test asserts are resized together. Positioned at 23.1 with the owner's figure recorded.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money

@@ -214,7 +214,13 @@ import { bondFutures } from '../mechanisms/bond-futures/index.js';
 import { research } from '../mechanisms/research/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { indexFutures } from '../mechanisms/index-futures/index.js';
-import { EQUITY_INDEX, GLOBAL_INDEX, SIZE_INDEX, indices, RATED_INDEX } from '../mechanisms/indices/index.js';
+import {
+  EQUITY_INDEX,
+  GLOBAL_INDEX,
+  SIZE_INDEX,
+  indices,
+  RATED_INDEX,
+} from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
@@ -1078,6 +1084,21 @@ export function foundationSeedFor(
       // dimension are two cells for one key, which is what 0d measured as 299 `units` findings.
       // The kernel places every seeded cell on the rest of its lattice at the seal.
       const members = positiveCount(ctx.params.count(P.membersPerCohort), 'membersPerCohort');
+      /**
+       * 21.97: AND IT IS A COUNT PER COUNTRY, which is what its own declaration says it is —
+       * *"fifteen million a cohort and two cohorts, thirty million in the region — A COUNTRY"*.
+       * This split it across every bank in the WORLD, so a world of four countries held thirty
+       * million people between them: seven and a half million a nation, in a model whose scale is
+       * the thing every other number in the seed is a ratio against. The rig has one country and
+       * never saw it; the four-country world has had a quarter of its people since 13j.
+       */
+      const byCountry = new Map<string, typeof banks>();
+      for (const b of banks) {
+        const where = String(countryOfRegion(b.region).country);
+        const held = byCountry.get(where);
+        if (held === undefined) byCountry.set(where, [b]);
+        else held.push(b);
+      }
       for (const cohort of ctx.registry.cohorts) {
         // Seed B4: and they are spread across the banks IN PROPORTION TO SIZE, so a bigger bank has
         // more depositors — which is what makes it bigger. Split exactly: a weight is a count of
@@ -1087,26 +1108,28 @@ export function foundationSeedFor(
         // cell lives where its bank books; a bank books where the people are; and how many people a
         // place holds is what its ground came to (`peopleOn`). So a country's population is the
         // sizes of the banks the ground gave it — two draws and no share anybody chose (Law 2).
-        const perBank = splitOnTick(
-          members,
-          banks.map((b) => b.size),
-        );
-        banks.forEach((bank, at) => {
-          const weight = zeroIfNone(perBank[at]);
-          if (weight <= 0) return;
-          const cell: CellParty = {
-            id: partyId(`hh.${cohort.id}.${bank.id}`),
-            kind: HOUSEHOLD,
-            region: bank.region,
-            name: `Households ${cohort.name} at ${bank.id}`,
-            bank: bank.id,
-            representation: 'cell',
-            status: { alive: true, standing: 'good' },
-            weight,
-            key: { region: bank.region, cohort: cohortId(cohort.id), bank: bank.id },
-          };
-          ctx.parties.add(cell);
-        });
+        for (const [, itsBanks] of byCountry) {
+          const perBank = splitOnTick(
+            members,
+            itsBanks.map((b) => b.size),
+          );
+          itsBanks.forEach((bank, at) => {
+            const weight = zeroIfNone(perBank[at]);
+            if (weight <= 0) return;
+            const cell: CellParty = {
+              id: partyId(`hh.${cohort.id}.${bank.id}`),
+              kind: HOUSEHOLD,
+              region: bank.region,
+              name: `Households ${cohort.name} at ${bank.id}`,
+              bank: bank.id,
+              representation: 'cell',
+              status: { alive: true, standing: 'good' },
+              weight,
+              key: { region: bank.region, cohort: cohortId(cohort.id), bank: bank.id },
+            };
+            ctx.parties.add(cell);
+          });
+        }
       }
       // Households F2 (13d.1): AND ONE PROBATE OFFICE PER PLACE AND BANK, where what the dead held
       // waits until it can be divided. A cell cannot pay a cell — two weights share no whole number
@@ -1624,7 +1647,7 @@ export function foundationSeedFor(
             price: priced(ctx, id, price),
             ccy: c.ccy,
             quotedAs: 'money',
-          provenance: { kind: 'opening' },
+            provenance: { kind: 'opening' },
           });
         }
 
@@ -1916,7 +1939,7 @@ export function foundationSeedFor(
             ),
             ccy: ctx.registry.currencyOf(where),
             quotedAs: 'money',
-          provenance: { kind: 'opening' },
+            provenance: { kind: 'opening' },
           });
         }
       }
@@ -2237,7 +2260,11 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
           // hold is translated at the rate in force, never added across moneys (Money A2.b).
           assets = plus(
             assets,
-            ctx.valuation.inOwnMoney(bank, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), ctx.period),
+            ctx.valuation.inOwnMoney(
+              bank,
+              ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+              ctx.period,
+            ),
             "the bank's opening assets",
           );
         }
