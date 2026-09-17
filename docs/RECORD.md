@@ -14420,3 +14420,30 @@ measurement at once); the ladder as a ratchet; suite triage; an explainer over t
 "why did this happen" is answered by the engine rather than reconstructed by hand; metamorphic
 relations as a family; Sobol over the parameter register, where an insensitive primitive becomes a
 deletion candidate under Law 2. Items 0h.1–0h.8, with 0g.3 and 0g.11 after them.
+
+## Review — the mechanisms against the state of the art (`docs/MECHANISM-REVIEW.md`)
+
+Eight proposals, each read from the source and measured, against the best practice in macroeconomic
+agent-based modelling and market microstructure.
+
+**The diagnosis.** The decision rules in this model are better than most of the literature's. What
+it has is ONE market microstructure — a weekly uniform-price call auction — applied to bread,
+labour, loans, shares and freight alike; no resting orders; no inventory-holding intermediary in the
+goods chain; and no queue in settlement. Those four absences, not the decisions, are what make
+4,158 auctions clear 15 trades and kill a third of the parties in twelve weeks.
+
+**The proposals.** P1 a protocol per venue as data (`call`, `posted`, `book`), because the dominant
+protocol in this literature is decentralised bilateral matching and because a Walrasian auctioneer
+for bread is the one intermediary that does not exist (Law 1). P2 an order that RESTS, as a kernel
+noun with a lifetime — the two sides are not failing to agree, they are failing to be in the room at
+the same time. P3 a stockist who holds goods and stands on both sides of one book, which is what a
+wholesaler is for and what makes a consumer price index possible. P4 a desired cover drawn per firm
+and an ask that answers the shelf, replacing a stock-adjustment rule whose desired buffer is exactly
+zero and a price with no feedback from unsold stock. P5 no schedule of zero width, because dispersion
+is what makes a market cross (Gode & Sunder). P6 a settlement queue with a gridlock pass, because a
+timing failure is not a default. P7 the exposure graph read as a network with a DebtRank-style
+distress read — a measurement, causing nothing. P8 trade credit promoted, the weakest-covered
+non-derivative system and the channel through which a customer's failure becomes a supplier's.
+
+**And what to refuse:** calibration to margins, a representative agent anywhere, GPU execution, and
+nudging during a spin-up.
