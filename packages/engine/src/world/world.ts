@@ -342,6 +342,16 @@ export class World {
   private readonly views = new Map<PartyId, ParticipantView>();
   private viewsAt = '';
   /**
+   * Law 18 (0g.5): WHAT A PARTICIPANT WORKED OUT, KEPT WHILE WHAT IT READ HAS NOT MOVED.
+   *
+   * A read that costs something — what one name owes a bank, across its whole book — is asked many
+   * times in a period by callers that cannot know about each other. The answer may be kept, and
+   * the one thing that makes keeping it safe is a version of everything it read: the entry is used
+   * only while every version it was computed at still stands (`memo` below). It holds no fact
+   * about the world and nothing decides anything from it; it is cleared with the views.
+   */
+  private readonly memos = new Map<string, { readonly at: readonly number[]; value: unknown }>();
+  /**
    * Law 18: which parties a market has to ask, for the participants that say (`ParticipantDecl`).
    *
    * Built once a cycle, per participant declaration, by asking each of its parties which books it
@@ -1682,6 +1692,7 @@ export class World {
     const stamp = `${this.currentPeriod}:${this.currentCycle}`;
     if (this.viewsAt !== stamp) {
       this.views.clear();
+      this.memos.clear();
       this.viewsAt = stamp;
     }
     const held = this.views.get(party);
@@ -1905,6 +1916,26 @@ export class World {
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       working: <T extends object>(name: string, initial: () => T): T =>
         this.workingFor<T>(party, name, initial),
+      /**
+       * 0g.5: READ WHEN IT IS ASKED, never when the view was built. A view is kept for a whole
+       * cycle and the register changes all through one — every payment that settles writes it — so
+       * a version taken at construction is the version of a world several instructions ago, and a
+       * memo keyed on it would hand back an answer from before them.
+       */
+      versions: () => ({
+        register: this.store.version,
+        prices: this.prices.version,
+        instruments: this.instruments.version,
+      }),
+      memo: <T>(key: string, at: readonly number[], compute: () => T): T => {
+        const held = this.memos.get(key);
+        if (held?.at.length === at.length && held.at.every((v, i) => v === at[i])) {
+          return held.value as T;
+        }
+        const made = compute();
+        this.memos.set(key, { at: [...at], value: made });
+        return made;
+      },
       published: this.published,
       control: this.control,
       actions: this.actions,

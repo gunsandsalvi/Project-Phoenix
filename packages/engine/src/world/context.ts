@@ -493,6 +493,31 @@ export interface ParticipantView extends KernelReads {
    */
   readonly parties: PartiesReads;
   /** Own holdings, per member (A2). */
+  /**
+   * Law 18 (0g.5): THE VERSIONS OF WHAT THIS VIEW READS, for a caller keeping an answer.
+   *
+   * It is a CALL and not a field, and that is the whole of what makes it safe: a view is kept for
+   * a cycle and the register changes all through one — every payment that settles writes it — so a
+   * version taken when the view was built is the version of a world several instructions ago.
+   *
+   * `register` counts the writes to the holdings, `prices` the prints written, and `instruments`
+   * the lines issued, re-seated or ceased. They are not facts about the world and no decision may
+   * be taken from them — what they are for is the one question a cache has to answer: has anything
+   * I read moved since I worked this out?
+   */
+  versions(): {
+    readonly register: number;
+    readonly prices: number;
+    readonly instruments: number;
+  };
+  /**
+   * Law 18 (0g.5): AN ANSWER KEPT WHILE EVERYTHING IT READ STANDS STILL.
+   *
+   * The caller names the key, says which versions the answer depends on, and hands over the walk
+   * that produces it. It is recomputed the moment any of them moves, so a memo cannot hand back
+   * something the world has left behind — which is the one way a cache can lie about a register.
+   */
+  memo<T>(key: string, at: readonly number[], compute: () => T): T;
   holdings(): readonly Holding[];
   /** Law 8: what the register holds is whole pieces, so what it reads back is a count of them. */
   quantity(instrument: InstrumentId): Qty;

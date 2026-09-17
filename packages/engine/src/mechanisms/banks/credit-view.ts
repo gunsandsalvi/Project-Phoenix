@@ -583,6 +583,28 @@ export function exposuresByIssuer(view: ParticipantView): Map<string, Cash> {
 }
 
 export function exposureTo(view: ParticipantView, borrower: PartyId): Cash {
+  /**
+   * Law 18 (0g.5): AND IT IS WORKED OUT ONCE WHILE THE BOOK STANDS STILL.
+   *
+   * The two callers that hold no credit view — the shop that picks the quoted bank, and the
+   * overdraft decision, taken on every payment that would overdraw — walked the whole book every
+   * time. What the walk reads is holdings and the prints that convert a foreign face into this
+   * bank's money, so the answer stands exactly as long as neither has moved, and the memo is
+   * keyed on both versions: a loan booked, a payment settled, a print written, and it is walked
+   * again. Nothing is kept ACROSS a change, which is what makes this a traversal and not a
+   * decision somebody took earlier (Law 18).
+   */
+  return view.memo(
+    `banks.exposure|${String(view.self.id)}|${String(borrower)}`,
+    (() => {
+      const at = view.versions();
+      return [at.register, at.prices, at.instruments];
+    })(),
+    () => walkExposure(view, borrower),
+  );
+}
+
+function walkExposure(view: ParticipantView, borrower: PartyId): Cash {
   const home = view.registry.currencyOf(view.self.region);
   let total = noCash(home);
   for (const h of view.holdings()) {

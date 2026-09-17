@@ -152,6 +152,8 @@ const moneyKey = (holder: PartyId, instrument: InstrumentId): string => `${holde
 
 export class Register {
   private readonly byHolder = new Map<PartyId, Map<InstrumentId, MutableHolding>>();
+  /** 0g.5: the write count this register's readers key their memos on. */
+  private writes = 0;
   private readonly byInstrument = new Map<InstrumentId, Set<PartyId>>();
   private readonly equityAccount = new Map<PartyId, Running>();
   /**
@@ -194,6 +196,22 @@ export class Register {
   ) {}
 
   // ---- reads -------------------------------------------------------------------------------
+
+  /**
+   * Law 18, Law 19 (0g.5): HOW MANY TIMES THIS REGISTER HAS BEEN WRITTEN.
+   *
+   * A read that costs something — what one name owes a bank, across its whole book — may be kept
+   * for as long as nothing it read has moved, and this is what "nothing has moved" means for
+   * holdings. It is bumped by every writer below and by nothing else, and `register.test.ts` holds
+   * every public writer to it: a writer that forgot to bump it would hand a stale answer to
+   * whoever cached one, which is the one way a memo can lie.
+   *
+   * It is not a fact about the world and nothing in the engine may decide anything from it: it is
+   * a monotone count of writes, for caches to compare against.
+   */
+  get version(): number {
+    return this.writes;
+  }
 
   holding(holder: PartyId, instrument: InstrumentId): Option<Holding> {
     const h = this.byHolder.get(holder)?.get(instrument);
@@ -347,6 +365,7 @@ export class Register {
     period: Period,
     cycle: Cycle,
   ): void {
+    this.writes += 1;
     forbid(
       !this.equityAccount.has(party),
       'Audit B5.b',
@@ -381,6 +400,7 @@ export class Register {
 
   /** Move the equity account by a named event (Audit B5), and keep the event (Reporting A2, G2). */
   moveEquity(move: EquityMove): void {
+    this.writes += 1;
     const cur = this.equityWalk(move.party);
     this.equityAccount.set(
       move.party,
@@ -416,6 +436,7 @@ export class Register {
    * nothing in it, which is zero rather than missing.
    */
   moveRevaluation(move: EquityMove): void {
+    this.writes += 1;
     const cur = this.revaluationWalk(move.party);
     this.revaluationAccount.set(
       move.party,
@@ -453,6 +474,7 @@ export class Register {
     basisPerUnit: number,
     period: Period,
   ): Lot {
+    this.writes += 1;
     impossible(qty > 0, 'Register C1', `a credit moves a positive quantity, got ${qty}`, {
       holder,
       instrument,
@@ -503,6 +525,7 @@ export class Register {
    * register once held it too, which made one rule with two writers and the wrong one deciding.
    */
   remark(holder: PartyId, instrument: InstrumentId, lot: LotId, basisPerUnit: number): void {
+    this.writes += 1;
     const h = this.mutable(holder, instrument);
     const i = h.lots.findIndex((l) => l.id === lot);
     const current = h.lots[i];
@@ -539,6 +562,7 @@ export class Register {
    * quantity is short: a party cannot deliver what it does not hold (C4: no short by accident).
    */
   debit(holder: PartyId, instrument: InstrumentId, qty: number): DrawnLot[] {
+    this.writes += 1;
     impossible(qty > 0, 'Register C1', `a debit moves a positive quantity, got ${qty}`, {
       holder,
       instrument,
@@ -603,6 +627,7 @@ export class Register {
    * after the move.
    */
   moneyDelta(holder: PartyId, instrument: InstrumentId, delta: number, period: Period): number {
+    this.writes += 1;
     finite(delta, `money delta on ${holder}`);
     this.onTheGrid(delta, `what moves on ${holder}'s ${instrument}`);
     this.parties.get(holder);
@@ -656,6 +681,7 @@ export class Register {
     reason: string,
     period: Period,
   ): Lien {
+    this.writes += 1;
     impossible(qty > 0, 'Register D5', `a lien binds a positive quantity, got ${qty}`);
     this.onTheGrid(qty, `the units of ${instrument} ${holder} pledges`);
     this.parties.get(beneficiary);
@@ -679,6 +705,7 @@ export class Register {
   }
 
   release(holder: PartyId, instrument: InstrumentId, lien: LienId): void {
+    this.writes += 1;
     const h = this.byHolder.get(holder)?.get(instrument);
     if (h === undefined)
       throw new Missing('Register D5', `lien ${lien} on ${holder}/${instrument} does not exist`);
@@ -703,6 +730,7 @@ export class Register {
    * called from one place (the split door on the world) which journals it publicly.
    */
   restate(instrument: InstrumentId, ratio: number): void {
+    this.writes += 1;
     impossible(
       finite(ratio, 'the split ratio') > 0,
       'Equity D4',
@@ -777,6 +805,7 @@ export class Register {
     period: Period,
     cycle: Cycle,
   ): ReadonlyMap<InstrumentId, Qty> {
+    this.writes += 1;
     const movedByInstrument = new Map<InstrumentId, Qty>();
     forbid(
       !this.byHolder.has(to),
@@ -880,6 +909,7 @@ export class Register {
     period: Period,
     cycle: Cycle,
   ): ReadonlyMap<InstrumentId, Qty> {
+    this.writes += 1;
     forbid(into !== from, 'XI-15', 'a cell cannot merge with itself');
     const absorbed = new Map<InstrumentId, Qty>();
     const m = this.byHolder.get(from);
@@ -1039,6 +1069,7 @@ function snapshot(h: MutableHolding): Holding {
  */
 export type RegisterReads = Pick<
   Register,
+  | 'version'
   | 'holding'
   | 'quantity'
   | 'perMember'
@@ -1065,6 +1096,9 @@ export function registerReads(store: Register): RegisterReads {
     perMember: (holder: PartyId, instrument: InstrumentId) => store.perMember(holder, instrument),
     encumbered: (holder: PartyId, instrument: InstrumentId) => store.encumbered(holder, instrument),
     free: (holder: PartyId, instrument: InstrumentId) => store.free(holder, instrument),
+    get version() {
+      return store.version;
+    },
     holdingsOf: (holder: PartyId) => store.holdingsOf(holder),
     holdersOf: (instrument: InstrumentId) => store.holdersOf(instrument),
     heldTotal: (instrument: InstrumentId) => store.heldTotal(instrument),
