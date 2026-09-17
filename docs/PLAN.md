@@ -17,8 +17,8 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 0 of 9 items closed** (0 of 132 steps).
-**Requirement coverage: 78.2%** (1091 MET, 128 PARTIAL, 2 OUT OF SCOPE of 1397 REASON/VERIFY/FORBID clauses).
+**What is left: 304 clauses this world does not meet** — 176 MISSING, 128 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.2% are met or out of scope.
+**The items broken out of that so far: 0 of 9 closed** (0 of 132 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|

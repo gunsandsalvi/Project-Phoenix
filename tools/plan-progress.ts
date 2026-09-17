@@ -144,11 +144,23 @@ export function render(items: readonly ItemProgress[]): string {
   const lines: string[] = [];
   const planned = items.filter((i) => i.present);
   const closedItems = planned.filter((i) => i.steps > 0 && i.done === i.steps).length;
+  const missing = rows.filter((r) => r.status === 'MISSING').length;
+  /**
+   * THE WORK IS THE CLAUSES, NOT THE STEPS. A progress line counted against the plan's own sections
+   * measures how much of what somebody has already written down is done, which is a number that
+   * only ever flatters: three hundred clauses this world does not meet sat outside the plan
+   * entirely while it read "nine items". What is left is every MISSING and every PARTIAL clause
+   * (Part 4 of `docs/IMPLEMENTATION.md`, generated from the coverage table), and the steps of the
+   * items somebody has broken out so far — the second is a subset of the work the first names.
+   */
+  const notMet = missing + partial;
   lines.push(
-    `**The plan: ${closedItems} of ${planned.length} items closed** (${done} of ${total} steps).`,
+    `**What is left: ${notMet} clauses this world does not meet** — ${missing} MISSING, ${partial} PARTIAL ` +
+      `(\`docs/IMPLEMENTATION.md\` Part 4, one line each). Of ${rows.length} clauses, ${pct(met + scope, rows.length)}% are met or out of scope.`,
   );
   lines.push(
-    `**Requirement coverage: ${pct(met + scope, rows.length)}%** (${met} MET, ${partial} PARTIAL, ${scope} OUT OF SCOPE of ${rows.length} REASON/VERIFY/FORBID clauses).`,
+    `**The items broken out of that so far: ${closedItems} of ${planned.length} closed** ` +
+      `(${done} of ${total} steps). What has closed is in \`docs/RECORD.md\`, not here.`,
   );
   lines.push('');
   lines.push('| item | steps | done | state |');
