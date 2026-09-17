@@ -16105,3 +16105,32 @@ evidence rather than carried on hope.
 
 **0g.11, 0g.13, 0g.16 and 0g.8 are deleted as wrong rather than done.** Each was ranked from a rig
 count. The count that ranks work is now in the repository and prints on every run.
+
+# 0g.23 — `control.tender`: the facts about a company, read once instead of 9,148 times
+
+**92,598,968 kernel reads → below 512,364** (off the census's top twenty-two entirely), the period
+**243,369,652 → 150,770,684 ops (−38%)** and **62.9 → 52.3 s**. `events 178604`, `audit 356268`
+unchanged.
+
+The phase asked 9,148 potential buyers about 9,006 listed lines — **82.4 million pairs** — and
+inside each pair `worthAt` read the target's last published accounts, computed the fraction of a
+year they cover, annualised them, counted the shares outstanding and ticked down half of them.
+**Not one of those is a fact about the buyer.** They are facts about the company and about the
+register, identical for every acquirer looking at it.
+
+They are now read once for the phase (`candidatesIn`), and what stays inside the loop is the one
+thing that is the buyer's: the rate it must clear. That is deliberate and it is the mechanism —
+two acquirers want the same firm at different prices because their money costs them different
+amounts (§46 A3), so the division by `required` is the one thing that cannot be hoisted. The shape
+of the arithmetic around it is unchanged, which is why no bid moved by a piece.
+
+**A line whose issuer published nothing, or published no earnings, or has no shares outstanding,
+is left out of the list rather than asked about 9,148 times.** That is the narrowing door's own
+contract (Law 19): what it leaves out is exactly what `worthAt` answered `Missing` on, so no bid
+anybody would have made is lost — and the identical event and audit totals are the evidence.
+
+`worthToBuyer` went with it: exported, and called by nothing (Law 12 — the fix removes code).
+
+**The step's budget was ≤ 2,000,000 and it came in under a quarter of that.** The census named the
+phase, the cause was the one this item is about — a fact about one party computed inside a loop
+over counterparties — and the fix was to move four reads up one level.

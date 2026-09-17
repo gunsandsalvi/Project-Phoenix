@@ -289,7 +289,7 @@ first rung), to produce four curves that do not change within the period.
 Layout and traversal only; no mechanism, no economics, no boundary changes. **THE EXIT IS THE
 OWNER'S FIGURE: 3 SECONDS PER PERIOD ON THE FULL WORLD.**
 
-**Steps closed and deleted: 12** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19 and 0g.21.
+**Steps closed and deleted: 13** — 0g.2 through 0g.7, 0g.9, 0g.10, 0g.17, 0g.18, 0g.19, 0g.21 and 0g.23.
 Their outcomes and the reverted attempts are in `docs/RECORD.md`. 0g.8 (the doors), 0g.11
 (columnar state), 0g.13 (the calendar) and 0g.16 are deleted as *wrong*, not as done — 0g.22
 measured what each was worth and the answer was single digits; where a door is still the right
@@ -378,13 +378,6 @@ carried on hope.
 `audit 356,268` unchanged. A step that moves either of the latter has changed the world, not its
 layout, and is reverted (Law 18).
 
-- [ ] 0g.23 **`control.tender` — 92,598,968 reads → ≤ 2,000,000.** 9,148 potential buyers × 9,006
-  listed lines is 82.4 M pairs and the phase spends 1.1 reads on each of them. A buyer does not
-  look at every company in the world: what it could buy at all is a fact it can state about
-  itself, which is the same door `ParticipantDecl.markets` is for a book, and the per-target work
-  (`worthAt`, the outstanding count, the half-of-what-exists tick) belongs per LINE, computed once
-  by the phase, not once per buyer. Neither is a decision — both are reads of what the register
-  and this period's prints already hold (Law 19).
 - [ ] 0g.24 **The dealing desk — 29,239,688 reads → ≤ 1,000,000.** `stateOf` is a fact about the
   BANK and this cycle, and it is rebuilt for every book the bank is asked about: `targetsFor`
   walks the lines, `bookValue` walks them again, `linesQuoted` a third time. `view.memo` with

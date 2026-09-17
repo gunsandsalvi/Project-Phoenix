@@ -89,75 +89,101 @@ import {
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
 
 /**
- * B1, A3: WHAT A WHOLE FIRM IS WORTH TO THIS ACQUIRER, and it is the same number it values anything
- * else by: what it expects to get out of it, against what its own money costs it.
+ * M&A A1, B1, §29 B1, Reporting A2, Law 18, Law 19 (0g.23): A COMPANY ANYBODY COULD BID FOR, AND
+ * EVERYTHING ABOUT IT THAT IS NOT ABOUT THE BUYER — read ONCE for the phase instead of once per
+ * buyer per company.
  *
- * There is no synergy coefficient and no control premium here. An acquirer's number differs from a
- * holder's because the two have different costs of capital and different views of the same firm,
- * which is what §46 A3 says disagreement IS — and it is the whole reason a market for control
- * exists at all. A world where everyone valued a firm identically would never see a takeover.
+ * `worthAt` used to read all of this inside the buyers' loop, and the loop is **9,148 potential
+ * buyers × 9,006 listed lines = 82.4 million pairs**: the target's last accounts, the span they
+ * cover as a fraction of a year, what that annualises to, how many shares exist, and how many of
+ * them are more than half. Not one of those is a fact about the BUYER — they are facts about the
+ * COMPANY and about the REGISTER, identical for every acquirer looking at it — and reading them
+ * per pair made this phase **92,598,968 kernel reads, 34.8% of everything a period reads**.
+ *
+ * What is left inside the loop is the one thing that is the buyer's: the rate it must clear. That
+ * is why two acquirers want the same firm at different prices (§46 A3) and it is the whole reason
+ * a market for control exists — so it is the one division that cannot be hoisted, and the shape of
+ * the arithmetic around it is unchanged so that no bid moves by a piece.
+ *
+ * A line whose issuer published nothing, or published no earnings, or has no shares outstanding,
+ * is one `worthAt` answered `Missing` about for every buyer in the world. It is left out here
+ * instead, which is the narrowing door's own contract (Law 19): what this leaves out is exactly
+ * what `worthAt` returned nothing on, so no bid anybody would have made is lost.
  */
-export function worthToBuyer(
-  buyer: ParticipantView,
-  ctx: MechanismContext,
-  target: PartyId,
-  line: InstrumentId,
-): Option<PerPiece> {
-  return worthAt(buyer, ctx, target, line, costOfMoneyOf(ctx, buyer.self.id));
+interface Candidate {
+  readonly line: InstrumentId;
+  readonly target: PartyId;
+  readonly ccy: CurrencyCode;
+  /** Reporting A2: what it earns a year, as IT published it — never a forecast, never re-parsed. */
+  readonly annual: Cash;
+  /** How many shares of it exist, off the register (Law 19). */
+  readonly shares: Qty;
+  /** A1: control is more than half of what exists, read off the register rather than declared. */
+  readonly needs: Qty;
+}
+
+function candidatesIn(ctx: MechanismContext, lines: readonly Instrument[]): readonly Candidate[] {
+  const out: Candidate[] = [];
+  for (const i of lines) {
+    if (!i.issuer.some) continue;
+    const target = i.issuer.value;
+    // Reporting A2, A2.a: the last accounts it published. Read through the kernel's one typed read,
+    // never rebuilt and never re-parsed here (item 3).
+    const said = ctx.published.lastStatement(target);
+    if (said === undefined || said.earned.pieces <= 0 || said.periods <= 0) continue;
+    // Law 8: the periodicity is part of the number. What it published covers a span of periods; what
+    // a required return is quoted in is a year, so the two are put in the same unit by the calendar
+    // rather than by a factor typed here.
+    const ofAYear = yearFraction(
+      'ACT/365F',
+      ctx.calendar.startOf(ctx.period),
+      ctx.calendar.startOf(periodOf(ctx.period + said.periods)),
+    );
+    if (ofAYear <= 0) continue;
+    const shares = ctx.register.heldTotal(i.id).value;
+    if (shares <= 0) continue;
+    const needs = downTick(
+      scale(
+        shares,
+        asRatio(1 / 2, 'more than half of what exists'),
+        'more than half of what exists',
+      ),
+    );
+    if (needs <= 0) continue;
+    out.push({
+      line: i.id,
+      target,
+      ccy: i.ccy,
+      annual: over(
+        said.earned,
+        asRatio(ofAYear, 'the fraction of a year that was'),
+        'what it earns a year, as it published it',
+      ),
+      shares,
+      needs,
+    });
+  }
+  return out;
 }
 
 /**
- * The same number, with WHAT THIS BUYER REQUIRES already in hand.
+ * A3, B1: WHAT IT WOULD GET, AGAINST WHAT IT REQUIRES — the same comparison it makes about a
+ * machine, because "what is this stream worth to me" is one question and a world with two answers
+ * to it has two valuation technologies (Law 4, Capital Programme B1).
  *
- * Law 18: a firm's own cost of money is a fact about the firm and not about the company it is
- * looking at, so it is read once and carried down the list of them. Read per company it was the
- * same answer fetched three hundred times over.
+ * What it would get is what the target PUBLISHED (Reporting A2), annualised by the span of its own
+ * report; there is no second set of accounts and no forecast. What it requires is what a bank
+ * quoted THIS acquirer, per annum — its own cost of money, published under its own name, and a
+ * firm nobody will lend to does not buy companies.
+ *
+ * That is why two acquirers want the same firm at different prices, and it is the whole reason a
+ * market for control exists: the disagreement is load-bearing (§46 A3). There is no synergy term
+ * and no control premium anywhere — the premium is what the BOOK produces.
  */
-function worthAt(
-  buyer: ParticipantView,
-  ctx: MechanismContext,
-  target: PartyId,
-  line: InstrumentId,
-  required: Option<Ratio>,
-): Option<PerPiece> {
-  /**
-   * A3, B1: WHAT IT WOULD GET, AGAINST WHAT IT REQUIRES — the same comparison it makes about a
-   * machine, because "what is this stream worth to me" is one question and a world with two answers
-   * to it has two valuation technologies (Law 4, Capital Programme B1).
-   *
-   * What it would get is what the target PUBLISHED (Reporting A2), annualised by the span of its own
-   * report; there is no second set of accounts and no forecast. What it requires is what a bank
-   * quoted THIS acquirer, per annum — its own cost of money, published under its own name, and a
-   * firm nobody will lend to does not buy companies.
-   *
-   * That is why two acquirers want the same firm at different prices, and it is the whole reason a
-   * market for control exists: the disagreement is load-bearing (§46 A3). There is no synergy term
-   * and no control premium anywhere — the premium is what the BOOK produces.
-   */
-  if (!required.some || required.value <= 0) return none<PerPiece>();
-  // Reporting A2, A2.a: the last accounts it published. Read through the kernel's one typed read,
-  // never rebuilt and never re-parsed here (item 3).
-  const said = ctx.published.lastStatement(target);
-  if (said === undefined || said.earned.pieces <= 0 || said.periods <= 0) return none<PerPiece>();
-  // Law 8: the periodicity is part of the number. What it published covers a span of periods; what
-  // a required return is quoted in is a year, so the two are put in the same unit by the calendar
-  // rather than by a factor typed here.
-  const ofAYear = yearFraction(
-    'ACT/365F',
-    ctx.calendar.startOf(ctx.period),
-    ctx.calendar.startOf(periodOf(ctx.period + said.periods)),
-  );
-  if (ofAYear <= 0) return none<PerPiece>();
-  const annual = over(
-    said.earned,
-    asRatio(ofAYear, 'the fraction of a year that was'),
-    'what it earns a year, as it published it',
-  );
-  const whole = over(annual, required.value, 'what that stream is worth at what it requires');
-  const shares = ctx.register.heldTotal(line).value;
-  if (shares <= 0) return none<PerPiece>();
-  const perShare = pricedAt(whole, shares, 'what one share of it is worth to this buyer');
-  const printed = buyer.print(line);
+function worthAt(buyer: ParticipantView, c: Candidate, required: Ratio): Option<PerPiece> {
+  const whole = over(c.annual, required, 'what that stream is worth at what it requires');
+  const perShare = pricedAt(whole, c.shares, 'what one share of it is worth to this buyer');
+  const printed = buyer.print(c.line);
   // B1: it bids only where its own number is above what a share is already trading at. Below that
   // it can buy shares in the market like anybody else and does not need a tender.
   if (printed.some && perShare <= printed.value.price) return none<PerPiece>();
@@ -1111,7 +1137,7 @@ export interface Wanted {
 export function controlDealsFor(
   view: ParticipantView,
   ctx: MechanismContext,
-  lines: readonly Instrument[],
+  lines: readonly Candidate[],
 ): { readonly bids: readonly Bid[]; readonly wanted: readonly Wanted[] } {
   const home = view.registry.currencyOf(view.self.region);
   // B1: what this buyer's own money costs it, which is the same number for every company on the
@@ -1144,8 +1170,8 @@ export function controlDealsFor(
   };
   const bids: Bid[] = [];
   const wanted: Wanted[] = [];
-  for (const i of lines) {
-    const target = i.issuer.some ? i.issuer.value : view.self.id;
+  for (const c of lines) {
+    const target = c.target;
     if (target === view.self.id) continue;
     /**
      * Cross-Border C4, A2.a, Law 8 (17b.7): THE DEAL IS STRUCK IN THE MONEY THE SHARES ARE IN.
@@ -1161,28 +1187,17 @@ export function controlDealsFor(
      * pair (Spot FX) — between the two it carries an exposure it chose (A2.a), and a tender that
      * fails leaves it holding a money it does not earn (C2.a).
      */
-    const ccy = i.ccy;
+    const ccy = c.ccy;
     const cash = holds(ccy);
     // B3, A2: what it could bring ITSELF — its own money, and for a pool the capital it could still
     // call. A buyout with no equity cheque at all is not a buyout: a buyer with nothing of its own
     // is not levering anything, it is asking a bank to buy a company and hold the shares for it.
     const equity = couldBring(ccy);
     if (equity.pieces <= 0) continue;
-    const worth = worthAt(view, ctx, target, i.id, required);
+    const worth = worthAt(view, c, required.value);
     if (!worth.some) continue;
-    const outstanding = ctx.register.heldTotal(i.id).value;
-    if (outstanding <= 0) continue;
-    // A1: control is more than half of what exists, read off the register rather than declared.
-    const needs = downTick(
-      scale(
-        outstanding,
-        asRatio(1 / 2, 'more than half of what exists'),
-        'more than half of what exists',
-      ),
-    );
-    if (needs <= 0) continue;
-    const cost = valueAt(worth.value, needs, ccy, 'what control would cost it at its own number');
-    const bid = { buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy };
+    const cost = valueAt(worth.value, c.needs, ccy, 'what control would cost it at its own number');
+    const bid = { buyer: view.self.id, target, line: c.line, price: worth.value, needs: c.needs, ccy };
     /**
      * E1, B2 (17b.3): IT DOES NOT BID FOR WHAT IT CANNOT PAY FOR — and what it can pay with is its
      * own money AND what a lender has committed to the company, because the commitment is drawn
@@ -1285,7 +1300,9 @@ export function control(): SystemModule {
           { kind: 'event', name: 'tender.unfilled' },
         ],
         run: (ctx: MechanismContext): void => {
-          const lines = equityLines(ctx);
+          // Law 18, Law 19 (0g.23): every fact about a company that is not about the buyer, read
+          // once for the phase. The loop below is 9,148 buyers against it.
+          const lines = candidatesIn(ctx, equityLines(ctx));
           if (lines.length === 0) return;
           /**
            * B4 (10f.4): EVERY BID FOR ONE COMPANY IS ONE PROCESS. Gathered first and run once, so
