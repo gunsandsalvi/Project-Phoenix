@@ -1141,6 +1141,19 @@ export class Settlement {
     // Currency A3 (16.0): the money a line is in, for what a leg on it comes to.
     const ccyOf = (instrument: InstrumentId): CurrencyCode =>
       this.d.instruments.get(instrument).ccy;
+    /**
+     * 0f.1, Audit B5 (21.101): A HOLDING PRODUCES A TOTAL, and it did not always. This door said
+     * *"every number a holding produces is per member"*, and that was true of the representation
+     * this world had before 0f.1 gave a cell TOTALS and a `perMember` read. Since then every
+     * `credit` and `debit` of a cell's book has put the WHOLE cell's value into an account kept per
+     * member of it: a probate office dividing an estate among nine hundred and seventy-four
+     * households credited each of them with all of it, and the balance-sheet family has reported
+     * every cell in this world every period ever since — twenty to twenty-nine violations a period
+     * in the scale model, growing, the largest of them thirty-one trillion.
+     *
+     * It is kept as a name rather than deleted because the distinction is the point: what reaches
+     * an equity account is per member, and a writer says which of the two it is holding.
+     */
     const bumpPerMember = (party: PartyId, delta: Cash): void => {
       bumpIn(party, delta);
     };
@@ -1229,7 +1242,7 @@ export class Settlement {
                 acquired: ins.period,
               },
             ]);
-            bumpPerMember(
+            bumpTotal(
               op.party,
               negated(heldAsMoney(op.qty, ccyOf(op.instrument), 'what leaves'), 'what leaves'),
             );
@@ -1250,7 +1263,7 @@ export class Settlement {
             ).value;
             // What this party's units of this line cost it, kept for the disposal pairing below.
             sold.set(`${op.party}/${op.instrument}`, carrying);
-            bumpPerMember(op.party, negated(carrying, 'what it gave up'));
+            bumpTotal(op.party, negated(carrying, 'what it gave up'));
           }
           deltas.push({
             party: op.party,
@@ -1264,7 +1277,7 @@ export class Settlement {
           const basis = op.basis === 'carrying' ? carryingOf(op.fromDebit) : op.basis;
           if (op.money) this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
-          bumpPerMember(op.party, valueAt(basis, op.qty, ccyOf(op.instrument), 'credit value'));
+          bumpTotal(op.party, valueAt(basis, op.qty, ccyOf(op.instrument), 'credit value'));
           deltas.push({
             party: op.party,
             instrument: op.instrument,

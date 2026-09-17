@@ -388,6 +388,22 @@ Each when its file is open for another item; file:line and the change.
   account, per member), `prices/Clearing F2` (10: a listed line held with no print this period) and
   `units/Capital Programme A6.b` (65 at p3), and each is its own cause.
 
+- [x] 21.101 `ledger/settlement.ts` (21): **A HOLDING PRODUCES A TOTAL, AND SETTLEMENT BOOKED IT AS
+  A NUMBER PER MEMBER.** Every `credit` and `debit` of a cell's book — which is every purchase,
+  every sale, every payment a cell is a side of — put the WHOLE cell's value into an equity account
+  kept PER MEMBER of it. The door that divides (`bumpTotal`) has existed since 13d.1 and its comment
+  names the very trap: *"`issue` and `redeem` remembered to divide, and `reseat` and the issuer's
+  re-mark did not"* — and the holding sites were on the other door, whose comment said *"every
+  number a holding produces is per member"*. That was true of the representation this world had
+  BEFORE 0f.1 gave a cell totals and a `perMember` read, and false every day since. A probate office
+  dividing an estate among nine hundred and seventy-four households credited each of them with all
+  of it. `accounts/Audit B5` fired on every cell, every period, growing: twenty to twenty-nine a
+  period in the scale model, the largest thirty-one TRILLION. **Now 4 to 11**, and what is left is
+  its own cause. The four suites most exposed to equity have the same 31 red before and after.
+  **And it moves the world**, as a correction of this size must: `units/Capital Programme A6.b` goes
+  65 → 131 at period 3, because equity is read by decisions and the path is different now. Not
+  chased (Law 11); it is the next cause in this list.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money
