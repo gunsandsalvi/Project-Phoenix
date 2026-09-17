@@ -104,7 +104,39 @@ export type Receipt =
   /** Insurers A4 (14.6): a pension paid to a retired member — income to the cell, as a wage is. */
   | { readonly of: 'pension' }
   /** Insurers A4, D3 (14.6): what a payroll or a sponsor pays into a pension fund — not income to it. */
-  | { readonly of: 'contribution' };
+  | { readonly of: 'contribution' }
+  /**
+   * Fund Shares F3, Ratings A5 (0i.5): A FEE FOR A SERVICE RENDERED — a manager's, an assessor's, an
+   * arranger's. It is the fee-earner's REVENUE and the payer's cost, and it was money that landed
+   * classified as nothing: a fund paying its manager every period of every run, twice.
+   */
+  | { readonly of: 'fee' }
+  /**
+   * Derivative Layer D2, D2.a, Appendix B (0i.5): MARGIN — initial or variation, posted against a
+   * position or returned. *"Real money leaving one account and arriving in another"*, and income to
+   * nobody: it is the poster's money the whole time, which is the half *"no margin that is only a
+   * number"* is about. Taxing it as income is what leaving it unsaid risked.
+   */
+  | { readonly of: 'margin' }
+  /**
+   * CDS A2, Insurers A4 (0i.5): A PREMIUM — what the buyer of protection or of cover pays for it,
+   * at inception or periodically. It is the writer's revenue and it is not a disposal: nothing was
+   * sold out of a book, so there are no lots and no basis for settlement to publish.
+   */
+  | { readonly of: 'premium' }
+  /**
+   * Securities Lending A3 (0i.5): A MANUFACTURED PAYMENT — the coupon or dividend the borrower of
+   * stock received as registered holder and PASSES ON to the lender, whose economics never moved.
+   * It is the lender's income of the same sort the real payment would have been, and calling it
+   * nothing inverts *"title moves, economics do not"*, which is the defining property of a stock loan.
+   */
+  | { readonly of: 'manufactured' }
+  /**
+   * Money E1 (0i.5): PRINCIPAL REPAID — the return of money borrowed, which is the mirror of
+   * `borrowing` and is income to nobody. It was the unsaid half: a world that named the raise and
+   * left the repayment blank.
+   */
+  | { readonly of: 'principal' };
 
 export const RECEIPT_KINDS = [
   'wage',
@@ -120,6 +152,11 @@ export const RECEIPT_KINDS = [
   'claim',
   'pension',
   'contribution',
+  'fee',
+  'margin',
+  'premium',
+  'manufactured',
+  'principal',
 ] as const;
 
 /**
@@ -130,6 +167,11 @@ export const RECEIPT_KINDS = [
  * bargain struck this period and says nothing about a promise. One switch, exhaustive, beside the
  * kinds it classifies (Law 15).
  */
+// 0i.5 adds the last five to the `true` side, and each is money owed under a standing arrangement:
+// a management fee falls due every period of the mandate (Fund Shares F3); a premium leg is *"a real
+// periodic payment"* (CDS A2); variation margin is owed and has a cash test (Derivative Layer D2.c);
+// a manufactured payment is owed to the lender of the stock (Securities Lending A3); principal falls
+// due on its date.
 export function paysWhatWasOwed(receipt: Receipt): boolean {
   switch (receipt.of) {
     case 'wage':
@@ -140,6 +182,11 @@ export function paysWhatWasOwed(receipt: Receipt): boolean {
     case 'claim':
     case 'pension':
     case 'contribution':
+    case 'fee':
+    case 'margin':
+    case 'premium':
+    case 'manufactured':
+    case 'principal':
       return true;
     case 'disposal':
     case 'sale':

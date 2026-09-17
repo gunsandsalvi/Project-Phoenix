@@ -17,6 +17,7 @@
  * is collected in the same walk.
  */
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
+import { assertNever } from '../../core/assert.js';
 import type { Civil } from '../../calendar/civil.js';
 import { moneyInstrumentId, type PartyId } from '../../core/ids.js';
 import { negQty } from '../../core/tick.js';
@@ -125,11 +126,26 @@ function lineOf(party: PartyId, legs: readonly Leg[], cause: string): IncomeLine
         return 'taxReceived';
       case 'claim':
         return 'claimsReceived';
+      // 0i.5: A FEE AND A PREMIUM EARNED ARE REVENUE for the service rendered — a manager's
+      // mandate (Fund Shares F3), an underwriter's cover (Insurers A4). They were money that
+      // reached a party and fell out of this switch into `other`.
+      case 'fee':
+      case 'premium':
+        return 'revenue';
+      // 0i.5: margin arriving is a counterparty's money and not a receipt of this party's
+      // (Derivative Layer D2.a); a manufactured payment stands in for the coupon or dividend the
+      // lender of the stock would have had (Securities Lending A3), and this switch cannot see
+      // WHICH — the leg names the line but not its kind — so it is named here rather than guessed.
       case 'returnOfCapital':
       case 'borrowing':
+      case 'principal':
       case 'transfer':
       case 'contribution':
+      case 'margin':
+      case 'manufactured':
         return 'otherReceipts';
+      default:
+        return assertNever(received, 'Reporting G2');
     }
   }
   if (paid !== undefined) {
@@ -151,9 +167,16 @@ function lineOf(party: PartyId, legs: readonly Leg[], cause: string): IncomeLine
       case 'disposal':
       case 'returnOfCapital':
       case 'borrowing':
+      case 'principal':
       case 'transfer':
       case 'contribution':
+      case 'fee':
+      case 'premium':
+      case 'margin':
+      case 'manufactured':
         return 'otherPayments';
+      default:
+        return assertNever(paid, 'Reporting G2');
     }
   }
   if (created) return 'production';
@@ -193,9 +216,20 @@ function cashLineOf(
       case 'pension':
       case 'transfer':
         return outgoing ? 'operatingOut' : 'operatingIn';
+      // 0i.5: a fee, a premium, a manufactured payment and margin are all cash of the operation
+      // that produced them; principal repaid has its own line and is the mirror of a drawing.
+      case 'fee':
+      case 'premium':
+      case 'manufactured':
+      case 'margin':
+        return outgoing ? 'operatingOut' : 'operatingIn';
+      case 'principal':
+        return outgoing ? 'principalRepaid' : 'securitiesSold';
       case 'sale':
       case 'disposal':
         break;
+      default:
+        return assertNever(receipt, 'Reporting B4');
     }
   }
   if (outgoing) {

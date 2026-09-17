@@ -16,27 +16,22 @@ import { currencyUnit, instrumentId, instrumentKindId, type InstrumentId } from 
 import { InvalidRegistry } from '../core/errors.js';
 import type { PartyId } from '../core/ids.js';
 import type { Instrument, Terms } from './instruments.js';
+import type { Receipt } from '../ledger/instruction.js';
 import type { InstrumentKindProfile } from '../registry/kinds.js';
 import { issuerName } from '../registry/naming.js';
 
 export const ARREAR = instrumentKindId('arrear');
 
-/** The class of payment it was — the receipt the leg carried, or none. */
-export type PaymentClass =
-  | 'wage'
-  | 'rent'
-  | 'interest'
-  | 'dividend'
-  | 'disposal'
-  | 'sale'
-  | 'returnOfCapital'
-  | 'borrowing'
-  | 'transfer'
-  | 'tax'
-  | 'claim'
-  | 'pension'
-  | 'contribution'
-  | 'unclassified';
+/**
+ * The class of payment it was: THE RECEIPT THE LEG CARRIED, derived and never restated (Law 4).
+ *
+ * 0i.5: this was a hand-written copy of `Receipt['of']` with `'unclassified'` on the end, and the
+ * two could drift without anything failing — a receipt added here and not there ranked last in
+ * every estate in the world, silently, because `seniorityOf` answered `CLASS_ORDER.length` for a
+ * class it did not know. One union, one place, and the ladder below now has to place whatever the
+ * ledger can write.
+ */
+export type PaymentClass = Receipt['of'] | 'unclassified';
 
 export interface ArrearTerms extends Terms {
   readonly kind: typeof ARREAR;
@@ -75,17 +70,36 @@ export const CLASS_ORDER: readonly (readonly PaymentClass[])[] = [
   // 14.6: a pension not paid ranks as a wage not paid — what a person is owed for their work.
   ['wage', 'pension'],
   // 14.3: a policyholder's unpaid claim ranks with what the state and a counterparty are owed;
-  // 14.6: so does what a sponsor was called for and did not pay.
-  ['transfer', 'tax', 'claim', 'contribution'],
+  // 14.6: so does what a sponsor was called for and did not pay. 0i.5: and MARGIN, which is a
+  // counterparty's money held against a position and never the holder's to keep.
+  ['transfer', 'tax', 'claim', 'contribution', 'margin'],
   ['rent'],
-  ['interest', 'borrowing'],
-  ['disposal', 'sale', 'unclassified'],
+  // 0i.5: PRINCIPAL ranks with the interest on it — one borrowing, one tier — and a MANUFACTURED
+  // payment with them, because it stands in for the coupon the lender of the stock would have had
+  // (Securities Lending A3) and cannot rank behind what it replaces.
+  ['interest', 'borrowing', 'principal', 'manufactured'],
+  // 0i.5: a FEE and a PREMIUM are owed for a service rendered, which is where goods and services
+  // rank; an unclassified one ranks with them until 0i.5 leaves none to rank.
+  ['disposal', 'sale', 'unclassified', 'fee', 'premium'],
   ['dividend', 'returnOfCapital'],
 ];
 
+/**
+ * XI-8, Firm Birth D2: WHERE A CLASS RANKS, or a refusal. It used to answer "last" for a class the
+ * ladder did not name, which is a numeric default on the order of claims (Appendix A): a payment
+ * class added to the ledger and not placed here was ranked behind the owners in every estate in the
+ * world and nothing said so. The order of claims is the law of the place, and a law with nothing to
+ * say about a claim is a gap to fill, not a silence to read as "last".
+ */
 export function seniorityOf(c: PaymentClass): number {
   const at = CLASS_ORDER.findIndex((tier) => tier.includes(c));
-  return at < 0 ? CLASS_ORDER.length : at;
+  if (at < 0) {
+    throw new InvalidRegistry(
+      'XI-8',
+      `the order of claims does not say where a ${c} ranks; place it in CLASS_ORDER (Firm Birth D2)`,
+    );
+  }
+  return at;
 }
 
 export const arrearKind: InstrumentKindProfile = {

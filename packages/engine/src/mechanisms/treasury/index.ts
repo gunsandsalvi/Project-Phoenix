@@ -1124,15 +1124,32 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
           // treasury taxes households (C1). Naming it is what keeps it out of `unclassified`
           // without pretending it is somebody's income (item 14 owns the corporate base).
           break;
+        case 'fee':
+        case 'premium':
+          // 0i.5: REVENUE FOR A SERVICE RENDERED — a manager's fee, an underwriter's premium. Like
+          // `sale` above it nets to a profit, which is a different tax on a different base and this
+          // world has no mechanism for one (item 14 owns it). Naming it keeps it out of
+          // `unclassified` without pretending it is somebody's income.
+          break;
+        case 'manufactured':
+          // Securities Lending A3: the lender's economics never moved, so a manufactured payment is
+          // taxed as what it stands in for — and what it stands in for is a coupon or a dividend on
+          // stock the lender still owns economically. It is NOT taxed here, because the leg that
+          // pays it is the borrower passing on money the issuer already paid it: taxing both sides
+          // of one coupon is taxing it twice. The half that is income is the issuer's payment.
+          break;
         case 'returnOfCapital':
         case 'borrowing':
+        case 'principal':
+        case 'margin':
         case 'transfer':
         case 'tax':
         case 'claim':
         case 'contribution':
-          // Its own money coming back, money it must repay, money the state itself moved, a tax
-          // paid, an indemnity for what it lost (14.3), and what a payroll put into a pension fund
-          // (14.6). None is income and the first three used to be taxed as one.
+          // Its own money coming back, money it must repay, the repayment itself, a counterparty's
+          // margin that was never the holder's (Derivative Layer D2.a), money the state itself
+          // moved, a tax paid, an indemnity for what it lost (14.3), and what a payroll put into a
+          // pension fund (14.6). None is income and the first three used to be taxed as one.
           break;
         default:
           assertNever(receipt, 'Treasury C1');

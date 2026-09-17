@@ -14955,3 +14955,37 @@ green, four of which assert that a mismatch now fails loudly.
 **Not done, and named:** `Produces` does not yet carry the declaration, `ctx.record` is not yet
 typed, `world/order.ts` does not yet match a reader's declaration to its writer's, and the other
 seven kernel kinds and `MoneyLeg.receipt` are still bags. Steps 0i.2–0i.7.
+
+---
+
+## 0i.5a — The receipt union is complete, and every switch over it is exhaustive
+
+**What.** `Receipt` gains the five categories this world actually moves money for and had no word
+for, each with the clause that names it: `fee` (Fund Shares F3, Ratings A5), `margin` (Derivative
+Layer D2, D2.a), `premium` (CDS A2, Insurers A4), `manufactured` (Securities Lending A3) and
+`principal` (Money E1).
+
+`PaymentClass` is now `Receipt['of'] | 'unclassified'` — DERIVED. It was a hand-written copy of the
+same union, so the two could drift with nothing failing; and `seniorityOf` answered
+`CLASS_ORDER.length` for a class the ladder did not name, which is a numeric default on **the order
+of claims in an estate** (Appendix A). A payment class the ledger could write and the ladder had not
+placed ranked behind the owners in every estate in this world, silently. It throws now, and the five
+new classes are placed: margin with what a counterparty is owed, principal and a manufactured
+payment with the interest they belong to, a fee and a premium with goods and services.
+
+`statement.ts`'s three switches over a receipt were NOT exhaustive — no `assertNever`, so a receipt
+the switch did not name fell out of it into `'other'` and into no cash line at all. All three end in
+`assertNever` now, which is what made the five new cases impossible to add without classifying them.
+
+**Why.** Measured: **49 of this engine's 79 money legs name no receipt**, and the field's own
+docstring said *"Absent is unclassified, never income"* — optional-means-unset, on the tax base. That
+is how 21.105 happened: every fund payout ever made reached a household as `unclassified` and was
+taxed as nothing, found by accident. Before the field can be REQUIRED (0i.5), the union has to be
+able to say what those 49 are, and four of the five categories did not exist.
+
+**Measured.** No behaviour change — nothing emits the new cases yet. `treasury`, `reporting` and
+`estate`: 7 red / 31 passed before and after, identical. `check:opens`, lint, typecheck,
+`check:spec` (581 citations) green.
+
+**Next, and named:** 0i.5 proper — `MoneyLeg.receipt` becomes required and the 49 sites each say
+what their money is. The compiler produces that worklist the moment the `?` comes off.
