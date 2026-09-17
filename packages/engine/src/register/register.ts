@@ -473,7 +473,7 @@ export class Register {
         ...last,
         qty: asQty(last.qty + pieces, 'the lot joined'),
       });
-      h.lots[h.lots.length - 1] = joined;
+      h.lots = [...h.lots.slice(0, h.lots.length - 1), joined];
       return joined;
     }
     const lot: Lot = Object.freeze({
@@ -485,7 +485,7 @@ export class Register {
       acquired: period,
     });
     this.nextLot += 1;
-    h.lots.push(lot);
+    h.lots = [...h.lots, lot];
     return lot;
   }
 
@@ -509,10 +509,11 @@ export class Register {
     if (current === undefined) {
       throw new Missing('Register D3', `${holder} holds no lot ${lot} of ${instrument}`);
     }
-    h.lots[i] = Object.freeze({
+    const remarked = Object.freeze({
       ...current,
       basisPerUnit: asPerPiece(basisPerUnit, 'the new basis'),
     });
+    h.lots = h.lots.map((l, at) => (at === i ? remarked : l));
   }
 
   /**
@@ -569,12 +570,12 @@ export class Register {
         acquired: lot.acquired,
       });
       remaining = finite(remaining - take, 'debit remaining');
-      if (take === lot.qty) h.lots.shift();
+      if (take === lot.qty) h.lots = h.lots.slice(1);
       else
-        h.lots[0] = Object.freeze({
-          ...lot,
-          qty: subQty(lot.qty, take, 'what is left of the lot'),
-        });
+        h.lots = [
+          Object.freeze({ ...lot, qty: subQty(lot.qty, take, 'what is left of the lot') }),
+          ...h.lots.slice(1),
+        ];
     }
     /**
      * Appendix B, Law 5, Law 8: AND WHAT IS LEFT IS LEFT. This used to clear the whole lot book
@@ -673,7 +674,7 @@ export class Register {
       created: period,
     });
     this.nextLien += 1;
-    h.liens.push(lien);
+    h.liens = [...h.liens, lien];
     return lien;
   }
 
@@ -684,7 +685,7 @@ export class Register {
     const idx = h.liens.findIndex((l) => l.id === lien);
     if (idx < 0)
       throw new Missing('Register D5', `lien ${lien} on ${holder}/${instrument} does not exist`);
-    h.liens.splice(idx, 1);
+    h.liens = [...h.liens.slice(0, idx), ...h.liens.slice(idx + 1)];
     if (h.lots.length === 0 && h.liens.length === 0) this.drop(holder, instrument);
   }
 
@@ -1006,15 +1007,26 @@ export class Register {
   }
 }
 
+/**
+ * Law 18 (0g.6): THE LOTS AND THE LIENS ARE REPLACED, NEVER MUTATED, so a read can hand out the
+ * arrays it holds instead of copying them.
+ *
+ * A read of a holding used to copy both arrays, every time, for every caller — and a bank asking
+ * what one name owes it walks every holding it has, once per name. At the first rung that copying
+ * was 9.3% of a year in `snapshot` alone and most of the 11.2% in `exposureTo` above it. The type
+ * is what keeps it honest: `readonly` here means the compiler finds every site that would have
+ * pushed or spliced, and each of them now builds the array it means (a write is rare; a read is
+ * not). Nothing about what the register HOLDS changes, which is what Law 18 requires.
+ */
 interface MutableHolding {
   readonly holder: PartyId;
   readonly instrument: InstrumentId;
-  lots: Lot[];
-  liens: Lien[];
+  lots: readonly Lot[];
+  liens: readonly Lien[];
 }
 
 function snapshot(h: MutableHolding): Holding {
-  return { holder: h.holder, instrument: h.instrument, lots: [...h.lots], liens: [...h.liens] };
+  return { holder: h.holder, instrument: h.instrument, lots: h.lots, liens: h.liens };
 }
 
 /**
