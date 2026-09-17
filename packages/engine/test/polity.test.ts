@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { ALLOTMENT_RULES, POLITY_PARAMS, allotmentBy } from '../src/mechanisms/polity/index.js';
 import { TREASURY_PARAMS } from '../src/mechanisms/treasury/index.js';
 import { rigWorld } from './rig.js';
+import { PLATFORMS } from '../src/mechanisms/polity/platforms.js';
+import { platformPositions, distanceBetween, spreadAcross } from '../src/registry/platforms.js';
 
 describe('the constitution states its own numbers (Polity A1, A4, C1, C2, C4, D5)', () => {
   const w = rigWorld('polity');
@@ -71,5 +73,60 @@ describe('the constitution states its own numbers (Polity A1, A4, C1, C2, C4, D5
     // 19.2: a gain is not a wage. The two rates are separate numbers and may differ, which is one
     // of the things an election is actually about.
     expect(String(TREASURY_PARAMS.taxGains)).not.toBe(String(TREASURY_PARAMS.taxIncome));
+  });
+});
+
+describe('every party states a position on every number parliament owns (Polity A2, D5, 19.3)', () => {
+  const w = rigWorld('platforms');
+  const mine = w.params.all().filter((d) => d.kind === 'policy' && d.owner === 'parliament');
+
+  it('covers all of them, in every platform, and the world would not have opened otherwise', () => {
+    expect(PLATFORMS.length).toBeGreaterThan(1);
+    expect(mine.length).toBeGreaterThan(0);
+    const said = platformPositions(PLATFORMS, w.params.all());
+    expect(said.size).toBe(PLATFORMS.length);
+    for (const positions of said.values()) {
+      // A2: EVERY one. A party that says nothing about a number has not given a cell enough to
+      // vote on, and whatever it did about it afterwards would arrive from nowhere.
+      expect(positions.size).toBe(mine.length);
+    }
+  });
+
+  it('refuses a missing position, one on something parliament does not own, and a duplicate', () => {
+    const [first] = PLATFORMS;
+    expect(first).toBeDefined();
+    if (first === undefined) return;
+    const short = { ...first, positions: first.positions.slice(1) };
+    expect(() => platformPositions([short], w.params.all())).toThrow();
+    // D5, F2: a party cannot promise the central bank's rate — it is not parliament's to set.
+    const overreach = {
+      ...first,
+      positions: [...first.positions, { on: 'centralBank.policyRate.USD', value: 0, why: 'it cannot.' }],
+    };
+    expect(() => platformPositions([overreach], w.params.all())).toThrow();
+    // And two positions on one number is two answers to one question (Law 4).
+    const twice = {
+      ...first,
+      positions: [...first.positions, { on: 'treasury.tax.income', value: 0.9, why: 'and also this.' }],
+    };
+    expect(() => platformPositions([twice], w.params.all())).toThrow();
+    // Two platforms with one name is two parties nobody can tell apart.
+    expect(() => platformPositions([first, first], w.params.all())).toThrow();
+  });
+
+  it('measures how far apart two platforms are against how far apart they all are (B2)', () => {
+    const said = platformPositions(PLATFORMS, w.params.all());
+    const spread = spreadAcross(said);
+    expect(spread.size).toBeGreaterThan(0);
+    const [a, b, c] = [...said.values()];
+    expect(a).toBeDefined();
+    expect(b).toBeDefined();
+    expect(c).toBeDefined();
+    if (a === undefined || b === undefined || c === undefined) return;
+    // A platform is no distance at all from itself, and the two that differ most are further apart
+    // than either is from the one between them — which is what "between" means here.
+    expect(distanceBetween(a, a, spread)).toBe(0);
+    expect(distanceBetween(a, b, spread)).toBeGreaterThan(distanceBetween(a, c, spread));
+    expect(distanceBetween(a, b, spread)).toBeGreaterThan(distanceBetween(c, b, spread));
   });
 });

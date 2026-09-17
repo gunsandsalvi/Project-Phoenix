@@ -16,9 +16,13 @@
  */
 import { CONSTITUTION, POLITY_PARAMS, ALLOTMENT_RULES, ruleIndexOf } from './data.js';
 import type { ParamDecl } from '../../registry/params.js';
+import { platformPositions } from '../../registry/platforms.js';
+import { PLATFORMS } from './platforms.js';
+import type { SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
 export * from './data.js';
+export * from './platforms.js';
 
 function paramsOf(): ParamDecl[] {
   return [
@@ -88,4 +92,16 @@ export const polity: SystemModule = {
   phases: [],
   participants: [],
   families: [],
+  /**
+   * A2, D5 (19.3): THE PLATFORMS ARE CHECKED AGAINST THE REGISTER, at assembly, once.
+   *
+   * What parliament owns is a read of the world's own declarations, so the seed is the first moment
+   * the question can be asked at all: by now every module has declared its numbers. A platform that
+   * says nothing about one of them, or says something about a number parliament does not own, or
+   * says two things about one — the world does not open. That is a declaration being wrong, not a
+   * finding about a world that ran.
+   */
+  seed(ctx: SeedContext): void {
+    platformPositions(PLATFORMS, ctx.params.all());
+  },
 };

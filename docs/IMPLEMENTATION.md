@@ -278,7 +278,14 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   standing mandate looks like from outside. The inflation TARGET is `parliament`'s now: what the
   bank is aiming at is the polity's to choose and what it does about it is the bank's.
 - [x] 19.2 Constitution primitives (`polity.seats`, `polity.termPeriods` by date, `polity.allotmentRule` dispatch, `polity.coalitionMaxDistance`, `polity.mandateLag`); all five declared by a new `polity` module and owned by the CONSTITUTION, because a body does not rewrite the rule that elected it; the allotment rule is a dispatch table with two rows (proportional by largest remainder, first past the post) and the register holds which one by position. The four tax bases are parliament's: PROFITS is new and is assessed on what a company PUBLISHED it earned less what the marks did, once per statement (§48, Law 19 — the statement is the source and a re-derivation would be a second writer); GAINS is new as a rate and a base of its own, taken out of the income base where it was taxed at the wage rate (Law 4: one rate on two different things).
-- [ ] 19.3 Platforms (`registry/platforms.ts`): one row per party with a value for every parliament-owned policy; assembly refuses a missing, extra or duplicate row.
+- [x] 19.3 Platforms (`registry/platforms.ts`, three parties in `polity/platforms.ts`): a stated
+  position, with its reason, on every number parliament owns — and what parliament owns is a READ of
+  the register, so a world that declares one more of them refuses to open until every party has
+  answered it. Assembly refuses a missing position, a position on something parliament does not own
+  (a party cannot promise the central bank's rate), two positions on one number, and two platforms
+  with one name. A position may name a FAMILY (`centralBank.target.`) because a party has one view
+  of the target and this world has one per money. `distanceBetween` measures two platforms against
+  how far apart they ALL are, which is B2's distance without a scale anybody invented.
 - [ ] 19.4 The vote: per cell, each platform applied to its own state at its own outlook through `withoutAggregates`; abstain when indifferent; turnout a read.
 - [ ] 19.5 Seats by the rule; coalition; a hung parliament continues the standing mandate.
 - [ ] 19.6 The mandate journaled and written at the lag; C3.b as an audit contribution.

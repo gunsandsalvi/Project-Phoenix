@@ -1385,6 +1385,12 @@ export interface SeedContext {
     | 'km'
     | 'kmPerDay'
     | 'decl'
+    /**
+     * XI-14, Polity A2 (19.3): EVERY DECLARATION, for the one reader that needs the whole set —
+     * a platform must state a position on every number PARLIAMENT owns, and which numbers those
+     * are is a read of what the world's modules declared, never a list anybody keeps.
+     */
+    | 'all'
   >;
   readonly rng: Prng;
   /**
