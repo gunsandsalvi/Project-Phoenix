@@ -158,6 +158,56 @@ function paramsOf(rows: readonly EquityDecl[]): ParamDecl[] {
   ];
 }
 
+
+/** D2, XI-8 (20.3): what a buyback programme is called in the process register. */
+export const BUYBACK = 'equity.buyback';
+
+/**
+ * D2, XI-8, Law 19 (20.3): THE BUYBACK IS A PROGRAMME, and this is where it stands each period.
+ *
+ * A board authorises so many shares and the company buys them over the weeks that follow, at
+ * whatever the book will give it. It was ONE PERIOD'S ORDER: a firm that wanted a million shares
+ * and was sold ten thousand wanted nothing the following week, which is not a buyback — it is a
+ * bid that happened once. Now the authority is a `Process` in the kernel's register, with a period
+ * by which it must be over, and every period it stands the firm bids for WHAT IS LEFT of it.
+ *
+ * What is left is a READ: what the board authorised, less what the firm's own holding of its own
+ * line has risen by since it authorised it. Nothing counts the fills — the register is the source,
+ * and a counter beside it would be a second answer to how many shares it has bought (Law 4).
+ *
+ * It ends two ways and says which: `closed` when the authority is used up, and `abandoned` when it
+ * ran out of time with shares unbought — which is a real outcome and is what a lapsed authority is.
+ */
+function standingBuyback(ctx: MechanismContext, firm: PartyId, line: InstrumentId): boolean {
+  const slot = ctx.workingOf(firm, EQUITY_PLAN, nothingDecided);
+  const id = slot.process;
+  if (id === undefined) return false;
+  const row = ctx.processes.get(id);
+  if (row.state !== 'running') {
+    slot.process = undefined;
+    return false;
+  }
+  const bought = asQty(ctx.register.quantity(firm, line) - slot.held, 'what it has bought back');
+  const left = slot.authorised - bought;
+  if (left <= 0) {
+    ctx.endProcess(id, 'closed', `the authority for ${String(slot.authorised)} shares is used up`);
+    slot.process = undefined;
+    return false;
+  }
+  if (ctx.period > row.closesAfter) {
+    ctx.endProcess(id, 'abandoned', `${String(left)} shares of the authority were never bought`);
+    slot.process = undefined;
+    return false;
+  }
+  // The programme is under way the first period it actually buys one, which is the difference
+  // between a board that has authorised a buyback and a company that is doing one.
+  if (bought > 0 && ctx.processes.step(id) === row.steps[0]) ctx.advanceProcess(id);
+  slot.at = ctx.period;
+  slot.line = line;
+  slot.buyback = asQty(left, 'what is left of the authority');
+  return true;
+}
+
 /**
  * D1, D2, D3: the firm's own decision about its own line, taken with the firm's own view, once,
  * published under its own name, and read back by the order it posts (Law 4).
@@ -175,6 +225,9 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
   }
   const firm = row.firm as PartyId;
   if (!ctx.parties.get(firm).status.alive) return;
+  // 20.3: a programme already running is what it is buying under, and a board does not authorise a
+  // second one while the first stands. Its own bid for the period is set from what is left of it.
+  if (standingBuyback(ctx, firm, line.id)) return;
   const view = ctx.participant(firm);
   const funding = ownFundingThisPeriod(view, ctx.period);
   if (!funding.some) return;
@@ -217,6 +270,24 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
   slot.line = line.id;
   slot.buyback = asQty(plan.buyback, 'the shares it bids for');
   slot.bookPerShare = plan.bookPerShare;
+  /**
+   * D2, XI-8 (20.3): AND THE AUTHORITY IS OPENED. It runs for as long as this management is
+   * patient — the same patience that sized the payout, because a board that distributes over four
+   * periods does not authorise a programme for forty (Law 2: no second number for one preference).
+   */
+  if (plan.buyback > 0) {
+    const patience = ctx.params.periods(equityParam(row.firm, 'payoutPatience'));
+    const opened = ctx.beginProcess({
+      what: BUYBACK,
+      subject: firm,
+      steps: ['authorised', 'buying'],
+      closesAfter: periodOf(ctx.period + patience),
+      why: `${row.firm} authorised the purchase of ${String(plan.buyback)} of its own shares, to cancel`,
+    });
+    slot.process = opened.id;
+    slot.authorised = asQty(plan.buyback, 'what the board authorised');
+    slot.held = asQty(ctx.register.quantity(firm, line.id), 'what it held when it authorised it');
+  }
   ctx.record(
     'equity.plan',
     [firm, line.id],

@@ -32,7 +32,7 @@ import {
   type PerPiece,
   valueAt,
 } from '../../core/measure.js';
-import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
+import type { InstrumentId, MarketId, PartyId, ProcessId } from '../../core/ids.js';
 import { material } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Order } from '../../clearing/solver.js';
@@ -53,6 +53,19 @@ export interface DecidedThisPeriod {
   /** D2: the shares it is bidding for, to cancel. Nothing where it is buying none back. */
   buyback: Qty;
   bookPerShare: number;
+  /**
+   * D2, XI-8 (20.3): THE AUTHORITY IT IS BUYING UNDER — a buyback is a PROGRAMME and not a bid.
+   *
+   * A board authorises so many shares and the company buys them in the market over the weeks that
+   * follow, at whatever the book gives it; it was a single period's order, so a firm that wanted a
+   * million shares and was sold ten thousand simply wanted nothing the following week. `process` is
+   * the row in the kernel's register that says the procedure is running and when it must be over,
+   * `authorised` is what the board said, and `held` is what the firm held of its own line when it
+   * said it — so what is LEFT is a read of the register (Law 19) and not a counter.
+   */
+  process: ProcessId | undefined;
+  authorised: Qty;
+  held: Qty;
 }
 
 /** An empty slot: a firm that has decided nothing has no period, no line and no bid. */
@@ -61,6 +74,9 @@ export const nothingDecided = (): DecidedThisPeriod => ({
   line: undefined,
   buyback: NO_QTY,
   bookPerShare: 0,
+  process: undefined,
+  authorised: NO_QTY,
+  held: NO_QTY,
 });
 
 /** What the firm decided about its own line this period, in the terms the orders are posted in. */

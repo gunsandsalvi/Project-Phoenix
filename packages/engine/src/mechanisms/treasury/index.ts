@@ -46,6 +46,7 @@ import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
+import { quarterClosedBy } from '../../calendar/fiscal.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
   currencyUnit,
@@ -115,6 +116,7 @@ export const nothingNeeded = (): ProgrammeNeed => ({ at: undefined, need: undefi
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
+  fiscalYearEnds: paramId('treasury.fiscalYear.endsInMonth'),
   horizon: paramId('treasury.programme.horizon'),
   tenorMixShort: paramId('treasury.tenorMix.short'),
   auctionEvery: paramId('treasury.auction.everyPeriods'),
@@ -307,6 +309,15 @@ export const treasury: SystemModule = {
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury D4.b, Polity D1 (19.7): it holds a cash buffer because the alternative is dependence on every single auction clearing. How many periods of known outlays it keeps in hand is how much it is willing to depend on the next auction — which is a POLICY the parliament answers for and not a treasurer’s patience: it was the model’s preference, and a state that runs itself close to the wire has made a public choice about what happens when a sale fails.',
+    },
+    {
+      id: TREASURY_PARAMS.fiscalYearEnds,
+      value: 12,
+      unit: 'the month of the year the state’s fiscal year ends in',
+      dimension: 'count',
+      kind: 'policy',
+      owner: 'constitution',
+      why: 'Treasury C3, Money G3.a (20.2): the state’s own fiscal year, which is what its quarters are quarters OF — the tax on what households spend is remitted at the end of one. It is the CONSTITUTION’s and not parliament’s: a fiscal year is the frame a mandate is measured in rather than one of the numbers a mandate sets, and a seat-weighted average of three parties’ preferred months would not be a month.',
     },
     {
       id: TREASURY_PARAMS.horizon,
@@ -987,7 +998,17 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     profits: noCash(ccy),
     unclassified: noCash(ccy),
   };
-  for (const r of ctx.ledger.inPeriod(previous)) {
+  /**
+   * C3, Money G3.a (20.2): ONE WALK OF ONE PERIOD'S SETTLED INSTRUCTIONS, and what it takes out of
+   * it depends on which taxes are being assessed today.
+   *
+   * The withheld taxes are read off the period just gone, every period. The tax on what households
+   * SPEND is not: it is remitted quarterly (below), so when a quarter closes this same walk is run
+   * over every period of that quarter, taking only what was spent. One walk, two callers, because a
+   * second reader of the same legs would be a second answer to what was paid (Law 4).
+   */
+  const takeFrom = (from: Period, weekly: boolean, spending: boolean): void => {
+  for (const r of ctx.ledger.inPeriod(from)) {
     if (r.outcome !== 'settled') continue;
     // C1: what a household bought in this instruction is what it paid for the real things in it.
     const buyers = new Set<PartyId>();
@@ -1011,7 +1032,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
        * of a cash failure it did not owe.
        */
       if (leg.ccy !== ccy) continue;
-      if (buyers.has(leg.from.holder)) {
+      if (spending && buyers.has(leg.from.holder)) {
         bases.consumption = plus(
           bases.consumption,
           heldAsMoney(leg.amount, ccy, 'what moved'),
@@ -1024,7 +1045,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
             .pieces,
         );
       }
-      if (leg.to.holder === id) continue;
+      if (!weekly || leg.to.holder === id) continue;
       /**
        * C1, Law 15: THE BASE IS WHAT THE PAYER SAID THIS RECEIPT IS, dispatched, never inferred.
        *
@@ -1112,7 +1133,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
      * the branch would be exactly the outcome-written-as-a-rule the method forbids.
      */
     for (const made of r.realised) {
-      if (!cells.has(made.party)) continue;
+      if (!weekly || !cells.has(made.party)) continue;
       // Currency C4: a gain made in another money is taxed in this one at the rate in force.
       const gain = ctx.valuation.inMoney(
         minus(made.proceeds, made.basis, 'what it made on the sale'),
@@ -1126,6 +1147,36 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       bases.gains = plus(bases.gains, gain, 'gains households realised');
       addTo(due, made.party, scale(gain, onGains, 'tax on the gain').pieces);
     }
+  }
+  };
+  /**
+   * C3, Money G3.a (20.2): WITHHELD WEEKLY, AND WHAT IS SPENT IS REMITTED QUARTERLY.
+   *
+   * Every tax here was assessed every period, which is one periodicity for four different taxes and
+   * it belongs to none of them: what is taken out of a wage is taken when the wage is paid, and
+   * what a seller collects on what it sold is remitted at the end of a QUARTER, because that is
+   * what a quarter is for. The quarter is the state's own — its fiscal year ends in a month the
+   * constitution names — and it is placed by DATE like everything else on this calendar (G3.a).
+   *
+   * The remittance is made in the period AFTER the one the close fell into, over every period the
+   * quarter covered, for the same reason the weekly walk reads the period just gone: a period this
+   * phase is standing in is not a period whose instructions are all written yet (Clearing F1).
+   */
+  const opened = ctx.calendar.startOf(period(0));
+  const quarter = quarterClosedBy(
+    ctx.params.count(TREASURY_PARAMS.fiscalYearEnds),
+    ctx.calendar.startOf(ctx.period),
+  );
+  // A quarter that closed before this world opened closed without it, and there is nothing in it
+  // to remit: the first remittance is of the first quarter that closes while there is a world.
+  const remitsNow =
+    compareCivil(quarter.ends, opened) >= 0 && ctx.calendar.periodOf(quarter.ends) === previous;
+  takeFrom(previous, true, remitsNow);
+  if (remitsNow) {
+    // The world did not exist before it opened, so a quarter that reaches back past period 0 is
+    // read from period 0: there are no instructions before there was anybody to settle them.
+    const opens = compareCivil(quarter.begins, opened) < 0 ? period(0) : ctx.calendar.periodOf(quarter.begins);
+    for (let p = Number(opens); p < Number(previous); p += 1) takeFrom(period(p), false, true);
   }
   /**
    * C1, §30 C1, §47 D1, Law 19 (19.2): THE CORPORATE BASE, read off what a company PUBLISHED.

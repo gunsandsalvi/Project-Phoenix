@@ -14240,3 +14240,62 @@ and C3.b finds nothing. What 21.86 is left with is E3's measurement and not the 
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence and
 plan:check green; `test/polity.test.ts` twenty-two green, `test/breach.test.ts` one green and one
 red (21.88).
+
+## Item 20 — Periodicity: closed
+
+**Four things happened on the phase's own heartbeat rather than on anything real.** A period is
+seven days and a month is not four of them, so a recurrence placed on a count of periods drifts
+against the calendar it claims to be on — by a day a month and by a week a year. Money G3.a exists
+to forbid exactly that, and this item is four places that were not obeying it.
+
+**The rating fee is annual** (20.1). It was charged EVERY PERIOD: the same declared share collected
+fifty-two times a year because nothing placed it on a date. It falls now on the anniversary of the
+first opinion that assessor published about that name, read back from the journal rather than kept
+in a second book (Law 19), and the parameter says what it is — a share of the issuer's worth, a
+year. The assessor's income falls by the factor the calendar says, which is the point.
+
+**An impairment is a transition** (20.1). `credit.impaired` was recorded for every holder of every
+impaired line every period, so a reader could not tell a new impairment from an old one. It is now
+written when the line stops performing or when this holder acquires one that already had, asked
+SINCE the line's last default — a restructured line can default again, and a second default is a
+second event. What a holding is CARRYING was never an event and is a read of the register.
+
+**One walk, in the calendar** (20.1). Both sit on `crossesAnniversary(cal, epoch, months, at)`,
+which also replaced the polity's own copy of the walk: a term of parliament and a year of a rating
+are one question asked of two epochs, and the election had the only copy of the answer until the
+second caller arrived (Law 4).
+
+**Withheld weekly, spent quarterly** (20.2). Every tax was assessed every period — one periodicity
+for four different taxes, belonging to none of them. What is taken out of a wage is taken when the
+wage is paid; what households SPEND is remitted at the end of the state's own fiscal quarter, over
+every period that quarter covered, in the period after the close fell (the same one-period lag the
+weekly walk takes, because a period this phase is standing in is not one whose instructions are all
+written yet). The quarter is the state's own: `treasury.fiscalYear.endsInMonth`, the CONSTITUTION's,
+because a fiscal year is the frame a mandate is measured in rather than one of its numbers — and a
+seat-weighted average of three parties' preferred months would not be a month.
+
+**The buyback is a programme** (20.3). It was one period's order: a firm that wanted a million
+shares and was sold ten thousand wanted nothing the following week, which is a bid that happened
+once. A board now opens a `Process` — `authorised`, `buying`, and a period by which it must be over
+— and every period it stands the firm bids for what is LEFT of the authority, read as what it
+authorised less what its own holding of its own line has risen by since (Law 19: the register is the
+source; a counter beside it would be a second answer). It ends two ways and says which: `closed`
+when used up, `abandoned` when it lapses with shares unbought, naming how many. The authority runs
+for as long as that management is patient — the same `payoutPatience` that sized the payout, so no
+second number was declared for one preference (Law 2).
+
+**What was inserted rather than half-built.** 20.2a: the ASSESSMENT against what was withheld. §30
+C2's fiscal period wants a year's income assessed at the rate in force and the difference settled
+either way, which needs a per-payer record of the year's withholdings and a refund leg this world
+has no door for. That is a mechanism and not a periodicity, so it is ITEM 20a at its dependency
+position — after 20, before 21 — rather than a half of 20.2.
+
+**What could not be measured.** The consumption base is ZERO in every period of the rig and was
+before this change (verified at `5828b34`): no physical good reaches a household in a settled
+instruction, which is finding 21.84 seen from the tax side. So the quarterly remittance is placed
+and its placement is tested, and what it would collect is untested because there is nothing to
+collect. Finding 21.89 gathers three suites — `credit-events`, `ratings` and `equity` — that are red
+in full and were red before this item, all verified against the commit before it.
+
+**Marked.** Money G3 carries the one calendar read, Treasury C3 the two periodicities, Equity D2 the
+programme. `test/periodicity.test.ts` is new and seven green.
