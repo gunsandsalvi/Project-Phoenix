@@ -189,11 +189,30 @@ export interface ParamReport {
   readonly counts: Readonly<Record<ParamKind, number>>;
   readonly placeholders: readonly { id: ParamId; mechanism: string; item: string }[];
   readonly shapes: readonly ParamId[];
+  /**
+   * XI-14, §47 D5, Observer A1 (19.1): EVERY POLICY NUMBER, ITS OWNER, AND WHETHER ANYBODY HAS
+   * MOVED IT — the value beside the mandate it belongs to.
+   *
+   * A reader of this world's numbers could see WHAT a policy is and not whose it is, so a rate the
+   * central bank administers and a tax rate parliament will own read the same. They are different
+   * facts about who may change them, and after §47 they are different facts about who is
+   * ANSWERABLE for them. `set` is false where a number still stands at what the seed declared —
+   * which is what a standing mandate looks like from outside (Polity D5).
+   */
+  readonly policies: readonly {
+    id: ParamId;
+    owner: ParamOwner;
+    value: number;
+    unit: string;
+    set: boolean;
+  }[];
 }
 
 export class ParamRegister {
   private readonly decls: Map<ParamId, ParamDecl>;
   private readonly units: UnitSource | undefined;
+  /** 19.1: which policy numbers somebody has actually moved, as against standing where declared. */
+  private readonly moved = new Set<ParamId>();
 
   /**
    * The units are what a value declared as an AMOUNT is counted in. They are optional because the
@@ -304,6 +323,7 @@ export class ParamRegister {
     if (why.length === 0) throw new InvalidRegistry('Law 16', `setting ${id} has no reason`);
     const now: ParamDecl = { ...was, value: finite(value, `parameter ${id}`), why: `${was.why} ${why}` };
     this.decls.set(id, Object.freeze(now));
+    this.moved.add(id);
     return now;
   }
 
@@ -455,6 +475,7 @@ export class ParamRegister {
     };
     const placeholders: { id: ParamId; mechanism: string; item: string }[] = [];
     const shapes: ParamId[] = [];
+    const policies: ParamReport['policies'][number][] = [];
     for (const d of this.decls.values()) {
       counts[d.kind] += 1;
       if (d.kind === 'placeholder' && d.standsInFor !== undefined) {
@@ -465,7 +486,16 @@ export class ParamRegister {
         });
       }
       if (d.kind === 'shape') shapes.push(d.id);
+      if (d.kind === 'policy') {
+        policies.push({
+          id: d.id,
+          owner: d.owner,
+          value: d.value,
+          unit: d.unit,
+          set: this.moved.has(d.id),
+        });
+      }
     }
-    return { counts, placeholders, shapes };
+    return { counts, placeholders, shapes, policies };
   }
 }

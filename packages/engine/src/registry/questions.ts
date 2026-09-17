@@ -30,7 +30,7 @@ import type { Qty } from '../core/tick.js';
  * has one answer altogether, which is how "who values a contract" and "who runs the clearing
  * house's capacity" differ from "what does a household expect".
  */
-export type QuestionScope = 'partyKind' | 'instrumentKind' | 'world';
+export type QuestionScope = 'partyKind' | 'instrumentKind' | 'world' | 'mandate';
 
 export interface QuestionDecl {
   /** What it is called, and what a module names when it answers. */
@@ -259,6 +259,23 @@ export const QUESTIONS = {
     required: () => false,
     spec: 'Banks Capital C3',
     why: 'two resolvers would divide one estate twice',
+  },
+  /**
+   * XI-14, §47 D5, Polity C3 (19.1): WHO SPEAKS FOR A MANDATE — which module may move the policy
+   * numbers a given owner owns.
+   *
+   * `setByMandate` refuses a number that is not a policy and refuses a setter that is not its
+   * declared owner, and both of those are about the NUMBER. This is about the CALLER: a mandate
+   * belongs to one institution, so exactly one module may act for it, and a second module setting
+   * the same rate would be two central banks with one name (Law 4). Answered by declaration, at
+   * assembly, so a world where two modules claim one mandate does not open.
+   */
+  whoSpeaksForIt: {
+    name: 'whoSpeaksForIt',
+    scope: 'mandate',
+    required: () => false,
+    spec: 'XI-14 Polity C3',
+    why: 'two modules setting one institution’s numbers would be two institutions under one name',
   },
   /** Derivative Layer E1, D9: what a member of a clearing house may carry, and what it posts. */
   whatAMemberMayCarry: {

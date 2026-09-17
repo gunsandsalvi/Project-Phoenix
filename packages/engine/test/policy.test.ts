@@ -9,6 +9,7 @@ import {
   paramId,
   type MechanismContext,
   type SystemModule,
+  type World,
 } from '../src/index.js';
 import { POLICY_PARAMS } from '../src/mechanisms/money-market/policy.js';
 import { policyRateOf } from '../src/mechanisms/money-market/data.js';
@@ -26,6 +27,7 @@ function worldWith(probe: SystemModule) {
 
 describe('the facilities re-price at the new rate (Central Bank B2, C1–C4, 18a.2)', () => {
   it('publishes a corridor that IS the rate it set, and moves with it the period it moves', () => {
+    const held: { w?: World } = {};
     const probe: SystemModule = {
       id: 'test.corridor',
       spec: 'Central Bank B2',
@@ -44,7 +46,10 @@ describe('the facilities re-price at the new rate (Central Bank B2, C1–C4, 18a
           writes: [],
           run: (ctx: MechanismContext) => {
             if (ctx.period !== 3) return;
-            ctx.setByMandate(policyRateOf('USD'), 0.05, 'centralBank', 'a test moved it.');
+            // 19.1: a probe module does NOT hold the central bank's mandate — the money market
+            // does — so it moves the number where the mandate is not asked: on the register, which
+            // is what a test of the CORRIDOR wants. That the door refuses it is the case below.
+            held.w?.params.setByMandate(policyRateOf('USD'), 0.05, 'centralBank', 'a test moved it.');
           },
         },
       ],
@@ -52,6 +57,7 @@ describe('the facilities re-price at the new rate (Central Bank B2, C1–C4, 18a
       families: [],
     };
     const w = worldWith(probe);
+    held.w = w;
     for (let i = 0; i < 5; i += 1) w.step();
     const said = w.journal.ofKind('centralBank.corridor').filter((e) => e.data['ccy'] === 'USD');
     expect(said.length).toBeGreaterThan(1);
@@ -129,19 +135,15 @@ describe('a policy number is set by whoever owns it (XI-14, 18a.1)', () => {
           writes: [],
           run: (ctx: MechanismContext) => {
             if (ctx.period !== 2) return;
-            ctx.setByMandate(policyRateOf('USD'), 0.03, 'centralBank', 'a test moved it.');
-            // A TECHNOLOGY is a fact about the world and does not move because somebody wants it to.
+            // 19.1: THE CALLER HOLDS THE MANDATE OR IT DOES NOT SET. This module declared none, so
+            // the door refuses it even for a policy whose owner it names correctly: a mandate
+            // belongs to one institution and one module speaks for it (the money market, here).
             try {
-              ctx.setByMandate(paramId('index.base'), 1, 'centralBank', 'it should not.');
+              ctx.setByMandate(policyRateOf('USD'), 0.03, 'centralBank', 'a test moved it.');
             } catch (e) {
-              refused.push(`kind:${e instanceof Error ? 'threw' : 'no'}`);
+              refused.push(`mandate:${e instanceof Error ? 'threw' : 'no'}`);
             }
-            // And nobody sets another mandate's number.
-            try {
-              ctx.setByMandate(POLICY_PARAMS.target('USD'), 0.05, 'parliament', 'not yet, §47.');
-            } catch (e) {
-              refused.push(`owner:${e instanceof Error ? 'threw' : 'no'}`);
-            }
+
           },
         },
       ],
@@ -150,17 +152,23 @@ describe('a policy number is set by whoever owns it (XI-14, 18a.1)', () => {
     };
     const w = worldWith(probe);
     for (let i = 0; i < 4; i += 1) w.step();
-    // It moved, and it stayed moved: the register holds one value and it is the new one (Law 4).
+    // The door refused it, at the site, with a citation: a module setting a number it has no
+    // mandate for is a defect in the module and not a finding about the world.
+    expect(refused).toEqual(['mandate:threw']);
+    // And the REGISTER refuses the other two, whoever is asking. A technology is a fact about the
+    // world and does not move because somebody wants it to...
+    expect(() => {
+      w.params.setByMandate(paramId('index.base'), 1, 'centralBank', 'it should not.');
+    }).toThrow();
+    // ...and nobody sets another mandate's number: the target is PARLIAMENT's from 19.1, so the
+    // bank that acts on it cannot choose it.
+    expect(w.params.decl(POLICY_PARAMS.target('USD')).owner).toBe('parliament');
+    expect(() => {
+      w.params.setByMandate(POLICY_PARAMS.target('USD'), 0.05, 'centralBank', 'not its own.');
+    }).toThrow();
+    // What the owner may do, it does, and the value it leaves is the one the register holds.
+    w.params.setByMandate(policyRateOf('USD'), 0.03, 'centralBank', 'the owner moved it.');
     expect(w.params.perAnnum(policyRateOf('USD'))).toBeCloseTo(0.03, 12);
-    // Observer A1: a policy decision is public, with what it was and what it is.
-    const said = w.journal.ofKind('param.set').filter((e) => e.data['id'] === String(policyRateOf('USD')));
-    expect(said.length).toBe(1);
-    expect(said[0]?.public).toBe(true);
-    expect(said[0]?.data['by']).toBe('centralBank');
-    expect(Number(said[0]?.data['now'])).toBeCloseTo(0.03, 12);
-    expect(Number(said[0]?.data['was'])).not.toBe(0.03);
-    // Both refusals fired, at the site, with a citation (they are contract violations, not findings).
-    expect(refused).toEqual(['kind:threw', 'owner:threw']);
   });
 
   it('gives every central bank a target, a step and a calendar of its own, and none of them is a gain', () => {
@@ -179,10 +187,20 @@ describe('a policy number is set by whoever owns it (XI-14, 18a.1)', () => {
     });
     // B1.a: the mandate is a POLICY with an owner, and it is the rate of change of a basket.
     expect(w.params.decl(POLICY_PARAMS.target('USD')).kind).toBe('policy');
-    expect(w.params.decl(POLICY_PARAMS.target('USD')).owner).toBe('centralBank');
+    // 19.1: what the bank is AIMING AT is parliament's, and what it does about it is the bank's.
+    expect(w.params.decl(POLICY_PARAMS.target('USD')).owner).toBe('parliament');
     // B1: a STEP, which is a grain and not a coefficient — nothing multiplies a gap by anything.
     expect(w.params.perAnnum(POLICY_PARAMS.step('USD'))).toBeGreaterThan(0);
     expect(w.params.decl(POLICY_PARAMS.step('USD')).why).toContain('NOT a gain');
+    // 19.1, Observer A1: every policy number is reported with its OWNER and whether anybody has
+    // moved it — so a reader can see which numbers are a mandate's and which still stand where the
+    // seed declared them, which is what a standing mandate looks like from outside.
+    const policies = w.params.report().policies;
+    expect(policies.length).toBeGreaterThan(0);
+    expect(policies.every((p) => p.owner.length > 0 && p.unit.length > 0)).toBe(true);
+    const target = policies.find((p) => String(p.id) === String(POLICY_PARAMS.target('USD')));
+    expect(target?.owner).toBe('parliament');
+    expect(target?.set).toBe(false);
     // Money G3.a: it meets on a DATE, in months, not every nth period.
     expect(w.params.months(POLICY_PARAMS.every('USD'))).toBeGreaterThan(0);
     expect(w.params.decl(POLICY_PARAMS.every('USD')).dimension).toBe('months');

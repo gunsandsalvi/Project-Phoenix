@@ -28,7 +28,7 @@ import type {
   PartyKindProfile,
 } from '../registry/kinds.js';
 import type { DerivativeKindProfile, StruckAt } from '../registry/derivatives.js';
-import type { ParamDecl, ParamRegister } from '../registry/params.js';
+import type { ParamDecl, ParamOwner, ParamRegister } from '../registry/params.js';
 import type { NounEntry } from '../registry/nouns.js';
 import type { EventKind } from '../journal/journal.js';
 import type { AgreementKindDecl } from '../register/agreements.js';
@@ -526,6 +526,13 @@ export interface SystemModule {
    * estate leave a kind alone without knowing which kind it is (Law 15: nothing branches).
    */
   readonly resolves?: readonly PartyKindId[];
+  /**
+   * XI-14, §47 D5 (19.1): THE MANDATES THIS MODULE SPEAKS FOR — the policy owners whose numbers it
+   * may move through `ctx.setByMandate`. A mandate belongs to one institution, so exactly one
+   * module may act for it: the money market speaks for the central bank, the polity will speak for
+   * parliament, and a module that claims one somebody else has answered does not assemble.
+   */
+  readonly mandates?: readonly ParamOwner[];
   /**
    * Derivative Layer E1-E3, D9: what a member may carry and what it posts against it. Exactly one
    * module may answer, and a world with a contract market and no answer cannot be sealed.

@@ -717,7 +717,11 @@ function paramsOf(): ParamDecl[] {
         unit: 'per annum',
         dimension: 'perAnnum',
         kind: 'policy',
-        owner: 'centralBank',
+        // 19.1: PARLIAMENT'S, not the bank's. What a central bank is FOR is a decision the polity
+        // takes and the bank carries out — the bank sets the rate, and what it is aiming at is set
+        // for it. Until §47 exists nobody moves it, which is what a standing mandate is, and the
+        // bank cannot move it itself: the register refuses a setter that is not the owner.
+        owner: 'parliament',
         why: `Central Bank B1.a (18a.1): what ${r.ccy}'s mandate is FOR — the rate of change of the consumer basket the bank is trying to hold to. Two per cent a year, which is the number the institutions this world imports its primitives from actually use, and it is a POLICY: somebody chose it, it can be changed by whoever owns it, and after §47 that owner is parliament.`,
       },
       {
@@ -898,6 +902,10 @@ export const moneyMarket: SystemModule = {
   curveFamilies: [],
   units: [],
   params: paramsOf(),
+  // 19.1: it speaks for the CENTRAL BANK's mandate — its rate and its corridor — and for no other.
+  // Parliament's numbers (the target, the tax rates, the transfers) are the polity's to move, and
+  // until the polity exists nobody moves them, which is what a standing mandate IS.
+  mandates: ['centralBank'],
   phases: [
     {
       name: 'moneyMarket.rates',

@@ -2585,6 +2585,22 @@ export class World {
        * rate anybody can act on — so the event carries what it was, what it is, and why.
        */
       setByMandate: (id, value, by, why) => {
+        /**
+         * XI-14, §47 D5 (19.1): AND THE CALLER HOLDS THE MANDATE. The register refuses a number
+         * that is not a policy and a setter that is not its declared owner — both facts about the
+         * NUMBER. This is the fact about the MODULE: exactly one may act for an institution, and it
+         * says which at assembly. A second module setting the central bank's rate would be a second
+         * central bank under one name (Law 4), and a module setting parliament's numbers before the
+         * polity exists would be a mandate nobody was given.
+         */
+        const speaks = this.answers.answer<string>(QUESTIONS.whoSpeaksForIt, by);
+        if (speaks?.fn !== owner) {
+          throw new InvalidRegistry(
+            'XI-14',
+            `${owner} would set ${by}'s ${String(id)} and ${speaks === undefined ? 'nobody speaks for that mandate' : `${speaks.fn} speaks for it`}`,
+            { module: owner, mandate: by, id: String(id) },
+          );
+        }
         const was = this.params.decl(id).value;
         const now = this.params.setByMandate(id, value, by, why);
         this.journal.record(

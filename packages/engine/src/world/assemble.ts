@@ -152,6 +152,8 @@ export function assemble(spec: AssemblySpec): World {
       world.answer(QUESTIONS.whetherItMayBorrow, String(d.partyKind), m.id, d.mayBorrow);
     }
     for (const k of m.resolves ?? []) world.answer(QUESTIONS.whoResolvesIt, String(k), m.id, k);
+    // 19.1: one module per mandate, answered at assembly, so a second claimant does not open.
+    for (const o of m.mandates ?? []) world.answer(QUESTIONS.whoSpeaksForIt, o, m.id, m.id);
     for (const x of m.measures ?? []) world.answer(x.question, 'world', m.id, x.fn);
     for (const v of m.marks ?? []) {
       world.answer(QUESTIONS.whatALotIsWorth, String(v.instrumentKind), m.id, v.value);

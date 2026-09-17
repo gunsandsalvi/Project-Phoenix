@@ -269,7 +269,14 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   periods of the rig the state takes delivery of bread and CARE and pays some of it on invoices —
   building, professional and the vessel line clear nothing yet, which is the same silence 21.79 and
   21.84 report from the other side.
-- [ ] 19.1 `params.setByMandate` on one module's context; every other write throws; owner and setter printed beside every policy value; the target moves to owner `parliament`.
+- [x] 19.1 `setByMandate` is held to ONE MODULE PER MANDATE: a module declares the mandates it
+  speaks for (`SystemModule.mandates`), assembly answers `whoSpeaksForIt` once per owner and refuses
+  a second claimant, and the kernel door throws when the caller is not the one who answered. The
+  register's two refusals stand beside it (not a policy; not the declared owner), so three things
+  are checked and each names the fact it is about. Every policy number is reported with its OWNER
+  and whether anybody has MOVED it — a number still standing where the seed declared it is what a
+  standing mandate looks like from outside. The inflation TARGET is `parliament`'s now: what the
+  bank is aiming at is the polity's to choose and what it does about it is the bank's.
 - [ ] 19.2 Constitution primitives (`polity.seats`, `polity.termPeriods` by date, `polity.allotmentRule` dispatch, `polity.coalitionMaxDistance`, `polity.mandateLag`); the four tax bases (profits, interest, gains, consumption) as policy values the treasury reads.
 - [ ] 19.3 Platforms (`registry/platforms.ts`): one row per party with a value for every parliament-owned policy; assembly refuses a missing, extra or duplicate row.
 - [ ] 19.4 The vote: per cell, each platform applied to its own state at its own outlook through `withoutAggregates`; abstain when indifferent; turnout a read.
