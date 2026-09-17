@@ -18,6 +18,8 @@
  */
 import type { InstrumentId, PartyId } from '../core/ids.js';
 import { asQty, negQty, type Qty } from '../core/tick.js';
+import { says } from '../registry/facts.js';
+import { WEIGHT } from '../world/facts.js';
 import type { AuditView } from './view.js';
 
 export interface WeightMoves {
@@ -43,19 +45,21 @@ export function movedByWeightEvents(
     else held.push(qty);
   };
   for (const e of view.journal.inPeriod(view.period)) {
-    if (e.kind !== 'weight') continue;
-    const kind = e.data['kind'];
-    const to = e.data['to'];
-    const from = e.data['from'];
-    const moved = e.data['moved'];
-    if (kind === 'merge' && typeof from === 'string') vanished.add(from);
-    if (typeof moved !== 'object' || moved === null) continue;
-    for (const [instrument, qty] of Object.entries(moved as Record<string, unknown>)) {
-      if (typeof qty !== 'number') continue;
-      if (typeof to === 'string') add(to, instrument, asQty(qty, 'what arrived with the members'));
+    if (e.kind !== WEIGHT.kind) continue;
+    /**
+     * 0i: THE DECLARATION, not the bag. This read `e.data['to']` and skipped the event when it was
+     * not a string — so the merge that wrote `into` instead (21.100) was not a mismatch this could
+     * report, it was a merge that had moved nothing. Every type test here was a way to be wrong
+     * quietly; `says` throws if the fact does not match what its writer declared, and an absence is
+     * `null` because the writer said so rather than because a key was missing.
+     */
+    const said = says(e, WEIGHT);
+    if (said.kind === 'merge' && said.from !== null) vanished.add(said.from);
+    for (const [instrument, qty] of Object.entries(said.moved)) {
+      if (said.to !== null) add(said.to, instrument, asQty(qty, 'what arrived with the members'));
       // A cell that merged away keeps no book to take it off: what it held is the other one's now.
-      if (typeof from === 'string' && kind !== 'merge') {
-        add(from, instrument, negQty(asQty(qty, 'what left with the members'), 'what left'));
+      if (said.from !== null && said.kind !== 'merge') {
+        add(said.from, instrument, negQty(asQty(qty, 'what left with the members'), 'what left'));
       }
     }
   }

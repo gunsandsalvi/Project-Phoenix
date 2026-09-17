@@ -14900,3 +14900,58 @@ true; its fourth compared a `Cash` to a number with `toBe` and could never pass.
 wants a member's share of an account — every one of them (a bank's capital, a fund's NAV check, a
 cost of capital, the reporting statement, the observer) wants the party's own number — and a door
 nobody opens is not a read, it is code (Law 2).
+
+---
+
+## 0i.1 — The fact register, and the first fact declared
+
+**What.** `registry/facts.ts`: the third register. A `FactDecl` is an event kind plus its payload's
+fields, each with a `FieldKind` from a closed list, each saying what it is. `Journal.say(decl, …)`
+takes a payload TYPED by the declaration; `says(event, decl)` reads one back with its types and
+THROWS if the fact does not match what its writer declared. An undeclared kind is counted, not
+refused (`countBag`, `report`), so the measure falls item by item instead of this being a
+556-site rewrite in one change.
+
+`world/facts.ts`: the kernel's page in it, and the first fact — `WEIGHT`, one of XI-15's five ways
+a weight changes. All six writers (five in `world/cells.ts`, one in `world/world.ts`) and both
+readers (`audit/weights.ts`, `audit/families/units.ts`) go through it.
+
+**Why.** `ParamRegister` makes every declared NUMBER name its kind, its unit and its owner.
+`registry/nouns.ts` does it for CATEGORIES. Nothing did it for FACTS, and a fact is how every
+mechanism in this world reaches every other one: 227 event kinds written with a literal name and 49
+with a computed one, 496 distinct payload keys written, 122 read back by name, and **nothing
+matching a reader to a writer**. Twenty-two kinds were written at more than one site with more than
+one set of keys.
+
+**The failure mode is not a throw, it is a `continue`.** A reader that cannot parse a payload skips
+it, so a renamed key is not an error — it is an absence. That is 21.100 exactly: the merge writer
+said `into`, `audit/weights.ts` asked for `to`, and every merge in this world was reported as a
+holding that moved with no leg behind it. `test/facts.test.ts` now reproduces that payload and it
+throws.
+
+**It is the general form of what 0e′.3 did by hand.** That item made it a build failure for a
+MECHANISM to read another module's event by name, and closed it with four files of hand-written
+per-event accessors — `wages`, `banking`, `funding`, `notices`, 1,551 lines — each unpacking
+`e.data['k']` itself and each answering *nothing* when the shape does not match. And its check
+scans `mechanisms/` only: `world/`, `ledger/` and `audit/` were never covered, which is where
+21.100, 21.102 and `world.ts requestsIn` all are.
+
+**A defect the declaration surfaced on the way.** `audit/families/units.ts` counted a weight event's
+`after - before` for the events that wrote both and skipped the ones that wrote neither — the
+meaning was in an ABSENCE, and the two writers of a promotion disagreed about it (`promoteCell`
+carried them, `reKeyCell` did not). It was right by accident. It now asks what the event SAYS: the
+members left the cell population if they did not land in another cell. Same arithmetic on all five
+events, from the fact rather than from which keys happen to be there.
+
+**There are no optional fields**, which is the same rule as `?? 0` for numbers. A field that may
+have no value declares `orNone` and its writer WRITES the absence; `into` is gone with the shape
+that carried it.
+
+**Measured.** `check:opens` green; lint, typecheck, `check:spec` (581 citations) and `check:forbids`
+green. `world.test.ts` 10 red before and after; `lattice`, `formation`, `firms` and `estate` 4 red
+before and after — identical, so the slice regresses nothing. `test/facts.test.ts`: 10 new,
+green, four of which assert that a mismatch now fails loudly.
+
+**Not done, and named:** `Produces` does not yet carry the declaration, `ctx.record` is not yet
+typed, `world/order.ts` does not yet match a reader's declaration to its writer's, and the other
+seven kernel kinds and `MoneyLeg.receipt` are still bags. Steps 0i.2–0i.7.

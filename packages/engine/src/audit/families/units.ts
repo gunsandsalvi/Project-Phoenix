@@ -10,6 +10,8 @@ import { negQty, onTick } from '../../core/tick.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
 import type { AuditView } from '../view.js';
+import { says } from '../../registry/facts.js';
+import { WEIGHT } from '../../world/facts.js';
 
 export function unitsFamily(memory: AuditMemory): Family {
   return {
@@ -78,17 +80,29 @@ export function unitsFamily(memory: AuditMemory): Family {
         }
         const moved = new Map<string, number>();
         for (const e of view.journal.inPeriod(view.period)) {
-          if (e.kind !== 'weight') continue;
-          const before = e.data['before'];
-          const after = e.data['after'];
+          if (e.kind !== WEIGHT.kind) continue;
+          const said = says(e, WEIGHT);
           const who = e.subjects[0];
           if (who === undefined) continue;
-          // Entry, death and an ordinary change all name what the weight WAS and what it became;
-          // a split and a promotion move members between two cells and change no total, and say so
-          // by carrying neither. Nothing here infers a number by subtraction (Law 19).
-          if (typeof before !== 'number' || typeof after !== 'number') continue;
+          /**
+           * 0i, Law 19: WHAT THE EVENT SAYS, not which keys it happens to carry.
+           *
+           * This counted `after - before` for the events that wrote both and skipped the ones that
+           * wrote neither — so the meaning was in an ABSENCE, and the two writers of a promotion
+           * disagreed about it: `promoteCell` carried them and `reKeyCell` did not. It was right by
+           * accident. What it is actually asking is whether the members left the CELL POPULATION
+           * this sums (`now` counts cells and no named party), and the event says where they went.
+           *
+           * A split or a merge moves them between two cells and the population is unchanged; a
+           * promotion into a named party takes them out of it (a member outgrows the tier and
+           * becomes a firm); an entry or a death has nowhere they came from or went to, and moves
+           * the population by what it moved.
+           */
+          const stillACell =
+            said.to !== null && view.parties.get(said.to as never).representation === 'cell';
+          if (stillACell) continue;
           const kind = String(view.parties.get(who as never).kind);
-          moved.set(kind, zeroIfNone(moved.get(kind)) + (after - before));
+          moved.set(kind, zeroIfNone(moved.get(kind)) + (said.after - said.before));
         }
         for (const kind of new Set([...now.keys(), ...memory.people.keys()])) {
           const was = zeroIfNone(memory.people.get(kind));

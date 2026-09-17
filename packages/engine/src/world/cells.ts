@@ -18,6 +18,7 @@ import type { CellParty, Parties, WeightEventKind } from '../parties/party.js';
 import type { Register } from '../register/register.js';
 import type { Instruments } from '../register/instruments.js';
 import { succeedAgreements, type SuccessionDeps } from './succession.js';
+import { WEIGHT } from './facts.js';
 
 /** Register F2: a cell is a party, so what it owed moves with it when it ceases (`succession`). */
 export interface CellDeps extends SuccessionDeps {
@@ -134,25 +135,22 @@ export function mergeCells(
     if (i.status.live) d.instruments.reseat(i.id, a);
   }
   succeedAgreements(b, a, period, cycle, d);
-  d.journal.record(
+  // 0i: ONE declaration, so `into` cannot be written beside `to` again (21.100), and a field this
+  // event has no value for is written as an absence rather than left out.
+  d.journal.say(
     period,
     cycle,
-    'weight',
+    WEIGHT,
     [a, b],
     {
       kind: 'merge',
-      /**
-       * XI-15, Money D3 (21.100): WHERE THE BOOK WENT IS `to`, in the word every other weight event
-       * uses. This said `into`, and the flows family reads `to` — so a merge's destination was
-       * credited with nothing and every merge in this world reported as a holding that moved with
-       * no leg behind it: three landlord cells of two hundred members became one of six hundred in
-       * period 3 of the scale model, their eight billion dwellings came with them, and `Money D3`
-       * called it unexplained. One fact, one name.
-       */
       to: a,
-      into: a,
       from: b,
+      successor: null,
+      key: null,
       members: cb.weight,
+      before: ca.weight,
+      after: ca.weight + cb.weight,
       cause,
       moved: Object.fromEntries(moved),
     },
@@ -179,10 +177,10 @@ export function weightEvent(
     `${kind} of ${members} would leave ${cell} with ${after} members; a cell of nobody is nobody's`,
   );
   d.parties.applyWeight({ kind, party: cell, before: c.weight, after, period, cause });
-  d.journal.record(
+  d.journal.say(
     period,
     cycle,
-    'weight',
+    WEIGHT,
     [cell],
     {
       kind,
@@ -190,6 +188,11 @@ export function weightEvent(
       before: c.weight,
       after,
       cause,
+      from: null,
+      to: null,
+      successor: null,
+      moved: {},
+      key: null,
     },
     true,
   );
@@ -253,14 +256,25 @@ export function reKeyCell(
     period,
     cause,
   });
-  d.journal.record(
+  d.journal.say(
     period,
     cycle,
-    'weight',
+    WEIGHT,
     [cell, id],
     // 0f.6: WHAT MOVED, per instrument, so the flows family reads it as a leg's worth of
     // explanation on both sides rather than inferring a copy (Law 19).
-    { kind: 'promotion', from: cell, to: id, members, key, cause, moved: Object.fromEntries(moved) },
+    {
+      kind: 'promotion',
+      from: cell,
+      to: id,
+      successor: null,
+      key,
+      members,
+      before: c.weight,
+      after: c.weight - members,
+      cause,
+      moved: Object.fromEntries(moved),
+    },
     true,
   );
   return id;
@@ -312,12 +326,23 @@ export function ceaseCell(
   d: CellDeps,
 ): void {
   const c = d.parties.cell(cell);
-  d.journal.record(
+  d.journal.say(
     period,
     cycle,
-    'weight',
+    WEIGHT,
     [cell, successor],
-    { kind: 'death', members: c.weight, before: c.weight, after: 0, successor, cause },
+    {
+      kind: 'death',
+      members: c.weight,
+      before: c.weight,
+      after: 0,
+      successor,
+      cause,
+      from: cell,
+      to: null,
+      moved: {},
+      key: null,
+    },
     true,
   );
   // Register F2, Money E4 (12a.5): WHAT THE DEAD OWED IS THE SUCCESSOR'S TO OWE — its loan rows and
@@ -367,12 +392,23 @@ export function promoteCell(
   // A cell of nobody is nobody's (XI-15): the last member does not leave a weight of zero behind,
   // the cell ceases into the party it became, and the event says so with before and after.
   if (after > 0) d.parties.applyWeight({ kind: 'promotion', party: cell, before: c.weight, after, period, cause });
-  d.journal.record(
+  d.journal.say(
     period,
     cycle,
-    'weight',
+    WEIGHT,
     [cell, to],
-    { kind: 'promotion', from: cell, to, members, before: c.weight, after, cause, moved: Object.fromEntries(moved) },
+    {
+      kind: 'promotion',
+      from: cell,
+      to,
+      successor: null,
+      key: null,
+      members,
+      before: c.weight,
+      after,
+      cause,
+      moved: Object.fromEntries(moved),
+    },
     true,
   );
   if (after === 0) {

@@ -11,6 +11,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { isCash } from '../core/measure.js';
 import { Impossible } from '../core/errors.js';
 import type { EventId } from '../core/ids.js';
+import type { FactDecl, FactFields, Payload } from '../registry/facts.js';
 
 /** Kernel event kinds; modules add their own as `<module>.<event>`. */
 export type EventKind =
@@ -66,6 +67,24 @@ export class Journal {
    * thrown away. The events in it are the same events in the same order.
    */
   private readonly bySubject = new Map<EventKind, Map<string, Event[]>>();
+
+  /**
+   * 0i: WRITE A DECLARED FACT. The payload is typed by the declaration, so a field left out or
+   * misnamed is a compile error and not a silent `undefined` at whoever reads it later.
+   *
+   * It is a separate door from `record` only while the migration runs. When the last bag is
+   * declared, `record` is deleted and this takes its name — one door (Law 4).
+   */
+  say<F extends FactFields>(
+    period: Period,
+    cycle: Cycle,
+    decl: FactDecl<F>,
+    subjects: readonly string[],
+    says: Payload<F>,
+    isPublic: boolean,
+  ): Event {
+    return this.record(period, cycle, decl.kind, subjects, says, isPublic);
+  }
 
   record(
     period: Period,

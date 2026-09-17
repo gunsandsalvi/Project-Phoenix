@@ -14,6 +14,7 @@
 import { Audit, type AuditReport, type Family, type Reads } from '../audit/audit.js';
 import { standardFamilies } from '../audit/families/index.js';
 import { balanceSheet } from '../audit/families/accounts.js';
+import { WEIGHT } from './facts.js';
 import { type AuditMemory, emptyMemory, remember } from '../audit/memory.js';
 import type { AuditView } from '../audit/view.js';
 import {
@@ -2684,10 +2685,10 @@ export class World {
           // one weight event that brings people into a population — and it is placed on its
           // kind's lattice the moment it exists, as the seed's cells are at the seal.
           this.placeCell(party);
-          this.journal.record(
+          this.journal.say(
             this.currentPeriod,
             this.currentCycle,
-            'weight',
+            WEIGHT,
             [party.id],
             {
               kind: 'entry',
@@ -2695,6 +2696,12 @@ export class World {
               before: 0,
               after: party.weight,
               cause: 'entered',
+              // An entry came from nobody and became nobody: the absence is written (Appendix A).
+              from: null,
+              to: null,
+              successor: null,
+              moved: {},
+              key: null,
             },
             true,
           );

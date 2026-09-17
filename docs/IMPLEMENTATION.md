@@ -271,6 +271,7 @@ first rung), to produce four curves that do not change within the period.
 | 19 | The polity — **done** (section removed; see `docs/RECORD.md`; a parliament the households elect, a mandate that moves the numbers it owns at a lag, a scope that says which power each of those numbers is, a law of late payment, and polls published late and read by nobody. Polity went from an ABSENT SECTOR to 28 of 32 clauses MET; findings 21.85 and 21.86 at 23.3, 21.87 and 21.88 at 21) | after 18a |
 | 20 | Periodicity — **done** (section removed; see `docs/RECORD.md`; a rating fee once a year on the anniversary of the first opinion, an impairment once per default, the spending tax remitted on the state's own fiscal quarter, and a buyback that is a programme with an authority and a closing period. One calendar read, `crossesAnniversary`, replaces the polity's copy of the walk. 20.2a inserted; finding 21.89) | after 19 |
 | 20a | The annual assessment against what was withheld — **done** (section removed; see `docs/RECORD.md`; the year's bases from the SAME walk the week's withholding runs, what was taken read off the ledger, and the difference settled both ways; finding 21.94) | after 20 |
+| 0i | **Facts are declared** — the third register | FIRST, before 21: most of 21's open findings are instances of it, and it is what makes a mechanism that never runs impossible to miss |
 | 21 | The local repairs | each when its file is open |
 | 22 | The recipe | recipes plural; batches; upkeep |
 | 22a | The opening is not an equilibrium — **absorbed by 22b**, whose steps delete the same doors from the other side | superseded |
@@ -312,6 +313,136 @@ engine rather than local edits.
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
+
+---
+
+## 0i. Facts are declared — the third register
+
+**Inserted before 21** (Law 10: at its dependency position, not appended). It depends on nothing
+open. Several of 21's findings are instances of it and close with it, and every item after it is
+verifiable in a way no item before it was — which is the argument 0h was placed on.
+
+### The cause, measured
+
+`ParamRegister` makes every declared NUMBER name its kind, its unit and its owner, and the build
+fails if one does not. `registry/nouns.ts` does the same for CATEGORIES, and says in its own
+docstring why it had to exist: *"is there a noun for this?" had no lookup — it had a search, and a
+search finds only what somebody already tried to build.*
+
+**There is no equivalent for FACTS, and facts are how every mechanism in this world reaches every
+other one.** Measured over `packages/engine/src` with the compiler, not a regex:
+
+| | |
+|---|---|
+| event kinds written with a literal name | 227 |
+| `record()` calls whose kind is not a literal | 49 |
+| distinct payload keys written | 496 |
+| distinct payload keys read by name (`e.data['k']`) | 122 |
+| kinds written at more than one site whose sites DISAGREE about the keys | 22 |
+| money legs naming a receipt | 30 |
+| **money legs naming NO receipt** | **49** |
+
+A payload is `Record<string, unknown>`. A writer may name any key; a reader may ask for any key;
+**nothing matches them, and a mismatch is not an error.** I wrote two tools to find the unmatched
+pairs and both were wrong on the first case I hand-checked — if a tool written for the job cannot
+decide it, neither can a reviewer and neither can the build.
+
+**The failure mode is not a throw, it is a `continue`.** `world.ts requestsIn` rebuilds a
+`CreditRequest` out of nine string keys and skips the request if any one of them is missing or the
+wrong type. A borrower whose ask does not parse is silently not in the lending market: no error, no
+finding, no red test — a world that looks like a world where nobody wanted to borrow. That is the
+shape of 21.58 (*116 funding needs, 539 credit quotes, zero bonds offered*), and it is why the
+liveness family had to be invented at 0h.3 — thirteen modules that never ran while every safety
+check passed.
+
+**And absent-means-something is the same defect with an optional field instead of a string key.**
+`MoneyLeg.receipt` is optional and its docstring says *"Absent is unclassified, never income"* —
+optional-means-unset, on the tax base, at 49 of 79 sites. 21.105 was one of those 49 and was found
+by accident: every fund payout ever made reached a household as `unclassified` and was **taxed as
+nothing**. The engine forbids `?? 0` for numbers; this is the same rule and facts are not covered by
+it.
+
+**Why this is not three findings.** 21.100 (`into` vs `to` on a weight event, so every merge in the
+world reported as an unexplained holding move), 21.102 (a `moved` map only one family knew how to
+read), 21.105 (the missing receipt) and the whole *"a mechanism that never runs"* class are one
+cause with three faces. Fixing them one at a time is what the last several items did; it leaves the
+next one to be found by accident.
+
+### This is the general form of what 0e′.3 did by hand
+
+**0e′.3 fixed WHO may read a fact. Nothing has ever fixed WHAT A FACT IS.** That item made it a
+build failure for a mechanism to read another module's event by name — 52 pairs over 31 kinds, and
+the baseline is empty, so it is a plain FORBID now. It is the right rule and it stays.
+
+But the fix it was closed with was FOUR FILES OF HAND-WRITTEN ACCESSORS, one function per event:
+`registry/wages.ts`, `registry/banking.ts`, `registry/funding.ts`, `registry/notices.ts` —
+**1,551 lines**. Each function unpacks `e.data['k']` itself and decides the shape by hand, and each
+one answers NOTHING when the shape does not match:
+
+```ts
+const portfolio = said.data['portfolio'];
+const equity = said.data['equity'];
+if (typeof portfolio !== 'number' || typeof equity !== 'number' || equity <= 0) {
+  return none<PrimeLine>();
+}
+```
+
+A broker that publishes a line under a renamed key has a client with **no line** — silently, in the
+file that was supposed to be the fix. One declaration is what those four files are each a hand-made
+instance of: generalise instead of duplicate.
+
+**And the forbid never covered the kernel or the audit.** `check-forbids` scans `mechanisms/` only.
+`world/`, `ledger/` and `audit/` read payloads by name freely — and every defect this week was in
+that uncovered region: 21.100 in `audit/weights.ts`, 21.102 in the audit families, `requestsIn` in
+`world/world.ts`. The place where a mismatch turns into a false statement about the economy is
+precisely the place the rule does not reach.
+
+### The change
+
+A fact is declared ONCE, by the phase that writes it, and every reader is checked against that
+declaration. No new contact point: phases already declare the event kinds they read (`Dependency`)
+and write (`Produces`), and `world/order.ts` already matches them at assembly and refuses a
+`thisPeriod` read no phase writes. What is missing is only the PAYLOAD, so it hangs on the
+declaration that is already there.
+
+- [x] 0i.1 `registry/facts.ts`: the register. A `FactDecl` is an event kind plus its payload's
+  fields, each a `FieldKind` from a closed list (`party | instrument | money | count | ratio |
+  period | text | flag | eventRef | list`). It carries the owner, stamped at assembly like a param's
+  (Law 4). It is to facts what `params` is to numbers and `nouns` is to categories, and it says so.
+  An undeclared kind is COUNTED, not refused — `nouns`' own construction — so the count of
+  undeclared kinds is the honest measure and falls item by item instead of this being a 556-site
+  rewrite.
+- [ ] 0i.2 `world/module.ts`: `Produces` carries the `FactDecl`; `Dependency` names the kind it
+  reads as it already does. `ctx.record(decl, subjects, payload)` takes the payload TYPED by the
+  declaration, so a missing or misnamed field is a compile error rather than a silent `undefined`.
+  **Delete** names the read that replaces it: `Record<string, unknown>` leaves the door.
+- [ ] 0i.3 `world/order.ts`: two checks on the map assembly already builds — a kind written by two
+  phases is ONE declaration (the 22 kinds whose sites disagree), and a declared read of a kind with
+  a declared writer agrees with it. Both name the two sites.
+- [ ] 0i.4 The kernel's own kinds first, because a mismatch in these is what becomes an economic
+  finding: ~~`weight` (5 shapes over 6 sites)~~ **done — the first slice, end to end**; `print`,
+  `revaluation`, `instruction.settled`, `party.ceased`, `instrument.split`, `credit.request`,
+  `disclosed`. Every `e.data['k']` in
+  `world/`, `audit/` and `ledger/` goes through the declaration. **`requestsIn` stops skipping what
+  does not parse**: an ask that is not an ask is a `PhoenixError` at the writer, not a borrower
+  quietly dropped from the market.
+- [ ] 0i.5 `ledger/instruction.ts`: `MoneyLeg.receipt` is REQUIRED. `Receipt` gains the case for
+  money that genuinely classifies as nothing, so a writer must SAY that rather than leave it out;
+  the 49 silent sites each say what their money is. **Delete** the sentence *"Absent is
+  unclassified, never income"* and the branch behind it.
+- [ ] 0i.6 `tools/check-forbids.ts` — EXTENDED, not joined by a rival: the cross-module read check
+  already walks every source file and already knows which kinds are written where. It gains the
+  count of undeclared kinds, of readers not matched to a declaration, and of money legs — by then
+  zero — with no receipt; ratcheted and may only fall, like the baseline beside it. *A rule that can
+  be a check should be one*, and a second checker of the same subject is the duplication this item
+  is about.
+- [ ] 0i.7 Tests: a writer omitting a declared field does not compile (a type test); two phases
+  declaring one kind differently are refused at assembly, naming both; a reader of an undeclared
+  kind throws at the read; a money leg with no receipt does not compile; and the rig's `flows`
+  family reports nothing it reported before for want of a key.
+
+**Exit.** `npm run check` green; the undeclared-kind count published and falling; 21.100, 21.102 and
+21.105 closed BY CONSTRUCTION rather than by repair, and said so in the record.
 
 ---
 
