@@ -45,7 +45,7 @@ import { none, some } from '../../core/option.js';
 import { about } from '../../world/context.js';
 import { CENT_TICK, HECTARES_PER_KM2 } from '../../registry/grid.js';
 import { asQty, downTick, type Qty } from '../../core/tick.js';
-import { type InstrumentId, type PartyId, type RegionId } from '../../core/ids.js';
+import { type InstrumentId, type MarketId, type PartyId, type RegionId } from '../../core/ids.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { shareOf, tilesOf } from '../../registry/geography.js';
 import { groundUnder, isPlant, plantTerms } from '../../registry/physical.js';
@@ -214,6 +214,18 @@ export function land(): SystemModule {
          * the kind and never off its name (Law 15).
          */
         partyKind: LOCAL_AUTHORITY,
+        /**
+         * Law 18, Clearing B2 (0g.8): THE GROUND IN ITS OWN PLACE, which is the one book it sells
+         * in — the same first line `authorityOrders` opens with, read here instead of discovered
+         * once per book. Measured at period 8 of the (24, 96) rung: 2,424 asked, 6 posted.
+         */
+        markets: (view: ParticipantView): readonly MarketId[] => {
+          if (view.objectiveOf(view.self.id) !== 'itsOffice') return [];
+          const ground = landId(view.self.region);
+          if (!view.instruments.has(ground)) return [];
+          const book = view.instruments.get(ground).market;
+          return book.some ? [book.value] : [];
+        },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
           view.objectiveOf(view.self.id) === 'itsOffice' ? authorityOrders(view, m) : [],
       },

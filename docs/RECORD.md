@@ -15573,3 +15573,60 @@ cost is never the walk, it is the number of askers, and it is invisible on a run
 not happen to include the book being asked about. The (24, 96) rung is not a scale model of the
 four-country world, and 0g.16's "the ladder per step at three scales" should be reading the abroad
 world too.
+
+---
+
+## 0g.8, continued — seven doors, and the measurement that says a door is not a yes/no
+
+**What the narrowing is.** A market or venue session asks every party of a kind whether it has an
+order in it. `ParticipantDecl.markets` and `VenueParticipantDecl.venues` let the module that owns the
+party say which books it could be in at all, and the kernel indexes the answer per period.
+
+**Measured per declaration, at period 8 of the (24, 96) rung — asked against posted:**
+
+| declaration | asked | posted | door |
+|---|---|---|---|
+| `derivative-layer/firm` [market] | 82,678 | 13,083 | yes |
+| `supply/firm` [venue] | 39,204 | **10** | yes |
+| `short-term-debt/firm` [market] | 20,230 | 9,240 | yes |
+| `estate/estate` [market] | 22,624 | 93 | no → **yes** |
+| `funds/fund` [market] | 9,696 | 12 | no |
+| `households/household` [venue] | 9,052 | 1,040 | no → **yes** |
+| `housing/household` [venue] | 9,052 | 6 | no → **yes** |
+| `housing/household` [market] | 7,676 | **0** | no → **yes** |
+| `funds/fundManager` [venue] | 3,680 | 1 | no → **yes** |
+| `land/localAuthority` [market] | 2,424 | 6 | no → **yes** |
+| `banks/bank` (five declarations) | 4,376 | 20 | no |
+| `treasury`, `central-bank-omo`, `spot-fx` ×2, `property/landlord` | ~1,200 | 5 | no |
+
+**Seven doored, and every one of them is a sentence the function's own opening lines already say.**
+An estate sells in the books of what it is HOLDING — `estateAsk` opens on
+`view.quantity(m.instrument)` and returns nothing where there is none, so the register already knew.
+A household and a landlord buy upkeep in the one book the dwelling's own declared upkeep part trades
+in; they let in the lettings venue of their own place; a cell's people work in the labour venues of
+their own place; a manager hires in the investing trade of its own place; an authority sells the
+ground of its own place. Each door is a READ of what `orders` decides from (Law 19), so a book it
+names and a book it posts in cannot disagree.
+
+`housing/household` [market] is the one worth naming twice: **7,676 asks a period and it posted
+nothing at all.** A whole declaration asking the world about every book in order to buy in none of
+them.
+
+**217,921 → 163,736 evaluations; 70,656 → 15,284 from an undoored declaration.** (12, 48) at 26
+periods 276 → 275 ms/period; (24, 96) **838 → 809**, order generation 162 → 147 ms. Every shape
+figure byte-identical (parties 141, cells 42, people 228, small 521, events 110,625, sessions 60,
+audit 13,616, money/member 23,787,064, wage/h 1591.08); both censuses identical.
+
+**A DOOR IS NOT A YES/NO, and that is the finding this pass adds.** The two biggest asks in the
+engine both HAVE doors: `supply/firm` narrows to 39,204 venue evaluations and posts 10 orders;
+`derivative-layer/firm` narrows to 82,678 and posts 13,083. A door is only as narrow as the read
+behind it, so "every declaration has one" is not the exit condition — `asked` against `posted` is,
+and it is now measured per declaration so the next pass starts from the number.
+
+**Why the step is not closed.** `funds/fund` is 63% of what remains, and its `orders` branches three
+ways on the mandate (tracks an index, holds things, or chooses), so its door must be a superset of
+all three. The door's own contract is that *"what `markets` leaves out must be what `orders` returns
+nothing in"* — a door written without reading all three branches silently loses orders somebody
+would have posted, which is worse than the cost it saves. It wants the funds module open, which is
+where 21.109's pool equity is going anyway. And `markets`/`venues` MANDATORY is the guard that lands
+with the LAST door, not before: assembly would refuse this world today, which is the point of it.

@@ -60,6 +60,7 @@ import {
   partyId,
   type InstrumentId,
   type MarketId,
+  type VenueId,
   type PartyId,
 } from '../../core/ids.js';
 import {
@@ -703,6 +704,19 @@ function publishSectorIncome(ctx: MechanismContext): void {
  * state), and the venue applies those to what it gathers — a market deciding who is in its book is
  * the market's business, and deciding what a seller will accept is not.
  */
+/** Clearing B2, Law 19 (0g.8): where this cell's people could work — `willWork`'s own opening. */
+function labourVenues(view: ParticipantView): readonly VenueId[] {
+  const self = view.self;
+  if (self.representation !== 'cell' || !self.status.alive) return [];
+  const mine: VenueId[] = [];
+  for (const v of view.venues) {
+    if (v.clearedBy !== 'labour') continue;
+    if (v.key['region'] !== String(self.region)) continue;
+    mine.push(v.id);
+  }
+  return mine;
+}
+
 function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   if (venue.clearedBy !== 'labour') return [];
   const self = view.self;
@@ -881,7 +895,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // Clearing B2, Labour B1, `A-43` (item 9.6): WHAT THIS CELL WILL WORK FOR, decided by the
     // module that owns it and posted through the door `gather` is — the last venue in the engine
     // whose sellers' schedules were built by the buyers' market.
-    venueParticipants: [{ partyKind: HOUSEHOLD, orders: willWork }],
+    /**
+     * Law 18, Clearing B2 (0g.8): THE LABOUR VENUES OF ITS OWN PLACE — `willWork`'s own first three
+     * tests, asked of the venue list once rather than discovered venue by venue. Measured at period
+     * 8 of the (24, 96) rung: 9,052 asked, 1,040 posted.
+     */
+    venueParticipants: [{ partyKind: HOUSEHOLD, venues: labourVenues, orders: willWork }],
     participants: [
       {
         partyKind: HOUSEHOLD,

@@ -476,20 +476,56 @@ say where the categories are:
   110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both censuses
   identical.
 
-- [ ] 0g.8 **The narrowing — first three done, and the venue half of the door built.** A session
-  asks every party of a kind whether it has an order in it, and the answer is almost always no.
-  **Measured, one period of the (12, 48) rung:** market-side evaluations 166,953, of which 129,256
-  (77%) were ONE declaration that named no markets — `short-term-debt`'s cash investor, every firm
-  and bank asked about all 428 books to answer a question about commercial paper. Venue-side 460,590,
-  of which 442,260 were TWO declarations — `supply/firm` and `property/firm`, 221,130 each, every
-  firm asked about all 472 venues to be told it is not in that region. **`VenueParticipantDecl` had
-  no narrowing door at all**; it has `venues` now, the same door `ParticipantDecl.markets` is, with
-  the same per-period index in the kernel (`askedInVenue`). The three declarations name what their
-  own `orders` already decided in its first two lines, so the orders are the same orders.
-  627,543 → 44,000 evaluations; 1,923 → 1,600 ms/period; every census figure byte-identical.
-  **What is left of the step:** `markets` and `venues` MANDATORY (assembly refuses a declaration
-  with neither it nor `everyone`), which is what stops the next one being written without them;
-  `central-bank-omo` names sovereign lines; `market.noView` one event per period.
+- [ ] 0g.8 **The narrowing — ten declarations doored, twelve to go, and the count is now
+  measured per declaration.** A session asks every party of a kind whether it has an order in it,
+  and the answer is almost always no. **Measured at period 8 of the (24, 96) rung, per declaration,
+  asked against posted:**
+
+  | declaration | asked | posted | door |
+  |---|---|---|---|
+  | `derivative-layer/firm` [market] | 82,678 | 13,083 | yes |
+  | `supply/firm` [venue] | 39,204 | **10** | yes |
+  | `short-term-debt/firm` [market] | 20,230 | 9,240 | yes |
+  | `funds/fund` [market] | **9,696** | **12** | **no** |
+  | `banks/bank` [venue] ×3 | 2,760 | 8 | **no** |
+  | `banks/bank` [market] ×2 | 1,616 | 12 | **no** |
+  | `treasury/treasury` [market] | 404 | 5 | **no** |
+  | `central-bank-omo/centralBank` [market] | 404 | **0** | **no** |
+
+  **Seven doored this pass, all seven a READ of what `orders` already decides from** (Law 19), and
+  every one of them the same sentence the function's own opening lines say: `estate` sells in the
+  books of what it is HOLDING (22,624 asked, 93 posted); `housing/household` and
+  `housing/landlord` buy upkeep in the one book the dwelling's own declared upkeep part trades in
+  (7,676 asked, **nothing posted** — a whole declaration asking the world about every book to buy
+  in none of them); the same two let in the lettings venue of their own place (9,052 asked, 6
+  posted); a household's people work in the labour venues of their own place (9,052 asked, 1,040
+  posted); a fund manager hires in the investing trade of its own place (3,680 asked, 1 posted);
+  a local authority sells the ground of its own place (2,424 asked, 6 posted).
+  **217,921 → 163,736 evaluations; 70,656 → 15,284 of them from an undoored declaration.**
+  (12, 48) at 26 periods **276 → 275 ms/period**; (24, 96) **838 → 809**, order generation
+  162 → 147 ms. Every shape figure byte-identical (parties 141, cells 42, people 228, small 521,
+  events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h 1591.08); both
+  censuses identical.
+  **What is left, and why it is not done here.** `funds/fund` is 63% of what remains and its
+  `orders` branches three ways on the mandate (tracks an index / holds things / chooses), so its
+  door has to be a superset of all three — and this door's own contract is that *"what `markets`
+  leaves out must be what `orders` returns nothing in"*, so a door written without reading all
+  three branches silently loses orders somebody would have posted. It wants the funds module open,
+  which is where 21.109's pool equity is going anyway. Then `banks` (five declarations, 4,376
+  asked, 20 posted), `treasury`, `central-bank-omo` (404 asked, **0 posted** — and its own item
+  below is to name sovereign lines), `spot-fx` ×2 and `property/landlord`.
+  **And the two doors that EXIST are the two biggest asks**, which is the other half of the finding:
+  `supply/firm` narrows to 39,204 and posts 10, `derivative-layer/firm` to 82,678 and posts 13,083.
+  A door is not a yes/no — it is as wide as its read, and the narrowing is not finished when every
+  declaration has one.
+  **Still to do:** `markets`/`venues` MANDATORY (assembly refuses a declaration with neither it nor
+  `everyone`) — which is the guard that lands with the last door and cannot land before it, because
+  assembly would refuse the world; `central-bank-omo` names sovereign lines; `market.noView` one
+  event per period.
+  (Done earlier at 0g.8: `VenueParticipantDecl.venues` built — the venue side had no door at all —
+  with the kernel's per-period `askedInVenue` index, and three declarations narrowed:
+  627,543 → 44,000 evaluations, 1,923 → 1,600 ms/period.)
+
 - [ ] 0g.9 Solver: sort once, sweep with running sums; outcomes byte-identical on a fixed book.
 - [ ] 0g.10 Derivatives: `marginCalls` over pairs; `valueTo` memoised per (contract, period); `requirement` per (poster, holder, ccy, period); capacity per (party, ccy, period) decremented within the session.
 - [ ] 0g.11 Columnar state behind the read faces: an interning table gives parties, instruments, units and currencies dense integers at registration; holdings as CSR typed arrays with lots in a side array; equity, weights, `latest` prints, the period index as typed arrays; `RegisterReads`, `PriceStore`, `Parties` keep string-keyed signatures.

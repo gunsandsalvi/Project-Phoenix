@@ -61,9 +61,11 @@ import {
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
+import type { VenueId } from '../../core/ids.js';
 import {
   agreementKindId,
   type AgreementId,
+  type MarketId,
   unitId,
   type PartyId,
   type RegionId,
@@ -231,6 +233,23 @@ function goodUnitOf(view: Pick<ParticipantView, 'instruments'>, region: RegionId
  * It bids what it EXPECTS TO PAY, on the same ladder every other holder buys its upkeep on: what a
  * plank is worth to it is the roof it keeps, and nothing in this world prices that yet.
  */
+/**
+ * Clearing B2, Law 19 (0g.8): the book the upkeep part trades in, read off the same three facts
+ * `upkeepOrders` opens with — the dwelling of this region, its declared upkeep, and that part's own
+ * market. A dwelling kind with no upkeep buys nothing anywhere, which is an answer and not an
+ * absence.
+ */
+function upkeepMarkets(view: ParticipantView): readonly MarketId[] {
+  const roof = goodId(DWELLING, view.self.region);
+  if (!view.instruments.has(roof)) return [];
+  const keep = goodTerms(view.instruments.get(roof)).upkeep;
+  if (keep === null) return [];
+  const part = goodId(keep.subUnit, view.self.region);
+  if (!view.instruments.has(part)) return [];
+  const book = view.instruments.get(part).market;
+  return book.some ? [book.value] : [];
+}
+
 function upkeepOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const roof = goodId(DWELLING, view.self.region);
   if (!view.instruments.has(roof)) return [];
@@ -405,6 +424,20 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): PerPie
 }
 
 /** Clearing B2: what a party has to say in the venue for the place it is in. */
+/**
+ * Clearing B2, Law 19 (0g.8): the lettings venues of this party's own place — `ordersOf`'s own
+ * first two tests, asked of the venue list once rather than discovered venue by venue.
+ */
+function lettingVenues(view: ParticipantView): readonly VenueId[] {
+  const mine: VenueId[] = [];
+  for (const v of view.venues) {
+    if (v.clearedBy !== 'housing') continue;
+    if (v.key['region'] !== String(view.self.region)) continue;
+    mine.push(v.id);
+  }
+  return mine;
+}
+
 function ordersOf(
   view: ParticipantView,
   venue: VenueDecl,
@@ -1142,18 +1175,31 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       // Housing A5 (17e.2b): whoever holds a roof buys what keeps it on — a household that owns the
       // one it lives in and a landlord that owns the ones it lets, by the same read, because what a
       // dwelling eats is a fact about the dwelling and not about who holds it (Law 15).
-      { partyKind: HOUSEHOLD, orders: (view, m) => upkeepOrders(view, m) },
-      { partyKind: LANDLORD, orders: (view, m) => upkeepOrders(view, m) },
+      /**
+       * Law 18, Clearing B2 (0g.8): THE ONE BOOK UPKEEP IS BOUGHT IN — the part a dwelling in this
+       * region wears out, which is the market `upkeepOrders` tests for in its own fourth line. It
+       * was asked of every book in the world: measured at period 8 of the (24, 96) rung, 7,676
+       * asked and NOTHING posted.
+       */
+      { partyKind: HOUSEHOLD, markets: upkeepMarkets, orders: (view, m) => upkeepOrders(view, m) },
+      { partyKind: LANDLORD, markets: upkeepMarkets, orders: (view, m) => upkeepOrders(view, m) },
     ],
     // A3, Clearing B2: whoever owns a roof may let it and whoever needs one may take it, by the same
     // reads. A landlord (15.3) is in the book as an owner with nobody of its own to house.
     venueParticipants: [
+      /**
+       * Law 18, Clearing B2 (0g.8): THE LETTINGS BOOK OF ITS OWN PLACE — the same two lines
+       * `ordersOf` opens with (`clearedBy` and the region), read once instead of once per venue.
+       * Measured at period 8 of the (24, 96) rung: 9,052 asked, 6 posted.
+       */
       {
         partyKind: HOUSEHOLD,
+        venues: lettingVenues,
         orders: (view, venue) => ordersOf(view, venue, rows),
       },
       {
         partyKind: LANDLORD,
+        venues: lettingVenues,
         orders: (view, venue) => ordersOf(view, venue, rows),
       },
     ],

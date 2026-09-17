@@ -38,7 +38,7 @@ import { atMostCash, noCash } from '../../core/measure.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { paramId, partyId, type ParamId, type PartyId } from '../../core/ids.js';
+import { paramId, partyId, type ParamId, type PartyId, type VenueId } from '../../core/ids.js';
 import {
   asAmount,
   asRatio,
@@ -129,6 +129,21 @@ export const staffVenue = (view: ParticipantView): VenueDecl | undefined =>
  * sheds the difference at its own cost (Labour C3), which is how an asset manager shrinks without
  * anybody writing a rule for it.
  */
+/**
+ * Law 18, Clearing B2 (0g.8): the investing trade in its own place, which is the only venue a
+ * manager hires in — `staffOrders`'s own first two tests, read once instead of once per venue.
+ * Measured at period 8 of the (24, 96) rung: 3,680 asked, 1 posted.
+ */
+export function staffVenues(view: ParticipantView): readonly VenueId[] {
+  const mine: VenueId[] = [];
+  for (const v of view.venues) {
+    if (v.key['occupation'] !== INVESTING) continue;
+    if (v.key['region'] !== String(view.self.region)) continue;
+    mine.push(v.id);
+  }
+  return mine;
+}
+
 export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   if (venue.key['occupation'] !== INVESTING) return [];
   if (venue.key['region'] !== String(view.self.region)) return [];

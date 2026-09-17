@@ -27,7 +27,7 @@
 import { type Cash, asPerPiece, asRatio, heldAsMoney, over } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
-import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { paramId, partyId, partyKindId } from '../../core/ids.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import type { Process } from '../../register/processes.js';
@@ -760,6 +760,23 @@ export const estate: SystemModule = {
   participants: [
     {
       partyKind: ESTATE,
+      /**
+       * Law 18, Clearing B2 (0g.8): THE BOOKS OF WHAT IT IS HOLDING, which is all an estate sells
+       * in — `estateAsk` opens on `view.quantity(m.instrument)` and returns nothing where there is
+       * none, so the register already knows the answer. An estate with nothing left is in no book,
+       * and a world's estates were asked about every book in it: measured at period 8 of the
+       * (24, 96) rung, 22,624 asked and 93 posted.
+       */
+      markets: (view: ParticipantView): readonly MarketId[] => {
+        if (!view.lastOwn('estate.opened').some) return [];
+        const books: MarketId[] = [];
+        for (const h of view.holdings()) {
+          if (view.quantity(h.instrument) <= 0) continue;
+          const book = view.instruments.get(h.instrument).market;
+          if (book.some) books.push(book.value);
+        }
+        return books;
+      },
       orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
         const opened = view.lastOwn('estate.opened');
         if (!opened.some) return [];

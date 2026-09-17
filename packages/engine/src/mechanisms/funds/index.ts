@@ -97,6 +97,7 @@ import {
   type Notice,
   noticeToGive,
   staffOrders,
+  staffVenues,
 } from './manager.js';
 import {
   ACCREDITED_WEALTH,
@@ -2786,7 +2787,7 @@ export function funds(
     // Labour A1, A3, D1, item 10e.4: a manager wants the hours its pools take, in the `analysis`
     // trade, at what an hour is worth to it - and it is matched by the same rule as a bank or a
     // baker. Until this existed the trade had a venue in every region and NOBODY on the bid side.
-    venueParticipants: [{ partyKind: FUND_MANAGER, orders: staffOrders }],
+    venueParticipants: [{ partyKind: FUND_MANAGER, venues: staffVenues, orders: staffOrders }],
     participants: [
       {
         partyKind: FUND,
