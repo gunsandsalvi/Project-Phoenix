@@ -428,12 +428,15 @@ Each when its file is open for another item; file:line and the change.
 
 ## 22a. The opening is not an equilibrium
 
-**See `docs/OPENING.md` (proposal, at `2ec6b4c`).** It argues that the steps below are the right
-demands arrived at from the wrong side: the opening's defect is not only that it CLAIMS too much but
-that it is a stock with no history behind it — the seed settles nothing, so at period 0 no party has
-observed anything and no party has an outlook, which is why so much of this world is silent. The
-proposal's items 22b.1–22b.7 absorb most of what is below; this section stands until the owner
-decides between them.
+**See `docs/OPENING.md` (proposal, second draft).** Measured at the opening: 135 living parties,
+**0 with an outlook of anything**, an **empty ledger**, and **132 markets already carrying a price**
+that nothing traded to produce — and 101 parties left twelve periods later. The proposal separates
+the three jobs "seeding" is doing at once (consistency, which this world already does well; history,
+which it has none of; and liveness, which consistency cannot see), reads how six other fields solve
+each, and proposes THE CHRONICLE: a world is drawn, lives a past through ordinary settlement, is
+accepted or rejected against a census of named properties with a logged reason, and is then saved as
+an artifact that runs open from. Its items 22b.1–22b.9 absorb most of what is below; this section
+stands until the owner decides between them.
 
 - [ ] 22a.1 Delete `prices.write` from `SeedContext`; delete `seed.openingPrice.*`, `seed.openingYield`, `seed.openingRate`. Opening holdings at cost; the first sessions print from posted reasons (sellers from cost plus required return; buyers from their own outlook of worth); `markOf` is `none` until a print; `rateInForce` for an untraded pair is `none`.
 - [ ] 22a.2 Delete `PUBLIC_AT_THE_OPENING`; flotation is 10f's decision over the first year.
