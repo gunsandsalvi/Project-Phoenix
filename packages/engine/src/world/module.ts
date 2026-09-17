@@ -72,7 +72,26 @@ export type KernelPhase = 'corporateActions' | 'markets' | 'revaluation';
  * `thisPeriod` says the writer must already have run, and is the only thing that is an edge.
  */
 export type Dependency =
-  | { readonly kind: 'event'; readonly name: EventKind; readonly of: When }
+  | {
+      readonly kind: 'event';
+      readonly name: EventKind;
+      readonly of: When;
+      /**
+       * Law 10, Law 15 (21.95): **IF THIS WORLD PRODUCES IT AT ALL.** A `thisPeriod` read is an
+       * ORDERING EDGE, and an edge to a phase no module in this world declares is a declaration
+       * that cannot be satisfied — so assembly refuses it, rightly.
+       *
+       * But some reads are of a thing a world may simply not have. The central bank records the
+       * WEATHER beside the rate it set, because a cold winter's fuel prints are not the price level
+       * moving; a world with no environment module has no weather, and the bank sets the same rate
+       * without it. Declaring that as a hard edge made a world without weather unable to have a
+       * monetary policy — 144 of this suite's 353 failures, every one of them at assembly.
+       *
+       * So: order me after it WHERE IT EXISTS, and require nothing where it does not. It is not a
+       * softer edge — where the writer exists the edge is exactly as hard as any other.
+       */
+      readonly ifWritten?: true;
+    }
   | { readonly kind: 'print'; readonly of: When };
 
 /**

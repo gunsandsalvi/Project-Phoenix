@@ -70,6 +70,8 @@ export function refuseLateReads(order: readonly Placed[]): void {
         continue;
       }
       const ws = writers.get(r.name);
+      // 21.95: a read declared `ifWritten` orders against a writer that EXISTS and asks for none.
+      if (ws === undefined && r.ifWritten === true) continue;
       forbid(
         ws !== undefined,
         'Law 10',

@@ -311,6 +311,18 @@ engine rather than local edits.
 
 Each when its file is open for another item; file:line and the change.
 
+- [x] 21.95 `world/module.ts`, `world/order.ts`, `mechanisms/money-market/index.ts` (21, the first
+  cause the suite's 353 reds were grouped by): **144 OF THEM WERE ONE LINE.** `moneyMarket.policy`
+  declared a `thisPeriod` read of `environment.state`, which is an ORDERING EDGE and therefore a
+  requirement, and every trimmed world that has a money market and no weather refused to assemble:
+  `[Law 10] phase moneyMarket.policy needs environment.state of this period and no phase writes it`.
+  What the phase actually does with the weather is RECORD it beside the rate it set (12d.3 — a cold
+  winter's fuel prints are not the price level moving), and `policy.ts` already answers for an
+  absent reading. So the declaration said something false: that a world cannot have a monetary
+  policy unless it has weather. `Dependency` gains `ifWritten`, which orders the phase after the
+  writer WHERE ONE EXISTS and requires nothing where none does — not a softer edge, the same edge
+  wherever there is something to be ordered against. `loans.test.ts` went 43 red to 7.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money

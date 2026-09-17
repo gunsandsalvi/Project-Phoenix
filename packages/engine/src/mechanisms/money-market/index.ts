@@ -941,7 +941,14 @@ export const moneyMarket: SystemModule = {
       name: 'moneyMarket.policy',
       spec: 'Central Bank B1 Central Bank B1.a Central Bank B2 Indices D4 Expectations A2',
       anchor: { before: 'moneyMarket.rates' },
-      reads: [{ kind: 'event', name: 'environment.state', of: 'thisPeriod' }],
+      /**
+       * 12d.3, 21.95: the weather, IF THIS WORLD HAS ANY. What the bank records beside its decision
+       * is what the conditions were when it decided; a world with no environment module has no
+       * conditions and the bank decides the same (`policy.ts` already answers for an absent
+       * reading). Declaring it as a hard edge said the opposite — that a world cannot have a
+       * monetary policy unless it has weather.
+       */
+      reads: [{ kind: 'event', name: 'environment.state', of: 'thisPeriod', ifWritten: true }],
       writes: [{ kind: 'event', name: POLICY_SET }],
       run: (ctx: MechanismContext): void => {
         decideRates(ctx, [...ctx.registry.currencies.values()].map((c) => c.code));
