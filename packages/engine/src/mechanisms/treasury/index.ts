@@ -1239,8 +1239,22 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   assessProfits(previous, live);
   let collected = noCash(ccy);
   let unpaid = noCash(ccy);
-  for (const [payer, total] of due) {
-    const p = ctx.parties.get(payer);
+  for (const [assessed, total] of due) {
+    /**
+     * Register F2, XI-8 (21.99): AND A PAYER THAT IS NOW SOMEBODY ELSE IS STILL ASSESSED. What a
+     * base is read off is last period's legs, and a party that was paid in that period can have
+     * ceased since — a household cell whose bank failed MERGES into the cell at the bank it moved
+     * to, which is one of XI-15's five weight events and not a death. Its money went with it.
+     *
+     * This skipped it for not being alive, so the tax on what it was paid was assessed, published
+     * in the base, and then collected from nobody: two cells of eleven thousand members each were
+     * paid 4.1 million of interest in one period of the scale model and charged nothing on it,
+     * while `unpaid` stayed zero because nothing had failed — there was no instruction at all. The
+     * successor holds what the predecessor held, which is the whole of what a succession IS, and
+     * `resolve` is the read every other reader of a ceased name uses.
+     */
+    const p = ctx.parties.resolve(assessed);
+    const payer = p.id;
     if (!p.status.alive || total <= 0) continue;
     // Law 8: what a payer can pay is a whole number of the smallest piece of the money, and for a
     // cell that is a whole number of pieces for each of its members. What the fraction below one
@@ -1261,7 +1275,11 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       ccy,
       amount: share.total,
     };
-    const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
+    const r = ctx.settle({
+      legs: [leg],
+      cause: 'transfer',
+      reason: assessed === payer ? `tax due from ${payer}` : `tax due from ${assessed}, now ${payer}`,
+    });
     // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
     if (r.outcome === 'settled') {
       collected = plus(collected, heldAsMoney(share.total, ccy, 'what was collected'), 'collected');

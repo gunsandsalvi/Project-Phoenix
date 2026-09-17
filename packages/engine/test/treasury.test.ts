@@ -15,6 +15,7 @@ import {
   assemble,
   currencyUnit,
   goodId,
+  isMoneyLeg,
   moneyInstrumentId,
   type EmploymentRow,
   type World,
@@ -48,9 +49,19 @@ describe('the programme (Treasury D4, Sovereign A2)', () => {
     const announced: number[] = [];
     for (let i = 0; i < 3 * every; i += 1) {
       const r = w.step();
-      if (w.journal.ofKind('auction.result').some((e) => e.period === r.period)) {
-        announced.push(r.period);
-      }
+      /**
+       * Sovereign C1 (21.99): THIS TREASURY'S OWN auctions, and not every auction in the world.
+       *
+       * `auction.result` is what an auction of ANY kind prints, and when this was written the
+       * treasury was the only issuer that held one. Banks raise subordinated capital by auction
+       * now (item 11), one a week, so a test reading every result in the journal saw a result in
+       * every period and concluded the state announces whenever it likes. The event names its
+       * issuer among its subjects, so which auctions are the state's is a read.
+       */
+      const mine = w.journal
+        .ofKindIn('auction.result', r.period)
+        .some((e) => e.subjects.includes(String(TREASURY_US)));
+      if (mine) announced.push(r.period);
     }
     expect(announced.length).toBeGreaterThan(1);
     expect(announced.every((p) => p % every === 0)).toBe(true);
@@ -74,14 +85,28 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
   it('pays every household cell by name, per member, and the money arrives', () => {
     const w = rigWorld('tsy-d');
     const cells = w.parties.ofKind(HOUSEHOLD);
-    const before = cells.map((c) => w.cash(c.id, USD));
     w.step();
-    const after = cells.map((c) => w.cash(c.id, USD));
-    expect(after.every((x, i) => x > (before[i] ?? 0))).toBe(true);
-    const transfers = w.ledger
-      .inPeriod(w.period)
-      .filter((r) => r.instruction.cause === 'transfer' && r.outcome === 'settled');
-    expect(transfers.length).toBeGreaterThanOrEqual(cells.length);
+    /**
+     * B1, XI-15 (21.99): WHAT ARRIVED IS READ OFF THE LEG, not off the balance.
+     *
+     * This asserted that every cell's cash was HIGHER at the end of the period, which was true of a
+     * world where the state's transfer was the only thing that happened to a household's account
+     * and is false in this one: a cell also pays rent and buys its basket, and — the reason it
+     * fails even for a cell that spent nothing — MEMBERS DIE. A cell holds TOTALS, so nine members
+     * leaving `hh.retired.bank.b` took their share of its money to their estates (XI-15's death
+     * event, `moveShare`): 8,286,564 arrived from the state, nothing was paid out, and the balance
+     * still fell by 1,009,452. A balance is a residual of everything that happened to it; what the
+     * clause is about is the PAYMENT, and the payment is a leg with this treasury on one side.
+     */
+    const paid = new Set<string>();
+    for (const r of w.ledger.inPeriod(w.period)) {
+      if (r.outcome !== 'settled') continue;
+      for (const leg of r.instruction.legs) {
+        if (!isMoneyLeg(leg) || leg.receipt?.of !== 'transfer') continue;
+        if (leg.from.holder === TREASURY_US && leg.amount > 0) paid.add(String(leg.to.holder));
+      }
+    }
+    for (const c of cells) expect(paid.has(String(c.id))).toBe(true);
   });
 
   it('collects tax on the interest each payer was actually paid (C1.a, C3)', () => {

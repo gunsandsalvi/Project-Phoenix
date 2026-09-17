@@ -354,6 +354,28 @@ Each when its file is open for another item; file:line and the change.
   here rather than changed on the way past: it is a resizing, and 23.1 is where the scale model and
   what a test asserts are resized together. Positioned at 23.1 with the owner's figure recorded.
 
+- [x] 21.99 `mechanisms/treasury/index.ts runReceipts`, `test/treasury.test.ts` (21): **TAX
+  ASSESSED ON A PARTY THAT HAD MERGED AWAY WAS COLLECTED FROM NOBODY.** A base is read off LAST
+  period's legs, and a party paid in that period can have ceased since: a household cell whose bank
+  fails MERGES into the cell at the bank it moved to, which is one of XI-15's five weight events and
+  not a death. The collection loop skipped it for not being alive, so the tax was assessed,
+  published in the base, and charged to no one — two cells of eleven thousand members each were paid
+  4.1 million of interest in one period of the scale model and charged nothing on it, with `unpaid`
+  at zero because nothing had FAILED: there was no instruction at all. Roughly a quarter of one
+  period's interest tax. The successor holds what the predecessor held, which is the whole of what a
+  succession IS (Register F2), so the payer is `resolve`d — the read every other reader of a ceased
+  name already uses — and the instruction says whose assessment it was when the two differ.
+  **And two stale assertions beside it, where the mechanism is right and the test had aged:**
+  *pays every household cell by name* measured "the money arrived" by the cell's CASH BEING HIGHER,
+  which was true when the state's transfer was the only thing that happened to a household and is
+  false now that a cell pays rent, buys a basket, and — the case that fails even for a cell that
+  spent nothing — loses members: nine deaths took their share of `hh.retired.bank.b`'s money to
+  their estates, so 8,286,564 arrived, nothing was paid out, and the balance still fell. What
+  arrived is read off the LEG now. *announces on its own calendar* read every `auction.result` in
+  the journal, and banks have raised subordinated capital by auction since item 11 — one a week — so
+  the state appeared to announce whenever it liked; the event names its issuer, so it is a read.
+  Treasury 7 red → 4.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money
