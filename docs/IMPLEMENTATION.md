@@ -261,7 +261,7 @@ first rung), to produce four curves that do not change within the period.
 | 18a | Monetary policy — **done** (section removed; see `docs/RECORD.md`; a policy number can be set by whoever owns it, a bank decides from its own view of the basket and moves one step, the price of time may be negative, and the desk posts a level instead of taking whatever it takes. 18a.3a inserted; findings 21.83 closed and 21.84 raised) | before the polity |
 | 19 | The polity — **done** (section removed; see `docs/RECORD.md`; a parliament the households elect, a mandate that moves the numbers it owns at a lag, a scope that says which power each of those numbers is, a law of late payment, and polls published late and read by nobody. Polity went from an ABSENT SECTOR to 28 of 32 clauses MET; findings 21.85 and 21.86 at 23.3, 21.87 and 21.88 at 21) | after 18a |
 | 20 | Periodicity — **done** (section removed; see `docs/RECORD.md`; a rating fee once a year on the anniversary of the first opinion, an impairment once per default, the spending tax remitted on the state's own fiscal quarter, and a buyback that is a programme with an authority and a closing period. One calendar read, `crossesAnniversary`, replaces the polity's copy of the walk. 20.2a inserted; finding 21.89) | after 19 |
-| 20a | The annual assessment against what was withheld (inserted at 20.2) | after 20 |
+| 20a | The annual assessment against what was withheld — **done** (section removed; see `docs/RECORD.md`; the year's bases from the SAME walk the week's withholding runs, what was taken read off the ledger, and the difference settled both ways; finding 21.94) | after 20 |
 | 21 | The local repairs | each when its file is open |
 | 22 | The recipe | recipes plural; batches; upkeep |
 | 22a | The opening is not an equilibrium — **absorbed by 22b**, whose steps delete the same doors from the other side | superseded |
@@ -307,35 +307,22 @@ engine rather than local edits.
 
 ---
 
-## 20a. The annual assessment against what was withheld (§30 C2)
-
-Inserted at 20.2, which placed the withholding and the quarterly remittance and did not build the
-reckoning between them. A tax WITHHELD is a payment on account, and what makes it one is that
-somebody later works out what was actually owed for the fiscal period and settles the difference.
-That difference is a mechanism — it needs a per-payer record and a leg that can go either way —
-and not a periodicity, which is why it is here and not in 20.2.
-
-- [ ] 20a.1 A per-payer record of what was withheld in a fiscal year: written where the withholding
-  is settled (`runReceipts`), read back by the assessment, one writer (Law 4). It is not a second
-  copy of the tax: what was paid is in the ledger, and what this holds is which fiscal year each
-  payment belonged to, which the ledger does not say.
-- [ ] 20a.2 The assessment on the state's fiscal year end (`treasury.fiscalYear.endsInMonth`, the
-  same date the quarters are cut from): the year's base at the rate in force, against what that
-  payer actually paid.
-- [ ] 20a.3 The difference, settled both ways: a top-up the payer owes (which can fail and leave an
-  arrear like any other, Money E1) and a REFUND the state owes, which is a leg out of the treasury's
-  account and can fail for the same reason its transfers can (D3). Neither is a bound and neither is
-  netted across payers.
-- [ ] 20a.4 Tests: a payer whose withholdings exceed its assessment is refunded exactly the
-  difference; one whose fall short owes it; a state that cannot pay a refund leaves an arrear; the
-  assessment falls in the period after the year end and once.
-
----
-
 ## 21. The local repairs
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.94 `test/treasury.test.ts` (seven of ten) and `test/treasury-default.test.ts` (two of two)
+  ARE RED, and were before 0h.5 and before 20a (the same ten on both sides of each). They are a
+  second shape of 21.67's problem and a first of their own: *announces on its own calendar*, *pays
+  every household cell by name*, *collects tax on the interest each payer was actually paid*,
+  *collects on what households were paid and on what they bought*, *has no overdraft at the central
+  bank*, *funds itself over a year* (which is 21.41 already), *raises more when more falls due*, and
+  both halves of the treasury's default. Not chased (Law 11); positioned at 23.1, where the scale
+  model and what a test asserts are resized together. **And the reason it was not written down
+  sooner is its own finding**: 0h.5's record claimed these suites green on a comparison that
+  extracted NO test lines at all and therefore compared two empty files. A check that cannot fail is
+  not a check — the pattern is `^\s+(×|✓) ` and it must be asserted to match something before its
+  answer is believed (20a).
 - [ ] 21.93 `mechanisms/treasury/index.ts` the corporate base (0h.5): **THE CENTRAL BANK IS TAXED ON
   ITS PROFIT.** The base walks every living party that is not a household and reads what it
   published; a central bank issues money everybody holds, so it keeps accounts (§48) and publishes

@@ -14621,7 +14621,16 @@ stops and nothing is inconsistent: it is the WRONG MECHANISM rather than a broke
 a central bank does with a surplus is REMIT it to the state, which has no rate in it and does not
 move when a parliament moves one. Positioned at 18a with the central bank's own decisions.
 
-**Unchanged.** `check:opens` green, both treasury suites green and identical before and after.
+**Unchanged.** `check:opens` green, and the treasury suites' red/green set identical before and
+after.
+
+**Correction (written at 20a, the next item).** This entry first said those suites were GREEN. They
+are not and were not: `test/treasury.test.ts` runs seven red of ten and `test/treasury-default.test.ts`
+two of two, and they were red before 0h.5 as well. The comparison that produced the claim was
+VACUOUS — the pattern it extracted test lines with matched nothing, so it compared two empty files
+and reported them equal. The finding is `21.94`; what is true of 0h.5 is the second half of the
+original sentence, that the change moved nothing, and that has now been checked with a pattern that
+extracts ten lines on each side.
 
 ---
 
@@ -14700,3 +14709,44 @@ mechanism is a remittance) at 18a.
 **Two things the ladder now says that no other gate can.** Cost grows within a run as well as with
 the population — the journal keeps every event of every period in one array (0g.14) — and a year at
 the middle rung is 825 MB. Both are 0g's when it resumes.
+
+---
+
+## Item 20a — The annual assessment against what was withheld
+
+**What.** Once a year, in the period after the state's fiscal year closed, the treasury works out
+what that year actually came to for each payer and settles the difference — both ways.
+
+- `calendar/fiscal.ts` gains `yearClosedBy`/`yearEndingOn`: the quarter walk's own arithmetic over
+  twelve months rather than three, beside it, because two copies of "back to the first of the month,
+  so many months ago" is the second one drifting (Law 4).
+- **What was owed** is the SAME walk the weekly withholding runs (`takeFrom`, `assessProfits`), over
+  every period the year covered, into an assessment of its own. The walk was parameterised with the
+  accumulator it writes into; a second formula for what a payer owes would be a second answer to it.
+- **What was taken** is a read of the LEDGER: every settled money leg in those periods carrying a
+  tax receipt, into the treasury's account less any that came back out of it, per payer. Nothing
+  stores it. The step as written asked for a per-payer record *"which fiscal year each payment
+  belonged to, which the ledger does not say"* — the ledger does say it: a payment's fiscal year is
+  a function of its period and the state's own anchor, and both are reads (Law 19). A store would
+  have been a second copy of what was paid.
+- **The difference is settled both ways.** A payer that paid less pays the rest and can fail and
+  leave an arrear like any other payment (Money E1). A payer that paid more is REPAID out of the
+  state's own account, and that leg can fail for want of money exactly as its transfers can (D3).
+  Both carry a tax receipt, because it is the same levy being settled and a refund marked anything
+  else would be somebody's income. No netting across payers: each reckoning is the state and one
+  payer.
+
+**Measured.** 53 periods of the rig: one `treasury.assessment`, at period 52, for `2026-FY` over
+periods 0–51, 146 payers — 209,771,443 topped up, 317,073,599 refunded, 300,646 that did not settle
+and left rows. Both directions and a failure, in the first year the world runs.
+
+**Tests.** `test/assessment.test.ts`: it falls once and in the period after the close, over the
+periods the year covered; every leg is a tax between the state and one payer and the event's totals
+are a read of what actually settled; what did not settle left an arrear row; and the reckoning is
+against what the ledger says was taken, so a refund is net of itself next year.
+
+**Found.** `21.94`: seven of ten in `test/treasury.test.ts` and both of `treasury-default.test.ts`
+are red, and were before this item and before 0h.5 — positioned at 23.1. Its second half is about
+this record: 0h.5's entry claimed those suites GREEN on a comparison that extracted no test lines at
+all and so compared two empty files. That entry is corrected above. A check that cannot fail is not
+a check.

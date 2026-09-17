@@ -109,6 +109,37 @@ function labelOf(anchor: number, ends: Civil): string {
 }
 
 /**
+ * §30 C2, A3 (20a.1): THE FISCAL YEAR THAT CLOSED most recently on or before `on`, for a body whose
+ * year ends in month `anchor`. It is the quarter walk's own arithmetic over twelve months rather
+ * than three, and it is here beside it for the reason `quarterEndingOn` exists: two copies of
+ * "back to the first of the month, so many months ago" is the second one drifting (Law 4).
+ *
+ * A YEAR IS NOT FOUR QUARTERS ADDED UP. What was withheld in it is a read of the ledger over the
+ * periods these two dates bound, and that is what makes the reckoning between what was taken and
+ * what was owed possible at all: both sides are reads of the same span.
+ */
+export function yearClosedBy(anchor: number, on: Civil): Quarter {
+  const q = quarterClosedBy(anchor, on);
+  // The year's close is the anchor month's own end: the quarter that just closed IS the year's end
+  // when it falls in that month, and otherwise the year's end is the last anchor month before it.
+  let ends = endOfMonth(civil(q.ends.y, anchor, 1));
+  while (compareCivil(ends, on) > 0) ends = endOfMonth(addMonths(ends, -MONTHS_IN_YEAR));
+  return yearEndingOn(anchor, ends);
+}
+
+/** The year whose CLOSE is this date — the twelve months back to the first, labelled by its end. */
+export function yearEndingOn(anchor: number, close: Civil): Quarter {
+  const ends = endOfMonth(close);
+  const opens = addMonths(ends, -(MONTHS_IN_YEAR - 1));
+  return {
+    begins: civil(opens.y, opens.m, 1),
+    ends,
+    // The fiscal year is named for the calendar year it ENDS in, as its quarters are (`labelOf`).
+    label: `${ends.m <= anchor ? ends.y : ends.y + 1}-FY`,
+  };
+}
+
+/**
  * A4: the day the report may come out — the close plus the lag somebody legislated. A date, because
  * the lag is a number of days and a period is a number of days (G3.b).
  */

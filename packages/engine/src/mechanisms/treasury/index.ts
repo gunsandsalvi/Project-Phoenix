@@ -46,7 +46,7 @@ import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { quarterClosedBy } from '../../calendar/fiscal.js';
+import { quarterClosedBy, yearClosedBy, type Quarter } from '../../calendar/fiscal.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
   currencyUnit,
@@ -59,7 +59,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { addTo, atLeast, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { addTo, atLeast, combineDust, div, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -1007,7 +1007,19 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
    * over every period of that quarter, taking only what was spent. One walk, two callers, because a
    * second reader of the same legs would be a second answer to what was paid (Law 4).
    */
-  const takeFrom = (from: Period, weekly: boolean, spending: boolean): void => {
+  const takeFrom = (
+    from: Period,
+    weekly: boolean,
+    spending: boolean,
+    /**
+     * §30 C2 (20a.2): WHOSE ASSESSMENT THIS WALK IS ADDING TO. The weekly withholding writes into
+     * the one that is settled this period; the annual reckoning runs the SAME walk over every
+     * period of the year that closed, into an assessment of its own, and what it produces is what
+     * was OWED for the year against what was actually taken. One walk, two callers — a second
+     * reader of these legs would be a second answer to what a payer owes (Law 4).
+     */
+    into: { readonly due: Map<PartyId, number>; readonly bases: typeof bases },
+  ): void => {
   for (const r of ctx.ledger.inPeriod(from)) {
     if (r.outcome !== 'settled') continue;
     // C1: what a household bought in this instruction is what it paid for the real things in it.
@@ -1033,13 +1045,13 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
        */
       if (leg.ccy !== ccy) continue;
       if (spending && buyers.has(leg.from.holder)) {
-        bases.consumption = plus(
-          bases.consumption,
+        into.bases.consumption = plus(
+          into.bases.consumption,
           heldAsMoney(leg.amount, ccy, 'what moved'),
           'what households paid for goods',
         );
         addTo(
-          due,
+          into.due,
           leg.from.holder,
           scale(heldAsMoney(leg.amount, ccy, 'what it paid'), onConsumption, 'consumption tax')
             .pieces,
@@ -1062,8 +1074,8 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       const receipt = leg.receipt;
       if (receipt === undefined) {
         if (cells.has(leg.to.holder) && leg.from.holder !== id) {
-          bases.unclassified = plus(
-            bases.unclassified,
+          into.bases.unclassified = plus(
+            into.bases.unclassified,
             heldAsMoney(leg.amount, ccy, 'what moved'),
             'received and unclassified',
           );
@@ -1072,13 +1084,13 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       }
       switch (receipt.of) {
         case 'interest': {
-          bases.interest = plus(
-            bases.interest,
+          into.bases.interest = plus(
+            into.bases.interest,
             heldAsMoney(leg.amount, ccy, 'what moved'),
             'interest received',
           );
           addTo(
-            due,
+            into.due,
             leg.to.holder,
             scale(heldAsMoney(leg.amount, ccy, 'what it received'), onInterest, 'tax on interest')
               .pieces,
@@ -1090,13 +1102,13 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'rent':
         case 'dividend': {
           if (!cells.has(leg.to.holder)) break;
-          bases.income = plus(
-            bases.income,
+          into.bases.income = plus(
+            into.bases.income,
             heldAsMoney(leg.amount, ccy, 'what moved'),
             'what households were paid',
           );
           addTo(
-            due,
+            into.due,
             leg.to.holder,
             scale(heldAsMoney(leg.amount, ccy, 'what it was paid'), onIncome, 'income tax').pieces,
           );
@@ -1144,8 +1156,8 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       // 19.2: ITS OWN BASE AT ITS OWN RATE. It was added to the income base and taxed at the wage
       // rate — one rate on two different things (Law 4) — and what a polity charges on a gain
       // against what it charges on a wage is one of the things an election is actually about.
-      bases.gains = plus(bases.gains, gain, 'gains households realised');
-      addTo(due, made.party, scale(gain, onGains, 'tax on the gain').pieces);
+      into.bases.gains = plus(into.bases.gains, gain, 'gains households realised');
+      addTo(into.due, made.party, scale(gain, onGains, 'tax on the gain').pieces);
     }
   }
   };
@@ -1171,12 +1183,14 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   // to remit: the first remittance is of the first quarter that closes while there is a world.
   const remitsNow =
     compareCivil(quarter.ends, opened) >= 0 && ctx.calendar.periodOf(quarter.ends) === previous;
-  takeFrom(previous, true, remitsNow);
+  const live = { due, bases };
+  takeFrom(previous, true, remitsNow, live);
   if (remitsNow) {
     // The world did not exist before it opened, so a quarter that reaches back past period 0 is
     // read from period 0: there are no instructions before there was anybody to settle them.
     const opens = compareCivil(quarter.begins, opened) < 0 ? period(0) : ctx.calendar.periodOf(quarter.begins);
-    for (let p = Number(opens); p < Number(previous); p += 1) takeFrom(period(p), false, true);
+    for (let p = Number(opens); p < Number(previous); p += 1)
+      takeFrom(period(p), false, true, live);
   }
   /**
    * C1, §30 C1, §47 D1, Law 19 (19.2): THE CORPORATE BASE, read off what a company PUBLISHED.
@@ -1196,6 +1210,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
    * same lag a reader of accounts gets (A2.a), so a quarter is taxed once and not every week of it.
    */
   const onProfits = ctx.params.ratio(TREASURY_PARAMS.taxProfits);
+  const assessProfits = (preparedIn: Period, into: { readonly due: Map<PartyId, number>; readonly bases: typeof bases }): void => {
   for (const p of ctx.parties.all()) {
     if (!p.status.alive || cells.has(p.id)) continue;
     /**
@@ -1211,15 +1226,17 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
      */
     if (p.id === id) continue;
     const said = ctx.published.lastStatement(p.id);
-    if (said?.preparedIn !== previous || said.ccy !== ccy) continue;
+    if (said?.preparedIn !== preparedIn || said.ccy !== ccy) continue;
     const made = minus(said.earned, said.revaluation, 'what it earned that the marks did not make');
     // A company that lost money is not owed money by the state. What a loss DOES — carry against
     // later profit, or not — is a fiscal rule the polity owns, and inventing one here would be the
     // outcome-written-as-a-rule the method forbids (the same answer the gains base gives).
     if (made.pieces <= 0) continue;
-    bases.profits = plus(bases.profits, made, 'what companies published they earned');
-    addTo(due, p.id, scale(made, onProfits, 'tax on the profit it published').pieces);
+    into.bases.profits = plus(into.bases.profits, made, 'what companies published they earned');
+    addTo(into.due, p.id, scale(made, onProfits, 'tax on the profit it published').pieces);
   }
+  };
+  assessProfits(previous, live);
   let collected = noCash(ccy);
   let unpaid = noCash(ccy);
   for (const [payer, total] of due) {
@@ -1254,6 +1271,22 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     // the same pass; what is counted here is the measurement, not the claim.
     unpaid = plus(unpaid, heldAsMoney(share.total, ccy, 'what was not paid'), 'unpaid');
   }
+  /**
+   * §30 C2 (20a): AND ONCE A YEAR, THE RECKONING BETWEEN WHAT WAS TAKEN AND WHAT WAS OWED.
+   *
+   * A tax WITHHELD is a payment on account, and what makes it one is that somebody later works out
+   * what was actually owed for the fiscal period and settles the difference. Without it this world
+   * took a weekly rate off a weekly flow and called the year done: a payer whose year was assessed
+   * at less than the sum of its weeks was never repaid, and one assessed at more was never asked.
+   *
+   * It runs in the period AFTER the year's close fell, over every period the year covered, for the
+   * reason the quarterly remittance runs then: a period this phase stands in is not one whose
+   * instructions are all written (Clearing F1).
+   */
+  const year = yearClosedBy(ctx.params.count(TREASURY_PARAMS.fiscalYearEnds), ctx.calendar.startOf(ctx.period));
+  if (compareCivil(year.ends, opened) >= 0 && ctx.calendar.periodOf(year.ends) === previous) {
+    reckon(ctx, id, ccy, year, opened, previous, takeFrom, assessProfits, bases);
+  }
   ctx.record(
     'treasury.receipts',
     [id],
@@ -1273,6 +1306,160 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     },
     true,
   );
+}
+
+/**
+ * §30 C2 (20a): WHAT A WALK OF THE LEDGER IS ADDING TO — one payer's bill, and the year's bases
+ * beside it. The week's withholding has one of these and the year's reckoning has another, and
+ * they are the same shape because they are the same walk (Law 4).
+ */
+interface Assessment {
+  readonly due: Map<PartyId, number>;
+  readonly bases: {
+    interest: Cash;
+    income: Cash;
+    consumption: Cash;
+    gains: Cash;
+    profits: Cash;
+    unclassified: Cash;
+  };
+}
+
+/**
+ * §30 C2, Treasury C1, Money E1, D3 (20a): THE ANNUAL ASSESSMENT AGAINST WHAT WAS WITHHELD.
+ *
+ * Three reads and one payment, both ways.
+ *
+ * WHAT WAS OWED is the same walk the withholding runs, over every period of the year that closed,
+ * into an assessment of its own (`takeFrom`, `assessProfits`): the year's bases at the rates in
+ * force. It is not four quarters added up and it is not a second formula — it is the one walk, and
+ * a second reader of these legs would be a second answer to what a payer owes (Law 4).
+ *
+ * WHAT WAS TAKEN is a read of the LEDGER (Law 19): every settled money leg in those periods that
+ * carries a tax receipt, to this treasury's account less any that came back out of it, per payer.
+ * Nothing stores it — the ledger already says what was paid, and which fiscal year a payment
+ * belonged to is a function of its period and the state's own anchor, which is a read as well.
+ *
+ * THE DIFFERENCE IS SETTLED BOTH WAYS. A payer that paid less than its year owes pays the rest,
+ * and it can fail and leave an arrear like any other payment (Money E1). A payer that paid more is
+ * REPAID, out of the state's own account, and that leg can fail for the want of money exactly as
+ * the state's transfers can (D3) — a refund is not a credit anybody grants and there is no netting
+ * across payers: each reckoning is between the state and one payer.
+ */
+function reckon(
+  ctx: MechanismContext,
+  id: PartyId,
+  ccy: CurrencyCode,
+  year: Quarter,
+  opened: Civil,
+  previous: Period,
+  takeFrom: (from: Period, weekly: boolean, spending: boolean, into: Assessment) => void,
+  assessProfits: (preparedIn: Period, into: Assessment) => void,
+  shape: Assessment['bases'],
+): void {
+  // The world did not exist before it opened: a year reaching back past period 0 is read from there.
+  const opens =
+    compareCivil(year.begins, opened) < 0 ? period(0) : ctx.calendar.periodOf(year.begins);
+  const owed: Assessment = { due: new Map<PartyId, number>(), bases: emptyLike(shape, ccy) };
+  for (let p = Number(opens); p <= Number(previous); p += 1) {
+    takeFrom(period(p), true, true, owed);
+    assessProfits(period(p), owed);
+  }
+  // Law 19: what was actually taken, off the legs themselves. A refund already paid comes back out
+  // of the same read, so a second year's reckoning is against what the payer is NET of the first.
+  const paid = new Map<PartyId, number>();
+  for (let p = Number(opens); p <= Number(previous); p += 1) {
+    for (const r of ctx.ledger.inPeriod(period(p))) {
+      if (r.outcome !== 'settled') continue;
+      for (const leg of r.instruction.legs) {
+        if (!isMoneyLeg(leg) || leg.receipt?.of !== 'tax' || leg.ccy !== ccy) continue;
+        if (leg.to.holder === id) addTo(paid, leg.from.holder, Number(leg.amount));
+        // A refund is the same levy going the other way, so it comes OFF what this payer has paid.
+        else if (leg.from.holder === id) {
+          addTo(paid, leg.to.holder, sub(0, Number(leg.amount), 'a refund already made'));
+        }
+      }
+    }
+  }
+  let toppedUp = noCash(ccy);
+  let refunded = noCash(ccy);
+  let owedStill = noCash(ccy);
+  const payers = new Set<PartyId>([...owed.due.keys(), ...paid.keys()]);
+  for (const payer of payers) {
+    if (!ctx.parties.has(payer) || payer === id) continue;
+    const p = ctx.parties.get(payer);
+    if (!p.status.alive) continue;
+    const assessed = zeroIfNone(owed.due.get(payer));
+    const took = zeroIfNone(paid.get(payer));
+    const gap = sub(assessed, took, 'what the year came to, against what was taken');
+    if (gap === 0) continue;
+    // Law 8, XI-15: whole pieces, and for a cell whole pieces for each of its members — the same
+    // grid the withholding is settled on, because it is the same money moving the other way.
+    const share = gridPerMember(
+      ctx.registry,
+      p,
+      eachMember(
+        asTotal<'money:piece'>(gap > 0 ? gap : -gap, 'the difference'),
+        weightOf(p),
+        'per member',
+      ),
+    );
+    if (share.total <= 0) continue;
+    const owes = gap > 0;
+    const leg: Leg = {
+      kind: 'money',
+      from: ctx.accountOf(owes ? payer : id, ccy),
+      to: ctx.accountOf(owes ? id : payer, ccy),
+      // Both ways it is a TAX receipt: it is the same levy being settled, and marking a refund
+      // anything else would make the state's own repayment somebody's income (C1).
+      receipt: { of: 'tax' },
+      ccy,
+      amount: share.total,
+    };
+    const r = ctx.settle({
+      legs: [leg],
+      cause: 'transfer',
+      reason: `${year.label} assessment ${owes ? 'due from' : 'refunded to'} ${payer}`,
+    });
+    if (r.outcome !== 'settled') {
+      // Money E1, D3: a top-up that fails is the payer's arrear; a refund that fails is the
+      // STATE's, and settlement writes the row either way. Nothing is advanced to make it settle.
+      owedStill = plus(owedStill, heldAsMoney(share.total, ccy, 'what did not move'), 'unsettled');
+      continue;
+    }
+    if (owes) toppedUp = plus(toppedUp, heldAsMoney(share.total, ccy, 'topped up'), 'topped up');
+    else refunded = plus(refunded, heldAsMoney(share.total, ccy, 'refunded'), 'refunded');
+  }
+  ctx.record(
+    'treasury.assessment',
+    [id],
+    {
+      ccy,
+      year: year.label,
+      from: Number(opens),
+      to: Number(previous),
+      payers: payers.size,
+      toppedUp: toppedUp.pieces,
+      refunded: refunded.pieces,
+      unsettled: owedStill.pieces,
+      bases: {
+        interest: owed.bases.interest.pieces,
+        income: owed.bases.income.pieces,
+        consumption: owed.bases.consumption.pieces,
+        gains: owed.bases.gains.pieces,
+        profits: owed.bases.profits.pieces,
+        unclassified: owed.bases.unclassified.pieces,
+      },
+    },
+    true,
+  );
+}
+
+/** The same bases, at nothing — one shape, so the year's walk and the week's cannot disagree. */
+function emptyLike(shape: Assessment['bases'], ccy: CurrencyCode): Assessment['bases'] {
+  const out: Record<string, Cash> = {};
+  for (const name of Object.keys(shape)) out[name] = noCash(ccy);
+  return out as Assessment['bases'];
 }
 
 /**
