@@ -14586,3 +14586,39 @@ citations now resolve where 268 were checked before.**
 **Measured.** The census is identical to 0h.3's, digit for digit, and the per-period times are
 unchanged (rig p30 244ms against 245ms): a tally on a door that already answered `Missing` costs
 nothing. Tests: `test/why.test.ts` (five cases) and two more in `tools/test/spec-index.test.ts`.
+
+---
+
+## Item 0h.5 — The ladder's middle rung, and the state that taxed itself
+
+**What.** One line in `treasury/index.ts`: the corporate base does not assess the treasury that is
+assessing. `21.87` closed with it.
+
+**Why it was there.** 19.2 built the third tax base — what a company PUBLISHED it earned — by
+walking every living party that is not a household. A treasury issues paper that others hold and
+employs people, so it KEEPS ACCOUNTS (§48) and publishes a statement like any company; a quarter its
+own statement showed a surplus for assessed the state, and the leg ran from its own account to its
+own account. Settlement refuses that (`Money C1.a`) and the world stopped. The rule was already
+written twice in the same function — the transfer base says *"the state does not tax back the
+transfer it just paid"*, and the interest base skips a receipt that arrived at this treasury — and
+the corporate base was written without it.
+
+**Why no gate caught it.** It stopped in period 26 of one seed and period 30 of another, and never
+in the `opens` seed, whose treasury's published quarters do not fall in surplus. A world that stops
+on some draws and not others is exactly what `check:opens` cannot see, and what the ladder does.
+
+**Measured.** The middle rung (6 banks, 60 firms) ran to period 20 and now runs the full year: 763
+ms/period at mark 1, 732 at 13, 857 at 26, **3,376 at 52**; heap 84 → 1,172 MB; 236 parties, 49
+cells, 281 people, 260 small firms; 358,027 events; 291 sessions cleared. Two things the rung says
+that the first rung could not: cost grows **within** a run as well as with the population — the
+journal keeps every event of every period in one array (0g.14's measurement) — and a year at this
+scale is a gigabyte. Both are 0g's, not this item's. `Part 0.7`'s ladder figures are re-marked,
+because a stale figure in the plan is a defect.
+
+**Found.** `21.93`: the central bank is taxed on its profit, for the same reason — it issues money
+everybody holds, so it publishes. That is a two-sided payment between two real parties, so nothing
+stops and nothing is inconsistent: it is the WRONG MECHANISM rather than a broken one, because what
+a central bank does with a surplus is REMIT it to the state, which has no rate in it and does not
+move when a parliament moves one. Positioned at 18a with the central bank's own decisions.
+
+**Unchanged.** `check:opens` green, both treasury suites green and identical before and after.

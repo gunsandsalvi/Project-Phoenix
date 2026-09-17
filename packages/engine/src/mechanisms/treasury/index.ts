@@ -1198,6 +1198,18 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const onProfits = ctx.params.ratio(TREASURY_PARAMS.taxProfits);
   for (const p of ctx.parties.all()) {
     if (!p.status.alive || cells.has(p.id)) continue;
+    /**
+     * Money C1.a, Treasury C1 (21.87, 0h.5): AND THE STATE DOES NOT ASSESS ITSELF. It is the rule
+     * the other three bases already state — *"the state does not tax back the transfer it just
+     * paid"* above, and the interest base skips a receipt that arrived AT this treasury — and the
+     * corporate base was written without it: a treasury issues paper others hold and employs
+     * people, so it KEEPS ACCOUNTS (§48) and publishes a statement like any company, and a quarter
+     * it published a surplus for assessed it and drew a leg from its own account to its own
+     * account. Settlement refuses that and the world STOPPED, in period 26 of one seed and 30 of
+     * another, wherever a treasury's own published quarter happened to be in surplus. What the
+     * state's own surplus IS, is not a tax at all — there is no second party to it.
+     */
+    if (p.id === id) continue;
     const said = ctx.published.lastStatement(p.id);
     if (said?.preparedIn !== previous || said.ccy !== ccy) continue;
     const made = minus(said.earned, said.revaluation, 'what it earned that the marks did not make');

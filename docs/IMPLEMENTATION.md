@@ -31,7 +31,7 @@ and neither is yet a MET a run has confirmed.
 | Register | 20 | 4 | 2 | 0 | 26 |
 | Clearing | 21 | 5 | 1 | 0 | 27 |
 | Audit | 20 | 3 | 0 | 0 | 23 |
-| Seed | 16 | 0 | 6 | 0 | 22 |
+| Seed | 16 | 1 | 5 | 0 | 22 |
 | Currency | 24 | 0 | 1 | 0 | 25 |
 | Bond | 14 | 1 | 1 | 0 | 16 |
 | Derivative | 18 | 0 | 0 | **3** | 18 |
@@ -215,9 +215,11 @@ mechanism that produces one needs a history to act on and **refuses to act witho
 sites read an outlook and return nothing when it is missing. So the world spends twenty-six weeks
 failing to service debt it was born owing while nothing trades, nobody is hired, and goods rot.
 
-**At scale it is also the wrong shape.** The ladder's rungs: (3,12) 331 ms/period; (6,60) **stops at
-period 20** on 21.87; (12,200) 9,078 ms/period — cost grows as about the 1.7th power of the
-population. A profile of the third rung: **53.2% of the run is inside `World.curveAt`**, which walks
+**At scale it is also the wrong shape.** The ladder's rungs: (3,12) 331 ms/period; (6,60) **stopped
+at period 20** on 21.87 and runs the full year since 0h.5 — 763 ms/period at the first mark and
+**3,376 at the fifty-second**, on a heap that goes 84 → 1,172 MB across the year; (12,200) 9,078
+ms/period — cost grows as about the 1.7th power of the population AND, within a rung, as the run
+gets longer (the journal keeps every event of every period in one array: 0g.14's measurement). A profile of the third rung: **53.2% of the run is inside `World.curveAt`**, which walks
 every instrument in the world with a root-find per instrument, **1,079 times a period** (28 at the
 first rung), to produce four curves that do not change within the period.
 
@@ -402,10 +404,21 @@ one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
   four invented citations besides the `Audit B10` that prompted it — three in `securitisation`
   (a §Securitisation that does not exist; it is XI-11) and one in `derivative-layer`. 578 citations
   now resolve where 268 did.
-- [ ] 0h.5 **Repair the ladder's middle rung.** (6,60) stops at period 20 with `[Money C1.a]
-  instruction …: a payment from an account to itself is not a payment` in `treasury runReceipts`
-  (21.87), so the performance programme cannot produce the three-rung comparison its own exit is
-  written about. Fix the receipt that pays the state from the state; then the ladder measures again.
+- [x] 0h.5 **Repair the ladder's middle rung.** The cause was the corporate base, and it is one
+  line: `runReceipts` walks every living party that is not a household and assesses what it
+  PUBLISHED it earned — and a treasury issues paper others hold and employs people, so it keeps
+  accounts (§48) and publishes a statement like any company. A quarter its own statement showed a
+  surplus for assessed the state itself, and the leg ran from its own account to its own account:
+  `[Money C1.a] a payment from an account to itself is not a payment`, and the world stopped. It
+  stopped in period 26 of one seed and 30 of another and never in the `opens` seed, which is why
+  every gate was green — it is a state some draws reach and one does not. **The state does not
+  assess itself**, which is the rule the other three bases already state (the transfer base says
+  *"the state does not tax back the transfer it just paid"*; the interest base skips a receipt that
+  arrived AT this treasury) and which the corporate base was written without. The middle rung now
+  runs the full year: 763 ms/period at mark 1, 732 at 13, 857 at 26, **3,376 at 52**, heap 84 →
+  1,172 MB, 358,027 events, 291 sessions cleared. 21.87 closed. Found on the way: **21.93**, the
+  central bank taxed on its profit, which is the wrong mechanism rather than a broken one — a
+  central bank REMITS its surplus — positioned at 18a.
 - [ ] 0h.6 **Memoise the curve.** 53.2% of a run at the third rung is inside `World.curveAt`, which
   calls `readCurve` — a walk of EVERY instrument in the world, a cash-flow rebuild, a `yearFraction`
   and a root-find per instrument — **1,079 times a period** (28 at the first rung; the callers are
@@ -451,6 +464,16 @@ and not a periodicity, which is why it is here and not in 20.2.
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.93 `mechanisms/treasury/index.ts` the corporate base (0h.5): **THE CENTRAL BANK IS TAXED ON
+  ITS PROFIT.** The base walks every living party that is not a household and reads what it
+  published; a central bank issues money everybody holds, so it keeps accounts (§48) and publishes
+  like any company, and the treasury assesses its surplus at the corporate rate. What a central bank
+  does with a surplus in the real mechanism is REMIT it to the state (Law 1: a real intermediary
+  with a real rule), which is a different flow with a different rule and no rate in it — and the
+  difference shows the moment a rate moves, because a remittance does not follow a rate a
+  parliament sets. It is a two-sided payment between two real parties, so nothing stops and nothing
+  is inconsistent: it is the WRONG MECHANISM rather than a broken one. Positioned at 18a with the
+  central bank's own decisions, where the remittance rule belongs (0h.5).
 - [x] 21.92 (closed at 0h.4) `tools/check-citations.ts` (0h.3): **A CITATION THAT IS NOT IN AN `@spec` TAG IS NOT
   CHECKED.** The audit's own `Family.spec` and every `Violation.spec` are runtime strings, and
   0h.3's family was written citing `Audit B10` — a clause that does not exist, since §Audit's own
@@ -496,7 +519,7 @@ Each when its file is open for another item; file:line and the change.
   against a run and not a number to chase (Law 11). Positioned at 21 as its own repair, next to 21.87: it
   is a read to make in three named places and not a measurement of a world (19.8, repositioned at
   19.9 when item 19 closed).
-- [ ] 21.87 `mechanisms/treasury/index.ts runReceipts` (seen at 19.8): A WORLD THAT STOPS ON A SEED.
+- [x] 21.87 (closed at 0h.5: the corporate base assessed the state itself) `mechanisms/treasury/index.ts runReceipts` (seen at 19.8): A WORLD THAT STOPS ON A SEED.
   `rigWorld('probe')` throws at period 26 — `Forbidden: [Money C1.a] instruction 11378: a payment
   from an account to itself is not a payment` — from `runReceipts`, and it predates this item (the
   same seed stops at the same place on 19.7's commit, at instruction 11378 there and 10534 with the
