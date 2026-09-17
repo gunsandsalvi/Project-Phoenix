@@ -406,7 +406,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         el('td', {}, p.name),
         el('td', {}, `${p.kind} (${p.representation})`),
         el('td', {}, num(p.weight)),
-        el('td', {}, money(s, p.ccy, p.equityPerMember)),
+        el('td', {}, money(s, p.ccy, p.equity)),
       ),
     );
   }

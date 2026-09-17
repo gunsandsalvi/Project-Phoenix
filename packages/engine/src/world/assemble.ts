@@ -16,7 +16,7 @@ import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { QUESTIONS } from '../registry/questions.js';
 import type { ParticipantView } from './context.js';
-import { asPerMember, type Cash } from '../core/measure.js';
+import { asTotal, type Cash } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
@@ -287,13 +287,12 @@ function stateEquityAsRead(w: World): void {
     // subtraction between them, and the walk behind every money balance they were read off. A
     // party whose equity is zero BY CONSTRUCTION (a fund, Fund Shares A3) is nothing but that
     // residue, and `opened(0)` charged it the rounding of stating a zero (worklist 13a).
-    // 0f.1: the sheet is a TOTAL; the account is per member until 0f.2, so it opens with the
-    // total over the people — the one division a per-member account costs, its dust carried.
-    const people = weightOf(p);
+    // 21a: the sheet is a TOTAL and so is the account, so the read opens it as it stands and the
+    // division the per-member account used to cost is gone, with its dust.
     store.stateEquity(
       p.id,
-      asPerMember<'money:piece'>(read.value / people, 'what one member opens with'),
-      (combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked) / people,
+      asTotal<'money:piece'>(read.value, 'what it opens with'),
+      combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
       w.period,
       w.cycle,
     );

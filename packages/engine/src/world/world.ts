@@ -13,6 +13,7 @@
  */
 import { Audit, type AuditReport, type Family, type Reads } from '../audit/audit.js';
 import { standardFamilies } from '../audit/families/index.js';
+import { balanceSheet } from '../audit/families/accounts.js';
 import { type AuditMemory, emptyMemory, remember } from '../audit/memory.js';
 import type { AuditView } from '../audit/view.js';
 import {
@@ -44,9 +45,7 @@ import {
 } from '../core/ids.js';
 
 import {
-  acrossMembers,
   asCash,
-  asPerMember,
   asPerPiece,
   asRatio,
   type Cash,
@@ -63,7 +62,7 @@ import {
   noCash,
   sumCash,
 } from '../core/measure.js';
-import { finite, addTo, sum } from '../core/num.js';
+import { finite, addTo, combineDust, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   asContractMarket,
@@ -1961,6 +1960,38 @@ export class World {
       instruments: this.instruments,
       journal: this.journal,
       agreements: this.agreementStore,
+      /**
+       * 21a: the ONE balance sheet (Law 4), so a split reads what arrived rather than working out a
+       * proportion of it — and it is read AT THE PERIOD THE ACCOUNTS STAND AT.
+       *
+       * A weight event happens around this period's markets and revaluation, not after them, so
+       * there is no mark to read: a sheet at prices that do not exist is not a sheet, and
+       * Clearing F1.a refuses it — which is how this was found. It is the same sheet at what the
+       * ACCOUNTS have recognised (`carryingOfLots`), which is the number they are standing at at
+       * that instant whichever side of revaluation it falls on.
+       */
+      sheetOf: (party) => {
+        const sheet = balanceSheet(
+          {
+            period: this.currentPeriod,
+            registry: this.registry,
+            parties: { get: (id: PartyId) => this.parties.get(id) },
+            instruments: this.instruments,
+            register: this.store,
+            valuation: {
+              inMoney: (x, ccy, at) => this.valuation.inMoney(x, ccy, at),
+              valueOfLots: (inst, lots, at) => this.valuation.carryingOfLots(inst, lots, at),
+            },
+            contracts: this.contracts,
+          },
+          party,
+        );
+        const read = sum([sheet.assets.value.pieces, -sheet.liabilities.value.pieces]);
+        return {
+          value: read.value,
+          dust: combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
+        };
+      },
     };
   }
 
@@ -2069,15 +2100,15 @@ export class World {
           // Reporting G2: what an INSTRUCTION did. An entry with no instruction behind it is a mark,
           // and a mark is not money anybody paid (Clearing D4).
           if (e.instruction === undefined) continue;
-          // XI-15: an equity entry is per member, and what a party TOOK IN is what one of its own
-          // members took in — the same denomination its balance and its account are kept in.
-          terms.push(acrossMembers(e.delta, 1, 'what one member took in'));
+          // 21a: an equity entry is the party's TOTAL, and so is what it took in — the same
+          // denomination its balance and its account are kept in.
+          terms.push(e.delta);
         }
         // Currency B1: an equity account is kept in the money the party reports in.
         return asCash(
           sum(terms).value,
           this.registry.currencyOf(this.parties.get(party).region),
-          'what one member took in',
+          'what it took in',
         );
       },
       equityWalk: () => this.store.equityWalk(party),
@@ -2675,7 +2706,7 @@ export class World {
         // arrived holds nothing and owes nothing, exactly.
         this.store.stateEquity(
           party.id,
-          asPerMember<'money:piece'>(0, 'a party that has just arrived holds nothing'),
+          asTotal<'money:piece'>(0, 'a party that has just arrived holds nothing'),
           0,
           this.currentPeriod,
           this.currentCycle,

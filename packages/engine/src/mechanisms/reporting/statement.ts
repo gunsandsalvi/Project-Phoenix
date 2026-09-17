@@ -20,7 +20,7 @@ import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import type { Civil } from '../../calendar/civil.js';
 import { moneyInstrumentId, type PartyId } from '../../core/ids.js';
 import { negQty } from '../../core/tick.js';
-import { acrossMembers, asCash, type Cash, type PerMember } from '../../core/measure.js';
+import { asCash, type Cash } from '../../core/measure.js';
 import {
   isAssetLeg,
   isCreateLeg,
@@ -30,7 +30,6 @@ import {
   type Receipt,
 } from '../../ledger/instruction.js';
 import { tradedIn, wasTraded } from '../../prices/price-store.js';
-import { weightOf } from '../../parties/party.js';
 import type { Instrument } from '../../register/instruments.js';
 import { balanceSheet } from '../../audit/families/accounts.js';
 import { isPlantTerms, isLeaseTerms } from '../../registry/physical.js';
@@ -223,10 +222,6 @@ function cashLineOf(
   return 'operatingIn';
 }
 
-/** The whole party's money, in its own currency, from a per-member entry (XI-15). */
-function whole(ctx: MechanismContext, party: PartyId, x: PerMember<'money:piece'>, what: string): number {
-  return acrossMembers(x, weightOf(ctx.parties.get(party)), what);
-}
 
 /** Currency C4: a sum of money legs in any currency, stated in the party's own at the rate in force. */
 function inOwn(ctx: MechanismContext, party: PartyId, amount: Cash): number {
@@ -340,7 +335,8 @@ export function prepareStatement(
 
   // ---- the income statement: the equity account's own entries, attributed.
   for (const e of ctx.register.equityEntries(company, span.from, span.to)) {
-    const delta = whole(ctx, company, e.delta, e.cause);
+    // 21a: an equity entry IS the whole party's money, in its own currency.
+    const delta: number = e.delta;
     earned += delta;
     if (e.instruction === undefined) {
       revaluation += delta;
@@ -385,7 +381,7 @@ export function prepareStatement(
    */
   if (span.from > 0) {
     for (const e of ctx.register.equityEntries(company, asPeriod(0), asPeriod(span.from - 1))) {
-      opening += whole(ctx, company, e.delta, e.cause);
+      opening += e.delta;
     }
   }
   // The identity is opening + earned = closing; the three below are components OF `earned`, named
@@ -713,7 +709,7 @@ export function prepareStatement(
 export function earnedOver(ctx: MechanismContext, company: PartyId, from: Period, to: Period): number {
   let earned = 0;
   for (const e of ctx.register.equityEntries(company, from, to)) {
-    earned += whole(ctx, company, e.delta, e.cause);
+    earned += e.delta;
   }
   return earned;
 }

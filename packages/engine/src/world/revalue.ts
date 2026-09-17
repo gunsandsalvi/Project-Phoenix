@@ -27,13 +27,11 @@ import { impossible } from '../core/assert.js';
 import { none, type Option } from '../core/option.js';
 import {
   absolute,
-  acrossMembers,
   asCash,
-  asPerMember,
+  asTotal,
   asPerPiece,
   asRatio,
   noCash,
-  over,
   type Cash,
   minus,
   negated,
@@ -47,7 +45,6 @@ import { addTo, largest, sum, zeroIfNone } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties } from '../parties/party.js';
-import { weightOf } from '../parties/party.js';
 import type { Valuation } from '../prices/value.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Holding, Register } from '../register/register.js';
@@ -124,18 +121,10 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     } else continue;
     const { delta: total, through: throughTotal, carried } = moved;
     if (total.pieces === 0) continue;
-    /**
-     * XI-15, 0f.1 (15.4): THE REGISTER HOLDS A CELL'S TOTAL AND ITS EQUITY ACCOUNT IS PER MEMBER.
-     * A mark over the lots is over the whole cell's units, so what one member's account moves by
-     * is that over the weight — as `revalueRows` has it, and as the issuer's side below crosses
-     * back by the weight. This booked the total per member: a landlord cell of two hundred wore
-     * its buildings two hundred times over a period and was insolvent in five, and every household
-     * cell's equity walk left its own balance sheet by the weight on every mark (the `accounts`
-     * family's finding, Audit B5).
-     */
-    const perMember = asRatio(weightOf(d.parties.get(h.holder)), 'the members the holding is over');
-    const delta = over(total, perMember, 'what one member’s share moved by');
-    const through = over(throughTotal, perMember, 'what one member’s share passed through');
+    // 21a, 0f.1: a mark over the lots is over the whole cell's units and the account it moves is
+    // the whole cell's too, so the two are the same number and nothing is divided on the way.
+    const delta = total;
+    const through = throughTotal;
     // A MARK IS IN THE INSTRUMENT'S MONEY AND AN ACCOUNT IS IN ITS PARTY'S, so the move between
     // them is a translation at the rate — the one the decomposition above already says this step
     // makes (Currency D2, C5); the balance itself is never converted (B3).
@@ -144,7 +133,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: h.holder,
       period,
       cycle,
-      delta: asPerMember<'money:piece'>(inHome.pieces, 'what one member’s account moves by'),
+      delta: asTotal<'money:piece'>(inHome.pieces, 'what the account moves by'),
       cause: `revaluation of ${inst.id} in period ${period}`,
       through: inHomeMoney(through, h.holder, period, d).pieces,
     });
@@ -181,35 +170,14 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
      * matching gain anywhere — which is correct, and is why there was never a counterparty to find.
      */
     if (profile.liabilityOfIssuer && profile.owes === 'value') {
-      const weight = weightOf(d.parties.get(h.holder));
       const issuer = issuerOf(inst);
       // And the issuer's account is in the ISSUER's money, which is not always the holder's: a
       // liability one party carries in its own money is the same liability the other side converts
       // from the instrument's, and the two conversions are different reads of the one rate.
-      // XI-15, item 16: a holder's move is PER MEMBER and what the issuer books is the total, so
-      // it crosses by the cell's weight and by nothing else — `acrossMembers` refuses a weight
-      // that is not a count of people, which is the shape A-1 and A-39 are made of.
-      const moved = asPerMember<'money'>(
-        inHomeMoney(delta, issuer, period, d).pieces,
-        'what one holder’s share moved by',
-      );
-      addTo(
-        issuerMoves,
-        issuer,
-        negated(acrossMembers(moved, weight, 'issuer revaluation'), 'the other side of it'),
-      );
-      addTo(
-        issuerThrough,
-        issuer,
-        acrossMembers(
-          asPerMember<'money'>(
-            inHomeMoney(through, issuer, period, d).pieces,
-            'what one holder’s share passed through',
-          ),
-          weight,
-          'what its liability passed through',
-        ),
-      );
+      // 21a: both sides are TOTALS now, so the crossing by the holder's weight — which was the
+      // per-member holder's move being put back into the issuer's total — is gone.
+      addTo(issuerMoves, issuer, -inHomeMoney(delta, issuer, period, d).pieces);
+      addTo(issuerThrough, issuer, inHomeMoney(through, issuer, period, d).pieces);
     }
   }
   revalueContracts(period, cycle, d);
@@ -220,7 +188,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: issuer,
       period,
       cycle,
-      delta: asPerMember<'money:piece'>(delta, 'what one member’s account moves by'),
+      delta: asTotal<'money:piece'>(delta, 'what the account moves by'),
       cause: `revaluation of own liabilities in period ${period}`,
       through: zeroIfNone(issuerThrough.get(issuer)),
     });
@@ -230,7 +198,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       'revaluation',
       [issuer],
       {
-        deltaPerMember: delta,
+        delta,
         liabilities: true,
       },
       false,
@@ -270,9 +238,9 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
         party,
         period,
         cycle,
-        delta: asPerMember<'money:piece'>(
+        delta: asTotal<'money:piece'>(
           inHomeMoney(sign === 1 ? delta : negated(delta, 'to this side'), party, period, d).pieces,
-          'what one member’s account moves by',
+          'what the account moves by',
         ),
         cause: `revaluation of ${c.id} in period ${period}`,
         through: inHomeMoney(through, party, period, d).pieces,
@@ -465,25 +433,16 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       'what the rate did to it',
     );
     if (total.pieces === 0) continue;
-    // XI-15, 0f.1 (15.4): the position is the cell's total; the account is per member.
-    const perMember = asRatio(
-      weightOf(d.parties.get(h.holder)),
-      'the members the position is over',
-    );
-    const delta = over(total, perMember, 'what one member’s share moved by');
+    // 21a, 0f.1: the position is the cell's total and so is the account it moves.
     const move = {
       party: h.holder,
       period,
       cycle,
-      delta: asPerMember<'money:piece'>(delta.pieces, 'what one member’s account moves by'),
+      delta: asTotal<'money:piece'>(total.pieces, 'what the account moves by'),
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.
       through: absolute(
-        over(
-          asCash(carried.pieces * now, home, 'the position in its holder\u2019s money'),
-          perMember,
-          'one member’s share of it',
-        ),
+        asCash(carried.pieces * now, home, 'the position in its holder\u2019s money'),
         'what it passed through',
       ).pieces,
     };
@@ -498,7 +457,7 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       cycle,
       'revaluation.fx',
       [h.holder, inst.id],
-      { deltaPerMember: delta.pieces, ccy: inst.ccy, home, was, now: now, carried: carried.pieces },
+      { delta: total.pieces, ccy: inst.ccy, home, was, now: now, carried: carried.pieces },
       false,
     );
   }
@@ -528,10 +487,11 @@ function revalueRows(period: Period, cycle: Cycle, d: RevalueDeps): void {
     ]) {
       const p = d.parties.get(side.party);
       if (!p.status.alive) continue;
-      const weight = weightOf(p);
-      const moved = asPerMember<'money:piece'>(
-        (side.sign * inHomeMoney(delta, side.party, period, d).pieces) / weight,
-        'what one member’s account moves by',
+      // 21a: a row is owed by the whole party and the account it moves is the whole party's, so
+      // the division by the weight this carried is gone.
+      const moved = asTotal<'money:piece'>(
+        side.sign * inHomeMoney(delta, side.party, period, d).pieces,
+        'what the account moves by',
       );
       d.register.moveEquity({
         party: side.party,
@@ -539,7 +499,7 @@ function revalueRows(period: Period, cycle: Cycle, d: RevalueDeps): void {
         cycle,
         delta: moved,
         cause: `revaluation of ${row.id} in period ${period}`,
-        through: inHomeMoney(now, side.party, period, d).pieces / weight,
+        through: inHomeMoney(now, side.party, period, d).pieces,
       });
       d.journal.record(
         period,

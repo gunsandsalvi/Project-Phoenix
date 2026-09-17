@@ -1,6 +1,6 @@
 /**
  * Accounts balance (Audit B5): assets minus liabilities, read from the register at marks, equals
- * the stated equity account, per party, per member.
+ * the stated equity account, per party. Both sides are the party's TOTAL (21a).
  *
  * @spec Central Bank A2 Audit B5 Audit B5.a Audit B5.b Banks Funding F3 Central Bank A2.c Firm C3 Fund Shares A3 Households D3 Law 7 Money D2
  *
@@ -26,7 +26,6 @@ import { negated } from '../../core/measure.js';
 import { combineDust, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { weightOf } from '../../parties/party.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { Contract } from '../../registry/derivatives.js';
 import type { Family, Violation } from '../audit.js';
@@ -66,11 +65,11 @@ export interface BalanceReads {
   };
 }
 
-/** The two sides and the rounding the read carries, per member of the party (XI-15). */
+/** The two sides and the rounding the read carries — the party's TOTAL (0f.1, 21a). */
 export interface BalanceSheet {
   readonly assets: CashSum;
   readonly liabilities: CashSum;
-  /** Law 7: the walk behind every money balance the two sides are read off, per member. */
+  /** Law 7: the walk behind every money balance the two sides are read off. */
   readonly walked: number;
   readonly ccy: CurrencyCode;
 }
@@ -119,8 +118,8 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
   /**
    * D1: an open contract is an asset to one side and a liability to the other, at every instant.
    * It is kept apart from the liabilities the register holds because those are read from the OTHER
-   * side — held by other parties in total, and divided by this one's weight below — while a
-   * contract's value is already per member, the way the leg that opened it booked it (XI-15).
+   * side — held by other parties in total — while a contract's value is what the contract is worth
+   * to this party, the way the leg that opened it booked it (21a).
    */
   const contractLiabilities: Cash[] = [];
   for (const c of view.contracts.openOf(party)) {
@@ -204,8 +203,8 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
  * proves (A2.a). Members' home currencies may differ; each sheet is already in its own party's
  * money and `inMoney` puts them in the root's at the rate in force (Currency C4, C5, D2).
  *
- * XI-15: each member's sheet is PER MEMBER, so a member that is a cell is multiplied by its weight
- * before it is added — a group holding a hundred identical subsidiaries holds a hundred of them.
+ * 21a: each member's sheet is its own TOTAL, so a group's is the sum of them and nothing is scaled
+ * on the way in.
  */
 export function consolidated(view: BalanceReads, group: readonly PartyId[]): BalanceSheet {
   const root = group[0];
@@ -269,29 +268,17 @@ export function accountsFamily(): Family {
         // equity account, which is the one number they have.
         const equity = view.register.equityWalk(p.id);
         const revaluation = view.register.revaluationWalk(p.id);
-        // 0f.1: the sheet is a TOTAL and the equity account is still PER MEMBER (settlement writes
-        // it so until 0f.2), so what stands against the read is the account over the people. The
-        // multiplication is by a count and adds no dust (Law 7).
-        const people = weightOf(p);
-        const stands = sum([equity.value * people, revaluation.value * people]);
+        // 21a: both sides are TOTALS. The sheet is what the party holds against what it owes and
+        // the accounts are the party's own, so nothing is multiplied and nothing is divided — the
+        // divide-and-multiply path that 21.104 measured (a residual a per-member account cannot
+        // help leaving, of 0.18 to 1.0 pieces against three hundred and forty billion) is gone
+        // because the division is gone, not because anything here was widened.
+        const stands = sum([equity.value, revaluation.value]);
         const read = sum([assets.value.pieces, -liabilities.value.pieces]);
-        /**
-         * Law 7 (21.104): THE DUST OF A PRODUCT IS SCALED BY THE MULTIPLIER. The two accounts are
-         * kept PER MEMBER and the sheet is a TOTAL, so the comparison happens at the total's
-         * magnitude — and the rounding a per-member walk carries arrives there multiplied by the
-         * people, exactly as its value does. This added the per-member dust unscaled, so a cell of
-         * fourteen thousand members was held to a tolerance fourteen thousand times tighter than
-         * the arithmetic it was measuring: four household cells reported residuals of 0.18 to 1.0
-         * pieces against assets of three hundred and forty BILLION — eight parts in ten trillion,
-         * which is what a walk of that length at that magnitude leaves behind.
-         *
-         * It is not a widened band (Law 7 forbids one): it is the same multiplication applied to
-         * the same number's dust, and a cell of one is unchanged by it.
-         */
         const dust =
           combineDust(assets, liabilities, read) +
-          equity.dust * people +
-          revaluation.dust * people +
+          equity.dust +
+          revaluation.dust +
           stands.dust +
           walked;
         if (!withinDust(read.value, stands.value, dust)) {
@@ -306,7 +293,7 @@ export function accountsFamily(): Family {
             size: read.value - stands.value,
             unit: home,
             period: view.period,
-            message: `${p.id}: assets ${assets.value.pieces} - liabilities ${liabilities.value.pieces} != the ${revaluation.value === 0 ? `equity account ${equity.value}` : `accounts it stands on ${stands.value} (equity ${equity.value} and revaluation ${revaluation.value})`} (per member)`,
+            message: `${p.id}: assets ${assets.value.pieces} - liabilities ${liabilities.value.pieces} != the ${revaluation.value === 0 ? `equity account ${equity.value}` : `accounts it stands on ${stands.value} (equity ${equity.value} and revaluation ${revaluation.value})`}`,
           });
         }
       }
@@ -367,7 +354,7 @@ export function equityLedgerFamily(): Family {
             size: itemised.value - walk.value,
             unit: home,
             period: view.period,
-            message: `${p.id}: the equity ledger sums to ${itemised.value} and the account stands at ${walk.value} (per member)`,
+            message: `${p.id}: the equity ledger sums to ${itemised.value} and the account stands at ${walk.value}`,
           });
         }
       }

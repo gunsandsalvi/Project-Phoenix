@@ -14842,3 +14842,61 @@ against the same worlds before this change.
 **Also here.** The family census in the same file said nine families and there are ten since 0h.3.
 A count is a claim (CLAUDE.md), and the comment now names which one arrived and why it is not one
 of Audit B1–B8.
+
+---
+
+## 21a — The equity account is a TOTAL
+
+**What.** A party's equity account holds its own total, like everything else the register has held
+since 0f.1. The account, its itemisation (`EquityEntry.delta`), what settlement reports an
+instruction did to it (`EquityEffect.delta`) and the seed's opening statement are all `Total` in the
+type, and the compiler refuses to mix the two denominations.
+
+Deleted with the per-member account: `bumpPerMember` and `perMemberOf` in settlement (one door,
+`bumpIn`, which takes the total); three divisions in `world/revalue.ts` (holdings, foreign positions
+and agreement rows) and the `acrossMembers` crossing on the issuer's side of its own liabilities;
+the division in `assemble.ts` that opened every account; `whole()` in the reporting statement and the
+`acrossMembers(x, 1, …)` casts in `banks/lines.ts`, `central-bank-omo`, `firms` and `world.ts`'s
+`earned`; the multiplication by the weight in the `accounts` family and its scaled dust; the
+weighted MEAN a merge took of two accounts, which was the one place a merge divided.
+
+`observer.parties[].equityPerMember` is `equity`, and the app's column with it.
+
+**Why.** 0f.1 gave a cell TOTALS in the register and left the account per member, so every writer
+divided by the weight and every reader multiplied it back — and the two weights were not always the
+same one. `hh.working.bank.a` closed a year of the scale model with assets of 407,346,979,888 and an
+account of 23,763,095 over 17,142 members: **407,346,979,888 against 407,346,979,887, times a
+seventeen-thousandth**. Four household cells reported it every period.
+
+**And a second cause under it, which the first was hiding.** With the denominations agreed the same
+four cells were still out by 0.18 to 1.0 pieces — 21.104's measurement, and a HUNDRED TIMES the dust
+of the walk that produced it, so not a rounding. A split moves `floor(total × members / weight)`
+pieces of every lot and leaves the remainder with the people who stayed; the account was being split
+in proportion to the MEMBERS, so each cell's account and its own sheet differed by the value of the
+fractions that would not divide. `moveShare` no longer touches either account. `world/cells.ts`
+states the arriving party's as the READ of what it now holds against what it owes — Seed C1's rule,
+which is already what `world.ts` does wherever a party begins — and takes the same number off the
+source, which conserves because the lots were partitioned and a sheet is a sum over them.
+
+**The read is at what the ACCOUNTS have recognised, not at marks.** A weight event happens around
+this period's markets, not after them, so there is no mark to read and `Clearing F1.a` refuses the
+sheet outright — which is how this was found (`check:opens` went red at a re-key). `Valuation`
+gained `carryingOfLots`, the sum of `carryingPerUnit` over lots, which is the number the account is
+standing at whichever side of revaluation the instant falls on; `sheetOf` is the ONE `balanceSheet`
+read at that valuation, so there is no second balance sheet (Law 4, Audit A2.a).
+
+**Measured.** `rigWorld('seed-E2')`, 52 periods: `accounts` reported four cells from period 1 with
+gaps of 75 billion; it now reports none, and what is left at period 2 is one pre-existing finding
+per world — `etf.us` holding 17.68 pieces of equity (21.109) and `probate.us.1.bank.b` whose account
+does not carry the 15.7 billion it owes (21.110). Both are written down and positioned; neither is
+new (`etf.us`'s entries and walk are byte-identical before and after, and the assertion simply never
+reached period 2).
+
+`equity-ledger.test.ts` 3 red → 2, both of them 21.109. Its third test asserted the OLD
+representation in its title — *"because it is per-member state"* — and now asserts what 21a made
+true; its fourth compared a `Cash` to a number with `toBe` and could never pass.
+
+**What was NOT added.** No `perMemberEquity` read. The plan expected one; no reader in the engine
+wants a member's share of an account — every one of them (a bank's capital, a fund's NAV check, a
+cost of capital, the reporting statement, the observer) wants the party's own number — and a door
+nobody opens is not a read, it is code (Law 2).

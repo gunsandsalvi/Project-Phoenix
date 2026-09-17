@@ -7,7 +7,7 @@
  * A leg on a cell is denominated like a leg on anybody (0f.2): the register holds the cell's total,
  * the leg moves a total, and what one member's share of it is is a read, never a side of a leg.
  */
-import type { Cash, PerMember, PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece, Total } from '../core/measure.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import type { Qty } from '../core/tick.js';
 import type {
@@ -435,8 +435,8 @@ export interface Realised {
 
 export interface EquityEffect {
   readonly party: PartyId;
-  /** Per member for a cell, in the party's home currency. */
-  readonly delta: PerMember<'money:piece'>;
+  /** 21a: the party's TOTAL, in its home currency — what its account actually moved by. */
+  readonly delta: Total<'money:piece'>;
 }
 
 export interface Settled {

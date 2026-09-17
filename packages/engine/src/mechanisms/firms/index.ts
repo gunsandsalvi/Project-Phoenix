@@ -33,9 +33,8 @@ import {
   windHardnessParam,
 } from '../../registry/physical.js';
 import {
-  acrossMembers,
   atMostCash,
-  type PerMember,
+  type Total,
   type Cash,
   heldAsMoney,
   minus,
@@ -122,7 +121,7 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      const moved = new Map<PartyId, PerMember<'money:piece'>[]>();
+      const moved = new Map<PartyId, Total<'money:piece'>[]>();
       // Law 7: the dust of this comparison is the dust of the arithmetic that produced it — a walk
       // over the lots each leg drew from, inside settlement, and then a sum over the legs. What is
       // visible here is the legs and what they cost, and that is what the tolerance is derived from.
@@ -162,8 +161,8 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           .map((e) => e.data['wages'])
           .filter((w): w is number => typeof w === 'number');
         const wages = sum(capitalised);
-        // XI-15: a firm is a named party, so what its equity moved by is what it made.
-        const effect = sum(deltas.map((d) => acrossMembers(d, 1, 'what it made')));
+        // 21a: what its equity moved by is what it made, and the effect is that total.
+        const effect = sum(deltas);
         const walk = walked.get(firm) ?? { terms: 0, magnitude: 0 };
         const dust =
           combineDust(effect, wages) + dustOf(walk.terms, walk.magnitude + Math.abs(wages.value));

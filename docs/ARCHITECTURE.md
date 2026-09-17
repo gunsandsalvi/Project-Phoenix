@@ -492,10 +492,20 @@ that only events move it.
 
 These fell out of building items 1 and 2 and are recorded here because they are load-bearing.
 
-- **Everything about a party is per member of that party.** Holdings, cash, the equity account and
-  every effect on them are per member (a named party is a cell of weight one). The only place a
-  total appears is a leg's other side and the register's `heldTotal`. Mixing the two was the first
-  defect the audit caught.
+- **Everything about a party is that party's TOTAL** (0f.1 for the register, 21a for the equity
+  account). Holdings, cash, liens, the equity and revaluation accounts and every effect on them are
+  what the whole party has; a member's share is a READ over the weight (`perMember`), and a named
+  party is a cell of weight one. It was the other way round until 0f.1, and the years in between are
+  the record: mixing the two was the first defect the audit caught and it was still catching it at
+  21.101, 21.104 and 21a. There is one denomination now, and `Total`/`PerMember` in the type system
+  is what keeps it that way.
+- **A weight event that moves holdings states the arriving party's account as the READ** (Seed C1,
+  21a). The register partitions lots in whole pieces (`floor(total × members / weight)`, remainder
+  with the people who stayed), so what arrived is not a proportion of anything — `world/cells.ts`
+  reads the one `balanceSheet` of what the arriving party now holds against what it owes and takes
+  that same number off the source. It is read at `Valuation.carryingOfLots` — what the accounts have
+  recognised — because a weight event happens around this period's markets and a mark that has not
+  printed yet is refused (Clearing F1.a).
 - **Routing across issuers** (Money C2.a). A money leg from account (h1, i1) to (h2, i2): payer minus
   (or _creation_ if h1 = i1), payee plus (or _destruction_ if h2 = i2). If i1 ≠ i2, then for each
   issuer that is a bank (not the central bank): the bank's own money is redeemed on the paying side or
@@ -1737,10 +1747,10 @@ their opening plant per member where it comes to whole hectares.
 meets and a project never builds (`registry/capital.ts project` filters it out of the bundle). The
 foundation seeds the landlord cells and their premises before the firms' plant (`seedLandlords`
 block) and `leaseFromLandlords` opens a shop's lease instead of its vintages; the landlords' cash is
-given in the property module's seed, after the banks' sheets are built. In `world/revalue.ts` the
-holdings and foreign-position marks of a cell are divided by its weight before the equity account
-moves (the register holds totals, the account is per member, 0f.1) — as `revalueRows` always did.
-`securities-lending` marks at the last print (`lastMarkOf`).
+given in the property module's seed, after the banks' sheets are built. In `world/revalue.ts` a
+cell's marks move its account by the whole cell's number, because both are totals (21a; they were
+divided by the weight while the account was per member). `securities-lending` marks at the last
+print (`lastMarkOf`).
 
 ### A tenancy has a term and a landlord has a view of its tenant (item 15.5)
 

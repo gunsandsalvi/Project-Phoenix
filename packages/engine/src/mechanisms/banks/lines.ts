@@ -30,7 +30,6 @@
 import { atMostCash, negated, noCash } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
-  acrossMembers,
   asCash,
   heldAsMoney,
   type Cash,
@@ -308,13 +307,13 @@ function earnedByLine(ctx: MechanismContext, bank: PartyId, d: BankDecl): Earned
   let unattributed = none_('nothing unattributed yet');
   for (const r of ctx.ledger.inPeriod(asPeriod(ctx.period - 1))) {
     if (r.outcome !== 'settled') continue;
-    // XI-15: a bank is a named party, so what its equity account moved by is what it made.
+    // 21a: what its equity account moved by is what it made, and the effect is that total.
     let delta = none_('nothing on this instruction');
     for (const e of r.equity) {
       if (e.party === bank) {
         delta = plus(
           delta,
-          asCash(acrossMembers(e.delta, 1, 'what it made'), home, 'what it made'),
+          asCash(e.delta, home, 'what it made'),
           'its own equity',
         );
       }

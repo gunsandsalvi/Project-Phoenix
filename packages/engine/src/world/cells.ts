@@ -12,6 +12,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
 import { type PartyId, partyId } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
+import { asTotal } from '../core/measure.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellParty, Parties, WeightEventKind } from '../parties/party.js';
 import type { Register } from '../register/register.js';
@@ -24,6 +25,67 @@ export interface CellDeps extends SuccessionDeps {
   readonly register: Register;
   readonly instruments: Instruments;
   readonly journal: Journal;
+  /**
+   * Audit B5, Seed C1 (21a): WHAT A PARTY HOLDS AGAINST WHAT IT OWES, and the dust of reading it.
+   * It is the world's own `balanceSheet` — the one implementation the audit checks against (Law 4)
+   * — handed in rather than rebuilt, because a split is where a party BEGINS and Seed C1 says what
+   * a party's equity is when it begins.
+   */
+  readonly sheetOf: (party: PartyId) => { readonly value: number; readonly dust: number };
+}
+
+/**
+ * XI-15, Seed C1, Audit B5 (21a): THE EQUITY THAT WENT WITH THE MEMBERS IS WHAT THEY TOOK.
+ *
+ * The register moved `floor(total x members / weight)` pieces of every lot and left the remainder
+ * with the people who stayed, so what arrived is not the members' proportion of anything — it is
+ * the pieces that divided. Splitting the ACCOUNT in proportion to the members therefore left both
+ * cells' accounts disagreeing with their own sheets by the value of those fractions, which is the
+ * residual the `accounts` family reported at period 1 of the scale model and 21.104 measured.
+ *
+ * So the arriving party's account is the READ, exactly as it is for any party that begins (Seed C1,
+ * and `world.ts` where a party enters), and the source's account moves by the same number — which
+ * conserves, because the lots were partitioned and a sheet is a sum over them.
+ *
+ * It runs after whatever the event reseats onto the arriving party, because what it OWES is half
+ * of the read.
+ */
+function equityFollowsTheMembers(
+  from: PartyId,
+  to: PartyId,
+  cause: string,
+  period: Period,
+  cycle: Cycle,
+  d: CellDeps,
+): void {
+  const arrived = d.sheetOf(to);
+  if (d.register.hasEquityAccount(to)) {
+    // A promotion arrives at a NAMED party that already entered, so it has an account (at nothing,
+    // because it held nothing) and Audit B5.b says an account that exists is moved, never restated.
+    const now = d.register.equityWalk(to).value;
+    d.register.moveEquity({
+      party: to,
+      period,
+      cycle,
+      delta: asTotal<'money:piece'>(arrived.value - now, 'what arrived with its members'),
+      cause,
+    });
+  } else {
+    d.register.stateEquity(
+      to,
+      asTotal<'money:piece'>(arrived.value, 'what it begins holding against what it owes'),
+      arrived.dust,
+      period,
+      cycle,
+    );
+  }
+  d.register.moveEquity({
+    party: from,
+    period,
+    cycle,
+    delta: asTotal<'money:piece'>(-arrived.value, 'what left with the members'),
+    cause,
+  });
 }
 
 
@@ -51,7 +113,7 @@ export function mergeCells(
    * the run so nothing persisted, but the order was backwards and it costs nothing to put right:
    * ask, apply, journal.
    */
-  const moved = d.register.merge(a, b, d.parties.cell(a).weight, d.parties.cell(b).weight, period, cycle);
+  const moved = d.register.merge(a, b, period, cycle);
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -181,7 +243,8 @@ export function reKeyCell(
     key: { ...c.key, ...key },
   };
   d.parties.add(fresh);
-  const moved = d.register.moveShare(cell, id, members, c.weight, period, cycle);
+  const moved = d.register.moveShare(cell, id, members, c.weight);
+  equityFollowsTheMembers(cell, id, cause, period, cycle, d);
   d.parties.applyWeight({
     kind: 'promotion',
     party: cell,
@@ -299,7 +362,7 @@ export function promoteCell(
   forbid(target.representation === 'named', 'A6.c', `${to} is a cell; a promotion makes a named party`);
   forbid(target.status.alive, 'XI-3', `${to} is not alive to be promoted into`);
   forbid(d.register.holdingsOf(to).length === 0, 'XI-15', `${to} already holds something; a promotion arrives with the members' own pieces`);
-  const moved = d.register.moveShare(cell, to, members, c.weight, period, cycle);
+  const moved = d.register.moveShare(cell, to, members, c.weight);
   const after = c.weight - members;
   // A cell of nobody is nobody's (XI-15): the last member does not leave a weight of zero behind,
   // the cell ceases into the party it became, and the event says so with before and after.
@@ -322,4 +385,6 @@ export function promoteCell(
     succeedAgreements(cell, to, period, cycle, d);
     d.journal.record(period, cycle, 'party.ceased', [cell, to], { successor: to, cause }, true);
   }
+  // After the reseat: what it owes is half of the read (21a).
+  equityFollowsTheMembers(cell, to, cause, period, cycle, d);
 }

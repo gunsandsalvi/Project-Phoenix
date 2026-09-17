@@ -76,18 +76,27 @@ describe('the equity ledger (Reporting A2, G2)', () => {
     expect(spans).toBeGreaterThan(0);
   });
 
-  it('carries the itemisation across a cell split, because it is per-member state (XI-15)', () => {
-    // A split is one member described twice: the new cell's equity has the same history as the old
-    // one's, and it did not arrive from nowhere. Copying the walk and not the entries left cells
-    // whose account said it had been moved eighteen times and whose ledger carried nine — which the
-    // count check above is what found.
+  it('splits an account by what actually moved, not by the members (21a)', () => {
+    /**
+     * XI-15, Audit B5: a split moves `floor(total x members / weight)` pieces of every lot and
+     * leaves the remainder with the people who stayed, so what arrived is NOT the members'
+     * proportion of the book — and the account that follows them is the READ of what they took
+     * (Seed C1), never a proportion of the account they left.
+     *
+     * Splitting it by the members instead left both cells' accounts disagreeing with their own
+     * sheets by the value of those fractions: 0.88 pieces against four hundred billion at period 1
+     * of the scale model, a hundred times the dust of the walk that produced it. The `accounts`
+     * family is what says so, and it says nothing here.
+     */
     const w = rigWorld('equity-ledger', 4, 16);
-    for (let i = 0; i < 8; i += 1) w.step();
+    for (let i = 0; i < 8; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const split = w.parties.all().filter((p) => /\.\d+\.\d+$/.test(String(p.id)));
     expect(split.length, 'this world never split a cell, so it tests nothing').toBeGreaterThan(0);
     for (const p of split) {
       if (!w.register.hasEquityAccount(p.id)) continue;
       const walk = w.register.equityWalk(p.id);
+      // Reporting G2: one opening entry and one for every move since, on the cell that arrived as
+      // much as on the cell it left.
       expect(w.register.equityEntries(p.id, 0 as Period, w.period).length).toBe(walk.moves + 1);
     }
   });
@@ -99,7 +108,7 @@ describe('the equity ledger (Reporting A2, G2)', () => {
     for (let i = 0; i < 4; i += 1) w.step();
     for (const p of w.parties.all()) {
       if (!w.register.hasEquityAccount(p.id)) continue;
-      expect(w.register.equity(p.id)).toBe(w.register.equityWalk(p.id).value);
+      expect(w.register.equity(p.id).pieces).toBe(w.register.equityWalk(p.id).value);
     }
   });
 });

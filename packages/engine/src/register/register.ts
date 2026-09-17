@@ -22,11 +22,11 @@ import {
   over,
   type PerPiece,
   type PerMember,
+  type Total,
   valueAt,
   asTotal,
   eachMember,
 } from '../core/measure.js';
-import { asPerMember } from '../core/measure.js';
 import type {
   CurrencyCode,
   InstructionId,
@@ -93,8 +93,8 @@ export interface DrawnLot {
 
 export interface EquityMove {
   readonly party: PartyId;
-  /** Per member for a cell, in the party's home currency. */
-  readonly delta: PerMember<'money:piece'>;
+  /** 21a: the party's TOTAL, like everything else it holds, in its home currency. */
+  readonly delta: Total<'money:piece'>;
   readonly cause: string;
   /**
    * Law 7: the magnitude the arithmetic actually passed through, when it is bigger than the move.
@@ -131,8 +131,8 @@ export interface EquityEntry {
   readonly party: PartyId;
   readonly period: Period;
   readonly cycle: Cycle;
-  /** Per member for a cell, in the party's home currency — the same number `moveEquity` was given. */
-  readonly delta: PerMember<'money:piece'>;
+  /** The party's TOTAL, in its home currency — the same number `moveEquity` was given (21a). */
+  readonly delta: Total<'money:piece'>;
   readonly cause: string;
   readonly instruction?: InstructionId;
 }
@@ -301,7 +301,11 @@ export class Register {
     return out;
   }
 
-  /** The stated equity account, per member (Audit B5). Missing until the seed states it. */
+  /**
+   * The stated equity account (Audit B5), a TOTAL like everything else the register holds since
+   * 0f.1. Missing until the seed states it; what one member's share of it comes to is
+   * `equity(p) / weight`, worked out by whoever wants that — and nobody does yet.
+   */
   equity(party: PartyId): Cash {
     return asCash(
       this.equityWalk(party).value,
@@ -360,7 +364,7 @@ export class Register {
    */
   stateEquity(
     party: PartyId,
-    value: PerMember<'money:piece'>,
+    value: Total<'money:piece'>,
     dust: number,
     period: Period,
     cycle: Cycle,
@@ -790,8 +794,7 @@ export class Register {
    * every lot and every lien to the fresh party, and the remainder STAYS: the pieces that would not
    * divide belong to the people who stayed, which is arithmetic and not a bound. The fresh party's
    * money walks open at what arrived; the dust of the source's history stays with the source. The
-   * equity and revaluation accounts are per member and a member described twice is the same member,
-   * so those copy as they did — with the itemisation, which is the count check in `accounts`.
+   * equity and revaluation accounts are NOT touched here (21a, below).
    *
    * This was `copyMemberState`: a cell's lots were PER MEMBER, so a split duplicated them and the
    * two cells' totals summed to the old one by construction. With totals in the lots the same
@@ -802,8 +805,6 @@ export class Register {
     to: PartyId,
     members: number,
     weight: number,
-    period: Period,
-    cycle: Cycle,
   ): ReadonlyMap<InstrumentId, Qty> {
     this.writes += 1;
     const movedByInstrument = new Map<InstrumentId, Qty>();
@@ -860,41 +861,28 @@ export class Register {
       }
       this.byHolder.set(to, dst);
     }
-    const e = this.equityAccount.get(from);
-    if (e !== undefined) {
-      // A fresh walk from the per-member value: one opening, no moves — which is what the ledger
-      // below itemises, and what the `accounts` family counts.
-      this.equityAccount.set(to, opened(e.value, `equity of ${to}`));
-      /**
-       * Reporting A2, Law 18, 0g.1: THE MOVERS ARRIVE WITH THEIR EQUITY, as one entry. Their
-       * per-member account is the same number it was in the cell they left, and the itemisation
-       * that has to sum to it is that number, once, under the cause that moved them. This COPIED
-       * the whole ledger of the cell they left — every entry since the seed — into every cell a
-       * death or a crossing split off, and a merge concatenated it again: the ladder's second rung
-       * ran out of six gigabytes of heap on copies of one history (0g.1).
-       */
-      this.equityLedger.set(to, [
-        {
-          party: to,
-          period,
-          cycle,
-          delta: asPerMember<'money:piece'>(e.value, `the equity ${to}'s members arrived with`),
-          cause: 'moved with its members',
-        },
-      ]);
-    }
-    const revalued = this.revaluationAccount.get(from);
-    if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
+    /**
+     * 21a, Seed C1: THE ACCOUNTS ARE NOT SPLIT HERE. An equity account is a READ of what a party
+     * holds against what it owes, and this store holds neither the marks nor the contracts that
+     * read costs — so it moved a share in proportion to the MEMBERS while the lots above move
+     * `floor` of that proportion, and the pieces that would not divide left the two cells' accounts
+     * disagreeing with their own sheets by the value of a fraction of a piece per lot (0.88 against
+     * four hundred billion at period 1 of the scale model, which is a hundred times the dust of the
+     * walk that produced it — a residual, not a rounding).
+     *
+     * `world/cells.ts` states the arriving party's account as the read and takes the same number
+     * off the source, where the balance sheet is readable. The revaluation account goes with it:
+     * it is the same read of the same positions.
+     */
     return movedByInstrument;
   }
 
   /**
    * XI-15, 0f.1: A MERGE ADDS TOTALS AND WEIGHTS. Two cells on one key become one cell holding what
    * both held: the lots concatenate (each lot keeps its own basis and date — nothing is averaged),
-   * the liens concatenate, the money walks add, and the per-member equity and revaluation accounts
-   * become the weighted mean of the two, which is the one place a merge divides: it is the
-   * accounting identity of the two books over the people in them and its dust is carried on the
-   * walk (Law 7), never a decision at an average.
+   * the liens concatenate, the money walks add, and 21a: the equity and revaluation accounts ADD,
+   * because they are totals like everything else. They used to be the weighted mean of the two,
+   * which was the one place a merge divided; nothing here divides now.
    *
    * This was `forget`, which REFUSED a merge unless the two cells' per-member state was identical
    * (`sameState`) — a merge was a renaming. With totals in the lots there is no per-member state to
@@ -904,8 +892,6 @@ export class Register {
   merge(
     into: PartyId,
     from: PartyId,
-    intoWeight: number,
-    fromWeight: number,
     period: Period,
     cycle: Cycle,
   ): ReadonlyMap<InstrumentId, Qty> {
@@ -952,31 +938,24 @@ export class Register {
     const ea = this.equityAccount.get(into);
     const eb = this.equityAccount.get(from);
     if (ea !== undefined && eb !== undefined) {
-      const people = intoWeight + fromWeight;
-      const mean = (ea.value * intoWeight + eb.value * fromWeight) / people;
-      this.equityAccount.set(into, moved(ea, mean - ea.value, `equity of ${into} at merge`));
-      // 0g.1: the account moved by the difference the arrivals make to the per-member mean, and
-      // that is the one entry the itemisation gains — never the movers' whole history (above).
+      // 21a: TWO TOTALS ADD. The weighted mean was the arithmetic a per-member account needed, and
+      // it was the one place a merge divided; with totals there is nothing to divide and nothing
+      // to average, and what the merged cell's account holds is what the two accounts held.
+      this.equityAccount.set(into, moved(ea, eb.value, `equity of ${into} at merge`));
+      // 0g.1: one entry for what arrived — never the movers' whole history (above).
       const mine = this.equityLedger.get(into);
       const entry: EquityEntry = {
         party: into,
         period,
         cycle,
-        delta: asPerMember<'money:piece'>(
-          mean - ea.value,
-          `what ${from}'s members did to ${into}'s mean`,
-        ),
+        delta: asTotal<'money:piece'>(eb.value, `the equity ${from}'s members brought`),
         cause: `merged ${from}`,
       };
       if (mine === undefined) this.equityLedger.set(into, [entry]);
       else mine.push(entry);
       const ra = this.revaluationWalk(into);
       const rb = this.revaluationWalk(from);
-      const rmean = (ra.value * intoWeight + rb.value * fromWeight) / people;
-      this.revaluationAccount.set(
-        into,
-        moved(ra, rmean - ra.value, `revaluation account of ${into}`),
-      );
+      this.revaluationAccount.set(into, moved(ra, rb.value, `revaluation account of ${into}`));
     }
     this.byHolder.delete(from);
     this.equityAccount.delete(from);

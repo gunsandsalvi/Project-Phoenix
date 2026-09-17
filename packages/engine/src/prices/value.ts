@@ -407,6 +407,25 @@ export class Valuation {
     }
   }
 
+  /**
+   * XI-6, Audit B5 (21a): WHAT THE EQUITY ACCOUNT HAS RECOGNISED FOR THESE LOTS, added.
+   *
+   * `valueOfLots` is the same sum at the MARK, and a mark is this period's print — which does not
+   * exist before this period's markets have met (Clearing F1.a refuses it). So a reader that has to
+   * value a book mid-period asks this instead: it is the number the account is standing at, at that
+   * instant, whichever side of revaluation the instant falls on (`carryingPerUnit`).
+   */
+  carryingOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): Cash {
+    const ccy = this.instruments.get(instrument).ccy;
+    return sumCash(
+      ccy,
+      lots.map((lot) =>
+        valueAt(this.carryingPerUnit(instrument, lot, at), lot.qty, ccy, `carrying of ${instrument}`),
+      ),
+      `carrying of ${instrument}`,
+    ).value;
+  }
+
   /** What the line was last marked at before `now`, or the lot's basis where it never was. */
   private lastMarkBefore(instrument: InstrumentId, now: Period, basis: PerPiece): PerPiece {
     const before = this.prices.latest(instrument, period(now - 1));

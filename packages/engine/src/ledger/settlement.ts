@@ -36,18 +36,15 @@ import {
   type UnitId,
 } from '../core/ids.js';
 import {
-  asCash,
   absolute,
-  asPerMember,
   asPerPiece,
   asRatio,
   asTotal,
   type Cash,
-  eachMember,
   heldAsMoney,
   minus,
   negated,
-  type PerMember,
+  type Total,
   type PerPiece,
   pricedAt,
   scale,
@@ -1108,7 +1105,7 @@ export class Settlement {
      */
     const sold = new Map<string, Cash>();
     const realised: Realised[] = [];
-    const equity = new Map<PartyId, PerMember<'money:piece'>>();
+    const equity = new Map<PartyId, Total<'money:piece'>>();
     /** Derivative D1: the rows this instruction wrote, so its drafter can name what it opened. */
     const written: ContractId[] = [];
     const drawnByOp = new Map<number, DrawnLot[]>();
@@ -1142,71 +1139,23 @@ export class Settlement {
     const ccyOf = (instrument: InstrumentId): CurrencyCode =>
       this.d.instruments.get(instrument).ccy;
     /**
-     * 0f.1, Audit B5 (21.101): A HOLDING PRODUCES A TOTAL, and it did not always. This door said
-     * *"every number a holding produces is per member"*, and that was true of the representation
-     * this world had before 0f.1 gave a cell TOTALS and a `perMember` read. Since then every
-     * `credit` and `debit` of a cell's book has put the WHOLE cell's value into an account kept per
-     * member of it: a probate office dividing an estate among nine hundred and seventy-four
-     * households credited each of them with all of it, and the balance-sheet family has reported
-     * every cell in this world every period ever since — twenty to twenty-nine violations a period
-     * in the scale model, growing, the largest of them thirty-one trillion.
+     * 21a, A-1, XI-15: THE ONE DOOR TO AN EQUITY ACCOUNT, and it takes a TOTAL.
      *
-     * It is kept as a name rather than deleted because the distinction is the point: what reaches
-     * an equity account is per member, and a writer says which of the two it is holding.
-     */
-    const bumpPerMember = (party: PartyId, delta: Cash): void => {
-      bumpIn(party, delta);
-    };
-    /**
-     * A-1, XI-15: THE ONE DOOR BETWEEN A TOTAL AND AN EQUITY ACCOUNT. Every number a holding
-     * produces is per member and every number an ISSUED line produces is a total, and the two used
-     * to arrive at the same function — so `issue` and `redeem` remembered to divide, and `reseat`
-     * and the issuer's re-mark did not. A cell's estate then took on a million households' worth of
-     * a liability against one household's equity, and the balance-sheet family fired on the estate.
+     * There were two — `bumpTotal`, which divided by the weight, and `bumpPerMember`, which did
+     * not — because a cell's equity account was kept per member while everything else it held
+     * became a total at 0f.1. Every writer had to know which of the two its `Cash` was, and the
+     * record of what that cost is 21.101 (a probate office crediting nine hundred households with
+     * the whole estate each) and 21.104 (the account and the sheet drifting apart by the
+     * divide-and-multiply itself). The account is a total now, so there is one denomination, one
+     * door, and nothing to say.
      *
-     * There is no `bump` any more: a writer names which of the two it is holding, because nothing
-     * in a `Cash` says it.
-     */
-    const bumpTotal = (party: PartyId, total: Cash): void => {
-      bumpPerMember(party, perMemberOf(party, total));
-    };
-    /**
-     * XI-15, Law 8 (13d.1): AN EQUITY ACCOUNT IS PER MEMBER AND AN ISSUED TOTAL IS NOT.
-     *
-     * What a party has issued is a total — it is the same number however many people the issuer
-     * stands for — and every equity account in this world is kept per member of whoever owns it.
-     * For a named party those are the same number and this changed nothing for years; the day a
-     * CELL issued something, it booked a million households' worth of liability against one
-     * household's equity. What the issuer's own book moves by is its share of what it issued.
-     */
-    const perMemberOf = (party: PartyId, amount: Cash): Cash =>
-      // Item 16: the division itself, which is the cell's weight and refuses a cell of nobody —
-      // `div` would have answered `Infinity` and carried it into an equity account. What the type
-      // cannot say is which of the two a `Cash` is; `bumpTotal` above is where a writer says it.
-      asCash(
-        eachMember(
-          asTotal<'money:piece'>(amount.pieces, 'what the issuer issued'),
-          weightOf(this.d.parties.get(party)),
-          'the issuer\u2019s own share of it',
-        ),
-        amount.ccy,
-        'the issuer\u2019s own share of it',
-      );
-
-    /**
-     * The same, for a value that belongs to no instrument: a contract's, which is a bilateral
-     * obligation and not a holding (Derivative X1), so its money is the contract's own (D5).
+     * A contract's value comes in here too: it belongs to no instrument, being a bilateral
+     * obligation and not a holding (Derivative X1), and its money is the contract's own (D5) — but
+     * it is the party's total the same way, so it takes the same door.
      */
     const bumpIn = (party: PartyId, delta: Cash): void => {
       const own = inOwn(party, delta);
-      // XI-15, A-1: an equity account is kept PER MEMBER, and everything reaching this is already
-      // in that denomination — a cell's holdings are per member and a named party stands for one
-      // of itself. Named here rather than assumed, which is the half of A-1 the type can hold.
-      addTo(
-        equity,
-        party,
-        asPerMember<'money:piece'>(own.pieces, 'what one member’s account moves by'),
-      );
+      addTo(equity, party, asTotal<'money:piece'>(own.pieces, 'what the account moves by'));
       addTo(gross, party, absolute(own, 'what it passed through').pieces);
     };
     /**
@@ -1242,7 +1191,7 @@ export class Settlement {
                 acquired: ins.period,
               },
             ]);
-            bumpTotal(
+            bumpIn(
               op.party,
               negated(heldAsMoney(op.qty, ccyOf(op.instrument), 'what leaves'), 'what leaves'),
             );
@@ -1263,7 +1212,7 @@ export class Settlement {
             ).value;
             // What this party's units of this line cost it, kept for the disposal pairing below.
             sold.set(`${op.party}/${op.instrument}`, carrying);
-            bumpTotal(op.party, negated(carrying, 'what it gave up'));
+            bumpIn(op.party, negated(carrying, 'what it gave up'));
           }
           deltas.push({
             party: op.party,
@@ -1277,7 +1226,7 @@ export class Settlement {
           const basis = op.basis === 'carrying' ? carryingOf(op.fromDebit) : op.basis;
           if (op.money) this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
-          bumpTotal(op.party, valueAt(basis, op.qty, ccyOf(op.instrument), 'credit value'));
+          bumpIn(op.party, valueAt(basis, op.qty, ccyOf(op.instrument), 'credit value'));
           deltas.push({
             party: op.party,
             instrument: op.instrument,
@@ -1296,7 +1245,7 @@ export class Settlement {
              */
             const inst = this.d.instruments.get(op.instrument);
             if (owesItsValue(this.d.registry.instrumentKind(inst.kind))) {
-              bumpTotal(
+              bumpIn(
                 issuerOf(inst),
                 valueAt(
                   minus(carryingOf(op.fromDebit), basis, 'what the re-mark moved it by'),
@@ -1334,7 +1283,7 @@ export class Settlement {
                 ? carryingOf(op.fromDebit)
                 : op.valuePerUnit
               : asPerPiece(1, 'at what it promised');
-            bumpTotal(
+            bumpIn(
               op.issuer,
               negated(valueAt(per, op.qty, ccyOf(op.instrument), 'issue value'), 'what it took on'),
             );
@@ -1373,7 +1322,7 @@ export class Settlement {
                   ? asPerPiece(1, 'at what it promised')
                   : op.valuePerUnit
               : asPerPiece(1, 'at what it promised');
-            bumpTotal(op.issuer, valueAt(per, op.qty, ccyOf(op.instrument), 'redeem value'));
+            bumpIn(op.issuer, valueAt(per, op.qty, ccyOf(op.instrument), 'redeem value'));
           }
           break;
         }
@@ -1430,8 +1379,8 @@ export class Settlement {
                 'what the dead party owed on it',
               ).value;
           this.d.instruments.reseat(op.instrument, op.to);
-          bumpTotal(op.from, owed);
-          bumpTotal(op.to, negated(owed, 'and onto the new one'));
+          bumpIn(op.from, owed);
+          bumpIn(op.to, negated(owed, 'and onto the new one'));
           break;
         }
         case 'writeContract': {

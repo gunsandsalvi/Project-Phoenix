@@ -485,41 +485,9 @@ each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here
 - [ ] 21.53 `derivative-layer`, `spot-fx` (16.6): once every kind is asked whether it owes a money it has not got, the USD clearing house squares its foreign margin balances in the pairs and CEASES by period 2–4 of the `fx-A` and `opens` worlds; a member defaulting into the dead house then tore up against the dead name (fixed where it was: margin is returned to a side's living successor). Why a house that holds members' margin in four moneys fails once it trades them is not chased (Law 11); positioned at 18.4 with the house's own book (16.6).
 - [ ] 21.51 `clearing/market.ts runMarket`, `world.ts settleTransacts` (16.5): a book in which a `transact` group's legs settled BESIDE ordinary trades prints the ordinary trades' volume only — the group settles after the book has printed and a period has one print (Clearing F2) — so the print's `qty` understates what moved there by the trip's legs; the trip's volume per book is on `transact.settled`. A book whose only trades were a trip's prints when the trip settles, which is right. Positioned at 18.0 with the print's dimension (a print could carry what settled after it as a second provenance row) (16.5).
 - [ ] 21.50 `treasury/index.ts fundingCostIn`: the cost of borrowing abroad is the benchmark yield plus the treasury's ONE-PERIOD outlook of the pair extrapolated over a year; a covered comparison would read the forward on the pair (`fx-derivatives`) for the tenor and pay the basis (Currency B4), and none does yet. Both are honest reads a party has, but a treasury with a naive outlook borrows in the lowest nominal yield every auction (the first four-country run picked EUR at once); positioned at 16.5, where the swap line gives it the covered rate to read (16.4).
+- [ ] 21.109 `funds/index.ts` (the `accounts` family, Fund Shares A3), measured at 21a and hidden until it: `etf.us` holds equity of **17.68 pieces** from period 2 of `rigWorld('equity-ledger', 4, 16)` and holds it for the rest of the run, against a derived dust of 3.0 x 10^-7 — a fund's equity is ZERO by construction, so seventeen pieces is somebody's money the pool has mislaid. It is NOT new: the entries and the walk are byte-identical at `cad8338`, where the four household cells' per-member residual failed the same assertion a period earlier and nothing ever reached this. What arrives with it is four `tracker shares: <n> @ 1` entries of -0.75, -0.34, -0.12 and -0.96, and a fifth of **-463.6 on 5,676,407 shares** in period 3 — a creation at a price of one that does not leave the book where it found it. The candidate is the creation/redemption leg pricing units at 1 against a book worth something else (Fund Shares D2), and which of the two sides is wrong is a read to make against a run, not a number to chase (Law 11). Positioned here, before 21b, because a pool with no manager is the next thing that happens to the same pools (21a).
+- [ ] 21.110 `probate`/`estate` (the `accounts` family, Audit B5), measured at 21a: `probate.us.1.bank.b` closes a year of `rigWorld('seed-E2')` with **assets 5,633,457,772 against liabilities 15,770,083,588 and an equity account of 5,633,457,772** — the account equals the assets exactly and the liabilities are not in it at all. An estate that takes on what the dead party owed (`instruments.reseat`, `succeedAgreements`) gains a liability with no entry against it, so the account it opened with is the one it still has. It is the same shape as 21c (a tax on an estate is a claim on it) and the same place in the code, so it is positioned WITH 21c rather than on its own; 21c's step that makes a claim on an estate a ranked claim is where the estate's account learns it owes anything (21a).
 - [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3).
-
----
-
-## 21a. The equity account is a TOTAL (0f.2, inserted here)
-
-**Three source files point at an item that was never in this list.** `world/assemble.ts` — *"the
-sheet is a TOTAL; the account is per member UNTIL 0f.2"*; `parties/party.ts` and `world/actions.ts`
-say the same. 0f.1 gave a cell totals in the register and a `perMember` read, and left the equity
-account per member; every settlement since divides a total by the weight to book it and every reader
-multiplies it back.
-
-**What it costs, measured (21.104).** The `accounts` family reports four household cells every
-period whose sheet and equity account differ by **0.18 to 1.0 pieces against assets of three hundred
-and forty billion** — eight parts in ten trillion. It is not the walk's rounding: the walk is exact
-against its own twenty-two entries, and the entries' own reconstruction error is three orders of
-magnitude smaller. It is the divide-and-multiply path itself, and it is the one thing a per-member
-account cannot do: hold a total that is not a multiple of the weight.
-
-It cannot be closed by widening anything — Law 7: a check that only passes with a band is reporting
-a defect, and this check is right.
-
-- [ ] 21a.1 `register/register.ts`: the equity account holds a TOTAL, like every other thing the
-  register holds since 0f.1, and `perMember` is a read of it over the weight (0f.1's own pattern).
-  The five weight events move it the way they move a holding: a share goes with the members that
-  moved, a merge adds, and nothing is averaged.
-- [ ] 21a.2 `ledger/settlement.ts`: `bumpTotal` and `bumpPerMember` become one door that takes the
-  total, because after 21a.1 there is only one denomination and the distinction 13d.1 built is gone.
-  **Delete** names the read that replaces it: `perMemberOf` goes with them.
-- [ ] 21a.3 Every reader of `equityWalk`/`equity` stops multiplying by the weight: the `accounts`
-  family, the observer, the reporting statement, the bank's capital, `ownUncertainty`. Each one
-  either wants the total (most) or asks `perMember` (a decision a member takes).
-- [ ] 21a.4 Tests: the identity holds EXACTLY for a cell whose total is not a multiple of its
-  weight; a merge of two cells leaves the sum of the two accounts; a death takes its share to the
-  estate; and the `accounts` family reports nothing on the rig for thirty periods.
 
 ---
 

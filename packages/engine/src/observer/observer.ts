@@ -223,8 +223,8 @@ export interface PartyView {
    * is a name that stops, and the estate winding it up is a party nobody can connect it to.
    */
   readonly successor: string | null;
-  /** Only in scope (A4): the party's own equity account per member, else null. */
-  readonly equityPerMember: number | null;
+  /** Only in scope (A4): the party's own equity account, a TOTAL (21a), else null. */
+  readonly equity: number | null;
   /** The money its own region books in, so a reader knows what the equity above is counted in. */
   readonly ccy: string;
 }
@@ -969,7 +969,7 @@ export function snapshot(
       region: p.region,
       alive: p.status.alive,
       successor: p.status.alive ? null : p.status.successor,
-      equityPerMember:
+      equity:
         visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id).pieces : null,
       ccy: w.registry.currencyOf(p.region),
     })),
