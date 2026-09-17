@@ -15185,3 +15185,60 @@ period (8.5 million a period at full scale, kept for ever — 0g.14 is no longer
 reads answered `Missing` per party per period (mechanisms asking for what this world does not
 produce, which is not a layout problem at all), and the parties × books product that must stay
 indexed (the rest of 0g.8, made mandatory at assembly so the next declaration cannot omit it).
+
+---
+
+## 0g.2 — The period index, measured and not built
+
+**What.** 0g.2 proposed a `world/period-index.ts` written by settlement and revaluation and read by
+nine audit families and a dozen module readers, each deleting its own walk. **It is not built**, and
+the reason is a measurement rather than a preference.
+
+Its own condition was *"moves when a profile names the walk"*. A profile of the (24, 96) rung says:
+
+| | |
+|---|---|
+| every reader 0g.2 names, together | **2.63%** of the run |
+| — of which `reach.produced`, which is a tally and not a walk | 1.91% |
+| — the walks themselves (`incomeOf`, `cashOf`, `externalOf`, `earnedByLine`, `reserveFlow`, `netReserveFlow`, `interestCollected`, `purchases`, `runCorporateActions`, `owedIn`, `reach()`, `equityLedger`, `equityDust`, `heldTotal`) | **0.7%**, the largest 0.19% |
+| the whole audit | **5%** of a period, scaling LINEARLY (84 → 167 ms as parties went 1,182 → 2,213) |
+
+A new kernel store with two writers, to buy 0.7%, is not worth what it costs to keep true (Law 4).
+0g.2a's `Ledger.deltasIn` stays: it is built, it is read, and it deleted three walks.
+
+**What the profile named instead was the tallies beside the walks**, and those are fixed:
+
+- The capability name a participant is tallied under is the **declaration's**, not the party's. It
+  was built inside the party loop at all three sites — `owner/kind/market` for every party of the
+  kind in every book — and `produced` then built `kind:id` again before discovering that nothing was
+  posted and there was nothing to record. Built once per declaration now, and not called at all
+  when nothing was posted (`produced` already returned early at zero, so this is the same tally).
+- `slot()` asked the ontology register whether a store is declared **on every read of it**. That is
+  three string keys and three map lookups on the path of every `view.working` and `ctx.state` in the
+  engine, for an answer that cannot change. It is asked when the store OPENS. A store nobody
+  declared still throws at the read that first opens it — the read that used to throw — so the count
+  of homeless nouns is unchanged (Appendix C).
+
+**Measured.** The gain is inside the noise (1,684 → 1,713 ms/period on the (12, 48) rung, which is
+run-to-run variation), **and that is the finding**: 0g.2's whole neighbourhood is 2.6% of a period,
+so nothing in it can matter. Behaviour byte-identical: rig p1 events 2291 settled 475, p30 events
+2523 settled 431 audit 647; abroad p12 events 9616 settled 1339 audit 2425 live 1577.
+
+**Where the time actually is, from the same measurements** — this is what the next steps are chosen
+against, and it is why 0g's order now has to bend to the profile:
+
+| | (12, 48) | (24, 96) | growth vs ×1.87 parties |
+|---|---|---|---|
+| whole period | 1,580 ms | 3,962 ms | ×2.51 |
+| **participant order generation** | **824 ms (49%)** | **2,190 ms (52%)** | ×2.66 |
+| — of which `derivative-layer/firm` | **579 ms** | **1,578 ms** | **×2.72** |
+| module phases (excluding order generation) | 652 ms | 1,584 ms | ×2.43 |
+| — of which `firms.decide` | 136 ms | 485 ms | **×3.57** |
+| — of which `control.tender` | 37 ms | 136 ms | **×3.68** |
+| the audit | 84 ms (5%) | 167 ms (4%) | ×1.99 |
+
+**Half of a period is one thing: parties deciding what to post.** `derivative-layer/firm` alone is
+34–38% of every period and grows faster than the world does. `firms.decide` and `control.tender`
+grow at about n², which is the scaling law that has to be broken before any constant matters. Those
+belong to 0g.7 (`curveAt` memoised, `invertDecreasing` seeded) and 0g.10 (the derivative reads), and
+the profile says they are next whatever the numbering says.

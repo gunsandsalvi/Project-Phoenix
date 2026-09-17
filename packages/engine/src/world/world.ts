@@ -345,7 +345,13 @@ export class World {
    * slot inside reads it takes per party, so the ask itself is on the hot path; nested this way it
    * is two lookups of a name that already exists rather than a string built to make a key.
    */
-  private readonly slots = new Map<string, Map<string, object>>();
+  /**
+   * Law 18 (0g.2): a module's store, WITH the name its capability is tallied under. `slot` is on
+   * the path of every `view.working` and `ctx.state` read, and it built that name — and the
+   * ontology register's key, and the reach key — on every one of them. The name is a property of
+   * the slot and is made when the slot is.
+   */
+  private readonly slots = new Map<string, Map<string, { readonly store: object; readonly capability: string }>>();
   /**
    * Law 4, Law 15: THE ELEVEN QUESTIONS THIS KERNEL ASKS AND CANNOT ANSWER, in one register.
    *
@@ -1011,17 +1017,25 @@ export class World {
    * a store that is really a NOUN names the plan item that gives it a kernel home.
    */
   private slot<T extends object>(owner: string, name: string, initial: () => T): T {
-    this.nouns.declared(owner, name);
-    this.reachTally.produced('store', `${owner}/${name}`, 1, this.currentPeriod);
     let mine = this.slots.get(owner);
     if (mine === undefined) {
-      mine = new Map<string, object>();
+      mine = new Map<string, { readonly store: object; readonly capability: string }>();
       this.slots.set(owner, mine);
     }
     const existing = mine.get(name);
-    if (existing !== undefined) return existing as T;
+    if (existing !== undefined) {
+      this.reachTally.produced('store', existing.capability, 1, this.currentPeriod);
+      return existing.store as T;
+    }
+    // Law 15, Law 2: DECLARED OR IT DOES NOT OPEN, asked when it opens. It was asked on every read
+    // — the same answer, several thousand times a period, each one building the register's key.
+    // A store that is not declared throws at the read that first opens it, which is the read that
+    // used to throw (Appendix C: the count of homeless nouns is unchanged).
+    this.nouns.declared(owner, name);
+    const capability = `${owner}/${name}`;
     const made = initial();
-    mine.set(name, made);
+    mine.set(name, { store: made, capability });
+    this.reachTally.produced('store', capability, 1, this.currentPeriod);
     return made;
   }
 
@@ -1500,18 +1514,20 @@ export class World {
     if (this.gathered.has(venue)) return;
     this.gathered.add(venue);
     for (const [at, p] of this.venueParticipantDecls.entries()) {
+      // Law 18 (0g.2): THE CAPABILITY'S NAME IS THE DECLARATION'S, so it is built once here and
+      // not once per party. It was inside the loop, building `owner/kind` for every party of the
+      // kind in every venue — and `produced` then built `kind:id` again before discovering that
+      // nothing was posted and there was nothing to record.
+      const capability = declId(p.owner ?? 'kernel', p.partyKind);
       for (const party of this.askedInVenue(at, p, decl)) {
         // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
         if (!party.status.alive) continue;
         const posted = this.asParticipantOf(p.owner, () =>
           p.orders(this.participantView(party.id), decl),
         );
-        this.reachTally.produced(
-          'venueParticipant',
-          declId(p.owner ?? 'kernel', p.partyKind),
-          posted.length,
-          this.currentPeriod,
-        );
+        if (posted.length > 0) {
+          this.reachTally.produced('venueParticipant', capability, posted.length, this.currentPeriod);
+        }
         // 0h.4: asked about this venue, and posted nothing — the same record as a book (`runOne`).
         if (posted.length === 0) {
           this.wantsTally.postedNothing(party.id, String(venue), this.currentPeriod);
@@ -1731,17 +1747,16 @@ export class World {
     for (const kind of [...this.answers.keys(QUESTIONS.whatItMustBorrow)].sort()) {
       const asker = this.answers.answer<BorrowNeeds>(QUESTIONS.whatItMustBorrow, kind);
       if (asker === undefined) continue;
+      // Law 18 (0g.2): the capability's name is the declaration's, built once.
+      const capability = declId(asker.owner, kind as PartyKindId);
       for (const party of this.parties.ofKind(kind as PartyKindId)) {
         if (!party.status.alive) continue;
         const wants = this.asParticipantOf(asker.owner, () =>
           asker.fn(this.participantView(party.id)),
         );
-        this.reachTally.produced(
-          'borrowNeeds',
-          declId(asker.owner, kind as PartyKindId),
-          wants.length,
-          this.currentPeriod,
-        );
+        if (wants.length > 0) {
+          this.reachTally.produced('borrowNeeds', capability, wants.length, this.currentPeriod);
+        }
         for (const w of wants) out.push({ ...w, borrower: party.id });
       }
     }
@@ -3904,6 +3919,8 @@ export class World {
       // else. Both defaults are `asset`, which is every market and every desk that existed before
       // a pair did — so this changes nothing for any of them (Law 15: one key, no branch).
       if ((decl.in ?? 'asset') !== (m.kind ?? 'asset')) continue;
+      // Law 18 (0g.2): the capability's name is the DECLARATION's — built once, not once per party.
+      const capability = declId(decl.owner ?? 'kernel', decl.partyKind, decl.in);
       for (const party of this.asked(at, decl, m)) {
         // A ceased party takes no part (Money E4): it has no reasons, and an order in its name
         // would be an instruction addressed to somebody who is not there. What it held is its
@@ -3912,12 +3929,9 @@ export class World {
         const posted = this.asParticipantOf(decl.owner, () =>
           decl.orders(this.participantView(party.id), m),
         );
-        this.reachTally.produced(
-          'participant',
-          declId(decl.owner ?? 'kernel', decl.partyKind, decl.in),
-          posted.length,
-          this.currentPeriod,
-        );
+        if (posted.length > 0) {
+          this.reachTally.produced('participant', capability, posted.length, this.currentPeriod);
+        }
         // 0h.4: asked, and posted nothing. `reach` counts what came out of a declaration; this is
         // the party-by-party half — the book it was asked about and did not bid in, which is the
         // first line of every diagnosis this project has ever written by hand.
