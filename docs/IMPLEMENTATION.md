@@ -376,6 +376,18 @@ Each when its file is open for another item; file:line and the change.
   the state appeared to announce whenever it liked; the event names its issuer, so it is a read.
   Treasury 7 red → 4.
 
+- [x] 21.100 `world/cells.ts` the merge event (21, read off the chronicle's `audit` line): **EVERY
+  MERGE IN THIS WORLD REPORTED AS MONEY MOVING WITH NO LEG BEHIND IT.** `flows/Money D3` ran at 18
+  to 83 violations a period in the scale model, and the cause is one word: the merge writes where
+  the book went as `into`, and the family that reads it — and the four other weight events — say
+  `to`. So the destination was credited with nothing. Three landlord cells of two hundred members
+  each become one of six hundred in period 3 of the rig, their eight billion dwellings come with
+  them (correctly: a merge adds totals), and the audit called it eight billion units that appeared
+  from nowhere. One fact, one name. **`flows/Money D3` goes 18–83 → 0, every period.** What is left
+  in the rig's audit is `accounts/Audit B5` (20–29: assets less liabilities against the equity
+  account, per member), `prices/Clearing F2` (10: a listed line held with no print this period) and
+  `units/Capital Programme A6.b` (65 at p3), and each is its own cause.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money

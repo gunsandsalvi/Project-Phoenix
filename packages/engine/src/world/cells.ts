@@ -79,6 +79,15 @@ export function mergeCells(
     [a, b],
     {
       kind: 'merge',
+      /**
+       * XI-15, Money D3 (21.100): WHERE THE BOOK WENT IS `to`, in the word every other weight event
+       * uses. This said `into`, and the flows family reads `to` — so a merge's destination was
+       * credited with nothing and every merge in this world reported as a holding that moved with
+       * no leg behind it: three landlord cells of two hundred members became one of six hundred in
+       * period 3 of the scale model, their eight billion dwellings came with them, and `Money D3`
+       * called it unexplained. One fact, one name.
+       */
+      to: a,
       into: a,
       from: b,
       members: cb.weight,
