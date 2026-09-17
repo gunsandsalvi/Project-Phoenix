@@ -218,8 +218,9 @@ failing to service debt it was born owing while nothing trades, nobody is hired,
 **At scale it is also the wrong shape.** The ladder's rungs: (3,12) 331 ms/period; (6,60) **stopped
 at period 20** on 21.87 and runs the full year since 0h.5 — 763 ms/period at the first mark and
 **3,376 at the fifty-second**, on a heap that goes 84 → 1,172 MB across the year; (12,200) 9,078
-ms/period — cost grows as about the 1.7th power of the population AND, within a rung, as the run
-gets longer (the journal keeps every event of every period in one array: 0g.14's measurement). A profile of the third rung: **53.2% of the run is inside `World.curveAt`**, which walks
+ms/period over a year, and 4,346 at period 13 before 0h.6 cached the curve against **1,392** after —
+cost grows as about the 1.7th power of the population AND, within a rung, as the run gets longer
+(the journal keeps every event of every period in one array: 0g.14's measurement). A profile of the third rung: **53.2% of the run is inside `World.curveAt`**, which walks
 every instrument in the world with a root-find per instrument, **1,079 times a period** (28 at the
 first rung), to produce four curves that do not change within the period.
 
@@ -419,19 +420,36 @@ one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
   1,172 MB, 358,027 events, 291 sessions cleared. 21.87 closed. Found on the way: **21.93**, the
   central bank taxed on its profit, which is the wrong mechanism rather than a broken one — a
   central bank REMITS its surplus — positioned at 18a.
-- [ ] 0h.6 **Memoise the curve.** 53.2% of a run at the third rung is inside `World.curveAt`, which
-  calls `readCurve` — a walk of EVERY instrument in the world, a cash-flow rebuild, a `yearFraction`
-  and a root-find per instrument — **1,079 times a period** (28 at the first rung; the callers are
-  parties, not lines) to produce four curves that cannot change within a period. Key it on
-  (family, period, `prices.version`, `instruments.version`) through the `view.memo` built at 0g.5a.
-  Then 0g.7's other two halves: memoise `yearFraction`/`dayNumber` (pure functions of (date, date,
-  convention), 34% of the third rung between them) and warm-start `invertDecreasing` from the
-  instrument's last yield. **Hours of work for about half the cost of a run at the scale that
-  matters**, with no mechanism touched. Gate: every shape figure on the ladder identical.
+- [x] 0h.6 **Memoise the curve.** `World.curveAt` keeps its answer while the two stores it is a read
+  OF stand still: a print or an issue moves `prices.version` or `instruments.version` and every kept
+  curve is dropped in the same instant, so nothing is held across a change (D3.b: the fit's own
+  previous output can never be an observation) and `readCurve` itself is untouched. **Third rung
+  (12 banks, 200 firms), thirteen periods: 4,346 → 1,392 ms/period at mark 13 — 3.1×**, with every
+  shape figure identical to the digit (473 parties, 47 cells, 233 people, 531 small firms, 170,365
+  events, 220 sessions, 15,292 audit findings, 7,162,262 money/member, 11,310,891.59 wage/hour).
+  Middle rung 763/732/857/3,376 → 720/533/725/3,171 ms/period and 1,172 → 825 MB of heap; first rung
+  unchanged within noise, which is what a rung that calls the curve 28 times a period should say.
+  **`dayNumber` is memoised too**, and the memo was measured before it was written (3M calls over
+  400 dates: 62 ms bare against 41 ms kept). It is the one cache in this world that cannot change a
+  number by construction — a pure function of three integers, so a kept answer IS the answer.
+  **The warm start is REFUSED, and this is where that is written down.** `invertDecreasing` stops
+  when its bracket is narrower than the dust of its own endpoints, so two different starting
+  brackets return two midpoints that differ within dust — a moved number for a changed traversal,
+  which Law 18 does not allow and which this project does not accept at dust level for a figure a
+  decision reads. The lever that IS allowed is fewer root-finds rather than cheaper ones, and that
+  is what the curve cache is: the third rung's root-finds fell with its 1,079 curve reads a period.
+  Test: `curve.test.ts` *answers the same twice in one period, and answers anew the moment a print
+  lands*.
 
-**Exit.** A one-period-old world has outlooks; `check:opens` reports the liveness family and it is
-RED with a list; `why(party, period)` answers for any party; the ladder runs three rungs; the third
-rung is at least twice as fast with the census identical to the digit.
+**Exit — met, 2026-09-17.** A one-period-old world has outlooks (0h.1: 184 → 347 price outlooks at
+the end of the rig's first period); `check:opens` reports the liveness family and it is RED with a
+list (0h.3: `live=649` at period 30 of the rig, 1,535 at period 12 of the four-country world);
+`why(party, period)` answers for any party (0h.4); the ladder runs three rungs (0h.5: the middle one
+stopped at period 20 on a state that taxed itself); the third rung is **3.1×** faster with the census
+identical to the digit (0h.6). What the section did NOT do, and says so where it is written: it did
+not close the fifteen fail-closed decision sites (0h.1 — the ones that fail on `sold`, `income` or
+`earnings` fail on variables with no public level at all), and the warm start in 0h.6 is refused
+rather than pending.
 
 ---
 

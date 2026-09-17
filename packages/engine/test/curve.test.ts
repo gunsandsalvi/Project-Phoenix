@@ -108,3 +108,25 @@ describe('the curve (Sovereign D3)', () => {
     }
   });
 });
+
+describe('the curve is a READ and is kept only while it is one (Law 18, D3.b, 0h.6)', () => {
+  it('answers the same twice in one period, and answers anew the moment a print lands', () => {
+    const w = rigWorld('curve-memo');
+    w.step();
+    const once = curveOf(w);
+    // Law 18: the same read, kept — the same points in the same order, because nothing moved.
+    const twice = curveOf(w);
+    expect(twice.points.map((p) => `${p.instrument}@${p.yield}`)).toEqual(
+      once.points.map((p) => `${p.instrument}@${p.yield}`),
+    );
+    // D3.b: and a curve is never a STORE. A period in which the market printed again is a different
+    // read, and the cache is keyed on the print store's own write count, so it cannot be stale.
+    w.step();
+    const after = curveOf(w);
+    expect(after.points.length).toBeGreaterThan(0);
+    const moved =
+      after.points.length !== once.points.length ||
+      after.points.some((p, i) => p.yield !== once.points[i]?.yield);
+    expect(moved).toBe(true);
+  });
+});

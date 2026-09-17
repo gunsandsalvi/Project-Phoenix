@@ -14622,3 +14622,47 @@ a central bank does with a surplus is REMIT it to the state, which has no rate i
 move when a parliament moves one. Positioned at 18a with the central bank's own decisions.
 
 **Unchanged.** `check:opens` green, both treasury suites green and identical before and after.
+
+---
+
+## Item 0h.6 — The curve kept while it is a read, and the days already counted
+
+**What.** Two caches and one refusal.
+
+`World.curveAt` keeps its answer while the two stores it is a read OF stand still. `readCurve` walks
+every instrument in the world, rebuilds its cash flows and root-finds a yield for each, and it was
+asked **1,079 times a period** at the third rung — for four curves that cannot differ between two
+calls in one period. The key is the period plus `prices.version` and `instruments.version`: a print
+or an issue moves one of them and every kept curve is dropped in the same instant, so nothing is
+held across a change (Sovereign D3.b: the fit's own previous output can never be an observation).
+`readCurve` itself is untouched.
+
+`dayNumber` is memoised on the three integers a civil date is. It is the one cache in this world
+that cannot change a number by construction — a pure function, so a kept answer IS the answer — and
+it was MEASURED before it was written: 3M calls over 400 distinct dates, 62 ms bare against 41 ms
+kept. Between them `yearFraction` and `dayNumber` were 34% of a third-rung run.
+
+**The warm start is refused.** 0g.7's third half was to start `invertDecreasing` from the
+instrument's last yield. It stops when its bracket is narrower than the dust of its own endpoints,
+so two different starting brackets return two midpoints differing within dust — a moved number for a
+changed traversal, which Law 18 does not allow and which this project does not accept at dust level
+for a figure a decision reads. The allowed lever is fewer root-finds rather than cheaper ones, and
+that is what the curve cache is. Written into the plan as refused, not as pending, so nobody
+re-proposes it.
+
+**Measured, and every shape figure identical to the digit at all three rungs.**
+
+| rung | ms/period before | ms/period after |
+|---|---|---|
+| (3,12) @1/13/26/52 | 308 / 249 / 297 / 570 | 314 / 240 / 283 / 540 |
+| (6,60) @1/13/26/52 | 763 / 732 / 857 / 3,376 | 720 / 533 / 725 / 3,171 |
+| (12,200) @1/13 | 1,394 / **4,346** | 1,360 / **1,392** |
+
+**3.1× at the third rung**, 473 parties / 47 cells / 233 people / 531 small firms / 170,365 events /
+220 sessions / 15,292 audit findings / 7,162,262 money per member / 11,310,891.59 wage per hour —
+the same on both sides. Heap at the year: first rung 698 → 478 MB, middle rung 1,172 → 825 MB. The
+first rung is unchanged within noise, which is what a rung that reads the curve 28 times a period
+should say.
+
+**Test.** `curve.test.ts` *answers the same twice in one period, and answers anew the moment a print
+lands* — the two halves of a cache that is a read: kept while nothing moved, gone when something did.

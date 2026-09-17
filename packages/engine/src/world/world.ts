@@ -315,6 +315,13 @@ export class World {
   private readonly reachTally = new Reach();
   /** 0h.4: the other half of `reach` — what a party asked for this period and did not get. */
   private readonly wantsTally = new Wants();
+  /**
+   * Law 18 (0h.6): the curves this world has read since the last print or issue. It is a cache of a
+   * READ and never a store of a curve: the moment either version moves it is empty again, so there
+   * is no state here a mechanism could come to depend on (Sovereign D3.b).
+   */
+  private readonly curves = new Map<string, CurveRead>();
+  private curvesAt = '';
 
   private readonly gathered = new Set<VenueId>();
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
@@ -3510,8 +3517,33 @@ export class World {
     return this.curveAt(family, this.currentPeriod);
   }
 
-  /** The same read at a stated period, which is what a derived value discounting a schedule asks. */
+  /**
+   * The same read at a stated period, which is what a derived value discounting a schedule asks.
+   *
+   * Law 18 (0h.6): AND IT IS KEPT WHILE THE THINGS IT IS A READ OF STAND STILL. `readCurve` walks
+   * every instrument in the world, rebuilds its cash flows and root-finds a yield for each, and it
+   * is asked **1,079 times a period** at the third rung — 53.2% of the whole run — for four curves
+   * that cannot differ between two calls in one period. What it is a read OF is the prints and the
+   * instruments, and both stores count their own writes, so the cache is keyed on those counts and
+   * on the period: a print or an issue moves a version and every kept curve is dropped in the same
+   * instant. Nothing is stored ACROSS a change (D3.b: the fit's own previous output can never be an
+   * observation), and `readCurve` itself is untouched.
+   */
   private curveAt(family: CurveFamilyId, at: Period): CurveRead {
+    const version = `${this.prices.version}/${this.instruments.version}`;
+    if (this.curvesAt !== version) {
+      this.curves.clear();
+      this.curvesAt = version;
+    }
+    const key = `${String(family)}@${at}`;
+    const held = this.curves.get(key);
+    if (held !== undefined) return held;
+    const made = this.readCurveNow(family, at);
+    this.curves.set(key, made);
+    return made;
+  }
+
+  private readCurveNow(family: CurveFamilyId, at: Period): CurveRead {
     return readCurve(this.registry.curveFamily(family), at, {
       calendar: this.calendar,
       prices: this.prices,
