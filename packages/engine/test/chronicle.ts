@@ -25,9 +25,15 @@ import { abroadWorld, rigWorld } from './rig.js';
 declare const console: { log: (line: string) => void };
 declare const process: { argv: readonly string[] };
 
+/**
+ * A LONG READ SAYS WHAT IT HAS AS IT HAS IT. The full world is thirty banks and nine thousand firms
+ * in four countries, and a period of it is minutes: a report that prints when it is finished is a
+ * report nobody sees until then, and a run that dies in period two prints nothing at all.
+ */
 const out: string[] = [];
 const say = (line: string): void => {
   out.push(line);
+  console.log(line);
 };
 
 /** The top `n` of a tally, biggest first, as `name×count` — the shape every line here uses. */
@@ -57,7 +63,7 @@ function opening(w: World, name: string): void {
 }
 
 /** WHAT THE PERIOD DID: the books, the wire, the work, and what refused. */
-function period(w: World, report: ReturnType<World['step']>): void {
+function period(w: World, report: ReturnType<World['step']>, since: number): void {
   const at = report.period;
   const books = new Map<string, number>();
   for (const m of report.markets) add(books, m.outcome);
@@ -96,7 +102,10 @@ function period(w: World, report: ReturnType<World['step']>): void {
   const families = new Map<string, number>();
   for (const f of report.audit.families) if (f.count > 0) families.set(f.family, f.count);
   say('');
-  say(`period ${at} — parties ${w.parties.alive().length}, ${quiet} of them a side of nothing`);
+  say(
+    `period ${at} — parties ${w.parties.alive().length}, ${quiet} of them a side of nothing` +
+      ` (${Date.now() - since}ms)`,
+  );
   say(`  books   ${top(books, 6)}`);
   say(`  wire    ${settled} settled (${top(causes, 6)}), ${failed} failed (${top(failures, 4)})`);
   say(`  money   ${top(paid, 8)}`);
@@ -134,6 +143,7 @@ function closing(w: World): void {
  * and a reading of the first periods of it is a different fact from a reading of the rig's.
  */
 export function chronicle(periods: number, which: 'rig' | 'abroad' | 'full'): string {
+  const began = Date.now();
   const w =
     which === 'full'
       ? foundationWorld('chronicle')
@@ -141,8 +151,11 @@ export function chronicle(periods: number, which: 'rig' | 'abroad' | 'full'): st
         ? abroadWorld('chronicle')
         : rigWorld('chronicle');
   out.length = 0;
-  opening(w, `${which}, ${periods} periods`);
-  for (let i = 0; i < periods; i += 1) period(w, w.step());
+  opening(w, `${which}, ${periods} periods (assembled in ${Date.now() - began}ms)`);
+  for (let i = 0; i < periods; i += 1) {
+    const at = Date.now();
+    period(w, w.step(), at);
+  }
   closing(w);
   return out.join('\n');
 }
@@ -150,7 +163,7 @@ export function chronicle(periods: number, which: 'rig' | 'abroad' | 'full'): st
 const [periodsArg, whichArg] = process.argv.slice(2);
 if (periodsArg !== undefined) {
   const which = whichArg === 'abroad' ? 'abroad' : whichArg === 'full' ? 'full' : 'rig';
-  console.log(chronicle(Number(periodsArg), which));
+  chronicle(Number(periodsArg), which);
 }
 
 /** So the party type is not imported for nothing when a reader adds a per-party line. */
