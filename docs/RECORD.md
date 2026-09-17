@@ -14353,3 +14353,64 @@ state). Both are mechanical passes over the whole engine and want to be taken de
 (76 small firms at grain 1 against 77 at grain 2), so the ladder's own invariance check is not
 currently trustworthy on that figure. The ladder's printed census is what these steps were gated on.
 
+
+## Review — the four questions (2026-09-17)
+
+Not an item: the owner asked four questions — how the world should OPEN, how it should be made
+FASTER, what it does BADLY, and what it does not do AT ALL — and asked for the answers against the
+best practice outside this project. The working file is deleted; what it concluded lives here and in
+the plan, as `docs/IMPLEMENTATION.md` Part 0.7 and items 0h, 22b, 22c, 22d and 23.6–23.9.
+
+**The measurement the four answers share** (`rigWorld('review')`, 3 banks, 12 firms, 26 periods, at
+`ab18535`): 9,911 instructions settled and 1,903 failed — 1,902 of them for want of money and 1,617
+of those maturities; 8,819 market sessions and 72 cleared, with 7,903 finding no demand at all; ten
+books of 395 have ever traded; **428 of 648 declared capabilities have never once been used and 13
+modules have never produced anything**; 1,141 credit refusals say *it cannot cost its own funding*;
+700,000 hours of labour offered and none wanted, every period; 1,648 lots of goods perished while
+the consumer basket read empty; 135 living parties became 111; and at period 0 the ledger is empty,
+132 markets carry an asserted price, and **not one party has an outlook of anything**.
+
+**The one sentence.** The seed gives this world obligations and stocks but no flows and no history.
+Obligations run by themselves because they are on a calendar; flows do not, because every mechanism
+that produces one needs a history and refuses to act without it. So the world spends twenty-six
+weeks failing to service debt it was born owing while nothing trades.
+
+**What the reading of the source added to that.** The seed is nineteen calls and **zero
+`ctx.settle`**, so nothing it creates has a counterparty or a date; `seed.funding` derives depositors'
+holdings from the banks' asset endowment, which is the identity satisfied and the economics
+inverted. Fifteen decision sites read an outlook and return nothing when it is missing — and the fix
+is already in the codebase and used for something else: `expectations` keeps an ANCHORED track, the
+last public level, but creates the record only on a first PRIVATE observation, so a party with no
+history never consults the public track it is entitled to read. There is one market microstructure —
+a weekly uniform-price call auction — for bread, labour, loans and freight alike, and nothing rests
+between sessions, which is why `noDemand` (7,903) dwarfs `noOverlap` (323): the two sides are not
+failing to agree, they are failing to be in the room in the same week. All nine audit families are
+SAFETY properties; there is no LIVENESS property, which is why 428 never-used capabilities pass every
+gate. And at the third rung **53.2% of a run is inside `World.curveAt`**, which walks every
+instrument in the world with a root-find per instrument, 1,079 times a period, for four curves that
+cannot change within a period — while the ladder's middle rung does not run at all (21.87).
+
+**What the outside reading contributed.** From stock-flow-consistent economics: the admissible
+openings are a polytope, and the toolkits gave up on stating an opening with several financial assets
+and simulate two hundred periods prior instead. From the macro-ABM literature: the opening is a
+choice of BASIN (Mark-0's phase diagram), and the dominant market protocol is decentralised bilateral
+matching with partial information rather than an auction. From discrete-event simulation: the length
+of a past is a truncation point a statistic chooses (MSER-5), not a number somebody picks; and
+bounded liveness is safety, which is what makes the liveness family cheap. From Earth-system models:
+spin up once and write a restart file — a world is an artifact, not a function called at t=0. From
+Dwarf Fortress: generate and REJECT against declared parameters with a logged reason, which is the
+one selection method that discards a world without adjusting one, and is therefore admissible where
+calibration (IPF, stylized-fact fitting) is forbidden by Seed B5 and C5. From Factorio: entities
+sleep and are woken by a cause rather than polled. From Gode & Sunder: allocative efficiency comes
+from the protocol over DISPERSED reservation prices — which is why a schedule of zero width is fatal.
+And from the validation literature: stylized facts are a weak test, which bites hardest on a project
+whose entire evidence base is one trajectory of one seed.
+
+**What was added to the plan.** Item **0h** (the instruments: the public-level outlook, no zero-width
+schedule, the liveness family, `why(party, period)`, the ladder repair, the curve memo) — six
+changes of days each, placed FIRST because every later item is unverifiable without them. Item
+**22b** (the chronicle) absorbing 22a. Item **22c** (a protocol per venue, orders that rest, a
+desired cover, a stockist). Item **22d** (the payment queue and the gridlock pass). And steps
+23.6–23.9 (ensembles, the network read, a metamorphic family, the ladder as a ratchet).
+
+**The test of whether the programme worked** is Part 0.7 re-run. The before is recorded above.

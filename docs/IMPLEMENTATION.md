@@ -187,6 +187,42 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 
 ---
 
+### 0.7 What the world actually does (2026-09-17)
+
+`rigWorld('review')`, 3 banks and 12 firms, 26 periods, at `ab18535`. The four questions the owner
+put — the opening, speed, what is done badly, what is not done — are four cuts through this table,
+and every item added below names the row it answers.
+
+| | |
+|---|---|
+| instructions settled | 9,911 |
+| instructions **failed** | **1,903** — 1,902 of them `overdraftRefused`, and **1,617 of those are maturities** |
+| market sessions run | 8,819 |
+| market sessions **cleared** | **72** (0.8%); 7,903 found **no demand at all** |
+| books that have **ever** traded | **10 of 395** |
+| capabilities declared / **never once used** | 648 / **428** |
+| modules that have never produced anything | **13** — bond futures, CDS, commodity futures, control, corporate bonds, FX derivatives, index futures, IRS, merchants, options, short-term debt, spot FX, supply |
+| credit refusals | 2,118 — **1,141 say `it cannot cost its own funding`** |
+| labour | **700,000 hours offered, 0 wanted**, every period, every venue |
+| goods | **1,648 lots perished** while the consumer basket read empty (21.84) |
+| living parties | 135 at the opening → 111 |
+| parties with an outlook of anything at period 0 | **0** |
+| instructions in the ledger at period 0 | **0** |
+
+**The one sentence.** The seed gives this world **obligations and stocks but no flows and no
+history**. Obligations run by themselves, because they are on a calendar. Flows do not, because every
+mechanism that produces one needs a history to act on and **refuses to act without one** — 15 decision
+sites read an outlook and return nothing when it is missing. So the world spends twenty-six weeks
+failing to service debt it was born owing while nothing trades, nobody is hired, and goods rot.
+
+**At scale it is also the wrong shape.** The ladder's rungs: (3,12) 331 ms/period; (6,60) **stops at
+period 20** on 21.87; (12,200) 9,078 ms/period — cost grows as about the 1.7th power of the
+population. A profile of the third rung: **53.2% of the run is inside `World.curveAt`**, which walks
+every instrument in the world with a root-find per instrument, **1,079 times a period** (28 at the
+first rung), to produce four curves that do not change within the period.
+
+---
+
 ## Part 1 — The order
 
 | # | item | why here |
@@ -199,7 +235,8 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 0e | Questions, not hooks — **done** (section removed; see `docs/RECORD.md`) | the module contract every sector item after it uses |
 | 0e′ | Stores, not events; and the observer imports nothing — **done** | the same subject; before 0f, because the lattice declares stores |
 | 0f | The population lattice (cells hold totals) — **done** (section removed; see `docs/RECORD.md`) | the representation every mass sector stands on; must precede the columnar state |
-| 0g | The core made fast | after 0f (the register's cell half is final); a year in minutes before anything is measured at scale |
+| 0g | The core made fast — **parked** (see `docs/RECORD.md`; 1354 → 554 ms/period at the first rung, every shape figure identical; the profile is flat there and the remaining cost is at rungs the ladder cannot reach) | after 0f; resumes after 0h |
+| 0h | **The instruments** — the world can act, says when it is not acting, is measurable at scale, and explains itself | FIRST: six changes of days each, each of which makes every later item verifiable (0.7) |
 | 11 | Small-Business Pools — **done** (section removed; see `docs/RECORD.md`; 11.2a's plant and 17.0's findings positioned) | on 0f |
 | 12 | Firm birth, household formation, promotion — **done** (section removed; see `docs/RECORD.md`) | entry into the pool |
 | 12a | Households borrow, owe and fail; arrears; the immortals — **done** (section removed; see `docs/RECORD.md`; findings positioned at 12b.1, 12b.3, 17.0, 21.2) | the arrears row that housing, treasury and the sovereign wait on |
@@ -224,7 +261,10 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 20a | The annual assessment against what was withheld (inserted at 20.2) | after 20 |
 | 21 | The local repairs | each when its file is open |
 | 22 | The recipe | recipes plural; batches; upkeep |
-| 22a | The opening is not an equilibrium | needs 12, 17, 18a |
+| 22a | The opening is not an equilibrium — **absorbed by 22b**, whose steps delete the same doors from the other side | superseded |
+| 22b | **The chronicle** — the world opens as one that has been running | after 21's stops; a chronicle cannot run through a world that throws |
+| 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
+| 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
 
@@ -261,6 +301,69 @@ engine rather than local edits.
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
 **Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
+
+---
+
+## 0h. The instruments
+
+*Six changes, days each. They come first because after them the world can ACT, SAYS when it is not
+acting, is MEASURABLE at the scale that matters, and can EXPLAIN itself — and every item after this
+one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
+
+- [ ] 0h.1 **An outlook exists from the moment a public level does.** `expectations/index.ts` already
+  keeps two tracks per party and variable — the party's own adaptive one and an `anchored` one, *"the
+  last PUBLIC level"* — and switches to whichever has surprised it less. But the record is created
+  only on a first private observation (*"a party that has never seen this variable has no outlook"*),
+  so a party with no history **never consults the public track it is entitled to read**. Create the
+  record for any variable with a public level: expectation = that level, confidence = the dispersion
+  of the public record, the party's own observations pulling it away at its own memory from then on.
+  It is a READ of a source (Law 19), not a default (`?? 0`), and it is what a new entrant does: look
+  at the posted price. **Closes the bootstrap for 15 fail-closed decision sites** —
+  `households/consume.ts` (income, price), `households/portfolio.ts`, `firms/produce.ts`,
+  `firms/index.ts`, `supply/index.ts`, `banks/prime.ts`, `funds/things.ts`, `options`,
+  `securities-lending`, `treasury`, `housing`, `reporting/guidance.ts`, `money-market/policy.ts`,
+  `households/index.ts` — and with them the three loops in 0.7. Test: a world one period old has an
+  outlook for every variable with a print, and the 13 dead modules are asked at least once.
+- [ ] 0h.2 **No schedule of zero width.** `households/consume.ts` posts
+  `width: outlook.some ? outlook.value.confidence : 0`, so a party with no surprises posts a POINT and
+  a point demand meets a point supply. Width becomes the dispersion the party has seen, which after
+  0h.1 includes the public record. No floor and nothing widened by decree — a longer source for the
+  same question. (Gode & Sunder: allocative efficiency comes from the protocol over DISPERSED
+  reservation prices; the dispersion is what makes a market cross.)
+- [ ] 0h.3 **The liveness family.** All nine audit families are SAFETY properties — nothing bad ever
+  happens — and there is no LIVENESS property: something good eventually happens. That is why 428
+  never-used capabilities and 13 dead modules pass every gate. Bounded liveness IS safety (a property
+  with a horizon is refutable by a finite prefix), so an audit family that runs every period is the
+  right home and needs no new machinery: `world/reach.ts` already records every capability with its
+  owner, its `produced` count and its `lastAt`. Checks, each with its own horizon declared with a
+  reason (a RESOLUTION, tested by invariance): every declared capability has produced something;
+  every declared book has cleared; every living firm has produced, sold and been paid; every bank has
+  lent; no party has stood in arrears without a payment; every cell has been paid. Reported with
+  owner and size, never repaired. **This is the check that would have found 12c.3, 21.72, 21.73,
+  21.76, 21.77, 21.79, 21.81 and 21.84 at the item that introduced each.**
+- [ ] 0h.4 **`why(party, period)`.** Every diagnosis in `docs/RECORD.md` was a hand-written probe.
+  The material is already recorded — the journal has every event with subjects, the ledger every
+  instruction with its cause, `reach` what has never run — and what is missing is the query: the
+  phases that asked this party for something, what each returned, and for each refusal **the read
+  that was missing**. The one change in the mechanisms is that a refusal names the read it wanted,
+  which is a line at each of 0h.1's fifteen sites and is a comment made machine-readable.
+- [ ] 0h.5 **Repair the ladder's middle rung.** (6,60) stops at period 20 with `[Money C1.a]
+  instruction …: a payment from an account to itself is not a payment` in `treasury runReceipts`
+  (21.87), so the performance programme cannot produce the three-rung comparison its own exit is
+  written about. Fix the receipt that pays the state from the state; then the ladder measures again.
+- [ ] 0h.6 **Memoise the curve.** 53.2% of a run at the third rung is inside `World.curveAt`, which
+  calls `readCurve` — a walk of EVERY instrument in the world, a cash-flow rebuild, a `yearFraction`
+  and a root-find per instrument — **1,079 times a period** (28 at the first rung; the callers are
+  parties, not lines) to produce four curves that cannot change within a period. Key it on
+  (family, period, `prices.version`, `instruments.version`) through the `view.memo` built at 0g.5a.
+  Then 0g.7's other two halves: memoise `yearFraction`/`dayNumber` (pure functions of (date, date,
+  convention), 34% of the third rung between them) and warm-start `invertDecreasing` from the
+  instrument's last yield. **Hours of work for about half the cost of a run at the scale that
+  matters**, with no mechanism touched. Gate: every shape figure on the ladder identical.
+
+**Exit.** A one-period-old world has outlooks; `check:opens` reports the liveness family and it is
+RED with a list; `why(party, period)` answers for any party; the ladder runs three rungs; the third
+rung is at least twice as fast with the census identical to the digit.
 
 ---
 
@@ -428,7 +531,7 @@ Each when its file is open for another item; file:line and the change.
 
 ## 22a. The opening is not an equilibrium
 
-**A review of the opening is in `docs/REVIEW.md` §1.**
+**Absorbed by item 22b**, which deletes the same doors from the other side: 22a asks the seed to claim less; 22b removes the doors through which it claims, by making every holding the residue of a settled instruction. The steps below stand only as the list of what 22b must end up having deleted.
 
 - [ ] 22a.1 Delete `prices.write` from `SeedContext`; delete `seed.openingPrice.*`, `seed.openingYield`, `seed.openingRate`. Opening holdings at cost; the first sessions print from posted reasons (sellers from cost plus required return; buyers from their own outlook of worth); `markOf` is `none` until a print; `rateInForce` for an untraded pair is `none`.
 - [ ] 22a.2 Delete `PUBLIC_AT_THE_OPENING`; flotation is 10f's decision over the first year.
@@ -441,6 +544,126 @@ Each when its file is open for another item; file:line and the change.
 
 ---
 
+## 22b. The chronicle — the world opens as one that has been running
+
+*Absorbs 22a. The opening is nineteen calls — 5 `endowMoney`, 10 `endowUnits`, 3 `prices.write`,
+9 `parties.add`, 1 `owes` — and **zero `ctx.settle`**. Nothing it creates has a counterparty, a date
+or a record, so the world is handed every obligation and no relationship: 1,617 failed maturities in
+26 weeks, 0 parties with an outlook at period 0, an empty ledger under 132 asserted prices.*
+
+**The construction.** `draw` (the physical world and the primitives) → `chronicle` (a past, lived
+through ordinary settlement) → `accept` (a census of properties, or REJECT with a logged reason and a
+re-draw) → `snapshot` (an artifact runs open from). `period(0)` becomes the END of the past: the
+epoch moves back, so issue dates, accruals, seasoning and anniversaries are reads rather than
+statements. Rejection is admissible where calibration is not because **it discards a world and never
+adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
+
+- [ ] 22b.1 `world/chronicle.ts`: `Told = { at: Civil; draft: InstructionDraft; why: string }` and
+  `Chronicle = { from: Civil; told: readonly Told[] }`; a pre-period replay through ordinary
+  settlement; the epoch shift; **the grammar guard at the door** — a chronicle instruction may create
+  a stock (issue, buy, hire, lend, deliver, pay) and may never write a price, a rate, a mark or a
+  policy number; a version on a told moment; determinism from one seed value; and no told moment may
+  read a live market (it carries what it needs).
+- [ ] 22b.2 `check:opening`: the nine properties — every market has traded; every living party has an
+  outlook; every firm has produced, sold and been paid in different periods; every bank has lent and
+  been repaid; every declared instrument kind is held by somebody who chose to hold it; the maturity
+  profile spans more than one period and issue dates are dispersed; ages are dispersed; the audit is
+  green and every balance sheet closes; nothing in the register is younger than the world. A failure
+  rejects the world, re-draws from the next seed value and logs the reason to `docs/rejections.log`.
+  **A criterion that fails for every seed is a missing mechanism with a name.** Plus the regeneration
+  check that keeps a snapshot an optimisation rather than a second way to state an opening.
+- [ ] 22b.3 Money and the sovereign through the chronicle: reserves issued, bills sold at auction on
+  their own dates, the central bank's holding bought. **Deletes `endowMoney`** (5 sites).
+- [ ] 22b.4 Firms, plant and inventory through the chronicle: plant bought from its maker on its
+  vintage date, inventory bought up the chain from somebody who made it. **Deletes `endowUnits`
+  (10 sites) and `SEED_STOCK_BASIS`** — and this is where 12c.3 dies, because no firm can BUY eleven
+  periods of world demand from anybody.
+- [ ] 22b.5 Households, employment and savings through the chronicle — the income history that
+  outlooks and votes are made of. Deletes `seed.funding`'s inversion (deposits are currently a
+  residual of the banks' asset endowment: the identity satisfied and the economics backwards).
+- [ ] 22b.6 Delete the opening prints (22a.1): by now every market has traded in the chronicle.
+  Deletes `seed.openingPrice.*`, `seed.openingWage`, `seed.openingYield`, `seed.openingRate`,
+  `prices.write` from `SeedContext`.
+- [ ] 22b.7 The snapshot format; `assemble()` opens from one; the rig's scale models become small
+  accepted worlds, so a test asks for *a mill that has traded for a year* instead of building one.
+- [ ] 22b.8 MSER-5 on a handful of named series (money per member, the going wage, living parties,
+  sessions cleared, the credit stock): the chronicle's length becomes a truncation point a statistic
+  chose rather than a number somebody picked — a RESOLUTION, tested by doubling it.
+- [ ] 22b.9 The first module graduated from a scripted past to a LIVED one: warm-up periods the
+  engine runs itself. Each graduation is a measurement of whether that mechanism works.
+
+**Exit.** `grep -rn "endowMoney\|endowUnits\|openingPrice\|prices\.write" src/` is empty;
+`check:opening` green; `docs/rejections.log` empty for the chosen seed; the census of period 0
+indistinguishable in KIND from the census of period 100.
+
+**What it predicts.** The first chronicle is rejected on *every firm has produced, sold and been
+paid* — that is 12c.3, and the rejection log naming it on attempt one is the item working. Money will
+be hard to create legally, because every deposit must arrive as somebody's borrowing. And every
+finding recorded against the old opening must be re-read, not carried over.
+
+---
+
+## 22c. The market as it is
+
+*8,819 sessions, 72 cleared, 7,903 finding no demand at all. The cause is not the decisions: it is
+that there is ONE microstructure — a weekly uniform-price call auction — for bread, labour, loans,
+shares and freight alike, and that nothing rests between sessions. A Walrasian auctioneer for bread
+is the one intermediary that never existed (Law 1).*
+
+- [ ] 22c.1 **A protocol per venue, as data.** `VenueDecl.protocol: 'call' | 'posted' | 'book'`
+  behind a dispatch table (Law 15), each protocol its own matching module, the kernel dispatching on
+  the declaration and never branching on a kind. `call` is today's solver, unchanged, for auctions
+  and fixings. `posted` is a seller standing behind an ask and a buyer seeing `seenBy` sellers (a
+  TECHNOLOGY: how much of a market a buyer can see) and taking the best it saw — still cleared from
+  real supply meeting real demand (Law 3), because a trade happens when a buyer accepts a price a
+  seller was standing behind, which is what a price in a shop IS. `book` is resting orders with
+  continuous matching, for exchanges. (This is the dominant protocol in the macro-ABM literature:
+  decentralised bilateral matching with partial information over goods, labour, credit and deposits.)
+- [ ] 22c.2 **An order rests.** A standing-order register as a kernel noun beside agreements and
+  processes: `(party, venue, side, level, quantity, from, until, why)` — entered by a participant,
+  cancelled by its owner, expired by the calendar, consumed by a match; every session opens with the
+  standing book. This is why `noDemand` (7,903) dwarfs `noOverlap` (323): the two sides are not
+  failing to agree on a price, **they are failing to be in the room in the same week**.
+- [ ] 22c.3 **A desired cover, and an ask that answers the shelf.** `firms/decide.ts` computes
+  `wanted = (expectsToSell − stock)/yield` — a stock-adjustment rule whose desired buffer is exactly
+  ZERO — and prices at what it expects to fetch with **no feedback from unsold stock**. So a firm
+  with stock above expectation starts nothing and waits at a price it has no reason to lower (12c.3:
+  `batch 0, bound demand`, for ever; 1,648 lots perished). Add a cover drawn per firm as a
+  PREFERENCE, dispersed like `payoutPatience`; and make the ask carry the value of HOLDING — storage,
+  perishing and the money tied up — which the docstring already claims to compute and currently
+  computes as if the shelf were empty.
+- [ ] 22c.4 **Somebody holds the stock.** No party's business is to hold goods and stand on both
+  sides of one book; `merchants` moves goods between places and has never once run. A `stockist`
+  buys from producers at what it expects to sell for less its own required return on the money tied
+  up, posts an ask to households out of the lots it holds, and wears the loss when the gap closes the
+  wrong way — margin an OUTCOME of turnover and carrying cost, no spread table, exactly as
+  `merchants` is written. It is the missing intermediary of Law 1 and what makes a consumer price
+  index possible at all (21.84).
+
+**Exit.** The liveness family's *every declared book has cleared within N* is green for the goods and
+labour venues; a household has bought a physical good in a settled instruction; `consumer.us.1` reads
+a level.
+
+---
+
+## 22d. The payment queue
+
+*1,902 of 1,903 failures are for want of money and 1,617 of those are maturities; 135 living parties
+become 111 in 26 weeks. A gridlock — A cannot pay B because B has not yet paid A — is a timing
+failure, not a default, and resolving it needs no new money.*
+
+- [ ] 22d.1 A settlement queue with a stated lifetime, in states this project already has words for:
+  due → queued (retried after each later instruction that funds the payer) → failed (the arrear, as
+  today; 19.8 built the other end, when an arrear becomes a breach). One TECHNOLOGY: how long a
+  payment may wait before it is late.
+- [ ] 22d.2 One pass at the end of the period that finds cycles in the queue and settles them
+  together, **each leg at full value** — which is not netting across counterparties (still forbidden)
+  but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.
+- [ ] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
+  read, published, causing nothing.
+
+---
+
 ## 23. Measure — Part XII
 
 - [ ] 23.1 Resize the scale model as one bounded change (with 21.7): a test never names a party.
@@ -448,6 +671,24 @@ Each when its file is open for another item; file:line and the change.
 - [ ] 23.3 Part XII's measurements with the level carried, at the smallest scale the ladder shows invariant.
 - [ ] 23.4 The accredited line: whether any household clears it.
 - [ ] 23.5 Which blueprints the world grew and wound down.
+- [ ] 23.6 **Ensembles.** `npm run ensemble -- <k>`: k seeds, the Part 0.7 census as a DISTRIBUTION,
+  and the rule that follows — a finding is not a finding until it reproduces across seeds, and the
+  record says in how many it was seen. k is computed from a confidence-based stopping rule, not
+  chosen. Every number this project has ever published comes from one trajectory of one seed.
+- [ ] 23.7 **The network read.** The exposure graph each period — loans, deposits, contracts,
+  arrears are all already edges in the register and the agreement book — its concentration, and a
+  DebtRank-style distress propagation from each node. A READ in Part XII's sense: published, causing
+  nothing, never repairing. It is what would have made 21.72 (the banks stop quoting every name)
+  diagnosable as a structure rather than three per-bank moods.
+- [ ] 23.8 **Metamorphic relations, as a family.** There is exactly one in the suite — the ladder's
+  scale invariance — and it is RED (76 small firms at grain 1 against 77 at grain 2). With
+  `fast-check`, already in the toolchain: scale invariance repaired; resolution invariance (double
+  the share tick, nothing moves); phase-order invariance (reorder phases that commute, the prints are
+  identical); unit invariance (restate a currency's subdivision, every ratio holds); and seed
+  invariance of PROPERTIES, never of values.
+- [ ] 23.9 **The ladder as a ratchet in `npm run check`**, a baseline that may only fall, as
+  `check:forbids` already does. The first rung went from 5.1 s a year at 0g.1 to 70 s a year with no
+  check noticing.
 
 ---
 

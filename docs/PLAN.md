@@ -17,17 +17,21 @@ The plan has two parts:
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**The plan: 0 of 7 items closed** (6 of 118 steps).
+**The plan: 0 of 11 items closed** (6 of 144 steps).
 **Requirement coverage: 78.2%** (1091 MET, 127 PARTIAL, 2 OUT OF SCOPE of 1397 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
 | 0g — The core made fast (Law 18) | 16 | 1 | in progress |
+| 0h — The instruments | 6 | 0 | open |
 | 20a — The annual assessment against what was withheld (§30 C2) | 4 | 0 | open |
 | 21 — The local repairs | 84 | 5 | in progress |
 | 22 — The recipe | 3 | 0 | open |
 | 22a — The opening is not an equilibrium | 6 | 0 | open |
-| 23 — Measure — Part XII | 5 | 0 | open |
+| 22b — The chronicle — the world opens as one that has been running | 9 | 0 | open |
+| 22c — The market as it is | 4 | 0 | open |
+| 22d — The payment queue | 3 | 0 | open |
+| 23 — Measure — Part XII | 9 | 0 | open |
 | 24 — The app and the APK | 0 | 0 | open |
 | 0 | — | — | closed |
 | 1 | — | — | closed |
