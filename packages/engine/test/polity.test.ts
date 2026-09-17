@@ -9,6 +9,9 @@ import { TREASURY_PARAMS } from '../src/mechanisms/treasury/index.js';
 import { rigWorld } from './rig.js';
 import { PLATFORMS } from '../src/mechanisms/polity/platforms.js';
 import { platformPositions, distanceBetween, spreadAcross } from '../src/registry/platforms.js';
+import { ballotOf, tally, turnoutOf } from '../src/mechanisms/polity/vote.js';
+import { asCash } from '../src/core/measure.js';
+import { USD, type ParamId } from '../src/index.js';
 
 describe('the constitution states its own numbers (Polity A1, A4, C1, C2, C4, D5)', () => {
   const w = rigWorld('polity');
@@ -128,5 +131,86 @@ describe('every party states a position on every number parliament owns (Polity 
     expect(distanceBetween(a, a, spread)).toBe(0);
     expect(distanceBetween(a, b, spread)).toBeGreaterThan(distanceBetween(a, c, spread));
     expect(distanceBetween(a, b, spread)).toBeGreaterThan(distanceBetween(c, b, spread));
+  });
+});
+
+describe('a cell votes from its own state, or stays home (Polity B1, B2, B2.b, B3, 19.4)', () => {
+  const w = rigWorld('vote');
+  const said = platformPositions(PLATFORMS, w.params.all());
+  const on = {
+    income: 'treasury.tax.income' as ParamId,
+    consumption: 'treasury.tax.consumption' as ParamId,
+    transfers: 'treasury.outlays.transfers.perMember' as ParamId,
+    pension: 'pensions.contribution.employeeShare' as ParamId,
+  };
+
+  it('prefers the platform that leaves it best off, and a poor cell and a rich one differ', () => {
+    // B2: each platform applied to the cell's OWN state. The two cells here differ in one thing —
+    // what they expect to be paid — and that is enough to make them want different governments,
+    // which is B4's mechanism seen from one cell: the result turns on the distribution.
+    const poor = ballotOf(
+      { cell: 'cell.poor' as never, weight: 10, expects: asCash(400, USD, 'what it expects') },
+      said,
+      on,
+    );
+    const rich = ballotOf(
+      { cell: 'cell.rich' as never, weight: 10, expects: asCash(40_000, USD, 'what it expects') },
+      said,
+      on,
+    );
+    expect(poor.voted).toBeDefined();
+    expect(rich.voted).toBeDefined();
+    // The transfer is worth more than the taxes to a household with little pay, so the poor cell
+    // wants the broad state. The rich cell does NOT, and which of the other two it wants is the
+    // arithmetic's to say rather than mine: the lean state's low income tax is paid for by a high
+    // consumption tax, and on a big income that trade is close. Nothing here is a preference
+    // parameter — the two cells differ in ONE number, what they expect to be paid, and that is
+    // enough to make them want different governments (B4's mechanism, seen from one cell).
+    expect(poor.voted).toBe('broad');
+    expect(rich.voted).not.toBe('broad');
+    expect(rich.voted).not.toBe(poor.voted);
+    // B3: a cell casts ALL its votes the same way, because a cell is one household with a
+    // multiplicity and one household votes once (A3, XI-15).
+    expect(poor.votes).toBe(10);
+  });
+
+  it('stays home when every platform leaves it in the same place, and turnout is the read', () => {
+    // B2.b: abstention is a DECISION and not a rate. A cell with no expectation of pay has nothing
+    // to compare and casts nothing; the turnout that results is a read of who could and who did.
+    const nothing = ballotOf(
+      { cell: 'cell.new' as never, weight: 7, expects: undefined },
+      said,
+      on,
+    );
+    expect(nothing.voted).toBeUndefined();
+    expect(nothing.votes).toBe(0);
+    expect(nothing.positions.length).toBe(0);
+    const one = ballotOf(
+      { cell: 'cell.a' as never, weight: 3, expects: asCash(1_000, USD, 'what it expects') },
+      said,
+      on,
+    );
+    const out = turnoutOf([nothing, one]);
+    // The cell that could not compare is not counted as ABLE: it had no ballot to cast, which is a
+    // different fact from having one and staying home, and the two are not averaged together.
+    expect(out.able).toBe(3);
+    expect(out.cast).toBe(3);
+    // B2.a: there is no turnout parameter anywhere — this is arithmetic over what the cells did.
+    expect(w.params.has('polity.turnout' as ParamId)).toBe(false);
+  });
+
+  it('sums the ballots weighted, and the tally is what the seats are allotted from (B3)', () => {
+    const ballots = [
+      ballotOf({ cell: 'a' as never, weight: 5, expects: asCash(400, USD, 'pay') }, said, on),
+      ballotOf({ cell: 'b' as never, weight: 2, expects: asCash(400, USD, 'pay') }, said, on),
+      ballotOf({ cell: 'c' as never, weight: 4, expects: asCash(40_000, USD, 'pay') }, said, on),
+    ];
+    const votes = tally(ballots);
+    expect(votes.get('broad')).toBe(7);
+    const other = [...votes].find(([id]) => id !== 'broad');
+    expect(other?.[1]).toBe(4);
+    // Σ vote(xᵢ)·wᵢ and never a sector's mean voter: the mean of these three cells' pay would have
+    // voted one way, and what they actually did was 7 to 4 the other.
+    expect([...votes.values()].reduce((x, y) => x + y, 0)).toBe(11);
   });
 });

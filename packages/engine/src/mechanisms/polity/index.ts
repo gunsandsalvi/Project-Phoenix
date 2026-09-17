@@ -18,11 +18,13 @@ import { CONSTITUTION, POLITY_PARAMS, ALLOTMENT_RULES, ruleIndexOf } from './dat
 import type { ParamDecl } from '../../registry/params.js';
 import { platformPositions } from '../../registry/platforms.js';
 import { PLATFORMS } from './platforms.js';
-import type { SeedContext } from '../../world/context.js';
+import type { MechanismContext, SeedContext } from '../../world/context.js';
+import { BALLOTS_CAST, SEATS_TAKEN, hold } from './election.js';
 import type { SystemModule } from '../../world/module.js';
 
 export * from './data.js';
 export * from './platforms.js';
+export * from './vote.js';
 
 function paramsOf(): ParamDecl[] {
   return [
@@ -89,7 +91,30 @@ export const polity: SystemModule = {
   // market's, and the constitution's own numbers are nobody's to move at all — which is what makes
   // them a constitution (Polity D5).
   mandates: ['parliament'],
-  phases: [],
+  phases: [
+    {
+      /**
+       * A4, B1, B3, C4 (19.4): THE ELECTION. It falls on a DAY — every `termMonths` from the day
+       * this world opened — and the period that crosses that day is the one that votes, which is
+       * the same rule the credit series rolls on and the central bank meets on (Money G3.a).
+       *
+       * At the top of the period, before anything else this world does, because what a parliament
+       * decides is the frame the rest of the period runs in — and because a cell voting after its
+       * own wage had been paid would be voting on a state the election had already changed.
+       */
+      name: 'polity.election',
+      spec: 'Polity A3 Polity A4 Polity B1 Polity B2 Polity B3 XI-15 XI-17',
+      anchor: { after: 'corporateActions' },
+      reads: [],
+      writes: [
+        { kind: 'event', name: BALLOTS_CAST },
+        { kind: 'event', name: SEATS_TAKEN },
+      ],
+      run: (ctx: MechanismContext): void => {
+        hold(ctx);
+      },
+    },
+  ],
   participants: [],
   families: [],
   /**

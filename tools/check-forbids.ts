@@ -247,6 +247,10 @@ const PEEK_BASELINE: Readonly<Record<string, number>> = {
   // basket it has a mandate about. It reads no counterparty's state: the basket is public and the
   // view of it is the deciding party's, which is what §46 A2 requires of a decision at all.
   'mechanisms/money-market/policy.ts': 1,
+  // 19.4: THE VOTER'S OWN view, for the voter's own ballot — its outlook of its own income, which
+  // is the one thing §47 B1 says a cell votes on. It reads no counterparty's state and no
+  // aggregate: what the vote is handed is `WhatACellKnows`, which has nothing else in it (B1.a).
+  'mechanisms/polity/election.ts': 1,
   'mechanisms/money-market/resolution.ts': 3,
   'mechanisms/money-market/session.ts': 2,
   'mechanisms/property/index.ts': 1,
