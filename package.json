@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run check:opens && npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run check:deaths && npm run check:existence && npm run plan:check",
+    "check": "npm run check:opens && npm run world 1 && npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run check:deaths && npm run check:existence && npm run plan:check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -35,7 +35,8 @@
     "coverage:reached": "tsx packages/engine/test/reached.ts",
     "ladder": "tsx packages/engine/test/ladder.ts",
     "chronicle": "tsx packages/engine/test/chronicle.ts",
-    "plan:gaps": "tsx tools/plan-gaps.ts"
+    "plan:gaps": "tsx tools/plan-gaps.ts",
+    "world": "tsx --max-old-space-size=12000 packages/engine/test/world.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
