@@ -1109,7 +1109,7 @@ measurement is taken there is nothing to name.
 | `Polity B2.a` | MET | packages/engine/src/mechanisms/polity/vote.ts (`ballotOf` ranks the platforms by what each leaves this cell with), packages/engine/test/polity.test.ts |
 | `Polity B2.b` | MET | packages/engine/src/mechanisms/polity/vote.ts (a cell left in the same place by every platform ABSTAINS — dust-tied, and the only abstention there is), packages/engine/test/polity.test.ts |
 | `Polity B3` | MET | packages/engine/src/mechanisms/polity/vote.ts (`tally`: per cell, summed over the cell’s weight — XI-15), packages/engine/test/polity.test.ts |
-| `Polity B4` | MISSING |  |
+| `Polity B4` | MET | packages/engine/test/polity.test.ts (a mean-preserving spread of four equal-weight cells’ incomes returns a different house from the flat distribution with the same weighted mean — the result turns on the distribution and not on its mean) |
 | `Polity C1` | MET | packages/engine/src/mechanisms/polity/data.ts (`ALLOTMENT_RULES`: the rule is DATA with a function beside it and the constitution points at a row), packages/engine/test/polity.test.ts |
 | `Polity C2` | MET | packages/engine/src/mechanisms/polity/government.ts (`formGovernment`: the largest party adds the nearest platform it may sit with until it holds a majority; a parliament where no such coalition exists is HUNG and reported), packages/engine/test/polity.test.ts |
 | `Polity C3` | MET | packages/engine/src/mechanisms/polity/government.ts (`mandateOf`: the seat-weighted position of the governing coalition, on the number’s own grain), packages/engine/test/polity.test.ts |
@@ -1122,15 +1122,15 @@ measurement is taken there is nothing to name.
 | `Polity D3.a` | MET | packages/engine/src/registry/mandate.ts (`whatParliamentControls`: a parliament-owned number whose dimension is a PRICE, and one in a family no parliament may reach, are both refused at assembly — a price is cleared, never voted for), packages/engine/test/polity.test.ts |
 | `Polity D4` | MET | packages/engine/src/registry/mandate.ts (the target is the parliament’s and the rate is refused by name — §31 A4, operationally independent), packages/engine/src/mechanisms/money-market/policy.ts, packages/engine/test/polity.test.ts |
 | `Polity D5` | MET | packages/engine/src/registry/params.ts (every POLICY primitive names its owner and the register refuses a setter that is not it), packages/engine/src/mechanisms/polity/index.ts, packages/engine/test/polity.test.ts |
-| `Polity E1` | MISSING |  |
-| `Polity E2` | MISSING |  |
-| `Polity E3` | MISSING |  |
-| `Polity E4` | MISSING |  |
-| `Polity F1` | MISSING |  |
-| `Polity F2` | MISSING |  |
-| `Polity F3` | MISSING |  |
-| `Polity F4` | MISSING |  |
-| `Polity F5` | MISSING |  |
+| `Polity E1` | MET | packages/engine/src/mechanisms/treasury/index.ts (the programme reads the RATES and the outlays out of the register, which is where the mandate wrote them; it never reads an election), packages/engine/src/mechanisms/polity/election.ts |
+| `Polity E2` | MET | packages/engine/src/mechanisms/polity/election.ts (`takeEffect` writes parameters and nothing else — there is no door from a mandate to a price, a quantity or a party’s decision, so a change of government reaches everything through the mechanisms that read those numbers) |
+| `Polity E3` | MISSING | a VERIFY that needs a run long enough to hold an election: the term is 48 months and a period is a week, so the first one falls around period 209 (finding 21.86, positioned at 23.3 with Part XII’s measurements). The mechanism it would measure is built — the mandate moves the rates and the outlays and the treasury reads them (E1, E2) — and what is missing is the measurement. |
+| `Polity E4` | MET | packages/engine/src/mechanisms/polity/election.ts (the seats and the mandate are public journaled events, so they are on the observer surface and the surface is a plain copy the engine never reads back), packages/engine/src/observer/observer.ts, packages/engine/test/polity.test.ts |
+| `Polity F1` | MET | packages/engine/src/mechanisms/polity/election.ts (the only source of seats is the cells’ own ballots — there is no door for a written result, which is the shape rather than a rule), packages/engine/test/polity.test.ts |
+| `Polity F2` | MET | packages/engine/src/registry/params.ts (`setByMandate` is the only writer of a policy primitive and it takes a value, never a series; nothing anywhere schedules one), packages/engine/src/registry/mandate.ts |
+| `Polity F3` | MET | packages/engine/src/mechanisms/polity/vote.ts (`WhatACellKnows` is one cell’s own outlook and its own weight: no bloc, no demographic weight, no loyalty coefficient, and no door onto one), packages/engine/test/polity.test.ts |
+| `Polity F4` | MET | packages/engine/src/mechanisms/polity/approval.ts (the poll is taken every period as a private fact and published `lagPeriods` later, saying which period it is about; nothing in this world reads what is published), packages/engine/test/polity.test.ts |
+| `Polity F5` | MET | packages/engine/test/polity.test.ts (the tally recomputed cell by cell equals the aggregate, turnout is what the cells could and did cast, and the same votes give the same house every time — nothing is scaled to a target) |
 
 ## Firm
 

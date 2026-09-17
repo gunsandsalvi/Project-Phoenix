@@ -23,7 +23,7 @@
 import type { ParamId } from '../core/ids.js';
 import { absolute, asRatio } from '../core/measure.js';
 import { InvalidRegistry } from '../core/errors.js';
-import type { Dimension, ParamDecl } from './params.js';
+import { COUNTED_DIMENSIONS, type ParamDecl } from './params.js';
 
 export interface PlatformPosition {
   /** A parameter id, or a family prefix ending in a dot — `centralBank.target.` covers every money. */
@@ -45,9 +45,7 @@ export interface PlatformDecl {
  * period of severance and two fifths of a day of reporting lag are not values the unit can hold,
  * and the read that would have to hold one throws where it reads (`asQty`) rather than here.
  */
-export const COUNTED: readonly Dimension[] = ['periods', 'days', 'months', 'years', 'count'];
-
-export const isCounted = (d: ParamDecl): boolean => COUNTED.includes(d.dimension);
+export const isCounted = (d: ParamDecl): boolean => COUNTED_DIMENSIONS.includes(d.dimension);
 
 /** Whether a position covers a parameter: its own name, or the family it names. */
 const covers = (on: string, id: ParamId): boolean =>

@@ -95,6 +95,15 @@ export type Dimension =
   /** A declared AMOUNT of a unit the reader names (`denominated`), read through `amount`. */
   | 'amount';
 
+/** Law 8: the dimensions whose values are whole ones — a calendar index or a count of things. */
+export const COUNTED_DIMENSIONS: readonly Dimension[] = [
+  'periods',
+  'days',
+  'months',
+  'years',
+  'count',
+];
+
 export interface ParamDecl {
   readonly id: ParamId;
   /**
@@ -321,6 +330,21 @@ export class ParamRegister {
       );
     }
     if (why.length === 0) throw new InvalidRegistry('Law 16', `setting ${id} has no reason`);
+    /**
+     * Law 8 (19.9): A COUNTED NUMBER IS SET IN WHOLE ONES. Periods, days, months, years and counts
+     * of things are read back by `periods()`, `count()` and their kin, and every one of those reads
+     * hands the number to something that indexes a calendar or counts a thing — so a mandate of
+     * four and a hundredth periods of grace is not a slightly different law, it is a period index
+     * that does not exist, and what said so was `period()` throwing four phases away from here.
+     * The unit is part of the number, and this is the writer, so this is where it is checked.
+     */
+    if (COUNTED_DIMENSIONS.includes(was.dimension) && !Number.isInteger(value)) {
+      throw new InvalidRegistry(
+        'Law 8',
+        `${id} is counted in whole ${was.dimension} ("${was.unit}") and would be set to ${String(value)}`,
+        { id, dimension: was.dimension, value },
+      );
+    }
     const now: ParamDecl = { ...was, value: finite(value, `parameter ${id}`), why: `${was.why} ${why}` };
     this.decls.set(id, Object.freeze(now));
     this.moved.add(id);

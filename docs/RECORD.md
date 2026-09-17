@@ -14158,3 +14158,78 @@ posts.
 
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths green.
 `test/policy.test.ts` is new and four green.
+
+## Item 19 — The polity: closed
+
+**§47 was the last mechanism missing on the decision side.** Every POLICY number in the register
+names an owner, and for `parliament` that owner did not exist: the tax rates, the transfers and the
+central bank's target stood where the seed declared them for ever, which is a standing mandate
+nobody ever voted on. Polity was an ABSENT SECTOR — 0 of 32 clauses MET — and it is now 28 of 32.
+
+**The government buys** (19.0). Its basket was BREAD and the whole of its budget. It is now
+building, professional services, care, bread and a vessel line, bidding at ITS OWN OUTLOOK rather
+than at the last print, constrained by the money its funding programme raised. A basket whose
+shares do not come to one refuses to open.
+
+**One module per mandate** (19.1). A module declares the mandates it speaks for; assembly answers
+`whoSpeaksForIt` once per owner and refuses a second claimant; the door throws when the caller is
+not the one who answered. With the register's two refusals — not a policy, not the declared owner —
+three things must hold before a number moves, and each says which one failed.
+
+**The constitution states its own numbers** (19.2). Seats, a term in MONTHS (so an election falls on
+a day walked from the day this world opened), the allotment rule as a position in a dispatch table
+with two rows, the coalition distance and the mandate lag — all owned by `constitution`, because a
+body does not rewrite the rule that elected it. Profits and gains became tax bases of their own:
+profits assessed on what a company PUBLISHED it earned less what the marks did, once per statement.
+
+**Three parties with stated positions** (19.3), as DATA in the registry. A platform that says nothing
+about a number parliament owns, or says something about one it does not, or says two things about
+one, and the world does not open.
+
+**A cell votes on what it experienced** (19.4). `WhatACellKnows` is its own outlook of its own income
+and how many households it is — so B1.a's forbid is a SHAPE and not a rule anybody remembers: there
+is no door in the vote onto a published statistic. A cell left in the same place by every platform
+stays home, and that is the only abstention there is.
+
+**Who governs, and what it then says** (19.5, 19.6). The largest party adds the nearest platform it
+may sit with until it holds a majority; a parliament where nobody may sit with anybody is HUNG and
+the standing mandate continues. The mandate is a read OF THE PARLIAMENT — every number it owns, at
+the seat-weighted position of the coalition — journaled with the period it starts from and WRITTEN
+at the lag through the one door that may write it. C3.b is the guard on C3.a's silent forbid: the
+register against the standing mandate, every period, exactly.
+
+**Which power each number is** (19.7). `registry/mandate.ts` names every parliament-owned number
+against the clause that grants it (D1 fiscal, D2 spending, D3 regulatory, D4 the target), and
+refuses at assembly a number that is a PRICE, the bank's rate and corridor by name, a number no
+clause grants, and a power that covers nothing. The treasury's cash buffer moved from the model's
+preference to parliament's policy: how close a state runs to the wire is a public choice.
+
+**The law of late payment** (19.8). `breached` was a state the register could hold and nothing could
+reach. A grace period the parliament sets, and the module that already says what a failure to pay
+makes somebody breaks every performing row the payer owes that payee when it expires with the
+arrear still standing. It ends nothing: what was owed is still owed.
+
+**Polls, late and inert** (19.9). The same count the election makes (`ballotsToday` — one question,
+one implementation), taken every period as a private fact and published `lagPeriods` later saying
+which period it is about. Nothing reads it, which is F4 as a shape.
+
+**Two defects undone on their own terms** (Law 13), both Law 8. A platform stated nine tenths on a
+number counted in HECTARES A PERIOD, and the seat-weighted mandate of a counted number was a
+fraction of one. A position on a counted number is now refused at assembly, a mandate lands on the
+unit's own grain, and — after a mandate of 4.01 periods of grace reached `period()` four phases
+away — `setByMandate` refuses a non-integer for any counted dimension. That last one is the check
+the other two were asking for: the unit is part of the number, and this is the writer.
+
+**What is not here.** `Polity E3` — a change of government showing in the deficit through named
+outlays — needs a run long enough to hold an election, and with a four-year term and a weekly period
+the first falls around period 209 (21.86, at 23.3, where it is one measurement with 21.85: a cell
+votes on four of the twenty numbers, and the other sixteen each need a mechanism first). The two
+repairs are 21.87 (a seed-dependent stop in the treasury's receipts, which predates this item) and
+21.88 (the breach scale model records the default and does not breach).
+
+**Marked.** Polity A1–A4, B1, B1.a, B2, B2.a, B2.b, B3, B4, C1, C2, C3, C3.a, C3.b, C4, D1–D5,
+E1, E2, E4, F1–F5 MET; E3 MISSING with its measurement named. Coverage 74.4% → 78.2%.
+
+**Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence and
+plan:check green; `test/polity.test.ts` twenty-one green, `test/breach.test.ts` one green and one
+red (21.88).

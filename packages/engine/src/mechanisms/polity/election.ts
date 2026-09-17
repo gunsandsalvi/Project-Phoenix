@@ -57,42 +57,59 @@ export function electsThisPeriod(ctx: MechanismContext): boolean {
   return compareCivil(last, opened) !== 0 && compareCivil(last, before) > 0;
 }
 
-/** A3, B3, C1: the vote, the tally and the house. */
-export function hold(ctx: MechanismContext): void {
-  if (!electsThisPeriod(ctx)) return;
-  const said = platformPositions(PLATFORMS, ctx.params.all());
+/**
+ * A3, B1, B3, XI-15: EVERY LIVING CELL'S BALLOT, AS IT WOULD BE CAST TODAY.
+ *
+ * It is the election's own count when an election falls today, and the straw poll's when it does
+ * not (F4) — ONE function, because "how the cells would vote" is one question and a second
+ * implementation of it would be a second answer to it (Law 4).
+ *
+ * WHAT THIS CELL KNOWS is its own outlook of its own income, in its own money, and how many
+ * households it is. A cell that has never been paid has no expectation of pay and no position to
+ * compare — it has nothing to vote WITH, which is a real state and not a zero, and it shows up in
+ * the turnout as a household that could not choose rather than one that chose to stay home.
+ */
+export function ballotsToday(
+  ctx: MechanismContext,
+  said: ReadonlyMap<string, ReadonlyMap<ParamId, number>>,
+): readonly Ballot[] {
   const ballots: Ballot[] = [];
   for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!cell.status.alive || cell.representation !== 'cell') continue;
     const view = ctx.participant(cell.id);
     const expects = view.outlook(about({ on: 'income' }));
-    /**
-     * B1, B1.a, XI-15: WHAT THIS CELL KNOWS. Its own outlook of its own income, in its own money,
-     * and how many households it is. A cell that has never been paid has no expectation of pay and
-     * no position to compare — it has nothing to vote WITH, which is a real state and not a zero,
-     * and it shows up in the turnout as a household that could not choose rather than one that
-     * chose to stay home.
-     */
     const ccy = ctx.registry.currencyOf(cell.region);
-    const ballot = ballotOf(
-      {
-        cell: cell.id,
-        weight: weightOf(cell),
-        expects: expects.some
-          ? asCash(expects.value.expected, ccy, 'what it expects to be paid in a period')
-          : undefined,
-      },
-      said,
-      TURNS_ON,
+    ballots.push(
+      ballotOf(
+        {
+          cell: cell.id,
+          weight: weightOf(cell),
+          expects: expects.some
+            ? asCash(expects.value.expected, ccy, 'what it expects to be paid in a period')
+            : undefined,
+        },
+        said,
+        TURNS_ON,
+      ),
     );
-    ballots.push(ballot);
+  }
+  return ballots;
+}
+
+/** A3, B3, C1: the vote, the tally and the house. */
+export function hold(ctx: MechanismContext): void {
+  if (!electsThisPeriod(ctx)) return;
+  const said = platformPositions(PLATFORMS, ctx.params.all());
+  const ballots = ballotsToday(ctx, said);
+  for (const ballot of ballots) {
+    const cell = ballot.cell;
     // Observer A4: a BALLOT IS SECRET. What this cell did is recorded against this cell and is not
     // public — the house is public, and how one household voted is nobody else's read.
     ctx.record(
       BALLOTS_CAST,
-      [cell.id],
+      [cell],
       {
-        cell: cell.id,
+        cell,
         voted: ballot.voted ?? '',
         votes: ballot.votes,
         weight: ballot.weight,

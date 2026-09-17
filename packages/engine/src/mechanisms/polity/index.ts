@@ -30,12 +30,14 @@ import {
   takeEffect,
 } from './election.js';
 import type { SystemModule } from '../../world/module.js';
+import { APPROVAL, APPROVAL_LAG, POLL_TAKEN, publishApproval, takePoll } from './approval.js';
 
 export * from './data.js';
 export * from './platforms.js';
 export * from './vote.js';
 export * from './government.js';
 export * from './election.js';
+export * from './approval.js';
 
 function paramsOf(): ParamDecl[] {
   return [
@@ -83,6 +85,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'policy',
       owner: 'constitution',
       why: 'Polity C4: how long after the election the mandate takes effect. A government is not instant — it is formed, and then it governs — and the lag is why a change of parliament shows in the deficit later rather than the same week (E3).',
+    },
+    {
+      id: APPROVAL_LAG,
+      value: CONSTITUTION.approvalLag,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'technology',
+      owner: 'model',
+      why: 'Polity F4: how long it takes to ask the households and to count what they said. A publication lag is a fact about measuring, like the reporting lag of any statistic — and it is nobody’s POLICY, least of all the parliament’s: a government that could shorten the lag on the polls about itself would be choosing when it is judged.',
     },
   ];
 }
@@ -144,6 +155,32 @@ export const polity: SystemModule = {
       ],
       run: (ctx: MechanismContext): void => {
         hold(ctx);
+      },
+    },
+    {
+      /**
+       * F4, E4 (19.9): THE POLLS. Asked every period and published `lagPeriods` later, and read by
+       * nothing: a government behind in them governs exactly as it did before, which is the whole
+       * of what F4 forbids made into a shape — there is no door from here into any decision.
+       *
+       * After the election, because on the day of one the count is the real thing and the poll is
+       * the same question asked of the same cells.
+       */
+      name: 'polity.approval',
+      spec: 'Polity B3 Polity E4 Polity F4 XI-15',
+      anchor: { after: 'corporateActions' },
+      reads: [
+        { kind: 'event', name: POLL_TAKEN, of: 'anyPeriod' },
+        // Who governs, off the public fact about who governs — history, so it orders nothing.
+        { kind: 'event', name: SEATS_TAKEN, of: 'anyPeriod' },
+      ],
+      writes: [
+        { kind: 'event', name: POLL_TAKEN },
+        { kind: 'event', name: APPROVAL },
+      ],
+      run: (ctx: MechanismContext): void => {
+        takePoll(ctx);
+        publishApproval(ctx);
       },
     },
   ],

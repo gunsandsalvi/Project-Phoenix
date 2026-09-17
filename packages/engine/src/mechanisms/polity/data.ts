@@ -125,6 +125,8 @@ export const CONSTITUTION = {
   allotmentRule: proportional.id,
   coalitionMaxDistance: asRatio(0.25, 'how far apart two platforms may be and still govern'),
   mandateLag: 4,
+  /** F4: two periods to ask the households and count what they said (19.9). */
+  approvalLag: 2,
 } as const;
 
 /** Law 8: the rule id is carried as a number in the register, so the table is indexed by position. */

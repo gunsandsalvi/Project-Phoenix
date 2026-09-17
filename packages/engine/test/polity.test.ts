@@ -4,7 +4,16 @@
  * @spec Polity A1 Polity A4 Polity C1 Polity C2 Polity C4 Polity D1 Polity D5 XI-17 Law 15
  */
 import { describe, expect, it } from 'vitest';
-import { ALLOTMENT_RULES, POLITY_PARAMS, allotmentBy } from '../src/mechanisms/polity/index.js';
+import {
+  ALLOTMENT_RULES,
+  APPROVAL,
+  APPROVAL_LAG,
+  BALLOTS_CAST,
+  POLITY_PARAMS,
+  POLL_TAKEN,
+  allotmentBy,
+} from '../src/mechanisms/polity/index.js';
+import { snapshot, type World } from '../src/index.js';
 import { TREASURY_PARAMS } from '../src/mechanisms/treasury/index.js';
 import { rigWorld } from './rig.js';
 import { PLATFORMS } from '../src/mechanisms/polity/platforms.js';
@@ -338,7 +347,9 @@ describe('the mandate takes effect at the lag, and the register holds it (Polity
     const last = given[given.length - 1];
     if (last === undefined) return;
     const values = last.data['mandate'] as Record<string, number>;
-    const [id] = Object.keys(values);
+    // Law 8 (19.9): a counted number cannot be set off its grain at all — the register refuses it —
+    // so what this moves off the mandate is one of the RATIOS, which is what most of them are.
+    const id = Object.keys(values).find((k) => w.params.decl(k as ParamId).dimension === 'ratio');
     if (id === undefined) return;
     // Off the STANDING mandate, which is what the register holds while nothing else touches it.
     const was = w.params.decl(id as ParamId).value;
@@ -402,5 +413,121 @@ describe('what the parliament controls, and what no parliament may reach (Polity
     expect(() =>
       whatParliamentControls(all.filter((d) => !String(d.id).startsWith('land.planning.'))),
     ).toThrow(/land\.planning\./);
+  });
+});
+
+describe('the result is the sum of the cells, and it turns on the spread (Polity B4, F5, 19.9)', () => {
+  const w = rigWorld('polity.spread');
+  const said = platformPositions(PLATFORMS, w.params.all());
+  const on = {
+    income: 'treasury.tax.income' as ParamId,
+    consumption: 'treasury.tax.consumption' as ParamId,
+    transfers: 'treasury.outlays.transfers.perMember' as ParamId,
+    pension: 'pensions.contribution.employeeShare' as ParamId,
+  };
+  const house = w.params.count(POLITY_PARAMS.seats);
+  const rule = allotmentBy('proportional');
+
+  function housesOf(incomes: readonly number[]): Map<string, number> {
+    const ballots = incomes.map((pay, i) =>
+      ballotOf(
+        { cell: `cell.${String(i)}` as never, weight: 1, expects: asCash(pay, USD, 'pay') },
+        said,
+        on,
+      ),
+    );
+    return rule.allot(tally(ballots), house);
+  }
+
+  it('B4: a mean-preserving spread moves the seats while the weighted mean does not move', () => {
+    // Four households of equal weight, the same total pay between them, spread differently. A
+    // polity whose result depended only on the mean would return the same parliament twice — which
+    // is B4's point: it would be one voter wearing a hundred seats.
+    const flat = [20_000, 20_000, 20_000, 20_000];
+    const spread = [400, 400, 39_600, 39_600];
+    const mean = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
+    expect(mean(spread)).toBeCloseTo(mean(flat), 9);
+    const a = housesOf(flat);
+    const b = housesOf(spread);
+    expect([...a]).not.toEqual([...b]);
+    // And both are full houses: what changed is who sits in them, not how many.
+    const total = (m: Map<string, number>): number => [...m.values()].reduce((x, y) => x + y, 0);
+    expect(total(a)).toBe(house);
+    expect(total(b)).toBe(house);
+  });
+
+  it('F5: every seat is a cell’s vote, and nothing is scaled to anything', () => {
+    const incomes = [400, 700, 5_000, 40_000, 40_000];
+    const weights = [3, 1, 4, 2, 5];
+    const ballots = incomes.map((pay, i) =>
+      ballotOf(
+        { cell: `cell.${String(i)}` as never, weight: weights[i] ?? 1, expects: asCash(pay, USD, 'pay') },
+        said,
+        on,
+      ),
+    );
+    const votes = tally(ballots);
+    // The tally is the SUM OVER MEMBERS and can be recomputed from the ballots one at a time —
+    // there is no aggregate anywhere that it was read off or scaled to (XI-15, Law 19).
+    const bySum = new Map<string, number>();
+    for (const b of ballots) {
+      if (b.voted === undefined) continue;
+      bySum.set(b.voted, (bySum.get(b.voted) ?? 0) + b.weight);
+    }
+    expect([...votes].sort()).toEqual([...bySum].sort());
+    const cast = [...votes.values()].reduce((a, b) => a + b, 0);
+    const out = turnoutOf(ballots);
+    expect(out.cast).toBe(cast);
+    expect(out.able).toBe(weights.reduce((a, b) => a + b, 0));
+    // And the same votes give the same house every time: a parliament is a function of the ballots.
+    expect([...rule.allot(votes, house)]).toEqual([...rule.allot(votes, house)]);
+  });
+});
+
+describe('the polls are published late and read by nobody (Polity E4, F4, 19.9)', () => {
+  function ran(seed: string, periods: number): World {
+    const w = rigWorld(seed);
+    for (let i = 0; i < periods; i += 1) w.step();
+    return w;
+  }
+
+  it('asks every period, publishes the poll of `lag` periods ago, and says which period it is about', () => {
+    const w = ran('polity.polls', 6);
+    const lag = w.params.periods(APPROVAL_LAG);
+    expect(lag).toBeGreaterThan(0);
+    // F4: the lag is a TECHNOLOGY of measuring and nobody's policy — least of all the parliament's.
+    expect(w.params.decl(APPROVAL_LAG).kind).toBe('technology');
+    expect(w.params.decl(APPROVAL_LAG).owner).not.toBe('parliament');
+    const taken = w.journal.ofKind(POLL_TAKEN);
+    const published = w.journal.ofKind(APPROVAL);
+    expect(taken.length).toBeGreaterThan(0);
+    expect(published.length).toBe(taken.length - lag);
+    for (const e of published) {
+      // Observer A1.a: how old it is, on the face of it — a reader cannot take it for today.
+      expect(Number(e.data['about'])).toBe(Number(e.period) - lag);
+      expect(e.public).toBe(true);
+    }
+    // Observer A4: the poll in the field is not published, and neither is any cell's own ballot.
+    expect(taken.every((e) => !e.public)).toBe(true);
+    expect(w.journal.ofKind(BALLOTS_CAST).every((e) => !e.public)).toBe(true);
+  });
+
+  it('E4: an election and its polls are events on the observer surface, and looking changes nothing', () => {
+    const w = ran('polity.surface', 5);
+    const seen = snapshot(w, { kind: 'inspector' }, 50, [APPROVAL, POLL_TAKEN]);
+    expect(seen.followed[APPROVAL]?.length).toBeGreaterThan(0);
+    const before = w.journal.all().length;
+    snapshot(w, { kind: 'inspector' }, 50, [APPROVAL]);
+    // Observer E3: the surface is a plain copy and the engine never reads it back.
+    expect(w.journal.all().length).toBe(before);
+  });
+
+  it('is the same world twice: the same seed gives the same polls, ballot for ballot', () => {
+    const a = ran('polity.same', 5);
+    const b = ran('polity.same', 5);
+    const said = (w: World): string =>
+      JSON.stringify(w.journal.ofKind(APPROVAL).map((e) => [e.period, e.data['votes'], e.data['approves']]));
+    expect(said(a)).toBe(said(b));
+    expect(said(a).length).toBeGreaterThan(2);
   });
 });

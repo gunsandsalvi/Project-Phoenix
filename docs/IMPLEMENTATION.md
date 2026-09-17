@@ -60,7 +60,7 @@ and neither is yet a MET a run has confirmed.
 | Private Equity | 24 | 1 | 0 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | **1** | 29 |
-| Polity | 22 | 0 | 10 | 0 | 32 |
+| Polity | 31 | 0 | 1 | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 13 | 7 | 5 | **1** | 25 |
@@ -219,7 +219,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 17g | What a pool is made of — **done** (section removed; see `docs/RECORD.md`; the claim held — houses and shops are both poolable and `saleable` names no kind — and what was missing was what a pool says about itself: `securedOn` reads the collateral off the rows and the note's market is named for it. XI-11 and Housing C6 re-marked; finding 21.81 at 23.3) | after 17f |
 | 18 | Commodities spot and futures — **done** (section removed; see `docs/RECORD.md`; a print says which dimension it is, a future delivers at the price it was struck at, offsetting rows net, a hedger hedges what it is exposed to, books that are over close, and the protection book has one derivation per question. 18.6 became items 18.6a and 18.6b at their dependency positions; findings 21.82 and 21.83) | after 17g |
 | 18a | Monetary policy — **done** (section removed; see `docs/RECORD.md`; a policy number can be set by whoever owns it, a bank decides from its own view of the basket and moves one step, the price of time may be negative, and the desk posts a level instead of taking whatever it takes. 18a.3a inserted; findings 21.83 closed and 21.84 raised) | before the polity |
-| 19 | The polity | 19.0 the government buys |
+| 19 | The polity — **done** (section removed; see `docs/RECORD.md`; a parliament the households elect, a mandate that moves the numbers it owns at a lag, a scope that says which power each of those numbers is, a law of late payment, and polls published late and read by nobody. Polity went from an ABSENT SECTOR to 28 of 32 clauses MET; findings 21.85 and 21.86 at 23.3, 21.87 and 21.88 at 21) | after 18a |
 | 20 | Periodicity | after 19 |
 | 21 | The local repairs | each when its file is open |
 | 22 | The recipe | recipes plural; batches; upkeep |
@@ -256,95 +256,6 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 ---
 
-## 19. The polity (§47)
-
-- [x] 19.0 The government BUYS. Its basket was BREAD and the whole of its budget — a state that
-  feeds people and builds nothing. It is now building (a third), professional services and care (a
-  fifth each), bread and a vessel line, which are the lines a real outlay programme lands in and
-  whose producers feel it when the programme changes. It bids at ITS OWN OUTLOOK (§46 A2) instead of
-  at the last print, which is a buyer agreeing with the market rather than saying anything; its
-  constraint is the money in its account, which is what its funding programme raised (D1). The
-  public employer in the labour venue was already there (`postPublicService`) and is unchanged. A
-  new assembly-time guard refuses a basket whose shares do not come to one. Measured: in sixteen
-  periods of the rig the state takes delivery of bread and CARE and pays some of it on invoices —
-  building, professional and the vessel line clear nothing yet, which is the same silence 21.79 and
-  21.84 report from the other side.
-- [x] 19.1 `setByMandate` is held to ONE MODULE PER MANDATE: a module declares the mandates it
-  speaks for (`SystemModule.mandates`), assembly answers `whoSpeaksForIt` once per owner and refuses
-  a second claimant, and the kernel door throws when the caller is not the one who answered. The
-  register's two refusals stand beside it (not a policy; not the declared owner), so three things
-  are checked and each names the fact it is about. Every policy number is reported with its OWNER
-  and whether anybody has MOVED it — a number still standing where the seed declared it is what a
-  standing mandate looks like from outside. The inflation TARGET is `parliament`'s now: what the
-  bank is aiming at is the polity's to choose and what it does about it is the bank's.
-- [x] 19.2 Constitution primitives (`polity.seats`, `polity.termPeriods` by date, `polity.allotmentRule` dispatch, `polity.coalitionMaxDistance`, `polity.mandateLag`); all five declared by a new `polity` module and owned by the CONSTITUTION, because a body does not rewrite the rule that elected it; the allotment rule is a dispatch table with two rows (proportional by largest remainder, first past the post) and the register holds which one by position. The four tax bases are parliament's: PROFITS is new and is assessed on what a company PUBLISHED it earned less what the marks did, once per statement (§48, Law 19 — the statement is the source and a re-derivation would be a second writer); GAINS is new as a rate and a base of its own, taken out of the income base where it was taxed at the wage rate (Law 4: one rate on two different things).
-- [x] 19.3 Platforms (`registry/platforms.ts`, three parties in `polity/platforms.ts`): a stated
-  position, with its reason, on every number parliament owns — and what parliament owns is a READ of
-  the register, so a world that declares one more of them refuses to open until every party has
-  answered it. Assembly refuses a missing position, a position on something parliament does not own
-  (a party cannot promise the central bank's rate), two positions on one number, and two platforms
-  with one name. A position may name a FAMILY (`centralBank.target.`) because a party has one view
-  of the target and this world has one per money. `distanceBetween` measures two platforms against
-  how far apart they ALL are, which is B2's distance without a scale anybody invented.
-- [x] 19.4 The vote. `withoutAggregates` is a SHAPE rather than a rule anybody remembers: what the
-  vote is handed is `WhatACellKnows` — the cell's own outlook of its own income and how many
-  households it is — so B1.a's forbid holds because there is no door onto a published rate to read.
-  A position is what a platform would LEAVE the cell with: its expected pay, less what that
-  platform's income tax and pension share take of it, plus what it would transfer, over what its
-  consumption tax makes things cost. A cell casts all its votes one way (A3, XI-15); a cell that
-  cannot tell the best two apart, or has no expectation to compare with, stays home (B2.b) — and
-  turnout is the read of who could against who did, with no turnout number anywhere (B2.a). Two
-  cells differing in ONE number — what they expect to be paid — want different governments, which
-  is B4's mechanism seen from one cell. **Finding 21.85**: five of the platforms' differences
-  (interest, gains, severance, the retirement age, planning) are not in a position yet, because each
-  needs a read a cell does not have. **Finding 21.86**: the term is four years, so no election falls
-  inside any run this world does today.
-- [x] 19.5 Seats by the rule the constitution names; the coalition is C2's rule and not a version of
-  it — the largest party adds the party whose platform is NEAREST its own until it holds a majority,
-  where nearest is measured against how far apart the platforms all are and a majority is MORE than
-  half the house. A parliament where nobody may sit with anybody is HUNG: reported, never repaired,
-  and it produces no mandate at all rather than an empty one (what governs is what was standing).
-  The mandate is a READ of the parliament — every number parliament owns, at the seat-weighted
-  position of the parties in government — so a coalition governs at what its seats between them come
-  to and nobody invents a deal.
-- [x] 19.6 The mandate journaled at the count with the period it starts from, and WRITTEN at the lag
-  through the one door that may write it (`polity.mandate`, every period, doing something in the one
-  the lag lands in). A government is formed and then it governs, which is why a change of parliament
-  shows in the deficit later rather than the same week. C3.b is the guard on C3.a's forbid, which
-  breaks silently: an audit contribution comparing every number in the standing mandate against the
-  register, every period, EXACTLY — no dust, because a policy primitive is not the sum of anything.
-  Two defects in 19.3's own declarations were undone on their own terms (Law 13): a platform stated
-  nine tenths on a number counted in HECTARES A PERIOD, and the seat-weighted mandate of a counted
-  number was a fraction of one. Both are Law 8 — the unit is part of the number — so a position on a
-  counted number is refused at assembly unless it is a whole one, and a coalition's mandate on such a
-  number lands on the unit's own grain (the nearest, up or down: a grain is not a bound).
-- [x] 19.7 What it controls, named against the clause that grants it (`registry/mandate.ts`, DATA):
-  the tax bases and the transfers (D1), the cash buffer of §30 D4.b — which was the MODEL's
-  preference and is a public choice about what happens when an auction fails, so it moves to
-  parliament and onto the three ballot papers — the purchase programme and the public payroll (D2),
-  the deposit guarantee, the weight on written protection, the pension contributions and the
-  replacement rate, severance, the retirement age, the accreditation line, the reporting lag and the
-  planning release (D3), and the central bank's target (D4). What no parliament may reach is the
-  other direction and the one that matters: a parliament-owned number whose DIMENSION is a price is
-  refused at assembly (D3.a — a price is cleared, never voted for), and the bank's rate and its
-  corridor are refused by name (D4, §31 A4). So is a number declared parliament's that no clause
-  grants — a module cannot quietly put a number on a ballot paper — and a power that covers nothing,
-  which reads as scope this world does not actually grant.
-- [x] 19.8 The arrears' `breached` writer. `breached` was a state the register could hold and
-  nothing in this world could reach: a wage went unpaid, the arrear stood, and the employment behind
-  it read `performing` for ever. What decides that a late payment has become a broken commitment is
-  not arithmetic — the money owed is the same money — it is the LAW, and a law is a POLICY somebody
-  answers for: `law.arrears.gracePeriods`, parliament's (D3), on the three ballot papers with
-  everything else it owns. The writer is `credit-events`, which is the module that already says what
-  a failure to pay makes somebody: the period the grace runs out, read off its own default event, an
-  arrear still standing breaks every performing row the payer owes that payee — the rows it is
-  failing on, by name. It ends nothing and takes nothing away: what was owed is still owed, the
-  arrear still falls due every period, and an estate still divides it. `ctx.inBreach` is the door,
-  beside `owes`, `paidOn`, `restate` and `endAgreement`. Findings 21.87 and 21.88 written down.
-- [ ] 19.9 A multi-year run shows the deficit changing through named outlays after an election; approval as a lagged read; B4 and F5 tests; observer; determinism; COVERAGE; record.
-
----
-
 ## 20. Periodicity
 
 - [ ] 20.1 The rating fee annual on the first rating's anniversary; `credit.impaired` on transition only.
@@ -365,8 +276,9 @@ Each when its file is open for another item; file:line and the change.
   period the phase looks back to (`ofKindIn(expires)` is one period and a default seen at a later
   cycle lands in the next), whether the arrears of that instruction are still held by the payee at
   that moment, or whether `owedBy(payer)` reaches the row the probe opened. It is a read to make
-  against a run and not a number to chase (Law 11). Positioned at 19.9, where the polity's own
-  mechanisms are measured against a long run (19.8).
+  against a run and not a number to chase (Law 11). Positioned at 21 as its own repair, next to 21.87: it
+  is a read to make in three named places and not a measurement of a world (19.8, repositioned at
+  19.9 when item 19 closed).
 - [ ] 21.87 `mechanisms/treasury/index.ts runReceipts` (seen at 19.8): A WORLD THAT STOPS ON A SEED.
   `rigWorld('probe')` throws at period 26 — `Forbidden: [Money C1.a] instruction 11378: a payment
   from an account to itself is not a payment` — from `runReceipts`, and it predates this item (the
@@ -376,8 +288,8 @@ Each when its file is open for another item; file:line and the change.
   payer and payee resolve to the same account is a state some draws reach and that one does not.
   Positioned at 21.2's neighbourhood as a treasury finding; it is a STOP, so whoever takes it takes
   it first (19.8).
-- [ ] 21.86 `mechanisms/polity/election.ts` (19.4): NO ELECTION FALLS INSIDE A RUN. The term is 48 months — four years, which is what a term IS — and a period is a week, so the first election is around period 209 and forty periods of the rig reach none. Every part of the vote is exercised as a scale model (`test/polity.test.ts`: positions, ballots, abstention, turnout, the tally, both allotment rules) and the ASSEMBLED election has never run, which is 21.73's shape one module over. What it needs is a run long enough — 19.9's exit asks for exactly that, and a 209-period run of the rig is about two minutes — or a scale model whose constitution is shorter, which is a world-building decision and not a change to the mechanism. Positioned at 19.9 (19.4).
-- [ ] 21.85 `mechanisms/polity/vote.ts positionUnder` (19.4): A CELL VOTES ON FOUR OF THE TWENTY NUMBERS. A position is its pay, the income tax, the pension share, the transfer and the consumption tax; the platforms also differ on the tax on INTEREST and on GAINS, on the SEVERANCE a firing pays, on the RETIREMENT AGE and on the PLANNING RELEASE, and none of those is in it. Each needs a read the cell does not have: its own interest and gains receipts (it has no outlook subject for either), its own age against a threshold (a cohort key is there, the comparison is not), and what a release would do to the rent it pays (which is a housing mechanism, not a read). A cell voting on what it cannot evaluate would be voting on a number somebody handed it, which is the thing B1.a forbids — so what is missing is written down rather than guessed. Positioned at 19.9, where the vote is measured against a real run (19.4).
+- [ ] 21.86 `mechanisms/polity/election.ts` (19.4): NO ELECTION FALLS INSIDE A RUN. The term is 48 months — four years, which is what a term IS — and a period is a week, so the first election is around period 209 and forty periods of the rig reach none. Every part of the vote is exercised as a scale model (`test/polity.test.ts`: positions, ballots, abstention, turnout, the tally, both allotment rules) and the ASSEMBLED election has never run, which is 21.73's shape one module over. What it needs is a run long enough — 19.9's exit asks for exactly that, and a 209-period run of the rig is about two minutes — or a scale model whose constitution is shorter, which is a world-building decision and not a change to the mechanism. It is also what `Polity E3` waits on — the deficit moving through named outlays after a change of government — so the two are one measurement. Positioned at 23.3 with Part XII's measurements (19.4, repositioned at 19.9 when item 19 closed).
+- [ ] 21.85 `mechanisms/polity/vote.ts positionUnder` (19.4): A CELL VOTES ON FOUR OF THE TWENTY NUMBERS. A position is its pay, the income tax, the pension share, the transfer and the consumption tax; the platforms also differ on the tax on INTEREST and on GAINS, on the SEVERANCE a firing pays, on the RETIREMENT AGE and on the PLANNING RELEASE, and none of those is in it. Each needs a read the cell does not have: its own interest and gains receipts (it has no outlook subject for either), its own age against a threshold (a cohort key is there, the comparison is not), and what a release would do to the rent it pays (which is a housing mechanism, not a read). A cell voting on what it cannot evaluate would be voting on a number somebody handed it, which is the thing B1.a forbids — so what is missing is written down rather than guessed. Each of the three is a MECHANISM somebody has to build (an outlook subject for receipts, a cohort read against a threshold, what a consent does to a rent), so it is not a repair: positioned at 23.3, where what the vote actually turns on is measured before any of them is built (19.4, repositioned at 19.9 when item 19 closed).
 - [ ] 21.84 `mechanisms/indices/baskets.ts goodsBoughtIn` (18a.1): THIS WORLD HAS NO PRICE LEVEL. Twelve periods of the rig: `equity.us.1` reads 100 over four constituents and `credit.USD` 100 over fifteen, and `consumer.us.1` and `producer.us.1` both read NONE over a basket of ZERO. The rule is what was DELIVERED this period — asset legs of physical goods, to a household cell of the region for the consumer basket, from a producer of it for the producer one — so an empty basket says no physical good changed hands in a settled instruction in that period, which sits beside 12c.3 (the named firms produce once and never again) and 21.79 (nobody crosses a supply contract). The consequence for this item is exact: 18a.1's decision rule is built, its door is tested, and the bank meets, reads the basket, finds nothing and does not act — so no rate has ever moved in this world for a reason. NOT CHASED (Law 11): why nothing is delivered is the goods market's, not the central bank's. Positioned at 23.3 with Part XII's measurements, where what this world actually produces and sells is measured (18a.1).
 - [x] 21.83 **CLOSED at 18a.1** (`{ on: 'index', index }` is a subject now, the expectations module observes the consumer basket of each party's own region, and `publicLevelOf` reads an index level like any other public fact). `world/context.ts Subject` (18.7): NOBODY CAN HAVE A VIEW OF THE PRICE LEVEL. A party's outlook is about a SUBJECT from a closed list — a price of a named instrument, what it bought, what it sold, a wage, a deposit rate, a benchmark rate, a counterparty's credit, a condition, a mortality, a claim, a call, a freight leg — and there is no subject for an INDEX. So the chain 18.7 asks for ends one link short: a commodity print reaches a margin and reaches the consumer basket, and what nobody can form a view OF is the basket itself. A central bank with a mandate about prices therefore has nothing to be wrong about, which is §46 A2's whole point turned off for the one party whose business it is. What it needs is one more `Subject` (`{ on: 'index', index }`) and the expectations module observing what an index read printed — both small, and both 18a.1's, because what the view is FOR is the policy decision. Positioned at 18a.1 (18.7).
 - [ ] 21.82 `mechanisms/derivative-layer/index.ts netOffsetting` (18.2): ONLY EQUAL NOTIONALS NET. A party long five lots and short three of the same thing with the same counterparty holds a position of two, and this closes neither pair — because reducing a contract is not something this world can do: a row is opened whole and closed whole (`Contracts.open`/`close`), so a partial net would need a SPLIT (one row becoming two, or a notional that falls) and that is a mechanism, not a line. Written down rather than half-built (Law 12). What it costs today is margin locked against a position that is mostly offset, which is real but bounded and visible: `derivatives.netted` says what did net. Positioned at 23.3 with Part XII's measurements, where what the layer locks up against what it is actually exposed to is measured — and if that reading says the offset positions are material, the row split becomes an item at its dependency position (18.2).
