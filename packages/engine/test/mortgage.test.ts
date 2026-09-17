@@ -110,7 +110,6 @@ const lend: SystemModule = {
           const terms: LoanTerms = {
             kind: LOAN,
             originator: bank,
-            borrower: cell.id,
             // 17d.2: a margin over the fixing, and a fixed row where the book has never traded.
             margin: asRatio(0.05, 'rate'),
             floatsOver: none<string>(),

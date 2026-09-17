@@ -222,7 +222,6 @@ export function facilityRow(
   const terms: LoanTerms = {
     kind: LOAN,
     originator: facility.bank,
-    borrower: target,
     // B4 (17d.2): the rate the commitment was struck at becomes a margin over the fixing, by the
     // same derivation every other row uses (Law 4).
     ...loanRate(facility.rate, benchmarkNow(ctx.journal, ctx.calendar, ccy, ctx.period)),

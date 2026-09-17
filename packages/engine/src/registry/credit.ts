@@ -49,7 +49,6 @@ export interface LoanTerms extends Terms {
    * row left a bank's book (Law 4, Law 19).
    */
   readonly originator: PartyId;
-  readonly borrower: PartyId;
   /**
    * A2, B4 (17d.2): WHAT IT PAYS OVER THE BENCHMARK, per annum, struck at origination and never
    * moved. *"Fixed or floating, and floating is the norm in the loan market"* — so what the
@@ -97,7 +96,7 @@ export interface LoanTerms extends Terms {
  * that it names a lender and a borrower and says what it is secured on (Law 15, A1, A4).
  */
 export function isLoan(t: Terms): t is LoanTerms {
-  return 'originator' in t && 'borrower' in t && 'security' in t;
+  return 'originator' in t && 'security' in t;
 }
 
 /**
@@ -198,6 +197,29 @@ export function creditorOf(
   }
   const first = held[0];
   return first === undefined ? none<PartyId>() : some(first);
+}
+
+/**
+ * Law 4, Law 19 (21.70): WHO OWES IT — the instrument's ISSUER, and there is nowhere else to look.
+ *
+ * `LoanTerms.borrower` was a second copy of `Instrument.issuer`, and the guard was what showed it:
+ * `reagree` had to REFUSE a change of borrower to keep the two in step, which is a check standing
+ * in for a fact with two writers. `creditorOf` above already reads the holder off the register for
+ * exactly this reason — who is OWED is a fact of the register, not of the terms — and who OWES is
+ * the same shape seen from the other side.
+ *
+ * Nothing was wrong while it stood: no loan has ever changed hands as a liability, which is what
+ * made it a mirror rather than a break. It was found at 17b's first design, which wanted to move a
+ * liability by an `assume` leg and could not without the terms disagreeing with the register.
+ *
+ * A liability with no issuer is nobody's promise (Appendix B), so this throws rather than answering
+ * an `Option` nobody could do anything with.
+ */
+export function borrowerOf(i: Instrument): PartyId {
+  if (!i.issuer.some) {
+    throw new InvalidRegistry('Banks Lending A1', `${i.id} is owed by nobody; a row has two parties`);
+  }
+  return i.issuer.value;
 }
 
 export function loanTerms(i: Instrument): LoanTerms {

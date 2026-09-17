@@ -81,7 +81,7 @@ import {
 import { financedFor, type PrimeDeps, PRIME, runPrime } from './prime.js';
 import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
-import { TERM_MONTHS } from '../../registry/credit.js';
+import { TERM_MONTHS, borrowerOf } from '../../registry/credit.js';
 import {
   benchmarkNow,
   type Covenants,
@@ -806,7 +806,6 @@ function write(
   const terms: LoanTerms = {
     kind: LOAN,
     originator: bank,
-    borrower,
     ...loanRate(rate, fixing),
     drawn,
     // A2: a year, placed by date like every other maturity in this world (Money G3.a). It is the
@@ -1155,7 +1154,7 @@ function draw(
   // that merged onto another (its bank moved) or a firm whose estate took its book is succeeded,
   // and the row was reseated onto the successor. The first cell to draw on a line it inherited
   // addressed a party that had ceased, and settlement refused it (Money E4).
-  const borrower = ctx.parties.resolve(line.terms.borrower).id;
+  const borrower = ctx.parties.resolve(borrowerOf(line)).id;
   // D4: the money comes from whoever is owed the line now, which is whoever holds it (Law 19). A
   // line nobody is owed is a line nobody can be drawn on.
   const owed = creditorOf((id) => ctx.register.holdersOf(id), line);
@@ -2178,7 +2177,7 @@ function worthToItsLender(
   if (decl === undefined) return none<PerPiece>();
   const cv = creditViewFor(rows, ctx, creditor.value, i.ccy);
   if (cv === undefined) return none<PerPiece>();
-  const pd = cv.of(i.terms.borrower).probabilityOfDefault;
+  const pd = cv.of(borrowerOf(i)).probabilityOfDefault;
   /**
    * C5.a (13d): what stands behind it, at the MARKET's own price, read when the question is asked.
    * So a bank holding claims secured on a thing whose price is falling carries them lower, without
@@ -2249,7 +2248,7 @@ function runWorkouts(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (decl === undefined) continue;
     const cv = creditViewFor(rows, ctx, creditor.value, i.ccy);
     if (cv === undefined) continue;
-    const borrower = ctx.parties.resolve(i.terms.borrower).id;
+    const borrower = ctx.parties.resolve(borrowerOf(i)).id;
     // XI-8, Firm Birth D5: an estate is winding the borrower up and there is nobody left to sign.
     // A row whose borrower has finished existing altogether is not a workout either: what became of
     // it is the estate's record, and the line itself ends when it is spent (Register E2, 17.9b).

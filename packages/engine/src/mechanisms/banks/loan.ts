@@ -85,19 +85,27 @@ export const loanKind: InstrumentKindProfile = {
   // growing more solvent the closer it came to failing.
   owes: 'face',
   unit: (ccy) => currencyUnit(ccy),
-  validateTerms: (t) => {
+  validateTerms: (t, issuer) => {
     if (!isLoan(t)) throw new InvalidRegistry('Banks Lending A1', 'not loan terms');
     if (compareCivil(t.drawn, t.maturity) >= 0) {
       throw new InvalidRegistry('Banks Lending A2', 'a loan matures after it is drawn');
     }
-    if (t.originator === t.borrower) {
+    // 21.70: who owes it is the ISSUER, so the two parties to the row are the originator and the
+    // issuer. It used to compare the originator against a `borrower` on the terms, which was the
+    // issuer written down a second time.
+    if (!issuer.some) {
+      throw new InvalidRegistry('Banks Lending A1', 'a loan is owed by somebody');
+    }
+    if (t.originator === issuer.value) {
       throw new InvalidRegistry('Banks Lending A1', 'a loan has two parties, and they differ');
     }
   },
   // Law 9: a market would name it by who owes it, at what, until when.
   displayName: (i: Instrument, namer: Namer) => {
     if (!isLoan(i.terms)) return String(i.id);
-    const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);
+    // 21.70: the issuer IS the borrower, so a loan with no issuer's name has no name to fall back
+    // on and says its own id — the fallback used to read the second copy of the same party.
+    const who = namer.issuer.some ? namer.issuer.value : String(i.id);
     return `${who} ${percent(rateOn(i.terms))} ${formatCivil(i.terms.maturity)}`;
   },
   /**
@@ -209,7 +217,10 @@ export const loanKind: InstrumentKindProfile = {
     if (!isLoan(was) || !isLoan(now)) {
       return some('a loan is re-agreed as a loan');
     }
-    if (was.originator !== now.originator || was.borrower !== now.borrower) {
+    // 21.70: who OWES it is the issuer and cannot be re-agreed here at all — the clause that
+    // refused a change of borrower was a guard keeping two copies of one fact in step, and it goes
+    // with the copy. The originator is a term and still may not change.
+    if (was.originator !== now.originator) {
       return some('a re-agreement is between the two parties that are already on it');
     }
     if (was.dayCount !== now.dayCount) {

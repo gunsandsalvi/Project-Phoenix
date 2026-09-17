@@ -34,6 +34,7 @@ import {
 } from '../src/index.js';
 import { rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
+import { borrowerOf } from '../src/registry/credit.js';
 
 const BANK_A = partyId('bank.a');
 const BANK_B = partyId('bank.b');
@@ -243,7 +244,8 @@ describe('who bears it (Banks Capital A2, D2, D2.a, E3)', () => {
       .filter((i) => i.status.live && (i.kind === 'repo' || i.kind === 'interbank'));
     for (const r of rows) {
       const terms = rowTerms(r);
-      expect(w.parties.get(w.parties.resolve(terms.borrower).id).status.alive).toBe(true);
+      // 21.70: who owes it is the ISSUER, read off the register rather than off a second copy.
+      expect(w.parties.get(w.parties.resolve(borrowerOf(r)).id).status.alive).toBe(true);
       expect(w.parties.get(w.parties.resolve(terms.lender).id).status.alive).toBe(true);
     }
   });

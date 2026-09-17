@@ -85,7 +85,7 @@ import {
 } from '../../registry/physical.js';
 import { expectedPriceOf } from '../../registry/expectation.js';
 import type { MarketDecl } from '../../clearing/market.js';
-import { LOAN, creditorOf, isLoan } from '../../registry/credit.js';
+import { LOAN, borrowerOf, creditorOf, isLoan } from '../../registry/credit.js';
 import { LANDLORD } from '../../registry/property.js';
 import { addDays, compareCivil, type Civil } from '../../calendar/civil.js';
 import { creditDefaults } from '../../registry/banking.js';
@@ -885,7 +885,7 @@ function foreclose(ctx: MechanismContext): void {
     const t = i.terms;
     if (!defaulted.has(String(i.id))) continue;
     // Register F2: the borrower as it is now — its estate, if it failed; the cell it joined, if it moved.
-    const borrower = ctx.parties.resolve(t.borrower);
+    const borrower = ctx.parties.resolve(borrowerOf(i));
     const id = goodId(DWELLING, borrower.region);
     if (!ctx.instruments.has(id)) continue;
     // Law 15: secured on the roof of its place, by name.

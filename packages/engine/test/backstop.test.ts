@@ -4,7 +4,7 @@
  * @spec Short-Term Debt B3.b Short-Term Debt B4 Banks Lending A1 Law 5 Law 19
  */
 import { describe, expect, it } from 'vitest';
-import { rateOn } from '../src/registry/credit.js';
+import { borrowerOf, rateOn } from '../src/registry/credit.js';
 import {
   BACKSTOP,
   BANK,
@@ -143,7 +143,8 @@ describe('a backstop line and its drawing (12a.7)', () => {
     expect(loan.kind).toBe(LOAN);
     expect(isLoan(loan.terms)).toBe(true);
     const t = loanTerms(loan);
-    expect(String(t.borrower)).toBe(scenario.issuer);
+    // 21.70: who owes it is the issuer, and there is no second copy on the terms to check.
+    expect(String(borrowerOf(loan))).toBe(scenario.issuer);
     expect(String(t.originator)).toBe(scenario.bank);
     expect(t.amortising).toBe(false);
     // 17d.2: a drawing on a committed line floats like every other row — what it pays is the

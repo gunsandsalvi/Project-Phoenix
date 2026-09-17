@@ -128,7 +128,7 @@ export class Instruments {
       `instrument ${decl.id} is ${decl.kind} with ${decl.terms.kind} terms`,
     );
     const profile = this.registry.instrumentKind(decl.kind);
-    profile.validateTerms(decl.terms);
+    profile.validateTerms(decl.terms, decl.issuer);
     this.registry.currency(decl.ccy);
     const unit = profile.unit(decl.ccy);
     this.registry.unit(unit);

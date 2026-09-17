@@ -792,7 +792,6 @@ export function drawBackstops(ctx: MechanismContext): void {
       const terms: LoanTerms = {
         kind: LOAN,
         originator: row.creditor,
-        borrower: row.debtor,
         // B4 (17d.2): the rate the line was committed at becomes a margin over the fixing, by the
         // same derivation every other row uses (Law 4).
         ...loanRate(t.rate, benchmarkNow(ctx.journal, ctx.calendar, row.ccy, ctx.period)),

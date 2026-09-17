@@ -15,6 +15,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { Order } from '../../clearing/solver.js';
 import { decideRates, POLICY_PARAMS, POLICY_SET } from './policy.js';
+import { borrowerOf } from '../../registry/credit.js';
 import {
   currencyUnit,
   moneyInstrumentId,
@@ -154,7 +155,7 @@ function freeRepaidCollateral(ctx: MechanismContext): void {
     // Register F2, Money E4: the borrower can have CEASED since it pledged — a resolution moves a
     // bank's whole book, collateral and all, to whoever succeeded it — and the lien is on the
     // successor's holding now. A leg addressed to the dead party would be a defect in this module.
-    const borrower = ctx.parties.resolve(i.terms.borrower).id;
+    const borrower = ctx.parties.resolve(borrowerOf(i)).id;
     const beneficiary = ctx.parties.resolve(i.terms.lender).id;
     // Register D5, Banks Capital D6: and both ends of the row can resolve to the SAME party, when
     // one bank's resolution put the borrower's book into the lender's hands. There is nothing left
@@ -837,7 +838,7 @@ function collateralHolds(): Family {
           // a resolution moves a bank's whole book, collateral and all, to whoever succeeded it —
           // and a reference to it resolves there. The security did not change; who is behind it did.
           const holding = view.register.holding(
-            view.parties.resolve(i.terms.borrower).id,
+            view.parties.resolve(borrowerOf(i)).id,
             c.instrument,
           );
           const bound = holding.some

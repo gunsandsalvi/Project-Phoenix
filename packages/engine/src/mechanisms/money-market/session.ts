@@ -269,7 +269,6 @@ export function writeRow(
   const terms: RowTerms = {
     kind: s.book.secured ? REPO : INTERBANK,
     lender: s.lender,
-    borrower: s.borrower,
     rate: s.rate,
     drawn,
     maturity,

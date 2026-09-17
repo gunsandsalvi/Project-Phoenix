@@ -5,7 +5,7 @@
  * @spec Banks Lending A1 Banks Lending A1.a Banks Lending A2 Banks Lending A4 Banks Lending B1 Banks Lending B1.a Banks Lending B1.b Banks Lending B1.c Banks Lending B2 Banks Lending B2.a Banks Lending B2.c Banks Lending B2.d Banks Lending C1 Banks Lending C1.a Banks Lending C1.b Banks Lending C1.c Banks Lending C1.d Banks Lending C2 Banks Lending C2.a Banks Lending C3 Banks Lending C3.a Banks Lending C4 Banks Lending D1 Banks Lending D3 Banks Lending E1 Banks Lending F1 Banks Lending F1.a Banks Lending F3 Money B3.a Money B3.c Bond N13.a Corporate Credit G8 XI-4
  */
 import { asCash, heldAsMoney, plus } from '../src/core/measure.js';
-import { rateOn } from '../src/registry/credit.js';
+import { borrowerOf, rateOn } from '../src/registry/credit.js';
 import { rate as perAnnum } from '../src/core/rate.js';
 import { describe, expect, it } from 'vitest';
 
@@ -73,7 +73,6 @@ function outOfTheSystem(report: { readonly audit: AuditReport }): Violation[] {
 }
 import { asPerPiece } from '../src/core/measure.js';
 import { instrumentId } from '../src/core/ids.js';
-import { loanTerms } from '../src/mechanisms/banks/loan.js';
 import { FACILITY, isFacility, TERM_MONTHS } from '../src/registry/credit.js';
 import { askToFund, committedTo } from '../src/mechanisms/control/deal.js';
 
@@ -406,7 +405,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
     expect(owed.some).toBe(true);
     if (!owed.some) return;
     expect(w.register.quantity(owed.value, row.id)).toBeCloseTo(row.issued, 9);
-    expect(row.terms.borrower).toBe(BORROWER);
+    expect(borrowerOf(row)).toBe(BORROWER);
   });
 });
 
@@ -918,7 +917,8 @@ describe('the workout (Banks Lending E3, 21.59)', () => {
     // The two parties on it are the two parties to the agreement; a date brought forward is an
     // acceleration and has its own path; what it is secured on is a lien and is pledged, not typed.
     const changed = (over: Partial<LoanTerms>): LoanTerms => ({ ...t, ...over });
-    expect(() => { w.reagreeOn(row.id, changed({ borrower: PAYEE }), 'rolled'); }).toThrow(Forbidden);
+    // 21.70: a change of BORROWER is not refused here any more — it is unwriteable. Who owes the
+    // row is its issuer, and a re-agreement of terms cannot reach it at all.
     expect(() => { w.reagreeOn(row.id, changed({ maturity: t.drawn }), 'rolled'); }).toThrow(Forbidden);
     expect(() => {
       w.reagreeOn(row.id, changed({ security: [{ instrument: row.id, qty: asQty(1) }] }), 'rolled');
@@ -1033,7 +1033,7 @@ describe('a pledge is worth what it covers (Banks Lending A4, C5.a)', () => {
     expect(lender.some).toBe(true);
     if (!lender.some) return;
     const view = w.participantView(lender.value);
-    const name = partyId(String(loanTerms(secured).borrower));
+    const name = borrowerOf(secured);
     const onName = requiredYieldOf(view, name);
     const onClaim = requiredOnClaim(view, secured.id);
     expect(onName.some).toBe(true);
@@ -1068,7 +1068,7 @@ describe('a pledge is worth what it covers (Banks Lending A4, C5.a)', () => {
     expect(lender.some).toBe(true);
     if (!lender.some) return;
     const view = w.participantView(lender.value);
-    const name = partyId(String(loanTerms(plain).borrower));
+    const name = borrowerOf(plain);
     const onName = requiredYieldOf(view, name);
     const onClaim = requiredOnClaim(view, plain.id);
     expect(onClaim.some).toBe(onName.some);

@@ -180,8 +180,14 @@ export interface InstrumentKindProfile {
    * either mistake at assembly). How fine it is, is a RESOLUTION (Law 2).
    */
   readonly priceTick?: number;
-  /** Validate kind-specific terms at registration; throw InvalidRegistry otherwise. */
-  readonly validateTerms: (terms: Terms) => void;
+  /**
+   * Validate kind-specific terms at registration; throw InvalidRegistry otherwise.
+   *
+   * 21.70: it is given the ISSUER too, because who owes a row is the issuer and not a line of terms
+   * — so a check that the two parties to a row differ has both of them without either being written
+   * down twice. Most kinds ignore it; a kind that does not need it takes one parameter as before.
+   */
+  readonly validateTerms: (terms: Terms, issuer: Option<PartyId>) => void;
   /**
    * Law 9: the name a market would use, built from the instrument's own terms and the name of
    * whoever promised it — which is nobody for a physical thing (Goods A1), so the profile is given

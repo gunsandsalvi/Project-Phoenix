@@ -15108,3 +15108,32 @@ refuses two writers who disagree. `check:opens`, lint, typecheck and `check:spec
 **Left, and named:** 21.113 (the 165 module kinds, one sector at a time, with their accessor files
 deleted in the same change) and 21.114 (`record` is deleted and `say` takes its name when the count
 reaches zero — the second door has a scheduled death).
+
+---
+
+## 21.70 — Who owes a row is its issuer, and there is nowhere else to look
+
+**What.** `LoanTerms.borrower` and `RowTerms.borrower` are deleted. `borrowerOf(i)` beside
+`creditorOf` reads `i.issuer`, and twelve sites read it. `validateTerms` takes the issuer, so the
+two checks that a row has two parties compare the lender or originator against the party that
+actually issued it. The `reagree` clause refusing a change of borrower is gone with the copy it was
+guarding, and both `displayName` fallbacks stop reaching for a second name.
+
+**Why.** Law 4: one fact, one writer. Who OWES a row is the register's fact — the issuer — and the
+terms carried a second copy of it. The guard is what showed it: `reagree` had to REFUSE a change of
+borrower to keep the two in step, which is a check standing in for a fact with two writers.
+`creditorOf` already read the holder off the register for exactly this reason, and who owes is the
+same shape seen from the other side.
+
+**Two copies, not one.** 21.70 named `LoanTerms`; `RowTerms` had the identical mirror and said so in
+its own docstring — *"The borrower is the instrument's issuer: it owes the money"* — with a
+`borrower` field underneath the sentence. The comment was right and the field made it a lie waiting
+for the first row to change hands as a liability. Fixing one and leaving the other would have left
+the defect in place under a second name, so both went in one change.
+
+**Nothing was wrong today**, which is what made it a mirror rather than a break: no loan has ever
+changed hands as a liability. It was found at 17b's first design, which wanted to move a liability
+by an `assume` leg and could not without the terms disagreeing with the register.
+
+**Measured.** `terms.borrower` has 0 readers left, `borrowerOf` has 12. `check:opens`, lint,
+typecheck, `check:spec` and `check:forbids` green.

@@ -52,7 +52,10 @@ export interface Pledged {
 }
 
 /**
- * A money-market row. The borrower is the instrument's issuer: it owes the money.
+ * A money-market row. Who OWES it is the instrument's ISSUER, read with `borrowerOf` — this used to
+ * say the same sentence and then carry a `borrower` term beside it, which is the mirror 21.70 found
+ * on `LoanTerms` and the identical one here. The comment was right and the field made it a lie
+ * waiting for the first row to change hands as a liability (Law 4).
  *
  * `collateral` is empty for an unsecured row and never empty for a secured one, and it is named
  * `collateral` rather than `security` on purpose: a bank's loan book and its money-market book are
@@ -62,7 +65,6 @@ export interface Pledged {
 export interface RowTerms extends Terms {
   readonly kind: InstrumentKindId;
   readonly lender: PartyId;
-  readonly borrower: PartyId;
   /** B4: what cleared in the session that struck it, per annum. */
   /** Per annum, struck by the session. A `Ratio`: a rate is never a level (A-44, A-58). */
   readonly rate: Ratio;
@@ -75,7 +77,7 @@ export interface RowTerms extends Terms {
 }
 
 export function isRow(t: Terms): t is RowTerms {
-  return 'lender' in t && 'borrower' in t && 'collateral' in t;
+  return 'lender' in t && 'collateral' in t;
 }
 
 /**
@@ -176,12 +178,17 @@ function shared(
     // Register B3: the borrower owes the amount advanced, whatever the paper behind it does.
     owes: 'face',
     unit: (ccy) => currencyUnit(ccy),
-    validateTerms: (t) => {
+    validateTerms: (t, issuer) => {
       if (!isRow(t)) throw new InvalidRegistry('Money Market B1', 'not money-market row terms');
       if (compareCivil(t.drawn, t.maturity) >= 0) {
         throw new InvalidRegistry('Money Market B6', 'a row matures after it is drawn');
       }
-      if (t.lender === t.borrower) {
+      // 21.70: the two parties to the row are the lender and whoever ISSUED it, which is who owes
+      // the money. It used to compare the lender against a second copy of the issuer.
+      if (!issuer.some) {
+        throw new InvalidRegistry('Money Market B1', 'a row is owed by somebody');
+      }
+      if (t.lender === issuer.value) {
         throw new InvalidRegistry('Money Market B1', 'a row has two parties, and they differ');
       }
       // Law 15: each kind says what IT requires, so nothing here asks which kind it is.
@@ -214,7 +221,7 @@ export const interbankKind: InstrumentKindProfile = {
   ...shared(INTERBANK, false),
   displayName: (i: Instrument, namer: Namer) => {
     if (!isRow(i.terms)) return String(i.id);
-    const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);
+    const who = namer.issuer.some ? namer.issuer.value : String(i.id);
     return `${who} ${i.terms.tenor} ${percent(i.terms.rate)} ${formatCivil(i.terms.maturity)}`;
   },
   ranking: () => ({
@@ -229,7 +236,7 @@ export const repoKind: InstrumentKindProfile = {
   ...shared(REPO, true),
   displayName: (i: Instrument, namer: Namer) => {
     if (!isRow(i.terms)) return String(i.id);
-    const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);
+    const who = namer.issuer.some ? namer.issuer.value : String(i.id);
     const on = i.terms.collateral.map((c) => String(c.instrument)).join(', ');
     return `${who} ${i.terms.tenor} repo ${percent(i.terms.rate)} vs ${on}`;
   },

@@ -36,7 +36,7 @@ import { askToFund, DEAL_MONTHS } from '../src/mechanisms/control/deal.js';
 import { countsOver, requiredBy } from '../src/registry/funding.js';
 import { none, some } from '../src/core/option.js';
 import type { Event } from '../src/journal/journal.js';
-import { facilityLoanId, isLoan, LOAN } from '../src/registry/credit.js';
+import { borrowerOf, facilityLoanId, isLoan, LOAN } from '../src/registry/credit.js';
 
 const BUYER = partyId('buyer.lbo');
 
@@ -262,7 +262,7 @@ describe('the tender has two payers (Private Equity B2, B2.a, B3, B4, B5)', () =
     if (row === undefined || !isLoan(row.terms)) return;
     // The company owes it; the buyer owes nothing at all, which is why a failed buyout would kill
     // the firm and not the fund.
-    expect(row.terms.borrower).toBe(target);
+    expect(borrowerOf(row)).toBe(target);
     // It was drawn on the commitment made for this deal, and the row is the one the lender's own
     // headroom read names — one row, two readers (Law 4). What is OUTSTANDING on it now is a moving
     // number: a borrower with money over what it needs pays its dearest line down (17.9a).
