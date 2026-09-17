@@ -15137,3 +15137,51 @@ by an `assume` leg and could not without the terms disagreeing with the register
 
 **Measured.** `terms.borrower` has 0 readers left, `borrowerOf` has 12. `check:opens`, lint,
 typecheck, `check:spec` and `check:forbids` green.
+
+---
+
+## 0g.8 — The narrowing: a party is asked about the books it is in
+
+**What.** `VenueParticipantDecl.venues` — the door `ParticipantDecl.markets` already was, which the
+venue side did not have — with the same per-period index in the kernel (`askedInVenue`). Three
+declarations now name their books: `short-term-debt`'s cash investor (the live paper lines),
+`supply/firm` and `property/firm` (the venues of the party's own region).
+
+Three layout fixes beside it: `participantView` and `asked` compare two integers instead of building
+a `"period:cycle"` STRING on every call (the view is asked 503,540 times in one period);
+`Parties.ofKind` is cached against a write version, with every write going through one door
+(`stored`) so a writer cannot leave a stale cache; and the wants tally's read-name is a thunk, so a
+door that answered is not charged for a diagnostic string it has nothing to say about.
+
+**Why.** A session asks every party of a kind whether it has an order in it and the answer is almost
+always no. Measured, one period of the (12, 48) rung:
+
+| | before | after |
+|---|---|---|
+| market-side participant evaluations | 166,953 | 24,000 |
+| — of which one declaration naming no markets | **129,256 (77%)** | 6,644 |
+| venue-side participant evaluations | 460,590 | ~20,000 |
+| — of which two declarations | **442,260** | narrowed |
+| ms/period | 1,923 | **1,600** |
+
+Every firm and bank was asked about all 428 books to answer a question about commercial paper, and
+every firm about all 472 venues to be told it is not in that region. The three declarations name
+what their own `orders` already decided in its first two lines, out of the same reads (Law 19,
+Law 4) — so no economics moved and no mechanism changed (Law 18).
+
+**Behaviour byte-identical**, which is the gate: rig p1 events 2291 settled 475, p30 events 2523
+settled 431 audit 647; abroad p12 events 9616 settled 1339 audit 2425 live 1577; the ladder rung
+audit 4406 settled 11959 events 84099 parties 1188 — the same digits before and after every step.
+
+**And the item is UN-PARKED with a new exit, because the old one was the wrong target.** 0g's exit
+was a (12, 200) year under 60 s — about 1.15 s/period. The owner's figure is **3–4 s/period on the
+FULL world**, which is ~120,000 parties against the rung's 1,188. At the measured 1.35 ms per party
+per period the full world is two to seven minutes a period: **the gap is ≈46×, not a few percent.**
+
+**A flat profile cannot be shaved 46×**, and this one is flat — nothing above 10%, the garbage
+collector the largest single entry at 9.7%. So the plan now names the three numbers that say where
+whole categories of work are, rather than the next function to trim: 71 journal events per party per
+period (8.5 million a period at full scale, kept for ever — 0g.14 is no longer optional), 99 door
+reads answered `Missing` per party per period (mechanisms asking for what this world does not
+produce, which is not a layout problem at all), and the parties × books product that must stay
+indexed (the rest of 0g.8, made mandatory at assembly so the next declaration cannot omit it).

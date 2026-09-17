@@ -1058,7 +1058,30 @@ export function shortTermDebt(): SystemModule {
     // C1: a cash investor with a horizon. A money fund, a corporate treasurer, a bank's liquidity
     // book — several party kinds with ONE reason, which is why this is one participant declared
     // once per kind and not three mechanisms (Law 15).
-    participants: CASH_INVESTORS.map((partyKind) => ({ partyKind, orders: buys })),
+    participants: CASH_INVESTORS.map((partyKind) => ({
+      partyKind,
+      /**
+       * Law 18, Clearing B2 (0g): WHICH BOOKS A CASH INVESTOR IS IN — the paper books, and no
+       * others. It named none, so every firm and every bank was asked about EVERY market in the
+       * world: 129,256 of a period's 166,953 participant evaluations in the scale model, 77% of
+       * them, to answer a question about commercial paper in the market for grain.
+       *
+       * It is the same read `buys` opens with (`lineIn`) and never a second copy of it (Law 19,
+       * Law 4): a live paper line, and the book it was brought in. What `buys` still decides —
+       * whether the name is its own, whether it doubts it, what else it could do with the money —
+       * is untouched, so the orders this world produces are the same orders. Nothing about the
+       * economics moves; what moves is how many books a party is asked about (Law 18).
+       */
+      markets: (view: ParticipantView): readonly MarketId[] => {
+        const books: MarketId[] = [];
+        for (const i of view.instruments.ofKind(COMMERCIAL_PAPER)) {
+          if (!i.status.live || !isPaper(i.terms) || !i.market.some) continue;
+          books.push(i.market.value);
+        }
+        return books;
+      },
+      orders: buys,
+    })),
     families: [profile()],
   };
 }

@@ -418,7 +418,16 @@ export class World {
   private choseBanks = false;
   /** Law 18: one participant view per party per cycle. Layout only; every read reaches live state. */
   private readonly views = new Map<PartyId, ParticipantView>();
-  private viewsAt = '';
+  /**
+   * Law 18 (0g): WHICH MOMENT THE CACHE IS OF, as the two numbers it is — never a string built to
+   * compare. `participantView` is asked 503,540 times in one period of the scale model (the venue
+   * loop asks every party of a kind about every venue), and it built a fresh `"period:cycle"`
+   * string on every one of them just to test whether the cache was stale. Half a million string
+   * allocations a period, for a comparison of two integers, and it is a third of what the garbage
+   * collector was doing.
+   */
+  private viewsAtPeriod = -1;
+  private viewsAtCycle = -1;
   /**
    * Law 18 (0g.5): WHAT A PARTICIPANT WORKED OUT, KEPT WHILE WHAT IT READ HAS NOT MOVED.
    *
@@ -439,7 +448,12 @@ export class World {
    * market of its kind exactly as before.
    */
   private readonly asks = new Map<number, Map<MarketId, PartyId[]>>();
-  private asksAt = '';
+  private asksAtPeriod = -1;
+  private asksAtCycle = -1;
+  /** 0g: the venue side of the same index — declaration → venue → the parties that named it. */
+  private readonly venueAsks = new Map<number, Map<VenueId, PartyId[]>>();
+  private venueAsksAtPeriod = -1;
+  private venueAsksAtCycle = -1;
   /** Indices A1, D5: the rules this world's modules declared. One list, read by `index`. */
   private readonly derivativeClasses = new Map<DerivativeKindId, DerivativeClassDecl>();
   private readonly indexList = new Map<string, IndexDecl>();
@@ -1417,9 +1431,16 @@ export class World {
    * 0h.4: hand back what the door answered, and when it answered nothing, say so where it is known.
    * The read's NAME is what a diagnosis needs — "it wanted the price of wheat and there was none" —
    * and it is the same string the door was asked for, never a message anybody wrote.
+   *
+   * Law 18 (0g): THE NAME IS BUILT ONLY WHEN IT IS NEEDED. It took the string, so every one of the
+   * period's door reads built `print.<instrument>` whether the read succeeded or not — and a read
+   * that SUCCEEDS needs no name at all. The tally asks for one 117,774 times in a period of the
+   * scale model and the doors are asked many times that, so the name was being made for the reads
+   * that had nothing to say about. It is a thunk now: the diagnostic costs nothing until there is
+   * something to diagnose.
    */
-  private wanted<T>(party: PartyId, read: string, answer: Option<T>): Option<T> {
-    if (!answer.some) this.wantsTally.missed(party, read, this.currentPeriod);
+  private wanted<T>(party: PartyId, read: () => string, answer: Option<T>): Option<T> {
+    if (!answer.some) this.wantsTally.missed(party, read(), this.currentPeriod);
     return answer;
   }
 
@@ -1478,8 +1499,8 @@ export class World {
     );
     if (this.gathered.has(venue)) return;
     this.gathered.add(venue);
-    for (const p of this.venueParticipantDecls) {
-      for (const party of this.parties.ofKind(p.partyKind)) {
+    for (const [at, p] of this.venueParticipantDecls.entries()) {
+      for (const party of this.askedInVenue(at, p, decl)) {
         // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
         if (!party.status.alive) continue;
         const posted = this.asParticipantOf(p.owner, () =>
@@ -1800,11 +1821,11 @@ export class World {
    * what building it afresh each time was quietly providing.
    */
   participantView(party: PartyId): ParticipantView {
-    const stamp = `${this.currentPeriod}:${this.currentCycle}`;
-    if (this.viewsAt !== stamp) {
+    if (this.viewsAtPeriod !== this.currentPeriod || this.viewsAtCycle !== this.currentCycle) {
       this.views.clear();
       this.memos.clear();
-      this.viewsAt = stamp;
+      this.viewsAtPeriod = this.currentPeriod;
+      this.viewsAtCycle = this.currentCycle;
     }
     const held = this.views.get(party);
     if (held !== undefined) return held;
@@ -2132,7 +2153,7 @@ export class World {
       // tallied here and at no call site (`wants.ts`). The four doors are the ones every
       // fail-closed decision in this world reads: a print, a mark, an index and its own outlook.
       print: (instrument) =>
-        this.wanted(party, `print.${String(instrument)}`, this.prices.latest(instrument, this.currentPeriod)),
+        this.wanted(party, () => `print.${String(instrument)}`, this.prices.latest(instrument, this.currentPeriod)),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       worth: (instrument, required) => this.worthTo(instrument, required),
@@ -2145,7 +2166,7 @@ export class World {
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) =>
-        this.wanted(party, `outlook.${String(variable)}`, this.outlookOf(party, variable)),
+        this.wanted(party, () => `outlook.${String(variable)}`, this.outlookOf(party, variable)),
       outlookVariables: () => this.outlookVariables(party),
       watches: () => this.watchedBy(party),
       outlookSubjects: () => {
@@ -2162,7 +2183,7 @@ export class World {
         return last === undefined ? none() : some(last);
       },
       mark: (instrument) =>
-        this.wanted(party, `mark.${String(instrument)}`, this.markOf(instrument, this.currentPeriod)),
+        this.wanted(party, () => `mark.${String(instrument)}`, this.markOf(instrument, this.currentPeriod)),
       lastPublicAbout: (kind, subject) => {
         const e = this.journal.lastOf(kind, subject);
         // Observer A3, A4: public or not at all. `lastOwn` is the door to a party's own private
@@ -3738,16 +3759,54 @@ export class World {
    * anything: it asks the module the same question the market was about to ask, once instead of
    * once per book.
    */
+  /**
+   * Law 18, Clearing B2 (0g): WHICH PARTIES ARE ASKED ABOUT THIS VENUE — the same index `asked`
+   * builds for a market, for the venue side, which had none.
+   *
+   * A declaration that names its venues is asked once per party per period and the answer is turned
+   * inside out into venue → parties; one that names none is asked of every party of its kind, which
+   * is what every venue participant did before the door existed.
+   */
+  private askedInVenue(
+    at: number,
+    p: VenueParticipantDecl,
+    v: VenueDecl,
+  ): readonly Party[] {
+    const naming = p.venues;
+    if (naming === undefined) return this.parties.ofKind(p.partyKind);
+    if (this.venueAsksAtPeriod !== this.currentPeriod || this.venueAsksAtCycle !== this.currentCycle) {
+      this.venueAsks.clear();
+      this.venueAsksAtPeriod = this.currentPeriod;
+      this.venueAsksAtCycle = this.currentCycle;
+    }
+    let byVenue = this.venueAsks.get(at);
+    if (byVenue === undefined) {
+      byVenue = new Map<VenueId, PartyId[]>();
+      for (const party of this.parties.ofKind(p.partyKind)) {
+        if (!party.status.alive) continue;
+        const named = this.asParticipantOf(p.owner, () => naming(this.participantView(party.id)));
+        for (const id of named) {
+          const already = byVenue.get(id);
+          if (already === undefined) byVenue.set(id, [party.id]);
+          else already.push(party.id);
+        }
+      }
+      this.venueAsks.set(at, byVenue);
+    }
+    const here = byVenue.get(v.id);
+    return here === undefined ? [] : here.map((id) => this.parties.get(id));
+  }
+
   private asked(at: number, decl: ParticipantDecl, m: MarketDecl): readonly Party[] {
     const naming = decl.markets;
     if (naming === undefined) return this.parties.ofKind(decl.partyKind);
     // Law 18: a book that is open to everybody is asked of everybody, whatever the index says. It
     // is one question about the book rather than one per party (`ParticipantDecl.everyone`).
     if (decl.everyone?.(m, this.worldReads) === true) return this.parties.ofKind(decl.partyKind);
-    const stamp = `${this.currentPeriod}:${this.currentCycle}`;
-    if (this.asksAt !== stamp) {
+    if (this.asksAtPeriod !== this.currentPeriod || this.asksAtCycle !== this.currentCycle) {
       this.asks.clear();
-      this.asksAt = stamp;
+      this.asksAtPeriod = this.currentPeriod;
+      this.asksAtCycle = this.currentCycle;
     }
     let byMarket = this.asks.get(at);
     if (byMarket === undefined) {

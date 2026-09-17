@@ -246,6 +246,19 @@ export class Parties {
     private readonly now: () => Period = () => 0 as Period,
   ) {}
 
+  /**
+   * Law 18 (0g): WHAT `ofKind` IS CACHED AGAINST — one counter, bumped by the one door every write
+   * goes through (`stored`), so a cache cannot be left standing by a writer that forgot it.
+   */
+  private writes = 0;
+  private readonly ofKindCache = new Map<PartyKindId, { readonly at: number; readonly parties: readonly Party[] }>();
+
+  /** The ONE writer of the party map. Everything that changes a party goes through it (Law 4). */
+  private stored(id: PartyId, p: Party): void {
+    this.writes += 1;
+    this.map.set(id, p);
+  }
+
   /** 0h.3: the period this party first existed in. A party this world does not have has none. */
   bornAt(id: PartyId): Option<Period> {
     const at = this.born.get(id);
@@ -269,7 +282,7 @@ export class Parties {
       const faults = cellKeyFaults(this.registry, p, 'seeded');
       forbid(faults.length === 0, 'XI-15', faults.join('; '), { id: p.id });
     }
-    this.map.set(p.id, Object.freeze({ ...p }));
+    this.stored(p.id, Object.freeze({ ...p }));
     this.born.set(p.id, this.now());
     const ofItsKind = this.byKind.get(p.kind);
     if (ofItsKind === undefined) this.byKind.set(p.kind, [p.id]);
@@ -317,7 +330,17 @@ export class Parties {
   }
 
   /** Alive parties of one kind, in insertion order (deterministic). */
+  /**
+   * Every LIVING party of a kind. Law 18 (0g): the answer is kept until a party changes.
+   *
+   * It built a fresh array on every call, and it is called once per participant declaration per
+   * book and per venue — so a period of the scale model asked it thousands of times and threw
+   * thousands of arrays away, which was a third of what the garbage collector had to do. The array
+   * it returns is `readonly` and nothing may keep it past a write, which is what the version is for.
+   */
   ofKind(kind: PartyKindId): readonly Party[] {
+    const held = this.ofKindCache.get(kind);
+    if (held?.at === this.writes) return held.parties;
     const ids = this.byKind.get(kind);
     if (ids === undefined) return EMPTY_PARTIES;
     const out: Party[] = [];
@@ -325,6 +348,7 @@ export class Parties {
       const p = this.map.get(id);
       if (p?.status.alive === true) out.push(p);
     }
+    this.ofKindCache.set(kind, { at: this.writes, parties: out });
     return out;
   }
 
@@ -340,7 +364,7 @@ export class Parties {
       `weight event on ${ev.party} expected ${ev.before}, is ${p.weight}`,
     );
     positiveCount(ev.after, `weight of ${ev.party} after ${ev.kind}`);
-    this.map.set(p.id, Object.freeze({ ...p, weight: ev.after }));
+    this.stored(p.id, Object.freeze({ ...p, weight: ev.after }));
   }
 
   /** A party that ceases leaves its holdings to a named successor, never to nobody (Register F2). */
@@ -357,7 +381,7 @@ export class Parties {
       'Register F2',
       `party ${id} cannot succeed itself`,
     );
-    this.map.set(
+    this.stored(
       id,
       Object.freeze({
         ...p,
@@ -411,7 +435,7 @@ export class Parties {
     // `forbid` asserts, so from here the status is the alive branch and TypeScript knows it.
     forbid(p.status.alive, 'XI-3', `${id} has ceased and its standing cannot change: ${cause}`);
     if (p.status.standing === standing) return;
-    this.map.set(id, Object.freeze({ ...p, status: { alive: true as const, standing } }));
+    this.stored(id, Object.freeze({ ...p, status: { alive: true as const, standing } }));
   }
 
   /**
@@ -438,7 +462,7 @@ export class Parties {
     const next: CellParty = Object.freeze({ ...p, key });
     const faults = cellKeyFaults(this.registry, next);
     if (faults.length > 0) throw new Forbidden('XI-15', faults.join('; '), { id, key });
-    this.map.set(id, next);
+    this.stored(id, next);
   }
 
   /** XI-15, 0f.4: the one live cell of a kind on a key, if there is one. At most one, by construction. */
@@ -462,7 +486,7 @@ export class Parties {
     const next: CellParty = Object.freeze({ ...p, key });
     const faults = cellKeyFaults(this.registry, next);
     if (faults.length > 0) throw new Forbidden('XI-15', faults.join('; '), { id, key });
-    this.map.set(id, next);
+    this.stored(id, next);
   }
 
   rebank(id: PartyId, to: PartyId): void {
@@ -476,7 +500,7 @@ export class Parties {
       `${id} cannot bank at ${to}, which issues no money`,
     );
     forbid(p.bank !== to, 'Banks Funding E1', `${id} already banks at ${to}`);
-    this.map.set(
+    this.stored(
       id,
       Object.freeze(
         p.representation === 'cell'

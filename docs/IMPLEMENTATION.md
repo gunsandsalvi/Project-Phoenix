@@ -289,12 +289,39 @@ first rung), to produce four curves that do not change within the period.
 
 Layout and traversal only; every step reports the ladder before and after; a step that moves a ratio is reverted.
 
-**PARKED after 0g.6a, 0g.6b, 0g.5a and 0g.6c (see `docs/RECORD.md`): 1354 → 554 ms/period at the
-first rung, every shape figure identical.** The profile is now flat — nothing above 3% but the
-garbage collector at 8.7% — and the remaining cost is the world getting bigger rather than a walk to
-remove (26 periods 9.0 s, 52 periods 33.9 s, the growth spread across everything). What is left to
-the exit is the two structural steps, 0g.3 and 0g.11, and they are mechanical passes over the whole
-engine rather than local edits.
+**UN-PARKED, and the exit is now the owner's figure: 3–4 SECONDS PER PERIOD ON THE FULL WORLD.**
+The old exit — a 52-period year of a (12, 200) one-country world under 60 s, about 1.15 s/period —
+is not the same target and is not enough.
+
+### What the target requires, measured
+
+| | |
+|---|---|
+| ladder rung (12 banks, 48 firms), steady state | 1,188 parties, 442 markets, 472 venues |
+| measured, after this session's steps | **1,600 ms/period** |
+| per party per period | **1.35 ms** |
+| the full model | 9,006 named firms + 108,036 small ones ⇒ **~120,000 parties** |
+| the target, 3.5 s/period, per party per period | **0.029 ms** |
+| **what is needed** | **≈ 46×** |
+
+Scaling is close to linear in parties and mildly superlinear: 173 → 2,151 parties (×12.4) took
+193 → 2,244 ms (×11.6). So the full world today is **two to seven minutes a period**, and the gap is
+a factor of fifty, not a few percent.
+
+**A FLAT PROFILE CANNOT BE SHAVED FIFTY TIMES.** Nothing in it is above 10% (the garbage collector,
+at 9.7%, is the largest single entry). Fifty times comes from removing whole categories of
+per-party-per-period work, which is what 0g.11, 0g.14 and 0g.15 are — and the three numbers that
+say where the categories are:
+
+- **84,099 journal events in one period** at 1,188 parties — **71 events per party per period**. At
+  120,000 parties that is 8.5 million events a period, and the journal keeps every one of them for
+  ever (0g.14 is the tiered log; it is no longer optional).
+- **117,774 door reads answered `Missing` in one period** — 99 per party. Every one is a party
+  asking for a print, a mark, an index or an outlook that does not exist. That is not a layout
+  problem: it is mechanisms asking for what this world does not produce, and it belongs to whichever
+  item builds the missing side.
+- **participant evaluations: 627,543 → 44,000** in one period, from this session's two narrowings
+  (below). What is left is the product that must stay indexed as the world grows.
 
 - [ ] 0g.2 **The period index** — **first sub-step done (0g.2a):** `Ledger.deltasIn(period)` (holding deltas by holder|instrument, issued deltas by line, units made/destroyed by line), written at `append`, read by the `flows`, `money` and `units` families in place of three walks of the period's records; first rung 94 → 88 ms/period, behaviour byte-identical. The rest, as listed, moves when a profile names the walk (the third-rung profile is flat: no family above 3%): (`world/period-index.ts`), written by settlement and revaluation as they write: legs by instrument, legs by party, equity delta by party, reserve flow by bank, `heldTotal` per instrument, dirty parties, the due heap (next due period per instrument, maintained at issue/restate). Readers, each deleting its own walk: audit families (`accounts`, `flows`, `money`, `units`, `names`, `currency`, goods `unitsIdentity`, capital `plantMoves`, banks `bookMoves`), `reporting/report.ts incomeOf/cashOf` (with `cause` on the equity entry at write), `external/index.ts externalOf` (once; the family reads the published event), `banks/lines.ts earnedByLine`, `banks/treasury.ts reserveFlow` and `money-market/session.ts netReserveFlow` (one read), `securitisation interestCollected`, `capital-programme purchases`, `runCorporateActions` and `owedIn` (the heap), `world.ts reach()` (first-traded per market), `equityLedgerFamily` (running sums), `equityDust` once per party.
 - [ ] 0g.3 `Measure<D>` → `number & { __d: D }`; `Qty` an integer-checked brand; `core/measure.ts` throws `Impossible('Law 8', …)`; arithmetic and dust unchanged. Mechanical pass over every site.
@@ -302,7 +329,20 @@ engine rather than local edits.
 - [ ] 0g.5 **`view.memo` built, and the exposure is its first customer — done at 0g.5a:** `memo(key, at, compute)` on the participant view keeps an answer while every version it was computed at still stands, and `versions()` gives the register's write count, the price store's and the instrument store's. TWO THINGS MADE IT SAFE, and both were found by the ladder moving: the register had no write count at all (one now, bumped by all twelve of its writers, with `test/register-version.test.ts` holding them to it), and `versions` is a CALL and not a field — a view is kept for a whole cycle and every payment that settles writes the register, so a version taken when the view was built is the version of a world several instructions ago, and a memo keyed on it hands back an answer from before them. First rung 1085 → 573 ms/period, every shape figure identical. What is left of `view.memo`'s list: `equity()`, `earned(window)`, `coveredLines`, `stateOf`, `regulationOf`, `eligibleLines`, `holdingsWorth`, `dearest(subUnit)`, `overdue(seller)`, `goodsBoughtIn`, `sizeSegmentOf`, `claimsSeen`, `longestPromise`, `blindView`. **the name's own lines, not the bank's whole book — done at 0g.6c:** `walkExposure` walked every holding the bank had and resolved each issuer to see whether it was this name, which is O(the book) to answer about one borrower and the book grows all year. It walks the register's own index of lines by promiser instead — this name's, and every name that resolves to it, which is what `Parties.predecessorsOf` is (the other direction of the succession `resolve` already walks, written by `cease` and by nothing else). 573 → 554 ms/period, figures identical including money per member to the unit, which is what says the sum came out in the same order. **exposure by issuer — done at 0g.6b:** `exposuresByIssuer(view)` walks the bank's book ONCE and groups the face by resolved issuer, and the per-period `CreditView` answers every name out of that map instead of walking the book once per name. Same arithmetic in the same order, so the number a name gets is the number it got. **And one attempt REVERTED (Law 18):** routing the two callers that hold no credit view — the shop that picks the quoted bank, and the overdraft decision taken on every payment that would overdraw — through `creditViewFor` was 1085 → 797 ms/period and MOVED THE WORLD: cells 43 → 44, events 288210 → 257344, sessions 158 → 161, audit 4941 → 4912, money per member 176879 → 6390296. Building a credit view has consequences (a cost of funds is read, and the bank's `asked` list is what it publishes quotes from), so asking for one where the code did not ask for one is a mechanism change wearing a traversal's clothes. The remaining 12% in `exposureTo` belongs to those two callers and wants a read that does not build a view — `view.memo` below, which is what this step is. (taken first, at 0g.1's measurement: the household basket was costed once per VENUE per cell — a twelfth of a period at the first rung — and is costed once per cell at its decision, kept in its `DECIDED` working store and read by `willWork`; behaviour byte-identical on the ladder) `view.memo(key, deps, compute)`: recomputes when a named dependency's version moved. Sites that today recompute per call: `equity()`, exposure by issuer, `earned(window)`, `coveredLines`, `stateOf`, `regulationOf`, `eligibleLines`, `holdingsWorth`, `dearest(subUnit)`, `overdue(seller)`, `goodsBoughtIn`, `sizeSegmentOf`, `claimsSeen`, `longestPromise`, `blindView`.
 - [ ] 0g.6 Register: **holdings are handed out, not copied — done at 0g.6a:** the lots and the liens of a holding are REPLACED and never mutated, so the type says `readonly` and every read returns the arrays the store holds instead of two copies of them. A bank asking what one name owes it walks every holding it has, once per name, and the copying was 9.3% of a year in `snapshot` alone plus most of the 11.2% above it in `exposureTo`. First rung: 1354 → 1132 ms/period at the 52 mark, every shape figure identical to the digit (parties 112, cells 43, people 265, small 76, events 288210, sessions 158, audit 4941, money/member 176879, wage/h 17212.64). (lots coalesce on equal basis and period — done at 0g.1) `issuedBy`/`ofKind` used at every `instruments.all()` filter (`firms/produce.ts`, `registry/capital.ts`, `treasury/index.ts`, `reporting listedLineOf`, `estate claimsOn`, `funds eligibleLines`, `funds/nav.ts`, `banks/dealing.ts coveredLines`, `money-market fallsDueToIt`, `merchants marketsOf`, `indices listed`, `cds openBooks`, `housing foreclose`, `corporate-bond testCovenants`, `sovereign-curve` family, `world.ts curveAt`); lots coalesce on equal basis and period; `holdingsOf` returns a frozen view; `Parties.ofKind` cached per (kind, version).
 - [ ] 0g.7 `curveAt` memoised per (family, period, prices.version); `invertDecreasing` seeded by the last yield; `index()` keyed on the basket's own prints.
-- [ ] 0g.8 `ParticipantDecl.markets` mandatory (assembly refuses a decl without it; `everyone` kept); `central-bank-omo` names sovereign lines; `market.noView` one event per period.
+- [ ] 0g.8 **The narrowing — first three done, and the venue half of the door built.** A session
+  asks every party of a kind whether it has an order in it, and the answer is almost always no.
+  **Measured, one period of the (12, 48) rung:** market-side evaluations 166,953, of which 129,256
+  (77%) were ONE declaration that named no markets — `short-term-debt`'s cash investor, every firm
+  and bank asked about all 428 books to answer a question about commercial paper. Venue-side 460,590,
+  of which 442,260 were TWO declarations — `supply/firm` and `property/firm`, 221,130 each, every
+  firm asked about all 472 venues to be told it is not in that region. **`VenueParticipantDecl` had
+  no narrowing door at all**; it has `venues` now, the same door `ParticipantDecl.markets` is, with
+  the same per-period index in the kernel (`askedInVenue`). The three declarations name what their
+  own `orders` already decided in its first two lines, so the orders are the same orders.
+  627,543 → 44,000 evaluations; 1,923 → 1,600 ms/period; every census figure byte-identical.
+  **What is left of the step:** `markets` and `venues` MANDATORY (assembly refuses a declaration
+  with neither it nor `everyone`), which is what stops the next one being written without them;
+  `central-bank-omo` names sovereign lines; `market.noView` one event per period.
 - [ ] 0g.9 Solver: sort once, sweep with running sums; outcomes byte-identical on a fixed book.
 - [ ] 0g.10 Derivatives: `marginCalls` over pairs; `valueTo` memoised per (contract, period); `requirement` per (poster, holder, ccy, period); capacity per (party, ccy, period) decremented within the session.
 - [ ] 0g.11 Columnar state behind the read faces: an interning table gives parties, instruments, units and currencies dense integers at registration; holdings as CSR typed arrays with lots in a side array; equity, weights, `latest` prints, the period index as typed arrays; `RegisterReads`, `PriceStore`, `Parties` keep string-keyed signatures.
@@ -312,7 +352,10 @@ engine rather than local edits.
 - [ ] 0g.15 Parallel order generation: parties of a market partitioned by a fixed hash of their handle; partitions run on workers (`worker_threads`; Web Workers in the app); orders gathered in partition order; clearing single-threaded. Gate: the ladder byte-identical single- and multi-threaded.
 - [ ] 0g.16 Record: the ladder per step at three scales.
 
-**Exit.** (12, 200) one country: a 52-period year under 60 s on CI; (3, 12) under 3 s; every ratio invariant.
+**Exit.** **The full world at 3–4 s/period**, which is the owner's figure and about 46× from here.
+On the way, and in this order because each makes the next measurable: (12, 200) one country, a
+52-period year under 60 s on CI; the (12, 48) rung under 400 ms/period; every ratio invariant at
+every step, and a step that moves one is reverted (Law 18).
 
 ---
 

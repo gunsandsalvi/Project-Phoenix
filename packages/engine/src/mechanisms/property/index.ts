@@ -46,6 +46,7 @@ import {
   type InstrumentId,
   type PartyId,
   type RegionId,
+  type VenueId,
 } from '../../core/ids.js';
 import {
   amountOf,
@@ -211,6 +212,24 @@ export function reservationOf(view: ParticipantView, region: RegionId): Option<P
  * binds on premises wants the units that lift it to the rate it wants to run at, and a unit is
  * worth to it a period what a unit of its output earns over the premises that output takes.
  */
+/**
+ * Law 18, Clearing B2 (0g): THE LETTINGS BOOKS OF THIS PARTY'S OWN PLACE — space is let where it
+ * stands, so both sides of it are in the venues of their own region and in no others.
+ *
+ * It is what `tenantOrders` and `landlordOrders` each decide in their first two lines, named once
+ * where the kernel can use it instead of discovered 221,130 times a period by a firm being asked
+ * whether it wants to rent a room in a region it is not in.
+ */
+function lettingsHere(view: ParticipantView): readonly VenueId[] {
+  const mine: VenueId[] = [];
+  for (const v of view.venues) {
+    if (v.clearedBy !== 'property') continue;
+    if (v.key['region'] !== String(view.self.region)) continue;
+    mine.push(v.id);
+  }
+  return mine;
+}
+
 export function tenantOrders(view: ParticipantView, venue: VenueDecl): readonly Order[] {
   if (venue.clearedBy !== 'property') return [];
   const region = venue.key['region'] as RegionId | undefined;
@@ -880,8 +899,8 @@ export function property(): SystemModule {
       },
     ],
     venueParticipants: [
-      { partyKind: LANDLORD, orders: (view, venue) => landlordOrders(view, venue) },
-      { partyKind: FIRM, orders: (view, venue) => tenantOrders(view, venue) },
+      { partyKind: LANDLORD, venues: lettingsHere, orders: (view, venue) => landlordOrders(view, venue) },
+      { partyKind: FIRM, venues: lettingsHere, orders: (view, venue) => tenantOrders(view, venue) },
     ],
     families: [],
     seed(ctx: SeedContext): void {

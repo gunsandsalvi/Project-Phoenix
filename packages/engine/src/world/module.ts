@@ -17,7 +17,7 @@ import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
 import type { ContractMarketDecl, MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId, RegionId } from '../core/ids.js';
+import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId, RegionId, VenueId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { DerivativeKindId } from '../core/ids.js';
 import { partyKindId } from '../core/ids.js';
@@ -242,6 +242,24 @@ export interface VenueParticipantDecl {
   /** The module that declared it, stamped by the kernel so a never-reached one has an owner. */
   readonly owner?: string;
   readonly partyKind: PartyKindId;
+  /**
+   * Law 18, Clearing B2 (0g): WHICH VENUES THIS PARTY IS IN — the same door `ParticipantDecl.markets`
+   * is, for the same reason, and it was missing here.
+   *
+   * A venue session asks every party of a kind whether it has an order in it, and in the scale model
+   * that is 472 venues against 468 firms — 221,130 questions a period, TWICE (`supply/firm` and
+   * `property/firm`), which is 442,260 of the period's 460,590 venue evaluations. The answer is
+   * almost always no, and a firm is being asked whether it wants to hire in a trade it does not
+   * practise and rent space in a region it is not in.
+   *
+   * It is a READ and never a second copy (Law 19, Law 4): a participant answers out of the same
+   * thing its `orders` answers out of, so a venue it names here and a venue it posts in cannot
+   * disagree. Omitted means every venue of its declared kind, which is what every venue participant
+   * did before this door existed and is right for a kind with few parties or a party in every venue.
+   *
+   * It may name a venue that does not exist; it is a filter and not a claim about the world.
+   */
+  readonly venues?: (view: ParticipantView) => readonly VenueId[];
   orders(view: ParticipantView, venue: VenueDecl): readonly Order[];
 }
 

@@ -618,7 +618,29 @@ export function supply(): SystemModule {
       },
     ],
     participants: [],
-    venueParticipants: [{ partyKind: FIRM, orders: (view, venue) => contractOrders(view, venue) }],
+    venueParticipants: [
+      {
+        partyKind: FIRM,
+        /**
+         * Law 18 (0g): THE SUPPLY VENUES OF ITS OWN REGION. `contractOrders` returns nothing for
+         * any other — a contract is struck where the good is made and bought — so this names what
+         * that function already decides, out of the same read (`view.self.region`, `venue.key`).
+         *
+         * It named none, so every firm was asked about every venue in the world: 221,130 questions
+         * a period in the scale model, of which all but a region's worth answered nothing.
+         */
+        venues: (view: ParticipantView): readonly VenueId[] => {
+          const mine: VenueId[] = [];
+          for (const v of view.venues) {
+            if (v.clearedBy !== 'supply') continue;
+            if (v.key['region'] !== String(view.self.region)) continue;
+            mine.push(v.id);
+          }
+          return mine;
+        },
+        orders: (view, venue) => contractOrders(view, venue),
+      },
+    ],
     families: [oneEach()],
     /**
      * A BOOK FOR THE THINGS ANYBODY BUYS TO MAKE SOMETHING ELSE, and for nothing else.
