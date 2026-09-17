@@ -15284,3 +15284,43 @@ every earlier 0g record quotes are still produced by the same code.
 | (24, 96) | 904 | 211 ms (23%) | 76 ms (8%) | `derivative-layer/firm` orders, 103 ms (11%) |
 
 `ladder.test.ts` green, lint and typecheck clean, `check:opens` green.
+
+---
+
+## 0i, corrected — three readers the rename broke, and what they had been costing
+
+**What.** 0i declared the kernel's facts and renamed the revaluation payload's `deltaPerMember` to
+`delta`, because the equity account stopped being per-member at 21a. It renamed the WRITERS. Three
+readers still asked for the old name, got `undefined`, and skipped the event — which is precisely
+the failure 0i was built to make impossible, committed inside 0i itself:
+
+- `audit/families/currency.ts` — the Currency D4 family's "what every revaluation actually BOOKED
+  this period". With every event skipped, `booked` was empty, so the family compared nothing against
+  the register's positions.
+- `mechanisms/expectations/index.ts` — a party's own result for the period, which is what its
+  outlook is formed from and judged against (§32 E7, §46 C2). Marks stopped reaching earnings.
+- `observer/observer.ts` — what the rate move did, per party and per money.
+
+All three read the declaration now (`says(e, REVALUATION)`, `says(e, REVALUATION_FX)`), so the next
+rename is a compile error at the reader and not a silent skip. The tests that quoted the old name
+(`capital`, `loans`, `currency`) read `delta`.
+
+**It moved the world, and that is the point.** A read that had been returning nothing is a mechanism
+that had not been running. The census, rig and abroad:
+
+| | before | after |
+|---|---|---|
+| rig p30 events | 2,523 | **2,531** |
+| abroad p12 events | 9,616 | **9,957** |
+| abroad p12 settled | 1,339 | **1,504** |
+| abroad p12 audit | 2,425 | **2,164** |
+
+Law 18 does not cover this — it is not a traversal change, it is a mechanism that starts running —
+so it is its own commit, before 0g.4, with the delta measured rather than absorbed into a
+performance step. `check:opens` green on both worlds at the new figures.
+
+**The lesson 0i already stated, now paid for.** 0i's own argument was that a payload key with no
+matching writer cannot be decided by a reviewer or by a tool. What it did not say is that the
+declaration has to reach the READERS in the same change, or the register describes a fact nobody
+reads correctly. Item 21.113's per-module work carries that rule: a module's facts are declared and
+its accessors deleted in the SAME change.

@@ -203,7 +203,7 @@ describe('what capital is (Capital Programme A)', () => {
     const marks = events(w, 'revaluation', FIRM_1).filter((e) => e.period === w.period);
     const plant = marks.filter((e) => e.subjects.some((s) => s.startsWith('plant.')));
     expect(plant.length).toBeGreaterThan(0);
-    const booked = plant.reduce((a, e) => a + num(e, 'deltaPerMember'), 0);
+    const booked = plant.reduce((a, e) => a + num(e, 'delta'), 0);
     expect(-booked).toBeCloseTo(charged, 9);
     // ...and it is a CHARGE: the number is negative, which is what "a real cost against profit"
     // means when the account it lands in is the one everything else lands in too.
@@ -228,13 +228,13 @@ describe('what capital is (Capital Programme A)', () => {
     // gross is what is left plus what has been charged. Nothing stores any of the three.
     const accumulated = events(w, 'revaluation', FIRM_1)
       .filter((e) => e.subjects.some((s) => s.startsWith('plant.')))
-      .reduce((a, e) => a - num(e, 'deltaPerMember'), 0);
+      .reduce((a, e) => a - num(e, 'delta'), 0);
     expect(accumulated).toBeGreaterThan(0);
     expect(net + accumulated).toBeGreaterThan(net);
     // The PERIOD's charge is the same read over this period alone.
     const charge = events(w, 'revaluation', FIRM_1)
       .filter((e) => e.period === w.period && e.subjects.some((s) => s.startsWith('plant.')))
-      .reduce((a, e) => a - num(e, 'deltaPerMember'), 0);
+      .reduce((a, e) => a - num(e, 'delta'), 0);
     expect(charge).toBeGreaterThan(0);
     expect(charge).toBeLessThan(accumulated);
   });

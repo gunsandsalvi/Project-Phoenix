@@ -538,7 +538,7 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
       .ofKind('revaluation')
       .filter((e) => e.subjects.includes(String(row.id)));
     expect(marks.length).toBeGreaterThan(0);
-    expect(Number(marks[0]?.data['deltaPerMember'])).toBeLessThan(0);
+    expect(Number(marks[0]?.data['delta'])).toBeLessThan(0);
   });
 });
 

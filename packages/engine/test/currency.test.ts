@@ -124,7 +124,7 @@ describe('a rate move lands on somebody (Currency D2, D4)', () => {
     const implied = new Map<string, number>();
     for (const e of w.journal.ofKind('revaluation.fx')) {
       const ccy = e.data['ccy'];
-      const delta = e.data['deltaPerMember'];
+      const delta = e.data['delta'];
       const carried = e.data['carried'];
       const was = e.data['was'];
       const now = e.data['now'];

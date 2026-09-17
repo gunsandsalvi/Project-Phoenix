@@ -36,6 +36,8 @@ import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
 import { contractName, displayName } from '../registry/naming.js';
 import type { World } from '../world/world.js';
+import { says } from '../registry/facts.js';
+import { REVALUATION_FX } from '../world/facts.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
 import type { Event, EventKind } from '../journal/journal.js';
@@ -1047,12 +1049,10 @@ function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly Hedg
   // Law 19: what the rate DID is the engine's own record of it, per party and per money, not a
   // second multiplication of a balance by a rate out here.
   const moved = new Map<string, number>();
-  for (const e of w.journal.inPeriod(w.period)) {
-    if (e.kind !== 'revaluation.fx') continue;
-    const ccy = e.data['ccy'];
-    const delta = e.data['deltaPerMember'];
+  for (const e of w.journal.ofKindIn('revaluation.fx', w.period)) {
+    const { ccy, delta } = says(e, REVALUATION_FX);
     const who = e.subjects[0];
-    if (typeof ccy !== 'string' || typeof delta !== 'number' || who === undefined) continue;
+    if (who === undefined) continue;
     const key = `${who}|${ccy}`;
     const before = moved.get(key);
     moved.set(key, before === undefined ? delta : add(before, delta, 'what the rate did'));

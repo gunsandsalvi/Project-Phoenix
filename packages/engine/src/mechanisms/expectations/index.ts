@@ -63,6 +63,8 @@ import {
   type OutlookVariable,
 } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { says } from '../../registry/facts.js';
+import { REVALUATION } from '../../world/facts.js';
 import type { Event, EventKind } from '../../journal/journal.js';
 import { weightOf } from '../../parties/party.js';
 
@@ -304,12 +306,10 @@ function observations(
     out.set(key, { value: seen.arrived / seen.due, unit: 'share of what fell due that arrived' });
   }
   // What a mark did to it is its result too, and it arrives without an instruction (XI-6).
-  for (const e of ctx.journal.ofKind('revaluation')) {
-    if (e.period !== ctx.period) continue;
+  for (const e of ctx.journal.ofKindIn('revaluation', ctx.period)) {
     const party = e.subjects[0];
-    const delta = e.data['deltaPerMember'];
-    if (party === undefined || typeof delta !== 'number') continue;
-    push(earnings, party as PartyId, delta);
+    if (party === undefined) continue;
+    push(earnings, party as PartyId, says(e, REVALUATION).delta);
   }
   for (const [party, amounts] of income) {
     const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);

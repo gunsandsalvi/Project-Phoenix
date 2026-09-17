@@ -31,6 +31,8 @@
 import { sumCash, valueAt } from '../../core/measure.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { addTo, sub, sum, withinDust } from '../../core/num.js';
+import { says } from '../../registry/facts.js';
+import { REVALUATION_FX } from '../../world/facts.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
@@ -49,17 +51,11 @@ export function revaluationAddsUp(): Family {
       /** The two rates the period moved between, which only the event that used them remembers. */
       const rates = new Map<string, { was: number; now: number; ccy: string }>();
       const key = (holder: PartyId, instrument: InstrumentId): string => `${holder}|${instrument}`;
-      for (const e of view.journal.ofKind('revaluation.fx')) {
-        if (e.period !== view.period) continue;
-        const ccy = e.data['ccy'];
-        const delta = e.data['deltaPerMember'];
-        const was = e.data['was'];
-        const now = e.data['now'];
+      for (const e of view.journal.ofKindIn('revaluation.fx', view.period)) {
+        const { ccy, delta, was, now } = says(e, REVALUATION_FX);
         const holder = e.subjects[0];
         const instrument = e.subjects[1];
-        if (typeof ccy !== 'string' || holder === undefined || instrument === undefined) continue;
-        if (typeof delta !== 'number' || typeof was !== 'number' || typeof now !== 'number')
-          continue;
+        if (holder === undefined || instrument === undefined) continue;
         // WHAT ITS BOOK BOOKED. The other half is not read here, on purpose: it comes off the
         // register below, which is the second independent thing this family needs (Audit A1.a).
         addTo(booked, ccy, delta);
