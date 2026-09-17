@@ -14385,3 +14385,38 @@ through ordinary settlement; accept or reject against a census of named properti
 reason; snapshot the accepted world and open runs from it. Items 22b.1–22b.9, which absorb most of
 22a. It also states what it predicts will break, including that the first chronicle will be rejected
 on "every firm has produced, sold and been paid" — which is 12c.3, and the point.
+
+## Research note — the engine (`docs/ENGINE.md`)
+
+The second of the two notes the owner asked for, written against `291e146`. Where `OPENING.md` asks
+how a world should BEGIN, this asks how it should RUN.
+
+**What it measures.** Twelve periods of the rig: **4,158 market sessions, 15 of them cleared —
+0.36%** — with 3,749 finding no demand at all, and **8 books of 358 ever clearing**. 554 ms/period
+after this session's work, with the second half of a year costing 2.8× the first per period. Every
+number in this project comes from one run of one seed. Nothing gates on the world being alive, and
+nothing gates on speed — the first rung went from 5.1 s a year to 70 s a year unnoticed.
+
+**What it separates.** SPEED, SCALE and EVIDENCE, and it argues speed is the least of the three
+right now: 99.6% of the market work produces nothing, so the first-order fix is not a faster auction
+but not holding it.
+
+**What it reads.** Factorio's sleeping entities woken by a cause rather than polled, and their
+determinism constraint on threading; data-oriented design's structure-of-arrays claims; the
+discrete-event-versus-time-stepped comparison; FLAME GPU, taken as NOT APPLICABLE and said so,
+because a period here is a sequence of global serialisations; Dwarf Fortress's refusal to abstract
+and the performance wall it buys; the ABM validation literature's verdict that stylized facts are a
+weak test, which bites harder on a project whose evidence is one trajectory; statistical model
+checking with temporal queries and confidence-based stopping rules, which is the language this
+project's bugs are actually written in; surrogate models with Sobol indices for sensitivity; and
+metamorphic testing, which is the name for what the ladder already does once and should do as a
+family.
+
+**What it proposes.** Nine gaps ranked by leverage, the first being that **nothing checks the world
+is alive** — a liveness family of temporal properties would have caught seven recorded findings at
+the item that introduced each. Then an ensemble runner so a finding is a statement about a
+distribution; books that open only on posted interest (the largest speed win and a liveness
+measurement at once); the ladder as a ratchet; suite triage; an explainer over the journal so
+"why did this happen" is answered by the engine rather than reconstructed by hand; metamorphic
+relations as a family; Sobol over the parameter register, where an insensitive primitive becomes a
+deletion candidate under Law 2. Items 0h.1–0h.8, with 0g.3 and 0g.11 after them.
