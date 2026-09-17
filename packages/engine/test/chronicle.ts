@@ -15,6 +15,7 @@
 import {
   type PartyId,
   type World,
+  foundationWorld,
   isMoneyLeg,
   isAssetLeg,
 } from '../src/index.js';
@@ -127,8 +128,18 @@ function closing(w: World): void {
   }
 }
 
-export function chronicle(periods: number, which: 'rig' | 'abroad'): string {
-  const w = which === 'abroad' ? abroadWorld('chronicle') : rigWorld('chronicle');
+/**
+ * `full` is THE WORLD ITSELF — thirty banks, nine thousand firms, four countries (`foundationWorld`)
+ * — and not a scale model of it. The rig is what the suite can afford; this is what the model IS,
+ * and a reading of the first periods of it is a different fact from a reading of the rig's.
+ */
+export function chronicle(periods: number, which: 'rig' | 'abroad' | 'full'): string {
+  const w =
+    which === 'full'
+      ? foundationWorld('chronicle')
+      : which === 'abroad'
+        ? abroadWorld('chronicle')
+        : rigWorld('chronicle');
   out.length = 0;
   opening(w, `${which}, ${periods} periods`);
   for (let i = 0; i < periods; i += 1) period(w, w.step());
@@ -138,7 +149,7 @@ export function chronicle(periods: number, which: 'rig' | 'abroad'): string {
 
 const [periodsArg, whichArg] = process.argv.slice(2);
 if (periodsArg !== undefined) {
-  const which = whichArg === 'abroad' ? 'abroad' : 'rig';
+  const which = whichArg === 'abroad' ? 'abroad' : whichArg === 'full' ? 'full' : 'rig';
   console.log(chronicle(Number(periodsArg), which));
 }
 
