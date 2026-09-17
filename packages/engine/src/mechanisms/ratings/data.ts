@@ -83,7 +83,7 @@ export const ASSESSOR_SPREAD: Readonly<Record<'patience' | 'firstBoundary' | 'bo
   fee: {
     low: 0.00002,
     high: 0.00008,
-    why: "Ratings A5: what this assessor charges an issuer for a rating, per period, as a share of what the issuer is worth. Small, because it is a fee for an opinion and not a cost of capital, and a share rather than a flat amount because a rating on a large issuer is worth more to sell. This is the CONFLICT (A5): the assessor's income comes from the parties it grades, and nothing in this world makes it independent.",
+    why: "Ratings A5, Money G3.a: what this assessor charges an issuer for a rating, A YEAR, as a share of what the issuer is worth — charged on the anniversary of the first opinion it published about that name (item 20). Small, because it is a fee for an opinion and not a cost of capital, and a share rather than a flat amount because a rating on a large issuer is worth more to sell. This is the CONFLICT (A5): the assessor's income comes from the parties it grades, and nothing in this world makes it independent.",
   },
 };
 

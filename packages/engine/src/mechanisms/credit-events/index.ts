@@ -97,9 +97,33 @@ function inDefaultOfPayment(ctx: MechanismContext, cycle: number): void {
 function impairments(ctx: MechanismContext): void {
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || i.status.performing) continue;
+    /**
+     * Item 20: WHEN IT STOPPED PERFORMING, which is what the event is about. A line can be
+     * restructured and default again (`reterm` restores what `markDefaulted` took away), so
+     * "has this holder already been told" is asked SINCE the last default on this line and not
+     * ever — a second default is a second transition and a second event.
+     */
+    const defaults = ctx.journal.forSubject('credit.default', String(i.id));
+    const last = defaults[defaults.length - 1];
+    const since = last === undefined ? period(0) : last.period;
     for (const holder of ctx.register.holdersOf(i.id)) {
       const units = ctx.register.quantity(holder, i.id);
       if (units <= 0) continue;
+      /**
+       * Item 20: ON TRANSITION, ONCE, AND NOT EVERY PERIOD UNTIL IT IS GONE.
+       *
+       * It was recorded every period for every holder of every impaired line, which is a read
+       * published on the phase's own heartbeat rather than on anything that happened — the journal
+       * said the same thing about the same holding fifty-two times a year and a reader could not
+       * tell a new impairment from an old one. What is an EVENT here is a holder becoming exposed
+       * to a claim that has stopped performing: the line defaulting, or this holder acquiring one
+       * that already had. What it is CARRYING is not an event at all and is a read of the register
+       * (Law 19), which is where a reader takes it from.
+       */
+      const told = ctx.journal
+        .forSubject('credit.impaired', String(i.id))
+        .some((e) => e.data['holder'] === holder && e.period >= since);
+      if (told) continue;
       const h = ctx.register.holding(holder, i.id);
       // Clearing F1, F1.a: this runs before today's session, so today's mark does not exist yet and
       // asking for it would throw. What the book is carrying these units at is what the last mark

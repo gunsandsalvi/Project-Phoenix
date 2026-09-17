@@ -10,7 +10,7 @@ import { Impossible, Mismatch } from '../core/errors.js';
 import type { Brand } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
 import type { Periodicity } from '../core/rate.js';
-import { addDays, addMonths, type Civil, dayNumber, fromDayNumber } from './civil.js';
+import { addDays, addMonths, type Civil, compareCivil, dayNumber, fromDayNumber } from './civil.js';
 
 /** A period index on the one calendar. There is no default period (G4.a). */
 export type Period = Brand<number, 'Period'>;
@@ -40,6 +40,35 @@ export function nextCycle(at: Period, every: number): Period {
 
 export function nextPeriod(p: Period): Period {
   return period(p + 1);
+}
+
+/**
+ * Money G3.a (item 20): DOES AN ANNIVERSARY OF `epoch` FALL IN THIS PERIOD?
+ *
+ * Anything that recurs in this world recurs on a DATE — a term of parliament, a year of a rating,
+ * a quarter of accounts — and the date is walked in MONTHS from the day the thing began. What a
+ * period then is, is the period that date falls into, which is what this answers. `period % n` is
+ * the thing it exists instead of: a second calendar, off by a day a month and by a week a year.
+ *
+ * The anniversaries are `epoch + k·months` for k ≥ 1, so the period of the epoch itself is not one
+ * of them — a thing does not have its anniversary on the day it happened.
+ */
+export function crossesAnniversary(
+  cal: Pick<Calendar, 'startOf'>,
+  epoch: Period,
+  months: number,
+  at: Period,
+): boolean {
+  if (!(months > 0) || at <= epoch) return false;
+  const from = cal.startOf(epoch);
+  const today = cal.startOf(at);
+  const before = cal.startOf(period(at - 1));
+  let last = from;
+  for (let next = addMonths(from, months); compareCivil(next, today) <= 0; ) {
+    last = next;
+    next = addMonths(last, months);
+  }
+  return compareCivil(last, from) !== 0 && compareCivil(last, before) > 0;
 }
 
 export interface CalendarSpec {

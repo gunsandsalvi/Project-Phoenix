@@ -258,7 +258,16 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 ## 20. Periodicity
 
-- [ ] 20.1 The rating fee annual on the first rating's anniversary; `credit.impaired` on transition only.
+- [x] 20.1 The rating fee is ANNUAL, on the anniversary of the first opinion that assessor published
+  about that name — it was charged every period, which is a fee nobody sells, and the same declared
+  share was collected fifty-two times a year because nothing placed it on a date. The date is read
+  back from the journal (the first `rating.action`, Law 19) and not kept in a second book. And
+  `credit.impaired` is a TRANSITION: a holder is told when the line stops performing or when it
+  acquires one that already had, once per default and not every period until the claim is gone —
+  what the holding is CARRYING is a read of the register and never an event. Both sit on one new
+  calendar read, `crossesAnniversary(cal, epoch, months, at)`, which also replaces the polity's own
+  copy of the walk (Law 4): a term of parliament and a year of a rating are one question asked of
+  two epochs. Finding 21.89 written down.
 - [ ] 20.2 Tax withheld weekly, assessed on the fiscal period the polity owns; VAT quarterly.
 - [ ] 20.3 The buyback as a `Process`.
 
@@ -268,6 +277,15 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 Each when its file is open for another item; file:line and the change.
 
+- [ ] 21.89 `test/credit-events.test.ts` and `test/ratings.test.ts` ARE RED IN FULL, and were before
+  item 20 (verified at `8294791`: 14 red, 7 green, the same fourteen). They are two of the eighteen
+  suites and the reds are of three shapes: a scale model whose payment no longer fails the way it
+  did (`is a named state, publicly`, `acceleration`, `a cell that could not pay`), two cases
+  comparing a whole period's audit violations against `[]` and getting 106 and 103 of them, and the
+  ratings measure reading an object where it expects a number. None was touched by 20.1, which
+  changed when the fee is charged and when an impairment is announced; whether the audit pair is one
+  fact or a hundred is a read to make with the suite triage. Positioned at 23.1 with the rest of it
+  (20.1).
 - [ ] 21.88 `test/breach.test.ts` (19.8): THE SCALE MODEL DOES NOT BREACH. Two firms the draw made,
   a commitment between them, and a payment the payer cannot make: the fail is recorded and the arrear
   written (`credit.default` fires, the second case is green — a parliament that allows a longer grace

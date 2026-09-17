@@ -18,7 +18,8 @@
  * mandate boundary is a fund's own rule; a haircut is a lender's own. Each of them is the consumer's
  * decision made WITH the grade, never the grade deciding.
  */
-import { period as asPeriod } from '../../calendar/calendar.js';
+import { crossesAnniversary, period as asPeriod } from '../../calendar/calendar.js';
+import { MONTHS_IN_YEAR } from '../../calendar/civil.js';
 import { forbid } from '../../core/assert.js';
 import { agreementKindId, partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
 import type { AgreementTerms } from '../../register/agreements.js';
@@ -250,11 +251,20 @@ function announce(
 }
 
 /**
- * A5: AND THE ISSUER PAYS FOR IT. One instruction per rating per period, from the rated party's own
- * account to the assessor's — so the assessor's income is a real flow with a payer (Law 5), and an
- * issuer that cannot pay simply does not (Money E1) and is rated anyway. Being rated is not a
- * service anybody asked for, which is exactly how the real arrangement works and why the conflict
- * is worth keeping rather than describing.
+ * A5, Money G3.a (item 20): AND THE ISSUER PAYS FOR IT, ONCE A YEAR, ON THE ANNIVERSARY OF THE
+ * FIRST OPINION THIS ASSESSOR PUBLISHED ABOUT IT.
+ *
+ * It was charged EVERY PERIOD, which is a fee nobody sells: a rating is an annual arrangement, and
+ * a periodicity that is "whenever the phase runs" is the thing G3.a exists to forbid — the same
+ * declared share was being collected fifty-two times a year because nothing placed it on a date.
+ * The date is the first `rating.action` this assessor published about this subject, which is when
+ * the arrangement began, read back from the journal (Law 19) rather than kept in a second book.
+ *
+ * One instruction per rating per year, from the rated party's own account to the assessor's — so
+ * the assessor's income is a real flow with a payer (Law 5), and an issuer that cannot pay simply
+ * does not (Money E1) and is rated anyway. Being rated is not a service anybody asked for, which is
+ * exactly how the real arrangement works and why the conflict is worth keeping rather than
+ * describing.
  */
 function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void {
   const b = book(ctx);
@@ -269,6 +279,14 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
     for (const subject of Object.keys(b[d.assessor] ?? {})) {
       const who = partyId(subject);
       if (!ctx.parties.has(who) || !ctx.parties.get(who).status.alive) continue;
+      // When this arrangement began: the first opinion this assessor published about this name. A
+      // subject it has never rated is not billed for one, and a name rated for the first time this
+      // period pays on its anniversary and not today.
+      const began = ctx.journal
+        .forSubject('rating.action', subject)
+        .find((e) => e.data['assessor'] === d.assessor);
+      if (began === undefined) continue;
+      if (!crossesAnniversary(ctx.calendar, began.period, MONTHS_IN_YEAR, ctx.period)) continue;
       const ccy: CurrencyCode = ctx.registry.currencyOf(ctx.parties.get(who).region);
       const worth = ctx.participant(who).equity();
       if (worth.pieces <= 0) continue;
@@ -285,7 +303,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
           },
         ],
         cause: 'transfer',
-        reason: `${subject} pays ${d.assessor} for its rating`,
+        reason: `${subject} pays ${d.assessor} for a year of its rating`,
       });
       if (r.outcome !== 'settled') {
         ctx.record(
@@ -465,11 +483,11 @@ function methodologies(rows: readonly AssessorDecl[]): readonly ParamDecl[] {
       {
         id: ratingParam(d.assessor, 'fee'),
         value: d.fee,
-        unit: "share of the issuer's worth, per period, per rating",
+        unit: "share of the issuer's worth, a year, per rating",
         dimension: 'ratio',
         kind: 'policy',
         owner: 'model',
-        why: `Ratings A5: what ${d.assessor} charges an issuer for an opinion about it. This is the conflict, priced: the assessor's income comes from the parties it grades and nothing here makes it independent of them. What counters it is that its grades and the defaults that follow them are both public (E3).`,
+        why: `Ratings A5, Money G3.a: what ${d.assessor} charges an issuer for an opinion about it, A YEAR, on the anniversary of the first opinion it published about that name (item 20 — it was charged every period, which is a fee nobody sells). This is the conflict, priced: the assessor's income comes from the parties it grades and nothing here makes it independent of them. What counters it is that its grades and the defaults that follow them are both public (E3).`,
       },
     );
   }

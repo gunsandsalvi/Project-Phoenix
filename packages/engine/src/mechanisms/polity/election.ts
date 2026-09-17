@@ -12,8 +12,7 @@
  * cell's own) and what the house came to (publicly). The seats are the allotment rule's, applied to
  * the weighted tally, and the rule is read from the register by the position it was declared at.
  */
-import { addMonths, compareCivil } from '../../calendar/civil.js';
-import { period } from '../../calendar/calendar.js';
+import { crossesAnniversary, period } from '../../calendar/calendar.js';
 import type { ParamId } from '../../core/ids.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
@@ -42,19 +41,20 @@ const TURNS_ON: WhatItTurnsOn = {
   pension: 'pensions.contribution.employeeShare' as ParamId,
 };
 
-/** A4, Money G3.a: the period that crosses an election day, walked from the day the world opened. */
+/**
+ * A4, Money G3.a: the period that crosses an election day, walked from the day the world opened.
+ *
+ * The walk itself is the CALENDAR's (`crossesAnniversary`, item 20): a term of parliament and a
+ * year of a rating are the same question asked of two epochs, and this file had the only copy of
+ * the answer until the second one needed it (Law 4).
+ */
 export function electsThisPeriod(ctx: MechanismContext): boolean {
-  const months = ctx.params.months(POLITY_PARAMS.termMonths);
-  if (months <= 0 || ctx.period === 0) return false;
-  const opened = ctx.calendar.startOf(period(0));
-  const today = ctx.calendar.startOf(ctx.period);
-  const before = ctx.calendar.startOf(period(ctx.period - 1));
-  let last = opened;
-  for (let next = addMonths(opened, months); compareCivil(next, today) <= 0; ) {
-    last = next;
-    next = addMonths(last, months);
-  }
-  return compareCivil(last, opened) !== 0 && compareCivil(last, before) > 0;
+  return crossesAnniversary(
+    ctx.calendar,
+    period(0),
+    ctx.params.months(POLITY_PARAMS.termMonths),
+    ctx.period,
+  );
 }
 
 /**
