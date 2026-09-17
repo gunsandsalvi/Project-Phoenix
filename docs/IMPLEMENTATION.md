@@ -289,39 +289,111 @@ first rung), to produce four curves that do not change within the period.
 
 Layout and traversal only; every step reports the ladder before and after; a step that moves a ratio is reverted.
 
-**UN-PARKED, and the exit is now the owner's figure: 3–4 SECONDS PER PERIOD ON THE FULL WORLD.**
-The old exit — a 52-period year of a (12, 200) one-country world under 60 s, about 1.15 s/period —
-is not the same target and is not enough.
+**THE EXIT IS THE OWNER'S FIGURE: 3–4 SECONDS PER PERIOD ON THE FULL WORLD.**
 
-### What the target requires, measured
+### 0g.0 The budget, measured (2026-09-17)
 
-| | |
-|---|---|
-| ladder rung (12 banks, 48 firms), steady state | 1,188 parties, 442 markets, 472 venues |
-| measured, after this session's steps | **1,600 ms/period** |
-| per party per period | **1.35 ms** |
-| the full model | 9,006 named firms + 108,036 small ones ⇒ **~120,000 parties** |
-| the target, 3.5 s/period, per party per period | **0.029 ms** |
-| **what is needed** | **≈ 46×** |
+Seven traversal steps (0g.4–0g.10) came to a bit over 2× and the record said six times that the
+rest was not in traversal. That was true and it was not a plan. **This is the plan, and every number
+in it is measured on this machine rather than reasoned about.** The measurements are in
+`docs/RECORD.md` under "0g.0".
 
-Scaling is close to linear in parties and mildly superlinear: 173 → 2,151 parties (×12.4) took
-193 → 2,244 ms (×11.6). So the full world today is **two to seven minutes a period**, and the gap is
-a factor of fifty, not a few percent.
+**Where a period goes**, at the (24, 96) rung — 259 living parties, 981 books, 702 ms/period:
 
-**A FLAT PROFILE CANNOT BE SHAVED FIFTY TIMES.** Nothing in it is above 10% (the garbage collector,
-at 9.7%, is the largest single entry). Fifty times comes from removing whole categories of
-per-party-per-period work, which is what 0g.11, 0g.14 and 0g.15 are — and the three numbers that
-say where the categories are:
+| block | ms | share | count | unit cost | per party |
+|---|---|---|---|---|---|
+| module phases (excl. order generation) | 380 | **54%** | — | — | 1,467 µs |
+| participant order generation | 133 | 19% | 22,640 evaluations (4,086 posted) | **5.87 µs** | 511 µs |
+| settlement | 96 | 14% | 2,827 instructions | **23.8 µs** | 371 µs |
+| the audit | 71 | 10% | — | — | 274 µs |
+| the journal | 31 | 4% | 9,607 events | **3.26 µs** | 121 µs |
+| | | | | | **2,710 µs/party** |
 
-- **84,099 journal events in one period** at 1,188 parties — **71 events per party per period**. At
-  120,000 parties that is 8.5 million events a period, and the journal keeps every one of them for
-  ever (0g.14 is the tiered log; it is no longer optional).
-- **117,774 door reads answered `Missing` in one period** — 99 per party. Every one is a party
-  asking for a print, a mark, an index or an outlook that does not exist. That is not a layout
-  problem: it is mechanisms asking for what this world does not produce, and it belongs to whichever
-  item builds the missing side.
-- **participant evaluations: 627,543 → 44,000** in one period, from this session's two narrowings
-  (below). What is left is the product that must stay indexed as the world grows.
+**What the target requires.** Party count grows LINEARLY with named firms — measured at assembly:
+99 parties at 8 firms, 248 at 24, 446 at 48, 878 at 96, 1,506 at 192, so ≈7.8 parties per named
+firm, and the full model's 9,006 named firms is **~70,000 parties** (the small firms are cells, but
+there are ~6 cells per firm, so aggregation does not rescue the count). 3.5 s over 70,000 parties is
+**50 µs per party per period**, against 2,710 measured: **54×**. At the 120,000 figure, 93×.
+
+**EVERY HOT OPERATION COSTS 30–86× ITS OWN CONTENT, and that is where the 46× is.** Not in layout.
+
+- A **settlement** moves **1.4 legs**, writes **1.1 journal events** and **1.2 register entries**, and
+  makes 3.7 quantity reads — and costs **23.8 µs**. A faithful floor prototype (same validation, same
+  random-access holdings, same event, same ledger row, written without defensive copying, freezing or
+  string keys) costs **276 ns**. **86×.**
+- A **journal write** costs 1,754 ns in isolation against a **51 ns** floor. Ablated: the
+  `Object.entries` + `isCash` validation loop **643 ns**, two `Object.freeze` **457 ns**, the
+  `[...subjects]` copy **369 ns**, the `byKindPeriod` template-string key **358 ns**, and the six
+  eager indexes **1,079 ns**. None of that is the event.
+- The **arithmetic guard layer** runs **2,538,758 `Number.isFinite` calls in one period** — 9,802 per
+  party — through `finite`/`add`/`sub`/`sum` wrappers, each taking a `what` string (119 sites build
+  it with a template literal on the happy path).
+
+**THE RUNTIME FLOOR, measured, which is what kills 0g.11 as written:** `Map<string,_>.get` **17 ns**,
+`array[int]` **3.4 ns**, `Float64Array[int]` **1.2 ns**, **allocating a small object 0.8 ns**,
+`Object.freeze` **38 ns**, a spread **12 ns**. Allocation is nearly free in V8's young generation and
+Phoenix's access pattern is random over an evolving graph, which is the case where struct-of-arrays
+gains least — the literature agrees (FLAME GPU reports ~1000× for homogeneous Boids and **~18× for
+Schelling**, and the 1:1-scale papers characterise this workload as *memory-bound with random access
+over dense evolving graphs*). **Interning and typed arrays are worth ~3% here and were measured, not
+guessed.**
+
+**THE SERIAL WALL, and it is the fact that decides the whole question.** The wire is intrinsically
+sequential: one numbered two-sided instruction at a time, order load-bearing (0g.10 established that
+margin settles inside its own loop and which call is met depends on which came first). At 70,000
+parties and 10.9 settlements each, that is **770,000 settlements a period that cannot be
+parallelised**. At today's 23.8 µs that is **18.3 s**; at the measured 276 ns floor it is **0.21 s**,
+which fits. **So the budget closes only if settlement gets to within ~3× of its floor.**
+
+**What the state of the art spends.** Gill & Lalith simulate 127 million agents, one period in 110 s
+on 64 CPU cores — **55 µs of CPU per agent per period**, with distributed + shared-memory hybrid
+parallelism. Phoenix's target is 29–50 µs per party per period, on one machine, in TypeScript, with
+a richer agent (double-entry settlement, a full instrument register, a live audit). **The target is
+at or beyond the published state of the art**, and that is worth the owner knowing before it is
+treated as a routine engineering goal.
+
+### 0g.0 The four levers, with what each is worth
+
+| lever | measured basis | worth |
+|---|---|---|
+| **A. Unit costs to within 3× of floor** | settlement 86×, journal 34×, guards everywhere | **10–30×** |
+| **B. Counts down** | 87 evaluations/party, 4,086 of 22,640 posted; doors unfinished (0g.8) | **1.5–4×** |
+| **C. Parallelism** (0g.15) | ~80% of a period is per-party; settlement and clearing are serial | **2.8–4×** (Amdahl) |
+| **D. The phase block** | **54% of a period and never decomposed** | unknown — measure first |
+
+A × B × C is 40–480× on paper and the honest reading is that **A is the whole programme and D is
+unmeasured**. What A means concretely, and it is not a list of local fixes but one decision applied
+everywhere: **contract checks and defensive copies leave the hot path.** Freeze, `[...]` copies,
+`Object.entries` validation loops, eagerly-built error strings and eager indexes are discipline
+devices that the TYPE SYSTEM already provides at compile time (`readonly`, the branded `Measure<D>`),
+and they are costing 30–86× at runtime. An assertion build keeps them for the suite and the chronicle;
+the engine runs without them.
+
+**If A, B and C land and D is no worse than the rest**: settlement 0.21 s + journal 0.13 s + order
+generation 0.53 s + audit 0.96 s ≈ 1.8 s serial-plus-parallel, with the phase block the open
+question. That is the first version of this budget that closes, and it closes on tested floors.
+
+**Revised order.** 0g.11 as written (interning, CSR typed arrays) is **NOT next and is not worth 46×**
+— it is worth ~3% and the measurement is above. The order the budget implies:
+
+1. **0g.17 (NEW, inserted here — the instrument, 21.118).** `runRung` reports a median and a spread.
+   The rung's own run-to-run spread is **±5%** (274, 274, 286, 287, 303 ms on identical code), so
+   0g's rule *"a step that moves a ratio is reverted"* currently has nothing to test against, and six
+   records carry ms deltas that were inside the noise.
+2. **0g.18 (NEW).** Decompose the **phase block** — 54% of a period, never opened. Nothing else can
+   be planned around it.
+3. **0g.19 (NEW).** The assertion build: contract checks and defensive copies out of the hot path,
+   kept under a flag the suite and `check:opens` set. This is lever A and it is most of the 46×.
+4. **0g.20 (NEW).** Settlement to its floor: 23.8 µs → <1 µs. The serial wall, and the single
+   biggest number in the budget.
+5. **0g.14** the tiered journal, **0g.8** finished (the doors), **0g.15** parallel order generation.
+6. **0g.11/0g.12/0g.13** last, as the ~3% they are measured to be.
+
+**And the exit condition needs the owner.** If A–D land and the phase block behaves, this reaches a
+few seconds a period at ~70,000 parties. If it does not, the three terms are the party count (a
+RESOLUTION — `SMALL_PER_NAMED`, cell granularity, 21.98), the budget, or the machine. Those are the
+owner's to set, not this item's; what this item owes is the measured cost of each, and that is now
+written down.
 
 - [x] 0g.2 **The period index — MEASURED AND NOT BUILT.** Its own condition was *"moves when a
   profile names the walk"*, and a profile now says it does not: **every reader 0g.2 names comes to
@@ -587,6 +659,36 @@ say where the categories are:
   **Capacity per (party, ccy, period) decremented within the session: measured and not built.**
   `capacityOf` is 0.26% of a period inclusive.
 
+- [ ] 0g.17 **THE INSTRUMENT FIRST (21.118).** `runRung` takes a repeat count and reports the MEDIAN
+  and the spread. Measured: the (12, 48) rung at 26 periods gives 274, 274, 286, 287, 303 ms/period
+  on IDENTICAL code — **±5%** — so 0g's own rule that a step moving a ratio is reverted has nothing
+  to test against, and six records (0g.4–0g.10) carry ms deltas that were inside the noise. Nothing
+  after this can be judged without it, which is why it is first.
+- [ ] 0g.18 **DECOMPOSE THE PHASE BLOCK — 54% of a period and never opened.** Module phases
+  excluding order generation are **380 ms of the (24, 96) rung's 702 ms, 1,467 µs per party**, and
+  no measurement in this item has ever gone inside them. The four blocks that HAVE been decomposed
+  (order generation, settlement, the journal, the audit) come to 46%. Planning the remaining levers
+  around an unmeasured majority is what 0g has been doing for seven steps. Same instrument as
+  0g.0's: counts and unit costs per phase, not percentages.
+- [ ] 0g.19 **THE ASSERTION BUILD — lever A, and most of the 46×.** Contract checks and defensive
+  copies leave the hot path and live under a flag the suite, `check:opens` and the chronicle set.
+  **Measured, per journal write: `Object.entries` + `isCash` validation 643 ns, two `Object.freeze`
+  457 ns, `[...subjects]` 369 ns, a template-string index key 358 ns, against a 51 ns floor.** And
+  **2,538,758 `Number.isFinite` calls in one period** — 9,802 per party — through the `finite`/`add`/
+  `sub`/`sum` wrappers, 119 of whose call sites build the `what` string with a template literal on
+  the happy path. The type system already provides at compile time what these provide at runtime
+  (`readonly`, the branded `Measure<D>`), so this is not weakening the error discipline: it is
+  declining to pay for it twice. **The one judgement the owner must make**: `PhoenixError` at the
+  site is Part I's discipline and this moves some of it to an assertion build. The invariant families
+  (the audit) are untouched — they are the measurement, not a guard.
+- [ ] 0g.20 **SETTLEMENT TO ITS FLOOR — the serial wall.** A settlement moves **1.4 legs**, writes
+  **1.1 journal events** and **1.2 register entries**, makes 3.7 quantity reads, and costs
+  **23.8 µs**. A faithful floor prototype — same validation, same random-access holdings, same event,
+  same ledger row, no defensive copying or freezing or string keys — costs **276 ns**. **86×.** It
+  matters more than any other number here because the wire is intrinsically sequential (one numbered
+  two-sided instruction at a time, and 0g.10 established the order is load-bearing), so this is the
+  one block parallelism cannot help: **770,000 settlements a period at the full world is 18.3 s at
+  today's cost and 0.21 s at the floor.** The budget closes or fails here.
 - [ ] 0g.11 **Measured and scoped, and one bounded piece of it done. The full columnar rewrite
   buys ~3% today and is the difference between five seconds and nothing at the target scale — so it
   stays open, with the arithmetic rather than the intuition.**

@@ -15816,3 +15816,142 @@ moved weather, and it should be built before 0g.11, 0g.14 and 0g.15, which are t
 are supposed to be large enough to see.
 
 **I would rather record this than keep six confident small numbers that cannot bear weight.**
+
+---
+
+## 0g.0 — The research the seven steps before it should have started with
+
+The owner's criticism was that seven traversal steps came to a bit over 2×, that the target is 46×,
+and that no literature had been read and no ground-breaking change proposed. That is correct. This is
+the measurement and the plan; every number was taken on this machine.
+
+### What a period is made of
+
+(24, 96) rung, 259 living parties, 981 books, 702 ms/period, median of five timed periods after four
+warm ones:
+
+| block | ms | share | count | unit cost | per party |
+|---|---|---|---|---|---|
+| module phases (excl. order generation) | 380 | **54%** | — | — | 1,467 µs |
+| participant order generation | 133 | 19% | 22,640 evaluations (4,086 posted) | **5.87 µs** | 511 µs |
+| settlement | 96 | 14% | 2,827 instructions | **23.8 µs** | 371 µs |
+| the audit | 71 | 10% | — | — | 274 µs |
+| the journal | 31 | 4% | 9,607 events | **3.26 µs** | 121 µs |
+| | | | | | **2,710 µs/party** |
+
+**The denominator is real.** Party count at assembly, measured: 99 parties at 8 firms, 248 at 24,
+446 at 48, 878 at 96, 1,506 at 192 — **linear**, ≈7.8 parties per named firm. The full model's 9,006
+named firms is **~70,000 parties**. The small firms are cells, which was the one hope of a smaller
+denominator, but there are ~6 cells per firm and ~2 small firms per cell, so aggregation does not
+rescue it. 3.5 s over 70,000 parties is **50 µs per party per period** against 2,710 measured: **54×**.
+
+### Every hot operation costs 30–86× its own content
+
+This is the finding, and it is what seven steps of traversal work never looked at.
+
+**A settlement moves 1.4 legs.** It writes 1.1 journal events and 1.2 register entries and makes 3.7
+quantity reads — and costs **23.8 µs**. A faithful floor prototype (the same validation: both parties
+alive, instrument exists, currency agrees, enough free; the same random-access holdings; the same
+event with one eager index; the same ledger row — written with no defensive copying, no freezing, no
+string keys) costs **276 ns**. **86×.**
+
+**A journal write** costs 1,754 ns in isolation against a **51 ns** floor, and the ablation says where:
+
+| | ns/event |
+|---|---|
+| as written today | **1,754** |
+| minus the `Object.entries` + `isCash` validation loop | 1,111 |
+| minus both `Object.freeze` | 1,297 |
+| minus the `[...subjects]` copy | 1,385 |
+| minus the `byKindPeriod` template-string key | 1,396 |
+| minus all six eager indexes | 675 |
+| allocate + push, nothing else | **51** |
+
+**The arithmetic guards run 2,538,758 `Number.isFinite` calls in one period** — 9,802 per party —
+through the `finite`/`add`/`sub`/`sum` wrappers, and 119 call sites build their `what` string with a
+template literal on the happy path.
+
+### The runtime floor, which is what kills 0g.11 as written
+
+| | ns/op |
+|---|---|
+| `Map<string,_>.get` | 17.2 |
+| `array[int]` | 3.4 |
+| `Float64Array[int]` | 1.2 |
+| **allocate a small object** | **0.8** |
+| `Object.freeze({a,b})` | 38.1 |
+| `{...o, x}` spread | 12.4 |
+| closure alloc + call | 10.7 |
+
+**Allocation is nearly free** in V8's young generation, and Phoenix's access pattern is random over an
+evolving graph. Struct-of-arrays buys memory coalescing and vectorisable loops; this workload has
+neither. 0g.11's interning is worth turning one 17 ns lookup into one 3.4 ns array index on the paths
+that can carry an integer — **~3% of a period**, and it was measured rather than assumed. The
+literature agrees on the shape: FLAME GPU reports ~1000× for homogeneous Boids and **~18× for
+Schelling**, the branchy heterogeneous case; the 1:1-scale HPC papers describe agent-based economies
+as *memory-bound with random access over dense evolving graphs*.
+
+An experiment confirmed it end to end: removing the journal's whole defensive layer (cheap validation
+loop, no freezes, no copies) changed the rung's median **not at all** — because the journal is 4% of
+a period. **No single lever here is large. That is the real reason seven steps came to 2×.**
+
+### The serial wall
+
+The wire is intrinsically sequential — one numbered two-sided instruction at a time, and 0g.10
+established that the order is load-bearing (margin settles inside its own loop and which call is met
+depends on which came first). At 70,000 parties and 10.9 settlements each, **770,000 settlements a
+period cannot be parallelised**:
+
+- at today's 23.8 µs: **18.3 s** — five times the entire budget, on the one block no core count helps
+- at the measured 276 ns floor: **0.21 s** — 6% of the budget
+
+**The budget closes only if settlement reaches within ~3× of its floor.** That is the single most
+important number in this item.
+
+### What the state of the art spends
+
+Gill & Lalith simulate **127 million agents, one period in 110 s on 64 CPU cores** — **55 µs of CPU
+per agent per period** — using distributed + shared-memory hybrid parallelism. Phoenix's target is
+**29–50 µs per party per period**, on one machine, in TypeScript, with a substantially richer agent:
+double-entry settlement over a full instrument register with lots and liens, and a live audit. **The
+target is at or beyond the published state of the art for HPC agent-based economics**, and the owner
+should know that before it is treated as routine engineering.
+
+### The four levers, and the revised order
+
+| lever | basis | worth |
+|---|---|---|
+| **A. Unit costs to within 3× of floor** | settlement 86×, journal 34×, guards everywhere | **10–30×** |
+| **B. Counts down** | 87 evaluations/party, 4,086 of 22,640 posted; the doors are unfinished | **1.5–4×** |
+| **C. Parallelism** | ~80% of a period is per-party; settlement and clearing are serial | **2.8–4×** (Amdahl) |
+| **D. The phase block** | **54% of a period, never decomposed** | unknown |
+
+A is the whole programme, and it is one decision rather than a list: **contract checks and defensive
+copies leave the hot path.** Freeze, `[...]` copies, `Object.entries` validation, eagerly-built error
+strings and six eager indexes are discipline devices the TYPE SYSTEM already provides at compile time
+(`readonly`, the branded `Measure<D>`) — the engine is paying for them twice, at 30–86×. An assertion
+build keeps them for the suite, `check:opens` and the chronicle; the engine runs without them. The
+audit families are untouched: they are the measurement, not a guard.
+
+If A, B and C land: settlement 0.21 s + journal 0.13 s + order generation 0.53 s + audit 0.96 s ≈
+**1.8 s**, with D the open question. That is the first version of this budget that closes, and it
+closes on tested floors rather than on hope.
+
+So the order changed, and four steps were INSERTED at their dependency positions rather than appended
+(Law 10): **0g.17** the instrument (a median and a spread — the rung's own noise is ±5%, so 0g's
+"revert a step that moves a ratio" has had nothing to test against); **0g.18** decompose the phase
+block, because planning around an unmeasured 54% is what the last seven steps did; **0g.19** the
+assertion build, which is lever A; **0g.20** settlement to its floor, which is the serial wall.
+0g.11, 0g.12 and 0g.13 go last, as the ~3% they are measured to be.
+
+**And the exit condition needs the owner.** If all four land, this reaches a few seconds a period at
+~70,000 parties. If they do not, the three terms in the exit are the party count (a RESOLUTION —
+`SMALL_PER_NAMED`, cell granularity, 21.98), the wall-clock budget, or the machine. Those are the
+owner's to set. What this item owed was the measured cost of each, and that is now written down
+instead of asserted.
+
+**Sources read:** Gill & Lalith, *High-Performance Computing Implementations of Agent-Based Economic
+Models for Realizing 1:1 Scale Simulations of Large Economies* (IEEE Access, 2021); *BeforeIT.jl:
+High-Performance Agent-Based Macroeconomics Made Easy* (Banca d'Italia, arXiv:2502.13267); FLAME GPU
+(NVIDIA technical blog, Boids 1000× / Schelling ~18×); Datseris et al., *Agents.jl* (SIMULATION,
+2024); *A Survey on Agent-based Simulation using Hardware Accelerators* (arXiv:1807.01014).
