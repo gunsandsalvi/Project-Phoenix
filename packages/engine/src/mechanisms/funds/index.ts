@@ -1726,6 +1726,15 @@ function distribute(
           kind: 'money',
           from: ctx.accountOf(fund.id, ccy),
           to: ctx.accountOf(holder, ccy),
+          /**
+           * Equity D3.a, Treasury C1 (21.105): AND THE LEG SAYS WHAT IT IS. A payout on a fund's
+           * shares is a dividend on a named line, and this leg said nothing — so the family that
+           * checks a declared payout against what actually moved saw `27891 of payout was recorded
+           * paid and 0 left the fund` and reported a one-sided flow that never happened, while the
+           * treasury's walk put the same money in `unclassified` and taxed none of it. The payer
+           * says what a receipt is (C1); nothing anywhere parses a reason.
+           */
+          receipt: { of: 'dividend', on: String(share) },
           ccy,
           amount: total,
         },

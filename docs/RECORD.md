@@ -14797,3 +14797,25 @@ ever printed behind it.
 **Measured.** `prices/Clearing F2`: 10 a period → 0. `prices.test.ts` and `equity.test.ts` have the
 same 10 red before and after. The rig's standing audit is now `accounts/Audit B5×4–11` and nothing
 else until period 4.
+
+---
+
+## 21.105 — A fund's payout said nothing about what it was
+
+**What.** The leg a fund pays a payout on says what it is: `receipt: { of: 'dividend', on: <line> }`.
+
+**Why.** It said nothing at all, and two readers depend on a payer naming its own receipt (Treasury
+C1: *"the payer says what this is; nothing here parses a reason"*).
+
+The equity family checks a declared payout against what actually moved, counting legs that say
+`dividend` — so it saw `share.etf.credit.investment.USD: 27891 of payout was recorded paid and 0
+left the fund` and reported a **one-sided flow that never happened**: the money did move, it just
+never said why.
+
+The treasury's own walk is the other reader, and this is not cosmetic there: a fund payout reaching
+a household went into `unclassified` and was **taxed as nothing**. Households hold money funds in
+this world, so the income tax base has been short by every payout ever made.
+
+**Measured.** `flows/Equity D3.a` leaves the rig's standing audit entirely. `funds.test.ts` and
+`in-kind.test.ts` have the same 15 red before and after. What is left at period 5 is
+`accounts/Audit B5` (item 21a), two `flows/Firm Birth D6` and one `names/Fund Shares F3`.
