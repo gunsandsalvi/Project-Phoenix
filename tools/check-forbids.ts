@@ -150,6 +150,10 @@ const ROUNDING_BASELINE: Readonly<Record<string, number>> = {
   'mechanisms/money-market/index.ts': 2,
   'mechanisms/money-market/resolution.ts': 1,
   'mechanisms/options/index.ts': 3,
+  // 19.2: the largest-remainder count in `allot` — whole SEATS, because a seat is a person and half
+  // a person does not sit. It is arithmetic about what the thing IS, like a whole piece of a good,
+  // and the remainders it leaves are given out rather than dropped: the house is always full.
+  'mechanisms/polity/data.ts': 1,
   'mechanisms/reporting/guidance.ts': 3,
   'mechanisms/research/index.ts': 2,
   'mechanisms/small-business/data.ts': 2,
