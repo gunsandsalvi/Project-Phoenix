@@ -50,14 +50,27 @@ function add(counts: Map<string, number>, key: string, by = 1): void {
   counts.set(key, had === undefined ? by : had + by);
 }
 
-/** WHO IS IN IT, before anything runs: the world as the seed left it. */
+/**
+ * WHO IS IN IT, before anything runs: the world as the seed left it.
+ *
+ * XI-15: A PARTY ROW IS NOT A COUNT OF ANYTHING. A cell is one possible party carried with a
+ * multiplicity, so sixty household rows are thirty million people a nation and a thousand
+ * small-firm rows are a few million businesses. Printing the rows alone said this world had sixty
+ * households in it, which is the one reading of a cell that is always wrong.
+ */
 function opening(w: World, name: string): void {
   const kinds = new Map<string, number>();
-  for (const p of w.parties.all()) add(kinds, String(p.kind));
+  const members = new Map<string, number>();
+  for (const p of w.parties.all()) {
+    add(kinds, String(p.kind));
+    add(members, String(p.kind), p.representation === 'cell' ? p.weight : 1);
+  }
   const instruments = new Map<string, number>();
   for (const i of w.instruments.all()) add(instruments, String(i.kind));
   say(`— ${name} —`);
-  say(`parties ${w.parties.all().length}: ${top(kinds, 10)}`);
+  const people = [...members].reduce((n, [, v]) => n + v, 0);
+  say(`party rows ${w.parties.all().length}: ${top(kinds, 10)}`);
+  say(`who they ARE (weights) ${people}: ${top(members, 10)}`);
   say(`instruments ${w.instruments.all().length}: ${top(instruments, 8)}`);
   say(`markets ${w.markets.length}, money ${JSON.stringify(w.moneyStock())}`);
 }
@@ -102,9 +115,11 @@ function period(w: World, report: ReturnType<World['step']>, since: number): voi
   const families = new Map<string, number>();
   for (const f of report.audit.families) if (f.count > 0) families.set(f.family, f.count);
   say('');
+  let alive = 0;
+  for (const p of w.parties.alive()) alive += p.representation === 'cell' ? p.weight : 1;
   say(
-    `period ${at} — parties ${w.parties.alive().length}, ${quiet} of them a side of nothing` +
-      ` (${Date.now() - since}ms)`,
+    `period ${at} — ${w.parties.alive().length} rows carrying ${alive}, ` +
+      `${quiet} rows a side of nothing (${Date.now() - since}ms)`,
   );
   say(`  books   ${top(books, 6)}`);
   say(`  wire    ${settled} settled (${top(causes, 6)}), ${failed} failed (${top(failures, 4)})`);
