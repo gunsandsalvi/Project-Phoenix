@@ -7,8 +7,22 @@
  *
  * What it prints is time and the shape of a year: ms per period at four marks, parties, cells,
  * people, events, sessions cleared, audit findings, money per member, the highest going rate.
+ *
+ * 0g.3: AND WHERE THE TIME GOES, with `--where`. The rung said how long a period took and never
+ * what it was spent on, so every step of 0g so far built a throwaway harness to find out and no
+ * two of those measurements were comparable. `whereItGoes` wraps each module's phases and each
+ * participant's `orders` — module code the KERNEL calls, which is why it never showed up as a
+ * phase — and times the audit. It answers the one question a step has to ask before it starts.
  */
-import { HOUSEHOLD, SMALL_FIRM, assemble, moneyInstrumentId, type World } from '../src/index.js';
+import {
+  HOUSEHOLD,
+  SMALL_FIRM,
+  assemble,
+  moneyInstrumentId,
+  type MechanismContext,
+  type World,
+} from '../src/index.js';
+import { Audit } from '../src/audit/audit.js';
 import { refined } from './grain.js';
 import { rigSpec } from './rig.js';
 
@@ -92,6 +106,85 @@ export function runRung(banks: number, firms: number, grain: 1 | 2, periods = YE
   };
 }
 
+/** Where a period's time went: the phases, the order generation, the audit. A measurement (Law 11). */
+export interface Where {
+  readonly perPeriod: number;
+  readonly orders: number;
+  readonly audit: number;
+  readonly phases: readonly (readonly [string, number])[];
+  readonly byParticipant: readonly (readonly [string, number])[];
+}
+
+/**
+ * Law 18: WHAT A PERIOD IS SPENT ON, in its steady state. It instruments the spec before the world
+ * is assembled, because a participant's `orders` is called by the kernel's market and venue
+ * sessions — so it is module code that appears nowhere in the phase list, and it turned out to be
+ * half of a period.
+ *
+ * `warm` periods run before the clock starts: a world still filling up is not in its steady state
+ * and its first period is not the one that matters.
+ */
+export function whereItGoes(banks: number, firms: number, warm = 4, timed = 4): Where {
+  const spec = rigSpec(`ladder-${banks}-${firms}`, banks, firms);
+  const phases = new Map<string, number>();
+  const byParticipant = new Map<string, number>();
+  let orders = 0;
+  for (const m of spec.modules) {
+    for (const ph of m.phases) {
+      const inner = ph.run.bind(ph);
+      const name = `${m.id}/${ph.name}`;
+      (ph as { run: (ctx: MechanismContext) => void }).run = (ctx: MechanismContext): void => {
+        const at = Date.now();
+        inner(ctx);
+        phases.set(name, (phases.get(name) ?? 0) + (Date.now() - at));
+      };
+    }
+    const wrap = (label: string, holder: { orders: (...a: never[]) => unknown }): void => {
+      const inner = holder.orders.bind(holder);
+      holder.orders = (...a: never[]): unknown => {
+        const at = Date.now();
+        const out = inner(...a);
+        const took = Date.now() - at;
+        byParticipant.set(label, (byParticipant.get(label) ?? 0) + took);
+        orders += took;
+        return out;
+      };
+    };
+    for (const p of m.participants) wrap(`${m.id}/${String(p.partyKind)} [market]`, p);
+    for (const p of m.venueParticipants ?? []) wrap(`${m.id}/${String(p.partyKind)} [venue]`, p);
+  }
+  let audit = 0;
+  // The unbinding is the point: `this` is re-supplied by `apply` below, so the audit runs on the
+  // real instance and only the clock is added. Binding it to the prototype loses the instance.
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- `this` is restored by `apply`
+  const ran = Audit.prototype.run;
+  Audit.prototype.run = function (this: Audit, ...a: Parameters<typeof ran>) {
+    const at = Date.now();
+    const out = ran.apply(this, a);
+    audit += Date.now() - at;
+    return out;
+  };
+  const w = assemble(spec);
+  for (let i = 0; i < warm; i += 1) w.step();
+  phases.clear();
+  byParticipant.clear();
+  orders = 0;
+  audit = 0;
+  const at = Date.now();
+  for (let i = 0; i < timed; i += 1) w.step();
+  const perPeriod = (Date.now() - at) / timed;
+  Audit.prototype.run = ran;
+  const per = (m: Map<string, number>): (readonly [string, number])[] =>
+    [...m].map(([k, v]) => [k, v / timed] as const).sort((x, y) => y[1] - x[1]);
+  return {
+    perPeriod,
+    orders: orders / timed,
+    audit: audit / timed,
+    phases: per(phases),
+    byParticipant: per(byParticipant),
+  };
+}
+
 export function line(r: Rung): string {
   const marks = Object.keys(r.msPerPeriodAt).map(Number);
   return (
@@ -103,9 +196,20 @@ export function line(r: Rung): string {
   );
 }
 
-const [banksArg, firmsArg, grainArg, periodsArg] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const where = args.includes('--where');
+const [banksArg, firmsArg, grainArg, periodsArg] = args.filter((a) => !a.startsWith('--'));
 if (banksArg !== undefined && firmsArg !== undefined) {
-  const grain: 1 | 2 = grainArg === '2' ? 2 : 1;
-  const periods = periodsArg === undefined ? YEAR : Number(periodsArg);
-  console.log(`LADDER ${line(runRung(Number(banksArg), Number(firmsArg), grain, periods))}`);
+  if (where) {
+    const w = whereItGoes(Number(banksArg), Number(firmsArg));
+    const pct = (ms: number): string => `${((100 * ms) / w.perPeriod).toFixed(0)}%`;
+    console.log(`WHERE ${banksArg}b/${firmsArg}f: ${w.perPeriod.toFixed(0)}ms/period`);
+    console.log(`  order generation ${w.orders.toFixed(0)}ms (${pct(w.orders)})  audit ${w.audit.toFixed(0)}ms (${pct(w.audit)})`);
+    for (const [k, ms] of w.byParticipant.slice(0, 6)) console.log(`  orders ${ms.toFixed(0).padStart(6)}ms ${pct(ms).padStart(4)}  ${k}`);
+    for (const [k, ms] of w.phases.slice(0, 6)) console.log(`  phase  ${ms.toFixed(0).padStart(6)}ms ${pct(ms).padStart(4)}  ${k}`);
+  } else {
+    const grain: 1 | 2 = grainArg === '2' ? 2 : 1;
+    const periods = periodsArg === undefined ? YEAR : Number(periodsArg);
+    console.log(`LADDER ${line(runRung(Number(banksArg), Number(firmsArg), grain, periods))}`);
+  }
 }

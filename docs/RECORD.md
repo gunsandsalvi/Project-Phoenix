@@ -15242,3 +15242,45 @@ against, and it is why 0g's order now has to bend to the profile:
 grow at about n², which is the scaling law that has to be broken before any constant matters. Those
 belong to 0g.7 (`curveAt` memoised, `invertDecreasing` seeded) and 0g.10 (the derivative reads), and
 the profile says they are next whatever the numbering says.
+
+---
+
+## 0g.3 — Already true, and the instrument it really lacked
+
+**What.** 0g.3 asked for `Measure<D>` → `number & { __d: D }`, `Qty` an integer-checked brand, and
+`core/measure.ts` throwing `Impossible('Law 8', …)`, as "a mechanical pass over every site". **All
+three hold today and no pass was needed.** `Measure<D>` is `number & { readonly [dimension]: (d: D)
+=> D }` — a compile-time brand with no runtime representation, so there was never a wrapper to
+unbox; `asQty` refuses a non-integer with exactly that error; the doors throw it. Whatever made it
+true happened before the step was written and nothing closed it. A stale plan entry is a defect
+(Law 16), and the fix is to read the source and say so.
+
+`core/measure.js` is 1.2% of a period and what is in it is `finite()` — the NaN-and-Infinity
+contract check the error discipline requires. Not overhead.
+
+**What the step really lacked was the instrument.** 0g's preamble asks that every step report the
+ladder before and after. The rung reported how long a period took and never what it was spent on —
+so every step of 0g so far built a throwaway harness to find out, three of them in this session,
+and no two of those measurements were comparable or survived the step that made them.
+
+`npm run ladder -- <banks> <firms> --where` now answers it. `whereItGoes` instruments the SPEC
+before the world is assembled, which is the only way to see the biggest thing in the engine: a
+participant's `orders` is called by the kernel's market and venue sessions, so it is module code
+that appears nowhere in the phase list. It is a fifth of a period on the canonical rungs and half of
+one on a heavier draw. Brought forward from 0g.16 because every remaining step needs it to start —
+said here rather than discovered a fourth time.
+
+**And a near miss worth recording.** The first attempt wrote a NEW `test/ladder.ts`, overwriting the
+one that has existed since 0g.1 — `ladder.test.ts` failed to compile on the missing exports and
+caught it before anything was committed. The instrument is now an addition to that file
+(`whereItGoes`, `Where`, a `--where` flag), with `runRung` and `line` untouched, so the rung figures
+every earlier 0g record quotes are still produced by the same code.
+
+**Measured, the canonical rungs:**
+
+| rung | ms/period | order generation | audit | largest single |
+|---|---|---|---|---|
+| (3, 12) | 191 | 39 ms (21%) | 15 ms (8%) | `funds/fund` orders, 13 ms |
+| (24, 96) | 904 | 211 ms (23%) | 76 ms (8%) | `derivative-layer/firm` orders, 103 ms (11%) |
+
+`ladder.test.ts` green, lint and typecheck clean, `check:opens` green.
