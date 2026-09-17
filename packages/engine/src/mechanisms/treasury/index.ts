@@ -90,12 +90,14 @@ import {
   MONTHS_PER_YEAR,
   PROCUREMENT,
   PUBLIC_OCCUPATION,
+  refuseIncompleteBasket,
   SHORT_TENORS,
   TENOR_WINDOW_YEARS,
 } from './data.js';
 import { downTick, type Qty, upTick } from '../../core/tick.js';
 import { ownPayrollOf, wageFacingParty, wholePeople } from '../../registry/wages.js';
 import { netChange } from '../../register/employment.js';
+import { expectedPriceOf } from '../../registry/expectation.js';
 
 /** The name of the store a treasury's programme phase leaves its need in (declared in the nouns). */
 export const PROGRAMME = 'treasury.programme.need';
@@ -268,6 +270,10 @@ function gridDate(target: Civil): Civil {
   }
   throw new Impossible('Sovereign B3.a', 'no maturity grid date after the target', { target });
 }
+
+// 19.0: asked once, at assembly, of the declaration itself — a world whose state does not spend
+// its whole budget on something does not open (Law 4: the check is where the fact is).
+refuseIncompleteBasket(PROCUREMENT);
 
 export const treasury: SystemModule = {
   // Money E1 (12a.9): a levy that fails is an ARREAR the payer issued to the state — settlement
@@ -1193,8 +1199,17 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const terms = view.instruments.get(m.instrument).terms;
   const row = PROCUREMENT.find((p) => isGoodTerms(terms) && terms.subUnit === p.subUnit);
   if (row === undefined || !isGoodTerms(terms) || terms.region !== view.self.region) return [];
-  const print = view.print(m.instrument);
-  if (!print.some || print.value.price <= 0) return [];
+  /**
+   * §46 A2, Clearing A2 (19.0): AT ITS OWN OUTLOOK, like every other buyer in the book.
+   *
+   * It bid the last PRINT — which is a party agreeing with the market rather than saying anything,
+   * and a book of buyers doing that prints one number for ever (`banks/dealing-quote.ts` records
+   * what that did to a bill). A state has watched these lines as long as anybody: what it will pay
+   * is what it expects the thing to cost, and where it has never watched, what the line last
+   * printed. It is the same ladder a firm buys an input on.
+   */
+  const level = expectedPriceOf(view, m.instrument);
+  if (!level.some || level.value <= 0) return [];
   const spend = scale(budget, row.share, 'what it puts into this market');
   const ccy = view.registry.currencyOf(view.self.region);
   const cash = heldAsMoney(view.cash(ccy), ccy, 'what is in its account');
@@ -1202,8 +1217,8 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const afford = atMostCash(spend, cash, 'it procures with the money in its account');
   // Law 8: a budget divided by a price is a fraction of a unit, and the state buys whole ones like
   // everybody else. Down: what it can afford never rounds up past the money it has.
-  const qty = downTick(amountOf(afford, print.value.price, 'what the budget buys'));
-  return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
+  const qty = downTick(amountOf(afford, level.value, 'what the budget buys'));
+  return qty > 0 ? [{ party: view.self.id, side: 'buy', price: level.value, qty }] : [];
 }
 
 /**

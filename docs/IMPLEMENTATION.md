@@ -258,7 +258,17 @@ Layout and traversal only; every step reports the ladder before and after; a ste
 
 ## 19. The polity (§47)
 
-- [ ] 19.0 The government BUYS: an outlay programme as a participant in construction, vessel and service lines at the treasury's outlook within its programme's constraint; a public employer in the labour venue.
+- [x] 19.0 The government BUYS. Its basket was BREAD and the whole of its budget — a state that
+  feeds people and builds nothing. It is now building (a third), professional services and care (a
+  fifth each), bread and a vessel line, which are the lines a real outlay programme lands in and
+  whose producers feel it when the programme changes. It bids at ITS OWN OUTLOOK (§46 A2) instead of
+  at the last print, which is a buyer agreeing with the market rather than saying anything; its
+  constraint is the money in its account, which is what its funding programme raised (D1). The
+  public employer in the labour venue was already there (`postPublicService`) and is unchanged. A
+  new assembly-time guard refuses a basket whose shares do not come to one. Measured: in sixteen
+  periods of the rig the state takes delivery of bread and CARE and pays some of it on invoices —
+  building, professional and the vessel line clear nothing yet, which is the same silence 21.79 and
+  21.84 report from the other side.
 - [ ] 19.1 `params.setByMandate` on one module's context; every other write throws; owner and setter printed beside every policy value; the target moves to owner `parliament`.
 - [ ] 19.2 Constitution primitives (`polity.seats`, `polity.termPeriods` by date, `polity.allotmentRule` dispatch, `polity.coalitionMaxDistance`, `polity.mandateLag`); the four tax bases (profits, interest, gains, consumption) as policy values the treasury reads.
 - [ ] 19.3 Platforms (`registry/platforms.ts`): one row per party with a value for every parliament-owned policy; assembly refuses a missing, extra or duplicate row.
