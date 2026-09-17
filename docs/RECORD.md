@@ -15749,3 +15749,70 @@ changed a number in the census**, which is what Law 18 asks of them, and the tot
 remaining factor is not in traversal and the record has now said so six times: it is the 71 journal
 events per party per period (0g.14), the 99 `Missing` door reads per party per period, and the
 parties × books product (0g.11, 0g.15).
+
+---
+
+## 0g.11 — Measured, scoped, one piece done, and a correction to the six records before it
+
+**What the string-keyed layout costs**, counted at period 8 of the (24, 96) rung:
+
+| | calls a period | self time |
+|---|---|---|
+| `instruments.get` | **388,560** | 1.86% |
+| `parties.get` | **213,127** | 0.93% |
+| `register.quantity` | 74,928 | 1.27% |
+| the garbage collector | | **11.5%** |
+
+A `Map.get` on a string key is 20–40 ns; an array index behind an interning table is 1–2 ns. So the
+interning half of this step is worth about **3% of a period today**, which is not a reason to rewrite
+the kernel's core stores.
+
+**At the target scale it is not 3%.** 388,560 lookups at 260 parties is about 1,500 per party per
+period. At 120,000 parties that is **180 million lookups a period — roughly 5.4 seconds, in lookups
+alone**, against a 3–4 second budget for the whole period. This is 0g.9's lesson a second time: worth
+little now, decisive at the scale the exit condition is written for. The step stays open with the
+arithmetic attached rather than the intuition.
+
+**And `quantity` is not the lot walk**, which is worth recording because it kills the obvious cheap
+fix. Holdings average **2.05 lots** (5,052 holdings, 10,375 lots, the largest 12), so the walk is
+nothing, and a stored per-holding total would buy nothing while adding a second representation of
+what the lots already say (Law 4).
+
+**The piece worth doing now, because 0g.6 created it.** The largest single caller of
+`instruments.get` was `instruments.ts` itself — **92,408 calls, 24% of every instrument lookup in the
+period** — inside `issuedBy` and `ofKind`. Those hold ids and not records, and the reason is sound:
+a record is replaced on issue, redemption, split, reseat or cease, and an index of stale copies is a
+second register. But they resolved every id through `get` into a fresh array on *every call*, and
+once 0g.6 pointed fourteen callers at those two doors, the index was doing the walking it had been
+built to replace. The resolved list is kept now and dropped the instant `changes` moves — the same
+construction `all()` already was, and that counter is bumped wherever `everything` is dropped, which
+is exactly when a record could have been replaced. **388,560 → 320,906 lookups, −17%.** Not the full
+92,408, because settlement bumps the version constantly, and that is correct rather than a
+shortfall.
+
+## A correction that applies to the six records before this one
+
+**Five runs of the (12, 48) rung at 26 periods, on identical code: 274, 274, 286, 287, 303
+ms/period.** A spread of ±5%.
+
+Every per-step ms delta from 0g.4 to here that was 1–4% was inside that band and is **not evidence**.
+0g.4's "325 → 327", 0g.6's "300 → 289", 0g.7's "289 → 276", 0g.8's "276 → 275", 0g.9's "275 → 275",
+0g.10's "275 → 280" — each was a single run against a single run, and the honest reading of all six
+is that the rung did not detect them.
+
+What IS evidence, and what those steps should be judged on:
+
+- the **counts**, which are exact and reproducible: 295,905 → 7,457 events walked (0g.4);
+  28,625,412 → 1,921,995 instruments (0g.6); 3,536 → 48 yield inversions (0g.7); 217,921 → 163,736
+  participant evaluations (0g.8); 388,560 → 320,906 lookups (here);
+- the **large deltas**, which are well outside the band: `margin.calls` 66 → 31 ms (0g.10), the
+  four-country world's p12 1,989 → 984 ms (0g.7), the solver's ×126 at 12,000 orders (0g.9);
+- the **census**, byte-identical at every step, which is what Law 18 actually asks.
+
+This is written down as **21.118**, and the fix belongs in the instrument rather than in the prose:
+`runRung` should take a repeat count and report the median and the spread. 0g's own rule is that *a
+step that moves a ratio is reverted* — that rule needs an instrument that can tell a moved ratio from
+moved weather, and it should be built before 0g.11, 0g.14 and 0g.15, which are the steps whose gains
+are supposed to be large enough to see.
+
+**I would rather record this than keep six confident small numbers that cannot bear weight.**

@@ -186,18 +186,52 @@ export class Instruments {
     return this.everything;
   }
 
+  /**
+   * Law 18 (0g.11): AND THE RESOLVED LIST STANDS WHILE THE REGISTER HAS NOT CHANGED.
+   *
+   * These hold IDS and not records, for the reason the fields' own note gives: a record is replaced
+   * when something is issued, redeemed, split, reseated or ceased, and an index of stale copies is
+   * a second register (Law 4). So every call resolved every id through `get` and built a fresh
+   * array — and once 0g.6 pointed fourteen callers at these doors, that became **92,408 of the
+   * period's 388,560 instrument lookups**, the largest single caller in the engine, in the two
+   * functions that were supposed to have removed the walking.
+   *
+   * What is kept is the RESOLVED list, dropped the instant `changes` moves — which is exactly the
+   * moment a record could have been replaced, because that counter is bumped wherever `everything`
+   * is dropped. It is the same construction `all()` above already is: a memo of a derivation with
+   * one writer and no way to be stale, not a copy of the register.
+   */
+  private readonly issuedResolved = new Map<PartyId, readonly Instrument[]>();
+  private readonly kindResolved = new Map<InstrumentKindId, readonly Instrument[]>();
+  private resolvedAt = -1;
+
+  private freshen(): void {
+    if (this.resolvedAt === this.changes) return;
+    this.issuedResolved.clear();
+    this.kindResolved.clear();
+    this.resolvedAt = this.changes;
+  }
+
   /** Register B3: what one party has promised — the instruments whose issuer it is, by name. */
   issuedBy(party: PartyId): readonly Instrument[] {
+    this.freshen();
+    const held = this.issuedResolved.get(party);
+    if (held !== undefined) return held;
     const ids = this.byIssuer.get(party);
-    if (ids === undefined) return [];
-    return ids.map((id) => this.get(id));
+    const made = ids === undefined ? [] : ids.map((id) => this.get(id));
+    this.issuedResolved.set(party, made);
+    return made;
   }
 
   /** Law 15, Law 18 (15.5): every line of one declared kind, live or ceased — the reader says which it wants. */
   ofKind(kind: InstrumentKindId): readonly Instrument[] {
+    this.freshen();
+    const held = this.kindResolved.get(kind);
+    if (held !== undefined) return held;
     const ids = this.byKind.get(kind);
-    if (ids === undefined) return [];
-    return ids.map((id) => this.get(id));
+    const made = ids === undefined ? [] : ids.map((id) => this.get(id));
+    this.kindResolved.set(kind, made);
+    return made;
   }
 
   /** Only settlement calls this, when an issuance or redemption leg applies (B1). */
