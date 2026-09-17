@@ -11,8 +11,13 @@ import {
   BALLOTS_CAST,
   POLITY_PARAMS,
   POLL_TAKEN,
+  MANDATE_GIVEN,
+  MANDATE_TAKEN,
+  SEATS_TAKEN,
   allotmentBy,
 } from '../src/mechanisms/polity/index.js';
+import { HOUSEHOLD, period } from '../src/index.js';
+import { addMonths, compareCivil } from '../src/calendar/civil.js';
 import { snapshot, type World } from '../src/index.js';
 import { TREASURY_PARAMS } from '../src/mechanisms/treasury/index.js';
 import { rigWorld } from './rig.js';
@@ -529,5 +534,88 @@ describe('the polls are published late and read by nobody (Polity E4, F4, 19.9)'
       JSON.stringify(w.journal.ofKind(APPROVAL).map((e) => [e.period, e.data['votes'], e.data['approves']]));
     expect(said(a)).toBe(said(b));
     expect(said(a).length).toBeGreaterThan(2);
+  });
+});
+
+describe('the assembled world holds a real election, as soon as its constitution allows (19.9a)', () => {
+  /**
+   * 21.86: every part of the vote was exercised as a scale model and the ASSEMBLED election had
+   * never run — a four-year term over a weekly period puts the first one past period 200. So this
+   * shortens the TERM to the shortest the unit can state (a month is the grain of `termMonths`) and
+   * runs the world until the day falls. Nothing else is touched: the cells, their outlooks, the
+   * platforms, the allotment rule, the coalition and the lag are the world's own.
+   */
+  const w = rigWorld('polity.election');
+  w.params.setByMandate(POLITY_PARAMS.termMonths, 1, 'constitution', 'the shortest term there is.');
+  const term = w.params.months(POLITY_PARAMS.termMonths);
+  const lag = w.params.periods(POLITY_PARAMS.mandateLag);
+
+  it('votes on the day, seats a house, forms a government and governs at the lag', () => {
+    // Far enough for one term to fall and for its mandate to take effect, and no further.
+    for (let i = 0; i < 6 + lag; i += 1) w.step();
+    const seated = w.journal.ofKind(SEATS_TAKEN);
+    expect(seated.length).toBeGreaterThan(0);
+    const first = seated[0];
+    if (first === undefined) return;
+    // A4, Money G3.a: it fell on a DAY walked from the day the world opened — one term in, not at
+    // a period index somebody chose.
+    // The election is held in the period the day falls INTO: the last one that began on or before
+    // it, and the first whose predecessor began before it.
+    const day = addMonths(w.calendar.startOf(period(0)), term);
+    expect(compareCivil(day, w.calendar.startOf(first.period))).toBeLessThanOrEqual(0);
+    expect(compareCivil(day, w.calendar.startOf(period(Number(first.period) - 1)))).toBeGreaterThan(0);
+
+    // A3, B3: real cells cast real ballots, one per living household cell, and they are secret.
+    // One ballot per living household cell AS IT WAS THEN — the population is not the same one
+    // periods later, which is what a world with births and deaths in it does (XI-3).
+    const ballots = w.journal.ofKindIn(BALLOTS_CAST, first.period);
+    expect(ballots.length).toBeGreaterThan(0);
+    expect(Number(first.data['cells'])).toBe(ballots.length);
+    expect(ballots.every((e) => !e.public)).toBe(true);
+    for (const e of ballots) {
+      const cell = w.parties.get(String(e.data['cell']) as never);
+      expect(cell.kind).toBe(HOUSEHOLD);
+      expect(cell.representation).toBe('cell');
+    }
+
+    // C1: the house is full and every seat is a whole one.
+    const seats = first.data['seats'] as Record<string, number>;
+    const total = Object.values(seats).reduce((a, b) => a + b, 0);
+    expect(total).toBe(w.params.count(POLITY_PARAMS.seats));
+    expect(Object.values(seats).every((n) => Number.isInteger(n))).toBe(true);
+    // Turnout is a read of who could and who did, and it is not a parameter anywhere.
+    expect(Number(first.data['cast'])).toBeLessThanOrEqual(Number(first.data['able']));
+
+    // C2: somebody governs, or the parliament is hung and the standing mandate continues — both
+    // are real outcomes, and the event says which.
+    expect(typeof first.data['hung']).toBe('boolean');
+    if (first.data['hung'] === true) {
+      expect(String(first.data['government'])).toBe('');
+      expect(w.journal.ofKindIn(MANDATE_GIVEN, first.period).length).toBe(0);
+      return;
+    }
+    expect(String(first.data['government']).length).toBeGreaterThan(0);
+    expect(Number(first.data['governmentSeats']) * 2).toBeGreaterThan(total);
+
+    // C3, C4: the mandate is journaled at the count with the period it starts from, and the
+    // numbers are in the register at that period — an election that changed the tax code.
+    const given = w.journal.ofKindIn(MANDATE_GIVEN, first.period);
+    expect(given.length).toBe(1);
+    const said = given[0];
+    if (said === undefined) return;
+    const from = Number(said.data['from']);
+    expect(from).toBe(Number(first.period) + lag);
+    const mandate = said.data['mandate'] as Record<string, number>;
+    for (const [id, value] of Object.entries(mandate)) {
+      expect(w.params.decl(id as ParamId).value).toBeCloseTo(value, 12);
+    }
+    const taken = w.journal.ofKindIn(MANDATE_TAKEN, period(from));
+    expect(taken.length).toBe(1);
+    expect(Number(taken[0]?.data['moved'])).toBeGreaterThan(0);
+
+    // C3.b: and the audit agrees, in the period the mandate landed and in the one after it.
+    const family = w.step().audit.families.find((f) => f.contributions.includes('polity'));
+    expect(family?.built).toBe(true);
+    expect(family?.violations.filter((v) => v.spec === 'Polity C3.b').length).toBe(0);
   });
 });

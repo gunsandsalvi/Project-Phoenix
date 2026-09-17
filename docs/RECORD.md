@@ -14230,6 +14230,13 @@ repairs are 21.87 (a seed-dependent stop in the treasury's receipts, which preda
 **Marked.** Polity A1–A4, B1, B1.a, B2, B2.a, B2.b, B3, B4, C1, C2, C3, C3.a, C3.b, C4, D1–D5,
 E1, E2, E4, F1–F5 MET; E3 MISSING with its measurement named. Coverage 74.4% → 78.2%.
 
+**And then the election itself was run** (19.9a, after the close). 21.86 said the assembled election
+had never happened, only its parts. With the term set to the shortest the unit can state — a month —
+it happens in the rig and is measured: it falls on the day walked from the day the world opened,
+every living household cell casts a secret ballot, the house is full and whole, a government holds
+more than half of it, the mandate is journaled at the count and stands in the register at the lag,
+and C3.b finds nothing. What 21.86 is left with is E3's measurement and not the mechanism.
+
 **Checks.** `check:opens` green at every step; lint, typecheck, spec, forbids, deaths, existence and
-plan:check green; `test/polity.test.ts` twenty-one green, `test/breach.test.ts` one green and one
+plan:check green; `test/polity.test.ts` twenty-two green, `test/breach.test.ts` one green and one
 red (21.88).
