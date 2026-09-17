@@ -523,6 +523,53 @@ a defect, and this check is right.
 
 ---
 
+## 21b. A pool whose manager died (Fund Shares F3, inserted after 21a)
+
+**Measured (21.106).** `manager.bank.c` dies in period 5 of the rig. Its estate is terminal, so the
+succession rule ends every commitment it ran — *"the successor is winding it up and does not run
+what it ran"* — and `fund.money.bank.c` is left ALIVE, holding a book, with households holding its
+shares, and **nobody deciding for it**. The `names` family says so every period from then on: *"a
+live pool under no mandate: there is no fund without a manager"*. Another mandate of the same
+manager was RESTATED onto the successor in the same period, so which pools survive a manager's death
+is decided by which side of the row the dead party was on, and not by anything about the pools.
+
+**No clause says what happens next.** Fund Shares F3 is about the FEE (*"the manager is a separate
+party that earns the fee"*); the family's sentence extends it, rightly, and the mechanism it asks
+for does not exist. This is the category Part 0.5 names: missing as an economy, with no clause
+naming it.
+
+- [ ] 21b.1 A pool with no live mandate DECIDES NOTHING — it posts no order, subscribes nobody, and
+  its phases read the mandate before they read anything else. It is not a rule against acting; it is
+  that there is nobody whose view the order would be (Clearing B2: a schedule is somebody's).
+- [ ] 21b.2 It WINDS UP through the machinery it already has: the holders' claim is redeemable (G1),
+  so what it holds is sold in the books it bought it in and the proceeds pay redemptions pro rata,
+  period by period, until nothing is left — and then it ceases, with its successor named. No forced
+  buyer (a book that will not take it leaves it unsold and the wind-up takes another period), and
+  nothing is invented: it is the fund's own selling and its own redemption path.
+- [ ] 21b.3 Tests: a manager that dies leaves its pools deciding nothing in the same period; a
+  winding pool sells what a book will take and pays its holders in proportion; a pool that cannot
+  sell holds what it holds and says so; the `names` family reports nothing on the rig for thirty
+  periods.
+
+---
+
+## 21c. A tax on an estate is a claim on it (XI-8, inserted after 21b)
+
+**Measured (21.107).** `estate.spv.bank.a.1` pays the treasury 388 pieces in period 5 and 388 again
+in period 6, with a `tax` receipt, and the `flows` family says *"paid 388 to treasury.us, who has no
+claim on it"* (Firm Birth D6). The estate is right to owe it — it holds paper that pays interest,
+and interest received is taxed — and the treasury is wrong to take it: an estate pays its claimants
+IN RANK ORDER (XI-8), and money leaving it directly for the state is the state jumping the queue
+ahead of the creditors the estate exists to pay.
+
+- [ ] 21c.1 The treasury's collection writes a CLAIM against an estate rather than a leg: what the
+  state is owed ranks where the law puts it (Money E1, 12a.9 already says this of a failed tax), and
+  the estate pays it in its own order like everything else it owes.
+- [ ] 21c.2 Test: an estate assessed a tax shows the state among its claimants at the right rank;
+  the ranked payout pays it in that order; the `flows` family reports nothing.
+
+---
+
 ## 22. The recipe
 
 - [ ] 22.1 A line may declare more than one recipe (technology, data); the firm picks by its own cost read.
