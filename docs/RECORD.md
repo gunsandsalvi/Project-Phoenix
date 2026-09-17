@@ -14666,3 +14666,37 @@ should say.
 
 **Test.** `curve.test.ts` *answers the same twice in one period, and answers anew the moment a print
 lands* — the two halves of a cache that is a read: kept while nothing moved, gone when something did.
+
+---
+
+## Item 0h — The instruments: closed
+
+Six changes, each of which makes every later item verifiable. Their own entries are above; what this
+says is what the section as a whole did and did not do.
+
+**Met.** A one-period-old world has outlooks (0h.1: 184 → 347 price outlooks at the end of the rig's
+first period). `check:opens` reports the liveness family and it is RED with a list (0h.3: `live=649`
+at period 30 of the rig, 1,535 at period 12 of the four-country world). `why(party, period)` answers
+for any party (0h.4). The ladder runs three rungs (0h.5). The third rung is **3.1×** faster with the
+census identical to the digit (0h.6).
+
+**Not met, and said rather than quietly dropped.** 0h.1 did not close the fifteen fail-closed
+decision sites it was written about: the ones that fail on a PRICE were already reading the print
+through `expectedPriceOf`, and the ones that fail on `sold`, `income` or `earnings` fail on
+variables with no public level at all, so there is nothing for a watcher to read. What they need is
+their own first act. 0h.6's warm start is REFUSED rather than pending, with its reason in the plan.
+
+**What the section changed in how this world is worked on.** Three instruments that did not exist:
+a party can be asked what it is about to act on (`SystemModule.watches`); the audit has a family
+that fails when NOTHING happens, where the other nine are satisfied by a world that does nothing;
+and a refusal can be read back — `why(party, period)` names the reads a party wanted and did not
+get, which is what every hand-written probe in this record was doing by hand.
+
+**Findings positioned.** 21.90 (a cell paid once in ten periods) at 0h.3's family; 21.91 (a reach
+assertion that is a census of a world that has changed) at 23.1; 21.92 (a citation outside an
+`@spec` tag is not checked) closed at 0h.4; 21.93 (the central bank taxed on its profit where the
+mechanism is a remittance) at 18a.
+
+**Two things the ladder now says that no other gate can.** Cost grows within a run as well as with
+the population — the journal keeps every event of every period in one array (0g.14) — and a year at
+the middle rung is 825 MB. Both are 0g's when it resumes.
