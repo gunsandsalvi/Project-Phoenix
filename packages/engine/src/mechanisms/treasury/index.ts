@@ -304,9 +304,9 @@ export const treasury: SystemModule = {
       value: 8,
       unit: 'periods',
       dimension: 'periods',
-      kind: 'preference',
-      owner: 'model',
-      why: 'Treasury D4.b: it holds a cash buffer because the alternative is dependence on every single auction clearing. How many periods of known outlays it wants in hand is its own patience with that risk.',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury D4.b, Polity D1 (19.7): it holds a cash buffer because the alternative is dependence on every single auction clearing. How many periods of known outlays it keeps in hand is how much it is willing to depend on the next auction — which is a POLICY the parliament answers for and not a treasurer’s patience: it was the model’s preference, and a state that runs itself close to the wire has made a public choice about what happens when a sale fails.',
     },
     {
       id: TREASURY_PARAMS.horizon,

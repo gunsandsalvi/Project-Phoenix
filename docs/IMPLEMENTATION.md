@@ -60,7 +60,7 @@ and neither is yet a MET a run has confirmed.
 | Private Equity | 24 | 1 | 0 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | **1** | 29 |
-| Polity | 18 | 0 | 14 | 0 | 32 |
+| Polity | 22 | 0 | 10 | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 13 | 7 | 5 | **1** | 25 |
@@ -318,7 +318,18 @@ Layout and traversal only; every step reports the ladder before and after; a ste
   number was a fraction of one. Both are Law 8 — the unit is part of the number — so a position on a
   counted number is refused at assembly unless it is a whole one, and a coalition's mandate on such a
   number lands on the unit's own grain (the nearest, up or down: a grain is not a bound).
-- [ ] 19.7 What it controls (fiscal rates, transfers, the buffer, the outlay programme, regulatory ratios, the target, the planning release of 15.1) and never controls (the rate, a price, a quantity, an outcome — assembly throws).
+- [x] 19.7 What it controls, named against the clause that grants it (`registry/mandate.ts`, DATA):
+  the tax bases and the transfers (D1), the cash buffer of §30 D4.b — which was the MODEL's
+  preference and is a public choice about what happens when an auction fails, so it moves to
+  parliament and onto the three ballot papers — the purchase programme and the public payroll (D2),
+  the deposit guarantee, the weight on written protection, the pension contributions and the
+  replacement rate, severance, the retirement age, the accreditation line, the reporting lag and the
+  planning release (D3), and the central bank's target (D4). What no parliament may reach is the
+  other direction and the one that matters: a parliament-owned number whose DIMENSION is a price is
+  refused at assembly (D3.a — a price is cleared, never voted for), and the bank's rate and its
+  corridor are refused by name (D4, §31 A4). So is a number declared parliament's that no clause
+  grants — a module cannot quietly put a number on a ballot paper — and a power that covers nothing,
+  which reads as scope this world does not actually grant.
 - [ ] 19.8 The arrears' `breached` writer (fiscal policy decides when an arrear is a breach).
 - [ ] 19.9 A multi-year run shows the deficit changing through named outlays after an election; approval as a lagged read; B4 and F5 tests; observer; determinism; COVERAGE; record.
 

@@ -13,6 +13,10 @@ import { ballotOf, tally, turnoutOf } from '../src/mechanisms/polity/vote.js';
 import { formGovernment, mandateOf } from '../src/mechanisms/polity/government.js';
 import { asCash } from '../src/core/measure.js';
 import { USD, type ParamId } from '../src/index.js';
+import type { ParamDecl } from '../src/registry/params.js';
+import { whatParliamentControls } from '../src/registry/mandate.js';
+import { POLICY_PARAMS } from '../src/mechanisms/money-market/policy.js';
+import { policyRateOf } from '../src/mechanisms/money-market/data.js';
 
 describe('the constitution states its own numbers (Polity A1, A4, C1, C2, C4, D5)', () => {
   const w = rigWorld('polity');
@@ -348,5 +352,55 @@ describe('the mandate takes effect at the lag, and the register holds it (Polity
     expect(found?.[0]?.size).toBeCloseTo(0.01, 12);
     // And it is still off: the audit observed, and changed nothing (Audit C4).
     expect(w.params.decl(id as ParamId).value).toBeCloseTo(was + 0.01, 12);
+  });
+});
+
+describe('what the parliament controls, and what no parliament may reach (Polity D1–D4, D3.a, 19.7)', () => {
+  const w = rigWorld('polity.scope');
+  const policies = (): ParamDecl[] => [...w.params.all()];
+
+  it('names the power behind every number parliament owns, and the world would not open otherwise', () => {
+    const powers = whatParliamentControls(policies());
+    const mine = policies().filter((d) => d.kind === 'policy' && d.owner === 'parliament');
+    expect(mine.length).toBeGreaterThan(0);
+    expect(powers.size).toBe(mine.length);
+    // Every one is an exercise of ONE of the four powers, and says which.
+    for (const [, p] of powers) {
+      expect(['Polity D1', 'Polity D2', 'Polity D3', 'Polity D4']).toContain(p.clause);
+      expect(p.why.length).toBeGreaterThan(0);
+    }
+    // D1: the buffer is the parliament's, and so it is a thing the parties differ about (§30 D4.b).
+    expect(w.params.decl(TREASURY_PARAMS.bufferPeriods).owner).toBe('parliament');
+    expect(powers.get(TREASURY_PARAMS.bufferPeriods)?.clause).toBe('Polity D1');
+    // D4: what the bank AIMS AT is parliament's, and what it does about it is the bank's.
+    expect(powers.get(POLICY_PARAMS.target('USD'))?.clause).toBe('Polity D4');
+    expect(powers.has(policyRateOf('USD'))).toBe(false);
+  });
+
+  it('refuses a price, the bank’s rate, a number no clause grants and a power over nothing', () => {
+    const all = policies();
+    const one = all.find((d) => d.kind === 'policy' && d.owner === 'parliament');
+    expect(one).toBeDefined();
+    if (one === undefined) return;
+    // D3.a: a price is CLEARED (Law 3), whoever would rather it were not.
+    expect(() =>
+      whatParliamentControls([...all, { ...one, id: 'treasury.tax.aPrice' as ParamId, dimension: 'price' }]),
+    ).toThrow(/price/);
+    // D4, §31 A4: the bank's rate is not the parliament's, however it is declared.
+    expect(() =>
+      whatParliamentControls([
+        ...all,
+        { ...all.find((d) => String(d.id) === String(policyRateOf('USD'))) ?? one, owner: 'parliament' },
+      ]),
+    ).toThrow(/policyRate/);
+    // A module that makes a number parliament's without naming the power: the world does not open.
+    expect(() =>
+      whatParliamentControls([...all, { ...one, id: 'someModule.aNumber' as ParamId }]),
+    ).toThrow(/no clause of D1–D4 grants it/);
+    // And a power over nothing is scope this world does not actually grant — a number renamed, a
+    // module dropped — which reads like a parliament with a power it has not got.
+    expect(() =>
+      whatParliamentControls(all.filter((d) => !String(d.id).startsWith('land.planning.'))),
+    ).toThrow(/land\.planning\./);
   });
 });

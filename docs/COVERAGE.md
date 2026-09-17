@@ -1116,11 +1116,11 @@ measurement is taken there is nothing to name.
 | `Polity C3.a` | MET | packages/engine/src/mechanisms/polity/election.ts (`takeEffect` — `setByMandate` is the only door, and it refuses a non-policy, an owner that is not parliament and any module but this one), packages/engine/src/world/world.ts, packages/engine/test/polity.test.ts |
 | `Polity C3.b` | MET | packages/engine/src/mechanisms/polity/election.ts (`mandateStands`: every period, exactly, the register against the standing mandate — an audit contribution that reports and never repairs), packages/engine/test/polity.test.ts |
 | `Polity C4` | MET | packages/engine/src/mechanisms/polity/election.ts (the mandate is a journaled event with the period it takes effect from, named subjects and what changed; the numbers move `mandateLag` periods after the count), packages/engine/test/polity.test.ts |
-| `Polity D1` | MET | packages/engine/src/mechanisms/treasury/index.ts (every tax rate and the transfer rate is a POLICY primitive owned by `parliament`), packages/engine/test/polity.test.ts |
-| `Polity D2` | MISSING |  |
-| `Polity D3` | MISSING |  |
-| `Polity D3.a` | MISSING |  |
-| `Polity D4` | MISSING |  |
+| `Polity D1` | MET | packages/engine/src/mechanisms/treasury/index.ts (every tax rate, the transfer rate and the cash buffer of §30 D4.b are POLICY primitives owned by `parliament`), packages/engine/src/registry/mandate.ts, packages/engine/test/polity.test.ts |
+| `Polity D2` | MET | packages/engine/src/registry/mandate.ts (the purchase programme and the public payroll are parliament’s, each named against the clause that grants it), packages/engine/src/mechanisms/treasury/index.ts, packages/engine/test/polity.test.ts |
+| `Polity D3` | MET | packages/engine/src/registry/mandate.ts (the deposit guarantee and its premium, the weight on written protection, the pension contributions and the replacement rate, severance, the retirement age, the accreditation line, the reporting lag and the planning release — and nothing else: the remaining ratios are the standard-setter’s), packages/engine/test/polity.test.ts |
+| `Polity D3.a` | MET | packages/engine/src/registry/mandate.ts (`whatParliamentControls`: a parliament-owned number whose dimension is a PRICE, and one in a family no parliament may reach, are both refused at assembly — a price is cleared, never voted for), packages/engine/test/polity.test.ts |
+| `Polity D4` | MET | packages/engine/src/registry/mandate.ts (the target is the parliament’s and the rate is refused by name — §31 A4, operationally independent), packages/engine/src/mechanisms/money-market/policy.ts, packages/engine/test/polity.test.ts |
 | `Polity D5` | MET | packages/engine/src/registry/params.ts (every POLICY primitive names its owner and the register refuses a setter that is not it), packages/engine/src/mechanisms/polity/index.ts, packages/engine/test/polity.test.ts |
 | `Polity E1` | MISSING |  |
 | `Polity E2` | MISSING |  |

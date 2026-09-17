@@ -17,6 +17,7 @@
 import { CONSTITUTION, POLITY_PARAMS, ALLOTMENT_RULES, ruleIndexOf } from './data.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { platformPositions } from '../../registry/platforms.js';
+import { whatParliamentControls } from '../../registry/mandate.js';
 import { PLATFORMS } from './platforms.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import {
@@ -159,6 +160,13 @@ export const polity: SystemModule = {
    * finding about a world that ran.
    */
   seed(ctx: SeedContext): void {
+    /**
+     * D1–D4, D3.a (19.7): AND FIRST, WHAT THERE IS TO STATE A POSITION ON. Which power each of
+     * parliament's numbers is an exercise of, and that none of them is a price or the bank's rate —
+     * because a platform covering every number parliament owns is only worth anything if what
+     * parliament owns is what a parliament may own.
+     */
+    whatParliamentControls(ctx.params.all());
     platformPositions(PLATFORMS, ctx.params.all());
   },
 };
