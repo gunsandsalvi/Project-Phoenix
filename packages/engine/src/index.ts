@@ -50,6 +50,7 @@ export * from './journal/journal.js';
 export * from './audit/audit.js';
 export * from './audit/view.js';
 export * from './world/world.js';
+export * from './world/wants.js';
 export * from './world/actions.js';
 export * from './world/revalue.js';
 export * from './world/cells.js';

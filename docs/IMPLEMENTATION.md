@@ -379,12 +379,29 @@ one is then verifiable instead of hopeful. The evidence for each is Part 0.7.*
   the full world declares by construction. Where the family is read is the assembled world's census
   (`opens.test.ts`, `live=`). Tests: `test/liveness.test.ts`, five cases including the horizon's
   invariance.
-- [ ] 0h.4 **`why(party, period)`.** Every diagnosis in `docs/RECORD.md` was a hand-written probe.
-  The material is already recorded — the journal has every event with subjects, the ledger every
-  instruction with its cause, `reach` what has never run — and what is missing is the query: the
-  phases that asked this party for something, what each returned, and for each refusal **the read
-  that was missing**. The one change in the mechanisms is that a refusal names the read it wanted,
-  which is a line at each of 0h.1's fifteen sites and is a comment made machine-readable.
+- [x] 0h.4 **`why(party, period)`.** Every diagnosis in `docs/RECORD.md` was a hand-written probe: a
+  script that walked the journal for one party, guessed which read had been missing and was usually
+  wrong twice before it was right. `World.why(party, at)` is that probe as a query, and it stores
+  nothing — what it answers with is the ledger's own record of what the party was a side of (with
+  the cause, and for a failure the reason SETTLEMENT gave and whose want stopped it), the journal's
+  own events naming it, and the one thing nothing recorded: **what it asked this world for and did
+  not get.** *The step said that last part would be "a line at each of 0h.1's fifteen sites"; it is
+  not, and that is the better answer (Law 4, Law 12): a view's door answering `Missing` IS the
+  moment the fact exists, so the kernel tallies it there — `print.<instrument>`, `mark.<instrument>`,
+  `outlook.<variable>`, in the words the door was asked in — and no module changed at all.* A second
+  tally says which books and venues a party was ASKED about and posted nothing into, kept apart
+  because it swamps the reads (a mill is asked about forty labour venues and bids in one). Both are
+  THIS period's, and the type says which period rather than answering an empty list for an older one
+  (an earlier period is answered from the journal and the ledger, which ARE that history). What it
+  shows on the rig at five periods: a firm wanting `outlook.bought.good.*` for every good it buys,
+  and a household wanting `outlook.price.equity.firm.*` for every line it might save into — the next
+  two watch lists, named by the world rather than by a reader. Tests: `test/why.test.ts`, five cases.
+  **And 21.92, which was positioned here, closed with it**: `check:spec` now reads the `spec` a
+  phase, a family and a violation carry, where a comma separates citations and a piece that names no
+  system carries the last one's, and `resolves` knows a SECTION of a system ("Sovereign D"). It found
+  four invented citations besides the `Audit B10` that prompted it — three in `securitisation`
+  (a §Securitisation that does not exist; it is XI-11) and one in `derivative-layer`. 578 citations
+  now resolve where 268 did.
 - [ ] 0h.5 **Repair the ladder's middle rung.** (6,60) stops at period 20 with `[Money C1.a]
   instruction …: a payment from an account to itself is not a payment` in `treasury runReceipts`
   (21.87), so the performance programme cannot produce the three-rung comparison its own exit is
@@ -434,7 +451,7 @@ and not a periodicity, which is why it is here and not in 20.2.
 
 Each when its file is open for another item; file:line and the change.
 
-- [ ] 21.92 `tools/check-citations.ts` (0h.3): **A CITATION THAT IS NOT IN AN `@spec` TAG IS NOT
+- [x] 21.92 (closed at 0h.4) `tools/check-citations.ts` (0h.3): **A CITATION THAT IS NOT IN AN `@spec` TAG IS NOT
   CHECKED.** The audit's own `Family.spec` and every `Violation.spec` are runtime strings, and
   0h.3's family was written citing `Audit B10` — a clause that does not exist, since §Audit's own
   run B1 to B8 — with `check:spec` green throughout. It was caught by reading the spec, which is

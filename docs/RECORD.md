@@ -14546,3 +14546,43 @@ money-market test failing because no ship has sailed would measure the scale mod
 written; positioned at 0h.4. `21.91`: `test/reach.test.ts` *finds the sectors three reads of the
 source found* is red and was red before this change — it asserts no insurer is ever created and one
 now is; positioned at 23.1.
+
+---
+
+## Item 0h.4 — `why(party, period)`, and the citations nobody checked
+
+**What.** `World.why(party, at)` — the hand-written probe every diagnosis in this record was, as a
+query. It stores nothing: what it answers with is the ledger's record of what the party was a side
+of (the cause, and for a failure the reason settlement itself gave and whose want stopped it), the
+journal's events naming it, and the one thing nothing recorded — **what it asked this world for and
+did not get**. `world/wants.ts` is that tally, with a second one for the books and venues a party
+was asked about and posted nothing into.
+
+**Why the step's own design was not followed.** It said a refusal naming its missing read would be
+"a line at each of 0h.1's fifteen sites". It is none: a view's door answering `Missing` IS the
+moment that fact exists, so the kernel tallies it there — `print.<instrument>`, `mark.<instrument>`,
+`outlook.<variable>`, in the words the door was asked in — and **no module changed at all**. Fifteen
+lines in fifteen files would have been fifteen things to keep in sync with a comment (Law 4,
+Law 12: a cause has one fix and it removes code).
+
+**What it is not.** The wants are THIS period's, and the type says which period rather than
+answering an empty list for an older one: a refusal's reason is a fact about the period being run,
+and keeping every party's for every period would be a second history beside the journal's (Law 19).
+An earlier period is answered from the journal and the ledger, which ARE that history.
+
+**What it found on its first run.** On the rig at five periods: a firm wanting
+`outlook.bought.good.*` for every good it buys, and a household wanting `outlook.price.equity.firm.*`
+for every listed line it might save into. Those are the next two watch lists (0h.1's `watches`),
+named by the world rather than by a reader.
+
+**And the finding positioned here closed with it (21.92).** `check:spec` now reads the `spec` string
+a phase, an audit family and every violation carry — the citation a READER of a finding is handed —
+where a comma separates citations and a piece that names no system carries the last one's, and
+`resolves` knows a SECTION of a system ("Sovereign D") as well as a node. Besides the `Audit B10`
+that prompted it, it found four more invented citations: three in `securitisation`, which cited a
+`§Securitisation` that does not exist (the system is XI-11), and one in `derivative-layer`. **578
+citations now resolve where 268 were checked before.**
+
+**Measured.** The census is identical to 0h.3's, digit for digit, and the per-period times are
+unchanged (rig p30 244ms against 245ms): a tally on a door that already answered `Missing` costs
+nothing. Tests: `test/why.test.ts` (five cases) and two more in `tools/test/spec-index.test.ts`.

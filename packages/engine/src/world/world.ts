@@ -83,6 +83,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal, type EventKind, type Event } from '../journal/journal.js';
 import { DISCLOSED, REPORT, type Statement, statementOf } from '../registry/statements.js';
 import type { InstructionDraft, Leg } from '../ledger/instruction.js';
+import { subjectsOf } from '../ledger/instruction.js';
 import { EVERY_PARTY_KIND } from './module.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
@@ -106,6 +107,7 @@ import type { Contract, ContractReads, StruckAt, Underlying } from '../registry/
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
+import { Wants, type Why, type WhyInstruction } from './wants.js';
 import {
   Agreements,
   agreementReads, type RowValuationReads,
@@ -311,6 +313,8 @@ export class World {
    * READ and never a family, because the audit cannot find an absence and this is nothing else.
    */
   private readonly reachTally = new Reach();
+  /** 0h.4: the other half of `reach` — what a party asked for this period and did not get. */
+  private readonly wantsTally = new Wants();
 
   private readonly gathered = new Set<VenueId>();
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
@@ -331,6 +335,58 @@ export class World {
    * the questions as data and `refuseUnanswered` checks every one of them at the seal.
    */
   private readonly heldAnswers = new Answers();
+
+  /**
+   * 0h.4: WHY THIS PARTY DID WHAT IT DID IN A PERIOD, from what this world already records.
+   *
+   * Every diagnosis in `docs/RECORD.md` was a hand-written probe — a script that walked the journal
+   * for one party, guessed which read had been missing and was usually wrong twice before it was
+   * right. The material was always there; the QUERY was not. What comes back is the three things a
+   * diagnosis needs and nothing invented: what the party was a side of (the ledger), what happened
+   * to it or was said about it (the journal), and WHAT IT ASKED FOR AND DID NOT GET (`wants.ts`).
+   *
+   * The last of those is this period's only, and the type says so rather than answering an empty
+   * list for an earlier one: a refusal's reason is a fact about the period being run, and keeping
+   * every party's for every period would be a second history beside the journal's (Law 19).
+   */
+  why(party: PartyId, at: Period): Why {
+    const p = this.parties.get(party);
+    const name = String(party);
+    const settled: WhyInstruction[] = [];
+    for (const r of this.ledger.inPeriod(at)) {
+      if (!subjectsOf(r.instruction).includes(name)) continue;
+      settled.push({
+        instruction: String(r.instruction.id),
+        cause: r.instruction.cause,
+        outcome: r.outcome,
+        // Money E1.b: what stopped it, in the words settlement itself used — never re-derived, and
+        // absent rather than empty where nothing stopped it.
+        ...(r.outcome === 'failed'
+          ? { failed: r.reason.kind, against: String(r.reason.party) }
+          : {}),
+      });
+    }
+    const events = new Map<string, number>();
+    for (const e of this.journal.inPeriod(at)) {
+      if (!e.subjects.includes(name)) continue;
+      const had = events.get(e.kind);
+      events.set(e.kind, had === undefined ? 1 : had + 1);
+    }
+    return {
+      party,
+      period: at,
+      kind: p.kind,
+      alive: p.status.alive,
+      bornAt: this.parties.bornAt(party),
+      settled,
+      events: [...events]
+        .map(([kind, times]) => ({ kind, times }))
+        .sort((a, b) => (b.times === a.times ? a.kind.localeCompare(b.kind) : b.times - a.times)),
+      wanted: this.wantsTally.of(party, at),
+      quietIn: this.wantsTally.quietIn(party, at),
+      wantedIsAbout: this.wantsTally.period(),
+    };
+  }
 
   /** Law 15, Audit E2: what this world was asked and who answered — a read, like `reach()`. */
   get answers(): Pick<Answers, 'answer' | 'answered' | 'keys'> {
@@ -1334,6 +1390,16 @@ export class World {
     return this.asParticipantOf(asked.owner, () => asked.fn(this.participantView(party)));
   }
 
+  /**
+   * 0h.4: hand back what the door answered, and when it answered nothing, say so where it is known.
+   * The read's NAME is what a diagnosis needs — "it wanted the price of wheat and there was none" —
+   * and it is the same string the door was asked for, never a message anybody wrote.
+   */
+  private wanted<T>(party: PartyId, read: string, answer: Option<T>): Option<T> {
+    if (!answer.some) this.wantsTally.missed(party, read, this.currentPeriod);
+    return answer;
+  }
+
   /** A2: what this party has an outlook of at all — nothing, for one that has observed nothing. */
   outlookVariables(party: PartyId): readonly OutlookVariable[] {
     const p = this.theOutlooks();
@@ -1402,6 +1468,10 @@ export class World {
           posted.length,
           this.currentPeriod,
         );
+        // 0h.4: asked about this venue, and posted nothing — the same record as a book (`runOne`).
+        if (posted.length === 0) {
+          this.wantsTally.postedNothing(party.id, String(venue), this.currentPeriod);
+        }
         for (const o of posted) this.post(venue, o);
       }
     }
@@ -2004,7 +2074,11 @@ export class World {
         );
       },
       equityWalk: () => this.store.equityWalk(party),
-      print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
+      // 0h.4: a door that answers `Missing` is the moment a refusal's reason exists, so it is
+      // tallied here and at no call site (`wants.ts`). The four doors are the ones every
+      // fail-closed decision in this world reads: a print, a mark, an index and its own outlook.
+      print: (instrument) =>
+        this.wanted(party, `print.${String(instrument)}`, this.prices.latest(instrument, this.currentPeriod)),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       worth: (instrument, required) => this.worthTo(instrument, required),
@@ -2016,7 +2090,8 @@ export class World {
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
       publicEvents: (last) => this.journal.visibleTo(party, last),
-      outlook: (variable) => this.outlookOf(party, variable),
+      outlook: (variable) =>
+        this.wanted(party, `outlook.${String(variable)}`, this.outlookOf(party, variable)),
       outlookVariables: () => this.outlookVariables(party),
       watches: () => this.watchedBy(party),
       outlookSubjects: () => {
@@ -2032,7 +2107,8 @@ export class World {
         const last = events[events.length - 1];
         return last === undefined ? none() : some(last);
       },
-      mark: (instrument) => this.markOf(instrument, this.currentPeriod),
+      mark: (instrument) =>
+        this.wanted(party, `mark.${String(instrument)}`, this.markOf(instrument, this.currentPeriod)),
       lastPublicAbout: (kind, subject) => {
         const e = this.journal.lastOf(kind, subject);
         // Observer A3, A4: public or not at all. `lastOwn` is the door to a party's own private
@@ -3696,6 +3772,12 @@ export class World {
           posted.length,
           this.currentPeriod,
         );
+        // 0h.4: asked, and posted nothing. `reach` counts what came out of a declaration; this is
+        // the party-by-party half — the book it was asked about and did not bid in, which is the
+        // first line of every diagnosis this project has ever written by hand.
+        if (posted.length === 0) {
+          this.wantsTally.postedNothing(party.id, String(m.id), this.currentPeriod);
+        }
         if (posted.length > 0 && decl.speculative === true) {
           withAView = true;
         }

@@ -923,7 +923,7 @@ export function derivativeLayer(
         why: 'it is one phase telling the next, within one period: the margin phase knows whether a call settled and the close-out phase needs it (0e\u2032.4). It read the period\u2019s own `margin.call` events back to recover it, which is the journal standing in for a store. The events stay as the public record of every call.',
       },
     ],
-    spec: 'Derivative Layer, Derivative contract',
+    spec: 'Derivative Layer, Derivative',
     // The estate is what a default resolves into (XI-8) and the money market is where a member finds
     // the cash a call asks for; credit events are what an underlying of that shape reads. And the
     // foundation seed, because a house is a PARTY: it has to be created after the world it clears in

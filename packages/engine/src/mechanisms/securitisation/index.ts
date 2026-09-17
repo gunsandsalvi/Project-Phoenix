@@ -1274,7 +1274,7 @@ function deals(): Family {
         if (taken === lost) continue;
         out.push({
           family: 'ownership',
-          spec: 'Securitisation C6',
+          spec: 'XI-11',
           owner: vehicle,
           size: taken - lost,
           unit: 'units of face',
@@ -1287,7 +1287,7 @@ function deals(): Family {
         if (taken <= 0) continue;
         out.push({
           family: 'ownership',
-          spec: 'Securitisation C6',
+          spec: 'XI-11',
           owner: vehicle,
           size: taken,
           unit: 'units of face',
@@ -1498,7 +1498,9 @@ export function securitisation(): SystemModule {
     ],
     // XI-8, item 9.1: no nouns. The deal is an agreement between the vehicle and its arranger, and
     // every other field the book carried — the layers, the money, the pool's face — is a read.
-    spec: 'Securitisation',
+    // 21.92: XI-11 is where this system lives in the spec. It cited a §Securitisation, and there
+    // is none: the citation a reader of a finding is handed was to a system that does not exist.
+    spec: 'XI-11',
     requires: ['banks'],
     instrumentKinds: [trancheKind],
     partyKinds: [vehicleKind],

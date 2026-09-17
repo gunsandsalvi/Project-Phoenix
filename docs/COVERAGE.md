@@ -179,7 +179,7 @@ measurement is taken there is nothing to name.
 | `Seed D4` | MET | packages/engine/test/world.test.ts (with nothing shocking it the world still moves: cells that opened identical hold different cash within eight periods, because each remembers at its own speed and they were not all hired) |
 | `Seed E1` | MISSING |  |
 | `Seed E2` | MET | packages/engine/src/seeds/foundation.ts (it states technology — the recipes, the lead times, the yields — and endowments of stock; what is produced, what is paid and who holds what afterwards are all outcomes) |
-| `Seed E3` | MISSING |  |
+| `Seed E3` | PARTIAL | packages/engine/src/world/wants.ts, packages/engine/src/world/world.ts `why(party, period)` (0h.4: the chain a change travels down can now be READ for one party in one period — what it was a side of, what was said about it, and the reads it asked for and did not get). The VERIFY itself is a comparison of two runs and is Part XII's (23) |
 
 ## Currency
 
