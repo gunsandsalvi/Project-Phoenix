@@ -996,7 +996,6 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     // 19.2: two bases of their own. A gain is not a wage and a company's profit is neither.
     gains: noCash(ccy),
     profits: noCash(ccy),
-    unclassified: noCash(ccy),
   };
   /**
    * C3, Money G3.a (20.2): ONE WALK OF ONE PERIOD'S SETTLED INSTRUCTIONS, and what it takes out of
@@ -1067,21 +1066,13 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
        * maturing bill's principal, on a fund redemption, on a probate distribution and on a loan
        * drawdown. Borrowing was income (A-46, A-37).
        *
-       * A receipt nobody classified is NOT TAXED and is counted, because taxing the unclassified at
-       * the wage rate is the defect itself. `unclassified` is published in the receipts event, so
-       * how much of this world's money movement still has no name is a number and not a silence.
+       * 0i.5: AND THERE IS NO UNCLASSIFIED ANY MORE. A receipt nobody classified used to be counted
+       * here and published as a base, so how much of this world's money movement had no name was a
+       * number rather than a silence — and the number was large, because 49 of the engine's 79 money
+       * legs named nothing. The field is REQUIRED now, so the count is zero by construction and a
+       * base that is always zero is a display-only number (Appendix B); it goes with the branch.
        */
       const receipt = leg.receipt;
-      if (receipt === undefined) {
-        if (cells.has(leg.to.holder) && leg.from.holder !== id) {
-          into.bases.unclassified = plus(
-            into.bases.unclassified,
-            heldAsMoney(leg.amount, ccy, 'what moved'),
-            'received and unclassified',
-          );
-        }
-        continue;
-      }
       switch (receipt.of) {
         case 'interest': {
           into.bases.interest = plus(
@@ -1336,7 +1327,6 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         consumption: bases.consumption.pieces,
         gains: bases.gains.pieces,
         profits: bases.profits.pieces,
-        unclassified: bases.unclassified.pieces,
       },
     },
     true,
@@ -1356,7 +1346,6 @@ interface Assessment {
     consumption: Cash;
     gains: Cash;
     profits: Cash;
-    unclassified: Cash;
   };
 }
 
@@ -1407,7 +1396,7 @@ function reckon(
     for (const r of ctx.ledger.inPeriod(period(p))) {
       if (r.outcome !== 'settled') continue;
       for (const leg of r.instruction.legs) {
-        if (!isMoneyLeg(leg) || leg.receipt?.of !== 'tax' || leg.ccy !== ccy) continue;
+        if (!isMoneyLeg(leg) || leg.receipt.of !== 'tax' || leg.ccy !== ccy) continue;
         if (leg.to.holder === id) addTo(paid, leg.from.holder, Number(leg.amount));
         // A refund is the same levy going the other way, so it comes OFF what this payer has paid.
         else if (leg.from.holder === id) {
@@ -1483,7 +1472,6 @@ function reckon(
         consumption: owed.bases.consumption.pieces,
         gains: owed.bases.gains.pieces,
         profits: owed.bases.profits.pieces,
-        unclassified: owed.bases.unclassified.pieces,
       },
     },
     true,

@@ -166,6 +166,8 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
       ctx.registry.instrumentKind(i.kind).pricing === 'money'
         ? {
             kind: 'money',
+            // 0i.5: the estate takes over the account of the party that ceased.
+            receipt: { of: 'transfer' },
             from: { holder: dead, issuer: i.issuer.some ? i.issuer.value : dead },
             to: { holder: id, issuer: i.issuer.some ? i.issuer.value : dead },
             ccy: i.ccy,
@@ -398,6 +400,8 @@ function repay(
     },
     {
       kind: 'money',
+      // 0i.5: the estate pays a claim at what it promised.
+      receipt: { of: 'principal' },
       from: { holder: estate, issuer: issuerOf(ctx.instruments.get(account)) },
       to: ctx.accountOf(claim.holder, ccy),
       ccy,

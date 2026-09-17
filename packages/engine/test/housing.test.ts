@@ -138,7 +138,7 @@ describe('a tenancy is a row with a term, and the rent is paid both legs (A2, A3
       expect(w.parties.get(row.creditor).kind).toBe(LANDLORD);
       // Law 5: every period after the signing, one instruction moved the rent, tenant to landlord, as rent.
       for (let p = row.since + 1; p <= periods; p += 1) {
-        const paid = w.ledger.inPeriod(p as never).filter((r) => r.instruction.legs.some((l) => isMoneyLeg(l) && l.receipt?.of === 'rent' && l.from.holder === row.debtor && l.to.holder === row.creditor));
+        const paid = w.ledger.inPeriod(p as never).filter((r) => r.instruction.legs.some((l) => isMoneyLeg(l) && l.receipt.of === 'rent' && l.from.holder === row.debtor && l.to.holder === row.creditor));
         expect(paid.length).toBeGreaterThan(0);
         for (const r of paid) {
           const leg = r.instruction.legs.find(isMoneyLeg);
@@ -221,7 +221,7 @@ describe('a landlord ends a tenancy on its own view of the tenant (A3, Banks Len
     expect(landlord).toBeDefined();
     if (tenant === undefined || landlord === undefined) return;
     // Expectations A2: the landlord formed a view of THIS tenant from the rents that came and did not.
-    const failed = w.ledger.failedFor(tenant, 1 as never).filter((f) => f.instruction.legs.some((l) => isMoneyLeg(l) && l.receipt?.of === 'rent'));
+    const failed = w.ledger.failedFor(tenant, 1 as never).filter((f) => f.instruction.legs.some((l) => isMoneyLeg(l) && l.receipt.of === 'rent'));
     expect(failed.length).toBeGreaterThan(0);
     const owner = w.parties.resolve(landlord as never);
     const view = w.participantView(owner.id);

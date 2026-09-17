@@ -296,6 +296,8 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
         legs: [
           {
             kind: 'money',
+            // 0i.5: Ratings A5: the fee the issuer pays the assessor it asked.
+            receipt: { of: 'fee' },
             from: ctx.accountOf(who, ccy),
             to: ctx.accountOf(me, ccy),
             ccy,

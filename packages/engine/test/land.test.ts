@@ -191,7 +191,7 @@ describe('15.1: the authority releases what the planning policy says, at its own
             const ground = ctx.settle({
               legs: [
                 { kind: 'asset', from: authority.id, to: a.id, instrument: land, qty: asQty(100), pricePerUnit: some(asPerPiece(1, 'a piece a hectare')), accruedPerUnit: none() },
-                { kind: 'money', from: ctx.accountOf(a.id, ccy), to: ctx.accountOf(authority.id, ccy), ccy, amount: asQty(100) },
+                { kind: 'money', receipt: { of: 'disposal' }, from: ctx.accountOf(a.id, ccy), to: ctx.accountOf(authority.id, ccy), ccy, amount: asQty(100) },
               ],
               cause: 'trade',
               reason: `${String(a.id)} buys ground by hand`,
@@ -202,7 +202,7 @@ describe('15.1: the authority releases what the planning policy says, at its own
               const r = ctx.settle({
                 legs: [
                   { kind: 'asset', from: maker.id, to: f.id, instrument: good, qty: asQty(1), pricePerUnit: some(asPerPiece(1, 'a piece')), accruedPerUnit: none() },
-                  { kind: 'money', from: ctx.accountOf(f.id, ccy), to: ctx.accountOf(maker.id, ccy), ccy, amount: asQty(1) },
+                  { kind: 'money', receipt: { of: 'disposal' }, from: ctx.accountOf(f.id, ccy), to: ctx.accountOf(maker.id, ccy), ccy, amount: asQty(1) },
                 ],
                 cause: 'trade',
                 reason: `${String(f.id)} buys a machine by hand`,

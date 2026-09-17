@@ -368,6 +368,8 @@ function handToProbate(
     cash.push({ ccy, amount });
     legs.push({
       kind: 'money',
+      // 0i.5: what the estate hands on.
+      receipt: { of: 'transfer' },
       from: ctx.accountOf(from, ccy),
       to: ctx.accountOf(to, ccy),
       ccy,

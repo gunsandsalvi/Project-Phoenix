@@ -3162,6 +3162,8 @@ export class World {
           legs: [
             {
               kind: 'money',
+              // 0i.5: the holder moves its balance to another bank.
+              receipt: { of: 'transfer' },
               from: { holder: party, issuer: p.bank },
               to: { holder: party, issuer: to },
               ccy,

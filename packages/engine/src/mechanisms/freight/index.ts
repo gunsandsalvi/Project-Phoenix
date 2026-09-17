@@ -500,6 +500,8 @@ function cargo(
         },
         {
           kind: 'money',
+          // 0i.5: Freight: what the shipper pays the carrier for the carriage.
+          receipt: { of: 'fee' },
           from: ctx.accountOf(shipper, ccy),
           to: ctx.accountOf(carrier, ccy),
           ccy,

@@ -398,7 +398,7 @@ describe('the period loop', () => {
     // hired and paid, and households bought the finished good from a named seller.
     expect(w.journal.ofKind('firms.started').length).toBeGreaterThan(0);
     expect(w.journal.ofKind('labour.hire').length).toBeGreaterThan(0);
-    expect(w.ledger.all().some((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'wage'))).toBe(true);
+    expect(w.ledger.all().some((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt.of === 'wage'))).toBe(true);
     // A GOOD, not any asset: this counted sovereign paper until item 4a, so it passed while the
     // households were buying no food at all. What it is for is the last link of the chain.
     const cells = new Set(w.parties.ofKind(HOUSEHOLD).map((p) => p.id));
@@ -778,6 +778,7 @@ describe('settlement contracts', () => {
           legs: [
             {
               kind: 'money',
+              receipt: { of: 'wage' },
               from: { holder: payer, issuer: BANK_A },
               to: { holder: cell.id, issuer: BANK_B },
               ccy: USD,
@@ -805,6 +806,7 @@ describe('settlement contracts', () => {
           legs: [
             {
               kind: 'money',
+              receipt: { of: 'transfer' },
               from: { holder: payer, issuer: BANK_A },
               to: { holder: payee, issuer: BANK_A },
               ccy: USD,

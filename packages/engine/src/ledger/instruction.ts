@@ -203,8 +203,17 @@ export interface MoneyLeg {
   readonly kind: 'money';
   readonly from: AccountRef;
   readonly to: AccountRef;
-  /** What this money IS to the party receiving it (`Receipt`). Absent is unclassified, never income. */
-  readonly receipt?: Receipt;
+  /**
+   * 0i.5: WHAT THIS MONEY IS to the party receiving it, and every money leg says it.
+   *
+   * It was optional, and *"absent is unclassified, never income"* — which is optional-means-unset
+   * on the tax base, and 49 of this engine's 79 money legs took it. 21.105 is what that costs: a
+   * fund's payout leg said nothing, so every payout ever made reached a household as unclassified
+   * and was taxed as nothing, and the defect was found by accident rather than by anything failing.
+   * Missing is `Missing` (Appendix A), for a fact as for a number: a writer that cannot say what its
+   * money is has not finished writing the leg.
+   */
+  readonly receipt: Receipt;
   readonly ccy: CurrencyCode;
   /** Law 8: total amount that moves, as a count of the money's own smallest piece. */
   readonly amount: Qty;

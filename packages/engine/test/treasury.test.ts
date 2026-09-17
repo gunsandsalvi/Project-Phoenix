@@ -102,7 +102,7 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
     for (const r of w.ledger.inPeriod(w.period)) {
       if (r.outcome !== 'settled') continue;
       for (const leg of r.instruction.legs) {
-        if (!isMoneyLeg(leg) || leg.receipt?.of !== 'transfer') continue;
+        if (!isMoneyLeg(leg) || leg.receipt.of !== 'transfer') continue;
         if (leg.from.holder === TREASURY_US && leg.amount > 0) paid.add(String(leg.to.holder));
       }
     }

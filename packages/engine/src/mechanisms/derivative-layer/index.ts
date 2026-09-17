@@ -407,6 +407,8 @@ function payLegs(ctx: MechanismContext): void {
         legs: [
           {
             kind: 'money',
+            // 0i.5: CDS A2: the contract's own periodic leg.
+            receipt: { of: 'premium' },
             from: ctx.accountOf(due.from, due.ccy),
             to: ctx.accountOf(due.to, due.ccy),
             ccy: due.ccy,
@@ -568,6 +570,8 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   if (owed > 0 && living) {
     legs.push({
       kind: 'money',
+      // 0i.5: D11: what the contract was carrying, paid out as it ends.
+      receipt: { of: 'margin' },
       from: ctx.accountOf(value.pieces > 0 ? c.b : c.a, c.ccy),
       to: ctx.accountOf(value.pieces > 0 ? c.a : c.b, c.ccy),
       ccy: c.ccy,

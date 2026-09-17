@@ -245,6 +245,8 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   if (paid <= 0) return;
   const leg: Leg = {
     kind: 'money',
+    // 0i.5: Central Bank E3: what it earned, remitted to the treasury that owns it.
+    receipt: { of: 'transfer' },
     from: { holder: cb, issuer: cb },
     to: ctx.accountOf(to.id, ccy),
     ccy,

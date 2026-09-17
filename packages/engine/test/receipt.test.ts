@@ -9,14 +9,27 @@ function receipts(w: ReturnType<typeof rigWorld>) {
 
 describe('a receipt says what money IS to whoever gets it (Treasury C1)', () => {
   it('the vocabulary is closed and the ledger owns it', () => {
+    // EIGHTEEN, and the count is honest in both directions: nine when this was written, then `tax`,
+    // `claim`, `pension` and `contribution` as the sectors that move that money were built, and
+    // 0i.5's five — `fee`, `margin`, `premium`, `manufactured`, `principal` — which are what 49 of
+    // this engine's 79 money legs turned out to be once the field stopped being optional.
     expect([...RECEIPT_KINDS].sort()).toEqual([
       'borrowing',
+      'claim',
+      'contribution',
       'disposal',
       'dividend',
+      'fee',
       'interest',
+      'manufactured',
+      'margin',
+      'pension',
+      'premium',
+      'principal',
       'rent',
       'returnOfCapital',
       'sale',
+      'tax',
       'transfer',
       'wage',
     ]);
@@ -30,9 +43,12 @@ describe('a receipt says what money IS to whoever gets it (Treasury C1)', () => 
     const last = said[said.length - 1];
     if (last === undefined) return;
     const bases = last.data['bases'] as Record<string, number>;
-    // The gap this item exists to close, and it is closed in this world: nothing arrives at a
-    // household without the payer saying what it is.
-    expect(bases['unclassified']).toBe(0);
+    // The gap this item exists to close. It used to be closed by a NUMBER — how much reached a
+    // household with no name on it, published so the silence was at least counted — and 0i.5 closed
+    // it by construction instead: `MoneyLeg.receipt` is required, so there is no unnamed money to
+    // count and no base to publish. The assertion is that the base is GONE, not that it is zero,
+    // because a figure that can only ever be zero is a display-only number (Appendix B).
+    expect('unclassified' in bases).toBe(false);
     expect(bases['interest']).toBeGreaterThan(0);
   });
 
@@ -66,7 +82,7 @@ describe('a receipt says what money IS to whoever gets it (Treasury C1)', () => 
     expect(coupons.length).toBeGreaterThan(0);
     const legs = coupons.flatMap((r) => r.instruction.legs).filter((l) => l.kind === 'money');
     expect(legs.length).toBeGreaterThan(0);
-    for (const l of legs) expect(l.receipt?.of).toBe('interest');
+    for (const l of legs) expect(l.receipt.of).toBe('interest');
   });
 });
 
@@ -86,9 +102,7 @@ describe('selling what you MADE is not selling what you HELD (Treasury C1, Regis
       if (r.outcome !== 'settled') continue;
       realised += r.realised.length;
       for (const l of r.instruction.legs) {
-        if (l.kind === 'money' && l.receipt !== undefined) {
-          kinds.set(l.receipt.of, (kinds.get(l.receipt.of) ?? 0) + 1);
-        }
+        if (l.kind === 'money') kinds.set(l.receipt.of, (kinds.get(l.receipt.of) ?? 0) + 1);
       }
     }
     // Every asset-market sale in this world is a firm selling its own output.
@@ -105,7 +119,7 @@ describe('selling what you MADE is not selling what you HELD (Treasury C1, Regis
     for (const r of w.ledger.all()) {
       if (r.outcome !== 'settled') continue;
       for (const l of r.instruction.legs) {
-        if (l.kind === 'money' && l.receipt !== undefined) kinds.add(l.receipt.of);
+        if (l.kind === 'money') kinds.add(l.receipt.of);
       }
     }
     // Interest, transfers, returns of capital and firms' own sales — and NOTHING ELSE. No wage is

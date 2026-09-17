@@ -197,6 +197,7 @@ function overspendsItsLimit(at = 2): SystemModule {
           const held = ctx.register.quantity(BORROWER, moneyInstrumentId(bank, USD));
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'transfer' },
             from: { holder: BORROWER, issuer: bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
@@ -253,6 +254,7 @@ function overspends(times: number, at = 2): SystemModule {
           );
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'transfer' },
             from: { holder: BORROWER, issuer: ctx.parties.get(BORROWER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
@@ -1139,6 +1141,7 @@ describe('where a loan may be owed (Banks Lending D4.a, XI-11)', () => {
                   },
                   {
                     kind: 'money',
+                    receipt: { of: 'disposal' },
                     from: ctx.accountOf(buyer.id, row.ccy),
                     to: ctx.accountOf(owed.value, row.ccy),
                     ccy: row.ccy,

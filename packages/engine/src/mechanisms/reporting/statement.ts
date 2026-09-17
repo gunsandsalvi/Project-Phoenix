@@ -96,7 +96,6 @@ function lineOf(party: PartyId, legs: readonly Leg[], cause: string): IncomeLine
   let destroyedGoods = false;
   for (const leg of legs) {
     if (isMoneyLeg(leg)) {
-      if (leg.receipt === undefined) continue;
       if (leg.to.holder === party && received === undefined) received = leg.receipt;
       if (leg.from.holder === party && paid === undefined) paid = leg.receipt;
     } else if (isCreateLeg(leg) && leg.party === party) created = true;
@@ -319,8 +318,8 @@ export function prepareStatement(
             ? { counterparty, instrument, cause: ins.cause, amount: moved, legs: 1 }
             : { ...at, amount: at.amount + moved, legs: at.legs + 1 },
         );
-        if (outgoing && leg.receipt?.of === 'dividend') dividendsPaid += own;
-        if (incoming && leg.receipt?.of === 'sale') {
+        if (outgoing && leg.receipt.of === 'dividend') dividendsPaid += own;
+        if (incoming && leg.receipt.of === 'sale') {
           const customer = String(leg.from.holder);
           const hadCustomer = byCustomer.get(customer);
           byCustomer.set(customer, hadCustomer === undefined ? own : hadCustomer + own);

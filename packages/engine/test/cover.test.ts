@@ -61,7 +61,7 @@ describe('who buys cover, and at what (14.2)', () => {
     for (const e of cleared) {
       // Law 5 (14.5): the premium is a money leg in a numbered instruction, and the row — the
       // policy — opens in the same pass, between the buyer and the insurer that filled it.
-      const one = w.ledger.inPeriod(e.period).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'sale' && r.instruction.reason.includes('premium')));
+      const one = w.ledger.inPeriod(e.period).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt.of === 'sale' && r.instruction.reason.includes('premium')));
       expect(one).toBeDefined();
     }
     for (const a of w.agreements.ofKind(POLICY_ROW)) {

@@ -674,6 +674,8 @@ function deliver(ctx: MechanismContext): void {
       });
       legs.push({
         kind: 'money',
+        // 0i.5: delivery: the short's proceeds of the lot it hands over.
+        receipt: { of: 'disposal' },
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,

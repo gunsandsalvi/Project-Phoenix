@@ -514,6 +514,8 @@ function payTheBank(
     legs: [
       {
         kind: 'money',
+        // 0i.5: what the bank is paid for running the offer.
+        receipt: { of: 'fee' },
         from: ctx.accountOf(bid.buyer, bid.ccy),
         to: ctx.accountOf(ran.bank, bid.ccy),
         ccy: bid.ccy,
@@ -626,6 +628,8 @@ function settleTender(
           },
           {
             kind: 'money',
+            // 0i.5: B3: the holder's proceeds of the shares it tendered.
+            receipt: { of: 'disposal' },
             from: ctx.accountOf(bid.buyer, bid.ccy),
             to: ctx.accountOf(f.party, bid.ccy),
             ccy: bid.ccy,
@@ -759,6 +763,8 @@ function drawnLegs(
     },
     {
       kind: 'money',
+      // 0i.5: B2: the seller's proceeds, paid out of the facility.
+      receipt: { of: 'disposal' },
       from: { holder: facility.bank, issuer: facility.bank },
       to: ctx.accountOf(seller, bid.ccy),
       ccy: bid.ccy,
@@ -907,6 +913,8 @@ function handOver(ctx: MechanismContext, buyer: PartyId, target: PartyId): void 
     if (cash <= 0) continue;
     legs.push({
       kind: 'money',
+      // 0i.5: the target hands over what it holds on being combined.
+      receipt: { of: 'transfer' },
       from: ctx.accountOf(target, ccy),
       to: ctx.accountOf(buyer, ccy),
       ccy,

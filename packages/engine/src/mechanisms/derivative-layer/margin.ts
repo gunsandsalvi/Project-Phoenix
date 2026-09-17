@@ -142,6 +142,8 @@ export function moveMargin(
     },
     {
       kind: 'money',
+      // 0i.5: Derivative Layer D2: variation margin, the poster's money throughout.
+      receipt: { of: 'margin' },
       from: ctx.accountOf(up ? poster : holder, ccy),
       to: ctx.accountOf(up ? holder : poster, ccy),
       ccy,

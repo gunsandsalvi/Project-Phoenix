@@ -87,7 +87,7 @@ const build: SystemModule = {
           ctx.settle({
             legs: [
               { kind: 'asset', from: issuer.id, to: holder.id, instrument: id, qty: 500_000 as never, pricePerUnit: some(asPerPiece(1, 'par')), accruedPerUnit: none() },
-              { kind: 'money', from: ctx.accountOf(holder.id, ccy), to: ctx.accountOf(issuer.id, ccy), ccy, amount: 500_000 as never },
+              { kind: 'money', receipt: { of: 'borrowing' }, from: ctx.accountOf(holder.id, ccy), to: ctx.accountOf(issuer.id, ccy), ccy, amount: 500_000 as never },
             ],
             cause: 'issuance',
             reason: `${String(holder.id)} buys paper of ${String(issuer.id)}`,

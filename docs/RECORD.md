@@ -14989,3 +14989,48 @@ able to say what those 49 are, and four of the five categories did not exist.
 
 **Next, and named:** 0i.5 proper — `MoneyLeg.receipt` becomes required and the 49 sites each say
 what their money is. The compiler produces that worklist the moment the `?` comes off.
+
+---
+
+## 0i.5 — Every money leg says what its money is
+
+**What.** `MoneyLeg.receipt` is REQUIRED. All 49 money legs in the engine that named nothing now
+name what their money is, and so do the 26 in the tests. Nothing in this world can move money
+without saying what it is any more, and the compiler is what says so.
+
+**Why.** The field was optional and its docstring said *"Absent is unclassified, never income"* —
+optional-means-unset, on the tax base. The engine has forbidden `?? 0` for numbers since item 0; a
+fact was not covered by the rule. **49 of 79 money legs took the absence**, and 21.105 is what one
+of them cost: a fund's payout leg said nothing, so every payout ever made reached a household as
+`unclassified` and was **taxed as nothing**. It was found by accident. The other 48 were never
+looked at.
+
+**What the 49 turned out to be.** A manager's fee and a rating fee; margin posted and returned;
+deposit-insurance and protection premiums; a manufactured payment on borrowed stock; principal
+repaid on paper, on a line and on a deposit; a seller's proceeds in a takeover, a factoring, a
+securitisation and a delivery; a subscription and a redemption; the carriage a shipper pays; rent
+for storage space; a central bank's remittance. Each one is a sentence somebody had to write, and
+none of them was a `transfer` in disguise.
+
+**Deleted with the absence.** `bases.unclassified` in the treasury's walk — the figure that
+published how much of this world's money had no name — because it is zero by construction now and a
+figure that can only be zero is a display-only number (Appendix B). The `receipt === undefined`
+branch that fed it. `leg.receipt?.of ?? 'unclassified'` in settlement, so an arrear always has a
+class. Eleven defensive `receipt?.` chains and four dead absence branches across the engine and the
+suite. `'unclassified'` survives in `PaymentClass` with the only meaning it has left: a claim that
+is not an arrear at all.
+
+**Measured.** No regression: `treasury`, `reporting`, `estate`, `loans` and `assessment` are 13 red
+/ 82 passed before and after, identical. `receipt.test.ts` goes **5 red → 3**, and the three that
+remain were red at `d7430ff` too — its vocabulary census listed nine receipts when the ledger had
+thirteen, and its world census predates several sectors. `check:opens`, lint, typecheck,
+`check:spec` (581) and `check:forbids` green.
+
+**What did NOT change, and it is worth saying.** The tax collected is the same. Every leg that was
+already classified still classifies the same way, and the 49 that were not are, in this scale model,
+between parties whose flows the treasury does not tax. The gain is not a bigger number today — it is
+that the 50th leg cannot be written silently, and 21.105's shape cannot happen again.
+
+**Open, and named:** three stale censuses in `receipt.test.ts` (21.111); a `disposal` on a money-only
+leg promises a basis from `Settled.realised` that only an asset debit produces, which is why an FX
+spot's quote leg is the one place that reads oddly (21.112).

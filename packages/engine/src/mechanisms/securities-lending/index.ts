@@ -509,6 +509,8 @@ export function manufacture(ctx: MechanismContext): void {
       legs: [
         {
           kind: 'money',
+          // 0i.5: Securities Lending A3: the coupon passed on, so the economics stay with the lender.
+          receipt: { of: 'manufactured' },
           from: ctx.accountOf(loan.borrower, loan.ccy),
           to: ctx.accountOf(loan.lender, loan.ccy),
           ccy: loan.ccy,
@@ -597,6 +599,8 @@ export function charge(ctx: MechanismContext): void {
       legs: [
         {
           kind: 'money',
+          // 0i.5: Securities Lending: what the borrower pays to borrow the stock.
+          receipt: { of: 'fee' },
           from: ctx.accountOf(loan.borrower, loan.ccy),
           to: ctx.accountOf(loan.lender, loan.ccy),
           ccy: loan.ccy,
@@ -673,6 +677,8 @@ export function remark(ctx: MechanismContext): void {
       legs: [
         {
           kind: 'money',
+          // 0i.5: collateral moving to keep the loan covered.
+          receipt: { of: 'margin' },
           from: ctx.accountOf(payer, loan.ccy),
           to: ctx.accountOf(payee, loan.ccy),
           ccy: loan.ccy,
@@ -804,6 +810,8 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
     if (!failed && loan.margined.pieces > 0) {
       legs.push({
         kind: 'money',
+        // 0i.5: the collateral, returned when the loan ends.
+        receipt: { of: 'margin' },
         from: ctx.accountOf(loan.lender, loan.ccy),
         to: ctx.accountOf(loan.borrower, loan.ccy),
         ccy: loan.ccy,

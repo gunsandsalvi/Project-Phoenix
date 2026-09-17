@@ -783,6 +783,8 @@ function settleDeal(
     });
     legs.push({
       kind: 'money',
+      // 0i.5: C4: what the investor pays the arranger for the notes.
+      receipt: { of: 'disposal' },
       from: ctx.accountOf(b.party, d.ccy),
       to: ctx.accountOf(d.arranger, d.ccy),
       ccy: d.ccy,
@@ -934,7 +936,7 @@ function interestCollected(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode)
     for (const leg of r.instruction.legs) {
       if (!isMoneyLeg(leg) || leg.ccy !== ccy) continue;
       if (leg.to.holder !== account.holder || leg.to.issuer !== account.issuer) continue;
-      if (leg.receipt?.of !== 'interest') continue;
+      if (leg.receipt.of !== 'interest') continue;
       terms.push(leg.amount);
     }
   }
@@ -1175,6 +1177,8 @@ function payTranche(
         },
         {
           kind: 'money',
+          // 0i.5: the waterfall pays the note it is due on.
+          receipt: { of: 'interest' },
           from: ctx.accountOf(deal.vehicle, ccy),
           to: ctx.accountOf(holder, ccy),
           ccy: ccy,

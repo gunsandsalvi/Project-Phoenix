@@ -505,7 +505,7 @@ export function callSponsors(ctx: MechanismContext): void {
     for (const r of ctx.ledger.inPeriod(ctx.period)) {
       if (r.outcome !== 'settled') continue;
       for (const leg of r.instruction.legs) {
-        if (!isMoneyLeg(leg) || leg.receipt?.of !== 'contribution') continue;
+        if (!isMoneyLeg(leg) || leg.receipt.of !== 'contribution') continue;
         if (leg.to.holder !== account.holder || leg.ccy !== ccy) continue;
         const payer = ctx.parties.resolve(leg.from.holder).id;
         if (payer === fund.id) continue;

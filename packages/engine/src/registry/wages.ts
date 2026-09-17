@@ -224,7 +224,7 @@ export function payrollSettledIn(
   for (const r of reads.ledger.inPeriod(at)) {
     if (r.outcome !== 'settled') continue;
     for (const l of r.instruction.legs) {
-      if (l.kind !== 'money' || l.receipt?.of !== 'wage' || l.from.holder !== who) continue;
+      if (l.kind !== 'money' || l.receipt.of !== 'wage' || l.from.holder !== who) continue;
       paid = plus(paid, heldAsMoney(l.amount, l.ccy, 'a wage it paid'), 'wages paid');
     }
   }

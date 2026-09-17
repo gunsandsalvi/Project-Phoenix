@@ -263,6 +263,8 @@ export function callCapital(
       legs: [
         {
           kind: 'money',
+          // 0i.5: a capital call drawn: money into the pool, income to nobody.
+          receipt: { of: 'contribution' },
           from: ctx.accountOf(investor.id, ccy),
           to: ctx.accountOf(pool, ccy),
           ccy,

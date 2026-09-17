@@ -290,7 +290,7 @@ function observations(
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     const failedPayer = r.outcome === 'failed' ? r.reason.party : undefined;
     for (const leg of r.instruction.legs) {
-      if (!isMoneyLeg(leg) || leg.receipt === undefined || !paysWhatWasOwed(leg.receipt)) continue;
+      if (!isMoneyLeg(leg) || !paysWhatWasOwed(leg.receipt)) continue;
       if (r.outcome === 'failed' && failedPayer !== leg.from.holder) continue;
       const key = `${leg.to.holder}|${about({ on: 'credit', party: leg.from.holder })}`;
       const seen = promised.get(key) ?? { due: 0, arrived: 0 };
@@ -357,7 +357,7 @@ function observations(
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
     for (const leg of r.instruction.legs) {
-      if (isMoneyLeg(leg) && leg.receipt?.of === 'claim')
+      if (isMoneyLeg(leg) && leg.receipt.of === 'claim')
         addTo(claimsPaid, leg.from.holder, leg.amount);
     }
   }

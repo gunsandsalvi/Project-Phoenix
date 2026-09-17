@@ -232,6 +232,8 @@ function lease(
           legs: [
             {
               kind: 'money',
+              // 0i.5: it rents space: what a tenant pays for the room.
+              receipt: { of: 'rent' },
               from: ctx.accountOf(taker.party, ccy),
               to: ctx.accountOf(letter.party, ccy),
               ccy,

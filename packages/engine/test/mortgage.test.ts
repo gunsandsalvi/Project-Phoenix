@@ -126,7 +126,7 @@ const lend: SystemModule = {
           ctx.settle({
             legs: [
               { kind: 'asset', from: cell.id, to: bank, instrument: id, qty: principal, pricePerUnit: some(asPerPiece(1, 'par')), accruedPerUnit: none() },
-              { kind: 'money', from: { holder: bank, issuer: bank }, to: ctx.accountOf(cell.id, ccy), ccy, amount: principal },
+              { kind: 'money', receipt: { of: 'borrowing' }, from: { holder: bank, issuer: bank }, to: ctx.accountOf(cell.id, ccy), ccy, amount: principal },
             ],
             cause: 'issuance',
             reason: `${String(bank)} lends ${String(cell.id)} against its roofs`,

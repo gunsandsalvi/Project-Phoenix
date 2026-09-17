@@ -532,6 +532,8 @@ function factorsReceivables(ctx: MechanismContext): void {
         },
         {
           kind: 'money',
+          // 0i.5: the seller's proceeds of the invoice it sold the bank.
+          receipt: { of: 'disposal' },
           from: ctx.accountOf(best.bank, i.ccy),
           to: ctx.accountOf(seller, i.ccy),
           ccy: i.ccy,

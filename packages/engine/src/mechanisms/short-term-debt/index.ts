@@ -730,6 +730,8 @@ export function chargeBackstops(ctx: MechanismContext): void {
       legs: [
         {
           kind: 'money',
+          // 0i.5: the paper matures and the debtor repays it.
+          receipt: { of: 'principal' },
           from: ctx.accountOf(row.debtor, row.ccy),
           to: ctx.accountOf(row.creditor, row.ccy),
           ccy: row.ccy,
@@ -816,6 +818,8 @@ export function drawBackstops(ctx: MechanismContext): void {
         },
         {
           kind: 'money',
+          // 0i.5: the creditor buys the paper: money the debtor must repay.
+          receipt: { of: 'borrowing' },
           from: { holder: row.creditor, issuer: row.creditor },
           to: ctx.accountOf(row.debtor, row.ccy),
           ccy: row.ccy,

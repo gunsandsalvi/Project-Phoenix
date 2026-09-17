@@ -696,6 +696,8 @@ function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
           },
           {
             kind: 'money',
+            // 0i.5: the client repays what it drew.
+            receipt: { of: 'principal' },
             from: ctx.accountOf(client, ccy),
             to: ctx.accountOf(broker, ccy),
             ccy,
@@ -835,6 +837,8 @@ function write(
     },
     {
       kind: 'money',
+      // 0i.5: the bank issues the loan into the borrower's account.
+      receipt: { of: 'borrowing' },
       from: { holder: bank, issuer: bank },
       // B1, B1.b: INTO THE BORROWER'S OWN ACCOUNT, which is at the borrower's own bank and not at
       // whichever bank won the business. When they are the same bank the money leg has one issuer
@@ -1169,6 +1173,8 @@ function draw(
     },
     {
       kind: 'money',
+      // 0i.5: the borrower draws on its line: money it must repay.
+      receipt: { of: 'borrowing' },
       from: { holder: lender, issuer: lender },
       // B1.b, as above: the drawing lands in the borrower's own account, wherever that is.
       to: ctx.accountOf(borrower, ccy),

@@ -25,6 +25,9 @@ export const ARREAR = instrumentKindId('arrear');
 /**
  * The class of payment it was: THE RECEIPT THE LEG CARRIED, derived and never restated (Law 4).
  *
+ * `'unclassified'` is no longer a leg that said nothing (0i.5 made the receipt required); it is the
+ * answer for a claim that is not an arrear and therefore has no payment class.
+ *
  * 0i.5: this was a hand-written copy of `Receipt['of']` with `'unclassified'` on the end, and the
  * two could drift without anything failing — a receipt added here and not there ranked last in
  * every estate in the world, silently, because `seniorityOf` answered `CLASS_ORDER.length` for a
@@ -79,7 +82,8 @@ export const CLASS_ORDER: readonly (readonly PaymentClass[])[] = [
   // (Securities Lending A3) and cannot rank behind what it replaces.
   ['interest', 'borrowing', 'principal', 'manufactured'],
   // 0i.5: a FEE and a PREMIUM are owed for a service rendered, which is where goods and services
-  // rank; an unclassified one ranks with them until 0i.5 leaves none to rank.
+  // rank. `unclassified` ranks with them too, and since 0i.5 no ARREAR can be one — every money leg
+  // says what it is — so what is left of it is the answer for a claim that is not an arrear at all.
   ['disposal', 'sale', 'unclassified', 'fee', 'premium'],
   ['dividend', 'returnOfCapital'],
 ];

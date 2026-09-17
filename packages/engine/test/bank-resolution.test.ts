@@ -99,6 +99,7 @@ function penalty(at: number, share: number): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: BANK_A, issuer: ctx.parties.get(BANK_A).bank },
                 to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
                 ccy: USD,

@@ -169,6 +169,8 @@ export function moveFund(
     },
     {
       kind: 'money',
+      // 0i.5: Derivative Layer D2: the mark, turned into cash, between member and house.
+      receipt: { of: 'margin' },
       from: ctx.accountOf(up ? member : house, ccy),
       to: ctx.accountOf(up ? house : member, ccy),
       ccy,

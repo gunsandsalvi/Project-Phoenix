@@ -330,7 +330,9 @@ export class Settlement {
       const terms: ArrearTerms = {
         kind: ARREAR,
         failed: failed.instruction.id,
-        class: leg.receipt?.of ?? 'unclassified',
+        // 0i.5: every money leg says what it is, so an arrear always has a class and there is
+        // no `unclassified` tier for it to fall into.
+        class: leg.receipt.of,
         payer,
         payee: leg.to.holder,
       };
@@ -1500,7 +1502,7 @@ export class Settlement {
      * only supplies the number the register alone holds.
      */
     for (const leg of ins.legs) {
-      if (leg.kind !== 'money' || leg.receipt?.of !== 'disposal') continue;
+      if (leg.kind !== 'money' || leg.receipt.of !== 'disposal') continue;
       const seller = leg.to.holder;
       for (const asset of ins.legs) {
         if (asset.kind !== 'asset' || asset.from !== seller) continue;

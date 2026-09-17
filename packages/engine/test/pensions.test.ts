@@ -23,7 +23,7 @@ const contributionsTo = (w: ReturnType<typeof rigWorld>, fund: string, upTo: num
     for (const r of w.ledger.inPeriod(p as never)) {
       if (r.outcome !== 'settled') continue;
       for (const l of r.instruction.legs) {
-        if (l.kind === 'money' && l.receipt?.of === 'contribution' && String(l.to.holder) === fund) total += l.amount;
+        if (l.kind === 'money' && l.receipt.of === 'contribution' && String(l.to.holder) === fund) total += l.amount;
       }
     }
   }
@@ -42,8 +42,8 @@ describe('the payroll carries the contributions (14.6)', () => {
       for (const r of w.ledger.inPeriod(p as never)) {
         if (r.outcome !== 'settled') continue;
         const legs = r.instruction.legs.filter(isMoneyLeg);
-        const wage = legs.find((l) => l.receipt?.of === 'wage');
-        const into = legs.filter((l) => l.receipt?.of === 'contribution');
+        const wage = legs.find((l) => l.receipt.of === 'wage');
+        const into = legs.filter((l) => l.receipt.of === 'contribution');
         if (wage === undefined || into.length === 0) continue;
         seen += 1;
         // Law 5: one instruction — the wage net of the member's share, and both shares to the fund
@@ -87,7 +87,7 @@ describe('the payroll carries the contributions (14.6)', () => {
           if (ownMove) continue;
           for (const l of money) {
             if (l.to.holder === fund.id) {
-              expect(l.receipt?.of).toBe('contribution');
+              expect(l.receipt.of).toBe('contribution');
               inflow += l.amount;
             }
             if (l.from.holder === fund.id) outflow += l.amount;

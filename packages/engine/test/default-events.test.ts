@@ -51,6 +51,7 @@ function drain(): SystemModule {
           if (cash <= 0) return;
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'transfer' },
             from: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
             to: { holder: SINK, issuer: ctx.parties.get(SINK).bank },
             ccy: USD,

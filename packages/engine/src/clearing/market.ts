@@ -894,6 +894,8 @@ function contractTrade(
   if (premium > 0) {
     const pay = (from: PartyId, to: PartyId): Leg => ({
       kind: 'money',
+      // 0i.5: CDS A2: what the buyer of the contract pays for it at inception.
+      receipt: { of: 'premium' },
       from: deps.accountOf(from, m.ccy),
       to: deps.accountOf(to, m.ccy),
       ccy: m.ccy,
@@ -941,6 +943,8 @@ function fxTrade(
   const legs: Leg[] = [
     {
       kind: 'money',
+      // 0i.5: Spot FX A1: the base is what the buyer BOUGHT, not a receipt of anything.
+      receipt: { of: 'transfer' },
       from: deps.accountOf(t.seller, pair.base),
       to: deps.accountOf(t.buyer, pair.base),
       ccy: pair.base,
@@ -948,6 +952,8 @@ function fxTrade(
     },
     {
       kind: 'money',
+      // 0i.5: Spot FX A1: the quote is the seller's proceeds of the money it sold.
+      receipt: { of: 'disposal' },
       from: deps.accountOf(t.buyer, pair.quote),
       to: deps.accountOf(t.seller, pair.quote),
       ccy: pair.quote,

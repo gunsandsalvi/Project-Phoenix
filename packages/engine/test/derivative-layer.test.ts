@@ -623,6 +623,7 @@ function drain(who: PartyId, after: number): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: ctx.accountOf(who, USD),
                 to: ctx.accountOf(other, USD),
                 ccy: USD,

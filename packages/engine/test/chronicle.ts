@@ -93,7 +93,7 @@ function period(w: World, report: ReturnType<World['step']>, since: number): voi
       add(causes, r.instruction.cause);
       for (const leg of r.instruction.legs) {
         // What kind of money this was — a wage, a coupon, a tax — as the PAYER declared it.
-        if (isMoneyLeg(leg)) add(paid, leg.receipt === undefined ? 'unnamed' : leg.receipt.of);
+        if (isMoneyLeg(leg)) add(paid, leg.receipt.of);
         else if (isAssetLeg(leg)) add(moved, String(w.instruments.get(leg.instrument).kind));
       }
       continue;

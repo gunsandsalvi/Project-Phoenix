@@ -199,14 +199,14 @@ function drainsAndPays(cohort: string, perMember: number, at: number): SystemMod
             const held = ctx.register.quantity(cell.id, moneyInstrumentId(cell.bank, ccy));
             if (cell.key['cohort'] === cohort && held > 0) {
               ctx.settle({
-                legs: [{ kind: 'money', from: { holder: cell.id, issuer: cell.bank }, to: { holder: cell.bank, issuer: cell.bank }, ccy, amount: held }],
+                legs: [{ kind: 'money', receipt: { of: 'transfer' }, from: { holder: cell.id, issuer: cell.bank }, to: { holder: cell.bank, issuer: cell.bank }, ccy, amount: held }],
                 cause: 'transfer',
                 reason: `the test empties ${cell.id}`,
               });
             }
             if (perMember <= 0) continue;
             ctx.settle({
-              legs: [{ kind: 'money', from: { holder: cell.bank, issuer: cell.bank }, to: { holder: cell.id, issuer: cell.bank }, ccy, amount: asQty(perMember * cell.weight) }],
+              legs: [{ kind: 'money', receipt: { of: 'transfer' }, from: { holder: cell.bank, issuer: cell.bank }, to: { holder: cell.id, issuer: cell.bank }, ccy, amount: asQty(perMember * cell.weight) }],
               cause: 'transfer',
               reason: `the test pays ${cell.id}`,
             });

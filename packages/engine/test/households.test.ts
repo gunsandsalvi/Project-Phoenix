@@ -134,6 +134,7 @@ function payer(spreadShare: number): SystemModule {
               legs: [
                 {
                   kind: 'money',
+                  receipt: { of: 'transfer' },
                   from: { holder: PAYER, issuer: BANK_A },
                   to: { holder: cell.id, issuer: cell.bank },
                   ccy: USD,

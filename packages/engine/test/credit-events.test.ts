@@ -82,6 +82,7 @@ function overpromise(amount: number): SystemModule {
               : upTick(mul(ctx.register.quantity(PAYER, moneyInstrumentId(ctx.parties.get(PAYER).bank, USD)), MORE_THAN_IT_HAS, 'more than it has'));
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'transfer' },
             from: { holder: PAYER, issuer: ctx.parties.get(PAYER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
@@ -222,6 +223,7 @@ function cellCannotPay(): SystemModule {
           );
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'tax' },
             from: { holder: cell.id, issuer: cell.bank },
             to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
             ccy: USD,

@@ -453,6 +453,8 @@ function payFee(ctx: MechanismContext, m: Mandate, amount: Qty): void {
   const manager = ctx.parties.get(m.manager);
   const leg: Leg = {
     kind: 'money',
+    // 0i.5: Fund Shares F3: the manager's fee — the finding 0i.5 is named on.
+    receipt: { of: 'fee' },
     from: ctx.accountOf(fund.id, ctx.registry.currencyOf(fund.region)),
     to: ctx.accountOf(manager.id, ctx.registry.currencyOf(fund.region)),
     ccy: ctx.registry.currencyOf(fund.region),
@@ -508,6 +510,8 @@ function subscribe(
   const legs: Leg[] = [
     {
       kind: 'money',
+      // 0i.5: a subscription: money into the pool, income to nobody.
+      receipt: { of: 'contribution' },
       from: ctx.accountOf(holder, ccy),
       to: ctx.accountOf(fund.id, ccy),
       ccy,
@@ -618,6 +622,8 @@ function redeem(
       },
       {
         kind: 'money',
+        // 0i.5: G1: a redemption pays the holder its own money back.
+        receipt: { of: 'returnOfCapital' },
         from: ctx.accountOf(fund.id, ccy),
         to: ctx.accountOf(holder, ccy),
         ccy,
@@ -1685,7 +1691,6 @@ function distribute(
       .filter(
         (leg) =>
           leg.to.holder === fund.id &&
-          leg.receipt !== undefined &&
           (leg.receipt.of === 'dividend' || leg.receipt.of === 'interest'),
       )
       .map((leg) => leg.amount),

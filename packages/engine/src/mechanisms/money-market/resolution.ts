@@ -529,6 +529,8 @@ function writeDownDeposit(
     legs: [
       {
         kind: 'money',
+        // 0i.5: the deposit is extinguished at the bank that owed it.
+        receipt: { of: 'principal' },
         from: { holder, issuer: bank },
         to: { holder: bank, issuer: bank },
         ccy,
@@ -626,6 +628,8 @@ function payFrom(
     legs: [
       {
         kind: 'money',
+        // 0i.5: the resolution moves what is left where it is due.
+        receipt: { of: 'transfer' },
         from: ctx.accountOf(from, ccy),
         to: ctx.accountOf(to, ccy),
         ccy,
@@ -734,6 +738,8 @@ function moveBook(
         legs: [
           {
             kind: 'money',
+            // 0i.5: what the acquirer pays for the book it takes.
+            receipt: { of: 'disposal' },
             from: { holder: acquirer, issuer: i.issuer.some ? i.issuer.value : bank },
             to: { holder: bank, issuer: i.issuer.some ? i.issuer.value : bank },
             ccy: i.ccy,
@@ -768,6 +774,8 @@ function moveBook(
         money
           ? {
               kind: 'money',
+              // 0i.5: the book moves to the acquirer with the resolution.
+              receipt: { of: 'transfer' },
               from: { holder: bank, issuer: i.issuer.some ? i.issuer.value : bank },
               to: { holder: acquirer, issuer: i.issuer.some ? i.issuer.value : bank },
               ccy: i.ccy,
@@ -880,6 +888,8 @@ function moveBook(
       legs: [
         {
           kind: 'money',
+          // 0i.5: the deposit is extinguished at the bank that owed it.
+          receipt: { of: 'principal' },
           from: { holder, issuer: bank },
           to: { holder: bank, issuer: bank },
           ccy,
@@ -887,6 +897,8 @@ function moveBook(
         },
         {
           kind: 'money',
+          // 0i.5: and reissued by the acquirer to the same holder.
+          receipt: { of: 'transfer' },
           from: { holder: acquirer, issuer: acquirer },
           to: { holder, issuer: acquirer },
           ccy,

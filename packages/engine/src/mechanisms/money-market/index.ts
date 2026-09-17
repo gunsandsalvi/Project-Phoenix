@@ -1203,7 +1203,17 @@ function swapDraw(
   const across = ctx.registry.payable(ctx.valuation.inMoney(heldAsMoney(need, ccy, 'what it drew'), home, ctx.period));
   if (across > 0) {
     ctx.settle({
-      legs: [{ kind: 'money', from: ctx.accountOf(homeCb, home), to: ctx.accountOf(issuer, home), ccy: home, amount: across }],
+      legs: [
+        {
+          kind: 'money',
+          // 0i.5: the swap-line draw: money the bank must repay.
+          receipt: { of: 'borrowing' },
+          from: ctx.accountOf(homeCb, home),
+          to: ctx.accountOf(issuer, home),
+          ccy: home,
+          amount: across,
+        },
+      ],
       cause: 'transfer',
       reason: `${String(homeCb)} hands ${String(issuer)} its own money against the swap-line draw ${line.value}`,
     });

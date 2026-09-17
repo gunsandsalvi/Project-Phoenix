@@ -190,6 +190,7 @@ function penalty(at: number, weeks: number, share: number): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: bank, issuer: cb },
                 to: { holder: partyId('treasury.us'), issuer: cb },
                 ccy: USD,

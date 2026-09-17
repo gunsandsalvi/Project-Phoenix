@@ -481,6 +481,7 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: from, issuer: cb },
                 to: { holder: to, issuer: cb },
                 ccy: USD,

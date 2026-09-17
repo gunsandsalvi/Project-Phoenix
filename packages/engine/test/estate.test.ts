@@ -192,6 +192,7 @@ function cannotPay(): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: DEBTOR, issuer: ctx.parties.get(DEBTOR).bank },
                 to: { holder: SENIOR_HOLDER, issuer: to.bank },
                 ccy: USD,
@@ -251,6 +252,7 @@ function paysAStranger(): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: ESTATE_OF_DEBTOR, issuer: estate.bank },
                 to: { holder: JUNIOR_HOLDER, issuer: stranger.bank },
                 ccy: USD,
@@ -346,6 +348,7 @@ function suddenBill(): SystemModule {
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: who, issuer: bank },
                 to: { holder: DEEP_BUYER, issuer: ctx.parties.get(DEEP_BUYER).bank },
                 ccy: USD,

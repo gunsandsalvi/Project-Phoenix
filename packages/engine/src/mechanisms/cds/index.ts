@@ -337,6 +337,8 @@ function settleSeriesNames(ctx: MechanismContext): void {
           legs: [
             {
               kind: 'money',
+              // 0i.5: CDS A3: the protection leg pays the loss — an indemnity, nobody's income.
+              receipt: { of: 'claim' },
               from: ctx.accountOf(seller, c.ccy),
               to: ctx.accountOf(buyer, c.ccy),
               ccy: c.ccy,
@@ -393,6 +395,8 @@ function settleEvents(ctx: MechanismContext): void {
     if (amount > 0) {
       legs.push({
         kind: 'money',
+        // 0i.5: CDS A3: the same indemnity, settled at the realised recovery.
+        receipt: { of: 'claim' },
         from: ctx.accountOf(owed.pieces > 0 ? seller : buyer, c.ccy),
         to: ctx.accountOf(owed.pieces > 0 ? buyer : seller, c.ccy),
         ccy: c.ccy,

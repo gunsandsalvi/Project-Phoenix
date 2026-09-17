@@ -92,6 +92,8 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
       legs: [
         {
           kind: 'money',
+          // 0i.5: what a bank pays for deposit cover.
+          receipt: { of: 'premium' },
           from: ctx.accountOf(bank, ccy),
           to: ctx.accountOf(insurer, ccy),
           ccy,

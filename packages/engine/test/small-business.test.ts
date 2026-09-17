@@ -125,7 +125,7 @@ describe('the sector exists, and it is cells with weights (A1, A6, XI-15)', () =
     for (const r of w.ledger.all()) {
       if (r.outcome !== 'settled') continue;
       for (const leg of r.instruction.legs) {
-        if (leg.kind === 'money' && leg.receipt?.of === 'dividend' && cells.has(String(leg.from.holder))) drawn += 1;
+        if (leg.kind === 'money' && leg.receipt.of === 'dividend' && cells.has(String(leg.from.holder))) drawn += 1;
       }
     }
     // Households B3: income that is not a wage reached a household cell, from a named payer.

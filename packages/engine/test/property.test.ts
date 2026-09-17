@@ -116,7 +116,7 @@ describe('a lease with a term, and the rent on it (15.3, Housing A3, Law 5, Law 
       for (const e of paid) {
         const landlord = w.parties.get(String(e.data['landlord']) as PartyId);
         expect(Number(e.data['amount']) % weightOf(landlord)).toBe(0);
-        const leg = w.ledger.inPeriod(p as never).filter((r) => r.outcome === 'settled').flatMap((r) => r.instruction.legs).filter(isMoneyLeg).find((l) => l.from.holder === tenant && l.to.holder === landlord.id && l.receipt?.of === 'rent');
+        const leg = w.ledger.inPeriod(p as never).filter((r) => r.outcome === 'settled').flatMap((r) => r.instruction.legs).filter(isMoneyLeg).find((l) => l.from.holder === tenant && l.to.holder === landlord.id && l.receipt.of === 'rent');
         expect(leg).toBeDefined();
       }
     }

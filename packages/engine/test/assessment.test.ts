@@ -51,7 +51,7 @@ describe('the annual assessment (§30 C2)', () => {
         if (!isMoneyLeg(leg)) continue;
         // C1: it is the same levy being settled, so it is a tax receipt whichever way it goes —
         // and a refund marked anything else would be somebody's income.
-        expect(leg.receipt?.of).toBe('tax');
+        expect(leg.receipt.of).toBe('tax');
         const state = leg.to.holder === TREASURY_US || leg.from.holder === TREASURY_US;
         expect(state).toBe(true);
         if (leg.to.holder === TREASURY_US) intoTheState += leg.amount;
@@ -97,7 +97,7 @@ describe('the annual assessment (§30 C2)', () => {
       for (const r of w.ledger.inPeriod(p as ReturnType<World['journal']['ofKind']>[number]['period'])) {
         if (r.outcome !== 'settled') continue;
         for (const leg of r.instruction.legs) {
-          if (!isMoneyLeg(leg) || leg.receipt?.of !== 'tax') continue;
+          if (!isMoneyLeg(leg) || leg.receipt.of !== 'tax') continue;
           if (leg.to.holder === TREASURY_US) net += leg.amount;
           else if (leg.from.holder === TREASURY_US) net -= leg.amount;
         }

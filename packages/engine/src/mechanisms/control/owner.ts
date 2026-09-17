@@ -149,6 +149,8 @@ function legsFor(
     },
     {
       kind: 'money',
+      // 0i.5: the company draws what its lender promised.
+      receipt: { of: 'borrowing' },
       from: { holder: bank, issuer: bank },
       to: ctx.accountOf(company, ccy),
       ccy,

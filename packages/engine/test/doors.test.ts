@@ -513,6 +513,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
             pledgeLeg(asQty(free + 1), 'repo.test.2'),
             {
               kind: 'money',
+              receipt: { of: 'transfer' },
               from: { holder: BANK_B, issuer: BANK_B },
               to: { holder: BANK_A, issuer: BANK_B },
               ccy: USD,

@@ -91,6 +91,7 @@ function pays(
               legs: [
                 {
                   kind: 'money',
+                  receipt: { of: 'transfer' },
                   from: { holder: BANK_A, issuer: BANK_A },
                   to: { holder, issuer: party.bank },
                   ccy: USD,

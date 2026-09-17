@@ -116,7 +116,7 @@ function last(w: World, kind: EventKind, subject: string): Event | undefined {
 function wagesPaidBy(w: World, who: string) {
   return w.ledger
     .all()
-    .filter((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'wage' && String(l.from.holder) === who));
+    .filter((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt.of === 'wage' && String(l.from.holder) === who));
 }
 
 describe('what a firm decides (Firm E1, E2, E6)', () => {
@@ -288,7 +288,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     const wageBill = wagesPaidBy(w, mill)
       .filter((r) => r.instruction.period === throttled?.period)
       .flatMap((r) => r.instruction.legs)
-      .reduce((t, l) => t + (l.kind === 'money' && l.receipt?.of === 'wage' && String(l.from.holder) === mill ? l.amount : 0), 0);
+      .reduce((t, l) => t + (l.kind === 'money' && l.receipt.of === 'wage' && String(l.from.holder) === mill ? l.amount : 0), 0);
     expect(wages).toBe(wageBill);
     expect(cost / started).toBeGreaterThan(cost / planned);
   });

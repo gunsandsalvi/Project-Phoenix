@@ -117,6 +117,7 @@ function payer(amount: number): SystemModule {
           if (ctx.period !== 1) return;
           const leg: Leg = {
             kind: 'money',
+            receipt: { of: 'transfer' },
             from: { holder: BANK_A, issuer: BANK_A },
             to: { holder: partyId('firm.1'), issuer: BANK_A },
             ccy: USD,

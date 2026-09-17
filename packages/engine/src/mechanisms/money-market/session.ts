@@ -290,6 +290,8 @@ export function writeRow(
     },
     {
       kind: 'money',
+      // 0i.5: the overnight draw: money the borrower must repay.
+      receipt: { of: 'borrowing' },
       from: ctx.accountOf(s.lender, ccy),
       to: ctx.accountOf(s.borrower, ccy),
       ccy,

@@ -71,6 +71,7 @@ function overdue(seed: string): { readonly world: World; readonly grace: number 
             legs: [
               {
                 kind: 'money',
+                receipt: { of: 'transfer' },
                 from: { holder: payer, issuer: ctx.parties.get(payer).bank },
                 to: { holder: payee, issuer: ctx.parties.get(payee).bank },
                 ccy: USD,

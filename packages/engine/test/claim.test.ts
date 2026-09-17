@@ -92,7 +92,7 @@ describe('a loss on covered plant is a claim on the insurer (14.3)', () => {
     // Law 5: the claim is a money leg to the holder in a numbered instruction, and the row it was
     // paid on carries that much less cover from the same pass (14.5) — a row paid out in full ends.
     const at = paid[0]?.period;
-    const one = w.ledger.inPeriod(at as never).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt?.of === 'claim'));
+    const one = w.ledger.inPeriod(at as never).find((r) => r.outcome === 'settled' && r.instruction.legs.some((l) => l.kind === 'money' && l.receipt.of === 'claim'));
     expect(one).toBeDefined();
     const row = w.agreements.get(String(paid[0]?.data['policy']) as never);
     expect(isPolicyTerms(row.terms)).toBe(true);

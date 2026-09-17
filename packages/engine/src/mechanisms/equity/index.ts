@@ -597,7 +597,7 @@ function dividendLegs(view: AuditView): ReadonlyMap<string, number[]> {
       if (!isMoneyLeg(leg)) continue;
       // 12.5: the leg says what it was paid on (Treasury C1: the payer says what this is); nothing
       // here parses a reason.
-      if (leg.receipt?.of !== 'dividend') continue;
+      if (leg.receipt.of !== 'dividend') continue;
       const line = leg.receipt.on;
       const key = `${line}\u0000${String(leg.from.holder)}`;
       const held = out.get(key);
