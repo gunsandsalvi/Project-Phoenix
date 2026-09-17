@@ -323,6 +323,19 @@ Each when its file is open for another item; file:line and the change.
   writer WHERE ONE EXISTS and requires nothing where none does — not a softer edge, the same edge
   wherever there is something to be ordered against. `loans.test.ts` went 43 red to 7.
 
+- [x] 21.96 `registry/physical.ts seedVintage` (21): **EVERY WORLD THIS PROJECT HAS OPENED CARRIED
+  PLANT NAMING A MARKET THAT DOES NOT EXIST.** Two functions bring a vintage into the world — the
+  capital programme's, when a firm builds one, and the seed's, when the world opens with one — and
+  they are the same instrument with the same market id, so they were the same writer twice (Law 4).
+  The built one issues the instrument AND opens the book; the seeded one issued the instrument and
+  stopped, so from the moment the seed learned to endow plant by vintage the `names` family reported
+  `Clearing D1: instrument plant.machinery.… names market mkt.plant.machinery.…, which does not
+  exist`, eleven times a period in the scale model, for ever. It was read off the chronicle's `audit`
+  line (21.0) and confirmed in a trimmed world. The seed now opens the book it names, with the
+  built vintage's own declaration, because it is the same book: a machine a firm bought and a
+  machine the world opened with are sold in the same place. `names` goes 11 → 0 in the rig every
+  period; `doors.test.ts` 6 red → 4.
+
 **21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
 prints what the assembled world actually does, period by period, in words: who is in it, what
 cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money

@@ -63,6 +63,7 @@ import type { Agreement, AgreementTerms } from '../register/agreements.js';
 import type { Holding } from '../register/register.js';
 import type { ParamRegister } from './params.js';
 import type { Registry } from './registry.js';
+import { displayName } from './naming.js';
 
 /**
  * What reading somebody's plant needs OF them: where they are, what they hold, and the calendar
@@ -1060,6 +1061,25 @@ export function seedVintage(
     ccy,
     terms,
     market: some(market),
+  });
+  /**
+   * Clearing D1, Law 4 (21.96): AND THE BOOK IT NAMES IS OPENED HERE, where it is named.
+   *
+   * A vintage built by the capital programme opens its own market in the same breath as the
+   * instrument (`capital-programme/index.ts`); a vintage the SEED endows did not, so every world
+   * this project has ever opened carried plant naming a market that does not exist — eleven of them
+   * in the scale model, said by the `names` family every period since the seed learned to endow
+   * plant by vintage. The same declaration as the built one's, because it is the same book: a
+   * machine a firm bought and a machine the world opened with are sold in the same place.
+   */
+  ctx.openMarket({
+    id: market,
+    name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
+    instrument: id,
+    ccy,
+    // D3, Clearing C4: a dead firm's plant goes to whoever will have it, and a shortage of it is
+    // shared in the proportion each bidder asked for — the built vintage's rule, once.
+    rationing: 'proRata',
   });
   return id;
 }
