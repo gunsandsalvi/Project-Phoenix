@@ -92,7 +92,7 @@ export interface LiquidityPlan {
  * what a bad one costs. That is a real state at the opening of the world and not a missing number:
  * it holds what it was given until it has watched its own account for a period.
  */
-export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<LiquidityPlan> {
+function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<LiquidityPlan> {
   const saidLeave = exposedToLeaving(view);
   const saidBuffer = bufferHeld(view);
   if (!saidLeave.some || !saidBuffer.some) return none<LiquidityPlan>();
@@ -131,7 +131,7 @@ export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<Liq
  * payments can be valued at a yield and pledged; a share cannot. And a line its own desk does not
  * make is a line it would have to go to a rival to sell, which is not a liquidity portfolio.
  */
-export function liquidityLines(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
+function liquidityLines(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
   const out: InstrumentId[] = [];
   const on = view.calendar.startOf(view.period);
   const home = view.registry.currencyOf(view.self.region);
@@ -157,6 +157,39 @@ export function liquidityLines(view: ParticipantView, d: BankDecl): readonly Ins
 }
 
 /**
+ * Law 18, Law 4 (0g.5): THE TARGET PER LINE, WORKED OUT ONCE WHILE THE BOOK STANDS STILL.
+ *
+ * `liquidityTargets` walks every market this bank is in TWICE — once for the lines it makes and
+ * once inside `liquidityLines`, which asks each of them for its cash flows — and it had two callers
+ * passing it the identical three arguments: the bank's capital read, and `stateOf`, which the
+ * dealing line calls once per book it quotes. So the same walk over 442 markets ran once per book
+ * per bank per period to produce the same map every time.
+ *
+ * What it reads is the register, the prints and the lines, so the answer stands exactly as long as
+ * none of the three has moved — and the PLAN, which comes off what the bank itself published, is in
+ * the key rather than the versions: a treasury that publishes a new plan mid-period asks a different
+ * question and gets a different answer, rather than being handed the one it asked before.
+ *
+ * One door now, and both callers are through it (Law 4).
+ */
+export function targetsFor(
+  view: ParticipantView,
+  d: BankDecl,
+  cushion: Ratio,
+): ReadonlyMap<InstrumentId, Cash> {
+  const plan = liquidityPlan(view, cushion);
+  const at = view.versions();
+  const asked = plan.some
+    ? `${String(plan.value.paper.pieces)}|${String(plan.value.cash.pieces)}`
+    : 'noPlan';
+  return view.memo(
+    `banks.targets|${String(view.self.id)}|${asked}`,
+    [at.register, at.prices, at.instruments],
+    () => liquidityTargets(view, d, plan),
+  );
+}
+
+/**
  * The target holding per line, in the bank's own money (Dealer Desks C2.a).
  *
  * Spread evenly over the lines it could hold it in, because between one issuer's lines a treasury
@@ -164,7 +197,7 @@ export function liquidityLines(view: ParticipantView, d: BankDecl): readonly Ins
  * and the same money, and what tells them apart is price risk, which is a view and belongs to the
  * dealing line's quote rather than to the target it quotes around.
  */
-export function liquidityTargets(
+function liquidityTargets(
   view: ParticipantView,
   d: BankDecl,
   plan: Option<LiquidityPlan>,

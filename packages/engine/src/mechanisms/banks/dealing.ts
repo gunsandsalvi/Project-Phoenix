@@ -57,7 +57,7 @@ import {
   type BankDecl,
 } from './data.js';
 import { DEALING, roomFor } from './lines.js';
-import { ccyOf, liquidityPlan, liquidityTargets } from './treasury.js';
+import { ccyOf, targetsFor } from './treasury.js';
 import { periodOfYear, quoteFor, rateOf, type DeskQuote, type DeskState } from './dealing-quote.js';
 import { downTick, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
@@ -218,10 +218,10 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
   const rate = carryRate(view, ccyOf(view));
   if (rate === undefined) return undefined;
   const ccy = ccyOf(view);
-  const targets = liquidityTargets(
+  const targets = targetsFor(
     view,
     d,
-    liquidityPlan(view, view.params.ratio(bankParam(view.self.id, 'liquidityCushion'))),
+    view.params.ratio(bankParam(view.self.id, 'liquidityCushion')),
   );
   return {
     // C2.a: where its own treasury wants each line held. The treasury posts nothing; this is how

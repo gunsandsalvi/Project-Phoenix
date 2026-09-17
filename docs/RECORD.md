@@ -15398,3 +15398,55 @@ check that "was missing" is missing this.
 **Two more pre-existing reds written down on the way (21.116).** `test/indices.test.ts` has four,
 identical at `27312b8`: no equity index is declared for three of the four regions, and a rated index
 never gets a level. One missing declaration and three consequences of an index with nothing in it.
+
+---
+
+## 0g.5 — One memo of fourteen, and the thirteen that were measured and not built
+
+**What the step asked.** `view.memo` (built at 0g.5a) applied to fourteen named sites that recompute
+per call: `equity()`, exposure by issuer, `earned(window)`, `coveredLines`, `stateOf`,
+`regulationOf`, `eligibleLines`, `holdingsWorth`, `dearest(subUnit)`, `overdue(seller)`,
+`goodsBoughtIn`, `sizeSegmentOf`, `claimsSeen`, `longestPromise`, `blindView`.
+
+**What a profile of them says.** (24, 96) rung, eight periods, inclusive time per function:
+
+| | |
+|---|---|
+| `stateOf` | **1.14%** |
+| `earnedByLine` | 0.33% |
+| `equityWalk` | 0.16% |
+| `dearest` | 0.14% |
+| `equity()` | 0.10% |
+| `regulationOf` | 0.09% |
+| `coveredLines` | 0.07% |
+| `earned(window)`, `eligibleLines`, `holdingsWorth`, `overdue`, `goodsBoughtIn`, `sizeSegmentOf`, `claimsSeen`, `longestPromise`, `blindView` | **do not appear at any depth** |
+
+Thirteen memos to recover under 1% of a period — each of them a place where a cache can hand back a
+world that has moved on — is not a trade worth making. 0g.5a's own finding is the reason it is not a
+formality: a version taken when a view was built is the version of a world several instructions ago,
+and the register had no write count at all until that step gave it one.
+
+**The one that was worth it, and it became one door instead of two.** `liquidityTargets` walks every
+market the bank is in TWICE — once for the lines it makes, once inside `liquidityLines`, which asks
+each of them for its cash flows — and two callers were passing it the identical three arguments: the
+bank's capital read, and `stateOf`, which the dealing line calls once per book it quotes. One walk
+over 442 markets, run once per book per bank per period, producing the same map every time.
+
+`targetsFor(view, d, cushion)` is now the only way in (Law 4). It is memoised on the register, the
+price store and the instrument store — everything the walk reads — with the PLAN in the key rather
+than in the versions, because the plan comes off what the bank itself published: a treasury that
+publishes a new plan is asking a different question and is not entitled to the old answer.
+`liquidityPlan`, `liquidityTargets` and `liquidityLines` are no longer exported.
+
+**Measured.** (12, 48) at 26 periods: **327 → 300 ms/period, −8%**. (24, 96): **997 → 910 ms/period**,
+and `banks/bank [market]` left the top of the order-generation list. Every shape figure
+byte-identical: parties 141, cells 42, people 228, small 521, events 110,625, sessions 60, audit
+13,616, money/member 23,787,064, wage/h 1591.08. `check:opens` census identical on both worlds. Heap
+at the 26 mark 342 → 382 MB, which is the memo holding its maps for the length of a cycle — said
+here rather than left for the next step to find.
+
+**Where the profile points after it.** Garbage collector 10.5%; `journal.record` 2.5%;
+`wants.missed` + `postedNothing` 2.6%, which is the 99 `Missing` door reads per party per period;
+`instruments.get` 1.6%; `parties.get` 1.5%. Nothing else above 1.7%. Three steps in a row have now
+measured a named category, and the two that were traversal were worth 0% and 8%. The 46× is where
+0g's preamble says it is.

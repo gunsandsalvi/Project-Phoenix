@@ -61,8 +61,7 @@ import { capitalOf, publish, type CapitalRules } from './capital.js';
 import { arbitrage, dealingOrders, deskBorrows, publishDealing } from './dealing.js';
 import {
   classesSeen,
-  liquidityPlan,
-  liquidityTargets,
+  targetsFor,
   publishBuffer,
   P_COVERAGE,
   ownDeposits,
@@ -192,11 +191,7 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
     targets:
       decl === undefined
         ? new Map<InstrumentId, Cash>()
-        : liquidityTargets(
-            view,
-            decl,
-            liquidityPlan(view, ctx.params.ratio(bankParam(bank, 'liquidityCushion'))),
-          ),
+        : targetsFor(view, decl, ctx.params.ratio(bankParam(bank, 'liquidityCushion'))),
   };
 }
 
