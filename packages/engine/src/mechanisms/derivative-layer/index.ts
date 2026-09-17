@@ -302,85 +302,115 @@ function capacity(): ClearingCapacity {
  * cannot make it fails the instruction and is in Money E1's state (D2.c).
  */
 function marginCalls(ctx: MechanismContext): void {
+  /**
+   * Law 18 (0g.10): THE PAIRS, ENUMERATED ONCE.
+   *
+   * This walked every open contract, and for each side of each one asked `marginPairsOf` — which
+   * walks that party's WHOLE open book — and then threw almost all of the answer away against
+   * `done`. So a book of C contracts did 2C walks of the book to arrive at a list of pairs that
+   * does not change while it is being built, and `marginPairsOf` alone was 1.4% of a period.
+   *
+   * The pairs are collected in one pass and the calls are made in a second. **The ORDER is exactly
+   * the order it was**, and that is not a nicety: margin settles inside this loop, so a party that
+   * pays one counterparty may have nothing left for the next, and which call is met depends on
+   * which came first. So the first pass keeps the nested shape — contract, then side, then that
+   * side's pairs, first encounter wins — and only the repeated walk is gone, memoised per party
+   * because a party's pairs cannot change while the list is being read.
+   */
+  const pairsOf = new Map<
+    PartyId,
+    readonly { readonly other: PartyId; readonly ccy: CurrencyCode }[]
+  >();
   const done = new Set<string>();
+  const calls: { readonly side: PartyId; readonly other: PartyId; readonly ccy: CurrencyCode }[] =
+    [];
   for (const c of ctx.contracts.open_()) {
     for (const side of [c.a, c.b] as const) {
-      for (const pair of marginPairsOf(ctx, side)) {
+      let pairs = pairsOf.get(side);
+      if (pairs === undefined) {
+        pairs = marginPairsOf(ctx, side);
+        pairsOf.set(side, pairs);
+      }
+      for (const pair of pairs) {
         const key = `${side}|${pair.other}|${pair.ccy}`;
         if (done.has(key)) continue;
         done.add(key);
-        const need = requirement(ctx, side, pair.other, pair.ccy);
-        const have = posted(ctx, side, pair.other, pair.ccy);
-        const by = minus(
-          need,
-          heldAsMoney(have, pair.ccy, 'what it has posted'),
-          'what the margin must move by',
-        );
-        if (by.pieces === 0) continue;
-        const legs = moveMargin(ctx, side, pair.other, pair.ccy, by);
-        if (legs.length === 0) continue;
-        let r = ctx.settle({
-          legs,
-          cause: 'transfer',
-          reason:
-            by.pieces > 0
-              ? `${side} posts ${by.pieces} of margin to ${pair.other}`
-              : `${pair.other} returns ${absolute(by, 'what comes back').pieces} of margin to ${side}`,
-        });
-        /**
-         * D4.a, D9, D9.a: A CALL HAS THREE ANSWERS, and cash is only one of them. A party that
-         * could not pay may PLEDGE instead — the units stay its own, the coupon and the mark stay
-         * its own, and what changes is that they are bound and it cannot move them. The third
-         * answer is a forced sale, and that is its own module's business (XI-2 door one).
-         *
-         * It is tried after the payment failed rather than instead of it, because a party with the
-         * cash pays: posting securities when you have money is a choice nobody makes, and the
-         * order these are tried in is what makes collateral the answer to a SHORTFALL.
-         */
-        if (by.pieces > 0 && r.outcome !== 'settled') {
-          const bound = pledgeInstead(ctx, side, pair.other, pair.ccy, by);
-          if (bound.length > 0) {
-            r = ctx.settle({
-              legs: bound,
-              cause: 'transfer',
-              reason: `${side} pledges what it holds against ${by.pieces} it could not pay ${pair.other}`,
-            });
-          }
-        }
-        if (by.pieces < 0) {
-          // D9.a: and it comes back. What secured a requirement that has gone is free again.
-          const free = releasePledges(ctx, side, pair.other, pair.ccy);
-          if (free.length > 0) {
-            ctx.settle({
-              legs: free,
-              cause: 'transfer',
-              reason: `${pair.other} releases what ${side} pledged`,
-            });
-          }
-        }
-        if (by.pieces > 0) {
-          const call = callOn(ctx, side, pair.other, pair.ccy);
-          // Law 15, 0e′.4: whose call went unmet goes in this module's own working store, which is
-          // what `resolveContracts` reads a phase later. The event below is the PUBLIC record of the
-          // call; it is written from the same outcome and never read back here.
-          if (r.outcome !== 'settled') {
-            unmetCalls(ctx).add(`${String(side)}|${String(pair.other)}`);
-          }
-          ctx.record(
-            'margin.call',
-            [side, pair.other],
-            {
-              poster: side,
-              holder: pair.other,
-              ccy: pair.ccy,
-              asked: by.pieces,
-              met: r.outcome === 'settled',
-              short: call === undefined ? 0 : call.short.pieces,
-            },
-            true,
-          );
-        }
+        calls.push({ side, other: pair.other, ccy: pair.ccy });
       }
+    }
+  }
+  for (const pair of calls) {
+    const side = pair.side;
+    const need = requirement(ctx, side, pair.other, pair.ccy);
+    const have = posted(ctx, side, pair.other, pair.ccy);
+    const by = minus(
+      need,
+      heldAsMoney(have, pair.ccy, 'what it has posted'),
+      'what the margin must move by',
+    );
+    if (by.pieces === 0) continue;
+    const legs = moveMargin(ctx, side, pair.other, pair.ccy, by);
+    if (legs.length === 0) continue;
+    let r = ctx.settle({
+      legs,
+      cause: 'transfer',
+      reason:
+        by.pieces > 0
+          ? `${side} posts ${by.pieces} of margin to ${pair.other}`
+          : `${pair.other} returns ${absolute(by, 'what comes back').pieces} of margin to ${side}`,
+    });
+    /**
+     * D4.a, D9, D9.a: A CALL HAS THREE ANSWERS, and cash is only one of them. A party that
+     * could not pay may PLEDGE instead — the units stay its own, the coupon and the mark stay
+     * its own, and what changes is that they are bound and it cannot move them. The third
+     * answer is a forced sale, and that is its own module's business (XI-2 door one).
+     *
+     * It is tried after the payment failed rather than instead of it, because a party with the
+     * cash pays: posting securities when you have money is a choice nobody makes, and the
+     * order these are tried in is what makes collateral the answer to a SHORTFALL.
+     */
+    if (by.pieces > 0 && r.outcome !== 'settled') {
+      const bound = pledgeInstead(ctx, side, pair.other, pair.ccy, by);
+      if (bound.length > 0) {
+        r = ctx.settle({
+          legs: bound,
+          cause: 'transfer',
+          reason: `${side} pledges what it holds against ${by.pieces} it could not pay ${pair.other}`,
+        });
+      }
+    }
+    if (by.pieces < 0) {
+      // D9.a: and it comes back. What secured a requirement that has gone is free again.
+      const free = releasePledges(ctx, side, pair.other, pair.ccy);
+      if (free.length > 0) {
+        ctx.settle({
+          legs: free,
+          cause: 'transfer',
+          reason: `${pair.other} releases what ${side} pledged`,
+        });
+      }
+    }
+    if (by.pieces > 0) {
+      const call = callOn(ctx, side, pair.other, pair.ccy);
+      // Law 15, 0e′.4: whose call went unmet goes in this module's own working store, which is
+      // what `resolveContracts` reads a phase later. The event below is the PUBLIC record of the
+      // call; it is written from the same outcome and never read back here.
+      if (r.outcome !== 'settled') {
+        unmetCalls(ctx).add(`${String(side)}|${String(pair.other)}`);
+      }
+      ctx.record(
+        'margin.call',
+        [side, pair.other],
+        {
+          poster: side,
+          holder: pair.other,
+          ccy: pair.ccy,
+          asked: by.pieces,
+          met: r.outcome === 'settled',
+          short: call === undefined ? 0 : call.short.pieces,
+        },
+        true,
+      );
     }
   }
 }
@@ -508,22 +538,20 @@ function netOffsetting(ctx: MechanismContext): void {
   const done = new Set<string>();
   for (const c of ctx.contracts.open_()) {
     if (done.has(String(c.id))) continue;
-    const other = ctx.contracts
-      .between(c.a, c.b)
-      .find(
-        (x) =>
-          x.state === 'open' &&
-          String(x.id) !== String(c.id) &&
-          !done.has(String(x.id)) &&
-          // Law 15: this is not a branch ON a kind — nothing here asks WHICH kind it is. It asks
-          // whether two rows are of the SAME one, which is what "the same trade twice" means.
-          String(x.kind) === String(c.kind) &&
-          x.ccy === c.ccy &&
-          x.notional === c.notional &&
-          String(x.a) === String(c.b) &&
-          String(x.b) === String(c.a) &&
-          sameTerms(x.terms, c.terms),
-      );
+    const other = ctx.contracts.between(c.a, c.b).find(
+      (x) =>
+        x.state === 'open' &&
+        String(x.id) !== String(c.id) &&
+        !done.has(String(x.id)) &&
+        // Law 15: this is not a branch ON a kind — nothing here asks WHICH kind it is. It asks
+        // whether two rows are of the SAME one, which is what "the same trade twice" means.
+        String(x.kind) === String(c.kind) &&
+        x.ccy === c.ccy &&
+        x.notional === c.notional &&
+        String(x.a) === String(c.b) &&
+        String(x.b) === String(c.a) &&
+        sameTerms(x.terms, c.terms),
+    );
     if (other === undefined) continue;
     done.add(String(c.id));
     done.add(String(other.id));

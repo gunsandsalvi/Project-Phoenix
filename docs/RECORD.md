@@ -15687,3 +15687,65 @@ measurement taken at the current scale would have said to skip this step, and it
 wrong: the four preceding steps were constants worth 0–8%, and this one is worth a factor of a
 hundred at the scale the exit condition is written for. **Both readings belong in the record,
 because the lesson is that a flat profile at the wrong scale is not evidence.**
+
+---
+
+## 0g.10 — The pairs enumerated once, and three items that would have been wrong
+
+**What was there.** `marginCalls` walked every open contract and, for each side of each one, called
+`marginPairsOf` — which walks that party's whole open book — then threw almost all of the answer away
+against a `done` set. A book of C contracts did 2C walks of the book to arrive at a list of pairs
+that does not change while it is being built. `marginPairsOf` alone was **1.4% of a period**.
+
+**What it is now.** The pairs are collected in one pass and the calls made in a second.
+
+**The order is exactly the order it was, and that is load-bearing.** Margin SETTLES inside this
+loop: a party that pays one counterparty may have nothing left for the next, so which call is met
+depends on which came first. The collecting pass therefore keeps the nested shape — contract, then
+side, then that side's pairs, first encounter wins — and only the repeated walk is gone, memoised per
+party because a party's pairs cannot change while the list is being read. A one-pass enumeration over
+`open_()` would have produced the same SET of pairs in a different ORDER, and that is a different
+world, not a faster one.
+
+**Measured.** `derivative-layer/margin.calls` **66 → 31 ms a period, 8% → 4%** on the (24, 96) rung;
+the whole period **800 → 777 ms**. (12, 48) at 26 periods 275 → 280 ms — inside that rung's own ±5 ms
+spread, on a draw with few contracts in it. Every shape figure byte-identical (parties 141, cells 42,
+people 228, small 521, events 110,625, sessions 60, audit 13,616, money/member 23,787,064, wage/h
+1591.08); both censuses identical.
+
+**And the step's other three items are not safe as written.** This is worth stating fully, because
+two of them would have been silent corruption rather than a slow world.
+
+`valueTo` memoised per (contract, period), and `requirement` per (poster, holder, ccy, period), both
+assume a contract's value is a function of prices. It is not. `cds/contract.ts creditState` values
+off `credit.default`, `estate.opened` and `estate.closed`; `irs/contract.ts floatingRate` off the
+`index.benchmark` fixing. All four are EVENTS, and all four land mid-period — inside the very phase
+that would be reading the memo. **A CDS is worth one thing before its reference defaults and another
+after.** A cache keyed on the price and instrument versions hands back the first for the rest of the
+period, on the exact path that decides whether a member can meet its margin call. Keying on the
+journal instead invalidates on every instruction, which in a settling phase is every settlement, so
+the memo would never hit where it is wanted.
+
+So the two items are **not deferred for cost, they are refused for correctness**, and the thing they
+were asking for is written down as **21.117**: the kernel publishes three version counters a reader
+can watch — the register's writes, the prints, the lines — and a derivative's value is not a function
+of those three. The read that is asked the same question thousands of times a period is the one read
+that cannot be cached. The fix is not a cache: it is for the facts these valuations read to be
+DECLARED (0i, 21.113) and for the journal to carry a version per declared kind, so that "has anything
+I read moved" is answerable for an event the way it already is for a print. Then `valueTo` is
+memoisable on (prices, lines, the kinds it reads) and says which kinds those are.
+
+Capacity per (party, ccy, period) decremented within the session: **measured and not built**,
+`capacityOf` is 0.26% of a period inclusive.
+
+**The running reading of 0g's traversal steps is now worth stating as a whole.** 0g.4 removed 40×
+the journal scanning and bought 0%. 0g.5 memoised one of fourteen sites and bought 8%. 0g.6 removed
+15× the instrument walking and bought 4%. 0g.7 removed 74× the yield inversions and bought 4% on the
+rig but half a period on the four-country world. 0g.8's seven doors removed a third of the
+participant evaluations and bought 1%. 0g.9 turned the solver from O(n²) to O(n log n) and bought
+nothing today and a factor of 126 at scale. 0g.10 halved the heaviest phase. **Not one of them
+changed a number in the census**, which is what Law 18 asks of them, and the total is roughly
+1,600 → 777 ms/period on the (24, 96) rung — a bit over 2×, against the 46× the exit needs. The
+remaining factor is not in traversal and the record has now said so six times: it is the 71 journal
+events per party per period (0g.14), the 99 `Missing` door reads per party per period, and the
+parties × books product (0g.11, 0g.15).
