@@ -6,7 +6,7 @@ numbers reported with the seed and the rung they came from), then against the be
 this project, and ends in proposals that name the items they become and the recorded findings they
 close. A section that has not been done yet says so.*
 
-**Status.** §0 done · §1 done · §2 done · §3 done · §4 done.
+**Status.** §0 done · §1 done · §2 done · §3 done · §4 done. Written at `ab18535`; every measurement is from `rigWorld('review')` at 3 banks and 12 firms unless it names another rung.
 
 ---
 
@@ -580,6 +580,142 @@ the goods chain. M5 falls out of M3.
 
 ## §4. What it does not do at all
 
-*Mechanisms and readings that are absent, ranked by what their absence costs this world.*
+*Ranked by what the absence costs. The first four are the ones that would have changed the last six
+months of this project's history.*
+
+### N1 — Nothing checks that the world is ALIVE
+
+**Today.** Nine audit families: `money`, `ownership`, `prices`, `crossMarket`, `accounts`, `names`,
+`flows`, `zeroSum`, `units`. **Every one of them is a consistency check.** A world can be perfectly
+consistent and asleep, and this one is: 72 clears in 8,819 sessions, 13 modules that have never run,
+428 of 648 capabilities never once used — and **every gate in this project is green**.
+
+The findings register tells the same story from the other side. 12c.3, 21.72, 21.73, 21.76, 21.77,
+21.79, 21.81 and 21.84 are all the same class — *a mechanism that never fires* — and every one of
+them was found **by hand, months after the item that introduced it**, by somebody writing a probe.
+
+**The vocabulary exists in the literature.** Statistical model checking applied to a macroeconomic
+ABM *"provides a principled analysis layer… without rewriting the simulator in a dedicated
+formalism"*, driven by *"reusable temporal queries, observable-specific precision targets, and
+confidence-based stopping rules"*, and *"automatically determines the minimum number of simulations
+needed to achieve user-specified confidence levels"*
+([SMC of Keynes+Schumpeter](https://arxiv.org/html/2605.10447),
+[MultiVeStA + Mesa](https://link.springer.com/chapter/10.1007/978-3-031-75434-0_26)).
+
+**Proposal.** A **liveness family**, in the audit, reported with owner and size like any other
+violation and never repaired. Its checks are temporal and each carries its own horizon, declared with
+a reason: *every declared book has cleared within N periods; every living firm has produced, sold and
+been paid within N; every bank has lent within N; every declared capability has produced an outcome
+within N; no party has stood in arrears for more than N.* The reach read (`world/reach.ts`) already
+computes the raw material — 428 never-used capabilities with their owning module — and publishes it
+as a number. What is missing is that **nothing fails when the number is 428.**
+
+*This is the highest-value absent thing in the engine, and it is perhaps two days' work.*
+
+### N2 — One run of one seed is the entire evidence base
+
+**Today.** Every number in this project — including all of §0 — comes from a single deterministic
+trajectory. No ensemble exists, no test asserts anything about a distribution, and there is no way to
+tell a fact about this world from a fact about this seed.
+
+**Why it is not a luxury.** The validation literature's verdict on the class is blunt: *"due to
+over-parameterization and the corresponding degrees of freedom, almost any simulation output can be
+generated with an ABM, and thus replication of stylized facts only represents a weak test"*
+([validation methodology](https://d-nb.info/1246195569/34)). If even matching real data weakly
+identifies a model, one trajectory identifies nothing.
+
+**Proposal.** `npm run ensemble -- <k>`: k seeds, the §0 census reported as a distribution, and a
+rule with teeth — **a finding is not a finding until it reproduces across seeds**, and the record
+says how many it was seen in. The number of seeds is itself computed, from SMC's confidence-based
+stopping rule, rather than chosen.
+
+### N3 — A payment that could wait has nowhere to wait
+
+**Today.** Every instruction settles atomically or fails, and a failed money leg writes an arrear in
+the same pass. There is no queue, no retry within the period, and no resolution of circular
+shortfalls: A cannot pay B because B has not yet paid A, and both fail. §0 measures the result —
+**1,902 failures for want of money, 1,617 of them maturities** — and 135 → 111 parties in 26 weeks.
+
+**What real systems do.** Large-value payment systems queue, and the queue is the mechanism:
+liquidity-saving features find cycles and settle them together, because a gridlock is a timing
+failure, not a default, and resolving it needs no new money.
+
+**Proposal.** A settlement queue with a stated lifetime, in states this project already has words
+for: due → queued (retried after each later instruction that funds the payer) → failed (the arrear,
+as today). Plus one pass at the end of the period that finds cycles and settles them together, **each
+leg at full value** — which is not netting (still forbidden), it is a DvP cycle. One TECHNOLOGY (how
+long a payment may wait) and nothing else.
+
+### N4 — Nothing reads the system as a network
+
+**Today.** Bilateral exposures are everywhere — loans, deposits, contracts, arrears — and nothing
+ever reads them **as a graph**. When the banks stopped quoting every name (21.72), the available
+reasons were per-bank: `appetite`, `it cannot cost its own funding`, `nobody lends to a party of this
+kind`. Three local reasons for what is almost certainly a system-level fact.
+
+**The measure exists.** DebtRank *"quantifies the extent of financial distress that a particular node
+should face under external shocks and the corresponding risk contagion"*, recursively, without
+waiting for a capital buffer to be exhausted ([DebtRank](https://arxiv.org/pdf/1504.01857)); the
+empirical regularity is that contagion *"decreases with capitalization but increases with
+concentration"*, non-monotonically in connectivity
+([interbank networks](https://arxiv.org/pdf/2109.14360)).
+
+**Proposal.** A network READ in Part XII's sense — published, causing nothing, never repairing: the
+exposure graph each period, its concentration, and a DebtRank-style distress propagation from each
+node. It needs **no new mechanism**: the edges are already in the register and the agreement book.
+
+### N5 — Trade credit, which is how firms actually survive a timing problem
+
+**Today.** 9 clauses MET of 22 — the weakest-covered system that is not a derivative. Firms in this
+world buy with money or not at all, which is why so many of them die of a cash timing problem
+(N3): real firms pay in thirty days.
+
+**Proposal.** Promote it in the worklist: an invoice with terms; a discount for early payment that is
+a price somebody quotes, never a rate somebody states; and the failure chain when an invoice is not
+paid — which is also the missing channel by which a customer's failure becomes a supplier's.
+
+### N6 — The world cannot say why it did anything
+
+**Today.** Every diagnosis in the record was a hand-written probe: this session alone wrote six
+throwaway test files to answer *why is nothing happening?*. The journal is already an event log with
+subjects and data; there is no read over it that answers a question.
+
+**Proposal.** An explainer over the journal: *why did this firm not produce?* → the chain of its own
+reads and refusals in that period, in order, ending at the one that returned nothing. The material is
+already recorded; what is missing is the query. Given that the project's scarcest resource is the
+owner's diagnostic time, this may be the highest leverage per line of code in the whole review.
+
+### N7 — Metamorphic relations, of which there is exactly one
+
+**Today.** `ladder.test.ts` asserts scale invariance — and is itself red (76 small firms at grain 1
+against 77 at grain 2), so the project's one invariance check does not currently hold.
+
+**Why it is the right kind of test here.** Simulation validation *"poses a particularly potent form
+of the oracle problem, and often no oracle exists"*, which is exactly what metamorphic relations are
+for: *"necessary properties of the intended functionality… involving multiple executions"*
+([metamorphic testing](https://en.wikipedia.org/wiki/Metamorphic_testing),
+[MT for simulation validation](https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=932547)).
+
+**Proposal.** A family of them, with `fast-check` which is already in the toolchain: scale invariance
+(the ladder's, repaired), resolution invariance (double the share tick, nothing moves), phase-order
+invariance (reorder phases that commute, the prints are identical), unit invariance (restate a
+currency's subdivision, every ratio holds), and seed invariance **of properties, never of values**.
+
+### N8 — What the spec says and nobody has built
+
+Ranked by missing clauses, for the systems where the absence is a mechanism rather than a detail:
+**Goods 10, Observer 10, Trade Credit 10, Equity 9, Hedge Funds 9, Money 8, M&A 8, Expectations 8,
+CDS 8, FX Forwards 8.** Two of these deserve naming here because they are not exotic: **Goods** is
+the real economy and is missing ten clauses while 1,648 lots perish unsold; **Observer** is how
+anybody sees any of this, and is missing ten while the project's diagnostic method is hand-written
+probes (N6).
+
+### 4.1 Order
+
+N1 first — without it, everything else in this review is unverifiable and the next dead mechanism
+will again be found by hand in six months. N6 second, because it is cheap and it pays for itself in
+the next diagnosis. N2 third, because it decides what a finding even is. Then N3 and N4, which are
+mechanisms and reads respectively. N5 and N8 belong in the worklist at their dependency positions;
+N7 rides with the ladder's repair (§2's S1).
 
 ---
