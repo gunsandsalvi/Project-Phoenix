@@ -20885,3 +20885,30 @@ and not a number to jitter, and the disagreement is load-bearing (§46 A3). **22
 prior close, so it carries no income, so coverage cannot be read. Missing is missing.
 
 **736 tests; `npm run check` green; clippy clean; census 30 → 29.**
+
+## 22i.3 — the forced sale, and the election
+
+Two `Closing` rows stop being closers for processes nothing opens. Census **29 → 27**.
+
+**XI-2: a downgrade through a mandate's floor is a forced sale by every bound holder, on the same
+date.** `forced_sale` had never run, and what it was waiting on was a grade — 22i.2 published one.
+This is the most mechanical and most synchronised of XI-2's four doors and the only one whose inputs
+exist. A mandate now carries its floor (`agreed::MANDATE`'s terms were EMPTY, so the boundary the
+clause turns on was nowhere); an issuer's grade is the WORST any house holds on it, because a mandate
+that let a holder pick the kindest house would bind on nothing.
+
+**It opens the workout and does not sell.** A forced seller posts a size and NO level (Clearing C3) —
+that is an order in a book and therefore a participant's act, so the row has both: `ForcedSelling`
+opens the requirement and `ForcedSeller` stands in the market with it. A sale with a reservation
+price is a sale that can decline, and then the contagion channel is closed.
+
+**XI-17: the term runs out and an election is called.** `polity` had never run either, so §47 had
+never happened: no election called, no seats held, and a parliament that never faces one is the
+immortality XI-3 is against. Placed by DATE from the last election, reckoned from the day the world
+opened where there has been none. It decides nothing — parliament never sets a price, a quantity or
+a rate — it opens the election and says it was called.
+
+**And a participant can now see its own processes** (`ParticipantView::afoot`, `in_a_workout`). A
+party put in a workout that could not see it would be under a requirement only the kernel knew about.
+
+**736 tests; `npm run check` green; clippy clean.**

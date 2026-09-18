@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Elections, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -789,6 +789,19 @@ pub fn declare(p: &mut Params) {
     // value of zero would delete the clause rather than satisfy it.
     say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Days, Kind::Technology, Owner::StandardSetter,
         "the days between a company's year-end and the day its accounts are published");
+    // **XI-2, 22i.3: how long a holder has to sell what its mandate no longer lets it hold.** A
+    // TECHNOLOGY: how long a breach may stand before it is a breach nobody is curing. It is short
+    // because a mandate breach is mechanical — the holder has no discretion about whether to sell.
+    // XI-17, §47: **the constitution's three primitives.** A POLICY — what the polity decided about
+    // itself — and the only numbers §47 has that are not outcomes.
+    say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
+        "how many seats the parliament of a country has");
+    say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
+        "the days between elections, placed by DATE and never a count of periods");
+    say("election.takes", 1.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "the periods between an election being called and its result being known");
+    say("workout.within", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "the periods a holder has to sell a line its mandate no longer lets it hold");
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
     // **37 B1, 22c.3: how much cover a firm wants on its shelf.** A PREFERENCE: it is what this firm
@@ -1026,13 +1039,31 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
         works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
-        works("forced_sale", AT_MARKETS, Box::new(Closing { kind: afoot::WORKOUT, says: says("workout.closed") })),
+        {
+            // **XI-2, §21 C1.a: and the workout is OPENED.** It was a closer for a process nothing
+            // opened, so a sequencing step had never happened here. What it waited on was a grade,
+            // and 22i.2 published one: a downgrade through a mandate's floor is a forced sale by
+            // every bound holder, on the same date.
+            let mut f = works("forced_sale", AT_MARKETS, Box::new(ForcedSelling {
+                kind: says("workout.opened"),
+                within: "workout.within",
+            }));
+            f.participant = Some(Box::new(ForcedSeller { kind: says("workout.sold"), of_kind: kinds::FUND }));
+            f
+        },
         // XI-3, 21j.3a: a party whose liabilities exceed its assets CEASES. Counting who was alive was
         // the opposite of the read this system is for, and nothing in this world had ever died.
         works("mortality", AT_REVALUATION, Box::new(Failing { says: says("mortality.failed") })),
         works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
         works("control", AT_MARKETS, Box::new(Closing { kind: afoot::BUY_BACK, says: says("buy_back.closed") })),
-        works("polity", AT_REVALUATION, Box::new(Closing { kind: afoot::ELECTION, says: says("election.called") })),
+        // **XI-17, §47: and the term RUNS OUT.** It was a closer for a process nothing opened, so no
+        // election had ever been called and a parliament that never faces one is immortal (XI-3).
+        works("polity", AT_REVALUATION, Box::new(Elections {
+            kind: says("election.called"),
+            term: "parliament.term",
+            takes: "election.takes",
+            days_per_period: w.days_per_period,
+        })),
     ];
     // Law 10, Law 4: each declaration gets its OWN slot, so no two systems declare the same phase.
     // The order of this list is the order they were wired in, and it is the only thing that decides it.

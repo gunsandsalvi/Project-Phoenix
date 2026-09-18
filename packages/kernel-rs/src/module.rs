@@ -43,6 +43,9 @@ pub struct ParticipantView<'a> {
     schedules: Option<&'a Schedules>,
     /// 3 C2, 22c.2: what it is already standing behind in a venue.
     resting: Option<&'a crate::stores::Resting>,
+    /// XI-3, XI-2, 22i.3: **what it has in flight — its OWN.** A party put in a workout has to be
+    /// able to see that it is in one, or the requirement is something only the kernel knows about.
+    processes: Option<&'a Processes>,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -55,7 +58,7 @@ impl<'a> ParticipantView<'a> {
         period: u32,
         cash: Option<InstrumentId>,
     ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None, resting: None }
+        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None, resting: None, processes: None }
     }
 
     /// XI-9, 21j.1: the same view, able to answer what falls due for it and to it.
@@ -68,6 +71,25 @@ impl<'a> ParticipantView<'a> {
     pub fn resting_in(mut self, resting: &'a crate::stores::Resting) -> Self {
         self.resting = Some(resting);
         self
+    }
+
+    /// XI-3, 22i.3: and able to answer what it has in flight.
+    pub fn afoot(mut self, processes: &'a Processes) -> Self {
+        self.processes = Some(processes);
+        self
+    }
+
+    /// **XI-2, 22i.3: how much this party has been put in a workout for**, and zero where it is in
+    /// none — which is not a party with a workout of nothing, because a workout of nothing is never
+    /// opened. Observer A4: its OWN, and there is no argument here that could make it another's.
+    pub fn in_a_workout(&self) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|r| crate::stores::ProcessId(*r))
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::WORKOUT)
+            .map(|p| all.size(p))
+            .sum()
     }
 
     /// **3 C2, 22c.2: WHAT THIS PARTY IS ALREADY STANDING BEHIND**, in one venue, as a count of

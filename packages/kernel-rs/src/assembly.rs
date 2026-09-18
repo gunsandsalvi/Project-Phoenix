@@ -719,6 +719,7 @@ impl World {
                 agreements: &self.agreements,
                 schedules: &self.schedules,
                 resting: &self.resting,
+                processes: &self.processes,
             },
             self.period,
         );
@@ -736,6 +737,7 @@ impl World {
                 agreements: &self.agreements,
                 schedules: &self.schedules,
                 resting: &mut self.resting,
+                processes: &self.processes,
                 calendar: &self.calendar,
             };
             let session = run_book(

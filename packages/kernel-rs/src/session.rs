@@ -60,6 +60,8 @@ pub struct Shown<'a> {
     /// 3 C2, 22c.2: **its OWN resting orders.** A party that could not see what it already has in
     /// a venue would re-enter it every session and stand behind twice what it meant to (Observer A4).
     pub resting: &'a crate::stores::Resting,
+    /// XI-2, 22i.3: what each party has in flight, so one put in a workout can see that it is.
+    pub processes: &'a crate::stores::Processes,
 }
 
 impl<'a> Shown<'a> {
@@ -77,6 +79,7 @@ impl<'a> Shown<'a> {
         .knowing(self.agreements)
         .owing(self.schedules)
         .resting_in(self.resting)
+        .afoot(self.processes)
     }
 }
 
@@ -136,6 +139,8 @@ pub struct Stores<'a> {
     /// resting order and the session is what matched it — the same reason settlement writes the
     /// register (Law 4).
     pub resting: &'a mut crate::stores::Resting,
+    /// XI-2, 22i.3: what is in flight, read by a forced seller.
+    pub processes: &'a crate::stores::Processes,
     /// **G3.a, 22c2.2: the one calendar**, so an order's life is a DATE and never a count of periods
     /// kept beside it. The assembled world had no calendar at all — it counted periods — which is
     /// why nothing in it could expire.
@@ -188,6 +193,7 @@ pub fn run_book(
             agreements: stores.agreements,
             schedules: stores.schedules,
             resting: stores.resting,
+            processes: stores.processes,
         };
         for (n, p) in participants.iter().enumerate() {
             for &who in books.who(n, book.market) {
@@ -215,6 +221,7 @@ pub fn run_book(
         agreements: stores.agreements,
         resting: stores.resting,
         schedules: stores.schedules,
+        processes: stores.processes,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
@@ -403,6 +410,11 @@ mod tests {
     fn nothing_resting() -> crate::stores::Resting {
         crate::stores::Resting::new()
     }
+
+    /// And nothing in flight: a view over it answers "no workout", which is what a party in none says.
+    fn nothing_afoot() -> crate::stores::Processes {
+        crate::stores::Processes::new()
+    }
     /// party with none says — and is a different answer from a view that cannot see them at all.
     fn no_relations() -> Agreements {
         Agreements::new()
@@ -512,7 +524,7 @@ mod tests {
         let buys = Buys { market, cash, at: 5.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting() }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting(), processes: &nothing_afoot() }, 1);
         // Two parties, each asked ONCE which books it could be in — not once per book.
         assert_eq!(books.narrows, 2);
 
@@ -527,6 +539,7 @@ mod tests {
             agreements: &no_relations(),
             schedules: &nothing_due(),
             resting: &mut nothing_resting(),
+            processes: &nothing_afoot(),
             calendar: &weekly(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
@@ -581,7 +594,7 @@ mod tests {
         let sells = Sells { market, subject: grain, at: 9.0 };
         let buys = Buys { market, cash, at: 4.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting() }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting(), processes: &nothing_afoot() }, 1);
         let mut stores = Stores {
             parties: &parties,
             instruments: &instruments,
@@ -593,6 +606,7 @@ mod tests {
             agreements: &no_relations(),
             schedules: &nothing_due(),
             resting: &mut nothing_resting(),
+            processes: &nothing_afoot(),
             calendar: &weekly(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
@@ -618,7 +632,7 @@ mod tests {
         let params = Params::new(100.0, 60.0);
         let sells = Sells { market: MarketId::at(1), subject: InstrumentId::at(1), at: 4.0 };
         let participants: Vec<&dyn Participant> = vec![&sells];
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting() }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations(), schedules: &nothing_due(), resting: &nothing_resting(), processes: &nothing_afoot() }, 1);
         assert_eq!(books.narrows, 1, "asked once about itself");
         assert!(books.who(0, MarketId::at(1)).is_empty(), "and named no book");
     }

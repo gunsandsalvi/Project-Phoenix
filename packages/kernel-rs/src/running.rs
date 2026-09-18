@@ -42,6 +42,10 @@ pub mod agreed {
     pub const POLICY: u32 = 2;
     pub const SUPPLY: u32 = 3;
     pub const TENANCY: u32 = 4;
+    /// §13 A4, §21 C1: **what a pool is run under.** Terms `[lowest grade it may hold]`, as a rank
+    /// on `ratings::Grade`'s scale — which is what makes a downgrade past the boundary a FORCED SALE
+    /// by every holder bound by it, at the same time (C1.a). They were empty, so a mandate was a
+    /// relation with no content and the boundary the clause turns on was nowhere.
     pub const MANDATE: u32 = 5;
     pub const SUBSCRIPTION: u32 = 6;
     pub const PRIME_BROKERAGE: u32 = 7;
@@ -1396,6 +1400,221 @@ impl Mechanism for Grading {
                 vec![grade.rank(), 0.0, 0.0],
             );
             ctx.say(self.kind, &[by.0, of.0], &[(0, Value::Num(grade.rank()))], true);
+        }
+    }
+}
+
+/// **XI-2, §21 C1, C1.a, 22i.3: A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY
+/// HOLDER BOUND BY IT, ON THE SAME DATE.**
+///
+/// The `forced_sale` row was a CLOSER for a process nothing opened, so XI-2 — a sequencing step —
+/// had never happened in this world. What it was waiting on was a grade, and 22i.2 published one.
+///
+/// This is the most mechanical and most synchronised of XI-2's four doors, and the only one whose
+/// inputs exist: a pool is run under a mandate with a floor (`agreed::MANDATE`'s terms), an
+/// assessor holds a grade on each issuer (`standing::GRADE`), and when the grade falls through the
+/// floor every bound holder must sell what it holds of that issuer's lines — whatever it is worth.
+///
+/// **It opens the workout and does not sell**: a forced seller posts a size and NO level (Clearing
+/// C3), which is an order in a book and therefore a participant's act, not a mechanism's. What is
+/// opened here is the requirement; `ForcedSeller` is what stands in the market with it.
+pub struct ForcedSelling {
+    /// What it says when a holder is put in a workout.
+    pub kind: u32,
+    /// How many periods a holder has to sell what its mandate no longer lets it hold. A TECHNOLOGY:
+    /// how long a breach may stand before it is a breach nobody is curing.
+    pub within: &'static str,
+}
+
+impl Mechanism for ForcedSelling {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let within = ctx.params().periods(self.within) as u32;
+        // §21 C1: what each issuer is graded at now. The WORST grade any house holds on it, because
+        // a mandate that let a holder pick the kindest house would not bind on anything.
+        let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let s = crate::stores::StandingId(row);
+            if !ctx.standing().live(s) || ctx.standing().kind_of(s) != standing::GRADE {
+                continue;
+            }
+            let about = ctx.standing().about(s).0;
+            let rank = ctx.standing().terms(s)[0];
+            worst.entry(about).and_modify(|r| if rank > *r { *r = rank }).or_insert(rank);
+        }
+        if worst.is_empty() {
+            return;
+        }
+
+        let mut breached: Vec<(PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::MANDATE {
+                continue;
+            }
+            let floor = match ctx.agreements().terms(a).first() {
+                Some(&floor) => floor,
+                // A mandate with no floor restricts no grade. That is an answer about that mandate
+                // and not a reason to invent one (Appendix A).
+                None => continue,
+            };
+            // The pool is the side the mandate is over; the manager is the other. The pool is what
+            // HOLDS, so it is the side whose register rows this reads.
+            let (one, other) = ctx.agreements().between(a);
+            for pool in [one, other] {
+                if !ctx.parties().alive(pool) {
+                    continue;
+                }
+                let mut must_sell = 0.0;
+                for row in ctx.register().of_holder(pool) {
+                    let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
+                    let issuer = ctx.instruments().issuer_of(line);
+                    // C1: through the floor, and only through it. A grade at the floor is one the
+                    // mandate still allows.
+                    if matches!(worst.get(&issuer.0), Some(&rank) if rank > floor) {
+                        must_sell += ctx.register().quantity(crate::ids::HoldingId(*row));
+                    }
+                }
+                if must_sell > 0.0 {
+                    breached.push((pool, must_sell));
+                }
+            }
+        }
+
+        for (pool, units) in breached {
+            // C1.a: it is already in one, and a second workout for the same breach would be the
+            // same requirement counted twice.
+            if ctx.processes().running(afoot::WORKOUT).iter().any(|p| ctx.processes().owner(*p) == pool) {
+                continue;
+            }
+            ctx.opens(crate::module::Opens {
+                kind: afoot::WORKOUT,
+                owner: pool,
+                closes: Some(ctx.period() + within),
+                size: units,
+            });
+            ctx.say(self.kind, &[pool.0], &[(0, Value::Num(units))], true);
+        }
+    }
+}
+
+/// **XI-2, Clearing C3: AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.**
+///
+/// A forced sale with a reservation price is a sale that can decline, and then the channel XI-2 is
+/// about is closed: the sale must be struck at whatever the other side posted, which is what makes
+/// it move the price and what makes the move reach holders that did nothing.
+pub struct ForcedSeller {
+    pub kind: u32,
+    /// The kinds of party that can be put in a workout. Registry data handed in, never a branch.
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for ForcedSeller {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        // It sells what it HOLDS, off its own rows — never by asking every book in the world.
+        if view.in_a_workout() == 0.0 {
+            return Vec::new();
+        }
+        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let must = view.in_a_workout();
+        if must <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::systems::line_of(m);
+        let held = view.free(line);
+        // Law 6: it cannot sell more than it holds, which is arithmetic about a holding and not a
+        // cap on a number.
+        let units = crate::mechanisms::forced_sale::sells(held, must) as i64;
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Sell,
+            // **NO LEVEL.** This is the whole of Clearing C3 and XI-2 in one field.
+            price: None,
+            qty: units,
+        }]
+    }
+}
+
+/// **XI-17, §47: THE TERM RUNS OUT AND AN ELECTION IS CALLED.**
+///
+/// `polity` was a CLOSER for a process nothing opened, so §47 — a whole part of the spec — had never
+/// happened in this world: no election was ever called, no seats were ever held, and a parliament
+/// that never faces one is the immortality Law 1 and XI-3 are both against.
+///
+/// **It is placed by DATE** (§1 G3.b): the term is a count of days from the last election, never a
+/// count of periods. The first is due a term after the world opened, because that is the only date
+/// there is to reckon from.
+///
+/// **What it does NOT do is decide anything.** Parliament never sets a price, a quantity, an outcome
+/// or the central bank's rate (Appendix B); what an election produces is seats, and what seats
+/// produce is a mandate the polity's own mechanisms read. This opens the election and says it was
+/// called; the poll and the allotment are `mechanisms::polity`'s and are reached from the process.
+pub struct Elections {
+    pub kind: u32,
+    /// XI-17: the term, in days. A POLICY — the constitution's, and one of its three primitives.
+    pub term: &'static str,
+    /// How long the election itself takes: called, then held. A TECHNOLOGY.
+    pub takes: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Elections {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // §47: the polity is the TREASURY's — it is the state, and there is one per country. A world
+        // with no state has no parliament, which is an answer and not a gap.
+        let states: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::TREASURY)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if states.is_empty() {
+            return;
+        }
+        let term = ctx.params().days(self.term) as i64;
+        let takes = ctx.params().periods(self.takes) as u32;
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // §1 G3.b: when the last one was HELD, read off the journal. A state that has never held one
+        // reckons from the day the world opened, which is the only date there is.
+        let mut held: std::collections::HashMap<u32, i64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            if let Some(&who) = ctx.journal().subjects_of(row).first() {
+                held.insert(who, i64::from(ctx.journal().period_of(row)) * self.days_per_period);
+            }
+        }
+
+        let mut due: Vec<PartyId> = Vec::new();
+        for state in states {
+            // One election at a time: a second called while the first is running is not a term
+            // expiring, it is the same term counted twice.
+            if ctx.processes().running(afoot::ELECTION).iter().any(|p| ctx.processes().owner(*p) == state) {
+                continue;
+            }
+            let last = *held.get(&state.0).unwrap_or(&0);
+            if today.0 - last >= term {
+                due.push(state);
+            }
+        }
+        for state in due {
+            ctx.opens(crate::module::Opens {
+                kind: afoot::ELECTION,
+                owner: state,
+                closes: Some(ctx.period() + takes),
+                // XI-17: the seats it is for. A count, and the constitution's own primitive.
+                size: ctx.params().count("parliament.seats"),
+            });
+            ctx.say(self.kind, &[state.0], &[(0, Value::Num(today.0 as f64))], true);
         }
     }
 }

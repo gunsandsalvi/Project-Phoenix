@@ -145,6 +145,8 @@ fn main() {
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
     let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
+    // And nothing in flight: a bench measures a session, not a world with workouts in it.
+    let nothing_afoot = phoenix_kernel::stores::Processes::new();
     let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let said = journal.kinds.declare("module.said");
@@ -190,7 +192,7 @@ fn main() {
     let period = clock.period.0;
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting }, period);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting, processes: &nothing_afoot }, period);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -209,6 +211,7 @@ fn main() {
             agreements: &bench_agreements,
             schedules: &bench_schedules,
             resting: &mut bench_resting,
+            processes: &nothing_afoot,
             calendar: &bench_calendar,
         };
         for n in 1..=BOOKS as u32 {
