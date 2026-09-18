@@ -320,6 +320,17 @@ A duration is the shadow; the count is the cause.
 **489 kernel reads per holding per period. 266 per participant question.** That ratio is the
 whole of this item: the world is not big, the reading of it is repetitive.
 
+**WHERE IT STANDS after 0g.23–0g.27: 265,908,687 → 105,524,506 ops (2.52×) and 72.1 → 42.1 s
+(1.71×), median of three, `events 178604` and `audit 356268` unchanged throughout.** The op count
+is still bit-exact reproducible across runs. The remaining 14× is the four rows below plus the
+constant, and the time profile has changed shape under the removals: **GC is now 22.4% of a
+period, the audit 18.0% and the register's own reads 17.6%**, where `control` and `banks` were the
+top two before. The plan's risk has come true exactly as written — what survives is denser, so
+0g.29 is no longer optional and its target is the 35 M small allocations and the array every
+indexed read returns, not a per-call cost with a small call count (see the reverted attempt in
+`docs/RECORD.md`).
+
+
 **Where the period goes** (reads, and what they produced):
 
 | where | reads | share | produced |
