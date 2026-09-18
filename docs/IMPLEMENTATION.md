@@ -215,12 +215,21 @@ short without dying. Nothing below this is buildable on a world that decides not
   period), and **the instruments are indexed by issuer** (asking *are my shares listed* walked
   16,750 lines per company per period). `reporting.accounts` went home to the journal: what was
   missing was never a store, it was a mechanism.
-- [ ] 22i.2 **A grade is published** (§21 A4, 21.69). `grade_from` and `reassess` are built and the
-  row counts parties alive. It needs a `State` per issuer — leverage, coverage, cash, size, AGE and
-  the trend. **Age is now readable** (22i.1) and **coverage is** (`accounts.published` carries
-  income). What is still missing is a HOME for a grade: `ratings.grades` is declared homeless, and
-  `reassess` says when a HELD grade moves with nothing holding one, so two houses cannot disagree
-  about a name and no grade can be shown to have been wrong.
+- [x] 22i.2 **A grade is published** (§21 A2–A4, A6; 21.69). **Done**: `running::Grading` on the
+  `ratings` row, which left the census — **29 of 51**. The state is READ and A2.a's forbidden input
+  cannot be supplied (no price, no spread): leverage is what an issuer owes against what it holds,
+  coverage is what it last PUBLISHED against what falls due (22i.1 first), age is `Parties::age`
+  (22i.1 again), the trend is this year's published income against last year's. **A grade went home
+  to `Standing`**, which needed one thing: a standing is now ABOUT somebody. A rating is exactly
+  terms a party stands behind until it withdraws them, and what made it homeless was that there was
+  nowhere to say whom it was about — so two houses hold two rows on one name (A4), a move is a
+  `restates` so what a house said before stays readable (A6), and it is sticky (A3).
+- [ ] 22i.2a **THE TWO HOUSES CANNOT DISAGREE.** §21 A4 says two houses looking at one issuer should
+  not always agree, and here they always do: `grade_from` is one function over one state, so every
+  assessor reaches the same grade by construction. What is missing is a house's OWN view — its own
+  bands (a POLICY of the assessor, which `grade_from` says it is and then shares), or its own
+  reading of the state. Found by 22i.2 and not chased: the disagreement is load-bearing (§46 A3) and
+  it is a mechanism, not a number to jitter.
 - [ ] 22i.3 **The estimates have no home.** `reporting::estimate`, `consensus`, `disagreement` and
   `settle` are built over a slice of estimates nobody keeps — so the consensus is computed from a
   list that exists for one call and the surprise has nothing to settle against (§48 C1, F1).

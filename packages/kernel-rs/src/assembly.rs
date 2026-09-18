@@ -678,21 +678,20 @@ impl World {
             self.making.finishes(batch);
         }
         // 21f.1, 21f.2: and what a party now stands behind. A party that already stands behind terms
-        // of this kind RESTATES them, so what it was standing behind stays readable beside what it is
-        // (Housing C5: a tightening is only visible against what it was).
-        for (kind, who, terms) in asked.stood {
-            let was = self
-                .standing
-                .of_party(who)
-                .iter()
-                .map(|r| crate::stores::StandingId(*r))
-                .find(|s| self.standing.live(*s) && self.standing.kind_of(*s) == kind);
+        // of this kind ABOUT THE SAME SUBJECT restates them, so what it was standing behind stays
+        // readable beside what it is (Housing C5: a tightening is only visible against what it was).
+        //
+        // 22i.2: the subject is part of the question. An assessor holds a grade on every name it
+        // covers, and a lookup that matched on the kind alone would have made its view of one issuer
+        // overwrite its view of every other.
+        for (kind, who, about, terms) in asked.stood {
+            let was = self.standing.of_party_about(who, about, kind);
             match was {
                 Some(s) => {
                     self.standing.restates(s, &terms, self.period);
                 }
                 None => {
-                    self.standing.stands(kind, who, &terms, self.period);
+                    self.standing.stands(kind, who, about, &terms, self.period);
                 }
             }
         }

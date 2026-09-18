@@ -737,6 +737,12 @@ pub struct StandingId(pub u32);
 pub struct Standing {
     kind: Vec<u32>,
     who: Vec<u32>,
+    /// **22i.2: WHAT IT IS ABOUT.** A posting and a lending standard are about nothing in
+    /// particular — they are terms anybody meeting them may have. A RATING is about a named other
+    /// party, and that is the one thing that made a grade homeless: it is exactly terms a party
+    /// stands behind until it withdraws them, and there was nowhere to say whom it was about.
+    /// `PartyId::NONE` where it is about nobody, which is an answer and not an omission.
+    about: Vec<u32>,
     term_at: Vec<u32>,
     term_len: Vec<u32>,
     terms: Vec<f64>,
@@ -761,12 +767,13 @@ impl Standing {
 
     /// The only way to make one. A party stands behind terms from a period; there is no anonymous
     /// standing offer, because a posting nobody holds cannot be withdrawn by anybody.
-    pub fn stands(&mut self, kind: u32, who: PartyId, terms: &[f64], since: u32) -> StandingId {
+    pub fn stands(&mut self, kind: u32, who: PartyId, about: PartyId, terms: &[f64], since: u32) -> StandingId {
         assert!(who.some(), "XI-10: a standing offer is HELD by a named party, or nobody can withdraw it");
         assert!(!terms.is_empty(), "Law 8: terms nobody stated are not terms");
         let row = self.kind.len() as u32;
         self.kind.push(kind);
         self.who.push(who.0);
+        self.about.push(about.0);
         self.term_at.push(self.terms.len() as u32);
         self.term_len.push(terms.len() as u32);
         self.terms.extend_from_slice(terms);
@@ -787,13 +794,30 @@ impl Standing {
     /// old row is withdrawn rather than overwritten, because what a lender was lending at last period
     /// is a fact somebody may read (Law 19, and it is how a tightening is visible at all).
     pub fn restates(&mut self, s: StandingId, terms: &[f64], now: u32) -> StandingId {
-        let (kind, who) = (self.kind[s.0 as usize], PartyId(self.who[s.0 as usize]));
+        let (kind, who, about) =
+            (self.kind[s.0 as usize], PartyId(self.who[s.0 as usize]), PartyId(self.about[s.0 as usize]));
         self.withdraw(s);
-        self.stands(kind, who, terms, now)
+        self.stands(kind, who, about, terms, now)
     }
 
     pub fn live(&self, s: StandingId) -> bool {
         self.live[s.0 as usize]
+    }
+
+    /// 22i.2: whom it is about. `NONE` where it is about nobody in particular.
+    #[inline]
+    pub fn about(&self, s: StandingId) -> PartyId {
+        PartyId(self.about[s.0 as usize])
+    }
+
+    /// 21 A4, A6, 22i.2: **what this party is standing behind about THAT one**, live — the read a
+    /// grade is. Two assessors looking at one issuer hold two rows and may disagree, which is what
+    /// A4 is about and what one shared number could never express.
+    pub fn of_party_about(&self, who: PartyId, about: PartyId, kind: u32) -> Option<StandingId> {
+        self.of_party(who)
+            .iter()
+            .map(|r| StandingId(*r))
+            .find(|s| self.live(*s) && self.kind_of(*s) == kind && self.about(*s) == about)
     }
 
     pub fn held_by(&self, s: StandingId) -> PartyId {
@@ -1300,7 +1324,7 @@ mod tests {
         // disappearance Law 5 is against.
         let mut s = Standing::new();
         let employer = party(1);
-        let p = s.stands(7, employer, &[900.0, 30.0], 4);
+        let p = s.stands(7, employer, PartyId::NONE, &[900.0, 30.0], 4);
         assert!(s.live(p));
         assert_eq!(s.held_by(p), employer);
         assert_eq!(s.terms(p), &[900.0, 30.0]);
@@ -1319,7 +1343,7 @@ mod tests {
         // visible against what it was. Overwriting the terms would delete the comparison.
         let mut s = Standing::new();
         let lender = party(2);
-        let was = s.stands(9, lender, &[4.0, 0.10], 1);
+        let was = s.stands(9, lender, PartyId::NONE, &[4.0, 0.10], 1);
         let now = s.restates(was, &[3.0, 0.25], 6);
 
         assert!(!s.live(was));
@@ -1334,7 +1358,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "or nobody can withdraw it")]
     fn a_standing_offer_nobody_holds_is_not_one() {
-        Standing::new().stands(7, PartyId::NONE, &[1.0], 0);
+        Standing::new().stands(7, PartyId::NONE, PartyId::NONE, &[1.0], 0);
     }
 
     #[test]

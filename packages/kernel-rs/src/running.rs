@@ -65,6 +65,15 @@ pub mod standing {
     /// which is `housing::Standard` read back — and a tightening is a `restates`, so what it was
     /// lending at last period is still readable beside what it is lending at now.
     pub const LENDING_STANDARD: u32 = 1;
+    /// **§21 A3, A4, A6, 22i.2: THE GRADE AN ASSESSOR HOLDS ON A NAME.** Terms
+    /// `[grade, probability of failing, loss given failure]`, `about` the issuer it is a view of.
+    ///
+    /// It is a standing and not an agreement because it is ONE-SIDED: the issuer did not agree to
+    /// be rated and cannot withdraw it. It is per assessor, so two houses hold two rows on one name
+    /// and may disagree (A4) — a single shared grade could never express that. And a move is a
+    /// `restates`, so what the house said before is still readable beside what it says now, which
+    /// is what lets a grade be shown to have been wrong (A6).
+    pub const GRADE: u32 = 2;
 }
 
 /// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
@@ -1279,6 +1288,118 @@ impl Mechanism for Publishes {
 }
 
 
+/// **§21 A2–A4, A6, 22i.2: EVERY HOUSE GRADES EVERY NAME IT CAN READ, AND THEY DISAGREE.**
+///
+/// This world had never published a grade. `grade_from` and `reassess` were built, tested and
+/// unreached; the `ratings` row counted how many parties were alive. So the investment-grade index
+/// was empty by construction, every claim took the worst weight wherever a grade was read, and A4's
+/// two houses could not disagree about anything because neither said anything.
+///
+/// **The state is READ, and A2.a's forbidden input cannot be supplied**: there is no price here and
+/// no spread. Leverage is what an issuer owes against what it holds; coverage is what it last
+/// PUBLISHED against what falls due on it (which is why 22i.1 came first); age is how long it has
+/// been going (22i.1 again); the trend is this year's published income against last year's.
+///
+/// **A house holds its grade** (`standing::GRADE`, `about` the issuer), so two houses hold two rows
+/// on one name. A move is a `restates`, so what a house said before stays readable beside what it
+/// says now — which is what lets a grade be shown to have been wrong (A6).
+pub struct Grading {
+    /// The event kind a rating action is published under.
+    pub kind: u32,
+    /// §48's published accounts, which is what the coverage and the trend are read from.
+    pub accounts: u32,
+    pub at_income: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Grading {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let houses: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::ASSESSOR)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if houses.is_empty() {
+            return;
+        }
+        // A2: what each name last published, and what it published before that — the trend. One
+        // pass over the accounts rather than a walk per name per house (Law 19).
+        let mut last: std::collections::HashMap<u32, (f64, Option<f64>)> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.accounts) {
+            if let (Some(&who), Some(Value::Num(income))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income))
+            {
+                let was = last.get(&who).map(|(now, _)| *now);
+                last.insert(who, (income, was));
+            }
+        }
+
+        let mut actions: Vec<(PartyId, PartyId, crate::mechanisms::ratings::Grade)> = Vec::new();
+        for (&who, &(income, before)) in &last {
+            let of = PartyId(who);
+            if !ctx.parties().alive(of) {
+                continue;
+            }
+            // A2: leverage is what it owes against what it holds. Both are reads.
+            let owes: f64 = ctx
+                .instruments()
+                .of_issuer(of)
+                .iter()
+                .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
+                .sum();
+            let holds = equity(of, ctx.register(), ctx.instruments(), ctx.claims());
+            let state = crate::mechanisms::ratings::State {
+                leverage: owes / holds,
+                // A2: coverage is what it earns against what it owes. An issuer that owes nothing is
+                // covered by arithmetic and not by a bound (Law 6).
+                coverage: if owes > 0.0 { income / owes } else { f64::INFINITY },
+                cash: ctx.register().quantity(
+                    ctx.register().row(of, match crate::ledger::account_of(ctx.parties(), ctx.instruments(), of) {
+                        Some(cash) => cash,
+                        None => continue,
+                    }),
+                ),
+                size: holds,
+                age_periods: ctx.parties().age(of, ctx.period()),
+                // A2: and the TREND — this year's published income against last year's. A name with
+                // one report has no trend, and no trend is not a trend of zero.
+                trend: match before {
+                    Some(was) if was != 0.0 => (income - was) / was.abs(),
+                    _ => 0.0,
+                },
+            };
+            let grade = crate::mechanisms::ratings::grade_from(&state);
+            for &by in &houses {
+                actions.push((by, of, grade));
+            }
+        }
+
+        for (by, of, grade) in actions {
+            // A3: **it is STICKY.** A house that already says this about this name says nothing;
+            // a grade republished every period is not a rating action and would make A6's record of
+            // what a house got wrong unreadable.
+            let held = ctx
+                .standing()
+                .of_party_about(by, of, crate::running::standing::GRADE)
+                .map(|s| ctx.standing().terms(s)[0]);
+            if matches!(held, Some(rank) if rank == grade.rank()) {
+                continue;
+            }
+            // B1, B2: the probability of failing and, SEPARATELY, the loss given it. Both are the
+            // house's own view and both are stood behind with the grade.
+            ctx.now_stands(
+                crate::running::standing::GRADE,
+                by,
+                of,
+                vec![grade.rank(), 0.0, 0.0],
+            );
+            ctx.say(self.kind, &[by.0, of.0], &[(0, Value::Num(grade.rank()))], true);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1392,8 +1513,8 @@ mod tests {
         for batch in asked.finished {
             w.making.finishes(batch);
         }
-        for (kind, who, terms) in asked.stood {
-            w.standing.stands(kind, who, &terms, w.period);
+        for (kind, who, about, terms) in asked.stood {
+            w.standing.stands(kind, who, about, &terms, w.period);
         }
     }
 

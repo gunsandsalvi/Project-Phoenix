@@ -325,7 +325,7 @@ pub struct MechanismContext<'a> {
     repaid: Vec<(crate::stores::ClaimId, f64)>,
     started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     finished: Vec<crate::stores::BatchId>,
-    stood: Vec<(u32, PartyId, Vec<f64>)>,
+    stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
     split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
     issued: Vec<Brings>,
     agreed: Vec<Agrees>,
@@ -630,8 +630,8 @@ impl<'a> MechanismContext<'a> {
 
     /// **What this party stands behind**, until it withdraws it (21f.1, 21f.2): a posting, a lending
     /// standard. `Standing` is the one writer.
-    pub fn now_stands(&mut self, kind: u32, who: PartyId, terms: Vec<f64>) {
-        self.stood.push((kind, who, terms));
+    pub fn now_stands(&mut self, kind: u32, who: PartyId, about: PartyId, terms: Vec<f64>) {
+        self.stood.push((kind, who, about, terms));
     }
 
     /// **21j.1a, 21.139: bring an obligation into existence.** The line, the units on the issuer's
@@ -723,7 +723,7 @@ pub struct Taken {
     /// And the batches taken off it, whose `Create` legs are in `proposed` (Law 5: one event).
     pub finished: Vec<crate::stores::BatchId>,
     /// 21f.1, 21f.2: terms a party now stands behind. The kernel writes `Standing`.
-    pub stood: Vec<(u32, PartyId, Vec<f64>)>,
+    pub stood: Vec<(u32, PartyId, PartyId, Vec<f64>)>,
     /// XI-15, 21h: cells that an event applies to part of — the parent, how many members it takes,
     /// and the relationship those members carry with them. `Parties` is the one writer of a weight.
     pub split: Vec<(PartyId, u32, crate::stores::AgreementId)>,

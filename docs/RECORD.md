@@ -20858,3 +20858,30 @@ disagree about a name), `reporting.estimates` (`consensus` is computed from a li
 call), and `agreements.states` (21.62's, restated as a noun).
 
 **735 tests; `npm run check` green; clippy clean.**
+
+## 22i.2 — every house grades every name it can read
+
+**What.** `running::Grading` on the `ratings` row, which leaves the census: **29 of 51**.
+
+The state is READ and §21 A2.a's forbidden input cannot be supplied — there is no price here and no
+spread. Leverage is what an issuer owes against what it holds; coverage is what it last PUBLISHED
+against what falls due on it; age is how long it has been going; the trend is this year's published
+income against last year's. Two of those are 22i.1's, which is why it came first.
+
+**A grade went home to `Standing`, and that needed one thing: a standing is now ABOUT somebody.** A
+rating is exactly what `Standing` holds — terms a party stands behind until it withdraws them,
+one-sided, because the issuer did not agree to be rated and cannot withdraw it. What made it homeless
+was that there was nowhere to say whom it was about. With `about`: two houses hold two rows on one
+name (A4), a move is a `restates` so what a house said before stays readable beside what it says now
+(A6), and it is sticky — a state that has not moved the grade is not a rating action (A3).
+
+**What it found, and did not chase. The two houses cannot disagree.** §21 A4 says two houses looking
+at one issuer should not always agree, and here they always do: `grade_from` is one function over one
+state, so every assessor reaches the same grade by construction — the function's own comment calls
+the bands *a POLICY of the assessor* and then shares them between all of them. That is a mechanism
+and not a number to jitter, and the disagreement is load-bearing (§46 A3). **22i.2a.**
+
+**And a name with ONE published year is not gradeable at all**, which is right: a first report has no
+prior close, so it carries no income, so coverage cannot be read. Missing is missing.
+
+**736 tests; `npm run check` green; clippy clean; census 30 → 29.**

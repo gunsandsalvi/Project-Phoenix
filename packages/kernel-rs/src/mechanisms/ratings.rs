@@ -189,6 +189,37 @@ pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
 
 /// A4, E3: **no assessment that is always right.** A rated-safe issuer can fail, and if a rating never
 /// misprices, C1's forced sales never surprise anyone. This is the read that keeps it measurable.
+impl Grade {
+    /// 22i.2: the grade as a term, so a house can STAND behind it (`standing::GRADE`). A grade is
+    /// ordinal, so the number is its rank on the scale and nothing else — never a score, never
+    /// something to average (E4: the distribution is a read of the states, not a target).
+    pub fn rank(self) -> f64 {
+        match self {
+            Grade::Highest => 0.0,
+            Grade::High => 1.0,
+            Grade::Upper => 2.0,
+            Grade::Lower => 3.0,
+            Grade::Speculative => 4.0,
+            Grade::Substantial => 5.0,
+            Grade::Defaulted => 6.0,
+        }
+    }
+
+    /// And back, reading a term a house is standing behind. Anything off the scale is not a grade.
+    pub fn at_rank(rank: f64) -> Option<Grade> {
+        Some(match rank as i64 {
+            0 => Grade::Highest,
+            1 => Grade::High,
+            2 => Grade::Upper,
+            3 => Grade::Lower,
+            4 => Grade::Speculative,
+            5 => Grade::Substantial,
+            6 => Grade::Defaulted,
+            _ => return None,
+        })
+    }
+}
+
 pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
     actually_failed && r.grade <= Grade::Upper
 }
