@@ -113,7 +113,7 @@ fn main() {
     let mut refused = 0usize;
     for legs in &built {
         match wire.settle(
-            &Instruction { legs, cause: Cause::Trade },
+            &Instruction::against_payment(legs, Cause::Trade),
             1,
             &mut reg,
             &mut journal,

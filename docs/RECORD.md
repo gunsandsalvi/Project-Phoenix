@@ -16847,3 +16847,50 @@ its two findings this round were both in the bench: a clippy index-loop, and a `
 Law 6's bound. The second is now exempt for `src/bin/**` with the reason stated, because a bench
 CONSTRUCTS inputs and "build no more legs than remain" is arithmetic about a loop rather than a
 damper on a number the world decided — which is what the TypeScript config does for the same files.
+
+# 0g.41a — free of payment, as a declared pathway (inserted at the owner's ask)
+
+**The engine has no FOP pathway. It has an ABSENCE OF A MONEY LEG, and that is not the same thing.**
+
+A restructured bond delivered for the old one, a collateral substitution, a distribution in kind,
+an estate handed to probate: the units move and nothing moves against them. In the TypeScript
+engine every one of those is `ctx.settle({ legs: [...asset legs], cause: 'corporateAction' })` — an
+instruction that happens to carry no money leg, which on the wire is **INDISTINGUISHABLE FROM A
+MONEY LEG SOMEBODY FORGOT.** Law 5 says a one-sided flow is a defect even when nothing fails, and
+the check could not be written: a legitimate free delivery and a dropped payment settle identically
+and look identical afterwards.
+
+`Delivery` is declared on the instruction and settlement checks it against the legs:
+
+- **`AgainstPayment`** — XI-5: units and money together, neither without the other.
+- **`Free`** — the units move and nothing moves against them HERE. The deliverer performs
+  unconditionally; whatever it is owed is owed outside this instruction, by a promise that can
+  fail, so **it carries the other side's performance as an exposure it chose.** That is the
+  economic content and the reason this is a pathway rather than a convenience.
+- **`Nothing`** — a payment, a thing made, a thing that perished: no delivery to be versus anything.
+
+A mismatch **throws at the site** rather than settling and being reported later, because a writer
+that says one thing and sends another has made a mistake, not met an outcome (error discipline).
+
+**And the exposure is recorded.** `Settlement::delivered_free()` reads who performed, who was
+trusted and when. It is an index of what the wire already did and never a second history — the legs
+are still the record — but a world carrying exposures nobody can see is the thing Law 1 is about.
+
+## It caught a mislabelled instruction on its first run
+
+`capital-programme`'s own test delivered plant with no money against it while declaring
+`AgainstPayment`. The guard refused it in the first `cargo test` after it was written. That is one
+instruction in a kernel of fifty-seven tests; **the TypeScript engine has 37 `cause:
+'corporateAction'` settlements and no way to ask the same question of any of them.**
+
+**Four laws as tests:** a free delivery moves the units and records who was trusted; a delivery with
+money against it is NOT free of payment; **a trade that lost its money leg is caught instead of
+settling free** — which is the defect the pathway exists to make findable; and a free delivery is
+still all legs or none, because a half-delivered restructuring is not a restructuring.
+
+**It is unused.** Nothing in the kernel or the one ported module settles `Free` outside the tests,
+which is what the owner asked for: the pathway exists and the mechanisms that should use it are
+named in the plan rather than switched over here.
+
+**Fifty-seven laws now hold as tests; clippy is clean; `phoenix-check` is green.** A period is
+unchanged at **130.3 ms**.

@@ -139,7 +139,7 @@ fn main() {
     let t = Instant::now();
     let mut ok = 0usize;
     for legs in &work {
-        if wire.settle(&Instruction { legs, cause: Cause::Trade }, period, &mut reg, &mut journal, settled, failed)
+        if wire.settle(&Instruction::against_payment(legs, Cause::Trade), period, &mut reg, &mut journal, settled, failed)
             == Outcome::Settled
         {
             ok += 1;

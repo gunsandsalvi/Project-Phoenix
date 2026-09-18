@@ -216,7 +216,7 @@ mod tests {
 
         // Period 2: it sells 40, and the leg says so.
         let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty: 40.0, price_per_unit: Some(2.0) }];
-        wire.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 2, &mut reg, &mut j, ok, no);
+        wire.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 2, &mut reg, &mut j, ok, no);
         let reports = audit.run(&reg, &wire, 2);
         assert!(
             reports[0].violations.is_empty(),

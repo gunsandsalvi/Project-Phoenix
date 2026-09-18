@@ -74,9 +74,78 @@ pub enum Outcome {
     ShortOfUnits,
 }
 
+/// **HOW THE UNITS AND THE MONEY ARE TIED TOGETHER — and it is DECLARED, not inferred.**
+///
+/// XI-5, Money C3.a: delivery versus payment is that neither leg happens without the other. That
+/// is the protection, and it is not free: it requires the money to be there at the same instant.
+///
+/// **Not everything settles that way, and this world had no way to say so.** A restructured bond
+/// delivered for the old one, a collateral substitution, a distribution in kind, an estate handed
+/// to probate: the units move and no money moves against them. In the TypeScript engine those are
+/// an instruction with asset legs and no money leg — which on the wire is INDISTINGUISHABLE FROM A
+/// MONEY LEG SOMEBODY FORGOT. Law 5 says a one-sided flow is a defect even when nothing fails, and
+/// the check could not be written, because a legitimate free delivery and a dropped payment look
+/// the same.
+///
+/// So the instruction says which it is and settlement refuses a mismatch. That is the whole point:
+/// it turns "there is no money leg" from an absence into a STATEMENT somebody made and can be held
+/// to.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Delivery {
+    /// XI-5: units and money in the same instruction, so neither happens without the other.
+    AgainstPayment,
+    /// **FREE OF PAYMENT.** The units move and nothing moves against them here. The deliverer
+    /// PERFORMS UNCONDITIONALLY: whatever it is owed is owed outside this instruction, by a promise
+    /// that can fail, so it carries the other side's performance as an exposure it chose. That is
+    /// the economic content of settling this way and the reason it is a different pathway rather
+    /// than a convenience — a world that let a module deliver free without saying so would be
+    /// hiding a real risk somebody took.
+    Free,
+    /// Nothing crossed between two parties: a payment, a thing made, a thing that perished. There
+    /// is no delivery here to be versus anything.
+    Nothing,
+}
+
 pub struct Instruction<'a> {
     pub legs: &'a [Leg],
     pub cause: Cause,
+    /// What the writer says this is. Settlement checks it against the legs (`Settlement::settle`).
+    pub delivery: Delivery,
+}
+
+impl<'a> Instruction<'a> {
+    /// XI-5: the ordinary way. Units one way, money the other, together or not at all.
+    pub fn against_payment(legs: &'a [Leg], cause: Cause) -> Self {
+        Self { legs, cause, delivery: Delivery::AgainstPayment }
+    }
+
+    /// Free of payment: the deliverer performs and takes the other side on trust.
+    pub fn free_of_payment(legs: &'a [Leg], cause: Cause) -> Self {
+        Self { legs, cause, delivery: Delivery::Free }
+    }
+
+    /// A payment, a thing made, a thing that perished: nothing is delivered against anything.
+    pub fn plain(legs: &'a [Leg], cause: Cause) -> Self {
+        Self { legs, cause, delivery: Delivery::Nothing }
+    }
+
+    /// What the LEGS say this is, so the declaration can be held to them.
+    fn shape(&self) -> Delivery {
+        let mut delivers = false;
+        let mut pays = false;
+        for leg in self.legs {
+            match leg {
+                Leg::Asset { from, to, .. } if from != to => delivers = true,
+                Leg::Money { from, to, .. } if from != to => pays = true,
+                _ => {}
+            }
+        }
+        match (delivers, pays) {
+            (true, true) => Delivery::AgainstPayment,
+            (true, false) => Delivery::Free,
+            _ => Delivery::Nothing,
+        }
+    }
 }
 
 /// Money D1, D4: EVERY INSTRUCTION EVER APPLIED, numbered, in order, with its legs. **The wire is
@@ -96,6 +165,11 @@ pub struct Settlement {
     legs: Vec<Leg>,
     /// Audit C1: where each period's instructions begin and end, written as they arrive.
     by_period: Vec<(u32, u32, u32)>,
+    /// Every free delivery: who performed, who was trusted, and when. It is a READ of what the
+    /// wire did and never a second history — the legs are still the record; this is the index a
+    /// reader asking *who is exposed and to whom* would otherwise have to walk them to build.
+    delivered_free: Vec<(PartyId, PartyId, u32)>,
+
 }
 
 impl Default for Settlement {
@@ -114,6 +188,7 @@ impl Settlement {
             leg_len: Vec::new(),
             legs: Vec::new(),
             by_period: Vec::new(),
+            delivered_free: Vec::new(),
         }
     }
 
@@ -144,6 +219,12 @@ impl Settlement {
         &self.legs[at..at + len]
     }
 
+    /// Who delivered free of payment, to whom, and when — the exposures this world is carrying
+    /// because somebody performed before being paid.
+    pub fn delivered_free(&self) -> &[(PartyId, PartyId, u32)] {
+        &self.delivered_free
+    }
+
     /// Audit C1: this period's instructions, without walking the history.
     pub fn in_period(&self, period: u32) -> std::ops::Range<usize> {
         for &(p, from, to) in &self.by_period {
@@ -167,7 +248,21 @@ impl Settlement {
         settled_kind: u32,
         failed_kind: u32,
     ) -> Outcome {
+        // The declaration, against the legs. A writer that says one thing and sends another has
+        // made a mistake rather than met an outcome, so this THROWS where a short balance is
+        // returned: it is a contract violation at the site (`docs/ARCHITECTURE.md` error
+        // discipline), and it is what makes "free of payment" a statement instead of an absence.
+        let shape = ins.shape();
+        assert!(
+            shape == ins.delivery,
+            "XI-5: this instruction is declared {:?} and its legs are {shape:?} — \
+             a delivery with no money against it is either FREE OF PAYMENT or a payment somebody \
+             forgot, and the wire cannot tell which unless the writer says",
+            ins.delivery
+        );
+
         // The pre-check. Law 6: nothing is clamped here — a leg that cannot happen is refused.
+
         for leg in ins.legs {
             match *leg {
                 Leg::Money { from, instrument, amount, .. } => {
@@ -275,7 +370,19 @@ impl Settlement {
                 }
             }
         }
+        // A free delivery is a risk somebody took, so the record NAMES who took it. Without this
+        // the world would carry an exposure nobody could see, which is the thing Law 1 is about.
+        if ins.delivery == Delivery::Free {
+            for leg in ins.legs {
+                if let Leg::Asset { from, to, .. } = *leg {
+                    if from != to {
+                        self.delivered_free.push((from, to, period));
+                    }
+                }
+            }
+        }
         self.record(Outcome::Settled, ins, period, journal, settled_kind)
+
     }
 
     fn record(
@@ -328,7 +435,7 @@ mod tests {
             Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 500.0, receipt: Receipt::Sale },
             Leg::Asset { from: b, to: a, instrument: share, qty: 99.0, price_per_unit: Some(5.0) },
         ];
-        let out = s.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 1, &mut reg, &mut j, ok, no);
+        let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
         assert_eq!(out, Outcome::ShortOfUnits);
         // NOTHING moved: the money is where it was and so are the shares.
         assert_eq!(reg.quantity(reg.row(a, cash)), 500.0);
@@ -350,7 +457,7 @@ mod tests {
             Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
             Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
         ];
-        let out = s.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 1, &mut reg, &mut j, ok, no);
+        let out = s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(a, cash)), 450.0);
         assert_eq!(reg.quantity(reg.row(b, cash)), 50.0);
@@ -370,13 +477,107 @@ mod tests {
         reg.credit(a, share, 10.0, 3.0, 1);
         reg.pledge(a, share, lender, 8.0);
         let legs = [Leg::Asset { from: a, to: b, instrument: share, qty: 5.0, price_per_unit: None }];
-        let out = s.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 1, &mut reg, &mut j, ok, no);
+        let out = s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
         assert_eq!(out, Outcome::Encumbered);
         assert_eq!(reg.quantity(reg.row(a, share)), 10.0);
     }
 
     #[test]
+    fn free_of_payment_delivers_and_records_who_was_trusted() {
+        // A restructured bond handed over for the old one: the units move and nothing moves
+        // against them. The deliverer performs FIRST and carries the other side's performance.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let issuer = PartyId::at(0);
+        let holder = PartyId::at(1);
+        let new_bond = InstrumentId::at(2);
+        reg.credit(issuer, new_bond, 1_000.0, 1.0, 1);
+        let legs = [Leg::Asset {
+            from: issuer,
+            to: holder,
+            instrument: new_bond,
+            qty: 1_000.0,
+            price_per_unit: None,
+        }];
+        let out = s.settle(
+            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
+            3,
+            &mut reg,
+            &mut j,
+            ok,
+            no,
+        );
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(reg.quantity(reg.row(holder, new_bond)), 1_000.0);
+        assert_eq!(reg.quantity(reg.row(issuer, new_bond)), 0.0);
+        // And the exposure is VISIBLE: who performed, who was trusted, and when.
+        assert_eq!(s.delivered_free(), &[(issuer, holder, 3)]);
+    }
+
+    #[test]
+    #[should_panic(expected = "a payment somebody forgot")]
+    fn a_delivery_with_money_against_it_is_not_free_of_payment() {
+        // Declaring `Free` while sending a money leg is the writer contradicting itself, and it is
+        // refused at the site rather than settled and reported later.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let a = PartyId::at(0);
+        let b = PartyId::at(1);
+        let cash = InstrumentId::at(0);
+        let share = InstrumentId::at(1);
+        reg.money_delta(a, cash, 500.0);
+        reg.credit(b, share, 10.0, 1.0, 1);
+        let legs = [
+            Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
+            Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+        ];
+        s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
+    }
+
+    #[test]
+    #[should_panic(expected = "a payment somebody forgot")]
+    fn a_trade_that_lost_its_money_leg_is_caught_instead_of_settling_free() {
+        // **The defect this pathway exists to make findable.** Before it, an asset-only instruction
+        // was indistinguishable from one whose money leg was dropped: both settled, and Law 5's
+        // "a one-sided flow is a defect even when nothing fails" could not be checked.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let a = PartyId::at(0);
+        let b = PartyId::at(1);
+        let share = InstrumentId::at(1);
+        reg.credit(b, share, 10.0, 1.0, 1);
+        let legs = [Leg::Asset { from: b, to: a, instrument: share, qty: 10.0, price_per_unit: Some(5.0) }];
+        s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
+    }
+
+    #[test]
+    fn a_free_delivery_is_still_all_legs_or_none() {
+        // XI-5 holds for a basket handed over free: one line short and NOTHING moves, because a
+        // half-delivered restructuring is not a restructuring.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let issuer = PartyId::at(0);
+        let holder = PartyId::at(1);
+        let one = InstrumentId::at(2);
+        let two = InstrumentId::at(3);
+        reg.credit(issuer, one, 100.0, 1.0, 1);
+        reg.credit(issuer, two, 5.0, 1.0, 1);
+        let legs = [
+            Leg::Asset { from: issuer, to: holder, instrument: one, qty: 100.0, price_per_unit: None },
+            Leg::Asset { from: issuer, to: holder, instrument: two, qty: 50.0, price_per_unit: None },
+        ];
+        let out = s.settle(
+            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
+            3,
+            &mut reg,
+            &mut j,
+            ok,
+            no,
+        );
+        assert_eq!(out, Outcome::ShortOfUnits);
+        assert_eq!(reg.quantity(reg.row(issuer, one)), 100.0, "the first line did not move either");
+        assert!(s.delivered_free().is_empty(), "nothing was delivered, so nobody was trusted");
+    }
+
+    #[test]
     fn a_payment_moves_money_and_makes_nobody_richer() {
+
         // Law 5: every flow has two sides, so what one account loses another gains and the world's
         // equity is unchanged. A payment that moved the total would be money appearing from nowhere.
         let (mut reg, mut j, mut s, ok, no) = world();
@@ -393,7 +594,7 @@ mod tests {
             amount: 120.0,
             receipt: Receipt::Wage,
         }];
-        s.settle(&Instruction { legs: &legs, cause: Cause::Payment }, 1, &mut reg, &mut j, ok, no);
+        s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut reg, &mut j, ok, no);
         assert_eq!(reg.equity(a), -120.0);
         assert_eq!(reg.equity(b), 120.0);
         assert_eq!(reg.equity(a) + reg.equity(b), before);
@@ -416,7 +617,7 @@ mod tests {
             Leg::Asset { from: a, to: b, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
             Leg::Money { from: b, to: a, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
         ];
-        s.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 1, &mut reg, &mut j, ok, no);
+        s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut reg, &mut j, ok, no);
         // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
         assert_eq!(reg.equity(a), -30.0 + 50.0);
         // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is.
@@ -432,7 +633,7 @@ mod tests {
         let good = InstrumentId::at(3);
         reg.credit(a, good, 10.0, 7.0, 1);
         let legs = [Leg::Asset { from: a, to: b, instrument: good, qty: 10.0, price_per_unit: None }];
-        s.settle(&Instruction { legs: &legs, cause: Cause::CorporateAction }, 2, &mut reg, &mut j, ok, no);
+        s.settle(&Instruction::free_of_payment(&legs, Cause::CorporateAction), 2, &mut reg, &mut j, ok, no);
         // Register D2: what it cost went with it.
         assert_eq!(reg.lots(reg.row(b, good))[0].basis_per_unit, 7.0);
     }

@@ -109,7 +109,7 @@ fn main() {
             }
             built += 1;
         }
-        wire.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 2, &mut reg, &mut journal, ok, no);
+        wire.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 2, &mut reg, &mut journal, ok, no);
     }
 
     let t = Instant::now();

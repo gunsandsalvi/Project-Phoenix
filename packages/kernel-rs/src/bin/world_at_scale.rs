@@ -229,7 +229,7 @@ fn main() {
             });
             legs_left -= 1;
         }
-        wire.settle(&Instruction { legs: &legs, cause: Cause::Payment }, period, &mut register, &mut journal, ok, no);
+        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut register, &mut journal, ok, no);
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 

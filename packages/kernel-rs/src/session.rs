@@ -167,7 +167,7 @@ pub fn run_book(
                 },
             ];
             match stores.wire.settle(
-                &Instruction { legs: &legs, cause: Cause::Trade },
+                &Instruction::against_payment(&legs, Cause::Trade),
                 period,
                 stores.register,
                 stores.journal,

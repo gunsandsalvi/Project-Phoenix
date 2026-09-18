@@ -452,7 +452,18 @@ measured kernel period plus one measured module ratio.
   gated on the census — `events 178604`, `audit 356268`, the op count — against the TypeScript
   engine as ORACLE. 67,571 lines over 47 modules. `capital-programme` is already measured at 10.9×
   and is where the port starts, because its ratio is the one the projection rests on.
-- [ ] 0g.43 **THE DISCIPLINE MOVES WITH IT.** `tools/eslint-rules` becomes clippy lints and a
+- [ ] 0g.42a **THE MECHANISMS THAT SHOULD SETTLE FREE OF PAYMENT, SWITCHED OVER.** The pathway is
+  built and unused (0g.41a): `Delivery::{AgainstPayment, Free, Nothing}` is declared on every
+  instruction and settlement refuses a mismatch, so *"there is no money leg"* is a statement
+  somebody made rather than an absence nobody can check. What is left is to say which of the
+  TypeScript engine's **37 `cause: 'corporateAction'` settlements** are genuinely free deliveries —
+  a restructured bond for the old one, a collateral substitution, a distribution in kind, an estate
+  to probate — and which are a money leg that went missing. **That question cannot be answered from
+  the wire today**, which is the finding; it is answered module by module as 0g.42 ports each one,
+  and the answer is the declaration. `Settlement::delivered_free()` then reads the exposures the
+  world is carrying, which nothing reads today because nothing records them.
+- [ ] 0g.43 **THE DISCIPLINE MOVES WITH IT.**
+ `tools/eslint-rules` becomes clippy lints and a
   checker: no bound, no `?? 0`, no kind branch in a mechanism, no module importing another module,
   `@spec` citations, the parameter register, the ontology register. **A law that stops being
   checkable is a law that stops holding** — this step is not optional and not last.
