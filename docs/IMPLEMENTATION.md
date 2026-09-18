@@ -191,6 +191,23 @@ longer true of any of them, and what is left is the specific clause each was rea
 here waits on a door any more — the doors are built — so each waits on a thing somebody has to
 write.
 
+- [ ] 22j.1 **A COMPANY IS UNVALUABLE FOR ITS FIRST TWO FISCAL YEARS, AND THAT IS A DEFECT OF 22i.1.**
+  `Publishes` computes income as the equity account's MOVEMENT against what the company last
+  published (§48 G2, *no earnings that were not earned*), so a FIRST report carries no income figure
+  at all. Everything that reads earnings then skips the company: `Control` cannot value it (§35 B1
+  discounts expected EARNINGS), `CostOfCapital` has no cost of equity for it (22i.9), and a covenant
+  has nothing to test. With a 365-day year and 45 days' asymmetry that is period 59 for the first
+  report and 111 for the second.
+  **G2 is right and the reading of it was lazy.** A real first annual report DOES report income —
+  for the period since incorporation, against the equity the company started with. That opening
+  figure is not missing in principle: the world knows what a party was admitted holding, and 22i.1
+  gave every party the period it entered (`Parties::since`). What it does not do is keep what the
+  party held then, so "missing is missing" was applied to a fact nobody had stored rather than to one
+  nobody can know (Appendix A: those are different).
+  **The fix is a read, not a workaround**: a company's first fiscal period opens at its BIRTH, and
+  its opening equity is what it held at that period. Either `World::admit` records it, or the first
+  report reads the register as at the birth period. Not a default of zero, which would publish an
+  income equal to everything the company has ever held.
 - [ ] 21.42 `indices/baskets.ts`: the consumer basket is physical goods a member buys and the rent a
   member pays is not in it, so the price level leaves out what Housing D3 calls a large component of
   it — and the basket that includes them is one basket, not a second index (Law 4). **Re-read: it
