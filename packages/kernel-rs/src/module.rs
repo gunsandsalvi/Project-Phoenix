@@ -13,12 +13,13 @@
 
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
 use crate::instruments::Instruments;
-use crate::journal::Journal;
+use crate::journal::{Journal, Value};
 use crate::ledger::{Cause, Delivery, Leg};
 use crate::parties::Parties;
 use crate::params::Params;
 use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
+use crate::stores::{Agreements, DueId, Outlooks, Processes, Schedules};
 
 /// Observer A1–A4: ONE PARTY'S own state and the public state. Built for a party, and there is no
 /// door on it that takes another party's id.
@@ -176,7 +177,14 @@ pub struct MechanismContext<'a> {
     prints: &'a Prints,
     journal: &'a Journal,
     params: &'a Params,
+    agreements: &'a Agreements,
+    schedules: &'a Schedules,
+    outlooks: &'a Outlooks,
+    processes: &'a Processes,
     proposed: Vec<Proposed>,
+    said: Vec<Saying>,
+    formed: Vec<(PartyId, u32, f64)>,
+    settled: Vec<DueId>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -188,18 +196,49 @@ pub struct Proposed {
     pub why: &'static str,
 }
 
+/// Audit A2: something a module states happened, for whoever it happened to. A private event reaches
+/// only its subjects; a public one is a fact about the world anybody may read (Observer A3).
+pub struct Saying {
+    pub kind: u32,
+    pub subjects: Vec<u32>,
+    pub data: Vec<(u32, Value)>,
+    pub public: bool,
+}
+
+/// Every store a mechanism may read, handed over together — because a phase is given the world as it
+/// stands, and a caller made to name ten is a caller that will one day name nine.
+pub struct Stores<'a> {
+    pub parties: &'a Parties,
+    pub instruments: &'a Instruments,
+    pub register: &'a Register,
+    pub prints: &'a Prints,
+    pub journal: &'a Journal,
+    pub params: &'a Params,
+    pub agreements: &'a Agreements,
+    pub schedules: &'a Schedules,
+    pub outlooks: &'a Outlooks,
+    pub processes: &'a Processes,
+}
+
 impl<'a> MechanismContext<'a> {
-    #[allow(clippy::too_many_arguments)]
-    pub fn of(
-        period: u32,
-        parties: &'a Parties,
-        instruments: &'a Instruments,
-        register: &'a Register,
-        prints: &'a Prints,
-        journal: &'a Journal,
-        params: &'a Params,
-    ) -> Self {
-        Self { period, parties, instruments, register, prints, journal, params, proposed: Vec::new() }
+    pub fn of(period: u32, s: Stores<'a>) -> Self {
+        Self {
+            period,
+            parties: s.parties,
+            instruments: s.instruments,
+            register: s.register,
+            prints: s.prints,
+            journal: s.journal,
+            params: s.params,
+            agreements: s.agreements,
+            schedules: s.schedules,
+            outlooks: s.outlooks,
+            processes: s.processes,
+            proposed: Vec::new(),
+            said: Vec::new(),
+            formed: Vec::new(),
+            settled: Vec::new(),
+        }
     }
 
     pub fn period(&self) -> u32 {
@@ -230,16 +269,73 @@ impl<'a> MechanismContext<'a> {
         self.params
     }
 
+    /// XI-10, 17f: the relations this party is in — an engagement, a mortgage, a policy.
+    pub fn agreements(&self) -> &Agreements {
+        self.agreements
+    }
+
+    /// 5 D2: what each instrument owes and when.
+    pub fn schedules(&self) -> &Schedules {
+        self.schedules
+    }
+
+    /// §46: what each party expects. They disagree, and that is the point.
+    pub fn outlooks(&self) -> &Outlooks {
+        self.outlooks
+    }
+
+    /// What is in flight across periods.
+    pub fn processes(&self) -> &Processes {
+        self.processes
+    }
+
     /// Law 5: what it asks the world to do. Both legs or it is not a flow.
     pub fn propose(&mut self, legs: Vec<Leg>, cause: Cause, delivery: Delivery, why: &'static str) {
         assert!(!why.is_empty(), "4.9b: an instruction with no reason is a state change with a date on it");
         self.proposed.push(Proposed { legs, cause, delivery, why });
     }
 
-    /// What the kernel settles once the phase returns.
-    pub fn taken(self) -> Vec<Proposed> {
-        self.proposed
+    /// Audit A2: something it states happened, for whoever it happened to. A private event reaches
+    /// only its subjects — the journal is what keeps that true, not the caller's good manners.
+    pub fn say(&mut self, kind: u32, subjects: &[u32], data: &[(u32, Value)], public: bool) {
+        self.said.push(Saying {
+            kind,
+            subjects: subjects.to_vec(),
+            data: data.to_vec(),
+            public,
+        });
     }
+
+    /// §46 B1: an outlook it formed from ITS OWN history. The forming is the module's — how much
+    /// weight to give the surprise is that party's own preference — and this records the answer.
+    pub fn form(&mut self, party: PartyId, about: u32, level: f64) {
+        self.formed.push((party, about, level));
+    }
+
+    /// A-20: what it paid off the schedule. Marked once the instruction it proposed has settled, so
+    /// a payment that failed leaves the arrear standing rather than clearing it.
+    pub fn settles(&mut self, due: DueId) {
+        self.settled.push(due);
+    }
+
+    /// What the kernel applies once the phase returns.
+    pub fn taken(self) -> Taken {
+        Taken {
+            proposed: self.proposed,
+            said: self.said,
+            formed: self.formed,
+            settled: self.settled,
+        }
+    }
+}
+
+/// Everything one phase asked for, handed back for the kernel to apply. Nothing here has happened
+/// yet — which is what makes settlement, the journal and the cell events the one writer of each.
+pub struct Taken {
+    pub proposed: Vec<Proposed>,
+    pub said: Vec<Saying>,
+    pub formed: Vec<(PartyId, u32, f64)>,
+    pub settled: Vec<DueId>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

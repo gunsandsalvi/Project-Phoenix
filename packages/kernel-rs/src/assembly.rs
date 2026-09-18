@@ -20,10 +20,12 @@ use crate::ids::{CurrencyCode, InstrumentId, MarketId};
 use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
 use crate::ledger::{Instruction, Settlement, Settling};
-use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView};
+use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView, Stores as Reads};
 use crate::params::Params;
 use crate::parties::Parties;
+use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
+use crate::stores::{Agreements, Outlooks, Processes, Schedules};
 use crate::register::Register;
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
@@ -77,6 +79,32 @@ pub trait System {
     }
 }
 
+/// **Every kernel store, declared for what it is.** The register exists to be asked what is still
+/// HOMELESS — a fact about the world with no kernel store to live in — and the count is the honest
+/// measure of how much ontology is missing. It must fall; it is not a number to tolerate.
+fn declared() -> Nouns {
+    let mut n = Nouns::new();
+    let mut at_home = |name: &str, holds: &str, why: &str| {
+        n.declare(NounDecl {
+            name: name.to_string(),
+            sort: Sort::Noun { home: None },
+            holds: holds.to_string(),
+            why: why.to_string(),
+        });
+    };
+    at_home("parties", "who exists, named or a cell", "XI-15: a party is a fact about the world");
+    at_home("instruments", "every priced thing, with its issuer", "Money A1: no instrument without an issuer");
+    at_home("register", "who holds what, with lots and liens", "Register A1: ownership is the world's");
+    at_home("prints", "what each book printed, with provenance", "Law 3: a price is a fact somebody cleared");
+    at_home("journal", "every event, with its subjects", "Audit A2: what happened is not a module's scratch");
+    at_home("wire", "every instruction ever applied", "Money D1: the wire IS the history");
+    at_home("agreements", "relations: engagement, mortgage, policy, contract", "XI-10, 17f: a relation is not an instrument and not an event");
+    at_home("schedules", "what each instrument owes, and when", "5 D2: a claim with no schedule is one nobody can fall behind on");
+    at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
+    at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
+    n
+}
+
 /// The stores, one of each, owned by the kernel. **Two engines is Law 4's defect at the largest
 /// possible scale**, and two of any store is the same defect one level down — so there is one.
 pub struct World {
@@ -87,6 +115,18 @@ pub struct World {
     pub journal: Journal,
     pub wire: Settlement,
     pub params: Params,
+    /// XI-10, 17f: the relations. An engagement, a mortgage, a policy, a supply contract.
+    pub agreements: Agreements,
+    /// 5 D2: what each instrument owes and when.
+    pub schedules: Schedules,
+    /// §46: what each deciding party expects, formed from its own history. They disagree.
+    pub outlooks: Outlooks,
+    /// Whatever is in flight across periods with an owner and an end.
+    pub processes: Processes,
+    /// **The ontology register.** Every store declares itself, and its count of HOMELESS nouns is
+    /// the honest measure of how much ontology is missing. It was written and wired to nothing, so
+    /// the count was zero by never having been asked (21d.1).
+    pub nouns: Nouns,
     pub phases: Phases,
     pub books: Vec<BookDecl>,
     pub period: u32,
@@ -108,7 +148,8 @@ pub struct Stepped {
 }
 
 impl World {
-    /// The world before anything has happened to it. The chronicle is what fills it (22b).
+    /// The world before anything has happened to it. **Every store declares itself here**, so the
+    /// ontology register's count of what is still homeless is true rather than zero-by-omission.
     pub fn empty() -> World {
         let mut journal = Journal::new();
         let settled_kind = journal.kinds.declare("instruction.settled");
@@ -121,6 +162,11 @@ impl World {
             journal,
             wire: Settlement::new(),
             params: Params::new(100.0, 60.0),
+            agreements: Agreements::new(),
+            schedules: Schedules::new(),
+            outlooks: Outlooks::new(),
+            processes: Processes::new(),
+            nouns: declared(),
             phases: Phases::new(),
             books: Vec::new(),
             period: 0,
@@ -190,15 +236,26 @@ impl World {
         };
         let mut ctx = MechanismContext::of(
             self.period,
-            &self.parties,
-            &self.instruments,
-            &self.register,
-            &self.prints,
-            &self.journal,
-            &self.params,
+            Reads {
+                parties: &self.parties,
+                instruments: &self.instruments,
+                register: &self.register,
+                prints: &self.prints,
+                journal: &self.journal,
+                params: &self.params,
+                agreements: &self.agreements,
+                schedules: &self.schedules,
+                outlooks: &self.outlooks,
+                processes: &self.processes,
+            },
         );
         m.run(&mut ctx);
-        for p in ctx.taken() {
+        let asked = ctx.taken();
+
+        // **Settlement is the one writer of the register** (Law 4). What a phase asked for happens
+        // here or not at all, and a refusal leaves the world as it was — a module cannot move units
+        // by wanting to.
+        for p in asked.proposed {
             let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery };
             self.wire.settle(
                 &instruction,
@@ -212,6 +269,19 @@ impl World {
                 self.settled_kind,
                 self.failed_kind,
             );
+        }
+        // Audit A2: and what it said happened, for whoever it happened to.
+        for s in asked.said {
+            self.journal.say(self.period, 0, s.kind, &s.subjects, &s.data, s.public);
+        }
+        // §46: the outlooks it formed from its parties' own histories.
+        for (who, about, level) in asked.formed {
+            self.outlooks.form(who, about, level, self.period);
+        }
+        // A-20: and what it paid off a schedule. A payment that failed leaves the arrear standing,
+        // because the mark is the module's claim and the wire above is what makes it true or not.
+        for due in asked.settled {
+            self.schedules.settle(due);
         }
         1
     }

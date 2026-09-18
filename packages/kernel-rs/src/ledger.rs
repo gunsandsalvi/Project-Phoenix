@@ -174,12 +174,16 @@ fn across(
             to.0, payees_bank.0
         ),
     };
-    // The reserve line is the money the BANKS' OWN BANK issues. The lattice already says who that is
-    // (a bank banks at its central bank), so there is no table of reserve lines to keep beside it.
-    let reserves = match instruments.money_issued_by(parties.bank_of(payees_bank)) {
+    // The reserve line is **what the payee's bank itself settles in** — the money its own bank
+    // issues, or the money it issues itself when it banks nowhere, which is exactly `account_of`.
+    // It was `money_issued_by(bank_of(payees_bank))`, which is the same thing for a commercial bank
+    // and WRONG for the central bank: a payment to the treasury, which banks AT the central bank,
+    // asked what the central bank's own bank issues and there is no such party. Found by running
+    // the assembled world at its real size, which is the first thing that ever paid one.
+    let reserves = match account_of(parties, instruments, payees_bank) {
         Some(r) => r,
         None => panic!(
-            "Money D2, 31 A1: bank {} has no central bank issuing reserves, so two banks have no way to settle between them",
+            "Money D2, 31 A1: bank {} settles in no money, so two banks have no way to settle between them",
             payees_bank.0
         ),
     };

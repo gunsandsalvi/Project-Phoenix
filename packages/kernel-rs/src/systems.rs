@@ -22,7 +22,9 @@
 use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
 use crate::clearing::{Order, Side};
 use crate::ids::{InstrumentId, MarketId};
+use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
+use crate::running::{afoot, Closing, Counts, Forming, Owed, Reads, Reporting, Servicing, Wages};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -353,6 +355,12 @@ pub fn reads(name: &'static str, at: u32) -> Wired {
     Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None }
 }
 
+/// A system that has its OWN WORK in the period and no reason to be in a book: it reads the world
+/// through the second door and proposes. Most of the forty-seven are this.
+pub fn works(name: &'static str, at: u32, mechanism: Box<dyn Mechanism>) -> Wired {
+    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: Some(mechanism) }
+}
+
 /// A system that posts. The participant is its reason to be in a book (Clearing B2).
 pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
     Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None }
@@ -372,13 +380,25 @@ pub struct Wiring {
     pub overnight: Option<InstrumentId>,
     /// §30 D2: what the treasury auctions.
     pub paper: Option<InstrumentId>,
+    /// Calendar A1: how many days a period is, so "what falls due this period" is a read of dates.
+    pub days_per_period: i64,
 }
 
-/// **Every system this world has.** The forty-seven of Part XIII, each wired once — the ones with a
-/// reason to post carrying a participant, the rest reading what the books produced.
-pub fn all(w: &Wiring) -> Vec<Wired> {
+/// **Every system this world has, and every one of them RUNS.** The forty-seven of Part XIII, each
+/// wired once: the ones with a reason to post carry a participant, and **all of them carry a
+/// mechanism** — the thing that system does in a period, through the second door.
+///
+/// It takes the journal's kinds because a system that publishes has to publish under a name, and
+/// naming it here is what makes an event traceable to the system that said it (Law 9).
+///
+/// **A system whose state the world does not hold yet proposes nothing**, and that is an answer: the
+/// wiring is complete, so it becomes live the moment the world holds something. What it is NOT is a
+/// row that the loop never reaches, which is what 43 of these were.
+pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
+    // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
+    let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
-        // The real economy: what is made, what it costs to move, and who buys it.
+        // ── The real economy: what is made, what it costs to move, and who buys it ──────────────
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
             // survive the period leaves at what it cost (37 E4).
@@ -386,80 +406,94 @@ pub fn all(w: &Wiring) -> Vec<Wired> {
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: 0.01 }));
             goods
         },
-        posts(
-            "households",
-            AT_MARKETS,
-            Box::new(HouseholdBuyers { will_pay: 1.2, basket: w.basket.clone() }),
-        ),
-        reads("recipe", AT_MARKETS),
-        reads("firms", AT_MARKETS),
-        reads("employment", AT_MARKETS),
-        reads("freight", AT_MARKETS),
-        reads("commodities", AT_MARKETS),
-        reads("housing", AT_MARKETS),
-        reads("trade_credit", AT_MARKETS),
-        reads("small_business", AT_MARKETS),
-        // Money, the banks and the sovereign.
-        posts(
-            "money_market",
-            AT_MARKETS,
-            Box::new(MoneyMarketBanks { buffer: 100.0, lends_at: 1.0, borrows_at: 1.0, book: w.overnight.map(book_of) }),
-        ),
-        posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: 0.98, size: 0.0 })),
-        reads("money", AT_CORPORATE_ACTIONS_SLOT),
-        reads("sovereign", AT_MARKETS),
-        reads("bank_capital", AT_REVALUATION),
-        reads("bank_funding", AT_REVALUATION),
-        reads("lending", AT_MARKETS),
-        reads("capital_programme", AT_MARKETS),
-        reads("cost_of_capital", AT_REVALUATION),
-        reads("short_term_debt", AT_MARKETS),
-        reads("corporate_credit", AT_MARKETS),
-        // The holders.
-        posts(
-            "funds",
-            AT_MARKETS,
-            Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: 1.1 }),
-        ),
-        posts(
-            "insurers",
-            AT_MARKETS,
-            Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: 1.05 }),
-        ),
-        posts(
-            "dealing",
-            AT_MARKETS,
-            Box::new(Dealers { around: 1.0, width: 0.02, limit: 1_000.0, lines: w.lines.clone() }),
-        ),
-        reads("hedge_funds", AT_MARKETS),
-        reads("private_equity", AT_MARKETS),
-        reads("prime_brokerage", AT_REVALUATION),
-        reads("redeemable", AT_MARKETS),
-        reads("equity", AT_MARKETS),
-        reads("securities_lending", AT_MARKETS),
-        reads("securitisation", AT_MARKETS),
-        // The instrument families that settle against what the books printed.
-        reads("derivative_layer", AT_REVALUATION),
-        reads("cds", AT_MARKETS),
-        reads("irs", AT_MARKETS),
-        reads("fx_forwards", AT_MARKETS),
-        reads("spot_fx", AT_MARKETS),
-        reads("currency", AT_MARKETS),
-        reads("cross_border", AT_REVALUATION),
-        // The reads over what the books produced. Each of these would be demand nobody has.
-        reads("benchmarks", AT_REVALUATION),
-        reads("ratings", AT_REVALUATION),
-        reads("reporting", AT_REVALUATION),
-        reads("second_opinion", AT_REVALUATION),
-        reads("observer", AT_REVALUATION),
-        reads("expectations", AT_REVALUATION),
-        // The events that end things.
-        reads("loss", AT_REVALUATION),
-        reads("forced_sale", AT_MARKETS),
-        reads("mortality", AT_REVALUATION),
-        reads("estate", AT_REVALUATION),
-        reads("control", AT_MARKETS),
-        reads("polity", AT_REVALUATION),
+        {
+            // §41 both posts and works: a cell bids for what it can fund, and forms its outlook from
+            // the prices its own lines printed at (§46).
+            let mut households =
+                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: w.basket.clone() }));
+            households.mechanism = Some(Box::new(Forming { memory: 0.3 }));
+            households
+        },
+        works("recipe", AT_MARKETS, Box::new(Reads { kind: says("recipe.lines"), what: Counts::LinesThatPrinted })),
+        works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
+        works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
+        works("freight", AT_MARKETS, Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive })),
+        works("commodities", AT_MARKETS, Box::new(Reads { kind: says("commodities.lines"), what: Counts::LinesThatPrinted })),
+        works("housing", AT_MARKETS, Box::new(Closing { kind: afoot::FORECLOSURE, says: says("housing.foreclosed") })),
+        works("trade_credit", AT_MARKETS, Box::new(Reads { kind: says("trade_credit.out"), what: Counts::AgreementsLive })),
+        works("small_business", AT_MARKETS, Box::new(Reads { kind: says("small_business.credit"), what: Counts::CreditOutstanding })),
+        // ── Money, the banks and the sovereign ──────────────────────────────────────────────────
+        {
+            let mut mm = posts(
+                "money_market",
+                AT_MARKETS,
+                Box::new(MoneyMarketBanks { buffer: 100.0, lends_at: 1.0, borrows_at: 1.0, book: w.overnight.map(book_of) }),
+            );
+            mm.mechanism = Some(Box::new(Reads { kind: says("money_market.credit"), what: Counts::CreditOutstanding }));
+            mm
+        },
+        {
+            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: 0.98, size: 0.0 }));
+            t.mechanism = Some(Box::new(Reads { kind: says("treasury.outstanding"), what: Counts::CreditOutstanding }));
+            t
+        },
+        // Money A1, 5 A4: every asset is somebody's liability, published party by party.
+        works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(Owed { kind: says("money.owed") })),
+        works("sovereign", AT_MARKETS, Box::new(Reads { kind: says("sovereign.lines"), what: Counts::LinesThatPrinted })),
+        works("bank_capital", AT_REVALUATION, Box::new(Reads { kind: says("bank_capital.alive"), what: Counts::PartiesAlive })),
+        works("bank_funding", AT_REVALUATION, Box::new(Reads { kind: says("bank_funding.credit"), what: Counts::CreditOutstanding })),
+        // §6, XI-9: THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
+        works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
+        works("capital_programme", AT_MARKETS, Box::new(Closing { kind: afoot::CAPITAL_PROGRAMME, says: says("plant.built") })),
+        works("cost_of_capital", AT_REVALUATION, Box::new(Reads { kind: says("cost_of_capital.lines"), what: Counts::LinesThatPrinted })),
+        works("short_term_debt", AT_MARKETS, Box::new(Reads { kind: says("short_term_debt.out"), what: Counts::CreditOutstanding })),
+        works("corporate_credit", AT_MARKETS, Box::new(Reads { kind: says("corporate_credit.out"), what: Counts::CreditOutstanding })),
+        // ── The holders ─────────────────────────────────────────────────────────────────────────
+        {
+            let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: 1.1 }));
+            f.mechanism = Some(Box::new(Reads { kind: says("funds.mandates"), what: Counts::AgreementsLive }));
+            f
+        },
+        {
+            let mut i = posts("insurers", AT_MARKETS, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: 1.05 }));
+            i.mechanism = Some(Box::new(Reads { kind: says("insurers.policies"), what: Counts::AgreementsLive }));
+            i
+        },
+        {
+            let mut d = posts("dealing", AT_MARKETS, Box::new(Dealers { around: 1.0, width: 0.02, limit: 1_000.0, lines: w.lines.clone() }));
+            d.mechanism = Some(Box::new(Reads { kind: says("dealing.lines"), what: Counts::LinesThatPrinted }));
+            d
+        },
+        works("hedge_funds", AT_MARKETS, Box::new(Reads { kind: says("hedge_funds.alive"), what: Counts::PartiesAlive })),
+        works("private_equity", AT_MARKETS, Box::new(Closing { kind: afoot::TAKEOVER, says: says("takeover.closed") })),
+        works("prime_brokerage", AT_REVALUATION, Box::new(Reads { kind: says("prime_brokerage.books"), what: Counts::AgreementsLive })),
+        works("redeemable", AT_MARKETS, Box::new(Reads { kind: says("redeemable.subscriptions"), what: Counts::AgreementsLive })),
+        works("equity", AT_MARKETS, Box::new(Closing { kind: afoot::FLOTATION, says: says("equity.floated") })),
+        works("securities_lending", AT_MARKETS, Box::new(Reads { kind: says("securities_lending.loans"), what: Counts::AgreementsLive })),
+        works("securitisation", AT_MARKETS, Box::new(Closing { kind: afoot::SECURITISATION, says: says("pool.closed") })),
+        // ── The instrument families that settle against what the books printed ──────────────────
+        works("derivative_layer", AT_REVALUATION, Box::new(Reads { kind: says("derivative_layer.open"), what: Counts::AgreementsLive })),
+        works("cds", AT_MARKETS, Box::new(Reads { kind: says("cds.open"), what: Counts::AgreementsLive })),
+        works("irs", AT_MARKETS, Box::new(Servicing { days_per_period: w.days_per_period })),
+        works("fx_forwards", AT_MARKETS, Box::new(Reads { kind: says("fx_forwards.open"), what: Counts::AgreementsLive })),
+        works("spot_fx", AT_MARKETS, Box::new(Reads { kind: says("spot_fx.lines"), what: Counts::LinesThatPrinted })),
+        works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
+        works("cross_border", AT_REVALUATION, Box::new(Reads { kind: says("cross_border.lines"), what: Counts::LinesThatPrinted })),
+        // ── The reads over what the books produced ──────────────────────────────────────────────
+        works("benchmarks", AT_REVALUATION, Box::new(Reads { kind: says("benchmarks.printed"), what: Counts::LinesThatPrinted })),
+        works("ratings", AT_REVALUATION, Box::new(Reads { kind: says("ratings.obligors"), what: Counts::PartiesAlive })),
+        works("reporting", AT_REVALUATION, Box::new(Reporting { kind: says("reporting.result") })),
+        works("second_opinion", AT_REVALUATION, Box::new(Reads { kind: says("second_opinion.lines"), what: Counts::LinesThatPrinted })),
+        works("observer", AT_REVALUATION, Box::new(Reads { kind: says("observer.alive"), what: Counts::PartiesAlive })),
+        // §46: every deciding party forms its own outlook from its own history. They disagree.
+        works("expectations", AT_REVALUATION, Box::new(Forming { memory: 0.3 })),
+        // ── The events that end things ──────────────────────────────────────────────────────────
+        works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
+        works("forced_sale", AT_MARKETS, Box::new(Closing { kind: afoot::WORKOUT, says: says("workout.closed") })),
+        works("mortality", AT_REVALUATION, Box::new(Reads { kind: says("mortality.alive"), what: Counts::PartiesAlive })),
+        works("estate", AT_REVALUATION, Box::new(Reads { kind: says("estate.open"), what: Counts::AgreementsLive })),
+        works("control", AT_MARKETS, Box::new(Closing { kind: afoot::BUY_BACK, says: says("buy_back.closed") })),
+        works("polity", AT_REVALUATION, Box::new(Closing { kind: afoot::ELECTION, says: says("election.called") })),
     ];
     // Law 10, Law 4: each declaration gets its OWN slot, so no two systems declare the same phase.
     // The order of this list is the order they were wired in, and it is the only thing that decides it.
@@ -652,12 +686,17 @@ mod tests {
     #[test]
     fn every_system_of_the_world_is_wired_exactly_once() {
         // ARCHITECTURE 4.9b: adding a system is a row, and a module not in this list does not run.
-        let all = all(&Wiring {
-            basket: vec![InstrumentId::at(1)],
-            lines: vec![InstrumentId::at(1)],
-            overnight: Some(InstrumentId::at(2)),
-            paper: Some(InstrumentId::at(3)),
-        });
+        let mut kinds = Names::new();
+        let all = all(
+            &Wiring {
+                basket: vec![InstrumentId::at(1)],
+                lines: vec![InstrumentId::at(1)],
+                overnight: Some(InstrumentId::at(2)),
+                paper: Some(InstrumentId::at(3)),
+                days_per_period: 7,
+            },
+            &mut kinds,
+        );
         let mut names: Vec<&str> = all.iter().map(|s| s.name).collect();
         names.sort_unstable();
         let before = names.len();
@@ -683,5 +722,55 @@ mod tests {
         let r = reads("benchmarks", AT_REVALUATION);
         assert!(r.participants().is_empty());
         assert_eq!(r.phases().len(), 1);
+    }
+
+    #[test]
+    fn every_wired_system_carries_a_mechanism_and_none_is_dead() {
+        // **The thing that was not true.** `wire_up` collected fifty phase declarations and sealed
+        // the order, and `World::step` ran books only — so forty-three of these rows did literally
+        // nothing and the world reported as wired. A row with no mechanism and no participant is a
+        // row the loop never reaches, and this is what says so.
+        let mut kinds = Names::new();
+        let all = all(
+            &Wiring {
+                basket: vec![InstrumentId::at(1)],
+                lines: vec![InstrumentId::at(1)],
+                overnight: Some(InstrumentId::at(2)),
+                paper: Some(InstrumentId::at(3)),
+                days_per_period: 7,
+            },
+            &mut kinds,
+        );
+        for row in &all {
+            assert!(
+                row.mechanism.is_some(),
+                "{} is wired and has no work to do in a period",
+                row.name
+            );
+        }
+    }
+
+    #[test]
+    fn a_period_of_the_wired_world_runs_every_one_of_them() {
+        // ARCHITECTURE 4.9b end to end: fifty systems, fifty phases, and `ran` counts the ones that
+        // actually ran. A world of declarations cannot report as a world that works.
+        let mut s = world();
+        let bread = s.bread;
+        // Law 4: the kinds they publish under are declared on THE WORLD'S OWN journal. A second
+        // register of names would give every event an id that means something else there.
+        let wired = all(
+            &Wiring {
+                basket: vec![bread],
+                lines: vec![bread],
+                overnight: None,
+                paper: None,
+                days_per_period: 7,
+            },
+            &mut s.w.journal.kinds,
+        );
+        let systems: Vec<&dyn System> = wired.iter().map(|w| w as &dyn System).collect();
+        s.w.wire_up(&systems);
+        let did = s.w.step(&systems);
+        assert_eq!(did.ran, 50, "every wired system ran its phase");
     }
 }
