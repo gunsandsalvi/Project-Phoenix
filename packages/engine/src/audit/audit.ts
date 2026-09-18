@@ -9,6 +9,7 @@
  * violation names who and how much, in a unit (A2, A3). A family with no built contribution says so
  * and is never green by omission.
  */
+import { totalOps } from '../core/ops.js';
 import type { Period } from '../calendar/calendar.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { finite, positiveCount } from '../core/num.js';
@@ -44,6 +45,12 @@ export const FAMILY_NAMES: readonly FamilyName[] = [
   'units',
   'liveness',
 ];
+
+/**
+ * Law 18 (0g.27): the elementary kernel reads each audit contribution spent, this run. It is a
+ * DIAGNOSTIC and never a finding: nothing in the engine reads it and the report does not carry it.
+ */
+export const AUDIT_READS = new Map<string, number>();
 
 export interface Violation {
   readonly family: FamilyName;
@@ -159,10 +166,15 @@ export class Audit {
       const violations: Violation[] = [];
       for (const c of contributions) {
         if (!c.built) continue;
+        // Law 18 (0g.27): what this contribution cost, counted where it is spent. The audit is 9%
+        // of a period and its families traverse the register one after another; `work.ts` names
+        // the audit as one row, and this is that row broken into the checks that make it up.
+        const before = totalOps();
         for (const v of c.check(view)) {
           finite(v.size, `violation size in ${name}`);
           violations.push(v);
         }
+        AUDIT_READS.set(`${name}/${c.contributor}`, totalOps() - before);
       }
       const worst = [...violations]
         .sort((a, b) => Math.abs(b.size) - Math.abs(a.size))

@@ -20,7 +20,7 @@
  * register whether the thing that moved is somebody's promise, which is the same question the
  * balance sheet asks and has one answer.
  */
-import type { PartyId, RegionId } from '../../core/ids.js';
+import type { CurrencyCode, PartyId, RegionId } from '../../core/ids.js';
 import { type Cash, absolute, heldAsMoney, negated, plus, valueAt } from '../../core/measure.js';
 import { currencyUnit } from '../../core/ids.js';
 import { sumCash } from '../../core/measure.js';
@@ -57,52 +57,102 @@ export interface External {
  * Nothing is inferred by subtraction and no total is stored. Ask again next period and it is walked
  * again — which is what makes it impossible for this to drift away from what the wire says.
  */
-export function externalOf(ctx: ExternalReads, region: RegionId): External {
+/**
+ * E1, E3, Law 18, Law 19 (0g.27): EVERY REGION'S ACCOUNTS, OFF ONE WALK OF THE PERIOD'S LEDGER.
+ *
+ * The walk is over every instruction that settled this period and every leg of each, and it was
+ * done ONCE PER REGION — by the audit family, and again by `external.publish` — so a four-country
+ * world walked the whole period's wire eight times and classified every leg eight times.
+ * Measured: **5,813,780 kernel reads in the audit alone, the largest of its fifty-one checks.**
+ *
+ * A leg names both ends, so one pass can attribute it to every region it crosses: which regions an
+ * instruction touches is read from the legs themselves rather than by asking each region in turn.
+ * Nothing about the answer changes — `delivered` is still decided against the crossings of THAT
+ * region, which is what makes a wage book both halves for the country that paid it and not for a
+ * bystander — and nothing is stored: ask again next period and it is walked again, which is what
+ * keeps this from drifting away from what the wire says.
+ */
+export function externalAll(
+  ctx: ExternalReads,
+  regions: ReadonlySet<RegionId>,
+): ReadonlyMap<RegionId, External> {
+  /** One region's two halves as they accumulate. Missing is missing: every region has a row. */
+  interface Running {
+    readonly home: CurrencyCode;
+    readonly trade: Cash[];
+    readonly finance: Cash[];
+    legs: number;
+  }
   // Currency B1, C4 (16.0): a country's accounts are a REPORT in its own money. What crossed is
   // translated at the rate in force to be added; nothing is converted.
-  const home = ctx.registry.currencyOf(region);
-  const trade: Cash[] = [];
-  const finance: Cash[] = [];
-  let legs = 0;
+  const running = new Map<RegionId, Running>();
+  for (const region of regions) {
+    running.set(region, {
+      home: ctx.registry.currencyOf(region),
+      trade: [],
+      finance: [],
+      legs: 0,
+    });
+  }
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
-    const crossings = r.instruction.legs
-      .map((leg) => sidesOf(ctx, leg))
-      .filter((c): c is Crossing => c !== undefined && (c.from === region) !== (c.to === region));
-    if (crossings.length === 0) continue;
-    /**
-     * E1: WAS ANYTHING DELIVERED ON THE WIRE? A sale of grain abroad has two crossing legs — the
-     * cargo out and the money in — and they cancel on their own. A WAGE has one: the money goes,
-     * and the week of work that earned it is not an instrument anybody holds. Labour, rent and a
-     * fee are like that, and they are most of what crosses a border in a service economy.
-     *
-     * So a payment with nothing delivered beside it BOOKS BOTH HALVES: the money that moved, and
-     * the thing it bought. What the thing was worth is what was paid for it — which is a read of
-     * the payment and not a number invented for it (Law 19) — and that is exactly what a current
-     * account is: the other side of every payment whose subject never appeared in a register.
-     */
-    const delivered = crossings.some((c) => !c.money);
-    for (const c of crossings) {
-      legs += 1;
-      // Positive is INTO this region. Every instruction moves the same value both ways, which is
-      // why the two halves cancel and why E3 is Law 5 seen from a country's end.
-      const amount = ctx.valuation.inMoney(c.amount, home, ctx.period);
-      const signed = c.to === region ? amount : negated(amount, 'out rather than in');
-      if (c.claim) finance.push(signed);
-      else trade.push(signed);
-      if (c.money && !delivered) {
-        // The service, the work or the use of a thing that the payment was for. It went the other
-        // way, so it carries the other sign.
-        trade.push(negated(signed, 'the other way'));
+    const sides: Crossing[] = [];
+    for (const leg of r.instruction.legs) {
+      const c = sidesOf(ctx, leg);
+      if (c !== undefined) sides.push(c);
+    }
+    if (sides.length === 0) continue;
+    // Which countries this instruction reaches across, read off the legs rather than by asking
+    // every country in the world whether this was any of its business.
+    const touched = new Set<RegionId>();
+    for (const c of sides) {
+      if (c.from === c.to) continue;
+      touched.add(c.from);
+      touched.add(c.to);
+    }
+    for (const region of touched) {
+      const mine = running.get(region);
+      if (mine === undefined) continue;
+      const crossings = sides.filter((c) => (c.from === region) !== (c.to === region));
+      if (crossings.length === 0) continue;
+      /**
+       * E1: WAS ANYTHING DELIVERED ON THE WIRE? A sale of grain abroad has two crossing legs — the
+       * cargo out and the money in — and they cancel on their own. A WAGE has one: the money goes,
+       * and the week of work that earned it is not an instrument anybody holds. Labour, rent and a
+       * fee are like that, and they are most of what crosses a border in a service economy.
+       *
+       * So a payment with nothing delivered beside it BOOKS BOTH HALVES: the money that moved, and
+       * the thing it bought. What the thing was worth is what was paid for it — which is a read of
+       * the payment and not a number invented for it (Law 19) — and that is exactly what a current
+       * account is: the other side of every payment whose subject never appeared in a register.
+       */
+      const delivered = crossings.some((c) => !c.money);
+      for (const c of crossings) {
+        mine.legs += 1;
+        // Positive is INTO this region. Every instruction moves the same value both ways, which is
+        // why the two halves cancel and why E3 is Law 5 seen from a country's end.
+        const amount = ctx.valuation.inMoney(c.amount, mine.home, ctx.period);
+        const signed = c.to === region ? amount : negated(amount, 'out rather than in');
+        if (c.claim) mine.finance.push(signed);
+        else mine.trade.push(signed);
+        if (c.money && !delivered) {
+          // The service, the work or the use of a thing that the payment was for. It went the
+          // other way, so it carries the other sign.
+          mine.trade.push(negated(signed, 'the other way'));
+        }
       }
     }
   }
-  return {
-    region,
-    trade: sumCash(home, trade, 'what crossed as things').value,
-    finance: sumCash(home, finance, 'what crossed as claims').value,
-    legs,
-  };
+  const out = new Map<RegionId, External>();
+  for (const [region, mine] of running) {
+    out.set(region, {
+      region,
+      trade: sumCash(mine.home, mine.trade, 'what crossed as things').value,
+      finance: sumCash(mine.home, mine.finance, 'what crossed as claims').value,
+      legs: mine.legs,
+    });
+  }
+  return out;
 }
 
 /** One leg that crossed a border: between whom, for how much, and what sort of thing moved. */
@@ -187,8 +237,7 @@ function accounts(): Family {
       const out: Violation[] = [];
       const seen = new Set<RegionId>();
       for (const p of view.parties.alive()) seen.add(p.region);
-      for (const region of seen) {
-        const said = externalOf(view, region);
+      for (const [region, said] of externalAll(view, seen)) {
         const net = plus(said.trade, said.finance, 'what crossed, both halves');
         // Law 7: the dust of the walk, derived from its own terms and magnitudes. Never a band.
         const magnitude = plus(
@@ -222,8 +271,7 @@ function accounts(): Family {
 export function publishExternal(ctx: MechanismContext): void {
   const seen = new Set<RegionId>();
   for (const p of ctx.parties.alive()) seen.add(p.region);
-  for (const region of seen) {
-    const said = externalOf(ctx, region);
+  for (const [region, said] of externalAll(ctx, seen)) {
     if (said.legs === 0) continue;
     ctx.record(
       'external.accounts',

@@ -16239,3 +16239,47 @@ from everywhere and no row in the census is its. **A step aimed at a census row 
 inside it**, which is what found the funds' branch split at 0g.25 and the settlement cost here.
 Both times the step as written was aimed at the wrong thing, and both times a probe took under two
 minutes.
+
+# 0g.27 (part) — the audit broken into its fifty-one checks, and the largest one removed
+
+**24,118,237 → 18,885,889 audit reads**, the period **110,944,378 → 105,524,506 ops**.
+`events 178604`, `audit 356268` unchanged. The step's budget is ≤ 4,000,000 and it is **not met**;
+what remains is named below and is a redesign rather than a local fix.
+
+## The instrument first, again
+
+`audit.ts` now records what each contribution spent (`AUDIT_READS`), which turns one census row
+into fifty-one. **A family that walks the holdings once costs exactly 544,104** — `ownership/kernel`
+and `ownership/securities-lending` both read exactly that — so every other row can be read as a
+number of passes at a glance. This is the third time in this item that breaking a row down was
+worth more than any guess about it.
+
+## `flows/external`: 5,813,780 → 581,432
+
+`externalOf(view, region)` walked **every instruction that settled this period and every leg of
+each**, and it was called once per region — by the audit family, and again by `external.publish`.
+A four-country world walked the whole period's wire **eight times** and classified every leg eight
+times.
+
+A leg names both ends, so one pass attributes it to every region it crosses: which countries an
+instruction reaches across is read off the legs rather than by asking each country in turn whether
+this was any of its business. `externalOf` is deleted and `externalAll` replaces it; both callers
+take the one walk (Law 12 — the fix removes code).
+
+Nothing about the answer changed. `delivered` is still decided against the crossings of THAT
+region, which is what makes a wage book both halves for the country that paid it and not for a
+bystander, and nothing is stored: ask again next period and it is walked again.
+
+## What is left, and why two of the three are not defects
+
+- **`crossMarket/indices` 5,438,107.** It recomputes each index from its constituents and compares
+  that against what the kernel reads. **That is Audit C3** — a family checks the source rather than
+  reading the answer — so the two walks are the point of the check and not a redundancy.
+- **`accounts/kernel` 4,365,820.** A balance sheet per party over that party's own holdings: eight
+  reads a holding, and a sheet is what it is.
+- **`money/currency` 3,797,756.**
+
+**The rest of the budget needs the traversal redesign**, which is written back into the step:
+`flows`, `accounts`, `currency` and `units` each walk the register after the one before it did, and
+one traversal feeding every family is the same audit. A family's independence is about the SOURCE
+it reads, not how many times the register is visited.

@@ -385,12 +385,21 @@ layout, and is reverted (Law 18).
   the estate hand-over is ONE instruction with 5,489 legs, and it costs **231,250 kernel reads, or
   42 per leg**. Sixty such instructions are 12% of the period. Two per-instruction reads are gone
   (below) and the rest is the settlement unit cost, which is 0g.20's and is now measured.
-- [ ] 0g.27 **The audit — 24,118,237 reads → ≤ 4,000,000.** 356,268 checks over 544,104 holdings,
-  and the families traverse the register independently: `flows`, `weights`, `accounts`,
-  `currency` and `units` each walk what the one before them just walked. **The audit's
-  independence is about the SOURCE it reads, not the number of times it reads it** (Audit C3): one
-  traversal feeding every family is the same audit, and a family that needs its own pass says so.
-  Nothing here may make the audit read a mechanism's running total.
+- [ ] 0g.27 **The audit — 24,118,237 → 18,885,889, and the budget is ≤ 4,000,000.** The census now
+  breaks the audit into its fifty-one contributions (`AUDIT_READS`), and a family that walks the
+  holdings once costs exactly **544,104** — which is the yardstick every row is read against.
+  `flows/external` was 5,813,780 and is now 581,432: it walked the whole period's ledger ONCE PER
+  REGION, and `external.publish` walked it four more times. What is left is
+  **`crossMarket/indices` 5,438,107, `accounts/kernel` 4,365,820, `money/currency` 3,797,756**, and
+  the first of those is NOT redundancy — Audit C3 says a family recomputes from the source rather
+  than reading the kernel's answer, so an index checked against its own constituents is two walks
+  on purpose. `accounts/kernel` is a balance sheet per party over that party's own holdings, which
+  is eight reads a holding and inherent to what a sheet is.
+  **So the remaining budget needs the traversal redesign, not another local fix**: `flows`,
+  `accounts`, `currency` and `units` each walk the register after the one before it did, and one
+  traversal feeding every family is the same audit — the independence is about the SOURCE a family
+  reads, not the number of times the register is visited. Nothing here may make the audit read a
+  mechanism's running total.
 - [ ] 0g.28 **The tail — ~34,000,000 reads over ~150 phases, PLUS 0g.24's 1,689,055 shortfall →
   ≤ 8,000,000, PLUS 0g.25's 4,862,161.** No phase in it is
   above 1.4%; they are the same defect at smaller scale. `work.ts` names them in order every run,
