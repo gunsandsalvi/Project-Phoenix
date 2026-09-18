@@ -25,7 +25,7 @@ use crate::params::Params;
 use crate::parties::Parties;
 use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
-use crate::stores::{Agreements, Claims, Outlooks, Processes, Schedules};
+use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
@@ -110,6 +110,10 @@ fn declared() -> Nouns {
     at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
     at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
     at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
+    // 21f: the three a module named and no store kept. Two were one shape — terms a party stands
+    // behind, one-sided, which is what an agreement is not (Law 5).
+    at_home("standing", "terms a party stands behind: a posting, a lending standard", "XI-10, Housing C5: a posting is HELD by an employer, which is what lets it be withdrawn; a standard is a decision that persists and that a borrower meets or does not");
+    at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
 
     // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
     // missing, and it must fall. Each names the plan item that gives it one; a noun whose item does
@@ -123,28 +127,31 @@ fn declared() -> Nouns {
         });
     };
 
-    // **THE REGISTRY'S FOUR WENT HOME AT 21e** and are declared above with the rest. What is left
-    // homeless is what no store keeps at all.
+    // **AND WHAT STILL HAS NO HOME.** The registry's four went home at 21e and the three a module
+    // kept went home at 21f — and a count of zero would be the measure switched off again (21d.1b),
+    // because zero here would mean "nothing anybody has DECLARED is homeless" rather than "nothing is
+    // missing". These three were found by the re-read of item 21 and each names the item that will
+    // give it a home. The count must fall and must never rise; it falls by being built, not by
+    // nobody asking.
+    homeless(
+        "registry.indices",
+        "21.116",
+        "each index, the country whose it is, and the lines it is built from",
+        "22 D5, Indices D1: an index is a country's and it is ONE system; `benchmarks::Index` has a level_at read and nothing in this engine declares or constructs one",
+    );
+    homeless(
+        "settlement.realised",
+        "21.112",
+        "what a disposal realised against the basis the lots carried",
+        "Law 19: `Register::debit` hands settlement the basis and settlement only carries it forward, so a gain exists on the register and in no read — which is why nothing can tax one",
+    );
+    homeless(
+        "reporting.accounts",
+        "21.76",
+        "the accounts a party has PUBLISHED, as at a date",
+        "§48: a covenant is tested against published accounts and a bid is formed from them; `Reporting` says a firm's own equity to its own subjects, which is not the same fact",
+    );
 
-    // Three facts a module names, which persist between periods, and which no store keeps.
-    homeless(
-        "employment.postings",
-        "21f",
-        "an open position an employer holds, at the wage it offers",
-        "XI-10, §39 B: every posting is a bid, and it is something an employer HOLDS — which is what lets it be withdrawn",
-    );
-    homeless(
-        "lending.standards",
-        "21f",
-        "the standard a lender is currently lending at",
-        "Housing C5, Banks Lending: a lender's standard is a decision that persists and that every borrower meets or does not",
-    );
-    homeless(
-        "recipe.work_in_progress",
-        "21f",
-        "what is between input and output, owned by somebody, carrying what it cost",
-        "37 B3: work in progress is a real thing with a holder, not a timing adjustment",
-    );
     n
 }
 
@@ -172,6 +179,11 @@ pub struct World {
     /// and each region's country, each unit's subdivision, and a profile per party kind. They were
     /// bare row numbers naming nothing, which is four of the ontology register's homeless nouns.
     pub registry: Registry,
+    /// 21f: terms a named party stands behind until it withdraws them — a posting, a lending
+    /// standard. The one-sided twin of `agreements`, which always has two sides (Law 5).
+    pub standing: Standing,
+    /// §37 B3, 21f: what is between input and output, owned by somebody, carrying what it cost.
+    pub making: InProgress,
     /// **The ontology register.** Every store declares itself, and its count of HOMELESS nouns is
     /// the honest measure of how much ontology is missing. It was written and wired to nothing, so
     /// the count was zero by never having been asked (21d.1).
@@ -217,6 +229,8 @@ impl World {
             processes: Processes::new(),
             claims: Claims::new(),
             registry: Registry::new(),
+            standing: Standing::new(),
+            making: InProgress::new(),
             nouns: declared(),
             phases: Phases::new(),
             books: Vec::new(),
@@ -300,6 +314,8 @@ impl World {
                 outlooks: &self.outlooks,
                 processes: &self.processes,
                 wire: &self.wire,
+                standing: &self.standing,
+                making: &self.making,
             },
         );
         m.run(&mut ctx);
@@ -344,6 +360,33 @@ impl World {
         // would be the claimant jumping ahead of the creditors the estate exists to pay (21c).
         for (on, holder, owed, ranks) in asked.claimed {
             self.claims.against(on, holder, owed, ranks);
+        }
+        // §37 B3, 21f.3: what went ON the line and what came OFF it. The `Create` legs for what came
+        // off are in `proposed` and settled above, so the mark and the leg are one event (Law 5).
+        for (owner, what, units, cost, ready) in asked.started {
+            self.making.starts(owner, what, units, cost, self.period, ready);
+        }
+        for batch in asked.finished {
+            self.making.finishes(batch);
+        }
+        // 21f.1, 21f.2: and what a party now stands behind. A party that already stands behind terms
+        // of this kind RESTATES them, so what it was standing behind stays readable beside what it is
+        // (Housing C5: a tightening is only visible against what it was).
+        for (kind, who, terms) in asked.stood {
+            let was = self
+                .standing
+                .of_party(who)
+                .iter()
+                .map(|r| crate::stores::StandingId(*r))
+                .find(|s| self.standing.live(*s) && self.standing.kind_of(*s) == kind);
+            match was {
+                Some(s) => {
+                    self.standing.restates(s, &terms, self.period);
+                }
+                None => {
+                    self.standing.stands(kind, who, &terms, self.period);
+                }
+            }
         }
         // XI-8, 21.36: and what came off one. A claim paid and not marked is paid again next period.
         for (claim, amount) in asked.repaid {
@@ -669,16 +712,27 @@ mod tests {
         let homeless = w.nouns.homeless();
         assert!(!homeless.is_empty(), "a count of zero here is the measure switched off");
 
-        // **The registry's four went home at 21e**, and the measure's whole point is that the count
-        // FALLS — so this asserts they are gone, where it used to assert they were there. A
-        // CurrencyCode names its issuer, a RegionId reads its money through its country, a UnitId
-        // says what one of it is divided into, and a kind has a profile the kernel asks.
+        // **The measure's whole point is that the count FALLS**, so this asserts what has gone home
+        // rather than what has not. The registry's four went at 21e; the three a module kept and no
+        // store held went at 21f — a posting and a lending standard into `standing`, work in progress
+        // into `making`.
         let named: Vec<&str> = homeless.iter().map(|(n, _)| *n).collect();
-        for gone in ["registry.currencies", "registry.places", "registry.units", "registry.kind_profiles"] {
-            assert!(!named.contains(&gone), "{gone} got a home at 21e");
+        for gone in [
+            "registry.currencies",
+            "registry.places",
+            "registry.units",
+            "registry.kind_profiles",
+            "employment.postings",
+            "lending.standards",
+            "recipe.work_in_progress",
+        ] {
+            assert!(!named.contains(&gone), "{gone} has a home now");
         }
-        // And what is left is what no store keeps at all, which is 21f's three.
-        assert!(named.contains(&"employment.postings"));
+        // And what is left is what the re-read of item 21 found and nothing yet holds. A count of
+        // zero would be this measure switched off, not a world with nothing missing.
+        assert!(named.contains(&"registry.indices"));
+        assert!(named.contains(&"settlement.realised"));
+        assert!(named.contains(&"reporting.accounts"));
 
         // And every one names the item that gives it a home. A noun whose item nobody has written
         // is a noun nobody has agreed to build.
@@ -689,13 +743,15 @@ mod tests {
 
     #[test]
     fn a_store_the_kernel_owns_is_not_homeless_and_a_fact_with_nowhere_to_live_is() {
-        // The distinction the register exists to hold. `agreements` had no home before 21d and has
-        // one now; `employment.postings` is the same shape of fact and still has none.
+        // The distinction the register exists to hold, and it is the same distinction wherever the
+        // line currently falls: `agreements` had no home before 21d, `standing` none before 21f, and
+        // `settlement.realised` has none yet — a gain that exists on the register and in no read.
         let w = World::empty();
         let named: Vec<&str> = w.nouns.homeless().iter().map(|(n, _)| *n).collect();
         assert!(!named.contains(&"agreements"), "it got a home at 21d");
         assert!(!named.contains(&"claims"), "it got one at 21c");
-        assert!(named.contains(&"employment.postings"), "an employer holds it and nothing keeps it");
+        assert!(!named.contains(&"standing"), "it got one at 21f");
+        assert!(named.contains(&"settlement.realised"), "settlement is handed it and nothing keeps it");
     }
 
     #[test]

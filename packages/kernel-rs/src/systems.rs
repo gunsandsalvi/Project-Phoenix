@@ -778,7 +778,7 @@ mod tests {
         Makes {
             line: crate::mechanisms::recipe::Line::new(
                 makes,
-                vec![crate::mechanisms::recipe::Recipe::new(makes, vec![(from, 2.0)], 0.1, 0.05, 0.98, 10.0)],
+                vec![crate::mechanisms::recipe::Recipe::new(makes, vec![(from, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)],
             ),
             plant: InstrumentId::at(9),
             plant_is: crate::mechanisms::capital_programme::Plant {

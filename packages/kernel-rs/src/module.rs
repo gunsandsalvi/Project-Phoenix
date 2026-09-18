@@ -208,6 +208,8 @@ pub struct MechanismContext<'a> {
     outlooks: &'a Outlooks,
     processes: &'a Processes,
     claims: &'a Claims,
+    standing: &'a crate::stores::Standing,
+    making: &'a crate::stores::InProgress,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
     said: Vec<Saying>,
@@ -216,6 +218,9 @@ pub struct MechanismContext<'a> {
     ceased: Vec<PartyId>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
     repaid: Vec<(crate::stores::ClaimId, f64)>,
+    started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
+    finished: Vec<crate::stores::BatchId>,
+    stood: Vec<(u32, PartyId, Vec<f64>)>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -256,6 +261,9 @@ pub struct Stores<'a> {
     /// one writer. Without this a module that needs its own past has to infer it by subtraction,
     /// which is exactly what Law 19 forbids.
     pub wire: &'a Settlement,
+    /// 21f: terms parties stand behind, and what is on the line.
+    pub standing: &'a crate::stores::Standing,
+    pub making: &'a crate::stores::InProgress,
 }
 
 impl<'a> MechanismContext<'a> {
@@ -274,6 +282,8 @@ impl<'a> MechanismContext<'a> {
             processes: s.processes,
             claims: s.claims,
             wire: s.wire,
+            standing: s.standing,
+            making: s.making,
             proposed: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
@@ -281,7 +291,19 @@ impl<'a> MechanismContext<'a> {
             ceased: Vec::new(),
             claimed: Vec::new(),
             repaid: Vec::new(),
+            started: Vec::new(),
+            finished: Vec::new(),
+            stood: Vec::new(),
         }
+    }
+
+    /// 21f: what parties stand behind — a posting, a lending standard — and what is on the line.
+    pub fn standing(&self) -> &crate::stores::Standing {
+        self.standing
+    }
+
+    pub fn making(&self) -> &crate::stores::InProgress {
+        self.making
     }
 
     pub fn period(&self) -> u32 {
@@ -399,6 +421,24 @@ impl<'a> MechanismContext<'a> {
         self.repaid.push((claim, amount));
     }
 
+    /// **§37 B3, 21f.3: a batch goes ON the line**, owned, carrying what it cost, ready in a later
+    /// period. `InProgress` is the one writer; a module says what it started.
+    pub fn starts(&mut self, owner: PartyId, what: InstrumentId, units: f64, cost: f64, ready: u32) {
+        self.started.push((owner, what, units, cost, ready));
+    }
+
+    /// And a batch comes OFF it. The mark and the `Create` leg are one event with two sides (Law 5),
+    /// so a module proposes both in the same phase and the kernel applies both.
+    pub fn finishes(&mut self, batch: crate::stores::BatchId) {
+        self.finished.push(batch);
+    }
+
+    /// **What this party stands behind**, until it withdraws it (21f.1, 21f.2): a posting, a lending
+    /// standard. `Standing` is the one writer.
+    pub fn now_stands(&mut self, kind: u32, who: PartyId, terms: Vec<f64>) {
+        self.stood.push((kind, who, terms));
+    }
+
     /// What the kernel applies once the phase returns.
     pub fn taken(self) -> Taken {
         Taken {
@@ -409,6 +449,9 @@ impl<'a> MechanismContext<'a> {
             ceased: self.ceased,
             claimed: self.claimed,
             repaid: self.repaid,
+            started: self.started,
+            finished: self.finished,
+            stood: self.stood,
         }
     }
 }
@@ -429,6 +472,13 @@ pub struct Taken {
     /// XI-8, 21.36: and what an estate actually PAID one, so the claim comes down. A claim that is
     /// paid and not marked is a claim that is paid again next period, for ever.
     pub repaid: Vec<(crate::stores::ClaimId, f64)>,
+    /// §37 B3, 21f.3: batches that went ON the line this phase — owner, what, how much, what it
+    /// cost, and the period it is ready.
+    pub started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
+    /// And the batches taken off it, whose `Create` legs are in `proposed` (Law 5: one event).
+    pub finished: Vec<crate::stores::BatchId>,
+    /// 21f.1, 21f.2: terms a party now stands behind. The kernel writes `Standing`.
+    pub stood: Vec<(u32, PartyId, Vec<f64>)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

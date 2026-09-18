@@ -848,6 +848,17 @@ instruction consumed is the recipe times what it created, and a good comes off i
 takes at least its own units of it (Goods B2, B4). The first stage of every chain is drawn from
 labour and land and consumes no units at all, which is why the kernel cannot require a destroy.
 
+**A batch takes time, and what is between the input and the output is a thing** (§37 B3, 21f.3).
+`Recipe.periods_to_make` is a TECHNOLOGY primitive like the batch size, and it is what makes there be
+an in-between at all: `Making` draws the inputs in the period it decides, puts the batch on the line
+in `stores::InProgress` — owned by a named maker, carrying what it cost — and proposes the `Create`
+leg only in the period the line is done. Until it had a length, production drew and created in ONE
+instruction, so nothing was ever in progress and B3 was a clause whose type existed and whose
+instances did not. The cost travels with the batch rather than being recomputed when it lands: what a
+unit cost is what went into THAT batch, not what its inputs were worth when it finished (Law 4).
+`InProgress` is indexed by the period a batch is ready and a taken batch leaves that index, so what
+comes off the line is a lookup rather than a walk over everything the world has ever made.
+
 **A batch is a thing (Goods B3).** Work in progress is an instrument kind of its own per good —
 physical, carried at what it has cost, no market, never written down because there is nothing to
 write it down to. Its LOTS are the batch book: each carries what that batch cost and the period it

@@ -225,9 +225,9 @@ export function checkPositions(): BadPosition[] {
     const target = f.target;
     // A position naming a finding rather than an item: it must still be an open step. This is the
     // one that caught 21.117 pointing at 21.113 one commit after 21.113 closed.
-    if (/^21\.[0-9]+$/.test(target) && target !== f.id) {
+    if (/^21\.[0-9]+$/.test(target) && target !== f.finding) {
       if (!open.has(target)) {
-        out.push({ finding: f.id, target, why: 'names a finding that is closed or was never written' });
+        out.push({ finding: f.finding, target, why: 'names a finding that is closed or was never written' });
       }
       continue;
     }
@@ -235,9 +235,9 @@ export function checkPositions(): BadPosition[] {
     const item = target.replace(/\.[0-9]+$/, '');
     const known = items.get(item);
     if (known === undefined) {
-      out.push({ finding: f.id, target, why: `names ${item}, which neither the plan nor the worklist knows` });
+      out.push({ finding: f.finding, target, why: `names ${item}, which neither the plan nor the worklist knows` });
     } else if (known.closed) {
-      out.push({ finding: f.id, target, why: `names ${item}, which is closed` });
+      out.push({ finding: f.finding, target, why: `names ${item}, which is closed` });
     }
   }
   return out;

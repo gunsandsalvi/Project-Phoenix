@@ -87,11 +87,13 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
 - **Ontology register** (`src/nouns.rs`): every store declared as `noun | working | physics`, and a
   NOUN names the plan item that gives it a kernel home. An undeclared store throws at the read. It is
   to categories what `params` is to numbers, and its count of homeless nouns is the honest measure of
-  how much ontology is missing. **Three homeless today**, down from seven: the registry's four went
-  home at 21e (`src/registry.rs` — a currency naming its issuer, a country naming its currency and a
-  region its country, a unit and what it is divided into, a profile per party kind). What is left is
-  three facts a module names that no store keeps: a posting an employer holds, the standard a lender
-  is lending at, and work in progress (21f). `npm run world:runs` prints them.
+  how much ontology is missing. **Three homeless today**, and they are not the three of a week ago:
+  the registry's four went home at 21e (`src/registry.rs`) and a module's three at 21f (`Standing`
+  for a posting and a lending standard, `InProgress` for work in progress). The three now declared
+  were found by the re-read of item 21 and each names its item — `registry.indices` (21.116),
+  `settlement.realised` (21.112), `reporting.accounts` (21.76). **A count of zero would be the measure
+  switched off**: zero means *nothing anybody DECLARED is homeless*, not *nothing is missing*, so what
+  a re-read finds is declared as it is found. `npm run world:runs` prints them.
 - **Registry**: what the ids point at (ARCHITECTURE 4.10). A country has the money and a region is a
   place, so `currency_of(region)` reads THROUGH the country — one fact, one writer. A unit says what
   one of it is divided into, so there is no single grid for every good. A party kind has a PROFILE the

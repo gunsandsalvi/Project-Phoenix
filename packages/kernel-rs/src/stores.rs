@@ -681,6 +681,243 @@ impl Claims {
     }
 }
 
+/// **TERMS A NAMED PARTY CURRENTLY STANDS BEHIND, AND WILL UNTIL IT WITHDRAWS THEM** (21f).
+///
+/// The one-sided twin of `Agreements`. An agreement has two sides, always (Law 5); this has one,
+/// because a posting and a lending standard are not relations — they are a party's own declared
+/// position, which anybody may take up or meet and nobody has agreed to.
+///
+/// Two homeless nouns turned out to be one shape. **A posting** is *a bid at the wage the employer
+/// offers, and something an employer HOLDS — which is what lets it be withdrawn, by a named party,
+/// as an event* (XI-10, §39 B). **A lending standard** is *a DECISION, and it tightens when the
+/// lender is worried* (Housing C5) — a decision that persists and that every borrower meets or does
+/// not. Both are terms, held by one party, standing until changed. A store per module would have
+/// been the same store twice (Law 4).
+///
+/// What each position of `terms` means is the declaring kind's business, as it is for an agreement.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct StandingId(pub u32);
+
+#[derive(Default)]
+pub struct Standing {
+    kind: Vec<u32>,
+    who: Vec<u32>,
+    term_at: Vec<u32>,
+    term_len: Vec<u32>,
+    terms: Vec<f64>,
+    since: Vec<u32>,
+    live: Vec<bool>,
+    by_party: HashMap<u32, Vec<u32>>,
+    by_kind: HashMap<u32, Vec<u32>>,
+}
+
+impl Standing {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.kind.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.kind.is_empty()
+    }
+
+    /// The only way to make one. A party stands behind terms from a period; there is no anonymous
+    /// standing offer, because a posting nobody holds cannot be withdrawn by anybody.
+    pub fn stands(&mut self, kind: u32, who: PartyId, terms: &[f64], since: u32) -> StandingId {
+        assert!(who.some(), "XI-10: a standing offer is HELD by a named party, or nobody can withdraw it");
+        assert!(!terms.is_empty(), "Law 8: terms nobody stated are not terms");
+        let row = self.kind.len() as u32;
+        self.kind.push(kind);
+        self.who.push(who.0);
+        self.term_at.push(self.terms.len() as u32);
+        self.term_len.push(terms.len() as u32);
+        self.terms.extend_from_slice(terms);
+        self.since.push(since);
+        self.live.push(true);
+        self.by_party.entry(who.0).or_default().push(row);
+        self.by_kind.entry(kind).or_default().push(row);
+        StandingId(row)
+    }
+
+    /// **Withdrawn, by the party that held it.** The event the finding is about: a vacancy that
+    /// stops existing without anybody withdrawing it is the silent disappearance Law 5 is against.
+    pub fn withdraw(&mut self, s: StandingId) {
+        self.live[s.0 as usize] = false;
+    }
+
+    /// C5: **a standard TIGHTENS** — the same party, standing behind different terms from now. The
+    /// old row is withdrawn rather than overwritten, because what a lender was lending at last period
+    /// is a fact somebody may read (Law 19, and it is how a tightening is visible at all).
+    pub fn restates(&mut self, s: StandingId, terms: &[f64], now: u32) -> StandingId {
+        let (kind, who) = (self.kind[s.0 as usize], PartyId(self.who[s.0 as usize]));
+        self.withdraw(s);
+        self.stands(kind, who, terms, now)
+    }
+
+    pub fn live(&self, s: StandingId) -> bool {
+        self.live[s.0 as usize]
+    }
+
+    pub fn held_by(&self, s: StandingId) -> PartyId {
+        PartyId(self.who[s.0 as usize])
+    }
+
+    pub fn kind_of(&self, s: StandingId) -> u32 {
+        self.kind[s.0 as usize]
+    }
+
+    pub fn since(&self, s: StandingId) -> u32 {
+        self.since[s.0 as usize]
+    }
+
+    pub fn terms(&self, s: StandingId) -> &[f64] {
+        let at = self.term_at[s.0 as usize] as usize;
+        let len = self.term_len[s.0 as usize] as usize;
+        &self.terms[at..at + len]
+    }
+
+    /// Register A3: both directions. What this party is standing behind.
+    pub fn of_party(&self, p: PartyId) -> &[u32] {
+        match self.by_party.get(&p.0) {
+            Some(rows) => rows,
+            None => &[],
+        }
+    }
+
+    /// Law 15: a mechanism asks for ITS OWN kind's rows.
+    pub fn of_kind(&self, kind: u32) -> &[u32] {
+        match self.by_kind.get(&kind) {
+            Some(rows) => rows,
+            None => &[],
+        }
+    }
+}
+
+/// **§37 B3: WORK IN PROGRESS EXISTS BETWEEN INPUT AND OUTPUT, OWNED BY SOMEBODY, AND IT CARRIES
+/// WHAT IT COST** (21f).
+///
+/// The clause whose type existed and whose instances did not. It is not a register holding — the
+/// units are not the finished good and nobody can be delivered them — and it is not a `Process`,
+/// because a process carries one size and this carries a quantity AND the cost that went into it.
+///
+/// **A batch is started in one period and finishes in another** (`ready`), which is what makes there
+/// be an in-between at all. Until the recipe had a lead time there was none: production drew its
+/// inputs and created its output in one instruction, so nothing was ever in progress.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct BatchId(pub u32);
+
+#[derive(Default)]
+pub struct InProgress {
+    owner: Vec<u32>,
+    what: Vec<u32>,
+    units: Vec<f64>,
+    /// B3: **what it cost** — the inputs, the wages and the capital charge that went in when it was
+    /// started, carried with the batch so the unit cost of what comes out is what went into it.
+    cost_carried: Vec<f64>,
+    started: Vec<u32>,
+    ready: Vec<u32>,
+    taken: Vec<bool>,
+    by_owner: HashMap<u32, Vec<u32>>,
+    /// By the period it is ready in, so `ready_in` is a lookup and not a walk over every batch this
+    /// world has ever run. The walk is the shape 21.138 is about, and a store built with it would
+    /// have grown the period cost by its own history.
+    by_ready: BTreeMap<u32, Vec<u32>>,
+}
+
+impl InProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.owner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.owner.is_empty()
+    }
+
+    pub fn starts(
+        &mut self,
+        owner: PartyId,
+        what: InstrumentId,
+        units: f64,
+        cost_carried: f64,
+        started: u32,
+        ready: u32,
+    ) -> BatchId {
+        assert!(owner.some(), "37 B3: work in progress is owned by SOMEBODY");
+        assert!(units > 0.0, "37 B3: a batch of {units} is not work in progress");
+        assert!(ready > started, "37 B3: a batch ready in the period it started is not in progress");
+        let row = self.owner.len() as u32;
+        self.owner.push(owner.0);
+        self.what.push(what.0);
+        self.units.push(units);
+        self.cost_carried.push(cost_carried);
+        self.started.push(started);
+        self.ready.push(ready);
+        self.taken.push(false);
+        self.by_owner.entry(owner.0).or_default().push(row);
+        self.by_ready.entry(ready).or_default().push(row);
+        BatchId(row)
+    }
+
+    /// What comes off the line this period — the batches whose time is up and which nobody has taken
+    /// yet. A read, so no caller keeps its own list of what is due (Law 19), and a range over the
+    /// ready index rather than a walk: a batch that finished ten periods ago costs this nothing.
+    pub fn ready_in(&self, period: u32) -> Vec<BatchId> {
+        self.by_ready
+            .range(..=period)
+            .flat_map(|(_, rows)| rows.iter().map(|r| BatchId(*r)))
+            .filter(|b| !self.taken[b.0 as usize])
+            .collect()
+    }
+
+    /// Taken off the line. The batch stops being in progress because it became a thing somebody
+    /// holds, and that is one event with two sides — this mark and the `Create` leg (Law 5).
+    ///
+    /// It comes out of the ready index as it goes, and an emptied period's entry goes with it, so
+    /// what `ready_in` looks at is what is still ON the line rather than everything ever started.
+    pub fn finishes(&mut self, b: BatchId) {
+        self.taken[b.0 as usize] = true;
+        let when = self.ready[b.0 as usize];
+        if let Some(rows) = self.by_ready.get_mut(&when) {
+            rows.retain(|r| *r != b.0);
+            if rows.is_empty() {
+                self.by_ready.remove(&when);
+            }
+        }
+    }
+
+    pub fn owner_of(&self, b: BatchId) -> PartyId {
+        PartyId(self.owner[b.0 as usize])
+    }
+
+    pub fn what(&self, b: BatchId) -> InstrumentId {
+        InstrumentId(self.what[b.0 as usize])
+    }
+
+    pub fn units(&self, b: BatchId) -> f64 {
+        self.units[b.0 as usize]
+    }
+
+    pub fn cost_carried(&self, b: BatchId) -> f64 {
+        self.cost_carried[b.0 as usize]
+    }
+
+    /// B3: what this party has on the line, at what it cost. A firm's balance sheet has to be able to
+    /// say it, which is the reason the clause exists.
+    pub fn held_by(&self, owner: PartyId) -> Vec<BatchId> {
+        match self.by_owner.get(&owner.0) {
+            Some(rows) => rows.iter().map(|r| BatchId(*r)).filter(|b| !self.taken[b.0 as usize]).collect(),
+            None => Vec::new(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -836,5 +1073,77 @@ mod tests {
     fn a_party_is_not_a_claimant_on_its_own_estate() {
         // Law 5: both sides, and they are two. An estate owing itself would pay itself first.
         Claims::new().against(PartyId::at(3), PartyId::at(3), 100.0, 1);
+    }
+
+    #[test]
+    fn a_posting_is_held_by_somebody_and_that_is_what_lets_it_be_withdrawn() {
+        // XI-10, 21f.1: a vacancy that stops existing without anybody withdrawing it is the silent
+        // disappearance Law 5 is against.
+        let mut s = Standing::new();
+        let employer = party(1);
+        let p = s.stands(7, employer, &[900.0, 30.0], 4);
+        assert!(s.live(p));
+        assert_eq!(s.held_by(p), employer);
+        assert_eq!(s.terms(p), &[900.0, 30.0]);
+        assert_eq!(s.of_party(employer).len(), 1);
+        assert_eq!(s.of_kind(7).len(), 1);
+
+        s.withdraw(p);
+        assert!(!s.live(p), "it is withdrawn BY the party that held it");
+        // And the row stays, because a vacancy that existed is a fact somebody may read (Law 19).
+        assert_eq!(s.of_party(employer).len(), 1);
+    }
+
+    #[test]
+    fn a_standard_that_tightens_leaves_the_one_it_replaced_readable() {
+        // Housing C5, 21f.2: a standard is a DECISION that tightens, and a tightening is only
+        // visible against what it was. Overwriting the terms would delete the comparison.
+        let mut s = Standing::new();
+        let lender = party(2);
+        let was = s.stands(9, lender, &[4.0, 0.10], 1);
+        let now = s.restates(was, &[3.0, 0.25], 6);
+
+        assert!(!s.live(was));
+        assert!(s.live(now));
+        assert_eq!(s.terms(was), &[4.0, 0.10], "what it WAS lending at is still there");
+        assert_eq!(s.terms(now), &[3.0, 0.25]);
+        assert_eq!(s.held_by(now), lender);
+        assert_eq!(s.since(now), 6);
+        assert_eq!(s.of_kind(9).len(), 2);
+    }
+
+    #[test]
+    #[should_panic(expected = "or nobody can withdraw it")]
+    fn a_standing_offer_nobody_holds_is_not_one() {
+        Standing::new().stands(7, PartyId::NONE, &[1.0], 0);
+    }
+
+    #[test]
+    fn work_in_progress_is_owned_carries_its_cost_and_comes_off_when_its_time_is_up() {
+        // 37 B3, 21f.3: the clause whose type existed and whose instances did not.
+        let mut w = InProgress::new();
+        let maker = party(5);
+        let good = InstrumentId::at(9);
+        let b = w.starts(maker, good, 120.0, 960.0, 3, 5);
+
+        assert_eq!(w.owner_of(b), maker);
+        assert_eq!(w.what(b), good);
+        assert_eq!(w.units(b), 120.0);
+        assert_eq!(w.cost_carried(b), 960.0);
+        // It is on the line, and it is this party's to say so on its own balance sheet.
+        assert_eq!(w.held_by(maker).len(), 1);
+        assert!(w.ready_in(4).is_empty(), "it is not ready before its time");
+        assert_eq!(w.ready_in(5).len(), 1);
+
+        w.finishes(b);
+        assert!(w.ready_in(5).is_empty(), "taken once, and not offered again");
+        assert!(w.held_by(maker).is_empty(), "it stopped being in progress when it became a holding");
+    }
+
+    #[test]
+    #[should_panic(expected = "ready in the period it started")]
+    fn a_batch_that_finishes_where_it_started_was_never_in_progress() {
+        // Which is exactly what production did before the recipe had a lead time.
+        InProgress::new().starts(party(5), InstrumentId::at(9), 10.0, 100.0, 3, 3);
     }
 }

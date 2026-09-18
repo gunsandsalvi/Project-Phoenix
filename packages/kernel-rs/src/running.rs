@@ -49,6 +49,17 @@ pub mod agreed {
     pub const COMMITMENT: u32 = 12;
 }
 
+/// What a party STANDS BEHIND, one-sided, until it withdraws it (21f). Same rule as `agreed`: the
+/// kind is data and the terms convention is stated here, once, rather than wherever it is read.
+pub mod standing {
+    /// XI-10, §39 B: an open position an employer holds. Terms `[wage offered, places]`.
+    pub const POSTING: u32 = 0;
+    /// Housing C5: what a lender is currently lending at. Terms `[income multiple, deposit share]`,
+    /// which is `housing::Standard` read back — and a tightening is a `restates`, so what it was
+    /// lending at last period is still readable beside what it is lending at now.
+    pub const LENDING_STANDARD: u32 = 1;
+}
+
 /// The processes this world runs. Same rule: data, not a branch.
 pub mod afoot {
     pub const CAPITAL_PROGRAMME: u32 = 0;
@@ -214,7 +225,12 @@ struct Ran {
     makes: InstrumentId,
     draws: Vec<(InstrumentId, f64)>,
     finished: f64,
-    per_unit: f64,
+    /// B3: the period it comes off the line. The inputs go now; the output arrives then.
+    ready: u32,
+    /// B5: what went in — inputs at their own basis, wages, the capital charge. The batch carries it
+    /// and the unit cost is struck from it when the batch comes off, so what a unit cost is what went
+    /// into THAT batch (Law 4: one cost, in one place).
+    cost: f64,
 }
 
 pub struct Making {
@@ -351,17 +367,58 @@ impl Mechanism for Making {
                 }
                 let wages = d.starts * way.labour_per_unit * an_hour;
                 let capital = d.starts * way.capital_services_per_unit * a_service;
-                let Some(per_unit) = unit_cost(inputs_cost, wages, capital, d.finishes) else {
+                // B5.a: **no units, no capitalised cost.** A run that finishes nothing capitalises
+                // nothing, and the cost it incurred is a period expense rather than a batch — which
+                // is the caller's, and this will not invent a unit to hang it on. The read is asked
+                // here, where the decision is, and the answer is thrown at the batch below (Law 4:
+                // one cost in one place — `unit_cost` over what the batch carried).
+                if unit_cost(inputs_cost, wages, capital, d.finishes).is_none() {
                     continue;
-                };
-                runs.push(Ran { maker, makes: m.line.makes, draws, finished: d.finishes, per_unit });
+                }
+                // B3, 21f.3: what goes ON the line now, and when it comes off.
+                runs.push(Ran {
+                    maker,
+                    makes: m.line.makes,
+                    draws,
+                    finished: d.finishes,
+                    ready: now + way.periods_to_make,
+                    cost: inputs_cost + wages + capital,
+                });
             }
         }
 
-        // THE PROPOSALS. B2 and B3 in ONE instruction: a world where the inputs went and the output
-        // did not arrive is a world that ate them.
-        for Ran { maker, makes, draws, finished, per_unit } in runs {
-            let mut legs: Vec<Leg> = draws
+        // WHAT COMES OFF THE LINE. B3, 21f.3: the batches whose time is up, started in an earlier
+        // period and carrying what they cost then. This runs BEFORE the starts below, because a line
+        // that took a period delivers what it began before it begins anything else.
+        let due: Vec<(crate::stores::BatchId, PartyId, InstrumentId, f64, f64)> = ctx
+            .making()
+            .ready_in(now)
+            .into_iter()
+            .map(|b| {
+                let m = ctx.making();
+                (b, m.owner_of(b), m.what(b), m.units(b), m.cost_carried(b))
+            })
+            .collect();
+        for (batch, maker, makes, units, cost) in due {
+            if !ctx.parties().alive(maker) {
+                continue;
+            }
+            // B5: what a unit cost is what went in over what came out — the cost the batch carried.
+            let per_unit = cost / units;
+            ctx.propose(
+                vec![Leg::Create { party: maker, instrument: makes, qty: units, cost_per_unit: per_unit }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the batches that came off the line this period",
+            );
+            ctx.finishes(batch);
+        }
+
+        // THE STARTS. B2: production consumes the inputs it consumes, NOW — and B3 puts what they
+        // became on the line, owned, carrying what it cost, until it is ready. The two were one
+        // instruction until the recipe had a lead time, which is why nothing was ever in progress.
+        for Ran { maker, makes, draws, finished, ready, cost } in runs {
+            let legs: Vec<Leg> = draws
                 .iter()
                 .map(|(what, qty)| Leg::Destroy {
                     party: maker,
@@ -370,8 +427,8 @@ impl Mechanism for Making {
                     why: crate::ledger::Gone::Consumed,
                 })
                 .collect();
-            legs.push(Leg::Create { party: maker, instrument: makes, qty: finished, cost_per_unit: per_unit });
-            ctx.propose(legs, Cause::Production, Delivery::Nothing, "the batches the line ran this period");
+            ctx.propose(legs, Cause::Production, Delivery::Nothing, "the inputs the line drew this period");
+            ctx.starts(maker, makes, finished, cost, ready);
         }
     }
 }
@@ -853,6 +910,8 @@ mod tests {
                 agreements: &w.agreements,
                 schedules: &w.schedules,
                 outlooks: &w.outlooks,
+                standing: &w.standing,
+                making: &w.making,
                 processes: &w.processes,
                 wire: &w.wire,
             },
@@ -891,6 +950,15 @@ mod tests {
         }
         for (claim, amount) in asked.repaid {
             w.claims.pays(claim, amount);
+        }
+        for (owner, what, units, cost, ready) in asked.started {
+            w.making.starts(owner, what, units, cost, w.period, ready);
+        }
+        for batch in asked.finished {
+            w.making.finishes(batch);
+        }
+        for (kind, who, terms) in asked.stood {
+            w.standing.stands(kind, who, &terms, w.period);
         }
     }
 
@@ -1073,22 +1141,30 @@ mod tests {
 
     #[test]
     fn a_firm_with_plant_inputs_hours_and_a_view_of_its_demand_actually_makes_something() {
-        // 37 B1, B2, B4: the inputs go, the output arrives, and both are in ONE instruction — a
-        // world where the inputs went and the output did not is a world that ate them.
+        // 37 B1, B2, B3, B4: the inputs go NOW and the output arrives when the line is done — and in
+        // between there is work in progress, owned, carrying what it cost (21f.3).
         use crate::mechanisms::recipe::{Line, Recipe};
         let (mut w, firm, flour, bread, mill) = a_mill();
         w.period = 1;
         w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
-        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
 
         let flour_before = w.register.quantity(w.register.row(firm, flour));
         ran(&mut w, &making(&line, mill));
 
         // It wanted 200/0.98 = 204 starts, had capacity for 300 and flour for 450, so the batch
-        // rounded it to 200 — and 196 loaves came out of 400 sacks.
-        let made = w.register.quantity(w.register.row(firm, bread));
-        assert_eq!(made, 196.0);
+        // rounded it to 200. The 400 sacks have gone and the 196 loaves are ON THE LINE.
         assert_eq!(flour_before - w.register.quantity(w.register.row(firm, flour)), 400.0);
+        assert_eq!(w.register.quantity(w.register.row(firm, bread)), 0.0, "it is not made yet");
+        let on_the_line = w.making.held_by(firm);
+        assert_eq!(on_the_line.len(), 1);
+        assert_eq!(w.making.units(on_the_line[0]), 196.0);
+        assert!(w.making.cost_carried(on_the_line[0]) > 0.0, "B3: it carries what it cost");
+
+        // And the period it is ready, it comes off and becomes a thing the firm holds.
+        w.period = 2;
+        ran(&mut w, &making(&line, mill));
+        assert_eq!(w.register.quantity(w.register.row(firm, bread)), 196.0);
     }
 
     #[test]
@@ -1100,7 +1176,11 @@ mod tests {
         let (mut w, firm, flour, bread, mill) = a_mill();
         w.period = 1;
         w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
-        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
+        ran(&mut w, &making(&line, mill));
+        // B3: the cost is carried by the batch on the line, and it is what the lot is struck at when
+        // the batch comes off — so what a unit cost is what went into IT, not what things cost then.
+        w.period = 2;
         ran(&mut w, &making(&line, mill));
 
         let lots = w.register.lots(w.register.row(firm, bread));
@@ -1118,14 +1198,14 @@ mod tests {
         use crate::mechanisms::recipe::{Line, Recipe};
         let (mut w, firm, flour, bread, mill) = a_mill();
         w.period = 1;
-        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
         ran(&mut w, &making(&line, mill));
-        assert_eq!(w.register.quantity(w.register.row(firm, bread)), 0.0);
+        assert!(w.making.held_by(firm).is_empty(), "it started nothing");
 
-        // And it starts the moment it has one.
+        // And it starts the moment it has one — which is a batch on the line, not a loaf.
         w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
         ran(&mut w, &making(&line, mill));
-        assert!(w.register.quantity(w.register.row(firm, bread)) > 0.0);
+        assert_eq!(w.making.held_by(firm).len(), 1);
     }
 
     #[test]
@@ -1141,7 +1221,10 @@ mod tests {
         w.register.credit(bank, flour, 500.0, 0.5, 0);
         w.agreements.strike(agreed::ENGAGEMENT, bank, cb, &[80.0, 40.0], Day(-7), None);
         w.outlooks.form(bank, about::HOW_MUCH_IT_SELLS, 100.0, 1);
-        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
+        ran(&mut w, &making(&line, mill));
+        assert_eq!(w.making.held_by(bank).len(), 1, "the bank that bought a mill is making bread");
+        w.period = 2;
         ran(&mut w, &making(&line, mill));
         assert!(w.register.quantity(w.register.row(bank, bread)) > 0.0);
     }

@@ -48,6 +48,12 @@ pub struct Recipe {
     /// small run. A line whose batch is one unit is a line with no batch, which is a real kind of
     /// line and is said by declaring one rather than by leaving it out.
     pub batch: f64,
+    /// B3: **how long the line takes**, in periods. A TECHNOLOGY primitive like the batch, and the
+    /// reason work in progress exists at all: between the input going in and the output coming out
+    /// there is a thing, owned by somebody, carrying what it cost (21f.3). A line that takes one
+    /// period still has an in-between — it started last period and finishes this one — and a line
+    /// that took none would be a line where nothing is ever being made.
+    pub periods_to_make: u32,
 }
 
 impl Recipe {
@@ -58,13 +64,18 @@ impl Recipe {
         capital_services_per_unit: f64,
         yields: f64,
         batch: f64,
+        periods_to_make: u32,
     ) -> Recipe {
         assert!(
             yields > 0.0 && yields <= 1.0,
             "37 B4: a line that yields {yields} of what it starts is not a line"
         );
         assert!(batch > 0.0, "37 B5.b: a line whose smallest run is {batch} cannot be run at all");
-        Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields, batch }
+        assert!(
+            periods_to_make > 0,
+            "37 B3: a line that takes no time has nothing between its input and its output"
+        );
+        Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields, batch, periods_to_make }
     }
 
     /// B2: **production consumes the inputs it consumes** — the physical consequence of the decision,
@@ -308,7 +319,7 @@ mod tests {
     /// Two units of input 1 and half a unit of input 2 make one unit of good 9, with 0.4 of labour
     /// and 0.1 of capital services, and nineteen starts in twenty survive.
     fn line() -> Recipe {
-        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 1.0)
+        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 1.0, 1)
     }
 
     fn reasons(demand: f64, capacity: f64, input_1: f64, input_2: f64, labour: f64) -> Reasons {
@@ -420,13 +431,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a line")]
     fn a_line_that_yields_nothing_is_not_a_line() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.0, 1.0);
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.0, 1.0, 1);
     }
 
     #[test]
     #[should_panic(expected = "is not a line")]
     fn a_line_that_yields_more_than_it_starts_is_not_a_line_either() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 1.2, 1.0);
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 1.2, 1.0, 1);
     }
 
     /// The same good, two ways: one that draws a lot of input 1 and little labour, one the reverse.
@@ -434,8 +445,8 @@ mod tests {
         Line::new(
             good(9),
             vec![
-                Recipe::new(good(9), vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.1, 0.95, 1.0),
-                Recipe::new(good(9), vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.1, 0.95, 1.0),
+                Recipe::new(good(9), vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.1, 0.95, 1.0, 1),
+                Recipe::new(good(9), vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.1, 0.95, 1.0, 1),
             ],
         )
     }
@@ -481,7 +492,7 @@ mod tests {
         let c = costs(r, &all_at_one, 1.0, 1.0).unwrap();
         assert!((c - 4.7 / 0.95).abs() < dust(4, &[4.7, 0.95]));
         // Scrapping less makes the same physical draw cheaper per unit sold, with no markup moved.
-        let kinder = Recipe::new(good(9), r.per_unit.clone(), 0.1, 0.1, 1.0, 1.0);
+        let kinder = Recipe::new(good(9), r.per_unit.clone(), 0.1, 0.1, 1.0, 1.0, 1);
         assert!(costs(&kinder, &all_at_one, 1.0, 1.0).unwrap() < c);
     }
 
@@ -489,12 +500,12 @@ mod tests {
     #[should_panic(expected = "not a way of making this line")]
     fn a_way_of_making_something_else_is_not_one_of_this_line_s_ways() {
         // Law 4: one representation per real thing. A line's ways all make the line.
-        Line::new(good(9), vec![Recipe::new(good(8), vec![(good(1), 1.0)], 0.1, 0.1, 1.0, 1.0)]);
+        Line::new(good(9), vec![Recipe::new(good(8), vec![(good(1), 1.0)], 0.1, 0.1, 1.0, 1.0, 1)]);
     }
 
     /// The same line, but it can only be run fifty units at a time.
     fn in_fifties() -> Recipe {
-        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 50.0)
+        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 50.0, 1)
     }
 
     #[test]
@@ -532,6 +543,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "cannot be run at all")]
     fn a_line_with_no_smallest_run_is_not_a_line() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.95, 0.0);
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.95, 0.0, 1);
     }
 }

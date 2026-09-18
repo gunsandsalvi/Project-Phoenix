@@ -19902,3 +19902,73 @@ ordered list** (Law 16); a finding's note there needs its verdict and its positi
 Nine per-block summaries that restated this file became a ten-line list, three group headers and the
 two raised findings were cut to their operative content, and every re-read note over ~500 characters
 was compressed. 334 lines deleted against 150 added, with no finding, verdict or position lost.
+
+---
+
+## 21f — Three facts the modules keep and the kernel does not
+
+**What.** Two kernel stores, a lead time on the recipe, and the ontology register's three remaining
+homeless nouns given homes. `stores::Standing`, `stores::InProgress`, `Recipe.periods_to_make`.
+
+### Two of the three were one shape
+
+A posting is *a bid at the wage an employer offers, and something it HOLDS — which is what lets it be
+withdrawn, by a named party, as an event* (XI-10). A lending standard is *a DECISION, and it tightens
+when the lender is worried* (Housing C5). Both are **terms a named party stands behind until it
+changes them**, held by one party — which is exactly what an agreement is not, since an agreement has
+two sides always (Law 5). So `Standing` is the one-sided twin of `Agreements` and holds both; a store
+per module would have been the same store written twice.
+
+A tightening RESTATES rather than overwrites: the old row is withdrawn and a new one stands from now,
+so what a lender was lending at last period is still readable beside what it is lending at now. C5's
+tightening is only visible against what it was, and overwriting the terms would delete the comparison.
+
+### Work in progress is real because the line has a length
+
+`Recipe.periods_to_make` is a TECHNOLOGY primitive beside the batch size, and it is what makes there
+be an in-between. `Making` now draws the inputs in the period it decides, puts the batch on the line —
+owned, carrying what it cost — and proposes the `Create` leg only when the line is done. The cost
+travels with the batch, so what a unit cost is what went into THAT batch rather than what its inputs
+were worth when it landed (Law 4).
+
+`world:runs` shows the change in one number: **0 made in period 1**, where everything started, then
+8, 6, 6. Four tests moved with it, each re-read rather than adjusted — they had asserted that the
+loaves exist in the period the flour went, which is the thing that was wrong.
+
+**It was built with an index from the start.** `InProgress` is keyed by the period a batch is ready
+and a taken batch leaves that index, so what comes off the line is a lookup. The first cut walked
+every batch ever started, which is 21.138's shape appearing in new code the same day it was written
+down; the run said so immediately.
+
+### The count did not reach zero, and that matters
+
+Three nouns went home and **three were declared in their place** — `registry.indices` (21.116),
+`settlement.realised` (21.112), `reporting.accounts` (21.76) — each found by the re-read of item 21
+and each naming its item. A count of zero here would be the measure switched off again (21d.1b): zero
+means *nothing anybody has DECLARED is homeless*, not *nothing is missing*. What a re-read finds gets
+declared as it is found.
+
+**And 21.116's declaration half had been positioned at 21e, which closed without it** — 21.137's
+defect once more, and `checkPositions` did not catch it because the position was written as prose
+(*the declaration is 21e's*) rather than as *positioned at*. It is placed here instead as a homeless
+noun with an item, which the ontology register enforces at the read rather than by a convention.
+
+### The check caught this commit, and then a defect in itself
+
+`plan:check` refused the commit: 21.40 was positioned at 21f, which this item closed. That is exactly
+what it was written for, one item after it was written. 21.40 is re-placed at 21j — the store exists
+now, and what is missing is a lender that computes a standard and stands behind it.
+
+But its message said `undefined -> 21f`, because `checkPositions` read `f.id` on a `StatedPosition`,
+whose field is `finding`. **A diagnostic that cannot name the finding cannot be acted on**, and the
+reason it slipped is one layer below 21.119: `npm run check` ran the tool's tests but never
+typechecked it. `tsc --noEmit -p tools/tsconfig.json` catches it — verified by reintroducing the bug
+and watching it fail — and is now `npm run check:types`, in `npm run check`.
+
+`docs/COVERAGE.md`: `Goods B3` re-pointed from the deleted TypeScript files to `InProgress` and
+`Making`. `CLAUDE.md` and `ARCHITECTURE.md` updated in the same change.
+
+**699 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 80 files; `npm run
+check` green.** The world runs four periods; the box is noisy enough that period 1 — which does no
+batch work at all — moved between 139 and 348 ms across runs, while every count is identical, so the
+timing is not a reading this item can make.

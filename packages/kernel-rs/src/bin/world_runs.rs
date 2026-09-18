@@ -216,8 +216,8 @@ fn main() {
                 line: Line::new(
                     *made,
                     vec![
-                        Recipe::new(*made, vec![(from, 2.0)], 0.2, 0.1, 0.98, 10.0),
-                        Recipe::new(*made, vec![(from, 0.5)], 1.5, 0.1, 0.98, 10.0),
+                        Recipe::new(*made, vec![(from, 2.0)], 0.2, 0.1, 0.98, 10.0, 1),
+                        Recipe::new(*made, vec![(from, 0.5)], 1.5, 0.1, 0.98, 10.0, 2),
                     ],
                 ),
                 plant,

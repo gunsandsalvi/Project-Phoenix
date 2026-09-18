@@ -232,7 +232,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21c | A tax on an estate is a claim on it — **done** (section removed; see `docs/RECORD.md`; `Rank::Preferential` is where the law puts the state, `Claims` is the fifth kernel store, and `running::Ranked` pays an estate's claimants in rank order. 21.110's other half stays open) | after 21b |
 | 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
 | 21e | There is no registry — **done** (section removed; see `docs/RECORD.md`; `src/registry.rs`: a currency names its issuer, `currency_of(region)` reads through the country, a unit says what it is divided into, a kind has a profile `World::admit` asks. Seven homeless nouns are three) | after 21d: the ontology register is what found it |
-| 21f | Three facts the modules keep and the kernel does not | with 21e, and for the same reason |
+| 21f | Three facts the modules keep and the kernel does not — **done** (section removed; see `docs/RECORD.md`; a posting and a lending standard are one shape, `stores::Standing`; work in progress is `stores::InProgress`, real because the recipe has a lead time. Three nouns went home and three were declared in their place) | with 21e, and for the same reason |
 | 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
 | 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
 | 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
@@ -438,8 +438,10 @@ and costs over an arbitrary world, which is what it is for.
   decision, and the scenario needs a bank whose standard refuses. **Re-read: the standard is the
   homeless noun.** `housing::standard` reads one from the lender's own book (C5.a) and
   `lending.standards` — *the standard a lender is currently lending at* — is declared with no kernel
-  home, so there is nowhere for a lender to keep the refusal. **Positioned at 21f**, which is the
-  store, and the refusal follows it.
+  home, so there was nowhere for a lender to keep the refusal. **21f built the store**
+  (`stores::Standing`, kind `LENDING_STANDARD`, terms `[income multiple, deposit share]`), and what is
+  left is a lender that computes one and stands behind it — which no lender does, because no lender
+  decides anything. **Re-positioned at 21j.**
 - [ ] 21.41 `treasury/index.ts`, `test/treasury.test.ts` *funds itself over a year when the market is
   there*: eleven of the treasury's instructions fail in a year of the rig. **Re-read: the measurement
   died with the rig and what it was measuring is worse than it said.** `TreasuryIssues.size` is a
@@ -636,29 +638,6 @@ both findings end on is carried into 21j.1a**: a delivery leg invoices at the ST
 the invoice price IS the futures settlement price.
 
 
-
----
-
-## 21f. Three facts the modules keep and the kernel does not
-
-**INSERTED here (Law 10), named by three homeless nouns.** Each is a fact about the world that
-persists between periods, that a module names, and that no store keeps — so the module either
-recomputes it every period or does without it.
-
-- [ ] 21f.1 **`employment.postings`** — an open position an employer holds, at the wage it offers.
-  §39 B, XI-10: *every posting is a bid, and it is something an employer HOLDS* — which is exactly
-  what lets it be withdrawn by a named party as an event. Nothing holds one.
-- [ ] 21f.2 **`lending.standards`** — the standard a lender is currently lending at. Housing C5: *a
-  lender's standard is a DECISION, and it tightens when it is worried*. A decision that persists and
-  that every borrower meets or does not, and there is nowhere for it to persist — so the credit
-  channel has nothing to tighten.
-- [ ] 21f.3 **`recipe.work_in_progress`** — §37 B3: *work in progress exists between input and
-  output, owned by somebody, and it carries what it cost.* `WorkInProgress` is a type the recipe
-  module declares and nothing constructs: production at 22 draws its inputs and creates its output in
-  one instruction, so there is no lead time and nothing is ever in progress.
-
-**Exit.** The three have a home; `Nouns::homeless()` falls by three, and §37 B3 stops being a clause
-whose type exists and whose instances do not.
 
 ---
 
