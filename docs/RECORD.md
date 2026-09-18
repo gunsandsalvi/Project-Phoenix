@@ -16415,3 +16415,24 @@ between two of its dates into the same book. Both are tests rather than comments
 in the calendar. That is the shape 0g.43 generalises: what was an eslint rule or a TypeScript type
 becomes a type, a `debug_assert` or a test here, and a law that stops being checkable is a law that
 stops holding.
+
+# 0g.41 (part) — prices and parties
+
+**Prints are contiguous per line**, so `latest` is a binary search over one run rather than a walk
+of a boxed list — it is **60.30 ns** over 12,783,916 calls a period in TypeScript. Three refusals
+became types or asserts: a second print of one line in one period (Law 4), a print arriving out of
+order (Law 10), and reading a book that quotes a RATE as though it quoted money (Derivative D7,
+Law 8). **A price that does not exist is `None`**, never zero and never the last one pretending to
+be this one — and a stale print is visibly stale because it carries its own period.
+
+`Provenance` is `Cleared | Carried | Seeded` and there is no fourth: a print exists because a book
+cleared, carried its last level when nothing crossed (Clearing C4), or was stated at the seed (Seed
+C4). Nothing writes a price from a yield, a spread, a multiple or a target.
+
+**Parties keep XI-15 as arithmetic.** A weight is a COUNT in the type — `u32`, not a share — and
+`reweigh` takes the event that justifies it, so a caller with no one of the five events to name
+cannot change a weight at all. A named party's weight is one and changing it panics; a cell of
+nobody is refused at the door. `per_member` is a READ over the total and nothing stores one, which
+is what stops a cell from keeping two books.
+
+**Thirteen laws now hold as tests in the Rust kernel**, against seven at the last commit.

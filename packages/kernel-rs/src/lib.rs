@@ -14,5 +14,7 @@
 
 pub mod ids;
 pub mod journal;
+pub mod parties;
+pub mod prices;
 pub mod register;
 pub mod calendar;
