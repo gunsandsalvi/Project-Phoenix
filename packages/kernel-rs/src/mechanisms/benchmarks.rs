@@ -56,6 +56,17 @@ pub struct Index {
 }
 
 impl Index {
+    /// 21.116: **built from what the registry declared**, so the basket has one writer (Law 4). An
+    /// `Index` assembled from a list somebody kept beside the declaration would be the second copy.
+    pub fn declared(constituents: &[(u32, f64)]) -> Index {
+        Index {
+            of: constituents
+                .iter()
+                .map(|(what, weight)| Constituent { what: InstrumentId::at(*what), weight: *weight })
+                .collect(),
+        }
+    }
+
     /// The level, from the constituents' prints in that period. `None` where a constituent did not
     /// print: the index has no level that period, and saying so is the honest answer. Carrying the
     /// last one under this period's date would be Law 8's lie about which period a number belongs

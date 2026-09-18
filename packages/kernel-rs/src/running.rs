@@ -60,6 +60,17 @@ pub mod standing {
     pub const LENDING_STANDARD: u32 = 1;
 }
 
+/// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
+/// has one of each, and adding a kind of index is a row rather than a branch.
+pub mod tracks {
+    pub const EQUITY: u32 = 0;
+    pub const CREDIT: u32 = 1;
+    /// §33 D3: consumer prices and producer prices are TWO indices, not one wearing both names —
+    /// they are built from different constituents and a cost shock moves them differently.
+    pub const CONSUMER_PRICES: u32 = 2;
+    pub const PRODUCER_PRICES: u32 = 3;
+}
+
 /// The processes this world runs. Same rule: data, not a branch.
 pub mod afoot {
     pub const CAPITAL_PROGRAMME: u32 = 0;

@@ -22,7 +22,7 @@ use phoenix_kernel::parties::Representation;
 use phoenix_kernel::registry::{Banks, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
-use phoenix_kernel::running::{about as running_about, afoot, agreed, Makes};
+use phoenix_kernel::running::{about as running_about, afoot, agreed, tracks, Makes};
 use phoenix_kernel::stores::Owing;
 use phoenix_kernel::systems::{all, book_of, Wiring};
 use std::time::Instant;
@@ -148,6 +148,13 @@ fn main() {
             lines.push(line);
         }
     }
+
+    // ── Indices (21.116): a country's, built from named lines, with a COUNT of each ─────────────
+    // Indices D1: one equity index per country, and this world has one country. The level is not
+    // declared and never is — it is computed from the constituents' own prints when asked.
+    let in_it: Vec<(InstrumentId, f64)> = lines.iter().take(8).map(|l| (*l, 100.0)).collect();
+    let equity_index = w.registry.index(tracks::EQUITY, us, &in_it);
+    assert_eq!(w.registry.indices_in(us), vec![equity_index]);
 
     // ── What everybody holds, and what everybody owes ───────────────────────────────────────────
     for (n, who) in everyone.iter().enumerate() {

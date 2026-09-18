@@ -18,17 +18,16 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 13 closed** (135 of 225 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 12 closed** (0 of 89 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 21 — The local repairs | 138 | 135 | in progress |
 | 21g — The parameter register is switched off | 3 | 0 | open |
 | 21h — The five cell events never fire | 6 | 0 | open |
 | 21i — There is no ground | 3 | 0 | open |
-| 21j — Twenty-five systems take no part | 26 | 0 | open |
+| 21j — Twenty-five systems take no part | 27 | 0 | open |
 | 22e — The audit is not in the period loop | 6 | 0 | open |
-| 22c — The market as it is | 5 | 0 | open |
+| 22c — The market as it is | 6 | 0 | open |
 | 22d — The payment queue | 5 | 0 | open |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
 | 22g — The seeding | 6 | 0 | open |

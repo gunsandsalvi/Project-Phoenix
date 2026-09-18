@@ -22,7 +22,7 @@
 //! commercial bank) is a fact about the KIND and had nowhere to be written. A world whose kinds have
 //! no profiles has nowhere to put what varies, so the pressure to branch never goes away.
 
-use crate::ids::{CurrencyCode, PartyId, RegionId, UnitId};
+use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 
 /// A country: one currency, one central bank, one treasury, one sovereign line, one FX pair and one
 /// equity index. It is what §39 and Indices D1 mean by "region", and it is not where a thing IS.
@@ -44,6 +44,22 @@ impl CountryId {
     #[inline]
     pub fn some(self) -> bool {
         self != CountryId::NONE
+    }
+}
+
+/// Indices D1, §22 D5: **an index, and the country whose it is.** There are four equity indices
+/// because there are four countries, not because somebody declared four.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct IndexId(pub u32);
+
+impl IndexId {
+    pub fn at(n: u32) -> IndexId {
+        IndexId(n)
+    }
+
+    #[inline]
+    pub fn row(self) -> usize {
+        self.0 as usize
     }
 }
 
@@ -86,6 +102,14 @@ pub struct Registry {
     unit_pieces: Vec<f64>,
     /// By party-kind id. `Missing` where a kind has been given no profile yet, which is an answer.
     profiles: Vec<Option<KindProfile>>,
+    /// Indices D1, 21.116: which indices exist, whose country each is, what it is an index OF, and
+    /// the lines it is built from with the COUNT of each (B1: a weight is a count of the line, never
+    /// a share). Nothing declared one before, so no basket in this world had a level to read.
+    index_in: Vec<u32>,
+    index_of: Vec<u32>,
+    index_at: Vec<u32>,
+    index_len: Vec<u32>,
+    constituents: Vec<(u32, f64)>,
 }
 
 impl Registry {
@@ -200,6 +224,66 @@ impl Registry {
     pub fn profile(&self, kind: u32) -> Option<KindProfile> {
         self.profiles.get(kind as usize).copied().flatten()
     }
+
+    // ── Indices ─────────────────────────────────────────────────────────────────────────────────
+
+    /// Indices D1, §22 D5, 21.116: **an index is a country's, it is ONE system, and it is built from
+    /// named lines.** The level is not here and never will be: it is computed from the constituents'
+    /// own prints when asked (`benchmarks::Index::level_at`), because a stored level read by
+    /// everything while the computed one is read by nobody is the two-system defect XI-7 names
+    /// (Appendix B: no stored index level).
+    ///
+    /// A weight is a **count of the line** (B1), not a share — so a level is what the basket is
+    /// worth and a constituent's own price moves it by what the basket holds of it.
+    pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, f64)]) -> IndexId {
+        assert!(
+            country.row() < self.country_ccy.len(),
+            "Indices D1: an index is a COUNTRY's, and this one is nobody's"
+        );
+        assert!(
+            !constituents.is_empty(),
+            "22 D5.a: an index over nothing has no level, and declaring one is a basket nobody filled"
+        );
+        for (_, weight) in constituents {
+            assert!(*weight > 0.0, "Indices B1: a weight is a COUNT of the line, and {weight} is not one");
+        }
+        let row = self.index_in.len() as u32;
+        self.index_in.push(country.0);
+        self.index_of.push(of);
+        self.index_at.push(self.constituents.len() as u32);
+        self.index_len.push(constituents.len() as u32);
+        self.constituents.extend(constituents.iter().map(|(i, w)| (i.0, *w)));
+        IndexId(row)
+    }
+
+    pub fn index_country(&self, i: IndexId) -> CountryId {
+        CountryId(self.index_in[i.row()])
+    }
+
+    pub fn index_subject(&self, i: IndexId) -> u32 {
+        self.index_of[i.row()]
+    }
+
+    /// What it is built from. The one writer of the basket: `benchmarks::Index` is BUILT from this
+    /// rather than keeping its own copy (Law 4).
+    pub fn index_constituents(&self, i: IndexId) -> &[(u32, f64)] {
+        let at = self.index_at[i.row()] as usize;
+        let len = self.index_len[i.row()] as usize;
+        &self.constituents[at..at + len]
+    }
+
+    /// Indices D1: **every index of one country** — four regions, four equity indices, and the read
+    /// that says whether that is true is a read over this rather than a count somebody keeps.
+    pub fn indices_in(&self, country: CountryId) -> Vec<IndexId> {
+        (0..self.index_in.len() as u32)
+            .map(IndexId)
+            .filter(|i| self.index_in[i.row()] == country.0)
+            .collect()
+    }
+
+    pub fn indices(&self) -> usize {
+        self.index_in.len()
+    }
 }
 
 #[cfg(test)]
@@ -281,6 +365,48 @@ mod tests {
         assert_eq!(r.profile(6).map(|p| p.banks), Some(Banks::AtTheCentralBank));
         // Missing is missing: no default profile is invented for a kind nobody declared.
         assert!(r.profile(3).is_none());
+    }
+
+    #[test]
+    fn an_index_is_a_countrys_and_it_is_built_from_named_lines() {
+        // Indices D1, 21.116: nothing declared an index anywhere, so no basket had a level to read.
+        let mut r = Registry::new();
+        let usd = r.currency(party(1));
+        let eur = r.currency(party(2));
+        let us = r.country(usd);
+        let de = r.country(eur);
+
+        let line = |n: u32| InstrumentId::at(n);
+        let us_equity = r.index(0, us, &[(line(10), 100.0), (line(11), 250.0)]);
+        let de_equity = r.index(0, de, &[(line(20), 90.0)]);
+        let us_credit = r.index(1, us, &[(line(12), 40.0)]);
+
+        assert_eq!(r.index_country(us_equity), us);
+        assert_eq!(r.index_subject(us_credit), 1);
+        assert_eq!(r.index_constituents(us_equity), &[(10, 100.0), (11, 250.0)]);
+        // Four regions, four equity indices: the read that says so is a read over the declarations.
+        assert_eq!(r.indices_in(us).len(), 2);
+        assert_eq!(r.indices_in(de), vec![de_equity]);
+        assert_eq!(r.indices(), 3);
+    }
+
+    #[test]
+    #[should_panic(expected = "an index over nothing")]
+    fn an_index_with_an_empty_basket_is_not_declared() {
+        // 22 D5.a: the empty-basket refusal, exercised at the declaration rather than at the read.
+        let mut r = Registry::new();
+        let usd = r.currency(party(1));
+        let us = r.country(usd);
+        r.index(0, us, &[]);
+    }
+
+    #[test]
+    #[should_panic(expected = "a weight is a COUNT of the line")]
+    fn a_constituent_weight_is_a_count_and_never_a_share() {
+        let mut r = Registry::new();
+        let usd = r.currency(party(1));
+        let us = r.country(usd);
+        r.index(0, us, &[(InstrumentId::at(1), 0.0)]);
     }
 
     #[test]

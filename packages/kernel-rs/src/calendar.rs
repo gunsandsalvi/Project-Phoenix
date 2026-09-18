@@ -3,6 +3,14 @@
 //!
 //! Time within a period is cycles (G1, G2); nothing finer exists. There is no default period
 //! (G4.a), which is why `Period` is a value a caller must have rather than a number it can omit.
+//!
+//! **A `Day` is a day COUNT from the epoch and carries no civil date** — no weekday, no month, no
+//! year. That is enough for everything placed by elapsed time (a maturity, an accrual, a year
+//! fraction) and it is not enough for a market convention that names one: a contract expiring on the
+//! third Friday of a delivery month cannot be stated here at all (21.132.OP1, 22c). A ladder anchored
+//! to the epoch instead was written and never called, and it is deleted rather than kept: a
+//! convention stated differently from the market is worse than no convention, because a caller would
+//! have believed it.
 
 /// A period index on the one calendar.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -56,12 +64,6 @@ impl Calendar {
         (to.0 - from.0) as f64 / 365.0
     }
 
-    /// The first period at or after `at` that is a whole number of `every` from the epoch — an
-    /// exchange's ladder, so everything written between two dates settles into the same book.
-    pub fn next_cycle(&self, at: Period, every: u32) -> Period {
-        assert!(every > 0, "Law 8: a contract cycle of no periods");
-        Period(((at.0 + 1).div_ceil(every)) * every)
-    }
 }
 
 #[cfg(test)]
@@ -79,13 +81,4 @@ mod tests {
         assert!((cal.year_fraction(Day(0), Day(365)) - 1.0).abs() <= crate::num::dust(2, &[1.0]));
     }
 
-    #[test]
-    fn a_ladder_settles_into_the_same_book() {
-        let cal = Calendar::new(Day(0), 7, 3);
-        // Everything written in periods 1..13 settles at 13 when the ladder is thirteen periods.
-        assert_eq!(cal.next_cycle(Period(0), 13), Period(13));
-        assert_eq!(cal.next_cycle(Period(11), 13), Period(13));
-        assert_eq!(cal.next_cycle(Period(12), 13), Period(13));
-        assert_eq!(cal.next_cycle(Period(13), 13), Period(26));
-    }
 }

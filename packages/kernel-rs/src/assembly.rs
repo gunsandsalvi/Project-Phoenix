@@ -116,6 +116,7 @@ fn declared() -> Nouns {
     at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
     // 21.112: it is the JOURNAL's, because a realised gain is an event rather than a thing anybody
     // holds — it happens at the moment the units leave, to a named party, for an amount.
+    at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
 
     // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
@@ -133,15 +134,9 @@ fn declared() -> Nouns {
     // **AND WHAT STILL HAS NO HOME.** The registry's four went home at 21e and the three a module
     // kept went home at 21f — and a count of zero would be the measure switched off again (21d.1b),
     // because zero here would mean "nothing anybody has DECLARED is homeless" rather than "nothing is
-    // missing". These three were found by the re-read of item 21 and each names the item that will
+    // missing". What is left was found by the re-read of item 21 and names the item that will
     // give it a home. The count must fall and must never rise; it falls by being built, not by
     // nobody asking.
-    homeless(
-        "registry.indices",
-        "21.116",
-        "each index, the country whose it is, and the lines it is built from",
-        "22 D5, Indices D1: an index is a country's and it is ONE system; `benchmarks::Index` has a level_at read and nothing in this engine declares or constructs one",
-    );
     homeless(
         "reporting.accounts",
         "21.76",
@@ -735,7 +730,7 @@ mod tests {
         }
         // And what is left is what the re-read of item 21 found and nothing yet holds. A count of
         // zero would be this measure switched off, not a world with nothing missing.
-        assert!(named.contains(&"registry.indices"));
+        assert!(!named.contains(&"registry.indices"), "it got a home at 21.116");
         assert!(!named.contains(&"settlement.realised"), "it got a home at 21.112");
         assert!(named.contains(&"reporting.accounts"));
 

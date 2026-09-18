@@ -146,7 +146,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 20a | The annual assessment against what was withheld — **done** (section removed; see `docs/RECORD.md`; the year's bases from the SAME walk the week's withholding runs, what was taken read off the ledger, and the difference settled both ways; finding 21.94) | after 20 |
 | 0i | Facts are declared — the third register — **done** (section removed; see `docs/RECORD.md`; 13 kernel facts declared, the ratchet at 219 kinds still bags and falling; findings 21.111–21.114). **Corrected:** its rename of the revaluation payload broke three readers, which is the failure it exists to prevent — see `docs/RECORD.md` “0i, corrected” | FIRST, before 21: most of 21's open findings are instances of it |
 | 20b | `docs/FINDINGS.md` is a second findings file — **done** (section removed; see `docs/RECORD.md`; all 295 ids audited, the 78 that were nowhere placed under 21.130–21.136 and 22d.4 by what each IS, and the file deleted) | BEFORE 21: most of what is in it is 21's, and one file is the rule |
-| 21 | The local repairs | each when its file is open |
+| 21 | The local repairs — **done** (section removed; see `docs/RECORD.md`; 138 findings re-read against the engine that exists, and every one closed, fixed or placed under the item that owes it) | each when its file is open |
 | 21b | A pool whose manager died — **done** (section removed; see `docs/RECORD.md`; a pool under nobody's mandate posts nothing and winds up through the machinery it already has, paying its holders pro rata on what it raised and ending when there is nothing left) | after 21a |
 | 21c | A tax on an estate is a claim on it — **done** (section removed; see `docs/RECORD.md`; `Rank::Preferential` is where the law puts the state, `Claims` is the fifth kernel store, and `running::Ranked` pays an estate's claimants in rank order. 21.110's other half stays open) | after 21b |
 | 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
@@ -169,26 +169,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-## 21. The local repairs
-
-**Steps closed and deleted: 135** (`docs/RECORD.md`, blocks *21.1–21.3* through *21.130–21.136*).
-Every finding of item 21 has been re-read; the rest are placed under the items that owe them.
-
-- [ ] 21.137 **The early-termination regime** (Corporate Credit B1, which F4 and F5 both wait on) and
-  **the cash-synthetic basis** (H4, H4.a — the MEASUREMENT of the gap, not a mechanism). Item 18
-  closed without them and no live item holds them. Both want a derivative layer that prices an
-  option, and neither can be exercised while §19's CDS book has never traded (21j).
-- [ ] 21.116 **No index is declared anywhere.** `benchmarks::Index` has a `level_at` read over its
-  constituents' prints and nothing constructs one, so no basket has a level (Indices D1: an index is
-  a country's, and there are four). `registry.indices` is the homeless noun that names it. The LEVEL
-  is 21j's, since `benchmarks` counts lines that printed instead of fixing anything.
-- [ ] 21.132.OP1 **`Calendar::next_cycle` anchors an expiry ladder to the epoch**, where a real
-  exchange anchors it to the calendar month — the third Friday (Law 1). It is placed by date, so it
-  is not the period-index defect the rest of that cluster was; it is a market convention stated
-  differently from the market. Closes wherever a dated book is next opened.
-
----
-
 ## 21g. The parameter register is switched off
 
 **INSERTED (Law 10), beside 21e and 21f.** `params` is built, tested and owned by the kernel, and
@@ -399,6 +379,10 @@ still only count, and the number is below twenty-five.
   when the thing the system would DO is create an obligation. Law 4 decides who writes — the kernel
   owns the instrument table and a module ASKS, as `Taken.claimed` and `.ceased` already do.
   **Positioned at 21j** as 21j.1a.
+- [ ] 21.137 **The early-termination regime** (Corporate Credit B1, which F4 and F5 both wait on) and
+  **the cash-synthetic basis** (H4, H4.a — the MEASUREMENT of the gap, not a mechanism). Item 18
+  closed without them. Both want a derivative layer that prices an option, and neither can be
+  exercised while §19's CDS book has never traded — which is this item's.
 
 ## 22e. The audit is not in the period loop
 
@@ -444,6 +428,12 @@ The measurements in the steps are the TypeScript engine's and are to be re-read,
 names are TypeScript and the mechanism each names is not. **The Rust engine says the same in its own
 numbers**: 13 books of 1,546 clear in period 1 and 6 in every period after.
 
+- [ ] 22c.0 **A `Day` carries no civil date** (21.132.OP1), so no market convention that names a
+  weekday or a month can be stated: a contract expiring on the third Friday of a delivery month, a
+  fixing on the last business day, a quarter end. It is enough for everything placed by elapsed time,
+  and a dated VENUE is the first thing that needs more. The ladder anchored to the epoch instead was
+  deleted at 21.132.OP1 rather than kept, because a convention stated differently from the market is
+  worse than none — a caller would have believed it.
 - [ ] 22c.1 **A protocol per venue, as data.** `VenueDecl.protocol: 'call' | 'posted' | 'book'`
   behind a dispatch table (Law 15), each protocol its own matching module, the kernel dispatching on
   the declaration and never branching on a kind. `call` is today's solver, unchanged, for auctions

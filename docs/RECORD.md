@@ -20062,3 +20062,54 @@ Three parts of the file's own head went entirely:
 **An implementation file is a list of what is left.** The rule was already at the top of it —
 *NOTHING DONE IS IN THIS FILE* — and the re-read pass had been writing its reasoning into both the
 plan and the ledger. The ledger is the right place.
+
+---
+
+## 21 — The local repairs, closed
+
+**What.** The last two findings built, one mis-placed finding moved, and the item deleted. 138
+findings re-read against the engine that exists; every one closed, fixed, or placed under the item
+that owes it.
+
+### 21.137 was in the wrong place
+
+Its own text said it waits on §19's CDS book trading, which is 21j's. A finding whose dependency is
+another item belongs under that item — "parked in 21" was the position being wrong, not a state a
+finding can be in. Moved to 21j.
+
+### 21.116 — no index was declared anywhere
+
+`benchmarks::Index` computes a level from its constituents' prints and honestly answers `None` when
+one did not print, and **nothing in this engine ever constructed one**, so no basket had a level to
+read. The finding said three of four regions lacked a declaration; the truth was that there was no
+declaration at all.
+
+`Registry::index(of, country, constituents)` is the declaration: **an index is a COUNTRY's** (D1 —
+four countries, four equity indices, and `indices_in` is the read that says so), it names what it is
+an index OF (`running::tracks`, data like every other kind), and it names the lines it is built from
+with a **COUNT** of each (B1 — `index` refuses a weight that is not a count, so a level is what the
+basket is worth rather than a share somebody assigned). §22 D5.a's empty-basket refusal is exercised
+at the declaration, where a basket nobody filled cannot be written at all.
+
+**The level is not in it and never will be.** It is computed when asked, because a stored level read
+by everything while the computed one is read by nobody is the two-system defect XI-7 names.
+`benchmarks::Index::declared` builds from the registry rather than keeping its own basket, so the
+basket has one writer (Law 4). `world:runs` declares one and the homeless count is **one**.
+
+### 21.132.OP1 — the fix removed code
+
+The finding: `Calendar::next_cycle` anchors an expiry ladder to the epoch where a real exchange
+anchors it to the calendar month. **The ladder has no caller** — `grep next_cycle` over the tree
+returns its own definition and its own test — so it was a read nobody takes, and the honest fix is
+deletion rather than a better ladder (Law 12: a cause has one fix and it removes code).
+
+What it uncovered is the real absence, and it is larger: **a `Day` is a day COUNT from the epoch and
+carries no civil date** — no weekday, no month, no year. That is enough for everything placed by
+elapsed time and not enough for any convention that NAMES one: the third Friday of a delivery month,
+the last business day, a quarter end. A dated venue is the first thing that needs more, so it is
+**22c.0**. The ladder is deleted rather than kept because a convention stated differently from the
+market is worse than no convention: a caller would have believed it.
+
+`docs/COVERAGE.md`: `Indices B1` and `Indices D1` re-pointed from the deleted TypeScript files.
+
+**702 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green.**
