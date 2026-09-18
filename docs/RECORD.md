@@ -16965,3 +16965,42 @@ priced over the sovereign curve assumes a borrower with a funding constraint.
 quietly reduced.
 
 **Sixty-eight laws now hold as tests; clippy is clean; `phoenix-check` is green over 26 files.**
+
+# 0g.42 — expectations (§46, XI-16): the disagreement is the mechanism
+
+@spec 46 A1–A5, B1–B5 · XI-16 · Law 2, Law 8, Law 17
+
+**A3: expectations are heterogeneous and the heterogeneity is LOAD-BEARING.** Different histories
+make different outlooks, and different outlooks are the different reasons a market needs to have two
+sides. *A world in which every party expected the same thing would trade once and stop.* That is why
+an `Outlook` belongs to one party and one subject, and why there is no door onto anybody else's.
+
+**Three refusals are structural rather than enforced:**
+
+- **A2.b, no global expectation.** There is no *the* expected inflation rate here. Nothing
+  aggregates outlooks, and there is nowhere a decision could consult an aggregate if something did.
+- **A4, no model forecast.** `observe` takes what a party saw and the period it saw it in, and
+  **B4 is a refusal at the call**: `observe(x, at, acting_in)` panics unless `at < acting_in`. A
+  party that could read the period's own result before acting would be a party with no expectation
+  at all, so being handed one is a contract violation rather than a value to use.
+- **B1.b, no second primitive.** Memory is the one PREFERENCE. **`confidence` is a function with no
+  field behind it** — it reads the width of the party's own recent surprises — so there is nothing
+  to set, draw or anchor. Confidence, sentiment, optimism, a target: each is either a read of the
+  surprises or a number nobody could derive, and the second kind is Law 2's defect.
+
+**Absence is absence.** A party that has observed nothing has NO expectation — not a zero, because
+a default would be an expectation nobody formed. A party with no surprises yet has no confidence to
+read: absence, not certainty. The first thing it ever sees IS its outlook, because there is nothing
+to correct from and inventing a prior would be a number nobody could derive.
+
+**B5 falls out rather than being written.** The test gives two parties the same history and
+different memories: the shorter memory moves further, both lag the turn, and the longer one lags
+more. Nothing in the code says "lag a turning point" — it is what correcting towards what happened
+at your own speed DOES.
+
+**And Law 17's falsification test is in the module**: `moved_without_a_surprise` is B2.a — an
+outlook that moved with no surprise behind it moved for a reason nobody stated. It MEASURES and
+never corrects the outlook it is about.
+
+**Six laws as tests. Seventy-four now hold; clippy is clean; `phoenix-check` is green over 27
+files.**
