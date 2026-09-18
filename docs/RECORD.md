@@ -20036,3 +20036,29 @@ the new figure with its cause rather than the old one.
 `docs/COVERAGE.md`: `Goods E4` re-pointed to `ledger.rs`.
 
 **700 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green.**
+
+---
+
+## The plan file, cut to the work
+
+**What.** 1,588 → 1,261 lines across two passes, with no finding, verdict or position lost.
+
+The second pass took the prose out of the item heads. Section 21 opened with **44 lines of history
+before its three steps** — a per-block summary of every re-read, each of which is a paragraph in this
+file already. It is two lines now: the declared closed count, which `plan:progress` reads, and a
+pointer here. Every other item head had the same growth (21j 32 lines, 21h 28, 21g 27, 22f 19) and is
+now 7–9 lines that say what the item is and why it exists.
+
+Three parts of the file's own head went entirely:
+
+- **0.2, "What the world actually does"** — a copied census, stale in every number (650 tests where
+  there are 700, eleven stores, `homeless()` returns zero where it returns two). `npm run world:runs`
+  prints it live, so the copy was a second writer of a fact (Law 4) and a stale doc besides (Law 16).
+- **0.4, "The documents"** — document defects that all cite item 0c, which closed.
+- **The "one thing to know before reading a finding" block** — how to re-read a finding measured on
+  the deleted engine. Every finding has now been re-read, so the instruction is spent; one sentence
+  says so.
+
+**An implementation file is a list of what is left.** The rule was already at the top of it —
+*NOTHING DONE IS IN THIS FILE* — and the re-read pass had been writing its reasoning into both the
+plan and the ledger. The ledger is the right place.
