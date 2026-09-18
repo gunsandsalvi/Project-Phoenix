@@ -27,7 +27,9 @@ use crate::draw::{firms_plant_and_inventory, households_employment_and_savings, 
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use crate::instruments::Class;
 use crate::ledger::Settling;
-use crate::assembly::kinds;
+use crate::assembly::{kinds, Stepped, System};
+use crate::clearing::PriceRule;
+use crate::systems::book_of;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// How big a world to draw. **These are SHAPE** (Law 2): claims about how many of each thing a world
@@ -458,6 +460,69 @@ pub fn warm_up_of(s: &Series) -> WarmUp {
     }
 }
 
+/// **THE GRADUATION** (22b.9): periods the engine RUNS rather than is told.
+///
+/// The chronicle is a script. Everything in it happened because the draw said so, which is fine for
+/// giving the world a past and useless for finding out whether anything WORKS. A warm-up period is
+/// the same world stepped through the real phases, with the real participants asked the real
+/// questions — and **each graduation is a measurement of whether that mechanism works**, never a
+/// guarantee that it does.
+///
+/// What it measures is printed and recorded (Law 11). A market that does not clear in a warm-up
+/// period is a finding about a mechanism, and the finding goes in the plan.
+pub struct Warmed {
+    /// What each period actually did.
+    pub stepped: Vec<Stepped>,
+    /// The same series the chronicle kept, carried on through the warm-up, so the two are comparable.
+    pub series: Series,
+}
+
+impl Warmed {
+    pub fn books_cleared(&self) -> usize {
+        self.stepped.iter().map(|s| s.books_cleared).sum()
+    }
+
+    pub fn trades(&self) -> usize {
+        self.stepped.iter().map(|s| s.trades).sum()
+    }
+
+    pub fn asks(&self) -> usize {
+        self.stepped.iter().map(|s| s.asks).sum()
+    }
+}
+
+/// Wire the systems into an accepted world, open the books its lines deserve, and step it.
+///
+/// **The first module to graduate is GOODS** (`systems::GoodsSellers` and `HouseholdBuyers`): the
+/// firms hold the stock the chronicle left them and the cells hold the wages they were paid, so it is
+/// the one market whose two sides the past has already put in place.
+pub fn warm(o: &mut Opening, periods: usize) -> Warmed {
+    assert!(periods > 0, "22b.9: a warm-up of no periods has run nothing");
+    let good = match o.drawn.good {
+        Some(g) => g,
+        None => panic!("22b.9: a world with no goods in it has no goods market to graduate"),
+    };
+    // The cash a book names. Money D2: there is one deposit line per bank, so this names ONE of
+    // them — which is exactly the thing the measurement below is about.
+    let cash = o.drawn.deposits[0];
+    let wired = crate::systems::all(cash, vec![good], vec![good]);
+    o.drawn.world.open_book(book_of(good), good, o.drawn.ccy, cash, PriceRule::SellersCompete);
+    let systems: Vec<&dyn System> = wired.iter().map(|w| w as &dyn System).collect();
+    o.drawn.world.wire_up(&systems);
+
+    let mut out = Warmed { stepped: Vec::new(), series: Series::default() };
+    for _ in 0..periods {
+        out.stepped.push(o.drawn.world.step(&systems));
+        out.series.read_from(&Settling {
+            register: &mut o.drawn.world.register,
+            journal: &mut o.drawn.world.journal,
+            parties: &o.drawn.world.parties,
+            instruments: &o.drawn.world.instruments,
+        });
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -632,5 +697,22 @@ mod tests {
         ramped.extend((0..100).map(|_| 40.0));
         let d = mser_5(&ramped);
         assert!(matches!(d, Some(at) if at > 0), "{d:?}");
+    }
+
+    #[test]
+    fn the_first_module_graduates_and_the_warm_up_measures_it() {
+        // 22b.9: periods the engine RUNS, not ones the draw tells. What this asserts is that the
+        // world steps at all and that the measurement is taken — NOT that goods clears. Whether it
+        // clears is the finding, and a test that demanded it would be a test that had to be weakened
+        // the day the mechanism said no (Law 11).
+        let run = open(1, ATTEMPTS, shape());
+        assert!(run.accepted(), "{:?}", run.rejections);
+        let mut world = run.outcome;
+        let before = world.drawn.world.register.rows();
+        let warmed = warm(&mut world, 4);
+        assert_eq!(warmed.stepped.len(), 4);
+        assert_eq!(warmed.series.living_parties.len(), 4, "a reading a period, like the chronicle's");
+        // The world survived being stepped, which is what `check:opens` was always for.
+        assert!(world.drawn.world.register.rows() >= before);
     }
 }

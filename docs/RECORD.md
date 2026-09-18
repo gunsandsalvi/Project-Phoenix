@@ -18401,3 +18401,41 @@ money it creates grow for ever. The past is not too short; the mechanism is miss
 the three.
 
 **Six hundred and sixty-eight tests hold; clippy clean; `phoenix-check` green over 83 files.**
+
+---
+
+## 22b.9 — the first module graduated, and 22b closes
+
+**What.** `opening::warm`: the accepted world is wired to the real systems, its books are opened, and
+it is STEPPED — periods the engine runs itself rather than ones the draw tells it. Each graduation is
+a measurement of whether that mechanism works, and the measurement is printed by `check:opening` every
+run.
+
+**GOODS went first**, because it is the one market whose two sides the past has already put in place:
+the firms hold the stock the chronicle left them and the cells hold the wages they were paid. **It
+clears** — four books in four periods, 58 trades off 72 asks. The test asserts that the world steps
+and that the measurement is taken, and deliberately NOT that goods clears: a test that demanded it
+would have to be weakened the day the mechanism said no.
+
+**And the warm-up found the next thing.** Only one bank's customers can be in a book. `BookDecl.cash`
+names one instrument, and since 22b.5a there is one deposit line per bank, so three quarters of the
+cells hold money the book does not accept and are in no book at all. A market's money is a CURRENCY,
+not one bank's deposits. Positioned as 22b.9a; the fix removes a field rather than adding one, and it
+is the half of 22b.5a's resolution that settlement does not yet do for the payer's side.
+
+**22b.8a re-diagnosed, because the first diagnosis was wrong.** It said "nothing repays the
+working-capital line". That is not the cause: the draw lends each firm exactly `wage − spends`, which
+IS the household's saving, so the credit stock grows by the world's saving every week by
+construction. Repaying out of takings moves the same money round once more and changes the identity
+not at all. The cause is that the SAVING RATE IS A CONSTANT, and §41 C2 says consumption is a
+decision. Making the series stationary in a scripted past would mean picking a drawdown that balances
+the saving — fitting an outcome, which is exactly what rejection-instead-of-calibration refuses. **A
+stationary series is an outcome of decisions, and the chronicle has none**, so the item closes when
+the household graduates too.
+
+**Where 22b stands.** The greps are empty and the grammar guard keeps them empty; `check:opening` is
+green and in `npm run check`; `docs/rejections.log` is empty for the chosen seed. The census of period
+zero is not yet indistinguishable from period 100, and the two reasons are named and open at their
+dependency positions rather than hidden: 22b.8a and 22b.9a.
+
+**Six hundred and sixty-nine tests hold; clippy clean; `phoenix-check` green over 83 files.**

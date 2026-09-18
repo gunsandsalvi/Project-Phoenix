@@ -820,26 +820,58 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   five: *the going wage* and *sessions cleared* are not readable from a scripted past (no book ever
   clears in it, and `Draft::Paid` carries no receipt saying a payment is a wage) — they arrive with
   22b.9, which is where a period is actually run. `holdings` stands in the meantime.
-- [ ] 22b.8a **Nothing repays the working-capital line.** INSERTED here (Law 10: found BY 22b.8, and
-  it is what 22b.8's statistic is for). Three of the four series never settle — money per member, the
-  credit stock and holdings are all still rising the week the world opens, and doubling the past does
-  not settle them. A firm draws the line every week for the wage bill it has not taken in (22b.7) and
-  never pays a penny of it back, so credit and the money it creates grow for ever. The past is not
-  too short; the mechanism is missing. A firm's TAKINGS repay the line before they do anything else —
-  which is what a revolving facility is — and the shortfall it draws is then the week's shortfall
-  rather than the whole wage bill compounded. Until then the opening's credit stock is a fact about
-  how long the chronicle is, and `check:opening` prints that in full rather than burying it.
-- [ ] 22b.9 The first module graduated from a scripted past to a LIVED one: warm-up periods the
-  engine runs itself. Each graduation is a measurement of whether that mechanism works.
+- [ ] 22b.8a **A constant saving rate means credit grows for ever, and no scripted past can fix it.**
+  INSERTED here (Law 10: found BY 22b.8, which is what the statistic is for). Three of the four series
+  never settle — money per member, the credit stock and holdings are all still rising the week the
+  world opens, and doubling the past does not settle them.
+
+  **The first diagnosis was wrong and is corrected here.** It read "nothing repays the working-capital
+  line", and the fix was to be "a firm's takings repay it first". That is not the cause. The draw
+  lends each firm exactly `wage − spends` per cell per week, and `wage − spends` IS the household's
+  saving, so the credit stock grows by the world's saving every week BY CONSTRUCTION. Repaying out of
+  takings moves the same money round one more time and changes the identity not at all: what a
+  household saves is what somebody owes, and a saving that accumulates for ever is a debt that
+  accumulates for ever. The trend is an accounting identity, not a missing repayment.
+
+  **The cause is that the saving rate is a constant** — `0.55 + a draw`, every week, whatever the
+  cell already has. §41 C2 says consumption is a DECISION; a household with a large enough stock
+  eventually spends out of it, and that is what makes the series stationary. A scripted past cannot
+  produce that: making it stationary here would mean picking a drawdown that balances the saving,
+  which is fitting an outcome (5 B5, C5, E1) and is exactly what rejection-instead-of-calibration
+  exists to refuse. **A stationary series is an OUTCOME of decisions, and the chronicle has none.**
+
+  So this item is 22b.9's: it closes when the household graduates from a scripted past to a lived one
+  and decides its own consumption. Until then `check:opening` prints all four series every run and
+  the opening's credit stock is a fact about how long the chronicle is — stated, not hidden.
+- [x] 22b.9 The first module graduated from a scripted past to a LIVED one: warm-up periods the
+  engine runs itself. Each graduation is a measurement of whether that mechanism works. GOODS went
+  first, because the past has already put both its sides in place — firms hold the stock and cells
+  hold the wages. It CLEARS: four books in four periods, 58 trades off 72 asks.
+- [ ] 22b.9a **A book has one cash line, so a market is open to one bank's customers only.** INSERTED
+  here (Law 10: found by 22b.9's first warm-up, and it is the next thing between the goods market and
+  a world where everybody can shop). `BookDecl.cash` names ONE instrument, and since 22b.5a there is
+  one deposit line per bank — so three quarters of the cells in the warm-up hold money the book does
+  not accept and are in no book at all. A market's money is a CURRENCY, not one bank's deposits. The
+  fix is the one 22b.5a already half made: the book names the currency, and each side pays out of ITS
+  OWN account, which settlement resolves from the lattice exactly as it already resolves the payee's.
+  It removes a field rather than adding one (Law 12).
 
 **Exit.** `grep -rn "endowMoney\|endowUnits\|openingPrice\|prices\.write" src/` is empty;
 `check:opening` green; `docs/rejections.log` empty for the chosen seed; the census of period 0
 indistinguishable in KIND from the census of period 100.
 
-**What it predicts.** The first chronicle is rejected on *every firm has produced, sold and been
-paid* — that is 12c.3, and the rejection log naming it on attempt one is the item working. Money will
-be hard to create legally, because every deposit must arrive as somebody's borrowing. And every
-finding recorded against the old opening must be re-read, not carried over.
+**MET on the first two, and the third is what 22b.8a and 22b.9a are.** The greps are empty and the
+grammar guard makes them stay empty; `check:opening` is green and in `npm run check`; the log is empty
+for seed 1. The census of period 0 is NOT yet indistinguishable from period 100, and the two reasons
+are named rather than hidden: three of the four series are still trending at the opening because the
+saving rate is a constant (22b.8a), and only one bank's customers can be in a book (22b.9a). Both are
+open items at their dependency positions, and `check:opening` prints both every run.
+
+**What it predicted, against what happened.** The first chronicle WAS rejected on *every firm has
+produced, sold and been paid* — one firm of thirteen, the last in a supply chain that was a line
+rather than a ring. Money was indeed hard to create legally, and the attempt to shortcut it is what
+`Leg::Mint` came out of. The four rejections the log recorded before a world opened are in the record
+at 22b.2; each was a real defect and none was a re-draw that got lucky.
 
 ---
 

@@ -77,6 +77,11 @@ pub struct Drawn {
     pub deposits: Vec<InstrumentId>,
     /// 5 C3.a: one bill per issue date, each with its own maturity.
     pub bills: Vec<InstrumentId>,
+    /// 22b.9: the line firms make and households eat, and the machines they make it with. `Missing`
+    /// until `firms_plant_and_inventory` has run — a world of money and a sovereign has no goods in
+    /// it yet, and that is an absence rather than a zeroth instrument.
+    pub good: Option<InstrumentId>,
+    pub plant: Option<InstrumentId>,
 }
 
 /// 22b.3: **money and the sovereign, through the chronicle.** Reserves created and lent, bills sold
@@ -227,6 +232,8 @@ pub fn money_and_the_sovereign(
         banks: bank_ids,
         deposits: deposit_lines,
         bills: bill_lines,
+        good: None,
+        plant: None,
     }
 }
 
@@ -255,6 +262,9 @@ pub fn firms_plant_and_inventory(
     let maker = d.world.parties.add(kinds::FIRM, region, d.banks[0], Representation::Named, 1, 0);
     let plant = d.world.instruments.issue(maker, ccy, Class::Plant, unit, None, None);
     let good = d.world.instruments.issue(maker, ccy, Class::Good, UnitId::at(1), None, None);
+    // 22b.9: the world has goods in it now, and a warm-up period needs to know which line they are.
+    d.good = Some(good);
+    d.plant = Some(plant);
 
     let mut made = Vec::with_capacity(firms);
     for n in 0..firms {

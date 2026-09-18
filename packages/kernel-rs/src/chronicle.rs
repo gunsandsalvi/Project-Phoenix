@@ -234,8 +234,9 @@ pub struct Series {
 }
 
 impl Series {
-    /// One reading of each, from the stores as they stand.
-    fn read_from(&mut self, on: &Settling<'_>) {
+    /// One reading of each, from the stores as they stand. Public because 22b.9 carries the same
+    /// series on through the warm-up periods, and two series read two ways would be two answers.
+    pub fn read_from(&mut self, on: &Settling<'_>) {
         let mut money = 0.0;
         let mut credit = 0.0;
         for row in 0..on.instruments.len() {
