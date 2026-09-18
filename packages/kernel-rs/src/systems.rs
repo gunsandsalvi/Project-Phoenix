@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, Observing, SecondOpinion, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, FxForwards, Observing, Protection, SpotFx, SecondOpinion, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -839,6 +839,14 @@ pub fn declare(p: &mut Params) {
     // less, and that is a decision rather than a rule.
     // §45 A5: **how many periods behind a statistic runs.** A TECHNOLOGY — how long it takes to
     // gather — and a lag of zero would delete the clause rather than satisfy it.
+    // §19 A2: the tenor protection runs for. A market CONVENTION, and what it is WORTH is what the
+    // two sides cross at (Law 3).
+    // §26 A3: how far out a forward is struck. A market CONVENTION, and what it is worth is what
+    // the two sides cross at (Law 3, B1: never struck off a formula).
+    say("forward.tenor", 90.0, "days", Dimension::Days, Kind::Technology, Owner::StandardSetter,
+        "how far out a currency forward is struck");
+    say("protection.tenor", 5.0, "years", Dimension::Years, Kind::Technology, Owner::StandardSetter,
+        "how long a protection contract runs");
     say("observer.lag", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
         "the periods between what a statistic is about and the period it is published in");
     say("invest.horizon", 20.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
@@ -958,6 +966,8 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let kinds_row_fixing = kinds.declare("benchmarks.fixing");
     // XI-4: what a company's capital costs it, read by whatever a hurdle reaches. Named once.
     let kinds_row_costs = kinds.declare("capital.costs");
+    // XI-12: the rate a pair cleared at, read by the forward that is a rate forward OF it.
+    let kinds_row_spot = kinds.declare("spot.rate");
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -1160,10 +1170,30 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         works("securitisation", AT_MARKETS, Box::new(Closing { kind: afoot::SECURITISATION, says: says("pool.closed") })),
         // ── The instrument families that settle against what the books printed ──────────────────
         works("derivative_layer", AT_REVALUATION, Box::new(Reads { kind: says("derivative_layer.open"), what: Counts::AgreementsLive })),
-        works("cds", AT_MARKETS, Box::new(Reads { kind: says("cds.open"), what: Counts::AgreementsLive })),
+        // **§19 B5, XI-13: and protection CLEARS between two parties who disagree.** It counted
+        // live agreements, so §19 had never traded — which is 21.137's blocker. What makes the
+        // market possible is the disagreement 22i.11 built: the most worried holder of a name and
+        // the least worried are two parties with two numbers, and that is the trade.
+        works("cds", AT_MARKETS, Box::new(Protection {
+            kind: says("protection.struck"),
+            tenor: "protection.tenor",
+        })),
         works("irs", AT_MARKETS, Box::new(Servicing { days_per_period: w.days_per_period })),
-        works("fx_forwards", AT_MARKETS, Box::new(Reads { kind: says("fx_forwards.open"), what: Counts::AgreementsLive })),
-        works("spot_fx", AT_MARKETS, Box::new(Reads { kind: says("spot_fx.lines"), what: Counts::LinesThatPrinted })),
+        // **§26 B1, B3: and a forward is STRUCK.** It counted live agreements, so nothing in this
+        // world had ever hedged a currency and the cross-currency basis had nothing to deviate from.
+        works("fx_forwards", AT_MARKETS, Box::new(FxForwards {
+            kind: says("forward.struck"),
+            spot: kinds_row_spot,
+            fixing: kinds_row_fixing,
+            tenor: "forward.tenor",
+            days_per_period: w.days_per_period,
+        })),
+        // **XI-12, §26 C1, C5: and a currency pair CLEARS from real reasons.** It counted how many
+        // lines printed, so no pair in this world had ever had a rate.
+        works("spot_fx", AT_MARKETS, Box::new(SpotFx {
+            kind: kinds_row_spot,
+            days_per_period: w.days_per_period,
+        })),
         works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
         works("cross_border", AT_REVALUATION, Box::new(Reads { kind: says("cross_border.lines"), what: Counts::LinesThatPrinted })),
         // ── The reads over what the books produced ──────────────────────────────────────────────

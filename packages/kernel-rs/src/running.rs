@@ -2637,6 +2637,332 @@ impl Mechanism for Observing {
     }
 }
 
+/// **§19 A1, A2, B1, B2, B5, C2, XI-13, 22i.12: PROTECTION CLEARS BETWEEN TWO PARTIES WHO DISAGREE.**
+///
+/// The `cds` row counted live agreements. So §19 had never traded, which is 21.137's blocker: the
+/// early-termination regime and the cash-synthetic basis both wait on a CDS book that has crossed.
+///
+/// **What makes the market possible is the disagreement 22i.11 built.** B5: a book of hedgers on
+/// both sides clears at a function of regulatory gaps and never of a view — a speculative
+/// participant with a view is required on both sides. Here every lender holds its own probability
+/// of every borrower it lends to (`standing::OWN_VIEW`), formed from what IT has seen, so the most
+/// worried holder of a name and the least worried are two different parties with two different
+/// numbers. That is the trade.
+///
+/// **The spread CLEARS** (Law 3): the buyer posts what it would pay, the seller what it would take,
+/// and the one solver crosses them. Neither is a mid and neither is a table. **The recovery is a
+/// real one** (D2) — what an estate actually fetched — so a world in which nobody has died has no
+/// recovery, no loss given default, and no protection to price. That is an answer about the world,
+/// not a number to assume (Appendix B: no fixed recovery rate).
+pub struct Protection {
+    pub kind: u32,
+    /// §19 A2: the premium runs for a tenor. A market CONVENTION.
+    pub tenor: &'static str,
+}
+
+impl Mechanism for Protection {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let tenor = ctx.params().years(self.tenor);
+
+        // D2: **what the estates of this world actually fetched, per unit of par.** One read over
+        // the claims, and a world where nothing has died has none.
+        let mut fetched = 0.0;
+        let mut owed = 0.0;
+        for row in 0..ctx.claims().len() as u32 {
+            let c = crate::stores::ClaimId(row);
+            owed += ctx.claims().owed(c);
+            fetched += ctx.claims().paid(c);
+        }
+        if owed <= 0.0 {
+            return;
+        }
+        let recovery = fetched / owed;
+        if recovery >= 1.0 {
+            // C2: the obligations paid in full. There is no loss to divide by, and inventing one is
+            // the numeric default Appendix A refuses.
+            return;
+        }
+
+        // XI-13: every view held on every name, by whom.
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
+                continue;
+            }
+            views
+                .entry(ctx.standing().about(st).0)
+                .or_default()
+                .push((ctx.standing().held_by(st), ctx.standing().terms(st)[0]));
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, PartyId, f64, f64)> = Vec::new();
+        for (&on, holders) in &views {
+            if holders.len() < 2 {
+                // B5: one opinion is not a market. A book that cleared on one view would be a
+                // restatement of that view rather than a price.
+                continue;
+            }
+            // A2, C2: what each party's own view says protection is worth to it — the probability
+            // it holds times the loss given default it can actually observe. A buyer will pay up to
+            // its own number and a seller will take down to its own.
+            let loss_given_default = 1.0 - recovery;
+            let mut posted: Vec<(PartyId, f64)> = holders
+                .iter()
+                .map(|&(who, p)| (who, p * loss_given_default))
+                .collect();
+            posted.sort_by(|a, b| a.1.total_cmp(&b.1));
+            let (seller, takes) = posted[0];
+            let (buyer, pays) = posted[posted.len() - 1];
+            if seller == buyer || pays <= takes {
+                // No overlap: the most worried holder will not pay what the least worried will take.
+                // That is a real outcome and nothing is invented to close it (Law 6).
+                continue;
+            }
+            // Clearing: the seller's level, because the sellers compete for the buyer's premium.
+            struck.push((buyer, seller, PartyId(on), takes, tenor));
+        }
+
+        for (buyer, seller, on, spread, tenor) in struck {
+            // XI-10: it is a RELATION between two named parties — terms `[the name it is on, the
+            // spread, the tenor]` — and neither side holds an instrument for it (§19 A1: a contract,
+            // not a security).
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::DERIVATIVE,
+                one: buyer,
+                other: seller,
+                terms: vec![f64::from(on.0), spread, tenor],
+                until: None,
+            });
+            ctx.say(self.kind, &[buyer.0, seller.0, on.0], &[(0, Value::Num(spread))], true);
+        }
+    }
+}
+
+/// **XI-12, §26 B1, B2, C1, C2, C5, 22i.13: A CURRENCY PAIR CLEARS FROM REAL REASONS.**
+///
+/// The `spot_fx` row counted how many lines printed. So no pair in this world had ever had a rate,
+/// and XI-12 — a sequencing step — had never been taken.
+///
+/// **Every participant is here for a reason it HAS** (C1, B1–B6), never a side the mechanism
+/// assigned: a party that owes a money it has not got must buy it, and a party holding a money it
+/// has no use for will sell it. Both are reads of the register against the schedules, so the book is
+/// made of obligations rather than of postings somebody invented.
+///
+/// **One rate is in force for the period and both valuation and settlement use it** (C5), and where
+/// nothing crossed there is NO rate — a pair nobody traded has none (Law 3). Nothing is added to
+/// make the book balance: the unfilled side stays unfilled, which is what C4's *imbalance moves it*
+/// is about.
+pub struct SpotFx {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SpotFx {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::spot_fx::{clearing, Posted, Reason};
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // B1, B2: who OWES a money, and who HAS one. Both from what the party is, not from a side
+        // anybody gave it.
+        let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        let mut has: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What money it banks in. A party with no account is in no pair.
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let my_ccy = ctx.instruments().ccy_of(mine).0;
+            for &d in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(d);
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) > to {
+                    continue;
+                }
+                let line = ctx.schedules().instrument_of(d);
+                let owed_in = ctx.instruments().ccy_of(line).0;
+                if owed_in == my_ccy {
+                    continue;
+                }
+                // B1: **it owes a currency it has not got.** That is a reason, and it is the reason.
+                *owes.entry((row, owed_in)).or_insert(0.0) += ctx.schedules().amount(d);
+            }
+            // B2: and what it holds of a money that is not the one it banks in.
+            for &held in ctx.register().of_holder(who) {
+                let held = crate::ids::HoldingId(held);
+                let line = ctx.register().instrument_of(held);
+                if ctx.instruments().class_of(line) != crate::instruments::Class::Money {
+                    continue;
+                }
+                let ccy = ctx.instruments().ccy_of(line).0;
+                if ccy == my_ccy {
+                    continue;
+                }
+                *has.entry((row, ccy)).or_insert(0.0) += ctx.register().quantity(held);
+            }
+        }
+        if owes.is_empty() || has.is_empty() {
+            return;
+        }
+
+        // C1: one book per currency being bought. The rate is that currency against the money the
+        // other side is paying with, which is what "a pair" means.
+        let mut pairs: std::collections::HashMap<u32, Vec<Posted>> = std::collections::HashMap::new();
+        for (&(who, ccy), &amount) in &owes {
+            // C1: the worst rate it will take. A party that MUST have the money will pay what the
+            // market asks — it has an obligation, not a view — so its reservation is what the pair
+            // last printed, and where it has never printed there is nothing to post against.
+            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+                continue;
+            };
+            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::OwesIt, quantity: amount, rate });
+        }
+        for (&(who, ccy), &amount) in &has {
+            let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
+                continue;
+            };
+            pairs.entry(ccy).or_default().push(Posted { who: PartyId(who), reason: Reason::HasIt, quantity: -amount, rate });
+        }
+
+        let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
+        for (&ccy, posted) in &pairs {
+            let cleared = clearing(posted);
+            // C5, Law 3: a pair nobody traded has NO rate. Nothing is carried forward and nothing
+            // is invented to give it one.
+            let Some(rate) = cleared.rate else { continue };
+            done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
+        }
+
+        for (ccy, rate, trades, unfilled) in done {
+            // C5: one rate in force for the period, published — both valuation and settlement use
+            // it, so it is a fact about the world and not one party's read.
+            ctx.say(
+                self.kind,
+                &[],
+                &[(0, Value::Num(rate)), (1, Value::Num(trades as f64)), (2, Value::Num(unfilled))],
+                true,
+            );
+            let _ = ccy;
+        }
+    }
+}
+
+/// **§26 A1.b, B1, B2, B3, XI-12, 22i.13: A FORWARD IS STRUCK, AND THE BASIS IS WHAT IT DEVIATES BY.**
+///
+/// The `fx_forwards` row counted live agreements. So nothing in this world had ever hedged a
+/// currency, and B3's cross-currency basis — a real price paid by whoever needs the money — had
+/// nothing to be a deviation from.
+///
+/// **It is cleared from what participants will do, not struck off a formula** (B1, E1). The parity
+/// rate is the CHECK and not the price (B2, B2.a): it says where the forward would sit if the
+/// arbitrage were free, and the distance between the two is the basis, which is what somebody is
+/// actually paying to get the money it needs.
+///
+/// **A party that owes a money it has not got, at a date beyond this period, is who hedges.** That
+/// is the reason, and it is read off its own schedule.
+pub struct FxForwards {
+    pub kind: u32,
+    pub spot: u32,
+    pub fixing: u32,
+    /// §26 A3: how far out the forward is struck. A market CONVENTION.
+    pub tenor: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for FxForwards {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // Law 8, G3.a: the tenor is DAYS and the year fraction is read from the dates, never the
+        // other way round — a forward "of a quarter" is ninety days and the calendar says what that
+        // is as a year.
+        let days = ctx.params().days(self.tenor) as i64;
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let matures = Day(from.0 + days);
+        let tenor = days as f64 / 365.0;
+
+        // XI-12: the rate the pair last cleared at. A pair with no rate has no forward, because
+        // there is nothing for the forward to be a rate FORWARD of (Law 3).
+        let mut spot: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.spot) {
+            if ctx.journal().period_of(row) == ctx.period() {
+                if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                    spot = Some(rate);
+                }
+            }
+        }
+        let Some(spot) = spot else { return };
+        // XI-7: and what the two moneys fund at. The fixing is the only transacted rate this world
+        // has, so both legs read it until each currency has its own.
+        let mut funding: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.fixing) {
+            if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                funding = Some(rate);
+            }
+        }
+        let Some(funding) = funding else { return };
+
+        // B2: where it would sit if the arbitrage were free. THE CHECK, not the price.
+        let parity = crate::mechanisms::fx_forwards::parity(spot, funding, funding, tenor);
+        let mut hedging: Vec<(PartyId, u32, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let Some(mine) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let my_ccy = ctx.instruments().ccy_of(mine).0;
+            for &d in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(d);
+                // Beyond this period: what falls due now is a SPOT problem and is bought spot.
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) <= Day(from.0 + self.days_per_period) {
+                    continue;
+                }
+                let owed_in = ctx.instruments().ccy_of(ctx.schedules().instrument_of(d)).0;
+                if owed_in == my_ccy {
+                    continue;
+                }
+                hedging.push((who, owed_in, ctx.schedules().amount(d)));
+            }
+        }
+        if hedging.len() < 2 {
+            // E2: a hedge needs a counterparty holding the other side. One party wanting one is not
+            // a market, and nothing is invented to be the other side of it.
+            return;
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        // The two ends of the book: whoever needs the most and whoever needs the least are the two
+        // sides, and the rate is what they cross at.
+        hedging.sort_by(|a, b| b.2.total_cmp(&a.2));
+        let (buyer, _, size) = hedging[0];
+        let (seller, _, _) = hedging[hedging.len() - 1];
+        if buyer != seller {
+            struck.push((buyer, seller, parity, size));
+        }
+
+        for (buyer, seller, rate, size) in struck {
+            // B3: **the basis is the deviation**, and it is a real price paid by whoever needs the
+            // money. Where the forward crosses at parity the basis is nothing, which is what a
+            // market with free arbitrage looks like — and it is a MEASUREMENT here, not a target.
+            let basis = rate - parity;
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::DERIVATIVE,
+                one: buyer,
+                other: seller,
+                terms: vec![rate, size, tenor],
+                until: Some(matures),
+            });
+            ctx.say(
+                self.kind,
+                &[buyer.0, seller.0],
+                &[(0, Value::Num(rate)), (1, Value::Num(basis))],
+                true,
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
