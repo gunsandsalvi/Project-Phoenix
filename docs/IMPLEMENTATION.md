@@ -158,7 +158,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 21j | Twenty-five systems take no part — **done** (section removed; see `docs/RECORD.md`; the schedules door and the INSTRUMENT door, so a party can see what falls due and bring paper for it; the treasury auctions what it is short of and the last SHAPE in the register is dead; benchmarks fix on a transacted rate and mortality kills the insolvent. The census is printed and the remaining thirty-one are item 22i) | named by 21.38–21.42; after 21i, and its door is what the later conversions all want 
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 22e | The audit is not in the period loop — **done** (section removed; see `docs/RECORD.md`; `World::step` runs every family every period over the one traversal, `Stepped` carries what it found, and `Audit::over` declares NOT BUILT for every family nobody contributed to, so an unbuilt one cannot be absent from the report. `world-runs` prints by family and names each violation. It found a two-writers defect on its first run — item 22e2) | after 22, BEFORE 22c: everything built after it should be audited as it is built 
-| 22e2 | The register keeps a running total beside the lots | immediately after 22e, which is what found it |
+| 22e2 | The register keeps a running total beside the lots — **done** (section removed; see `docs/RECORD.md`; `held` is deleted and a holding's quantity is READ from its lots. Money keeps a total because it has no lots to sum. The ownership family reports 0 where it reported 2 every period, the world's behaviour is identical, and the traversal cost is measured and needs no cache) | immediately after 22e, which is what found it 
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
 | 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
@@ -174,35 +174,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ## Part 2 — The items
 
 
-## 22e2. The register keeps a running total beside the lots
-
-**INSERTED (Law 10) immediately after 22e, which is what FOUND it** — the audit's first period in the
-loop reported two ownership violations and has reported the same two every period since:
-
-```
-[Register B2] holding 48622  5.68e-14 pieces — lots sum to 27.143341836734685 and the row holds 27.143341836734628
-```
-
-**The cause is two writers of one quantity** (Law 4). `Register.held[row]` is a running total that
-`credit` adds to and `debit` subtracts from, while the lots are the SOURCE the same number comes from
-— so `quantity()` answers from a tally kept beside the lots rather than from the lots (Law 19: never
-sum a copy, never keep a second tally). Float addition over many periods drifts the two apart, and the
-family that reads the lots and compares them with the total is exactly the check built to catch it. It
-caught it on its first run.
-
-**It is not a tolerance to widen** (Law 7). The dust is derived per check from that walk's own terms
-and magnitudes, and the drift is larger than it; a check that only passed with a band would be
-reporting this defect rather than finding it.
-
-- [ ] 22e2.1 **Delete `held` and make `quantity` a read of the lots.** The fix removes code, which is
-  what a cause's fix does (Law 12). A money account is the one row with no lots (Money D2) and keeps
-  its total, which is why `is_total` already exists.
-- [ ] 22e2.2 **Gate it on behaviour and measure the traversal** (Law 18). The total was O(1) and a sum
-  of lots is O(lots); the register walk and the audit both scale with the holdings, so the period cost
-  is what says whether the layout needs the sum cached as a *derived* value with one writer rather
-  than a second fact.
-
-**Exit.** The ownership family reports nothing, because there is one writer of a holding's quantity.
 
 ## 22c. The market as it is
 

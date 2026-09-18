@@ -3,8 +3,15 @@
 //!
 //! A holding is a ROW and its lots are a counted slice of one flat column. That is the whole of the
 //! difference from the TypeScript store, and it is what the calibration measured: a traversal of
-//! 544,104 holdings is **95.70 ms** there and **2.23 ms** here, and the hot read with the row in
-//! hand is **67.20 ns** against **10.62 ns** (`tools/calibrate`).
+//! 544,104 holdings is **95.70 ms** there and **2.75 ms** here, and the hot read with the row in
+//! hand is **67.20 ns** against **19.47 ns** (`register-at-scale`).
+//!
+//! **Those two numbers were 0.39 ms and 3.99 ns until 22e2**, when the running total beside the lots
+//! was deleted and a holding's quantity became a READ of them (Law 19). The read costs five times
+//! what a tally cost and the traversal seven times, and the assembled world's period is unchanged
+//! at ~350 ms — because the register read was never the period's bottleneck. Law 18 is satisfied
+//! the way it asks to be: behaviour identical, correctness better, the cost measured rather than
+//! assumed, and no cache added for a cost nothing pays.
 //!
 //! Law 4: settlement is the ONE writer. The reads are open to anybody; `debit`, `credit` and
 //! `move_money` are reached only through the wire.
@@ -44,11 +51,20 @@ pub struct Register {
     lot_len: Vec<u32>,
     lien_at: Vec<u32>,
     lien_len: Vec<u32>,
-    /// Law 18: the holding's own total, maintained by the one writer, so a read is not a sum.
-    /// It is NOT a stored aggregate in Appendix B's sense — that forbids a stored TOTAL beside the
-    /// units it is derived from across parties. This is the row's own quantity, written by the same
-    /// instruction that writes the lots, and the audit still sums the lots to check it (Law 19).
-    held: Vec<f64>,
+    /// **Money D2: what a MONEY account holds, and nothing else's total.** A money account has no
+    /// lots — one unit of it is every other unit — so there is nothing to sum and the total IS the
+    /// holding. `money_delta` is its one writer, and for any row that carries lots this column is
+    /// not read at all.
+    ///
+    /// **It used to be every row's total, and that was two writers of one quantity** (Law 4, 22e2).
+    /// The old comment argued it was not a stored aggregate in Appendix B's sense — and the defect
+    /// was not that: it was Law 19. `quantity()` answered from a tally kept BESIDE the lots rather
+    /// than from the lots, so float addition over many periods drifted the two apart, and the
+    /// ownership family — which reads the lots and compares them with the total — found exactly that
+    /// on the audit's first period in the loop: *lots sum to 27.143341836734685 and the row holds
+    /// 27.143341836734628*. The fix is the deletion: there is one writer of a holding's quantity
+    /// because there is only one place it is written down.
+    total: Vec<f64>,
     /// Money D2: MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row
     /// is one or the other and the register says which, because a family that summed the lots of a
     /// money account would report every account in the world as a violation — which is exactly what
@@ -100,13 +116,23 @@ impl Register {
 
     /// Law 8: what the register holds is whole pieces, so what it reads back is a count of them.
     /// A pair nobody holds holds nothing — which is an answer, not a missing number.
+    /// **Law 19, 22e2: it is READ from the lots, which are the source.** A holding's quantity used
+    /// to be a running total `credit` added to and `debit` subtracted from while the lots carried
+    /// the same number — two writers, and they drifted.
+    ///
+    /// Money D2 is the one row that answers from a total, and that is not an exception: a money
+    /// account has no lots, so the total is not a copy of anything.
     #[inline]
     pub fn quantity(&self, row: HoldingId) -> f64 {
-        if row.some() {
-            self.held[row.row()]
-        } else {
-            0.0
+        if !row.some() {
+            return 0.0;
         }
+        if self.total_only[row.row()] {
+            return self.total[row.row()];
+        }
+        let at = self.lot_at[row.row()] as usize;
+        let len = self.lot_len[row.row()] as usize;
+        self.lots[at..at + len].iter().map(|l| l.qty).sum()
     }
 
     /// Register C3: what is not encumbered. The liens are a slice, summed where it is asked.
@@ -121,7 +147,7 @@ impl Register {
         for l in &self.liens[at..at + len] {
             pledged += l.qty;
         }
-        self.held[row.row()] - pledged
+        self.quantity(row) - pledged
     }
 
     /// The lots of one holding, in the order they were acquired (Register D1).
@@ -178,7 +204,7 @@ impl Register {
         let mut magnitude = 0.0;
         let mut terms = 0usize;
         for &row in self.of_instrument(instrument) {
-            let q = self.held[row as usize];
+            let q = self.quantity(HoldingId(row));
             total += q;
             magnitude += q.abs();
             terms += 1;
@@ -204,7 +230,7 @@ impl Register {
         self.lot_len.push(0);
         self.lien_at.push(self.liens.len() as u32);
         self.lien_len.push(0);
-        self.held.push(0.0);
+        self.total.push(0.0);
         self.total_only.push(false);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
@@ -238,7 +264,6 @@ impl Register {
             self.lots.push(Lot { qty, basis_per_unit, acquired: period });
         }
         self.lot_len[row.row()] += 1;
-        self.held[row.row()] += qty;
         self.writes += 1;
         row
     }
@@ -280,7 +305,6 @@ impl Register {
             self.lot_at[row.row()] += first_live as u32;
             self.lot_len[row.row()] -= first_live as u32;
         }
-        self.held[row.row()] -= qty;
         self.writes += 1;
         drawn
     }
@@ -289,9 +313,9 @@ impl Register {
     pub fn money_delta(&mut self, holder: PartyId, instrument: InstrumentId, delta: f64) -> f64 {
         let row = self.open(holder, instrument);
         self.total_only[row.row()] = true;
-        self.held[row.row()] += delta;
+        self.total[row.row()] += delta;
         self.writes += 1;
-        self.held[row.row()]
+        self.total[row.row()]
     }
 
     /// Register C3: a claim over units, which refuses their move rather than adjusting it.
@@ -387,6 +411,42 @@ pub fn lots_against_quantity(reg: &Register) -> Vec<(HoldingId, f64)> {
 mod tests {
     use super::*;
     use crate::ids::{InstrumentId, PartyId};
+
+    #[test]
+    fn a_holdings_quantity_is_its_lots_and_cannot_drift_from_them() {
+        // **Law 4, Law 19, 22e2: ONE WRITER of a holding's quantity.** It was a running total that
+        // `credit` added to and `debit` subtracted from while the lots carried the same number, and
+        // over enough float arithmetic the two drifted apart — which is what the ownership family
+        // found on the audit's first period in the loop.
+        //
+        // The drift cannot be asserted away with a band (Law 7). It is unsayable now, because there
+        // is only one place the number is written down: whatever the lots say, the quantity IS.
+        let mut reg = Register::new();
+        let p = PartyId::at(0);
+        let i = InstrumentId::at(0);
+        // Amounts that do not land on a power of two, credited and drawn many times over — the shape
+        // the arbitrary world produces and the shape that drifted.
+        for n in 1..200u32 {
+            reg.credit(p, i, 1.0 / 3.0 + f64::from(n) / 7.0, 0.5, n);
+            let row = reg.row(p, i);
+            if n % 3 == 0 {
+                reg.debit(row, reg.quantity(row) / 11.0);
+            }
+        }
+        let row = reg.row(p, i);
+        let summed: f64 = reg.lots(row).iter().map(|l| l.qty).sum();
+        assert_eq!(reg.quantity(row), summed, "the quantity IS the lots, not a tally beside them");
+
+        // Money D2: the one row that answers from a total, and it is not an exception — a money
+        // account has no lots, so the total is a copy of nothing.
+        let cash = InstrumentId::at(1);
+        reg.money_delta(p, cash, 900.0);
+        reg.money_delta(p, cash, -250.0);
+        let account = reg.row(p, cash);
+        assert!(reg.is_total(account));
+        assert_eq!(reg.quantity(account), 650.0);
+        assert!(reg.lots(account).is_empty());
+    }
 
     #[test]
     fn units_arrive_with_their_basis_and_leave_oldest_first() {

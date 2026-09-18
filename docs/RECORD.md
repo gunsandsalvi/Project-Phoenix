@@ -20481,3 +20481,54 @@ Rust kernel.
 
 **715 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
 `npm run check` green; `world:runs` four periods, 50 systems, worst period 382 ms.**
+
+## 22e2 — the register keeps a running total beside the lots
+
+The audit's first period in the loop (22e) found two ownership violations and reported the same two
+every period after it:
+
+```
+[Register B2] holding 48622  5.68e-14 pieces — lots sum to 27.143341836734685 and the row holds 27.143341836734628
+```
+
+**Two writers of one quantity** (Law 4). `Register.held[row]` was a running total that `credit` added
+to and `debit` subtracted from, while the lots were the SOURCE the same number came from — so
+`quantity()` answered from a tally kept BESIDE the lots rather than from the lots (Law 19: never sum a
+copy, never keep a second tally). Float addition over many periods drifts the two apart.
+
+The old field's own comment argued it was not a stored aggregate in Appendix B's sense, and that was
+true and beside the point: the defect was Law 19, not Appendix B.
+
+**The fix is the deletion** (Law 12: a cause has one fix and it removes code). `held` is gone;
+`quantity` sums the row's lots. **Money D2's account is the one row that answers from a total, and
+that is not an exception** — a money account has no lots, one unit of it being every other unit, so
+the total is a copy of nothing and `money_delta` is its one writer. The column survives for exactly
+that and is renamed `total`.
+
+It is **not a tolerance to widen** (Law 7). The dust is derived per check from that walk's own terms
+and magnitudes; the drift was larger than it. A check that only passed with a band would have been
+reporting this defect rather than finding it.
+
+### Measured, not assumed (Law 18)
+
+|                  | before  | after   | TypeScript |
+| ---------------- | ------- | ------- | ---------- |
+| hot read         | 3.99 ns | 19.47 ns | 67.20 ns  |
+| full traversal   | 0.39 ms | 2.75 ms  | 95.70 ms  |
+
+The read costs five times what a tally cost and the traversal seven times — and **the assembled
+world's period is unchanged**: 366 ms worst against 382 ms before, with identical asks, trades, lines
+and cells. The register read was never the period's bottleneck, which is the measurement that answers
+22e2.2's question: **no cache.** A sum cached as a derived value would be a second fact bought with
+nothing, and it is the thing that was just deleted.
+
+**The ownership family reports 0 where it reported 2**, and the drift is now unsayable rather than
+forbidden: there is one place a holding's quantity is written down. The test that guards it credits
+and draws two hundred amounts that do not land on a power of two and asserts the quantity IS the lot
+sum — no band, because there is nothing left to be within one.
+
+`packages/kernel-rs/src/register.rs`'s header carried the old figures and is corrected in the same
+change. `docs/COVERAGE.md`: `Register B2` re-pointed at the read and at the family that found it.
+
+**716 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
+`npm run check` green; `world:runs` four periods, 50 systems, worst period 366 ms, every family clean.**

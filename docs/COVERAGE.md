@@ -72,7 +72,7 @@ measurement is taken there is nothing to name.
 | `Register A3` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/audit/families/ownership.ts, packages/engine/src/register/register.ts |
 | `Register A4` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/register/instruments.ts |
 | `Register B1` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/register/instruments.ts |
-| `Register B2` | MET | packages/engine/src/audit/families/ownership.ts, packages/engine/src/register/register.ts |
+| `Register B2` | MET | packages/kernel-rs/src/register.rs `quantity` (**22e2: a holding's quantity is READ from its lots**, which are the source — it was a running total `credit` added to and `debit` subtracted from while the lots carried the same number, and two writers of one quantity drift. Money D2's account is the one row that answers from a total, and that is not an exception: it has no lots, so the total is a copy of nothing), packages/kernel-rs/src/audit.rs `LotsAgainstQuantity` (the family that found it, on the audit's first period in the loop — it sums the lots and compares, with the dust of that walk, never a band) |
 | `Register B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts |
 | `Register B4` | PARTIAL | maturity ceases an instrument; default-into-recovery arrives with XI-1 |
 | `Register C1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts |
