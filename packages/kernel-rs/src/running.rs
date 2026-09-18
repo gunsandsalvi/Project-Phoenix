@@ -2963,6 +2963,274 @@ impl Mechanism for FxForwards {
     }
 }
 
+/// **§13 A2, A3, B1, B2, C1, 22i.14: A POOL PUBLISHES ITS NAV, AND A HOLDER SUBSCRIBES AT IT.**
+///
+/// The `redeemable` row counted live agreements. So no pool in this world had a net asset value,
+/// nobody could subscribe to one, and §13's whole shape — a liability denominated in shares whose
+/// value is a READ of what the assets cleared at — did not exist.
+///
+/// **NAV is a read, not a stored level** (B1), and it is marked at CLEARED prices (B2): a price
+/// nobody cleared is not a mark, so an asset the market has not touched is carried at what it cost
+/// and says so. A pool with no shares has no per-share value at all — missing, not zero.
+///
+/// **A subscription gives the pool cash and the holder shares AT NAV** (C1), and it is a RELATION:
+/// the pool's liability is denominated in shares, and the agreement is where those shares are. C1.a
+/// says the pool must then buy something with the cash, which is its mandate's business and not this
+/// mechanism's — cash that sits is a mandate not being kept, and that shows up as a read.
+pub struct Subscribing {
+    pub kind: u32,
+    /// §13 C1: how much of its spare money a holder will put into one pool. A PREFERENCE.
+    pub commits: &'static str,
+}
+
+impl Mechanism for Subscribing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let commits = ctx.params().ratio(self.commits);
+
+        let mut navs: Vec<(PartyId, f64, f64)> = Vec::new();
+        for &pool in ctx.parties().of_kind(kinds::FUND) {
+            let who = PartyId(pool);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // B2: **at cleared prices.** An asset with a print is marked at it; one without is
+            // carried at what it cost, which is what it is worth to whoever holds it until a market
+            // says otherwise (Law 3: nothing is re-priced here).
+            let mut at_market = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                let units = ctx.register().quantity(row);
+                at_market += match ctx.prints().latest(line, ctx.period()) {
+                    Some(print) => units * print.price,
+                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
+                };
+            }
+            // A2: its shares are what it has already sold, which is what its subscriptions say.
+            let mut shares = 0.0;
+            let mut owed = 0.0;
+            for &a in ctx.agreements().of_party(who) {
+                let a = crate::stores::AgreementId(a);
+                if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
+                    continue;
+                }
+                if let [held, _] = ctx.agreements().terms(a) {
+                    shares += held;
+                }
+            }
+            let due: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d))
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            owed += due;
+            let book = crate::mechanisms::redeemable::Book {
+                assets_at_market: at_market,
+                liabilities: owed,
+                shares,
+            };
+            // B1: **`None` where there are no shares.** A pool with none has no per-share value, and
+            // a first subscription therefore buys at what the pool is worth per share it is about to
+            // create — which is the assets themselves where it holds any, and nothing where it does
+            // not. A pool with neither has nothing to sell.
+            let nav = match book.nav() {
+                Some(nav) => nav,
+                None if at_market > 0.0 => at_market,
+                None => continue,
+            };
+            if nav <= 0.0 {
+                continue;
+            }
+            navs.push((who, nav, shares));
+        }
+
+        let mut subscribing: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        for (pool, nav, _) in &navs {
+            // B1: the NAV is published. It is a fact about the pool that anybody may read, which is
+            // what makes a subscription possible at all.
+            ctx.say(self.kind, &[pool.0], &[(0, Value::Num(*nav))], true);
+        }
+        for (pool, nav, _) in &navs {
+            for &holder in ctx.parties().of_kind(kinds::INSURER) {
+                let holder = PartyId(holder);
+                if !ctx.parties().alive(holder) {
+                    continue;
+                }
+                let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+                let cash = ctx.register().quantity(ctx.register().row(holder, money));
+                // C1: **it subscribes with cash it has.** `None` where it has none — a subscription
+                // by a holder with no money is a share issued against nothing.
+                let Some(shares) = crate::mechanisms::redeemable::subscribe(cash * commits, Some(*nav))
+                else {
+                    continue;
+                };
+                if shares <= 0.0 {
+                    continue;
+                }
+                subscribing.push((*pool, holder, shares, shares * nav));
+                break;
+            }
+        }
+
+        for (pool, holder, shares, paid) in subscribing {
+            // C1: cash one way and shares the other, in the same pass (Law 5). The shares are the
+            // RELATION — §13 A2's liability denominated in shares is exactly this row.
+            let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: holder,
+                    to: pool,
+                    ccy: ctx.instruments().ccy_of(from),
+                    instrument: from,
+                    amount: paid,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }],
+                crate::ledger::Cause::CorporateAction,
+                crate::ledger::Delivery::Nothing,
+                "13 C1: a subscription gives the pool cash and the holder shares at NAV",
+            );
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::SUBSCRIPTION,
+                one: pool,
+                other: holder,
+                terms: vec![shares, paid],
+                until: None,
+            });
+        }
+    }
+}
+
+/// **§12 B1, B1.a, C1, C1.b, E1, E4, 22i.14: A BROKER LENDS TO A NAMED CLIENT, AND SETS WHAT IT
+/// REQUIRES.**
+///
+/// The `prime_brokerage` row counted live agreements. So no client in this world was levered by a
+/// named lender: B1.a's *the client's leverage is a loan from a NAMED lender, not a property of the
+/// client* had nothing to be true of, and §14's funds could not borrow at all.
+///
+/// **The requirement is a DECISION by the broker, from its own view of the risk** (C1.b), never a
+/// formula the client can rely on — which is what lets it RISE, and the rise is the procyclicality
+/// XI-2 is about.
+///
+/// **And no unlimited exposure** (E4): a broker with no limit is a synthetic counterparty. The limit
+/// is its own and it binds; a limit that never binds is not a limit.
+pub struct Broking {
+    pub kind: u32,
+    /// §12 C1.b: what the broker thinks the book could move this period. Its own view, and it is
+    /// what the requirement is made of.
+    pub could_move: &'static str,
+    /// §12 E4: what one broker will be exposed to one client for. Its own limit.
+    pub limit: &'static str,
+}
+
+impl Mechanism for Broking {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::prime_brokerage::{requirement, Account, View};
+        let could_move = ctx.params().ratio(self.could_move);
+        let limit = ctx.params().amount(self.limit, crate::params::Denomination::Money);
+
+        let brokers: Vec<PartyId> = ctx
+            .parties()
+            .of_kind(kinds::DEALER)
+            .iter()
+            .map(|p| PartyId(*p))
+            .filter(|p| ctx.parties().alive(*p))
+            .collect();
+        if brokers.is_empty() {
+            return;
+        }
+
+        let mut opening: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
+        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (n, &client) in ctx.parties().of_kind(kinds::FUND).iter().enumerate() {
+            let client = PartyId(client);
+            if !ctx.parties().alive(client) {
+                continue;
+            }
+            // E1: one broker per client here — a client with two brokers is real and is §12 E3's,
+            // which needs each to see only its own book. This world gives each client one.
+            let broker = brokers[n % brokers.len()];
+            let mut assets = 0.0;
+            for &row in ctx.register().of_holder(client) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    continue;
+                }
+                let units = ctx.register().quantity(row);
+                assets += match ctx.prints().latest(line, ctx.period()) {
+                    Some(print) => units * print.price,
+                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
+                };
+            }
+            if assets <= 0.0 {
+                continue;
+            }
+            // What this broker has already lent it, read off the relation it holds.
+            let held = ctx
+                .agreements()
+                .of_party(client)
+                .iter()
+                .map(|a| crate::stores::AgreementId(*a))
+                .find(|a| {
+                    ctx.agreements().live(*a)
+                        && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
+                });
+            let lent = match held {
+                Some(a) => ctx.agreements().terms(a).first().copied().unwrap_or(0.0),
+                None => 0.0,
+            };
+            let account = Account {
+                broker,
+                client,
+                assets,
+                lent,
+                short_proceeds_held: 0.0,
+                stock_borrowed: 0.0,
+                limit,
+            };
+            // C1, C1.b: the requirement, from the broker's OWN view of what the book could move.
+            let view = View { move_it_expects: could_move, add_for_the_client: could_move };
+            let required = requirement(assets, 0.0, &view);
+            if held.is_none() {
+                opening.push((broker, client, lent, limit));
+            }
+            // C2: and where the account is short of what the broker requires, it CALLS. That is a
+            // real demand on a named client for real money.
+            let headroom = crate::mechanisms::prime_brokerage::headroom(&account, required);
+            if headroom < 0.0 {
+                calling.push((broker, client, -headroom));
+            }
+        }
+
+        for (broker, client, lent, limit) in opening {
+            // B1.a: **a loan from a NAMED lender.** Terms `[lent, limit]`, and the limit is the
+            // broker's own — E4's *no unlimited exposure* is this number existing at all.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::PRIME_BROKERAGE,
+                one: broker,
+                other: client,
+                terms: vec![lent, limit],
+                until: None,
+            });
+            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);
+        }
+        for (broker, client, short) in calling {
+            // XI-2: a margin call the client cannot meet from cash is the first of the four doors,
+            // and it is a WORKOUT — the client must find the money or sell.
+            ctx.opens(crate::module::Opens {
+                kind: afoot::WORKOUT,
+                owner: client,
+                closes: Some(ctx.period() + 1),
+                size: short,
+            });
+            ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(-short))], false);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

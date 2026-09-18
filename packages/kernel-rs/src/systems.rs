@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, FxForwards, Observing, Protection, SpotFx, SecondOpinion, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, SpotFx, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -843,6 +843,16 @@ pub fn declare(p: &mut Params) {
     // two sides cross at (Law 3).
     // §26 A3: how far out a forward is struck. A market CONVENTION, and what it is worth is what
     // the two sides cross at (Law 3, B1: never struck off a formula).
+    // §13 C1: how much of its spare money a holder puts into one pool. A PREFERENCE, and its own.
+    say("subscribe.commits", 0.1, "per unit of spare cash", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the share of its spare money a holder commits to one pool");
+    // §12 C1.b, E4: **the broker's own view and its own limit.** The view is what makes the
+    // requirement RISE when it likes what it sees less, which a stated constant could not; the limit
+    // is E4's no-unlimited-exposure, and a limit that never binds is not a limit.
+    say("broker.could_move", 0.2, "per unit of the book", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "what a broker thinks a client's book could move against it in a period");
+    say("broker.limit", 100000.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "what one broker will be exposed to one client for");
     say("forward.tenor", 90.0, "days", Dimension::Days, Kind::Technology, Owner::StandardSetter,
         "how far out a currency forward is struck");
     say("protection.tenor", 5.0, "years", Dimension::Years, Kind::Technology, Owner::StandardSetter,
@@ -1151,8 +1161,19 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         },
         works("hedge_funds", AT_MARKETS, Box::new(Reads { kind: says("hedge_funds.alive"), what: Counts::PartiesAlive })),
         works("private_equity", AT_MARKETS, Box::new(Closing { kind: afoot::TAKEOVER, says: says("takeover.closed") })),
-        works("prime_brokerage", AT_REVALUATION, Box::new(Reads { kind: says("prime_brokerage.books"), what: Counts::AgreementsLive })),
-        works("redeemable", AT_MARKETS, Box::new(Reads { kind: says("redeemable.subscriptions"), what: Counts::AgreementsLive })),
+        // **§12 B1.a, C1.b, E4: and a broker LENDS to a named client and sets what it requires.** It
+        // counted live agreements, so no client in this world was levered by a named lender.
+        works("prime_brokerage", AT_REVALUATION, Box::new(Broking {
+            kind: says("broker.account"),
+            could_move: "broker.could_move",
+            limit: "broker.limit",
+        })),
+        // **§13 B1, C1: and a pool publishes its NAV, and a holder subscribes at it.** It counted
+        // live agreements, so no pool in this world had a net asset value at all.
+        works("redeemable", AT_REVALUATION, Box::new(Subscribing {
+            kind: says("pool.nav"),
+            commits: "subscribe.commits",
+        })),
         {
             // **§10 A2, A2.a: and a company FLOATS.** It was a closer for a flotation nothing opened,
             // so no company in this world had ever had shares — which is why nothing could be valued
