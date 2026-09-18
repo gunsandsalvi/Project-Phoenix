@@ -804,7 +804,7 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   from 22b.2**: drawing from the snapshot's seed value must reproduce it exactly, or a snapshot is a
   second way to state an opening rather than an optimisation. The rig's scale models become small
   accepted worlds, so a test asks for *a mill that has traded for a year* instead of building one.
-- [ ] 22b.7a **Equity is a stored aggregate, and it counts assets only.** INSERTED here (Law 10: at
+- [x] 22b.7a **Equity is a stored aggregate, and it counts assets only.** INSERTED here (Law 10: at
   its dependency position — before the balance-sheet audit family, which cannot be written over a
   number nothing derives). Found writing the snapshot, which had to carry it: `Register::equity` is a
   running total settlement bumps, so nothing reads it from anywhere. An ISSUER'S LIABILITY never

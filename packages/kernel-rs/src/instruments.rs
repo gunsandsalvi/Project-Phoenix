@@ -20,7 +20,8 @@
 //! and an internal id is never shown.
 
 use crate::calendar::Day;
-use crate::ids::{CurrencyCode, InstrumentId, PartyId, UnitId};
+use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
+use crate::register::Register;
 
 /// Register A1: what kind of thing this is. Not a branch a mechanism takes (Law 15) — the kernel uses
 /// it to know what may be held in fractions, what carries lots, and what money is.
@@ -191,6 +192,56 @@ impl Instruments {
     }
 }
 
+/// **WHAT A PARTY IS WORTH: WHAT IT HOLDS, LESS WHAT IT OWES.** A read, every time (Law 19).
+///
+/// @spec Audit B5 · 5 A4 · 5 C2 · Law 4, Law 12, Law 19 · Appendix B
+///
+/// It used to be a POT the register kept and settlement bumped, and that was wrong twice over.
+/// Appendix B forbids a stored aggregate and says capital is never a pot; and the pot counted the
+/// ASSET SIDE ONLY, so an issuer got richer by issuing — the treasury's equity rose when it sold a
+/// bill, a firm's when it borrowed, because the money arrived and the obligation went nowhere. The
+/// snapshot had to write the number down because nothing derived it (22b.7), which is what made it
+/// impossible to miss.
+///
+/// **Holdings are at what they COST**, which is what the lots carry and what a money total is worth
+/// at the one hard-coded price (Money A2.b). Nothing here consults a market: an equity read that
+/// re-priced a book would be re-deriving what a market printed (Law 19), and what a party is worth
+/// AT MARKET is a different question with a different name.
+pub fn equity(party: PartyId, register: &Register, instruments: &Instruments) -> f64 {
+    let holds: f64 = register
+        .of_holder(party)
+        .iter()
+        .map(|row| at_cost(register, HoldingId(*row)))
+        .sum();
+    // 5 A4: and what it owes is what OTHERS hold of what it issued. Its own line on its own book is
+    // not a debt to itself — netting it off here is the whole of what "issued and outstanding" means.
+    //
+    // **Only money and claims are debts.** Law 8: units are part of the number, and a share is not a
+    // sum of money at all — it IS the residual this function computes, so counting it as a liability
+    // would net a firm to nothing by construction. A good or a plant on an issuer's book is a thing
+    // it made, not a promise it owes. Money and a claim are carried at par, which is what a unit of
+    // each is worth to the party that must hand it over.
+    let owes = owed_by(party, instruments, |i| {
+        match instruments.class_of(i) {
+            Class::Money | Class::Claim => {
+                let (held, _) = register.held_total(i);
+                held - register.quantity(register.row(party, i))
+            }
+            Class::Share | Class::Good | Class::Plant => 0.0,
+        }
+    });
+    holds - owes
+}
+
+/// Register C1, Money D2: what one holding cost. A money account is a total at price 1; anything else
+/// carries the basis its units arrived with.
+fn at_cost(register: &Register, row: HoldingId) -> f64 {
+    if register.is_total(row) {
+        return register.quantity(row);
+    }
+    register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum()
+}
+
 /// 5 A4, C2: **every asset is somebody's liability, party by party.** What an issuer owes, read from
 /// the holdings of what it issued — never a second tally kept beside them (Law 19).
 pub fn owed_by(
@@ -322,5 +373,50 @@ mod tests {
         assert_eq!(i.display(bond, "firm.4"), "firm.4 4.5 2031");
         assert_eq!(i.display(share, "firm.4"), "firm.4");
         assert_eq!(i.display(deposit, "bank.2"), "bank.2 deposit");
+    }
+
+    #[test]
+    fn an_issuer_does_not_get_richer_by_issuing() {
+        // **22b.7a, and the whole reason the pot had to go.** Settlement used to BUMP an equity
+        // account, and it bumped the asset side only: money arrived and the obligation went nowhere,
+        // so the treasury got richer for selling a bill and a firm for borrowing. Read as holdings
+        // against liabilities, issuing is what it is — neutral at the moment it happens.
+        let mut i = Instruments::new();
+        let mut reg = Register::new();
+        let treasury = party(5);
+        let buyer = party(6);
+        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
+        let bill = i.issue(treasury, ccy(), Class::Claim, unit(), None, Some(Day(900)));
+
+        reg.money_delta(buyer, cash, 1_000.0);
+        let before = equity(treasury, &reg, &i);
+
+        // It sold the bill: money in, and a promise out at the same instant.
+        reg.money_delta(buyer, cash, -900.0);
+        reg.money_delta(treasury, cash, 900.0);
+        reg.credit(buyer, bill, 900.0, 1.0, 0);
+
+        assert_eq!(equity(treasury, &reg, &i), before, "selling a promise is not income");
+        assert_eq!(equity(buyer, &reg, &i), 1_000.0, "and the buyer swapped money for a claim");
+    }
+
+    #[test]
+    fn a_share_is_the_residual_and_never_a_liability() {
+        // Law 8: units are part of the number, and shares are not a sum of money. Counting a firm's
+        // own shares as a debt would net every firm in the world to nothing by construction.
+        let mut i = Instruments::new();
+        let mut reg = Register::new();
+        let firm = party(1);
+        let holder = party(2);
+        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
+        let share = i.issue(firm, ccy(), Class::Share, unit(), None, None);
+        let plant = i.issue(firm, ccy(), Class::Plant, unit(), None, None);
+
+        reg.money_delta(firm, cash, 400.0);
+        reg.credit(firm, plant, 10.0, 60.0, 0);
+        reg.credit(holder, share, 100.0, 1.0, 0);
+
+        // 400 of money and 600 of plant, and the shares its owners hold are not a debt against it.
+        assert_eq!(equity(firm, &reg, &i), 1_000.0);
     }
 }

@@ -78,11 +78,6 @@ impl<'a> ParticipantView<'a> {
         self.register.instrument_of(row)
     }
 
-    /// Audit B5: what its OWN equity account says.
-    pub fn equity(&self) -> f64 {
-        self.register.equity(self.who)
-    }
-
     /// A3: what a BOOK printed is public — anybody may read it, which is what a price is for.
     pub fn print(&self, instrument: InstrumentId) -> Option<Print> {
         self.prints.latest(instrument, self.period)

@@ -369,28 +369,11 @@ impl Settlement {
                 Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
             }
         }
-        // Currency B1, C5, Law 18 (0g.26): WHICH MONEY A PARTY REPORTS IN and WHAT THE RATE IS,
-        // once per instruction. An instruction is atomic, so neither can change between two of its
-        // legs — and the TypeScript wire read both per leg, which is where an estate hand-over's
-        // 5,489 legs cost 231,250 kernel reads.
-        let mut homes: Vec<(u32, u32)> = Vec::new();
-        let mut home_of = |p: PartyId| -> u32 {
-            for &(who, home) in &homes {
-                if who == p.0 {
-                    return home;
-                }
-            }
-            // One region, one money, in this bench: the seam a registry fills in.
-            homes.push((p.0, 0));
-            0
-        };
-        let rate_into = |_home: u32, _ccy: CurrencyCode| -> f64 { 1.0 };
-
         // The application. Nothing here can fail: the pre-check is what made that true.
 
         for leg in ins.legs {
             match *leg {
-                Leg::Money { from, to, instrument, amount, ccy, .. } => {
+                Leg::Money { from, to, instrument, amount, .. } => {
                     // **THE INTERBANK LEG** (Money D2, XI-9, worklist 1). A deposit is a claim on the
                     // bank that ISSUED it. When the payee banks somewhere else, the payer's bank's
                     // deposit is extinguished, the payee's bank's deposit is created, and RESERVES
@@ -409,27 +392,10 @@ impl Settlement {
                             reg.money_delta(payees_bank, reserves, amount);
                         }
                     }
-                    // Currency C5: in each party's OWN money, at the rate in force — asked ONCE
-                    // per instruction, not once per leg, which is where 0g.26 found four fifths
-                    // of settlement's 42 reads a leg going.
-                    reg.bump_equity(from, -amount * rate_into(home_of(from), ccy));
-                    reg.bump_equity(to, amount * rate_into(home_of(to), ccy));
                 }
                 Leg::Asset { from, to, instrument, qty, price_per_unit } => {
                     let row = reg.row(from, instrument);
                     let drawn = reg.debit(row, qty);
-                    // Register D2: the seller gives up what the units COST it, and takes in what
-                    // it was paid; the gain is the difference and it is booked, never plugged.
-                    let mut carried = 0.0;
-                    for d in &drawn {
-                        carried += d.qty * d.basis_per_unit;
-                    }
-                    reg.bump_equity(from, -carried);
-                    if let Some(price) = price_per_unit {
-                        reg.bump_equity(to, qty * price);
-                    } else {
-                        reg.bump_equity(to, carried);
-                    }
                     // Register D2: what the units cost goes with them where it is a transfer, and
                     // the price is the basis where a market struck one (C2.a).
                     match price_per_unit {
@@ -445,7 +411,6 @@ impl Settlement {
                 }
                 Leg::Create { party, instrument, qty, cost_per_unit } => {
                     reg.credit(party, instrument, qty, cost_per_unit, period);
-                    reg.bump_equity(party, qty * cost_per_unit);
                 }
                 // Money A1, D2: the issuer's own money, as a TOTAL, and NO equity — what it created
                 // is what it owes, and `Instruments::owed_by` reads that from issued against held.
@@ -457,11 +422,7 @@ impl Settlement {
                     let drawn = reg.debit(row, qty);
                     // Goods E4: what perished cost something, and the loss is an EVENT on the
                     // account rather than a number that quietly stops existing (XI-1).
-                    let mut carried = 0.0;
-                    for d in &drawn {
-                        carried += d.qty * d.basis_per_unit;
-                    }
-                    reg.bump_equity(party, -carried);
+                    let _ = drawn;
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
                     reg.pledge(holder, instrument, to, qty);
@@ -532,6 +493,11 @@ mod tests {
             i.issue(PartyId::at(1), CurrencyCode::at(0), Class::Good, UnitId::at(0), None, None);
         }
         (Register::new(), j, p, i, Settlement::new(), ok, no)
+    }
+
+    /// 22b.7a: what a party is worth, READ from what it holds against what it owes. There is no pot.
+    fn worth(reg: &Register, ins: &Instruments, p: PartyId) -> f64 {
+        crate::instruments::equity(p, reg, ins)
     }
 
     /// The four stores settlement works on, gathered for a call.
@@ -706,7 +672,8 @@ mod tests {
         let b = PartyId::at(1);
         let cash = InstrumentId::at(0);
         reg.money_delta(a, cash, 500.0);
-        let before = reg.equity(a) + reg.equity(b);
+        let before = worth(&reg, &ins, a) + worth(&reg, &ins, b);
+        let bank_before = worth(&reg, &ins, PartyId::at(9));
         let legs = [Leg::Money {
             from: a,
             to: b,
@@ -716,11 +683,16 @@ mod tests {
             receipt: Receipt::Wage,
         }];
         s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins), ok, no);
-        assert_eq!(reg.equity(a), -120.0);
-        assert_eq!(reg.equity(b), 120.0);
-        assert_eq!(reg.equity(a) + reg.equity(b), before);
-        // And what passed THROUGH each account is its own magnitude, for Law 7's dust.
-        assert_eq!(reg.gross(a), 120.0);
+        // A LEVEL, not a running delta: what each is worth is read from its book every time.
+        assert_eq!(worth(&reg, &ins, a), 500.0 - 120.0);
+        assert_eq!(worth(&reg, &ins, b), 120.0);
+        assert_eq!(worth(&reg, &ins, a) + worth(&reg, &ins, b), before);
+        // And the BANK is no better or worse off for having moved it: it owes 120 less to one
+        // depositor and 120 more to the other, which nets to nothing. That its LEVEL is negative is
+        // this fixture being a fixture — the deposit was put on the register rather than minted
+        // against anything, so the bank owes money it was never paid for. The read says so, which is
+        // the side the old pot never saw (22b.7a).
+        assert_eq!(worth(&reg, &ins, PartyId::at(9)), bank_before);
     }
 
     #[test]
@@ -734,15 +706,19 @@ mod tests {
         let share = InstrumentId::at(1);
         reg.money_delta(b, cash, 1_000.0);
         reg.credit(a, share, 10.0, 3.0, 1);
+        let seller_before = worth(&reg, &ins, a);
+        let buyer_before = worth(&reg, &ins, b);
         let legs = [
             Leg::Asset { from: a, to: b, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
             Leg::Money { from: b, to: a, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
         ];
         s.settle(&Instruction::against_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins), ok, no);
         // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
-        assert_eq!(reg.equity(a), -30.0 + 50.0);
-        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is.
-        assert_eq!(reg.equity(b), 50.0 - 50.0);
+        assert_eq!(seller_before, 30.0, "ten shares that cost three");
+        assert_eq!(worth(&reg, &ins, a), 50.0);
+        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is. Its own
+        // share line is NOT a liability to itself — a share is the residual, not a promise (Law 8).
+        assert_eq!(worth(&reg, &ins, b), buyer_before);
     }
 
     #[test]

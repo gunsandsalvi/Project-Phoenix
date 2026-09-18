@@ -18337,3 +18337,35 @@ the wire and the session; the interbank path is timed where a world with four ba
 
 **Six hundred and sixty-three tests hold; clippy clean; `phoenix-check` green over 83 files;
 `check:opening` accepts on the first seed with 4,161 moments settled and none refused.**
+
+---
+
+## 22b.7a — equity is a read, and capital is not a pot
+
+**What went.** `Register::equity`, `Register::gross`, `Register::bump_equity`, the two columns behind
+them, the seven bumps in settlement, the currency-home and rate closures that existed only to feed
+those bumps, `ParticipantView::equity` (nobody called it), and `PartyRow::equity` from the snapshot
+format. **The fix removes code** (Law 12).
+
+**What replaces it** (Law 19 — every deletion names the read): `instruments::equity(party, register,
+instruments)` — what the party HOLDS at what it cost, less what it OWES, derived every time.
+
+**Why it had to go.** Two prohibitions at once: no stored aggregate, and capital is never a pot. And
+the pot was not merely redundant, it was WRONG — it counted the asset side only, so an issuer got
+richer by issuing: the treasury's equity rose when it sold a bill, a firm's when it borrowed, because
+the money arrived and the obligation went nowhere. The snapshot is what made it impossible to miss,
+because it had to write the number down: nothing derived it.
+
+**Two things the read had to get right.** Holdings are at what they COST — the lots carry it and a
+money total is worth it at the one hard-coded price — because an equity read that consulted a market
+would be re-deriving what a market printed, and what a party is worth AT MARKET is a different
+question with a different name. And **only money and claims are debts**: a share is not a sum of
+money, it IS the residual being computed, so counting a firm's own shares as a liability would net
+every firm in the world to nothing by construction (Law 8).
+
+Three tests hold it: an issuer is no richer the instant it issues; a firm's own shares are not a debt
+against it; and a bank that moves 120 between two of its depositors is exactly as well off after as
+before — the side the pot never saw.
+
+**Six hundred and sixty-five tests hold; clippy clean; `phoenix-check` green over 83 files;
+`check:opening` accepts on the first seed.**

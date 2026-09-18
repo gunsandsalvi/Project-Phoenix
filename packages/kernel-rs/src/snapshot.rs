@@ -42,12 +42,6 @@ pub struct PartyRow {
     pub weight: u32,
     pub key: u32,
     pub alive: bool,
-    /// **Carried because the register KEEPS it, and it should not.** `Register::equity` is a running
-    /// total that settlement bumps, so nothing derives it and a snapshot has to write it down. It
-    /// counts assets only: an issuer's liability never reaches it, which is why the treasury in the
-    /// committed snapshot looks richer for having sold a bill. This field DIES with 22b.7a, when
-    /// equity becomes a read over holdings and issued lines.
-    pub equity: f64,
 }
 
 /// A line as the past left it: everything `Instruments::issue` is given, and nothing derived.
@@ -141,7 +135,6 @@ fn state_of(w: &World, seed_value: u64, shape: Shape, opens_at: u32) -> Snapshot
             weight: w.parties.weight(id),
             key: w.parties.key_of(id),
             alive: w.parties.alive(id),
-            equity: w.register.equity(id),
         });
     }
     let mut lines = Vec::with_capacity(w.instruments.len());
@@ -191,7 +184,6 @@ pub fn open_from(s: &Snapshot) -> World {
         if !p.alive {
             w.parties.cease(id);
         }
-        w.register.bump_equity(id, p.equity);
     }
     for l in &s.lines {
         w.instruments.issue(
@@ -307,15 +299,14 @@ pub fn to_text(s: &Snapshot) -> String {
     out.push_str(&format!("opens {}\n", s.opens_at));
     for p in &s.parties {
         out.push_str(&format!(
-            "party {} {} {} {} {} {} {} {:?}\n",
+            "party {} {} {} {} {} {} {}\n",
             p.kind,
             p.region,
             p.bank,
             if p.representation == Representation::Cell { "cell" } else { "named" },
             p.weight,
             p.key,
-            if p.alive { "alive" } else { "ceased" },
-            p.equity
+            if p.alive { "alive" } else { "ceased" }
         ));
     }
     for l in &s.lines {
@@ -397,7 +388,6 @@ pub fn from_text(text: &str) -> Snapshot {
                     "ceased" => false,
                     other => panic!("22b.7: line {n} says a party is {other}"),
                 },
-                equity: real(word[8], n),
             }),
             "line" => lines.push(LineRow {
                 issuer: num(word[1], n) as u32,

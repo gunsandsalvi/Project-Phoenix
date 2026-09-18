@@ -18,7 +18,7 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 304 clauses this world does not meet** — 176 MISSING, 128 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.2% are met or out of scope.
-**The items broken out of that so far: 0 of 12 closed** (8 of 142 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 12 closed** (9 of 142 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -28,7 +28,7 @@ The plan has two parts:
 | 21c — A tax on an estate is a claim on it (XI-8, inserted after 21b) | 2 | 0 | open |
 | 22 — The recipe | 3 | 0 | open |
 | 22a — The opening is not an equilibrium | 6 | 0 | open |
-| 22b — The chronicle — the world opens as one that has been running | 11 | 7 | in progress |
+| 22b — The chronicle — the world opens as one that has been running | 11 | 8 | in progress |
 | 22c — The market as it is | 4 | 0 | open |
 | 22d — The payment queue | 3 | 0 | open |
 | 23 — Measure — Part XII | 9 | 0 | open |

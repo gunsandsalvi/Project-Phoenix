@@ -2,49 +2,49 @@ phoenix-snapshot 1
 seed 1
 shape 4 8 12 24 52 0 7
 opens 520
-party 7 0 4294967295 named 1 0 alive 0.0
-party 6 0 0 named 1 0 alive 69373.51650000001
-party 2 0 0 named 1 0 alive 66633.8077808218
-party 2 0 0 named 1 0 alive 91268.10191780813
-party 2 0 0 named 1 0 alive 81472.34806164388
-party 2 0 0 named 1 0 alive 86725.3368767124
-party 1 0 2 named 1 0 alive 45030.07533784615
-party 1 0 2 named 1 0 alive 5017.984273972577
-party 1 0 3 named 1 0 alive 5118.518301369879
-party 1 0 4 named 1 0 alive 3033.2174794520565
-party 1 0 5 named 1 0 alive 5947.63265753422
-party 1 0 2 named 1 0 alive 5881.647123287673
-party 1 0 3 named 1 0 alive 3748.2899999999963
-party 1 0 4 named 1 0 alive 5096.728191780813
-party 1 0 5 named 1 0 alive 4085.997369863
-party 1 0 2 named 1 0 alive 4654.962821917824
-party 1 0 3 named 1 0 alive 4876.011780821935
-party 1 0 4 named 1 0 alive 5396.944767123316
-party 1 0 5 named 1 0 alive 5002.5170958903755
-party 0 0 2 cell 1525 0 alive 657.1088959999998
-party 0 0 3 cell 708 1 alive 628.6236800000004
-party 0 0 4 cell 660 2 alive 517.7371679999999
-party 0 0 5 cell 1525 3 alive 563.7945560000001
-party 0 0 2 cell 1331 4 alive 298.98131999999987
-party 0 0 3 cell 629 5 alive 565.5122860000001
-party 0 0 4 cell 1066 6 alive 414.2553779999998
-party 0 0 5 cell 1475 7 alive 679.3333979999995
-party 0 0 2 cell 757 8 alive 414.09632
-party 0 0 3 cell 759 9 alive 634.6124399999995
-party 0 0 4 cell 1726 10 alive 603.6764359999995
-party 0 0 5 cell 1930 11 alive 315.9903999999997
-party 0 0 2 cell 1462 12 alive 520.0514540000001
-party 0 0 3 cell 1471 13 alive 728.8979600000001
-party 0 0 4 cell 418 14 alive 597.3104600000004
-party 0 0 5 cell 1267 15 alive 602.6929999999998
-party 0 0 2 cell 902 16 alive 393.23420799999974
-party 0 0 3 cell 613 17 alive 331.7036
-party 0 0 4 cell 864 18 alive 729.0024399999994
-party 0 0 5 cell 535 19 alive 588.5493399999998
-party 0 0 2 cell 556 20 alive 546.4035960000001
-party 0 0 3 cell 1358 21 alive 492.37429999999983
-party 0 0 4 cell 1785 22 alive 597.4142720000004
-party 0 0 5 cell 913 23 alive 559.2580399999997
+party 7 0 4294967295 named 1 0 alive
+party 6 0 0 named 1 0 alive
+party 2 0 0 named 1 0 alive
+party 2 0 0 named 1 0 alive
+party 2 0 0 named 1 0 alive
+party 2 0 0 named 1 0 alive
+party 1 0 2 named 1 0 alive
+party 1 0 2 named 1 0 alive
+party 1 0 3 named 1 0 alive
+party 1 0 4 named 1 0 alive
+party 1 0 5 named 1 0 alive
+party 1 0 2 named 1 0 alive
+party 1 0 3 named 1 0 alive
+party 1 0 4 named 1 0 alive
+party 1 0 5 named 1 0 alive
+party 1 0 2 named 1 0 alive
+party 1 0 3 named 1 0 alive
+party 1 0 4 named 1 0 alive
+party 1 0 5 named 1 0 alive
+party 0 0 2 cell 1525 0 alive
+party 0 0 3 cell 708 1 alive
+party 0 0 4 cell 660 2 alive
+party 0 0 5 cell 1525 3 alive
+party 0 0 2 cell 1331 4 alive
+party 0 0 3 cell 629 5 alive
+party 0 0 4 cell 1066 6 alive
+party 0 0 5 cell 1475 7 alive
+party 0 0 2 cell 757 8 alive
+party 0 0 3 cell 759 9 alive
+party 0 0 4 cell 1726 10 alive
+party 0 0 5 cell 1930 11 alive
+party 0 0 2 cell 1462 12 alive
+party 0 0 3 cell 1471 13 alive
+party 0 0 4 cell 418 14 alive
+party 0 0 5 cell 1267 15 alive
+party 0 0 2 cell 902 16 alive
+party 0 0 3 cell 613 17 alive
+party 0 0 4 cell 864 18 alive
+party 0 0 5 cell 535 19 alive
+party 0 0 2 cell 556 20 alive
+party 0 0 3 cell 1358 21 alive
+party 0 0 4 cell 1785 22 alive
+party 0 0 5 cell 913 23 alive
 line 0 0 money 0 - -
 line 2 0 money 0 - -
 line 3 0 money 0 - -

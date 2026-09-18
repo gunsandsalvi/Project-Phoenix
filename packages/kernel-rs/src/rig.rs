@@ -192,8 +192,16 @@ mod tests {
         let plant_one = one.world.drawn.world.instruments.len();
         assert!(held_one > 0 && held_two > 0 && plant_one > 0);
         assert_ne!(
-            one.world.drawn.world.register.equity(one.a_bank_that_has_lent()),
-            two.world.drawn.world.register.equity(two.a_bank_that_has_lent()),
+            crate::instruments::equity(
+                one.a_bank_that_has_lent(),
+                &one.world.drawn.world.register,
+                &one.world.drawn.world.instruments,
+            ),
+            crate::instruments::equity(
+                two.a_bank_that_has_lent(),
+                &two.world.drawn.world.register,
+                &two.world.drawn.world.instruments,
+            ),
             "5 B4: two draws that produced identical banks are not dispersed"
         );
     }
