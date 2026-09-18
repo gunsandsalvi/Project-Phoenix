@@ -18163,3 +18163,35 @@ right not to guess: the read is now `in_order().last()`, which says what it mean
 
 **Four laws as tests. Six hundred and thirty-nine now hold; clippy clean; `phoenix-check` green over
 79 files.**
+
+---
+
+## 22b.5 — Households, employment and savings through the chronicle
+
+**What.** `draw::households_employment_and_savings`: household CELLS with drawn weights (XI-15, 5
+B1.a), each hired by a firm as a recorded relationship (§39, XI-10: an employer, a worker, a wage, a
+start date), then paid week after week, and spending most of each wage back at its employer. The
+wages are the income HISTORY an outlook is formed from (§46) — a run of weeks on different days, not
+one total on one day.
+
+**Why.** The old seed made a household's deposit the RESIDUAL of the banks' stated assets: the
+identity satisfied and the arrow backwards. Here a household has money because somebody paid it, and
+the payment is a settled two-sided instruction like any other.
+
+**The defect this item created, and the fix.** My first pass had firms and households paying each
+other in RESERVES. Every test passed, because arithmetically a reserve moves like any other unit —
+and it collapses the two-tier money system. Reserves are the central bank's liability and only banks
+hold them (Money D2); a world where a household holds them is one where no payment ever needs a bank.
+Lending, plant, inventory, wages and household spending now all move a BANK's own deposit money, and
+the test asserts both halves: the cell holds its employer's bank's money, and holds no reserves at
+all. An assertion that only checks the presence of money would not have caught this; the one that
+checks the ABSENCE of the wrong money is what makes it a VERIFY that can fail.
+
+**What was found and written down.** Cross-bank payment has no reserve leg — see `docs/IMPLEMENTATION.md`
+22b.5a, INSERTED there at its dependency position. A payment currently moves the PAYER's bank's
+deposit money, so a payee banked elsewhere simply comes to hold a deposit at the payer's bank. It
+settles and it is wrong: no bank ever loses reserves to another, so the money market has nothing to
+meet about (which is 21.77 one tier up) and a bank's liquidity is never tested by its customers'
+payments. Not chased (Law 11): the fix is one settlement rule in the wire, not a branch in the draw.
+
+**Six hundred and forty-four tests hold; clippy clean; `phoenix-check` green over 79 files.**

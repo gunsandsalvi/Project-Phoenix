@@ -770,15 +770,25 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   rejects the world, re-draws from the next seed value and logs the reason to `docs/rejections.log`.
   **A criterion that fails for every seed is a missing mechanism with a name.** Plus the regeneration
   check that keeps a snapshot an optimisation rather than a second way to state an opening.
-- [ ] 22b.3 Money and the sovereign through the chronicle: reserves issued, bills sold at auction on
+- [x] 22b.3 Money and the sovereign through the chronicle: reserves issued, bills sold at auction on
   their own dates, the central bank's holding bought. **Deletes `endowMoney`** (5 sites).
-- [ ] 22b.4 Firms, plant and inventory through the chronicle: plant bought from its maker on its
+- [x] 22b.4 Firms, plant and inventory through the chronicle: plant bought from its maker on its
   vintage date, inventory bought up the chain from somebody who made it. **Deletes `endowUnits`
   (10 sites) and `SEED_STOCK_BASIS`** — and this is where 12c.3 dies, because no firm can BUY eleven
   periods of world demand from anybody.
-- [ ] 22b.5 Households, employment and savings through the chronicle — the income history that
+- [x] 22b.5 Households, employment and savings through the chronicle — the income history that
   outlooks and votes are made of. Deletes `seed.funding`'s inversion (deposits are currently a
   residual of the banks' asset endowment: the identity satisfied and the economics backwards).
+- [ ] 22b.5a **Interbank settlement: a payment across banks moves reserves.** INSERTED here (Law 10:
+  at its dependency position, before the chronicle can tell a payment between parties banked
+  differently). Found writing 22b.5: `Draft::Paid` moves the PAYER'S bank's deposit money, so a payee
+  at another bank simply comes to hold a deposit at the payer's bank. That settles, and it is wrong:
+  Money D2 says a deposit is a claim on the bank that issued it, and a real cross-bank payment
+  extinguishes the payer's bank's deposit, creates the payee's bank's deposit, and moves RESERVES
+  from one bank to the other at the central bank. Without that leg no bank ever loses reserves to
+  another, so the money market has nothing to meet about (21.77 is the same silence one tier up) and
+  a bank's liquidity is never tested by its customers' payments. The fix is one settlement rule, not
+  a branch in the draw: the wire asks each side's bank and, when they differ, adds the reserve leg.
 - [ ] 22b.6 Delete the opening prints (22a.1): by now every market has traded in the chronicle.
   Deletes `seed.openingPrice.*`, `seed.openingWage`, `seed.openingYield`, `seed.openingRate`,
   `prices.write` from `SeedContext`.

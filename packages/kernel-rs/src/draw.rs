@@ -262,14 +262,27 @@ pub fn firms_plant_and_inventory(
     for (n, f) in made.iter().enumerate() {
         // A firm needs money before it can buy anything: its bank lent it, which is where a firm's
         // opening balance sheet actually comes from (Banks Lending).
-        let bank = d.banks[n % d.banks.len()];
+        //
+        // **Money D2: it is lent in the BANK'S OWN deposit money, not in reserves.** Reserves are the
+        // central bank's liability and only banks hold them; a firm holding them would collapse the
+        // two tiers into one, and then a payment between two customers of different banks would
+        // need no interbank settlement at all. A bank creates the deposits it lends — which is what
+        // lending is — so the money exists because somebody borrowed it.
+        let at_bank = n % d.banks.len();
+        let bank = d.banks[at_bank];
+        let bank_money = d.deposits[at_bank];
         let loan = d.world.instruments.issue(*f, ccy, Class::Claim, unit, Some(0.04), Some(Day(opens_on.0 + 730)));
         let borrowed = draw.spread(6_000.0, 0.35);
         let vintage = Day(opens_on.0 - 3_100 + (n as i64 * 90));
         d.chronicle.tell(Told {
+            at: Day(vintage.0 - 1),
+            draft: Draft::Created { issuer: bank, what: bank_money, units: borrowed },
+            why: "the bank created the deposits it was about to lend, which is what lending is",
+        });
+        d.chronicle.tell(Told {
             at: vintage,
-            draft: Draft::Lent { lender: bank, borrower: *f, loan, principal: borrowed, ccy, money: d.reserves },
-            why: "the bank lent the firm what it needed to buy its plant",
+            draft: Draft::Lent { lender: bank, borrower: *f, loan, principal: borrowed, ccy, money: bank_money },
+            why: "the bank lent the firm what it needed to buy its plant, in its own deposit money",
         });
         // **Plant bought from its maker, on its vintage date.** Every machine in this world has a
         // date and a seller, so its age is a read and not a stated `SEED_PLANT_AGES`.
@@ -284,7 +297,9 @@ pub fn firms_plant_and_inventory(
                 units: machines,
                 paid: machines * price,
                 ccy,
-                money: d.reserves,
+                // Money D2: it pays in the money its OWN bank issued. The maker thereby comes to hold
+                // a deposit at that bank, which is what being paid by somebody else's customer is.
+                money: bank_money,
             },
             why: "the firm bought its plant from the maker that built it, on its vintage date",
         });
@@ -296,6 +311,8 @@ pub fn firms_plant_and_inventory(
     for (n, f) in made.iter().enumerate().skip(1) {
         let from = made[n - 1];
         let stock = draw.spread(300.0, 0.4);
+        // The buyer pays in the money its own bank issued (Money D2).
+        let buyers_money = d.deposits[n % d.banks.len()];
         d.chronicle.tell(Told {
             at: Day(opens_on.0 - 400 + n as i64 * 20),
             draft: Draft::Created { issuer: from, what: good, units: stock },
@@ -310,10 +327,91 @@ pub fn firms_plant_and_inventory(
                 units: stock / 2.0,
                 paid: stock / 2.0 * 1.1,
                 ccy,
-                money: d.reserves,
+                money: buyers_money,
             },
             why: "the firm bought its opening stock from the firm that made it",
         });
+    }
+
+    made
+}
+
+/// 22b.5: **households, employment and savings through the chronicle** — the income history that
+/// outlooks and votes are made of (§46, XI-17).
+///
+/// **Deposits are not the residual of the banks' asset endowment.** In the old seed a household's
+/// deposit was whatever was left over once the banks' assets had been stated: the identity satisfied
+/// and the economics backwards. Here a household has money because **it was PAID** — its employer
+/// paid it a wage, out of the employer's own account, week after week — and what it did not spend is
+/// what it saved. The arrow runs the way it runs in the world.
+pub fn households_employment_and_savings(
+    d: &mut Drawn,
+    firms: &[PartyId],
+    cells: usize,
+    weeks: i64,
+    seed_value: u64,
+    opens_on: Day,
+) -> Vec<PartyId> {
+    assert!(cells > 1, "5 B1: one household cell is not a distribution, and every decision here is a threshold");
+    assert!(weeks > 1, "22b.5: an income history of one week is not a history to form an outlook from");
+    assert!(!firms.is_empty(), "39: employment without an employer is not employment");
+    let mut draw = Draw::from(seed_value ^ 0x0110_05E4_01D5);
+    let region = d.region;
+    let ccy = d.ccy;
+
+    // XI-15, 5 B1.a: a cell is a named party with a WEIGHT — how many real households it stands for.
+    // The weights sum to the population, and that sum is a read rather than a target.
+    let mut made = Vec::with_capacity(cells);
+    for n in 0..cells {
+        // 5 B4: dispersed. A sector of equals never produces a market, and a world where every
+        // household is the same one cannot have a mean-preserving spread cause a default (§41 A2.g).
+        let weight = 200 + draw.below(1_800) as u32;
+        let h = d.world.parties.add(
+            kinds::HOUSEHOLD,
+            region,
+            d.banks[n % d.banks.len()],
+            Representation::Cell,
+            weight,
+            n as u32,
+        );
+        made.push(h);
+    }
+
+    // §39, XI-10: **employment is a relationship**, recorded — a firm, a worker, a wage, a start date.
+    // The wage that follows is its own told moment, week after week, which is the income history.
+    for (n, h) in made.iter().enumerate() {
+        let employer = firms[n % firms.len()];
+        // Money D2: wages are paid in the money the EMPLOYER'S bank issued — the household comes to
+        // hold a deposit at that bank, which is what being paid is. Reserves are the central bank's
+        // liability and only banks hold them; a household holding them would be the two tiers
+        // collapsed into one, and then no payment in this world would ever need a bank.
+        let employers_bank_money = d.deposits[(n % firms.len()) % d.banks.len()];
+        let wage = draw.spread(40.0, 0.45);
+        let started = Day(opens_on.0 - weeks * 7);
+        d.chronicle.tell(Told {
+            at: started,
+            draft: Draft::Hired { employer, worker: *h, wage },
+            why: "the firm hired the household, which is a relationship and not a number on a firm",
+        });
+        for week in 0..weeks {
+            let day = Day(started.0 + week * 7);
+            // The wage is REAL MONEY leaving the employer's account and arriving in the household's
+            // (Law 5). A household that was never paid has no money, and no outlook either.
+            d.chronicle.tell(Told {
+                at: day,
+                draft: Draft::Paid { from: employer, to: *h, amount: wage, ccy, money: employers_bank_money },
+                why: "the firm paid the week's wages out of its own account",
+            });
+            // §41 C2: what it did not spend is what it saved — and the spending goes back to a firm,
+            // which is where the firm got the money to pay the next week's wages (§32 F1: spending is
+            // somebody's income). The circuit closes because both legs are told.
+            let spends = wage * (0.55 + (draw.below(400) as f64) / 1_000.0);
+            d.chronicle.tell(Told {
+                at: Day(day.0 + 1),
+                draft: Draft::Paid { from: *h, to: employer, amount: spends, ccy, money: employers_bank_money },
+                why: "the household spent most of its wage, which is the firm's income",
+            });
+        }
     }
 
     made
@@ -508,6 +606,86 @@ mod tests {
             })
             .sum();
         assert!(held > 0.0, "a firm that opens holding nothing bought nothing");
+    }
+
+    #[test]
+    fn a_household_has_money_because_it_was_paid_and_not_as_a_residual() {
+        // 22b.5: the old seed made a deposit the leftover of the banks' stated assets — the identity
+        // satisfied and the economics backwards. Here the arrow runs the way it runs in the world.
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        let cells = households_employment_and_savings(&mut d, &firms, 3, 6, 1, Day(0));
+        let done = replay(
+            &d.chronicle,
+            7,
+            &mut d.world.register,
+            &mut d.world.journal,
+            &mut d.world.wire,
+            d.world.settled_kind,
+            d.world.failed_kind,
+        );
+        assert!(done.refused.is_empty(), "the draw told a moment the world could not live: {:?}", done.refused);
+        // Every cell holds money, and every unit of it arrived as a wage somebody paid. The money it
+        // holds is its EMPLOYER'S BANK'S deposit money (Money D2) — not reserves, which are the
+        // central bank's liability and are held by banks alone.
+        for (n, h) in cells.iter().enumerate() {
+            let employers_bank_money = d.deposits[(n % firms.len()) % d.banks.len()];
+            assert!(d.world.register.quantity(d.world.register.row(*h, employers_bank_money)) > 0.0);
+            assert_eq!(
+                d.world.register.quantity(d.world.register.row(*h, d.reserves)),
+                0.0,
+                "a household holding reserves is the two tiers collapsed into one"
+            );
+        }
+    }
+
+    #[test]
+    fn the_income_history_is_a_run_of_weeks_and_not_one_moment() {
+        // §46: an outlook is formed adaptively from a party's OWN history, so a household that was
+        // paid once has nothing to form one from. The chronicle gives it a run of weeks.
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        let cells = households_employment_and_savings(&mut d, &firms, 3, 8, 1, Day(0));
+        let wages: Vec<&Told> = d
+            .chronicle
+            .told()
+            .iter()
+            .filter(|t| matches!(t.draft, Draft::Paid { to, .. } if cells.contains(&to)))
+            .collect();
+        assert_eq!(wages.len(), 3 * 8, "every cell was paid every week of its history");
+        // And the weeks are different days, which is what makes it a history rather than a total.
+        let mut days: Vec<i64> = wages.iter().map(|t| t.at.0).collect();
+        days.sort_unstable();
+        days.dedup();
+        assert!(days.len() > 1);
+    }
+
+    #[test]
+    fn a_household_cell_is_a_weight_and_the_weights_are_dispersed() {
+        // XI-15, 5 B1.a, 5 B4: a cell is one possible household with a multiplicity, and a sector of
+        // equals never produces a market — nor a mean-preserving spread that can cause a default.
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        let cells = households_employment_and_savings(&mut d, &firms, 5, 4, 1, Day(0));
+        let weights: Vec<u32> = cells.iter().map(|h| d.world.parties.weight(*h)).collect();
+        assert!(weights.iter().all(|w| *w > 0), "a cell of nobody is not a cell");
+        let first = weights[0];
+        assert!(weights.iter().any(|w| *w != first), "a sector of equals never produces a market");
+    }
+
+    #[test]
+    #[should_panic(expected = "not a history to form an outlook from")]
+    fn an_income_history_of_one_week_is_refused() {
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        households_employment_and_savings(&mut d, &firms, 3, 1, 1, Day(0));
+    }
+
+    #[test]
+    #[should_panic(expected = "employment without an employer")]
+    fn employment_without_an_employer_is_refused() {
+        let mut d = drawn();
+        households_employment_and_savings(&mut d, &[], 3, 6, 1, Day(0));
     }
 
     #[test]
