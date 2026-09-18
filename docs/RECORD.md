@@ -19543,3 +19543,61 @@ parts and the units move when the last of it goes, and the two refusals.
 
 **685 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 61 of 179.
+
+---
+
+## 21.119–21.121 — the rule becomes a check
+
+**What.** One closed by building the thing it asked for, two re-placed, and the plan's own rule is now
+enforced by `npm run check` instead of by whoever is reading.
+
+### 21.137's rule is a check
+
+*A finding leaves `docs/IMPLEMENTATION.md` only by being placed* (`CLAUDE.md`). The rule was broken
+**seventeen times at once** (21.137), then **twice more by the sweep that found them**, then **once
+more by the very next commit**, which closed 21.113 while 21.117 pointed at it. Three rounds, two of
+them by the hand doing the sweeping. The digest's own line applies: *when a rule is broken twice,
+write the check.*
+
+`tools/plan-progress.ts checkPositions` refuses a stated position that names a closed item, an item
+neither the plan nor the worklist knows, or a finding that has itself closed. `checkPlan` runs it, so
+`npm run check` gates on it. Two things it gets right are the two that were got wrong:
+
+- **a finding is its opening line AND the continuation lines under it**, which is how the hand sweep
+  lost 21.90 and 21.93;
+- **the operative position is the LAST one stated**, because a re-read appends — a finding keeps what
+  it said and adds what it now says. That convention was already how the file was written; the check
+  makes it load-bearing.
+
+It caught two on its first run — 21.62 and 21.117, both of which ended with the original note's old
+position after the new one — and it fails when the rule is broken, checked by breaking it.
+
+### 21.119 — the test that proves it
+
+The finding asked for a test that asserts the RULE against a fixture instead of encoding the state of
+the plan on the day it was written. It closes by being what asked for exactly that: the stale file
+went with the TypeScript engine and **took the whole of `tools/test/` with it**, so `plan-progress`,
+`coverage-existence` and `spec-coverage` were three unchecked programs `npm run check` believed —
+which is 21.94's rule (a check that cannot fail is not a check) one layer up.
+
+`tools/plan-progress.test.ts`: five cases, every one against a fixture and **none naming a real
+item**, asserting that an item with a section is counted from its section, that a declared closed
+count is read rather than inferred and is not a step of the next item, and 21.137's two rules above.
+`npm run check:tools` runs them on node's own runner through `tsx`, and it is in `npm run check`.
+
+### Re-placed (two), both re-positioned with what they are really about
+
+- **21.120** — the ladder's rungs are not a scaling series. The ladder went with the engine and the
+  RULE is the finding: **a rung that re-draws the world measures the draw, not the size.** A series
+  must hold the world's shape fixed — the same instruments per firm, the same books per instrument —
+  or plot against the product the work is over (parties × books). 0g closed; → 23, as a precondition
+  on that item's readings rather than a defect anywhere.
+- **21.121** — the world stopping in period 1 on a CDS order of 3.1 × 10¹⁶ units. The chain is gone
+  (no `sizeOf` making an order `12.5 × equity` here) and the arithmetic now refuses itself by name in
+  `clearing::whole_pieces` with 21.1's citation, rather than by a bound. What survives is the sentence
+  it ends on, which it got right: **nothing sizes how much plant a firm ends up with**, and 81,800×
+  the median firm is what that absence produced. → the seeding, beside 21.98 and 21.6: a quantity a
+  seed states is a quantity somebody decided, where 5 E1 wants an outcome.
+
+**685 tests hold, and 5 tool tests; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green.** Item 21 stands at 62 of 179.

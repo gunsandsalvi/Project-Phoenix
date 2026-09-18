@@ -153,6 +153,96 @@ export function itemProgress(): ItemProgress[] {
   return out;
 }
 
+/** A finding whose stated position names something that cannot take it. */
+export interface BadPosition {
+  readonly finding: string;
+  readonly target: string;
+  readonly why: string;
+}
+
+/**
+ * **A FINDING LEAVES THIS FILE ONLY BY BEING PLACED** (`CLAUDE.md`), and a placement into an item
+ * that then closes without it is the silent drop that rule exists to stop.
+ *
+ * 21.137 found seventeen of them at once — positions pointing at 18, 18.0, 18.4, 18.5, 18a, 18a.1,
+ * 16.5, 17.0, 19 and 19.9, every one closed — and the sweep that found them MISSED TWO, because it
+ * read only the line a finding begins on and a position written on a continuation line was invisible
+ * to it. Then the next commit broke the rule again by closing 21.113 with 21.117 pointing at it.
+ * Three times, two of them by the hand doing the sweeping: a rule that can be a check should be one.
+ *
+ * **The operative position is the LAST one stated**, because a re-read appends: a finding keeps what
+ * it said and adds what it now says, so the newest sentence is the live one and the earlier ones are
+ * history. That is a convention this check makes load-bearing, which is the point of writing it down
+ * here rather than in a comment beside one finding.
+ */
+/** Where one finding says it is placed: its id, and the operative target, if it states one. */
+export interface StatedPosition {
+  readonly finding: string;
+  readonly target: string;
+}
+
+/**
+ * The parse, apart from the resolving, so the RULE can be asserted against a fixture rather than
+ * against today's plan (21.119: that is what a test of this should do, and what the deleted one
+ * did not). The two things it gets right are the two that were got wrong:
+ *
+ * - a finding is its opening line **and the continuation lines under it**, because a position
+ *   written on the fourth line is the finding's and reading only the first line lost two of them;
+ * - the operative position is the **last** one stated, because a re-read appends.
+ */
+export function positionsIn(text: string): StatedPosition[] {
+  const findings: { id: string; text: string }[] = [];
+  for (const line of text.split('\n')) {
+    const opens = /^- \[[ x]\] ([0-9][0-9a-zA-Z.]*)/.exec(line);
+    if (opens?.[1] !== undefined) {
+      findings.push({ id: opens[1], text: line });
+      continue;
+    }
+    const last = findings[findings.length - 1];
+    if (last !== undefined && /^\s+\S/.test(line)) last.text += `\n${line}`;
+  }
+  const out: StatedPosition[] = [];
+  for (const f of findings) {
+    const stated = [...f.text.matchAll(/[Pp]ositioned (?:at|with) ([0-9][0-9a-z]*(?:\.[0-9]+)?)/g)];
+    const target = stated[stated.length - 1]?.[1];
+    if (target !== undefined) out.push({ finding: f.id, target });
+  }
+  return out;
+}
+
+export function checkPositions(): BadPosition[] {
+  const text = readFileSync(resolve(root, 'docs', 'IMPLEMENTATION.md'), 'utf8');
+  const items = new Map(itemProgress().map((i) => [i.id, i]));
+  const open = new Set(
+    text
+      .split('\n')
+      .map((l) => /^- \[ \] ([0-9][0-9a-zA-Z.]*)/.exec(l)?.[1])
+      .filter((id): id is string => id !== undefined),
+  );
+
+  const out: BadPosition[] = [];
+  for (const f of positionsIn(text)) {
+    const target = f.target;
+    // A position naming a finding rather than an item: it must still be an open step. This is the
+    // one that caught 21.117 pointing at 21.113 one commit after 21.113 closed.
+    if (/^21\.[0-9]+$/.test(target) && target !== f.id) {
+      if (!open.has(target)) {
+        out.push({ finding: f.id, target, why: 'names a finding that is closed or was never written' });
+      }
+      continue;
+    }
+    // Otherwise it names an item, or a step of one: `23.3` is item 23, `18a.1` is item 18a.
+    const item = target.replace(/\.[0-9]+$/, '');
+    const known = items.get(item);
+    if (known === undefined) {
+      out.push({ finding: f.id, target, why: `names ${item}, which neither the plan nor the worklist knows` });
+    } else if (known.closed) {
+      out.push({ finding: f.id, target, why: `names ${item}, which is closed` });
+    }
+  }
+  return out;
+}
+
 export function render(items: readonly ItemProgress[]): string {
   const total = items.reduce((s, i) => s + i.steps, 0);
   const done = items.reduce((s, i) => s + i.done, 0);
@@ -230,6 +320,15 @@ export function updatePlan(): string {
 
 /** `--check`: fail when the block in docs/PLAN.md is stale instead of rewriting it (used by `npm run check`). */
 export function checkPlan(): string {
+  const dropped = checkPositions();
+  if (dropped.length > 0) {
+    const said = dropped.map((d) => `  ${d.finding} -> ${d.target}: ${d.why}`).join('\n');
+    throw new Error(
+      `a finding leaves docs/IMPLEMENTATION.md only by being PLACED, and ${dropped.length} ` +
+        `${dropped.length === 1 ? 'position names' : 'positions name'} somewhere that cannot take ` +
+        `it (21.137):\n${said}`,
+    );
+  }
   const path = resolve(root, 'docs', 'PLAN.md');
   const text = readFileSync(path, 'utf8');
   const { a, b } = markers(text);
