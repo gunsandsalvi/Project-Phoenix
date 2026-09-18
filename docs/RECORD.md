@@ -17038,3 +17038,35 @@ accounting model** and its price carries no information the accounts did not alr
 
 **Five laws as tests. Seventy-nine now hold; clippy is clean; `phoenix-check` is green over 28
 files.**
+
+# 0g.42 — loans are rows (Banks Lending F1)
+
+@spec Banks Lending F1, F1.a, F2, F3 · Corporate Credit E1, E2, E3, E5.a · XI-1 · Law 4, Law 6, Law 19
+
+**F1.a: no "loan book" number that is not the sum of loans.** A book with no loans in it cannot
+default, cannot be provisioned and cannot be sold. Every loan a bank makes — corporate, pooled,
+mortgage, consumer, and the central bank's loan to it — is a row with a lender of record, a borrower
+and its own terms, in the same register as anything else it owns.
+
+**So there is no `book_value` field in this module.** `outstanding()` WALKS the rows with the dust of
+its own walk, because a stored total is a second writer of one fact (Law 4) and the first thing that
+drifts (Law 19). The only door that makes the book bigger is a loan to somebody.
+
+- **F3, concentration is answerable** because the rows name the borrower. A large-exposure limit
+  that BINDS needs this underneath it; a book that was a scalar could not answer it at all.
+- **E3, no risk transfer without a transferee.** `transfer` moves the lender of record — **there is
+  no door that simply removes a row from a book**, so if the bank's exposure fell, somebody named
+  picked it up and the total is unchanged.
+- **E1, a pool IS its rows.** A pool whose losses come from a loss rate has nothing to seize and
+  nothing to disagree with, and tranching a loss rate yields senior notes that can never be touched
+  (XI-1). `pooled` is a READ over the rows and stores no second copy of them.
+- **E5.a**, the loss that reaches capital is principal minus recovery minus **provisions already
+  taken** — subtracted here rather than left to a caller to remember, because double-counting a
+  provision flatters capital by exactly that provision, which the test states both ways.
+
+**Law 6 shows up in an unusual place:** paying more than is owed is not clamped to the balance. It
+is a mistake, and the arithmetic says so — a prepayment of what does not exist is not a smaller
+payment.
+
+**Eight laws as tests. Eighty-seven now hold; clippy is clean; `phoenix-check` is green over 29
+files.**

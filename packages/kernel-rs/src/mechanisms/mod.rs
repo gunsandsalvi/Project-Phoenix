@@ -4,6 +4,7 @@
 
 pub mod capital_programme;
 pub mod expectations;
+pub mod lending;
 pub mod loss;
 pub mod money;
 pub mod sovereign;
