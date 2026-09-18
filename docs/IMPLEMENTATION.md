@@ -234,6 +234,8 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21e | There is no registry — four homeless nouns name it | after 21d: the ontology register is what found it |
 | 21f | Three facts the modules keep and the kernel does not | with 21e, and for the same reason |
 | 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
+| 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
+| 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
@@ -258,7 +260,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 27** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 39** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -276,6 +278,12 @@ test for *did this mark move* replaced by the dust of the subtraction it came fr
 a party admitted at a bank that issues no money now refused at ENTRY rather than at its first payment.
 Six are verified absent. **21.13's shapes half is the one that grew**: nothing in the engine declares a
 parameter at all, which is item 21g.
+
+**And 21.17 through 21.31** (`docs/RECORD.md`, *21.17–21.31*): twelve verified absent, and the two
+that were not are absences rather than defects, so each became an item. **21h**: the five cell events
+are declared, guarded, and `reweigh` is called by nothing — not one weight in this world has ever
+changed, which is what 21.20 turns out to be a consequence of. **21i**: there is no ground anywhere,
+which is what 21.27–21.30 are four findings about.
 
 
 - [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
@@ -391,19 +399,14 @@ and costs over an arbitrary world, which is what it is for.
   country's; one tracker for the world is a fund whose mandate names a thing that does not exist.
   It stays open and it is the seeding's to honour, not this engine's to fix — there is nothing here
   that draws a tracker.
-- [ ] 21.17 Freight: the storm's loss leg emitted by `sail` or its docstring deleted; `costOf` crew cost = the carrier's wage bill; `legsBetween` computed once at assembly; `load` uses the solver's fills; `Math.ceil/exp/pow` → `core/num`.
-- [ ] 21.18 `fx-derivatives`: read a public event through `lastPublicAbout`, never a view of an arbitrary party.
-- [ ] 21.20 `expectations`: the book of outlooks is keyed by party id and follows no cell event — a cell split off its parent by a hire, a release or a promotion starts with no outlook although its people have the parent's history, and a merge drops the arriving cell's; XI-15 says a cell is one group with one history, so the offspring's book is the parent's at the split and a merge weighs the two by their people (`observation.test.ts` skips the cells born after a statement for this; 12d.1).
-- [ ] 21.22 `world/world.ts runOne`, `world/module.ts speculative`: WHETHER AN ORDER IS A VIEW is a fact about the ORDER, and the flag sits on the participant. A firm's bid for an input names a level from what it thinks the output will fetch less the wages a unit still needs — its own money behind its own opinion — and its ask for the output is its cost (F15), which is not; one participant posts both, so the firms' participant is not flagged and every wholesale goods book journals `market.noView` with firms bidding in it (`no-view.test.ts`, 12d.4: `bread`, `flour`, `power`, `itServices`, `facilities`, `chemicals`, `meat`, `cloth`, `steel`… in period 30 of the rig). The order carries the mark (`Order.view`), the participant sets it per order, the kernel counts orders and the participant flag goes; the households' saver and the merchants keep saying what they already say, per order. Until then the census counts a firm's view as none and 12d.4's test is red.
-- [ ] 21.23 `registry/capital.ts requiredOnEquity` reads what a company's equity costs as its earnings yield — its own earnings outlook over what the market says it is worth — so a listed company that has not yet earned is told its equity costs NOTHING, and the listed insurer of `quote-37` quoted a price of nothing for it in two periods of six (14.4). What shareholders require of a claim is never below what the curve pays them for holding nothing of it; the read wants the floor the market itself sets, not a yield of nothing.
-- [ ] 21.24 `insurers/pensions.ts sponsorshipRowKind` carries no value: a pension fund's shortfall sits on the fund's equity and on the members' as the mark moves, and on the SPONSOR only as each call arrives — an employer standing behind a scheme short by a year of its payroll shows nothing of it until it pays (Insurers D3, Law 5, IAS 19 in the world this reflects). The covenant is a row the kernel can value — the sponsor's share of the fund's shortfall, read off the fund's marks and its equity in the same pass — and the circularity (the covenant is an asset of the fund whose shortfall it values) wants the valuation to read the fund's equity BEFORE its covenants, which `RowValuationReads` does not yet offer (14.6).
-- [ ] 21.25 `insurers/pensions.ts pensionPerMember`: a pension indexed to the trade most of a place worked in when the promise opened is worth nothing and pays nothing in a period nobody works in that trade — the going rate is a read of the rows and there are none — and the row says so only in its mark. A promise indexed to a rate is a promise indexed to the LAST rate struck until a new one is (Law 8: a level with no history is a lie, and this is the reverse — a history with no level); `goingRatePublishedAt` has the last print and the read should fall back to it, dated (14.6).
-- [ ] 21.26 `funds/index.ts`: the money fund of a bank winds up at a NAV of NOTHING (`fund.money.bank.a`, `exp-f`, period 16 — every holder queued at a price of nothing by `queueEverybody`), and `redeem` divided what it could pay by that price, which stopped the world. 14.7 made a share struck at nothing owed nothing, said on the record; what is NOT answered is why the pool's whole book came to nothing — the paper it held and who failed on it — and what a holder of a share worth nothing in a pool that has ceased is left holding (XI-3: the pool's death has to have a destination for its issued line).
-- [ ] 21.27 `land/index.ts` seed: the ground under the opening's plant is endowed to its holder at nothing and NOT pledged to the vintages standing on it — a seed states stocks and cannot write a lien — so a firm can sell the hectares from under its opening plant while it cannot from under a vintage it commissioned (15.1). The opening is where 22a says every opening belongs; the lien wants a seed door that can state an encumbrance the world opened with (XI-8's `openCommitment` for a lien).
-- [ ] 21.28 `registry/capital.ts project`, `capital-programme/index.ts groundToCarry`: machines the programme refuses to stand — no ground under them — stay as goods the firm holds, and the project does not count them: next period it bids for the ground and then for machines AGAIN, so a firm short of ground buys its plant twice. The project's plant need wants to read what it already holds of the capital good (`view.quantity(goodId(kind.madeFrom, region))`) before it bids (15.1).
-- [ ] 21.29 `small-business`: a pool of small firms holds no ground and its rooms stand on nobody's — the seed gives it plant and no hectares, `commissionOne` refuses nothing of it because a pool builds through no purchase the programme reads, and a room a pool rents is a LEASE, which is 15.3's (commercial property). Until then the ground under every pool's plant is counted as the authority's unbuilt ground (15.1).
-- [ ] 21.30 `registry/ports.ts`, `freight/index.ts berthFree`: a quay has an owner and a berth and the owner EARNS NOTHING — port dues are a price and a price is cleared (Law 3), which wants a berth session per quay per period that carriers bid in for the calls they want to make, the authority offering its berths, congestion then a price as well as a queue; until then a call is free and the queue is the whole of what a berth does (15.2).
-- [ ] 21.31 `test/freight.test.ts`: three older tests are red at 15.1's HEAD and were not counted in the eighteen-suite baseline — `runs every leg every period and reports the outcome of each` (no leg in `byLeg`), `prints the same grade separately in every place that makes it` and `sources locally where the thing is made` (one place where two were expected). The rig's legs and places have moved under them since 13c; whether the world or the assertion is stale is a read to make against `legsBetween` and the draw's regions (15.2 found them and did not chase them).
+- [ ] 21.20 `expectations`: the book of outlooks is keyed by party id and follows no cell event.
+  **Re-read: it survived the port exactly, and it has NO SITE.** `Outlooks` is keyed by
+  `(party, about)` and nothing touches it at a weight event — so a cell split off its parent would
+  start with no outlook although its people carry the parent's history, and a merge would drop the
+  arriving cell's, where XI-15 says a cell is one group with one history. It cannot be fixed here:
+  **nothing performs a merge**, because the five cell events never fire at all (21h). A `merged` read
+  written for a caller that does not exist is `WorkInProgress` again — a type nothing constructs.
+  It closes as 21h.3.
 - [ ] 21.32 `property/index.ts tenantOrders`, `firms/decide.ts`: no firm's plan binds on premises in thirty periods of the rig — every `firms.plan` says `bound: demand` or `bound: labour` — so the lettings books print `noDemand` every period and the only leases signed are a test's. The tenant's reason is built; what is missing is a firm short of ROOM: the service lines (13c.2) whose recipes take premises open holding their own, and nothing makes a firm outgrow them. When a line's demand outruns its room (22.3's shops with buyers), the bid is there (15.3).
 - [ ] 21.33 `property/index.ts collect`: a bank resolution merges the landlords of the failed bank into another bank's cell (`weight: merge`), and a lease signed with the smaller cell then comes to less than a piece of money a landlord — said as `property.rentPaid` unpaid, never fixed. A lease is with EVERY member of the cell alike (XI-15), and a merge changes who that is; the honest row is one per landlord member, which is a cell event the register does not yet have (a lease that splits with the cell, as 21.20 asks of outlooks) (15.3).
 - [ ] 21.34 `property/index.ts buildOf`: a landlord builds by buying buildings from whoever sells them in its place, and the rig has no builder selling buildings — the `building` good's market prints nothing — so its pace is a bid nobody fills and its ask for a loan is against a purchase that never happens. The builder is 13c.2's construction line; until it sells, no building is built to let after the opening (15.3).
@@ -684,6 +687,80 @@ these are numbers somebody DID store, in the one place the law says not to.
 
 **Exit.** Law 2's five kinds are answerable for every number the engine acts on, and the count of
 shapes is a number that can fall.
+
+---
+
+## 21h. The five cell events never fire
+
+**INSERTED here (Law 10), beside 21e–21g, found re-reading 21.20.** The third register reporting
+nothing, and the largest of the three.
+
+XI-15 is the representation every mass sector stands on: a cell is a named party with an integer
+WEIGHT, and **a weight changes only by entry, death, promotion, merge and the crossings the kernel
+reads at revaluation**. `Parties::reweigh` takes a `WeightEvent` and refuses a weight written outside
+the five, which is the guard working. **And `grep reweigh(` over the engine returns one hit: its own
+definition.** Not one weight in this world has ever changed.
+
+So the whole of XI-15's population dynamics is declared and unreached:
+
+- **no entry** — a cell's people never grow, so `world-runs` opens with 1,286 household cells of a
+  drawn weight and closes with the same 1,286 of the same weight;
+- **no death by weight** — a cell loses members only by the party ceasing entirely, which is a cell
+  of two hundred people dying at once;
+- **no promotion** — XI-15's boundary between the named and the represented *is not a modelling
+  decision but a SIZE, and it moves*; here it cannot, so `Small-Business Pools E4`'s *no constant
+  composition by construction* is violated in the one direction nothing checks;
+- **no merge**, and **no crossing** — the read the kernel is supposed to take at revaluation.
+
+**21.20 is a consequence and it is re-marked, not closed.** Its defect survived the port exactly:
+`Outlooks` is keyed by `(party, about)` and follows no cell event, so a cell split off its parent
+would start with no outlook although its people carry the parent's history, and a merge would drop
+the arriving cell's. XI-15: a cell is one group with one history. **It cannot be fixed here** — there
+is no site, because nothing performs a merge — and a `merged` read written for a caller that does not
+exist is the `WorkInProgress` defect again (a type nothing constructs).
+
+- [ ] 21h.1 **Entry and death move a weight**, each an event with a cause, and the population is a
+  read of the cells rather than a number anybody keeps.
+- [ ] 21h.2 **Promotion**: a cell that outgrows the represented tier becomes a named party, which is
+  what makes the boundary a size and not a decision (XI-15, Small-Business Pools A6.c).
+- [ ] 21h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
+  receiving cell's by their people, because one group has one history.
+- [ ] 21h.4 **The crossing the kernel reads at revaluation**, which is the one of the five the kernel
+  itself owns.
+
+**Exit.** A weight in this world changes, every change names its event, and the population is a read.
+
+---
+
+## 21i. There is no ground
+
+**INSERTED here (Law 10), named by 21.27–21.30, which are four findings about one absence.** A
+missing sector is an ITEM, not a finding (`CLAUDE.md`).
+
+`grep land|ground|hectare|berth|quay` over the engine returns nothing but the word "lands" in prose.
+There is no land, no ports and no premises in this world at all — so the four findings measured on the
+old engine describe a subsystem that has no Rust counterpart to be wrong:
+
+- **21.27** the ground under the opening's plant endowed at nothing and not pledged to the vintages
+  standing on it;
+- **21.28** machines the capital programme refuses to stand because there is no ground under them,
+  left as goods;
+- **21.29** a pool of small firms holding no ground, its rooms standing on nobody's;
+- **21.30** a quay with an owner and a berth whose owner earns nothing — **a price that is not
+  cleared** (Law 3), which is the sharpest of the four and survives as a rule whatever builds it.
+
+What the absence costs is not small: 33 A4 makes capital **specific in kind**, and a use that needs
+several kinds is limited by the scarcest — ground is the one that is scarce everywhere and priced
+nowhere. Without it a firm's plant stands on nothing, land rent does not exist, and the one asset
+whose supply is genuinely fixed cannot bind.
+
+- [ ] 21i.1 **Ground is held like anything else**: a named holder, a register row, a place.
+- [ ] 21i.2 **Plant stands on it**, and a vintage commissioned without it is refused rather than
+  quietly built (33 A4).
+- [ ] 21i.3 **A quay's owner earns what a berth clears at**, because a price is cleared or it is not
+  a price (Law 3). Same for a room: rent is a cleared price, not a stated one.
+
+**Exit.** The four findings have a subsystem to be about, and each is re-read against it.
 
 ---
 

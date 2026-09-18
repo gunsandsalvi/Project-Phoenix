@@ -19147,3 +19147,60 @@ the one place the law says not to. **Item 21g**, inserted beside 21e and 21f.
 
 **679 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 27 of 177, and 21.1 through 21.16 are done.
+
+---
+
+## 21.17–21.31 — twelve absent, and two absences that became items
+
+Fifteen findings re-read in number order. **Not one had a live defect to fix**, and that is the
+result: twelve died with the files they named, and the two that survived are not defects at all —
+they are subsystems this engine does not have, which `CLAUDE.md` says is an ITEM and not a finding.
+
+### Verified absent (twelve)
+
+| | |
+|---|---|
+| 21.17 | freight's storm leg, crew cost, `legsBetween`, `Math.ceil` — the file is gone and there is no `.ceil()` in the engine |
+| 21.18 | *read a public event through `lastPublicAbout`, never a view of an arbitrary party* — **absent by construction**: `MechanismContext` has no door that builds a view of a party at all, so the thing the finding asks for cannot be written |
+| 21.22 | the speculative flag sitting on the participant — `Order` has no such flag and neither has `Participant`; the CAPABILITY is missing rather than misplaced, and that belongs to 22c, which is about what a party posts |
+| 21.23 | `requiredOnEquity` reading a cost of equity off an earnings yield — `at_the_margin` takes the cost of equity as an INPUT and derives nothing; what is missing is that nothing produces it |
+| 21.24, 21.25 | the pension sponsor's row and a pension indexed to a trade nobody works in — there is no pensions module |
+| 21.26 | a money fund winding up at a NAV of nothing, and `redeem` DIVIDING by it — `redeem` multiplies, and `nav` is `Option`, so a fund with no shares has no NAV rather than a NAV of zero |
+| 21.27–21.30 | four findings about ground — see 21i |
+| 21.31 | three red tests in a file that went with the rig |
+
+### 21h — the five cell events never fire
+
+Found re-reading 21.20, and it is **the third register reporting nothing**, after the ontology
+register (21d.1b) and the parameter register (21g).
+
+XI-15 is the representation every mass sector stands on: a cell is a named party with an integer
+weight, and a weight changes **only** by entry, death, promotion, merge and the crossings the kernel
+reads at revaluation. `Parties::reweigh` takes a `WeightEvent` and refuses a weight written outside
+the five — the guard working. **And `grep reweigh(` over the engine returns one hit: its own
+definition.** Not one weight in this world has ever changed.
+
+So no entry, no death by weight (a cell loses members only by the whole party ceasing, which is two
+hundred people dying at once), no promotion — and XI-15 is explicit that the boundary between the
+named and the represented *is not a modelling decision but a SIZE, and it moves* — no merge, and not
+the crossing the kernel itself owns.
+
+**21.20 is a consequence, and it is re-marked rather than closed.** Its defect survived exactly:
+`Outlooks` is keyed by `(party, about)` and follows no cell event. It **cannot be fixed here**,
+because nothing performs a merge — and a `merged` read written for a caller that does not exist is
+the `WorkInProgress` defect again, a type nothing constructs. It closes as 21h.3.
+
+### 21i — there is no ground
+
+`grep land|ground|hectare|berth|quay` over the engine returns nothing but the word "lands" in prose.
+21.27–21.30 are four findings about one absence, and what the absence costs is not small: 33 A4 makes
+capital **specific in kind**, and a use that needs several kinds is limited by the scarcest — ground
+is the one that is scarce everywhere and priced nowhere. Without it a firm's plant stands on nothing,
+land rent does not exist, and the one asset whose supply is genuinely fixed cannot bind.
+
+21.30 is the sharpest and survives as a rule whatever builds it: **a quay has an owner and a berth and
+the owner earns nothing**, which is a price that is not cleared (Law 3).
+
+**679 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 39 of 177; 21.1 through 21.31 are done but for 21.6 and 21.20, each of which says what it is
+waiting on.
