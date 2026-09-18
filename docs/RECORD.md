@@ -17222,3 +17222,38 @@ short.
 
 **Eleven laws as tests. A hundred and seventeen now hold; clippy clean; `phoenix-check` green over
 35 files.**
+
+# 0g.42 item 10 — the cost of capital, the transmission joint (XI-4)
+
+@spec XI-4 · Banks Lending C, D · 46 A1 · Law 3, Law 4, Law 6, Law 7, Law 19
+
+**This is the chain the whole model exists to have**: a financial price changes, somebody's cost of
+capital changes, a real decision changes, output changes with a lag. Two of XI-4's three joints are
+here; the third — decision to output — belongs to the firm's own production.
+
+**Joint one: a bank prices a loan from ITS OWN economics.** *A bank with no cost-of-funds term
+prices every loan as though it funded at the policy rate whatever its own position* — and then
+nothing about that bank's funding condition can ever reach a borrower. The test is two banks facing
+the same market, differing only in their own deposit base, and the borrower pays the difference.
+
+**One rate per liability** is the corollary and it is Law 4: a liability costed one way for a
+reported margin and another for the cash that actually leaves is two prices for one thing, and the
+decision reads whichever it happens to reach. `Funding::blended` is the one writer, and there is no
+second formula. A bank that funds with nothing has **no** cost of funds — answering zero would say
+it funds for free, and somebody would price a loan off that.
+
+**Joint two: investment is a PROJECT with a return and a hurdle.** The cost comes from the markets —
+**at the margin, NOW, not the average coupon on debt already outstanding**, which is a price struck
+in the past and cannot transmit anything that has happened since (Law 19). The hurdle and the
+horizon are the management's own, and the test shows a patient management and an impatient one
+deciding differently on an identical project in identical markets — which is what makes them
+decisions. *Investment as a rate on revenue, however many multipliers are attached, is this joint
+deleted.* Law 6: a project that does not clear is not done smaller; it is not done.
+
+**A test of mine failed on floating point and the fix was Law 7 rather than a band.** I compared two
+rates by exact equality; the difference was 0.024000000000000007. The assertion now carries the DUST
+of that arithmetic — terms × ε × Σ|magnitudes| — which is what the law says a tolerance is. Asserting
+a float without its dust is the same defect as widening one, seen from the other side.
+
+**Six laws as tests. A hundred and twenty-three now hold; clippy clean; `phoenix-check` green over
+36 files.**
