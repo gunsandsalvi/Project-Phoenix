@@ -17610,3 +17610,35 @@ cell has cannot cross. Dissolution names an heir, because a residual with no hol
 
 **Thirteen laws as tests. Two hundred and eighty-one now hold; clippy clean; `phoenix-check` green
 over 50 files. Twenty-six of forty-seven modules ported.**
+
+# 0g.42 — firm fundamentals (§32)
+
+`packages/kernel-rs/src/mechanisms/firms.rs`. Twenty-seventh module.
+
+**Nothing here can produce a cost from a revenue.** B4.a names the defect precisely — a cost line
+struck at the seed as the gap to a chosen margin and then applied as a fixed share of revenue makes
+that margin an attractor and the cost base perfectly variable by construction — so `CostLine` is a
+named payee and an amount, and `margin` divides two reads. There is no share-of-revenue in the file.
+
+**Operating leverage is computed, not parameterised.** `costs_at` scales the lines that vary with
+output and leaves the ones that do not; the test halves the revenue and finds the margin falls by
+more than half of itself, with nothing multiplying anything. That is B5's "margin moves more than
+revenue" as a consequence of the cost structure.
+
+**Profit and cash are different numbers.** The firm in the test earned 450 and consumed 700 of working
+capital, and `cash_from_operations` is negative. C4.a says the difference is where firms die, and this
+is that case written down. Receivables are the sum of the invoice book (C4.b), not a ratio of revenue:
+there is only the book to read.
+
+**`Failing` keeps D4's two failures apart** — out of cash with a solvent balance sheet, insolvent with
+money in the account — and the test exhibits both. A first draft's insolvent-with-cash fixture was not
+actually insolvent (I removed the fixed capital but left the liabilities too small); the fixture was
+wrong, not the read.
+
+**`funds` will not raise into nothing.** A firm with no programme answers `Funds::Nothing` whatever the
+markets offer (E4.a), spends its own cash first, and a management above its own target issues rather
+than borrows however cheap debt is — the target being the covenant line moderated by the management's
+own caution, which is theirs.
+
+**Fourteen laws as tests. Two hundred and ninety-six now hold; clippy clean; `phoenix-check` green over
+51 files. Twenty-seven of forty-seven modules ported.**

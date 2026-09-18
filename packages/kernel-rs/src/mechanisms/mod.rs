@@ -13,6 +13,7 @@ pub mod employment;
 pub mod equity;
 pub mod estate;
 pub mod expectations;
+pub mod firms;
 pub mod forced_sale;
 pub mod goods;
 pub mod households;
