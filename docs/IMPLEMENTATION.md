@@ -452,14 +452,6 @@ measured kernel period plus one measured module ratio.
   gated on the census — `events 178604`, `audit 356268`, the op count — against the TypeScript
   engine as ORACLE. 67,571 lines over 47 modules. `capital-programme` is already measured at 10.9×
   and is where the port starts, because its ratio is the one the projection rests on.
- `core calendar registry parties register
-  ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
-  collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep
-  their exact shape, so a mechanism is ported without being redesigned. The kernel is where the
-  62× and the 43× land and it is ~30% of a period on its own.
-- [ ] 0g.42 **THE MODULES, ONE SPEC SYSTEM AT A TIME**, in the sequencing order of Part XIII, each
-  one's port gated on the census: `events 178604`, `audit 356268` and the op count unchanged at
-  every step. A module is a `SystemModule` today and stays one.
 - [ ] 0g.43 **THE DISCIPLINE MOVES WITH IT.** `tools/eslint-rules` becomes clippy lints and a
   checker: no bound, no `?? 0`, no kind branch in a mechanism, no module importing another module,
   `@spec` citations, the parameter register, the ontology register. **A law that stops being
