@@ -19601,3 +19601,54 @@ count is read rather than inferred and is not a step of the next item, and 21.13
 
 **685 tests hold, and 5 tool tests; clippy clean; `phoenix-check` green over 80 files; `npm run check`
 green.** Item 21 stands at 62 of 179.
+
+---
+
+## 21.130 — the twenty-seven walks, and the one shape they were all instances of
+
+**What.** The walks group closes in full: twenty-seven steps deleted, one finding raised.
+
+### Why they close
+
+Every one names a `.ts` file and a line in it, and every one proposes a CACHE — compute
+`coveredLines` once per bank, memoise `stateOf` per bank, keep `requirement` per
+(poster, holder, ccy, period), keep a per-period `placedBy` map in the session's working store. **None
+of those call sites exists.** A Rust mechanism is a pure function over what it is handed, and the
+participants that would have built the O(banks × markets²) shapes do not do that work at all.
+
+Eleven of the forty had already closed at *21, the small self-contained points* — the
+`journal.ofKind` / `journal.forSubject` walks, which cannot exist because this journal has neither
+read. What was left needed a re-read rather than a verification, and four of them name a KERNEL shape
+rather than a module's. Three are answered by the kernel as it stands:
+
+| finding | what it asked | the kernel's answer |
+| --- | --- | --- |
+| WK6 | a schedule recomputing its calendar placement on every read | `Schedules::falling(from, to)` is a `BTreeMap` range over the day — an index, not a walk |
+| WK10 | *verify `inPeriod` is an index and not a filter over the whole ledger* | `Journal::in_period` returns a contiguous row RANGE from a per-period slice table: O(periods) to find, O(1) to read, never O(journal) |
+| EQ6 | `Math.round` in engine code outside `core/num` | there is no `round` anywhere here, and the four `floor` calls are each a COUNT being counted — whole seats by largest remainder, whole batches, a majority of shares |
+
+`CD11`'s type-erased division is every division in this engine, since a ratio is an `f64` and there is
+no `ratioOf` to bypass; it is not a fact about one site.
+
+### 21.138 — what a period costs
+
+The twenty-seven were each a call site. This is the shape they were instances of, and the only one the
+port carried over. Two numbers, both off `npm run world:runs` over 10,318 parties, 16,750 instruments
+and 1,546 books:
+
+- **`Reads` walks everything to produce twenty numbers.** `LinesThatPrinted` and `CreditOutstanding`
+  walk every instrument, `PartiesAlive` every party, once per system per period — and twenty-five
+  systems do nothing else (21j). A period walks the instrument list about fourteen times and the party
+  list about six: roughly 300,000 reads.
+- **The journal grows by ~170,000 rows a period** and is not falling (172,999, then 169,911). A
+  thousand-period run is a hundred and seventy million rows, which is why Audit C1's per-period slice
+  table exists at all.
+
+**Neither is a work item** (Law 18 gates performance on behaviour; Law 11 forbids measuring
+mid-build). The worst period is 194 ms against the 3,000 ms budget. And the first of the two largely
+stops being true when 21j converts a counting row into a real read — the walk is cheap because the
+work is absent, which is the opposite of a performance problem. Positioned at 23, where a run long
+enough to matter is made, and where 21.120's rule governs how that reading is taken.
+
+**685 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green.** Item 21 stands at 89 of 180.

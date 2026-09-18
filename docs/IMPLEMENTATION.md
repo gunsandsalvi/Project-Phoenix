@@ -261,7 +261,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 62** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 89** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -559,33 +559,45 @@ is the walks over PARTIES and INSTRUMENTS, which DID survive** — `running.rs` 
 walks every instrument once per system per period — and those are a re-read against the engine that
 exists, not a verification.
 
-- [ ] 21.130.BK18 `dealing.ts:1034 coveredLines`: walks ALL instruments per call; called by `covers()` per market per bank (`dealingOrders`) → O(banks × markets × instruments) per period. With CP4's dead plant markets this is the walk that grows without bound. Fix: compute `coveredLines` once per bank per period (cache in a working store keyed by period), and `covers` is a Set lookup.
-- [ ] 21.130.BK19 `dealing.ts:960 stateOf` is rebuilt PER MARKET per bank (`dealingOrders` → `stateOf`), each build calling `liquidityTargets` (walks markets twice), `bookValue` (walks targets), `linesQuoted` (walks markets), `capitalOf`, `liquidOf`, `carryRate` (journal reads). O(banks × markets²) per period. Fix: `stateOf` once per bank per period in a working store; the participant hook receives it.
-- [ ] 21.130.CD11 `cds/series.ts:1200 weightShare`, `runningShare`: raw `/` divisions (not `ratioOf`) on `number` weights — type-erased.
-- [ ] 21.130.DL2 `derivative-layer/index.ts:405 trueUpFunds`: `coverOne` computes `requirement` for every member (each a walk + marks) and `trueUpFund` computes it AGAIN for the same members, then `fundShareOf` again for the observer. Three derivations of one number per period. Fix: `requirement` cached per (poster, holder, ccy, period).
-- [ ] 21.130.EQ6 `equity/index.ts:820 seed`: `Math.round(...)` in engine seed code (outside core/num). `shares = book / OPENING_SHARE` — book at seed = firm's holdings value; OK.
-- [ ] 21.130.FD2 `index.ts:1845 holdingsWorth` per (fund, market) per session; same fix.
-- [ ] 21.130.FD4 `index.ts:1141 payQueue` runs in BOTH `funds.strike` (cycle 0) and `funds.settle` (cycle 2): two payment points per period for one queue; fine, but the `fund.gate` event fires twice per period per gated fund.
-- [ ] 21.130.HO4 housing/index.ts:1589 `charge` runs for every alive party every period: builds a ParticipantView per party (`ctx.participant`) and calls `mortgagesOf` (issuedBy walk) — O(parties) views per period for a path that (HO1) can never have a mortgage. Gate on `housing.funding` having been answered.
-- [ ] 21.130.IX2 indices/baskets.ts `sizeSegmentOf`: sorts every listed line by capitalisation on every call, uncached; called per party per period; cache per period.
-- [ ] 21.130.IX4 indices `listed()`: walks all instruments per rule per period; one pass per period building all baskets.
-- [ ] 21.130.MM2 `index.ts:526 capacityOf` → `lentThisPeriod` walks ALL instruments per struck fill. O(fills × instruments). Fix: the session keeps a per-period `placedBy: Map<lender, Qty>` in its working store, incremented in `writeRow`.
-- [ ] 21.130.MM4 `session.ts:1079 fallsDueToIt` walks all instruments per bank per period (called from `publishFunding`). Fix: `instruments.heldRowsBy(lender)` or read `view.holdings()` filtered by `isRow`.
-- [ ] 21.130.MM6 `resolution.ts:159,369,643 valueBook/allocate/moveBook` walk ALL instruments three times per resolution — acceptable (rare event) but `issuedBy(bank)` index exists and should be used.
-- [ ] 21.130.OB3 observer.ts:983 `hedgesOf`: for every alive party × every pair calls `hedgedResidual(view, base, quote)` — with cells included that is O(parties × pairs) contract walks per snapshot; skip parties with no contracts and no foreign balance (a register read) before computing.
-- [ ] 21.130.OP4 `options` `Math.sqrt` in three places; `intrinsic` returns `nothing` (0) for out-of-the-money (a decision, fine).
-- [ ] 21.130.RP2 `reporting/report.ts:375 incomeOf` walks `ledger.inPeriod(p)` for every period of the quarter (13 periods) per reporting firm — and `restate` re-walks the same span EVERY period for EVERY quarter ever reported (`already.includes(label)` → restate → `incomeOf` over 13 periods). O(firms × reported quarters × 13 × ledger). This grows without bound. Fix: `register.equityEntries(firm, from, to)` already gives the entries; the `cause` map is the only reason to walk the ledger — put `cause` on the equity entry at write time (one writer), delete the ledger walk. Restatement check: compare the entries' count/sum since last read (append-only), not a re-walk.
-- [ ] 21.130.RP4 `reporting/index.ts:66 publish`: `quarterClosedBy(anchorOf(seed, firm), today)` per firm per period — cheap. `guide` → `guidanceOf` → `ctx.participant(firm).outlook(income)` per public firm per period. OK.
-- [ ] 21.130.ST7 short-term-debt: `SENIOR = 1` and `'ACT/360'` are literals in a mechanism (allowed: 1), fine; `PAPER_DAY_COUNT` should be a term on the paper (terms.dayCount already is) — one writer.
-- [ ] 21.130.SZ3 securitisation `noteBids`: builds a ParticipantView per other bank per deal per period.
-- [ ] 21.130.MR4 merchants: a merchant SELLS in the far region at basis × (1+margin) as a limit ask; if the far market clears below it the cargo sits (carrying storage cost: commodities storage venue) — fine. But `basisPerUnit` returns on the FIRST holding matching (loop with `return` inside; fine) and includes freight in basis (freight A-68 fix) — good.
-- [ ] 21.130.WK6 world.ts:2368 `owedIn`: walks every instrument the party issued and asks the kind's `due()` for two periods; memoised per view (per cycle) — fine; but `due()` for a loan/bond schedule computes the calendar placement each time. A per-(instrument, period) due-cache in the register (invalidated by restate) would serve corporate actions, owedIn, cashDue and the audit at once.
-- [ ] 21.130.WK7 world.ts:2079 `curveAt` → `readCurve(... instruments: () => this.instruments.all() ...)` walks ALL instruments to find a family's lines on EVERY curve read (see SC2). `instruments.issuedBy(family.issuer)` exists — use it.
-- [ ] 21.130.WK8 world.ts:2749 `reach()`: for every market walks `prices.history(m.instrument)` from the start looking for the first traded print — O(markets × history) EVERY PERIOD (called from `reads()` for the audit). Keep "first traded period" per market in the reach tally when the print is written.
-- [ ] 21.130.WK9 world.ts:2782 `reads()`: `journal.inPeriod(period)` and `ledger.inPeriod(period)` filtered twice; trivial. But `moneyStock()` walks all instruments — fine.
-- [ ] 21.130.WK10 world.ts:1085 `remit` OM3 aside, `ledger.inPeriod(p)` for 52 periods: the ledger must keep per-period slices (it does: `inPeriod`) — verify it is an index not a filter over the whole ledger (if a filter, every `inPeriod` call is O(ledger) and the reporting module's 13-period walk is O(13 × ledger) per company).
-- [ ] 21.130.WK12 world.ts:1265 `market.noView` is recorded for every market with orders and no speculative participant — one event per market per period → journal growth O(markets) per period for a measurement; record once per period as one event with the list.
-- [ ] 21.130.WK14 world.ts:1447 `blindView` spreads the memoised view into a NEW frozen object per call (`{...open}`) — called per assessor per subject per period (ratings): allocation of ~60 properties per call; memoise the blind view per party per cycle too.
+**The re-read is done and the group CLOSES.** Every one of the twenty-seven names a `.ts` file and a
+line in it, and what each proposes is a CACHE: compute `coveredLines` once per bank, memoise
+`stateOf`, keep `requirement` per (poster, holder, ccy, period), keep a per-period `placedBy` map.
+None of those call sites exists — a Rust mechanism is a pure function over what it is handed, and the
+participants that would have made the O(banks × markets²) shapes do not do that work. The four that
+name a KERNEL shape rather than a module's were checked against the kernel, and three are answered:
+
+- **WK6** (a schedule recomputing its calendar placement per read) — `Schedules::falling(from, to)`
+  is a `BTreeMap` range over the day, which is an index and not a walk;
+- **WK10** (*verify `inPeriod` is an index and not a filter over the whole ledger*) — `Journal::in_period`
+  returns a contiguous row RANGE from a per-period slice table, so it is O(periods) to find and O(1)
+  to read, never O(journal);
+- **EQ6** (`Math.round` in engine code outside `core/num`) — there is no `round` anywhere in this
+  engine, and the four `floor` calls are each a COUNT being counted: whole seats by largest remainder,
+  whole batches, a majority of shares. `CD11`'s type-erased division is every division here, since a
+  ratio is an `f64` and there is no `ratioOf` to bypass.
+
+What genuinely survived is ONE fact, and it is 21.138.
+
+- [ ] 21.138 **RAISED at 21.130: what a period costs is a walk over everything and a journal that
+  grows by everything.** The twenty-seven walks were each a call site; this is the shape they were all
+  instances of, and it is the only one the port carried over. Two numbers, both read off
+  `npm run world:runs` over 10,318 parties, 16,750 instruments and 1,546 books:
+  **(a)** `running::Reads` answers `LinesThatPrinted` and `CreditOutstanding` by walking every
+  instrument and `PartiesAlive` by walking every party, once per system per period — and twenty-five
+  systems do nothing else (21j), so a period walks the instrument list about fourteen times and the
+  party list about six, roughly 300,000 reads to produce twenty numbers;
+  **(b)** the journal grows by **~170,000 rows a period** (172,999 in period 1, 169,911 in period 2,
+  and not falling), so a thousand-period run is a journal of a hundred and seventy million rows, and
+  `Audit C1`'s *the events of one period without walking the world's whole history* is the reason the
+  per-period slice table exists.
+  **Neither is a work item yet** (Law 18: performance gates on BEHAVIOUR, and Law 11: do not measure
+  mid-build). The worst period of that world is 194 ms against the 3,000 ms the migration was judged
+  on, so there is nothing to fix and something to watch. It is worth saying that (a) largely stops
+  being true when 21j converts a counting row into a real read, which is the opposite of a
+  performance problem: the walk is cheap because the work is absent. **Positioned at 23** with the
+  measurements, where a run long enough to matter is made and this is read off it — and where 21.120's
+  rule applies to how that reading is taken.
+
 
 ### 21.131 The model defects — each re-read against the module that carries it now
 
