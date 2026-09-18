@@ -146,34 +146,43 @@ impl Chronicle {
         Chronicle { from, seed_value, told: Vec::new() }
     }
 
-    /// **The grammar guard at the door.** A moment belongs to the past, happens no earlier than the
-    /// chronicle begins, and comes after the one before it — a past told out of order is not a past.
+    /// **The grammar guard at the door.** A moment belongs to the past and carries a reason.
+    ///
+    /// It does NOT have to be told after the one before it. The draw is composed in stages — money
+    /// and the sovereign, then firms and plant, then households — and each stage spans the whole
+    /// past, so demanding that the AUTHOR tell it in order would be a rule about how the draw is
+    /// written rather than a property of the world. What must hold is that the past **replays** in
+    /// date order, and `in_order` is where that lives.
     pub fn tell(&mut self, moment: Told) {
         assert!(
             moment.at >= self.from,
             "22b: a told moment before the chronicle begins is not part of this world's past"
         );
-        if let Some(last) = self.told.last() {
-            assert!(
-                moment.at >= last.at,
-                "22b: the past is told in order — {:?} after {:?} is a chronicle that rewinds",
-                moment.at,
-                last.at
-            );
-        }
         assert!(!moment.why.is_empty(), "22b: a told moment with no reason is an assertion with a date on it");
         self.told.push(moment);
     }
 
+    /// The moments as they were told, in whatever order the draw composed them.
     pub fn told(&self) -> &[Told] {
         &self.told
+    }
+
+    /// **The past, in the order it happened.** A stable sort by day, so two moments on the same day
+    /// keep the order the draw meant — a bank lends in the morning and the firm buys with it in the
+    /// afternoon, and reversing that would make the second refuse.
+    pub fn in_order(&self) -> Vec<Told> {
+        let mut out = self.told.clone();
+        out.sort_by_key(|t| t.at.0);
+        out
     }
 
     /// **Period zero is the END of the past.** The epoch moves back to `from`, and the world opens on
     /// the day the last thing happened — so everything the opening holds has a date behind it.
     pub fn opens_on(&self) -> Day {
-        match self.told.last() {
-            Some(last) => last.at,
+        // The last moment in the order things HAPPENED — which is `in_order`'s last, not the last one
+        // the draw happened to tell.
+        match self.in_order().last().map(|t| t.at) {
+            Some(last) => last,
             // A chronicle with no past opens on the day it began, and `accept` will reject it: a world
             // where nothing ever happened fails every property below.
             None => self.from,
@@ -220,7 +229,7 @@ pub fn replay(
 ) -> Replayed {
     assert!(days_per_period > 0, "22b: a past measured in periods of no days has no periods in it");
     let mut out = Replayed { settled: 0, refused: Vec::new() };
-    for moment in c.told() {
+    for moment in c.in_order() {
         let legs = moment.draft.legs();
         if legs.is_empty() {
             // A relationship moves nothing over the wire. It is still part of the past.
@@ -475,11 +484,29 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "a chronicle that rewinds")]
-    fn a_moment_told_after_a_later_one_is_refused() {
+    fn the_past_replays_in_the_order_it_happened_whatever_order_it_was_told_in() {
+        // The draw is composed in STAGES — money and the sovereign, then firms and plant, then
+        // households — and each stage spans the whole past, so the author cannot tell it in order.
+        // What must hold is that it REPLAYS in date order, and an earlier guard that demanded the
+        // telling order was a rule about how the draw is written rather than about the world.
         let mut c = Chronicle::opening(Day(-3_650), 1);
-        c.tell(Told { at: Day(-2_900), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "a wage" });
-        c.tell(Told { at: Day(-3_000), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "an earlier one" });
+        c.tell(Told { at: Day(-30), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "the last wage of the past" });
+        c.tell(Told { at: Day(-3_000), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "a wage told later but paid earlier" });
+        let order: Vec<i64> = c.in_order().iter().map(|t| t.at.0).collect();
+        assert_eq!(order, vec![-3_000, -30]);
+        // And the world still opens on the day the last thing happened, not the last thing told.
+        assert_eq!(c.opens_on(), Day(-30));
+    }
+
+    #[test]
+    fn two_moments_on_one_day_keep_the_order_the_draw_meant() {
+        // A stable sort: a bank lends in the morning and the firm buys with it in the afternoon, and
+        // reversing that would make the second refuse for want of money that had not arrived.
+        let mut c = Chronicle::opening(Day(-3_650), 1);
+        c.tell(Told { at: Day(-100), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "first" });
+        c.tell(Told { at: Day(-100), draft: Draft::Paid { from: party(2), to: party(3), amount: 10.0, ccy: ccy(), money: money() }, why: "second, with what the first paid" });
+        let whys: Vec<&str> = c.in_order().iter().map(|t| t.why).collect();
+        assert_eq!(whys, vec!["first", "second, with what the first paid"]);
     }
 
     #[test]

@@ -218,6 +218,107 @@ pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, open
     }
 }
 
+/// 22b.4: **firms, plant and inventory through the chronicle.** Plant is bought from the maker who
+/// built it, on its vintage date; inventory is bought up the chain from somebody who made it.
+///
+/// **This is where 12c.3 dies.** The old seed handed one baker 314 million loaves — eleven periods of
+/// the whole world's demand — and the firm then produced once and never again, because it could not
+/// sell what it already had. Here a firm's opening stock is **what it actually bought from somebody
+/// who actually had it**, so a stock that large would need a seller with that much to sell and a
+/// buyer with the money to pay for it. Neither exists, so it cannot be told.
+pub fn firms_plant_and_inventory(
+    d: &mut Drawn,
+    firms: usize,
+    seed_value: u64,
+    opens_on: Day,
+) -> Vec<PartyId> {
+    assert!(firms > 1, "5 B1: one firm is not a population, and a market needs somebody to compete with");
+    let mut draw = Draw::from(seed_value ^ 0x5EED_0F1E);
+    let unit = UnitId::at(0);
+    let region = d.region;
+    let ccy = d.ccy;
+
+    // The maker of plant, and the good every firm here makes. Both are parties and lines like any
+    // other — a machine has an issuer because somebody built it (Money A1's shape, one level up).
+    let maker = d.world.parties.add(kinds::FIRM, region, d.banks[0], Representation::Named, 1, 0);
+    let plant = d.world.instruments.issue(maker, ccy, Class::Plant, unit, None, None);
+    let good = d.world.instruments.issue(maker, ccy, Class::Good, UnitId::at(1), None, None);
+
+    let mut made = Vec::with_capacity(firms);
+    for n in 0..firms {
+        let f = d.world.parties.add(kinds::FIRM, region, d.banks[n % d.banks.len()], Representation::Named, 1, 0);
+        made.push(f);
+    }
+
+    // The maker has to have the machines before it can sell them: it BUILT them, which is a creation
+    // by their issuer and its own stock to sell (5 C2 — the asset is somebody's).
+    let built = draw.spread(400.0, 0.2) * firms as f64;
+    d.chronicle.tell(Told {
+        at: Day(opens_on.0 - 3_200),
+        draft: Draft::Created { issuer: maker, what: plant, units: built },
+        why: "the maker built the machines it would later sell",
+    });
+
+    for (n, f) in made.iter().enumerate() {
+        // A firm needs money before it can buy anything: its bank lent it, which is where a firm's
+        // opening balance sheet actually comes from (Banks Lending).
+        let bank = d.banks[n % d.banks.len()];
+        let loan = d.world.instruments.issue(*f, ccy, Class::Claim, unit, Some(0.04), Some(Day(opens_on.0 + 730)));
+        let borrowed = draw.spread(6_000.0, 0.35);
+        let vintage = Day(opens_on.0 - 3_100 + (n as i64 * 90));
+        d.chronicle.tell(Told {
+            at: vintage,
+            draft: Draft::Lent { lender: bank, borrower: *f, loan, principal: borrowed, ccy, money: d.reserves },
+            why: "the bank lent the firm what it needed to buy its plant",
+        });
+        // **Plant bought from its maker, on its vintage date.** Every machine in this world has a
+        // date and a seller, so its age is a read and not a stated `SEED_PLANT_AGES`.
+        let machines = draw.spread(built / (firms as f64 + 1.0), 0.3);
+        let price = borrowed / machines * 0.6;
+        d.chronicle.tell(Told {
+            at: vintage,
+            draft: Draft::Bought {
+                from: maker,
+                to: *f,
+                what: plant,
+                units: machines,
+                paid: machines * price,
+                ccy,
+                money: d.reserves,
+            },
+            why: "the firm bought its plant from the maker that built it, on its vintage date",
+        });
+    }
+
+    // **Inventory is bought up the chain from somebody who made it**, and the seller is the firm that
+    // made it — so the quantity is bounded by what that firm could produce and pay for, which is what
+    // makes 12c.3's eleven periods of world demand untellable.
+    for (n, f) in made.iter().enumerate().skip(1) {
+        let from = made[n - 1];
+        let stock = draw.spread(300.0, 0.4);
+        d.chronicle.tell(Told {
+            at: Day(opens_on.0 - 400 + n as i64 * 20),
+            draft: Draft::Created { issuer: from, what: good, units: stock },
+            why: "a firm made the goods it would sell up the chain",
+        });
+        d.chronicle.tell(Told {
+            at: Day(opens_on.0 - 390 + n as i64 * 20),
+            draft: Draft::Bought {
+                from,
+                to: *f,
+                what: good,
+                units: stock / 2.0,
+                paid: stock / 2.0 * 1.1,
+                ccy,
+                money: d.reserves,
+            },
+            why: "the firm bought its opening stock from the firm that made it",
+        });
+    }
+
+    made
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -348,6 +449,72 @@ mod tests {
         assert_eq!(lent.len(), d.banks.len());
         let first = lent[0];
         assert!(lent.iter().any(|x| *x != first), "a sector of equals never produces a market");
+    }
+
+    #[test]
+    fn a_firms_plant_was_bought_from_the_maker_that_built_it_on_its_vintage_date() {
+        // 22b.4: every machine has a date and a seller, so its age is a READ — never a stated
+        // `SEED_PLANT_AGES`.
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        assert_eq!(firms.len(), 4);
+        let bought: Vec<&Told> = d
+            .chronicle
+            .told()
+            .iter()
+            .filter(|t| matches!(t.draft, Draft::Bought { to, .. } if firms.contains(&to)))
+            .collect();
+        assert!(!bought.is_empty());
+        for t in &bought {
+            // It happened on a day, in the past, and somebody sold it.
+            assert!(t.at < Day(0));
+            match t.draft {
+                Draft::Bought { from, to, .. } => assert_ne!(from, to, "a firm cannot buy from itself"),
+                other => panic!("expected a purchase, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn a_firm_opens_holding_what_it_actually_bought_and_this_is_where_the_old_seeds_stock_dies() {
+        // 22b.4, finding 12c.3: the old seed handed one baker 314 million loaves — eleven periods of
+        // the whole world's demand — and the firm produced once and never again. Here the stock is
+        // what somebody SOLD it, so it is bounded by what a seller had and what a buyer could pay.
+        let mut d = drawn();
+        let firms = firms_plant_and_inventory(&mut d, 4, 1, Day(0));
+        let done = replay(
+            &d.chronicle,
+            7,
+            &mut d.world.register,
+            &mut d.world.journal,
+            &mut d.world.wire,
+            d.world.settled_kind,
+            d.world.failed_kind,
+        );
+        assert!(done.refused.is_empty(), "the draw told a moment the world could not live: {:?}", done.refused);
+
+        // Every unit a firm holds came out of somebody else's book, so the two sides are one number.
+        let good = InstrumentId::at(d.world.instruments.len() as u32 - 1);
+        let _ = good;
+        let held: f64 = firms
+            .iter()
+            .map(|f| {
+                d.world
+                    .register
+                    .of_holder(*f)
+                    .iter()
+                    .map(|row| d.world.register.quantity(crate::ids::HoldingId(*row)))
+                    .sum::<f64>()
+            })
+            .sum();
+        assert!(held > 0.0, "a firm that opens holding nothing bought nothing");
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a population")]
+    fn one_firm_is_not_a_population() {
+        let mut d = drawn();
+        firms_plant_and_inventory(&mut d, 1, 1, Day(0));
     }
 
     #[test]

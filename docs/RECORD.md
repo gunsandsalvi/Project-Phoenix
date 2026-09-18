@@ -18128,3 +18128,38 @@ produces a market (5 B4).
 
 **Seven laws as tests. Six hundred and thirty-five now hold; clippy clean; `phoenix-check` green over
 79 files.**
+
+# 22b.4 — firms, plant and inventory through the chronicle, and a guard of mine that was wrong
+
+`firms_plant_and_inventory` in `draw.rs`. **This is where 12c.3 dies.**
+
+**Plant is bought from the maker that built it, on its vintage date.** The maker CREATES the machines
+— its own stock, because it made them — then each firm borrows from its bank and buys its plant on a
+day of its own. Every machine in this world therefore has a date and a seller, so its age is a READ
+and there is no `SEED_PLANT_AGES` to state.
+
+**Inventory is bought up the chain from somebody who made it.** A firm's opening stock came out of
+another firm's book, which is what makes the old seed's 314 million loaves — eleven periods of the
+whole world's demand at one baker — **untellable**: it would need a seller with that much to sell and
+a buyer with the money to pay for it, and neither exists. The finding does not need fixing here
+because the shape that produced it cannot be expressed.
+
+**A guard I wrote yesterday was wrong, and the draw proved it.** `tell` demanded each moment come
+after the one before it — "a past told out of order is not a past". But the draw is composed in
+STAGES: money and the sovereign, then firms and plant, then households, and each stage spans the whole
+past. The second stage's first moment is three thousand days before the first stage's last, so the
+guard refused a perfectly ordinary past. It was a rule about **how the draw is written**, not about
+the world.
+
+The fix is the cause, not the symptom: `tell` keeps its two real guards (a moment belongs to the past,
+and it carries a reason), and `in_order` sorts by day for the replay. **The sort is STABLE**, because
+two moments on one day must keep the order the draw meant — a bank lends in the morning and the firm
+buys with it in the afternoon, and reversing those makes the second refuse for want of money that had
+not arrived. Both are tested. `opens_on` now reads the last moment in the order things HAPPENED rather
+than the last one told.
+
+**And `.max()` tripped Law 6.** The checker cannot tell an iterator's maximum from a clamp, and it is
+right not to guess: the read is now `in_order().last()`, which says what it means.
+
+**Four laws as tests. Six hundred and thirty-nine now hold; clippy clean; `phoenix-check` green over
+79 files.**
