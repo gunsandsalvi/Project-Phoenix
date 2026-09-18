@@ -286,100 +286,114 @@ first rung), to produce four curves that do not change within the period.
 ## Part 2 — The items
 ## 0g. The core made fast (Law 18)
 
-**THE EXIT IS 3 SECONDS PER PERIOD ON THE FULL WORLD.** Layout and traversal only.
+**THE EXIT IS 3 SECONDS PER PERIOD ON THE FULL WORLD.**
 
 **Steps closed and deleted: 20.** 0g.2–0g.7, 0g.9, 0g.10, 0g.17–0g.19, 0g.21–0g.27. 0g.8, 0g.11,
 0g.13, 0g.16 deleted as wrong. Outcomes in `docs/RECORD.md`.
 
-### 0g.30 What a period is, all of it measured on the full world
+### 0g.30 What a period is, measured on the full world
 
 | | |
 |---|---|
-| period | **28.3–45.6 s** (the band is real; see the spread note below) |
+| period | **28.3–45.6 s** (the band is real; every claim below is a median of three) |
 | counted kernel reads | **105,524,506**, bit-exact across runs |
 | state | 10,318 parties, 16,750 instruments, **544,104 holdings in 657,785 lots**, 1,546 markets |
-| written | **178,604 events in 48,828 settled instructions carrying 501,044 legs** |
-| **moved** | **436,125 of 544,104 holdings · 6,782 of 10,318 parties · 1,456 of 16,750 prices** |
-| asked | 920,404 participant questions |
-| audited | 356,268 checks, 18,885,889 reads |
+| written | **178,604 events in 48,828 instructions carrying 501,044 legs** |
+| moved | **436,125 of 544,104 holdings · 6,782 of 10,318 parties · 1,456 of 16,750 prices** |
+| asked / audited | 920,404 questions · 356,268 checks in 18,885,889 reads |
 | where the time is | GC **22.4%**, audit 18.0%, register 17.6%, world 7.5%, ledger 4.9%, prices 4.6%, registry 3.8%, core 1.6% |
 
-The dearest event kinds: 48,828 `instruction.settled`, 29,284 `goods.perished`, 21,491
-`revaluation`, 10,375 `capital.kept`, 10,227 `credit.quoted`, 9,489 `credit.request`.
+### Four candidate revolutions, all tested. Three are dead. The fourth is the answer.
 
-### Three candidate revolutions, all TESTED, and two of them are dead
+**1. Make the period incremental — DEAD.** **436,125 of 544,104 holdings move every period (80%).**
+Skipping what stood still is worth 20%. The step rested on a guess of "~180,000", wrong by 2.4×.
 
-This item spent twenty-two steps on hot spots and reached 1.71×. The question was whether a single
-structural change reaches the rest. Three were proposed and each was measured **before** any of it
-was built.
+**2. Stop boxing values — DEAD.** **`asCash` is 2.6 ns over 14,096,854 calls — 37 ms of a 54.7 s
+period; `some` 46 ms, `none` 16 ms.** The small values are not the cost.
 
-**1. Make the period incremental — DEAD.** The proposal was that a period works over the whole
-world when only a slice of it moved, so traversals should skip what stood still. **Measured: 436,125
-of 544,104 holdings move every period — 80%.** Skipping the rest is worth 20%, not an order of
-magnitude. The guess this step rested on was "~180,000 of 544,104", which is wrong by 2.4× in the
-direction that mattered. Prices are the exception (1,456 of 16,750 print, 8.7%), so a traversal
-driven by a PRICE may still skip; one driven by a holding may not.
+**3. Dense integer ids, in TypeScript — TOO SMALL.** Every kernel door's own self time sums to
+**8,645 ms, 15.8% of a period**. Array indexing cannot return more than that.
 
-**2. Stop boxing values — DEAD.** The proposal was that `Cash` being a frozen `{pieces, ccy}` and
-`Option` boxing every absent value is what the collector is spending 22.4% on. **Measured per call
-on this machine, in this world: `asCash` 2.6 ns over 14,096,854 calls — 37 ms of a 54.7 s period.
-`some` 46 ms, `none` 16 ms.** The small values are not the cost. (The 22.4% is real, and it is the
-MATERIALISED ARRAYS: `allHoldings` alone is 957 ms of self time and builds 544,104 snapshot objects
-per call, for each audit family that asks.)
+**4. THE ENGINE IS WRITTEN IN THE WRONG LANGUAGE.** Every result above says the cost is DIFFUSE —
+no layer, no traversal, no algorithm dominates, and the ~44% that is module code has no shared
+cause left (0g.23–0g.27 removed the one that had). **A diffuse cost spread evenly through ordinary
+code is the signature of the runtime, not of the design.** That was the conclusion to draw and this
+item drew the opposite one for twenty-two steps.
 
-**3. Ids become dense integers — TOO SMALL.** The proposal was that every kernel lookup hashes a
-string and should be an array index. **Measured self time in the doors themselves: `instruments.get`
-1,847 ms over 38,676,668 calls (47.8 ns), `prices.latest` 771 ms (60.3 ns), `parties.get` 432 ms
-(25.9 ns), the register's nine read and write doors 5,072 ms — 8,645 ms in total, 15.8% of a
-period.** Turning every one of them into an array index cannot return more than that, and realistically
-returns three quarters of it: **≤ 12%.** It is worth doing and it is not a revolution.
+### The calibration, and it is not "Rust is faster"
 
-### What the measurement actually says
+`tools/calibrate` builds the register's real shape at its real scale — 10,318 parties, 16,750
+instruments, **544,104 holdings in 657,785 lots** — and runs the engine's own three hot operations
+at the engine's own measured call counts. The TypeScript side of each row is a **measured self time
+from the engine's CPU profile**, not a re-implementation: the real thing against the real thing.
 
-**There is no single 50× lever in this engine, and the reason is that the cost is not in a layer —
-it is spread through the mechanism code that sits between the kernel reads.** The counted doors are
-15.8%; the collector is 22.4%; the audit is 18%. The remaining ~44% is module code, and no two
-modules share a cause any more (0g.23–0g.27 removed the one that did: a party-fact computed inside
-a loop over counterparties).
+| operation | per period | TypeScript, measured | native, struct-of-arrays | ratio |
+|---|---|---|---|---|
+| a record fetched by id | 38,676,668 | **47.80 ns** | **0.77 ns** | **62×** |
+| a full traversal of the holdings | ~10 passes | **95.70 ms** | **2.23 ms** | **43×** |
+| the hot read, row index in hand | 23,304,012 | **67.20 ns** | **10.62 ns** | **6.3×** |
+| the same, hashing a packed pair | 23,304,012 | 67.20 ns | 30.29 ns | 2.2× |
+| the same, with the standard hasher | 23,304,012 | 67.20 ns | **75.22 ns** | **0.9×** |
 
-**So the route to 3 s is a budget over four measured blocks, and it is honest about what each can
-give.** The item continues on these and on nothing else:
+**The last row is the important one.** A native rewrite that keeps the current data model — a hash
+map from an id pair to a record — is **SLOWER than V8**, because V8's string maps are good and the
+access pattern is cache-miss bound in either language. **The win is not the language. It is the
+language AND the layout AND ids that are row indices**, and all three are required:
 
-- [ ] 0g.31 **STOP MATERIALISING ARRAYS — the collector's 22.4%.** `allHoldings()` builds 544,104
-  snapshot objects on every call and every audit family calls it; `holdingsOf`, `ofKind` and `all`
-  do the same at smaller scale. They return a cursor over the store instead. **Budget: GC 22.4% →
-  under 8%, and `allHoldings` self time 957 ms → under 100 ms. Kill if GC is still above 12%.**
-- [ ] 0g.34 **THE AUDIT WALKS ONCE — 18,885,889 reads → under 6,000,000.** `flows`, `accounts`,
-  `currency`, `units` and `ownership` each walk the register after the one before it did. One
-  traversal feeds every family. Independence is about the SOURCE a family reads (Audit C3), not how
-  many times the register is visited — `crossMarket/indices` recomputing an index from its
-  constituents is the independence that matters and it stays exactly as it is.
-- [ ] 0g.20 **SETTLEMENT — 501,044 legs at 42 kernel reads each.** Measured by probing inside
-  `ctx.settle`: one 5,489-leg instruction costs 231,250 reads. Per leg the necessary work is a lot
-  drawn, a carrying value per lot, a currency, a home money and an equity bump — call it eight — so
-  roughly four fifths of the 42 is repetition inside one atomic instruction. **Budget: under 15
-  reads per leg.** The wire is sequential by law (0g.10), so this is the one block parallelism
-  cannot help.
-- [ ] 0g.31b **IDS BECOME DENSE INTEGERS — ≤ 12%, done last and only if the three above land.**
-  Branded numbers interned at assembly, arrays where the kernel has `Map<Id, T>`. Law 9 untouched:
-  an internal id was never a display name. It touches every file, it is worth 12%, and it is
-  therefore the LAST thing to do rather than the first.
+- ids as **row indices** rather than keys to hash: 62× on 38.7 M reads a period;
+- state as **columns** rather than heap objects: 43× on a traversal, and the collector's **22.4%
+  becomes zero** because there is no collector;
+- the hot random read: 6.3×, and only with the first two.
 
-**And the number that decides whether 3 s is reachable at all is now on the table rather than
-assumed.** A period moves 436,125 holdings and settles 501,044 legs. Three seconds over that is
-**6 µs a leg and 7 µs a moved holding across revaluation, five audit families and a balance sheet
-each**. If the four blocks above land in full, the period is roughly 12–15 s, not 3. **The
-remaining gap is the WORK VOLUME, and work volume is a mechanism question, not a layout one** —
-29,284 `goods.perished` events a week, one per holder per good, is the first place to ask it, and
-asking it is not this item's to do (Law 18: mechanisms never change here).
+### The projection, with the one unmeasured number named
 
-**The spread, and why single runs are not evidence.** The same binary measured 28.3 s and 45.6 s in
-one session. Every claim in this item is a median of three, arms measured back to back, and a
-figure quoted from another session is not a baseline (0g.19 learned this and 0g.22 relearned it).
+Of the profiled 54.7 s: the kernel doors are 9.6 s, `allHoldings` 1.0 s, GC 12.2 s, and **32.8 s is
+module, audit and ledger code whose ratio is NOT MEASURED.** Applying the measured ratios to the
+first three and a range to the last:
 
-**Exit.** `npm run world 1` reports **≤ 3 s** with `events 178604` and `audit 356268` unchanged. If
-the four blocks land and the period is still above 3 s, the item reports the measured floor and the
-mechanism question rather than inventing a fifth block.
+| module-code ratio | period |
+|---|---|
+| 5× | ~5.8 s |
+| 10× | ~3.2 s |
+| 20× | ~2.0 s |
+
+**So 3 s needs the module-code ratio to be 10× or better, and that is the single number the whole
+migration turns on.** It is not guessed here: 0g.40 measures it before anything else is ported.
+
+### 0g.40–0g.45 The migration
+
+- [ ] 0g.40 **MEASURE THE MODULE-CODE RATIO, and kill the whole plan if it is under 6×.** Port ONE
+  real mechanism to Rust against the same inputs and compare against its measured TypeScript self
+  time. `capital-programme` is the candidate: it is **4.1% of a period (2,222 ms)**, it is
+  arithmetic over holdings rather than orchestration, and its two `allHoldings` walks make it
+  representative of what the other forty-nine do. **Exit: a measured ratio. Under 6× and 0g.40 is
+  the last step of this item — the answer is then that 3 s is not reachable and the report says so
+  with the number.**
+- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** `core calendar registry parties register
+  ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
+  collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep
+  their exact shape, so a mechanism is ported without being redesigned. The kernel is where the
+  62× and the 43× land and it is ~30% of a period on its own.
+- [ ] 0g.42 **THE MODULES, ONE SPEC SYSTEM AT A TIME**, in the sequencing order of Part XIII, each
+  one's port gated on the census: `events 178604`, `audit 356268` and the op count unchanged at
+  every step. A module is a `SystemModule` today and stays one.
+- [ ] 0g.43 **THE DISCIPLINE MOVES WITH IT.** `tools/eslint-rules` becomes clippy lints and a
+  checker: no bound, no `?? 0`, no kind branch in a mechanism, no module importing another module,
+  `@spec` citations, the parameter register, the ontology register. **A law that stops being
+  checkable is a law that stops holding** — this step is not optional and not last.
+- [ ] 0g.44 **THE APP.** `packages/app` is Vite and Capacitor on Android. The engine ships as WASM
+  for the browser and native through the NDK on the device. WASM gives up perhaps half the native
+  ratio, so the browser target is measured separately and the Android one is the target that counts.
+- [ ] 0g.45 **THE TS ENGINE IS DELETED**, not kept beside the Rust one. Two engines is Law 4's
+  defect at the largest possible scale: two answers to every number, and the audit could not say
+  which was right.
+
+**The loop.** Every step is measured on the full world the moment it runs, against its own budget
+and against `events 178604` / `audit 356268`. **A step that misses its budget is reverted, not kept
+for partial credit** — that is what went wrong in 0g.24 through 0g.27, where four steps in a row
+missed, were kept, and left the plan reading as though it were on course at 1.71×.
+
+**Exit.** `npm run world 1` reports **≤ 3 s** with `events 178604` and `audit 356268` unchanged.
 
 ---
 

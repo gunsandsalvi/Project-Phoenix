@@ -298,10 +298,22 @@ export class Register {
     return sum(this.holdersOf(instrument).map((h) => this.quantity(h, instrument)));
   }
 
-  allHoldings(): readonly Holding[] {
-    const out: Holding[] = [];
-    for (const m of this.byHolder.values()) for (const h of m.values()) out.push(snapshot(h));
-    return out;
+  /**
+   * Law 18 (0g.31): EVERY HOLDING, WALKED — and it is an ITERABLE rather than a list, because a
+   * list of every holding in the world is 544,104 objects built for a reader that reads each one
+   * once and drops it.
+   *
+   * Ten readers ask for this in a period — revaluation twice, six audit families, the capital
+   * programme twice — and each of them is a `for…of` over the answer. Building the list cost
+   * **957 ms of self time and 5.4 million objects a period**, which is what the collector was
+   * spending 22.4% of a period on; the small values it was blamed on are 2.6 ns each (0g.30).
+   *
+   * `Holding` is readonly in the type, which is what was keeping a reader from writing to one —
+   * `snapshot` copied four references and could not stop a cast either. The store's own row is
+   * yielded, so the walk allocates nothing at all.
+   */
+  *allHoldings(): Iterable<Holding> {
+    for (const m of this.byHolder.values()) for (const h of m.values()) yield h;
   }
 
   /**

@@ -61,15 +61,18 @@ for (let i = 1; i <= periods; i += 1) {
         ` + price ${ops.price} + party ${ops.party} + measure ${ops.measure}`,
     );
     resetOps();
-    const holdings = w.register.allHoldings();
+    let heldRows = 0;
     let lots = 0;
-    for (const h of holdings) lots += h.lots.length;
+    for (const h of w.register.allHoldings()) {
+      heldRows += 1;
+      lots += h.lots.length;
+    }
     console.log(
-      `   state holdings ${holdings.length} lots ${lots} instruments ${w.instruments.all().length}` +
+      `   state holdings ${heldRows} lots ${lots} instruments ${w.instruments.all().length}` +
         ` prints ${w.prices.instruments().length} events ${w.journal.all().length}`,
     );
     console.log(
-      `   moved holdings ${moved.holdings.size} of ${holdings.length} · prices ${moved.prices.size} of ${w.instruments.all().length}` +
+      `   moved holdings ${moved.holdings.size} of ${heldRows} · prices ${moved.prices.size} of ${w.instruments.all().length}` +
         ` · parties ${moved.parties.size} of ${alive} · legs ${moved.legs}`,
     );
     resetMoved();

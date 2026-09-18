@@ -121,14 +121,8 @@ describe('open-market operations (Central Bank C)', () => {
       on.step();
       off.step();
     }
-    const heldOn = on.register
-      .allHoldings()
-      .filter((h) => h.holder === CB)
-      .length;
-    const heldOff = off.register
-      .allHoldings()
-      .filter((h) => h.holder === CB)
-      .length;
+    const heldOn = [...on.register.allHoldings()].filter((h) => h.holder === CB).length;
+    const heldOff = [...off.register.allHoldings()].filter((h) => h.holder === CB).length;
     expect(heldOff).toBeLessThanOrEqual(heldOn);
     expect(off.moneyStock()['USD'] ?? 0).toBeLessThan(on.moneyStock()['USD'] ?? 0);
   });
