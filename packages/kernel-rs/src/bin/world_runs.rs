@@ -15,10 +15,13 @@
 use phoenix_kernel::assembly::{kinds, System, World};
 use phoenix_kernel::calendar::Day;
 use phoenix_kernel::clearing::PriceRule;
+use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::instruments::Class;
 use phoenix_kernel::parties::Representation;
-use phoenix_kernel::running::{afoot, agreed};
+use phoenix_kernel::mechanisms::capital_programme::Plant;
+use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
+use phoenix_kernel::running::{about as running_about, afoot, agreed, Makes};
 use phoenix_kernel::stores::Owing;
 use phoenix_kernel::systems::{all, book_of, Wiring};
 use std::time::Instant;
@@ -151,7 +154,7 @@ fn main() {
     let cells: Vec<u32> = w.parties.of_kind(kinds::HOUSEHOLD).to_vec();
     for (n, c) in cells.iter().enumerate() {
         let employer = PartyId(firms[n % firms.len()]);
-        w.agreements.strike(agreed::ENGAGEMENT, employer, PartyId(*c), &[draw.spread(40.0)], Day(-365), None);
+        w.agreements.strike(agreed::ENGAGEMENT, employer, PartyId(*c), &[draw.spread(40.0), draw.spread(35.0)], Day(-365), None);
     }
     for (n, f) in firms.iter().enumerate() {
         let kind = match n % 4 {
@@ -168,8 +171,51 @@ fn main() {
         w.open_book(book_of(*line), *line, CurrencyCode::at(0), PriceRule::SellersCompete);
     }
 
+    // §37 A2: how the goods of this world are made. Arbitrary like everything else here, and with
+    // two ways per line so the firm has something to choose between (22.1): one that leans on the
+    // input and one that leans on the hours.
+    let goods: Vec<InstrumentId> =
+        lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Good).take(8).copied().collect();
+    let plants: Vec<InstrumentId> =
+        lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Plant).take(8).copied().collect();
+    let makes: Vec<Makes> = goods
+        .iter()
+        .enumerate()
+        .filter_map(|(n, made)| {
+            let from = *goods.get((n + 1) % goods.len())?;
+            let plant = *plants.get(n % plants.len().max(1))?;
+            Some(Makes {
+                line: Line::new(
+                    *made,
+                    vec![
+                        Recipe::new(*made, vec![(from, 2.0)], 0.2, 0.1, 0.98, 10.0),
+                        Recipe::new(*made, vec![(from, 0.5)], 1.5, 0.1, 0.98, 10.0),
+                    ],
+                ),
+                plant,
+                plant_is: Plant { life: 200, upkeep_per_period: 0.5, capacity_per_period: 40.0 },
+            })
+        })
+        .collect();
+
+    // 33 A2, 37 B1: **a maker is whoever holds the plant**, so a world where the plant landed on
+    // parties that employ nobody is a world that makes nothing. The draw spread the plant lines over
+    // everybody; here one firm per line is given the mill, the input stock to run it and nothing
+    // else. It is as arbitrary as the rest of this file and it is what lets the production mechanism
+    // be SEEN to run at scale rather than only in its own tests.
+    for (n, m) in makes.iter().enumerate() {
+        let maker = PartyId(firms[n % firms.len()]);
+        w.register.credit(maker, m.plant, 3.0, 1_000.0, 0);
+        for (input, _) in &m.line.ways[0].per_unit {
+            w.register.credit(maker, *input, draw.spread(4_000.0), 0.5, 0);
+        }
+        // §46: and a view of its own demand, which in a seeded world is what its own past sales
+        // gave it. Here it is drawn, like everything else — 5 E1 again: this is not a seed.
+        w.outlooks.form(maker, running_about::HOW_MUCH_IT_SELLS, draw.spread(300.0), 0);
+    }
+
     let wiring = Wiring {
-        basket: lines.iter().take(8).copied().collect(),
+        makes,
         lines: lines.iter().take(8).copied().collect(),
         overnight: None,
         paper: None,
@@ -204,9 +250,22 @@ fn main() {
         if ms > worst {
             worst = ms;
         }
+        // §37 B1: how many production runs the world actually made. A wired mechanism that never
+        // fires is the defect 21d exists to prevent, so the runner counts it rather than assuming.
+        // A thing coming into existence is a `Create`; a thing leaving it is a `Destroy`, and
+        // perishing is the other user of `Cause::Production`. Counting the cause alone counts the
+        // rot as production, which is the opposite of what is being asked.
+        let made = w
+            .wire
+            .in_period(period)
+            .filter(|n| {
+                w.wire.cause_of(*n) == Cause::Production
+                    && w.wire.legs_of(*n).iter().any(|l| matches!(l, Leg::Create { .. }))
+            })
+            .count();
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} events · {} outlooks",
-            did.ran, did.asks, did.books_cleared, did.trades, did.events, w.outlooks.len(),
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks",
+            did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
     }
 
@@ -219,4 +278,6 @@ fn main() {
     );
     println!("The world is ARBITRARY: nothing in it was cleared, decided or seeded, and the seeding");
     println!("replaces it (5 E1). What it proves is that the machine runs in full, and what that costs.");
+    println!("`made` counts the batches §37's lines ran. It was zero every period until item 22, and a");
+    println!("world that makes nothing sells its opening stock once and then has nothing to trade.");
 }

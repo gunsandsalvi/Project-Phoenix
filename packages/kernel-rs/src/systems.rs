@@ -24,7 +24,8 @@ use crate::clearing::{Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
-use crate::running::{afoot, Closing, Counts, Forming, Owed, Reads, Reporting, Servicing, Wages};
+use crate::mechanisms::goods::CostFlow;
+use crate::running::{afoot, Closing, Counts, Forming, Makes, Making, Owed, Reads, Reporting, Servicing, Wages};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -50,6 +51,12 @@ pub fn line_of(book: MarketId) -> InstrumentId {
 pub struct GoodsSellers {
     /// §37 B1: what a unit cost it. Its own, and two firms differ (§32 A3).
     pub will_take: f64,
+    /// **33 A4.c: whether a good is an input is the HOLDER's question, not the good's.** What a
+    /// party's own recipe consumes is an input to it and stock to everybody else — so a firm that can
+    /// run a line does not offer the flour it is about to bake, and the same sacks in a merchant's
+    /// yard are for sale. Each row is a plant and what the ways of running it draw on; holding the
+    /// plant is what makes the question apply, and it is a read of the register (Law 19).
+    pub keeps: Vec<(InstrumentId, Vec<InstrumentId>)>,
 }
 
 impl Participant for GoodsSellers {
@@ -57,11 +64,19 @@ impl Participant for GoodsSellers {
         kinds::FIRM
     }
 
-    /// Law 19: off its OWN rows. A firm is in the book for a line because it HOLDS that line.
+    /// Law 19: off its OWN rows. A firm is in the book for a line because it HOLDS that line — and
+    /// not for a line its own plant is about to consume (33 A4.c).
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        let mine: Vec<InstrumentId> = self
+            .keeps
+            .iter()
+            .filter(|(plant, _)| view.quantity(*plant) > 0.0)
+            .flat_map(|(_, inputs)| inputs.iter().copied())
+            .collect();
         view.holdings()
-            .filter(|row| view.quantity(view.line_of(*row)) > 0.0)
-            .map(|row| book_of(view.line_of(row)))
+            .map(|row| view.line_of(row))
+            .filter(|line| view.quantity(*line) > 0.0 && !mine.contains(line))
+            .map(book_of)
             .collect()
     }
 
@@ -371,8 +386,12 @@ pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> 
 /// told which line to look at is a system looking at somebody else's money. A party's own account is
 /// `ParticipantView::own_cash`; what is left here is what each system TRADES.
 pub struct Wiring {
-    /// What households consume.
-    pub basket: Vec<InstrumentId>,
+    /// 37 A2: **how every good in this world is made**, one row per line, with the plant it is made
+    /// with. It replaces the separate `basket` that stood here: what a household consumes is what
+    /// somebody makes, and two lists of that are two writers of one fact (Law 4). A world whose
+    /// basket named a good no recipe produced was a world asking for something nobody could supply,
+    /// and the books that never cleared could not say which of the two lists was wrong.
+    pub makes: Vec<Makes>,
     /// What funds, insurers and dealers may hold.
     pub lines: Vec<InstrumentId>,
     /// §11: the overnight book's subject. `Missing` where no such line exists yet — a money market
@@ -382,6 +401,34 @@ pub struct Wiring {
     pub paper: Option<InstrumentId>,
     /// Calendar A1: how many days a period is, so "what falls due this period" is a read of dates.
     pub days_per_period: i64,
+}
+
+impl Wiring {
+    /// 37 A2, Law 4, Law 19: **the basket is a READ of what the recipes make.** It replaces the list
+    /// that used to sit beside them, and the read is what makes "a household wants what somebody
+    /// makes" true by construction rather than by two declarations agreeing.
+    pub fn basket(&self) -> Vec<InstrumentId> {
+        self.makes.iter().map(|m| m.line.makes).collect()
+    }
+
+    /// 33 A4.c: each plant with everything the ways of running it draw on — what a holder of that
+    /// plant is keeping rather than selling. Another read of the same declaration (Law 4).
+    pub fn keeps(&self) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
+        self.makes
+            .iter()
+            .map(|m| {
+                let mut inputs: Vec<InstrumentId> = Vec::new();
+                for way in &m.line.ways {
+                    for (what, _) in &way.per_unit {
+                        if !inputs.contains(what) {
+                            inputs.push(*what);
+                        }
+                    }
+                }
+                (m.plant, inputs)
+            })
+            .collect()
+    }
 }
 
 /// **Every system this world has, and every one of them RUNS.** The forty-seven of Part XIII, each
@@ -402,7 +449,7 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
             // survive the period leaves at what it cost (37 E4).
-            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0 }));
+            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0, keeps: w.keeps() }));
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: 0.01 }));
             goods
         },
@@ -410,11 +457,13 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
             // §41 both posts and works: a cell bids for what it can fund, and forms its outlook from
             // the prices its own lines printed at (§46).
             let mut households =
-                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: w.basket.clone() }));
+                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: w.basket() }));
             households.mechanism = Some(Box::new(Forming { memory: 0.3 }));
             households
         },
-        works("recipe", AT_MARKETS, Box::new(Reads { kind: says("recipe.lines"), what: Counts::LinesThatPrinted })),
+        // §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines
+        // printed, which is a system reporting on a world it takes no part in.
+        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut })),
         works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
         works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
         works("freight", AT_MARKETS, Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive })),
@@ -565,7 +614,7 @@ mod tests {
     fn a_firm_posts_what_it_holds_and_a_household_bids_what_it_can_fund() {
         // §37 C1, §41 C1.d: the seller offers units it HAS; the buyer bids for what it can pay for.
         let s = world();
-        let sellers = GoodsSellers { will_take: 1.0 };
+        let sellers = GoodsSellers { will_take: 1.0, keeps: Vec::new() };
         let buyers = HouseholdBuyers { will_pay: 1.2, basket: vec![s.bread] };
         let bread = s.bread;
 
@@ -600,7 +649,7 @@ mod tests {
         let (bread, household) = (s.bread, s.household);
         let w = &mut s.w;
         let systems = [
-            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0 })).slotted(FIRST_SLOT),
+            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0, keeps: Vec::new() })).slotted(FIRST_SLOT),
             posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: vec![bread] })).slotted(FIRST_SLOT + 1),
         ];
         let as_systems: Vec<&dyn System> = systems.iter().map(|s| s as &dyn System).collect();
@@ -683,13 +732,31 @@ mod tests {
         assert!(forbidden.markets(&view).is_empty());
     }
 
+    /// A line that makes one good out of another, with a mill to make it in. The fixtures need one
+    /// because the basket is now a READ of what the recipes make (22.3), so a world that makes
+    /// nothing is a world whose households want nothing.
+    fn a_loaf(makes: InstrumentId, from: InstrumentId) -> Makes {
+        Makes {
+            line: crate::mechanisms::recipe::Line::new(
+                makes,
+                vec![crate::mechanisms::recipe::Recipe::new(makes, vec![(from, 2.0)], 0.1, 0.05, 0.98, 10.0)],
+            ),
+            plant: InstrumentId::at(9),
+            plant_is: crate::mechanisms::capital_programme::Plant {
+                life: 100,
+                upkeep_per_period: 1.0,
+                capacity_per_period: 150.0,
+            },
+        }
+    }
+
     #[test]
     fn every_system_of_the_world_is_wired_exactly_once() {
         // ARCHITECTURE 4.9b: adding a system is a row, and a module not in this list does not run.
         let mut kinds = Names::new();
         let all = all(
             &Wiring {
-                basket: vec![InstrumentId::at(1)],
+                makes: vec![a_loaf(InstrumentId::at(1), InstrumentId::at(4))],
                 lines: vec![InstrumentId::at(1)],
                 overnight: Some(InstrumentId::at(2)),
                 paper: Some(InstrumentId::at(3)),
@@ -733,7 +800,7 @@ mod tests {
         let mut kinds = Names::new();
         let all = all(
             &Wiring {
-                basket: vec![InstrumentId::at(1)],
+                makes: vec![a_loaf(InstrumentId::at(1), InstrumentId::at(4))],
                 lines: vec![InstrumentId::at(1)],
                 overnight: Some(InstrumentId::at(2)),
                 paper: Some(InstrumentId::at(3)),
@@ -760,7 +827,7 @@ mod tests {
         // register of names would give every event an id that means something else there.
         let wired = all(
             &Wiring {
-                basket: vec![bread],
+                makes: vec![a_loaf(bread, InstrumentId::at(4))],
                 lines: vec![bread],
                 overnight: None,
                 paper: None,

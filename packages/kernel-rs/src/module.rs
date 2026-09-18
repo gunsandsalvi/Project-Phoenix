@@ -14,7 +14,7 @@
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
 use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
-use crate::ledger::{Cause, Delivery, Leg};
+use crate::ledger::{Cause, Delivery, Leg, Settlement};
 use crate::parties::Parties;
 use crate::params::Params;
 use crate::prices::{Print, Prints};
@@ -181,6 +181,7 @@ pub struct MechanismContext<'a> {
     schedules: &'a Schedules,
     outlooks: &'a Outlooks,
     processes: &'a Processes,
+    wire: &'a Settlement,
     proposed: Vec<Proposed>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
@@ -218,6 +219,11 @@ pub struct Stores<'a> {
     pub schedules: &'a Schedules,
     pub outlooks: &'a Outlooks,
     pub processes: &'a Processes,
+    /// Money D1: **the wire IS the history.** A mechanism may READ what happened — what it itself
+    /// delivered last period, what anybody delivered — and it may not write it: settlement stays the
+    /// one writer. Without this a module that needs its own past has to infer it by subtraction,
+    /// which is exactly what Law 19 forbids.
+    pub wire: &'a Settlement,
 }
 
 impl<'a> MechanismContext<'a> {
@@ -234,6 +240,7 @@ impl<'a> MechanismContext<'a> {
             schedules: s.schedules,
             outlooks: s.outlooks,
             processes: s.processes,
+            wire: s.wire,
             proposed: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
@@ -287,6 +294,12 @@ impl<'a> MechanismContext<'a> {
     /// What is in flight across periods.
     pub fn processes(&self) -> &Processes {
         self.processes
+    }
+
+    /// Money D1: **what actually happened**, to read and never to write. A module that needs its own
+    /// past reads it here rather than inferring it from a balance that moved (Law 19).
+    pub fn wire(&self) -> &Settlement {
+        self.wire
     }
 
     /// Law 5: what it asks the world to do. Both legs or it is not a flow.

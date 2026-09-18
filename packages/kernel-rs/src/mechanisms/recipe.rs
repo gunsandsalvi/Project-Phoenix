@@ -43,6 +43,11 @@ pub struct Recipe {
     /// B4: not everything started is finished. The share of starts that survive — a fact about the
     /// line, never a target.
     pub yields: f64,
+    /// B5.b: **the smallest run of the line** — a furnace charge, a print run, a shift. A TECHNOLOGY
+    /// primitive: a fact about how the thing is made, and the reason a small order is not simply a
+    /// small run. A line whose batch is one unit is a line with no batch, which is a real kind of
+    /// line and is said by declaring one rather than by leaving it out.
+    pub batch: f64,
 }
 
 impl Recipe {
@@ -52,12 +57,14 @@ impl Recipe {
         labour_per_unit: f64,
         capital_services_per_unit: f64,
         yields: f64,
+        batch: f64,
     ) -> Recipe {
         assert!(
             yields > 0.0 && yields <= 1.0,
             "37 B4: a line that yields {yields} of what it starts is not a line"
         );
-        Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields }
+        assert!(batch > 0.0, "37 B5.b: a line whose smallest run is {batch} cannot be run at all");
+        Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields, batch }
     }
 
     /// B2: **production consumes the inputs it consumes** — the physical consequence of the decision,
@@ -97,6 +104,9 @@ pub enum Bound {
     Capacity,
     Inputs,
     Labour,
+    /// B5.b: what the firm could otherwise have run does not reach one batch of the line, so the
+    /// line does not run. It is not a small production decision; it is the absence of one.
+    Batch,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -104,6 +114,83 @@ pub struct Decided {
     pub starts: f64,
     pub finishes: f64,
     pub bound: Bound,
+}
+
+/// A2: **a line may be made more than one way.** Two ways of making the same good are two
+/// TECHNOLOGIES, not a parameter — one may be labour-heavy and cheap on inputs, another the reverse,
+/// and which is better is not a fact about the line at all. It is a fact about the PRICES the firm
+/// is facing, and those differ between firms and between periods, which is why the choice belongs to
+/// the firm and not to this declaration.
+#[derive(Clone, Debug)]
+pub struct Line {
+    pub makes: InstrumentId,
+    /// A2.a: each way is a full Leontief recipe in its own right. There is no blending of two ways
+    /// into one, because blending IS substitution, and the model chose none (A2.a).
+    pub ways: Vec<Recipe>,
+}
+
+impl Line {
+    pub fn new(makes: InstrumentId, ways: Vec<Recipe>) -> Line {
+        assert!(!ways.is_empty(), "37 A2: a line with no way of making it is not a line");
+        for w in &ways {
+            assert!(
+                w.makes == makes,
+                "Law 4: a way of making something else is not a way of making this line"
+            );
+        }
+        Line { makes, ways }
+    }
+}
+
+/// B5: **what one way costs THIS firm to make one unit that survives**, at the prices it can see.
+///
+/// Inputs consumed plus wages plus a capital charge (B5), divided by what finishes rather than by
+/// what starts — because normal waste is absorbed into the cost of the survivors (B4). The division
+/// is where that happens; nobody applies a markup for it.
+///
+/// **`None` where an input has never printed.** A firm cannot cost a way it cannot price, and a way
+/// it cannot cost is one it cannot choose. Appendix A: that is missing, not zero — reading an
+/// unpriced input as free would make the way with the most unpriced inputs look cheapest, which is
+/// the defect exactly inverted.
+pub fn costs(r: &Recipe, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
+    let mut inputs = 0.0;
+    for (what, per) in &r.per_unit {
+        match priced(*what) {
+            Some(price) => inputs += per * price,
+            None => return None,
+        }
+    }
+    let per_start = inputs + r.labour_per_unit * wage + r.capital_services_per_unit * capital_service;
+    Some(per_start / r.yields)
+}
+
+/// B1, A2: **the firm picks the way that costs IT least**, at the prices IT is facing.
+///
+/// Law 2: this is not a rule about which way is better — there is no such fact. Two firms looking at
+/// different prices pick differently, and a firm picks differently when a price moves, which is the
+/// whole reason a line has more than one way of being made. What is declared is the ways; which one
+/// runs is an OUTCOME.
+///
+/// A tie goes to the way declared first, and that is arbitrary rather than economic: two ways that
+/// cost the same are two ways that cost the same, and inventing a preference between them would be a
+/// decision nobody made. `None` where the firm can price no way at all.
+pub fn picks<'a>(
+    line: &'a Line,
+    priced: &impl Fn(InstrumentId) -> Option<f64>,
+    wage: f64,
+    capital_service: f64,
+) -> Option<(&'a Recipe, f64)> {
+    let mut best: Option<(&Recipe, f64)> = None;
+    for w in &line.ways {
+        let Some(c) = costs(w, priced, wage, capital_service) else {
+            continue;
+        };
+        match best {
+            Some((_, so_far)) if c >= so_far => {}
+            _ => best = Some((w, c)),
+        }
+    }
+    best
 }
 
 /// B1: **the quantity is the OUTCOME.** It starts what its demand, capacity, inputs and labour all
@@ -142,6 +229,22 @@ pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
             allows = from_labour;
             bound = Bound::Labour;
         }
+    }
+    // B5.b: **the line runs in whole batches.** A batch is a fact about the line — a furnace charge,
+    // a print run, a shift — and half of one is not a smaller run of it, it is nothing. So what the
+    // reasons allow is turned into whole batches, and a firm whose reasons do not reach one batch
+    // STARTS NOTHING and says so.
+    //
+    // Law 6: this is not a floor under the quantity. A floor would raise a number to meet a
+    // threshold; this lowers it to what the line can actually be run at, and the remainder is not
+    // clipped away — it was never a producible quantity. It is also where operating leverage comes
+    // from: the plant's upkeep is owed over whatever the batch made, so a line running one batch
+    // where it could run ten costs ten times as much a unit (`throttled_cost`).
+    let batches = (allows / r.batch).floor();
+    let in_batches = batches * r.batch;
+    if in_batches < allows {
+        bound = if batches <= 0.0 { Bound::Batch } else { bound };
+        allows = in_batches;
     }
     Decided { starts: allows, finishes: r.finishes(allows), bound }
 }
@@ -192,6 +295,7 @@ pub fn throttled_cost(whole_line_cost: f64, batch: f64) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::num::dust;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -204,7 +308,7 @@ mod tests {
     /// Two units of input 1 and half a unit of input 2 make one unit of good 9, with 0.4 of labour
     /// and 0.1 of capital services, and nineteen starts in twenty survive.
     fn line() -> Recipe {
-        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95)
+        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 1.0)
     }
 
     fn reasons(demand: f64, capacity: f64, input_1: f64, input_2: f64, labour: f64) -> Reasons {
@@ -316,12 +420,118 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a line")]
     fn a_line_that_yields_nothing_is_not_a_line() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.0);
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.0, 1.0);
     }
 
     #[test]
     #[should_panic(expected = "is not a line")]
     fn a_line_that_yields_more_than_it_starts_is_not_a_line_either() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 1.2);
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 1.2, 1.0);
+    }
+
+    /// The same good, two ways: one that draws a lot of input 1 and little labour, one the reverse.
+    fn two_ways() -> Line {
+        Line::new(
+            good(9),
+            vec![
+                Recipe::new(good(9), vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.1, 0.95, 1.0),
+                Recipe::new(good(9), vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.1, 0.95, 1.0),
+            ],
+        )
+    }
+
+    #[test]
+    fn which_way_is_better_is_a_fact_about_prices_and_not_about_the_line() {
+        // A2, Law 2: two firms facing different prices pick differently, and the same firm picks
+        // differently when a price moves. That is why the ways are declared and the choice is not.
+        let line = two_ways();
+        let dear_input = |i: InstrumentId| if i == good(1) { Some(10.0) } else { Some(1.0) };
+        let cheap_input = |i: InstrumentId| if i == good(1) { Some(0.5) } else { Some(1.0) };
+
+        // Input 1 at 10 and an hour at 1: the input-heavy way costs 40.6 a unit, the labour-heavy
+        // one 12.2. The firm takes the second.
+        let (way, _) = picks(&line, &dear_input, 1.0, 1.0).unwrap();
+        assert_eq!(way.labour_per_unit, 2.0);
+
+        // The same line, the same firm, input 1 now at 0.5: the first way wins on the same read.
+        let (way, _) = picks(&line, &cheap_input, 1.0, 1.0).unwrap();
+        assert_eq!(way.labour_per_unit, 0.1);
+
+        // And nothing about the LINE changed between those two reads.
+        assert_eq!(line.ways.len(), 2);
+    }
+
+    #[test]
+    fn a_way_the_firm_cannot_price_is_a_way_it_cannot_choose() {
+        // Appendix A: an unpriced input is MISSING, not free. Read as zero it would make the way
+        // with the most unpriced inputs look cheapest — the defect exactly inverted.
+        let line = two_ways();
+        let only_input_two = |i: InstrumentId| if i == good(2) { Some(1.0) } else { None };
+        assert!(costs(&line.ways[0], &only_input_two, 1.0, 1.0).is_none());
+        assert!(picks(&line, &only_input_two, 1.0, 1.0).is_none());
+    }
+
+    #[test]
+    fn the_cost_a_firm_reads_is_the_cost_of_a_unit_that_survives() {
+        // B4, B5: normal waste is absorbed into the cost of the survivors, and the division is
+        // where that happens. Four units of input 1 at 1, half of input 2 at 1, a tenth of an hour
+        // at 1 and a tenth of capital at 1 is 4.7 a start — and 4.7/0.95 a survivor.
+        let r = &two_ways().ways[0];
+        let all_at_one = |_: InstrumentId| Some(1.0);
+        let c = costs(r, &all_at_one, 1.0, 1.0).unwrap();
+        assert!((c - 4.7 / 0.95).abs() < dust(4, &[4.7, 0.95]));
+        // Scrapping less makes the same physical draw cheaper per unit sold, with no markup moved.
+        let kinder = Recipe::new(good(9), r.per_unit.clone(), 0.1, 0.1, 1.0, 1.0);
+        assert!(costs(&kinder, &all_at_one, 1.0, 1.0).unwrap() < c);
+    }
+
+    #[test]
+    #[should_panic(expected = "not a way of making this line")]
+    fn a_way_of_making_something_else_is_not_one_of_this_line_s_ways() {
+        // Law 4: one representation per real thing. A line's ways all make the line.
+        Line::new(good(9), vec![Recipe::new(good(8), vec![(good(1), 1.0)], 0.1, 0.1, 1.0, 1.0)]);
+    }
+
+    /// The same line, but it can only be run fifty units at a time.
+    fn in_fifties() -> Recipe {
+        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 50.0)
+    }
+
+    #[test]
+    fn the_line_runs_in_whole_batches_and_the_remainder_was_never_producible() {
+        // B5.b: half a furnace charge is not a smaller run, it is nothing. The firm has inputs for
+        // 150 and could sell more, so it runs three batches of fifty and the reasons still say
+        // inputs — the batch shaped the quantity but the shortage is what bound it.
+        let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 320.0, 10_000.0, 10_000.0));
+        assert_eq!(d.starts, 150.0);
+        assert_eq!(d.bound, Bound::Inputs);
+        // Law 6: the 10 units of input beyond the third batch are not clipped off a quantity the
+        // firm would have made — they were never a producible run, and they are still on its books.
+    }
+
+    #[test]
+    fn a_firm_whose_reasons_do_not_reach_one_batch_does_not_run_the_line_at_all() {
+        // B5.b: it is not a small production decision, it is the absence of one — and the reader
+        // can name it, which is the whole point of `Bound`.
+        let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 80.0, 10_000.0, 10_000.0));
+        assert_eq!(d.starts, 0.0);
+        assert_eq!(d.finishes, 0.0);
+        assert_eq!(d.bound, Bound::Batch);
+    }
+
+    #[test]
+    fn a_line_run_at_one_batch_where_it_could_run_ten_costs_ten_times_as_much_a_unit() {
+        // B5.b and F5.a together: this is operating leverage. The plant's upkeep is owed over
+        // whatever the batch made, so the same whole-line cost over a tenth of the output is ten
+        // times the unit cost — and nobody applied a markup to make it so.
+        let at_ten = throttled_cost(10_000.0, 500.0).unwrap();
+        let at_one = throttled_cost(10_000.0, 50.0).unwrap();
+        assert_eq!(at_one / at_ten, 10.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot be run at all")]
+    fn a_line_with_no_smallest_run_is_not_a_line() {
+        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.95, 0.0);
     }
 }

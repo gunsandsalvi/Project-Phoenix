@@ -39,8 +39,8 @@
 
 ### 0.1 By spec system
 
-`npm run check:existence` over `docs/COVERAGE.md`. **1,361 clauses: 888 MET (94 UNMEASURED),
-105 PARTIAL, 368 MISSING.** A MET mark means a module cites the clause; the read found MET rows on
+`npm run check:existence` over `docs/COVERAGE.md`. **1,361 clauses: 1,055 MET (91 UNMEASURED),
+128 PARTIAL, 176 MISSING.** A MET mark means a module cites the clause; the read found MET rows on
 code that cannot run (re-marked by the item named): Insurers A4/B1/B2 (14), Housing B1/C1/C3/C4
 (12a), Freight A3/D2/D6 (0.11), Trade Credit D1/D4 (12a.3), Short-Term Debt B3.b/B4 (0.5, 12a.7),
 Corporate Credit E5 (17.0), Banks Capital C2 (0.9), §42 A1–A6 (0f), Capital Programme A2/C1 (15.1),
@@ -90,7 +90,7 @@ and neither is yet a MET a run has confirmed.
 | Central Bank | 22 | 3 | 4 | **1** | 29 |
 | Polity | 31 | 0 | 1 | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
-| Capital Programme | 22 | 3 | 0 | 0 | 25 |
+| Capital Programme | 20 | 5 | 0 | 0 | 25 |
 | Firm Birth | 13 | 7 | 5 | **1** | 25 |
 | M&A | 14 | 0 | 8 | **7** | 22 |
 | Trade Credit | 9 | 3 | 10 | 0 | 22 |
@@ -123,31 +123,36 @@ at 22c.3a, the production absence at 22.2.
 **What the engine does today.** Fifty systems, fifty mechanisms, fifty-three phases, and every one of
 them runs. `packages/kernel-rs/src/bin/world-runs` builds a world at the counts the engine is judged
 on and steps it:
-
 ```
-built 160 ms — 10,318 parties, 16,750 instruments, 548,268 holdings, 1,546 books, 53 phases
+built 172 ms — 10,318 parties, 16,750 instruments, 548,284 holdings, 1,546 books, 53 phases
                1,286 agreements, 16,720 scheduled payments, 1,286 processes
-period 1  135.5 ms — 50 phases ran · 47,319 asks · 8 books cleared · 10,320 trades · 151,850 events
-period 4  150.9 ms — 50 phases ran · 47,315 asks · 0 books cleared ·      0 trades · 141,840 events
-worst period 150.9 ms against the 3,000 ms the migration was judged on
+period 1  171.1 ms — 50 phases ran · 13 books cleared · 16,337 trades · 8 made · 157,899 events
+period 2  223.3 ms — 50 phases ran ·  7 books cleared ·  3,115 trades · 6 made · 154,808 events
+period 4  168.2 ms — 50 phases ran ·  6 books cleared ·    658 trades · 6 made · 148,490 events
+worst period 223.3 ms against the 3,000 ms the migration was judged on
 ```
+
+**`made` is the batches §37's lines ran, and until item 22 it was zero in every period of every run
+this project has made.** A world that makes nothing sells its opening stock once and then has nothing
+to trade, which is what "8 books cleared, then none" was. It now makes things every period and the
+goods books keep clearing — the first repeating circuit this engine has had.
 
 **That world is ARBITRARY and is declared arbitrary** — every number in it is drawn from a counter,
 nothing in it was cleared or decided, and it is not a seed (5 E1). What it proves is the thing that
 could not be proved before: every ported module is REACHED by the period loop, the phase order holds
 at scale, and what a mechanism proposes goes over the ordinary wire.
 
-**What is built**: 634 tests, clippy clean, `tools/phoenix-check` green over 80 files — the laws as
+**What is built**: 650 tests, clippy clean, `tools/phoenix-check` green over 80 files — the laws as
 checks, which is what replaced the TypeScript oracle (0g.41a). The kernel owns **eleven stores**: the
 seven it had, plus `agreements`, `schedules`, `outlooks` and `processes` (21d), which is what a
 mechanism for employment, for lending, for expectations and for anything in flight reads.
 
-**Two findings this run leaves, both written down and neither chased** (Law 11):
+**Three findings these runs leave, all written down and none chased** (Law 11):
 
-- **Eight books clear in period 1 and none after.** The arbitrary world has one stock of goods and
-  nothing that makes more, so the books empty and stay empty. It is a fact about the scaffold, not
-  about the engine — the world has no production because nothing seeded it with any — and it is the
-  same absence 22.2 names.
+- **The audit never runs.** `World::step` does not call it, so every run this project has made since
+  the port has stepped with no family visiting it. Item **22e**, inserted before 22c.
+- **The plant wears in the cost and not on the books**, and the upkeep is a cost with no payee.
+  Item **22f**, inserted after 22d.
 - **`Nouns::homeless()` returns zero, and it is zero by omission.** The register is wired and every
   kernel store declares itself, so the read is live and an undeclared store throws; but no module
   declares a noun it has no home for, so the count has nothing to count. `CLAUDE.md` says *14
@@ -155,6 +160,7 @@ mechanism for employment, for lending, for expectations and for anything in flig
   declared homeless (`estate/index.ts estates`, standing in for `Process`, positioned at item 21),
   and `processes` is now a kernel store. The measure is switched on and reading an empty room; what
   is left of 21d is to walk the fifty modules and have each declare what it keeps.
+
 
 
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
@@ -168,9 +174,9 @@ mechanism for employment, for lending, for expectations and for anything in flig
 | one propensity to consume; no liquid/illiquid wealth | one rule per cell | 0f |
 | information diffusion: public prints are not observations | H8 | 12d |
 | the government buys nothing | outlays are transfers and wages | 19.0 |
-| input substitution: one recipe per line | Leontief only | 22 |
+| input substitution: a line has more than one WAY and the firm picks, but no way blends two — substitution is still MISSING and is a new mechanism, not a parameter (37 A2.a) | Leontief within a way | a new item when it is wanted |
 | demography: two cohorts, no births | stubs | 0f, 12.3, 14.6 |
-| fixed costs and batches at the firm (operating leverage) | linear scaling | 22 |
+| fixed costs and batches at the firm (operating leverage) — **built at 22**: a line runs in whole batches and a vintage carries its own keep, so a throttled line costs more a unit | — | done |
 | external shocks: three stub countries | 16 | 16 |
 | readers of the environment (insurer, central bank, heating) | EN2 | 14.2, 18.8, 12d |
 
@@ -225,11 +231,13 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21b | A pool whose manager died | after 21a |
 | 21c | A tax on an estate is a claim on it | after 21b |
 | 21d | Every store declares itself, and the homeless count is true | ahead of 22; four steps closed, the modules' own declarations left |
-| 22 | The recipe | recipes plural; batches; upkeep |
+| 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
+| 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
 | 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
+| 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
 
@@ -557,55 +565,29 @@ in `CLAUDE.md` is the count the register prints.
 
 ---
 
-## 22. The recipe
+## 22e. The audit is not in the period loop
 
-*Last in the sequence deliberately: changing input-output relationships moves EVERY quantity in the
-model, so it lands against a stable measurement and the comparison across the change is the point of
-it. `packages/kernel-rs/src/mechanisms/recipe.rs` holds the Leontief recipe, the production decision
-and the work-in-progress; what it does not have is a batch, an upkeep, or a second recipe to choose
-between.*
+**INSERTED here (Law 10), immediately after 22 and BEFORE 22c**, because everything built after it
+should be audited as it is built rather than audited once at the end. Found wiring §37's production:
+the runner wanted to say whether making things had broken any identity, and there was nothing to ask.
 
-- [ ] 22.1 **A line may declare more than one recipe** (TECHNOLOGY, registry data), and the firm
-  picks by its own cost read — not by a rule about which is better.
-- [ ] 22.2 **A recipe declares a BATCH; a vintage declares an UPKEEP per period; a line below batch
-  stops.**
+**`World::step` never runs the audit.** `audit.rs` is built, the families are built, they have their
+own tests and `capital_programme::PlantMoves` is one of them — and `grep -n "audit" assembly.rs
+world.rs` returns one hit, in a comment. So the assembled world has stepped, in every run this
+project has made since the port, **with no family ever visiting it**. It is 21d's defect one level
+up: the thing exists, the loop does not reach it, and nothing said so.
 
-  **MEASURED TWICE, on two different worlds, and they say the same thing.** On the seeded world
-  `check:opening` last stepped (now deleted with it): the world sold its opening stock in the first
-  period and had nothing left — one book cleared of four, 35 trades, no firm making anything in any
-  period. On the arbitrary world `world-runs` steps today: **eight books clear in period 1 and none
-  in periods 2, 3 or 4** — the stock goes and nothing replaces it. `recipe` and `goods` are wired as
-  READS, so nothing in either world produces. That is the largest single thing between this and an
-  economy, and it is measured on the engines that existed rather than inferred.
+It matters most right now, because production is the first mechanism that CREATES and DESTROYS units
+at scale, and the units identity is the family that would catch it getting that wrong.
 
-  **Measured on the TypeScript engine (12c.3), to be re-read:** in a year of the scale model the
-  twelve named firms produced ONCE — period 1, off the seed's work in progress — and never again:
-  every plan after was `batch 0, bound demand`, because the stock the seed gave them (314 million
-  loaves at one baker) exceeded what they expected to sell (27 million a period) for longer than
-  they lived; by period 52 six of twelve were dead and thirty-seven estates open. **The seed half of
-  that is closed** — 22b's chronicle gives a firm the stock it BOUGHT — so what is left of the
-  finding is the batch this step names.
-- [ ] 22.3 **Goods A2 as specified**, and a basket that names what the recipe makes.
+- [ ] 22e.1 **The audit runs in the period**, over the one traversal it was built for, and `Stepped`
+  carries what it found — so a run that breaks an identity says so in the line it prints.
+- [ ] 22e.2 **Audit E2: an unbuilt family reports "not built", never green.** A world that assembled
+  no family must not read as a world with no violations; `22b.2` already found that exact lie in the
+  census and the fix has to survive here.
+- [ ] 22e.3 **`world-runs` prints the audit by family**, because a number nobody reads is not a check.
 
-  **Measured on the TypeScript engine, to be re-read** — five findings, and each says which part of
-  the recipe is missing:
-  - *(12.1)* no service line had a buyer: every capacity line's print was stale from period 0 with
-    `noDemand`, because the households' basket and the firms' overheads named no service. The demand
-    for services is the recipe's and the basket's to state.
-  - *(12b.3, from 12d.1)* with a firm's ask at its cost, a machinery maker asked 0.616 a piece where
-    the print had been 630,879 — **the print was a belief asking the market to agree** — and a
-    buyer's gap took thirty-nine million pieces of it at period 3. The price level of that world was
-    what those asks were holding up.
-  - *(12b.3, from 12a.8 and 12d.1)* the banking venue printed sixty-seven billion an hour on one
-    bank's bid at any price, falling to thirteen million once the bid was the bank's outlook on its
-    earnings — still a price nobody else pays for an hour, because the `banking` occupation had one
-    kind of bidder. **What a bank's hour is worth beside a baker's is the recipe's to state.**
-  - *(14.1)* with a pool's payout back to what it was actually paid, the one listed firm of the
-    (4, 40) rig failed in period 21 unable to pay 44.8m, where it had lived to report in period 29 —
-    a saver's own subscription coming back as a dividend was demand from nowhere.
-  - *(12d.4)* retail books in a place with no household in it ran with sellers and nobody to buy.
-    Goods A1 opens a good where it can be made or sold, so **that one is honest**: it is a fact about
-    where the draw puts people, not a defect.
+**Exit.** A period of the assembled world is audited, and the runner says by family what was found.
 
 ---
 
@@ -693,6 +675,39 @@ growing, and is why this item sits after 22c rather than before it.
   but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.
 - [ ] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
   read, published, causing nothing.
+
+---
+
+## 22f. The plant wears, and somebody is paid to keep it
+
+**INSERTED here (Law 10), after 22d**, because paying the upkeep needs a payee to exist and a queue
+that can refuse the payment. Both halves were found closing 22, and both are written down rather than
+patched (Law 11).
+
+**33 A3 says depreciation is charged in BOTH places — and here it is charged in one.**
+`capital_programme::charge` is a read, and 22 uses it: the period's depreciation on the plant that
+ran lands in the unit cost of what the line made, which is right (37 F5.a, absorption). What does not
+happen is the other half: **nothing reduces the plant's own basis on the register**, so a mill in this
+world wears out in the cost of its flour and never wears out on the books. `worn` and `net` compute
+the right numbers and no writer applies them. A vintage therefore never reaches the end of its life,
+and 33 A6's *a vintage leaves the register when fully worn* has nothing to leave.
+
+**And the upkeep is a cost with no payee.** `upkeep` is cash in the real world — it is paid to whoever
+maintains the plant — and here it enters the unit cost of what was made without any money leaving the
+firm's account. That is not a one-sided flow on the wire (there is no leg at all), which is worse in
+one way: **the firm's inventory carries a cost that never left its account**, and Law 5's check cannot
+see an instruction nobody wrote. The maintenance supplier is a party this world does not have.
+
+- [ ] 22f.1 **One schedule, charged in both places.** The period's charge reduces the vintage's basis
+  on the register through an ordinary instruction, so gross, net and accumulated stay reads over the
+  lots and a fully worn vintage leaves.
+- [ ] 22f.2 **Upkeep is paid to somebody**, by name, out of an account, and the payment can fail —
+  which is what makes a firm that cannot keep its plant a firm whose plant stops.
+- [ ] 22f.3 **Until 22f.2, upkeep is out of the unit cost**, because a cost nobody paid is not a cost
+  the stock should carry. Whichever way round these land, they land together: the two are one fact.
+
+**Exit.** Plant wears on the register as well as in the cost, and every number in a batch's cost is a
+number that left somebody's account or reduced somebody's stock.
 
 ---
 

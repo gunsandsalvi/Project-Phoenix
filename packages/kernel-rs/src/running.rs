@@ -26,6 +26,10 @@ use crate::stores::Owing;
 /// The agreement kinds this world has. **Registry data** (Law 15): `Agreements` holds a kind id and
 /// never knows what an engagement is, and a mechanism asks for its own kind's rows.
 pub mod agreed {
+    /// XI-10, §39: an employer and a worker. **Its terms are `[wage per period, hours per period]`,
+    /// and this is the one place that convention is stated** (Law 4): `Wages` pays the first and
+    /// `Making` draws on the second, and a reader who wants to know what a term means comes here
+    /// rather than to whichever mechanism happened to be open.
     pub const ENGAGEMENT: u32 = 0;
     pub const MORTGAGE: u32 = 1;
     pub const POLICY: u32 = 2;
@@ -60,6 +64,10 @@ pub mod about {
     pub const WHAT_CREDIT_COSTS: u32 = 2;
     pub const WHAT_A_HOUSE_IS_WORTH: u32 = 3;
     pub const WHETHER_IT_IS_PAID_BACK: u32 = 4;
+    /// 37 B1: **how much it expects to sell** — a quantity, and a different fact from the price it
+    /// expects to get. It is the firm's own, formed from what it actually delivered (§46), and it is
+    /// the first of the production decision's reasons.
+    pub const HOW_MUCH_IT_SELLS: u32 = 5;
 }
 
 /// **§6, §7, XI-9: WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.**
@@ -166,6 +174,204 @@ impl Mechanism for Wages {
     }
 }
 
+/// **§37: WHAT A FIRM MAKES, AND THE PLANT IT MAKES IT WITH.** Registry data (Law 15), one row per
+/// good this world knows how to produce.
+///
+/// **Who makes it is not declared here, and that is the point.** A maker is whoever holds the plant —
+/// so production follows the capital rather than the party kind, entry is a firm buying plant, and
+/// exit is a firm selling it. A mechanism that asked a party what kind it was would be Law 15's
+/// defect and would also be wrong: a bank that bought a mill makes flour.
+#[derive(Clone)]
+pub struct Makes {
+    pub line: crate::mechanisms::recipe::Line,
+    /// A4.a: what THIS line's plant is. Capital is specific in kind (33 A4).
+    pub plant: InstrumentId,
+    pub plant_is: crate::mechanisms::capital_programme::Plant,
+}
+
+/// **§37 A2, B1–B5: THE FIRM PRODUCES.**
+///
+/// The one thing in this world that makes anything, and the read pass is the firm's reasons: what it
+/// expects to sell (its own outlook, §46), the capacity of the plant it holds (33 A2), the inputs on
+/// its own register rows (B1.b), and the hours its engagements give it (B1.c). It picks the way of
+/// making the good that costs IT least at the prices IT can see (A2), runs the line in whole batches
+/// (B5.b), and what comes out is the OUTCOME of those reasons and never a quantity anybody chose.
+///
+/// **The proposal is one instruction.** The inputs are destroyed as consumed and the output is
+/// created carrying what it cost — inputs at their own lot basis (E5, first in first out, the same
+/// order settlement will draw them in), plus the wages the hours cost, plus the period's depreciation
+/// on the plant that ran (33 A3). Both halves stand or fall together, because a world where the
+/// inputs went and the output did not arrive is a world that ate them.
+/// What one batch run came to, between the read pass and the proposal. It is named rather than a
+/// tuple because five positional numbers about a production run is a thing a reader has to decode.
+struct Ran {
+    maker: PartyId,
+    makes: InstrumentId,
+    draws: Vec<(InstrumentId, f64)>,
+    finished: f64,
+    per_unit: f64,
+}
+
+pub struct Making {
+    pub makes: Vec<Makes>,
+    /// E5: the flow, declared once and applied consistently — and it is the order settlement itself
+    /// draws lots in, so the cost this books and the units that leave cannot disagree (Law 4).
+    pub flow: crate::mechanisms::goods::CostFlow,
+}
+
+impl Mechanism for Making {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::ids::HoldingId;
+        use crate::mechanisms::capital_programme::{capacity, charge, upkeep, Vintage};
+        use crate::mechanisms::goods::{take, Lot};
+        use crate::mechanisms::recipe::{decide, picks, unit_cost, Reasons};
+
+        let now = ctx.period();
+        // THE READ PASS. Nothing below writes, and nothing above proposes.
+        let mut runs: Vec<Ran> = Vec::new();
+
+        for m in &self.makes {
+            for &plant_row in ctx.register().of_instrument(m.plant) {
+                let plant_row = HoldingId(plant_row);
+                let maker = ctx.register().holder_of(plant_row);
+                if !ctx.parties().alive(maker) {
+                    continue;
+                }
+
+                // 33 A6: a vintage IS a lot on the register, so capacity and the period's charge are
+                // reads over the lots and nothing stores either.
+                let stock: Vec<Vintage> = ctx
+                    .register()
+                    .lots(plant_row)
+                    .iter()
+                    .map(|l| Vintage { units: l.qty, cost_per_unit: l.basis_per_unit, in_service: l.acquired })
+                    .collect();
+                let can_make = capacity(&stock, &m.plant_is, now);
+                if can_make <= 0.0 {
+                    continue;
+                }
+
+                // B1: its own outlook, and NOT a model forecast (§46). A firm with no view of what it
+                // sells has no reason to start a line, and that is missing rather than nothing.
+                let Some(expects) = ctx.outlooks().of(maker, about::HOW_MUCH_IT_SELLS) else {
+                    continue;
+                };
+
+                // B1.c: the hours its engagements give it, and what an hour of them costs. The terms
+                // are `[wage, hours]` — the convention `agreed::ENGAGEMENT` states.
+                let mut hours = 0.0;
+                let mut wage_bill = 0.0;
+                for a in ctx.agreements().of_party(maker) {
+                    let a = crate::stores::AgreementId(*a);
+                    if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::ENGAGEMENT {
+                        continue;
+                    }
+                    let (employer, _) = ctx.agreements().between(a);
+                    if employer != maker {
+                        continue;
+                    }
+                    let terms = ctx.agreements().terms(a);
+                    match (terms.first(), terms.get(1)) {
+                        (Some(w), Some(h)) => {
+                            wage_bill += w;
+                            hours += h;
+                        }
+                        // An engagement that does not say how long it is for buys no hours.
+                        _ => continue,
+                    }
+                }
+                if hours <= 0.0 {
+                    continue;
+                }
+                let an_hour = wage_bill / hours;
+
+                // B5, 33 A3: what a unit of capital service costs — the plant's own upkeep and its
+                // own depreciation, over what the plant can make. Both are owed whether the line runs
+                // or not, which is exactly why they land in the unit cost of what it does make.
+                let keeping: f64 = stock.iter().map(|v| upkeep(v, &m.plant_is, now) + charge(v, &m.plant_is, now)).sum();
+                let a_service = keeping / can_make;
+
+                // A2, B5: it picks the way that costs IT least — and **what an input costs IT is
+                // what it paid for the stock it holds**, off its own lots, because that is the stock
+                // the batch will actually consume and the number `unit_cost` will book. Where it
+                // holds none of an input it would have to buy it, and what it would pay is the
+                // market's print (Law 3, never a number this module made up).
+                //
+                // This is one rule, stated once, over two real situations — not two formulas for one
+                // fact. Costing everything at the print was the earlier reading and it was wrong in a
+                // way that mattered: a firm with a full yard could not cost the line it was standing
+                // in, because the market for its input had not happened to clear.
+                let priced = |i: InstrumentId| {
+                    let row = ctx.register().row(maker, i);
+                    let lots = ctx.register().lots(row);
+                    let units: f64 = lots.iter().map(|l| l.qty).sum();
+                    if units > 0.0 {
+                        let value: f64 = lots.iter().map(|l| l.qty * l.basis_per_unit).sum();
+                        return Some(value / units);
+                    }
+                    ctx.prints().latest(i, now).map(|p| p.price)
+                };
+                let Some((way, _)) = picks(&m.line, &priced, an_hour, a_service) else {
+                    continue;
+                };
+
+                // B1.b: what it holds of each input, off its own rows. An input it has no row for is
+                // one it has none of, and `decide` is where that stops the line.
+                let on_hand: Vec<(InstrumentId, f64)> = way
+                    .per_unit
+                    .iter()
+                    .map(|(what, _)| (*what, ctx.register().quantity(ctx.register().row(maker, *what))))
+                    .collect();
+
+                let d = decide(
+                    way,
+                    &Reasons { firm: maker, expected_demand: expects, capacity: can_make, on_hand, labour: hours },
+                );
+                if d.starts <= 0.0 {
+                    continue;
+                }
+
+                // B2, E5: what the draw costs, at the lots' own basis and in the order settlement
+                // will draw them in — so what this books and what leaves cannot disagree (Law 4).
+                let draws = way.draws_for(d.starts);
+                let mut inputs_cost = 0.0;
+                for (what, units) in &draws {
+                    let held: Vec<Lot> = ctx
+                        .register()
+                        .lots(ctx.register().row(maker, *what))
+                        .iter()
+                        .map(|l| Lot { units: l.qty, cost_per_unit: l.basis_per_unit, acquired: l.acquired })
+                        .collect();
+                    inputs_cost += take(&held, *units, self.flow).cost;
+                }
+                let wages = d.starts * way.labour_per_unit * an_hour;
+                let capital = d.starts * way.capital_services_per_unit * a_service;
+                let Some(per_unit) = unit_cost(inputs_cost, wages, capital, d.finishes) else {
+                    continue;
+                };
+                runs.push(Ran { maker, makes: m.line.makes, draws, finished: d.finishes, per_unit });
+            }
+        }
+
+        // THE PROPOSALS. B2 and B3 in ONE instruction: a world where the inputs went and the output
+        // did not arrive is a world that ate them.
+        for Ran { maker, makes, draws, finished, per_unit } in runs {
+            let mut legs: Vec<Leg> = draws
+                .iter()
+                .map(|(what, qty)| Leg::Destroy {
+                    party: maker,
+                    instrument: *what,
+                    qty: *qty,
+                    why: crate::ledger::Gone::Consumed,
+                })
+                .collect();
+            legs.push(Leg::Create { party: maker, instrument: makes, qty: finished, cost_per_unit: per_unit });
+            ctx.propose(legs, Cause::Production, Delivery::Nothing, "the batches the line ran this period");
+        }
+    }
+}
+
+
 /// **§46, XI-16: EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.**
 ///
 /// One PREFERENCE — how much weight it gives the surprise — and no global expectation anywhere. What
@@ -212,6 +418,34 @@ impl Mechanism for Forming {
             };
             formed.push((who, about::WHAT_IT_SELLS_FOR, level));
         }
+
+        // 37 B1, §46: **and how much it expects to sell**, which is a different fact from the price
+        // and is the first reason the production decision has. It is formed the same adaptive way,
+        // from the one source that is not an inference: what it actually DELIVERED last period, read
+        // off the wire (Money D1, Law 19). A firm that has never delivered has no view of its demand
+        // and forms none — which is missing, not a demand of zero.
+        let mut delivered: Vec<(PartyId, f64)> = Vec::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            for leg in ctx.wire().legs_of(n) {
+                if let Leg::Asset { from, qty, .. } = *leg {
+                    match delivered.iter_mut().find(|(who, _)| *who == from) {
+                        Some((_, units)) => *units += qty,
+                        None => delivered.push((from, qty)),
+                    }
+                }
+            }
+        }
+        for (who, units) in delivered {
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
+                Some(old) => old + self.memory * (units - old),
+                None => units,
+            };
+            formed.push((who, about::HOW_MUCH_IT_SELLS, level));
+        }
+
         for (who, subject, level) in formed {
             ctx.form(who, subject, level);
         }
@@ -378,6 +612,7 @@ mod tests {
                 schedules: &w.schedules,
                 outlooks: &w.outlooks,
                 processes: &w.processes,
+                wire: &w.wire,
             },
         );
         m.run(&mut ctx);
@@ -554,5 +789,109 @@ mod tests {
         w.period = 3;
         ran(&mut w, &Closing { kind: afoot::CAPITAL_PROGRAMME, says });
         assert_eq!(w.journal.in_period(3).count(), 1);
+    }
+
+    /// A mill that holds its plant, its input and one worker — the smallest world that can make
+    /// anything.
+    fn a_mill() -> (World, PartyId, InstrumentId, InstrumentId, InstrumentId) {
+        let (mut w, bank, firm, worker, _cash) = world();
+        let flour = w.instruments.issue(firm, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
+        let bread = w.instruments.issue(firm, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
+        let mill = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
+        w.register.credit(firm, mill, 2.0, 1_000.0, 0);
+        w.register.credit(firm, flour, 900.0, 0.5, 0);
+        // `[wage, hours]`, the convention `agreed::ENGAGEMENT` states.
+        w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[80.0, 40.0], Day(-7), None);
+        (w, firm, flour, bread, mill)
+    }
+
+    fn making(line: &crate::mechanisms::recipe::Line, plant: InstrumentId) -> Making {
+        Making {
+            makes: vec![Makes {
+                line: line.clone(),
+                plant,
+                plant_is: crate::mechanisms::capital_programme::Plant {
+                    life: 100,
+                    upkeep_per_period: 1.0,
+                    capacity_per_period: 150.0,
+                },
+            }],
+            flow: crate::mechanisms::goods::CostFlow::FirstInFirstOut,
+        }
+    }
+
+    #[test]
+    fn a_firm_with_plant_inputs_hours_and_a_view_of_its_demand_actually_makes_something() {
+        // 37 B1, B2, B4: the inputs go, the output arrives, and both are in ONE instruction — a
+        // world where the inputs went and the output did not is a world that ate them.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, firm, flour, bread, mill) = a_mill();
+        w.period = 1;
+        w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+
+        let flour_before = w.register.quantity(w.register.row(firm, flour));
+        ran(&mut w, &making(&line, mill));
+
+        // It wanted 200/0.98 = 204 starts, had capacity for 300 and flour for 450, so the batch
+        // rounded it to 200 — and 196 loaves came out of 400 sacks.
+        let made = w.register.quantity(w.register.row(firm, bread));
+        assert_eq!(made, 196.0);
+        assert_eq!(flour_before - w.register.quantity(w.register.row(firm, flour)), 400.0);
+    }
+
+    #[test]
+    fn what_it_made_carries_what_it_cost_and_the_cost_includes_the_plant_nobody_could_switch_off() {
+        // B5, 33 A3: inputs at their own lot basis, plus the wages the hours cost, plus the period's
+        // upkeep and depreciation on the plant that ran. B4: over what FINISHED, so the scrap is
+        // absorbed into the survivors.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, firm, flour, bread, mill) = a_mill();
+        w.period = 1;
+        w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        ran(&mut w, &making(&line, mill));
+
+        let lots = w.register.lots(w.register.row(firm, bread));
+        assert_eq!(lots.len(), 1);
+        // 400 sacks at 0.5 is 200; 20 hours at 2 an hour is 40; the capital service is the mill's
+        // own keep over what it can make. All of it over 196 loaves.
+        assert!(lots[0].basis_per_unit > (200.0 + 40.0) / 196.0);
+    }
+
+    #[test]
+    fn a_firm_with_no_view_of_its_own_demand_has_no_reason_to_start_a_line() {
+        // B1, §46: expected demand is the first reason, and it is the firm's OWN. Missing is missing
+        // (Appendix A) — a firm that has never sold anything does not produce as if it expected zero,
+        // it does not produce at all, and the difference is that it starts the moment it sells once.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, firm, flour, bread, mill) = a_mill();
+        w.period = 1;
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        ran(&mut w, &making(&line, mill));
+        assert_eq!(w.register.quantity(w.register.row(firm, bread)), 0.0);
+
+        // And it starts the moment it has one.
+        w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
+        ran(&mut w, &making(&line, mill));
+        assert!(w.register.quantity(w.register.row(firm, bread)) > 0.0);
+    }
+
+    #[test]
+    fn production_follows_the_plant_and_not_the_party_kind() {
+        // Law 15, 33 A2: a maker is whoever holds the plant. A bank that bought a mill makes flour,
+        // and nothing here asks a party what it is.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, _firm, flour, bread, mill) = a_mill();
+        let cb = PartyId::at(0);
+        let bank = PartyId::at(1);
+        w.period = 1;
+        w.register.credit(bank, mill, 1.0, 1_000.0, 0);
+        w.register.credit(bank, flour, 500.0, 0.5, 0);
+        w.agreements.strike(agreed::ENGAGEMENT, bank, cb, &[80.0, 40.0], Day(-7), None);
+        w.outlooks.form(bank, about::HOW_MUCH_IT_SELLS, 100.0, 1);
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
+        ran(&mut w, &making(&line, mill));
+        assert!(w.register.quantity(w.register.row(bank, bread)) > 0.0);
     }
 }

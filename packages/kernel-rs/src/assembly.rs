@@ -247,6 +247,7 @@ impl World {
                 schedules: &self.schedules,
                 outlooks: &self.outlooks,
                 processes: &self.processes,
+                wire: &self.wire,
             },
         );
         m.run(&mut ctx);

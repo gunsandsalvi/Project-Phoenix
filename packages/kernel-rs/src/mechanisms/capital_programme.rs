@@ -186,6 +186,87 @@ impl Contribution for PlantMoves {
     }
 }
 
+/// A6: **the stock is a set of dated vintages, each with its own cost and its own service date** —
+/// and a vintage is a LOT ON THE REGISTER, not a second book kept beside it. The register already
+/// holds units with a basis and a date; a parallel vintage store would be Law 4's defect, two
+/// writers for one fact, and the first period they disagreed would be unfindable. So this is a READ
+/// SHAPE: what a lot looks like when the question is capital.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Vintage {
+    pub units: f64,
+    pub cost_per_unit: f64,
+    /// A6: its own service date. C3's lag is between the spend and this.
+    pub in_service: u32,
+}
+
+/// A4.b, A6: **what a kind of plant IS** — a TECHNOLOGY primitive (Law 2) about the capital good,
+/// declared once per line and true for every holder of it. A4.a: what a firm's plant is made of is a
+/// property of its industry, so this is DATA handed in, never a branch on a kind (Law 15).
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Plant {
+    /// A4.b: **a useful life of its own, and the presence of a life is what makes a good a capital
+    /// good.** In periods.
+    pub life: u32,
+    /// **What it costs to keep, every period, whether or not it runs.** This is the fixed cost, and
+    /// it is the whole of operating leverage: a firm with a large plant and a quiet line pays it
+    /// anyway, and that is what makes idle capacity expensive (37 F5.a). It is not depreciation —
+    /// depreciation is the plant wearing out, upkeep is cash paid to keep it working, and summing
+    /// them into one number would hide that one of them is a payment to somebody.
+    pub upkeep_per_period: f64,
+    /// A2: **capacity is a function of the stock.** What one unit of this plant can make in a period.
+    pub capacity_per_period: f64,
+}
+
+/// A3, A6: **one depreciation schedule, charged in both places** — against profit and against the
+/// stock. Straight line over the declared life: a convention, stated here as the one convention, not
+/// a shape with a claim in it. What it must not be is a share of revenue, which would mean a firm
+/// that doubles its plant takes no extra charge (A3).
+pub fn charge(v: &Vintage, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    v.units * v.cost_per_unit / (p.life as f64)
+}
+
+/// A6: **a vintage leaves the register when fully worn, so the charge stops when the plant is gone.**
+/// Law 6: this is not a floor under the charge — it is the plant having been consumed, which is
+/// arithmetic about a thing that ran out.
+pub fn in_service(v: &Vintage, p: &Plant, now: u32) -> bool {
+    now >= v.in_service && now - v.in_service < p.life
+}
+
+/// A6: accumulated depreciation is a READ over the vintages, never a stored balance.
+pub fn worn(v: &Vintage, p: &Plant, now: u32) -> f64 {
+    let periods = if now <= v.in_service {
+        0
+    } else if now - v.in_service > p.life {
+        p.life
+    } else {
+        now - v.in_service
+    };
+    v.units * v.cost_per_unit * (periods as f64) / (p.life as f64)
+}
+
+/// A6: and so is net book value. Gross is `units * cost_per_unit`, and nothing stores the difference.
+pub fn net(v: &Vintage, p: &Plant, now: u32) -> f64 {
+    v.units * v.cost_per_unit - worn(v, p, now)
+}
+
+/// **What the firm pays this period to keep this vintage, whether or not the line runs.**
+/// A vintage out of service is a vintage nobody keeps.
+pub fn upkeep(v: &Vintage, p: &Plant, now: u32) -> f64 {
+    if !in_service(v, p, now) {
+        return 0.0;
+    }
+    v.units * p.upkeep_per_period
+}
+
+/// A2: **capacity is a function of the stock**, summed over the vintages still in service. 37 B1.a
+/// reads this as one of the firm's reasons; nothing writes it.
+pub fn capacity(vintages: &[Vintage], p: &Plant, now: u32) -> f64 {
+    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.units * p.capacity_per_period).sum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -275,5 +356,68 @@ mod tests {
         reg.credit(a, share, 50.0, 1.0, 2);
         let reports = audit.run(&reg, &wire, 2);
         assert!(reports[0].violations.is_empty());
+    }
+
+    /// A mill: five periods of life, 3 a period to keep, and each unit makes 100 a period.
+    fn mill() -> Plant {
+        Plant { life: 5, upkeep_per_period: 3.0, capacity_per_period: 100.0 }
+    }
+
+    fn bought(units: f64, cost: f64, when: u32) -> Vintage {
+        Vintage { units, cost_per_unit: cost, in_service: when }
+    }
+
+    #[test]
+    fn the_charge_is_against_the_stock_and_not_against_revenue() {
+        // A3: one schedule, charged in both places. A charge struck as a share of revenue means a
+        // firm that doubles its plant takes no extra charge — so doubling the plant here doubles it.
+        let p = mill();
+        let one = charge(&bought(10.0, 500.0, 0), &p, 1);
+        let two = charge(&bought(20.0, 500.0, 0), &p, 1);
+        assert_eq!(two, one * 2.0);
+        // And the stock it is charged against falls by exactly what was charged.
+        let v = bought(10.0, 500.0, 0);
+        assert_eq!(net(&v, &p, 0) - net(&v, &p, 1), charge(&v, &p, 1));
+    }
+
+    #[test]
+    fn a_vintage_leaves_when_fully_worn_and_the_charge_stops_with_it() {
+        // A6: the charge stops when the plant is gone. Law 6: not a floor under the charge — the
+        // plant was consumed, which is arithmetic about a thing that ran out.
+        let p = mill();
+        let v = bought(10.0, 500.0, 0);
+        assert!(in_service(&v, &p, 4));
+        assert!(!in_service(&v, &p, 5));
+        assert_eq!(charge(&v, &p, 5), 0.0);
+        assert_eq!(net(&v, &p, 5), 0.0);
+        assert_eq!(worn(&v, &p, 5), 10.0 * 500.0);
+        // And nothing keeps paying to keep a plant that is gone.
+        assert_eq!(upkeep(&v, &p, 5), 0.0);
+    }
+
+    #[test]
+    fn upkeep_is_owed_whether_or_not_the_line_runs_and_that_is_what_idle_capacity_costs() {
+        // 37 F5.a: costs no batch absorbed are period costs. Nothing in this read asks what the
+        // line made, because the answer would not change what the plant costs to keep.
+        let p = mill();
+        let v = bought(10.0, 500.0, 0);
+        assert_eq!(upkeep(&v, &p, 1), 30.0);
+        assert_eq!(upkeep(&v, &p, 3), 30.0);
+        // It is not depreciation, and the two are never summed: one is cash paid to somebody, the
+        // other is the plant wearing out, and they are different sizes for the same vintage.
+        assert!(upkeep(&v, &p, 1) != charge(&v, &p, 1));
+    }
+
+    #[test]
+    fn capacity_is_a_function_of_the_stock_and_the_worn_out_vintages_are_not_in_it() {
+        // A2, D4: a world producing more than its capital allows has capacity from nowhere.
+        let p = mill();
+        let stock = [bought(10.0, 500.0, 0), bought(4.0, 600.0, 3)];
+        // C3: there is a lag between the spend and the capacity. The second vintage is bought and
+        // not yet in service in period 1, and a plant that is not working makes nothing.
+        assert_eq!(capacity(&stock, &p, 1), 1_000.0);
+        assert_eq!(capacity(&stock, &p, 3), 1_400.0);
+        // By period 5 the first vintage is worn out and only the second is making anything.
+        assert_eq!(capacity(&stock, &p, 5), 400.0);
     }
 }

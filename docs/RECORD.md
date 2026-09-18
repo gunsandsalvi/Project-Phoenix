@@ -18660,3 +18660,88 @@ in it has landed somewhere.
 **`npm run world:runs`** now exists, so the full-scale runner is reachable the way everything else is.
 
 `plan:check`, `check:existence` and `check:laws` green (80 files).
+
+---
+
+## 22 — the recipe, and the first period in which this world made something
+
+**What closed.** Item 22's three steps, and with them the finding that had sat under 22.2 since the
+TypeScript engine: *nothing in this world produces*. It had been measured twice, on two engines, and
+the second measurement is now `made` in `world-runs`, which was **zero in every period of every run
+this project has ever made**.
+
+**22.1 — a line may be made more than one way, and which way is not a fact about the line.**
+`recipe::Line` holds one or more `Recipe`s, and `picks` is the firm's own cost read: what each way
+costs IT, at the prices IT is facing, divided by what FINISHES rather than what starts, because
+normal waste is absorbed into the survivors (B4). Two firms facing different prices pick differently
+and the same firm picks differently when a price moves — which is the whole reason a line has more
+than one way. Law 2: the ways are declared, the choice is an OUTCOME.
+
+**What an input costs a firm is what it PAID for the stock it holds.** The first version costed every
+way at the market print, and at scale that meant almost nothing could be costed at all: a firm with a
+full yard could not cost the line it was standing in, because the market for its input had not
+happened to clear. The rule is one rule over two situations — the basis of the lots it holds, because
+that is the stock the batch will consume and the number `unit_cost` will book; and where it holds
+none, the print, because it would have to buy it.
+
+**22.2 — the batch, and the plant that costs money whether or not it runs.** A `Recipe` declares its
+smallest run and `decide` turns what the reasons allow into whole batches; a firm that cannot reach
+one **starts nothing and says so** (`Bound::Batch`). Law 6: not a floor under the quantity — a floor
+raises a number to meet a threshold, this lowers it to what the line can be run at, and the remainder
+is not clipped off, it was never a producible quantity.
+
+`capital_programme` gained the vintage reads, and **a vintage IS a lot on the register** rather than a
+second book beside it (Law 4): `charge`, `worn`, `net`, `in_service`, `upkeep` and `capacity` are all
+reads over the lots. Upkeep and depreciation are never summed — one is cash paid to somebody, the
+other is the plant wearing out. Together they are the capital charge per unit of service, and a line
+run at one batch where it could run ten costs ten times as much a unit, with nobody applying a markup
+to make it so. **That is operating leverage, and it is arithmetic.**
+
+**22.3 — the basket is a READ of what the recipes make.** It was a second list beside them, and two
+lists of one fact is Law 4's defect: a world whose basket named a good no recipe produced was asking
+for something nobody could supply, and the books that never cleared could not say which list was
+wrong. `Wiring::basket()` and `Wiring::keeps()` are two reads of one declaration.
+
+**And the world makes things.** `running::Making` is §37 in a period: a maker is **whoever holds the
+plant** — so production follows the capital and not the party kind, which is Law 15 and is also more
+correct, since a bank that bought a mill makes flour. It reads its reasons (its own outlook of what it
+sells, the capacity of its vintages, the inputs on its own rows, the hours its engagements give it),
+picks its way, runs whole batches, and proposes the draw and the output as **one instruction** —
+because a world where the inputs went and the output did not arrive is a world that ate them.
+
+| | before | after |
+|---|---|---|
+| period 1 | 8 books cleared, 10,320 trades, **0 made** | 13 books, 16,337 trades, **8 made** |
+| period 2 | 0 books, 0 trades, 0 made | 7 books, 3,115 trades, **6 made** |
+| period 4 | 0 books, 0 trades, 0 made | 6 books, 658 trades, **6 made** |
+| worst period | 150.9 ms | 223.3 ms, against 3,000 ms |
+
+**The cause of "it stops after period 1", found by running it.** Production ran eight batches in
+period 1 and none after, and the reason was that **the makers sold their own inputs**. `GoodsSellers`
+offered everything on the register, so the flour went into the book at the same session the mill was
+about to bake it. 33 A4.c answers it and the answer is not a special case: *whether a purchase is
+plant, an input or an expense is the BUYER's question, not the good's*. A party that holds the plant
+for a line keeps what that line's ways draw on; the same sacks in a merchant's yard are for sale. It
+is a read of the register and of the one recipe declaration (`Wiring::keeps()`), and with it the goods
+books keep clearing period after period — **the first repeating circuit this engine has had**.
+
+**One kernel change, and it is a read.** `MechanismContext::wire()`: Money D1 says the wire IS the
+history, and a module that needs its own past was inferring it from a balance that moved, which Law 19
+forbids. A mechanism may now READ what happened and still cannot write it. `Forming` uses it for the
+new outlook — 37 B1's *how much it expects to sell*, a quantity and a different fact from the price —
+formed from what the party actually DELIVERED. A firm that has never sold anything has no view of its
+demand and forms none, so it does not produce as if it expected zero; it starts the period after its
+first sale, and that difference is the whole of Appendix A.
+
+**Two findings raised and positioned, neither chased** (Law 11):
+
+- **22e, inserted before 22c: the audit is not in the period loop.** `World::step` never calls it.
+  Every run since the port has stepped with no family visiting it — 21d's defect one level up, and it
+  matters most now, because production is the first mechanism that creates and destroys units at
+  scale and the units identity is the family that would catch it going wrong.
+- **22f, inserted after 22d: the plant wears in the cost and not on the books**, and the upkeep is a
+  cost with no payee. 33 A3 wants one schedule charged in both places and this charges it in one;
+  `Capital Programme A3` and `A6` are re-marked PARTIAL to say so rather than carrying a MET that
+  cites a deleted file.
+
+**650 tests hold; clippy clean; `phoenix-check` green over 80 files.**
