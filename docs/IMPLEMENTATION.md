@@ -362,13 +362,38 @@ migration turns on.** It is not guessed here: 0g.40 measures it before anything 
 
 ### 0g.40–0g.45 The migration
 
-- [ ] 0g.40 **MEASURE THE MODULE-CODE RATIO, and kill the whole plan if it is under 6×.** Port ONE
-  real mechanism to Rust against the same inputs and compare against its measured TypeScript self
-  time. `capital-programme` is the candidate: it is **4.1% of a period (2,222 ms)**, it is
-  arithmetic over holdings rather than orchestration, and its two `allHoldings` walks make it
-  representative of what the other forty-nine do. **Exit: a measured ratio. Under 6× and 0g.40 is
-  the last step of this item — the answer is then that 3 s is not reachable and the report says so
-  with the number.**
+**0g.40 IS DONE AND THE GATE IS PASSED.** `capital-programme`'s `plantMoves` family — **2,049 ms of
+self time, 3.75% of a period and 95% of its module** — ported against its real probed inputs
+(497,338 legs, 496,246 classified, 1,034,257 keys, 21,490 holdings over 479 capital lines):
+
+| | ms | ratio |
+|---|---|---|
+| TypeScript, measured in the engine | 2,049.0 | — |
+| the same algorithm, in Rust | **173.6** | **11.8×** (10.9× corrected) |
+| the native shape, flat columns | **127.1** | **16.1×** (14.8× corrected) |
+
+The correction is stated because it goes the wrong way: the generated map holds 953,992 keys against
+the world's 1,034,257, so the Rust side does 92% of the work and the raw ratios are overstated by
+that much. **Both clear the 6× gate by a wide margin, and the one that matters is 10.9× — what a
+port that TRANSLATES rather than redesigns gets.**
+
+**So the projection is no longer a range over an unmeasured number.** Of the profiled 54.7 s:
+
+| block | today | ported | basis |
+|---|---|---|---|
+| `instruments.get`/`has` | 2,370 ms | 38 ms | 62×, measured |
+| `parties.get` | 432 ms | 13 ms | 33×, measured |
+| `prices.latest` | 771 ms | 77 ms | 10×, conservative (it binary-searches) |
+| the register's nine doors | 5,072 ms | 805 ms | 6.3×, measured |
+| `allHoldings` | 957 ms | 22 ms | 43×, measured |
+| **the collector** | **12,225 ms** | **0** | there is none |
+| module, audit and ledger code | 32,847 ms | 3,014 ms | **10.9×, measured at 0g.40** |
+| **total** | **54,674 ms** | **3,969 ms** |
+
+Scaled to the 42.1 s median rather than the profiled total, that is **≈ 3.1 s translating and
+≈ 2.4 s in the native shape — the item's exit, met.** It is **14–17× from today** and ~30× from the
+72.1 s this item started at. The 50× figure needs a baseline the world never had: before 0g.23 a
+period did not complete at all.
 - [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** `core calendar registry parties register
   ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
   collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep

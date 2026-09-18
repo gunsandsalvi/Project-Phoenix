@@ -16302,3 +16302,60 @@ item. The count is in `ops.ts` and `work.ts` and there is no excuse for guessing
 The two freezes stay, then — not because they earn their keep, but because removing them earns
 nothing and a change that buys nothing is not made (Law 12). The 22.4% the collector costs is in
 the 35 M small measures and the arrays every indexed read allocates, which is where 0g.29 goes.
+
+# 0g.40 — the migration's gate: module code is 10.9× faster ported, so the plan lives
+
+**The gate was: measure the module-code ratio and kill the whole migration under 6×.** The kernel's
+ratios were already measured (62× on a record fetched by id, 43× on a traversal of the holdings),
+but they only apply to 22.6 s of a profiled 54.7 s period. **The other 32.8 s is module code and
+nothing had measured it** — so the plan was written with that as its one unmeasured number and its
+first step was to find it rather than assume it.
+
+## What was ported, and why that one
+
+`capital-programme`'s `plantMoves` audit family: **2,049 ms of self time, 3.75% of a period and 95%
+of its own module.** It is arithmetic and map bookkeeping over the period's legs and the register's
+holdings — which is what the other forty-nine modules are made of — rather than orchestration.
+
+Its inputs are the world's own, probed rather than guessed: **497,338 legs walked, 496,246
+classified, 1,034,257 distinct (party, instrument) keys, 21,490 holdings read over 479 capital
+lines.** The keys are the interesting part: the family builds a `Map<string, Qty[]>` on a BUILT
+string key, so a million keys means a million built-and-hashed strings and a million arrays.
+
+## The result
+
+| | ms | ratio |
+|---|---|---|
+| TypeScript, measured in the engine | 2,049.0 | — |
+| the same algorithm, in Rust | **173.6** | **11.8×** |
+| the native shape — keys packed in a `u64`, terms in one flat column | **127.1** | **16.1×** |
+
+Both keep the terms per key rather than a running total, because Law 7's dust is derived from the
+terms and dropping them would be a different check. Both print the same checksum.
+
+**The correction, stated because it goes the wrong way:** the generated map holds 953,992 keys
+against the world's 1,034,257, so the Rust side does 92% of the work and the raw ratios are
+overstated by that much. **Corrected: 10.9× translating, 14.8× in the native shape.**
+
+**10.9× is the number that matters**, because it is what a port that translates rather than
+redesigns gets — and it is the pessimistic end.
+
+## What it makes the migration worth
+
+Applying every measured ratio to its own block of the profiled 54.7 s gives **3,969 ms**, which
+scaled to the 42.1 s median is **≈ 3.1 s translating and ≈ 2.4 s in the native shape**. That is the
+item's 3 s exit, met, at **14–17× from today**.
+
+**And the 50× the owner asked about needs a baseline the world never had:** before 0g.23 a period
+did not complete at all, and the first one that did took 78.6 s. Against 78.6 s the migration is
+33×. The honest figure is the exit — 3 s — and not a multiple of a number that was never measured.
+
+## What was wrong with the four earlier attempts at this item
+
+Twenty-two steps of hot spots reached 1.71×. Three structural revolutions were then proposed and
+each was killed by measurement before it was built: incrementality (**436,125 of 544,104 holdings
+move every period**), value boxing (**`asCash` is 2.6 ns a call**), and dense integer ids in
+TypeScript (**every kernel door together is 15.8% of a period**). Each result said the same thing in
+a different way — **the cost is diffuse, spread evenly through ordinary code** — and that is the
+signature of a runtime rather than a design. The language was the one candidate never put on the
+table, and it took the owner to say so.

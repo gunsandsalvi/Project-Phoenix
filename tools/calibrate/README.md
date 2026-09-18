@@ -26,3 +26,30 @@ are row indices, and a proposal that claims the language alone is quoting a numb
 
 It does NOT measure the module code, which is 32.8 s of a 54.7 s period. That is 0g.40's job and
 the migration is gated on it.
+
+## And what module code costs (0g.40)
+
+The kernel's ratios above apply to 22.6 s of a profiled 54.7 s period. The other **32.8 s is module
+code**, and nothing had measured it — so the migration is gated on this number and dies under 6×.
+
+`cargo run --release --bin module` ports `capital-programme`'s `plantMoves` audit family, which is
+**2,049 ms of self time: 3.75% of a period and 95% of its own module.** It was chosen because it is
+arithmetic and bookkeeping rather than orchestration, which is what the other forty-nine are made
+of. Its inputs are probed from the full world: **497,338 legs walked, 496,246 classified, 1,034,257
+distinct (party, instrument) keys, 21,490 holdings read over 479 capital lines.**
+
+| | ms | ratio |
+|---|---|---|
+| TypeScript, measured in the engine | 2,049.0 | — |
+| **A. the same algorithm, in Rust** — a hash map to a growable list per key | **173.6** | **11.8×** |
+| **B. the native shape** — keys packed in a `u64`, terms in one flat column, nothing allocated per key | **127.1** | **16.1×** |
+
+Both ports keep the terms per key rather than a running total, because Law 7's dust is derived from
+the terms; dropping them would be a different check, and both print the same checksum.
+
+**Correction, stated because it goes the wrong way:** the generated map holds 953,992 keys against
+the world's 1,034,257 — 92% — so the Rust side does slightly less work and the ratios are
+overstated by that much. Corrected: **A 10.9×, B 14.8×.**
+
+**A is the number that matters**, because it is what a port that translates rather than redesigns
+gets. Both clear 6× by a wide margin.
