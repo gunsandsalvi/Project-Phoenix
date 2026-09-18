@@ -13,7 +13,7 @@
  * simulation throws: the simulation IS the error, which is the point of it.
  */
 import { foundationWorld, HOUSEHOLD, SMALL_FIRM } from '../src/index.js';
-import { ops, resetOps, totalOps } from '../src/core/ops.js';
+import { moved, ops, resetMoved, resetOps, totalOps } from '../src/core/ops.js';
 
 declare const console: { log: (l: string) => void; error: (l: string) => void };
 declare const process: {
@@ -68,6 +68,19 @@ for (let i = 1; i <= periods; i += 1) {
       `   state holdings ${holdings.length} lots ${lots} instruments ${w.instruments.all().length}` +
         ` prints ${w.prices.instruments().length} events ${w.journal.all().length}`,
     );
+    console.log(
+      `   moved holdings ${moved.holdings.size} of ${holdings.length} · prices ${moved.prices.size} of ${w.instruments.all().length}` +
+        ` · parties ${moved.parties.size} of ${alive} · legs ${moved.legs}`,
+    );
+    resetMoved();
+    const byKind = new Map<string, number>();
+    for (const e of w.journal.inPeriod(r.period)) {
+      byKind.set(e.kind, (byKind.get(e.kind) ?? 0) + 1);
+    }
+    console.log('   events by kind, dearest:');
+    for (const [k, n] of [...byKind].sort((a, b) => b[1] - a[1]).slice(0, 12)) {
+      console.log(`   ${String(n).padStart(8)}  ${k}`);
+    }
     const rows = w.work.all();
     console.log(`   asks ${w.work.asks()} over ${rows.length} declarations, dearest:`);
     for (const q of rows.slice(0, 22)) {

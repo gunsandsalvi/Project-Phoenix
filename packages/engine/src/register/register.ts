@@ -11,7 +11,7 @@
  * The equity book is the stated equity account per party (Audit B5): a balance moved only by named
  * events (settlement's realised effects, revaluation, capital), never a stored total of anything.
  */
-import { ops } from '../core/ops.js';
+import { moved as movedTally, ops } from '../core/ops.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
@@ -569,6 +569,9 @@ export class Register {
    * quantity is short: a party cannot deliver what it does not hold (C4: no short by accident).
    */
   debit(holder: PartyId, instrument: InstrumentId, qty: number): DrawnLot[] {
+    movedTally.holdings.add(`${holder}#${instrument}`);
+    movedTally.parties.add(String(holder));
+    movedTally.legs += 1;
     this.writes += 1;
     impossible(qty > 0, 'Register C1', `a debit moves a positive quantity, got ${qty}`, {
       holder,
@@ -634,6 +637,9 @@ export class Register {
    * after the move.
    */
   moneyDelta(holder: PartyId, instrument: InstrumentId, delta: number, period: Period): number {
+    movedTally.holdings.add(`${holder}#${instrument}`);
+    movedTally.parties.add(String(holder));
+    movedTally.legs += 1;
     this.writes += 1;
     finite(delta, `money delta on ${holder}`);
     this.onTheGrid(delta, `what moves on ${holder}'s ${instrument}`);

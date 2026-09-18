@@ -7,7 +7,7 @@
  * traded one, visibly (E4); it never silently refreshes. A read of a period the market has not yet
  * printed throws NotYetProduced: the fix is the order of phases (F1.a), never a forward reference.
  */
-import { ops } from '../core/ops.js';
+import { moved, ops } from '../core/ops.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
 import { Mismatch, NotYetProduced, Unpriced } from '../core/errors.js';
@@ -185,6 +185,7 @@ export class PriceStore {
 
   /** One print per (instrument, period); a second writer is Law 4's defect and throws. */
   write(p: Print): void {
+    moved.prices.add(String(p.instrument));
     finite(p.price, `print ${p.instrument}`);
     // Law 6, 18a.4: a price of a THING cannot be negative — nobody is paid to be handed grain — and
     // the price of TIME can be: a lender that gets back less than it lent has paid for somewhere to

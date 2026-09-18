@@ -286,106 +286,100 @@ first rung), to produce four curves that do not change within the period.
 ## Part 2 — The items
 ## 0g. The core made fast (Law 18)
 
-Layout and traversal only; no mechanism, no economics, no boundary. **THE EXIT IS 3 SECONDS PER
-PERIOD ON THE FULL WORLD**, and the first twenty-two steps of this item did not get there because
-every one of them was a hot spot. This section is the fundamental change instead.
+**THE EXIT IS 3 SECONDS PER PERIOD ON THE FULL WORLD.** Layout and traversal only.
 
 **Steps closed and deleted: 20.** 0g.2–0g.7, 0g.9, 0g.10, 0g.17–0g.19, 0g.21–0g.27. 0g.8, 0g.11,
 0g.13, 0g.16 deleted as wrong. Outcomes in `docs/RECORD.md`.
 
-### 0g.30 The diagnosis, from what was measured
-
-One period of `foundationWorld`, after 0g.23–0g.27 took 160 M reads out of it:
+### 0g.30 What a period is, all of it measured on the full world
 
 | | |
 |---|---|
-| period | **42.1 s** (median of 3; it was 72.1 s before 0g.23) |
-| counted kernel reads | **105,524,506** (bit-exact across runs) |
+| period | **28.3–45.6 s** (the band is real; see the spread note below) |
+| counted kernel reads | **105,524,506**, bit-exact across runs |
 | state | 10,318 parties, 16,750 instruments, **544,104 holdings in 657,785 lots**, 1,546 markets |
-| written | 178,604 events, 356,268 audit checks, 920,404 participant questions |
-| **per read** | **399 ns** |
-| where the time is | **GC 22.4%**, audit 18.0%, register 17.6%, world 7.5%, ledger 4.9%, prices 4.6%, registry 3.8%, core 1.6% |
+| written | **178,604 events in 48,828 settled instructions carrying 501,044 legs** |
+| **moved** | **436,125 of 544,104 holdings · 6,782 of 10,318 parties · 1,456 of 16,750 prices** |
+| asked | 920,404 participant questions |
+| audited | 356,268 checks, 18,885,889 reads |
+| where the time is | GC **22.4%**, audit 18.0%, register 17.6%, world 7.5%, ledger 4.9%, prices 4.6%, registry 3.8%, core 1.6% |
 
-**399 ns to read one number out of the kernel.** This repository has already measured what the
-runtime charges for the primitives underneath: `Map<string,_>.get` **17.2 ns**, `array[int]`
-**3.4 ns**, `Float64Array[int]` **1.2 ns**, a built string key against a nested map **99.4 ns against
-15.1 ns**, `Object.freeze` **38.1 ns**. The read itself is at most a twentieth of what a read costs.
-The other nineteen twentieths are the shape of the data.
+The dearest event kinds: 48,828 `instruction.settled`, 29,284 `goods.perished`, 21,491
+`revaluation`, 10,375 `capital.kept`, 10,227 `credit.quoted`, 9,489 `credit.request`.
 
-**Every fact in this engine is a heap object reached through a string-keyed hash map, and every
-read of it allocates another heap object.** An id is a branded STRING, so every lookup hashes a
-string; a pair is a BUILT string, so it is hashed after being built; a quantity of money is a
-frozen `{pieces, ccy}`; an absent value is a boxed `{some:false}`; an indexed read returns a fresh
-ARRAY. That is why the collector is 22.4% of a period and why the register — which does nothing but
-answer "how many units" — is 17.6%.
+### Three candidate revolutions, all TESTED, and two of them are dead
 
-**And the period does its work over the whole world when only a slice of it moved.** 178,604 events
-touch at most ~180,000 of the 544,104 holdings, and the audit walks all 544,104 five times over,
-revaluation marks all of them, and a balance sheet is rebuilt for each of 10,318 parties. Law 19
-forbids exactly this: re-deriving a mark for an unchanged holding at an unchanged price is
-recomputing what the source already holds.
+This item spent twenty-two steps on hot spots and reached 1.71×. The question was whether a single
+structural change reaches the rest. Three were proposed and each was measured **before** any of it
+was built.
 
-### The floor, and why 3 s is reachable
+**1. Make the period incremental — DEAD.** The proposal was that a period works over the whole
+world when only a slice of it moved, so traversals should skip what stood still. **Measured: 436,125
+of 544,104 holdings move every period — 80%.** Skipping the rest is worth 20%, not an order of
+magnitude. The guess this step rested on was "~180,000 of 544,104", which is wrong by 2.4× in the
+direction that mattered. Prices are the exception (1,456 of 16,750 print, 8.7%), so a traversal
+driven by a PRICE may still skip; one driven by a holding may not.
 
-What the economy of one period actually requires, at the primitive costs above:
+**2. Stop boxing values — DEAD.** The proposal was that `Cash` being a frozen `{pieces, ccy}` and
+`Option` boxing every absent value is what the collector is spending 22.4% on. **Measured per call
+on this machine, in this world: `asCash` 2.6 ns over 14,096,854 calls — 37 ms of a 54.7 s period.
+`some` 46 ms, `none` 16 ms.** The small values are not the cost. (The 22.4% is real, and it is the
+MATERIALISED ARRAYS: `allHoldings` alone is 957 ms of self time and builds 544,104 snapshot objects
+per call, for each audit family that asks.)
 
-| | |
-|---|---|
-| 178,604 events written | 0.018 s |
-| ~250,000 settlement legs moved | 0.050 s |
-| ~180,000 CHANGED holdings revalued | 0.018 s |
-| 5 audit families over what changed | 0.140 s |
-| participant questions behind doors | 0.200 s |
-| 1,546 books cleared | 0.050 s |
-| **floor** | **≈ 0.5 s** |
+**3. Ids become dense integers — TOO SMALL.** The proposal was that every kernel lookup hashes a
+string and should be an array index. **Measured self time in the doors themselves: `instruments.get`
+1,847 ms over 38,676,668 calls (47.8 ns), `prices.latest` 771 ms (60.3 ns), `parties.get` 432 ms
+(25.9 ns), the register's nine read and write doors 5,072 ms — 8,645 ms in total, 15.8% of a
+period.** Turning every one of them into an array index cannot return more than that, and realistically
+returns three quarters of it: **≤ 12%.** It is worth doing and it is not a revolution.
 
-**The engine runs at 84× its own floor.** That is the whole finding. 3 s is six times the floor, so
-the target is not ambitious — it is slack. And no arrangement of hot spots reaches it: the three
-reasons for the 84× are structural and each has to go.
+### What the measurement actually says
 
-### 0g.31–0g.34 The change
+**There is no single 50× lever in this engine, and the reason is that the cost is not in a layer —
+it is spread through the mechanism code that sits between the kernel reads.** The counted doors are
+15.8%; the collector is 22.4%; the audit is 18%. The remaining ~44% is module code, and no two
+modules share a cause any more (0g.23–0g.27 removed the one that did: a party-fact computed inside
+a loop over counterparties).
 
-**One sentence: the kernel's state becomes columnar and the period becomes incremental.** It touches
-every file in the engine, which is what makes it the fundamental change and not another sweep. No
-mechanism changes, no number changes, and the gate on every step is `events 178604` / `audit 356268`
-/ the op count, unchanged.
+**So the route to 3 s is a budget over four measured blocks, and it is honest about what each can
+give.** The item continues on these and on nothing else:
 
-- [ ] 0g.31 **IDS BECOME DENSE INTEGERS.** `PartyId`, `InstrumentId`, `MarketId`, `VenueId` are
-  branded strings today and every kernel lookup hashes one. They become branded NUMBERS, interned
-  once at assembly, with the string kept beside them for display and for the journal. Every
-  `Map<Id, T>` in the kernel becomes an array indexed by the id; every built pair key
-  (`${party}/${instrument}`) becomes a row index. Law 9 is untouched — an internal id was never a
-  display name, and the market-naming functions are where a name comes from.
-  **Budget: `Map<string>.get` 17.2 ns → `array[int]` 3.4 ns on 105 M reads. Kill if the register's
-  17.6% does not fall below 6%.**
-- [ ] 0g.32 **VALUES STOP BEING OBJECTS.** `Cash` is a frozen `{pieces, ccy}` allocated 14 M times a
-  period; `Option` boxes every absent value; `holdingsOf`, `ofKind` and `all` return a fresh array
-  per call. A cash amount becomes a float64 and a currency int; an absent value becomes a sentinel
-  the type system still forces a caller to test; an indexed read returns a cursor over the columns
-  rather than a materialised array. `readonly` is what was enforcing immutability and it keeps
-  doing it.
-  **Budget: GC 22.4% → under 5%. Kill if the collector is still above 10% after it.**
-- [ ] 0g.33 **THE STATE CARRIES ITS OWN VERSION AND THE TRAVERSALS SKIP WHAT DID NOT MOVE.** Every
-  holding row and every price carries the period it last changed — one integer in a column, written
-  by the one writer each already has (settlement, the market). Revaluation marks what was
-  re-printed; the audit checks what moved; a balance sheet is rebuilt for a party whose rows moved.
-  This is Law 19 applied to the read path and not a cache: nothing is stored that is not already a
-  fact, and a family that must see everything says so and gets everything.
-  **Budget: audit 18.0% + revaluation → under 5% of a period. Kill if a single audit total moves.**
-- [ ] 0g.34 **THE AUDIT WALKS ONCE.** `flows`, `accounts`, `currency`, `units` and `ownership` each
-  walk the register after the one before it did. One traversal feeds every family. A family's
-  independence is about the SOURCE it reads — Audit C3 — and not about how many times the register
-  is visited; `crossMarket/indices` recomputing an index from its constituents is the independence
-  that matters and it stays exactly as it is.
-  **Budget: 18,885,889 audit reads → under 4,000,000.**
+- [ ] 0g.31 **STOP MATERIALISING ARRAYS — the collector's 22.4%.** `allHoldings()` builds 544,104
+  snapshot objects on every call and every audit family calls it; `holdingsOf`, `ofKind` and `all`
+  do the same at smaller scale. They return a cursor over the store instead. **Budget: GC 22.4% →
+  under 8%, and `allHoldings` self time 957 ms → under 100 ms. Kill if GC is still above 12%.**
+- [ ] 0g.34 **THE AUDIT WALKS ONCE — 18,885,889 reads → under 6,000,000.** `flows`, `accounts`,
+  `currency`, `units` and `ownership` each walk the register after the one before it did. One
+  traversal feeds every family. Independence is about the SOURCE a family reads (Audit C3), not how
+  many times the register is visited — `crossMarket/indices` recomputing an index from its
+  constituents is the independence that matters and it stays exactly as it is.
+- [ ] 0g.20 **SETTLEMENT — 501,044 legs at 42 kernel reads each.** Measured by probing inside
+  `ctx.settle`: one 5,489-leg instruction costs 231,250 reads. Per leg the necessary work is a lot
+  drawn, a carrying value per lot, a currency, a home money and an equity bump — call it eight — so
+  roughly four fifths of the 42 is repetition inside one atomic instruction. **Budget: under 15
+  reads per leg.** The wire is sequential by law (0g.10), so this is the one block parallelism
+  cannot help.
+- [ ] 0g.31b **IDS BECOME DENSE INTEGERS — ≤ 12%, done last and only if the three above land.**
+  Branded numbers interned at assembly, arrays where the kernel has `Map<Id, T>`. Law 9 untouched:
+  an internal id was never a display name. It touches every file, it is worth 12%, and it is
+  therefore the LAST thing to do rather than the first.
 
-**The loop this item runs on.** Each step is measured on the full world the moment it compiles, by
-`npm run world 1`, against three numbers: its own budget, `events 178604`, `audit 356268`. **A step
-that misses its budget is reverted, not kept for its partial credit** — that is what went wrong in
-0g.24 through 0g.27, where four steps in a row missed and were kept, and the item ended at 1.71×
-with the plan reading as though it were on course.
+**And the number that decides whether 3 s is reachable at all is now on the table rather than
+assumed.** A period moves 436,125 holdings and settles 501,044 legs. Three seconds over that is
+**6 µs a leg and 7 µs a moved holding across revaluation, five audit families and a balance sheet
+each**. If the four blocks above land in full, the period is roughly 12–15 s, not 3. **The
+remaining gap is the WORK VOLUME, and work volume is a mechanism question, not a layout one** —
+29,284 `goods.perished` events a week, one per holder per good, is the first place to ask it, and
+asking it is not this item's to do (Law 18: mechanisms never change here).
 
-**Exit.** `npm run world 1` reports **≤ 3 s** with `events 178604` and `audit 356268` unchanged.
+**The spread, and why single runs are not evidence.** The same binary measured 28.3 s and 45.6 s in
+one session. Every claim in this item is a median of three, arms measured back to back, and a
+figure quoted from another session is not a baseline (0g.19 learned this and 0g.22 relearned it).
+
+**Exit.** `npm run world 1` reports **≤ 3 s** with `events 178604` and `audit 356268` unchanged. If
+the four blocks land and the period is still above 3 s, the item reports the measured floor and the
+mechanism question rather than inventing a fifth block.
 
 ---
 
