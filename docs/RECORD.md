@@ -20820,3 +20820,41 @@ seeding, because it is a fact about the world's obligations and not about the pa
 **The item's exit, met.** A gridlock is a timing failure and this world no longer books it as a
 default: 49 · 31 · 50 · 28 payments a period go through after waiting, and a ring settles in one
 instruction with every leg at full value.
+
+## 22i.1 — a company publishes its accounts
+
+**What.** `running::Publishes` on the `reporting` row. Being public is READ from the register (§48
+A1.a: shares listed and held by outsiders — no kind branch, so it walks every living party and asks);
+the fiscal year is placed by DATE from the day the company started (A3, G6); the report comes out
+`reporting.asymmetry` days after the books close, which is the only real information asymmetry this
+world has (A4.a); income is the equity account's MOVEMENT against what the company last published
+(G2), and a first report has no prior close so it publishes no income at all.
+
+**Three absences it had to build first.**
+- **A party now carries the period it entered** (`Parties::since`, `age`). It was missing entirely —
+  `add` took a key and no `since` — so nothing could have a fiscal year and nothing could be graded
+  on age. `Parties` is told the period once as it opens and stamps; a party does not choose when it
+  was born. **A split is not a birth**: the members were already here, so a child is as old as its
+  parent.
+- **The journal is indexed by kind.** A company asking when it last published had to walk every event
+  this world has ever recorded — 322,000 a period — so the read that would have answered it was one
+  nobody could afford to take.
+- **The instruments are indexed by issuer.** Asking *are my shares listed and held by outsiders*
+  walked all 16,750 lines, per company, per period.
+
+**Why.** 21.76: nothing published accounts, on any calendar. §48's published accounts are what a bid
+values a company off (§35 `worthAt`) and what a covenant is written against, and they were nobody's —
+`reporting` said a firm's own equity to its own subjects, which is a private result and a different
+fact. 21.76 calls it the deeper cause of 21.73 (control never runs) and of the covenant findings.
+
+**`reporting.accounts` went home, to the journal.** A set of published accounts is an EVENT: it
+happens on a day, to a named company, and it is public. A separate store would have been a second
+history. What was missing was never a store — it was a mechanism.
+
+**And the ontology register's count did not fall to zero, because zero is the measure switched off.**
+This item's re-read found three nouns that a built mechanism produces and no store keeps:
+`ratings.grades` (`reassess` says when a HELD grade moves and nothing holds one, so two houses cannot
+disagree about a name), `reporting.estimates` (`consensus` is computed from a list that exists for one
+call), and `agreements.states` (21.62's, restated as a noun).
+
+**735 tests; `npm run check` green; clippy clean.**

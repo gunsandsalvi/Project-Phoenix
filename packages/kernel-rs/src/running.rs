@@ -15,6 +15,7 @@
 //! proposals. A module reads and proposes; it cannot do both at once, which is the borrow checker
 //! saying what Law 4 already says.
 
+use crate::calendar::Day;
 use crate::assembly::kinds;
 use crate::ids::{InstrumentId, PartyId};
 use crate::instruments::{equity, Class};
@@ -1164,6 +1165,119 @@ impl Mechanism for Owed {
         }
     }
 }
+
+/// **§48 A1–A5, G2, G5, G6, 21.76: A PUBLIC COMPANY PUBLISHES WHAT ITS OWN BOOKS PRODUCED.**
+///
+/// Nothing in this world published accounts, on any calendar. `reporting` said a firm's own equity
+/// to its own subjects, which is a private result — and §48's PUBLISHED accounts, the thing a bid
+/// values a company off (§35 `worthAt`) and a covenant is written against, were nobody's. That is
+/// the deeper cause 21.76 names under three other findings.
+///
+/// **Being public is a state read from the register, never a label** (A1.a): a company reports while
+/// its shares are listed and held by OUTSIDERS, so a company whose outsiders sell stops reporting
+/// without anybody relabelling it, and there is no kind of party that reports (Law 15) — this walks
+/// every living party and asks the register.
+///
+/// **The year is placed by DATE from the day the company started** (A3, G6), which is why 22i.1 had
+/// to give a party a birth period first. Year-ends are staggered because companies start on
+/// different days, not because anything staggers them.
+///
+/// **The report comes out after the books close** (A4), and in between the company knows its result
+/// and nobody else does — the only real information asymmetry this world has (A4.a).
+///
+/// **Income is the equity account's MOVEMENT** (G2), read against what this company last published
+/// — never a figure anybody chose. A first report has no prior close, so it publishes no income at
+/// all: missing is missing, and a first annual report with no comparative is what that looks like.
+pub struct Publishes {
+    /// The event kind the accounts are published under.
+    pub kind: u32,
+    /// Key rows for the figures, so a reader takes them by name rather than by position.
+    pub at_equity: u32,
+    pub at_income: u32,
+    pub at_shares: u32,
+    pub days_per_period: i64,
+    /// §48 A4: how many days after the books close the report comes out. A TECHNOLOGY.
+    pub asymmetry: &'static str,
+}
+
+impl Mechanism for Publishes {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let days = self.days_per_period;
+        let today = Day(i64::from(ctx.period()) * days);
+        let asymmetry = ctx.params().days(self.asymmetry) as i64;
+
+        // A5: what each company last published, read off the journal's own rows — one pass, not one
+        // walk of the world's history per company (Law 19: the read replaces the walk).
+        let mut last: std::collections::HashMap<u32, (u32, f64)> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            let when = ctx.journal().period_of(row);
+            if let (Some(&who), Some(Value::Num(equity))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_equity))
+            {
+                last.insert(who, (when, equity));
+            }
+        }
+
+        let mut out: Vec<(u32, f64, Option<f64>, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // A1.a: listed, and held by outsiders. Both are reads of the register.
+            let mut listed = 0.0;
+            let mut outsiders = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let share = InstrumentId::at(line);
+                if ctx.instruments().class_of(share) != Class::Share {
+                    continue;
+                }
+                let (held, _) = ctx.register().held_total(share);
+                listed += held;
+                outsiders += held - ctx.register().quantity(ctx.register().row(who, share));
+            }
+            if !crate::mechanisms::reporting::reports(listed > 0.0, outsiders) {
+                continue;
+            }
+            // A3, G6: the fiscal year, from the day this company started. A year that has not closed
+            // has nothing to report.
+            let born = Day(i64::from(ctx.parties().since(who)) * days);
+            let years = (today.0 - born.0) / 365;
+            if years <= 0 {
+                continue;
+            }
+            let closes = Day(born.0 + 365 * years - 1);
+            let fiscal = crate::mechanisms::reporting::Fiscal::new(
+                Day(closes.0 - 364),
+                closes,
+                Day(closes.0 + asymmetry),
+            );
+            if today < fiscal.published {
+                continue;
+            }
+            // And it publishes each year once. A report already out for this year-end is not
+            // republished; a restatement is a different act (A5) and nothing restates yet.
+            let closed_in = (fiscal.published.0 / days) as u32;
+            if matches!(last.get(&row), Some(&(when, _)) if when >= closed_in) {
+                continue;
+            }
+            let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            // G2: income is the MOVEMENT against what it last published. A first report has no
+            // prior close and so publishes no income — missing is missing.
+            let income = last.get(&row).map(|&(_, was)| now - was);
+            out.push((row, now, income, listed));
+        }
+        for (who, worth, income, shares) in out {
+            let mut data = vec![(self.at_equity, Value::Num(worth)), (self.at_shares, Value::Num(shares))];
+            if let Some(earned) = income {
+                data.push((self.at_income, Value::Num(earned)));
+            }
+            // A1: **published**, which is what makes it something anybody else may read.
+            ctx.say(self.kind, &[who], &data, true);
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

@@ -45,6 +45,11 @@ pub struct Journal {
     /// Audit C1: the events of one period, so a reader does not walk the world's whole history to
     /// find this week's. Written where an event is written; there is no second history.
     by_period: Vec<(u32, u32)>,
+    /// **22i.1: and the events of one KIND.** A mechanism asking *when did this company last
+    /// publish* had to walk every event this world has ever recorded — 323,000 a period — so the
+    /// read that would have answered it was one nobody could afford to take. Register A3's
+    /// both-directions rule: the same rows, indexed the other way, written where they are written.
+    by_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
 
 impl Journal {
@@ -90,7 +95,16 @@ impl Journal {
             Some(last) if self.period[last.0 as usize] == period => last.1 = row + 1,
             _ => self.by_period.push((row, row + 1)),
         }
+        self.by_kind.entry(kind).or_default().push(row);
         row
+    }
+
+    /// 22i.1: every event of one kind, oldest first. A read over the rows, never a second history.
+    pub fn of_kind(&self, kind: u32) -> &[u32] {
+        match self.by_kind.get(&kind) {
+            Some(rows) => rows,
+            None => &[],
+        }
     }
 
     pub fn period_of(&self, row: u32) -> u32 {

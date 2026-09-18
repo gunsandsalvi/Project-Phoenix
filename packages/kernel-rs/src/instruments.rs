@@ -68,6 +68,11 @@ pub struct Instruments {
     /// money and a central bank one reserve money, and the payment system has to be able to ask
     /// which — an index over this store rather than a second table somebody keeps beside it (Law 4).
     money_of: Vec<u32>,
+    /// **22i.1: the lines one issuer brought.** Register A3's both-directions rule. A company asking
+    /// *are my shares listed and held by outsiders* (§48 A1.a) had to walk every instrument in the
+    /// world — 16,750 of them, per company, per period — so the read that decides whether it reports
+    /// was one nobody could afford to take.
+    by_issuer: std::collections::HashMap<u32, Vec<u32>>,
 }
 
 impl Instruments {
@@ -114,6 +119,7 @@ impl Instruments {
             self.money_of[issuer.row()] = row;
         }
         self.issuer.push(issuer.0);
+        self.by_issuer.entry(issuer.0).or_default().push(row);
         self.ccy.push(ccy.0);
         self.class.push(class);
         self.unit.push(unit.0);
@@ -134,6 +140,14 @@ impl Instruments {
     #[inline]
     pub fn issuer_of(&self, i: InstrumentId) -> PartyId {
         PartyId(self.issuer[i.row()])
+    }
+
+    /// 22i.1: the lines this party brought, oldest first. Register A3: both directions.
+    pub fn of_issuer(&self, p: PartyId) -> &[u32] {
+        match self.by_issuer.get(&p.0) {
+            Some(rows) => rows,
+            None => &[],
+        }
     }
 
     #[inline]

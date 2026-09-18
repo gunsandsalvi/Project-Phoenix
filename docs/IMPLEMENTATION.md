@@ -201,16 +201,35 @@ short without dying. Nothing below this is buildable on a world that decides not
   `ctx.agrees / ends / opens / closes`, `Taken.agreed/.ended/.opened/.closed`, applied by
   `World::run_phase` — struck and opened before the legs (a leg that pays rent performs a tenancy),
   ended and closed after (the last payment a relation owes is made under it). This is 21j.1a's twin.
-- [ ] 22i.1 **A grade is published** (§21 A4, 21.69). `grade_from` and `reassess` are built and the
+- [x] 22i.1 **A COMPANY PUBLISHES ITS ACCOUNTS** (§48 A1–A5, G2, G6; 21.76). Nothing in this world
+  published any, on any calendar, so a bid could not value a company (§35 `worthAt`) and a covenant
+  had nothing to test — the deeper cause 21.76 names under three other findings. **Done**:
+  `running::Publishes` on the `reporting` row. Being public is read from the register (A1.a: listed
+  and held by outsiders, no kind branch); the year is placed by DATE from the day the company
+  started; the report comes out `reporting.asymmetry` days after the books close, which is the only
+  information asymmetry this world has (A4.a); income is the equity account's MOVEMENT against what
+  the company last published (G2), and a FIRST report has no prior close so it publishes no income
+  at all. Three absences it had to build first: **a party now carries the period it entered**
+  (`Parties::since`/`age` — a split is not a birth, so a child is as old as its parent), **the
+  journal is indexed by kind** (a company asking when it last published walked 323,000 events a
+  period), and **the instruments are indexed by issuer** (asking *are my shares listed* walked
+  16,750 lines per company per period). `reporting.accounts` went home to the journal: what was
+  missing was never a store, it was a mechanism.
+- [ ] 22i.2 **A grade is published** (§21 A4, 21.69). `grade_from` and `reassess` are built and the
   row counts parties alive. It needs a `State` per issuer — leverage, coverage, cash, size, AGE and
-  the trend — and two of those cannot be read: **no party carries a birth period** (`Parties::add`
-  takes a key and no `since`), and there is no earnings read for coverage. Both are absences to build,
-  not numbers to invent.
+  the trend. **Age is now readable** (22i.1) and **coverage is** (`accounts.published` carries
+  income). What is still missing is a HOME for a grade: `ratings.grades` is declared homeless, and
+  `reassess` says when a HELD grade moves with nothing holding one, so two houses cannot disagree
+  about a name and no grade can be shown to have been wrong.
+- [ ] 22i.3 **The estimates have no home.** `reporting::estimate`, `consensus`, `disagreement` and
+  `settle` are built over a slice of estimates nobody keeps — so the consensus is computed from a
+  list that exists for one call and the surprise has nothing to settle against (§48 C1, F1).
+  Declared as `reporting.estimates`, found by this item's re-read.
 - [ ] 22i.2 **The observer publishes a statistic** (§45 A5): late, and revised. `observer::Statistic`
   carries `about_period`, `published_in` and `revised_from` and nothing constructs one. It was left
   out of 21j deliberately: converting a count into a count-with-a-lag is a relabelling unless the lag
   and the revision are the mechanism, and saying so needs §45's surface.
-- [ ] 22i.3 **The census falls below twenty-five.** 21j's exit said that against a baseline of
+- [ ] 22i.4 **The census falls below twenty-five.** 21j's exit said that against a baseline of
   twenty-five, which was a MISCOUNT: it counted the `Reads` rows and not the seven `Closing` rows,
   which are the same absence the other way up — a closer for a process nothing opens. The true
   baseline was thirty-three and it is thirty-one.

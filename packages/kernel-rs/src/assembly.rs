@@ -132,6 +132,7 @@ fn declared() -> Nouns {
     // 21.112: it is the JOURNAL's, because a realised gain is an event rather than a thing anybody
     // holds — it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
+    at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1, 22i.1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read. What was missing was never a store — it was a mechanism");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
     // 22d.1: the wire is what HAPPENED; this is what is still trying to. It is settlement's because
     // settlement is what decides an instruction cannot go through, and a queue written anywhere else
@@ -156,11 +157,32 @@ fn declared() -> Nouns {
     // missing". What is left was found by the re-read of item 21 and names the item that will
     // give it a home. The count must fall and must never rise; it falls by being built, not by
     // nobody asking.
+    // 22i.1: **and it went home, to the JOURNAL.** A set of published accounts is an EVENT — it
+    // happens on a day, to a named company, and it is public — so it belongs where every other public
+    // fact about this world belongs, and a separate store for it would be a second history (Law 4).
+    // `Publishes` writes it; `journal.of_kind("accounts.published")` is the read a covenant and a bid
+    // take. What was missing was never a store, it was a mechanism.
+    // **AND WHAT THE 22i RE-READ FOUND, declared as it was found.** `reporting.accounts` went home to
+    // the journal at 22i.1, and a count of zero would be the measure switched off — zero means
+    // nothing anybody DECLARED is homeless, not that nothing is missing. Each of these is a fact a
+    // built mechanism produces and no store keeps.
     homeless(
-        "reporting.accounts",
-        "21.76",
-        "the accounts a party has PUBLISHED, as at a date",
-        "§48: a covenant is tested against published accounts and a bid is formed from them; `Reporting` says a firm's own equity to its own subjects, which is not the same fact",
+        "ratings.grades",
+        "22i.2",
+        "the grade an assessor currently holds on an issuer, and what it was before",
+        "21 A4, A6: `ratings::reassess` says when a HELD grade moves, and nothing holds one — so two houses cannot disagree about a name and no grade can be shown to have been wrong",
+    );
+    homeless(
+        "reporting.estimates",
+        "22i.3",
+        "what each bank expects a named company to report, and the surprise when it does",
+        "48 C1, F1: `reporting::estimate` and `settle` are built over a slice of estimates nobody keeps, so the consensus is computed from a list that exists for one call and the surprise has nothing to settle against",
+    );
+    homeless(
+        "agreements.states",
+        "21.62",
+        "whether a relation is live, breached, cured, discharged or terminated",
+        "17.7: `Agreements` is live or ended, so this world records neither a breach nor a cure — and a payer given time on an arrear has nowhere to land",
     );
 
     n
@@ -320,6 +342,9 @@ impl World {
     /// participant did nothing at all, and the ordering Law 10 is about was validated and ignored.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
         self.period += 1;
+        // 22i.1: and the parties store knows what period it is, so a party entering in it is
+        // stamped with it. A party does not choose when it was born.
+        self.parties.opened(self.period);
         let participants: Vec<&dyn Participant> =
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
@@ -1377,7 +1402,7 @@ mod tests {
         // zero would be this measure switched off, not a world with nothing missing.
         assert!(!named.contains(&"registry.indices"), "it got a home at 21.116");
         assert!(!named.contains(&"settlement.realised"), "it got a home at 21.112");
-        assert!(named.contains(&"reporting.accounts"));
+        assert!(!named.contains(&"reporting.accounts"), "it got a home at 22i.1, in the journal");
 
         // And every one names the item that gives it a home. A noun whose item nobody has written
         // is a noun nobody has agreed to build.
@@ -1396,7 +1421,11 @@ mod tests {
         assert!(!named.contains(&"agreements"), "it got a home at 21d");
         assert!(!named.contains(&"claims"), "it got one at 21c");
         assert!(!named.contains(&"standing"), "it got one at 21f");
-        assert!(named.contains(&"reporting.accounts"), "a covenant is tested against it and nothing keeps it");
+        assert!(!named.contains(&"reporting.accounts"), "it went home to the journal at 22i.1");
+        // And what the 22i re-read found in its place. The count falls by what goes home and rises
+        // by what a re-read finds, which is the whole of how this measure stays honest.
+        assert!(named.contains(&"ratings.grades"), "nothing holds a grade, so two houses cannot disagree");
+        assert!(named.contains(&"agreements.states"), "a relation is live or ended and never breached");
     }
 
     #[test]

@@ -40,6 +40,14 @@ pub struct Parties {
     alive: Vec<bool>,
     /// The cell's key on its kind's lattice, as a row in a names table. `NONE` for a named party.
     key: Vec<u32>,
+    /// **XI-3, 22i.1: THE PERIOD THIS PARTY ENTERED.** A party that cannot say how old it is cannot
+    /// be graded (§21 A4 reads age), cannot have a fiscal year (§48 A3 places one from when the
+    /// company started) and cannot be told from one that has been trading for twenty years. It was
+    /// missing entirely: `add` took a key and no `since`.
+    since: Vec<u32>,
+    /// The period the world is in, told to this store once by the kernel. A party does not choose
+    /// when it was born, so `add` stamps rather than asking (Law 4).
+    now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
 
@@ -50,6 +58,27 @@ impl Parties {
 
     pub fn len(&self) -> usize {
         self.kind.len()
+    }
+
+    /// 22i.1: the period the world has reached, so a party added in it is stamped with it. The
+    /// kernel says this once as a period opens; nothing else has business telling this store when
+    /// it is.
+    pub fn opened(&mut self, period: u32) {
+        self.now = period;
+    }
+
+    /// **XI-3, 22i.1: the period it entered.** The world opened at period 0, so a party the assembly
+    /// admitted before the first step entered at 0 — which is a fact about it and not a default.
+    #[inline]
+    pub fn since(&self, p: PartyId) -> u32 {
+        self.since[p.0 as usize]
+    }
+
+    /// §21 A4: how many periods it has been going, which is one of the things a grade reads. A party
+    /// cannot be older than the world, so this is arithmetic and never a bound (Law 6).
+    #[inline]
+    pub fn age(&self, p: PartyId, now: u32) -> u32 {
+        now - self.since(p)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -81,6 +110,7 @@ impl Parties {
         self.weight.push(weight);
         self.alive.push(true);
         self.key.push(key);
+        self.since.push(self.now);
         self.of_kind.entry(kind).or_default().push(row);
         PartyId(row)
     }
@@ -171,6 +201,9 @@ impl Parties {
             taking,
             self.key[p.row()],
         );
+        // XI-15: **a split is not a birth.** The members were already here; the row they are counted
+        // in is new and they are not, so the child is as old as the parent (§21 A4 reads age).
+        self.since[child.row()] = self.since[p.row()];
         self.reweigh(p, had - taking, WeightEvent::Split);
         child
     }

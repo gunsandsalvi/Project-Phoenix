@@ -336,7 +336,7 @@ fn main() {
     // XI-14, 21g: every behaviour-shaping number this world acts on, declared before anything
     // reads one. A participant holds the ID; the value lives here and nowhere else.
     declare(&mut w.params);
-    let wired = all(&wiring, &mut w.journal.kinds);
+    let wired = all(&wiring, &mut w.journal);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);
     let assembly = built.elapsed();

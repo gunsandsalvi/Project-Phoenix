@@ -22,12 +22,11 @@
 use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
-use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -784,6 +783,12 @@ pub fn declare(p: &mut Params) {
     // Everything else in that mechanism is an OUTCOME — how built-up a place is, is a read over the
     // register, and what the extra draw costs is whatever its inputs cleared at (Law 3). No money
     // number is set anywhere in it, which is why this is a draw and not a price.
+    // **§48 A4, 22i.1: how long after a company's books close its report comes out.** A TECHNOLOGY:
+    // how long it takes to prepare and audit a set of accounts. It is the ONLY information asymmetry
+    // this world has — in these days the company knows its result and nobody else does (A4.a) — so a
+    // value of zero would delete the clause rather than satisfy it.
+    say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Days, Kind::Technology, Owner::StandardSetter,
+        "the days between a company's year-end and the day its accounts are published");
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
     // **37 B1, 22c.3: how much cover a firm wants on its shelf.** A PREFERENCE: it is what this firm
@@ -857,7 +862,15 @@ pub fn declare(p: &mut Params) {
         "the coupon the paper carries as a TERM, fixed for its life — never what it is worth");
 }
 
-pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
+pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
+    // 22i.1: **the KEYS a published figure is said under**, declared here with the kinds for the
+    // same reason — a reader takes a figure by name and never by the position it happened to be
+    // written at (Law 8: the identifier says what the number is).
+    let keys_of = |j: &mut crate::journal::Journal, name: &str| j.keys_named.declare(name);
+    let at_equity = keys_of(journal, "accounts.equity");
+    let at_income = keys_of(journal, "accounts.income");
+    let at_shares = keys_of(journal, "accounts.shares");
+    let kinds = &mut journal.kinds;
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -986,7 +999,16 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         // nothing crossed. A count of how many lines printed was never what a benchmark is for.
         works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: says("benchmarks.fixing") })),
         works("ratings", AT_REVALUATION, Box::new(Reads { kind: says("ratings.obligors"), what: Counts::PartiesAlive })),
-        works("reporting", AT_REVALUATION, Box::new(Reporting { kind: says("reporting.result") })),
+        // §48 A1, 21.76: **and the accounts are PUBLISHED.** Nothing in this world published any,
+        // on any calendar, so a bid could not value a company and a covenant had nothing to test.
+        works("reporting", AT_REVALUATION, Box::new(Publishes {
+            kind: says("accounts.published"),
+            at_equity,
+            at_income,
+            at_shares,
+            days_per_period: w.days_per_period,
+            asymmetry: "reporting.asymmetry",
+        })),
         works("second_opinion", AT_REVALUATION, Box::new(Reads { kind: says("second_opinion.lines"), what: Counts::LinesThatPrinted })),
         works("observer", AT_REVALUATION, Box::new(Reads { kind: says("observer.alive"), what: Counts::PartiesAlive })),
         // §46: every deciding party forms its own outlook from its own history. They disagree.
@@ -1265,7 +1287,7 @@ mod tests {
     #[test]
     fn every_system_of_the_world_is_wired_exactly_once() {
         // ARCHITECTURE 4.9b: adding a system is a row, and a module not in this list does not run.
-        let mut kinds = Names::new();
+        let mut journal = crate::journal::Journal::new();
         let all = all(
             &Wiring {
                 makes: vec![a_loaf(InstrumentId::at(1), InstrumentId::at(4))],
@@ -1274,7 +1296,7 @@ mod tests {
                 paper: Some(InstrumentId::at(3)),
                 days_per_period: 7,
             },
-            &mut kinds,
+            &mut journal,
         );
         let mut names: Vec<&str> = all.iter().map(|s| s.name).collect();
         names.sort_unstable();
@@ -1310,7 +1332,7 @@ mod tests {
         // the order, and `World::step` ran books only — so forty-three of these rows did literally
         // nothing and the world reported as wired. A row with no mechanism and no participant is a
         // row the loop never reaches, and this is what says so.
-        let mut kinds = Names::new();
+        let mut journal = crate::journal::Journal::new();
         let all = all(
             &Wiring {
                 makes: vec![a_loaf(InstrumentId::at(1), InstrumentId::at(4))],
@@ -1319,7 +1341,7 @@ mod tests {
                 paper: Some(InstrumentId::at(3)),
                 days_per_period: 7,
             },
-            &mut kinds,
+            &mut journal,
         );
         for row in &all {
             // **A row with NEITHER is dead**, which is what this exists to catch. A row with a
@@ -1350,11 +1372,102 @@ mod tests {
                 paper: None,
                 days_per_period: 7,
             },
-            &mut s.w.journal.kinds,
+            &mut s.w.journal,
         );
         let systems: Vec<&dyn System> = wired.iter().map(|w| w as &dyn System).collect();
         s.w.wire_up(&systems);
         let did = s.w.step(&systems);
         assert_eq!(did.ran, 50, "every wired system ran its phase");
+    }
+}
+
+#[cfg(test)]
+mod publishing {
+    use super::*;
+    use crate::assembly::{kinds, System, World};
+    use crate::ids::{CurrencyCode, PartyId, RegionId, UnitId};
+    use crate::instruments::Class;
+    use crate::journal::Value;
+    use crate::parties::Representation;
+
+    /// **§48 A1, A3, A4, G2, 21.76: a company publishes its accounts on ITS OWN year-end.**
+    ///
+    /// Nothing in this world published any, on any calendar, so a bid could not value a company
+    /// (§35) and a covenant had nothing to test. The year is placed by DATE from the day the company
+    /// started, which is why a party had to be given a birth period first (22i.1).
+    #[test]
+    fn a_listed_company_publishes_its_accounts_on_its_own_year_end() {
+        let mut w = World::empty();
+        declare(&mut w.params);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let holder = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
+        // A1.a: listed and held by an OUTSIDER. Both are reads of the register, never a label.
+        let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
+        w.register.credit(holder, share, 100.0, 2.0, 0);
+        // Something for the accounts to be about.
+        let plant = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(0), None, None);
+        w.register.credit(firm, plant, 50.0, 4.0, 0);
+
+        let wired = all(
+            &Wiring {
+                makes: Vec::new(),
+                lines: Vec::new(),
+                overnight: None,
+                paper: None,
+                days_per_period: 7,
+            },
+            &mut w.journal,
+        );
+        let only: Vec<&dyn System> = wired.iter().filter(|s| s.name == "reporting").map(|s| s as &dyn System).collect();
+        w.wire_up(&only);
+        let published = w.journal.kinds.row("accounts.published");
+        let at_equity = w.journal.keys_named.row("accounts.equity");
+        let at_income = w.journal.keys_named.row("accounts.income");
+
+        // A3: its first year has not closed, so it reports nothing. A4: and 45 days after it closes
+        // is week 59 of a 7-day period, so nothing comes out before then either.
+        for _ in 0..58 {
+            w.step(&only);
+            assert!(w.journal.of_kind(published).is_empty(), "48 A4: the books have not closed");
+        }
+        w.step(&only);
+        let out = w.journal.of_kind(published).to_vec();
+        assert_eq!(out.len(), 1, "one company, one year-end, one report");
+        assert_eq!(w.journal.subjects_of(out[0]), &[firm.0]);
+        assert!(w.journal.is_public(out[0]), "48 A1: PUBLISHED is what makes it readable by anybody");
+        assert_eq!(w.journal.says(out[0], at_equity), Some(Value::Num(200.0)));
+        // G2: a FIRST report has no prior close, so there is no income figure at all. Missing is
+        // missing — a first annual report with no comparative is what that looks like.
+        assert_eq!(w.journal.says(out[0], at_income), None);
+
+        // And it does not publish the same year-end twice.
+        w.step(&only);
+        assert_eq!(w.journal.of_kind(published).len(), 1);
+    }
+
+    /// A1.a: **and a company whose outsiders sell stops reporting**, without anybody relabelling it.
+    #[test]
+    fn a_company_nobody_outside_holds_publishes_nothing() {
+        let mut w = World::empty();
+        declare(&mut w.params);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let bank = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let share = w.instruments.issue(firm, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
+        // Every share is the company's own: listed, and held by nobody else.
+        w.register.credit(firm, share, 100.0, 1.0, 0);
+        let wired = all(
+            &Wiring { makes: Vec::new(), lines: Vec::new(), overnight: None, paper: None, days_per_period: 7 },
+            &mut w.journal,
+        );
+        let only: Vec<&dyn System> = wired.iter().filter(|s| s.name == "reporting").map(|s| s as &dyn System).collect();
+        w.wire_up(&only);
+        let published = w.journal.kinds.row("accounts.published");
+        for _ in 0..70 {
+            w.step(&only);
+        }
+        assert!(w.journal.of_kind(published).is_empty());
     }
 }
