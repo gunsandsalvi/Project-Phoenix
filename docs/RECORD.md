@@ -19769,3 +19769,77 @@ invoices at the STRUCK price, because the invoice price IS the futures settlemen
 
 **686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
 green.** Item 21 stands at 131 of 182, and the drained file's 78 findings are all re-read and placed.
+
+---
+
+## 21.47–21.84 — the last seventeen, and the re-read pass is complete
+
+**What.** The findings that had never been re-read: 21.47, 21.64–21.67 and 21.72–21.84. Three close,
+eleven turn out to be one answer said eleven ways, three keep a live position — and the pass voided a
+step of item 23.
+
+**Every finding in item 21 has now been re-read.** The file header's rule — *before a step is taken it
+is re-read as either a fact about the MODEL, which survived the port, or a fact about the CODE, which
+died with the file it named* — has been applied to all of them. What is left open is open for a stated
+reason, and the three steps carrying no re-read mark are the three written from one.
+
+### Eleven of them are 21j
+
+The group was measured on the old rig, and the re-read gives the same answer eleven times, each time
+stronger than the finding stated it:
+
+| finding | it said | it is |
+| --- | --- | --- |
+| 21.72 | the banks stop quoting every name by period 9 | no bank quotes anybody, ever. `dealing::quote` is built, returns `Option<Quote>`, and has no caller |
+| 21.73 | `control` never runs in 24 periods | it is `Closing { BUY_BACK }`, a closer for a process nothing opens — and a takeover cannot be financed while nothing can issue (21.139) |
+| 21.75 | 17b.7's change is untested and untestable in a one-country rig | it needs two moneys (the seeding) and a deal (21j); it has neither |
+| 21.76 | only cells publish accounts; a named firm publishes at period 25 | nothing publishes accounts at all, on any calendar. A staggered year-end was never the cause — there is no year-end |
+| 21.79 | 66 contract books a period, 0 bids, 0 contracts | the books are not open, because nobody posts in one. `agreed::SUPPLY` is declared and 17f built the contract |
+| 21.81 | 0 pools cut, 10 failed for want of a bidder | no pool is cut and a note cannot be cut at all — a pool's whole point is to ISSUE (21.139) |
+| 21.65 | the tier trade credit lives on does not use it | no invoice is written here at all; `trade_credit` counts live agreements and writes none |
+| 21.84 | the basket is empty, so no rate ever moved for a reason | **the basket is no longer empty** — item 22 made the world make things — and there is still no level, because nothing constructs an `Index` (21.116). The consequence is unchanged and worth keeping in its own words |
+| 21.64, 21.133's BK34 | every bank insolvent from period six and none resolved | built and unreached: `bank_capital` and `mortality` say when a bank is insolvent and how it dies, and no phase resolves one |
+| 21.47 | one session in a hundred clears in the four-country world | **13 books of 1,546 clear in period 1 and 6 in every period after.** Not a fact about four countries — this world, about one session in two hundred |
+
+### Three close, three keep their position
+
+21.74, 21.78 and 21.80 are red cases in deleted files — an assertion that could never pass, a file
+asking the draw for a firm it had not made, one case about where a hire lands. Their rules are held
+elsewhere (21.94's *a check that cannot fail*, and the census shape at 21.111/21.119).
+
+Three keep a live position, and two are sharper for the re-read:
+
+- **21.77** at 23.3 — one of the few in this group whose participant IS reached. `MoneyMarketBanks`
+  posts on both sides of the overnight book every period, so a book that does not clear is an OUTCOME
+  and not an absence. Its pairing with 21.72 does not survive: 21.72 turned out to be nothing quoting.
+- **21.82** at 23.3 — the netting half is answered (`net_against` sums the MARKS of every position
+  between two parties whatever the notionals, so *only equal notionals net* is gone). What is left is
+  one sentence: **the same question is asked twice with two answers** — exposure read net, margin
+  sized gross per position on its own notional — where §16 D1 says margin is sized from the risk of
+  the position, and by this layer's own read that risk is the net one.
+- **21.67** — its SHAPE half cannot recur (no shared world, no module-scope audit assertion running
+  nothing silently); its FAMILIES half was never about the tests, and the reason nobody sees those
+  violations is that the audit does not run in the period loop → **22e**.
+
+### 23.1 is void, and the step now says so
+
+`23.1 Resize the scale model as one bounded change` — **there is no scale model.** `packages/engine`
+and its `test/rig.ts` went with the TypeScript engine; the 686 tests here are inline in the file they
+test and each builds exactly the parties its case needs. Nine findings were positioned there on the
+old premise. The rule the step serves — *a test never names a party* — now holds by a different route
+and holds harder: **a test that builds its own parties cannot be broken by a draw**, which is what
+21.78 was. What the step stood for, measuring against a world that models something rather than an
+arbitrary draw, is the seeding's; the step stays saying that, so item 23 does not quietly lose it.
+
+### A footnote that earned its place
+
+Sweeping this file for findings still lacking a re-read, the first `awk` used `/^\s+\S/` to match a
+continuation line — which awk does not understand — so it reported fourteen findings as un-re-read
+when eleven of them carried the note two spaces in. **That is the third time in this session that
+reading only a finding's first line has produced a false answer**, after the 21.137 sweep and the two
+positions it missed. The check that now guards it (`positionsIn`, and the fixture case *a finding is
+its opening line AND the lines under it*) is the right shape, and the reflex it exists to replace is
+evidently a strong one.
+
+**686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green.** Item 21 stands at 134 of 182, and every one of its findings has been re-read.
