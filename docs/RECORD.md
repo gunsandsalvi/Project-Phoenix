@@ -16788,3 +16788,62 @@ architecture caught this in one run because the counts are printed; in TypeScrip
 sat in `funds/fund` and `banks/bank` for months, and nothing said so until 0g.22 built the census.
 
 **Fifty-three laws now hold as tests; clippy is clean; `phoenix-check` is green.**
+
+# 0g.42 — a whole period of the world, end to end: 145.0 ms
+
+`world-at-scale` runs the shape of a real period — assemble, index the doors, run 1,546 books,
+settle, journal, audit — at the counts `npm run world 1` reports. **Median of five: 145.0 ms**
+(130.3–168.9), against TypeScript's **42,100 ms**.
+
+| | this bench | the world |
+|---|---|---|
+| parties | 10,319 | 10,318 |
+| **participant questions** | **921,123** | **920,404** |
+| books cleared | 1,539 | 1,456 printed |
+| instructions | 131,253 | 48,828 |
+| legs | 262,506 | 501,044 |
+| events | 178,604 | 178,604 |
+| holdings audited | 668,597 | 544,104 |
+
+| | ms |
+|---|---|
+| narrowing index | 17.6 |
+| sessions (ask, clear, print, settle) | 82.6 |
+| journal | 1.1 |
+| audit, 4 families on one walk | 20.5 |
+| **period** | **145.0** |
+
+## Getting the counts right took three corrections, and each one mattered
+
+The first run asked **508,403** questions — 55% of the world's — and settled nothing extra, because
+the trades had already filled the instruction budget. The second matched the asks but settled
+**914,661 instructions against 48,828**, nineteen times the world, because every asked party posted
+an order. **In the world most asks post nothing** — that is the shape the census found and it is now
+in the bench. The third is what the table above reports: asks within 0.1%, events exact,
+instructions 2.7× and legs 0.52×.
+
+**A bench whose counts do not match is measuring a different economy**, and the first two would
+have been quoted as 476× and 59× if the counts had not been printed beside the world's. They are
+printed on every run for that reason.
+
+## What it does and does not say
+
+**ONE module of forty-seven is in it.** The sessions ask a real participant and the audit runs a
+real family, so the SHAPE of a period is here and its content is one module deep. The honest
+reading is this floor plus the rest of the module block:
+
+| | |
+|---|---|
+| this period, measured | **0.15 s** |
+| the other modules: ~25.4 s of the TypeScript period at **10.9×** (0g.40) | 2.33 s |
+| **a period** | **≈ 2.5 s** |
+
+**Unchanged, and that is the point** — the end-to-end run confirms the component arithmetic rather
+than replacing it. The 3 s exit holds with the conservative module ratio; at the 20.9× measured in
+situ it is ≈ 1.4 s.
+
+**Fifty-three laws hold as tests; clippy is clean; `phoenix-check` is green over 24 files** — and
+its two findings this round were both in the bench: a clippy index-loop, and a `.min()` that is
+Law 6's bound. The second is now exempt for `src/bin/**` with the reason stated, because a bench
+CONSTRUCTS inputs and "build no more legs than remain" is arithmetic about a loop rather than a
+damper on a number the world decided — which is what the TypeScript config does for the same files.

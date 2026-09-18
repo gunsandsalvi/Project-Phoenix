@@ -7,7 +7,8 @@
 //! Run: `cargo run --release --manifest-path tools/phoenix-check/Cargo.toml`
 //!
 //! What is EXEMPT, and why:
-//!   - `src/bin/**` — the benches. They time things, so they hold a clock and print.
+//!   - `src/bin/**` — the benches. They time things, so they hold a clock and print; and they
+//!     construct inputs, so a bound on a loop counter is arithmetic rather than a damper.
 //!   - `#[cfg(test)]` blocks — a test states the numbers it is a test of.
 //!   - `ids`, `params`, `calendar` — the kernel's own conventions live there, which is what
 //!     `core/` and `registry/` are exempt for in the TypeScript rules.
@@ -94,7 +95,11 @@ fn main() {
                 what,
             };
 
-            if !is_convention {
+            // Law 6 is about the ENGINE. A bench is not the engine: it CONSTRUCTS inputs, and
+            // "build no more legs than remain to build" is arithmetic about a loop rather than a
+            // damper on a number the world decided. The TypeScript config turns `no-bounds` off
+            // for the same kind of file and for the same reason.
+            if !is_convention && !is_bench {
                 for b in BOUNDS {
                     if line.contains(b) {
                         found.push(say("Law 6", format!("a bound: {b}")));

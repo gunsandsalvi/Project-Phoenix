@@ -37,3 +37,7 @@ path = "src/bin/module_at_scale.rs"
 [[bin]]
 name = "session-at-scale"
 path = "src/bin/session_at_scale.rs"
+
+[[bin]]
+name = "world-at-scale"
+path = "src/bin/world_at_scale.rs"
