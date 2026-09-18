@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -826,6 +826,9 @@ pub fn declare(p: &mut Params) {
     // is the one place they are stated. They are what a bank is measured against and never what it
     // chooses; the buffer is the line the bank is expected to keep above the requirement, and being
     // inside it has consequences short of breaching (B3).
+    // 40 C5: the return a lender wants on what it puts out. Its OWN hurdle, and a PREFERENCE.
+    say("lender.hurdle", 0.05, "per unit lent", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the return a lender wants on what it puts out, which its standard is read against");
     say("bank.min_weighted", 0.08, "capital per unit of weighted assets", Dimension::Ratio, Kind::Policy, Owner::Parliament,
         "the capital a bank must hold against its risk-weighted assets");
     say("bank.min_leverage", 0.03, "capital per unit of assets", Dimension::Ratio, Kind::Policy, Owner::Parliament,
@@ -848,6 +851,13 @@ pub fn declare(p: &mut Params) {
     // PREFERENCE — a holder that would lend all of it is a holder with no view about being recalled.
     // §21 D3: what a period of storage costs, per unit. A TECHNOLOGY — a fact about warehouses,
     // and it is PAID to whoever owns one (Law 5), never subtracted from a number.
+    // §40 A5, B2: what a dwelling costs its owner to keep, and what share of its money a household
+    // puts towards a roof. The first is a TECHNOLOGY — a fact about buildings; the second is a
+    // PREFERENCE, and it is the household's.
+    say("dwelling.upkeep", 0.02, "money per dwelling per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
+        "what keeping one dwelling in repair costs its owner each period");
+    say("household.will_spend", 0.5, "per unit of its money", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the share of what it holds a household will put towards a roof");
     say("storage.per_unit", 0.01, "money per unit per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
         "what holding one unit of a physical good for one period costs");
     say("lending.will_lend", 0.3, "per unit held", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -1030,7 +1040,15 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // a goods book — buying what it expects to sell and asking what it has actually paid to hold
         // — and it is the missing intermediary of Law 1.
         posts("stockists", AT_MARKETS, Box::new(Stockist { lines: w.basket(), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
-        works("housing", AT_MARKETS, Box::new(Closing { kind: afoot::FORECLOSURE, says: says("housing.foreclosed") })),
+        // **§40 B1, B2, C1: and dwellings are LET and SOLD, and both prices clear.** It was a closer
+        // for a foreclosure nothing opened, so no dwelling had ever been offered, no rent had ever
+        // been set, and no household had ever compared owning with renting.
+        works("housing", AT_REVALUATION, Box::new(Housing {
+            kind: says("dwelling.sold"),
+            lets: says("dwelling.let"),
+            upkeep: "dwelling.upkeep",
+            will_spend: "household.will_spend",
+        })),
         // **§36 B5, C1: and a seller that has delivered and not been paid OFFERS TERMS.** It counted
         // live agreements and wrote none, so no invoice existed in this world at all.
         works("trade_credit", AT_REVALUATION, Box::new(TradeCredit {
@@ -1088,6 +1106,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             min_weighted: "bank.min_weighted",
             min_leverage: "bank.min_leverage",
             buffer: "bank.buffer",
+            hurdle: "lender.hurdle",
             days_per_period: w.days_per_period,
         })),
         // **§9 B1.a, B2: and a bank SETS the rate it pays on deposits.** It counted the credit

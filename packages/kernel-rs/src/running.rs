@@ -2045,6 +2045,8 @@ pub struct BankCapital {
     pub min_weighted: &'static str,
     pub min_leverage: &'static str,
     pub buffer: &'static str,
+    /// 40 C5: the return a lender wants on what it puts out. Its own hurdle.
+    pub hurdle: &'static str,
     pub days_per_period: i64,
 }
 
@@ -2056,6 +2058,7 @@ impl Mechanism for BankCapital {
             min_leverage: ctx.params().ratio(self.min_leverage),
             buffer: ctx.params().ratio(self.buffer),
         };
+        let hurdle = ctx.params().ratio(self.hurdle);
         let from = Day(i64::from(ctx.period()) * self.days_per_period);
         let to = Day(from.0 + self.days_per_period - 1);
 
@@ -2146,6 +2149,24 @@ impl Mechanism for BankCapital {
             // B3: the standing is PUBLIC. A capital position nobody could read is one no depositor,
             // no lender and no assessor could act on.
             ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
+            // 40 C5, C5.a: **the standard it is lending at**, which is a READ of what it already
+            // measures — the strain on its own book, its hurdle and its headroom — and never a
+            // constant. A lender already stretched, or with little room to put more on, asks for
+            // more of the price up front and lends a smaller multiple of income; both move together
+            // because both come from the same position (Law 4). A constant here means only the rate
+            // channel loops, and it is C5.b's loop that is the housing cycle.
+            //
+            // The strain is its leverage: what it carries against what it has. It has that whether
+            // or not it has written a mortgage, which is why this does not wait for a book.
+            if ratio > 0.0 && headroom > 0.0 {
+                let standard = crate::mechanisms::housing::standard(1.0 / ratio, headroom, hurdle);
+                ctx.now_stands(
+                    standing::LENDING_STANDARD,
+                    who,
+                    PartyId::NONE,
+                    vec![standard.income_multiple, standard.deposit_share],
+                );
+            }
             // C2: **and a bank below its requirement must RAISE.** What it says here is what it is
             // short of, and `Floating` is the one writer of a company's shares (Law 4) — a
             // recapitalisation IS an equity issue, and a second mechanism bringing a share line
@@ -3635,6 +3656,186 @@ impl Mechanism for Storing {
                 crate::ledger::Delivery::Nothing,
                 "21 D3: storage costs money, and it is paid to whoever owns the storage",
             );
+        }
+    }
+}
+
+/// **§40 A2, A3, B1, B2, B4, C1, C5, 22i.17: DWELLINGS ARE LET AND SOLD, AND BOTH PRICES CLEAR.**
+///
+/// The `housing` row was a CLOSER for a foreclosure nothing opened. So no dwelling in this world had
+/// ever been offered, no rent had ever been set (21.38), no household had ever compared owning with
+/// renting (21.39), and the consumer basket could not include the rent Housing D3 calls a large
+/// component of it (21.42) — because there was no rent to include.
+///
+/// **A rent is a real payment between two named parties** (A3, Law 5), and an owner-occupier pays
+/// itself nothing: imputing a rent would be a flow with one side. So the letting session is between
+/// owners with a spare dwelling and households without one, and what the roof costs is what that
+/// session crossed at (Law 3).
+///
+/// **A buyer bids what it can FUND** (B2), which is its income and its deposit against the standard
+/// its lender is currently lending at (C5) — the standard 22i.8 stands behind. A seller's reservation
+/// is what it owes or what the dwelling cost to build, whichever is more (B1.a): below that it
+/// refuses, and a refusal is an outcome.
+///
+/// **A dwelling is INDIVISIBLE** (A1): a trade is one dwelling and there is no partial fill. What did
+/// not sell is not a residual — it stays with its owner (B1.c), and B4's falling market is volumes
+/// collapsing before prices do.
+pub struct Housing {
+    pub kind: u32,
+    pub lets: u32,
+    /// §40 A5: what a dwelling costs its owner to keep, per period.
+    pub upkeep: &'static str,
+    /// §40 B2: what share of its money a household will put towards a roof. A PREFERENCE.
+    pub will_spend: &'static str,
+}
+
+impl Mechanism for Housing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::housing::{can_bid, clearing, Bid, Offer, Standard};
+        let will_spend = ctx.params().ratio(self.will_spend);
+        let _upkeep = ctx.params().price_per_unit(self.upkeep);
+
+        // C5: the standard each lender is currently lending at. The KEENEST is what a buyer faces,
+        // because a buyer takes the best offer it can find and lenders compete for it.
+        let mut keenest: Option<Standard> = None;
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::LENDING_STANDARD {
+                continue;
+            }
+            let terms = ctx.standing().terms(st);
+            let here = Standard { income_multiple: terms[0], deposit_share: terms[1] };
+            keenest = Some(match keenest {
+                Some(best) if best.income_multiple >= here.income_multiple => best,
+                _ => here,
+            });
+        }
+        // B2: **a buyer with no lender cannot bid.** Missing is missing — it does not bid cash it
+        // has not got, and it does not bid on a standard nobody is offering.
+        let Some(standard) = keenest else { return };
+
+        // A1.a, A3: the dwellings, where they are, and who lives in them. A dwelling is a structure
+        // its holder holds; the occupier is its holder until a tenancy says otherwise.
+        let mut offers: Vec<Offer> = Vec::new();
+        let mut spare: Vec<(PartyId, crate::ids::RegionId)> = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if !crate::places::is_a_structure(ctx.registry(), line) {
+                continue;
+            }
+            for &holding in ctx.register().of_instrument(line) {
+                let holding = crate::ids::HoldingId(holding);
+                let owner = ctx.register().holder_of(holding);
+                if !ctx.parties().alive(owner) || ctx.register().free(holding) <= 0.0 {
+                    continue;
+                }
+                let at = ctx.parties().region_of(owner);
+                // B1.a: it will not sell below what it owes or what a dwelling costs to build
+                // there, whichever is more — and the build cost is higher where more already
+                // stands (21i). What the market last printed is what building it draws.
+                let Some(print) = ctx.prints().latest(line, ctx.period()) else { continue };
+                let owed: f64 = ctx
+                    .schedules()
+                    .of_payer(owner)
+                    .iter()
+                    .map(|r| crate::stores::DueId(*r))
+                    .filter(|d| !ctx.schedules().paid(*d))
+                    .map(|d| ctx.schedules().amount(d))
+                    .sum();
+                offers.push(Offer::reserving(owner, at, owed, print.price));
+                // A3: and an owner holding more than one has a roof to let.
+                if ctx.register().quantity(holding) > 1.0 {
+                    spare.push((owner, at));
+                }
+            }
+        }
+        if offers.is_empty() {
+            return;
+        }
+
+        // B2: what each household can fund. Its income is what it has been paid — read off the wire
+        // — and its deposit is what it holds.
+        let mut bids: Vec<Bid> = Vec::new();
+        let mut renting: Vec<(PartyId, crate::ids::RegionId, f64)> = Vec::new();
+        for &household in ctx.parties().of_kind(kinds::HOUSEHOLD) {
+            let who = PartyId(household);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let deposit = ctx.register().quantity(ctx.register().row(who, money)) * will_spend;
+            if deposit <= 0.0 {
+                continue;
+            }
+            // §46: what it expects to earn is its own outlook; a household that has formed none
+            // bids on what it holds and nothing more.
+            let income = ctx
+                .outlooks()
+                .of(who, crate::running::about::WHAT_IT_KEEPS_EARNING)
+                .unwrap_or(0.0);
+            let at = ctx.parties().region_of(who);
+            bids.push(Bid { buyer: who, at, bidding: can_bid(income, deposit, &standard) });
+            renting.push((who, at, deposit));
+        }
+
+        // B1: **per LOCATION.** There is no single housing market (A1.a), so each place clears on
+        // its own and a print in one says nothing about another.
+        let mut sold: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut printed: Vec<(u32, f64)> = Vec::new();
+        let mut places: Vec<u32> = offers.iter().map(|o| o.at.0).collect();
+        places.sort_unstable();
+        places.dedup();
+        for place in places {
+            let at = crate::ids::RegionId::at(place);
+            let cleared = clearing(&bids, &offers, at);
+            if let Some(print) = cleared.print {
+                printed.push((place, print));
+            }
+            sold.extend(cleared.trades);
+        }
+
+        // A3: and the letting session — a spare roof, and a household without one.
+        let mut let_to: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (owner, at) in spare {
+            let Some((tenant, _, can_pay)) = renting.iter().copied().find(|(_, where_it_is, _)| *where_it_is == at)
+            else {
+                continue;
+            };
+            if tenant == owner {
+                continue;
+            }
+            // Law 3: the rent is what this session crossed at — what the tenant will pay against a
+            // roof that is standing empty, and an owner that will not let at it keeps it empty.
+            let_to.push((owner, tenant, can_pay));
+        }
+
+        for (seller, buyer, price) in sold {
+            // C1: a loan from a NAMED lender, secured on the house. What the buyer cannot find
+            // itself it borrows, and E3's *no mortgage without a lender's balance sheet* is the
+            // lender being on the row.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::MORTGAGE,
+                one: seller,
+                other: buyer,
+                terms: vec![price, standard.deposit_share],
+                until: None,
+            });
+            ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(price))], true);
+        }
+        for (owner, tenant, rent) in let_to {
+            // A3, XI-10: a tenancy is a relation, and the rent is its term. It is what the occupier
+            // pays the owner for the shelter it consumes — two named parties, and never imputed.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::TENANCY,
+                one: owner,
+                other: tenant,
+                terms: vec![rent],
+                until: None,
+            });
+            ctx.say(self.lets, &[owner.0, tenant.0], &[(0, Value::Num(rent))], true);
+        }
+        for (place, print) in printed {
+            ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(place))), (1, Value::Num(print))], true);
         }
     }
 }
