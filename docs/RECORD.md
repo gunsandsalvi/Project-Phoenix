@@ -20951,3 +20951,67 @@ shipped; the first version dropped the row.
 payment a seller was willing to wait for.
 
 **736 tests; `npm run check` green; clippy clean.**
+
+## 22i — the systems that still only count: CLOSED, census 30 → 0
+
+**Every one of the fifty-one wired systems now takes a decision and writes something.** The third
+register, beside the homeless nouns and the shapes, is at zero.
+
+**The order was wrong and that is why this took so long to start.** 22i was placed after 22g, the
+seeding, on the reasoning that what was left needed a world whose quantities were an outcome rather
+than a draw. That is backwards: a seed draws parties INTO systems, and drawing a bank into a row that
+counts parties alive is drawing it into nothing. 22i moved to the front and the seeding moved to
+last — what a seed draws is drawn into whatever the mechanisms then do with it, so a seed written
+first is a seed rewritten after every fix.
+
+**22i.0, the two doors nothing could reach.** `Agreements::strike` and `Processes::begin` had no
+caller outside tests. Every system whose whole content is a relation could only count what the
+assembly drew, and seven systems were wired as a CLOSER for a process nothing opens. `ctx.agrees /
+ends / opens / closes` is 21j.1a's twin and is what the rest of the item stands on.
+
+**Then twenty conversions, in dependency order, because most of them needed each other.** A company
+publishes its accounts (§48) — which needed a party to carry the period it entered, the journal
+indexed by kind and the instruments by issuer. A house grades every name that has published (§21) —
+which needed the accounts. A downgrade through a mandate's floor is a forced sale (XI-2) — which
+needed the grade. A bank reads its own capital (§31) — whose weights are the grades. A company knows
+what its capital costs (XI-4) — both halves derived from cleared prices that the accounts and the
+flotation are what made exist. A firm decides to invest (§33) — which needed the cost of capital.
+Every lender forms its own view of every borrower (XI-13) — and protection clears between two parties
+who disagree (§19), stock is lent to whoever disagrees most (§15), and a fund buys from a forced
+seller because it disagrees (§14). **The disagreement is load-bearing and it is what three markets
+are made of.**
+
+And: the term runs out and an election is called (XI-17); a borrower's own paper is its own system's,
+split by horizon so one shortfall brings one instrument (§7, §17); a loss is an EVENT (XI-1); a seller
+that has delivered and not been paid offers terms (§36); a company floats when the credit market has
+not taken it (§10); a bank sets its deposit rate (§9); the observer publishes late and revises (§45);
+a currency pair clears from real reasons and a forward is struck (XI-12, §26); a pool publishes its
+NAV and a broker lends to a named client (§13, §12); a treasury handles being short (XI-9); stock is
+tight or it is not and storing it costs money to somebody (§21); dwellings are let and sold (§40); a
+bank pools loans and cuts notes (XI-11); a company is bid for and the owners decide (§35, §29 B); a
+region's accounts are read off the wire (§41); and a fund calls its commitments (§29 A2).
+
+**What it deleted.** `running::Closing` — every closer got an opener, which left the closing itself
+with seven writers of one rule. **XI-3 is the KERNEL's**: `World::step` finishes what has reached its
+end, once, for every kind. And the `Reads`/`Counts` rows it converted.
+
+**Two defects it made and caught.** A flotation posted a fractional holding as an order for zero
+pieces, which the whole-pieces tick refuses — found by running four periods, fixed with
+`whole_pieces`. And `Storing` walked the period's half-million legs once per line, which took a
+period from 300 ms to 3,013 ms; one walk bucketing consumption by line put it back to 550 ms. Law 18:
+the traversal is free to change and the mechanism is not.
+
+**The ontology register did not fall to zero**, because zero is the measure switched off.
+`reporting.accounts` went home to the journal, `ratings.grades` and `reporting.estimates` to
+`standing` — which needed one thing, that a standing is now ABOUT somebody. What this pass found in
+their place: `derivatives.collateral` (a position marks and nothing is posted against it) and
+`control.resistance` (management may resist and nothing in this world does).
+
+**What survived, and where it went.** Nine findings were positioned at 22i and are no longer about a
+system that does not decide — they are about a clause inside one that does. **22j is inserted where
+22i closed** and holds them: no index is constructed (21.42, 21.84), no holder bids a term (21.60),
+no treasury chooses a money (21.50), no central bank has a mandate (21.54), nobody strikes a supply
+contract (21.79), an agreement has no cure (21.62), and the early-termination regime (21.137).
+
+**736 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst period
+594 ms against the 3,000 ms budget, every family clean or honestly not-built.**

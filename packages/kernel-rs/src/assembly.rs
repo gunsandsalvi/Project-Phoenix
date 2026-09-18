@@ -132,6 +132,15 @@ fn declared() -> Nouns {
     // 21.112: it is the JOURNAL's, because a realised gain is an event rather than a thing anybody
     // holds — it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
+    // 22i.20: **and the estimates went home too**, to `standing` — a bank holds what it expects a
+    // company to report until it revises it, the company did not agree to be covered, and two banks
+    // holding two figures on one name is §48 C3's disagreement. It is the same shape as a grade,
+    // which is why it needed the same one thing: a standing is ABOUT somebody.
+    // 22i.2: **a grade went home to `standing`** — terms an assessor stands behind until it
+    // withdraws them, about a named issuer. What made it homeless was that there was nowhere to say
+    // whom it was about, and a standing is about somebody now.
+    at_home("ratings.grades", "the grade an assessor currently holds on an issuer, and what it was before", "21 A4, A6: two houses hold two rows on one name and may disagree, and a move is a `restates`, so what a house said before stays readable beside what it says now");
+    at_home("reporting.estimates", "what each bank expects a named company to report", "48 C1, C3: `consensus` was computed from a list that existed for one call, so the disagreement C3 is about could not survive the call that measured it");
     at_home("reporting.accounts", "the accounts a party has PUBLISHED, as at a date — an EVENT in the journal, on a day, to a named company, public", "48 A1, 22i.1: a covenant is tested against published accounts and a bid is formed from them, and `journal.of_kind(accounts.published)` is that read. What was missing was never a store — it was a mechanism");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
     // 22d.1: the wire is what HAPPENED; this is what is still trying to. It is settlement's because
@@ -167,16 +176,16 @@ fn declared() -> Nouns {
     // nothing anybody DECLARED is homeless, not that nothing is missing. Each of these is a fact a
     // built mechanism produces and no store keeps.
     homeless(
-        "ratings.grades",
-        "22i.2",
-        "the grade an assessor currently holds on an issuer, and what it was before",
-        "21 A4, A6: `ratings::reassess` says when a HELD grade moves, and nothing holds one — so two houses cannot disagree about a name and no grade can be shown to have been wrong",
+        "control.resistance",
+        "23.1",
+        "what a target's management is doing to defend it, and what that costs the bidder",
+        "35 C3: management may resist and its interests differ from the owners', which is the corporate-control problem — and nothing in this world resists, so a tender meets only the owners' own valuations",
     );
     homeless(
-        "reporting.estimates",
-        "22i.3",
-        "what each bank expects a named company to report, and the surprise when it does",
-        "48 C1, F1: `reporting::estimate` and `settle` are built over a slice of estimates nobody keeps, so the consensus is computed from a list that exists for one call and the surprise has nothing to settle against",
+        "derivatives.collateral",
+        "23.1",
+        "what is posted against a derivative position, by whom, and what it is worth now",
+        "16 C1, Appendix B: no margin that is only a number. A position marks (22i.19) and nothing is posted against it, so a counterparty exposure has nothing standing behind it",
     );
     homeless(
         "agreements.states",
@@ -266,6 +275,9 @@ pub struct Stepped {
     /// waiting, ran out of days. A read, published, causing nothing (`ledger::Queue::between`). The
     /// middle number is the measure: every one of those was an arrear before the queue existed.
     pub queue: (usize, usize, usize),
+    /// XI-3, 22i.19: how many processes reached their end this period. Nothing is immortal, and a
+    /// world where this is always zero is a world accumulating things that never resolve.
+    pub closed: usize,
 }
 
 impl World {
@@ -391,6 +403,33 @@ impl World {
         out.trades += self.run_books(&participants, &mut out);
         for (owner, _) in order.iter().filter(|(_, after)| *after) {
             out.ran += self.run_phase(*owner, &by_slot, systems);
+        }
+
+        // **XI-3, 22i.19: AND WHATEVER IS IN FLIGHT CLOSES WHEN ITS PERIOD COMES.**
+        //
+        // Seven systems used to be a `Closing` — a closer for a process nothing opened — and 22i
+        // gave every one of them an opener, which left the closing itself with seven writers of one
+        // rule. It is the KERNEL's: a process with no end is one nobody has to finish, and that is
+        // how a world accumulates things that never resolve. One writer, here, for every kind.
+        let closing: Vec<crate::stores::ProcessId> = (0..self.processes.len() as u32)
+            .map(crate::stores::ProcessId)
+            .filter(|p| !self.processes.done(*p))
+            .filter(|p| matches!(self.processes.closes(*p), Some(when) if when <= self.period))
+            .collect();
+        out.closed = closing.len();
+        for p in closing {
+            let (owner, size) = (self.processes.owner(p), self.processes.size(p));
+            self.processes.finish(p);
+            // Audit A2: what closed, whose it was and how big it was. A process that ended with
+            // nobody able to say so is one nobody can be asked about.
+            self.journal.say(
+                self.period,
+                0,
+                self.says.closed,
+                &[owner.0],
+                &[(0, crate::journal::Value::Num(size))],
+                true,
+            );
         }
 
         // **XI-9, 22d.2: and the gridlock pass, once, with every payment of the period in.** The
@@ -1435,7 +1474,11 @@ mod tests {
         assert!(!named.contains(&"reporting.accounts"), "it went home to the journal at 22i.1");
         // And what the 22i re-read found in its place. The count falls by what goes home and rises
         // by what a re-read finds, which is the whole of how this measure stays honest.
-        assert!(named.contains(&"ratings.grades"), "nothing holds a grade, so two houses cannot disagree");
+        assert!(!named.contains(&"reporting.estimates"), "it got a home at 22i.20, in `standing`");
+        assert!(!named.contains(&"ratings.grades"), "it got one at 22i.2, in `standing`");
+        // And what THIS pass found in their place: a position that marks with nothing posted
+        // against it, and a management that cannot defend its company.
+        assert!(named.contains(&"derivatives.collateral"), "a mark with nothing behind it");
         assert!(named.contains(&"agreements.states"), "a relation is live or ended and never breached");
     }
 

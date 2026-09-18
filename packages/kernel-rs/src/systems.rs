@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, Control, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{agreed, BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -860,6 +860,14 @@ pub fn declare(p: &mut Params) {
     // §35 B1, C1: **what an acquirer wants on what it buys, and how much of the rest a bid must
     // reach.** The first is its own hurdle and a PREFERENCE; the second is a TECHNOLOGY of the
     // market — how much of a dispersed register a tender needs before it has control.
+    // §42 A6.c: the size at which a borrower reaches the bond market. A TECHNOLOGY of the market —
+    // below it the issue costs more than it raises, which is why the tier below is bank-dependent.
+    // §29 A2: what share of an uncalled commitment a fund draws at once. Its own, and a PREFERENCE
+    // — a fund that called everything at once would be a fund with no investment programme.
+    say("fund.draws", 0.05, "per unit uncalled", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the share of an uncalled commitment a fund draws in one period");
+    say("small_business.reaches", 5000.0, "money", Dimension::Amount(Denomination::Money), Kind::Technology, Owner::StandardSetter,
+        "the size at which a borrower can reach the bond market instead of a bank");
     say("acquirer.hurdle", 0.1, "per unit paid", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the return an acquirer wants on what it pays for a company");
     say("control.needs", 0.5, "per unit outstanding", Dimension::Ratio, Kind::Technology, Owner::StandardSetter,
@@ -997,6 +1005,9 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let at_about = keys_of(journal, "statistic.about");
     let at_value = keys_of(journal, "statistic.value");
     let at_revised = keys_of(journal, "statistic.revised_from");
+    let at_the_mark = keys_of(journal, "position.mark");
+    let keys_of_current = keys_of(journal, "region.current_account");
+    let keys_of_financial = keys_of(journal, "region.financial_account");
     let kinds = &mut journal.kinds;
     // 22i.2: the kind the accounts are published under, read back by whatever reads them — the
     // grades do. Named once, here, where the list is (Law 4).
@@ -1071,7 +1082,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             will_wait: "trade_credit.will_wait",
             days_per_period: w.days_per_period,
         })),
-        works("small_business", AT_MARKETS, Box::new(Reads { kind: says("small_business.credit"), what: Counts::CreditOutstanding })),
+        // **§42 A3, A5.a: and the tier too small for the bond market is READ.** It counted the
+        // credit outstanding, so *bank-dependent* was a sentence about nobody.
+        works("small_business", AT_REVALUATION, Box::new(SmallBusiness {
+            kind: says("small_business.state"),
+            reaches_the_bond_market_at: "small_business.reaches",
+            days_per_period: w.days_per_period,
+        })),
         // ── Money, the banks and the sovereign ──────────────────────────────────────────────────
         {
             let mut mm = posts(
@@ -1221,7 +1238,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             h.participant = Some(Box::new(Liquidity { of_kind: kinds::FUND }));
             h
         },
-        works("private_equity", AT_MARKETS, Box::new(Closing { kind: afoot::TAKEOVER, says: says("takeover.closed") })),
+        // **§29 A2, A2.a: and a fund CALLS its commitments.** It was a closer for a takeover nothing
+        // opened, and §29's own half had never run: the investor that must hold liquidity against a
+        // call it did not choose the timing of had no call to be against.
+        works("private_equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Calling {
+            kind: says("commitment.called"),
+            draws: "fund.draws",
+        })),
         // **§12 B1.a, C1.b, E4: and a broker LENDS to a named client and sets what it requires.** It
         // counted live agreements, so no client in this world was levered by a named lender.
         works("prime_brokerage", AT_REVALUATION, Box::new(Broking {
@@ -1264,7 +1287,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             pools: "pool.pools",
         })),
         // ── The instrument families that settle against what the books printed ──────────────────
-        works("derivative_layer", AT_REVALUATION, Box::new(Reads { kind: says("derivative_layer.open"), what: Counts::AgreementsLive })),
+        // **§16 A3, B3.a: and a position MARKS, and an offset does not remove it.** It counted live
+        // agreements, so §16's one indispensable fact — flat on the market, doubled on the credit —
+        // had nothing to be true of.
+        works("derivative_layer", AT_REVALUATION, Box::new(Derivatives {
+            kind: says("position.marked"),
+            at_mark: at_the_mark,
+        })),
         // **§19 B5, XI-13: and protection CLEARS between two parties who disagree.** It counted
         // live agreements, so §19 had never traded — which is 21.137's blocker. What makes the
         // market possible is the disagreement 22i.11 built: the most worried holder of a name and
@@ -1290,7 +1319,14 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             days_per_period: w.days_per_period,
         })),
         works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
-        works("cross_border", AT_REVALUATION, Box::new(Reads { kind: says("cross_border.lines"), what: Counts::LinesThatPrinted })),
+        // **§41 D1, D2, F2: and a region's accounts are a READ of what actually crossed.** It
+        // counted how many lines printed, so no region had a current account and F2's *the world
+        // closes* had nothing to check.
+        works("cross_border", AT_REVALUATION, Box::new(CrossBorder {
+            kind: says("region.accounts"),
+            at_current: keys_of_current,
+            at_financial: keys_of_financial,
+        })),
         // ── The reads over what the books produced ──────────────────────────────────────────────
         // XI-7, 21j.3a: it FIXES on what the overnight book cleared at, and publishes nothing where
         // nothing crossed. A count of how many lines printed was never what a benchmark is for.
@@ -1313,6 +1349,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             at_shares,
             days_per_period: w.days_per_period,
             asymmetry: "reporting.asymmetry",
+            memory: "outlook.memory",
         })),
         // **XI-13: and every lender forms its OWN view of every borrower it holds.** It counted how
         // many lines printed, so this world had ONE opinion of every borrower — and then the market

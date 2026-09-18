@@ -465,8 +465,8 @@ fn main() {
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
         println!(
-            "           queue, of this period's short payments: {waiting} still waiting · {taken} went through after waiting ({} of them in a ring) · {late} ran out of days",
-            did.unwound,
+            "           {} in flight closed · queue, of this period's short payments: {waiting} still waiting · {taken} went through after waiting ({} of them in a ring) · {late} ran out of days",
+            did.closed, did.unwound,
         );
         println!("           audit: {}", audited.join(" · "));
         // Audit A2: a violation names its OWNER, its SIZE, its period and the clause it is about —

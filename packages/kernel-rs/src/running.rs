@@ -86,6 +86,11 @@ pub mod standing {
     /// different things and disagree — which is what stops the market being a restatement of one
     /// accounting model (§46 A3).
     pub const OWN_VIEW: u32 = 4;
+    /// **§48 B1, C1, C3, 22i.20: WHAT A BANK EXPECTS A COMPANY TO REPORT.** Terms `[the figure]`,
+    /// `about` the company. It is a standing for the same reason a grade is: the bank holds it until
+    /// it revises it, the company did not agree to be covered, and two banks holding two figures on
+    /// one name is C3's disagreement — which a single shared number could never express.
+    pub const ESTIMATE: u32 = 5;
 }
 
 /// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
@@ -1098,38 +1103,6 @@ impl Mechanism for Reporting {
     }
 }
 
-/// **XI-3: NOTHING IS IMMORTAL, and a process is not either.**
-///
-/// Whatever is in flight closes when its period comes. A process with no end is one nobody has to
-/// finish, which is how a world accumulates things that never resolve.
-pub struct Closing {
-    pub kind: u32,
-    /// What it says when one closes.
-    pub says: u32,
-}
-
-impl Mechanism for Closing {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let mut done: Vec<(u32, f64)> = Vec::new();
-        for p in ctx.processes().running(self.kind) {
-            if matches!(ctx.processes().closes(p), Some(when) if when <= ctx.period()) {
-                done.push((ctx.processes().owner(p).0, ctx.processes().size(p)));
-            }
-        }
-        for (owner, size) in done {
-            ctx.say(self.says, &[owner], &[(0, Value::Num(size))], true);
-        }
-    }
-
-    /// 21j.4: **the same absence the other way up.** A closer is a real mechanism and it closes
-    /// nothing, because nothing OPENS four of the seven processes it waits on — so what it publishes
-    /// every period is how many closed, which is a count. It leaves the census when something opens
-    /// one.
-    fn only_counts(&self) -> bool {
-        true
-    }
-}
-
 /// **A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.**
 ///
 /// Benchmarks, ratings, the observer surface, the second opinion: they publish a read over what
@@ -1243,6 +1216,9 @@ pub struct Publishes {
     pub days_per_period: i64,
     /// §48 A4: how many days after the books close the report comes out. A TECHNOLOGY.
     pub asymmetry: &'static str,
+    /// §46 A2, §48 C1: the weight a bank puts on what it already thought against what it has just
+    /// seen. ONE PREFERENCE, and it is what makes two banks' estimates of one name differ.
+    pub memory: &'static str,
 }
 
 impl Mechanism for Publishes {
@@ -1312,6 +1288,44 @@ impl Mechanism for Publishes {
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed));
         }
+        // C1, D3: **and the banks that cover a name estimate what it will report.** Coverage is
+        // uneven and how many cover a name is an OUTCOME (D3): a bank estimates the names it can
+        // SEE, which is the ones whose paper it holds, so a company nobody lends to is covered by
+        // nobody. §46 A2: it is formed from what THIS bank has observed, weighted by its own memory,
+        // so two banks with different histories of a name estimate differently.
+        let memory = ctx.params().ratio(self.memory);
+        let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (who, worth, _, _) in &out {
+            let company = PartyId(*who);
+            for &line in ctx.instruments().of_issuer(company) {
+                for &row in ctx.register().of_instrument(InstrumentId::at(line)) {
+                    let row = crate::ids::HoldingId(row);
+                    let bank = ctx.register().holder_of(row);
+                    if bank == company
+                        || ctx.parties().kind_of(bank) != kinds::BANK
+                        || ctx.register().quantity(row) <= 0.0
+                    {
+                        continue;
+                    }
+                    // §46 A2, C5: what it has seen is what the company has PUBLISHED, and it may not
+                    // be handed the answer — so what it holds now is weighted against what this
+                    // report is about to say, and never set to it.
+                    let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {
+                        Some(st) => ctx.standing().terms(st)[0],
+                        // A bank that has seen nothing of a name has no estimate of it and is not
+                        // covering it (D3) — its first is what the first report it saw said.
+                        None => *worth,
+                    };
+                    estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
+                }
+            }
+        }
+        for (bank, company, figure) in estimating {
+            // C1: it HOLDS it, so it can be shown to have been wrong — and F1's surprise is the
+            // report against what was standing when it arrived.
+            ctx.now_stands(standing::ESTIMATE, bank, company, vec![figure]);
+        }
+
         for (who, worth, income, shares) in out {
             let mut data = vec![(self.at_equity, Value::Num(worth)), (self.at_shares, Value::Num(shares))];
             if let Some(earned) = income {
@@ -1562,7 +1576,7 @@ impl crate::module::Participant for ForcedSeller {
         let held = view.free(line);
         // Law 6: it cannot sell more than it holds, which is arithmetic about a holding and not a
         // cap on a number.
-        let units = crate::mechanisms::forced_sale::sells(held, must) as i64;
+        let units = crate::clearing::whole_pieces(crate::mechanisms::forced_sale::sells(held, must));
         if units <= 0 {
             return Vec::new();
         }
@@ -2011,11 +2025,17 @@ impl crate::module::Participant for Flotation {
         // seller with nothing to sell it for is a seller with no reservation, which is missing and
         // not free (Appendix A).
         let Some(worth) = view.worth_per_share(held) else { return Vec::new() };
+        // Law 8: an order is WHOLE PIECES, and `whole_pieces` is the one writer of that tick. A
+        // holding of less than one share is not an order for none — it is not an order (Clearing C1).
+        let units = crate::clearing::whole_pieces(held);
+        if units <= 0 {
+            return Vec::new();
+        }
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Sell,
             price: Some(worth),
-            qty: held as i64,
+            qty: units,
         }]
     }
 }
@@ -3199,8 +3219,14 @@ impl Mechanism for Broking {
                     ctx.agreements().live(*a)
                         && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 });
-            let lent = match held {
-                Some(a) => ctx.agreements().terms(a).first().copied().unwrap_or(0.0),
+            // B1.a: what this broker has already lent it. A client with no account has borrowed
+            // nothing from it — that is the absence of a loan, not a loan of nothing — and an
+            // account whose terms say nothing is one nobody has written terms for yet.
+            let lent = match held.map(|a| ctx.agreements().terms(a).to_vec()) {
+                Some(terms) => match terms.first() {
+                    Some(&lent) => lent,
+                    None => 0.0,
+                },
                 None => 0.0,
             };
             let account = Account {
@@ -3589,6 +3615,18 @@ impl Mechanism for Storing {
             return;
         }
 
+        // D4: what was consumed, by line. **ONE walk of the period's legs** — Law 18: the traversal
+        // is free to change and the mechanism is not, and a walk per line over half a million legs
+        // is the same answer at sixteen thousand times the cost.
+        let mut consumed_of: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            for leg in ctx.wire().legs_of(n) {
+                if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
+                    *consumed_of.entry(instrument.0).or_insert(0.0) += qty;
+                }
+            }
+        }
+
         let mut charging: Vec<(PartyId, PartyId, f64)> = Vec::new();
         let mut tight: Vec<(u32, f64)> = Vec::new();
         for row in 0..ctx.instruments().len() as u32 {
@@ -3600,18 +3638,12 @@ impl Mechanism for Storing {
             if held <= 0.0 {
                 continue;
             }
-            // D4: what was consumed. Read off the wire — the units this period's instructions
-            // destroyed — never a tally kept beside the register (Law 19).
-            let mut consumed = 0.0;
-            for n in ctx.wire().in_period(ctx.period()) {
-                for leg in ctx.wire().legs_of(n) {
-                    if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
-                        if instrument == line {
-                            consumed += qty;
-                        }
-                    }
-                }
-            }
+            // A line with no `Destroy` leg this period had none consumed — the walk above saw every
+            // leg, so its absence is the answer and not a number standing in for one.
+            let consumed = match consumed_of.get(&row) {
+                Some(&units) => units,
+                None => 0.0,
+            };
             if let Some(t) = crate::mechanisms::commodities::tightness(held, consumed) {
                 tight.push((row, t));
             }
@@ -3767,14 +3799,16 @@ impl Mechanism for Housing {
             if deposit <= 0.0 {
                 continue;
             }
-            // §46: what it expects to earn is its own outlook; a household that has formed none
-            // bids on what it holds and nothing more.
-            let income = ctx
-                .outlooks()
-                .of(who, crate::running::about::WHAT_IT_KEEPS_EARNING)
-                .unwrap_or(0.0);
+            // §46, B2: what it expects to earn is its OWN outlook, and a household that has formed
+            // none bids what it holds — not an income of zero, which would be a number nobody has
+            // (Appendix A), but a bid with no borrowing behind it, which is what having no view of
+            // your income means when a lender asks.
             let at = ctx.parties().region_of(who);
-            bids.push(Bid { buyer: who, at, bidding: can_bid(income, deposit, &standard) });
+            let bidding = match ctx.outlooks().of(who, crate::running::about::WHAT_IT_KEEPS_EARNING) {
+                Some(income) => can_bid(income, deposit, &standard),
+                None => deposit,
+            };
+            bids.push(Bid { buyer: who, at, bidding });
             renting.push((who, at, deposit));
         }
 
@@ -4104,6 +4138,330 @@ impl Mechanism for Control {
     }
 }
 
+/// **§16 A3, B3, B3.a, G1, 22i.19: A DERIVATIVE POSITION IS MARKED, AND AN OFFSET DOES NOT REMOVE IT.**
+///
+/// The `derivative_layer` row counted live agreements. So §16's one indispensable fact — that a
+/// party which has hedged is FLAT on the market and DOUBLED on the credit — had nothing to be true
+/// of, and a world that netted them would hide the thing that actually breaks.
+///
+/// **One number, two reads** (A3): what a contract is worth to one side is the negative of what it
+/// is worth to the other. Not two numbers that might drift apart — the same number, read from either
+/// end (Law 4).
+///
+/// **And the exposure is PER COUNTERPARTY** (B3.a): a party with a bought contract and a sold one
+/// against different names has two exposures, and netting them across counterparties is exactly what
+/// Appendix B forbids.
+pub struct Derivatives {
+    pub kind: u32,
+    pub at_mark: u32,
+}
+
+impl Mechanism for Derivatives {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::derivative_layer::Position;
+
+        let mut marked: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::DERIVATIVE {
+                continue;
+            }
+            let (one, other) = ctx.agreements().between(a);
+            let terms = ctx.agreements().terms(a);
+            let [struck_at, notional, years] = match terms {
+                [a, b, c] => [*a, *b, *c],
+                _ => continue,
+            };
+            // B1, G4: it was agreed at a CLEARED price and it marks against one — never against a
+            // price this world does not clear. What it is worth now is what that name's protection
+            // would cost now, against what this contract struck at.
+            let on = InstrumentId::at(struck_at as u32);
+            let mark = match ctx.prints().latest(on, ctx.period()) {
+                Some(print) => (print.price - struck_at) * notional,
+                // A contract on something nothing has cleared does not mark, and a position that
+                // does not mark is one whose holder has hidden its loss (§14 E2). It is said with
+                // no mark rather than marked at zero.
+                None => continue,
+            };
+            let position = Position {
+                a: one,
+                b: other,
+                notional,
+                struck_at,
+                mark,
+                years_left: years,
+                cleared_at_house: None,
+            };
+            // A3: one number, two reads. The other side's is its negative, and it is read rather
+            // than written a second time.
+            if let Some(to_one) = position.mark_to(one) {
+                marked.push((one, other, to_one));
+            }
+        }
+
+        for (one, other, mark) in marked {
+            // B3.a: **per counterparty.** A party's exposure to one name is not reduced by an
+            // offsetting contract with another, so this is said naming both — netting them across
+            // counterparties is what Appendix B forbids, and a single number per party would be it.
+            ctx.say(self.kind, &[one.0, other.0], &[(self.at_mark, Value::Num(mark))], false);
+        }
+    }
+}
+
+/// **§42 A3, A5, A5.a, B1, B3, 22i.19: THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.**
+///
+/// The `small_business` row counted the credit outstanding. So A5's *bank-dependent — too small for
+/// the bond market* was a sentence about nobody: nothing in this world knew which borrowers had no
+/// alternative, which is why a credit tightening could not bite here first and hardest (A5.a).
+///
+/// **It is a READ of observable characteristics** (A3): size, region, leverage, coverage — and
+/// **bank-dependence is size against the point where the bond market starts**, never a label. A cell
+/// that outgrows it is PROMOTED (A6.c), which is a weight event and not a relabelling (XI-15).
+///
+/// **And the default is one borrower's arithmetic** (B3, A2.a): a threshold this cell crosses or does
+/// not, never an average. A test applied to a band's mean means a mean-preserving spread causes no
+/// defaults at all, which is exactly backwards.
+pub struct SmallBusiness {
+    pub kind: u32,
+    /// §42 A6.c: the size at which a borrower reaches the bond market. A TECHNOLOGY of the market:
+    /// below it the issue costs more than it raises.
+    pub reaches_the_bond_market_at: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SmallBusiness {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::small_business::Cell;
+        let reaches = ctx.params().amount(self.reaches_the_bond_market_at, crate::params::Denomination::Money);
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        let mut tier: Vec<(PartyId, f64, bool)> = Vec::new();
+        for &small in ctx.parties().of_kind(kinds::SMALL_FIRM) {
+            let who = PartyId(small);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // A3: **observable characteristics**, every one of them a read.
+            let size = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            let owes: f64 = ctx
+                .instruments()
+                .of_issuer(who)
+                .iter()
+                .map(|i| ctx.schedules().outstanding(InstrumentId::at(*i)))
+                .sum();
+            let cell = Cell {
+                who,
+                weight: f64::from(ctx.parties().weight(who)),
+                size,
+                region: ctx.parties().region_of(who),
+                leverage: if size > 0.0 { owes / size } else { f64::INFINITY },
+                // A3: coverage is what it earns against what it owes, and a borrower with no
+                // published earnings has none that anybody can read.
+                coverage: 0.0,
+                bank_dependent: true,
+            };
+            // A6.c: **it outgrew bank-dependence** — large enough to reach the bond market. That is
+            // a fact about its size against a market convention, and never a label anybody set.
+            let dependent = !cell.outgrew(reaches);
+            // B3, A2.a: and whether THIS borrower can meet what falls due. One borrower's own
+            // arithmetic, never a band's average.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let cash = ctx.register().quantity(ctx.register().row(who, money));
+            let due: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            tier.push((who, cell.leverage, dependent && cash < due));
+        }
+
+        for (who, leverage, cannot_meet) in tier {
+            // A5.a: which borrowers have no alternative, and which of those cannot meet what falls
+            // due — the two facts a credit tightening needs to bite here first and hardest.
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(leverage)), (1, Value::Flag(cannot_meet))],
+                true,
+            );
+        }
+    }
+}
+
+/// **§41 D1, D2, D3, F2, XI-12, 22i.19: A REGION'S ACCOUNTS ARE A READ OF WHAT ACTUALLY CROSSED.**
+///
+/// The `cross_border` row counted how many lines printed. So no region in this world had a current
+/// account, a financial account or an imbalance — and F2's *the world closes*, the check that every
+/// region's surplus is somebody's deficit, had nothing to check.
+///
+/// **Every flow is read off the WIRE, party by party** (Law 19, F2): who paid whom, where each of
+/// them is, and what the payment was FOR. Nothing is a tally kept beside the instructions, and no
+/// series is exogenous — Appendix B forbids an imposed trade or capital-flow series precisely
+/// because it would make this read decorative.
+///
+/// **D3: the two accounts are the same flows read twice**, which is why the imbalance is derived and
+/// can be reported with a size rather than asserted away.
+pub struct CrossBorder {
+    pub kind: u32,
+    pub at_current: u32,
+    pub at_financial: u32,
+}
+
+impl Mechanism for CrossBorder {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::cross_border::{Entry, Flow};
+
+        // F2: the flows that actually crossed, this period, off the wire's own legs.
+        let mut flows: Vec<Flow> = Vec::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
+                continue;
+            }
+            for leg in ctx.wire().legs_of(n) {
+                let crate::ledger::Leg::Money { from, to, ccy, amount, receipt, .. } = *leg else {
+                    continue;
+                };
+                if from == to || !ctx.parties().alive(from) || !ctx.parties().alive(to) {
+                    continue;
+                }
+                let from_region = ctx.parties().region_of(from);
+                let to_region = ctx.parties().region_of(to);
+                if from_region == to_region {
+                    continue;
+                }
+                // A2, C5, D1: **what the payment was FOR** decides which account it lands in. It is
+                // read off the leg's own receipt, which the writer had to state (0i.5) — never
+                // guessed from the parties.
+                let entry = match receipt {
+                    crate::ledger::Receipt::Sale => Entry::Goods,
+                    crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => Entry::Services,
+                    crate::ledger::Receipt::Interest | crate::ledger::Receipt::Dividend => Entry::Income,
+                    crate::ledger::Receipt::Principal | crate::ledger::Receipt::Transfer => Entry::Claim,
+                };
+                flows.push(Flow {
+                    from,
+                    from_region,
+                    to,
+                    to_region,
+                    amount,
+                    invoiced_in: ccy,
+                    entry,
+                });
+            }
+        }
+        if flows.is_empty() {
+            return;
+        }
+
+        let mut places: Vec<u32> = flows.iter().flat_map(|f| [f.from_region.0, f.to_region.0]).collect();
+        places.sort_unstable();
+        places.dedup();
+        let regions: Vec<crate::ids::RegionId> = places.iter().map(|r| crate::ids::RegionId::at(*r)).collect();
+
+        let mut read: Vec<(u32, f64, f64, Option<f64>)> = Vec::new();
+        for &at in &regions {
+            read.push((
+                at.0,
+                crate::mechanisms::cross_border::current_account(at, &flows),
+                crate::mechanisms::cross_border::financial_account(at, &flows),
+                // D3: the two are the same flows read twice, so this is the discrepancy and it is
+                // REPORTED with a size rather than asserted away (Law 7's dust, not a band).
+                crate::mechanisms::cross_border::imbalance(at, &flows, 2),
+            ));
+        }
+        // F2: **and the world closes.** Every region's surplus is somebody's deficit, so the sum
+        // over all of them is dust or it is a finding about a flow with one side (Law 5).
+        let closes = crate::mechanisms::cross_border::world_closes(&regions, &flows, regions.len());
+
+        for (at, current, financial, imbalance) in read {
+            let mut data = vec![
+                (0, Value::Num(f64::from(at))),
+                (self.at_current, Value::Num(current)),
+                (self.at_financial, Value::Num(financial)),
+            ];
+            if let Some(off) = imbalance {
+                data.push((1, Value::Num(off)));
+            }
+            ctx.say(self.kind, &[], &data, true);
+        }
+        if let Some(off) = closes {
+            // A world that does not close has a flow with one side in it somewhere, and that is a
+            // finding with a size — never something to net away (Law 5, Audit A2).
+            ctx.say(self.kind, &[], &[(1, Value::Num(off))], true);
+        }
+    }
+}
+
+/// **§29 A2, A3, A4, B2.b, 22i.19: A FUND CALLS ITS COMMITMENTS, AND THE INVESTOR MUST HAVE THE
+/// MONEY.**
+///
+/// The `private_equity` row was a CLOSER for a takeover nothing opened. §29's own half — the fund,
+/// its commitments and the call — had never run either: A2.a's *the investor must hold liquidity
+/// against calls it did not choose the timing of* had no call to be against.
+///
+/// **A call is pro rata on UNCALLED commitments** (A2), and it is a real demand on a named investor
+/// for real money. **The fund has a LIFE** (A4): it invests, it holds, it exits and it winds up —
+/// nothing here is immortal (XI-3).
+///
+/// **And whether the deal happens is the credit market's** (B2.b): the buyout half is `control`'s,
+/// which 22i.18 built. This is the money behind it.
+pub struct Calling {
+    pub kind: u32,
+    /// §29 A2: what share of an uncalled commitment a fund draws at once. Its own.
+    pub draws: &'static str,
+}
+
+impl Mechanism for Calling {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let draws = ctx.params().ratio(self.draws);
+
+        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
+                continue;
+            }
+            let (fund, investor) = ctx.agreements().between(a);
+            if !ctx.parties().alive(fund) || !ctx.parties().alive(investor) {
+                continue;
+            }
+            // A2: pro rata on what is UNCALLED. A commitment fully drawn has nothing left to call,
+            // which is an answer and not a call of nothing.
+            let Some(&committed) = ctx.agreements().terms(a).first() else { continue };
+            let owed = committed * draws;
+            if owed <= 0.0 {
+                continue;
+            }
+            calling.push((fund, investor, owed));
+        }
+
+        for (fund, investor, owed) in calling {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
+            // A2.a: **the investor must hold liquidity against a call it did not choose the timing
+            // of.** If it has not got it the payment waits in the queue like any other and can run
+            // out of days — which is the consequence that makes a commitment mean something.
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: investor,
+                    to: fund,
+                    ccy: ctx.instruments().ccy_of(money),
+                    instrument: money,
+                    amount: owed,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }],
+                crate::ledger::Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "29 A2: a call is pro rata on uncalled commitments, and it is real money",
+            );
+            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed))], false);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4366,16 +4724,23 @@ mod tests {
 
     #[test]
     fn a_process_closes_when_its_period_comes_and_not_before() {
-        // XI-3: nothing is immortal, a process included.
+        // **XI-3, 22i.19: nothing is immortal, a process included — and the KERNEL is what closes
+        // one.** Seven systems used to be a `Closing`, a closer for a process nothing opened; 22i
+        // gave every one of them an opener, which left the closing itself with seven writers of one
+        // rule. It is the kernel's now, once, for every kind.
         let (mut w, _bank, firm, _worker, _cash) = world();
-        let says = w.journal.kinds.declare("programme.closed");
+        let systems: Vec<&dyn crate::assembly::System> = Vec::new();
+        w.wire_up(&systems);
         w.processes.begin(afoot::CAPITAL_PROGRAMME, firm, 1, Some(3), 500.0);
+        let p = crate::stores::ProcessId(0);
+        w.period = 1;
+        assert_eq!(w.step(&systems).closed, 0, "its period has not come");
+        assert!(!w.processes.done(p));
         w.period = 2;
-        ran(&mut w, &Closing { kind: afoot::CAPITAL_PROGRAMME, says });
-        assert_eq!(w.journal.in_period(2).count(), 0);
-        w.period = 3;
-        ran(&mut w, &Closing { kind: afoot::CAPITAL_PROGRAMME, says });
-        assert_eq!(w.journal.in_period(3).count(), 1);
+        assert_eq!(w.step(&systems).closed, 1, "and now it has");
+        assert!(w.processes.done(p));
+        // And it does not close twice: a process that ended is ended.
+        assert_eq!(w.step(&systems).closed, 0);
     }
 
     /// A mill that holds its plant, its input and one worker — the smallest world that can make

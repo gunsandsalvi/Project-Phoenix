@@ -150,6 +150,9 @@ pub struct Outcomes {
     pub failed: u32,
     /// 22d.1: it is waiting, which is neither of the other two.
     pub queued: u32,
+    /// XI-3, 22i.19: and the kind a process ending is said under. It is here with the others
+    /// because it is the same sort of fact — what the kernel did, said once (Law 4).
+    pub closed: u32,
     /// 21.112: the kind **what a disposal realised** is said under. Settlement is the only place
     /// that holds both halves of the answer at once — the price the leg moved at, and the basis the
     /// lots carried — so it is the only place that can say it without re-deriving one of them
@@ -166,6 +169,7 @@ impl Outcomes {
             settled: journal.kinds.declare("instruction.settled"),
             failed: journal.kinds.declare("instruction.failed"),
             queued: journal.kinds.declare("instruction.queued"),
+            closed: journal.kinds.declare("process.closed"),
             realised: journal.kinds.declare("disposal.realised"),
         }
     }
