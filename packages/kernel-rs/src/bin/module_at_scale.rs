@@ -46,9 +46,9 @@ fn main() {
     let mut draw = Draw(0xCAFE_F00D_1234_5678);
     let mut reg = Register::new();
     let mut journal = Journal::new();
-    let ok = journal.kinds.declare("instruction.settled");
-    let no = journal.kinds.declare("instruction.failed");
-    let mut wire = Settlement::new();
+    let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
+    let mut wire = Settlement::new(6);
 
     // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
@@ -132,7 +132,7 @@ fn main() {
         } else {
             Instruction::plain(&legs, Cause::Trade)
         };
-        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 }, ok, no);
+        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &cal, says });
     }
 
     let t = Instant::now();

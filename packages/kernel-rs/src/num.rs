@@ -134,6 +134,38 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
     }
 }
 
+/// **22c.1: WHICH OF TWO LEVELS IS THE KEENER**, on a side. It lives here for the reason every other
+/// comparison does — `Math.min/max` is forbidden outside this module (Law 6), because a minimum
+/// written at a site is indistinguishable from a cap written at a site, and the law exists to make
+/// the difference visible.
+///
+/// This is neither: it is a walk over a list choosing which of two ORDERS is better, which is the
+/// same arithmetic as `recipe::decide` naming the reason that bound. Nothing is limited and no number
+/// is held back — one of two things somebody actually posted is picked.
+pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
+    if buying {
+        if a > b {
+            a
+        } else {
+            b
+        }
+    } else if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity.
+/// A buyer that can see more sellers than there are sees all of them, which is a fact about the list.
+pub fn at_most(wanted: usize, there_are: usize) -> usize {
+    if wanted < there_are {
+        wanted
+    } else {
+        there_are
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,37 +207,5 @@ mod tests {
         let large = dust(2, &[1e9, 1e9]);
         assert!(large > small);
         assert!(dust(0, &[1e9]) == 0.0);
-    }
-}
-
-/// **22c.1: WHICH OF TWO LEVELS IS THE KEENER**, on a side. It lives here for the reason every other
-/// comparison does — `Math.min/max` is forbidden outside this module (Law 6), because a minimum
-/// written at a site is indistinguishable from a cap written at a site, and the law exists to make
-/// the difference visible.
-///
-/// This is neither: it is a walk over a list choosing which of two ORDERS is better, which is the
-/// same arithmetic as `recipe::decide` naming the reason that bound. Nothing is limited and no number
-/// is held back — one of two things somebody actually posted is picked.
-pub fn keener(a: f64, b: f64, buying: bool) -> f64 {
-    if buying {
-        if a > b {
-            a
-        } else {
-            b
-        }
-    } else if a < b {
-        a
-    } else {
-        b
-    }
-}
-
-/// And how many of a list a reader may take: a window over what exists, never a cap on a quantity.
-/// A buyer that can see more sellers than there are sees all of them, which is a fact about the list.
-pub fn at_most(wanted: usize, there_are: usize) -> usize {
-    if wanted < there_are {
-        wanted
-    } else {
-        there_are
     }
 }

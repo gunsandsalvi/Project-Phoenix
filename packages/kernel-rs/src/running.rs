@@ -1249,10 +1249,9 @@ mod tests {
                     journal: &mut w.journal,
                     parties: &w.parties,
                     instruments: &w.instruments,
-                    realised: w.realised_kind,
+                    calendar: &w.calendar,
+                    says: w.says,
                 },
-                w.settled_kind,
-                w.failed_kind,
             );
         }
         for s in asked.said {

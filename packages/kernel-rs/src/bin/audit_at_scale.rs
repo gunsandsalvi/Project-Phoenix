@@ -56,7 +56,7 @@ fn main() {
     audit.add(Box::<NoCollateralCountedTwice>::default());
 
     let t = Instant::now();
-    let reports = audit.run(&reg, &phoenix_kernel::ledger::Settlement::new(), 1);
+    let reports = audit.run(&reg, &phoenix_kernel::ledger::Settlement::new(6), 1);
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

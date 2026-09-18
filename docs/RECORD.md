@@ -20696,3 +20696,53 @@ saying an order rests until its owner pulls it *because this venue has not decla
 
 **728 tests, a typecheck; `npm run check` green; `world:runs` four periods, 51 systems, worst period
 356 ms, every family clean or honestly not-built.**
+
+## 22d.1 — the payment queue
+
+**What.** `ledger::Queue`: a payment that cannot be made YET, held with the day it must settle by,
+the party that is short, and the legs it will move when it can. Four pieces around it:
+
+- **`Outcome::Queued`.** A payment (`Delivery::Nothing`) whose money leg is short joins the queue
+  instead of becoming an arrear on the spot. Anything else fails exactly as it did.
+- **A receipt is a retry.** `Settlement::release` runs after every settlement and tries what each
+  party just paid was itself waiting to pay — over a WORKLIST, not one pass, because the party that
+  retry pays may be able to pay in turn. It terminates because a retry that goes through takes its
+  row out of the queue for good.
+- **`Settlement::give_up`.** The day passed; the arrear is recorded on the wire, on the payer,
+  which is the failure this world used to record instantly. `World::step` runs it as the period
+  opens, beside the resting book's expiry.
+- **One TECHNOLOGY: `Settlement::new(waits_for)`** — how many days a payment may wait here. A fact
+  about the payment system, stated where the system is built.
+
+**And two things were folded together that were one fact in two shapes.** `settle` took
+`settled_kind` and `failed_kind` as loose arguments while `Settling` carried `realised` as a field;
+they are now one `Outcomes { settled, failed, queued, realised }`, declared once by
+`Outcomes::declared(journal)` and handed over with the stores. `settle` went from five arguments to
+three. `Settling` also gained the CALENDAR, which settlement had no access to at all — the other
+half of why this world could not hold a payment open: there was no date to place a deadline against.
+
+**Why.** A gridlock — A cannot pay B because B has not yet paid A — is a **timing** failure, and
+resolving it needs no new money at all. This world had no queue, so every one of them was an arrear
+the instant it was tried, and parties were recorded as having missed payments they could have met an
+instant later. That is a default invented by the order the phases happened to run in.
+
+**What it found.** Four periods of `world:runs`: **158 payments went through on a retry** — 49, 31,
+50, 28 — every one of them a default this world was inventing. 4,230 are still waiting and 8,849 ran
+out of days, which in a world where nothing was cleared or decided is what an arbitrary draw of
+obligations looks like, not a finding about the queue.
+
+**What it did not do, and where that went.** Two things, both written into `docs/IMPLEMENTATION.md`
+under 22d:
+- **22d.1a**: settlement knows the PERIOD and not the cycle, so every payment is stamped at the
+  period's first day and the six-day life is "the rest of the week it was tried in". The queue is
+  therefore only retried by later instructions of the same period. The fix is the cycle reaching the
+  wire (Money G2), not a longer lifetime.
+- **22d.1b**: a delivery it cannot pay for still fails, because holding one open would leave the
+  seller's units unencumbered and sellable twice. The real mechanism encumbers them; it is not built.
+
+**What it deleted.** `World::settled_kind`, `failed_kind` and `realised_kind`; two arguments from
+`settle` at twelve call sites and two from `run_book`; the `#[allow(clippy::too_many_arguments)]`
+`run_book` carried. The `items after a test module` warning in `core/num.rs`, left by 22c.
+
+**730 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst
+period 366 ms, every family clean or honestly not-built.**

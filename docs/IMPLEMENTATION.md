@@ -183,10 +183,26 @@ resolving it needs no new money.*
 The measurements in the steps are the TypeScript engine's and are to be re-read. It sits after 22c
 because the queue's evidence arrives only when the world runs long enough to fail.
 
-- [ ] 22d.1 A settlement queue with a stated lifetime, in states this project already has words for:
+- [x] 22d.1 A settlement queue with a stated lifetime, in states this project already has words for:
   due → queued (retried after each later instruction that funds the payer) → failed (the arrear, as
   today; 19.8 built the other end, when an arrear becomes a breach). One TECHNOLOGY: how long a
   payment may wait before it is late.
+  **Done.** `ledger::Queue`, `Outcome::Queued`, `Settlement::release` (a receipt is a retry, over a
+  worklist so a chain unwinds) and `Settlement::give_up` (the day passed; the arrear is recorded on
+  the wire). Four periods of `world:runs`: **158 payments went through on a retry** that were
+  arrears before it. Two findings it left, both below.
+- [ ] 22d.1a **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
+  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
+  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it
+  was tried in" for every payment alike, and means the queue is only ever retried by later
+  instructions of the SAME period. A real queue is retried the next morning too. The fix is the
+  cycle reaching settlement (Money G2: the settlement cycles within a period are declared and
+  nothing hands one to the wire), not a longer lifetime.
+- [ ] 22d.1b **A delivery it cannot pay for still fails.** The queue holds payments
+  (`Delivery::Nothing`); an instruction that delivers units against a payment it cannot make is a
+  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
+  second time. That is the mechanism a real CSD has (the queued delivery encumbers the securities)
+  and it is not built. It needs `Leg::Pledge` over the delivering leg for as long as the row waits.
 - [ ] 22d.2 One pass at the end of the period that finds cycles in the queue and settles them
   together, **each leg at full value** — which is not netting across counterparties (still forbidden)
   but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.

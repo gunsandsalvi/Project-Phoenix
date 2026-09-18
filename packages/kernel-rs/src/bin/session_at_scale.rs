@@ -117,7 +117,7 @@ fn main() {
     let mut register = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
-    let mut wire = Settlement::new();
+    let mut wire = Settlement::new(6);
     let params = Params::new(100.0, 60.0);
     // Predates the relations store and strikes none: a view over it answers "no relations".
     let bench_agreements = phoenix_kernel::stores::Agreements::new();
@@ -126,8 +126,7 @@ fn main() {
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
     let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
-    let ok = journal.kinds.declare("instruction.settled");
-    let no = journal.kinds.declare("instruction.failed");
+    let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
 
     for row in 0..parties.len() as u32 {
         register.money_delta(PartyId::at(row), CASH, 1_000_000.0);
@@ -186,7 +185,7 @@ fn main() {
                     stands_for: None,
                 },
             };
-            let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
+            let s = run_book(&book, &participants, &books, &mut stores, 1, says);
             asks += s.asks;
             orders += s.orders;
             settled += s.settled;

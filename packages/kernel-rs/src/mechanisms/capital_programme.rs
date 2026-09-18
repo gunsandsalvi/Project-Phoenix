@@ -285,9 +285,9 @@ mod tests {
     fn plant_that_moved_with_a_leg_behind_it_is_not_a_violation() {
         let mut reg = Register::new();
         let mut j = Journal::new();
-        let ok = j.kinds.declare("instruction.settled");
-        let no = j.kinds.declare("instruction.failed");
-        let mut wire = Settlement::new();
+        let says = crate::ledger::Outcomes::declared(&mut j);
+        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
+        let mut wire = Settlement::new(6);
         let a = PartyId::at(0);
         let b = PartyId::at(1);
         let plant = InstrumentId::at(1);
@@ -305,9 +305,7 @@ mod tests {
         wire.settle(
             &Instruction::free_of_payment(&legs, Cause::Trade),
             2,
-            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins, realised: 0 },
-            ok,
-            no,
+            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins, calendar: &cal, says },
         );
         let reports = audit.run(&reg, &wire, 2);
         assert!(
@@ -321,7 +319,7 @@ mod tests {
     #[test]
     fn plant_that_moved_with_no_leg_behind_it_has_nowhere_to_hide() {
         let mut reg = Register::new();
-        let wire = Settlement::new();
+        let wire = Settlement::new(6);
         let a = PartyId::at(0);
         let plant = InstrumentId::at(1);
         reg.credit(a, plant, 100.0, 1.0, 0);
@@ -343,7 +341,7 @@ mod tests {
     #[test]
     fn a_line_that_is_not_capital_is_not_this_familys_business() {
         let mut reg = Register::new();
-        let wire = Settlement::new();
+        let wire = Settlement::new(6);
         let a = PartyId::at(0);
         let share = InstrumentId::at(2);
         // Only row 1 is capital; row 2 is not.

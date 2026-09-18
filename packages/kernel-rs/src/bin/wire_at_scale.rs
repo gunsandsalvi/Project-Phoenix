@@ -44,9 +44,11 @@ fn main() {
     let mut draw = Draw(0x1357_9BDF_2468_ACE0);
     let mut reg = Register::new();
     let mut journal = Journal::new();
-    let ok = journal.kinds.declare("instruction.settled");
-    let no = journal.kinds.declare("instruction.failed");
-    let mut wire = Settlement::new();
+    let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
+    // G3: the one calendar, and how long a payment may wait here (22d.1). This bench runs one
+    // period, so nothing in it ever reaches the day it is late on.
+    let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
+    let mut wire = Settlement::new(6);
 
     // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
@@ -141,9 +143,7 @@ fn main() {
         match wire.settle(
             &instruction,
             1,
-            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 },
-            ok,
-            no,
+            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &cal, says },
         ) {
             Outcome::Settled => settled += 1,
             _ => refused += 1,

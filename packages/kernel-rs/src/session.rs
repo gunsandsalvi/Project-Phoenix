@@ -161,16 +161,13 @@ pub struct BookDecl {
 }
 
 /// Run one book: ask, clear, print, settle.
-#[allow(clippy::too_many_arguments)]
 pub fn run_book(
     book: &BookDecl,
     participants: &[&dyn Participant],
     books: &Books,
     stores: &mut Stores<'_>,
     period: u32,
-    settled_kind: u32,
-    failed_kind: u32,
-    realised_kind: u32,
+    says: crate::ledger::Outcomes,
 ) -> Session {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
@@ -291,10 +288,9 @@ pub fn run_book(
                     journal: stores.journal,
                     parties: stores.parties,
                     instruments: stores.instruments,
-                    realised: realised_kind,
+                    calendar: stores.calendar,
+                    says,
                 },
-                settled_kind,
-                failed_kind,
             ) {
                 Outcome::Settled => settled += 1,
                 // C4.b: a trade that did not settle is a recorded state, and the book still
@@ -502,10 +498,9 @@ mod tests {
         let mut register = Register::new();
         let mut prints = Prints::new();
         let mut journal = Journal::new();
-        let mut wire = Settlement::new();
+        let mut wire = Settlement::new(6);
         let params = Params::new(100.0, 60.0);
-        let ok = journal.kinds.declare("instruction.settled");
-        let no = journal.kinds.declare("instruction.failed");
+        let says = crate::ledger::Outcomes::declared(&mut journal);
 
         let cash = InstrumentId::at(0);
         let grain = InstrumentId::at(1);
@@ -535,7 +530,7 @@ mod tests {
             calendar: &weekly(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
-        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
+        let s = run_book(&book, &participants, &books, &mut stores, 1, says);
 
         assert_eq!(s.asks, 2);
         assert_eq!(s.orders, 2);
@@ -573,10 +568,9 @@ mod tests {
         let mut register = Register::new();
         let mut prints = Prints::new();
         let mut journal = Journal::new();
-        let mut wire = Settlement::new();
+        let mut wire = Settlement::new(6);
         let params = Params::new(100.0, 60.0);
-        let ok = journal.kinds.declare("instruction.settled");
-        let no = journal.kinds.declare("instruction.failed");
+        let says = crate::ledger::Outcomes::declared(&mut journal);
         let cash = InstrumentId::at(0);
         let grain = InstrumentId::at(1);
         let market = MarketId::at(1);
@@ -602,7 +596,7 @@ mod tests {
             calendar: &weekly(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
-        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
+        let s = run_book(&book, &participants, &books, &mut stores, 1, says);
         assert!(matches!(s.outcome, Cleared::NoOverlap { .. }));
         assert_eq!(s.settled, 0);
         // Law 3: a bracket is not a price, so the book printed NOTHING.

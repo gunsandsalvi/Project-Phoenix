@@ -454,9 +454,17 @@ fn main() {
         let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
+        // **XI-9, 22d.1: and what the PAYMENT QUEUE holds.** A payment waiting is not a payment
+        // that failed, and a world with no queue turned every gridlock into an arrear on the spot.
+        // `taken` is the measure that matters: those are the defaults this world was inventing.
+        let (waiting, taken, late) = w.wire.queue.census();
         println!(
             "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {standing} resting",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
+        );
+        println!(
+            "           queue: {waiting} waiting · {taken} went through on a retry · {late} ran out of days ({} of them this period)",
+            did.gave_up,
         );
         println!("           audit: {}", audited.join(" · "));
         // Audit A2: a violation names its OWNER, its SIZE, its period and the clause it is about —

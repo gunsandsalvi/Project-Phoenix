@@ -350,7 +350,7 @@ mod tests {
         let mut audit = Audit::new();
         audit.add(Box::<LotsAgainstQuantity>::default());
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, &Settlement::new(), 1);
+        let reports = audit.run(&reg, &Settlement::new(6), 1);
         assert_eq!(reports.len(), 1, "both contribute to ownership");
         assert_eq!(reports[0].contributors.len(), 2);
         assert!(reports[0].built);
@@ -368,7 +368,7 @@ mod tests {
         let before = reg.quantity(reg.row(p, i));
         let mut audit = Audit::new();
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, &Settlement::new(), 4);
+        let reports = audit.run(&reg, &Settlement::new(6), 4);
         assert_eq!(reports[0].violations.len(), 1);
         let v = &reports[0].violations[0];
         assert_eq!(v.size, -8.0);
@@ -392,7 +392,7 @@ mod tests {
         let mut audit = Audit::new();
         audit.add(Box::<LotsAgainstQuantity>::default());
         audit.add(Box::<ATotalCarriesNoLots>::default());
-        let reports = audit.run(&reg, &Settlement::new(), 1);
+        let reports = audit.run(&reg, &Settlement::new(6), 1);
         let found: usize = reports.iter().map(|r| r.violations.len()).sum();
         assert_eq!(found, 0, "a money account is not a defect");
     }
@@ -403,7 +403,7 @@ mod tests {
         let reg = Register::new();
         let mut audit = Audit::new();
         audit.add(Box::new(NotBuilt { family: Family::Liveness, contributor: "nobody" }));
-        let reports = audit.run(&reg, &Settlement::new(), 1);
+        let reports = audit.run(&reg, &Settlement::new(6), 1);
         assert_eq!(reports[0].family, Family::Liveness);
         assert!(!reports[0].built, "an unbuilt family is not green");
         assert!(reports[0].violations.is_empty());

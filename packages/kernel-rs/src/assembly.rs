@@ -133,6 +133,10 @@ fn declared() -> Nouns {
     // holds — it happens at the moment the units leave, to a named party, for an amount.
     at_home("registry.indices", "each index, the country whose it is, and the lines it is built from with a COUNT of each", "Indices D1, 22 D5: an index is a COUNTRY's and it is ONE system; the level is never stored, it is computed from the constituents when asked");
     at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
+    // 22d.1: the wire is what HAPPENED; this is what is still trying to. It is settlement's because
+    // settlement is what decides an instruction cannot go through, and a queue written anywhere else
+    // would be a second writer of that decision (Law 4).
+    at_home("settlement.queue", "payments that could not be made yet, with the day each is late on", "XI-9, 22d: a gridlock is a timing failure and not a default, and this world turned every one of them into an arrear the instant it was tried");
 
     // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
     // missing, and it must fall. Each names the plan item that gives it one; a noun whose item does
@@ -208,10 +212,9 @@ pub struct World {
     /// come from.
     pub calendar: crate::calendar::Calendar,
     pub period: u32,
-    pub settled_kind: u32,
-    pub failed_kind: u32,
-    /// 21.112: the kind a realised gain is said under. Declared here with the other two.
-    pub realised_kind: u32,
+    /// 22d.1: the journal kinds an instruction's outcome is said under — settled, failed, queued,
+    /// and what a disposal realised. They were four loose fields handed to `settle` three at a time.
+    pub says: crate::ledger::Outcomes,
 }
 
 /// What one period did. Printed rather than asserted (`check:opens`): the census is a read, and a
@@ -234,6 +237,10 @@ pub struct Stepped {
     pub events: usize,
     /// How many systems' phases actually ran. A world where this is zero is a world of declarations.
     pub ran: usize,
+    /// **22d.1: how many queued payments ran out of days this period** and became the arrear. A
+    /// payment that waited and then went through is not here — that one is not a failure at all,
+    /// which is the whole point of the queue.
+    pub gave_up: usize,
 }
 
 impl World {
@@ -241,18 +248,21 @@ impl World {
     /// ontology register's count of what is still homeless is true rather than zero-by-omission.
     pub fn empty() -> World {
         let mut journal = Journal::new();
-        let settled_kind = journal.kinds.declare("instruction.settled");
-        let failed_kind = journal.kinds.declare("instruction.failed");
-        // 21.112: what a disposal realised against the basis its lots carried. Settlement is the
-        // only place that holds the price and the basis at once.
-        let realised_kind = journal.kinds.declare("disposal.realised");
+        // Settled, failed, QUEUED (22d.1 — a payment waiting for the money to arrive, which is
+        // neither of the other two) and what a disposal realised (21.112).
+        let says = crate::ledger::Outcomes::declared(&mut journal);
         World {
             parties: Parties::new(),
             instruments: Instruments::new(),
             register: Register::new(),
             prints: Prints::new(),
             journal,
-            wire: Settlement::new(),
+            // **22d.1: how many days a payment may wait here before it is late.** A TECHNOLOGY of
+            // the payment system, stated where the system is built, in days — six, so a payment
+            // tried on the first day of a period is late when the next period opens and one tried
+            // late in a period still has the days it has left. Nothing about it is a choice any
+            // party makes.
+            wire: Settlement::new(6),
             params: Params::new(100.0, 60.0),
             agreements: Agreements::new(),
             schedules: Schedules::new(),
@@ -271,9 +281,7 @@ impl World {
             // 2000-01-01 (`calendar::Day`'s epoch). A RESOLUTION, tested by invariance.
             calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3),
             period: 0,
-            settled_kind,
-            realised_kind,
-            failed_kind,
+            says,
         }
     }
 
@@ -317,7 +325,25 @@ impl World {
         // **3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday, before anything reads
         // a book.** The period opens with the orders that are still good and no others; an order
         // whose day has passed is not one somebody has to be asked about.
-        self.resting.expire(self.calendar.start_of(crate::calendar::Period(self.period)));
+        let today = self.calendar.start_of(crate::calendar::Period(self.period));
+        self.resting.expire(today);
+
+        // **XI-9, 22d.1: and the payments that ran out of days.** A queued payment is not an arrear
+        // while it still has days to wait; when it has none left it becomes the failure this world
+        // used to record the instant the payer was short. The arrear is recorded on the wire, where
+        // every other outcome is.
+        out.gave_up = self.wire.give_up(
+            today,
+            self.period,
+            &mut Settling {
+                register: &mut self.register,
+                journal: &mut self.journal,
+                parties: &self.parties,
+                instruments: &self.instruments,
+                calendar: &self.calendar,
+                says: self.says,
+            },
+        );
 
         // Law 10: in order, and the markets moment is where the books run. A phase anchored before
         // markets sees the world the last period left; one anchored after sees this period's prints.
@@ -413,10 +439,9 @@ impl World {
                     journal: &mut self.journal,
                     parties: &self.parties,
                     instruments: &self.instruments,
-                    realised: self.realised_kind,
+                    calendar: &self.calendar,
+                    says: self.says,
                 },
-                self.settled_kind,
-                self.failed_kind,
             );
         }
 
@@ -472,10 +497,9 @@ impl World {
                     journal: &mut self.journal,
                     parties: &self.parties,
                     instruments: &self.instruments,
-                    realised: self.realised_kind,
+                    calendar: &self.calendar,
+                    says: self.says,
                 },
-                self.settled_kind,
-                self.failed_kind,
             );
         }
         // Clearing B1: a book for it, if it is paper anybody else may bid for. A loan row is the
@@ -548,10 +572,9 @@ impl World {
                     journal: &mut self.journal,
                     parties: &self.parties,
                     instruments: &self.instruments,
-                    realised: self.realised_kind,
+                    calendar: &self.calendar,
+                    says: self.says,
                 },
-                self.settled_kind,
-                self.failed_kind,
             );
         }
         // Audit A2: and what it said happened, for whoever it happened to.
@@ -652,9 +675,7 @@ impl World {
                 &books,
                 &mut stores,
                 self.period,
-                self.settled_kind,
-                self.failed_kind,
-                self.realised_kind,
+                self.says,
             );
             out.asks += session.asks;
             traded += session.settled;

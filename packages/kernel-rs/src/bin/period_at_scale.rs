@@ -55,7 +55,7 @@ fn main() {
     let mut reg = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
-    let mut wire = Settlement::new();
+    let mut wire = Settlement::new(6);
 
     // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
@@ -68,8 +68,7 @@ fn main() {
     }
     instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
     let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
-    let settled = journal.kinds.declare("instruction.settled");
-    let failed = journal.kinds.declare("instruction.failed");
+    let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
     let noted = journal.kinds.declare("period.noted");
     let amount = journal.keys_named.declare("amount");
 
@@ -168,7 +167,7 @@ fn main() {
             (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
             _ => Instruction::plain(legs, Cause::Trade),
         };
-        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 }, settled, failed)
+        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, calendar: &clock.calendar, says })
             == Outcome::Settled
         {
             ok += 1;
