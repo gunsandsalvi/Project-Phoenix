@@ -5,6 +5,7 @@
 pub mod bank_capital;
 pub mod capital_programme;
 pub mod cost_of_capital;
+pub mod currency;
 pub mod dealing;
 pub mod equity;
 pub mod estate;

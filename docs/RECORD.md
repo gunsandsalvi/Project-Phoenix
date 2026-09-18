@@ -17298,3 +17298,35 @@ answer false. Neither has a path that tops anybody up, and both take Law 7 dust 
 
 **Thirteen laws as tests. A hundred and thirty-eight now hold; clippy clean; `phoenix-check` green
 over 37 files.**
+
+# 0g.42 item 12a — the currency layer (XI-12)
+
+`packages/kernel-rs/src/mechanisms/currency.rs`. Fifteenth module.
+
+**`Rates::of` answers `None` for a pair nothing crossed, and there is no triangulating fallback in
+the module at all.** That is the whole of XI-12: clearing every pair and then promoting only the legs
+against one currency at the ledger restores the vehicle currency BY CONSTRUCTION, and the market half
+is then decorative — the arbitrage has no consequence and cannot be measured. The one derivation the
+store will do is reading a print from the other end, because the two directions of a pair are one
+fact and one writer (Law 4); storing the reciprocal would be two prices for one thing and they would
+drift.
+
+**The gap is measured and can stand.** `gap` says how far three prints are from consistent and
+nothing reads it to repair one. `Arbitrageur` has a balance sheet and a per-leg cost: a gap that does
+not beat three legs is not taken, and a book smaller than the opportunity takes what it can fund and
+leaves the rest. Appendix B's no free arbitrage and no unlimited arbitrageur — tested by running the
+same gap past a large book and a small one and finding different answers.
+
+**The forward carries the differential and there is ONE basis.** `covered` is the parity point: the
+higher-rate money is forward-weaker and that is the carry. `basis` is what the CLEARED forward says
+against parity — derived from a print (Law 19), not a second series on its own process that
+participants would then see, trade and book against, which is Law 4's defect in the benchmark's
+clothes.
+
+**One settlement convention.** A purchase settles in the seller's money, whoever the buyer is;
+`short_of` returns the ORDER a buyer short of that money must place, in a currency book, with a
+counterparty (Law 5). A conversion inside the trade would delete that order and with it the currency
+demand the purchase creates.
+
+**Ten laws as tests. A hundred and forty-eight now hold; clippy clean; `phoenix-check` green over 38
+files.**
