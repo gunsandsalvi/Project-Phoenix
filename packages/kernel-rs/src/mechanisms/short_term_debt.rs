@@ -131,32 +131,8 @@ pub fn roll(maturing: f64, buyers: &[(Limit, f64)], face_per_unit: f64) -> Rolle
 }
 
 /// B4: **the issuer keeps a backstop — a committed bank line, a liquid buffer — and the backstop costs
-/// money in every period it is not used.** A committed line with no commitment fee on undrawn headroom
-/// is a free option the lender did not sell (Law 5: the fee is paid to somebody).
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Backstop {
-    pub lender: PartyId,
-    pub committed: f64,
-    pub drawn: f64,
-    /// Paid on the UNDRAWN headroom, every period, whether or not it is used.
-    pub fee_on_undrawn: f64,
-}
-
-impl Backstop {
-    pub fn undrawn(&self) -> f64 {
-        self.committed - self.drawn
-    }
-
-    /// What it costs this period, to the lender who sold the option.
-    pub fn costs(&self) -> (PartyId, f64) {
-        assert!(
-            self.fee_on_undrawn > 0.0,
-            "9 B4: a committed line with no commitment fee is a free option the lender did not sell"
-        );
-        (self.lender, self.undrawn() * self.fee_on_undrawn)
-    }
-}
-
+/// money in every period it is not used.** The line itself is `stores::Commitment`, which §7 C9 names
+/// a facility and this clause names a backstop: one object, one representation (Law 4, 21.71).
 /// B5: **the maturity profile of outstanding paper is a read, and a concentrated profile is a
 /// foreseeable wall.** A walk over the rows (Law 19) — never a stated schedule.
 pub fn wall(outstanding: &[Paper], within: Day) -> f64 {
@@ -204,6 +180,7 @@ pub fn redeem(p: &Paper, held: f64, holder: PartyId) -> Option<(PartyId, PartyId
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::stores::Commitment;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -279,16 +256,35 @@ mod tests {
     fn the_backstop_costs_money_in_every_period_it_is_not_used() {
         // B4: a committed line with no commitment fee on undrawn headroom is a free option the lender
         // did not sell.
-        let b = Backstop { lender: party(70), committed: 1_000.0, drawn: 200.0, fee_on_undrawn: 0.005 };
+        // 21.71: and it is the SAME object §7 C9 calls a facility, so it is read from one place.
+        let b = Commitment {
+            lender: party(70),
+            borrower: party(9),
+            limit: 1_000.0,
+            drawn: 200.0,
+            margin: 0.02,
+            fee_on_undrawn: 0.005,
+            until: None,
+        };
         let (lender, fee) = b.costs();
         assert_eq!(lender, party(70));
         assert_eq!(fee, 4.0);
+        // A backstop STANDS — `until` is Missing — and it is still standing whenever it is asked.
+        assert!(b.live_on(Day(9_000)));
     }
 
     #[test]
     #[should_panic(expected = "free option the lender did not sell")]
     fn a_committed_line_with_no_fee_is_refused() {
-        let free = Backstop { lender: party(70), committed: 1_000.0, drawn: 0.0, fee_on_undrawn: 0.0 };
+        let free = Commitment {
+            lender: party(70),
+            borrower: party(9),
+            limit: 1_000.0,
+            drawn: 0.0,
+            margin: 0.02,
+            fee_on_undrawn: 0.0,
+            until: None,
+        };
         free.costs();
     }
 

@@ -42,6 +42,11 @@ pub mod agreed {
     pub const DERIVATIVE: u32 = 9;
     pub const CARRIAGE: u32 = 10;
     pub const TRADE_CREDIT: u32 = 11;
+    /// §9 B4, §7 C9, 21.71: **a named lender's committed line to a named borrower** — the backstop an
+    /// issuer keeps behind its paper and the facility a borrower draws on are ONE object under two
+    /// names (Law 4). Its terms are `[limit, drawn, margin, fee on undrawn]`, and the agreement's own
+    /// `until` says whether it lapses or stands. `stores::Commitment` is the shape that reads them.
+    pub const COMMITMENT: u32 = 12;
 }
 
 /// The processes this world runs. Same rule: data, not a branch.

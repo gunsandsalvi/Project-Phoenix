@@ -165,6 +165,54 @@ impl Agreements {
     }
 }
 
+/// §9 B4, §7 C9, 21.71: **a committed line, and there is one of them.** An issuer's backstop and a
+/// borrower's facility were two structs in two modules describing the same real thing — a named
+/// lender's commitment to a named borrower, at a limit, at a margin, with headroom it may draw — which
+/// is the parallel representation Law 4 is about. This is that thing, once, as the terms of an
+/// `agreed::COMMITMENT` agreement read back.
+///
+/// **The fee is not optional.** §9 B4: a committed line with no fee on its undrawn headroom is a free
+/// option the lender did not sell, so `costs` refuses one (Law 5: the fee is paid to somebody). What
+/// DOES vary is the END, and it varies the way every agreement's does: `until` is `Missing` for a line
+/// that stands until somebody ends it.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Commitment {
+    pub lender: PartyId,
+    pub borrower: PartyId,
+    pub limit: f64,
+    pub drawn: f64,
+    /// The margin it was STRUCK at — never the one the lender would quote today.
+    pub margin: f64,
+    /// Paid on the UNDRAWN headroom, every period, whether or not it is used.
+    pub fee_on_undrawn: f64,
+    /// `Missing` where it stands until somebody ends it, which is not the same as ending today.
+    pub until: Option<Day>,
+}
+
+impl Commitment {
+    /// The headroom: what the borrower may still draw, and what the fee is paid on.
+    pub fn undrawn(&self) -> f64 {
+        self.limit - self.drawn
+    }
+
+    /// What it costs this period, to the lender who sold the option.
+    pub fn costs(&self) -> (PartyId, f64) {
+        assert!(
+            self.fee_on_undrawn > 0.0,
+            "9 B4: a committed line with no commitment fee is a free option the lender did not sell"
+        );
+        (self.lender, self.undrawn() * self.fee_on_undrawn)
+    }
+
+    /// Whether this line is still available on a given day. A lapsed line is not a line.
+    pub fn live_on(&self, day: Day) -> bool {
+        match self.until {
+            None => true,
+            Some(end) => day <= end,
+        }
+    }
+}
+
 /// What a payment on a schedule IS to the party that owes it. Only one of them reduces what is owed,
 /// and a store that could not tell them apart would make that distinction unreadable (Households E3.a).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

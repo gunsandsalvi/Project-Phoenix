@@ -32,8 +32,8 @@
 //!
 //! **No derived measure may set the price** (D8): a spread is read FROM a price here and never into it.
 
-use crate::calendar::Day;
 use crate::ids::{InstrumentId, PartyId};
+use crate::stores::Commitment;
 
 /// C2, C2.a: **an indication is a SCHEDULE — a size at a level** — and not a quantity. Real buyers
 /// indicating real demand at real levels.
@@ -177,18 +177,8 @@ pub fn tap(existing: Option<InstrumentId>, added_face: f64) -> Option<(Instrumen
 
 /// C9: **a committed facility is one line per lender per borrower.** A draw taps the existing line at
 /// the margin it was struck at; a new line opens only when none is live. **A draw does not mint a
-/// facility per period.**
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Facility {
-    pub lender: PartyId,
-    pub borrower: PartyId,
-    pub limit: f64,
-    pub drawn: f64,
-    /// The margin it was STRUCK at — not the one the lender would quote today.
-    pub margin: f64,
-    pub until: Day,
-}
-
+/// facility per period.** The line is `stores::Commitment`, which §9 B4 names a backstop: one object,
+/// one representation (Law 4, 21.71).
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Draw {
     /// Against the existing line, at its own margin.
@@ -199,10 +189,10 @@ pub enum Draw {
     NoRoom,
 }
 
-pub fn draw(live: Option<&Facility>, wants: f64, quoted_now: f64) -> Draw {
+pub fn draw(live: Option<&Commitment>, wants: f64, quoted_now: f64) -> Draw {
     match live {
         Some(f) => {
-            let room = f.limit - f.drawn;
+            let room = f.undrawn();
             if room <= 0.0 {
                 return Draw::NoRoom;
             }
@@ -365,6 +355,7 @@ pub fn refinanced_at(old_coupon: f64, new_market_spread: f64, risk_free_now: f64
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::calendar::Day;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -469,10 +460,18 @@ mod tests {
     #[test]
     fn a_draw_taps_the_line_at_the_margin_it_was_struck_at() {
         // C9: a draw does not mint a facility per period, and a line with no room is not a draw.
-        let line = Facility { lender: party(70), borrower: party(9), limit: 1_000.0, drawn: 400.0, margin: 0.02, until: Day(900) };
+        let line = Commitment {
+            lender: party(70),
+            borrower: party(9),
+            limit: 1_000.0,
+            drawn: 400.0,
+            margin: 0.02,
+            fee_on_undrawn: 0.005,
+            until: Some(Day(900)),
+        };
         assert_eq!(draw(Some(&line), 300.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 300.0 });
         assert_eq!(draw(Some(&line), 900.0, 0.09), Draw::OnExistingLine { at_margin: 0.02, amount: 600.0 });
-        let full = Facility { drawn: 1_000.0, ..line };
+        let full = Commitment { drawn: 1_000.0, ..line };
         assert_eq!(draw(Some(&full), 100.0, 0.09), Draw::NoRoom);
         // And with no line live, one opens at what the lender quotes NOW.
         assert_eq!(draw(None, 300.0, 0.09), Draw::OpensNewLine { at_margin: 0.09, amount: 300.0 });

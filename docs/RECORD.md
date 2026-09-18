@@ -19285,3 +19285,96 @@ register that can only report "nothing missing" is switched off.
 
 **681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green; the world
 runs four periods at 194 ms worst against the 3,000 ms budget.** Item 21 stands at 46 of 177.
+
+---
+
+## 21.47–21.85 — one object under two names, and seventeen findings dropped into closed items
+
+**What.** The fifth block of item 21. Three closed, one of them by a fix that removes code; nine
+re-marked; and a sweep that found a defect in the plan file itself.
+
+### 21.71 — a backstop and a facility are one line
+
+The finding said it on the old engine and it survived the port exactly:
+`short_term_debt::Backstop { lender, committed, drawn, fee_on_undrawn }` and
+`corporate_credit::Facility { lender, borrower, limit, drawn, margin, until }` are **one object under
+two names** (Law 4) — a named lender's committed line to a named borrower, at a limit, with headroom.
+§9 B4 calls it a backstop and §7 C9 calls it a facility, and the two clauses describe the same thing.
+
+It is now `stores::Commitment`, in the kernel, once. A module may not import another module (Law 15),
+so a shape two modules share belongs where the agreements it is one of already live; `agreed::COMMITMENT`
+declares the kind and states the terms convention `[limit, drawn, margin, fee on undrawn]` in the one
+place conventions are stated, as `ENGAGEMENT` does for a wage.
+
+The two differences the finding named are TERMS, and they are now terms:
+
+- **the fee** is required, not optional — §9 B4 is right that a committed line with no fee on its
+  undrawn headroom is a free option the lender did not sell, so `costs` refuses one (Law 5). The
+  facility had no fee field at all, which was the defect, not the difference;
+- **the end** is `Option<Day>`, exactly as `Agreements::until` already is: `Missing` for a line that
+  stands until somebody ends it, which is not the same as ending today. `live_on` is the read.
+
+`corporate_credit::draw` takes a `&Commitment` and asks it for `undrawn()`; the two structs and their
+two `undrawn` computations are deleted. **A cause has one fix and it removes code** (Law 12).
+
+One thing is left alone and written down: `money_market::Facility` is a THIRD use of the word, and it
+is a different real thing — the central bank's standing facility, a rate and a penalty, not a
+committed line. It is not merged, because merging it would be the opposite defect.
+
+### Verified absent (two)
+
+| finding | why it closes |
+| --- | --- |
+| 21.57 | 96 sites taking another party's own view. **`ParticipantView` has no door onto anybody else's book** — the header of `systems.rs` says so and the type enforces it, so a schedule written against a rival's position cannot be written (Observer A4). The ratchet the finding asked for is done by the type |
+| 21.51 | a print understating volume where a `transact` group settled beside ordinary trades. There is no `transact` group; a book's print is the book's |
+
+### 21.137 — seventeen findings positioned into items that closed
+
+The block turned up something worse than any of its findings. `CLAUDE.md`: *a finding leaves that file
+only by being placed* — and a placement into an item that then closes without it is the silent drop
+that rule exists to stop. A sweep of every *positioned at* in the plan against the item table:
+
+| pointed at | closed | findings |
+| --- | --- | --- |
+| 18.0, 18.4, 18.5 (five rows), 18 | item 18 | 21.51, 21.53, 21.71, and Corporate Credit B1, F4, F5, H4, H4.a |
+| 18a, 18a.1 (four) | item 18a | 21.54, 21.55, 21.60(c) |
+| 16.5 | item 16 | 21.50 |
+| 17.0 | item 17 | 21.52 |
+| 19, 19.9 | item 19 | 21.62, 21.85 |
+
+Every one is re-placed in this commit. What stays under **21.137** is the pair item 18 closed without
+and no live item holds: the early-termination regime (Corporate Credit B1, which F4 and F5 both wait
+on) and the cash-synthetic basis (H4, H4.a). **And the repair is a check**: `plan:check` should refuse
+a *positioned at* naming a closed item, the way `check:spec` refuses a citation resolving to nothing —
+otherwise the next closing item drops the next finding and nothing says so. It is `tools/`, so it goes
+with 21.119's fixture work.
+
+### Re-marked, and what the re-reads found
+
+- **21.69** — *every grade this world has ever published is the worst one*. Neither reading was right:
+  **this world has never published a grade.** `ratings::grade_from` and `reassess` are built; the
+  `ratings` row counts how many parties are alive. → 21j (new step 21j.3a), and 23.3 takes it back
+  once it publishes.
+- **21.58** — no firm brings paper, and which gate holds them back is no longer the question:
+  `corporate_credit::bring` is called by no period of any world. → 21j.
+- **21.62** — an agreement has no cure. Simpler and worse than it was said: `Agreements` has **no
+  states at all**, only `live` and `end`, so neither a breach nor a cure can be recorded. → 22d, where
+  the payer given time on an arrear is the first thing that will ask for one.
+- **21.85** — a cell votes on four of twenty numbers. It survived, and the number is **two of eight**:
+  `polity::votes_for` reads `TaxOn` and `TransferTo` and nothing else.
+- **21.50, 21.52, 21.54, 21.60(c)** → 21j: each is a decision (borrow abroad covered, quote a
+  published short, hold reserves, choose an issuing money) in a world where the deciding system takes
+  no part. 21.52's site half is closed by `whole_pieces` (21.1).
+- **21.53, 21.55** → 23.3: measurements over a four-country world this engine does not assemble.
+- **21.48** — the empty freight-session record cannot be written (freight is a counting row); its other
+  two halves are a rule about the DRAW — a good made in one place can have no location basis
+  (Commodities Spot D1, Freight D3) — and they are the seeding's, as 21.6 is.
+
+**21j sharpened.** The `systems.rs` header defends the reading systems being out of the books, and it
+is right to: handing a rating agency a schedule would be inventing demand nobody has. What it does not
+say is that the read each performs **is not the read the system is for** — `ratings` counts parties
+alive, `benchmarks` counts lines that printed, `observer` counts parties alive. A system may rightly
+stay out of the books and still owe its own read, and none of the twenty-five produces one.
+
+**681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 49 of 178.
