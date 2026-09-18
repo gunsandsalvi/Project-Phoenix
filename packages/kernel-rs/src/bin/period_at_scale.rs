@@ -139,7 +139,23 @@ fn main() {
     let t = Instant::now();
     let mut ok = 0usize;
     for legs in &work {
-        if wire.settle(&Instruction::against_payment(legs, Cause::Trade), period, &mut reg, &mut journal, settled, failed)
+        // XI-5: the writer says which this is, and the draw decides. A parcel of legs that came out
+        // with no money in it IS a free delivery, and declaring it against payment would be the
+        // forgotten payment leg the wire refuses to guess at.
+        // A leg whose two ends are the same party moves nothing and so declares nothing, which is
+        // why both tests read `from != to` exactly as the wire does.
+        let delivers = legs
+            .iter()
+            .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));
+        let pays = legs
+            .iter()
+            .any(|l| matches!(l, Leg::Money { from, to, .. } if from != to));
+        let instruction = match (delivers, pays) {
+            (true, true) => Instruction::against_payment(legs, Cause::Trade),
+            (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
+            _ => Instruction::plain(legs, Cause::Trade),
+        };
+        if wire.settle(&instruction, period, &mut reg, &mut journal, settled, failed)
             == Outcome::Settled
         {
             ok += 1;

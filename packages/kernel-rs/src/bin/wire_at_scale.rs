@@ -112,8 +112,21 @@ fn main() {
     let mut settled = 0usize;
     let mut refused = 0usize;
     for legs in &built {
+        // XI-5: the writer declares what these legs are, and a leg whose two ends are the same
+        // party moves nothing — which is why both tests read `from != to`, exactly as the wire does.
+        let delivers = legs
+            .iter()
+            .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));
+        let pays = legs
+            .iter()
+            .any(|l| matches!(l, Leg::Money { from, to, .. } if from != to));
+        let instruction = match (delivers, pays) {
+            (true, true) => Instruction::against_payment(legs, Cause::Trade),
+            (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
+            _ => Instruction::plain(legs, Cause::Trade),
+        };
         match wire.settle(
-            &Instruction::against_payment(legs, Cause::Trade),
+            &instruction,
             1,
             &mut reg,
             &mut journal,

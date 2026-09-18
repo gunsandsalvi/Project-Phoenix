@@ -109,7 +109,17 @@ fn main() {
             }
             built += 1;
         }
-        wire.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 2, &mut reg, &mut journal, ok, no);
+        // XI-5: a parcel that only destroys units delivers nothing to anybody, so it is not a free
+        // DELIVERY — the writer says which, and the wire refuses to guess.
+        let delivers = legs
+            .iter()
+            .any(|l| matches!(l, Leg::Asset { from, to, .. } if from != to));
+        let instruction = if delivers {
+            Instruction::free_of_payment(&legs, Cause::Trade)
+        } else {
+            Instruction::plain(&legs, Cause::Trade)
+        };
+        wire.settle(&instruction, 2, &mut reg, &mut journal, ok, no);
     }
 
     let t = Instant::now();

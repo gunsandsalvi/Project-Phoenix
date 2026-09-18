@@ -17671,3 +17671,43 @@ path anybody drew.
 
 **Eleven laws as tests. Three hundred and seven now hold; clippy clean; `phoenix-check` green over 52
 files. Twenty-eight of forty-seven modules ported.**
+
+# 0g.42a — the FOP pathway caught three benches lying about their legs
+
+`period_at_scale`, `wire_at_scale` and `module_at_scale` all declared `against_payment` (or, in the
+module's case, `free_of_payment`) over legs drawn at random, and the draw regularly produced parcels
+with no asset leg, no money leg, or legs whose two ends were the same party. Before XI-5's declaration
+check existed the wire took them; now it throws, and all three benches stopped dead on the first run
+after the FOP work.
+
+**The benches were wrong, not the wire.** Each now declares what its draw actually made — against
+payment where both an asset and money cross between two different parties, free of payment where only
+the asset does, plain where nothing is delivered at all — reading `from != to` exactly as `shape()`
+does. A parcel that only destroys units delivers nothing to anybody and is not a free DELIVERY, which
+is the module bench's case.
+
+This is what the declaration is for: the wire cannot tell a free delivery from a forgotten payment
+leg, and until it demanded an answer three benchmarks had been quietly settling both as the same
+thing.
+
+**Measured after the fix, on this machine, one run each:**
+
+| | TypeScript, measured | Rust | |
+|---|---|---|---|
+| register hot read | 67.20 ns | **2.69 ns** | 25.0× |
+| traversal, 544,104 holdings | 95.70 ms | **0.33 ms** | 289× |
+| the wire, 48,828 instructions / 470,310 legs | 4,729 ms | **187.2 ms** | 25.3× |
+| audit, normalised per contribution | 192.7 ms | **3.6 ms** | 53.8× |
+| one module in situ | 2,049 ms | **97.7 ms** | 21.0× |
+| the session loop | 5,453 ms | **648.9 ms** | 8.4× |
+| kernel period floor | ~37,000 ms (kernel's share) | **240.3 ms** | 154× |
+| assembled world, one module in it | 42,100 ms | **130.5 ms** | 323× |
+
+**The session loop is the weak ratio and it is the one that matters**, because forty-six more modules'
+participants ride on it: 648.9 ms for 1,178,660 asks is 551 ns an ask, and 8.4× is the smallest
+multiple anywhere in this table. The world bench's 90.8 ms over 921,123 asks is not the same
+measurement — it settles 131,253 trades where the session bench settles 755,965 — and the two are not
+quoted as one number.
+
+Against the owner's gate of three seconds a step: the kernel floor is 240 ms and the modules are what
+is left to find out.
