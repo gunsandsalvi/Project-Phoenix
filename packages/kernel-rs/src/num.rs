@@ -60,6 +60,80 @@ pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
     (terms as f64) * f64::EPSILON * magnitudes.iter().map(|m| m.abs()).sum::<f64>()
 }
 
+/// **MSER-5: where a series stops being about how it started** (22b.8).
+///
+/// @spec 22b.8 · Law 2 · Law 6
+///
+/// A run opens carrying whatever the past put in it, and for a while every number is still a fact
+/// about that rather than about the world. The length of the past is therefore a number somebody has
+/// to choose — and choosing it by hand is a SHAPE with nobody to kill it.
+///
+/// This is the Marginal Standard Error Rule at batch size five: batch the series in fives, then over
+/// the batched series pick the truncation `d` that minimises the standard error of the mean of what
+/// is left, `(1/(n-d)²) · Σ_{i>d} (x_i - x̄)²`. The answer is a RESOLUTION: it is tested by doubling
+/// the series and getting the same place.
+///
+/// It returns the truncation in ORIGINAL observations (the batch times five), and `None` when there
+/// is not enough series for the answer to mean anything — which is missing, not zero.
+///
+/// **It is not a bound** (Law 6): nothing is clamped by it and no number is adjusted to reach it. It
+/// is a read that says how much of a series to ignore.
+pub fn mser_5(series: &[f64]) -> Option<usize> {
+    const BATCH: usize = 5;
+    let batches: Vec<f64> = series
+        .chunks_exact(BATCH)
+        .map(|c| c.iter().sum::<f64>() / BATCH as f64)
+        .collect();
+    // The rule needs something left after the truncation to have a mean of, and the last few batches
+    // alone are a mean of nothing (Schruben's own caveat, and why the half is dropped).
+    if batches.len() < 4 {
+        return None;
+    }
+    let n = batches.len();
+    let last = n / 2;
+    let mut best = None;
+    let mut best_at = 0usize;
+    for d in 0..last {
+        let rest = &batches[d..];
+        let left = rest.len() as f64;
+        let mean = rest.iter().sum::<f64>() / left;
+        let spread: f64 = rest.iter().map(|x| (x - mean) * (x - mean)).sum();
+        let mser = spread / (left * left);
+        match best {
+            Some(b) if mser >= b => {}
+            _ => {
+                best = Some(mser);
+                best_at = d;
+            }
+        }
+    }
+    // **A minimum at the far end of the search is not an answer** (Schruben's own caveat, and
+    // Appendix A's): the statistic was still falling when it ran out of series, which means this
+    // series has not settled inside what it was given. Reporting the boundary would report a number
+    // that is a fact about how much was drawn — and it would move when the draw got longer, which is
+    // exactly what a RESOLUTION must not do. Missing is missing.
+    if best_at + 1 >= last {
+        return None;
+    }
+    // **And a truncation is only an answer if what is LEFT has stopped moving.** On a series that
+    // simply rises, the rule still returns its minimum — and that minimum is a fraction of the
+    // series' length, so it doubles when the series doubles. The test is the series' own halves
+    // against its own dispersion: if the back half sits further from the front half than the spread
+    // of the whole remainder, the remainder is still going somewhere, and where it settles is not a
+    // question this series can answer yet.
+    let rest = &batches[best_at..];
+    let half = rest.len() / 2;
+    if half == 0 {
+        return None;
+    }
+    let front = rest[..half].iter().sum::<f64>() / half as f64;
+    let back = rest[half..].iter().sum::<f64>() / (rest.len() - half) as f64;
+    match dispersion(rest) {
+        Some(spread) if (back - front).abs() <= spread => best.map(|_| best_at * BATCH),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

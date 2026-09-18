@@ -287,14 +287,15 @@ pub fn to_text(s: &Snapshot) -> String {
     out.push('\n');
     out.push_str(&format!("seed {}\n", s.seed_value));
     out.push_str(&format!(
-        "shape {} {} {} {} {} {} {}\n",
+        "shape {} {} {} {} {} {} {} {}\n",
         s.shape.banks,
         s.shape.bills,
         s.shape.firms,
         s.shape.cells,
         s.shape.weeks,
         s.shape.opens_on.0,
-        s.shape.days_per_period
+        s.shape.days_per_period,
+        s.shape.days_of_past
     ));
     out.push_str(&format!("opens {}\n", s.opens_at));
     for p in &s.parties {
@@ -369,6 +370,7 @@ pub fn from_text(text: &str) -> Snapshot {
                     weeks: signed(word[5], n),
                     opens_on: Day(signed(word[6], n)),
                     days_per_period: num(word[7], n) as u32,
+                    days_of_past: signed(word[8], n),
                 })
             }
             "opens" => opens_at = Some(num(word[1], n) as u32),
@@ -503,6 +505,7 @@ mod tests {
     const WEEKS: i64 = 8;
     const WEEK: u32 = 7;
     const ATTEMPTS: usize = 3;
+    const PAST: i64 = 3_650;
 
     fn shape() -> Shape {
         Shape {
@@ -513,6 +516,7 @@ mod tests {
             weeks: WEEKS,
             opens_on: Day(0),
             days_per_period: WEEK,
+            days_of_past: PAST,
         }
     }
 

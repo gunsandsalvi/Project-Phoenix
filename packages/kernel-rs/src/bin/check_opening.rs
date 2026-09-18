@@ -11,7 +11,7 @@
 
 use phoenix_kernel::calendar::Day;
 use phoenix_kernel::chronicle::Census;
-use phoenix_kernel::opening::{open, Shape};
+use phoenix_kernel::opening::{open, warm_up_of, Shape};
 use phoenix_kernel::snapshot::{from_text, regenerates, to_text, Regenerated, Snapshot};
 use std::fmt::Write as _;
 use std::fs;
@@ -26,6 +26,9 @@ const CELLS: usize = 24;
 const WEEKS: i64 = 52;
 /// One calendar: a 7-day period (Calendar A1).
 const WEEK: u32 = 7;
+/// 22b.8: how long the past is, in days. A RESOLUTION, not a shape: `warm_up_of` reads the world's
+/// own series and says whether it is long enough, and doubling it must not move where they settle.
+const PAST: i64 = 3_650;
 /// The run's budget — how many worlds this invocation draws before it reports. Not a bound on any
 /// number in the model (Law 6): it changes nothing about the worlds it draws.
 const ATTEMPTS: usize = 8;
@@ -40,6 +43,7 @@ fn main() {
         weeks: WEEKS,
         opens_on: Day(0),
         days_per_period: WEEK,
+        days_of_past: PAST,
     };
     let run = open(FIRST_SEED, ATTEMPTS, shape);
 
@@ -74,6 +78,24 @@ fn main() {
     // has a world to show, and what it shows is where the next mechanism is missing.
     say(&run.outcome.census);
     println!("  {} moments of the past settled.", run.outcome.replayed.settled);
+    // 22b.8: where each series says its warm-up ends, and which never settle at all. A series that
+    // never settles is a missing mechanism with a name, not a past that wants lengthening.
+    let warm = warm_up_of(&run.outcome.replayed.series);
+    println!("  the past ran {} periods", warm.periods);
+    for (name, settles) in warm.named() {
+        match settles {
+            Some(d) => println!("    {name}: settles by period {d}"),
+            None => println!("    {name}: NEVER SETTLES — still trending when the world opens"),
+        }
+    }
+    if !warm.long_enough() {
+        println!("  THE PAST IS TOO SHORT for its own series.");
+        std::process::exit(1);
+    }
+    for name in warm.still_trending() {
+        let _ = writeln!(log, "- still trending at the opening: {name}");
+    }
+
     for v in &run.outcome.violations {
         let line = format!("{} — {} ({} {}) — {}", v.spec, v.owner, v.size, v.unit, v.message);
         println!("  audit: {line}");

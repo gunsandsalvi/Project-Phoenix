@@ -18369,3 +18369,35 @@ before — the side the pot never saw.
 
 **Six hundred and sixty-five tests hold; clippy clean; `phoenix-check` green over 83 files;
 `check:opening` accepts on the first seed.**
+
+---
+
+## 22b.8 — how long the past must be, answered by a statistic
+
+**What.** `num::mser_5` (the Marginal Standard Error Rule at batch five), a per-period `Series` the
+replay reads as the past is lived, and `opening::warm_up_of`, which says where each named series
+stops being about how the world started. The chronicle's length moved out of the draw and into
+`Shape::days_of_past` — it was `3_650` hard-coded in three places, which is a SHAPE with nobody to
+kill it. It is now a RESOLUTION, and the test is invariance: doubling the past must not move where
+anything settles.
+
+**Four series, not the five the step named.** *The going wage* and *sessions cleared* are not readable
+from a scripted past — no book clears in one, and `Draft::Paid` carries no receipt saying a payment is
+a wage. They arrive with 22b.9, where a period is actually run. `holdings` stands in the meantime.
+
+**Two ways the rule can decline to answer, and both were needed.** A minimum at the far end of the
+search is the statistic still falling when it ran out of series. And a minimum whose remainder is
+still going somewhere is not a settling point either: on a series that simply rises, MSER returns a
+FRACTION OF THE SERIES' LENGTH, which doubles when the series doubles — precisely what a resolution
+must not do. The second test is the remainder's own halves against the remainder's own dispersion, so
+there is no threshold anybody picked. Both return Missing, because missing is missing.
+
+**And the answer it gave is a finding.** Three of the four series never settle: money per member, the
+credit stock and holdings are all still rising the week the world opens, and twice the past does not
+settle them. The cause has a name — **nothing repays the working-capital line** (22b.7): a firm draws
+it every week for the wage bill it has not taken in and never pays any of it back, so credit and the
+money it creates grow for ever. The past is not too short; the mechanism is missing. Positioned as
+22b.8a, not chased (Law 11), and `check:opening` prints all four series every run rather than burying
+the three.
+
+**Six hundred and sixty-eight tests hold; clippy clean; `phoenix-check` green over 83 files.**

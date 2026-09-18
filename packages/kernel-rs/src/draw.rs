@@ -84,9 +84,19 @@ pub struct Drawn {
 ///
 /// Every stock this leaves behind is the residue of a settled instruction — there is no endowment
 /// door in this function, and none anywhere else either.
-pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, opens_on: Day) -> Drawn {
+pub fn money_and_the_sovereign(
+    seed_value: u64,
+    banks: usize,
+    bills: usize,
+    opens_on: Day,
+    days_of_past: i64,
+) -> Drawn {
     assert!(banks > 0, "5 B1: a banking system of no banks is not a population");
     assert!(bills > 1, "5 C3.a: one bill is a wall, not a maturity profile");
+    // 22b.8: how long the past is. It is not a number picked here — `opening::warm_up_of` reads the
+    // world's own series and says whether it is long enough, and doubling it must not move where they
+    // settle. A past of a handful of days has nothing to form an outlook from.
+    assert!(days_of_past > 365, "22b.8: a past of under a year is a start-up, not a world that has been running");
     let mut draw = Draw::from(seed_value);
     let mut w = World::empty();
     let region = RegionId::at(0);
@@ -113,9 +123,11 @@ pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, open
     // profile is spread rather than stacked.
     let mut bill_lines = Vec::with_capacity(bills);
     let mut issued_on = Vec::with_capacity(bills);
-    let span = opens_on.0 - (opens_on.0 - 3_640);
+    let began = Day(opens_on.0 - days_of_past);
+    // The bills are spread over the past, from just after it began to the day the world opens.
+    let span = days_of_past - 10;
     for n in 0..bills {
-        let issue_day = Day(opens_on.0 - 3_640 + (n as i64 * span / bills as i64));
+        let issue_day = Day(began.0 + 10 + (n as i64 * span / bills as i64));
         let tenor = 90 + draw.below(640) as i64;
         let line = w.instruments.issue(
             treasury,
@@ -131,13 +143,13 @@ pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, open
         issued_on.push(issue_day);
     }
 
-    let mut c = Chronicle::opening(Day(opens_on.0 - 3_650), seed_value);
+    let mut c = Chronicle::opening(began, seed_value);
 
     // The first money in the world. It is not free (5 A4): it is the central bank's own liability,
     // recorded against its name in `Instruments`.
     let created = draw.spread(100_000.0, 0.1) * banks as f64;
     c.tell(Told {
-        at: Day(opens_on.0 - 3_650),
+        at: began,
         draft: Draft::Minted { issuer: central_bank, money: reserves, units: created, ccy },
         why: "the central bank created the reserves that are its own liability",
     });
@@ -148,7 +160,7 @@ pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, open
         let paper = w.instruments.issue(*b, ccy, Class::Claim, unit, Some(0.01), Some(Day(opens_on.0 + 365)));
         let lent = draw.spread(created / (banks as f64 + 1.0), 0.25);
         c.tell(Told {
-            at: Day(opens_on.0 - 3_649 + n as i64),
+            at: Day(began.0 + 1 + n as i64),
             draft: Draft::Lent {
                 lender: central_bank,
                 borrower: *b,
@@ -273,7 +285,9 @@ pub fn firms_plant_and_inventory(
         let bank_money = d.deposits[at_bank];
         let loan = d.world.instruments.issue(*f, ccy, Class::Claim, unit, Some(0.04), Some(Day(opens_on.0 + 730)));
         let borrowed = draw.spread(6_000.0, 0.35);
-        let vintage = Day(opens_on.0 - 3_100 + (n as i64 * 90));
+        // Law 19: read where the past began rather than restating it. A machine bought before the
+        // world existed is not a machine anybody bought.
+        let vintage = Day(d.chronicle.from.0 + 550 + (n as i64 * 90));
         d.chronicle.tell(Told {
             at: Day(vintage.0 - 1),
             draft: Draft::Minted { issuer: bank, money: bank_money, units: borrowed, ccy },
@@ -504,17 +518,20 @@ mod tests {
     use crate::chronicle::replay;
     use crate::ledger::Settling;
 
+    /// 22b.8: how long the past is, in days — a RESOLUTION the opening check tests by doubling.
+    const PAST: i64 = 3_650;
+
     fn drawn() -> Drawn {
-        money_and_the_sovereign(1, 4, 9, Day(0))
+        money_and_the_sovereign(1, 4, 9, Day(0), PAST)
     }
 
     #[test]
     fn the_same_seed_value_draws_the_same_world_and_the_next_one_draws_a_different_world() {
         // 5 A5: reproducible, so a rejected world is re-drawn from the next value and any run can be
         // re-run.
-        let a = money_and_the_sovereign(7, 4, 9, Day(0));
-        let b = money_and_the_sovereign(7, 4, 9, Day(0));
-        let c = money_and_the_sovereign(8, 4, 9, Day(0));
+        let a = money_and_the_sovereign(7, 4, 9, Day(0), PAST);
+        let b = money_and_the_sovereign(7, 4, 9, Day(0), PAST);
+        let c = money_and_the_sovereign(8, 4, 9, Day(0), PAST);
         let told_of = |d: &Drawn| format!("{:?}", d.chronicle.told());
         assert_eq!(told_of(&a), told_of(&b));
         assert_ne!(told_of(&a), told_of(&c));
@@ -792,12 +809,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "not a maturity profile")]
     fn one_bill_is_a_wall_and_is_refused() {
-        money_and_the_sovereign(1, 4, 1, Day(0));
+        money_and_the_sovereign(1, 4, 1, Day(0), PAST);
     }
 
     #[test]
     #[should_panic(expected = "not a population")]
     fn a_banking_system_of_no_banks_is_refused() {
-        money_and_the_sovereign(1, 0, 9, Day(0));
+        money_and_the_sovereign(1, 0, 9, Day(0), PAST);
     }
 }

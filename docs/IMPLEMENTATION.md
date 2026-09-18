@@ -814,9 +814,21 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   `equity(party)` becomes a read over what the party holds against what it issued, `bump_equity` and
   every call to it go, and `PartyRow::equity` goes with them. It is also the half of the census
   property *the audit is green and every balance sheet closes* that no family checks today.
-- [ ] 22b.8 MSER-5 on a handful of named series (money per member, the going wage, living parties,
+- [x] 22b.8 MSER-5 on a handful of named series (money per member, the going wage, living parties,
   sessions cleared, the credit stock): the chronicle's length becomes a truncation point a statistic
-  chose rather than a number somebody picked — a RESOLUTION, tested by doubling it.
+  chose rather than a number somebody picked — a RESOLUTION, tested by doubling it. Four series, not
+  five: *the going wage* and *sessions cleared* are not readable from a scripted past (no book ever
+  clears in it, and `Draft::Paid` carries no receipt saying a payment is a wage) — they arrive with
+  22b.9, which is where a period is actually run. `holdings` stands in the meantime.
+- [ ] 22b.8a **Nothing repays the working-capital line.** INSERTED here (Law 10: found BY 22b.8, and
+  it is what 22b.8's statistic is for). Three of the four series never settle — money per member, the
+  credit stock and holdings are all still rising the week the world opens, and doubling the past does
+  not settle them. A firm draws the line every week for the wage bill it has not taken in (22b.7) and
+  never pays a penny of it back, so credit and the money it creates grow for ever. The past is not
+  too short; the mechanism is missing. A firm's TAKINGS repay the line before they do anything else —
+  which is what a revolving facility is — and the shortfall it draws is then the week's shortfall
+  rather than the whole wage bill compounded. Until then the opening's credit stock is a fact about
+  how long the chronicle is, and `check:opening` prints that in full rather than burying it.
 - [ ] 22b.9 The first module graduated from a scripted past to a LIVED one: warm-up periods the
   engine runs itself. Each graduation is a measurement of whether that mechanism works.
 

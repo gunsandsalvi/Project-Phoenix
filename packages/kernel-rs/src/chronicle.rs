@@ -31,6 +31,7 @@
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::instruments::Class;
 use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 
 /// What a told moment may do: **create a stock.** There is no variant for a price, a rate, a mark or
@@ -212,6 +213,61 @@ impl Chronicle {
     }
 }
 
+/// 22b.8: **a handful of NAMED series, one reading a period**, so how long the past has to be is a
+/// question a statistic can answer instead of a number somebody picked (`num::mser_5`).
+///
+/// Every one of them is a READ over the stores as the past leaves them, taken while the past is being
+/// lived — there is nowhere else they could come from, because the register only ever holds the
+/// present (Law 19).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Series {
+    /// XI-15: money outstanding over the people it is outstanding among. Per MEMBER, because a cell's
+    /// holdings are totals and a decision is never taken at an average of cells.
+    pub money_per_member: Vec<f64>,
+    /// XI-3: how many parties are alive. Nothing is immortal, so this is a series and not a constant.
+    pub living_parties: Vec<f64>,
+    /// The credit stock: claims outstanding, at par, held by somebody other than their issuer.
+    pub credit_stock: Vec<f64>,
+    /// How many holdings the world has — the size of the thing, which a warm-up grows and a settled
+    /// world does not.
+    pub holdings: Vec<f64>,
+}
+
+impl Series {
+    /// One reading of each, from the stores as they stand.
+    fn read_from(&mut self, on: &Settling<'_>) {
+        let mut money = 0.0;
+        let mut credit = 0.0;
+        for row in 0..on.instruments.len() {
+            let i = InstrumentId::at(row as u32);
+            let issuer = on.instruments.issuer_of(i);
+            let (held, _) = on.register.held_total(i);
+            let outstanding = held - on.register.quantity(on.register.row(issuer, i));
+            match on.instruments.class_of(i) {
+                Class::Money => money += outstanding,
+                Class::Claim => credit += outstanding,
+                Class::Share | Class::Good | Class::Plant => {}
+            }
+        }
+        let mut alive = 0.0;
+        let mut members = 0.0;
+        for row in 0..on.parties.len() {
+            let p = PartyId::at(row as u32);
+            if on.parties.alive(p) {
+                alive += 1.0;
+                members += f64::from(on.parties.weight(p));
+            }
+        }
+        // Error discipline: no NaN reaches a series. A period of the past with nobody alive in it is
+        // not a period of this world — the draw names its parties before the past is lived.
+        assert!(members > 0.0, "XI-15: a period with nobody alive in it has no money per member");
+        self.money_per_member.push(money / members);
+        self.living_parties.push(alive);
+        self.credit_stock.push(credit);
+        self.holdings.push(on.register.rows() as f64);
+    }
+}
+
 /// What the replay actually did. **A refusal in the past is a real event**, not something to paper
 /// over: it means the chronicle told a moment the world could not live, and that is a finding about
 /// the draw rather than a number to adjust.
@@ -219,6 +275,7 @@ impl Chronicle {
 pub struct Replayed {
     pub settled: usize,
     pub refused: Vec<(Day, &'static str, Outcome)>,
+    pub series: Series,
 }
 
 /// The past, **lived through ordinary settlement**. Every told moment goes over the same wire every
@@ -233,7 +290,8 @@ pub fn replay(
     failed_kind: u32,
 ) -> Replayed {
     assert!(days_per_period > 0, "22b: a past measured in periods of no days has no periods in it");
-    let mut out = Replayed { settled: 0, refused: Vec::new() };
+    let mut out = Replayed { settled: 0, refused: Vec::new(), series: Series::default() };
+    let mut at = 0u32;
     for moment in c.in_order() {
         let legs = moment.draft.legs();
         if legs.is_empty() {
@@ -250,11 +308,21 @@ pub fn replay(
         // of that rather than a statement about it (5 D2). A hand-written zero here would have made
         // every moment of the past simultaneous, which is the defect this whole item replaces.
         let period = ((moment.at.0 - c.from.0) / days_per_period as i64) as u32;
+        // 22b.8: the series, one reading a period, taken BEFORE this period's first moment settles —
+        // so each reading is the state at the end of the period before it. A period in which nothing
+        // happened still gets its reading, because a world in which nothing happened is a fact about
+        // that period and not a gap in the series.
+        while at < period {
+            out.series.read_from(on);
+            at += 1;
+        }
         match wire.settle(&instruction, period, on, settled_kind, failed_kind) {
             Outcome::Settled => out.settled += 1,
             refused => out.refused.push((moment.at, moment.why, refused)),
         }
     }
+    // And the period the world opens in, which is the last one the past has.
+    out.series.read_from(on);
     out
 }
 

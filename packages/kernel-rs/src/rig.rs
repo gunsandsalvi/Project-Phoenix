@@ -33,6 +33,9 @@ const CELLS: usize = 8;
 const WEEKS: i64 = 52;
 /// One calendar: a 7-day period (Calendar A1).
 const WEEK: u32 = 7;
+/// 22b.8: how long the past is, in days. A RESOLUTION — `warm_up_of` says whether it is long enough
+/// and doubling it must not move where the series settle.
+const PAST: i64 = 3_650;
 /// The run's budget, not a bound on anything in the model (Law 6).
 const ATTEMPTS: usize = 8;
 
@@ -64,6 +67,7 @@ pub fn small() -> Shape {
         weeks: WEEKS,
         opens_on: Day(0),
         days_per_period: WEEK,
+        days_of_past: PAST,
     }
 }
 

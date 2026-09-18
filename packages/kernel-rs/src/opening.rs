@@ -21,7 +21,8 @@
 
 use crate::audit::{ATotalCarriesNoLots, Audit, LotsAgainstQuantity, NoCollateralCountedTwice, Violation};
 use crate::calendar::Day;
-use crate::chronicle::{accept, next_seed_value, Census, Draft, Property, Replayed, Verdict};
+use crate::chronicle::{accept, next_seed_value, Census, Draft, Property, Replayed, Series, Verdict};
+use crate::num::mser_5;
 use crate::draw::{firms_plant_and_inventory, households_employment_and_savings, money_and_the_sovereign, Drawn};
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use crate::instruments::Class;
@@ -41,6 +42,10 @@ pub struct Shape {
     pub cells: usize,
     /// How many weeks of income history each cell has. §46: an outlook is formed from a run.
     pub weeks: i64,
+    /// **How long the past is, in days** — a RESOLUTION, not a shape (22b.8). `warm_up_of` reads the
+    /// world's own series and says whether it is long enough, and doubling it must not move where
+    /// they settle. It was 3,650 days hard-coded inside the draw, which is a number somebody picked.
+    pub days_of_past: i64,
     pub opens_on: Day,
     pub days_per_period: u32,
 }
@@ -87,7 +92,7 @@ impl Opened {
 
 /// **One attempt, end to end**: draw, live the past, census, verdict.
 pub fn draw_once(seed_value: u64, shape: Shape) -> Opening {
-    let mut d = money_and_the_sovereign(seed_value, shape.banks, shape.bills, shape.opens_on);
+    let mut d = money_and_the_sovereign(seed_value, shape.banks, shape.bills, shape.opens_on, shape.days_of_past);
     let firms = firms_plant_and_inventory(&mut d, shape.firms, seed_value, shape.opens_on);
     let _ = households_employment_and_savings(&mut d, &firms, shape.cells, shape.weeks, seed_value, shape.opens_on);
 
@@ -389,6 +394,70 @@ fn class_key(c: Class) -> u8 {
     }
 }
 
+/// **HOW LONG THE PAST HAS TO BE, ANSWERED BY A STATISTIC** (22b.8).
+///
+/// The truncation point each named series says its warm-up ends at, in PERIODS, and whether the past
+/// this world actually lived runs past all of them. A `None` is a series too short to ask.
+///
+/// This is what turns the chronicle's length from a SHAPE somebody picked into a RESOLUTION: the
+/// number is tested by doubling the past and getting the same place (`num::mser_5`, and the test
+/// below). Nothing is clamped by it and no world is adjusted to reach it — a past too short for its
+/// own series is a world that gets thrown away like any other (Law 6, 5 C5).
+#[derive(Clone, Debug, PartialEq)]
+pub struct WarmUp {
+    pub money_per_member: Option<usize>,
+    pub living_parties: Option<usize>,
+    pub credit_stock: Option<usize>,
+    pub holdings: Option<usize>,
+    /// How many periods the past actually ran for.
+    pub periods: usize,
+}
+
+impl WarmUp {
+    /// Which series settled, and which are still trending when the world opens. A series that never
+    /// settles is a MISSING MECHANISM with a name, not a past that needs to be longer — a number
+    /// that grows every period grows for a reason.
+    pub fn named(&self) -> [(&'static str, Option<usize>); 4] {
+        [
+            ("money per member", self.money_per_member),
+            ("living parties", self.living_parties),
+            ("credit stock", self.credit_stock),
+            ("holdings", self.holdings),
+        ]
+    }
+
+    /// The series that never settled, by name.
+    pub fn still_trending(&self) -> Vec<&'static str> {
+        self.named().iter().filter(|(_, d)| d.is_none()).map(|(n, _)| *n).collect()
+    }
+
+    /// Whether the past outlives every warm-up it can measure. A series it could not measure is not
+    /// evidence either way, and saying "long enough" on the strength of one is what a picked number
+    /// does.
+    pub fn long_enough(&self) -> bool {
+        let asked = [self.money_per_member, self.living_parties, self.credit_stock, self.holdings];
+        asked.iter().flatten().all(|d| *d < self.periods)
+    }
+
+    /// The latest place any series says its warm-up ends.
+    pub fn settles_by(&self) -> Option<usize> {
+        [self.money_per_member, self.living_parties, self.credit_stock, self.holdings]
+            .into_iter()
+            .flatten()
+            .reduce(|a, b| if b > a { b } else { a })
+    }
+}
+
+pub fn warm_up_of(s: &Series) -> WarmUp {
+    WarmUp {
+        money_per_member: mser_5(&s.money_per_member),
+        living_parties: mser_5(&s.living_parties),
+        credit_stock: mser_5(&s.credit_stock),
+        holdings: mser_5(&s.holdings),
+        periods: s.living_parties.len(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -400,6 +469,7 @@ mod tests {
     const WEEKS: i64 = 8;
     const WEEK: u32 = 7;
     const ATTEMPTS: usize = 3;
+    const PAST: i64 = 3_650;
 
     fn shape() -> Shape {
         Shape {
@@ -410,6 +480,7 @@ mod tests {
             weeks: WEEKS,
             opens_on: Day(0),
             days_per_period: WEEK,
+            days_of_past: PAST,
         }
     }
 
@@ -506,5 +577,60 @@ mod tests {
         assert!(!in_that_order(Some(&made), Some(&sold), Some(&paid)), "paid before or with the sale is not after it");
         let later: BTreeSet<u32> = [2, 2 + 1].into_iter().collect();
         assert!(in_that_order(Some(&made), Some(&sold), Some(&later)));
+    }
+
+    #[test]
+    fn how_long_the_past_must_be_is_answered_by_a_statistic_and_not_by_me() {
+        // 22b.8: the chronicle's length was a SHAPE somebody picked. MSER-5 over the world's own
+        // series says where each one stops being about how the world started, and the past has to
+        // outlive all of them — otherwise the opening is a fact about the draw rather than the world.
+        let one = draw_once(1, shape());
+        let warm = warm_up_of(&one.replayed.series);
+        assert!(warm.periods > 0);
+        assert!(
+            warm.long_enough(),
+            "the past ran {} periods and its series settle by {:?}",
+            warm.periods,
+            warm.settles_by()
+        );
+    }
+
+    #[test]
+    fn doubling_the_past_does_not_move_where_it_settles() {
+        // **The resolution test** (Law 2): a RESOLUTION is a number tested by invariance. If twice as
+        // long a past said the world settles somewhere else, the truncation point would be an artefact
+        // of how much was drawn rather than a property of the world — and the length would still be a
+        // number somebody picked, only with a statistic's name on it.
+        let once = warm_up_of(&draw_once(1, shape()).replayed.series);
+        let twice = warm_up_of(&draw_once(1, Shape { days_of_past: PAST * 2, ..shape() }).replayed.series);
+        assert!(twice.periods > once.periods, "a doubled past is a longer past");
+        assert!(once.long_enough() && twice.long_enough());
+        // Every series that SETTLED settles in the same place under both, which is what makes the
+        // answer a property of the world rather than of how much was drawn. A series that settled
+        // under one length and not the other would be the clearest possible sign it had not.
+        for ((name, a), (_, b)) in once.named().iter().zip(twice.named().iter()) {
+            assert_eq!(a, b, "{name} settles somewhere else when the past is twice as long");
+        }
+        // And the ones that never settle are a finding with a name, not a past that wants lengthening
+        // (22b.8, positioned at 22b.8a): nothing repays the working-capital line, so the credit stock
+        // and the money it created rise every week of the past and would rise for ever.
+        assert_eq!(once.still_trending(), vec!["money per member", "credit stock", "holdings"]);
+        assert_eq!(once.still_trending(), twice.still_trending(), "and twice the past does not settle them");
+    }
+
+    #[test]
+    fn a_series_too_short_to_ask_answers_missing_and_never_zero() {
+        // Appendix A: a truncation of zero says "warmed up immediately", which is an answer. Not
+        // enough series to ask is not that answer.
+        assert_eq!(mser_5(&[1.0, 2.0, 3.0]), None);
+        assert_eq!(mser_5(&[]), None);
+        // And a flat series settles at once, which is an answer and not an absence.
+        let flat: Vec<f64> = (0..100).map(|_| 7.0).collect();
+        assert_eq!(mser_5(&flat), Some(0));
+        // A series with a warm-up on the front settles after it, not at zero.
+        let mut ramped: Vec<f64> = (0..40).map(|n| n as f64).collect();
+        ramped.extend((0..100).map(|_| 40.0));
+        let d = mser_5(&ramped);
+        assert!(matches!(d, Some(at) if at > 0), "{d:?}");
     }
 }
