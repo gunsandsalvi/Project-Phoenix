@@ -31,6 +31,44 @@ pub enum Family {
     Liveness,
 }
 
+impl Family {
+    /// **Audit E2, 22e.2: every family this audit is accountable for.** A world that assembled no
+    /// contribution to a family must not read as a world with no violations in it, and the only way
+    /// to know a family is missing is to have the list of them — so the list is here, beside the
+    /// enum, and `Audit::over` fills the gaps with `NotBuilt` rather than leaving them silent.
+    ///
+    /// The lie this exists to stop was measured: four of nine families were tautologies until item 4
+    /// and were reported green for thirteen `done` rows, so an "audit green" in the record from
+    /// before item 4 is not evidence (21.134.D15).
+    pub const ALL: [Family; 10] = [
+        Family::Money,
+        Family::Ownership,
+        Family::Prices,
+        Family::CrossMarket,
+        Family::Accounts,
+        Family::Names,
+        Family::Flows,
+        Family::ZeroSum,
+        Family::Units,
+        Family::Liveness,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Family::Money => "money",
+            Family::Ownership => "ownership",
+            Family::Prices => "prices",
+            Family::CrossMarket => "cross-market",
+            Family::Accounts => "accounts",
+            Family::Names => "names",
+            Family::Flows => "flows",
+            Family::ZeroSum => "zero-sum",
+            Family::Units => "units",
+            Family::Liveness => "liveness",
+        }
+    }
+}
+
 /// A2: a violation names its owner, its size, its period and the clause it is about. A finding
 /// with no size cannot be ranked and one with no owner cannot be chased.
 #[derive(Clone, Debug)]
@@ -46,6 +84,7 @@ pub struct Violation {
 
 /// What one contribution found, and whether it is BUILT. An unbuilt family is reported as unbuilt
 /// and is never counted as passing.
+#[derive(Debug)]
 pub struct Report {
     pub family: Family,
     pub built: bool,
@@ -99,6 +138,27 @@ impl Audit {
 
     pub fn add(&mut self, c: Box<dyn Contribution>) {
         self.families.push(c);
+    }
+
+    /// **Audit E2, 22e.2: THE ONLY WAY TO BUILD AN AUDIT OF A WORLD.** It takes what the kernel and
+    /// the modules contributed and declares `NotBuilt` for every family nobody contributed to — so
+    /// an unbuilt family is IN the report saying it is unbuilt, and cannot be absent from it.
+    ///
+    /// Leaving the gaps silent is the lie: a reader counting violations over the families that
+    /// happened to be assembled would read a world with one family built and nine missing as a world
+    /// with no violations. Filling them here makes that unsayable rather than forbidden.
+    pub fn over(contributions: Vec<Box<dyn Contribution>>) -> Audit {
+        let mut audit = Audit::new();
+        for c in contributions {
+            audit.add(c);
+        }
+        for family in Family::ALL {
+            if audit.families.iter().any(|f| f.family() == family) {
+                continue;
+            }
+            audit.add(Box::new(NotBuilt { family, contributor: "nobody" }));
+        }
+        audit
     }
 
     /// Audit C1: every family, every period, off ONE walk of the register.

@@ -20415,3 +20415,69 @@ falls due. `docs/COVERAGE.md`: `Treasury D1` and `Central Bank A1` re-pointed at
 
 **715 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
 `npm run check` green; `world:runs` four periods, 50 systems, worst period 382 ms.**
+
+## 22e — the audit is not in the period loop
+
+`audit.rs` was built, the families were built, they had their own tests — and `grep -n "audit"
+assembly.rs world.rs` returned one hit, in a comment. **`World::step` never ran the audit**, so the
+assembled world had stepped in every run since the port with no family ever visiting it. 21d's defect
+one register up, and it mattered most now because production is the first mechanism that creates and
+destroys at scale.
+
+**It runs last, over what the period actually left behind**, and `Stepped` carries what it found —
+carried rather than printed and dropped, because a caller that wants to know whether the world it just
+stepped is sound should not have to run the audit a second time (Law 19). It never repairs.
+
+**A module states its own family and the kernel runs it** (`System::audits`). A family's independence
+is about the SOURCE it reads (Audit C3), not about who wrote it, so a module's check rides the same
+single traversal as the kernel's. A row holds the way to MAKE a contribution rather than a made one,
+because a contribution accumulates as it walks and is consumed when it reports. `PlantMoves` —
+*plant moves only for a reason*, 33 A6.b, the one module family this world has — was written, tested
+and assembled into nothing; it arrives through that door now, with the capital lines read off the
+recipes rather than restated.
+
+### Audit E2 is structural now, not remembered
+
+`Audit::over` is the only way to build an audit of a world, and it declares `NotBuilt` for every
+family in `Family::ALL` that nobody contributed to. **An unbuilt family cannot be ABSENT from the
+report** — it is in it, saying it is unbuilt. Leaving the gaps silent is the lie: a reader counting
+violations over the families that happened to be assembled would read a world with one family built
+and nine missing as a world with no violations. That lie was measured (21.134.D15): four of nine
+families were tautologies until item 4 and were reported green for thirteen `done` rows, so an "audit
+green" in the record from before item 4 is not evidence.
+
+`world-runs` prints the families every period, and then the findings themselves with owner, size and
+citation — a count alone cannot be ranked or chased (Audit A2). Three families are built (money,
+ownership, units) and **seven say `not-built`**, which is now a number on the screen rather than an
+absence nobody could see.
+
+### It found a real defect on its first run
+
+Two ownership violations, the same two every period:
+
+```
+[Register B2] holding 48622  5.68e-14 pieces — lots sum to 27.143341836734685 and the row holds 27.143341836734628
+```
+
+**Two writers of one quantity** (Law 4). `Register.held[row]` is a running total that `credit` adds to
+and `debit` subtracts from, while the lots are the SOURCE the same number comes from — so `quantity()`
+answers from a tally kept beside the lots rather than from the lots (Law 19: never sum a copy, never
+keep a second tally). Float addition over many periods drifts the two apart, and the family that reads
+the lots and compares them with the total is exactly the check built to catch it.
+
+It is **not a tolerance to widen** (Law 7): the dust is derived per check from that walk's own terms
+and magnitudes, and the drift is larger than it. A check that only passed with a band would be
+reporting this defect rather than finding it. Inserted as **item 22e2**, immediately after this one,
+because this is what found it; its fix REMOVES code (Law 12) and needs the traversal measured (Law 18).
+
+**The three findings placed here are answered.** 21.67's families half — *violations are what an audit
+is FOR, and the audit does not run in the period loop at all* — is closed by the loop. 21.134.C0's
+sentence stands as the reason the whole class of defect was possible and needs no further answer.
+21.134.D14/D15 are answered by an audit that runs and reports by family with E2 holding at the same
+time; D14's *was it ever measured* is answerable now for anything, which is what it asked for.
+
+`docs/ARCHITECTURE.md` gained 4.9b′. `docs/COVERAGE.md`: `Audit C1` and `Audit E2` re-pointed at the
+Rust kernel.
+
+**715 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
+`npm run check` green; `world:runs` four periods, 50 systems, worst period 382 ms.**

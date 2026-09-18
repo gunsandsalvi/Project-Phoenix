@@ -142,7 +142,7 @@ measurement is taken there is nothing to name.
 | `Audit B6` | MET | packages/engine/src/audit/families/names.ts |
 | `Audit B7` | MET | packages/engine/src/audit/families/flows.ts |
 | `Audit B8` | PARTIAL | independence is measured once a defect can light families (Part XII) |
-| `Audit C1` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/world/world.ts |
+| `Audit C1` | MET | packages/kernel-rs/src/audit.rs `Audit::run` (every family, every period, off ONE walk of the register — a family's independence is about the SOURCE it reads, not how many times the register is visited), packages/kernel-rs/src/assembly.rs `World::step` (**22e: it is IN THE PERIOD LOOP.** `audit.rs` and its families were built and tested and `grep audit assembly.rs` returned one hit, in a comment — the assembled world had stepped in every run since the port with no family ever visiting it. It runs last, over what the period left behind, and never repairs) |
 | `Audit C2` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/memory.ts, packages/engine/src/world/world.ts |
 | `Audit C3` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/world/world.ts |
 | `Audit C4` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/view.ts |
@@ -151,7 +151,7 @@ measurement is taken there is nothing to name.
 | `Audit D3` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/rng/prng.ts |
 | `Audit D4` | PARTIAL | run-length comparison is a Part XII measurement |
 | `Audit E1` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/unbuilt.ts |
-| `Audit E2` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/liveness.ts (0h.3: what was declared and never reached is a VIOLATION with the module that declared it as its owner, not only a count on the report) |
+| `Audit E2` | MET | packages/kernel-rs/src/audit.rs `Audit::over` and `Family::ALL` (**22e.2: an unbuilt family cannot be ABSENT from the report.** `over` is the only way to build an audit of a world and it declares `NotBuilt` for every family nobody contributed to, so a reader counting violations over the families that happened to be assembled cannot read a world with one family built and nine missing as a world with no violations. The lie was measured: four of nine families were tautologies until item 4 and were reported green for thirteen `done` rows, 21.134.D15), packages/kernel-rs/src/bin/world_runs.rs (it prints `not-built` by name, every period) |
 | `Audit E3` | MET | packages/engine/src/audit/audit.ts, packages/engine/src/audit/families/unbuilt.ts |
 
 ## Seed

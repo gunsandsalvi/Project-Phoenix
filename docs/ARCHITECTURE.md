@@ -665,6 +665,31 @@ built from are in its `Pick<>`s and the rest of each store is not.
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
 
+### 4.9b′ The audit in the period loop (Audit C1, C3, E2, 22e)
+
+`World::step` runs the audit last, over what the period actually left behind, and `Stepped` carries
+what it found. Until 22e it did not run at all: `audit.rs` and its families were built and tested and
+`grep audit assembly.rs` returned one hit, in a comment — the assembled world had stepped in every run
+since the port with no family ever visiting it. That is 21d's defect one register up.
+
+**A module states its own family and the kernel runs it** (`System::audits`). A family's independence
+is about the SOURCE it reads (Audit C3), not about who wrote it, so a module's check rides the same
+single traversal as the kernel's. A row holds the way to MAKE a contribution rather than a made one,
+because a contribution accumulates as it walks and is consumed when it reports.
+
+**An unbuilt family cannot be absent from the report.** `Audit::over` is the only way to build an
+audit of a world, and it declares `NotBuilt` for every family in `Family::ALL` that nobody contributed
+to. That is what makes Audit E2 structural instead of remembered: a reader counting violations over
+the families that happened to be assembled would read a world with one family built and nine missing
+as a world with no violations. The lie was measured — four of nine families were tautologies until
+item 4 and were reported green for thirteen `done` rows, so an "audit green" in the record from before
+item 4 is not evidence (21.134.D15).
+
+**It never repairs, and the runner names what it finds.** A violation carries owner, size, period and
+citation, and `world-runs` prints the families and then the findings themselves: a count alone cannot
+be ranked or chased. The audit's first period in the loop found a real defect and it is item 22e2 —
+the register keeps a running total beside the lots, which is two writers of one quantity.
+
 ### 4.9c The two doors 21j built, and why they were the two
 
 **`ParticipantView::owes_by` / `owed_to_it_by` (21j.1).** A view could read what a party HELD and not

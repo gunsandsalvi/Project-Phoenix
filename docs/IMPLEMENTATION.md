@@ -157,7 +157,8 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 21i | Nowhere is more built-up than anywhere else — **done** (section removed; see `docs/RECORD.md`; the owner replaced the fixed-ground premise with CONGESTION: a structure declares its footprint, how built-up a place is, is an area read off the register, and building where more stands draws more. One TECHNOLOGY primitive, nothing refused, no money number set. 21.27 and 21.29 dissolved with the premise; 21.28 and 21.30 re-positioned) | named by 21.27–21.30 |
 | 21j | Twenty-five systems take no part — **done** (section removed; see `docs/RECORD.md`; the schedules door and the INSTRUMENT door, so a party can see what falls due and bring paper for it; the treasury auctions what it is short of and the last SHAPE in the register is dead; benchmarks fix on a transacted rate and mortality kills the insolvent. The census is printed and the remaining thirty-one are item 22i) | named by 21.38–21.42; after 21i, and its door is what the later conversions all want 
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
-| 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
+| 22e | The audit is not in the period loop — **done** (section removed; see `docs/RECORD.md`; `World::step` runs every family every period over the one traversal, `Stepped` carries what it found, and `Audit::over` declares NOT BUILT for every family nobody contributed to, so an unbuilt one cannot be absent from the report. `world-runs` prints by family and names each violation. It found a two-writers defect on its first run — item 22e2) | after 22, BEFORE 22c: everything built after it should be audited as it is built 
+| 22e2 | The register keeps a running total beside the lots | immediately after 22e, which is what found it |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
 | 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
@@ -173,39 +174,35 @@ goes over the ordinary wire. Item **22g** replaces it.
 ## Part 2 — The items
 
 
-## 22e. The audit is not in the period loop
+## 22e2. The register keeps a running total beside the lots
 
-**INSERTED (Law 10), after 22 and BEFORE 22c**, so everything built after it is audited as it is built.
-`audit.rs` is built, the families are built and they have their own tests — and `grep -n "audit"
-assembly.rs world.rs` returns one hit, in a comment. **`World::step` never runs the audit**, so the
-assembled world has stepped in every run since the port with no family ever visiting it. 21d's defect
-one register up. It matters most now because production is the first mechanism that creates and
-destroys at scale, and the units identity is the family that would catch it getting that wrong.
+**INSERTED (Law 10) immediately after 22e, which is what FOUND it** — the audit's first period in the
+loop reported two ownership violations and has reported the same two every period since:
 
-- [ ] 22e.1 **The audit runs in the period**, over the one traversal it was built for, and `Stepped`
-  carries what it found — so a run that breaks an identity says so in the line it prints.
-- [ ] 22e.2 **Audit E2: an unbuilt family reports "not built", never green.** A world that assembled
-  no family must not read as a world with no violations; `22b.2` already found that exact lie in the
-  census and the fix has to survive here.
-- [ ] 22e.3 **`world-runs` prints the audit by family**, because a number nobody reads is not a check.
+```
+[Register B2] holding 48622  5.68e-14 pieces — lots sum to 27.143341836734685 and the row holds 27.143341836734628
+```
 
-**Exit.** A period of the assembled world is audited, and the runner says by family what was found.
+**The cause is two writers of one quantity** (Law 4). `Register.held[row]` is a running total that
+`credit` adds to and `debit` subtracts from, while the lots are the SOURCE the same number comes from
+— so `quantity()` answers from a tally kept beside the lots rather than from the lots (Law 19: never
+sum a copy, never keep a second tally). Float addition over many periods drifts the two apart, and the
+family that reads the lots and compares them with the total is exactly the check built to catch it. It
+caught it on its first run.
 
----
+**It is not a tolerance to widen** (Law 7). The dust is derived per check from that walk's own terms
+and magnitudes, and the drift is larger than it; a check that only passed with a band would be
+reporting this defect rather than finding it.
 
-**Placed here.**
+- [ ] 22e2.1 **Delete `held` and make `quantity` a read of the lots.** The fix removes code, which is
+  what a cause's fix does (Law 12). A money account is the one row with no lots (Money D2) and keeps
+  its total, which is why `is_total` already exists.
+- [ ] 22e2.2 **Gate it on behaviour and measure the traversal** (Law 18). The total was O(1) and a sum
+  of lots is O(lots); the register walk and the audit both scale with the holdings, so the period cost
+  is what says whether the layout needs the sum cached as a *derived* value with one writer rather
+  than a second fact.
 
-- [ ] 21.67 `test/money-market.test.ts`, the assembled world (17.7d's census of five periods of the rig): FIFTEEN OF THE SIXTEEN TESTS IN THAT FILE ARE RED, AND NONE OF THEM IS ABOUT THE MONEY MARKET. Each ends in `expect(unexpected(w.step().audit)).toEqual([])` — which is every violation the audit reported, of every family — so each is asserting that the WHOLE WORLD is clean, and the assembled world reports 79 to 325 violations a period across four families: `prices` 9 (a listed line is held and the session printed no price for it), `accounts` 23–36, `names` 18, `flows` 20–127, and `units` 148 in the one period it fires. They were red at `af70a23` and are unchanged by 17.7d (verified in a worktree at that commit — same fifteen, same names). 17.9 found the same shape one file over and worse: `test/bank-capital.test.ts` DOES NOT COLLECT AT ALL — its `run` helper asserts an empty audit at module scope, so the file reports “no tests” and every case in it has been silently unrun. Two different things and both are written down here: the SHAPE of the test, which makes a money-market case fail for a reason in the goods market (positioned at 23.1, where the scale model and what a test asserts are resized together); and each family's own cause, which is a read to make against a run and never a number to chase (Law 11), positioned at 23.3 with the rest of Part XII's measurements (17.7d). **Re-read: both halves are gone as stated.** The SHAPE half cannot recur — no shared world in these tests, no module-scope audit assertion silently running nothing. The FAMILIES half was never about the tests: violations are what an audit is FOR, and **the audit does not run in the period loop at all** → **22e**.
-- [ ] 21.134.C0 *typecheck green, lint green, `check:spec`/`forbids`/`deaths` green — none of these
-  loads a world.* It is not a defect; it is the sentence that explains why every one of these
-  findings was possible, and it is why `world-runs` exists and why 22e (the audit in the period loop)
-- [ ] 21.134.D14/D15 The two audit claims the file would not let stand: **D15**, that four of nine
-  families were tautologies until item 4 and were reported green for thirteen `done` rows, so an
-  "audit green" in `docs/RECORD.md` before item 4 is not evidence; and **D14**, that the fix claiming
-  to give all eight derivative classes a second side was never measured. Both are answered by the
-  same thing and it is item **22e**: an audit that runs in the period loop and reports by family,
-  with Audit E2's *an unbuilt family reports "not built", never green* holding at the same time.
-  is the next item after this one.
+**Exit.** The ownership family reports nothing, because there is one writer of a holding's quantity.
 
 ## 22c. The market as it is
 

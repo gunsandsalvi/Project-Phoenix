@@ -78,6 +78,16 @@ pub trait System {
     fn mechanism(&self) -> Option<&dyn Mechanism> {
         None
     }
+
+    /// **Audit C3, 22e: what this system contributes to the audit.** A family's independence is
+    /// about the SOURCE it reads, not about who wrote it — so a module states its own check and the
+    /// kernel runs it on the one traversal, beside the kernel's own and beside every other module's.
+    ///
+    /// A system with none contributes none, and that is not the same as a family being green: the
+    /// families nobody contributed to are declared NOT BUILT at assembly (`Audit::over`).
+    fn audits(&self) -> Vec<Box<dyn crate::audit::Contribution>> {
+        Vec::new()
+    }
 }
 
 /// **Every kernel store, declared for what it is.** The register exists to be asked what is still
@@ -181,6 +191,9 @@ pub struct World {
     /// the count was zero by never having been asked (21d.1).
     pub nouns: Nouns,
     pub phases: Phases,
+    /// Audit C1, 22e: **the families, assembled at `wire_up` and run every period.** It was built,
+    /// tested and never reached by the loop.
+    pub audit: crate::audit::Audit,
     pub books: Vec<BookDecl>,
     pub period: u32,
     pub settled_kind: u32,
@@ -191,8 +204,17 @@ pub struct World {
 
 /// What one period did. Printed rather than asserted (`check:opens`): the census is a read, and a
 /// number nobody looks at is not a check.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Debug, Default)]
 pub struct Stepped {
+    /// **Audit C1, A2, E2, 22e.1: what the audit found in this period, by family.** It is carried
+    /// here rather than printed and dropped, because a run that breaks an identity has to be able to
+    /// say so in the line it prints — and because a caller that wants to know whether the world it
+    /// just stepped is sound should not have to run the audit a second time (Law 19).
+    ///
+    /// **An unbuilt family is in this list too**, reporting `built: false` and no violations. A world
+    /// that assembled no family must not read as a world with no violations; that lie is what
+    /// `Audit::report_card` refuses to let a reader tell by counting.
+    pub audit: Vec<crate::audit::Report>,
     pub asks: usize,
     pub narrows: usize,
     pub books_cleared: usize,
@@ -229,6 +251,7 @@ impl World {
             standing: Standing::new(),
             making: InProgress::new(),
             nouns: declared(),
+            audit: crate::audit::Audit::new(),
             phases: Phases::new(),
             books: Vec::new(),
             period: 0,
@@ -247,6 +270,18 @@ impl World {
             }
         }
         self.phases.seal();
+        // **Audit C1, C3, E2, 22e: the audit is assembled here, with the phases.** The kernel's own
+        // checks, plus whatever each module contributes, plus NOT BUILT for every family nobody
+        // contributed to — because a family that is missing has to SAY it is missing.
+        let mut contributions: Vec<Box<dyn crate::audit::Contribution>> = vec![
+            Box::<crate::audit::LotsAgainstQuantity>::default(),
+            Box::<crate::audit::ATotalCarriesNoLots>::default(),
+            Box::<crate::audit::NoCollateralCountedTwice>::default(),
+        ];
+        for s in systems {
+            contributions.extend(s.audits());
+        }
+        self.audit = crate::audit::Audit::over(contributions);
     }
 
     /// One period: **the phases run in their declared order, the books run at the markets moment,
@@ -283,6 +318,15 @@ impl World {
         }
 
         out.events = self.journal.len() - events_before;
+        // **Audit C1, 22e.1: EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.**
+        // `audit.rs` and its families were built and tested and `grep audit assembly.rs` returned one
+        // hit, in a comment — so the assembled world had stepped in every run since the port with no
+        // family ever visiting it, which is 21d's defect one register up.
+        //
+        // It runs LAST, over what the period actually left behind. It never repairs: what it finds is
+        // carried out for whoever is reading, and a violation is a finding about a mechanism rather
+        // than a licence to adjust the number.
+        out.audit = self.audit.run(&self.register, &self.wire, self.period);
         out
     }
 
@@ -751,7 +795,19 @@ mod tests {
         w.wire_up(&systems);
         let did = w.step(&systems);
         assert_eq!(w.period, 1);
-        assert_eq!(did, Stepped::default());
+        assert_eq!((did.asks, did.books_cleared, did.trades, did.events, did.ran), (0, 0, 0, 0, 0));
+        // **Audit E2, 22e.2: and it was AUDITED.** A world that assembled no family must not read as
+        // a world with no violations, so every family is in the report — the three the kernel builds
+        // saying nothing is wrong, and the seven nobody has built saying they are NOT BUILT.
+        assert_eq!(did.audit.len(), crate::audit::Family::ALL.len());
+        assert!(did.audit.iter().all(|r| r.violations.is_empty()));
+        // TWO built families, not three contributions: `LotsAgainstQuantity` and
+        // `NoCollateralCountedTwice` both contribute to OWNERSHIP and are one report between them.
+        assert_eq!(did.audit.iter().filter(|r| r.built).count(), 2);
+        assert!(
+            did.audit.iter().any(|r| !r.built && r.family == crate::audit::Family::Flows),
+            "a family nobody built says so, and is never absent from the report"
+        );
     }
 
     /// A system that does nothing but run `Wages`, so the split reaches the kernel the way any

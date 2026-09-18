@@ -397,6 +397,22 @@ fn main() {
                 people += u64::from(w.parties.weight(who));
             }
         }
+        // **Audit A2, E2, 22e.3: WHAT THE AUDIT FOUND, BY FAMILY.** A number nobody reads is not a
+        // check, and until this item the audit was not even run — so the assembled world had stepped
+        // in every run since the port with no family ever visiting it.
+        //
+        // An unbuilt family says NOT BUILT and is never counted as clean: a world that assembled no
+        // family must not read as a world with no violations.
+        let mut audited: Vec<String> = Vec::new();
+        for r in &did.audit {
+            audited.push(if r.built {
+                format!("{} {}", r.family.name(), r.violations.len())
+            } else {
+                format!("{} not-built", r.family.name())
+            });
+        }
+        audited.sort();
+
         // 21j.1a: **how many obligations came into existence**, which was zero in every period of
         // every world until the door existed — no firm brought paper, no treasury auctioned a bill it
         // had not got, no pool cut a note. It is counted off the wire rather than assumed (Law 19).
@@ -411,6 +427,15 @@ fn main() {
             "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
+        println!("           audit: {}", audited.join(" · "));
+        // Audit A2: a violation names its OWNER, its SIZE, its period and the clause it is about —
+        // a finding with no size cannot be ranked and one with no owner cannot be chased, so the
+        // count above is never the whole of what is printed.
+        for r in &did.audit {
+            for v in r.violations.iter().take(3) {
+                println!("             [{}] {} {} {} — {}", v.spec, v.owner, v.size, v.unit, v.message);
+            }
+        }
     }
 
     println!();

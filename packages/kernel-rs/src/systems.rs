@@ -378,6 +378,11 @@ pub struct Wired {
     /// ARCHITECTURE 4.9b: its own work in the period, if it has any of its own. A system that only
     /// reads what the books produced has none, and that is an answer rather than a gap.
     pub mechanism: Option<Box<dyn Mechanism>>,
+    /// Audit C3, 22e: **how this system builds its audit family**, not a built one. A contribution
+    /// accumulates as it walks and is consumed when it reports, so a row holds the way to make one
+    /// and the kernel owns what it makes. `PlantMoves` is the one module family this world has, and
+    /// until 22e there was no row here for it to arrive through at all.
+    pub audits: Vec<Box<dyn Fn() -> Box<dyn crate::audit::Contribution>>>,
 }
 
 impl Wired {
@@ -399,6 +404,10 @@ impl System for Wired {
         self.mechanism.as_deref()
     }
 
+    fn audits(&self) -> Vec<Box<dyn crate::audit::Contribution>> {
+        self.audits.iter().map(|make| make()).collect()
+    }
+
     fn phases(&self) -> Vec<PhaseDecl> {
         let anchor = if self.anchor_after { Anchor::After(self.at) } else { Anchor::Before(self.at) };
         // The phase's name is its own declaration slot; the owner is the system itself.
@@ -418,18 +427,18 @@ impl System for Wired {
 /// for one of them would be demand nobody has.
 pub fn reads(name: &'static str, at: u32) -> Wired {
     // The slot is assigned by `all`, which is the one place that knows the order.
-    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None }
+    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None, audits: Vec::new() }
 }
 
 /// A system that has its OWN WORK in the period and no reason to be in a book: it reads the world
 /// through the second door and proposes. Most of the forty-seven are this.
 pub fn works(name: &'static str, at: u32, mechanism: Box<dyn Mechanism>) -> Wired {
-    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: Some(mechanism) }
+    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: Some(mechanism), audits: Vec::new() }
 }
 
 /// A system that posts. The participant is its reason to be in a book (Clearing B2).
 pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
-    Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None }
+    Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None, audits: Vec::new() }
 }
 
 /// **The lines each system needs, NAMED.** It was one `cash` handed to everybody, which is what
@@ -479,6 +488,22 @@ impl Wiring {
                 (m.plant, inputs)
             })
             .collect()
+    }
+
+    /// Audit C3, 33 A6.b, 22e: **which lines the plant-moves family is about**, by row. It is DATA
+    /// handed to the check (Law 15), so the family never asks an instrument what kind it is — and it
+    /// is read off the recipes rather than restated, because what a firm makes its goods WITH is
+    /// already written there (Law 19).
+    pub fn capital(&self) -> Vec<bool> {
+        let mut is_capital: Vec<bool> = Vec::new();
+        for m in &self.makes {
+            let row = m.plant.row();
+            while is_capital.len() <= row {
+                is_capital.push(false);
+            }
+            is_capital[row] = true;
+        }
+        is_capital
     }
 }
 
@@ -637,7 +662,20 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         works("bank_funding", AT_REVALUATION, Box::new(Reads { kind: says("bank_funding.credit"), what: Counts::CreditOutstanding })),
         // §6, XI-9: THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
         works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
-        works("capital_programme", AT_MARKETS, Box::new(Closing { kind: afoot::CAPITAL_PROGRAMME, says: says("plant.built") })),
+        {
+            // Audit C3, 33 A6.b, 22e: **PLANT MOVES ONLY FOR A REASON**, and this is the one module
+            // family this world has. It was written, tested and assembled into nothing.
+            //
+            // Which lines are capital is DATA handed in (Law 15), so the check never asks an
+            // instrument what kind it is: every line whose recipes make it with a plant, plus the
+            // plant lines themselves.
+            let capital = w.capital();
+            let mut cp = works("capital_programme", AT_MARKETS, Box::new(Closing { kind: afoot::CAPITAL_PROGRAMME, says: says("plant.built") }));
+            cp.audits.push(Box::new(move || {
+                Box::new(crate::mechanisms::capital_programme::PlantMoves::over(capital.clone()))
+            }));
+            cp
+        },
         works("cost_of_capital", AT_REVALUATION, Box::new(Reads { kind: says("cost_of_capital.lines"), what: Counts::LinesThatPrinted })),
         works("short_term_debt", AT_MARKETS, Box::new(Reads { kind: says("short_term_debt.out"), what: Counts::CreditOutstanding })),
         works("corporate_credit", AT_MARKETS, Box::new(Reads { kind: says("corporate_credit.out"), what: Counts::CreditOutstanding })),
