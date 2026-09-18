@@ -19,4 +19,5 @@ pub mod ledger;
 pub mod parties;
 pub mod prices;
 pub mod register;
+pub mod world;
 pub mod calendar;

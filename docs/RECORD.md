@@ -16521,3 +16521,21 @@ not a residual with no holder (Register D2, Appendix B).
 TypeScript is built in here rather than retrofitted: which money a party reports in, and the rate
 into it, are read once per instruction because an instruction is atomic and neither can change
 between two of its legs.
+
+# 0g.41 (part) — the period loop, and a law that caught a bug in its own port
+
+Phases are ordered DATA and the three kernel moments — corporate actions, markets, revaluation —
+are what a module anchors to. Five laws as tests: a phase runs where its anchor puts it and
+siblings keep assembly order; **a phase may not read what a later phase writes**, checked at the
+seal rather than discovered as a stale number every period; a phase cannot anchor to one that does
+not exist; nothing is added once the world has begun; and a cycle is within a period, so stepping a
+period resets it and nothing finer exists.
+
+**The first of those tests failed on the first run, and it was right to.** The kernel's own three
+phases were anchored to each other — markets after corporate actions, revaluation after markets —
+so a module's phase anchored AFTER markets counted revaluation as a sibling and was inserted BEHIND
+it, at the end of the period. The moments anchor to themselves now, because they are what a module
+anchors TO rather than phases in a chain. **A law written as a test caught a defect in the port
+that a comment would have shipped**, which is the whole argument of 0g.43 in one instance.
+
+**Thirty-one laws now hold as tests; clippy is clean.**

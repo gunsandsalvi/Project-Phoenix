@@ -414,11 +414,22 @@ same seed, and the TypeScript one is deleted the day it does (0g.45). Two engine
 same question is Law 4's defect at the largest possible scale, and the only reason to hold one for a
 while is that it is the only thing that can say the other is right.
 
-- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** **Started: `packages/kernel-rs` holds
-  `ids.rs` and `register.rs`, and the real store at the world's shape reads in 2.92 ns against
-  TypeScript's measured 67.20 ns (23.0×) and traverses 544,104 holdings in 0.89 ms against 95.70 ms
-  (108×), with three Register laws as tests and the lots-against-quantity family reporting zero.**
-  Next: `journal`, `calendar`, `prices`, `parties`, then `ledger` and `clearing`.
+- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** **`packages/kernel-rs` holds `ids`,
+  `register`, `journal`, `calendar`, `prices`, `parties`, `ledger`, `clearing` and `world`, with
+  **31 laws as tests** and clippy clean at zero warnings. Timed at the world's own scale:
+
+  | | TypeScript, measured | this kernel | |
+  |---|---|---|---|
+  | a record fetched by id | 47.80 ns | 0.77 ns | 62× |
+  | the register's hot read | 67.20 ns | **2.69 ns** | **25×** |
+  | a traversal of 544,104 holdings | 95.70 ms | **0.28–0.89 ms** | **>100×** |
+  | the wire: 48,828 instructions, 470,310 legs | **4,729 ms** | **156.1 ms** | **30.3×** |
+  | the clearing solver | 38 ms | — | **not a cost; ported for its laws** |
+
+  The wire's 30.3× is an upper BOUND: it does the register moves, the equity and gross bumps and
+  the journal event, where the TypeScript one also does contract and voyage legs, assume and
+  release, `validate` and `expand`. Left: `registry` (10,951 lines, the largest single piece),
+  `audit`, and the participant doors.
  `core calendar registry parties register
   ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
   collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep

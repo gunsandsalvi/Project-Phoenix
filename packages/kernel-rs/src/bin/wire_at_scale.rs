@@ -84,7 +84,7 @@ fn main() {
             let b = PartyId::at(draw.below(PARTIES));
             let _ = a;
             // Law 5: two sides. A payment and its delivery are the two legs of one move.
-            if draw.next() % 2 == 0 {
+            if draw.next().is_multiple_of(2) {
                 legs.push(Leg::Money {
                     from: a,
                     to: b,
