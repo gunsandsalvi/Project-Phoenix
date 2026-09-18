@@ -156,7 +156,7 @@ fn main() {
 
     // The audit, on one walk.
     let t = Instant::now();
-    let reports = audit.run(&reg, period);
+    let reports = audit.run(&reg, &wire, period);
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
 

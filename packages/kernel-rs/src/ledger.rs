@@ -79,11 +79,23 @@ pub struct Instruction<'a> {
     pub cause: Cause,
 }
 
+/// Money D1, D4: EVERY INSTRUCTION EVER APPLIED, numbered, in order, with its legs. **The wire is
+/// the history** — nothing else stores what moved, and a reader that wants a total walks this
+/// rather than keeping a second tally of it (Law 19).
+///
+/// The legs are one flat column and an instruction owns a counted slice of it, so walking a
+/// period's legs is one contiguous run. The audit families that ask *why did this move* — flows,
+/// units, the capital programme — are all walks of this, and in TypeScript each of them walked it
+/// separately.
 pub struct Settlement {
-    /// Money D4: every instruction ever applied, numbered, in order. The wire IS the history.
     outcomes: Vec<Outcome>,
     at_period: Vec<u32>,
-    leg_count: Vec<u32>,
+    cause: Vec<Cause>,
+    leg_at: Vec<u32>,
+    leg_len: Vec<u32>,
+    legs: Vec<Leg>,
+    /// Audit C1: where each period's instructions begin and end, written as they arrive.
+    by_period: Vec<(u32, u32, u32)>,
 }
 
 impl Default for Settlement {
@@ -94,7 +106,15 @@ impl Default for Settlement {
 
 impl Settlement {
     pub fn new() -> Self {
-        Self { outcomes: Vec::new(), at_period: Vec::new(), leg_count: Vec::new() }
+        Self {
+            outcomes: Vec::new(),
+            at_period: Vec::new(),
+            cause: Vec::new(),
+            leg_at: Vec::new(),
+            leg_len: Vec::new(),
+            legs: Vec::new(),
+            by_period: Vec::new(),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -108,6 +128,32 @@ impl Settlement {
     pub fn outcome_of(&self, n: usize) -> Outcome {
         self.outcomes[n]
     }
+
+    pub fn cause_of(&self, n: usize) -> Cause {
+        self.cause[n]
+    }
+
+    pub fn period_of(&self, n: usize) -> u32 {
+        self.at_period[n]
+    }
+
+    /// The legs of one instruction, as a contiguous slice. Nothing is copied to read them.
+    pub fn legs_of(&self, n: usize) -> &[Leg] {
+        let at = self.leg_at[n] as usize;
+        let len = self.leg_len[n] as usize;
+        &self.legs[at..at + len]
+    }
+
+    /// Audit C1: this period's instructions, without walking the history.
+    pub fn in_period(&self, period: u32) -> std::ops::Range<usize> {
+        for &(p, from, to) in &self.by_period {
+            if p == period {
+                return from as usize..to as usize;
+            }
+        }
+        0..0
+    }
+
 
     /// XI-5: ALL LEGS OR NONE. Every leg is checked before any is applied, so a refusal leaves the
     /// world exactly as it was — which is what makes delivery-versus-payment true rather than
@@ -240,9 +286,17 @@ impl Settlement {
         journal: &mut Journal,
         kind: u32,
     ) -> Outcome {
+        let n = self.outcomes.len() as u32;
         self.outcomes.push(outcome);
         self.at_period.push(period);
-        self.leg_count.push(ins.legs.len() as u32);
+        self.cause.push(ins.cause);
+        self.leg_at.push(self.legs.len() as u32);
+        self.leg_len.push(ins.legs.len() as u32);
+        self.legs.extend_from_slice(ins.legs);
+        match self.by_period.last_mut() {
+            Some(last) if last.0 == period => last.2 = n + 1,
+            _ => self.by_period.push((period, n, n + 1)),
+        }
         journal.say(period, 0, kind, &[], &[(0, Value::Num(ins.legs.len() as f64))], true);
         outcome
     }

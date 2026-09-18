@@ -16,6 +16,7 @@ pub mod clearing;
 pub mod ids;
 pub mod journal;
 pub mod ledger;
+pub mod mechanisms;
 pub mod module;
 pub mod nouns;
 pub mod params;

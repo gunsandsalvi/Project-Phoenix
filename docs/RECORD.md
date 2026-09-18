@@ -16652,3 +16652,49 @@ the phase-ordering bug at the period loop. Both were caught by a law written as 
 as a comment.
 
 **Forty-seven laws now hold as tests; clippy is clean.**
+
+# 0g.42 — the first module ported, and it is faster in the kernel than it was standalone
+
+`capital-programme`'s `plantMoves` is now a real audit contribution: it takes its own pass over the
+WIRE in `before`, rides the audit's one shared traversal for the register, and states what it found
+in `finish`.
+
+| | |
+|---|---|
+| TypeScript, measured in the engine | **2,049 ms** (3.75% of a period, 95% of its module) |
+| standalone port (0g.40) | 173.6 ms — 11.8×, **10.9× corrected** |
+| **in the real kernel** | **104.8 ms — 19.5×**, 0 violations |
+
+**It is faster in the kernel than standalone, and the reason is the design rather than the
+compiler**: 0g.40's prototype made its own walk of the holdings, and here the audit's single
+traversal (0g.34) already visits every row, so the family only records the capital ones as they go
+by. The measured input is the world's: **497,347 legs over 47,346 instructions, 21,490 capital
+holdings on 479 lines.**
+
+**Zero violations, which is the state worth timing.** Every leg in the run has a reason behind it,
+so a working family finds nothing — a bench where the check short-circuits on a defect would be
+timing the wrong path, which is the mistake the wire's first bench made.
+
+**The key is a packed pair, not a built string.** TypeScript builds `${party}|${instrument}` and
+hashes it once per leg and once per holding — a million built-and-hashed strings a period, with a
+million `Qty[]` arrays behind them. Law 7 is kept either way: the TERMS are carried, not a running
+total, because the dust is derived from them.
+
+**Three laws as tests:** plant that moved with a leg behind it is not a violation; plant that moved
+with NO leg behind it has nowhere to hide, and the family never repairs it; and a line that is not
+capital is not this family's business — which is DATA handed in, never a branch on a kind inside a
+mechanism (Law 15).
+
+## What it does to the projection
+
+| | at 10.9× (conservative) | at 19.5× (measured in situ) |
+|---|---|---|
+| the ported kernel, measured | 0.18 s | 0.18 s |
+| the modules, ~25.4 s of the period | 2.33 s | 1.30 s |
+| **a period** | **≈ 2.5 s** | **≈ 1.5 s** |
+
+**The headline stays 2.5 s.** One module is not forty-seven, and the mix of arithmetic to
+orchestration differs across them; 19.5× is one measurement and 10.9× is the floor two measurements
+agree on. The projection is revised when more modules land, not before.
+
+**Fifty laws now hold as tests; clippy is clean.**

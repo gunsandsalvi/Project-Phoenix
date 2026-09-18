@@ -29,3 +29,7 @@ path = "src/bin/audit_at_scale.rs"
 [[bin]]
 name = "period-at-scale"
 path = "src/bin/period_at_scale.rs"
+
+[[bin]]
+name = "module-at-scale"
+path = "src/bin/module_at_scale.rs"

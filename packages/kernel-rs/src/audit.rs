@@ -14,6 +14,7 @@
 //! them may read another's total or a mechanism's running one.
 
 use crate::ids::HoldingId;
+use crate::ledger::Settlement;
 use crate::register::Register;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -59,6 +60,16 @@ pub struct Visit<'a> {
     pub period: u32,
 }
 
+/// What a family is given BEFORE the shared walk, for the sources that are not the register: the
+/// wire's own history, and the period. A family that needs to know WHY something moved reads the
+/// legs here — which is its own pass over its own source, and the independence Audit C3 is about.
+pub struct Sources<'a> {
+    pub wire: &'a Settlement,
+    pub register: &'a Register,
+    pub period: u32,
+}
+
+
 /// A contribution to a family. `visit` is called once per holding on the ONE traversal; `finish`
 /// is where a family that needs the whole picture states what it found.
 pub trait Contribution {
@@ -68,6 +79,8 @@ pub trait Contribution {
     fn built(&self) -> bool {
         true
     }
+    /// Before the shared walk: a family's own pass over the sources that are not the register.
+    fn before(&mut self, _from: &Sources<'_>) {}
     fn visit(&mut self, _at: &Visit<'_>) {}
     fn finish(&mut self, _period: u32) -> Vec<Violation> {
         Vec::new()
@@ -89,8 +102,15 @@ impl Audit {
     }
 
     /// Audit C1: every family, every period, off ONE walk of the register.
-    pub fn run(&mut self, register: &Register, period: u32) -> Vec<Report> {
+    pub fn run(&mut self, register: &Register, wire: &Settlement, period: u32) -> Vec<Report> {
+        let from = Sources { wire, register, period };
+        for f in self.families.iter_mut() {
+            if f.built() {
+                f.before(&from);
+            }
+        }
         for row in register.all() {
+
             let at = Visit { row, register, period };
             for f in self.families.iter_mut() {
                 if f.built() {
@@ -270,7 +290,7 @@ mod tests {
         let mut audit = Audit::new();
         audit.add(Box::<LotsAgainstQuantity>::default());
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, 1);
+        let reports = audit.run(&reg, &Settlement::new(), 1);
         assert_eq!(reports.len(), 1, "both contribute to ownership");
         assert_eq!(reports[0].contributors.len(), 2);
         assert!(reports[0].built);
@@ -288,7 +308,7 @@ mod tests {
         let before = reg.quantity(reg.row(p, i));
         let mut audit = Audit::new();
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, 4);
+        let reports = audit.run(&reg, &Settlement::new(), 4);
         assert_eq!(reports[0].violations.len(), 1);
         let v = &reports[0].violations[0];
         assert_eq!(v.size, -8.0);
@@ -312,7 +332,7 @@ mod tests {
         let mut audit = Audit::new();
         audit.add(Box::<LotsAgainstQuantity>::default());
         audit.add(Box::<ATotalCarriesNoLots>::default());
-        let reports = audit.run(&reg, 1);
+        let reports = audit.run(&reg, &Settlement::new(), 1);
         let found: usize = reports.iter().map(|r| r.violations.len()).sum();
         assert_eq!(found, 0, "a money account is not a defect");
     }
@@ -323,7 +343,7 @@ mod tests {
         let reg = Register::new();
         let mut audit = Audit::new();
         audit.add(Box::new(NotBuilt { family: Family::Liveness, contributor: "nobody" }));
-        let reports = audit.run(&reg, 1);
+        let reports = audit.run(&reg, &Settlement::new(), 1);
         assert_eq!(reports[0].family, Family::Liveness);
         assert!(!reports[0].built, "an unbuilt family is not green");
         assert!(reports[0].violations.is_empty());
