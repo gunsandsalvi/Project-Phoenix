@@ -231,9 +231,10 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21b | A pool whose manager died — **done** (section removed; see `docs/RECORD.md`; a pool under nobody's mandate posts nothing and winds up through the machinery it already has, paying its holders pro rata on what it raised and ending when there is nothing left) | after 21a |
 | 21c | A tax on an estate is a claim on it — **done** (section removed; see `docs/RECORD.md`; `Rank::Preferential` is where the law puts the state, `Claims` is the fifth kernel store, and `running::Ranked` pays an estate's claimants in rank order. 21.110's other half stays open) | after 21b |
 | 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
-| 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 21e | There is no registry — four homeless nouns name it | after 21d: the ontology register is what found it |
 | 21f | Three facts the modules keep and the kernel does not | with 21e, and for the same reason |
+| 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
+| 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
@@ -257,7 +258,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 19** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 27** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -269,6 +270,12 @@ had a half that survived the port and is fixed — one `whole_pieces` read where
 wrote `as i64`, and a bank that could not settle its customer's payment now failing under its own name
 with the row on itself. 21.3 is verified absent: every `of_kind` reader checks `alive`, so a dead
 party is asked for no orders.
+
+**And 21.7 through 21.16** (`docs/RECORD.md`, *21.7–21.16*): two more live halves fixed — an exact-zero
+test for *did this mark move* replaced by the dust of the subtraction it came from, in two modules, and
+a party admitted at a bank that issues no money now refused at ENTRY rather than at its first payment.
+Six are verified absent. **21.13's shapes half is the one that grew**: nothing in the engine declares a
+parameter at all, which is item 21g.
 
 
 - [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
@@ -379,15 +386,11 @@ and costs over an arbitrary world, which is what it is for.
 - [ ] 21.73 `control/index.ts` NEVER RUNS. Twenty-four periods of the `opens` rig: `control.tender` 0, `control.failed` 0, `control.acquired` 0, `control.financing` 0 — so §35 and §29 B are a thousand lines nothing has ever exercised in an assembled world, and every test of them is a scale model built by hand. `couldBuy` finds six candidates in period 24 and all six are index ETFs (`etf.us`, `etf.equity.large.us.1`, …): the rig draws no buyout fund at all (`drawPrivateEquity` needs a bank at or above `SPONSOR_SIZE` and the rig's banks are smaller), and a tracker has no view of a company to value one with. Positioned at 23.1, which is where the scale model is resized and is exactly this: a test never names a party, so the draw has to make a buyer (17b.2).
 - [ ] 21.72 `banks/index.ts publishQuotes` STOPS QUOTING EVERY NAME. `opens` rig, quotes per period: 121, 102, 81, 55, 62, 62 … and 0 from period 9 or so to the end of twenty-four, with declines rising the other way (12 at p12, 106 at p24). The reasons the banks give for the declines after period 10: 178× `appetite`, 58× `it cannot cost its own funding`, 61× `nobody lends to a party of this kind`. A world where no bank will quote anybody has no credit market at all, and §29 B2.b (*“the credit market decides which buyouts occur”*) cannot be exercised in it. NOT CHASED (Law 11): appetite is the bank's own room and the room is made of capital, funding and what it already has out, none of which this reading separates. Positioned at 23.3, with Part XII's measurements, where what a bank's room is made of is measured with the level carried (17b.2).
 - [ ] 21.71 `short-term-debt/index.ts BACKSTOP` and `registry/credit.ts FACILITY` are ONE OBJECT under two names (Law 4): a named bank's committed line to a named borrower, at a limit and a rate, whose undrawn headroom consumes the lender's capital and whose drawing is a loan row. The differences are a commitment FEE (the backstop has one, and §18 B4 is right that a line without one is a free option) and an END (the facility lapses, the backstop stands). Both are TERMS, not kinds. Merging them means moving §18's fee onto the kernel's shape and deciding whether an acquisition commitment is charged for, which is §18's economics and not §29's; positioned at 18 with commercial paper's own item (17b.1).
-- [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index).
-- [ ] 21.7 `test/rig.ts:473` and the 21 files that name a party ask the draw (with 23.1).
-- [ ] 21.10 Types: `Register.credit(basisPerUnit)`, `Agreements.owed/paid` (refuse a fraction), `Guarantees.limit/paid`, `Unpaid.amount`, `MarketResult.price` typed.
-- [ ] 21.11 `actions.ts:286` `=== 0`, not a dust band; `settlement.ts apply` `sold` keyed per leg; `precheck` journals `reserve.overdraft` after apply; the kernel enforces create-with-destroy or `instruction.ts`'s claim is deleted.
-- [ ] 21.12 `enter` checks the entrant's bank issues its money.
-- [ ] 21.13 Shapes and floors: `ratings firstBoundary/boundaryStep` get their killer (grade vs default); `firms dealershipShare` a preference or deleted; `derivative-layer/house.ts:1011` √T sizing named a SHAPE with its killer; `capital-programme weather` loss not rounded by `deliverable`; `commission` reads `capital.ordered`; `ratings/assess.ts:1941` no-op floor deleted, the grade clamp as the scale's ends; `derivative-layer/index.ts:548`, `funds/nav.ts:1552` stated as the residual's arithmetic; `spot-fx`, `external`, `research` tolerances → `dustOf`.
-- [ ] 21.14 `prime.ts:801 requirementOn` uses the client's units; `prime.wanted` read this period only; the clearing house `depositClass: 'wholesale'`.
-- [ ] 21.15 `funds/manager.ts:359 launchToMake` records `expects` with the notice mechanism as its killer; `commitment.ts callCapital` calls per deal (after 17b).
-- [ ] 21.16 `environment/state.ts moveOn` documents its variance; `CLIMATE_CELLS` a RESOLUTION param.
+- [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index). **Re-read: the file
+  went with the seeding and the RULE did not.** An index fund tracks an index, and an index is a
+  country's; one tracker for the world is a fund whose mandate names a thing that does not exist.
+  It stays open and it is the seeding's to honour, not this engine's to fix — there is nothing here
+  that draws a tracker.
 - [ ] 21.17 Freight: the storm's loss leg emitted by `sail` or its docstring deleted; `costOf` crew cost = the carrier's wage bill; `legsBetween` computed once at assembly; `load` uses the solver's fills; `Math.ceil/exp/pow` → `core/num`.
 - [ ] 21.18 `fx-derivatives`: read a public event through `lastPublicAbout`, never a view of an arbitrary party.
 - [ ] 21.20 `expectations`: the book of outlooks is keyed by party id and follows no cell event — a cell split off its parent by a hire, a release or a promotion starts with no outlook although its people have the parent's history, and a merge drops the arriving cell's; XI-15 says a cell is one group with one history, so the offspring's book is the parent's at the split and a merge weighs the two by their people (`observation.test.ts` skips the cells born after a statement for this; 12d.1).
@@ -640,6 +643,47 @@ recomputes it every period or does without it.
 
 **Exit.** The three have a home; `Nouns::homeless()` falls by three, and §37 B3 stops being a clause
 whose type exists and whose instances do not.
+
+---
+
+## 21g. The parameter register is switched off
+
+**INSERTED here (Law 10), beside 21e and 21f, found working 21.13.** It is the same defect as
+21d.1b's, one register over: **`params` is built, tested, owned by the kernel — and nothing in the
+engine declares a parameter or reads one.** `grep params.declare src/` over eighty files returns
+nothing.
+
+XI-14 and `CLAUDE.md`: *every behaviour-shaping number declared with kind, unit, owner; placeholders
+name their mechanism; **the engine reads numbers only via `params`***. Instead every one of them is a
+bare struct field a caller passes in:
+
+```
+Perishing { share: 0.01 }          Forming { memory: 0.3 }
+HouseholdBuyers { will_pay: 1.2 }  GoodsSellers { will_take: 1.0 }
+Dealers { around, width, limit }   MoneyMarketBanks { buffer, lends_at, borrows_at }
+Plant { life, upkeep_per_period, capacity_per_period }
+```
+
+**So Law 2's question is asked of none of them.** Is `will_pay: 1.2` a TECHNOLOGY, a PREFERENCE, a
+POLICY, a RESOLUTION or a SHAPE? Nothing says, and nothing can be made to say, because the number
+never passes a register that could ask. `params.shapes()` returns **empty**, which reads as *this
+world has no shapes* and means *nobody declared one* — the register reporting zero for the reason the
+ontology register reported zero, and the reason Law 2's *count of shapes must fall* cannot be measured
+at all.
+
+**It is worse than the ontology gap in one way**: a homeless noun is a thing nobody could store, and
+these are numbers somebody DID store, in the one place the law says not to.
+
+- [ ] 21g.1 **Every declared number in the engine goes through `params`**, with its kind, its unit
+  and its owner. A module states the number it needs and reads it; the assembly declares it.
+- [ ] 21g.2 **`params.shapes()` is printed by `world-runs`**, beside the homeless nouns, because a
+  count that must fall is a count somebody has to see.
+- [ ] 21g.3 **A check that a behaviour-shaping number does not reach a mechanism except through
+  `params`** — `phoenix-check` can see a bare `f64` field on a `Mechanism` or a `Participant`, which
+  is the shape this takes. When a rule is broken eighty times it should be a check.
+
+**Exit.** Law 2's five kinds are answerable for every number the engine acts on, and the count of
+shapes is a number that can fall.
 
 ---
 

@@ -16,7 +16,7 @@
 //! would be inventing demand nobody has (Appendix B: no demand added to clear).
 
 use crate::clearing::{Order, PriceRule, Side};
-use crate::ids::{CurrencyCode, InstrumentId, MarketId};
+use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
 use crate::ledger::{Instruction, Settlement, Settling};
@@ -413,6 +413,33 @@ impl World {
         traded
     }
 
+    /// **Money D2, 21.12: A PARTY IS ADMITTED TO A WORLD, AND ITS BANK HAS TO ISSUE MONEY.**
+    ///
+    /// `Parties::add` cannot ask: it is the one writer of who exists and it has no instruments to
+    /// look at. So a party banked at a bank that issues nothing was admitted silently, held no money
+    /// it could pay with, and **found out at its first payment** — where `across` panics that the
+    /// payment has nowhere to land. 21.12 and `WK13` are the same finding: the throw is in the right
+    /// place for the payment and two hundred periods too late for the party.
+    ///
+    /// A world is where both are known, so this is where it is asked. A party that banks NOWHERE is
+    /// admitted and is not an error: that is what a central bank does, and it issues its own.
+    pub fn admit(
+        &mut self,
+        kind: u32,
+        region: crate::ids::RegionId,
+        bank: PartyId,
+        representation: crate::parties::Representation,
+        weight: u32,
+        key: u32,
+    ) -> PartyId {
+        assert!(
+            !bank.some() || self.instruments.money_issued_by(bank).is_some(),
+            "Money D2: party of kind {kind} banks at {}, which issues no money — it would hold nothing it could pay with",
+            bank.0
+        );
+        self.parties.add(kind, region, bank, representation, weight, key)
+    }
+
     /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side pays
     /// out of its own account (22b.9a).
     pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, rule: PriceRule) {
@@ -659,5 +686,30 @@ mod tests {
         assert!(!named.contains(&"agreements"), "it got a home at 21d");
         assert!(!named.contains(&"claims"), "it got one at 21c");
         assert!(named.contains(&"employment.postings"), "an employer holds it and nothing keeps it");
+    }
+
+    #[test]
+    #[should_panic(expected = "issues no money")]
+    fn a_party_admitted_at_a_bank_that_issues_nothing_is_refused_at_entry() {
+        // Money D2, 21.12: it was admitted silently, held nothing it could pay with, and found out
+        // at its FIRST PAYMENT, where `across` panics that the payment has nowhere to land. The
+        // throw was in the right place for the payment and two hundred periods too late for the
+        // party. `Parties::add` cannot ask — it has no instruments to look at — so a WORLD does.
+        let mut w = World::empty();
+        let not_a_bank = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 1, 0);
+        w.admit(kinds::HOUSEHOLD, crate::ids::RegionId::at(0), not_a_bank, crate::parties::Representation::Named, 1, 0);
+    }
+
+    #[test]
+    fn a_party_that_banks_nowhere_is_admitted_because_that_is_what_a_central_bank_does() {
+        // The absence is not the error: a central bank banks nowhere and issues its own money.
+        let mut w = World::empty();
+        let cb = w.admit(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, crate::parties::Representation::Named, 1, 0);
+        assert!(w.parties.alive(cb));
+
+        // And once it issues one, a party may bank at it.
+        w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
+        let t = w.admit(kinds::TREASURY, crate::ids::RegionId::at(0), cb, crate::parties::Representation::Named, 1, 0);
+        assert!(w.parties.alive(t));
     }
 }

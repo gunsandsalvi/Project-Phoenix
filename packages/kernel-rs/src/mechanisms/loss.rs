@@ -94,8 +94,21 @@ pub struct Seized {
 /// What the loss COMES TO, once the seizure has been sold: what was owed, less what the sale
 /// fetched. **It is arithmetic on two things that happened**, and it cannot be known before the
 /// sale — which is the whole difference between a recovery and a recovery rate.
-pub fn loss_after_recovery(owed: f64, fetched: f64) -> f64 {
-    owed - fetched
+///
+/// **Law 7, 21.11: and the dust belongs HERE**, where the two terms are. A sale that fetched what was
+/// owed, to the last bit of a float, is a claim that came back whole — and `owed - fetched` returning
+/// that last bit made it a LOSS, which `onto_holders` then hands to a named holder by largest
+/// remainder: the whole of the artefact, landing on one party, as a real charge.
+///
+/// `None` is *no loss*, and it is a different answer from a loss of nothing. Downstream this is the
+/// only place that can tell them apart, because by the time the difference is one number the
+/// magnitudes it came from are gone.
+pub fn loss_after_recovery(owed: f64, fetched: f64) -> Option<f64> {
+    let short = owed - fetched;
+    if short.abs() <= crate::num::dust(2, &[owed, fetched]) {
+        return None;
+    }
+    Some(short)
 }
 
 /// XI-1: **the loss lands on named holders in proportion.** Every piece of it has a holder, because
@@ -105,6 +118,9 @@ pub fn loss_after_recovery(owed: f64, fetched: f64) -> f64 {
 /// By largest remainder, so the pieces handed out are exactly the loss. Nothing is rounded away.
 pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let held: f64 = holders.iter().map(|(_, q)| *q).sum();
+    // A loss of nothing is nothing to hand out. Whether the loss is REAL or is the dust of the
+    // subtraction it came from is `loss_after_recovery`'s question, because that is where the two
+    // magnitudes are (Law 7, 21.11); by here they are gone and only the answer is left.
     if held <= 0.0 || loss == 0.0 {
         return Vec::new();
     }
@@ -176,11 +192,11 @@ mod tests {
         };
         assert_eq!(s.units, 1.0);
         // Sold well: the loss is small. Sold into a falling market: it is large. Same claim.
-        assert_eq!(loss_after_recovery(100.0, 90.0), 10.0);
-        assert_eq!(loss_after_recovery(100.0, 30.0), 70.0);
+        assert_eq!(loss_after_recovery(100.0, 90.0), Some(10.0));
+        assert_eq!(loss_after_recovery(100.0, 30.0), Some(70.0));
         // And it can be negative — the sale fetched more than was owed, which is a real outcome and
         // not something to clamp away (Law 6).
-        assert_eq!(loss_after_recovery(100.0, 130.0), -30.0);
+        assert_eq!(loss_after_recovery(100.0, 130.0), Some(-30.0));
     }
 
     #[test]
@@ -194,5 +210,19 @@ mod tests {
         assert!((shares[0].1 - 35.0).abs() <= crate::num::dust(3, &[shares[0].1, 35.0]));
         // Nobody holds it: there is nothing to land on, and inventing a holder would be worse.
         assert!(onto_holders(50.0, &[]).is_empty());
+    }
+
+    #[test]
+    fn a_sale_that_fetched_what_was_owed_is_a_claim_that_came_back_whole() {
+        // Law 7, 21.11: the last bit of a float came back as a LOSS, which `onto_holders` then
+        // hands to a named holder by largest remainder — the whole of the artefact, landing on one
+        // party, as a real charge. The dust belongs where the two magnitudes are.
+        assert!(loss_after_recovery(1_000_000.0, 1_000_000.0 - f64::EPSILON).is_none());
+        // And a loss that is a loss still lands, in full and on the holders.
+        let holders = [(PartyId::at(1), 700.0), (PartyId::at(2), 300.0)];
+        let real = loss_after_recovery(100.0, 30.0).expect("seventy is a loss");
+        let out = onto_holders(real, &holders);
+        let total: f64 = out.iter().map(|(_, l)| *l).sum();
+        assert!((total - 70.0).abs() <= crate::num::dust(2, &[total, 70.0]));
     }
 }

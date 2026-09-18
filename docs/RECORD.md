@@ -19072,3 +19072,78 @@ posts nothing. The rent-on-an-estate's-space family and the capacity line went w
 
 **675 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green; the
 full-scale world unchanged.** Item 21 stands at 19 of 177.
+
+---
+
+## 21.7–21.16 — the rest of the first sixteen, and the register that is switched off
+
+Nine findings re-read in number order. **Two had a half that survived the port**; six are verified
+absent; one grew into an item.
+
+### 21.11 — an exact zero where the dust of a subtraction belongs
+
+*`actions.ts:286` `=== 0`, not a dust band.* It survived, in two modules:
+
+- `derivative_layer::variation` asked `moved == 0.0` of `p.mark - mark_before`, so **a mark that moved
+  by the last bit of a float called for a variation payment** — a real payment between two named
+  parties for an amount that is an artefact of the subtraction.
+- `loss::loss_after_recovery` returned `owed - fetched` whatever it was, and `onto_holders` then
+  handed that last bit to a named holder **by largest remainder, which lands the whole of it on one
+  party** as a real charge.
+
+Both are the same question — *did this number actually move?* — and the answer is the subtraction's
+own dust, `terms × ε × Σ|magnitudes|`. **The dust is put where the two magnitudes are**: at the
+subtraction, not at the result. `loss_after_recovery` returns `Option` now, because by the time the
+difference is one number the terms it came from are gone and nothing downstream can tell a loss from
+an artefact. `onto_holders` keeps its exact-zero guard, which is now correct: it is asked only about
+a loss somebody established.
+
+Its other three halves — `sold` keyed per leg, `precheck` journalling after apply, the
+create-with-destroy claim — went with their files, and no doc here makes that claim.
+
+### 21.12 — an entrant banked wrong found out at its first payment
+
+It survived exactly as written, and `WK13` from the drained file is the same finding. A party banked
+at a bank that issues no money was admitted silently, held nothing it could pay with, and found out
+at its **first payment**, where `across` panics that the payment has nowhere to land. The throw is in
+the right place for the payment and two hundred periods too late for the party.
+
+`Parties::add` cannot ask — it is the one writer of who exists and has no instruments to look at. A
+WORLD has both, so `World::admit` is where it is asked. **A party that banks NOWHERE is admitted and
+is not an error**: that is what a central bank does, and it issues its own.
+
+### Verified absent (21.7, 21.10, 21.14, 21.15, 21.16)
+
+- **21.7** — the rig is deleted and there is no draw; the fixtures here build the parties they name.
+- **21.10** — branded quantity types are a TypeScript device; the ids are newtypes already, and the
+  fraction case is `whole_pieces` (21.1).
+- **21.14** — `requirement` takes bare numbers and there are no units anywhere to get wrong. Its
+  residue is `registry.units`, declared homeless at 21d.1b and owed by **21e**.
+- **21.15** — `private_equity::call` calls for a stated need, which is per deal when the caller calls
+  per deal; there is no manager module to launch a fund.
+- **21.16** — there is no environment module, so `CLIMATE_CELLS` has nothing to be a resolution of.
+
+### 21.6 stays open, and says why
+
+*One tracker per (country, index).* The file went with the seeding and **the rule did not**: an index
+fund tracks an index and an index is a country's, so one tracker for the world is a fund whose mandate
+names a thing that does not exist. It is the seeding's to honour; there is nothing in this engine that
+draws a tracker.
+
+### 21.13 — and the one that grew
+
+Its tolerance half closed with the Law 7 check. Its shapes half — *`ratings firstBoundary` gets its
+killer; `dealershipShare` a preference or deleted; the √T sizing named a SHAPE* — turned out to rest on
+something none of them could stand on. **Nothing in this engine declares a parameter or reads one.**
+`grep params.declare src/` over eighty files returns nothing, and every behaviour-shaping number is a
+bare struct field: `Perishing { share: 0.01 }`, `Forming { memory: 0.3 }`, `HouseholdBuyers { will_pay:
+1.2 }`, `Plant { life, upkeep_per_period, capacity_per_period }`.
+
+So **Law 2's question is asked of none of them** — is `1.2` a technology, a preference, a policy, a
+resolution or a shape? — and `params.shapes()` returns empty, which reads as *this world has no shapes*
+and means *nobody declared one*. It is the ontology register's defect one register over, and worse in
+one way: a homeless noun is a thing nobody could store, and these are numbers somebody DID store, in
+the one place the law says not to. **Item 21g**, inserted beside 21e and 21f.
+
+**679 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 27 of 177, and 21.1 through 21.16 are done.

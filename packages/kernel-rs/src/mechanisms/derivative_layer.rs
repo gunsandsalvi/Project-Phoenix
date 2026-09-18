@@ -249,7 +249,11 @@ pub enum Variation {
 
 pub fn variation(p: &Position, mark_before: f64, payer_can_find: f64) -> Variation {
     let moved = p.mark - mark_before;
-    if moved == 0.0 {
+    // Law 7, 21.11: **whether a mark MOVED is a question about a subtraction**, so the answer is the
+    // subtraction's own dust — two terms over the two magnitudes it was taken between — and not an
+    // exact zero. `==` here called for a variation payment on the last bit of a float, which is a
+    // real payment between two named parties for an amount that is an artefact of the arithmetic.
+    if moved.abs() <= crate::num::dust(2, &[p.mark, mark_before]) {
         return Variation::Nothing;
     }
     let (from, to, amount) = if moved > 0.0 { (p.b, p.a, moved) } else { (p.a, p.b, -moved) };
@@ -520,5 +524,21 @@ mod tests {
     #[should_panic(expected = "margin on nothing")]
     fn margin_on_a_position_with_no_life_left_is_margin_on_nothing() {
         initial_margin(1_000_000.0, 0.01, 0.0);
+    }
+
+    #[test]
+    fn a_mark_that_moved_by_arithmetic_dust_calls_no_variation() {
+        // Law 7, 21.11: `moved == 0.0` called for a variation payment on the last bit of a float —
+        // a real payment between two named parties for an amount that is an artefact of the
+        // subtraction. Whether a mark MOVED is a question about a subtraction, so the answer is the
+        // subtraction's own dust.
+        let big = 1_000_000.0;
+        let p = position(1, 2, big);
+        assert_eq!(variation(&p, big - f64::EPSILON, 1_000_000.0), Variation::Nothing);
+        // And a move that is a move is still paid, in full and in the right direction.
+        match variation(&p, big - 500.0, 1_000_000.0) {
+            Variation::Paid { amount, .. } => assert_eq!(amount, 500.0),
+            other => panic!("a mark that moved 500 pays it: {other:?}"),
+        }
     }
 }
