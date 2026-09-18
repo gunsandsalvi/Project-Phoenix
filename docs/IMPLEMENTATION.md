@@ -192,38 +192,6 @@ market (a protocol per venue, orders that rest, a shop and an exchange), 21j.1a 
 instrument door (`ctx.brings`), 21j.1 the schedules door, and 22d the queue that lets a payer be
 short without dying. Nothing below this is buildable on a world that decides nothing.
 
-- [x] 22i.0 **THE TWO DOORS NOTHING COULD REACH.** Before any row can be converted: a module could
-  not strike a RELATION and could not put a PROCESS in flight. `Agreements::strike` and
-  `Processes::begin` had no caller outside tests, so every system whose whole content is a relation
-  (trade credit, securities lending, CDS, FX forwards, the derivative layer, prime brokerage,
-  insurers, housing's tenancies) could do nothing but count what the assembly drew, and seven systems
-  were wired as a CLOSER for a process nothing opens. **Done**: `module::Agrees`, `module::Opens`,
-  `ctx.agrees / ends / opens / closes`, `Taken.agreed/.ended/.opened/.closed`, applied by
-  `World::run_phase` — struck and opened before the legs (a leg that pays rent performs a tenancy),
-  ended and closed after (the last payment a relation owes is made under it). This is 21j.1a's twin.
-- [x] 22i.1 **A COMPANY PUBLISHES ITS ACCOUNTS** (§48 A1–A5, G2, G6; 21.76). Nothing in this world
-  published any, on any calendar, so a bid could not value a company (§35 `worthAt`) and a covenant
-  had nothing to test — the deeper cause 21.76 names under three other findings. **Done**:
-  `running::Publishes` on the `reporting` row. Being public is read from the register (A1.a: listed
-  and held by outsiders, no kind branch); the year is placed by DATE from the day the company
-  started; the report comes out `reporting.asymmetry` days after the books close, which is the only
-  information asymmetry this world has (A4.a); income is the equity account's MOVEMENT against what
-  the company last published (G2), and a FIRST report has no prior close so it publishes no income
-  at all. Three absences it had to build first: **a party now carries the period it entered**
-  (`Parties::since`/`age` — a split is not a birth, so a child is as old as its parent), **the
-  journal is indexed by kind** (a company asking when it last published walked 323,000 events a
-  period), and **the instruments are indexed by issuer** (asking *are my shares listed* walked
-  16,750 lines per company per period). `reporting.accounts` went home to the journal: what was
-  missing was never a store, it was a mechanism.
-- [x] 22i.2 **A grade is published** (§21 A2–A4, A6; 21.69). **Done**: `running::Grading` on the
-  `ratings` row, which left the census — **29 of 51**. The state is READ and A2.a's forbidden input
-  cannot be supplied (no price, no spread): leverage is what an issuer owes against what it holds,
-  coverage is what it last PUBLISHED against what falls due (22i.1 first), age is `Parties::age`
-  (22i.1 again), the trend is this year's published income against last year's. **A grade went home
-  to `Standing`**, which needed one thing: a standing is now ABOUT somebody. A rating is exactly
-  terms a party stands behind until it withdraws them, and what made it homeless was that there was
-  nowhere to say whom it was about — so two houses hold two rows on one name (A4), a move is a
-  `restates` so what a house said before stays readable (A6), and it is sticky (A3).
 - [ ] 22i.2a **THE TWO HOUSES CANNOT DISAGREE.** §21 A4 says two houses looking at one issuer should
   not always agree, and here they always do: `grade_from` is one function over one state, so every
   assessor reaches the same grade by construction. What is missing is a house's OWN view — its own
@@ -234,14 +202,14 @@ short without dying. Nothing below this is buildable on a world that decides not
   `settle` are built over a slice of estimates nobody keeps — so the consensus is computed from a
   list that exists for one call and the surprise has nothing to settle against (§48 C1, F1).
   Declared as `reporting.estimates`, found by this item's re-read.
-- [ ] 22i.2 **The observer publishes a statistic** (§45 A5): late, and revised. `observer::Statistic`
+- [ ] 22i.5 **The observer publishes a statistic** (§45 A5): late, and revised. `observer::Statistic`
   carries `about_period`, `published_in` and `revised_from` and nothing constructs one. It was left
   out of 21j deliberately: converting a count into a count-with-a-lag is a relabelling unless the lag
   and the revision are the mechanism, and saying so needs §45's surface.
-- [ ] 22i.4 **The census falls below twenty-five.** 21j's exit said that against a baseline of
-  twenty-five, which was a MISCOUNT: it counted the `Reads` rows and not the seven `Closing` rows,
-  which are the same absence the other way up — a closer for a process nothing opens. The true
-  baseline was thirty-three and it is thirty-one.
+- [ ] 22i.9 **THE CENSUS FALLS TO ZERO.** Not below twenty-five, which is what 21j's exit said
+  against a baseline that was a MISCOUNT anyway (it counted the `Reads` rows and not the seven
+  `Closing` rows, which are the same absence the other way up). The exit is that **no wired system
+  only counts**: every one takes a decision and writes something, or it is not a system.
 ---
 
 **Moved here from 21j when it closed.** Each is one system that publishes a count and takes no
