@@ -106,7 +106,7 @@ and neither is yet a MET a run has confirmed.
 | Observer | 16 | 0 | 10 | 0 | 26 |
 | Expectations | 17 | 2 | 8 | 0 | 27 |
 
-### 0.2 What the world actually does (2026-09-18, `npm run check:opening`)
+### 0.2 What the world actually does (2026-09-18)
 
 **The engine this section used to measure no longer exists.** Everything under the old 0.2–0.4 and
 0.7 — the twenty-three stops, the patched rig, the architecture section by section, the 52-period
@@ -114,27 +114,25 @@ run — was measured on the TypeScript engine, which was deleted at 0g.45 after 
 numbers are in `docs/RECORD.md` where they belong: **a measurement of a world that is gone cannot be
 the measured state of the one that is here.** What follows is the world there is.
 
-**The opening is accepted on the first seed value**, on all nine properties plus *the past was
-lived*: 10 of 10 markets traded, 43 of 43 parties with a history to form an outlook from, 13 of 13
-firms through the produce-sell-be-paid cycle, 4 of 4 banks lent and repaid, 4 of 4 declared kinds
-held by somebody who chose to hold them, maturities on 10 days, issues on 8, 20 distinct ages, the
-audit built and silent, nothing younger than the world, **0 moments refused of 4,161 settled** over
-a past of 521 periods. `docs/rejections.log` is empty for the chosen seed and
-`docs/opening.snapshot` regenerates from it exactly.
+**THERE IS NO SEEDING.** It was deleted — 3,403 lines: the draw, the chronicle, the census, the
+snapshot, the rig and `check:opening`. It was being built against a 43-party world and scaled by
+hand, and a seeding that cannot draw the world at its real size is not a seeding. What it proved on
+the way is kept in `docs/RECORD.md` and the two findings it left are placed: the constant saving rate
+at 22c.3a, the production absence at 22.2.
 
-**Three of its four series never settle**, and that is the honest state of the thing: money per
-member, the credit stock and holdings are all still rising the week the world opens, and doubling
-the past does not settle them (22b.8). Only *living parties* settles, at period 0, because nobody
-dies yet. The cause is named at 22c.3a.
+**What the engine does today.** A period runs its phases in the order they were declared, the books
+at the markets moment, and settles what each proposed. `Stepped::ran` counts the phases that actually
+ran — **one**, because `goods::Perishing` is the only system yet carrying a mechanism. The kernel
+period at the counts the engine is judged on is **160.6 ms** (`world_at_scale`: 10,318 parties,
+668,597 holdings, 1,546 books), against the TypeScript engine's 42.1 s — with the caveat the bench
+prints itself, that one module of forty-seven is in it and every party banks at one bank, so the
+interbank leg is not in that number.
 
-**Four warm-up periods the engine runs itself**: 144 asks, **one book cleared**, 35 trades. The
-world sells its opening stock in the first period and has nothing left, because **nothing produces**
-— `recipe` and `goods` are wired as reads. That is 22.2, and it is the largest single thing between
-this and an economy.
-
-**What is built**: 669 tests, clippy clean, `tools/phoenix-check` green over 83 files — the laws as
-checks, which is what replaced the TypeScript oracle (0g.41a). 50 systems wired, one of them
-graduated from a scripted past to a lived one (22b.9).
+**What is built**: 615 tests, clippy clean, `tools/phoenix-check` green over 77 files — the laws as
+checks, which is what replaced the TypeScript oracle (0g.41a). **Fifty systems are LISTED; one of
+them runs.** The seeding was deleted and the second door built in its place, and what that exposed is
+21d: the kernel has seven stores and the modules need the ones that hold an engagement, a loan's
+schedule, a policy, a dwelling, an outlook. Until those exist a mechanism has nothing to read.
 
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
 
@@ -450,6 +448,60 @@ ahead of the creditors the estate exists to pay.
   the estate pays it in its own order like everything else it owes.
 - [ ] 21c.2 Test: an estate assessed a tax shows the state among its claimants at the right rank;
   the ranked payout pays it in that order; the `flows` family reports nothing.
+
+---
+
+## 21d. The kernel has seven stores and the modules need fifteen
+
+**INSERTED here (Law 10), ahead of 22 and of every item that needs a module to RUN.** Found building
+the phase pass: the second door is now hung and the loop runs phases in order, and it turns out that
+is not what was stopping the modules.
+
+**The kernel's stores are `parties`, `instruments`, `register`, `prints`, `journal`, `wire`,
+`params`.** That is all of them. The modules carry their own state types and there is no home for
+any of them — a sample of eight, every one of which needs a store that does not exist:
+
+| system | what it is about | where that lives today |
+|---|---|---|
+| employment | `Engagement`, `Separation`, `Posting` | nowhere |
+| lending | `Loan` with its schedule, `Book` | a `Class::Claim` instrument with no schedule |
+| insurers | `Owed`, `Quote`, `Catastrophe` | nowhere |
+| redeemable | `Subscription`, `Meeting` | nowhere |
+| housing | `Dwelling`, `Mortgage`, `Standard` | nowhere |
+| expectations | `Outlook`, `Surprise` | nowhere |
+| polity | `Platform`, `Constitution`, `Elected` | nowhere |
+| equity | `Line` | nowhere |
+
+So a mechanism for employment has no engagements to read, one for housing has no dwellings, one for
+expectations has no outlooks. **They would each read nothing and propose nothing** — and fifty
+adapters that read nothing is the appearance of a wired engine, which is the defect this item exists
+to avoid rather than to commit at a smaller scale.
+
+**`registry/nouns.ts`'s successor already exists to measure exactly this and is wired to nothing.**
+`src/nouns.rs` declares a store as `noun | working | physics` and counts the HOMELESS — the ones with
+no kernel home — and `World` does not own a `Nouns`, nothing calls `declare`, and the count is
+therefore zero by never having been asked. CLAUDE.md: *its count of homeless nouns is the honest
+measure of how much ontology is missing.* Today that measure is switched off.
+
+- [ ] 21d.1 **`World` owns a `Nouns`, and every store declares itself.** An undeclared store throws
+  at the read (CLAUDE.md), so the count becomes true the moment it is wired. It goes first because it
+  is what says whether the rest of this item is finished.
+- [ ] 21d.2 **The stores, one at a time, each with the item that needs it.** A store is a kernel
+  noun: columnar, one writer, both directions indexed where a reader needs it. The order is the
+  sequencing order of Part XIII, so employment and loans-as-rows come before policies and dwellings.
+- [ ] 21d.3 **A mechanism per system, through the second door**, reading the stores and proposing.
+  `goods::Perishing` is the pattern: the read pass first, then the proposals. `Stepped::ran` counts
+  how many phases actually ran, so a world of declarations cannot report as a world that works.
+- [ ] 21d.4 **A world at the counts the engine is judged on** — `world_at_scale`'s 10,318 parties,
+  16,750 instruments, 1,546 books — with all eleven party kinds present, built from arbitrary
+  numbers and **declared as arbitrary**. It is a scaffold for measuring that the machine runs in
+  full, and the seeding replaces it; it is not a seed and must never be read as one (5 E1).
+- [ ] 21d.5 **The runner**: N periods of that world, timed, with what ran and what it cost. This is
+  where a full-scale period time comes from, and it cannot come from anywhere else.
+
+**Exit.** `Nouns::homeless()` names what is still missing rather than reporting zero; every system in
+`systems::all()` carries a mechanism, a participant or an audit family and none is dead; a period of
+the full-scale world runs every phase and reports its time.
 
 ---
 

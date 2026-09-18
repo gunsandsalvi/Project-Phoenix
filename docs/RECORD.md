@@ -18519,3 +18519,53 @@ been re-read, and `tools/phoenix-check` already forbids a good number of the sec
 **The one thing the file now refuses to claim.** 22b's exit asked for *the census of period 0
 indistinguishable in KIND from the census of period 100*. It is not met, it is not ticked, and the
 two reasons are open items with the evidence printed every run.
+
+---
+
+## The seeding deleted, the second door built, and what that exposed
+
+**What went.** 3,403 lines: `draw.rs`, `chronicle.rs`, `opening.rs`, `snapshot.rs`, `rig.rs`,
+`check_opening.rs`, `docs/opening.snapshot`, `docs/rejections.log` and the `check:opening` scripts.
+The engine and the fifty mechanism modules are untouched. It was being built against a 43-party world
+and scaled by hand, and a seeding that cannot draw the world at its real size is not a seeding.
+
+**What was built in its place.** `MechanismContext` — the second door of ARCHITECTURE 4.9b, which had
+existed only as a word in a doc comment. A mechanism reads the kernel's stores and **proposes**; the
+kernel settles what it proposed once the phase returns, so settlement stays the one writer of the
+register. Proposing rather than writing makes Law 4 true by the type instead of by discipline, and
+the borrow checker enforces the read-pass-then-propose shape that `goods::Perishing` establishes.
+
+**And the thing that made "fifty systems wired" untrue.** `wire_up` collected every phase declaration
+and sealed the order; `World::step` then ignored `self.phases` entirely and ran books only. So 43 of
+the 50 rows — every one declared `reads(...)` — did **literally nothing**, the ordering Law 10 is
+about was validated and then unused, and every ported module was a pure function that only its own
+unit tests called. `step` now runs the phases in order, the books at the markets moment, and the
+phases anchored after it; `Stepped::ran` counts how many actually ran, so a world of declarations
+cannot report as a world that works.
+
+**What that exposed, and it is why this stops here.** The phase pass was not what was stopping the
+modules. **The kernel has seven stores** — parties, instruments, register, prints, journal, wire,
+params — and the modules carry their own state types with no home: `Engagement`, `Loan` with its
+schedule, `Owed`, `Subscription`, `Dwelling`, `Mortgage`, `Outlook`, `Platform`. A mechanism for
+employment has no engagements to read; one for housing has no dwellings; one for expectations has no
+outlooks. **Fifty adapters that read nothing would be the appearance of a wired engine** — the same
+defect, one level down, as the 43-party world that was being called the opening.
+
+`src/nouns.rs` exists to measure exactly this: it declares a store as `noun | working | physics` and
+counts the HOMELESS. **`World` does not own one, nothing calls `declare`, and the count is therefore
+zero by never having been asked.** CLAUDE.md calls that count the honest measure of how much ontology
+is missing. Today it is switched off.
+
+**Positioned as item 21d**, ahead of 22 and of every item that needs a module to run: the ontology
+register wired first (because it is what says whether the rest is finished), then the stores one at a
+time in Part XIII's order, then a mechanism per system, then a world at the counts the engine is
+judged on — **built from arbitrary numbers and declared as arbitrary**, a scaffold for measuring that
+the machine runs in full, which the seeding later replaces and which must never be read as a seed.
+
+**Measured, for the record.** The kernel period at the full counts is **160.6 ms** (10,318 parties,
+668,597 holdings, 1,546 books; sessions 112.7, audit 25.6, narrowing 21.0) against the TypeScript
+engine's 42.1 s. One module of forty-seven is in it and every party banks at one bank, so the
+interbank leg is not in that number. **A full-scale period time for the assembled world cannot be
+measured yet, and 21d.5 is where it comes from.**
+
+**615 tests hold; clippy clean; `phoenix-check` green over 77 files.**
