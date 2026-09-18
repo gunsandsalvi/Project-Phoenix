@@ -414,22 +414,44 @@ same seed, and the TypeScript one is deleted the day it does (0g.45). Two engine
 same question is Law 4's defect at the largest possible scale, and the only reason to hold one for a
 while is that it is the only thing that can say the other is right.
 
-- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** **`packages/kernel-rs` holds `ids`,
-  `register`, `journal`, `calendar`, `prices`, `parties`, `ledger`, `clearing` and `world`, with
-  **31 laws as tests** and clippy clean at zero warnings. Timed at the world's own scale:
+**0g.41 IS DONE.** `packages/kernel-rs` holds `ids`, `register`, `journal`, `calendar`, `prices`,
+`parties`, `ledger`, `clearing`, `world`, `params`, `nouns`, `audit` and `module` — **47 laws as
+tests**, clippy clean at zero warnings. **A whole kernel period runs in 180.9 ms**:
 
-  | | TypeScript, measured | this kernel | |
-  |---|---|---|---|
-  | a record fetched by id | 47.80 ns | 0.77 ns | 62× |
-  | the register's hot read | 67.20 ns | **2.69 ns** | **25×** |
-  | a traversal of 544,104 holdings | 95.70 ms | **0.28–0.89 ms** | **>100×** |
-  | the wire: 48,828 instructions, 470,310 legs | **4,729 ms** | **156.1 ms** | **30.3×** |
-  | the clearing solver | 38 ms | — | **not a cost; ported for its laws** |
+| | | |
+|---|---|---|
+| assembly | 141 ms | 794,743 holdings, 10,318 parties |
+| prints | 0.2 ms | 1,456 books |
+| the wire | **162.3 ms** | 48,828 instructions, 504,096 legs |
+| the journal | 7.0 ms | 178,604 events |
+| the audit | 11.4 ms | one walk, every family, **0 violations** |
+| **the period** | **180.9 ms** | ~200× the kernel's share of the TypeScript period |
 
-  The wire's 30.3× is an upper BOUND: it does the register moves, the equity and gross bumps and
-  the journal event, where the TypeScript one also does contract and voyage legs, assume and
-  release, `validate` and `expand`. Left: `registry` (10,951 lines, the largest single piece),
-  `audit`, and the participant doors.
+**Three run-time guards became structural, which is the argument for the move stated as evidence:**
+a placeholder carries its death in the variant so one without it cannot be built; a
+`ParticipantView` has no door that takes another party's id, so Observer A4 is a fact about the
+type; and a money account is a TOTAL by construction, so Money D2 is not an exemption in a family.
+
+**And running it found two defects that reading it did not** — a module phase anchored after markets
+was being inserted behind revaluation, and the lots family was summing the lots of money accounts
+that have none. Both were caught by a law written as a test rather than as a comment, which is
+0g.43's whole argument, twice.
+
+### The projection, now on two measured numbers instead of a chain of ratios
+
+| | |
+|---|---|
+| the ported kernel, measured end to end | **0.18 s** |
+| the modules: ~25.4 s of the 42.1 s period, at **10.9×** measured at 0g.40 | **2.33 s** |
+| **a period** | **≈ 2.5 s** |
+
+**That is under the 3 s exit.** It is not a chain of per-operation ratios any more: it is one
+measured kernel period plus one measured module ratio.
+
+- [ ] 0g.42 **THE MODULES, ONE SPEC SYSTEM AT A TIME**, in the sequencing order of Part XIII, each
+  gated on the census — `events 178604`, `audit 356268`, the op count — against the TypeScript
+  engine as ORACLE. 67,571 lines over 47 modules. `capital-programme` is already measured at 10.9×
+  and is where the port starts, because its ratio is the one the projection rests on.
  `core calendar registry parties register
   ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
   collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep
