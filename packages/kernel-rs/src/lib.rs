@@ -12,6 +12,7 @@
 //! The laws are not relaxed by the move. What was a TypeScript type or an eslint rule becomes a
 //! type, a `debug_assert` or a checker here, and 0g.43 is the step that says each one's new home.
 
+pub mod clearing;
 pub mod ids;
 pub mod journal;
 pub mod ledger;

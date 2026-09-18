@@ -16462,3 +16462,24 @@ was taxed as nothing. Here a money leg cannot be constructed without saying what
 | the hot read, row in hand | 67.20 ns | **2.69–2.92 ns** (23–25×) |
 | a full traversal of 544,104 holdings | 95.70 ms | **0.28–0.89 ms** (>100×) |
 | lots summed against every row's quantity | — | 3.57 ms, 0 violations |
+
+# 0g.41 (part) — clearing, and a measurement that says not to bother optimising it
+
+The solver is ported and carries seven laws as tests: **a bracket is never a print** (`NoOverlap`
+returns the two levels and a caller that wrote one down would be inventing a price); no demand and
+no supply are told apart; the level is one somebody POSTED at; rationing hands out exactly what
+cleared, by largest remainder, so there is no residual with no holder; a forced seller names no
+price and takes what the book gives (XI-2); **there is no buyer at any price**, which is a panic
+because a bid with no level is a buyer of last resort (Appendix B); and a book that clears a RATE
+may clear a negative one where a book in a thing may not.
+
+**A quantity is an `i64` here, where TypeScript could only say so in a comment.** The solver's own
+note argues at length that a running total equals a re-summed filter *because* a quantity is a whole
+count of pieces and integer addition is exact. That is now a fact about the type. The rationing is
+integer throughout, so no float ever touches a count of pieces.
+
+**And the measurement says the port bought no speed, which is worth writing down.** `clear` is
+**38 ms inclusive of a 54.7 s period — 0.07%.** The 5,453 ms that `runOne` costs is the ASKING, not
+the clearing. Clearing was never a hot spot and 0g.9's sweep-with-running-sums, which replaced an
+O(n²) level scan, was worth 0.4% at the time. The port is for the laws, not the ratio, and claiming
+one here would be quoting a number that does not exist.
