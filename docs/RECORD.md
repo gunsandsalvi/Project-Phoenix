@@ -16483,3 +16483,41 @@ integer throughout, so no float ever touches a count of pieces.
 the clearing. Clearing was never a hot spot and 0g.9's sweep-with-running-sums, which replaced an
 O(n²) level scan, was worth 0.4% at the time. The port is for the laws, not the ratio, and claiming
 one here would be quoting a number that does not exist.
+
+# 0g.41 (part) — the wire timed at the world's scale: 30.3×, and the caveat that makes it a bound
+
+**48,828 instructions carrying 470,310 legs, all settled, over a register of 544,112 holdings.**
+
+| | |
+|---|---|
+| TypeScript `settle`, measured inclusive | **4,729 ms** (8.65% of a period; `apply` 2,658, `precheck` 436) |
+| this wire | **156.1 ms** |
+| ratio | **30.3×**, at **331.8 ns a leg** |
+
+**The first run of this bench said 646× and it was wrong.** 47,283 of the 48,828 instructions were
+REFUSED, because the legs drew random parties against random lines and almost nobody held what was
+being sold — so it timed the pre-check's early return and not settlement. The bench now draws every
+asset leg's seller from the holders index, 48,828 settle and 0 are refused, and the counter that
+caught it is printed on every run so the next reader cannot miss it.
+
+**And the number is an upper bound, for a reason worth stating rather than burying.** This wire does
+the register moves, the equity and gross bumps, and the journal event. The TypeScript one ALSO does
+contract legs, voyage legs, assume and release, provenance checks, `validate` and `expand`. It does
+more, so the gap will close as those land, and 30.3× is the ceiling rather than the answer. The
+synthetic leg mix — half money, half asset, 9.6 legs an instruction plus one 5,489-leg estate
+hand-over — is the world's counts but not its proven mix.
+
+**What the equity bump added, and why it belongs to the comparison:** booking every leg to an
+account cost 123.5 → 156.1 ms, dropping 38.3× to 30.3×. Leaving it out would have been a faster
+number for less work.
+
+**Two more laws became tests.** A payment moves money and makes NOBODY richer — what one account
+loses another gains, so the world's equity is unchanged, and a payment that moved the total would be
+money appearing from nowhere (Law 5). And a sale BOOKS the gain rather than plugging it: the seller
+gives up what the units cost, takes in what it was paid, and the difference is on the account and
+not a residual with no holder (Register D2, Appendix B).
+
+**Twenty-six laws now hold as tests; clippy is clean.** The per-instruction hoist 0g.26 found in
+TypeScript is built in here rather than retrofitted: which money a party reports in, and the rate
+into it, are read once per instruction because an instruction is atomic and neither can change
+between two of its legs.

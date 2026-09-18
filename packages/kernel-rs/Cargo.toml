@@ -17,3 +17,7 @@ panic = "abort"
 [[bin]]
 name = "register-at-scale"
 path = "src/bin/register_at_scale.rs"
+
+[[bin]]
+name = "wire-at-scale"
+path = "src/bin/wire_at_scale.rs"

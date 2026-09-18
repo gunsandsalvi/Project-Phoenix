@@ -151,16 +151,51 @@ impl Settlement {
                 Leg::Create { .. } | Leg::Pledge { .. } => {}
             }
         }
+        // Currency B1, C5, Law 18 (0g.26): WHICH MONEY A PARTY REPORTS IN and WHAT THE RATE IS,
+        // once per instruction. An instruction is atomic, so neither can change between two of its
+        // legs — and the TypeScript wire read both per leg, which is where an estate hand-over's
+        // 5,489 legs cost 231,250 kernel reads.
+        let mut homes: Vec<(u32, u32)> = Vec::new();
+        let mut home_of = |p: PartyId| -> u32 {
+            for &(who, home) in &homes {
+                if who == p.0 {
+                    return home;
+                }
+            }
+            // One region, one money, in this bench: the seam a registry fills in.
+            homes.push((p.0, 0));
+            0
+        };
+        let rate_into = |_home: u32, _ccy: CurrencyCode| -> f64 { 1.0 };
+
         // The application. Nothing here can fail: the pre-check is what made that true.
+
         for leg in ins.legs {
             match *leg {
-                Leg::Money { from, to, instrument, amount, .. } => {
+                Leg::Money { from, to, instrument, amount, ccy, .. } => {
                     reg.money_delta(from, instrument, -amount);
                     reg.money_delta(to, instrument, amount);
+                    // Currency C5: in each party's OWN money, at the rate in force — asked ONCE
+                    // per instruction, not once per leg, which is where 0g.26 found four fifths
+                    // of settlement's 42 reads a leg going.
+                    reg.bump_equity(from, -amount * rate_into(home_of(from), ccy));
+                    reg.bump_equity(to, amount * rate_into(home_of(to), ccy));
                 }
                 Leg::Asset { from, to, instrument, qty, price_per_unit } => {
                     let row = reg.row(from, instrument);
                     let drawn = reg.debit(row, qty);
+                    // Register D2: the seller gives up what the units COST it, and takes in what
+                    // it was paid; the gain is the difference and it is booked, never plugged.
+                    let mut carried = 0.0;
+                    for d in &drawn {
+                        carried += d.qty * d.basis_per_unit;
+                    }
+                    reg.bump_equity(from, -carried);
+                    if let Some(price) = price_per_unit {
+                        reg.bump_equity(to, qty * price);
+                    } else {
+                        reg.bump_equity(to, carried);
+                    }
                     // Register D2: what the units cost goes with them where it is a transfer, and
                     // the price is the basis where a market struck one (C2.a).
                     match price_per_unit {
@@ -176,10 +211,18 @@ impl Settlement {
                 }
                 Leg::Create { party, instrument, qty, cost_per_unit } => {
                     reg.credit(party, instrument, qty, cost_per_unit, period);
+                    reg.bump_equity(party, qty * cost_per_unit);
                 }
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);
-                    reg.debit(row, qty);
+                    let drawn = reg.debit(row, qty);
+                    // Goods E4: what perished cost something, and the loss is an EVENT on the
+                    // account rather than a number that quietly stops existing (XI-1).
+                    let mut carried = 0.0;
+                    for d in &drawn {
+                        carried += d.qty * d.basis_per_unit;
+                    }
+                    reg.bump_equity(party, -carried);
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
                     reg.pledge(holder, instrument, to, qty);
@@ -279,7 +322,56 @@ mod tests {
     }
 
     #[test]
+    fn a_payment_moves_money_and_makes_nobody_richer() {
+        // Law 5: every flow has two sides, so what one account loses another gains and the world's
+        // equity is unchanged. A payment that moved the total would be money appearing from nowhere.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let a = PartyId::at(0);
+        let b = PartyId::at(1);
+        let cash = InstrumentId::at(0);
+        reg.money_delta(a, cash, 500.0);
+        let before = reg.equity(a) + reg.equity(b);
+        let legs = [Leg::Money {
+            from: a,
+            to: b,
+            ccy: CurrencyCode::at(0),
+            instrument: cash,
+            amount: 120.0,
+            receipt: Receipt::Wage,
+        }];
+        s.settle(&Instruction { legs: &legs, cause: Cause::Payment }, 1, &mut reg, &mut j, ok, no);
+        assert_eq!(reg.equity(a), -120.0);
+        assert_eq!(reg.equity(b), 120.0);
+        assert_eq!(reg.equity(a) + reg.equity(b), before);
+        // And what passed THROUGH each account is its own magnitude, for Law 7's dust.
+        assert_eq!(reg.gross(a), 120.0);
+    }
+
+    #[test]
+    fn a_sale_books_the_gain_and_never_plugs_it() {
+        // Register D2: the seller gives up what the units cost it and takes in what it was paid.
+        // The difference is a GAIN and it is on the account, not a residual with no holder.
+        let (mut reg, mut j, mut s, ok, no) = world();
+        let a = PartyId::at(0);
+        let b = PartyId::at(1);
+        let cash = InstrumentId::at(0);
+        let share = InstrumentId::at(1);
+        reg.money_delta(b, cash, 1_000.0);
+        reg.credit(a, share, 10.0, 3.0, 1);
+        let legs = [
+            Leg::Asset { from: a, to: b, instrument: share, qty: 10.0, price_per_unit: Some(5.0) },
+            Leg::Money { from: b, to: a, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
+        ];
+        s.settle(&Instruction { legs: &legs, cause: Cause::Trade }, 1, &mut reg, &mut j, ok, no);
+        // It gave up 30 of book and took in 50: it is 20 better off, and nothing was invented.
+        assert_eq!(reg.equity(a), -30.0 + 50.0);
+        // The buyer paid 50 and holds 50 of stock: unchanged, which is what a purchase is.
+        assert_eq!(reg.equity(b), 50.0 - 50.0);
+    }
+
+    #[test]
     fn a_transfer_carries_the_basis_and_a_trade_does_not() {
+
         let (mut reg, mut j, mut s, ok, no) = world();
         let a = PartyId::at(0);
         let b = PartyId::at(1);

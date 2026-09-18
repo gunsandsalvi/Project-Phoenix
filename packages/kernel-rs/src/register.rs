@@ -60,8 +60,16 @@ pub struct Register {
     by_holder: HashMap<u32, Vec<u32>>,
     by_instrument: HashMap<u32, Vec<u32>>,
 
+    /// Audit B5, 21a: the party's OWN equity account, a total in its own money, moved by the same
+    /// instruction that moves the holding. One door, one writer — the balance sheet is checked
+    /// against it and never derived from it (Law 4).
+    equity: Vec<f64>,
+    /// What passed THROUGH the account, either way, so Law 7's dust has its magnitude.
+    gross: Vec<f64>,
+
     /// 0g.5: the write count a reader keys a kept answer on.
     writes: u64,
+
 }
 
 #[inline]
@@ -77,6 +85,38 @@ impl Register {
     pub fn version(&self) -> u64 {
         self.writes
     }
+
+    /// Audit B5: what this party's equity account says it is worth. A READ of what the wire wrote.
+    #[inline]
+    pub fn equity(&self, party: PartyId) -> f64 {
+        match self.equity.get(party.row()) {
+            Some(&e) => e,
+            None => 0.0,
+        }
+    }
+
+    #[inline]
+    pub fn gross(&self, party: PartyId) -> f64 {
+        match self.gross.get(party.row()) {
+            Some(&g) => g,
+            None => 0.0,
+        }
+    }
+
+    /// Money A2.b, Currency C5: the one door to an equity account, and it takes a TOTAL in the
+    /// party's OWN money — the caller converts at the rate in force before it gets here, because
+    /// two currencies are never added (Law 8).
+    pub fn bump_equity(&mut self, party: PartyId, by: f64) {
+        let row = party.row();
+        if self.equity.len() <= row {
+            self.equity.resize(row + 1, 0.0);
+            self.gross.resize(row + 1, 0.0);
+        }
+        self.equity[row] += by;
+        self.gross[row] += by.abs();
+        self.writes += 1;
+    }
+
 
     pub fn rows(&self) -> usize {
         self.holder.len()
