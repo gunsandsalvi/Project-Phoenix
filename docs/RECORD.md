@@ -17642,3 +17642,32 @@ own caution, which is theirs.
 
 **Fourteen laws as tests. Two hundred and ninety-six now hold; clippy clean; `phoenix-check` green over
 51 files. Twenty-seven of forty-seven modules ported.**
+
+# 0g.42 — trade credit (§36)
+
+`packages/kernel-rs/src/mechanisms/trade_credit.rs`. Twenty-eighth module, and the failure channel
+that runs along the supply network instead of through the banking system.
+
+**One row, read from two ends.** `receivable_of` and `payable_of` answer for their own party and
+`None` for the other; there is no second stored number to drift. **C4's check has no function in this
+module and that is deliberate** — I wrote one, saw that it summed `amount` twice and subtracted, and
+deleted it: a VERIFY that cannot fail is worse than none. The check belongs to the audit over the
+register, where it catches a party whose books carry a figure the row does not, which is the defect
+C4 exists to find.
+
+**The discount is an implicit interest rate and therefore a price** (A3): two per cent for twenty days
+annualises to a large number, and without it no factoring market can exist. `Factored::cost_of_it`
+reads the rate off what a bank actually paid, never a formula off the face.
+
+**Terms that are a formula cannot tighten**, so `offer` takes the seller's own view of THIS buyer and
+returns `None` when it will not carry more — refusing is a decision, and this is a real credit
+tightening with no bank in it (B5). `withdraw` is D4's event: the anticipation of failure starves a
+firm of working capital faster than any lender could, which is how a solvent firm dies of a rumour.
+
+**`along_the_chain` traces the contagion firm to firm** as D3.a requires: firm 2 fails, its supplier
+takes a loss large enough to take it down, and that supplier's own supplier loses in turn. Raise the
+loss a firm survives and the chain stops at the first link — it is a consequence of the sizes, not a
+path anybody drew.
+
+**Eleven laws as tests. Three hundred and seven now hold; clippy clean; `phoenix-check` green over 52
+files. Twenty-eight of forty-seven modules ported.**

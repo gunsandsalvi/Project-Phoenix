@@ -27,5 +27,6 @@ pub mod recipe;
 pub mod redeemable;
 pub mod reporting;
 pub mod second_opinion;
+pub mod trade_credit;
 pub mod securitisation;
 pub mod sovereign;
