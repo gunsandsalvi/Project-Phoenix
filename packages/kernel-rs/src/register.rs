@@ -9,7 +9,7 @@
 //! Law 4: settlement is the ONE writer. The reads are open to anybody; `debit`, `credit` and
 //! `move_money` are reached only through the wire.
 
-use crate::ids::{HoldingId, InstrumentId, PartyId, NONE};
+use crate::ids::{HoldingId, InstrumentId, PartyId};
 use std::collections::HashMap;
 
 /// Register D1: units carry the basis they were acquired at, so a disposal has a gain to book.

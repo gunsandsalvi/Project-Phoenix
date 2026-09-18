@@ -16436,3 +16436,29 @@ nobody is refused at the door. `per_member` is a READ over the total and nothing
 is what stops a cell from keeping two books.
 
 **Thirteen laws now hold as tests in the Rust kernel**, against seven at the last commit.
+
+# 0g.41 (part) — the wire
+
+Settlement, and it is where most of the law is. **XI-5: all legs or none.** Every leg is checked
+before any is applied, so a refusal leaves the world exactly as it was — which is what makes
+delivery-versus-payment TRUE rather than hoped for, and what lets a caller read the reason and do
+something else. `Outcome` is `Settled | ShortOfMoney | Encumbered | ShortOfUnits`: **A-20's "a fail
+is a recorded state and the module has to read it"** becomes a returned value that cannot be
+discarded by accident, where the TypeScript engine had one call site throw the record away and stop
+the world (21.x, the estate transfer).
+
+Four laws are tests: a refused instruction moves nothing at all and still writes its refusal; both
+legs of a trade move in the same pass; encumbered units refuse the WHOLE instruction; and a transfer
+carries the basis where a trade takes the market's price (Register D2, C2.a).
+
+`Receipt` is not optional. *"Absent is unclassified, never income"* is optional-means-unset on the
+tax base and it cost 21.105 — every fund payout ever made reached a household as unclassified and
+was taxed as nothing. Here a money leg cannot be constructed without saying what the money IS.
+
+**Seventeen laws now hold as tests and clippy is clean at zero warnings.**
+
+| | TypeScript, measured | this kernel |
+|---|---|---|
+| the hot read, row in hand | 67.20 ns | **2.69–2.92 ns** (23–25×) |
+| a full traversal of 544,104 holdings | 95.70 ms | **0.28–0.89 ms** (>100×) |
+| lots summed against every row's quantity | — | 3.57 ms, 0 violations |

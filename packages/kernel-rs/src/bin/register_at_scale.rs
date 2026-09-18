@@ -50,7 +50,7 @@ fn main() {
         reg.credit(p, i, ((draw.next() % 1_000_000) as f64) / 100.0, 1.0, 1);
         lots_placed += 1;
         // 657,785 lots over 544,104 holdings is 1.209 each.
-        if lots_placed + 4 < LOTS && draw.next() % 5 == 0 {
+        if lots_placed + 4 < LOTS && draw.next().is_multiple_of(5) {
             reg.credit(p, i, ((draw.next() % 1_000_000) as f64) / 100.0, 2.0, 2);
             lots_placed += 1;
         }
