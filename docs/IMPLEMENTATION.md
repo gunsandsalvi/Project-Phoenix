@@ -162,7 +162,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
 | 22c | **The market as it is** — **done** (section removed; see `docs/RECORD.md`; a protocol per venue behind a dispatch — call, posted, book — orders that rest as a kernel store, a `Day` that carries a civil date, a desired cover and an ask that answers the shelf, a household that spends out of its wealth, and a STOCKIST whose business is to hold the stock. 22c.7 and 22c.8 closed with it; what it revealed is item 22c2) | after 0h (M1) and with 22b; the goods chain cannot live without both 
-| 22c2 | The standing book only grows | immediately after 22c, which is what made it visible |
+| 22c2 | **The standing book only grows** — **done** (section removed; see `docs/RECORD.md`; a venue declares how long an order stands there, the assembled world has the one calendar it needed to place that date against, and a party pulls its own orders. 22c2.1 waits on a seeded world and is positioned at 22g) | immediately after 22c, which is what made it visible |
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
 | 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
@@ -174,32 +174,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 2 — The items
 
-
-
-## 22c2. The standing book only grows
-
-**INSERTED (Law 10) immediately after 22c, which is what MADE it visible.** Orders rest now, and
-`world:runs` prints how many are standing: **16,869 after the first period and 33,069 after the
-fourth.** It rises every period and the books clear less as it does — 5 books in period 1 and 1 by
-period 4.
-
-**That is not the resting book's defect; it is what a market with memory REVEALS about this world.**
-Before 22c nothing rested, so an order that met nobody vanished and the world looked like a place
-where demand was merely thin. Now the unmet orders accumulate and say what they always were: **two
-sides that never overlap.** A seller asking its cost plus a margin and a buyer bidding a multiple of
-a print that never moves are not going to meet, and no amount of waiting in the room fixes that.
-
-- [ ] 22c2.1 **Read WHY they do not overlap**, against a run, once the world is seeded (Law 11: a
-  misbehaving number is not a work item). The bracket is printed per book by `NoOverlap` and nothing
-  reads it yet.
-- [ ] 22c2.2 **An order has a life.** Every order this world enters rests until somebody pulls it,
-  because no venue declares how long one stands (`until: None`). A real book has orders that expire,
-  and the calendar can now say when (22c.0) — what is missing is the venue's own convention.
-- [ ] 22c2.3 **Nobody cancels.** `Resting::cancels` is built and has no caller: a party that has
-  changed its mind has no way to act on it, so the standing book is a ratchet.
-
-**Exit.** The standing book is a stock that falls as well as rises, and a book that does not clear
-says which of the two sides was missing.
 
 ## 22d. The payment queue
 
@@ -261,6 +235,15 @@ because measuring an arbitrary world measures the draw.
 
 **Placed here.**
 
+- [ ] 22c2.1 **Read WHY the two sides do not overlap**, against a run, once the world is seeded
+  (Law 11: a misbehaving number is not a work item). **Positioned here from 22c2**, which closed
+  without it: the standing book no longer only grows — a venue says how long an order stands in it
+  and a party pulls its own — but the books still clear 1 of 1,546 by period 4, and 28,900 orders
+  stand unmet. A seller asking its cost plus a margin and a buyer bidding a multiple of a print that
+  never moves are not going to meet, and no amount of waiting in the room fixes that. **In an
+  ARBITRARY world that is not a finding**, because nothing in it was cleared or decided and the
+  bracket it prints is a bracket between two drawn numbers. The bracket is printed per book by
+  `NoOverlap` and nothing reads it yet; reading it is this item's, against a world that was seeded.
 - [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index). **Re-read: the file
   went with the seeding and the RULE did not.** An index fund tracks an index, and an index is a
   country's; one tracker for the world is a fund whose mandate names a thing that does not exist.

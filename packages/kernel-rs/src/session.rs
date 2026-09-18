@@ -11,8 +11,8 @@
 //! quadratic was the default; here `Participant::markets` is required and `everyone` is the
 //! explicit way to say a book is open to all.
 
-use crate::clearing::{Fill, Order, Outcome as Cleared, PriceRule, Side};
-use crate::protocols::Protocol;
+use crate::clearing::{Fill, Order, Outcome as Cleared, Side};
+use crate::protocols::Venue;
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
@@ -136,6 +136,10 @@ pub struct Stores<'a> {
     /// resting order and the session is what matched it — the same reason settlement writes the
     /// register (Law 4).
     pub resting: &'a mut crate::stores::Resting,
+    /// **G3.a, 22c2.2: the one calendar**, so an order's life is a DATE and never a count of periods
+    /// kept beside it. The assembled world had no calendar at all — it counted periods — which is
+    /// why nothing in it could expire.
+    pub calendar: &'a crate::calendar::Calendar,
 }
 
 pub struct BookDecl {
@@ -148,16 +152,12 @@ pub struct BookDecl {
     /// warm-up were in no book at all. Each side pays out of ITS OWN account, which settlement
     /// resolves from the banking lattice exactly as it resolves the payee's (`ledger::account_of`).
     pub ccy: CurrencyCode,
-    pub rule: PriceRule,
-    /// **3 A1, 22c.1: WHAT KIND OF VENUE THIS IS**, declared by whoever opened it. There was one
+    /// **3 A1, 22c.1: WHAT KIND OF PLACE THIS IS**, declared by whoever opened it — its rule, its
+    /// protocol, what a buyer can see of it and how long an order stands in it. There was one
     /// microstructure — a weekly uniform-price call auction — for bread, labour, loans, shares and
     /// freight alike, and a Walrasian auctioneer for bread is the one intermediary that never
     /// existed (Law 1). The kernel dispatches on this and never on what is being traded (Law 15).
-    pub protocol: Protocol,
-    /// 22c.1: how much of this venue a buyer can see, as a count of sellers. A TECHNOLOGY (Law 2),
-    /// read only by `Posted` — search is costly, and a buyer that saw everything would be a buyer in
-    /// a call auction wearing a shop's clothes.
-    pub seen_by: usize,
+    pub venue: Venue,
 }
 
 /// Run one book: ask, clear, print, settle.
@@ -174,6 +174,40 @@ pub fn run_book(
 ) -> Session {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
+    // **3 C2, 22c2.3: WHAT THE PARTIES PULL, before anybody is asked for a new order.** An order
+    // rested until somebody took it away and nothing ever did, so a seller whose stock had perished
+    // went on standing behind units it had not got. The party decides and the kernel applies it —
+    // `cancels` refuses anybody but the owner, and a book that pulled orders on a party's behalf
+    // would be deciding for it.
+    let mut pulled: Vec<(PartyId, crate::stores::RestingId)> = Vec::new();
+    {
+        let seen = Shown {
+            parties: stores.parties,
+            instruments: stores.instruments,
+            register: stores.register,
+            prints: stores.prints,
+            journal: stores.journal,
+            params: stores.params,
+            agreements: stores.agreements,
+            schedules: stores.schedules,
+            resting: stores.resting,
+        };
+        for (n, p) in participants.iter().enumerate() {
+            for &who in books.who(n, book.market) {
+                if !stores.parties.alive(who) {
+                    continue;
+                }
+                for o in p.pulls(&seen.view(who, period), book.market) {
+                    pulled.push((who, o));
+                }
+            }
+        }
+    }
+    for (who, o) in pulled {
+        stores.resting.cancels(o, who);
+    }
+
+    // And the book the rest of the session reads is the one the pulls left behind.
     let shown = Shown {
         parties: stores.parties,
         instruments: stores.instruments,
@@ -208,7 +242,8 @@ pub fn run_book(
             qty: stores.resting.left(*o),
         })
         .collect();
-    let outcome = crate::protocols::run(book.protocol, &resting, &posted, book.rule, book.seen_by);
+    let outcome =
+        crate::protocols::run(book.venue.protocol, &resting, &posted, book.venue.rule, book.venue.seen_by);
 
     let mut settled = 0usize;
     let mut failed = 0usize;
@@ -300,7 +335,9 @@ pub fn run_book(
     // shelf next week; on an exchange the bid is still in the book. In a CALL it is gone, because a
     // sealed cross is an event and the event is over — which is why a treasury whose auction failed
     // must come back rather than find its bid still standing.
-    if book.protocol.rests() {
+    if book.venue.protocol.rests() {
+        // 22c2.2: the day it stands to, taken from the calendar at the moment it is entered.
+        let until = book.venue.until(stores.calendar, period);
         for o in &posted {
             let filled = took
                 .iter()
@@ -317,9 +354,7 @@ pub fn run_book(
                 o.price,
                 left,
                 period,
-                // It rests until its owner pulls it. An order with a date would need the venue to
-                // say how long it stands, which is a convention this venue has not declared.
-                None,
+                until,
                 book.subject.0,
             );
         }
@@ -365,6 +400,7 @@ fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64, f64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::clearing::PriceRule;
 
     /// A fixture that strikes no relation. A view over it answers "no relations", which is what a
     /// And rests nothing: a fixture for a venue with no memory, which is what every venue was.
@@ -380,6 +416,21 @@ mod tests {
     /// party that owes nothing says.
     fn nothing_due() -> Schedules {
         Schedules::new()
+    }
+
+    /// G3: the one calendar these tests run against — a seven-day period from day zero.
+    fn weekly() -> crate::calendar::Calendar {
+        crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3)
+    }
+
+    /// A sealed cross: nothing rests in it, so it declares no life for an order.
+    fn a_call() -> Venue {
+        Venue {
+            rule: PriceRule::SellersCompete,
+            protocol: crate::protocols::Protocol::Call,
+            seen_by: 1,
+            stands_for: None,
+        }
     }
     use crate::instruments::Class;
     use crate::parties::Representation;
@@ -481,8 +532,9 @@ mod tests {
             agreements: &no_relations(),
             schedules: &nothing_due(),
             resting: &mut nothing_resting(),
+            calendar: &weekly(),
         };
-        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete, protocol: Protocol::Call, seen_by: 1 };
+        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
 
         assert_eq!(s.asks, 2);
@@ -547,8 +599,9 @@ mod tests {
             agreements: &no_relations(),
             schedules: &nothing_due(),
             resting: &mut nothing_resting(),
+            calendar: &weekly(),
         };
-        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete, protocol: Protocol::Call, seen_by: 1 };
+        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), venue: a_call() };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
         assert!(matches!(s.outcome, Cleared::NoOverlap { .. }));
         assert_eq!(s.settled, 0);

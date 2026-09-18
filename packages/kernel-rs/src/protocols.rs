@@ -64,6 +64,35 @@ impl Protocol {
     }
 }
 
+/// **3 A1, 22c2.2: A VENUE, as whoever opened it declared it.** The four facts that are about the
+/// PLACE rather than about what is traded there, carried together because a caller made to name
+/// three is a caller that will one day name two (Law 15: registry data, never a branch).
+#[derive(Clone, Copy, Debug)]
+pub struct Venue {
+    pub rule: PriceRule,
+    pub protocol: Protocol,
+    /// How many sellers one buyer can see. A TECHNOLOGY, read only by `Posted`.
+    pub seen_by: usize,
+    /// **How long an order stands here, in periods.** A CONVENTION of this venue — as much a fact
+    /// about the place as its protocol, and the reason a real book does not only grow.
+    ///
+    /// `Missing` is a venue whose orders stand until somebody pulls them, which is a real kind of
+    /// venue and is said by declaring it rather than by leaving it out (Appendix A). Every order in
+    /// this world rested for ever because no venue said otherwise: 16,869 resting after one period
+    /// and 33,069 after four, with books cleared falling from 5 to 1.
+    pub stands_for: Option<u32>,
+}
+
+impl Venue {
+    /// 3 C2: the last day an order entered in `from` stands here. An order that stands for one
+    /// period stands to the end of that period and is gone when the next one opens — a DATE, taken
+    /// from the calendar, never a count of periods carried on the row (G3.a).
+    pub fn until(&self, cal: &crate::calendar::Calendar, from: u32) -> Option<crate::calendar::Day> {
+        self.stands_for
+            .map(|periods| crate::calendar::Day(cal.start_of(crate::calendar::Period(from + periods)).0 - 1))
+    }
+}
+
 /// How much of a market one buyer can see, as a count of sellers. **A TECHNOLOGY** (Law 2): search
 /// is costly and nobody sees everything, and it is the difference between a shop and an auction.
 ///
@@ -258,6 +287,22 @@ fn side_total(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> i64 
 mod tests {
     use super::*;
     use crate::ids::PartyId;
+
+    #[test]
+    fn how_long_an_order_stands_is_the_venues_convention_and_it_is_a_date() {
+        // 22c2.2, G3.a: a venue that declares a life gives its orders a DAY to stand to, taken from
+        // the one calendar. An order entered in period 1 that stands for one period stands to the
+        // end of period 1 and is gone when period 2 opens.
+        let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
+        let shop = Venue { rule: PriceRule::SellersCompete, protocol: Protocol::Posted, seen_by: 5, stands_for: Some(1) };
+        assert_eq!(shop.until(&cal, 1), Some(crate::calendar::Day(13)));
+        assert_eq!(cal.start_of(crate::calendar::Period(2)), crate::calendar::Day(14));
+
+        // And a venue that declares none has orders that stand until somebody pulls them, which is
+        // an answer and not an omission (Appendix A).
+        let forever = Venue { stands_for: None, ..shop };
+        assert_eq!(forever.until(&cal, 1), None);
+    }
 
     fn buy(who: u32, at: f64, qty: i64) -> Order {
         Order { party: PartyId::at(who), side: Side::Buy, price: Some(at), qty }

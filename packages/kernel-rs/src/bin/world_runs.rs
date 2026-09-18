@@ -20,7 +20,7 @@ use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId}
 use phoenix_kernel::instruments::Class;
 use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
-use phoenix_kernel::protocols::Protocol;
+use phoenix_kernel::protocols::{Protocol, Venue};
 use phoenix_kernel::registry::{Banks, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
@@ -246,14 +246,23 @@ fn main() {
     // A SHARE trades on an exchange: orders rest and are matched as they arrive. Everything else is
     // a call — an auction or a fixing, which is what a sealed cross at one level IS.
     for line in &lines {
-        let (protocol, rule) = match w.instruments.class_of(*line) {
-            Class::Good => (Protocol::Posted, PriceRule::SellersCompete),
-            Class::Share => (Protocol::Book, PriceRule::BuyersCompete),
-            _ => (Protocol::Call, PriceRule::SellersCompete),
+        // **22c2.2: and how long an order stands there**, which is the venue's own convention and
+        // the difference between a book and a ratchet. A shop's ask is good for the week and is
+        // reposted; an exchange's order is good for about a month; a call's orders do not rest at
+        // all, so it declares no life for one.
+        let (protocol, rule, stands_for) = match w.instruments.class_of(*line) {
+            Class::Good => (Protocol::Posted, PriceRule::SellersCompete, Some(1)),
+            Class::Share => (Protocol::Book, PriceRule::BuyersCompete, Some(4)),
+            _ => (Protocol::Call, PriceRule::SellersCompete, None),
         };
         // How much of a shop's market a buyer sees. A TECHNOLOGY: search is costly, and a buyer that
         // saw every seller would be a buyer in a call auction wearing a shop's clothes.
-        w.open_book(book_of(*line), *line, CurrencyCode::at(0), rule, protocol, 5);
+        w.open_book(
+            book_of(*line),
+            *line,
+            CurrencyCode::at(0),
+            Venue { rule, protocol, seen_by: 5, stands_for },
+        );
     }
 
     // §37 A2: how the goods of this world are made. Arbitrary like everything else here, and with

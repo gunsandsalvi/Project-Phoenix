@@ -15,7 +15,7 @@
 //! ratings, the audit families — are reads over what the books produced, and giving them a schedule
 //! would be inventing demand nobody has (Appendix B: no demand added to clear).
 
-use crate::clearing::{Order, PriceRule, Side};
+use crate::clearing::{Order, Side};
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
@@ -28,7 +28,6 @@ use crate::prices::Prints;
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
-use crate::protocols::Protocol;
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
 
@@ -203,6 +202,11 @@ pub struct World {
     /// 3 C2, 22c.2: the standing book — orders that rest between sessions.
     pub resting: crate::stores::Resting,
     pub books: Vec<BookDecl>,
+    /// **G3, 22c2.2: THE ONE CALENDAR.** The assembled world counted periods and had no calendar in
+    /// it at all, so nothing it held could be placed by date — which is why every order in every
+    /// book rested for ever. A periodicity is placed by date (G3.a) and this is where the dates
+    /// come from.
+    pub calendar: crate::calendar::Calendar,
     pub period: u32,
     pub settled_kind: u32,
     pub failed_kind: u32,
@@ -263,6 +267,9 @@ impl World {
             resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
+            // G3: the period is 7 days with 3 settlement cycles in it, and the world opened on
+            // 2000-01-01 (`calendar::Day`'s epoch). A RESOLUTION, tested by invariance.
+            calendar: crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3),
             period: 0,
             settled_kind,
             realised_kind,
@@ -306,6 +313,11 @@ impl World {
             systems.iter().flat_map(|s| s.participants()).collect();
         let mut out = Stepped::default();
         let events_before = self.journal.len();
+
+        // **3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday, before anything reads
+        // a book.** The period opens with the orders that are still good and no others; an order
+        // whose day has passed is not one somebody has to be asked about.
+        self.resting.expire(self.calendar.start_of(crate::calendar::Period(self.period)));
 
         // Law 10: in order, and the markets moment is where the books run. A phase anchored before
         // markets sees the world the last period left; one anchored after sees this period's prints.
@@ -468,8 +480,8 @@ impl World {
         }
         // Clearing B1: a book for it, if it is paper anybody else may bid for. A loan row is the
         // lender's and nobody bids for it, which is an answer rather than a missing book.
-        if let Some((rule, protocol, seen_by)) = what.book {
-            self.open_book(crate::systems::book_of(line), line, what.ccy, rule, protocol, seen_by);
+        if let Some(venue) = what.book {
+            self.open_book(crate::systems::book_of(line), line, what.ccy, venue);
         }
         // 5 D2: and what it owes, by date. A claim with terms and no schedule is a claim nobody can
         // fall behind on.
@@ -632,6 +644,7 @@ impl World {
                 agreements: &self.agreements,
                 schedules: &self.schedules,
                 resting: &mut self.resting,
+                calendar: &self.calendar,
             };
             let session = run_book(
                 book,
@@ -701,7 +714,7 @@ impl World {
 
     /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side pays
     /// out of its own account (22b.9a).
-    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, rule: PriceRule, protocol: Protocol, seen_by: usize) {
+    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, venue: crate::protocols::Venue) {
         // 22b.9a: a book names a CURRENCY and each side pays out of its own account, so there is no
         // cash line to check the class of. What it does have to be is a thing somebody can deliver:
         // a book whose subject is money is a book for swapping a deposit for itself.
@@ -709,7 +722,7 @@ impl World {
             self.instruments.class_of(subject) != Class::Money,
             "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
         );
-        self.books.push(BookDecl { market, subject, ccy, rule, protocol, seen_by });
+        self.books.push(BookDecl { market, subject, ccy, venue });
     }
 }
 
@@ -777,6 +790,7 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::clearing::PriceRule;
     use crate::ids::{PartyId, UnitId};
     use crate::ledger::{Cause, Leg};
     use crate::parties::Representation;
@@ -794,6 +808,25 @@ mod tests {
         let q = Quiet;
         assert!(q.participants().is_empty());
         assert!(q.phases().is_empty());
+    }
+
+    #[test]
+    fn the_period_opens_with_the_orders_that_are_still_good() {
+        // **3 C2, G3.a, 22c2.2: the calendar expires what stood to yesterday.** Every order in this
+        // world rested for ever because the assembled world had no calendar in it to place a date
+        // against — 16,869 resting after one period and 33,069 after four, with books cleared
+        // falling from five to one.
+        let mut w = World::empty();
+        let who = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        // Period 0 is days 0..6, so an order standing to day 6 is good for period 0 and no longer.
+        let week = w.resting.enters(who, 3, false, Some(2.0), 100, 0, Some(crate::calendar::Day(6)), 0);
+        let forever = w.resting.enters(who, 3, false, Some(2.0), 100, 0, None, 0);
+        let q = Quiet;
+        let systems: Vec<&dyn System> = vec![&q];
+        w.wire_up(&systems);
+        w.step(&systems);
+        assert!(!w.resting.live(week), "period 1 opens on day 7 and its day has passed");
+        assert!(w.resting.live(forever), "a venue that declared no life for it did not end it");
     }
 
     #[test]
@@ -1068,7 +1101,7 @@ mod tests {
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
+        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), a_call());
         assert_eq!(w.books.len(), 1);
     }
 
@@ -1080,7 +1113,17 @@ mod tests {
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
+        w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), a_call());
+    }
+
+    /// A sealed cross: nothing rests in it, so it declares no life for an order.
+    fn a_call() -> crate::protocols::Venue {
+        crate::protocols::Venue {
+            rule: PriceRule::SellersCompete,
+            protocol: crate::protocols::Protocol::Call,
+            seen_by: 1,
+            stands_for: None,
+        }
     }
 
     /// A system whose phase mints a little of its own money and pays it away — the smallest thing a

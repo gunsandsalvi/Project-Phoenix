@@ -125,6 +125,7 @@ fn main() {
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
     // And nothing rests in it: a bench measures one session, not a market with a memory.
     let mut bench_resting = phoenix_kernel::stores::Resting::new();
+    let bench_calendar = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let ok = journal.kinds.declare("instruction.settled");
     let no = journal.kinds.declare("instruction.failed");
 
@@ -169,16 +170,21 @@ fn main() {
             agreements: &bench_agreements,
             schedules: &bench_schedules,
             resting: &mut bench_resting,
+            calendar: &bench_calendar,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
-                rule: PriceRule::SellersCompete,
-                // The bench measures the CALL solver, which is what it always measured.
-                protocol: phoenix_kernel::protocols::Protocol::Call,
-                seen_by: 1,
+                // The bench measures the CALL solver, which is what it always measured. Nothing
+                // rests in a sealed cross, so the venue declares no life for an order.
+                venue: phoenix_kernel::protocols::Venue {
+                    rule: PriceRule::SellersCompete,
+                    protocol: phoenix_kernel::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                },
             };
             let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
             asks += s.asks;

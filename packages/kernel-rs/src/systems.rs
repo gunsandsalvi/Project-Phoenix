@@ -69,6 +69,35 @@ impl Participant for GoodsSellers {
         kinds::FIRM
     }
 
+    /// **3 C2, 22c2.3: it pulls what it can no longer deliver.** An ask rests until somebody takes
+    /// it away, and a seller whose stock perished or went somewhere else is standing behind units it
+    /// has not got — a short with no borrow (Appendix B) wearing an ordinary ask's clothes.
+    ///
+    /// It withdraws the oldest first and stops the moment what it is standing behind fits what it
+    /// holds. Law 6: it does not shrink an order to fit, because an order is a thing somebody
+    /// entered and half of one is a different order — it pulls whole ones.
+    fn pulls(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<crate::stores::RestingId> {
+        let (_, standing) = view.resting(m);
+        let have = whole_pieces(view.free(line_of(m)));
+        if standing <= have {
+            return Vec::new();
+        }
+        let mut over = standing - have;
+        let mut pulling = Vec::new();
+        for o in view.standing(m) {
+            if over <= 0 {
+                break;
+            }
+            let left = view.left_of(o);
+            if left <= 0 {
+                continue;
+            }
+            pulling.push(o);
+            over -= left;
+        }
+        pulling
+    }
+
     /// Law 19: off its OWN rows. A firm is in the book for a line because it HOLDS that line — and
     /// not for a line its own plant is about to consume (33 A4.c).
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
@@ -1021,7 +1050,17 @@ mod tests {
         let household = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 500, 0);
         w.register.credit(firm, bread, 400.0, 0.9, 0);
         w.register.money_delta(household, cash, 600.0);
-        w.open_book(book_of(bread), bread, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
+        w.open_book(
+            book_of(bread),
+            bread,
+            CurrencyCode::at(0),
+            crate::protocols::Venue {
+                rule: PriceRule::SellersCompete,
+                protocol: crate::protocols::Protocol::Call,
+                seen_by: 1,
+                stands_for: None,
+            },
+        );
         // **22c.3: a buyer bids against what the book last PRINTED**, because its limit is a multiple
         // of a price and not a price. A household with no print has nothing to bid against, which is
         // missing rather than free (Appendix A) — so a world it can bid in is one that has printed.

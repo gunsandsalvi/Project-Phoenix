@@ -20646,3 +20646,53 @@ declares how long an order stands, and `Resting::cancels` has no caller, so the 
 **726 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 83 files;
 `npm run check` green; `world:runs` four periods, 51 systems, worst period 392 ms, every family clean
 or honestly not-built.**
+
+## 22c2 — the standing book only grows
+
+**What.** Three things, and the third was the reason the other two could not be built before.
+
+**A venue is a thing now** (`protocols::Venue`): its rule, its protocol, how much of it a buyer can
+see, and **how long an order stands in it**. `BookDecl` carried four loose fields and `open_book`
+took six arguments; a caller made to name six is a caller that will one day name five. The four
+facts that are about the PLACE rather than about what is traded there travel together.
+
+**The assembled world has the one calendar.** It had none: `assembly::World` counted periods, and
+`calendar::Calendar` — the one writer of every date in this project — was reachable only from
+`world::Clock`, which the assembled world does not use. That is why nothing in it could expire:
+there was no date to place an expiry against. `World::calendar` is that store, seven days a period
+from day zero, and `session::Stores` hands it to a book so an order's life is a DATE and never a
+count of periods kept beside it (G3.a).
+
+**An order has a life.** `Venue::until` reads the venue's convention through the calendar and gives
+each arriving order the day it stands to; `World::step` opens every period by expiring what stood to
+yesterday, before anything reads a book. A venue that declares no life still has orders that rest
+until somebody pulls them — which is a real kind of venue and is now SAID rather than left out
+(Appendix A). `world-runs` declares the conventions it has: a shop's ask is good for the week, an
+exchange's order for about a month, and a sealed cross rests nothing at all.
+
+**And a party pulls its own** (22c2.3): `Participant::pulls` is asked before anybody is asked for a
+new order, and `GoodsSellers` withdraws whole orders, oldest first, when what it is standing behind
+exceeds what it holds free. `Resting::cancels` was built at 22c.2 and had no caller; it refuses
+anybody but the owner, so a book that pulled orders on a party's behalf would be deciding for it.
+
+**Why.** 22c gave the world a market with memory and `world:runs` printed what that memory held:
+**16,869 orders standing after one period and 33,069 after four**, with books cleared falling from 5
+to 1. A book that only grows is not a book. Every order in it rested for ever because no venue said
+otherwise and nothing ever pulled one — two absences, and the calendar's was underneath both.
+
+**What it found.** The standing book is now a stock that falls as well as rises: **16,869 · 27,937 ·
+28,899 · 28,919** — it settles rather than ratchets, and the last period adds twenty orders where it
+used to add eleven thousand.
+
+**What it did not fix, and where that went.** The books still clear 1 of 1,546 by period 4 and
+28,900 orders stand unmet. That is not the resting book's defect — it is what a market with memory
+REVEALS about an ARBITRARY world, where a seller asking its cost plus a margin and a buyer bidding a
+multiple of a print that never moves were never going to meet. Reading the `NoOverlap` bracket is
+Law 11's measurement and belongs against a world that was seeded: **22c2.1 is positioned at 22g.**
+
+**What it deleted.** `BookDecl.rule`, `.protocol`, `.seen_by` and three of `open_book`'s six
+arguments; the `(PriceRule, Protocol, usize)` tuple in `module::Brings`; the comment in `run_book`
+saying an order rests until its owner pulls it *because this venue has not declared a convention*.
+
+**728 tests, a typecheck; `npm run check` green; `world:runs` four periods, 51 systems, worst period
+356 ms, every family clean or honestly not-built.**

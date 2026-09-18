@@ -249,8 +249,14 @@ impl Mechanism for Funding {
                 matures: Some(matures),
                 units: short,
                 // §30 D2: a treasury auction is a CALL — a sealed cross at one level, which is what
-                // an auction IS (22c.1). The `seen_by` is not read by a call and says so with one.
-                book: Some((crate::clearing::PriceRule::BuyersCompete, crate::protocols::Protocol::Call, 1)),
+                // an auction IS (22c.1). The `seen_by` is not read by a call and says so with one,
+                // and nothing rests in a sealed cross, so it declares no life for an order (22c2.2).
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                }),
                 owing: vec![
                     (matures, short * coupon * years, crate::stores::Owing::Interest),
                     (matures, short, crate::stores::Owing::Principal),

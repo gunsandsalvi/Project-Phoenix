@@ -93,6 +93,23 @@ impl<'a> ParticipantView<'a> {
         (buying, selling)
     }
 
+    /// 3 C2, 22c2.3: **its own orders in one venue, one by one**, so a party that wants to withdraw
+    /// one can name it. The totals above answer *how much am I standing behind*; this answers *which
+    /// of these is it* — and a party cannot name anybody else's, because `of_party` is its own.
+    pub fn standing(&self, venue: MarketId) -> Vec<crate::stores::RestingId> {
+        let Some(all) = self.resting else { return Vec::new() };
+        all.of_party(self.who).into_iter().filter(|o| all.venue_of(*o) == venue.0).collect()
+    }
+
+    /// And what is left of one of them. A caller that has named an order may ask how much of it is
+    /// still standing; it cannot ask that of an order it did not enter, because it could not name it.
+    pub fn left_of(&self, o: crate::stores::RestingId) -> i64 {
+        match self.resting {
+            Some(all) if all.owner(o) == self.who => all.left(o),
+            _ => 0,
+        }
+    }
+
     /// The same view, able to answer what this party has AGREED. It is a second constructor rather
     /// than an eighth argument because most callers have no relations to hand and saying `None`
     /// eight times is how a caller ends up passing the wrong one.
@@ -224,6 +241,20 @@ impl<'a> ParticipantView<'a> {
 /// Clearing B2: a participant's reason to be in a market, evaluated per party with only that
 /// party's own view — a schedule cannot be written against something the party may not see.
 pub trait Participant {
+    /// **3 C2, 22c2.3: WHAT THIS PARTY PULLS.** An order rests until somebody takes it away, and
+    /// `Resting::cancels` had no caller at all — so a party that had changed its mind had no way to
+    /// act on it and the standing book was a ratchet.
+    ///
+    /// It is the PARTY's decision and not the kernel's: `cancels` refuses anybody but the owner, and
+    /// a book that pulled orders on a party's behalf would be deciding for it. The commonest reason
+    /// is the plainest — an ask for units it no longer holds, because they perished or it sold them
+    /// somewhere else — and standing behind those is a short with no borrow (Appendix B).
+    ///
+    /// A participant with nothing to withdraw pulls nothing, which is an answer and not a gap.
+    fn pulls(&self, _view: &ParticipantView<'_>, _m: MarketId) -> Vec<crate::stores::RestingId> {
+        Vec::new()
+    }
+
     /// Which kind of party is asked.
     fn party_kind(&self) -> u32;
 
@@ -328,7 +359,7 @@ pub struct Brings {
     pub units: f64,
     /// Clearing B1: whether a book opens for it, and under which rule. `None` for a line that is not
     /// traded — a loan row is held by the lender that wrote it and is nobody else's to bid for.
-    pub book: Option<(crate::clearing::PriceRule, crate::protocols::Protocol, usize)>,
+    pub book: Option<crate::protocols::Venue>,
     /// 5 D2: **what it owes and when.** A claim with terms and no schedule is a claim nobody can
     /// fall behind on, which is why every maturity in the old world arrived at once.
     pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,
