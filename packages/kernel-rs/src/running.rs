@@ -1643,6 +1643,107 @@ impl Mechanism for Elections {
     }
 }
 
+/// **XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.**
+///
+/// The `loss` row counted how many parties were alive. So nothing in this world ever crossed a
+/// threshold, nothing was ever non-performing, and XI-1 — a sequencing step — had never happened:
+/// there was no borrower, nothing to distribute, nothing to seize and nothing to disagree with.
+///
+/// **The test is applied to ONE borrower, never to a band's average** (XI-15). A cell is one
+/// borrower here: it stands for a population whose members share a key, and applying the test to a
+/// mean would mean a mean-preserving spread caused no defaults at all — exactly backwards, because
+/// widening dispersion at constant mean is what a downturn does.
+///
+/// **The crossing is an EVENT WITH A DATE**, which is what XI-1 calls it, so the journal is where it
+/// lives: what a claim's standing is, is the last crossing said about it. There is no second store
+/// holding a status beside the events that changed it (Law 4).
+///
+/// **Nothing is drawn and there is no probability.** What is compared is what the borrower HAS
+/// against what FELL DUE: it either could pay or it could not.
+pub struct Losses {
+    pub kind: u32,
+    pub at_standing: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Losses {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::register::Standing;
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // What each claim's standing IS: the last crossing said about it. One pass over this kind's
+        // own rows, never a walk of the world's history per claim (Law 19).
+        let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.kind) {
+            let subjects = ctx.journal().subjects_of(row);
+            if let ([borrower, claim], Some(Value::Num(rank))) =
+                (subjects, ctx.journal().says(row, self.at_standing))
+            {
+                let when = ctx.journal().period_of(row);
+                let standing = match rank as i64 {
+                    0 => Standing::Performing,
+                    1 => Standing::NonPerforming { since: when },
+                    2 => Standing::Impaired { since: when },
+                    _ => Standing::WrittenOff { on: when },
+                };
+                was.insert((*borrower, *claim), standing);
+            }
+        }
+
+        // XI-1: what fell due on each borrower, per claim. A claim with nothing due this period is
+        // one nobody could have missed a payment on.
+        let mut fell: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            for &due in ctx.schedules().of_payer(who) {
+                let d = crate::stores::DueId(due);
+                if ctx.schedules().paid(d) || ctx.schedules().due(d) > to || ctx.schedules().due(d) < from {
+                    continue;
+                }
+                *fell.entry((row, ctx.schedules().instrument_of(d).0)).or_insert(0.0) += ctx.schedules().amount(d);
+            }
+        }
+
+        let mut crossings: Vec<(u32, u32, f64)> = Vec::new();
+        for (&(borrower, claim), &owed) in &fell {
+            let who = PartyId(borrower);
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let could_pay = ctx.register().quantity(ctx.register().row(who, money));
+            let standing = *was.get(&(borrower, claim)).unwrap_or(&Standing::Performing);
+            // Law 7: the only tolerance is the dust of the two numbers, never a grace band.
+            let dust = crate::num::dust(2, &[owed, could_pay]);
+            let Some(crossed) = crate::mechanisms::loss::crossed(
+                who,
+                InstrumentId::at(claim),
+                standing,
+                could_pay,
+                owed,
+                ctx.period(),
+                dust,
+            ) else {
+                continue;
+            };
+            let rank = match crossed.now {
+                Standing::Performing => 0.0,
+                Standing::NonPerforming { .. } => 1.0,
+                Standing::Impaired { .. } => 2.0,
+                Standing::WrittenOff { .. } => 3.0,
+            };
+            crossings.push((borrower, claim, rank));
+        }
+
+        for (borrower, claim, rank) in crossings {
+            // D2: **a charge that is VISIBLE**, never a reserve absorbing things quietly. It names
+            // the borrower and the claim, so a holder can find its own.
+            ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

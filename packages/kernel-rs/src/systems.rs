@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Elections, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Elections, Losses, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -901,6 +901,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let at_equity = keys_of(journal, "accounts.equity");
     let at_income = keys_of(journal, "accounts.income");
     let at_shares = keys_of(journal, "accounts.shares");
+    let at_standing = keys_of(journal, "claim.standing");
     let kinds = &mut journal.kinds;
     // 22i.2: the kind the accounts are published under, read back by whatever reads them — the
     // grades do. Named once, here, where the list is (Law 4).
@@ -1084,7 +1085,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // §46: every deciding party forms its own outlook from its own history. They disagree.
         works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
-        works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
+        // **XI-1: and a loss is an EVENT.** It counted how many parties were alive, so nothing in
+        // this world ever crossed a threshold and a sequencing step had never happened.
+        works("loss", AT_REVALUATION, Box::new(Losses {
+            kind: says("claim.crossed"),
+            at_standing,
+            days_per_period: w.days_per_period,
+        })),
         {
             // **XI-2, §21 C1.a: and the workout is OPENED.** It was a closer for a process nothing
             // opened, so a sequencing step had never happened here. What it waited on was a grade,
