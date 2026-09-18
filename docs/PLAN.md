@@ -22,11 +22,11 @@ The plan has two parts:
 
 | item | steps | done | state |
 |---|---|---|---|
+| 22i — The systems that still only count | 26 | 0 | open |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
 | 22g — The seeding | 9 | 0 | open |
 | 22h — The other four cell events have no cause | 4 | 0 | open |
 | 22d2 — The queue is one day wide, and it holds no deliveries | 2 | 0 | open |
-| 22i — The systems that still only count | 26 | 0 | open |
 | 23 — Measure — Part XII | 21 | 0 | open |
 | 24 — The app and the APK | 2 | 0 | open |
 | 25 — A tracker's target moves with the running order of the sessions | 1 | 0 | open |

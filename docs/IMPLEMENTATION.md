@@ -164,10 +164,11 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22c | **The market as it is** — **done** (section removed; see `docs/RECORD.md`; a protocol per venue behind a dispatch — call, posted, book — orders that rest as a kernel store, a `Day` that carries a civil date, a desired cover and an ask that answers the shelf, a household that spends out of its wealth, and a STOCKIST whose business is to hold the stock. 22c.7 and 22c.8 closed with it; what it revealed is item 22c2) | after 0h (M1) and with 22b; the goods chain cannot live without both 
 | 22c2 | **The standing book only grows** — **done** (section removed; see `docs/RECORD.md`; a venue declares how long an order stands there, the assembled world has the one calendar it needed to place that date against, and a party pulls its own orders. 22c2.1 waits on a seeded world and is positioned at 22g) | immediately after 22c, which is what made it visible |
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default — **done** (section removed; see `docs/RECORD.md`; a payment that cannot be made yet WAITS, a receipt retries it, a ring settles together, and what became of the period's short payments is published. 22d.4 and 21.62 closed by re-read into 22i; 22d.1a, 22d.1b and 22d.3a are positioned) | after 22c; it is what stops the world killing parties it has no reason to kill |
-| 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
+| 22i | **The systems that still only count** | **NEXT. The order was backwards and this is the correction.** It said 22i waited on the seeding; a seed populates SYSTEMS, and thirty of fifty-one of them decide nothing and write nothing. There is no world to seed until they work. Everything below is built on it |
+| 22f | The plant wears, and somebody is paid to keep it | after 22i: an upkeep needs a payee that decides, and a landlord, a servicer and a carrier are all counting rows today |
+| 22g | The seeding | after 22i and 22f: a seed draws parties into systems that take decisions, and drawing them into counters is drawing them into nothing |
 | 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
-| 22d2 | The queue is one day wide, and it holds no deliveries | immediately after 22h, which is what leaves it the last kernel absence; it blocks nothing before it |
-| 22i | The systems that still only count | after 22h: what is left needs the market (22c) or a seeded world (22g) |
+| 22d2 | The queue is one day wide, and it holds no deliveries | after 22h, the last kernel absence; it blocks nothing before it |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
 
@@ -176,166 +177,20 @@ goes over the ordinary wire. Item **22g** replaces it.
 ## Part 2 — The items
 
 
-## 22f. The plant wears, and somebody is paid to keep it
-
-**INSERTED (Law 10), after 22d**, because paying the upkeep needs a payee and a queue that can refuse.
-**33 A3 charges depreciation in BOTH places and here it is charged in one**: `charge` lands in the unit
-cost of what the line made, and **nothing reduces the plant's own basis on the register** — `worn` and
-`net` compute the right numbers and no writer applies them, so a vintage never reaches the end of its
-life and 33 A6 has nothing to leave. **And the upkeep is a cost with no payee**: it enters the unit
-cost without any money leaving the firm's account, so its inventory carries a cost that never left it
-and Law 5's check cannot see an instruction nobody wrote.
-
-- [ ] 22f.1 **One schedule, charged in both places.** The period's charge reduces the vintage's basis
-  on the register through an ordinary instruction, so gross, net and accumulated stay reads over the
-  lots and a fully worn vintage leaves.
-- [ ] 22f.2 **Upkeep is paid to somebody**, by name, out of an account, and the payment can fail —
-  which is what makes a firm that cannot keep its plant a firm whose plant stops.
-- [ ] 22f.3 **Until 22f.2, upkeep is out of the unit cost**, because a cost nobody paid is not a cost
-  the stock should carry. Whichever way round these land, they land together: the two are one fact.
-
-**Exit.** Plant wears on the register as well as in the cost, and every number in a batch's cost is a
-number that left somebody's account or reduced somebody's stock.
-
----
-
-## 22g. The seeding
-
-**INSERTED here (Law 10), and it is where six re-read findings have been waiting.** The world
-`world:runs` builds is ARBITRARY and says so: every number in it is drawn from a counter, nothing was
-cleared or decided, and it is not a seed (5 E1). It comes after 22c and 22d because a seeded world
-runs the ordinary period loop and stops wherever the market or the queue is missing, and before 23
-because measuring an arbitrary world measures the draw.
-
-**Placed here.**
-
-- [ ] 22d.3a **No ring has ever been found in the payment queue.** Positioned here from 22d.3: the
-  gridlock pass is built and tested and the arbitrary world has zero cycles among its 4,230 waiting
-  payments, because receipts in it come from sales rather than from the parties a payer owes. What
-  to look at once this world is seeded: a payment graph that is still a tree is a world missing the
-  mutual trade credit that makes rings, and the measure of the pass is worth nothing until then.
-- [ ] 22c2.1 **Read WHY the two sides do not overlap**, against a run, once the world is seeded
-  (Law 11: a misbehaving number is not a work item). **Positioned here from 22c2**, which closed
-  without it: the standing book no longer only grows — a venue says how long an order stands in it
-  and a party pulls its own — but the books still clear 1 of 1,546 by period 4, and 28,900 orders
-  stand unmet. A seller asking its cost plus a margin and a buyer bidding a multiple of a print that
-  never moves are not going to meet, and no amount of waiting in the room fixes that. **In an
-  ARBITRARY world that is not a finding**, because nothing in it was cleared or decided and the
-  bracket it prints is a bracket between two drawn numbers. The bracket is printed per book by
-  `NoOverlap` and nothing reads it yet; reading it is this item's, against a world that was seeded.
-- [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index). **Re-read: the file
-  went with the seeding and the RULE did not.** An index fund tracks an index, and an index is a
-  country's; one tracker for the world is a fund whose mandate names a thing that does not exist.
-  It stays open and it is the seeding's to honour, not this engine's to fix — there is nothing here
-  that draws a tracker.
-- [ ] 21.37 `goods/index.ts unitsOf`, `goods/data.ts`: the dwelling good is subdivided a million ways
-  (`PIECES_PER_UNIT`, the tonne's grid) while a good counted in whole things has no piece below one of
-  itself (Housing A1: indivisible). **Re-read: the per-good grid died with its file and the QUESTION
-  is homeless.** There is no table of units anywhere in the Rust engine — the only grain it knows is
-  `clearing::whole_pieces`, which is one grid for everything — and `registry.units`, *each unit of
-  measure and what it is divided into*, is one of the seven nouns the ontology register reports with
-  no kernel home. A dwelling counted in whole dwellings is that noun's first job. **Positioned at
-  21e**, where the registry is built.
-- [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3). **Re-read: the first is absent, the other two are the seeding's.** No freight session exists to write an empty record for (`freight` is one of 21j's counting rows). The other two are a rule about the DRAW: a good made in one place can have no location basis (Commodities Spot D1, Freight D3). Stays open as 21.6 does, for the seeding to honour.
-- [ ] 21.75 17b.7's change is not covered by a test and cannot be in any world this repository builds: a deal struck in the money the shares are in only differs from one struck in the buyer's where the two moneys differ, and the rig is ONE COUNTRY while `control` has never run in the four-country world (21.73). What the change fixes was visible by reading — every price carried `currencyOf(buyer.region)` whatever the line was, so a foreign seller would have been paid in the wrong money (Law 8) — and it is fixed; what is missing is the world that would show it. Positioned at 23.1 with the scale model's resize, which is where a buyer and a company in two moneys become possible (17b.7). **Re-read: it needs two things and has neither.** A deal struck in the money the shares are in differs from one struck in the buyer's only where the two moneys differ, and `world-runs` opens ONE region — which is 21.134's C16, *a one-country opening cannot be the world the model is judged on*, now the seeding's. And `control` has still never run (21.73). → the **seeding** for the second money, **21j** for the deal.
-- [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
-  **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
-  firms and 108,036 small ones; the world it is a model of has *a few million* SMEs against
-  thousands of named firms, which is a multiple in the hundreds rather than twelve. It is a SHAPE
-  (a claim about the answer) and the count it produces is the one every per-firm cost in this world
-  is paid over — and multiplying it by forty multiplies the run, which is why it is written down
-  here rather than changed on the way past: it is a resizing, and 23.1 is where the scale model and
-  what a test asserts are resized together. Positioned at 23.1 with the owner's figure recorded.
-  **Re-read: the multiple is now ONE, and the finding's own framing is what has to go.**
-  `world-runs` draws its parties round-robin over eight kinds, so this world holds exactly as many
-  small firms as named ones — worse than twelve, and not a defect, because that world is ARBITRARY by
-  declaration and nothing in it was decided. There is no scale model here to resize, so 23.1 is not
-  where this lands. **And the deeper answer is that the multiple must not be declared at all**: how
-  many firms are small is an OUTCOME of the boundary, and XI-15 is explicit that the boundary between
-  the named and the represented *is not a modelling decision but a SIZE, and it moves* — which is
-  22h.2. A seeding that states the ratio states an equilibrium (5 E1, Law 2), so if it states one it
-  is a PLACEHOLDER and 22h.2 is the item that kills it. **Re-positioned with the seeding**, carrying
-  the owner's figure as what the outcome is checked AGAINST and never as what it is set to.
-- [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone and the ROOT is what it got right.** No `sizeOf` makes a CDS order `12.5 × equity` here, and the overflow is now `whole_pieces` throwing with 21.1's citation rather than a bound. What survives: **nothing sizes how much plant a firm ends up with**, and 81,800× the median is what that absence produced. Same shape as 21.98 — a quantity a seed states is one somebody decided (5 E1). **Re-positioned with the seeding.**
-- [ ] 22g.7 **The arbitrary world is built-up past anything a place could be.** Measured at 21i:
-  `world-runs` carries **115,816 km² standing in its fullest region** against a declared doubling area
-  of 60, so a build there draws **1,930×** what the same build draws on empty ground and no structure
-  is ever started. The mechanism is right and the QUANTITIES are the arbitrary world's — the same
-  absence as 21.98 and 21.121, that nothing sizes how much plant a firm ends up with (5 E1: a quantity
-  a seed states is one somebody decided). It is named here rather than answered by moving a declared
-  technology to suit a world that admits it is arbitrary (Law 11).
-
-**Exit.** The world opens from a seed whose every quantity is an outcome of something, and the six
-above are answered by it rather than by anything in the engine.
-
----
-
-## 22h. The other four cell events have no cause
-
-**INSERTED (Law 10) after 22g, by 21h.** The split was built there because it had a caller: an
-engagement carries a headcount, so one covering part of a cell splits it. Entry, death, promotion and
-merge were not, because nothing in this world causes one, and a door written for a caller that does
-not exist is a type nothing constructs. It is after the seeding because the seeding is what draws a
-small firm as a CELL and a household that can form — today every small firm is `Named` and every
-household cell is drawn whole.
-
-- [ ] 22h.1 **Entry and death move a weight**, each with its own cause — a household that forms, a
-  member who dies, with a destination for what they held (Appendix B: no death without one).
-- [ ] 22h.2 **Promotion**: a small-firm cell whose own size crosses the tier becomes a named party,
-  which is what makes the boundary a SIZE and not a decision (A6.c). With it, **21.44**: a size is
-  compared in ONE money. The registry has currencies since 21e and `params` has
-  `Dimension::Amount(Denomination::Money)` since 21g — *an amount of whatever money the party reading
-  it deals in* — so the answer to *is a size boundary a money's or the world's?* is now available: one
-  declaration, read in each firm's own money.
-- [ ] 22h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
-  receiving cell's BY THEIR PEOPLE, because one group has one history. Its cause is a SEPARATION —
-  an engagement ending returns those members to a state a sibling cell already has — so it waits on
-  employment being a relationship that ends.
-- [ ] 22h.4 **A cell per key.** XI-15 allows at most one live cell per key on its kind's lattice and
-  `Parties::add` does not ask: `world-runs` admits 1,286 household cells all on key 0. Measured while
-  building 21h; it is the seeding's to get right and the store's to refuse.
-
-**Exit.** All five events fire, each from a cause a participant has, and the population moves in both
-
----
-directions rather than only fragmenting.
-
-
-## 22d2. The queue is one day wide, and it holds no deliveries
-
-**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
-payments over four periods went through after waiting, each one a default this world was inventing —
-and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
-sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
-them before the census is all that is left.
-
-- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
-  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
-  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
-  tried in" for every payment alike, and means the queue is only ever retried by later instructions
-  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
-  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
-  longer lifetime, which would only hide it.
-- [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
-  (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
-  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
-  second time — so it fails on the spot, as it always did. A real CSD encumbers the securities for as
-  long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
-  released when it settles or gives up.
-
-**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
-
 ## 22i. The systems that still only count
 
-**INSERTED (Law 10) after 22h, by 21j.** `world:runs` prints the census: **thirty-one of fifty wired
-systems publish an honest count of something real and take no decision and write nothing.** That is
-the third register, beside the homeless nouns and the shapes, and like them it must fall.
+**INSERTED (Law 10) by 21j, and MOVED TO THE FRONT.** `world:runs` prints the census: **thirty of
+fifty-one wired systems publish an honest count of something real and take no decision and write
+nothing.** That is the third register, beside the homeless nouns and the shapes, and like them it
+must fall.
 
-It is after 22h because most of what is left needs one of two things 21j could not give it: the
-MARKET as it is (22c) — a bank that quotes, a supply contract that crosses, a note somebody bids for
-— or a world whose quantities are an outcome rather than a draw (22g). 21j built the doors they all
-waited on and converted the four its own findings named; each remaining row belongs to the item that
-needs it, and this is where they queue until one does.
+**It was ordered after 22g and that was backwards.** The reason written here was that what is left
+needs a world whose quantities are an outcome rather than a draw — but a seed draws parties INTO
+systems, and drawing a bank into a row that counts parties alive is drawing it into nothing. There is
+no world to seed until the systems work. The doors these rows waited on are built: 22c gave them the
+market (a protocol per venue, orders that rest, a shop and an exchange), 21j.1a gave them the
+instrument door (`ctx.brings`), 21j.1 the schedules door, and 22d the queue that lets a payer be
+short without dying. Nothing below this is buildable on a world that decides nothing.
 
 - [ ] 22i.1 **A grade is published** (§21 A4, 21.69). `grade_from` and `reassess` are built and the
   row counts parties alive. It needs a `State` per issuer — leverage, coverage, cash, size, AGE and
@@ -455,6 +310,158 @@ whose quantities are seeded rather than arbitrary (22g).
 
 
 ---
+## 22f. The plant wears, and somebody is paid to keep it
+
+**INSERTED (Law 10), after 22i**, because paying the upkeep needs a payee that DECIDES — a landlord,
+a servicer, a carrier — and every one of those is a counting row until 22i. The queue that lets the
+payer be short without dying is 22d's and is built.
+**33 A3 charges depreciation in BOTH places and here it is charged in one**: `charge` lands in the unit
+cost of what the line made, and **nothing reduces the plant's own basis on the register** — `worn` and
+`net` compute the right numbers and no writer applies them, so a vintage never reaches the end of its
+life and 33 A6 has nothing to leave. **And the upkeep is a cost with no payee**: it enters the unit
+cost without any money leaving the firm's account, so its inventory carries a cost that never left it
+and Law 5's check cannot see an instruction nobody wrote.
+
+- [ ] 22f.1 **One schedule, charged in both places.** The period's charge reduces the vintage's basis
+  on the register through an ordinary instruction, so gross, net and accumulated stay reads over the
+  lots and a fully worn vintage leaves.
+- [ ] 22f.2 **Upkeep is paid to somebody**, by name, out of an account, and the payment can fail —
+  which is what makes a firm that cannot keep its plant a firm whose plant stops.
+- [ ] 22f.3 **Until 22f.2, upkeep is out of the unit cost**, because a cost nobody paid is not a cost
+  the stock should carry. Whichever way round these land, they land together: the two are one fact.
+
+**Exit.** Plant wears on the register as well as in the cost, and every number in a batch's cost is a
+number that left somebody's account or reduced somebody's stock.
+
+---
+
+## 22g. The seeding
+
+**INSERTED here (Law 10), and it is where six re-read findings have been waiting.** The world
+`world:runs` builds is ARBITRARY and says so: every number in it is drawn from a counter, nothing was
+cleared or decided, and it is not a seed (5 E1). **It comes after 22i**: a seed draws parties into
+systems, and a world seeded into thirty counters is an arbitrary world with better numbers in it. It
+runs the ordinary period loop and stops wherever a mechanism is missing, and it is before 23 because
+measuring an arbitrary world measures the draw.
+
+**Placed here.**
+
+- [ ] 22d.3a **No ring has ever been found in the payment queue.** Positioned here from 22d.3: the
+  gridlock pass is built and tested and the arbitrary world has zero cycles among its 4,230 waiting
+  payments, because receipts in it come from sales rather than from the parties a payer owes. What
+  to look at once this world is seeded: a payment graph that is still a tree is a world missing the
+  mutual trade credit that makes rings, and the measure of the pass is worth nothing until then.
+- [ ] 22c2.1 **Read WHY the two sides do not overlap**, against a run, once the world is seeded
+  (Law 11: a misbehaving number is not a work item). **Positioned here from 22c2**, which closed
+  without it: the standing book no longer only grows — a venue says how long an order stands in it
+  and a party pulls its own — but the books still clear 1 of 1,546 by period 4, and 28,900 orders
+  stand unmet. A seller asking its cost plus a margin and a buyer bidding a multiple of a print that
+  never moves are not going to meet, and no amount of waiting in the room fixes that. **In an
+  ARBITRARY world that is not a finding**, because nothing in it was cleared or decided and the
+  bracket it prints is a bracket between two drawn numbers. The bracket is printed per book by
+  `NoOverlap` and nothing reads it yet; reading it is this item's, against a world that was seeded.
+- [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index). **Re-read: the file
+  went with the seeding and the RULE did not.** An index fund tracks an index, and an index is a
+  country's; one tracker for the world is a fund whose mandate names a thing that does not exist.
+  It stays open and it is the seeding's to honour, not this engine's to fix — there is nothing here
+  that draws a tracker.
+- [ ] 21.37 `goods/index.ts unitsOf`, `goods/data.ts`: the dwelling good is subdivided a million ways
+  (`PIECES_PER_UNIT`, the tonne's grid) while a good counted in whole things has no piece below one of
+  itself (Housing A1: indivisible). **Re-read: the per-good grid died with its file and the QUESTION
+  is homeless.** There is no table of units anywhere in the Rust engine — the only grain it knows is
+  `clearing::whole_pieces`, which is one grid for everything — and `registry.units`, *each unit of
+  measure and what it is divided into*, is one of the seven nouns the ontology register reports with
+  no kernel home. A dwelling counted in whole dwellings is that noun's first job. **Positioned at
+  21e**, where the registry is built.
+- [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3). **Re-read: the first is absent, the other two are the seeding's.** No freight session exists to write an empty record for (`freight` is one of 21j's counting rows). The other two are a rule about the DRAW: a good made in one place can have no location basis (Commodities Spot D1, Freight D3). Stays open as 21.6 does, for the seeding to honour.
+- [ ] 21.75 17b.7's change is not covered by a test and cannot be in any world this repository builds: a deal struck in the money the shares are in only differs from one struck in the buyer's where the two moneys differ, and the rig is ONE COUNTRY while `control` has never run in the four-country world (21.73). What the change fixes was visible by reading — every price carried `currencyOf(buyer.region)` whatever the line was, so a foreign seller would have been paid in the wrong money (Law 8) — and it is fixed; what is missing is the world that would show it. Positioned at 23.1 with the scale model's resize, which is where a buyer and a company in two moneys become possible (17b.7). **Re-read: it needs two things and has neither.** A deal struck in the money the shares are in differs from one struck in the buyer's only where the two moneys differ, and `world-runs` opens ONE region — which is 21.134's C16, *a one-country opening cannot be the world the model is judged on*, now the seeding's. And `control` has still never run (21.73). → the **seeding** for the second money, **21j** for the deal.
+- [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
+  **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
+  firms and 108,036 small ones; the world it is a model of has *a few million* SMEs against
+  thousands of named firms, which is a multiple in the hundreds rather than twelve. It is a SHAPE
+  (a claim about the answer) and the count it produces is the one every per-firm cost in this world
+  is paid over — and multiplying it by forty multiplies the run, which is why it is written down
+  here rather than changed on the way past: it is a resizing, and 23.1 is where the scale model and
+  what a test asserts are resized together. Positioned at 23.1 with the owner's figure recorded.
+  **Re-read: the multiple is now ONE, and the finding's own framing is what has to go.**
+  `world-runs` draws its parties round-robin over eight kinds, so this world holds exactly as many
+  small firms as named ones — worse than twelve, and not a defect, because that world is ARBITRARY by
+  declaration and nothing in it was decided. There is no scale model here to resize, so 23.1 is not
+  where this lands. **And the deeper answer is that the multiple must not be declared at all**: how
+  many firms are small is an OUTCOME of the boundary, and XI-15 is explicit that the boundary between
+  the named and the represented *is not a modelling decision but a SIZE, and it moves* — which is
+  22h.2. A seeding that states the ratio states an equilibrium (5 E1, Law 2), so if it states one it
+  is a PLACEHOLDER and 22h.2 is the item that kills it. **Re-positioned with the seeding**, carrying
+  the owner's figure as what the outcome is checked AGAINST and never as what it is set to.
+- [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone and the ROOT is what it got right.** No `sizeOf` makes a CDS order `12.5 × equity` here, and the overflow is now `whole_pieces` throwing with 21.1's citation rather than a bound. What survives: **nothing sizes how much plant a firm ends up with**, and 81,800× the median is what that absence produced. Same shape as 21.98 — a quantity a seed states is one somebody decided (5 E1). **Re-positioned with the seeding.**
+- [ ] 22g.7 **The arbitrary world is built-up past anything a place could be.** Measured at 21i:
+  `world-runs` carries **115,816 km² standing in its fullest region** against a declared doubling area
+  of 60, so a build there draws **1,930×** what the same build draws on empty ground and no structure
+  is ever started. The mechanism is right and the QUANTITIES are the arbitrary world's — the same
+  absence as 21.98 and 21.121, that nothing sizes how much plant a firm ends up with (5 E1: a quantity
+  a seed states is one somebody decided). It is named here rather than answered by moving a declared
+  technology to suit a world that admits it is arbitrary (Law 11).
+
+**Exit.** The world opens from a seed whose every quantity is an outcome of something, and the six
+above are answered by it rather than by anything in the engine.
+
+---
+
+## 22h. The other four cell events have no cause
+
+**INSERTED (Law 10) after 22g, by 21h.** The split was built there because it had a caller: an
+engagement carries a headcount, so one covering part of a cell splits it. Entry, death, promotion and
+merge were not, because nothing in this world causes one, and a door written for a caller that does
+not exist is a type nothing constructs. It is after the seeding because the seeding is what draws a
+small firm as a CELL and a household that can form — today every small firm is `Named` and every
+household cell is drawn whole.
+
+- [ ] 22h.1 **Entry and death move a weight**, each with its own cause — a household that forms, a
+  member who dies, with a destination for what they held (Appendix B: no death without one).
+- [ ] 22h.2 **Promotion**: a small-firm cell whose own size crosses the tier becomes a named party,
+  which is what makes the boundary a SIZE and not a decision (A6.c). With it, **21.44**: a size is
+  compared in ONE money. The registry has currencies since 21e and `params` has
+  `Dimension::Amount(Denomination::Money)` since 21g — *an amount of whatever money the party reading
+  it deals in* — so the answer to *is a size boundary a money's or the world's?* is now available: one
+  declaration, read in each firm's own money.
+- [ ] 22h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
+  receiving cell's BY THEIR PEOPLE, because one group has one history. Its cause is a SEPARATION —
+  an engagement ending returns those members to a state a sibling cell already has — so it waits on
+  employment being a relationship that ends.
+- [ ] 22h.4 **A cell per key.** XI-15 allows at most one live cell per key on its kind's lattice and
+  `Parties::add` does not ask: `world-runs` admits 1,286 household cells all on key 0. Measured while
+  building 21h; it is the seeding's to get right and the store's to refuse.
+
+**Exit.** All five events fire, each from a cause a participant has, and the population moves in both
+
+---
+directions rather than only fragmenting.
+
+
+## 22d2. The queue is one day wide, and it holds no deliveries
+
+**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
+payments over four periods went through after waiting, each one a default this world was inventing —
+and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
+sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
+them before the census is all that is left.
+
+- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
+  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
+  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
+  tried in" for every payment alike, and means the queue is only ever retried by later instructions
+  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
+  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
+  longer lifetime, which would only hide it.
+- [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
+  (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
+  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
+  second time — so it fails on the spot, as it always did. A real CSD encumbers the securities for as
+  long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
+  released when it settles or gives up.
+
+**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
+
 ## 23. Measure — Part XII
 
 - [ ] 23.1 Resize the scale model as one bounded change (with 21.7): a test never names a party.
