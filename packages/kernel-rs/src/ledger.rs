@@ -492,6 +492,22 @@ impl Queue {
         Day(self.late_after[q.row()])
     }
 
+    /// **§36 C1, 22i.6: A SELLER AGREED TO WAIT.** The payment is not made and is not an arrear —
+    /// its day moves out, and it goes on waiting.
+    ///
+    /// **It is the SAME debt.** The terms are struck beside it as a relation (`agreed::TRADE_CREDIT`)
+    /// and the money owed stays here, because the alternative is one debt in two places: an invoice
+    /// the buyer owes and a payment the buyer owes, both real, neither aware of the other (Law 4).
+    /// What trade credit changes is WHEN, and this is the when.
+    pub fn given_time(&mut self, q: QueueId, until: Day) {
+        assert!(self.state[q.row()] == Waiting::Queued, "36 C1: only a waiting payment is given time");
+        assert!(
+            until.0 > self.late_after[q.row()],
+            "36 C1: terms that end sooner than the payment's own day are not time given"
+        );
+        self.late_after[q.row()] = until.0;
+    }
+
     /// It went through on a retry. The row stays readable — how long a payment waited before it was
     /// made is the measurement 22d.3 is about, and a row deleted is a measurement nobody can take.
     pub fn took(&mut self, q: QueueId, on: Day) {

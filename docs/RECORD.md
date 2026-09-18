@@ -20927,3 +20927,27 @@ instrument. The tenor is a decision about a NEED and the need is the borrower's 
 treasury keeps §30's own row and issues for nobody else.
 
 **736 tests; `npm run check` green; clippy clean.**
+
+## 22i.6 — a seller that has delivered and not been paid offers terms
+
+Census **24 → 23**. `trade_credit` counted live agreements and wrote none, so no invoice existed in
+this world at all — the tier §42 A4 calls *the tier that lives on it* used nothing, because there was
+nothing to use.
+
+**The trigger is 22d's queue.** A payment that is short is sitting in it with a day it is late on;
+the seller can wait, and a seller that waits has made a loan. That is what trade credit IS (§36 C1:
+the goods move at one time and the money at another), and it is a DECISION the seller takes per buyer
+on that buyer's condition (B5) — a refusal is an outcome, and the buyer's payment then runs out of
+days as an arrear like any other. The seller's limits are its own: how much it will have out to one
+name at once, and how long it will wait.
+
+**The terms move the payment's DAY; they do not replace the debt.** Striking an invoice and dropping
+the queued payment would put one debt in two places — an invoice the buyer owes and a payment the
+buyer owes, both real, neither aware of the other (Law 4). What trade credit changes is WHEN, so the
+relation records the terms and the money owed stays where it was. This was caught and fixed before it
+shipped; the first version dropped the row.
+
+**What it did to the world.** Arrears in period 2 went from 1,576 to none: every one of them was a
+payment a seller was willing to wait for.
+
+**736 tests; `npm run check` green; clippy clean.**

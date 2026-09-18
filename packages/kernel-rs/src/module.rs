@@ -354,6 +354,7 @@ pub struct MechanismContext<'a> {
     ended: Vec<crate::stores::AgreementId>,
     opened: Vec<Opens>,
     closed: Vec<crate::stores::ProcessId>,
+    on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Day)>,
 }
 
 /// **21j.1a, 21.139: A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.**
@@ -505,6 +506,7 @@ impl<'a> MechanismContext<'a> {
             ended: Vec::new(),
             opened: Vec::new(),
             closed: Vec::new(),
+            on_terms: Vec::new(),
         }
     }
 
@@ -687,6 +689,13 @@ impl<'a> MechanismContext<'a> {
         self.closed.push(p);
     }
 
+    /// **§36 C1, 22i.6: the seller agreed to WAIT**, and the payment it was waiting on becomes terms.
+    /// It did not settle and nobody failed — which is why the queue has a state for it rather than
+    /// the module quietly dropping the row.
+    pub fn waits_for(&mut self, q: crate::ledger::QueueId, until: crate::calendar::Day) {
+        self.on_terms.push((q, until));
+    }
+
     /// **XI-15, Labour A4.c: an event that applies to SOME of a cell splits it**, and the relationship
     /// that applies to them goes with them. A module names the members and the relation; the kernel
     /// makes the cell, moves their exact share of what the parent holds, carries their outlook, and
@@ -717,6 +726,7 @@ impl<'a> MechanismContext<'a> {
             ended: self.ended,
             opened: self.opened,
             closed: self.closed,
+            on_terms: self.on_terms,
             split: self.split,
             issued: self.issued,
         }
@@ -758,6 +768,9 @@ pub struct Taken {
     /// XI-3, 22i.0: processes opened, and processes finished. `Processes` is the one writer.
     pub opened: Vec<Opens>,
     pub closed: Vec<crate::stores::ProcessId>,
+    /// §36 C1, 22i.6: queued payments a seller agreed to wait for, replaced by terms. Settlement is
+    /// the one writer of the queue, so a module asks.
+    pub on_terms: Vec<(crate::ledger::QueueId, crate::calendar::Day)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

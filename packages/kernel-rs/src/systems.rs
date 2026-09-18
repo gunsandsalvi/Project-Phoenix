@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Elections, Losses, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Elections, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -812,6 +812,13 @@ pub fn declare(p: &mut Params) {
         "the coupon commercial paper carries as a TERM, fixed for its life");
     say("firm.buffer", 10.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
         "the cash a borrower that is not the state keeps back beyond what falls due");
+    // §36 B5: **the seller's own limits**, which is what makes terms a decision rather than a rule.
+    // A PREFERENCE: it is what this seller will do, not what the world requires — and terms that are
+    // a formula cannot tighten, which is the whole of D4.
+    say("trade_credit.will_carry", 500.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "how much a seller will have out to one buyer at once before it stops offering terms");
+    say("trade_credit.will_wait", 30.0, "days", Dimension::Days, Kind::Preference, Owner::Model,
+        "how long a seller will wait to be paid");
     say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
         "how many seats the parliament of a country has");
     say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
@@ -945,7 +952,14 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // — and it is the missing intermediary of Law 1.
         posts("stockists", AT_MARKETS, Box::new(Stockist { lines: w.basket(), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
         works("housing", AT_MARKETS, Box::new(Closing { kind: afoot::FORECLOSURE, says: says("housing.foreclosed") })),
-        works("trade_credit", AT_MARKETS, Box::new(Reads { kind: says("trade_credit.out"), what: Counts::AgreementsLive })),
+        // **§36 B5, C1: and a seller that has delivered and not been paid OFFERS TERMS.** It counted
+        // live agreements and wrote none, so no invoice existed in this world at all.
+        works("trade_credit", AT_REVALUATION, Box::new(TradeCredit {
+            kind: says("invoice.struck"),
+            will_carry: "trade_credit.will_carry",
+            will_wait: "trade_credit.will_wait",
+            days_per_period: w.days_per_period,
+        })),
         works("small_business", AT_MARKETS, Box::new(Reads { kind: says("small_business.credit"), what: Counts::CreditOutstanding })),
         // ── Money, the banks and the sovereign ──────────────────────────────────────────────────
         {

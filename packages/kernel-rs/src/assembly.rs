@@ -660,6 +660,11 @@ impl World {
         for p in asked.closed {
             self.processes.finish(p);
         }
+        // §36 C1, 22i.6: and the payments a seller agreed to wait for. After the legs, because the
+        // terms are struck above and this is what stops the same amount being owed twice.
+        for (q, until) in asked.on_terms {
+            self.wire.queue.given_time(q, until);
+        }
         // XI-3: and whose life ended. `Parties` is the one writer of who is alive; a module asks.
         for who in asked.ceased {
             self.parties.cease(who);

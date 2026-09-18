@@ -1744,6 +1744,114 @@ impl Mechanism for Losses {
     }
 }
 
+/// **§36 B5, C1, C1.a, 22i.6: A SELLER THAT HAS DELIVERED AND NOT BEEN PAID OFFERS TERMS.**
+///
+/// `trade_credit` counted live agreements and wrote none, so no invoice existed in this world at
+/// all — the tier §42 A4 calls *the tier that lives on it* used nothing, because there was nothing
+/// to use.
+///
+/// **The trigger is 22d's queue.** A payment that is short is sitting in it with a day it is late
+/// on; the seller can wait, and a seller that waits has made a loan. That is what trade credit IS
+/// (C1: the goods move at one time and the money at another), and it is a DECISION the seller takes
+/// per buyer on that buyer's condition (B5) — a refusal is an outcome, and the buyer's payment then
+/// runs out of days as an arrear like any other.
+///
+/// **The seller's limit is its own** (B5): how much it will have out to one name at once, and how
+/// long it will wait. Terms that are a formula cannot tighten, which is what D4 is about — the
+/// anticipation of failure making suppliers withdraw terms and starving a firm of working capital
+/// faster than any lender could.
+pub struct TradeCredit {
+    pub kind: u32,
+    /// B5: how much a seller will have out to ONE buyer at once. A PREFERENCE — its own limit.
+    pub will_carry: &'static str,
+    /// B5: and how long it will wait. Its own, and it shortens when the seller is worried.
+    pub will_wait: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for TradeCredit {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let will_carry = ctx.params().amount(self.will_carry, crate::params::Denomination::Money);
+        let will_wait = ctx.params().days(self.will_wait) as i64;
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // C1.a: what each seller already has out to each buyer, read off the relations it holds.
+        let mut out: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::TRADE_CREDIT {
+                continue;
+            }
+            let (seller, buyer) = ctx.agreements().between(a);
+            if let Some(&amount) = ctx.agreements().terms(a).first() {
+                *out.entry((seller.0, buyer.0)).or_insert(0.0) += amount;
+            }
+        }
+
+        // The payments that are short, and who was to be paid by them.
+        let mut offering: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64)> = Vec::new();
+        for row in 0..ctx.wire().queue.len() as u32 {
+            let q = crate::ledger::QueueId(row);
+            if ctx.wire().queue.state_of(q) != crate::ledger::Waiting::Queued {
+                continue;
+            }
+            let buyer = ctx.wire().queue.payer_of(q);
+            let mut owed: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+            for leg in ctx.wire().queue.legs_of(q) {
+                if let crate::ledger::Leg::Money { from, to, amount, .. } = *leg {
+                    if from != to {
+                        *owed.entry(to.0).or_insert(0.0) += amount;
+                    }
+                }
+            }
+            for (seller, amount) in owed {
+                let seller = PartyId(seller);
+                if !ctx.parties().alive(seller) || !ctx.parties().alive(buyer) {
+                    continue;
+                }
+                offering.push((q, seller, buyer, amount));
+            }
+        }
+
+        let mut struck: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64, Day)> = Vec::new();
+        for (q, seller, buyer, amount) in offering {
+            let already = *out.get(&(seller.0, buyer.0)).unwrap_or(&0.0);
+            let view = crate::mechanisms::trade_credit::View {
+                of: buyer,
+                will_carry,
+                will_wait_days: will_wait,
+            };
+            // B5: **`None` is a REFUSAL, and a refusal is a decision.** The buyer's payment then
+            // runs out of days as an arrear, which is what a seller that will not wait means.
+            let Some(terms) =
+                crate::mechanisms::trade_credit::offer(seller, buyer, amount, today, &view, already)
+            else {
+                continue;
+            };
+            *out.entry((seller.0, buyer.0)).or_insert(0.0) += amount;
+            struck.push((q, seller, buyer, terms.amount, terms.due));
+        }
+
+        for (q, seller, buyer, amount, due) in struck {
+            // C1: the terms are the relation — what is owed and when. The DUE DATE is what makes the
+            // goods and the money two different moments (E1: a sale that settles instantly by
+            // construction deletes all of this). **The money owed stays in the queue**: the invoice
+            // and the payment would otherwise be one debt in two places (Law 4), so what the terms
+            // change is WHEN, and the seller's waiting is the payment's day moving out.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::TRADE_CREDIT,
+                one: seller,
+                other: buyer,
+                terms: vec![amount, due.0 as f64],
+                until: Some(due),
+            });
+            // And the payment goes on waiting, to the day the terms say.
+            ctx.waits_for(q, due);
+            ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(amount))], true);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
