@@ -18478,3 +18478,44 @@ is a finding rather than a regression (Law 13): the earlier four came from three
 demand being locked out, which is not a market working.
 
 **Six hundred and sixty-nine tests hold; clippy clean; `phoenix-check` green over 83 files.**
+
+---
+
+## The plan file, cleaned (no item — a document repair)
+
+**What it was.** 1,535 lines, 430 open steps, 17 ticked, and its own header saying *NOTHING DONE IS
+IN THIS FILE* while 0g, 22a and 22b sat in it with their work finished. Part 0 was headed **The
+measured state** and every number in it measured `packages/engine`, which was deleted at 0g.45.
+Section 25 sat after Part 4, past the end of the plan. Two items owned the app.
+
+**What it is.** 1,195 lines, 123 steps across 9 items.
+
+- **Sections deleted because they closed**: 0g (26 steps; its one live step, the app, moved to 24.2
+  where the app belongs — 0g is a performance item and two items for one thing is Law 4 in the plan
+  itself), 22a, 22b. Their outcomes are here in the record, and Part 1's order table carries one row
+  each saying so.
+- **Part 0 now measures the world that exists**: the opening accepted on the first seed value,
+  4,161 moments of its past settled with none refused, three of four series still trending, four
+  warm-up periods with one book cleared, 669 tests and the laws as checks. The TypeScript engine's
+  twenty-three stops, patched rig and 52-period census are in this file, which is where a
+  measurement of a world that is gone belongs. **A dead engine's numbers cannot be the measured
+  state of a live one.**
+- **Two findings MOVED rather than dropped** when 22b's section went: the constant saving rate is
+  now 22c.3a, beside the firm's half of the same absence; the production absence is 22.2's, with the
+  live measurement beside the TypeScript one.
+- **Section 22 restructured**: each step states the work in a sentence and its evidence is listed
+  beneath as what it is. One of its five findings — retail books where nobody lives — is marked
+  HONEST rather than a defect, because Goods A1 says a good opens where it can be made or sold.
+
+**What was NOT deleted, and why.** Sections 21, 21b, 21c and the findings quoted in 22, 22c, 22d and
+25 were measured on the engine that no longer exists — roughly a hundred steps naming TypeScript
+files. `CLAUDE.md` says every finding recorded against the old world must be **RE-READ, not carried
+over**, and Part II says never delete a clause to look better. So they are kept and MARKED: the file
+header and section 21 both now say that each is either a fact about the MODEL, which survived the
+port because the port changed the language and not the economics, or a fact about the CODE, which
+died with the file it named and closes by being verified absent. A step is not taken until it has
+been re-read, and `tools/phoenix-check` already forbids a good number of the second kind outright.
+
+**The one thing the file now refuses to claim.** 22b's exit asked for *the census of period 0
+indistinguishable in KIND from the census of period 100*. It is not met, it is not ticked, and the
+two reasons are open items with the evidence printed every run.

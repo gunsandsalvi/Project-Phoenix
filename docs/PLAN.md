@@ -18,22 +18,19 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 304 clauses this world does not meet** — 176 MISSING, 128 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.2% are met or out of scope.
-**The items broken out of that so far: 0 of 12 closed** (12 of 144 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 9 closed** (1 of 123 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0g — The core made fast (Law 18) | 5 | 0 | open |
 | 21 — The local repairs | 95 | 1 | in progress |
 | 21b — A pool whose manager died (Fund Shares F3, inserted after 21a) | 3 | 0 | open |
 | 21c — A tax on an estate is a claim on it (XI-8, inserted after 21b) | 2 | 0 | open |
 | 22 — The recipe | 3 | 0 | open |
-| 22a — The opening is not an equilibrium | 6 | 0 | open |
-| 22b — The chronicle — the world opens as one that has been running | 13 | 11 | in progress |
-| 22c — The market as it is | 4 | 0 | open |
+| 22c — The market as it is | 5 | 0 | open |
 | 22d — The payment queue | 3 | 0 | open |
 | 23 — Measure — Part XII | 9 | 0 | open |
-| 24 — The app and the APK | 1 | 0 | open |
-| 25 — A tracker's target moves with the running order of the sessions | 0 | 0 | open |
+| 24 — The app and the APK | 2 | 0 | open |
+| 25 — A tracker's target moves with the running order of the sessions | 1 | 0 | open |
 | 0 | — | — | closed |
 | 1 | — | — | closed |
 | 2 | — | — | closed |
