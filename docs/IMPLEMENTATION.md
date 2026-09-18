@@ -163,9 +163,10 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
 | 22c | **The market as it is** — **done** (section removed; see `docs/RECORD.md`; a protocol per venue behind a dispatch — call, posted, book — orders that rest as a kernel store, a `Day` that carries a civil date, a desired cover and an ask that answers the shelf, a household that spends out of its wealth, and a STOCKIST whose business is to hold the stock. 22c.7 and 22c.8 closed with it; what it revealed is item 22c2) | after 0h (M1) and with 22b; the goods chain cannot live without both 
 | 22c2 | **The standing book only grows** — **done** (section removed; see `docs/RECORD.md`; a venue declares how long an order stands there, the assembled world has the one calendar it needed to place that date against, and a party pulls its own orders. 22c2.1 waits on a seeded world and is positioned at 22g) | immediately after 22c, which is what made it visible |
-| 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
+| 22d | **The payment queue** — a gridlock is a timing failure, not a default — **done** (section removed; see `docs/RECORD.md`; a payment that cannot be made yet WAITS, a receipt retries it, a ring settles together, and what became of the period's short payments is published. 22d.4 and 21.62 closed by re-read into 22i; 22d.1a, 22d.1b and 22d.3a are positioned) | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
 | 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
+| 22d2 | The queue is one day wide, and it holds no deliveries | immediately after 22h, which is what leaves it the last kernel absence; it blocks nothing before it |
 | 22i | The systems that still only count | after 22h: what is left needs the market (22c) or a seeded world (22g) |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
@@ -174,66 +175,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 2 — The items
 
-
-## 22d. The payment queue
-
-*A gridlock — A cannot pay B because B has not yet paid A — is a timing failure, not a default, and
-resolving it needs no new money.*
-
-The measurements in the steps are the TypeScript engine's and are to be re-read. It sits after 22c
-because the queue's evidence arrives only when the world runs long enough to fail.
-
-- [x] 22d.1 A settlement queue with a stated lifetime, in states this project already has words for:
-  due → queued (retried after each later instruction that funds the payer) → failed (the arrear, as
-  today; 19.8 built the other end, when an arrear becomes a breach). One TECHNOLOGY: how long a
-  payment may wait before it is late.
-  **Done.** `ledger::Queue`, `Outcome::Queued`, `Settlement::release` (a receipt is a retry, over a
-  worklist so a chain unwinds) and `Settlement::give_up` (the day passed; the arrear is recorded on
-  the wire). Four periods of `world:runs`: **158 payments went through on a retry** that were
-  arrears before it. Two findings it left, both below.
-- [ ] 22d.1a **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
-  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
-  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it
-  was tried in" for every payment alike, and means the queue is only ever retried by later
-  instructions of the SAME period. A real queue is retried the next morning too. The fix is the
-  cycle reaching settlement (Money G2: the settlement cycles within a period are declared and
-  nothing hands one to the wire), not a longer lifetime.
-- [ ] 22d.1b **A delivery it cannot pay for still fails.** The queue holds payments
-  (`Delivery::Nothing`); an instruction that delivers units against a payment it cannot make is a
-  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
-  second time. That is the mechanism a real CSD has (the queued delivery encumbers the securities)
-  and it is not built. It needs `Leg::Pledge` over the delivering leg for as long as the row waits.
-- [x] 22d.2 One pass at the end of the period that finds cycles in the queue and settles them
-  together, **each leg at full value** — which is not netting across counterparties (still forbidden)
-  but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.
-  **Done.** `Settlement::unwind` over `Queue::a_cycle`, checked by `short_together` (no holding goes
-  negative at the one instant the legs all happen at). A ring that does not balance is refused and
-  stays queued; nothing is forced.
-- [x] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
-  read, published, causing nothing.
-  **Done, and the second half of that sentence is refused.** `Queue::between(from, to)` reads what
-  became of the period's short payments off the rows: still waiting, went through after waiting, ran
-  out of days. The middle number is gridlock, definitively. **The third is NOT insolvency** — the
-  queue cannot tell a payer that could never have paid from a chain that never closed, and a number
-  claiming to would be a diagnosis nobody measured. Separating them needs a solvency test on the
-  payer, which is `mechanisms/mortality`'s.
-- [ ] 22d.3a **No ring has ever been found.** Four periods of `world:runs`: 4,230 payments waiting
-  and **zero cycles** among them. The pass is built and tested (`a_ring_of_payers_with_nothing
-  _between_them_settles_together_and_none_of_them_defaults`) and the world it runs on has no rings
-  in it — which is what an ARBITRARY draw of obligations looks like, because receipts here come from
-  sales and not from the parties a payer owes. It is not a finding about the pass and Law 11 says it
-  is not a work item; it is a thing to LOOK AT once the world is seeded, because a seeded world whose
-  payment graph is still a tree is a world missing the mutual trade credit that makes rings. →
-  **positioned at 22g** with the seeding's other re-reads.
-
-- [ ] 22d.4 **ST4, drained from `docs/FINDINGS.md` (20b) and positioned here** because it is a
-  phase-ordering failure that ends in a default the payer could have met: short-term-debt phases: `paper.backstop` is anchored `after: markets`, but maturities are collected in `corporateActions` which runs BEFORE markets. So the maturing paper has already been presented and FAILED (recorded as a missed payment → `defaultOn` → `accelerates: true` → the whole balance sheet is accelerated) before the backstop is drawn to meet it. B3.b is inverted: the run always ends in default first and the draw arrives after the default. Fix: draw in `corporateActions` BEFORE the kernel presents dues (anchor `{ before: 'corporateActions' }` or a pre-dues hook), and only against the shortfall at that moment.
-
----
-
-**Placed here.**
-
-- [ ] 21.62 `register/agreements.ts` (17.7): AN AGREEMENT HAS NO CURE. `breached` reaches only `discharged` (paid in full) or `terminated` (written off), so a commitment renegotiated after a missed payment has nowhere to land — the transition 17.7 built for a ROW in the register has no twin for the row beside it. Nothing in this world re-agrees one yet, which is why it was not built with the instrument's (Law 14); the first that will is an arrear a payer is given time on. **Re-read: simpler and worse than it was said.** `Agreements` has no states AT ALL — `live` or `end`ed — so this world records neither a breach nor a cure. **19 closed without it. Re-positioned at 22d**, whose payer given time on an arrear is the first thing that will ask for one.
 
 ## 22f. The plant wears, and somebody is paid to keep it
 
@@ -360,6 +301,30 @@ household cell is drawn whole.
 directions rather than only fragmenting.
 
 
+## 22d2. The queue is one day wide, and it holds no deliveries
+
+**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
+payments over four periods went through after waiting, each one a default this world was inventing —
+and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
+sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
+them before the census is all that is left.
+
+- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
+  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
+  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
+  tried in" for every payment alike, and means the queue is only ever retried by later instructions
+  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
+  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
+  longer lifetime, which would only hide it.
+- [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
+  (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
+  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
+  second time — so it fails on the spot, as it always did. A real CSD encumbers the securities for as
+  long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
+  released when it settles or gives up.
+
+**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
+
 ## 22i. The systems that still only count
 
 **INSERTED (Law 10) after 22h, by 21j.** `world:runs` prints the census: **thirty-one of fifty wired
@@ -462,6 +427,16 @@ whose quantities are seeded rather than arbitrary (22g).
   missing for 21.54's reason — the `currency` row is `Owed { currency.owed }`, a publication, so no
   central bank in this world decides or pays anything. **18a closed without it. Re-positioned at 22i**
   beside 21.54, and this was one of the two the 21.137 sweep missed.
+- [ ] 22d.4 **A BACKSTOP IS DRAWN BEFORE THE PAYER IS PRESENTED, NEVER AFTER.** Positioned here from
+  22d when it closed: in the TypeScript engine `paper.backstop` was anchored `after: markets` while
+  maturities were collected in `corporateActions`, which runs BEFORE markets — so the maturing paper
+  had already been presented, failed, been recorded a missed payment and accelerated the whole
+  balance sheet before the draw that would have met it arrived. There is no such phase here yet
+  (`short_term_debt` is `Reads { Counts::CreditOutstanding }`), so this is a RULE for whoever writes
+  it: draw against the shortfall at the moment of the draw, anchored before the dues are presented.
+  22d.1 removed what made the inverted order fatal — the payment now waits and a later draw releases
+  it through the retry — so this costs a wait rather than a default, and is still worth getting right.
+- [ ] 21.62 `register/agreements.ts` (17.7): AN AGREEMENT HAS NO CURE. `breached` reaches only `discharged` (paid in full) or `terminated` (written off), so a commitment renegotiated after a missed payment has nowhere to land — the transition 17.7 built for a ROW in the register has no twin for the row beside it. Nothing in this world re-agrees one yet, which is why it was not built with the instrument's (Law 14); the first that will is an arrear a payer is given time on. **Re-read: simpler and worse than it was said.** `Agreements` has no states AT ALL — `live` or `end`ed — so this world records neither a breach nor a cure. **19 closed without it. Re-positioned at 22d**, whose payer given time on an arrear is the first thing that will ask for one. **Re-read at 22d, and 22d closed without it too — deliberately, with the absence it waits on now nameable.** 22d.1 built the payer given time: a queued payment IS time given, and when it runs out of days the arrear is recorded. What it cannot do is reach the relation behind it, because **an instruction does not say which agreement it performs** — the queue holds legs, a leg names two parties and a line, and nothing anywhere carries "this payment is what that commitment promised". So a breach cannot be written even now, and a cure has nothing to cure. Beyond that, `Agreements::end` has NO CALLER outside tests: no agreement in this world ends at all, so adding four states nothing enters would be building the thing 21j exists to measure. The absence to build is the link — a schedule row or an instruction that names its agreement — and then the states follow with callers. **Re-positioned at 22i**, with 21.139 and the rest of what nothing exercises.
 - [ ] 21.139 **RAISED at 21.135: NOTHING IN THIS WORLD CAN ISSUE AN INSTRUMENT.** The set of
   instruments and the set of books are whatever `assembly` built, and they do not change while the
   world runs. `MechanismContext` offers `propose`, `say`, `form`, `settles`, `ceases`, `is_owed` and

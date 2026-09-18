@@ -20790,3 +20790,33 @@ in two places the moment the read existed (Law 4).
 
 **732 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst period
 318 ms, every family clean or honestly not-built.**
+
+## 22d — the payment queue, closed
+
+**22d.4 and 21.62 closed by re-read, and both re-reads are the same shape:** the thing the finding
+describes does not exist in this engine, and what survives is a RULE for whoever builds it.
+
+- **22d.4** (the backstop drawn after the dues are presented) — there is no `paper.backstop` phase
+  here at all; `short_term_debt` is `Reads { Counts::CreditOutstanding }`, one of the thirty systems
+  that only count, and `mechanisms/short_term_debt.rs` has the functions with nothing running them.
+  **And 22d.1 removed what made the inverted order fatal**: a maturing payment the issuer cannot meet
+  now waits, and a backstop drawn later in the same period releases it through the retry — so the
+  ordering costs a wait rather than a default. The rule travels to **22i**.
+- **21.62** (an agreement has no cure) — 22d.1 built the payer given time, which is what the finding
+  said would ask for one, and it still cannot ask: **an instruction does not say which agreement it
+  performs.** The queue holds legs; a leg names two parties and a line; nothing anywhere carries
+  *this payment is what that commitment promised*. And `Agreements::end` has no caller outside tests,
+  so no agreement in this world ends at all — adding four states nothing enters is building the thing
+  21j exists to measure. The absence to build is the LINK, and then the states follow with callers.
+  → **22i**.
+
+**And the two things 22d could not do are an item, not findings.** 22d2 is INSERTED after 22h: the
+queue is one day wide (settlement knows the period and not the cycle, Money G2) and it holds no
+deliveries (a queued delivery must encumber the units, or they are sellable twice). Both are kernel
+absences, neither blocks 22f, 22g or 22h, and putting them anywhere else would have left them as
+findings under a closed item. 22d.3a — no ring has ever been found — went to **22g** with the
+seeding, because it is a fact about the world's obligations and not about the pass.
+
+**The item's exit, met.** A gridlock is a timing failure and this world no longer books it as a
+default: 49 · 31 · 50 · 28 payments a period go through after waiting, and a ring settles in one
+instruction with every leg at full value.
