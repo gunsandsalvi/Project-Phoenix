@@ -78,6 +78,9 @@ pub mod standing {
     /// `restates`, so what the house said before is still readable beside what it says now, which
     /// is what lets a grade be shown to have been wrong (A6).
     pub const GRADE: u32 = 2;
+    /// §9 B1.a, 22i.9: **the rate a bank pays on deposits.** Terms `[rate]`, about nobody — it is
+    /// posted to everyone who banks there, which is what makes depositors able to respond to it.
+    pub const DEPOSIT_RATE: u32 = 3;
 }
 
 /// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
@@ -2145,6 +2148,187 @@ impl Mechanism for BankCapital {
             if below {
                 ctx.say(self.short_by, &[who.0], &[(self.at_ratio, Value::Num(-headroom))], true);
             }
+        }
+    }
+}
+
+/// **XI-4, §25, 22i.9: WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.**
+///
+/// The `cost_of_capital` row counted how many lines printed. So XI-4 — a sequencing step — had never
+/// been taken: no company in this world knew what its money cost, and with no cost of capital there
+/// is no hurdle, and with no hurdle no financial price can reach a real decision (`worth_doing`).
+///
+/// **At the MARGIN and NOW** — weighted by what it would raise, at what the markets say today, never
+/// the average coupon on debt already outstanding, which is a price struck in the past and cannot
+/// transmit anything that has happened since (Law 19).
+///
+/// **Both halves are DERIVED FROM CLEARED PRICES, in the direction Law 3 requires.** The cost of
+/// debt is the yield its own paper last crossed at; the cost of equity is the earnings yield on its
+/// own share price — what it last published (§48, 22i.1) over what the market last paid for a share
+/// (§10, 22i.7). Neither existed before this item, which is why this row could only count.
+///
+/// **`Missing` is missing**: a company whose paper has never printed has no cost of debt, and a
+/// company with no published income has no cost of equity. It stands behind nothing rather than
+/// standing behind a number nobody struck.
+pub struct CostOfCapital {
+    pub kind: u32,
+    pub accounts: u32,
+    pub at_income: u32,
+    pub at_shares: u32,
+    /// XI-4: the mix it would raise at. A PREFERENCE — the management's own, and theirs.
+    pub debt_share: &'static str,
+}
+
+impl Mechanism for CostOfCapital {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::instruments::Class;
+        let debt_share = ctx.params().ratio(self.debt_share);
+
+        // §48: what each company last published, and over how many shares.
+        let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.accounts) {
+            if let (Some(&who), Some(Value::Num(income)), Some(Value::Num(shares))) = (
+                ctx.journal().subjects_of(row).first(),
+                ctx.journal().says(row, self.at_income),
+                ctx.journal().says(row, self.at_shares),
+            ) {
+                published.insert(who, (income, shares));
+            }
+        }
+
+        let mut costs: Vec<(PartyId, f64)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let mut debt_now: Option<f64> = None;
+            let mut equity_now: Option<f64> = None;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
+                match ctx.instruments().class_of(what) {
+                    // 5: **the yield derives FROM the price**, which is the direction Law 3 requires
+                    // — what the paper crossed at against what it repays.
+                    Class::Claim => {
+                        let Some(matures) = ctx.instruments().matures_on(what) else { continue };
+                        let paper = crate::mechanisms::short_term_debt::Paper {
+                            issuer: who,
+                            face: 1.0,
+                            price: print.price,
+                            issued: Day(0),
+                            matures,
+                        };
+                        if let Some(y) = paper.yield_on(crate::mechanisms::short_term_debt::Convention::Actual365) {
+                            debt_now = Some(y);
+                        }
+                    }
+                    // §25: and the cost of equity is the EARNINGS YIELD — what it published over
+                    // what a share last cost. A price is never turned into a return the other way.
+                    Class::Share => {
+                        if let Some(&(income, shares)) = published.get(&row) {
+                            if shares > 0.0 && print.price > 0.0 {
+                                equity_now = Some(income / shares / print.price);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let (Some(debt_now), Some(equity_now)) = (debt_now, equity_now) else { continue };
+            costs.push((who, crate::mechanisms::cost_of_capital::at_the_margin(debt_now, equity_now, debt_share)));
+        }
+
+        for (who, cost) in costs {
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(cost))], true);
+        }
+    }
+}
+
+/// **§9 B1.a, B2, 22i.9: A BANK SETS THE RATE IT PAYS ON DEPOSITS.**
+///
+/// The `bank_funding` row counted the credit outstanding. So no bank in this world set a deposit
+/// rate, no depositor had anything to respond to, and B1's *a real payment to a real holder* had no
+/// rate to be of.
+///
+/// **The mix is its own and the blend is a READ across it** (B2), which is what lets a funding
+/// condition reach a borrower at all. **What it will pay is bounded above by the cheaper of its own
+/// wholesale cost and what a money fund yields** — and that is not a bound anybody imposed (Law 6):
+/// past that point the bank would rather fund wholesale, which is a decision.
+pub struct BankFunding {
+    pub kind: u32,
+    /// XI-7: the benchmark fixing, which is what a money fund would earn. A CLEARED print or
+    /// nothing (`Fixes` refuses a carried one), so a bank with no fixing to read sets no rate.
+    pub fixing: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for BankFunding {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::bank_funding::{blended, will_pay_on_deposits, Funding, Source};
+        // XI-7: the last fixing. A rate nobody transacted is not a benchmark, so there may be none.
+        let mut money_fund_yield: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.fixing) {
+            if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
+                money_fund_yield = Some(rate);
+            }
+        }
+        let Some(money_fund_yield) = money_fund_yield else { return };
+
+        let mut set: Vec<(PartyId, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // B2: its OWN mix, read off what it has issued and what it pays on each.
+            let mut mix: Vec<Source> = Vec::new();
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let (held, _) = ctx.register().held_total(what);
+                let outstanding = held - ctx.register().quantity(ctx.register().row(who, what));
+                if outstanding <= 0.0 {
+                    continue;
+                }
+                match ctx.instruments().class_of(what) {
+                    crate::instruments::Class::Money => mix.push(Source {
+                        kind: Funding::Deposits(crate::mechanisms::bank_funding::Class::Retail),
+                        amount: outstanding,
+                        // What it is paying now is what it last stood behind, and nothing where it
+                        // has never set one — a bank that has not set a rate is not paying zero.
+                        rate: match ctx.standing().of_party_about(who, PartyId::NONE, standing::DEPOSIT_RATE) {
+                            Some(s) => ctx.standing().terms(s)[0],
+                            None => continue,
+                        },
+                    }),
+                    // A2: short, and it ROLLS — which is where a funding squeeze bites. Its rate is
+                    // the coupon it promised, which is a TERM and not a price (5 C4.b).
+                    crate::instruments::Class::Claim => mix.push(Source {
+                        kind: Funding::Wholesale,
+                        amount: outstanding,
+                        rate: match ctx.instruments().coupon_of(what) {
+                            Some(c) => c,
+                            None => continue,
+                        },
+                    }),
+                    _ => {}
+                }
+            }
+            // B2: **`None` where it funds with nothing** — answering zero would say it funds free.
+            let own_wholesale_cost = match blended(&mix) {
+                Some(cost) => cost,
+                // A bank that has never funded wholesale has its own cost to find, and the
+                // benchmark is the only thing it can read. That is a real starting position.
+                None => money_fund_yield,
+            };
+            set.push((who, will_pay_on_deposits(own_wholesale_cost, money_fund_yield)));
+        }
+
+        for (who, rate) in set {
+            // B1.a: a POSTED rate — depositors respond to it, so it is one-sided terms the bank
+            // stands behind until it changes them, and what it was paying stays readable beside it.
+            ctx.now_stands(standing::DEPOSIT_RATE, who, PartyId::NONE, vec![rate]);
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(rate))], true);
         }
     }
 }

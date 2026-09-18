@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, Closing, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Closing, CostOfCapital, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -832,6 +832,10 @@ pub fn declare(p: &mut Params) {
         "the backstop: capital against total assets, whatever they weigh");
     say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Owner::Parliament,
         "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
+    // XI-4: **the mix a company would raise at.** A PREFERENCE — the management's own, and theirs.
+    // It is the weight in a read of two cleared prices, never a target anybody is held to.
+    say("capital.debt_share", 0.6, "debt per unit raised", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the share of debt in the money a company would raise at the margin");
     say("equity.shares", 1000.0, "shares", Dimension::Count, Kind::Technology, Owner::StandardSetter,
         "how many shares a company's line comes into existence with when it floats");
     say("equity.takes", 4.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
@@ -934,6 +938,8 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     // §31 C2, 22i.8: a bank short of capital says so, and the equity row acts on it — one writer of
     // a company's shares, two reasons to issue them.
     let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
+    // XI-7: the benchmark fixing, read by whatever a market rate reaches. Named once (Law 4).
+    let kinds_row_fixing = kinds.declare("benchmarks.fixing");
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -1027,7 +1033,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             buffer: "bank.buffer",
             days_per_period: w.days_per_period,
         })),
-        works("bank_funding", AT_REVALUATION, Box::new(Reads { kind: says("bank_funding.credit"), what: Counts::CreditOutstanding })),
+        // **§9 B1.a, B2: and a bank SETS the rate it pays on deposits.** It counted the credit
+        // outstanding, so no depositor in this world had anything to respond to.
+        works("bank_funding", AT_REVALUATION, Box::new(BankFunding {
+            kind: says("deposit.rate"),
+            fixing: kinds_row_fixing,
+            days_per_period: w.days_per_period,
+        })),
         // §6, XI-9: THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
         works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
         {
@@ -1044,7 +1056,17 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             }));
             cp
         },
-        works("cost_of_capital", AT_REVALUATION, Box::new(Reads { kind: says("cost_of_capital.lines"), what: Counts::LinesThatPrinted })),
+        // **XI-4, §25: and a company knows what its capital COSTS it.** It counted how many lines
+        // printed, so a sequencing step had never been taken — and with no cost of capital there is
+        // no hurdle, and no financial price can reach a real decision. Both halves derive from
+        // CLEARED prices that 22i.1 and 22i.7 are what made exist.
+        works("cost_of_capital", AT_REVALUATION, Box::new(CostOfCapital {
+            kind: says("capital.costs"),
+            accounts: kinds_row_accounts,
+            at_income,
+            at_shares,
+            debt_share: "capital.debt_share",
+        })),
         // §7, 21.58: **a borrower short over the WEEK brings commercial paper.** It counted the
         // credit outstanding while the treasury's row issued its paper for it.
         works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
@@ -1118,7 +1140,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // ── The reads over what the books produced ──────────────────────────────────────────────
         // XI-7, 21j.3a: it FIXES on what the overnight book cleared at, and publishes nothing where
         // nothing crossed. A count of how many lines printed was never what a benchmark is for.
-        works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: says("benchmarks.fixing") })),
+        works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: kinds_row_fixing })),
         // §21 A2–A4, 21.69: **and every house grades every name it can read.** It counted how many
         // parties were alive, so no grade had ever been published and A4's two houses could not
         // disagree about anything. It reads §48's accounts, which is why 22i.1 came first.
