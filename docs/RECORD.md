@@ -16539,3 +16539,27 @@ anchors TO rather than phases in a chain. **A law written as a test caught a def
 that a comment would have shipped**, which is the whole argument of 0g.43 in one instance.
 
 **Thirty-one laws now hold as tests; clippy is clean.**
+
+# 0g.41 (part) — the parameter register and the ontology register
+
+**Two of the TypeScript register's run-time guards are STRUCTURAL in Rust, which is the argument
+for the move in one instance.** `Kind::Placeholder { mechanism, item }` carries its death in the
+variant, so a placeholder without one cannot be constructed and no other kind has a field to put
+one in. The guard that threw *"a placeholder must name what it stands in for"*, and the one that
+threw *"a technology with a scheduled death IS a placeholder"*, have nothing left to catch.
+
+`Dimension` keeps the four durations apart — periods, days, months, years are the same quantity in
+four units and mixing them is exactly the defect the register exists to catch — and every read
+NAMES what it expects, so a mismatch says **both** dimensions at the site. Six laws as tests: a read
+that names the wrong dimension says both; a placeholder carries its death; **a declared amount moves
+with the world's resolution** (`piece_shift` is the invariance test, not a rescaling of half the
+world); one number has one writer; a number nobody declared cannot be read; a count of things is a
+whole one.
+
+**The ontology register is what `params` is for numbers, for categories.** A module's store is a
+noun, a working store or physics, and an undeclared one is refused AT THE READ, which is the moment
+the omission exists. A `Noun` that has not reached a kernel store carries the plan item that will
+give it one, and **the count of homeless nouns is the honest measure of how much ontology is
+missing.** Three laws as tests.
+
+**Forty laws now hold as tests; clippy is clean.**
