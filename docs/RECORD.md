@@ -16393,3 +16393,25 @@ to issued with the dust of their own walk (Register A3, B2, Law 7).
 into their store's columns, so the type still refuses a party where an instrument is wanted and
 costs nothing at run time. `Names` is the one place a row is turned back into the string it is
 displayed as, which is where Law 9 is kept true rather than hoped for.
+
+# 0g.41 (part) — the journal and the calendar
+
+**The journal is columns.** The TypeScript one keeps every event as a frozen object with a frozen
+`data` object and a copied `subjects` array behind six indexes, retaining **~896 bytes per event**
+while the world writes **178,604 a period**. Here an event is a ROW: its scalars are columns, its
+subjects are a counted slice of one flat column and its payload is a counted slice of another.
+Nothing is allocated per event and nothing is copied to read one.
+
+**And the payload is TYPED, where `Record<string, unknown>` was not.** Law 8 says the unit is part
+of the number, and a payload that could hold anything is why the TypeScript journal has to refuse
+money-as-a-value at run time on every single write — 643 ns of a 1,754 ns write, measured at 0g.19.
+`Value` is `Num | Text | Flag`, a name is a row in `Names`, and the refusal becomes a type.
+
+**The calendar states its conventions once.** A periodicity is placed BY DATE and never by a count
+of periods (G3.a), a year fraction comes from two dates, and a ladder settles everything written
+between two of its dates into the same book. Both are tests rather than comments.
+
+**Seven laws now hold as tests in the Rust kernel** — three in the register, two in the journal, two
+in the calendar. That is the shape 0g.43 generalises: what was an eslint rule or a TypeScript type
+becomes a type, a `debug_assert` or a test here, and a law that stops being checkable is a law that
+stops holding.
