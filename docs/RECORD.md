@@ -17087,3 +17087,61 @@ That is the second time a law-as-a-check has found something in this port that r
 the first time it found something in code that was already pushed. **The discipline this leaves:
 `phoenix-check` runs BEFORE `git commit`, not beside it** — the same rule `npm run check:opens` has
 in CLAUDE.md, and for the same reason.
+
+# 0g.42 — item 7: the forced seller (XI-2), nothing immortal (XI-3), the estate (XI-8)
+
+Three modules, one plan item, because they are one event seen from three sides: a party is made to
+sell, a party ceases, and what it held is realised and ranked.
+
+## The forced seller — XI-2
+
+The sale happens **in the same period**, **it moves the price**, and **the price move reaches
+somebody else**. Each link is a thing that can be silently closed, so each is a function here.
+
+- **All four doors**, because they arrive from different directions: a margin call, a redemption, a
+  funding line withdrawn, a mandate breach. A world can be asked WHICH opened rather than told a
+  position "was reduced".
+- **The requirement can RISE.** `Requirement.wants` is a number the broker sets each period from
+  what it sees, never a declared ratio — *a margin expressed as a stated rate cannot rise, and that
+  deletes precisely the procyclicality that IS the contagion.*
+- **A forced seller names no price** (Clearing C3): `sells` returns a size and the level is
+  whatever the other side posted. A forced sale with a reservation price is a sale that can
+  decline, and then the channel is shut.
+- **`reaches`** is the third link: every other holder is marked at what the sale printed, so a
+  bystander that never traded is poorer.
+
+## Nothing is immortal — XI-3
+
+Every kind can cease, with its own trigger and its own consequence — and **a bank has two doors**,
+liquidity and solvency, which a single "insolvent" flag would erase. **There is no death without a
+destination**: `Destination` is `Estate | Heir | Resolution` and there is no variant meaning
+nowhere, so a caller cannot write one.
+
+**The one exception is a consequence, not a relaxation.** `can_cease(is_central_bank, owed_in,
+issues)` takes the CURRENCY, because §31 A1.a's immortality is bounded to the money it alone issues:
+a central bank short of a money it does not issue is a party like any other. And §31 E4 is its own
+test — **a central bank in loss remits nothing**, the loss reduces its equity and the deferred asset
+is a row the treasury may have to make good. Remitting out of a loss would be XI-9's interest
+round-trip wearing a different hat.
+
+## The estate and the waterfall — XI-8
+
+**Assets are sold, not valued.** `Realised` carries what a bidder actually paid; there is no
+`book × haircut` anywhere, because *a formula discount off book is a stated price with no buyer*
+(Law 3). What no bidder took is `Unsold` — units, which do not become proceeds.
+
+XI-8 names two failures that both bias recoveries upward, and each is refused:
+
+- **Ranking by instrument TYPE** makes subordination decorative and means a subordinated bond can
+  never trade wider than a senior one. `Claim.ranks` is the instrument's own.
+- **An estate that collects receivables while its trade creditors rank nowhere** biases every
+  recovery upward by exactly that asymmetry. `Rank::Trade` is a rank, and the test makes a trade
+  creditor take a 400 loss while the senior holder is whole.
+
+**A test of mine was wrong and the arithmetic was right.** I asserted the subordinated holder got
+nothing from 500 against claims of 50 secured and 400 senior; it gets the 50 that is actually left.
+Corrected, and the test now asserts the whole distribution — senior whole, subordinated half, equity
+wiped — which is the point XI-8 is making rather than the one I had typed.
+
+**Fourteen laws as tests. A hundred and one now hold; clippy is clean; `phoenix-check` is green over
+32 files — and it ran BEFORE the commit this time.**
