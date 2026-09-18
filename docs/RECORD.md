@@ -16593,3 +16593,26 @@ its constituents and a walk of the whole period's ledger; these two walk the lot
 contribution is a bound**, and it will fall as the real families land.
 
 **Forty-three laws now hold as tests; clippy is clean.**
+
+# 0g.41 — the module contract, and Observer A4 as a fact about the type
+
+**A participant sees its own state and the public state, and it is now structural.** A
+`ParticipantView` is built FOR a party and has no door that takes another: `quantity` takes an
+instrument and never a holder, `holdings` walks that party's rows. The test puts 999 units of the
+same line in a rival's book and shows the view cannot name them — where TypeScript passed a context
+and relied on discipline, this is something a module cannot do by accident.
+
+Two more laws as tests: a print is PUBLIC, which is what a price is for, while a private event
+reaches its subjects and nobody else; and a view reads the register LIVE, so a party that traded
+mid-cycle is seen to have, with `versions` saying when a kept answer must be recomputed.
+
+**And the narrowing door is REQUIRED.** In TypeScript `markets` was optional and absent meant every
+book of the kind, so **the quadratic was the default** and nothing said which declarations were
+taking it — which is the whole reason `work.ts` had to be built. A book genuinely open to everybody
+says so through `everyone`, which is one question about the BOOK rather than one per party. The
+measurement at 0g.24 showed a door alone buys little when the per-ask cost is the problem; it is
+required here because it makes the ask count KNOWABLE, not because it is fast.
+
+**Forty-six laws now hold as tests; clippy is clean.** The kernel has `ids`, `register`, `journal`,
+`calendar`, `prices`, `parties`, `ledger`, `clearing`, `world`, `params`, `nouns`, `audit` and
+`module`.
