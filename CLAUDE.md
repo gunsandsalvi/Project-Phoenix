@@ -84,11 +84,14 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
   unbuilt family reports "not built", never green.
 - **Registry + parameter register**: every behaviour-shaping number declared with kind, unit, owner;
   placeholders name their mechanism; engine reads numbers only via `params`.
-- **Ontology register** (`registry/nouns.ts`): every store a module keeps in `ctx.state` declared as
-  `noun | working | physics`, and a NOUN names the plan item that gives it a kernel home. An
-  undeclared store throws at the read. It is to categories what `params` is to numbers, and its
-  count of homeless nouns is the honest measure of how much ontology is missing (14 homeless today;
-  nine more `working` stores were declared at 0e′.4 and none of them is homeless).
+- **Ontology register** (`src/nouns.rs`): every store declared as `noun | working | physics`, and a
+  NOUN names the plan item that gives it a kernel home. An undeclared store throws at the read. It is
+  to categories what `params` is to numbers, and its count of homeless nouns is the honest measure of
+  how much ontology is missing. **Seven homeless today** (21d.1b), and `npm run world:runs` prints
+  them: the four the absent REGISTRY holds — a currency naming its issuer, a country naming its
+  currency and a region its country, a unit and its subdivision, a profile per party kind (21e) — and
+  three facts a module names that no store keeps: a posting an employer holds, the standard a lender
+  is lending at, and work in progress (21f). The count must fall and must never rise.
 - **Expectations** (§46, XI-16): every deciding party has its own outlook formed adaptively from its
   own history; one PREFERENCE (memory); surprise is a recorded event; confidence is a read; no global
   expectation; no peeking at the period's own result. Outlooks **disagree**, and the disagreement is

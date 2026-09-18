@@ -241,6 +241,13 @@ fn main() {
         w.schedules.len(),
         w.processes.len(),
     );
+    // 21d.1b: the honest measure of how much ontology is missing. It must fall, and a run that does
+    // not print it is a run in which nobody is looking at it.
+    let homeless = w.nouns.homeless();
+    println!("         {} nouns with no kernel home:", homeless.len());
+    for (name, item) in &homeless {
+        println!("           {name} (item {item})");
+    }
 
     let mut worst = 0.0f64;
     for period in 1..=PERIODS {

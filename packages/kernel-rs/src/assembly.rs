@@ -103,6 +103,67 @@ fn declared() -> Nouns {
     at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
     at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
     at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
+
+    // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
+    // missing, and it must fall. Each names the plan item that gives it one; a noun whose item does
+    // not exist is a noun nobody has agreed to build, and the register refuses to let that be silent.
+    let mut homeless = |name: &str, item: &str, holds: &str, why: &str| {
+        n.declare(NounDecl {
+            name: name.to_string(),
+            sort: Sort::Noun { home: Some(item.to_string()) },
+            holds: holds.to_string(),
+            why: why.to_string(),
+        });
+    };
+
+    // **THERE IS NO REGISTRY** (ARCHITECTURE 4.10: *all data lives in the registry*). `CurrencyCode`,
+    // `UnitId` and `RegionId` are bare row ids with nothing behind them, and the party kinds are
+    // integer constants with no profile — so four facts the specification states outright are, in
+    // this engine, not stated anywhere.
+    homeless(
+        "registry.currencies",
+        "21e",
+        "each money and the central bank whose liability it is",
+        "Money A2, Currency A2: money is issued by a named issuer, and a CurrencyCode names nobody",
+    );
+    homeless(
+        "registry.places",
+        "21e",
+        "countries and the regions in them: a country has the money, a region is a place",
+        "Seed B3: each party is placed in a region, and the region determines its money — and a RegionId determines nothing",
+    );
+    homeless(
+        "registry.units",
+        "21e",
+        "each unit of measure and what it is divided into",
+        "Law 8: the unit is part of the number, and a UnitId carries no unit",
+    );
+    homeless(
+        "registry.kind_profiles",
+        "21e",
+        "what varies by party kind, behind a dispatch table",
+        "Law 15: kind-varying behaviour lives in a profile, and the kinds here are integers a mechanism could branch on",
+    );
+
+    // Three facts a module names, which persist between periods, and which no store keeps.
+    homeless(
+        "employment.postings",
+        "21f",
+        "an open position an employer holds, at the wage it offers",
+        "XI-10, §39 B: every posting is a bid, and it is something an employer HOLDS — which is what lets it be withdrawn",
+    );
+    homeless(
+        "lending.standards",
+        "21f",
+        "the standard a lender is currently lending at",
+        "Housing C5, Banks Lending: a lender's standard is a decision that persists and that every borrower meets or does not",
+    );
+    homeless(
+        "recipe.work_in_progress",
+        "21f",
+        "what is between input and output, owned by somebody, carrying what it cost",
+        "37 B3: work in progress is a real thing with a holder, not a timing adjustment",
+    );
     n
 }
 
@@ -562,5 +623,41 @@ mod tests {
         let systems: Vec<&dyn System> = vec![&q];
         w.wire_up(&systems);
         assert_eq!(w.step(&systems).ran, 0);
+    }
+
+    #[test]
+    fn the_ontology_register_names_what_is_still_homeless_rather_than_reporting_zero() {
+        // 21d.1b: the register was wired at 21d and every one of the kernel's own stores declared
+        // itself — so the count was zero, and zero because nothing had declared a noun it had no
+        // home for. A measure that can only report "nothing missing" is not a measure.
+        let w = World::empty();
+        let homeless = w.nouns.homeless();
+        assert!(!homeless.is_empty(), "a count of zero here is the measure switched off");
+
+        // **There is no registry** (ARCHITECTURE 4.10), and that is four of them: a CurrencyCode
+        // names no issuer, a RegionId determines no money, a UnitId carries no unit, and a party
+        // kind is an integer with no profile.
+        let named: Vec<&str> = homeless.iter().map(|(n, _)| *n).collect();
+        assert!(named.contains(&"registry.currencies"));
+        assert!(named.contains(&"registry.places"));
+        assert!(named.contains(&"registry.units"));
+        assert!(named.contains(&"registry.kind_profiles"));
+
+        // And every one names the item that gives it a home. A noun whose item nobody has written
+        // is a noun nobody has agreed to build.
+        for (name, item) in &homeless {
+            assert!(!item.is_empty(), "{name} names no item");
+        }
+    }
+
+    #[test]
+    fn a_store_the_kernel_owns_is_not_homeless_and_a_fact_with_nowhere_to_live_is() {
+        // The distinction the register exists to hold. `agreements` had no home before 21d and has
+        // one now; `employment.postings` is the same shape of fact and still has none.
+        let w = World::empty();
+        let named: Vec<&str> = w.nouns.homeless().iter().map(|(n, _)| *n).collect();
+        assert!(!named.contains(&"agreements"), "it got a home at 21d");
+        assert!(!named.contains(&"claims"), "it got one at 21c");
+        assert!(named.contains(&"employment.postings"), "an employer holds it and nothing keeps it");
     }
 }

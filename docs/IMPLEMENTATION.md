@@ -230,8 +230,10 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21 | The local repairs | each when its file is open |
 | 21b | A pool whose manager died — **done** (section removed; see `docs/RECORD.md`; a pool under nobody's mandate posts nothing and winds up through the machinery it already has, paying its holders pro rata on what it raised and ending when there is nothing left) | after 21a |
 | 21c | A tax on an estate is a claim on it — **done** (section removed; see `docs/RECORD.md`; `Rank::Preferential` is where the law puts the state, `Claims` is the fifth kernel store, and `running::Ranked` pays an estate's claimants in rank order. 21.110's other half stays open) | after 21b |
-| 21d | Every store declares itself, and the homeless count is true | ahead of 22; four steps closed, the modules' own declarations left |
+| 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
+| 21e | There is no registry — four homeless nouns name it | after 21d: the ontology register is what found it |
+| 21f | Three facts the modules keep and the kernel does not | with 21e, and for the same reason |
 | 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
@@ -581,30 +583,60 @@ are what neither of those covers, and they are placed rather than assumed dead.
 
 ---
 
-## 21d. Every store declares itself, and the homeless count is true
+## 21e. There is no registry
 
-**INSERTED ahead of 22 (Law 10); five of its six steps are closed and this is what is left.** The
-item was raised because the kernel had seven stores and the modules carried their own state types
-with no home, so a mechanism for employment had no engagements to read.
+**INSERTED here (Law 10), named by four homeless nouns.** ARCHITECTURE 4.10 is unambiguous — *all
+data lives in the registry: currencies (each naming its issuing central bank), countries (each naming
+its currency), regions (each naming its country), units, party kinds, instrument kinds, cell-key
+dimensions, platforms.* **The Rust kernel has none of it.** `CurrencyCode`, `UnitId` and `RegionId`
+are bare row ids with nothing behind them, and the party kinds are integer constants in
+`assembly::kinds` with no profile.
 
-**Steps closed and deleted: 5** — the ontology register wired, the four stores, a mechanism per
-system, a world at the judged counts and the runner. They are in `docs/RECORD.md`, *21d — the engine
-runs in full*, which is the ledger; nothing done is in this file.
+Four clauses the specification states outright are therefore, in this engine, stated nowhere:
 
-**What is left, and it is the half the item was named for:**
+| noun | what it should hold | the clause it is |
+|---|---|---|
+| `registry.currencies` | each money and the central bank whose liability it is | Money A2, Currency A2 — a `CurrencyCode` names nobody |
+| `registry.places` | countries and the regions in them; a country has the money, a region is a place | Seed B3 — *the region determines its money*, and a `RegionId` determines nothing |
+| `registry.units` | each unit and what it is divided into | Law 8 — the unit is part of the number, and a `UnitId` carries no unit |
+| `registry.kind_profiles` | what varies by party kind, behind a dispatch table | Law 15 — kind-varying behaviour lives in a PROFILE, and these are integers a mechanism could branch on |
 
-- [ ] 21d.1b **Every MODULE declares what it keeps, and the homeless count stops being zero by
-  omission.** The register is live and reading an empty room: no module declares a noun, so
-  `homeless()` counts nothing. `CLAUDE.md`'s *14 homeless today* is a stale figure — at the
-  TypeScript engine's deletion exactly one noun was declared homeless (`estate/index.ts estates`,
-  standing in for `Process`, positioned at item 21), and `processes` is now a kernel store. Walk the
-  fifty modules; each declares its stores as `noun | working | physics`, and a noun with no kernel
-  home names the item that gives it one. **`CLAUDE.md` is re-marked in the same change** — a stale
-  count in the always-in-context digest is a defect (Law 16), and it is the figure everything else
-  reads this measure off.
+**The last one is the sharp one.** `phoenix-check` forbids `.kind ==` textually, which catches the
+shape and not the absence: a world whose kinds have no profiles has nowhere to put the behaviour that
+varies, so the pressure to branch never goes away. Law 15's dispatch table does not exist.
 
-**Exit.** `Nouns::homeless()` names what is still missing rather than reporting zero, and the count
-in `CLAUDE.md` is the count the register prints.
+- [ ] 21e.1 **Currencies, and each one's issuer.** Money A2: money is somebody's liability, and the
+  currency is the first place that has to be true.
+- [ ] 21e.2 **Countries and regions**, with `currency_of(region)` reading THROUGH the country, so one
+  fact has one writer (Law 4, 13c.1: *a country has the money; a region is a place*).
+- [ ] 21e.3 **Units and their subdivisions**, so a quantity can say what it is in.
+- [ ] 21e.4 **A profile per party kind**, and the kernel asks the profile. The integer constants stay
+  as ids; what goes behind them is the behaviour that varies.
+
+**Exit.** The four registry nouns have a home; `Nouns::homeless()` falls by four.
+
+---
+
+## 21f. Three facts the modules keep and the kernel does not
+
+**INSERTED here (Law 10), named by three homeless nouns.** Each is a fact about the world that
+persists between periods, that a module names, and that no store keeps — so the module either
+recomputes it every period or does without it.
+
+- [ ] 21f.1 **`employment.postings`** — an open position an employer holds, at the wage it offers.
+  §39 B, XI-10: *every posting is a bid, and it is something an employer HOLDS* — which is exactly
+  what lets it be withdrawn by a named party as an event. Nothing holds one.
+- [ ] 21f.2 **`lending.standards`** — the standard a lender is currently lending at. Housing C5: *a
+  lender's standard is a DECISION, and it tightens when it is worried*. A decision that persists and
+  that every borrower meets or does not, and there is nowhere for it to persist — so the credit
+  channel has nothing to tighten.
+- [ ] 21f.3 **`recipe.work_in_progress`** — §37 B3: *work in progress exists between input and
+  output, owned by somebody, and it carries what it cost.* `WorkInProgress` is a type the recipe
+  module declares and nothing constructs: production at 22 draws its inputs and creates its output in
+  one instruction, so there is no lead time and nothing is ever in progress.
+
+**Exit.** The three have a home; `Nouns::homeless()` falls by three, and §37 B3 stops being a clause
+whose type exists and whose instances do not.
 
 ---
 

@@ -18965,3 +18965,56 @@ than ten, which is what 21d.1b is about.
 
 `Money E1` and `Firm Birth D6` re-marked. **667 tests hold; clippy clean; `phoenix-check` green over
 80 files; `npm run check` green; the full-scale world unchanged at 172.8 ms worst.**
+
+---
+
+## 21d.1b — the ontology register stops reporting zero, and names seven
+
+**What was wrong with a count of zero.** 21d wired the register and had every one of the kernel's own
+stores declare itself — so `Nouns::homeless()` returned nothing, and it returned nothing **because no
+store had declared a noun it had no home for**. A measure that can only report *nothing missing* is
+not a measure, and `CLAUDE.md` calls this count *the honest measure of how much ontology is missing*.
+
+**Seven, and `npm run world:runs` prints them every run.**
+
+**Four of them are one absence: THERE IS NO REGISTRY.** ARCHITECTURE 4.10 is unambiguous — *all data
+lives in the registry: currencies (each naming its issuing central bank), countries (each naming its
+currency), regions (each naming its country), units, party kinds…* — and the Rust kernel has none of
+it. `CurrencyCode`, `UnitId` and `RegionId` are bare row ids with **nothing behind them**, and the
+party kinds are integer constants with no profile. Four clauses the specification states outright are
+stated nowhere in this engine:
+
+| noun | the clause |
+|---|---|
+| `registry.currencies` | Money A2, Currency A2 — money is issued by a NAMED issuer, and a `CurrencyCode` names nobody |
+| `registry.places` | Seed B3 — *each party is placed in a region, and the region determines its money*, and a `RegionId` determines nothing |
+| `registry.units` | Law 8 — the unit is part of the number, and a `UnitId` carries no unit |
+| `registry.kind_profiles` | Law 15 — kind-varying behaviour lives in a PROFILE behind a dispatch table |
+
+**The last is the sharp one**, and it is why this is worth more than a tidy: `phoenix-check` forbids
+`.kind ==` textually, which catches the SHAPE and not the ABSENCE. A world whose kinds have no
+profiles has nowhere to put the behaviour that varies, so the pressure to branch never goes away.
+Law 15's dispatch table does not exist, and the check that guards it cannot say so.
+
+**Three are facts a module names and no store keeps**, each persisting between periods:
+
+- `employment.postings` — *every posting is a bid, and it is something an employer HOLDS*, which is
+  what lets it be withdrawn by a named party as an event (§39 B). Nothing holds one.
+- `lending.standards` — *a lender's standard is a DECISION, and it tightens when it is worried*
+  (Housing C5). It has nowhere to persist, **so the credit channel has nothing to tighten**.
+- `recipe.work_in_progress` — §37 B3: *work in progress exists between input and output, owned by
+  somebody, carrying what it cost.* `WorkInProgress` is a type the module declares and nothing
+  constructs: production at 22 draws its inputs and creates its output in ONE instruction, so there
+  is no lead time and nothing is ever in progress.
+
+**They named two items, and the items are inserted** (21e, 21f), because `CLAUDE.md`'s rule is that a
+noun names the plan item that gives it a home — and a noun whose item does not exist is a noun nobody
+has agreed to build. The register now refuses to let that be silent: the test asserts every homeless
+noun names one.
+
+**`CLAUDE.md` re-marked in the same change.** It said *14 homeless today* and cited `registry/nouns.ts`,
+a TypeScript file deleted at 0g.45. A stale count in the always-in-context digest is a defect (Law 16)
+and it is the figure everything else reads this measure off.
+
+**671 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21d
+is closed.
