@@ -166,9 +166,9 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default — **done** (section removed; see `docs/RECORD.md`; a payment that cannot be made yet WAITS, a receipt retries it, a ring settles together, and what became of the period's short payments is published. 22d.4 and 21.62 closed by re-read into 22i; 22d.1a, 22d.1b and 22d.3a are positioned) | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 22i | **The systems that still only count** | **NEXT. The order was backwards and this is the correction.** It said 22i waited on the seeding; a seed populates SYSTEMS, and thirty of fifty-one of them decide nothing and write nothing. There is no world to seed until they work. Everything below is built on it |
 | 22f | The plant wears, and somebody is paid to keep it | after 22i: an upkeep needs a payee that decides, and a landlord, a servicer and a carrier are all counting rows today |
-| 22g | The seeding | after 22i and 22f: a seed draws parties into systems that take decisions, and drawing them into counters is drawing them into nothing |
-| 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
+| 22h | The other four cell events have no cause | after 22f: entry, death, promotion and merge are each caused by a MECHANISM — a firm that fails, a household that can afford to form — and every one of those mechanisms is 22i's or 22f's |
 | 22d2 | The queue is one day wide, and it holds no deliveries | after 22h, the last kernel absence; it blocks nothing before it |
+| 22g | **The seeding — LAST.** | after everything above. **A seed cannot be written against a world with bugs in it**: whatever it draws is drawn into whatever the mechanisms then do with it, so a seed written first is a seed rewritten after every fix. It is the last thing built and the first thing 23 measures |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
 
@@ -335,14 +335,69 @@ number that left somebody's account or reduced somebody's stock.
 
 ---
 
+## 22h. The other four cell events have no cause
+
+**INSERTED (Law 10) after 22f, by 21h.** The split was built there because it had a caller: an
+engagement carries a headcount, so one covering part of a cell splits it. Entry, death, promotion and
+merge were not, because nothing in this world causes one, and a door written for a caller that does
+not exist is a type nothing constructs. It is after the seeding because the seeding is what draws a
+small firm as a CELL and a household that can form — today every small firm is `Named` and every
+household cell is drawn whole.
+
+- [ ] 22h.1 **Entry and death move a weight**, each with its own cause — a household that forms, a
+  member who dies, with a destination for what they held (Appendix B: no death without one).
+- [ ] 22h.2 **Promotion**: a small-firm cell whose own size crosses the tier becomes a named party,
+  which is what makes the boundary a SIZE and not a decision (A6.c). With it, **21.44**: a size is
+  compared in ONE money. The registry has currencies since 21e and `params` has
+  `Dimension::Amount(Denomination::Money)` since 21g — *an amount of whatever money the party reading
+  it deals in* — so the answer to *is a size boundary a money's or the world's?* is now available: one
+  declaration, read in each firm's own money.
+- [ ] 22h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
+  receiving cell's BY THEIR PEOPLE, because one group has one history. Its cause is a SEPARATION —
+  an engagement ending returns those members to a state a sibling cell already has — so it waits on
+  employment being a relationship that ends.
+- [ ] 22h.4 **A cell per key.** XI-15 allows at most one live cell per key on its kind's lattice and
+  `Parties::add` does not ask: `world-runs` admits 1,286 household cells all on key 0. Measured while
+  building 21h; it is the seeding's to get right and the store's to refuse.
+
+**Exit.** All five events fire, each from a cause a participant has, and the population moves in both
+
+---
+directions rather than only fragmenting.
+
+
+## 22d2. The queue is one day wide, and it holds no deliveries
+
+**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
+payments over four periods went through after waiting, each one a default this world was inventing —
+and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
+sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
+them before the census is all that is left.
+
+- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
+  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
+  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
+  tried in" for every payment alike, and means the queue is only ever retried by later instructions
+  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
+  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
+  longer lifetime, which would only hide it.
+- [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
+  (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
+  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
+  second time — so it fails on the spot, as it always did. A real CSD encumbers the securities for as
+  long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
+  released when it settles or gives up.
+
+**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
+
 ## 22g. The seeding
 
 **INSERTED here (Law 10), and it is where six re-read findings have been waiting.** The world
 `world:runs` builds is ARBITRARY and says so: every number in it is drawn from a counter, nothing was
-cleared or decided, and it is not a seed (5 E1). **It comes after 22i**: a seed draws parties into
-systems, and a world seeded into thirty counters is an arbitrary world with better numbers in it. It
-runs the ordinary period loop and stops wherever a mechanism is missing, and it is before 23 because
-measuring an arbitrary world measures the draw.
+cleared or decided, and it is not a seed (5 E1). **IT IS THE LAST THING BUILT.** A seed cannot be
+written against a world with bugs in it: what it draws is drawn into whatever the mechanisms then do
+with it, so a seed written before them is a seed rewritten after every fix. It goes after 22i, 22f,
+22h and 22d2, and before 23, because measuring an arbitrary world measures the draw.
 
 **Placed here.**
 
@@ -406,61 +461,6 @@ measuring an arbitrary world measures the draw.
 above are answered by it rather than by anything in the engine.
 
 ---
-
-## 22h. The other four cell events have no cause
-
-**INSERTED (Law 10) after 22g, by 21h.** The split was built there because it had a caller: an
-engagement carries a headcount, so one covering part of a cell splits it. Entry, death, promotion and
-merge were not, because nothing in this world causes one, and a door written for a caller that does
-not exist is a type nothing constructs. It is after the seeding because the seeding is what draws a
-small firm as a CELL and a household that can form — today every small firm is `Named` and every
-household cell is drawn whole.
-
-- [ ] 22h.1 **Entry and death move a weight**, each with its own cause — a household that forms, a
-  member who dies, with a destination for what they held (Appendix B: no death without one).
-- [ ] 22h.2 **Promotion**: a small-firm cell whose own size crosses the tier becomes a named party,
-  which is what makes the boundary a SIZE and not a decision (A6.c). With it, **21.44**: a size is
-  compared in ONE money. The registry has currencies since 21e and `params` has
-  `Dimension::Amount(Denomination::Money)` since 21g — *an amount of whatever money the party reading
-  it deals in* — so the answer to *is a size boundary a money's or the world's?* is now available: one
-  declaration, read in each firm's own money.
-- [ ] 22h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
-  receiving cell's BY THEIR PEOPLE, because one group has one history. Its cause is a SEPARATION —
-  an engagement ending returns those members to a state a sibling cell already has — so it waits on
-  employment being a relationship that ends.
-- [ ] 22h.4 **A cell per key.** XI-15 allows at most one live cell per key on its kind's lattice and
-  `Parties::add` does not ask: `world-runs` admits 1,286 household cells all on key 0. Measured while
-  building 21h; it is the seeding's to get right and the store's to refuse.
-
-**Exit.** All five events fire, each from a cause a participant has, and the population moves in both
-
----
-directions rather than only fragmenting.
-
-
-## 22d2. The queue is one day wide, and it holds no deliveries
-
-**INSERTED (Law 10) after 22h, and it is the two things 22d could not do.** The queue works — 158
-payments over four periods went through after waiting, each one a default this world was inventing —
-and both of its limits are absences elsewhere in the kernel rather than anything wrong with it. It
-sits here because neither blocks 22f, 22g or 22h, and because both are kernel changes: the last of
-them before the census is all that is left.
-
-- [ ] 22d2.1 **A payment is stamped at its PERIOD's first day, not at the cycle it was tried in.**
-  `Settlement::attempt` knows the period and not the cycle, so `calendar.start_of(period)` is the
-  only day it can place a payment on — which makes the six-day lifetime "the rest of the week it was
-  tried in" for every payment alike, and means the queue is only ever retried by later instructions
-  of the SAME period. A real queue is retried the next morning too. **Money G2 declares the
-  settlement cycles within a period and nothing hands one to the wire**; the fix is that, not a
-  longer lifetime, which would only hide it.
-- [ ] 22d2.2 **A delivery it cannot pay for still fails.** The queue holds payments
-  (`Delivery::Nothing`). An instruction that delivers units against a payment it cannot make is a
-  FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
-  second time — so it fails on the spot, as it always did. A real CSD encumbers the securities for as
-  long as the row waits, which is `Leg::Pledge` over the delivering leg, taken when it queues and
-  released when it settles or gives up.
-
-**Exit.** A payment waits from the cycle it was tried in, and a delivery waits with its units held.
 
 ## 23. Measure — Part XII
 
