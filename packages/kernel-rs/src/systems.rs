@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, Closing, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -822,6 +822,16 @@ pub fn declare(p: &mut Params) {
     // §10 A2: **how many shares a line comes into existence with.** A TECHNOLOGY — the count is a
     // market convention and what a share is WORTH is what the book crosses at (Law 3), so this
     // number says nothing about value.
+    // **§31 B1: the requirement, the backstop and the buffer.** POLICY — the regulation's, and this
+    // is the one place they are stated. They are what a bank is measured against and never what it
+    // chooses; the buffer is the line the bank is expected to keep above the requirement, and being
+    // inside it has consequences short of breaching (B3).
+    say("bank.min_weighted", 0.08, "capital per unit of weighted assets", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the capital a bank must hold against its risk-weighted assets");
+    say("bank.min_leverage", 0.03, "capital per unit of assets", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the backstop: capital against total assets, whatever they weigh");
+    say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
     say("equity.shares", 1000.0, "shares", Dimension::Count, Kind::Technology, Owner::StandardSetter,
         "how many shares a company's line comes into existence with when it floats");
     say("equity.takes", 4.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
@@ -916,10 +926,14 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let at_income = keys_of(journal, "accounts.income");
     let at_shares = keys_of(journal, "accounts.shares");
     let at_standing = keys_of(journal, "claim.standing");
+    let at_ratio = keys_of(journal, "bank.ratio");
     let kinds = &mut journal.kinds;
     // 22i.2: the kind the accounts are published under, read back by whatever reads them — the
     // grades do. Named once, here, where the list is (Law 4).
     let kinds_row_accounts = kinds.declare("accounts.published");
+    // §31 C2, 22i.8: a bank short of capital says so, and the equity row acts on it — one writer of
+    // a company's shares, two reasons to issue them.
+    let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -1001,7 +1015,18 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
         works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(Owed { kind: says("money.owed") })),
         works("sovereign", AT_MARKETS, Box::new(Reads { kind: says("sovereign.lines"), what: Counts::LinesThatPrinted })),
-        works("bank_capital", AT_REVALUATION, Box::new(Reads { kind: says("bank_capital.alive"), what: Counts::PartiesAlive })),
+        // **§31 A1, B3, C1.a: and a bank READS its own capital.** It counted how many parties were
+        // alive, so no bank in this world had a capital position at all and §31's ladder was never
+        // read. The weights come from the grades, which is why it waited for 22i.2.
+        works("bank_capital", AT_REVALUATION, Box::new(BankCapital {
+            kind: says("bank.capital"),
+            short_by: kinds_row_short_of_capital,
+            at_ratio,
+            min_weighted: "bank.min_weighted",
+            min_leverage: "bank.min_leverage",
+            buffer: "bank.buffer",
+            days_per_period: w.days_per_period,
+        })),
         works("bank_funding", AT_REVALUATION, Box::new(Reads { kind: says("bank_funding.credit"), what: Counts::CreditOutstanding })),
         // §6, XI-9: THE ONE THE WHOLE CREDIT SIDE RESTS ON — what falls due is paid, or it is an arrear.
         works("lending", AT_CORPORATE_ACTIONS_SLOT, Box::new(Servicing { days_per_period: w.days_per_period })),
@@ -1073,6 +1098,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             // (§35), nothing taken over (§29 B), and §48's accounts published by nobody.
             let mut e = works("equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Floating {
                 kind: says("equity.floated"),
+                short_of_capital: kinds_row_short_of_capital,
                 shares: "equity.shares",
                 takes: "equity.takes",
             }));

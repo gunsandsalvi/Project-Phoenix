@@ -1868,6 +1868,9 @@ impl Mechanism for TradeCredit {
 /// existence with the shares it issues, through the same door every other instrument does.
 pub struct Floating {
     pub kind: u32,
+    /// §31 C2, 22i.8: what a bank says when it is below its capital requirement. A recapitalisation
+    /// IS an equity issue, so it comes through this door and not a second one (Law 4).
+    pub short_of_capital: u32,
     /// §10 A2: how many shares a line comes into existence with. A TECHNOLOGY of the market: the
     /// count is a convention and what a share is WORTH is what the book crosses at (Law 3).
     pub shares: &'static str,
@@ -1880,6 +1883,16 @@ impl Mechanism for Floating {
         use crate::instruments::Class;
         let shares = ctx.params().count(self.shares);
         let takes = ctx.params().periods(self.takes) as u32;
+
+        // §31 C2: the banks that said they are short of capital this period.
+        let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        for &row in ctx.journal().of_kind(self.short_of_capital) {
+            if ctx.journal().period_of(row) == ctx.period() {
+                if let Some(&who) = ctx.journal().subjects_of(row).first() {
+                    must_raise.insert(who);
+                }
+            }
+        }
 
         let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
@@ -1906,9 +1919,10 @@ impl Mechanism for Floating {
                     _ => {}
                 }
             }
-            // A company already listed does not float again; a company the lenders took has no
-            // reason to sell its ownership.
-            if listed || unsold <= 0.0 {
+            // **Two reasons to sell ownership, and a company already listed has neither.** The
+            // lenders would not take it (unsold paper), or it is a bank below its requirement and
+            // must raise (§31 C2).
+            if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
                 continue;
             }
             if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
@@ -1995,6 +2009,143 @@ impl crate::module::Participant for Flotation {
             price: Some(worth),
             qty: held as i64,
         }]
+    }
+}
+
+/// **§31 A1, B1, B3, C1, C1.a, 40 C5, 22i.8: A BANK READS ITS OWN CAPITAL AND ACTS ON IT.**
+///
+/// The `bank_capital` row counted how many parties were alive. So no bank in this world had a
+/// capital position at all: §31's ladder was never read, the two failures C1.a insists are different
+/// were never told apart, and 21.40's lending standard — *the standard a lender is currently lending
+/// at* — had no lender computing one, because no lender decided anything.
+///
+/// **Capital is the RESIDUAL** (A1): what it holds against what it owes, read, never a stored figure
+/// something is withdrawn from. **The weights come from the GRADES** (§21, 22i.2): a claim on a party
+/// that cannot fail weighs nothing and everything else weighs what its own credit says it weighs —
+/// which is why this had to wait for a house to publish a grade.
+///
+/// **And a bank below its requirement has to RAISE** (C2), which it says and `Floating` acts on: a
+/// recapitalisation IS an equity issue, and one company's shares have one writer (Law 4). C2 also
+/// says it can FAIL — nobody has to buy — which is why this publishes a need rather than an outcome.
+pub struct BankCapital {
+    pub kind: u32,
+    /// C2: what it says when it is below its requirement and has to raise. `Floating` reads it.
+    pub short_by: u32,
+    pub at_ratio: u32,
+    /// §31 B1: the requirement, the backstop and the buffer. POLICY — the regulation's, and the one
+    /// place they are stated.
+    pub min_weighted: &'static str,
+    pub min_leverage: &'static str,
+    pub buffer: &'static str,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for BankCapital {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::bank_capital::{standing, Asset, Position, Rules, Weight};
+        let rules = Rules {
+            min_weighted: ctx.params().ratio(self.min_weighted),
+            min_leverage: ctx.params().ratio(self.min_leverage),
+            buffer: ctx.params().ratio(self.buffer),
+        };
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        // §21, 22i.2: what each name is graded at — the WORST any house holds on it, because a bank
+        // that could pick the kindest house would weigh its book by choosing its assessor.
+        let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let s = crate::stores::StandingId(row);
+            if !ctx.standing().live(s) || ctx.standing().kind_of(s) != standing::GRADE {
+                continue;
+            }
+            let rank = ctx.standing().terms(s)[0];
+            worst
+                .entry(ctx.standing().about(s).0)
+                .and_modify(|r| if rank > *r { *r = rank })
+                .or_insert(rank);
+        }
+
+        let mut acted: Vec<(PartyId, f64, bool, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // A1: what it holds, at what it is carried at, and what each weighs.
+            let mut assets: Vec<Asset> = Vec::new();
+            let mut money_at_hand = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                let carried = ctx.register().quantity(row);
+                if ctx.instruments().class_of(line) == crate::instruments::Class::Money {
+                    money_at_hand += carried;
+                }
+                let issuer = ctx.instruments().issuer_of(line);
+                // XI-3's two exceptions are exactly the parties that cannot be made to fail, and a
+                // claim on one of them is the zero-weighted asset the standard means.
+                let kind = ctx.parties().kind_of(issuer);
+                let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
+                // A name nobody has graded weighs what an ungraded name weighs, which is what the
+                // scale's bottom is for — not nothing, and not a number invented here.
+                let grade = crate::mechanisms::ratings::Grade::at_rank(
+                    *worst.get(&issuer.0).unwrap_or(&crate::mechanisms::ratings::Grade::Substantial.rank()),
+                )
+                .unwrap_or(crate::mechanisms::ratings::Grade::Substantial);
+                assets.push(Asset {
+                    carried,
+                    weight: Weight::on(can_fail, crate::mechanisms::ratings::haircut(grade, 1.0) - 1.0),
+                });
+            }
+            // A1: and what it OWES — the money it issued that others hold, plus what falls due on it.
+            let mut liabilities = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                let (held, _) = ctx.register().held_total(what);
+                liabilities += held - ctx.register().quantity(ctx.register().row(who, what));
+            }
+            let due_now: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let position = Position {
+                bank: who,
+                assets,
+                liabilities,
+                // A2.b: the layer between equity and senior paper. Nothing in this world issues one
+                // yet, so it is none — which is a fact about the world and not a number chosen here.
+                subordinated: 0.0,
+                due_now,
+                money_at_hand,
+            };
+            if position.carried() <= 0.0 {
+                continue;
+            }
+            let how = standing(&position, rules);
+            let ratio = position.capital() / position.carried();
+            // 40 C5: **what it is lending at now.** A lender with no room asks for more of the price
+            // up front, and both terms move together because both are read from the same position.
+            let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
+            acted.push((who, ratio, how.below_requirement, headroom));
+        }
+
+        for (who, ratio, below, headroom) in acted {
+            // B3: the standing is PUBLIC. A capital position nobody could read is one no depositor,
+            // no lender and no assessor could act on.
+            ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
+            // C2: **and a bank below its requirement must RAISE.** What it says here is what it is
+            // short of, and `Floating` is the one writer of a company's shares (Law 4) — a
+            // recapitalisation IS an equity issue, and a second mechanism bringing a share line
+            // would be two answers to *where did this company's shares come from*.
+            if below {
+                ctx.say(self.short_by, &[who.0], &[(self.at_ratio, Value::Num(-headroom))], true);
+            }
+        }
     }
 }
 
