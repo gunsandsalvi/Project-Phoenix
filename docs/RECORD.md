@@ -21015,3 +21015,45 @@ contract (21.79), an agreement has no cure (21.62), and the early-termination re
 
 **736 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst period
 594 ms against the 3,000 ms budget, every family clean or honestly not-built.**
+
+## 22j.1 — the fiscal period is a QUARTER, a target opens its books, and book equity is not a price
+
+**Three corrections from the owner, and I had invented all three rather than reading the spec.**
+
+**§48 A3 says a QUARTER, and I used a year.** *It covers a fiscal period: a quarter placed by date on
+the one calendar (§1 G3.a), which is a whole number of periods only by accident.* 22i.1 wrote 365
+days. It is now three months of calendar, walked by advancing the MONTH — `Day::plus_months`, which
+keeps the day where the target month has one and takes that month's last where it has not. A quarter
+is 91 days in one year and 90 in another, and four of them are not 4 × 91; the test says so. The
+first report of a company that opened on the epoch now comes out on day 135, period 20, instead of
+period 59.
+
+**§35 B1 says the acquirer's OWN valuation of the target's expected earnings, and I gated it on a
+published report.** A target being bid for opens its books to the bidder — that is what due diligence
+is — so waiting for §48's calendar made a company unvaluable between its quarters and for the whole
+of its first one. `Control` reads what the target is EARNING off the wire, in any week: what it took
+in against what it paid out, from each leg's own receipt.
+
+**And the book-value reservation in `Flotation` was mine.** Book equity is what a company's holdings
+cost, at cost. Nothing in §10 says a floating company will not sell below it, and a reservation
+nobody derived is a floor under a price wearing a seller's clothes — it made a flotation clear at an
+accounting figure rather than at what anybody would pay. Deleted, with the `worth_per_share` read
+that existed only to feed it.
+
+**Where I push back: §48 G2 is not my invention.** *Reported income is the equity account's movement
+over the fiscal period* is the clause, word for word, and `Publishes` implements it. The fixation was
+in the two places above, not there.
+
+**What deleting it exposed, and what stopped.** A level-less ask reaches `prices.rs` as MINUS
+INFINITY — `protocols::level_of` uses ±∞ to mean *takes what the book gives* and nothing stops the
+sentinel becoming a print. It stopped the world in period 1. Latent since 22c; the flotation's ask is
+what reached it. **22j.2** has the fix, which belongs in `protocols` and not at the call sites:
+`clearing::clear` already takes only *the levels somebody NAMED*, and `book` and `posted` must do the
+same. Until then `Flotation` offers nothing — the line is brought and nobody is asked to bid for it,
+which is a flotation that has not been offered rather than one cleared at an accounting figure.
+
+**A first report still carries no income** (22j.3), and that no longer blocks a takeover, but it does
+leave a company's cost of equity missing for a quarter. The opening figure for a first fiscal period
+is what the company held when it entered; nothing keeps it.
+
+**736 tests; `npm run check` green; clippy clean; `world:runs` four periods, worst 547 ms.**

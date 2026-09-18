@@ -93,27 +93,6 @@ impl<'a> ParticipantView<'a> {
             .sum()
     }
 
-    /// §10 A1, Law 3: **what the residual is worth to equity, per share** — its OWN book value, over
-    /// the shares it is selling. It is a reservation and not a price: what the shares fetch is
-    /// whatever the book crosses at. `Missing` over no shares, because a per-share figure over
-    /// nothing is not a number (§48 G5).
-    pub fn worth_per_share(&self, shares: f64) -> Option<f64> {
-        if shares <= 0.0 {
-            return None;
-        }
-        let worth: f64 = self
-            .holdings()
-            .map(|row| {
-                if self.register.is_total(row) {
-                    self.register.quantity(row)
-                } else {
-                    self.register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum()
-                }
-            })
-            .sum();
-        Some(worth / shares)
-    }
-
     /// §33, 22i.10: how much money this firm has committed to a capital programme, and zero where
     /// it has none afoot.
     pub fn in_a_programme(&self) -> f64 {

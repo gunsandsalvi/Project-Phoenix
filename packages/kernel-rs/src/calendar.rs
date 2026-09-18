@@ -145,6 +145,25 @@ impl Day {
 
     /// **22c.0: the last business day of this day's month** — how a fixing and a quarter end are
     /// stated. A month always has one, so this is not an Option.
+    /// **G3.a, §48 A3: ADVANCE A DATE BY MONTHS.** A quarter is three months of calendar, which is
+    /// a whole number of periods only by accident — so a fiscal calendar is walked by advancing the
+    /// month and never by adding days.
+    ///
+    /// The day of the month is kept where the target month has one; where it has not (the 31st of a
+    /// month with thirty days) it is the last day of that month, which is what a date that does not
+    /// exist means rather than a day in the next one.
+    pub fn plus_months(self, months: i64) -> Day {
+        let c = self.civil();
+        let whole = (c.year * 12 + i64::from(c.month) - 1) + months;
+        let year = whole.div_euclid(12);
+        let month = (whole.rem_euclid(12) + 1) as u32;
+        // The last day of that month, found by stepping back from the first of the next — no table
+        // of month lengths, and the leap year falls out of the civil mapping (Law 4).
+        let next = if month == 12 { Day::of(year + 1, 1, 1) } else { Day::of(year, month + 1, 1) };
+        let last = Day(next.0 - 1).civil().day;
+        Day::of(year, month, if c.day < last { c.day } else { last })
+    }
+
     pub fn last_business_day_of_its_month(self) -> Day {
         let Civil { year, month, .. } = self.civil();
         let (next_year, next_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
@@ -201,6 +220,28 @@ impl Calendar {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_quarter_is_three_months_of_calendar_and_not_ninety_one_days() {
+        // **G3.a, §48 A3: a quarter is three MONTHS**, which is a whole number of days only by
+        // accident — 90 in one and 92 in another — so a fiscal calendar advances the month.
+        let opens = Day::of(2000, 1, 1);
+        let closes = Day(opens.plus_months(3).0 - 1);
+        assert_eq!(closes.civil(), Civil { year: 2000, month: 3, day: 31 });
+        assert_eq!(closes.0 - opens.0 + 1, 91, "2000 was a leap year");
+        let next = Day(closes.0 + 1);
+        assert_eq!(Day(next.plus_months(3).0 - 1).civil(), Civil { year: 2000, month: 6, day: 30 });
+        // Four quarters make a year, and adding 91 days four times does not.
+        assert_eq!(opens.plus_months(12), Day::of(2001, 1, 1));
+        assert_ne!(Day(opens.0 + 4 * 91), Day::of(2001, 1, 1));
+
+        // A date the target month has not got is its LAST day, which is what a day that does not
+        // exist means rather than one in the month after.
+        assert_eq!(Day::of(2000, 1, 31).plus_months(1).civil(), Civil { year: 2000, month: 2, day: 29 });
+        assert_eq!(Day::of(2001, 1, 31).plus_months(1).civil(), Civil { year: 2001, month: 2, day: 28 });
+        // And it walks backwards, over a year boundary.
+        assert_eq!(Day::of(2000, 1, 15).plus_months(-3).civil(), Civil { year: 1999, month: 10, day: 15 });
+    }
 
     #[test]
     fn a_periodicity_is_placed_by_date_and_never_by_a_count_of_periods() {

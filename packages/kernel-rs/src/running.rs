@@ -1213,6 +1213,9 @@ pub struct Publishes {
     pub at_equity: u32,
     pub at_income: u32,
     pub at_shares: u32,
+    /// §48 A3: which fiscal close a report is FOR. A figure with no period is one nobody can
+    /// restate against or compare with the next (Law 8).
+    pub at_closed: u32,
     pub days_per_period: i64,
     /// §48 A4: how many days after the books close the report comes out. A TECHNOLOGY.
     pub asymmetry: &'static str,
@@ -1230,16 +1233,22 @@ impl Mechanism for Publishes {
         // A5: what each company last published, read off the journal's own rows — one pass, not one
         // walk of the world's history per company (Law 19: the read replaces the walk).
         let mut last: std::collections::HashMap<u32, (u32, f64)> = std::collections::HashMap::new();
+        // A5: and which fiscal close each report was ABOUT, so a quarter is published once and a
+        // restatement is a different act.
+        let mut reported: std::collections::HashSet<(u32, i64)> = std::collections::HashSet::new();
         for &row in ctx.journal().of_kind(self.kind) {
             let when = ctx.journal().period_of(row);
             if let (Some(&who), Some(Value::Num(equity))) =
                 (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_equity))
             {
                 last.insert(who, (when, equity));
+                if let Some(Value::Num(about)) = ctx.journal().says(row, self.at_closed) {
+                    reported.insert((who, about as i64));
+                }
             }
         }
 
-        let mut out: Vec<(u32, f64, Option<f64>, f64)> = Vec::new();
+        let mut out: Vec<(u32, f64, Option<f64>, f64, i64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
             let who = PartyId(row);
             if !ctx.parties().alive(who) {
@@ -1260,33 +1269,36 @@ impl Mechanism for Publishes {
             if !crate::mechanisms::reporting::reports(listed > 0.0, outsiders) {
                 continue;
             }
-            // A3, G6: the fiscal year, from the day this company started. A year that has not closed
-            // has nothing to report.
+            // **A3, G3.a, G6: THE FISCAL PERIOD IS A QUARTER**, placed by DATE from the day this
+            // company started — three months of calendar, which is a whole number of periods only by
+            // accident. It is walked by advancing the month, never by adding days: a quarter is not
+            // ninety-one days and a year is not four of them.
             let born = Day(i64::from(ctx.parties().since(who)) * days);
-            let years = (today.0 - born.0) / 365;
-            if years <= 0 {
+            let mut opens = born;
+            let mut closes = Day(born.plus_months(3).0 - 1);
+            // The LAST quarter whose report is due. A company reports every quarter, so the one to
+            // publish is the most recent closed one it has not published yet.
+            while Day(closes.plus_months(3).0).0 + asymmetry <= today.0 {
+                opens = Day(closes.0 + 1);
+                closes = Day(opens.plus_months(3).0 - 1);
+            }
+            if closes.0 >= today.0 {
                 continue;
             }
-            let closes = Day(born.0 + 365 * years - 1);
-            let fiscal = crate::mechanisms::reporting::Fiscal::new(
-                Day(closes.0 - 364),
-                closes,
-                Day(closes.0 + asymmetry),
-            );
+            let fiscal = crate::mechanisms::reporting::Fiscal::new(opens, closes, Day(closes.0 + asymmetry));
             if today < fiscal.published {
                 continue;
             }
-            // And it publishes each year once. A report already out for this year-end is not
-            // republished; a restatement is a different act (A5) and nothing restates yet.
-            let closed_in = (fiscal.published.0 / days) as u32;
-            if matches!(last.get(&row), Some(&(when, _)) if when >= closed_in) {
+            // A5: and it publishes each quarter ONCE. A report already out for this close is not
+            // republished; a restatement is a different act and nothing restates yet.
+            if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
             let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
             // G2: income is the MOVEMENT against what it last published. A first report has no
             // prior close and so publishes no income — missing is missing.
             let income = last.get(&row).map(|&(_, was)| now - was);
-            out.push((row, now, income, listed));
+            out.push((row, now, income, listed, fiscal.closes.0));
         }
         // C1, D3: **and the banks that cover a name estimate what it will report.** Coverage is
         // uneven and how many cover a name is an OUTCOME (D3): a bank estimates the names it can
@@ -1295,7 +1307,7 @@ impl Mechanism for Publishes {
         // so two banks with different histories of a name estimate differently.
         let memory = ctx.params().ratio(self.memory);
         let mut estimating: Vec<(PartyId, PartyId, f64)> = Vec::new();
-        for (who, worth, _, _) in &out {
+        for (who, worth, _, _, _) in &out {
             let company = PartyId(*who);
             for &line in ctx.instruments().of_issuer(company) {
                 for &row in ctx.register().of_instrument(InstrumentId::at(line)) {
@@ -1326,8 +1338,14 @@ impl Mechanism for Publishes {
             ctx.now_stands(standing::ESTIMATE, bank, company, vec![figure]);
         }
 
-        for (who, worth, income, shares) in out {
-            let mut data = vec![(self.at_equity, Value::Num(worth)), (self.at_shares, Value::Num(shares))];
+        for (who, worth, income, shares, closed) in out {
+            let mut data = vec![
+                (self.at_equity, Value::Num(worth)),
+                (self.at_shares, Value::Num(shares)),
+                // A3: WHICH fiscal close this is the report for. A figure with no period is a
+                // figure nobody can restate or compare (Law 8).
+                (self.at_closed, Value::Num(closed as f64)),
+            ];
             if let Some(earned) = income {
                 data.push((self.at_income, Value::Num(earned)));
             }
@@ -1988,13 +2006,19 @@ impl Mechanism for Floating {
     }
 }
 
-/// **§10 A6, Law 3, 22i.7: AND IT OFFERS THEM, at what it will take.**
+/// **§10 A6, Law 3, 22j.1: AND IT OFFERS THEM, AT NO LEVEL.**
 ///
-/// A company selling its own new shares posts an ask like any other seller. Its reservation is its
-/// own book value per share — what the company is worth to the people who already own it — because
-/// selling ownership below that makes them poorer. What the shares FETCH is whatever the book
-/// crosses at (Law 3), and the two can be far apart: a flotation that does not clear is a real
-/// outcome and is why `closes` exists.
+/// A company selling its own new shares offers them and the BOOK says what they are worth. That is
+/// what a flotation is — investors bid, the price clears, and the company finds out what its
+/// ownership fetches.
+///
+/// **It posted a book-value reservation and that was invented.** Book equity is what a company's
+/// holdings cost, at cost; it is not what the company is worth and nothing in §10 says a floating
+/// company will not sell below it. A reservation nobody derived is a floor under a price (Law 6)
+/// wearing a seller's clothes, and it made the flotation clear at an accounting figure rather than
+/// at what anybody would pay.
+///
+/// A flotation that finds no bid does not clear, which is a real outcome and is why `closes` exists.
 pub struct Flotation {
     pub of_kind: u32,
 }
@@ -2016,27 +2040,20 @@ impl crate::module::Participant for Flotation {
         if shares <= 0.0 {
             return Vec::new();
         }
-        let line = crate::systems::line_of(m);
-        let held = view.free(line);
-        if held <= 0.0 {
-            return Vec::new();
-        }
-        // A1: what the residual is worth to equity, per share — the company's own book value. A
-        // seller with nothing to sell it for is a seller with no reservation, which is missing and
-        // not free (Appendix A).
-        let Some(worth) = view.worth_per_share(held) else { return Vec::new() };
-        // Law 8: an order is WHOLE PIECES, and `whole_pieces` is the one writer of that tick. A
-        // holding of less than one share is not an order for none — it is not an order (Clearing C1).
-        let units = crate::clearing::whole_pieces(held);
-        if units <= 0 {
-            return Vec::new();
-        }
-        vec![crate::clearing::Order {
-            party: view.self_id(),
-            side: crate::clearing::Side::Sell,
-            price: Some(worth),
-            qty: units,
-        }]
+        let _ = m;
+        // **22j.2: IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.**
+        //
+        // A company floating its shares posts an ask at NO LEVEL — the book says what its ownership
+        // is worth and the company does not — and posting one at its book value was an invented
+        // floor under a price that nothing derived. Both of those are settled.
+        //
+        // What is not settled is that a level-less ask in a `Book` venue reaches `prices.rs` as
+        // MINUS INFINITY: `protocols::level_of` uses ±∞ to mean *takes what the book gives* and
+        // nothing stops that sentinel becoming the print. It stops the world in period 1, and it is
+        // 22j.2. Until it is fixed the line is brought and nobody is asked to bid for it — which is
+        // a flotation that has not been offered, and says so, rather than one cleared at an
+        // accounting figure.
+        Vec::new()
     }
 }
 
@@ -3981,8 +3998,13 @@ impl Mechanism for Securitising {
 /// **§35 A1, B1, B2, C1, §29 B2.b, 22i.18: A COMPANY IS BID FOR, AND THE OWNERS DECIDE.**
 ///
 /// The `control` row was a CLOSER for a buy-back nothing opened, so §35 and §29 B were a thousand
-/// lines nothing had ever exercised (21.73). What it waited on was two things that did not exist:
-/// a company with SHARES (22i.7) and a published set of accounts to value it from (22i.1).
+/// lines nothing had ever exercised (21.73). What it waited on was a company with SHARES, which
+/// 22i.7 built.
+///
+/// **It does NOT wait for a published report** (22j.1). A target being bid for opens its books to
+/// the bidder — that is what due diligence is — so the acquirer forms its expectation from what the
+/// target is EARNING, read off the wire in any week. Gating this on §48's quarterly calendar made a
+/// company unvaluable between its quarters and for the whole of its first one.
 ///
 /// **The acquirer's valuation is its OWN** (B1): the target's expected earnings discounted at its own
 /// hurdle, so the next acquirer's is different — which is what makes a contest possible at all.
@@ -3995,8 +4017,6 @@ impl Mechanism for Securitising {
 /// sell, measured against what the market last printed.
 pub struct Control {
     pub kind: u32,
-    pub accounts: u32,
-    pub at_income: u32,
     /// §35 B1: what an acquirer wants on what it buys. Its own hurdle, and a PREFERENCE.
     pub hurdle: &'static str,
     /// §35 C1: the share of a company somebody must hold to control it, read off the outstanding
@@ -4010,22 +4030,47 @@ impl Mechanism for Control {
         let hurdle = ctx.params().ratio(self.hurdle);
         let needs = ctx.params().ratio(self.needs);
 
-        // §48, 22i.1: what each company last published. A company that publishes nothing cannot be
-        // valued, which is 21.76's finding and is why this row could not run before.
-        let mut earnings: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
-        for &row in ctx.journal().of_kind(self.accounts) {
-            if let (Some(&who), Some(Value::Num(income))) =
-                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income))
-            {
-                earnings.insert(who, income);
+        // **§35 B1: THE ACQUIRER'S OWN VALUATION, of the target's EXPECTED earnings.** It does not
+        // wait for a published report and must not: a target being bid for OPENS ITS BOOKS to the
+        // bidder — that is what due diligence IS — and gating on §48's calendar made a company
+        // unvaluable between its quarters and for its whole first quarter.
+        //
+        // What an acquirer expects is what the target is EARNING: the money it has taken in against
+        // the money it has paid out, over the period, read off the wire. That is a read of what
+        // settled (§48 A2's rule, applied to a private look rather than a public report), and it is
+        // available in any week rather than four times a year.
+        let mut earned: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for n in ctx.wire().in_period(ctx.period()) {
+            if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
+                continue;
+            }
+            for leg in ctx.wire().legs_of(n) {
+                if let crate::ledger::Leg::Money { from, to, amount, receipt, .. } = *leg {
+                    if from == to {
+                        continue;
+                    }
+                    // What a company EARNS is what it sells, less what it pays for what it uses.
+                    // A receipt says which a payment is (0i.5), so this reads the leg's own word
+                    // for it rather than guessing from the parties.
+                    match receipt {
+                        crate::ledger::Receipt::Sale => {
+                            *earned.entry(to.0).or_insert(0.0) += amount;
+                            *earned.entry(from.0).or_insert(0.0) -= amount;
+                        }
+                        crate::ledger::Receipt::Wage | crate::ledger::Receipt::Tax => {
+                            *earned.entry(from.0).or_insert(0.0) -= amount;
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
-        if earnings.is_empty() {
+        if earned.is_empty() {
             return;
         }
 
         let mut bidding: Vec<(PartyId, PartyId, f64, f64, f64)> = Vec::new();
-        for (&target, &income) in &earnings {
+        for (&target, &income) in &earned {
             let company = PartyId(target);
             if !ctx.parties().alive(company) {
                 continue;

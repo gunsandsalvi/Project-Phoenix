@@ -191,23 +191,29 @@ longer true of any of them, and what is left is the specific clause each was rea
 here waits on a door any more — the doors are built — so each waits on a thing somebody has to
 write.
 
-- [ ] 22j.1 **A COMPANY IS UNVALUABLE FOR ITS FIRST TWO FISCAL YEARS, AND THAT IS A DEFECT OF 22i.1.**
-  `Publishes` computes income as the equity account's MOVEMENT against what the company last
-  published (§48 G2, *no earnings that were not earned*), so a FIRST report carries no income figure
-  at all. Everything that reads earnings then skips the company: `Control` cannot value it (§35 B1
-  discounts expected EARNINGS), `CostOfCapital` has no cost of equity for it (22i.9), and a covenant
-  has nothing to test. With a 365-day year and 45 days' asymmetry that is period 59 for the first
-  report and 111 for the second.
-  **G2 is right and the reading of it was lazy.** A real first annual report DOES report income —
-  for the period since incorporation, against the equity the company started with. That opening
-  figure is not missing in principle: the world knows what a party was admitted holding, and 22i.1
-  gave every party the period it entered (`Parties::since`). What it does not do is keep what the
-  party held then, so "missing is missing" was applied to a fact nobody had stored rather than to one
-  nobody can know (Appendix A: those are different).
-  **The fix is a read, not a workaround**: a company's first fiscal period opens at its BIRTH, and
-  its opening equity is what it held at that period. Either `World::admit` records it, or the first
-  report reads the register as at the birth period. Not a default of zero, which would publish an
-  income equal to everything the company has ever held.
+- [ ] 22j.2 **A LEVEL-LESS ASK REACHES THE PRICES AS MINUS INFINITY, AND IT STOPS THE WORLD.**
+  `protocols::level_of` uses `+∞` for a bid with no level and `-∞` for an ask with one — a sentinel
+  meaning *takes what the book gives* (Clearing C1, XI-2) — and nothing stops that sentinel becoming
+  the print: `prices.rs` refuses it (*Law 6: a price of -inf is not a price*) and the world stops in
+  period 1. It was latent from 22c and a flotation's no-level ask is what reached it; the forced
+  seller's has not, which is luck rather than a difference.
+  **The fix is in `protocols`, not at the call sites.** An order with no level is in the book at
+  every level and CANNOT SET ONE — which is exactly what `clearing::clear` already does (the
+  candidate levels are *the ones somebody NAMED*). `book` and `posted` must do the same: cross
+  against the levels that were posted, and where NOBODY on either side named one there is no price
+  and nothing clears. A sentinel that can be printed is a level nobody named wearing a price's
+  clothes.
+  **Until it is fixed `Flotation` offers nothing** — the line is brought and nobody is asked to bid
+  for it, which is a flotation that has not been offered and says so.
+- [ ] 22j.3 **A FIRST REPORT STILL CARRIES NO INCOME** (§48 G2). Income is the equity account's
+  movement against the last published close, so the first report for a company has none — nothing
+  that reads earnings can read it, and the company's cost of equity (22i.9) is missing for a quarter.
+  G2 is right; what is missing is the OPENING figure for the first fiscal period, which is what the
+  company held when it entered. 22i.1 gave every party the period it entered (`Parties::since`) and
+  nothing keeps what it held then, so "missing is missing" was applied to a fact nobody had STORED
+  rather than one nobody can know — and Appendix A says those are different answers.
+  No longer blocks a takeover: 22j read §35 B1 again and `Control` values a target off what it is
+  EARNING, read in any week, because a target being bid for opens its books.
 - [ ] 21.42 `indices/baskets.ts`: the consumer basket is physical goods a member buys and the rent a
   member pays is not in it, so the price level leaves out what Housing D3 calls a large component of
   it — and the basket that includes them is one basket, not a second index (Law 4). **Re-read: it

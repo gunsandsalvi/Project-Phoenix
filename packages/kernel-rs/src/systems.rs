@@ -788,7 +788,7 @@ pub fn declare(p: &mut Params) {
     // this world has — in these days the company knows its result and nobody else does (A4.a) — so a
     // value of zero would delete the clause rather than satisfy it.
     say("reporting.asymmetry", 45.0, "days after the books close", Dimension::Days, Kind::Technology, Owner::StandardSetter,
-        "the days between a company's year-end and the day its accounts are published");
+        "the days between a company's quarter-end and the day its accounts are published");
     // **XI-2, 22i.3: how long a holder has to sell what its mandate no longer lets it hold.** A
     // TECHNOLOGY: how long a breach may stand before it is a breach nobody is curing. It is short
     // because a mandate breach is mechanical — the holder has no discretion about whether to sell.
@@ -1000,6 +1000,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let at_equity = keys_of(journal, "accounts.equity");
     let at_income = keys_of(journal, "accounts.income");
     let at_shares = keys_of(journal, "accounts.shares");
+    let at_closed = keys_of(journal, "accounts.closed");
     let at_standing = keys_of(journal, "claim.standing");
     let at_ratio = keys_of(journal, "bank.ratio");
     let at_about = keys_of(journal, "statistic.about");
@@ -1347,6 +1348,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             at_equity,
             at_income,
             at_shares,
+            at_closed,
             days_per_period: w.days_per_period,
             asymmetry: "reporting.asymmetry",
             memory: "outlook.memory",
@@ -1397,11 +1399,10 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // **§35, §29 B: and a company is BID FOR, and the owners decide.** It was a closer for a
         // buy-back nothing opened, so §35 and §29 B were a thousand lines nothing had ever
         // exercised (21.73). What it waited on was a company with SHARES (22i.7) and published
-        // accounts to value it from (22i.1).
+        // 22j.1: it does NOT wait for a published report — a target being bid for opens its books
+        // to the bidder, so the acquirer reads what it is EARNING in any week.
         works("control", AT_REVALUATION, Box::new(Control {
             kind: says("control.tender"),
-            accounts: kinds_row_accounts,
-            at_income,
             hurdle: "acquirer.hurdle",
             needs: "control.needs",
         })),
@@ -1787,7 +1788,7 @@ mod publishing {
     /// (§35) and a covenant had nothing to test. The year is placed by DATE from the day the company
     /// started, which is why a party had to be given a birth period first (22i.1).
     #[test]
-    fn a_listed_company_publishes_its_accounts_on_its_own_year_end() {
+    fn a_listed_company_publishes_its_accounts_on_its_own_quarter_end() {
         let mut w = World::empty();
         declare(&mut w.params);
         let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
@@ -1817,15 +1818,17 @@ mod publishing {
         let at_equity = w.journal.keys_named.row("accounts.equity");
         let at_income = w.journal.keys_named.row("accounts.income");
 
-        // A3: its first year has not closed, so it reports nothing. A4: and 45 days after it closes
-        // is week 59 of a 7-day period, so nothing comes out before then either.
-        for _ in 0..58 {
+        // **A3, G3.a: the fiscal period is a QUARTER placed by date.** This company opened on the
+        // world's own epoch, 2000-01-01, so its first quarter closes on 2000-03-31 — day 90 — and
+        // A4's forty-five days put the report out on day 135, which is period 20 of a seven-day
+        // period. Nothing comes out before then.
+        for _ in 0..19 {
             w.step(&only);
             assert!(w.journal.of_kind(published).is_empty(), "48 A4: the books have not closed");
         }
         w.step(&only);
         let out = w.journal.of_kind(published).to_vec();
-        assert_eq!(out.len(), 1, "one company, one year-end, one report");
+        assert_eq!(out.len(), 1, "one company, one quarter-end, one report");
         assert_eq!(w.journal.subjects_of(out[0]), &[firm.0]);
         assert!(w.journal.is_public(out[0]), "48 A1: PUBLISHED is what makes it readable by anybody");
         assert_eq!(w.journal.says(out[0], at_equity), Some(Value::Num(200.0)));
@@ -1833,7 +1836,7 @@ mod publishing {
         // missing — a first annual report with no comparative is what that looks like.
         assert_eq!(w.journal.says(out[0], at_income), None);
 
-        // And it does not publish the same year-end twice.
+        // A5: and it does not publish the same quarter twice — the next report is the next quarter's.
         w.step(&only);
         assert_eq!(w.journal.of_kind(published).len(), 1);
     }
@@ -1856,7 +1859,7 @@ mod publishing {
         let only: Vec<&dyn System> = wired.iter().filter(|s| s.name == "reporting").map(|s| s as &dyn System).collect();
         w.wire_up(&only);
         let published = w.journal.kinds.row("accounts.published");
-        for _ in 0..70 {
+        for _ in 0..25 {
             w.step(&only);
         }
         assert!(w.journal.of_kind(published).is_empty());
@@ -1905,7 +1908,7 @@ mod grading {
 
         // Nothing to grade until something has published: a grade formed off no accounts would be a
         // grade of a state nobody can read (A2).
-        for _ in 0..60 {
+        for _ in 0..20 {
             w.step(&only);
         }
         assert!(
@@ -1913,8 +1916,8 @@ mod grading {
             "21 A2: ONE report carries no income (48 G2 has no prior close), so coverage cannot be \
              read and there is nothing to grade on — missing is missing"
         );
-        // Its second year-end gives it an income figure, and that is the first thing gradeable.
-        for _ in 0..53 {
+        // Its second QUARTER-end gives it an income figure, and that is the first thing gradeable.
+        for _ in 0..14 {
             w.step(&only);
         }
         assert!(!w.journal.of_kind(action).is_empty(), "48 A1 published twice, so 21 A2 has a state to read");
