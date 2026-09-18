@@ -22,7 +22,7 @@
 use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
 use crate::clearing::{Order, Side};
 use crate::ids::{InstrumentId, MarketId};
-use crate::module::{Participant, ParticipantView};
+use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -307,6 +307,9 @@ pub struct Wired {
     pub at: u32,
     pub anchor_after: bool,
     pub participant: Option<Box<dyn Participant>>,
+    /// ARCHITECTURE 4.9b: its own work in the period, if it has any of its own. A system that only
+    /// reads what the books produced has none, and that is an answer rather than a gap.
+    pub mechanism: Option<Box<dyn Mechanism>>,
 }
 
 impl Wired {
@@ -322,6 +325,10 @@ impl Wired {
 impl System for Wired {
     fn name(&self) -> &'static str {
         self.name
+    }
+
+    fn mechanism(&self) -> Option<&dyn Mechanism> {
+        self.mechanism.as_deref()
     }
 
     fn phases(&self) -> Vec<PhaseDecl> {
@@ -343,12 +350,12 @@ impl System for Wired {
 /// for one of them would be demand nobody has.
 pub fn reads(name: &'static str, at: u32) -> Wired {
     // The slot is assigned by `all`, which is the one place that knows the order.
-    Wired { name, slot: 0, at, anchor_after: true, participant: None }
+    Wired { name, slot: 0, at, anchor_after: true, participant: None, mechanism: None }
 }
 
 /// A system that posts. The participant is its reason to be in a book (Clearing B2).
 pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> Wired {
-    Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant) }
+    Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None }
 }
 
 /// **The lines each system needs, NAMED.** It was one `cash` handed to everybody, which is what
@@ -372,7 +379,13 @@ pub struct Wiring {
 pub fn all(w: &Wiring) -> Vec<Wired> {
     let mut rows = vec![
         // The real economy: what is made, what it costs to move, and who buys it.
-        posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0 })),
+        {
+            // §37 both posts and works: a firm offers what it holds, and the stock that does not
+            // survive the period leaves at what it cost (37 E4).
+            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0 }));
+            goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: 0.01 }));
+            goods
+        },
         posts(
             "households",
             AT_MARKETS,

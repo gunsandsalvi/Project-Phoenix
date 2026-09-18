@@ -31,6 +31,9 @@
 //! what absorption means; charging it in both places is F5.b's one cost in two places.
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
+use crate::instruments::Class;
+use crate::ledger::{Cause, Delivery, Gone, Leg};
+use crate::module::{Mechanism, MechanismContext};
 
 /// C1: a seller offering a quantity, and a buyer posting the most it will pay. C3: buyers are
 /// heterogeneous and bid for their own reasons — firms buying inputs, households consuming,
@@ -299,6 +302,54 @@ pub fn charge(sold: &Consumed, line_cost: f64, absorbed_into_batches: f64) -> Ch
     Charged {
         cost_of_goods_sold: sold.cost,
         period_cost: line_cost - absorbed_into_batches,
+    }
+}
+
+/// **WHAT §37 DOES IN A PERIOD**, through the second door (ARCHITECTURE 4.9b).
+///
+/// Goods perish. It is the one thing this system does whether or not anybody trades, and it is a
+/// real flow with a real loss: units leave at what they cost, booked as an EVENT on the holder's
+/// account rather than a number that quietly stops existing (XI-1, 37 E4).
+pub struct Perishing {
+    /// 37 E4: the share of a lot that does not survive the period. A TECHNOLOGY — a fact about the
+    /// thing, not about who holds it.
+    pub share: f64,
+}
+
+impl Mechanism for Perishing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        // The READ pass first, then the proposals. A module reads the stores and proposes; it cannot
+        // do both at once, which is the borrow saying what Law 4 already says.
+        let mut gone_from: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
+        for row in ctx.register().all() {
+            let line = ctx.register().instrument_of(row);
+            if ctx.instruments().class_of(line) != Class::Good {
+                continue;
+            }
+            let held = ctx.register().lots(row);
+            if held.is_empty() {
+                continue;
+            }
+            // Law 19: the module's own arithmetic over the register's own lots, converted at the
+            // boundary and nowhere else.
+            let mine: Vec<Lot> = held
+                .iter()
+                .map(|l| Lot { units: l.qty, cost_per_unit: l.basis_per_unit, acquired: l.acquired })
+                .collect();
+            let gone: f64 = mine.iter().map(|l| perish(l, self.share).units).sum();
+            if gone <= 0.0 {
+                continue;
+            }
+            gone_from.push((ctx.register().holder_of(row), line, gone));
+        }
+        for (party, instrument, qty) in gone_from {
+            ctx.propose(
+                vec![Leg::Destroy { party, instrument, qty, why: Gone::Perished }],
+                Cause::Production,
+                Delivery::Nothing,
+                "the share of the stock that did not survive the period",
+            );
+        }
     }
 }
 
