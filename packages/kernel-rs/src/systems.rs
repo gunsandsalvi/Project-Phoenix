@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, SpotFx, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -846,6 +846,10 @@ pub fn declare(p: &mut Params) {
     // §13 C1: how much of its spare money a holder puts into one pool. A PREFERENCE, and its own.
     // §15 B2.a: how much of what it holds a lender will put out at once. Its own limit, and a
     // PREFERENCE — a holder that would lend all of it is a holder with no view about being recalled.
+    // §21 D3: what a period of storage costs, per unit. A TECHNOLOGY — a fact about warehouses,
+    // and it is PAID to whoever owns one (Law 5), never subtracted from a number.
+    say("storage.per_unit", 0.01, "money per unit per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
+        "what holding one unit of a physical good for one period costs");
     say("lending.will_lend", 0.3, "per unit held", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of a holding a lender will have out on loan at once");
     say("subscribe.commits", 0.1, "per unit of spare cash", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -1015,7 +1019,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             f.mechanism = Some(Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive }));
             f
         },
-        works("commodities", AT_MARKETS, Box::new(Reads { kind: says("commodities.lines"), what: Counts::LinesThatPrinted })),
+        // **§21 D2, D3: and stock is TIGHT or it is not, and storing it costs money to somebody.**
+        // It counted how many lines printed, so this world had no measure of scarcity at all and
+        // D3's storage cost was paid by nobody to nobody.
+        works("commodities", AT_REVALUATION, Box::new(Storing {
+            kind: says("stock.tightness"),
+            per_unit: "storage.per_unit",
+        })),
         // §37 C3, 22c.4: **somebody whose business is to hold the stock.** It stands on both sides of
         // a goods book — buying what it expects to sell and asking what it has actually paid to hold
         // — and it is the missing intermediary of Law 1.
@@ -1062,7 +1072,12 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
         works("money", AT_CORPORATE_ACTIONS_SLOT, Box::new(Owed { kind: says("money.owed") })),
-        works("sovereign", AT_MARKETS, Box::new(Reads { kind: says("sovereign.lines"), what: Counts::LinesThatPrinted })),
+        // **XI-9: and a treasury HANDLES being short.** It counted how many lines printed, so the
+        // sovereign funding constraint — step 3 of the sequencing — bound on nothing.
+        works("sovereign", AT_REVALUATION, Box::new(Sovereign {
+            kind: says("sovereign.shortfall"),
+            days_per_period: w.days_per_period,
+        })),
         // **§31 A1, B3, C1.a: and a bank READS its own capital.** It counted how many parties were
         // alive, so no bank in this world had a capital position at all and §31's ladder was never
         // read. The weights come from the grades, which is why it waited for 22i.2.

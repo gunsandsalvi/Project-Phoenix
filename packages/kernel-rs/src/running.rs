@@ -3451,6 +3451,194 @@ impl Mechanism for Levered {
     }
 }
 
+/// **XI-9, §30 C3, 22i.16: WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.**
+///
+/// The `sovereign` row counted how many lines printed. So the sovereign funding constraint — step 3
+/// of the sequencing — bound on nothing: a treasury short of money simply failed a payment, and
+/// XI-9's three real acts, each with a consequence, had never happened.
+///
+/// **It is a READ of the state, not a policy** — which of the three is available is arithmetic about
+/// what it holds and what it owes. The buffer is what the buffer is for, and it is smaller
+/// afterwards. **An outlay deferred is somebody not paid**, and that is an EVENT with a named
+/// counterparty, never a number quietly reduced. Past both, it goes back to the market, and a failed
+/// auction has cost something — which is what makes its result carry information rather than being
+/// decorative.
+pub struct Sovereign {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for Sovereign {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::sovereign::{handle, Programme, Shortfall};
+        let from = Day(i64::from(ctx.period()) * self.days_per_period);
+        let to = Day(from.0 + self.days_per_period - 1);
+
+        let mut handled: Vec<(PartyId, f64, f64)> = Vec::new();
+        for &state in ctx.parties().of_kind(kinds::TREASURY) {
+            let who = PartyId(state);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // What falls due on paper already issued, and what it has committed to pay out. Both
+            // are reads of its own schedule.
+            let redemptions: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            // The buffer is a real holding of real money and not a line in a plan.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let buffer = ctx.register().quantity(ctx.register().row(who, money));
+            let programme = Programme { redemptions, outlays: 0.0, buffer };
+            let short = programme.to_raise();
+            // **What it can defer is what it has queued and not yet made good**: a payment already
+            // waiting is one somebody is already not being paid, and deferring it further is the
+            // act XI-9 names rather than a new one.
+            let deferrable: f64 = (0..ctx.wire().queue.len() as u32)
+                .map(crate::ledger::QueueId)
+                .filter(|q| ctx.wire().queue.state_of(*q) == crate::ledger::Waiting::Queued)
+                .filter(|q| ctx.wire().queue.payer_of(*q) == who)
+                .map(|q| {
+                    ctx.wire()
+                        .queue
+                        .legs_of(q)
+                        .iter()
+                        .filter_map(|l| match *l {
+                            crate::ledger::Leg::Money { from, to, amount, .. } if from != to => Some(amount),
+                            _ => None,
+                        })
+                        .sum::<f64>()
+                })
+                .sum();
+            let (what, size) = match handle(short, buffer, deferrable) {
+                // A treasury whose buffer covers the period raises nothing, which is an answer.
+                Shortfall::None => continue,
+                Shortfall::FromTheBuffer { drawn } => (0.0, drawn),
+                Shortfall::DeferAnOutlay { deferred } => (1.0, deferred),
+                Shortfall::ComeBackToTheMarket { still_short } => (2.0, still_short),
+            };
+            handled.push((who, what, size));
+        }
+
+        for (who, what, size) in handled {
+            // XI-9: each is a real act and it is SAID, because a shortfall handled silently is the
+            // overdraft this clause exists to refuse — it would make being short cost nothing.
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(what)), (1, Value::Num(size))], true);
+        }
+    }
+}
+
+/// **§21 D2, D3, D4, 22i.16: STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.**
+///
+/// The `commodities` row counted how many lines printed. So this world had no measure of scarcity at
+/// all — D2's *when stocks approach zero the price has nothing left to ration with* had no stocks to
+/// be about — and D3's storage cost, which is a real payment to a real owner of real storage, was
+/// paid by nobody to nobody.
+///
+/// **Tightness is a READ** (D4): stock against what is consumed in a period, and `Missing` where
+/// nothing is consumed — a ratio over no consumption is not a ratio (Law 8), and answering zero
+/// would say the world is awash when in fact nobody has asked it.
+///
+/// **And the fee is TWO-SIDED** (D3, Law 5): whoever holds the stock pays whoever holds the storage.
+/// A region with no stockist has nobody to pay, so nothing is charged — which is an answer about
+/// that place and not a fee waived.
+pub struct Storing {
+    pub kind: u32,
+    /// §21 D3: what a period of storage costs, per unit. A TECHNOLOGY: a fact about warehouses.
+    pub per_unit: &'static str,
+}
+
+impl Mechanism for Storing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let per_unit = ctx.params().price_per_unit(self.per_unit);
+
+        // Who holds the storage, by place. A region with none has nobody to pay.
+        let mut warehouses: std::collections::HashMap<u32, PartyId> = std::collections::HashMap::new();
+        for &keeper in ctx.parties().of_kind(kinds::STOCKIST) {
+            let who = PartyId(keeper);
+            if ctx.parties().alive(who) {
+                warehouses.entry(ctx.parties().region_of(who).0).or_insert(who);
+            }
+        }
+        if warehouses.is_empty() {
+            return;
+        }
+
+        let mut charging: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        let mut tight: Vec<(u32, f64)> = Vec::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            if ctx.instruments().class_of(line) != crate::instruments::Class::Good {
+                continue;
+            }
+            let (held, _) = ctx.register().held_total(line);
+            if held <= 0.0 {
+                continue;
+            }
+            // D4: what was consumed. Read off the wire — the units this period's instructions
+            // destroyed — never a tally kept beside the register (Law 19).
+            let mut consumed = 0.0;
+            for n in ctx.wire().in_period(ctx.period()) {
+                for leg in ctx.wire().legs_of(n) {
+                    if let crate::ledger::Leg::Destroy { instrument, qty, .. } = *leg {
+                        if instrument == line {
+                            consumed += qty;
+                        }
+                    }
+                }
+            }
+            if let Some(t) = crate::mechanisms::commodities::tightness(held, consumed) {
+                tight.push((row, t));
+            }
+            // D3: and everybody holding it pays for the storage, to the keeper of its own place.
+            for &holding in ctx.register().of_instrument(line) {
+                let holding = crate::ids::HoldingId(holding);
+                let holder = ctx.register().holder_of(holding);
+                if !ctx.parties().alive(holder) {
+                    continue;
+                }
+                let Some(&keeper) = warehouses.get(&ctx.parties().region_of(holder).0) else { continue };
+                if keeper == holder {
+                    continue;
+                }
+                let units = ctx.register().quantity(holding);
+                let (to, fee) = crate::mechanisms::commodities::storage_fee(units, per_unit, keeper);
+                if fee > 0.0 {
+                    charging.push((holder, to, fee));
+                }
+            }
+        }
+
+        for (line, t) in tight {
+            // D2: **the measure of scarcity, published.** It is what a price has left to ration with,
+            // and a world that could not say it could not tell a squeeze from a glut.
+            ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))], true);
+        }
+        for (holder, keeper, fee) in charging {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
+            // Law 5: two named sides, in the same pass. A storage cost that came off a number
+            // without reaching anybody would be the one-sided flow Law 5 is about.
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: holder,
+                    to: keeper,
+                    ccy: ctx.instruments().ccy_of(money),
+                    instrument: money,
+                    amount: fee,
+                    receipt: crate::ledger::Receipt::Sale,
+                }],
+                crate::ledger::Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "21 D3: storage costs money, and it is paid to whoever owns the storage",
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
