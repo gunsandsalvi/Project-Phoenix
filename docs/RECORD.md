@@ -17845,3 +17845,55 @@ The exchange-traded fund's gap closes only when somebody trades and persists whe
 
 **Fifty-one laws as tests. Three hundred and eighty-five now hold; clippy clean; `phoenix-check` green
 over 58 files. Thirty-four of forty-seven modules ported.**
+
+# 0g.42 — securities lending (§14), the derivative layer (§16), commodities (§20–21), §22 into the benchmarks, insurers (§27), ratings (§44)
+
+Six more, and one of them is a deletion rather than a file.
+
+**§22 has no module, and that is the point.** The index system is ONE system (22 D5, Law 4). A second
+module with its own `Index` would BE the defect the clause names — a level computed from real
+constituents and read by nobody, beside one read by everything. So §22's chaining across a rebalance,
+its corporate actions, its stated weighting choice and its tracker trades became functions on the
+`Index` already in `benchmarks.rs`, and there is no other. The chain factor is what the old and new
+baskets came to on the SAME day; a split moves weight and price together so the level does not change;
+and `divergence` reports a difference between the index and its constituents as a defect in the READ,
+which is what 22 E3 calls it.
+
+**`securities_lending.rs`.** Title passes and the economics do not: without the manufactured payment
+the defining property inverts and the lender pays a fee to lose its income. The lendable pool caps how
+large a short can get — arithmetic about a finite quantity, not a bound — and a re-pledge chain is
+walked party by party, which is how a default reaches somebody that never traded with the defaulter.
+
+**`derivative_layer.rs`.** `offset` returns TWO positions: flat market risk, doubled credit risk, and
+B3.a says collapsing them hides the thing that actually breaks. `net_against` takes a counterparty
+PAIR and there is no door taking a party alone (G3). The waterfall runs in order and returns what was
+left **unfunded** — the house is not a guarantor of last resort, and running past the end is a real
+event. Initial margin is sized from the position's measured move and rises with volatility, which is
+procyclical by construction and measured rather than damped.
+
+**`commodities.rs`.** Contango is bounded above by full carry — because an arbitrageur with storage and
+funding takes it — and backwardation is unbounded below, because you cannot store a shortage. That
+asymmetry is in the code: there is a ceiling that is a TRADE and no floor at all. Inventory carries
+across periods, never goes negative, and refuses rather than clamping. Convergence is a consequence of
+deliverability: nothing drives the futures price to spot, and a contract nobody can deliver against
+simply has no convergence mechanism.
+
+**`insurers.rs`.** The liability is a schedule discounted at a market rate, so falling rates raise it
+and equity is recomputed every time (E3). A cash-balance liability would never move when rates move and
+the sector's defining risk would disappear — this one moves. A leveraged hedge improves solvency and
+demands cash in the same move, which is D4.a's failure mode, and the liability revalues demanding
+nothing, which is D5's asymmetry.
+
+**`ratings.rs`.** `State` has no price field, so A2.a's forbidden input cannot be supplied — and D's
+loop is therefore traceable rather than tautological: the downgrade raises the cost of funds, which
+eats coverage, which is the observable the next assessment reads. `downgrade` returns every consequence
+at once because C1.a's forced sales happen at the same time, and the haircut reads the issuer's own
+grade rather than the instrument type.
+
+**Clippy and `phoenix-check` disagreed once**, in `close_out`: clippy wanted `unwrap_or(0.0)` where the
+law forbids exactly that. Neither tool was wrong and the fix satisfied both by removing the branch — a
+survivor's collateral is now a SUM over its rows, so a survivor with no rows has posted nothing and no
+default is chosen anywhere. Law 12: the fix removed code.
+
+**Eighty-two laws as tests across the ten-module block. Four hundred and fifty-nine now hold; clippy
+clean; `phoenix-check` green over 63 files. Forty of forty-seven modules ported.**
