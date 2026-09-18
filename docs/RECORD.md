@@ -20746,3 +20746,47 @@ under 22d:
 
 **730 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst
 period 366 ms, every family clean or honestly not-built.**
+
+## 22d.2, 22d.3 — the gridlock pass, and what became of the payments that were short
+
+**What.** `Settlement::unwind`, one pass at the end of the period: it finds a CYCLE in the queue and
+settles it as one instruction, every leg at full value.
+
+**The retry unwinds a chain and needs money from outside it. A ring has no outside.** A waits on B,
+B waits on C, C waits on A, not one of them holds a penny, and all three can pay together. Before
+this pass every such ring sat until its days ran out and became three arrears — three defaults on a
+problem that was never about anybody's solvency. `Queue::a_cycle` walks the payer graph trying every
+waiting payment of a party as an edge, because a ring may close through a party's second payment and
+not its first; `short_together` checks the ring by what the whole of it does to each holding, since
+the legs all happen at one instant and what must be true is that no holding goes negative at that
+instant. **Nothing is cancelled against anything** — every leg is on the wire at full value, which is
+what makes this a DvP cycle and not netting across counterparties (Appendix B). A ring that does not
+balance is refused and stays queued; it is offered once and the search moves on.
+
+**And the measure (22d.3).** `Queue::between(from, to)` reads what became of a period's short
+payments off the rows — still waiting, went through after waiting, ran out of days — and `World::step`
+publishes it. Each row now carries the DAY it stopped waiting, so every one of those counts is a read
+(Law 19) rather than a tally kept beside the rows.
+
+**The item asked for "gridlock rather than insolvency" and half of that is refused.** The middle
+number is gridlock, definitively: the money existed and had not arrived yet. The third is NOT
+insolvency, and this world must not print it as one — the queue cannot tell a payer that could never
+have paid from a chain that never closed. Separating them needs a solvency test on the payer, which
+is `mechanisms/mortality`'s. That is said in the code, in the printout and in COVERAGE, because a
+number that claims a diagnosis nobody measured is worse than no number.
+
+**What it found. No ring has ever been found.** Four periods, 4,230 payments waiting, **zero cycles**.
+The pass is built and tested and the world it runs on has no rings in it, which is what an arbitrary
+draw of obligations looks like: receipts here come from sales, not from the parties a payer owes. Law
+11 — that is not a work item, and it is not a finding about the pass. It is a thing to LOOK AT once
+the world is seeded, because a seeded world whose payment graph is still a tree is a world missing
+the mutual trade credit that makes rings. **22d.3a is positioned at 22g.**
+
+What the retry alone is worth, per period: **49 · 31 · 50 · 28** payments that went through after
+waiting. Every one was an arrear before the queue existed.
+
+**What it deleted.** `Stepped::gave_up`, which counted the same rows `queue.2` now reads — one fact
+in two places the moment the read existed (Law 4).
+
+**732 tests; `npm run check` green; clippy clean; `world:runs` four periods, 51 systems, worst period
+318 ms, every family clean or honestly not-built.**

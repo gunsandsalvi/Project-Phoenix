@@ -291,6 +291,64 @@ impl<'a> Instruction<'a> {
     }
 }
 
+/// **How an instruction is presented to the wire**, which decides how its legs are checked and
+/// whether a short payment may wait.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Presented {
+    /// The ordinary way: leg by leg, and a short payment joins the queue.
+    Fresh,
+    /// A queued payment tried again because its payer was paid. Leg by leg, and it is already in
+    /// the queue, so it never joins it twice.
+    Retry,
+    /// **22d.2: a gridlock cycle, settled TOGETHER.** Checked on what the whole of it does to each
+    /// holding, because in a cycle nobody has the money on their own — which is what a gridlock IS.
+    Together,
+}
+
+/// **22d.2: what the legs of one instruction do to each holding, together.** Returns the first
+/// party that would be left holding less than nothing, or `Missing` where none would.
+///
+/// Every leg is at FULL VALUE and every leg reaches the wire: nothing here cancels a payment
+/// against another (Appendix B: no netting across counterparties). What it does is read the one
+/// instant they all happen at, which is what atomic settlement means (XI-5) and is the whole of why
+/// a cycle can settle when none of its members could pay alone.
+fn short_together(
+    legs: &[Leg],
+    reg: &Register,
+    parties: &Parties,
+    instruments: &Instruments,
+) -> Option<(PartyId, InstrumentId)> {
+    let mut delta: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
+    let mut moves = |who: PartyId, what: InstrumentId, by: f64| {
+        *delta.entry((who.0, what.0)).or_insert(0.0) += by;
+    };
+    for leg in legs {
+        if let Leg::Money { from, to, instrument, amount, .. } = *leg {
+            moves(from, instrument, -amount);
+            match across(parties, instruments, to, instrument) {
+                None => moves(to, instrument, amount),
+                Some(a) => {
+                    moves(to, a.payees_money, amount);
+                    // Money D2: and the reserves the banks move between them, which net over a
+                    // cycle exactly as the customers' deposits do.
+                    moves(a.payers_bank, a.reserves, -amount);
+                    moves(a.payees_bank, a.reserves, amount);
+                }
+            }
+        }
+    }
+    for ((who, what), by) in delta {
+        if by >= 0.0 {
+            continue;
+        }
+        let (who, what) = (PartyId(who), InstrumentId(what));
+        if reg.quantity(reg.row(who, what)) + by < 0.0 {
+            return Some((who, what));
+        }
+    }
+    None
+}
+
 /// 22d.1: who this instruction PAYS. A receipt is what makes a queued payment worth trying again,
 /// so the payees of what just settled are the parties whose queues are retried.
 fn paid_by(legs: &[Leg]) -> Vec<PartyId> {
@@ -350,6 +408,9 @@ pub struct Queue {
     /// The day it was tried, and the day it stops being early and becomes an arrear.
     queued_on: Vec<i64>,
     late_after: Vec<i64>,
+    /// 22d.3: **the day it stopped waiting**, so what became of a payment is a read off the row and
+    /// never a tally kept beside it (Law 19). `Missing` while it is still waiting.
+    finished_on: Vec<Option<i64>>,
     state: Vec<Waiting>,
     by_payer: std::collections::HashMap<u32, Vec<u32>>,
 }
@@ -371,6 +432,7 @@ impl Queue {
             payer: Vec::new(),
             queued_on: Vec::new(),
             late_after: Vec::new(),
+            finished_on: Vec::new(),
             state: Vec::new(),
             by_payer: std::collections::HashMap::new(),
         }
@@ -393,6 +455,7 @@ impl Queue {
         self.payer.push(payer.0);
         self.queued_on.push(on.0);
         self.late_after.push(late_after.0);
+        self.finished_on.push(None);
         self.state.push(Waiting::Queued);
         self.by_payer.entry(payer.0).or_default().push(row);
         QueueId(row)
@@ -431,16 +494,18 @@ impl Queue {
 
     /// It went through on a retry. The row stays readable — how long a payment waited before it was
     /// made is the measurement 22d.3 is about, and a row deleted is a measurement nobody can take.
-    pub fn took(&mut self, q: QueueId) {
+    pub fn took(&mut self, q: QueueId, on: Day) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment is taken");
         self.state[q.row()] = Waiting::Taken;
+        self.finished_on[q.row()] = Some(on.0);
     }
 
     /// Its days ran out. This is the arrear, and it is where a queued payment becomes the failure
     /// this world always recorded immediately.
-    pub fn gave_up(&mut self, q: QueueId) {
+    pub fn gave_up(&mut self, q: QueueId, on: Day) {
         assert!(self.state[q.row()] == Waiting::Queued, "22d.1: only a waiting payment gives up");
         self.state[q.row()] = Waiting::Late;
+        self.finished_on[q.row()] = Some(on.0);
     }
 
     /// What this party is still waiting to pay — the one question a retry asks.
@@ -464,6 +529,89 @@ impl Queue {
             .collect()
     }
 
+    /// **22d.2: A CYCLE IN THE QUEUE — A waits on B, B waits on C, C waits on A.**
+    ///
+    /// Nobody in it can pay alone and all of them can pay together, which is the case the retry
+    /// cannot reach: a retry needs money from OUTSIDE the cycle and a pure cycle has no outside.
+    /// This is the thing a liquidity-saving mechanism does in a real large-value system, once a day.
+    ///
+    /// It walks the payer graph — every waiting payment of a party is an edge, and the walk tries
+    /// all of them, because a ring may close through a party's second payment and not its first.
+    /// When the walk comes back to a party already on the path, the cycle is the path from there.
+    /// `skip` holds the rows of cycles that were found and did NOT balance, so the search moves on
+    /// rather than offering the same one for ever.
+    ///
+    /// Only money-only payments are walked: a queued row carrying anything else is not a link in a
+    /// chain of payments and settling it inside one would be settling something nobody asked about.
+    pub fn a_cycle(&self, skip: &std::collections::HashSet<u32>) -> Option<Vec<QueueId>> {
+        let links: Vec<QueueId> = (0..self.state.len() as u32)
+            .map(QueueId)
+            .filter(|q| self.state_of(*q) == Waiting::Queued && !skip.contains(&q.0))
+            .filter(|q| self.legs_of(*q).iter().all(|l| matches!(l, Leg::Money { .. })))
+            .collect();
+        let mut owes: std::collections::HashMap<u32, Vec<QueueId>> = std::collections::HashMap::new();
+        for q in &links {
+            owes.entry(self.payer_of(*q).0).or_default().push(*q);
+        }
+        // A party the walk has left behind without finding a ring through it is not walked again:
+        // the answer would be the same, and this is what keeps the search over the whole queue.
+        let mut done: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        for q in &links {
+            let mut path: Vec<QueueId> = Vec::new();
+            let mut at: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+            if let Some(ring) = self.ring_from(self.payer_of(*q).0, &owes, &mut path, &mut at, &mut done) {
+                return Some(ring);
+            }
+        }
+        None
+    }
+
+    /// Who this queued payment pays. A payment with no payee is not a link in a chain.
+    fn payee_of(&self, q: QueueId) -> Option<PartyId> {
+        self.legs_of(q).iter().find_map(|l| match *l {
+            Leg::Money { from, to, .. } if from != to => Some(to),
+            _ => None,
+        })
+    }
+
+    fn ring_from(
+        &self,
+        who: u32,
+        owes: &std::collections::HashMap<u32, Vec<QueueId>>,
+        path: &mut Vec<QueueId>,
+        at: &mut std::collections::HashMap<u32, usize>,
+        done: &mut std::collections::HashSet<u32>,
+    ) -> Option<Vec<QueueId>> {
+        if let Some(from) = at.get(&who) {
+            return Some(path[*from..].to_vec());
+        }
+        if done.contains(&who) {
+            return None;
+        }
+        let edges = match owes.get(&who) {
+            Some(edges) => edges.clone(),
+            None => {
+                done.insert(who);
+                return None;
+            }
+        };
+        at.insert(who, path.len());
+        for e in edges {
+            let to = match self.payee_of(e) {
+                Some(to) => to.0,
+                None => continue,
+            };
+            path.push(e);
+            if let Some(ring) = self.ring_from(to, owes, path, at, done) {
+                return Some(ring);
+            }
+            path.pop();
+        }
+        at.remove(&who);
+        done.insert(who);
+        None
+    }
+
     /// Every payment ever queued. The history, not the standing queue.
     pub fn len(&self) -> usize {
         self.state.len()
@@ -476,11 +624,38 @@ impl Queue {
     /// How many are waiting right now, and how many each of the other two states holds. A read over
     /// the rows, never a tally kept beside them (Law 19).
     pub fn census(&self) -> (usize, usize, usize) {
+        self.between(Day(i64::MIN), Day(i64::MAX))
+    }
+
+    /// **22d.3: WHAT BECAME OF THE PAYMENTS THAT WERE SHORT**, between two days — how many are
+    /// still waiting, how many went through after waiting, how many ran out of days. It is a READ
+    /// and it causes nothing.
+    ///
+    /// **The middle number is the measure.** Every one of those was a payment this world would have
+    /// recorded as an arrear the instant it was tried, and it was a TIMING failure: the money
+    /// existed, it had not arrived yet.
+    ///
+    /// **The third number is not "insolvency" and must not be read as one.** A payment that ran out
+    /// of days was either owed by somebody who could not have paid it at all, or owed in a chain
+    /// that never closed; the queue cannot tell those apart, and a number that claimed to would be a
+    /// diagnosis nobody measured. What separates them is a solvency test on the payer, which is
+    /// `mechanisms/mortality`'s, not this.
+    pub fn between(&self, from: Day, to: Day) -> (usize, usize, usize) {
         let mut waiting = 0;
         let mut taken = 0;
         let mut late = 0;
-        for s in &self.state {
-            match s {
+        for row in 0..self.state.len() {
+            let when = match self.state[row] {
+                Waiting::Queued => self.queued_on[row],
+                _ => match self.finished_on[row] {
+                    Some(day) => day,
+                    None => continue,
+                },
+            };
+            if when < from.0 || when > to.0 {
+                continue;
+            }
+            match self.state[row] {
                 Waiting::Queued => waiting += 1,
                 Waiting::Taken => taken += 1,
                 Waiting::Late => late += 1,
@@ -596,7 +771,7 @@ impl Settlement {
     /// somebody money RETRIES what that party was waiting to pay — which is how a gridlock unwinds
     /// without a penny of new money.
     pub fn settle(&mut self, ins: &Instruction<'_>, period: u32, on: &mut Settling<'_>) -> Outcome {
-        let out = self.attempt(ins, period, on, true);
+        let out = self.attempt(ins, period, on, Presented::Fresh);
         if out == Outcome::Settled {
             self.release(ins.legs, period, on);
         }
@@ -608,6 +783,7 @@ impl Settlement {
     /// worklist and not a single pass. It terminates because every retry that goes through takes a
     /// row out of the queue for good.
     fn release(&mut self, legs: &[Leg], period: u32, on: &mut Settling<'_>) {
+        let today = on.calendar.start_of(Period(period));
         let mut funded: Vec<PartyId> = paid_by(legs);
         while let Some(who) = funded.pop() {
             for q in self.queue.of_payer(who) {
@@ -617,12 +793,49 @@ impl Settlement {
                     cause: self.queue.cause_of(q),
                     delivery: self.queue.delivery_of(q),
                 };
-                if self.attempt(&ins, period, on, false) == Outcome::Settled {
-                    self.queue.took(q);
+                if self.attempt(&ins, period, on, Presented::Retry) == Outcome::Settled {
+                    self.queue.took(q, today);
                     funded.extend(paid_by(&waiting));
                 }
             }
         }
+    }
+
+    /// **XI-9, 22d.2: ONE PASS THAT FINDS THE CYCLES AND SETTLES THEM TOGETHER.**
+    ///
+    /// The retry unwinds a CHAIN, and it needs money from outside the chain to start it. A pure
+    /// cycle has no outside: A waits on B, B waits on C, C waits on A, nobody can pay alone and all
+    /// of them can pay together. Without this pass every one of them sits in the queue until its day
+    /// runs out and then becomes three arrears — three defaults on a problem that was never about
+    /// anybody's solvency.
+    ///
+    /// **Each leg at full value, and every leg on the wire.** Nothing is cancelled against anything
+    /// (Appendix B: no netting across counterparties). What settles it is that the legs happen at
+    /// one instant and no holding goes negative at that instant — a DvP cycle, which is what a real
+    /// large-value system's liquidity-saving mechanism does.
+    ///
+    /// Returns how many queued payments went through this way.
+    pub fn unwind(&mut self, period: u32, on: &mut Settling<'_>) -> usize {
+        let today = on.calendar.start_of(Period(period));
+        let mut went = 0usize;
+        // The cycles that were found and did not balance — somebody in them is short beyond what
+        // the cycle itself funds. They stay queued and nothing is forced (Law 6).
+        let mut stuck: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        while let Some(rows) = self.queue.a_cycle(&stuck) {
+            let legs: Vec<Leg> = rows.iter().flat_map(|q| self.queue.legs_of(*q).to_vec()).collect();
+            let ins = Instruction { legs: &legs, cause: Cause::Settlement, delivery: Delivery::Nothing };
+            if self.attempt(&ins, period, on, Presented::Together) == Outcome::Settled {
+                for q in &rows {
+                    self.queue.took(*q, today);
+                }
+                went += rows.len();
+                // And a cycle that settled has paid people, so whatever THAT funds goes too.
+                self.release(&legs, period, on);
+            } else {
+                stuck.extend(rows.iter().map(|q| q.0));
+            }
+        }
+        went
     }
 
     /// **22d.1: the queue's day passed.** A payment that ran out of days is the arrear this world
@@ -638,7 +851,7 @@ impl Settlement {
                 delivery: self.queue.delivery_of(*q),
             };
             let who = self.queue.payer_of(*q);
-            self.queue.gave_up(*q);
+            self.queue.gave_up(*q, today);
             let failed = on.says.failed;
             self.record(Outcome::ShortOfMoney, who, &ins, period, on.journal, failed);
         }
@@ -650,8 +863,9 @@ impl Settlement {
         ins: &Instruction<'_>,
         period: u32,
         on: &mut Settling<'_>,
-        may_queue: bool,
+        how: Presented,
     ) -> Outcome {
+        let may_queue = how == Presented::Fresh;
         let Settling { register: reg, journal, parties, instruments, calendar, says } = on;
         let (parties, instruments, says, calendar) = (*parties, *instruments, *says, *calendar);
         let (settled_kind, failed_kind, realised_kind) = (says.settled, says.failed, says.realised);
@@ -674,9 +888,22 @@ impl Settlement {
 
         // The pre-check. Law 6: nothing is clamped here — a leg that cannot happen is refused.
 
+        // **22d.2: a gridlock cycle is checked on what the whole of it does to each holding**, and
+        // every other instruction leg by leg. In a cycle nobody has the money on their own — that is
+        // what a gridlock IS — and the legs all happen at one instant, so what has to be true is that
+        // no holding goes negative AT that instant. Nothing is cancelled and every leg moves at full
+        // value; this is the ordering that makes the cycle settle, not netting across counterparties.
+        if how == Presented::Together {
+            if let Some((who, _)) = short_together(ins.legs, reg, parties, instruments) {
+                return self.record(Outcome::ShortOfMoney, who, ins, period, journal, failed_kind);
+            }
+        }
         for leg in ins.legs {
             match *leg {
                 Leg::Money { from, to, instrument, amount, .. } => {
+                    if how == Presented::Together {
+                        continue;
+                    }
                     let row = reg.row(from, instrument);
                     if reg.quantity(row) < amount {
                         return self.short(Outcome::ShortOfMoney, from, ins, period, journal, calendar, says, may_queue);
@@ -1324,6 +1551,70 @@ mod tests {
         assert_eq!(reg.quantity(reg.row(b, cash)), 0.0);
         // A-20: and not one of the three is recorded as having failed anything.
         assert_eq!(j.in_period(1).filter(|r| j.kind_of(*r) == says.failed).count(), 0);
+    }
+
+    #[test]
+    fn a_ring_of_payers_with_nothing_between_them_settles_together_and_none_of_them_defaults() {
+        // **XI-9, 22d.2: THE CASE THE RETRY CANNOT REACH.** A owes B, B owes C, C owes A, and not
+        // one of them holds a penny. A retry needs money from outside the chain and a ring has no
+        // outside — so without this pass all three sit until their day runs out and become three
+        // defaults on a problem that was never about anybody's solvency.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let (a, b, c) = (PartyId::at(0), PartyId::at(1), PartyId::at(2));
+        let cash = InstrumentId::at(0);
+        let pays = |from: PartyId, to: PartyId| {
+            [Leg::Money { from, to, ccy: CurrencyCode::at(0), instrument: cash, amount: 70.0, receipt: Receipt::Sale }]
+        };
+        for (from, to) in [(a, b), (b, c), (c, a)] {
+            let legs = pays(from, to);
+            assert_eq!(
+                s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says)),
+                Outcome::Queued
+            );
+        }
+        assert_eq!(s.queue.census(), (3, 0, 0));
+
+        // The pass finds the ring and settles it as ONE instruction — three legs, each at its full
+        // seventy, none of them cancelled against another.
+        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says)), 3);
+        assert_eq!(s.queue.census(), (0, 3, 0));
+        let n = s.len() - 1;
+        assert_eq!(s.outcome_of(n), Outcome::Settled);
+        assert_eq!(s.legs_of(n).len(), 3, "every leg is on the wire at full value");
+
+        // Law 5: and everybody is exactly where they started, because that is what a ring of equal
+        // debts IS. Nothing was created and nothing was cancelled.
+        for who in [a, b, c] {
+            assert_eq!(reg.quantity(reg.row(who, cash)), 0.0);
+        }
+        assert_eq!(j.in_period(1).filter(|r| j.kind_of(*r) == says.failed).count(), 0);
+    }
+
+    #[test]
+    fn a_ring_that_does_not_balance_is_not_forced_through() {
+        // Law 6: a cycle where somebody owes more than the cycle funds does not settle — it is
+        // refused and stays queued, and nothing is clamped to make it fit. The pass offers it once
+        // and moves on rather than trying the same ring for ever.
+        let (mut reg, mut j, ps, ins, mut s, cal, says) = world();
+        let (a, b) = (PartyId::at(0), PartyId::at(1));
+        let cash = InstrumentId::at(0);
+        let pays = |from: PartyId, to: PartyId, amount: f64| {
+            [Leg::Money { from, to, ccy: CurrencyCode::at(0), instrument: cash, amount, receipt: Receipt::Sale }]
+        };
+        let out = pays(a, b, 100.0);
+        let back = pays(b, a, 60.0);
+        for legs in [&out, &back] {
+            s.settle(&Instruction::plain(legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        }
+        // A pays 100 and receives 60: it is forty short whichever order they go in.
+        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says)), 0);
+        assert_eq!(s.queue.census(), (2, 0, 0));
+
+        // Give A the forty and it goes through, the ring and all.
+        reg.money_delta(a, cash, 40.0);
+        assert_eq!(s.unwind(1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says)), 2);
+        assert_eq!(reg.quantity(reg.row(b, cash)), 40.0);
+        assert_eq!(reg.quantity(reg.row(a, cash)), 0.0);
     }
 
     #[test]

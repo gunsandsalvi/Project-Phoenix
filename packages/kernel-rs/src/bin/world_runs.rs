@@ -454,17 +454,19 @@ fn main() {
         let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
-        // **XI-9, 22d.1: and what the PAYMENT QUEUE holds.** A payment waiting is not a payment
-        // that failed, and a world with no queue turned every gridlock into an arrear on the spot.
-        // `taken` is the measure that matters: those are the defaults this world was inventing.
-        let (waiting, taken, late) = w.wire.queue.census();
+        // **XI-9, 22d.1, 22d.3: what became of THIS PERIOD's short payments.** A payment waiting is
+        // not a payment that failed, and a world with no queue turned every gridlock into an arrear
+        // on the spot. `taken` is the measure that matters: those are the defaults it was inventing.
+        // `late` is NOT insolvency — the queue cannot tell a payer that could never have paid from a
+        // chain that never closed, and a number claiming to would be a diagnosis nobody measured.
+        let (waiting, taken, late) = did.queue;
         println!(
             "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {standing} resting",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
         println!(
-            "           queue: {waiting} waiting · {taken} went through on a retry · {late} ran out of days ({} of them this period)",
-            did.gave_up,
+            "           queue, of this period's short payments: {waiting} still waiting · {taken} went through after waiting ({} of them in a ring) · {late} ran out of days",
+            did.unwound,
         );
         println!("           audit: {}", audited.join(" · "));
         // Audit A2: a violation names its OWNER, its SIZE, its period and the clause it is about —

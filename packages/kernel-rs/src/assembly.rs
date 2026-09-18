@@ -237,10 +237,13 @@ pub struct Stepped {
     pub events: usize,
     /// How many systems' phases actually ran. A world where this is zero is a world of declarations.
     pub ran: usize,
-    /// **22d.1: how many queued payments ran out of days this period** and became the arrear. A
-    /// payment that waited and then went through is not here — that one is not a failure at all,
-    /// which is the whole point of the queue.
-    pub gave_up: usize,
+    /// **22d.2: how many queued payments the gridlock pass settled**, in cycles nobody in them
+    /// could have paid alone. Every one is a default this world would otherwise have invented.
+    pub unwound: usize,
+    /// **22d.3: what became of THIS period's short payments** — still waiting, went through after
+    /// waiting, ran out of days. A read, published, causing nothing (`ledger::Queue::between`). The
+    /// middle number is the measure: every one of those was an arrear before the queue existed.
+    pub queue: (usize, usize, usize),
 }
 
 impl World {
@@ -332,7 +335,8 @@ impl World {
         // while it still has days to wait; when it has none left it becomes the failure this world
         // used to record the instant the payer was short. The arrear is recorded on the wire, where
         // every other outcome is.
-        out.gave_up = self.wire.give_up(
+        // 22d.3 reads how many, off the rows, with the rest of what became of them.
+        self.wire.give_up(
             today,
             self.period,
             &mut Settling {
@@ -363,6 +367,29 @@ impl World {
         for (owner, _) in order.iter().filter(|(_, after)| *after) {
             out.ran += self.run_phase(*owner, &by_slot, systems);
         }
+
+        // **XI-9, 22d.2: and the gridlock pass, once, with every payment of the period in.** The
+        // retry unwinds a chain as the money arrives; a CYCLE has no outside to arrive from, and
+        // this is the one moment the whole queue is visible at once. It runs before the audit
+        // because a cycle it settles is not a violation of anything.
+        out.unwound = self.wire.unwind(
+            self.period,
+            &mut Settling {
+                register: &mut self.register,
+                journal: &mut self.journal,
+                parties: &self.parties,
+                instruments: &self.instruments,
+                calendar: &self.calendar,
+                says: self.says,
+            },
+        );
+
+        // 22d.3: and what became of the payments that were short in it. Read off the rows at the
+        // end, when the retries and the gridlock pass have both had their turn.
+        // The LAST day of this period, not the first of the next: a payment that finishes on the
+        // boundary belongs to one of them and not to both.
+        let closes = crate::calendar::Day(self.calendar.start_of(crate::calendar::Period(self.period + 1)).0 - 1);
+        out.queue = self.wire.queue.between(today, closes);
 
         out.events = self.journal.len() - events_before;
         // **Audit C1, 22e.1: EVERY FAMILY, EVERY PERIOD, over the one traversal it was built for.**

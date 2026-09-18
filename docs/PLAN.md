@@ -18,13 +18,13 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 8 closed** (1 of 70 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 8 closed** (3 of 72 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 22d — The payment queue | 7 | 1 | in progress |
+| 22d — The payment queue | 8 | 3 | in progress |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
-| 22g — The seeding | 8 | 0 | open |
+| 22g — The seeding | 9 | 0 | open |
 | 22h — The other four cell events have no cause | 4 | 0 | open |
 | 22i — The systems that still only count | 24 | 0 | open |
 | 23 — Measure — Part XII | 21 | 0 | open |

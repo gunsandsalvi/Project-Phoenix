@@ -203,11 +203,28 @@ because the queue's evidence arrives only when the world runs long enough to fai
   FAIL TO DELIVER, and holding one open would leave the seller's units unencumbered and sellable a
   second time. That is the mechanism a real CSD has (the queued delivery encumbers the securities)
   and it is not built. It needs `Leg::Pledge` over the delivering leg for as long as the row waits.
-- [ ] 22d.2 One pass at the end of the period that finds cycles in the queue and settles them
+- [x] 22d.2 One pass at the end of the period that finds cycles in the queue and settles them
   together, **each leg at full value** — which is not netting across counterparties (still forbidden)
   but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.
-- [ ] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
+  **Done.** `Settlement::unwind` over `Queue::a_cycle`, checked by `short_together` (no holding goes
+  negative at the one instant the legs all happen at). A ring that does not balance is refused and
+  stays queued; nothing is forced.
+- [x] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
   read, published, causing nothing.
+  **Done, and the second half of that sentence is refused.** `Queue::between(from, to)` reads what
+  became of the period's short payments off the rows: still waiting, went through after waiting, ran
+  out of days. The middle number is gridlock, definitively. **The third is NOT insolvency** — the
+  queue cannot tell a payer that could never have paid from a chain that never closed, and a number
+  claiming to would be a diagnosis nobody measured. Separating them needs a solvency test on the
+  payer, which is `mechanisms/mortality`'s.
+- [ ] 22d.3a **No ring has ever been found.** Four periods of `world:runs`: 4,230 payments waiting
+  and **zero cycles** among them. The pass is built and tested (`a_ring_of_payers_with_nothing
+  _between_them_settles_together_and_none_of_them_defaults`) and the world it runs on has no rings
+  in it — which is what an ARBITRARY draw of obligations looks like, because receipts here come from
+  sales and not from the parties a payer owes. It is not a finding about the pass and Law 11 says it
+  is not a work item; it is a thing to LOOK AT once the world is seeded, because a seeded world whose
+  payment graph is still a tree is a world missing the mutual trade credit that makes rings. →
+  **positioned at 22g** with the seeding's other re-reads.
 
 - [ ] 22d.4 **ST4, drained from `docs/FINDINGS.md` (20b) and positioned here** because it is a
   phase-ordering failure that ends in a default the payer could have met: short-term-debt phases: `paper.backstop` is anchored `after: markets`, but maturities are collected in `corporateActions` which runs BEFORE markets. So the maturing paper has already been presented and FAILED (recorded as a missed payment → `defaultOn` → `accelerates: true` → the whole balance sheet is accelerated) before the backstop is drawn to meet it. B3.b is inverted: the run always ends in default first and the draw arrives after the default. Fix: draw in `corporateActions` BEFORE the kernel presents dues (anchor `{ before: 'corporateActions' }` or a pre-dues hook), and only against the shortfall at that moment.
@@ -251,6 +268,11 @@ because measuring an arbitrary world measures the draw.
 
 **Placed here.**
 
+- [ ] 22d.3a **No ring has ever been found in the payment queue.** Positioned here from 22d.3: the
+  gridlock pass is built and tested and the arbitrary world has zero cycles among its 4,230 waiting
+  payments, because receipts in it come from sales rather than from the parties a payer owes. What
+  to look at once this world is seeded: a payment graph that is still a tree is a world missing the
+  mutual trade credit that makes rings, and the measure of the pass is worth nothing until then.
 - [ ] 22c2.1 **Read WHY the two sides do not overlap**, against a run, once the world is seeded
   (Law 11: a misbehaving number is not a work item). **Positioned here from 22c2**, which closed
   without it: the standing book no longer only grows — a venue says how long an order stands in it
