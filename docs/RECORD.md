@@ -19435,3 +19435,60 @@ been opened by any mechanism. A closer with nothing to close is a counter with a
 
 **681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 54 of 178.
+
+---
+
+## 21.98–21.112 — an estate learns what it owes
+
+**What.** Taken one at a time. One fix, three verified absent, one re-positioned, one that grew.
+
+### 21.110 — a claim is neither held nor issued, and it is still owed
+
+`instruments::equity` reads what a party HOLDS against what OTHERS hold of what it ISSUED. An estate's
+liabilities are neither: `Claims` arrived at 21c as the fifth kernel store precisely because a claim is
+not an instrument anybody holds and not an agreement anybody entered. So an estate's worth was its
+assets, exactly, with nothing owed against them — which is the finding's measurement on the old engine
+(`probate.us.1.bank.b`: an equity account equal to its assets to the digit, 15.7bn of liabilities
+nowhere in it).
+
+`equity` now takes the claims book and reads **both sides** of it: what is claimed on this party comes
+off, and what this party is claimant for goes on. One side alone would have been a one-sided flow
+(Law 5) — the world's equity would have fallen by every claim ever made. `Claims` gained `by_holder`,
+the second index the register has had all along (Register A3: both directions indexed), and
+`owed_by_estate`/`owed_to` are reads over the two indexes rather than a walk each caller writes again.
+
+The test says the three things that matter: an estate is worth what it holds less what is claimed on
+it; the claimant holds the other side of the same row; and paying moves both, because the mark and the
+money leg are one event in `running::Ranked`. Marking a claim paid without its leg would make an estate
+richer by paying, which is why the two are proposed together.
+
+### Verified absent (three)
+
+| finding | why it closes |
+| --- | --- |
+| 21.109 | a fund holding 17.68 pieces of equity, the candidate being creation priced at 1 against a book worth something else. `funds::subscribe` issues `cash / nav` — creation is at NAV by construction here. The VERIFY the finding wanted exists: `mislaid` says a fund with equity has mislaid somebody's money, on Law 7's derived dust. It has never run, because nothing subscribes (21j) |
+| 21.111 | three assertions that were a census of an older world. The file is gone and no test here asserts a closed list of receipt names. The shape — a test written as a list of names — is 21.119's, which is open |
+| 21.112 (the label) | a money-only leg carrying `disposal` and promising a basis that never comes. There is no `disposal` receipt: `Receipt` is wage, sale, interest, dividend, transfer, tax, principal, and a leg cannot promise what the vocabulary cannot say |
+
+### 21.112's other half grew, and it stays in 21
+
+A lot carries the basis its units arrived at. Settlement draws those lots. **And `grep realised` over
+the engine returns nothing.** So a realised gain exists on the register and in no read anywhere — which
+is why nothing in this world can tax one (21.85's cell cannot evaluate a gains platform for exactly
+this reason) and why a firm's result is a residual rather than a statement of what it sold things for.
+It is one decision at one site — settlement returns the realised amount, or says it as an event — and a
+decision is a STEP, not a re-mark, so it stays in 21 as a local repair. Its readers are 21j's.
+
+### 21.98 — the multiple must not be declared at all
+
+The small tier was said to be forty times too small at a multiple of twelve. In this engine it is
+**one**: `world-runs` draws round-robin over eight kinds, so there are exactly as many small firms as
+named ones. That is not a defect, because that world is ARBITRARY by declaration. And the finding's own
+framing is what has to go: how many firms are small is an OUTCOME of the boundary, and XI-15 says the
+boundary between the named and the represented *is not a modelling decision but a SIZE, and it moves* —
+which is 21h.2. A seeding that states the ratio states an equilibrium (5 E1), so if it states one it is
+a PLACEHOLDER with 21h.2 as its scheduled death. Re-positioned with the seeding, carrying the owner's
+figure as what the outcome is checked against and never as what it is set to.
+
+**682 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 58 of 179.

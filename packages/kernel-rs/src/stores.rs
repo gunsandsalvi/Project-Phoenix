@@ -588,6 +588,10 @@ pub struct Claims {
     ranks: Vec<u32>,
     paid: Vec<f64>,
     by_estate: HashMap<u32, Vec<u32>>,
+    /// Register A3, 21.110: **both directions.** A claim is an asset to the party that holds it and a
+    /// liability to the estate it is on, and a store that could only be walked from the estate made
+    /// the claimant's side unreadable — which is how an estate's equity came to ignore what it owed.
+    by_holder: HashMap<u32, Vec<u32>>,
 }
 
 impl Claims {
@@ -615,6 +619,7 @@ impl Claims {
         self.ranks.push(ranks);
         self.paid.push(0.0);
         self.by_estate.entry(estate.0).or_default().push(row);
+        self.by_holder.entry(holder.0).or_default().push(row);
         ClaimId(row)
     }
 
@@ -625,6 +630,25 @@ impl Claims {
             Some(rows) => rows,
             None => &[],
         }
+    }
+
+    /// Register A3: the other direction. Every claim this party holds, on whoever's estate.
+    pub fn held_by(&self, holder: PartyId) -> &[u32] {
+        match self.by_holder.get(&holder.0) {
+            Some(rows) => rows,
+            None => &[],
+        }
+    }
+
+    /// 21.110: **what this party still owes on claims against it**, and what it is still owed on
+    /// claims it holds. Both are reads of `outstanding` over one of the two indexes, and they are the
+    /// two sides of the same rows (Law 5) — which is why they are here and not computed twice.
+    pub fn owed_by_estate(&self, estate: PartyId) -> f64 {
+        self.on_estate(estate).iter().map(|r| self.outstanding(ClaimId(*r))).sum()
+    }
+
+    pub fn owed_to(&self, holder: PartyId) -> f64 {
+        self.held_by(holder).iter().map(|r| self.outstanding(ClaimId(*r))).sum()
     }
 
     pub fn holder_of(&self, c: ClaimId) -> PartyId {

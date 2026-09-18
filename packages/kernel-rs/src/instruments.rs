@@ -22,6 +22,7 @@
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, HoldingId, InstrumentId, PartyId, UnitId};
 use crate::register::Register;
+use crate::stores::Claims;
 
 /// Register A1: what kind of thing this is. Not a branch a mechanism takes (Law 15) — the kernel uses
 /// it to know what may be held in fractions, what carries lots, and what money is.
@@ -207,12 +208,20 @@ impl Instruments {
 /// at the one hard-coded price (Money A2.b). Nothing here consults a market: an equity read that
 /// re-priced a book would be re-deriving what a market printed (Law 19), and what a party is worth
 /// AT MARKET is a different question with a different name.
-pub fn equity(party: PartyId, register: &Register, instruments: &Instruments) -> f64 {
+/// **A claim is neither held nor issued, and it is still owed** (21.110). An estate's liabilities
+/// stand in `Claims` (21c) and nothing about them is an instrument — nobody holds a row, nobody
+/// issued a line — so a read that only walked holdings and issues gave an estate the assets it took
+/// on and none of the debts that came with them: `probate.us.1.bank.b` closed a year with an account
+/// equal to its assets exactly and 15.7bn of liabilities nowhere in it. Both sides are read here,
+/// from the store's two indexes, because a claim subtracted from the estate and not added to its
+/// holder would be a one-sided flow (Law 5).
+pub fn equity(party: PartyId, register: &Register, instruments: &Instruments, claims: &Claims) -> f64 {
     let holds: f64 = register
         .of_holder(party)
         .iter()
         .map(|row| at_cost(register, HoldingId(*row)))
-        .sum();
+        .sum::<f64>()
+        + claims.owed_to(party);
     // 5 A4: and what it owes is what OTHERS hold of what it issued. Its own line on its own book is
     // not a debt to itself — netting it off here is the whole of what "issued and outstanding" means.
     //
@@ -230,7 +239,7 @@ pub fn equity(party: PartyId, register: &Register, instruments: &Instruments) ->
             Class::Share | Class::Good | Class::Plant => 0.0,
         }
     });
-    holds - owes
+    holds - owes - claims.owed_by_estate(party)
 }
 
 /// Register C1, Money D2: what one holding cost. A money account is a total at price 1; anything else
@@ -389,15 +398,15 @@ mod tests {
         let bill = i.issue(treasury, ccy(), Class::Claim, unit(), None, Some(Day(900)));
 
         reg.money_delta(buyer, cash, 1_000.0);
-        let before = equity(treasury, &reg, &i);
+        let before = equity(treasury, &reg, &i, &Claims::new());
 
         // It sold the bill: money in, and a promise out at the same instant.
         reg.money_delta(buyer, cash, -900.0);
         reg.money_delta(treasury, cash, 900.0);
         reg.credit(buyer, bill, 900.0, 1.0, 0);
 
-        assert_eq!(equity(treasury, &reg, &i), before, "selling a promise is not income");
-        assert_eq!(equity(buyer, &reg, &i), 1_000.0, "and the buyer swapped money for a claim");
+        assert_eq!(equity(treasury, &reg, &i, &Claims::new()), before, "selling a promise is not income");
+        assert_eq!(equity(buyer, &reg, &i, &Claims::new()), 1_000.0, "and the buyer swapped money for a claim");
     }
 
     #[test]
@@ -417,6 +426,38 @@ mod tests {
         reg.credit(holder, share, 100.0, 1.0, 0);
 
         // 400 of money and 600 of plant, and the shares its owners hold are not a debt against it.
-        assert_eq!(equity(firm, &reg, &i), 1_000.0);
+        assert_eq!(equity(firm, &reg, &i, &Claims::new()), 1_000.0);
+    }
+
+    #[test]
+    fn an_estate_is_worth_what_it_holds_less_what_is_claimed_on_it() {
+        // 21.110: an estate that took on what the dead party owed had a liability with no entry
+        // against it — `probate.us.1.bank.b` closed a year with an account equal to its assets
+        // exactly and 15.7bn of liabilities nowhere in it. A claim is neither held nor issued, so a
+        // read that walked only holdings and issues could not see it.
+        let mut i = Instruments::new();
+        let mut reg = Register::new();
+        let estate = party(3);
+        let claimant = party(4);
+        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
+        reg.money_delta(estate, cash, 1_000.0);
+
+        let mut claims = Claims::new();
+        assert_eq!(equity(estate, &reg, &i, &claims), 1_000.0, "nothing claimed on it yet");
+
+        let c = claims.against(estate, claimant, 400.0, 0);
+        assert_eq!(equity(estate, &reg, &i, &claims), 600.0, "what is claimed on it is owed");
+        // Law 5: the same row is an asset to whoever holds it, or the world's equity fell by 400.
+        assert_eq!(equity(claimant, &reg, &i, &claims), 400.0);
+
+        // And paying it discharges both sides at once, which is what makes a payment neutral: the
+        // money leg and the mark are the same event (`running::Ranked`), so neither party's worth
+        // moves. Marking it paid WITHOUT the leg would make an estate richer by paying, which is why
+        // the two are proposed together.
+        claims.pays(c, 400.0);
+        reg.money_delta(estate, cash, -400.0);
+        reg.money_delta(claimant, cash, 400.0);
+        assert_eq!(equity(estate, &reg, &i, &claims), 600.0);
+        assert_eq!(equity(claimant, &reg, &i, &claims), 400.0);
     }
 }

@@ -524,7 +524,9 @@ mod tests {
 
     /// 22b.7a: what a party is worth, READ from what it holds against what it owes. There is no pot.
     fn worth(reg: &Register, ins: &Instruments, p: PartyId) -> f64 {
-        crate::instruments::equity(p, reg, ins)
+        // 21.110: settlement moves instruments, and no instruction in these cases makes a claim on an
+        // estate — so an empty book of them is what this world has, not a corner being avoided.
+        crate::instruments::equity(p, reg, ins, &crate::stores::Claims::new())
     }
 
     /// The four stores settlement works on, gathered for a call.

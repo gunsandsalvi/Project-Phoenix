@@ -710,7 +710,7 @@ impl Mechanism for Reporting {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            said.push((*f, equity(who, ctx.register(), ctx.instruments())));
+            said.push((*f, equity(who, ctx.register(), ctx.instruments(), ctx.claims())));
         }
         for (who, worth) in said {
             // Observer A3: a firm's own result reaches its own subjects. What it publishes to the
