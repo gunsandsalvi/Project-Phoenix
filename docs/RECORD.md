@@ -19492,3 +19492,54 @@ figure as what the outcome is checked against and never as what it is set to.
 
 **682 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 58 of 179.
+
+---
+
+## 21.113–21.117 — a lien comes off the way it went on
+
+**What.** Taken one at a time. One fix in the kernel, three verified absent, two re-placed — one of
+them because closing 21.113 broke a pointer, which is 21.137's rule catching this session's own work
+one commit after it was written down.
+
+### 21.115 — there was no release at all
+
+The finding is a world stopping in period 9 on `Missing: [Register D5] lien 613 … does not exist`: a
+securities loan being returned released a lien that was already gone. Re-read against this engine, the
+defect could not happen, **and the reason is worse than the defect**: `Register` has `pledge` and had
+no `release`. Units pledged in this world were pledged for ever — a loan could be returned, a repo
+could mature, a margin call could be reversed, and the claim over the units stayed on the row, with
+`free` answering for ever with the encumbrance of a relation that had ended.
+
+`Register::release(holder, instrument, to, qty)` is the twin `pledge` never had, and the finding's own
+Register D5 is what it asserts: releasing to a party that holds no lien on the row throws, and
+releasing more than was pledged throws rather than becoming a smaller release (Law 6 — it is not
+clamped to what is there; it is somebody reading the wrong row, and the citation says which). A lien
+reduced to nothing stops being a lien, because missing is missing. Three tests: a lien comes off in
+parts and the units move when the last of it goes, and the two refusals.
+
+### Verified absent (three)
+
+| finding | why it closes |
+| --- | --- |
+| 21.113 | 165 kinds written as `Record<string, unknown>` reaching readers through four hand-written accessor files. This journal has one door — `say(kind, subjects, [(key, Value)])` — with `Value` a three-way enum and kinds and keys declared as rows in `Names`. There is no bag |
+| 21.114 | `say` and `record` are two doors and the second has a scheduled death. There is one door and it is `say`. The death happened in the port |
+| 21.112 (already closed) | — |
+
+### Re-placed (two)
+
+- **21.116** — four red index assertions. Its own conclusion was right and the scale is larger: it is
+  not that three of four regions lack an index declaration, **there is no declaration of an index
+  anywhere**. `benchmarks::Index` is a value type with a `level_at` read that honestly answers `None`
+  when a constituent did not print, and nothing ever constructs one. It splits, and both halves have a
+  home: the DECLARATION is 21e's (an index is a country's, per 21.6, and a country is
+  `registry.places`), and the LEVEL is 21j's, because the `benchmarks` row counts lines that printed
+  instead of fixing anything.
+- **21.117** — positioned at 21.113, which this commit closed. **The thing it was waiting for has
+  arrived and the reason to want it has not.** Kinds and keys are declared here, so "has anything I
+  read moved" is askable per kind; what is missing is the version per kind, `view.versions()` still
+  answering with two counters. But the pressure is gone with the TypeScript engine: the worst period
+  is 194 ms against the 3,000 ms budget, and Law 18 gates performance work on behaviour. → 23.3, where
+  a measurement can say whether a valuation walk is what a period costs.
+
+**685 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 61 of 179.

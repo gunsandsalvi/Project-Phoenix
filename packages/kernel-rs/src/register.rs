@@ -310,6 +310,39 @@ impl Register {
         self.lien_len[row.row()] += 1;
         self.writes += 1;
     }
+
+    /// Register C3, D5, 21.115: **a lien comes off the way it went on, and releasing one that is not
+    /// there throws.** There was no release at all until now, which meant that in this world units
+    /// pledged were pledged for ever: a securities loan could be returned, a repo could mature and a
+    /// margin call could be reversed, and the claim over the units stayed on the row. `free` would
+    /// answer for ever with the encumbrance of a relation that had ended.
+    ///
+    /// Law 6: it does not clamp a release to what is there. Releasing more than was pledged, or
+    /// releasing to a party that holds no lien on this row, is not a smaller release — it is somebody
+    /// reading the wrong row, and the citation says which.
+    pub fn release(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
+        assert!(to.some(), "Register C3: a lien is held BY somebody, so a release names them");
+        let row = self.row(holder, instrument);
+        assert!(row.some(), "Register D5: nothing is pledged on a holding that does not exist");
+        let at = self.lien_at[row.row()] as usize;
+        let len = self.lien_len[row.row()] as usize;
+        let found = self.liens[at..at + len].iter().position(|l| l.to == to);
+        let i = match found {
+            Some(i) => at + i,
+            None => panic!("Register D5: there is no lien to release on this holding for that party"),
+        };
+        let have = self.liens[i].qty;
+        assert!(
+            qty <= have,
+            "Register D5: releasing {qty} against a lien of {have} is a read of the wrong row"
+        );
+        self.liens[i].qty = have - qty;
+        // A lien of nothing is not a lien, so the row stops carrying it (Law 2: missing is missing).
+        if self.liens[i].qty == 0.0 {
+            self.liens[i].to = PartyId::NONE;
+        }
+        self.writes += 1;
+    }
 }
 
 /// Law 19, Audit B2: the audit's own walk — it SUMS THE LOTS and compares them with the row's
@@ -374,6 +407,54 @@ mod tests {
         let row = reg.row(p, i);
         assert_eq!(reg.free(row), 20.0);
         reg.debit(row, 50.0);
+    }
+
+    #[test]
+    fn a_lien_comes_off_the_way_it_went_on() {
+        // 21.115, Register C3/D5: there was no release at all, so units pledged were pledged for
+        // ever — a securities loan could be returned and the claim over the units stayed on the row.
+        let mut reg = Register::new();
+        let p = PartyId::at(0);
+        let i = InstrumentId::at(0);
+        let to = PartyId::at(1);
+        reg.credit(p, i, 100.0, 1.0, 1);
+        reg.pledge(p, i, to, 80.0);
+        let row = reg.row(p, i);
+        assert_eq!(reg.free(row), 20.0);
+
+        // Part of it back: the rest of the claim stands.
+        reg.release(p, i, to, 30.0);
+        assert_eq!(reg.free(row), 50.0);
+        // And the whole of the rest: the units are the holder's again and they move.
+        reg.release(p, i, to, 50.0);
+        assert_eq!(reg.free(row), 100.0);
+        assert_eq!(reg.debit(row, 100.0).len(), 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "no lien to release")]
+    fn releasing_a_lien_that_is_not_there_is_a_read_of_the_wrong_row() {
+        // 21.115: the (24, 96) world stopped on exactly this, and stopping is right — a return that
+        // releases a lien already gone means the row it thinks it is on is not the row it is on.
+        let mut reg = Register::new();
+        let p = PartyId::at(0);
+        let i = InstrumentId::at(0);
+        reg.credit(p, i, 100.0, 1.0, 1);
+        reg.pledge(p, i, PartyId::at(1), 80.0);
+        reg.release(p, i, PartyId::at(2), 10.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "a read of the wrong row")]
+    fn releasing_more_than_was_pledged_is_not_a_smaller_release() {
+        // Law 6: it is not clamped to what is there.
+        let mut reg = Register::new();
+        let p = PartyId::at(0);
+        let i = InstrumentId::at(0);
+        let to = PartyId::at(1);
+        reg.credit(p, i, 100.0, 1.0, 1);
+        reg.pledge(p, i, to, 40.0);
+        reg.release(p, i, to, 60.0);
     }
 
     #[test]
