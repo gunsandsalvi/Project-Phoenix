@@ -192,6 +192,15 @@ market (a protocol per venue, orders that rest, a shop and an exchange), 21j.1a 
 instrument door (`ctx.brings`), 21j.1 the schedules door, and 22d the queue that lets a payer be
 short without dying. Nothing below this is buildable on a world that decides nothing.
 
+- [x] 22i.0 **THE TWO DOORS NOTHING COULD REACH.** Before any row can be converted: a module could
+  not strike a RELATION and could not put a PROCESS in flight. `Agreements::strike` and
+  `Processes::begin` had no caller outside tests, so every system whose whole content is a relation
+  (trade credit, securities lending, CDS, FX forwards, the derivative layer, prime brokerage,
+  insurers, housing's tenancies) could do nothing but count what the assembly drew, and seven systems
+  were wired as a CLOSER for a process nothing opens. **Done**: `module::Agrees`, `module::Opens`,
+  `ctx.agrees / ends / opens / closes`, `Taken.agreed/.ended/.opened/.closed`, applied by
+  `World::run_phase` — struck and opened before the legs (a leg that pays rent performs a tenancy),
+  ended and closed after (the last payment a relation owes is made under it). This is 21j.1a's twin.
 - [ ] 22i.1 **A grade is published** (§21 A4, 21.69). `grade_from` and `reassess` are built and the
   row counts parties alive. It needs a `State` per issuer — leverage, coverage, cash, size, AGE and
   the trend — and two of those cannot be read: **no party carries a birth period** (`Parties::add`

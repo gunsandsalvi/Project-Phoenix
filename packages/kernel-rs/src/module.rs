@@ -328,6 +328,10 @@ pub struct MechanismContext<'a> {
     stood: Vec<(u32, PartyId, Vec<f64>)>,
     split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
     issued: Vec<Brings>,
+    agreed: Vec<Agrees>,
+    ended: Vec<crate::stores::AgreementId>,
+    opened: Vec<Opens>,
+    closed: Vec<crate::stores::ProcessId>,
 }
 
 /// **21j.1a, 21.139: A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.**
@@ -363,6 +367,39 @@ pub struct Brings {
     /// 5 D2: **what it owes and when.** A claim with terms and no schedule is a claim nobody can
     /// fall behind on, which is why every maturity in the old world arrived at once.
     pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,
+}
+
+/// **XI-10, 22i.0: a relation a module asks the kernel to strike.**
+///
+/// The twin of `Brings`. An instrument is a thing somebody holds; an agreement is a thing two
+/// parties are IN — a tenancy, an invoice on terms, a stock loan, a swap, a broker's account — and
+/// until now no module could make one. `Agreements::strike` existed with no caller outside tests, so
+/// every system whose whole content is a relation could do nothing but count the relations the
+/// assembly happened to draw.
+pub struct Agrees {
+    pub kind: u32,
+    pub one: PartyId,
+    pub other: PartyId,
+    /// What was agreed, in the order that kind declares. A term is a number the two sides settled
+    /// on, never a number the kernel supplies.
+    pub terms: Vec<f64>,
+    /// `Missing` where it runs until somebody ends it, which is not the same as ending today.
+    pub until: Option<crate::calendar::Day>,
+}
+
+/// **XI-3, 22i.0: something a module puts in flight, with an owner and an end.**
+///
+/// Seven systems are wired as a `Closing` — a closer for a process nothing opens — because
+/// `Processes::begin` had no caller either. A foreclosure, a flotation, a takeover, a workout, a
+/// securitisation, a buy-back and an election are each a thing that takes more than one period and
+/// somebody starts.
+pub struct Opens {
+    pub kind: u32,
+    pub owner: PartyId,
+    /// XI-3: the period it is due to close. `Missing` is a process nobody has to finish, which is
+    /// what this rule is against — so a module that cannot say when says so deliberately.
+    pub closes: Option<u32>,
+    pub size: f64,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -442,6 +479,10 @@ impl<'a> MechanismContext<'a> {
             stood: Vec::new(),
             split: Vec::new(),
             issued: Vec::new(),
+            agreed: Vec::new(),
+            ended: Vec::new(),
+            opened: Vec::new(),
+            closed: Vec::new(),
         }
     }
 
@@ -600,6 +641,30 @@ impl<'a> MechanismContext<'a> {
         self.issued.push(what);
     }
 
+    /// **XI-10, 22i.0: strike a relation.** Two named parties and the terms they settled on. The
+    /// kernel places it on the calendar and `Agreements` is the one writer, exactly as settlement is
+    /// the one writer of the register.
+    pub fn agrees(&mut self, what: Agrees) {
+        self.agreed.push(what);
+    }
+
+    /// 17f: **and it ends, and the ending is recorded.** A relation that stops existing without
+    /// anybody ending it is the silent disappearance Law 5 is about.
+    pub fn ends(&mut self, a: crate::stores::AgreementId) {
+        self.ended.push(a);
+    }
+
+    /// **XI-3, 22i.0: put something in flight**, with an owner and an end. Seven systems close
+    /// processes and none could open one.
+    pub fn opens(&mut self, what: Opens) {
+        self.opened.push(what);
+    }
+
+    /// And finish one. The closer publishes what closed; this is what makes it closed.
+    pub fn closes(&mut self, p: crate::stores::ProcessId) {
+        self.closed.push(p);
+    }
+
     /// **XI-15, Labour A4.c: an event that applies to SOME of a cell splits it**, and the relationship
     /// that applies to them goes with them. A module names the members and the relation; the kernel
     /// makes the cell, moves their exact share of what the parent holds, carries their outlook, and
@@ -626,6 +691,10 @@ impl<'a> MechanismContext<'a> {
             started: self.started,
             finished: self.finished,
             stood: self.stood,
+            agreed: self.agreed,
+            ended: self.ended,
+            opened: self.opened,
+            closed: self.closed,
             split: self.split,
             issued: self.issued,
         }
@@ -661,6 +730,12 @@ pub struct Taken {
     /// 21j.1a, 21.139: obligations a module asked to bring into existence. The kernel owns the
     /// instrument table, the register, the books and the schedules, so a module asks (Law 4).
     pub issued: Vec<Brings>,
+    /// XI-10, 22i.0: relations struck, and relations ended. `Agreements` is the one writer.
+    pub agreed: Vec<Agrees>,
+    pub ended: Vec<crate::stores::AgreementId>,
+    /// XI-3, 22i.0: processes opened, and processes finished. `Processes` is the one writer.
+    pub opened: Vec<Opens>,
+    pub closed: Vec<crate::stores::ProcessId>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

@@ -585,6 +585,16 @@ impl World {
         for what in asked.issued {
             self.brought(what);
         }
+        // **XI-10, XI-3, 22i.0: and relations struck and processes opened.** Before the legs for the
+        // same reason: a leg that pays rent performs a tenancy, and the tenancy has to exist first.
+        // `Agreements` and `Processes` are the one writer of each; a module asks.
+        let today = self.calendar.start_of(crate::calendar::Period(self.period));
+        for a in asked.agreed {
+            self.agreements.strike(a.kind, a.one, a.other, &a.terms, today, a.until);
+        }
+        for o in asked.opened {
+            self.processes.begin(o.kind, o.owner, self.period, o.closes, o.size);
+        }
 
         // **Settlement is the one writer of the register** (Law 4). What a phase asked for happens
         // here or not at all, and a refusal leaves the world as it was — a module cannot move units
@@ -616,6 +626,14 @@ impl World {
         // because the mark is the module's claim and the wire above is what makes it true or not.
         for due in asked.settled {
             self.schedules.settle(due);
+        }
+        // 17f, XI-3, 22i.0: and what ended — after the legs, because the last payment a relation
+        // owed is made under it and not after it.
+        for a in asked.ended {
+            self.agreements.end(a);
+        }
+        for p in asked.closed {
+            self.processes.finish(p);
         }
         // XI-3: and whose life ended. `Parties` is the one writer of who is alive; a module asks.
         for who in asked.ceased {
@@ -848,6 +866,82 @@ mod tests {
         fn name(&self) -> &'static str {
             "quiet"
         }
+    }
+
+    /// 22i.0: a module that strikes a relation and puts something in flight — the two acts no module
+    /// could perform, which is why thirty of fifty-one systems could only count.
+    struct Relates {
+        kind: u32,
+        one: PartyId,
+        other: PartyId,
+    }
+    impl crate::module::Mechanism for Relates {
+        fn run(&self, ctx: &mut crate::module::MechanismContext<'_>) {
+            if ctx.period() > 1 {
+                // It ends what it struck and closes what it opened, so both halves are exercised.
+                for a in ctx.agreements().of_kind(self.kind).to_vec() {
+                    ctx.ends(crate::stores::AgreementId(a));
+                }
+                for p in ctx.processes().running(self.kind) {
+                    ctx.closes(p);
+                }
+                return;
+            }
+            ctx.agrees(crate::module::Agrees {
+                kind: self.kind,
+                one: self.one,
+                other: self.other,
+                terms: vec![7.0],
+                until: None,
+            });
+            ctx.opens(crate::module::Opens { kind: self.kind, owner: self.one, closes: Some(9), size: 3.0 });
+        }
+    }
+    struct Relating(Relates);
+    impl System for Relating {
+        fn name(&self) -> &'static str {
+            "relating"
+        }
+        fn phases(&self) -> Vec<PhaseDecl> {
+            vec![phase(900, 0, Anchor::After(MARKETS))]
+        }
+        fn mechanism(&self) -> Option<&dyn crate::module::Mechanism> {
+            Some(&self.0)
+        }
+    }
+
+    #[test]
+    fn a_module_can_strike_a_relation_and_put_something_in_flight() {
+        // **XI-10, XI-3, 22i.0: the two doors that were missing.** `Agreements::strike` and
+        // `Processes::begin` had no caller outside tests, so every system whose whole content is a
+        // relation counted the relations the assembly drew, and seven systems were a CLOSER for a
+        // process nothing opens.
+        let mut w = World::empty();
+        let bank = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let firm = w.parties.add(kinds::FIRM, crate::ids::RegionId::at(0), bank, Representation::Named, 1, 0);
+        let kind = 3u32;
+        let r = Relating(Relates { kind, one: bank, other: firm });
+        let systems: Vec<&dyn System> = vec![&r];
+        w.wire_up(&systems);
+
+        w.step(&systems);
+        assert_eq!(w.agreements.len(), 1);
+        let a = crate::stores::AgreementId(0);
+        assert_eq!(w.agreements.between(a), (bank, firm));
+        assert_eq!(w.agreements.terms(a), [7.0]);
+        // G3.a: the kernel placed it on the calendar; the module said no day at all.
+        assert_eq!(w.agreements.from(a), w.calendar.start_of(crate::calendar::Period(1)));
+        assert!(w.agreements.live(a));
+        assert_eq!(w.processes.len(), 1);
+        let p = crate::stores::ProcessId(0);
+        assert_eq!(w.processes.owner(p), bank);
+        assert_eq!(w.processes.size(p), 3.0);
+        assert!(!w.processes.done(p));
+
+        // And both end, which is the half that makes them not immortal (XI-3).
+        w.step(&systems);
+        assert!(!w.agreements.live(a));
+        assert!(w.processes.done(p));
     }
 
     #[test]
