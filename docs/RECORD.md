@@ -17954,3 +17954,55 @@ engine, gated as 0g.41a restated it: laws-as-tests plus a census whose every dif
 
 Measured again on this machine after the block: the assembled world period is **138.3 ms** against
 TypeScript's 42,100 ms, with one module in it and forty-six still to wire into the session loop.
+
+# 0g.42d — the instruments store, and 22b's chronicle begins
+
+Two kernel pieces, and the second is the one that matters.
+
+**`instruments.rs` had to exist first.** Every Rust bench passed bare `InstrumentId`s, so **nothing in
+the Rust kernel recorded who issued what**. A seed cannot honour 5 A4's "no free money and no free
+assets" without it: the register knows who HOLDS, and until now nothing knew who OWES. `Instruments`
+is columnar like the rest; `issue` takes an issuer and there is no constructor that omits one, so
+Appendix B's money without an issuer cannot be written. Price 1 for money is a fact about the CLASS
+(Money A2.b) and the only hard-coded price there is. A coupon is a TERM and is refused on anything but
+a claim (5 C4.b), because a seeded term is permanent structure while an opening price is a guess the
+next period re-clears.
+
+**`chronicle.rs` is 22b, and it replaces the seed rather than porting it.** The old opening was
+nineteen calls — five `endowMoney`, ten `endowUnits`, three `prices.write`, nine `parties.add`, one
+`owes` — **and zero settlements**, which is why the world was handed every obligation and no
+relationship. This one is a PAST, lived through the ordinary wire:
+
+- **The grammar guard is the type.** `Draft` has variants for issuing, buying, hiring, lending,
+  delivering and paying, and **none for a price, a rate, a mark or a policy number**. A chronicle that
+  seeds an outcome cannot be written, rather than being checked for afterwards.
+- **Period zero is the END of the past.** `opens_on` is the day the last thing happened and
+  `seasoning_of` is a READ — a bond issued 1,990 days before the opening is 1,990 days seasoned, not
+  new (5 D2, 5 C3).
+- **Every told moment settles.** The test that matters builds a small past — a bank lends, a firm buys
+  its plant from the maker who built it, the firm pays interest — and finds the firm's opening cash is
+  `1,500 − 1,200 − 90`: **a residue, not a number anybody wrote.** The maker holds the money because it
+  was paid, and no longer holds the plant.
+- **A refusal in the past is a real event.** A payment from a party that has nothing comes back as
+  `ShortOfMoney` against its day and its reason — a finding about the DRAW, which the old opening could
+  not have had, because it settled nothing.
+- **The nine acceptance properties**, each rejecting with a sentence rather than a flag, because 22b.2
+  says a criterion that fails for every seed is a missing mechanism with a name. One test encodes the
+  item's own prediction: the first chronicle is expected to fail on *every firm has produced, sold and
+  been paid*, and the rejection naming it is the item working.
+- **Rejection discards a world and never adjusts one**, which is why it is admissible where calibration
+  is not. `next_seed_value` is a counter: nothing here takes a census and returns a corrected census.
+
+**Three defects in my own first draft**, all caught by reading it back: a comment naming an
+`is_a_stock` function that did not exist; a hardcoded `period = 0` sitting under a comment claiming
+each moment settled in the period it fell in — which would have made the whole past simultaneous, the
+exact defect the item replaces; and `Told0` as a type name. The period is now derived from the day and
+the chronicle's start, and a past measured in periods of no days is refused.
+
+**One thing the wire taught me.** I declared an issue and a loan `AgainstPayment` and the wire refused
+them: a `Create` leg is not a delivery out of anybody's book, so what it sees is money moving and units
+appearing. Declaring them against payment would be telling the wire a leg is there that is not — so
+they are `Plain`, with the reason written where the declaration is made.
+
+**Twenty-two laws as tests. Six hundred and fourteen now hold; clippy clean; `phoenix-check` green over
+76 files.**
