@@ -17359,3 +17359,34 @@ squeeze, which is most of what a cost shock does to a firm, is invisible to a si
 
 **Eight laws as tests. A hundred and fifty-six now hold; clippy clean; `phoenix-check` green over 39
 files.**
+
+# 0g.42 item 12c — the second opinion (XI-13)
+
+`packages/kernel-rs/src/mechanisms/second_opinion.rs`. Seventeenth module, and the last of item 12.
+
+XI-13's general form is the thing being refused: any mechanism whose INPUT to the participants'
+schedules is derived from the same quantity the clearing is supposed to DISCOVER produces a price
+that is a fixed point of its own formula — it looks like a market and carries no information. Three
+shapes do it quietly, and each is refused by a structure rather than by a check.
+
+**No probability is computed from accounts and fed to anybody.** `implied` runs only the other way:
+from the cleared spread, divided by a loss given default, as a READ (Law 19). There is no companion
+function in the module, so a caller cannot reach one.
+
+**The recovery names a party that died.** `Recovery` carries the estate it was realised from, so a
+constant cannot be passed where a recovery is wanted (Appendix B: no fixed recovery rate) — the
+credit content of a credit derivative IS this number being an outcome. An estate that paid in full
+implies nothing about default and answers `None`.
+
+**A rating is an opinion held by a named assessor.** `Assessments` is keyed by (assessor, subject);
+there is no `rating_of(subject)` to call. Two assessors on one borrower are two facts, and an
+assessor revising its view replaces its own and nobody else's (Law 4). `dispersion` measures the
+disagreement §46 A3 calls load-bearing, and answers `None` on one opinion rather than zero.
+
+**`can_disagree` is the standing question a derivative book must answer yes to.** A book of two
+hedgers clears at a function of regulatory gaps and never of a view, and does not open at all in a
+period where neither gap binds. It needs a participant whose reason is a VIEW and a two-sided dealer;
+the test removes each in turn.
+
+**Nine laws as tests. A hundred and sixty-five now hold; clippy clean; `phoenix-check` green over 40
+files. Seventeen of forty-seven modules ported.**

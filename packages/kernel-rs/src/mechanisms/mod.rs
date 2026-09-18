@@ -17,4 +17,5 @@ pub mod loss;
 pub mod money;
 pub mod mortality;
 pub mod redeemable;
+pub mod second_opinion;
 pub mod sovereign;
