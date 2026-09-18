@@ -17330,3 +17330,32 @@ demand the purchase creates.
 
 **Ten laws as tests. A hundred and forty-eight now hold; clippy clean; `phoenix-check` green over 38
 files.**
+
+# 0g.42 item 12b — the benchmarks (XI-7)
+
+`packages/kernel-rs/src/mechanisms/benchmarks.rs`. Sixteenth module. The things everything else
+prices off must themselves be prices, and there are three of them.
+
+**There is no level field.** `Index` is its constituents and their weights; `level_at` walks their
+prints every time it is asked. The two-system defect XI-7 names — one level computed from real
+constituents and read by nobody, one stored and moved by a delta and read by everything — cannot be
+written here, because there is nothing to write it into. An index whose constituent did not print has
+no level that period: `None`, not the last one wearing this period's date (Law 8).
+
+**A covariance is taken against the history the index HAD.** `history` reads the constituents' prints
+and a period with no level is ABSENT from it rather than filled; `covariance` answers `None` below two
+observations rather than zero. XI-7's chain is why: a made-up opening history makes every covariance
+against it a covariance against noise, and a covariance against noise is a DISCOUNT RATE wherever a
+beta is used — equity valuation, loan pricing, a wage decision, a freight decision.
+
+**`fix` refuses a rate that did not transact.** A floating coupon fixes on the cleared overnight
+print; `Carried` (a book that ran and had nothing cross) and `Seeded` (the world's opening level)
+both answer `None`. A posted policy rate is not a benchmark: fixing on one makes the corridor
+decoration and the named reference on the instrument a label nothing prices off.
+
+**Producer and consumer prices are two indices**, and `squeeze` is what having two buys. The test
+runs the case where one index wears both names and finds it reads zero in every world — a margin
+squeeze, which is most of what a cost shock does to a firm, is invisible to a single index.
+
+**Eight laws as tests. A hundred and fifty-six now hold; clippy clean; `phoenix-check` green over 39
+files.**

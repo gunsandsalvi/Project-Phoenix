@@ -3,6 +3,7 @@
 //! the kernel ONLY through `module.rs`'s doors — never by importing another module (Law 15).
 
 pub mod bank_capital;
+pub mod benchmarks;
 pub mod capital_programme;
 pub mod cost_of_capital;
 pub mod currency;
