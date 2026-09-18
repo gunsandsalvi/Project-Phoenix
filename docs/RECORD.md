@@ -17145,3 +17145,34 @@ wiped — which is the point XI-8 is making rather than the one I had typed.
 
 **Fourteen laws as tests. A hundred and one now hold; clippy is clean; `phoenix-check` is green over
 32 files — and it ran BEFORE the commit this time.**
+
+# 0g.42 item 8 — redeemable claims (§13)
+
+**A3: equity is zero BY CONSTRUCTION** — assets minus liabilities minus what the shares are worth,
+because the liability IS the shares and the shares are a claim on the assets. It is not an invariant
+the pool tries to hold; it is what a redeemable claim is. `equity()` is a READ that comes out at
+zero within the dust of its own walk, and it is **returned rather than asserted**, so a family can
+report it with an owner and a size — an audit that threw here would be repairing by stopping the
+world.
+
+**B2.a: a stale price makes a stale NAV and somebody transacts on it.** That is a real transfer
+between the holder coming in and the ones already there, and **it is not a defect to be smoothed
+away — smoothing it is what deletes the transfer.** The test makes it concrete: a pool whose assets
+are worth 12,000 but whose prints show 10,000 sells a subscriber 100 shares where the true NAV would
+have sold it 83.
+
+**C2.a, C2.b, XI-2: a redemption is met IN FULL**, from the buffer and by selling for the rest —
+and the selling is a trade into a market that must clear at whatever it clears. Law 6: the buffer
+is not "as much as it can", and **the holder is not paid less because the pool was illiquid**. A
+redemption rationed by the fund's cash with the unfilled part dropped is not a redemption, which is
+XI-2's second door into a forced sale.
+
+**Missing stays missing**: a pool with no shares has no NAV, and `subscribe` at no NAV returns none
+rather than zero — because answering zero would be a number somebody divides by.
+
+**B4 is a VERIFY and behaves like one**: `holders_against_the_book` returns the gap with its dust so
+a family can report it, and repairs nothing. The test asserts both directions — balanced within
+dust, and a real negative gap when 200 shares are unaccounted for.
+
+**Six laws as tests. A hundred and seven now hold; clippy is clean; `phoenix-check` is green over 33
+files, run before the commit.**

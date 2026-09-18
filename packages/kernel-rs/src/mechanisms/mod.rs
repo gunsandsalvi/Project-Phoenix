@@ -10,4 +10,5 @@ pub mod lending;
 pub mod loss;
 pub mod money;
 pub mod mortality;
+pub mod redeemable;
 pub mod sovereign;
