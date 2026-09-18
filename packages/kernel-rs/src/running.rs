@@ -3231,6 +3231,226 @@ impl Mechanism for Broking {
     }
 }
 
+/// **§14 A4, C2, XI-2, 22i.15: A FUND IS THE BUYER WHEN OTHERS ARE FORCED SELLERS.**
+///
+/// The `hedge_funds` row counted how many parties were alive. So the one thing §14 C2 says a fund IS
+/// — the other side of a forced sale, if it has capacity — had never happened, and XI-2's channel
+/// had nobody at the end of it.
+///
+/// **`None` is the case that matters**: everybody short at once and nobody to buy. A fund only bids
+/// what its borrowing room and its cash allow, so a world where every fund is out of room is a world
+/// where a forced sale finds no bid — which is the contagion, and it is arithmetic here rather than
+/// a rule anybody wrote.
+///
+/// **And it bids because it DISAGREES** (§46 A3, XI-13): its own view of the name is better than the
+/// worst view held, which is 22i.11's disagreement doing the work it exists for. A fund that agreed
+/// with the seller would have no reason to take the other side.
+pub struct Liquidity {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Liquidity {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        // C2: **IF it has capacity.** A fund with no room is not a buyer of anything, and that is
+        // the case XI-2 turns on.
+        if view.own_cash() <= 0.0 {
+            return Vec::new();
+        }
+        // Law 19: the lines it knows — its own rows — never every book in the world.
+        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let room = view.own_cash();
+        if room <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::systems::line_of(m);
+        // E2: **no position that does not mark.** A line nothing cleared is one it will not take on,
+        // because it could not say afterwards what it was worth (Law 3).
+        let Some(print) = view.print(line) else { return Vec::new() };
+        if print.price <= 0.0 {
+            return Vec::new();
+        }
+        let units = crate::clearing::whole_pieces(room / print.price);
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Buy,
+            // It bids at what the line last cleared at: it is buying from somebody who must sell,
+            // and what it pays is what the book crosses at (Law 3, Clearing C3).
+            price: Some(print.price),
+            qty: units,
+        }]
+    }
+}
+
+/// **§15 A5, A5.a, B2.a, C1, E3, 22i.15: STOCK IS LENT, AND THE FEE CLEARS.**
+///
+/// The `securities_lending` row counted live agreements. So nothing in this world had ever been
+/// borrowed, which means nothing could be SHORTED — Appendix B's *no short without a borrow* held
+/// only because no short was possible at all.
+///
+/// **The fee is a price** (A5.a, E3): scarce paper is expensive to borrow and abundant paper is
+/// cheap, and it clears between what holders will lend and what borrowers want. **A fee of zero is a
+/// cleared price only if somebody posted it** — `None` means nobody did and there is no borrow
+/// rather than a free one.
+///
+/// **Who wants to borrow is who disagrees** (XI-13, 22i.11): the party holding the WORST view of a
+/// name wants to be short it, and the parties holding it are who can lend. Two different numbers on
+/// one name is the whole reason either side is there.
+pub struct StockLending {
+    pub kind: u32,
+    /// §15 B2.a: how much of what it holds a lender will put out at once. Its own limit, and it may
+    /// be none.
+    pub will_lend: &'static str,
+}
+
+impl Mechanism for StockLending {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::securities_lending::{clearing, Willing};
+        let will_lend = ctx.params().ratio(self.will_lend);
+
+        // XI-13: the views held on each name, so the keenest short and the calmest holder are found
+        // rather than assigned.
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
+                continue;
+            }
+            views
+                .entry(ctx.standing().about(st).0)
+                .or_default()
+                .push((ctx.standing().held_by(st), ctx.standing().terms(st)[0]));
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, InstrumentId, f64, f64)> = Vec::new();
+        for (&on, holders) in &views {
+            if holders.len() < 2 {
+                continue;
+            }
+            let mut by_view = holders.clone();
+            by_view.sort_by(|a, b| a.1.total_cmp(&b.1));
+            let (borrower, worst) = by_view[by_view.len() - 1];
+            let (_, best) = by_view[0];
+            if worst <= best {
+                continue;
+            }
+            for &line in ctx.instruments().of_issuer(PartyId(on)) {
+                let what = InstrumentId::at(line);
+                // B2.a: **the pool is what holders will actually lend**, which is their own limit on
+                // their own holding and never all of it.
+                let mut pool: Vec<Willing> = Vec::new();
+                for &row in ctx.register().of_instrument(what) {
+                    let row = crate::ids::HoldingId(row);
+                    let holder = ctx.register().holder_of(row);
+                    if holder == borrower || holder == PartyId(on) {
+                        continue;
+                    }
+                    let holds = ctx.register().free(row);
+                    if holds <= 0.0 {
+                        continue;
+                    }
+                    pool.push(Willing { holder, holds, will_lend: holds * will_lend });
+                }
+                if pool.is_empty() {
+                    continue;
+                }
+                // A5.a: **the fee CLEARS.** What the borrower wants against what the pool will
+                // lend, and the schedules are what each holder posted.
+                let wants = pool.iter().map(|w| w.will_lend).sum::<f64>();
+                let schedules: Vec<(PartyId, f64, f64)> =
+                    pool.iter().map(|w| (w.holder, w.will_lend, worst - best)).collect();
+                let Some(fee) = clearing(wants, &pool, &schedules) else { continue };
+                let lender = pool[0].holder;
+                struck.push((lender, borrower, what, pool[0].will_lend, fee));
+                break;
+            }
+        }
+
+        for (lender, borrower, what, units, fee) in struck {
+            // XI-10: a loan of stock is a RELATION — terms `[the line, the units, the fee]` — and
+            // C1's collateral, worth more than the loan, is what the two sides then post against it.
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::SECURITIES_LOAN,
+                one: lender,
+                other: borrower,
+                terms: vec![f64::from(what.0), units, fee],
+                until: None,
+            });
+            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(fee))], true);
+        }
+    }
+}
+
+/// **§14 A5, B5, E2, 22i.15: A FUND MARKS, AND ITS LEVERAGE IS A READ AGAINST WHAT IT BORROWED.**
+///
+/// A5: everything is marked at cleared prices, so its equity moves continuously. E2: **no position
+/// that does not mark** — a fund carrying an unmarked position has hidden its loss, and a line
+/// nothing cleared is carried at what it cost and says so.
+///
+/// B5: **leverage is a read of borrowed against equity, and it must equal what the broker has lent**
+/// (§12 B1.a). It is not a property of the fund: the loan is a named lender's, and this reads it off
+/// the relation that lender holds rather than off a figure the fund keeps.
+pub struct Levered {
+    pub kind: u32,
+    pub at_equity: u32,
+}
+
+impl Mechanism for Levered {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut marked: Vec<(PartyId, f64, Option<f64>)> = Vec::new();
+        for &fund in ctx.parties().of_kind(kinds::FUND) {
+            let who = PartyId(fund);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            let mut at_market = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                let units = ctx.register().quantity(row);
+                at_market += match ctx.prints().latest(line, ctx.period()) {
+                    Some(print) => units * print.price,
+                    None => ctx.register().lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum(),
+                };
+            }
+            // B1.a: what it borrowed, from the named lender that lent it.
+            let lent: f64 = ctx
+                .agreements()
+                .of_party(who)
+                .iter()
+                .map(|a| crate::stores::AgreementId(*a))
+                .filter(|a| {
+                    ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
+                })
+                .filter_map(|a| ctx.agreements().terms(a).first().copied())
+                .sum();
+            let equity = at_market - lent;
+            // B5: `None` where the client has no equity left — which is not zero leverage, it is a
+            // client that is gone.
+            let leverage = if equity > 0.0 { Some(lent / equity) } else { None };
+            marked.push((who, equity, leverage));
+        }
+
+        for (who, equity, leverage) in marked {
+            let mut data = vec![(self.at_equity, Value::Num(equity))];
+            if let Some(l) = leverage {
+                data.push((0, Value::Num(l)));
+            }
+            // A5: what a fund is worth is its holders' business and its lender's, not the world's.
+            ctx.say(self.kind, &[who.0], &data, false);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

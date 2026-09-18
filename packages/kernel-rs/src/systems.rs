@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, SpotFx, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, SpotFx, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -844,6 +844,10 @@ pub fn declare(p: &mut Params) {
     // §26 A3: how far out a forward is struck. A market CONVENTION, and what it is worth is what
     // the two sides cross at (Law 3, B1: never struck off a formula).
     // §13 C1: how much of its spare money a holder puts into one pool. A PREFERENCE, and its own.
+    // §15 B2.a: how much of what it holds a lender will put out at once. Its own limit, and a
+    // PREFERENCE — a holder that would lend all of it is a holder with no view about being recalled.
+    say("lending.will_lend", 0.3, "per unit held", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the share of a holding a lender will have out on loan at once");
     say("subscribe.commits", 0.1, "per unit of spare cash", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of its spare money a holder commits to one pool");
     // §12 C1.b, E4: **the broker's own view and its own limit.** The view is what makes the
@@ -1159,7 +1163,16 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             d.mechanism = Some(Box::new(Reads { kind: says("dealing.lines"), what: Counts::LinesThatPrinted }));
             d
         },
-        works("hedge_funds", AT_MARKETS, Box::new(Reads { kind: says("hedge_funds.alive"), what: Counts::PartiesAlive })),
+        {
+            // **§14 C2, XI-2: and a fund is the BUYER when others are forced sellers.** It counted
+            // how many parties were alive, so XI-2's channel had nobody at the end of it.
+            let mut h = works("hedge_funds", AT_REVALUATION, Box::new(Levered {
+                kind: says("fund.marked"),
+                at_equity,
+            }));
+            h.participant = Some(Box::new(Liquidity { of_kind: kinds::FUND }));
+            h
+        },
         works("private_equity", AT_MARKETS, Box::new(Closing { kind: afoot::TAKEOVER, says: says("takeover.closed") })),
         // **§12 B1.a, C1.b, E4: and a broker LENDS to a named client and sets what it requires.** It
         // counted live agreements, so no client in this world was levered by a named lender.
@@ -1187,7 +1200,13 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             e.participant = Some(Box::new(Flotation { of_kind: kinds::FIRM }));
             e
         },
-        works("securities_lending", AT_MARKETS, Box::new(Reads { kind: says("securities_lending.loans"), what: Counts::AgreementsLive })),
+        // **§15 A5.a: and stock is LENT, at a fee that clears.** It counted live agreements, so
+        // nothing had ever been borrowed — and Appendix B's *no short without a borrow* held only
+        // because no short was possible at all.
+        works("securities_lending", AT_MARKETS, Box::new(StockLending {
+            kind: says("stock.lent"),
+            will_lend: "lending.will_lend",
+        })),
         works("securitisation", AT_MARKETS, Box::new(Closing { kind: afoot::SECURITISATION, says: says("pool.closed") })),
         // ── The instrument families that settle against what the books printed ──────────────────
         works("derivative_layer", AT_REVALUATION, Box::new(Reads { kind: says("derivative_layer.open"), what: Counts::AgreementsLive })),
