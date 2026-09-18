@@ -19,6 +19,7 @@ use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::instruments::Class;
 use phoenix_kernel::parties::Representation;
+use phoenix_kernel::registry::{Banks, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
 use phoenix_kernel::running::{about as running_about, afoot, agreed, Makes};
@@ -67,14 +68,41 @@ fn main() {
 
     // ── Parties: all eleven kinds, so no participant and no mechanism has nobody to be ──────────
     let cb = w.parties.add(kinds::CENTRAL_BANK, RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-    let treasury = w.parties.add(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 1, 0);
+
+    // ── The registry (21e): what the ids point at ────────────────────────────────────────────────
+    // A currency naming its issuer, a country holding the money, a region reading through it, a unit
+    // saying what one of it is divided into, and a profile per kind so `admit` asks rather than
+    // allowing anything with no bank at all. The ids are the same rows they always were — this says
+    // what they MEAN, which is what nothing did before.
+    let usd = w.registry.currency(cb);
+    let us = w.registry.country(usd);
+    let home = w.registry.region(us);
+    assert_eq!(home, RegionId::at(0), "this world's one region is row 0, as every party's is");
+    assert_eq!(w.registry.currency_of(home), usd, "Seed B3: the region determines its money");
+    // Law 8: two units, because one grid for everything is 21.37's defect. A tonne is milled; a thing
+    // counted in whole things is not divided at all.
+    let _fine = w.registry.unit(1_000_000.0);
+    let _whole = w.registry.unit(1.0);
+    for kind in kinds::ALL {
+        let p = match kind {
+            kinds::CENTRAL_BANK => KindProfile { issues_money: true, banks: Banks::Nowhere },
+            kinds::BANK => KindProfile { issues_money: true, banks: Banks::AtTheCentralBank },
+            kinds::TREASURY => KindProfile { issues_money: false, banks: Banks::AtTheCentralBank },
+            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank },
+        };
+        w.registry.profile_for(kind, p);
+    }
+    // Money D2: the central bank's money exists before anybody banks at it. `admit` asks the kind's
+    // profile now (21e), so the ordering is enforced rather than assumed — a treasury admitted before
+    // there were reserves to hold would be refused at ENTRY.
     let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+    let treasury = w.admit(kinds::TREASURY, RegionId::at(0), cb, Representation::Named, 1, 0);
 
     let banks_wanted = 30usize;
     let mut banks: Vec<PartyId> = Vec::with_capacity(banks_wanted);
     let mut deposits: Vec<InstrumentId> = Vec::with_capacity(banks_wanted);
     for _ in 0..banks_wanted {
-        let b = w.parties.add(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
+        let b = w.admit(kinds::BANK, RegionId::at(0), cb, Representation::Named, 1, 0);
         deposits.push(w.instruments.issue(b, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None));
         banks.push(b);
     }
@@ -90,7 +118,7 @@ fn main() {
         let kind = rest[(w.parties.len()) % rest.len()];
         let at = w.parties.len() % banks.len();
         let cell = kind == kinds::HOUSEHOLD;
-        let who = w.parties.add(
+        let who = w.admit(
             kind,
             RegionId::at(0),
             banks[at],

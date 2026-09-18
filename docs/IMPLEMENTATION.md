@@ -231,7 +231,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21b | A pool whose manager died — **done** (section removed; see `docs/RECORD.md`; a pool under nobody's mandate posts nothing and winds up through the machinery it already has, paying its holders pro rata on what it raised and ending when there is nothing left) | after 21a |
 | 21c | A tax on an estate is a claim on it — **done** (section removed; see `docs/RECORD.md`; `Rank::Preferential` is where the law puts the state, `Claims` is the fifth kernel store, and `running::Ranked` pays an estate's claimants in rank order. 21.110's other half stays open) | after 21b |
 | 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
-| 21e | There is no registry — four homeless nouns name it | after 21d: the ontology register is what found it |
+| 21e | There is no registry — **done** (section removed; see `docs/RECORD.md`; `src/registry.rs`: a currency names its issuer, `currency_of(region)` reads through the country, a unit says what it is divided into, a kind has a profile `World::admit` asks. Seven homeless nouns are three) | after 21d: the ontology register is what found it |
 | 21f | Three facts the modules keep and the kernel does not | with 21e, and for the same reason |
 | 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
 | 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
@@ -268,133 +268,58 @@ journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD
 ledger. The count is declared because `plan:progress` cannot otherwise tell a step that closed from
 one that never existed.
 
-**And 21.1, 21.2 and 21.3, worked in number order** (`docs/RECORD.md`, *21.1–21.3*): two of the three
-had a half that survived the port and is fixed — one `whole_pieces` read where nine participants each
-wrote `as i64`, and a bank that could not settle its customer's payment now failing under its own name
-with the row on itself. 21.3 is verified absent: every `of_kind` reader checks `alive`, so a dead
-party is asked for no orders.
+**Worked in number order, each block's outcomes in `docs/RECORD.md` under the same range:**
 
-**And 21.7 through 21.16** (`docs/RECORD.md`, *21.7–21.16*): two more live halves fixed — an exact-zero
-test for *did this mark move* replaced by the dust of the subtraction it came from, in two modules, and
-a party admitted at a bank that issues no money now refused at ENTRY rather than at its first payment.
-Six are verified absent. **21.13's shapes half is the one that grew**: nothing in the engine declares a
-parameter at all, which is item 21g.
-
-**And 21.17 through 21.31** (`docs/RECORD.md`, *21.17–21.31*): twelve verified absent, and the two
-that were not are absences rather than defects, so each became an item. **21h**: the five cell events
-are declared, guarded, and `reweigh` is called by nothing — not one weight in this world has ever
-changed, which is what 21.20 turns out to be a consequence of. **21i**: there is no ground anywhere,
-which is what 21.27–21.30 are four findings about.
-
-**And 21.32 through 21.46** (`docs/RECORD.md`, *21.32–21.46*): seven closed, seven positioned, and one
-new item. **21.36 is the first of these findings that caught a defect THIS SESSION wrote**: it names an
-estate presenting every claim again each period, and `running::Ranked` — written three commits earlier
-at 21c — read `claims.outstanding()` and never marked anything paid, so an estate paid every claimant
-in full again every period for as long as it stayed open. The fix is the `pays` door and a waterfall
-that answers **in input order** so its results can be paired with the claim ids that went in; sorting
-the answer by rank was the same defect the finding describes on the old engine. Three more are about a
-`property/` module that the specification never asked for — `grep -i "premises|commercial property"`
-over 5,428 lines returns nothing — and one (21.35) about an equity account that does not exist here at
-all, `instruments::equity` being a read of the register and a cell's holdings totals with `per_member`
-a read. The new item is **21j**: twenty-five of the forty-seven wired systems do nothing but count.
-
-**And 21.47 through 21.85** (`docs/RECORD.md`, *21.47–21.85*): three closed and one of them by a fix
-that removed code. **21.71 survived the port exactly** — `short_term_debt::Backstop` and
-`corporate_credit::Facility` were one object under two names (Law 4), a named lender's committed line
-to a named borrower — and both are now `stores::Commitment`, one shape in the kernel, with the fee
-required (§9 B4) and the end optional as every agreement's is. 21.57 is absent: `ParticipantView` has
-no door onto anybody else's book, so the ninety-six peek sites cannot be written here. 21.51 is absent:
-there is no `transact` group, so a book's print is the book's. **And the sweep this block ran found
-what became 21.137**: seventeen findings and five coverage rows positioned into items that then closed,
-which is the silent drop the plan's own rule forbids. Every one is re-placed.
-
-**And 21.47 and 21.64 through 21.84** (`docs/RECORD.md`, *21.47–21.84*): the last seventeen, and with
-them **every finding in item 21 has now been re-read**. Three close (21.74, 21.78, 21.80: red cases in
-deleted files whose rules are already held elsewhere). Eleven are the same answer said eleven ways and
-it is **21j**: no bank quotes anybody, `control` never runs, nothing publishes accounts, no supply book
-is posted in, no pool is cut, no invoice is written, no index has a level. Three keep a live position —
-21.77 at 23.3 (one of the few whose participant IS reached, so its book not clearing is an outcome),
-21.82 at 23.3 (sharpened: exposure is read net and margin is sized gross, the same question twice with
-two answers), and 21.66 with 21.64 at 23.2. **And the re-read voided a step of item 23**: 23.1 is
-*resize the scale model*, and there is no scale model — `packages/engine` and its rig went with the
-TypeScript engine, and every test here builds the two or three parties its own case needs, which holds
-*a test never names a party* harder than the rig did.
-
-**And 21.86 through 21.94** (`docs/RECORD.md`, *21.86–21.94*): five closed, two re-marked, and the
-21.137 sweep corrected — it had missed two, because it read only the line a finding begins on and a
-position written on a continuation line was invisible to it. **21.90 is the one that closes by being
-UNTRUE of this engine**: it reported a cell paid once and then never again, and `running::Wages` pays
-the wage on every live engagement in every period, which is what the 2,890 outlooks a period from
-period 2 are made of. Three more (21.89, 21.91, 21.94) are deleted suites whose surviving halves are
-rules already held elsewhere, and 21.88's *the row is still performing after the grace expires* cannot
-happen here for 21.62's reason: `Agreements` has no states to be performing in. The two re-marks are
-both sharper than they were: **no election has ever been held in this world** (21.86 — nothing ever
-`begin`s one), and the central bank's remittance is already stated at `mortality::CentralBankLoss` and
-has no flow to travel down (21.93).
-
-**And 21.98 through 21.112**, taken one at a time (`docs/RECORD.md`, *21.98–21.112*): **21.110 is fixed
-and it is the second real repair of this pass.** An estate's liabilities stand in `Claims` and a claim
-is neither held nor issued, so `instruments::equity` could not see one — `equity` now reads BOTH sides
-of the claims book, because subtracting on the estate without adding on its claimant would be a
-one-sided flow (Law 5), and `Claims` gained the second index the register has always had (Register A3).
-Three more close: 21.109 (creation is at NAV here, not at one, and `mislaid` is the standing VERIFY
-waiting on 21j), 21.111 and 21.112's label (there is no `disposal` receipt to promise a basis).
-**21.112's other half is the one that grew**: a lot carries the basis its units arrived at, settlement
-draws those lots, and `grep realised` over the engine returns nothing — so a gain exists on the
-register and in no read at all. 21.98 is re-positioned with the seeding, because the multiple it is
-about must not be declared: how many firms are small is an outcome of a boundary that MOVES (XI-15,
-21h.2).
-
-**And 21.113 through 21.121** (`docs/RECORD.md`, *21.113–21.117* and *21.119–21.121*): a kernel fix,
-three verified absent, and **the rule became a check**. `Register` had `pledge` and no `release`, so
-units pledged in this world were pledged for ever (21.115). 21.113 and 21.114 are absent: this journal
-has one typed door with declared kinds. And 21.137's rule — *a finding leaves this file only by being
-placed* — is now `plan-progress.ts checkPositions`, in `npm run check`, which refuses a position that
-names a closed item, an unknown item, or a finding that has closed. It caught two on its first run,
-one of them written by the commit before it. 21.119 closes by being what asked for the test that
-proves it: `tools/` had no test runner at all, and now has five fixture cases and `check:tools`.
+- **21.1–21.3** — two live halves fixed (one `whole_pieces` read for nine `as i64` sites; a bank that
+  could not settle now failing under its own name); 21.3 verified absent.
+- **21.7–21.16** — two live halves fixed (an exact-zero mark test replaced by the subtraction's own
+  dust, in two modules; a party admitted at a bank that issues no money now refused at ENTRY); six
+  absent. 21.13's shapes half grew into item **21g**.
+- **21.17–21.31** — twelve absent; the two that were not are absences, so each became an item: **21h**
+  (the five cell events never fire) and **21i** (there is no ground).
+- **21.32–21.46** — seven closed, seven positioned, one new item. **21.36 was the first to catch a
+  defect this session wrote**: `running::Ranked`, written at 21c, never marked a claim paid, so an
+  estate paid every claimant in full again every period. Three were about a `property/` module the
+  specification never asked for. New item **21j**: twenty-five of the forty-seven systems only count.
+- **21.47–21.85** — three closed, one by a fix that removed code: `Backstop` and `Facility` were one
+  object under two names (Law 4), now `stores::Commitment`. **21.137 raised**: seventeen findings
+  positioned into items that had closed.
+- **21.86–21.94** — five closed, two re-marked. **21.90 closes by being untrue here** — `Wages` pays
+  every live engagement every period. The 21.137 sweep is corrected: it had missed two.
+- **21.98–21.112** — **21.110 fixed**: an estate's equity now reads both sides of the claims book, and
+  `Claims` gained the second index the register has always had. Three absent.
+- **21.113–21.121** — **21.115 fixed**: `Register` had `pledge` and no `release`, so units pledged
+  were pledged for ever. Two absent. **21.137's rule became a check** (`checkPositions`, in
+  `npm run check`), and 21.119 closed by being what asked for the test that proves it.
+- **21.130–21.136** — the drained file's four groups, forty-two steps. Most close because the port
+  built the answer. **21.139 raised**: nothing in this world can issue an instrument.
+- **21.47, 21.64–21.84** — the last seventeen, and with them **every finding in item 21 is re-read**.
+  Eleven are 21j said eleven ways. **23.1 is void**: there is no scale model.
 
 - [ ] 21.137 **RAISED at 21.47–21.85: seventeen findings and five coverage rows were positioned into
-  items that then closed.** *A finding leaves that file only by being placed* (`CLAUDE.md`), and a
-  placement into an item that closes without it is the silent drop the rule exists to stop. A sweep of
-  every *positioned at* in this file against the item table found them pointing at 18.0, 18.4, 18.5
-  (five), 18a, 18a.1 (four), 16.5, 17.0, 19 and 19.9 — all closed. Each has been re-placed and the
-  reasoning is in `docs/RECORD.md`. **And the first sweep missed two**, which is the argument for the
-  check rather than against it: it read only lines beginning a finding, so a position written on a
-  CONTINUATION line was invisible to it — 21.90 at `0h.3` and 21.93 at `18a`, both found at 21.86–21.94
-  by a second sweep that walks every line and carries the finding id down. A sweep by hand that can
-  miss is the defect; what remains under this id is the pair item 18
-  closed without, because no live item holds them: **the early-termination regime** (Corporate Credit
-  B1 — make-whole for investment grade, a non-call period for high yield, a soft call for floating
-  paper, stamped at issuance from what the issue IS, which F4's prepayment and F5's refinancing both
-  wait on) and **the cash-synthetic basis** (H4, H4.a — one derivation over two books that clear on
-  their own, and what is missing is the MEASUREMENT of the gap, not a mechanism). Both want a
+  items that then closed** — 18.0, 18.4, 18.5, 18a, 18a.1, 16.5, 17.0, 19, 19.9. A placement into an
+  item that closes without it is the silent drop *a finding leaves that file only by being placed*
+  exists to stop. All are re-placed (`docs/RECORD.md`). **The check is BUILT**
+  (`plan-progress.ts checkPositions`, in `npm run check`): it refuses a position naming a closed item,
+  an unknown item, or a closed finding; it reads every line of a finding, not just the one it opens
+  on; and the LAST position stated is the operative one, because a re-read appends.
+  **What remains under this id** is the pair item 18 closed without and no live item holds:
+  **the early-termination regime** (Corporate Credit B1, which F4 and F5 both wait on) and **the
+  cash-synthetic basis** (H4, H4.a — the MEASUREMENT of the gap, not a mechanism). Both want a
   derivative layer that prices an option, and neither can be exercised while §19's CDS book has never
-  traded (21j). **The check is BUILT** (`tools/plan-progress.ts checkPositions`, in `npm run check`):
-  `plan:check` now refuses a *positioned at* that names a closed item, an item nothing knows, or a
-  finding that has closed. It reads every line of a finding and not just the line it opens on, which
-  is how the first sweep lost two; and it takes the LAST position stated as the operative one, because
-  a re-read appends — a convention this makes load-bearing rather than leaving in a comment beside one
-  finding. The rule had been broken seventeen times at once, then twice more by the sweep that found
-  them, then once more by the commit after it: **when a rule is broken twice, write the check.** It
-  caught its own two on the first run, and it fails when the rule is broken, which is 21.94's rule
-  about checks that cannot fail.
+  traded (21j).
 
 - [ ] 21.139 **RAISED at 21.135: NOTHING IN THIS WORLD CAN ISSUE AN INSTRUMENT.** The set of
   instruments and the set of books are whatever `assembly` built, and they do not change while the
   world runs. `MechanismContext` offers `propose`, `say`, `form`, `settles`, `ceases`, `is_owed` and
   `pays`; `Taken` carries exactly those and nothing else. `Leg::Create` makes UNITS of a line that
   already exists — which is what production is (§37) — and every `instruments.issue` call in the tree
-  is in a test or a `bin`. So a firm cannot bring paper (21.58), a bank cannot write a loan as a new
-  row, a treasury cannot auction a bill it has not already got (21.41), a pool cannot cut a note
-  (21.81), a company cannot float and a borrower cannot be lent to on a line struck today. **This is
-  the deeper half of 21j.** That item found twenty-five systems whose mechanism only counts; this says
-  that for a good number of them, converting the row is not enough, because the thing the system would
-  DO is create an obligation and there is no door to create one through. It is the same shape as
-  21j.1's missing schedules read and it is the larger of the two. Law 4 decides who writes: settlement
-  is the one writer of the register, so the kernel is the one writer of the instrument table, and a
-  module ASKS — `Taken.issued`, applied by the assembly, exactly as `claimed` and `ceased` are.
-  **Positioned at 21j** as 21j.1a, before the conversions that need it.
+  is in a test or a `bin`. So a firm cannot bring paper (21.58), a bank cannot write a loan as a row,
+  a treasury cannot auction a bill it has not got (21.41), a pool cannot cut a note (21.81) and a
+  company cannot float. **This is the deeper half of 21j**: converting a counting row is not enough
+  when the thing the system would DO is create an obligation. Law 4 decides who writes — the kernel
+  owns the instrument table and a module ASKS, as `Taken.claimed` and `.ceased` already do.
+  **Positioned at 21j** as 21j.1a.
 
 - [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
   **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
@@ -463,15 +388,15 @@ and costs over an arbitrary world, which is what it is for.
   and nothing in this engine ever `begin`s one — `world-runs` opens four of the eight process kinds
   and an election is not among them. E3's measurement stands at 23.3 and waits on 21j.
 - [ ] 21.85 `mechanisms/polity/vote.ts positionUnder` (19.4): A CELL VOTES ON FOUR OF THE TWENTY NUMBERS. A position is its pay, the income tax, the pension share, the transfer and the consumption tax; the platforms also differ on the tax on INTEREST and on GAINS, on the SEVERANCE a firing pays, on the RETIREMENT AGE and on the PLANNING RELEASE, and none of those is in it. Each needs a read the cell does not have: its own interest and gains receipts (it has no outlook subject for either), its own age against a threshold (a cohort key is there, the comparison is not), and what a release would do to the rent it pays (which is a housing mechanism, not a read). A cell voting on what it cannot evaluate would be voting on a number somebody handed it, which is the thing B1.a forbids — so what is missing is written down rather than guessed. Each of the three is a MECHANISM somebody has to build (an outlook subject for receipts, a cohort read against a threshold, what a consent does to a rent), so it is not a repair: positioned at 23.3, where what the vote actually turns on is measured before any of them is built (19.4). **Re-read: it survived and the number is TWO of eight.** `polity::votes_for` reads `Owns::TaxOn` and `Owns::TransferTo` and nothing else, while `Owns` names eight things a parliament controls — the outlay's size and its composition, the treasury's buffer, a regulatory ratio, the central bank's target. 23.3 holds; the earlier note repositioning it at 19.9 pointed into item 19, which then closed, and is deleted.
-- [ ] 21.84 `mechanisms/indices/baskets.ts goodsBoughtIn` (18a.1): THIS WORLD HAS NO PRICE LEVEL. Twelve periods of the rig: `equity.us.1` reads 100 over four constituents and `credit.USD` 100 over fifteen, and `consumer.us.1` and `producer.us.1` both read NONE over a basket of ZERO. The rule is what was DELIVERED this period — asset legs of physical goods, to a household cell of the region for the consumer basket, from a producer of it for the producer one — so an empty basket says no physical good changed hands in a settled instruction in that period, which sits beside 12c.3 (the named firms produce once and never again) and 21.79 (nobody crosses a supply contract). The consequence for this item is exact: 18a.1's decision rule is built, its door is tested, and the bank meets, reads the basket, finds nothing and does not act — so no rate has ever moved in this world for a reason. NOT CHASED (Law 11): why nothing is delivered is the goods market's, not the central bank's. Positioned at 23.3 with Part XII's measurements, where what this world actually produces and sells is measured (18a.1). **Re-read: the basket is no longer empty and there is still no level.** Item 22 made the world MAKE things — `world-runs` prints `made 8, 6, 6, 6` and the goods books keep clearing — so the cause the finding names (nothing is delivered) has been removed. What replaced it is 21.116's: an `Index` is a value type with a `level_at` read and **nothing in this engine ever constructs one**, so no basket anywhere has a level to read. The consequence the finding draws is unchanged and is worth keeping in those words: the bank meets, reads the basket, finds nothing and does not act, so **no rate has ever moved in this world for a reason.** → **21j** with 21.116, and 23.3 takes the measurement once a level prints.
-- [ ] 21.82 `mechanisms/derivative-layer/index.ts netOffsetting` (18.2): ONLY EQUAL NOTIONALS NET. A party long five lots and short three of the same thing with the same counterparty holds a position of two, and this closes neither pair — because reducing a contract is not something this world can do: a row is opened whole and closed whole (`Contracts.open`/`close`), so a partial net would need a SPLIT (one row becoming two, or a notional that falls) and that is a mechanism, not a line. Written down rather than half-built (Law 12). What it costs today is margin locked against a position that is mostly offset, which is real but bounded and visible: `derivatives.netted` says what did net. Positioned at 23.3 with Part XII's measurements, where what the layer locks up against what it is actually exposed to is measured — and if that reading says the offset positions are material, the row split becomes an item at its dependency position (18.2). **Re-read: it survived, and the re-read sharpens it into one sentence.** A `Position` is still opened whole and closed whole, so the row split is still the only way to reduce one. But the netting half is answered: `net_against` sums the MARKS of every position between two parties whatever their notionals, so exposure is read net and the *only equal notionals net* defect is gone. What is left is that **the same question is asked twice with two answers** — exposure net, and `initial_margin(notional, …)` gross, per position on its own notional — so a party long five and short three margins eight. §16 D1 says margin is sized from the risk of the POSITION, and by this layer's own read that risk is the net one. 23.3 stands, and that is what it measures.
+- [ ] 21.84 `mechanisms/indices/baskets.ts goodsBoughtIn` (18a.1): THIS WORLD HAS NO PRICE LEVEL. Twelve periods of the rig: `equity.us.1` reads 100 over four constituents and `credit.USD` 100 over fifteen, and `consumer.us.1` and `producer.us.1` both read NONE over a basket of ZERO. The rule is what was DELIVERED this period — asset legs of physical goods, to a household cell of the region for the consumer basket, from a producer of it for the producer one — so an empty basket says no physical good changed hands in a settled instruction in that period, which sits beside 12c.3 (the named firms produce once and never again) and 21.79 (nobody crosses a supply contract). The consequence for this item is exact: 18a.1's decision rule is built, its door is tested, and the bank meets, reads the basket, finds nothing and does not act — so no rate has ever moved in this world for a reason. NOT CHASED (Law 11): why nothing is delivered is the goods market's, not the central bank's. Positioned at 23.3 with Part XII's measurements, where what this world actually produces and sells is measured (18a.1). **Re-read: the basket is no longer empty and there is still no level.** Item 22 made the world make things, so the stated cause is gone; what replaced it is 21.116's — **nothing ever constructs an `Index`**. The consequence is unchanged: **no rate has ever moved in this world for a reason.** → **21j** with 21.116.
+- [ ] 21.82 `mechanisms/derivative-layer/index.ts netOffsetting` (18.2): ONLY EQUAL NOTIONALS NET. A party long five lots and short three of the same thing with the same counterparty holds a position of two, and this closes neither pair — because reducing a contract is not something this world can do: a row is opened whole and closed whole (`Contracts.open`/`close`), so a partial net would need a SPLIT (one row becoming two, or a notional that falls) and that is a mechanism, not a line. Written down rather than half-built (Law 12). What it costs today is margin locked against a position that is mostly offset, which is real but bounded and visible: `derivatives.netted` says what did net. Positioned at 23.3 with Part XII's measurements, where what the layer locks up against what it is actually exposed to is measured — and if that reading says the offset positions are material, the row split becomes an item at its dependency position (18.2). **Re-read: the netting half is answered, one sentence is left.** `net_against` sums the MARKS of every position between two parties whatever the notionals, so *only equal notionals net* is gone. What remains: **the same question is asked twice with two answers** — exposure net, `initial_margin` gross per position — so a party long five and short three margins eight, where §16 D1 sizes margin from the risk of the position. 23.3 stands and measures that.
 - [ ] 21.81 `mechanisms/securitisation/index.ts` (17g.1): NOTHING EXCLUDES A MORTGAGE FROM A POOL AND NO POOL IS EVER CUT. Twenty-four periods of the rig: the banks hold 42 rows that pass `saleable` — 7 secured on `good.dwelling`, 5 on `plant.premises`, 17 on machinery and premises together, 8 on fleet and premises, 3 on machinery alone, 2 on nothing — so houses and shops are both poolable today and `saleable` names no kind, which is what 17g's claim said. What does not happen is a DEAL: 0 `securitisation.cut` and 10 `securitisation.failed`, every one for want of a bidder for the notes. Who would buy a note is a fund, an insurer or another bank with money to put to work, and why none of them bids is the same silence 21.72 and 21.79 report in the credit and contract books. NOT CHASED (Law 11). Positioned at 23.3 with Part XII's measurements (17g.1). **Re-read: no pool is cut here either, and a note cannot be cut at all.** `securitisation` is `Closing { afoot::SECURITISATION }`, a closer for a process nothing opens, and a pool's whole point is to ISSUE notes — which 21.139 says no module can do. The finding's own half that was a claim about the world (houses and shops are both poolable, `saleable` names no kind) was 17g's answer and it holds. → **21j**, behind 21j.1a.
 - [ ] 21.79 `mechanisms/supply/index.ts` (17f.1): THE CONTRACT BOOKS ARE OPEN AND THE `opens` RIG NEVER CROSSES ONE. Sixty-six books a period, sixteen periods: **0 bids, 1 ask, 0 contracts**. What a party posts is what its own outlook says it trades in a period (`bought.<good>` / `sold.<good>`, §46 A2) and almost no firm in that world has either, because almost no firm in that world trades — which is 12c.3 (the twelve named firms produce ONCE, in period 1, and never again) seen from a third side, beside 21.72 (the banks stop quoting) and 21.77 (the overnight book prints twice). The mechanism is not idle everywhere: the scale model in `test/supply.test.ts` — the same modules, a world whose firms do trade — strikes 51 contracts in six periods, delivers on them and breaks one. NOT CHASED (Law 11): why the rig's firms stop trading is 22.2's and 22a's, not this item's. Positioned at 23.3 with Part XII's measurements (17f.1). **Re-read: the books are not open, because nobody opens them.** `agreed::SUPPLY` is a declared agreement kind and 17f built the contract, the deliveries and the break cost — and no participant posts in a contract book, so there are no sixty-six books to find empty. → **21j**.
-- [ ] 21.77 `money-market`, `indices/benchmark.ts` (17d.2): THE OVERNIGHT BOOK BARELY TRADES. Twelve periods of the rig publish TWO fixings (periods 2 and 3, both at 1.9% per annum, one and two borrowers), so 2 loans of 52 float and the other 50 are fixed rows — which is the honest answer for a world whose interbank market does not meet, and is the same silence 21.55 reports in the pairs. A world with no overnight market has no benchmark, no term rate and therefore no channel from a policy rate to a borrower's payment, whatever §7 B4 now says about the rows. NOT CHASED (Law 11): why banks stop lending each other money is the money market's, and it sits beside 21.72 (the banks stop quoting every name by period 9) — the two are plausibly one fact. Positioned at 23.3 with Part XII's measurements (17d.2). **Re-read: this is one of the FEW in this group whose mechanism is actually reached, and its position stands.** `MoneyMarketBanks` posts on both sides of the overnight book every period — it is one of the twenty-odd participants that are not 21j's — so a book that does not clear here is a real outcome and not an absence. The world's own census says the same silence in its own numbers: **6 books of 1,546 clear after period 1.** Why is a measurement (Law 11), and 23.3 is where it is made. Its pairing with 21.72 does not survive: 21.72 turned out to be nothing quoting at all.
+- [ ] 21.77 `money-market`, `indices/benchmark.ts` (17d.2): THE OVERNIGHT BOOK BARELY TRADES. Twelve periods of the rig publish TWO fixings (periods 2 and 3, both at 1.9% per annum, one and two borrowers), so 2 loans of 52 float and the other 50 are fixed rows — which is the honest answer for a world whose interbank market does not meet, and is the same silence 21.55 reports in the pairs. A world with no overnight market has no benchmark, no term rate and therefore no channel from a policy rate to a borrower's payment, whatever §7 B4 now says about the rows. NOT CHASED (Law 11): why banks stop lending each other money is the money market's, and it sits beside 21.72 (the banks stop quoting every name by period 9) — the two are plausibly one fact. Positioned at 23.3 with Part XII's measurements (17d.2). **Re-read: one of the few here whose mechanism IS reached, so the position stands.** `MoneyMarketBanks` posts both sides of the overnight book every period, so a book that does not clear is an outcome, not an absence — and the census says the same: **6 books of 1,546 clear after period 1**. Why is 23.3's. Its pairing with 21.72 does not survive: that turned out to be nothing quoting at all.
 - [ ] 21.76 `reporting/index.ts`: IN TWENTY-FOUR PERIODS OF THE RIG ONLY CELLS PUBLISH ACCOUNTS. The seventeen reports at period 20 are household and small-business cells; the first NAMED FIRM publishes at period 25, and firms' year-ends are staggered after that. Everything that reads a company's published accounts therefore has nothing to read for most of a run: `control/index.ts worthAt` (a bid is what the target PUBLISHED, so no named company can be valued at all), `corporate-bond openLine` (a covenant is its published accounts), and 17b.8a's facility covenant (a lender with nothing to test asks for no promise). It is the DEEPER CAUSE of 21.73 — `control` never runs — and it is not obviously a defect: a quarter is thirteen weeks and a staggered year-end is real. **Re-read at 17b′**: the LENDER's half is closed — a borrower asking for a commitment now prepares management accounts and its lender reads those (`reporting.interim`), so *no accounts, no commitment* holds without waiting for a quarter. What is left is the other readers: `control worthAt` values a company off what it PUBLISHED, and a named firm publishes nothing until period 25, so no bid can be formed for one before then. That half stays, positioned at 23.1 with 21.73 (17b.8a, 17b′.1). **Re-read: nothing publishes accounts at all, on any calendar.** `reporting` is wired as `Reporting { reporting.result }`, which says a firm's own equity read to its own subjects — and §48's published accounts, the thing `worthAt` and a covenant read, are nobody's. A staggered year-end was never the cause; there is no year-end. → **21j**.
 - [ ] 21.75 17b.7's change is not covered by a test and cannot be in any world this repository builds: a deal struck in the money the shares are in only differs from one struck in the buyer's where the two moneys differ, and the rig is ONE COUNTRY while `control` has never run in the four-country world (21.73). What the change fixes was visible by reading — every price carried `currencyOf(buyer.region)` whatever the line was, so a foreign seller would have been paid in the wrong money (Law 8) — and it is fixed; what is missing is the world that would show it. Positioned at 23.1 with the scale model's resize, which is where a buyer and a company in two moneys become possible (17b.7). **Re-read: it needs two things and has neither.** A deal struck in the money the shares are in differs from one struck in the buyer's only where the two moneys differ, and `world-runs` opens ONE region — which is 21.134's C16, *a one-country opening cannot be the world the model is judged on*, now the seeding's. And `control` has still never run (21.73). → the **seeding** for the second money, **21j** for the deal.
 - [ ] 21.73 `control/index.ts` NEVER RUNS. Twenty-four periods of the `opens` rig: `control.tender` 0, `control.failed` 0, `control.acquired` 0, `control.financing` 0 — so §35 and §29 B are a thousand lines nothing has ever exercised in an assembled world, and every test of them is a scale model built by hand. `couldBuy` finds six candidates in period 24 and all six are index ETFs (`etf.us`, `etf.equity.large.us.1`, …): the rig draws no buyout fund at all (`drawPrivateEquity` needs a bank at or above `SPONSOR_SIZE` and the rig's banks are smaller), and a tracker has no view of a company to value one with. Positioned at 23.1, which is where the scale model is resized and is exactly this: a test never names a party, so the draw has to make a buyer (17b.2). **Re-read: it still never runs, and now the reason is structural.** `control` is wired as `Closing { afoot::BUY_BACK }` — a closer for a process nothing opens — and a takeover cannot be opened, financed or closed while no module can issue the paper that pays for it (21.139). §35 and §29 B are reached by nothing. → **21j**, whose 21j.1a is the door this waits on.
-- [ ] 21.72 `banks/index.ts publishQuotes` STOPS QUOTING EVERY NAME. `opens` rig, quotes per period: 121, 102, 81, 55, 62, 62 … and 0 from period 9 or so to the end of twenty-four, with declines rising the other way (12 at p12, 106 at p24). The reasons the banks give for the declines after period 10: 178× `appetite`, 58× `it cannot cost its own funding`, 61× `nobody lends to a party of this kind`. A world where no bank will quote anybody has no credit market at all, and §29 B2.b (*“the credit market decides which buyouts occur”*) cannot be exercised in it. NOT CHASED (Law 11): appetite is the bank's own room and the room is made of capital, funding and what it already has out, none of which this reading separates. Positioned at 23.3, with Part XII's measurements, where what a bank's room is made of is measured with the level carried (17b.2). **Re-read: a bank stopping quoting is no longer the question, because NO BANK IN THIS WORLD QUOTES ANYBODY, EVER.** `dealing::quote(desk, worth, risk, adverse)` is built and returns `Option<Quote>`, refusing when it has no reason; nothing calls it, because `dealing`'s participant posts two-sided orders in listed lines and its mechanism counts lines that printed. The room the finding wanted separated — capital, funding, what it already has out — cannot be read off a world where the decision is never taken. → **21j**, and 23.3 takes the measurement back once a bank quotes.
+- [ ] 21.72 `banks/index.ts publishQuotes` STOPS QUOTING EVERY NAME. `opens` rig, quotes per period: 121, 102, 81, 55, 62, 62 … and 0 from period 9 or so to the end of twenty-four, with declines rising the other way (12 at p12, 106 at p24). The reasons the banks give for the declines after period 10: 178× `appetite`, 58× `it cannot cost its own funding`, 61× `nobody lends to a party of this kind`. A world where no bank will quote anybody has no credit market at all, and §29 B2.b (*“the credit market decides which buyouts occur”*) cannot be exercised in it. NOT CHASED (Law 11): appetite is the bank's own room and the room is made of capital, funding and what it already has out, none of which this reading separates. Positioned at 23.3, with Part XII's measurements, where what a bank's room is made of is measured with the level carried (17b.2). **Re-read: NO BANK IN THIS WORLD QUOTES ANYBODY, EVER.** `dealing::quote` is built, refuses properly, and has no caller. The room the finding wanted separated cannot be read off a world where the decision is never taken. → **21j**.
 - [ ] 21.6 `seeds/foundation.ts drawTrackers`: one tracker per (country, index). **Re-read: the file
   went with the seeding and the RULE did not.** An index fund tracks an index, and an index is a
   country's; one tracker for the world is a fund whose mandate names a thing that does not exist.
@@ -538,26 +463,26 @@ and costs over an arbitrary world, which is what it is for.
   A number cannot name its money while `registry.currencies` has no kernel home, so the design
   question (is a size boundary a money's or the world's?) cannot even be asked yet. **Positioned at
   21e.**
-- [ ] 21.47 the four-country world at thirty periods (16.2's table): about one session in a hundred clears (78 of 6,825 in EUR, 48 of 11,965 in JPY), and a hundred to two hundred parties per money are dead — one bank per money in the scale model, and a treasury (`treasury.us`) refused an overdraft of 1.6 × 10¹¹ pieces at its central bank every period from 29. Not chased (Law 11): a measurement for Part XII, and the sovereign's failure is XI-9 doing what it is for; positioned here so 16.8's `check:opens` on `abroadWorld` reads it against this table (16.2). **Re-read: the four-country world is gone and its headline number survived the port intact.** `world-runs` opens ONE region and clears **13 books of 1,546 in period 1 and 6 in every period after** — about one session in two hundred, against the finding's one in a hundred. So *a world where almost no book clears* is not a fact about four countries; it is this world, and 21j says why. The sovereign half — a treasury refused an overdraft every period from 29 — cannot arise here, because this treasury never asks anybody for anything (21.41). → **23** with the measurements, once there is a world worth measuring.
+- [ ] 21.47 the four-country world at thirty periods (16.2's table): about one session in a hundred clears (78 of 6,825 in EUR, 48 of 11,965 in JPY), and a hundred to two hundred parties per money are dead — one bank per money in the scale model, and a treasury (`treasury.us`) refused an overdraft of 1.6 × 10¹¹ pieces at its central bank every period from 29. Not chased (Law 11): a measurement for Part XII, and the sovereign's failure is XI-9 doing what it is for; positioned here so 16.8's `check:opens` on `abroadWorld` reads it against this table (16.2). **Re-read: the four countries are gone, the headline survived.** `world-runs` clears **13 books of 1,546 in period 1 and 6 after** — one session in two hundred, against its one in a hundred. So *almost no book clears* is not about four countries; it is this world, and 21j says why. The sovereign half cannot arise: this treasury asks nobody for anything (21.41). → **23**.
 - [ ] 21.54 Central Bank F1, F2 (16.7): no central bank in this world has a reason to hold another money's paper — the stated share is gone and nothing buys reserves — so F1's reserves are zero, F2's intervention has nothing to intervene with, and the FX pairs open with less two-way flow than the seed used to plant. The reason is a policy decision (a reserve target, an intervention rule) and belongs with 18a's mandate; positioned at 18a.1 (16.7). **Re-read: 18a closed without it, and the absence is one of 21j's.** The `currency` row in the wiring table is `Owed { currency.owed }` — a publication of who owes what, which is a read — so no central bank in this world decides anything, reserves included. **Re-positioned at 21j**; 21.55 is the same absence seen from the pairs.
 - [ ] 21.69 `mechanisms/ratings/assess.ts` (17.10a's census, sixty periods of `rated-a`): EVERY GRADE THIS WORLD HAS EVER PUBLISHED IS THE WORST ONE. All 240 rating actions carry `c`, the bottom of the scale — no name is ever graded anything else by any of the three assessors. So the investment-grade index is permanently empty while the high-yield one carries every rated line, every claim takes the regulation's worst weight where a grade is read, and the assessors cannot disagree with each other about anything (Ratings A4: two houses looking at one issuer should not always agree). It may be a true reading of a world whose banks open in breach and whose firms fail (21.66), or the measure may be saturated; which it is, is a read to make against a run and not a number to chase (Law 11). Positioned at 23.3, with Part XII's measurements (17.10a). **Re-read, and the answer is neither: THIS WORLD HAS NEVER PUBLISHED A GRADE.** `ratings::grade_from` reads a state into a `Grade` and `reassess` says when a held one moves, both built; the `ratings` row in the wiring table is `Reads { Counts::PartiesAlive }`, so what the system does every period is count who is alive. The saturation cannot be measured until something grades somebody. **Re-positioned at 21j**, and 23.3 takes it back once it publishes.
-- [ ] 21.67 `test/money-market.test.ts`, the assembled world (17.7d's census of five periods of the rig): FIFTEEN OF THE SIXTEEN TESTS IN THAT FILE ARE RED, AND NONE OF THEM IS ABOUT THE MONEY MARKET. Each ends in `expect(unexpected(w.step().audit)).toEqual([])` — which is every violation the audit reported, of every family — so each is asserting that the WHOLE WORLD is clean, and the assembled world reports 79 to 325 violations a period across four families: `prices` 9 (a listed line is held and the session printed no price for it), `accounts` 23–36, `names` 18, `flows` 20–127, and `units` 148 in the one period it fires. They were red at `af70a23` and are unchanged by 17.7d (verified in a worktree at that commit — same fifteen, same names). 17.9 found the same shape one file over and worse: `test/bank-capital.test.ts` DOES NOT COLLECT AT ALL — its `run` helper asserts an empty audit at module scope, so the file reports “no tests” and every case in it has been silently unrun. Two different things and both are written down here: the SHAPE of the test, which makes a money-market case fail for a reason in the goods market (positioned at 23.1, where the scale model and what a test asserts are resized together); and each family's own cause, which is a read to make against a run and never a number to chase (Law 11), positioned at 23.3 with the rest of Part XII's measurements (17.7d). **Re-read: both halves are gone as stated and the second is an item.** The SHAPE half — a money-market case failing for a reason in the goods market, because it asserts the whole world's audit is clean — cannot recur: there is no shared world in these tests and no case asserts an empty audit at module scope (which is how `bank-capital.test.ts` silently ran nothing). The FAMILIES half was never about the tests: `prices`, `accounts`, `names`, `flows` and `units` reporting 79 to 325 violations a period is what an audit is FOR, and the reason nobody sees it now is that **the audit does not run in the period loop at all** → **22e**, which is that item.
+- [ ] 21.67 `test/money-market.test.ts`, the assembled world (17.7d's census of five periods of the rig): FIFTEEN OF THE SIXTEEN TESTS IN THAT FILE ARE RED, AND NONE OF THEM IS ABOUT THE MONEY MARKET. Each ends in `expect(unexpected(w.step().audit)).toEqual([])` — which is every violation the audit reported, of every family — so each is asserting that the WHOLE WORLD is clean, and the assembled world reports 79 to 325 violations a period across four families: `prices` 9 (a listed line is held and the session printed no price for it), `accounts` 23–36, `names` 18, `flows` 20–127, and `units` 148 in the one period it fires. They were red at `af70a23` and are unchanged by 17.7d (verified in a worktree at that commit — same fifteen, same names). 17.9 found the same shape one file over and worse: `test/bank-capital.test.ts` DOES NOT COLLECT AT ALL — its `run` helper asserts an empty audit at module scope, so the file reports “no tests” and every case in it has been silently unrun. Two different things and both are written down here: the SHAPE of the test, which makes a money-market case fail for a reason in the goods market (positioned at 23.1, where the scale model and what a test asserts are resized together); and each family's own cause, which is a read to make against a run and never a number to chase (Law 11), positioned at 23.3 with the rest of Part XII's measurements (17.7d). **Re-read: both halves are gone as stated.** The SHAPE half cannot recur — no shared world in these tests, no module-scope audit assertion silently running nothing. The FAMILIES half was never about the tests: violations are what an audit is FOR, and **the audit does not run in the period loop at all** → **22e**.
 - [ ] 21.66 `mechanisms/banks/capital.ts`, the seed (17.7b's census, re-read at 17.9): EVERY BANK IN THE SCALE MODEL OPENS IN CAPITAL BREACH, IN PERIOD ONE, with negative headroom — bank.a at a weighted ratio of 0.089 against a minimum of 0.08 plus its own buffer of 0.039, bank.c below the requirement outright. **17.9 built the answer to it and it is not enough**: a line is now told to come down, the desk sells at market, and the credit side came back to life (38 loans written in period 2 where the world had written none after period 5). What it has not done is close the hole — two of the three banks are insolvent by period 3 and stop publishing anything, and the third's headroom runs from −34bn to −102bn over twelve periods while it sheds. A bank that cannot shed its way back is its RESOLVER's, and nothing resolves it. Positioned at 23.2, which is that sentence's item (17.9). **Re-read: the position stands, and the measurement it rests on cannot be re-taken yet.** A bank opening in capital breach is a fact about a SEED — the old one put the banks there — and this world's opening is arbitrary by declaration, so the number is not re-readable until the seeding exists. What is not arbitrary is the second half: 17.9 built the shedding (a line told to come down, the desk selling at market) and nothing resolves the bank the shedding does not save. 23.2 holds both.
 - [ ] 21.65 `mechanisms/trade-credit/index.ts`, the rig's draw (17.7a's census, twelve periods of four seeds): THE TIER TRADE CREDIT LIVES ON DOES NOT USE IT. Every invoice the scale model writes is one firm on the TREASURY — seventeen of them, one seller, one buyer — and no firm ships another firm on terms at all, which is the connection §42 A4 calls *"the tier that lives on it"*. One seed of the four (`credit-terms`) writes no invoice in twelve periods. And the one buyer this world has keeps no deposit at a commercial bank (`PartyKindProfile.depositClass` is null for a treasury, rightly — it banks at the central bank), so it never knows what its money earns and never takes a discount: the early-payment mechanism is exercised by a test and by nothing in the assembled world. Why firms do not sell each other on terms is a read to make against a run and not a number to chase (Law 11); positioned at 23.1, where the scale model is resized as one bounded change (17.7a). **Re-read: no invoice is written here at all.** `trade_credit` is wired as `Reads { AgreementsLive }` — it counts live agreements and writes none — so *the tier trade credit lives on does not use it* has become *nobody uses it*, and the early-payment discount the finding says is exercised only by a test is exercised by nothing. → **21j**.
-- [ ] 21.64 `mechanisms/banks/index.ts`, `world/actions.ts` (17.7's census of the 30-period rig): EVERY BANK IN THE SCALE MODEL IS INSOLVENT FROM PERIOD SIX AND NONE IS RESOLVED. Twenty-six `bank.insolvent` events; `bank.c` closes with a residual of −5.0 × 10⁹ against 61 × 10⁹ owed. An insolvent bank publishes no cost of funds (17.0, deliberately: there is nothing for its owners to require a return on), so it forms NO CREDIT VIEW — and with no view there is no quote, no reservation and no workout. `credit.written` is 3, 2, 0 in periods 3–5 and zero in every period after, so the whole credit side of the world stops at period six and what comes after it is a world of twenty-five loans nobody can add to. Not chased (Law 11): the missing mechanism is the resolution that should have taken these banks, and it is 23.2's (17.7). **Re-read: the position stands and 21.133's BK34 joins it.** The measurement is the old rig's, but what it names is built and unreached in the same way here: `bank_capital` and `mortality` between them say when a bank is insolvent and how it dies (*a bank has two doors*), and **no phase resolves one** — both rows are `Reads` counting who is alive. So *nothing resolves it* is still the sentence, and 23.2 is still its item; what 23.2 diagnoses cannot be read until a resolution exists to fail, which is 21j's.
-- [ ] 21.62 `register/agreements.ts` (17.7): AN AGREEMENT HAS NO CURE. `breached` reaches only `discharged` (paid in full) or `terminated` (written off), so a commitment renegotiated after a missed payment has nowhere to land — the transition 17.7 built for a ROW in the register has no twin for the row beside it. Nothing in this world re-agrees one yet, which is why it was not built with the instrument's (Law 14); the first that will is an arrear a payer is given time on. **Re-read: it survived and it is simpler and worse than it was said.** `stores::Agreements` has no states AT ALL — an agreement is `live` or it has been `end`ed, so this world can record neither a breach nor a cure, and `corporate_credit::Standing` (performing, breached, defaulted) is a read of a covenant against two numbers that nothing keeps. **19 closed without it. Re-positioned at 22d**, the payment queue: a gridlock is a timing failure and not a default, so the first thing that will ask for an agreement to be CURED is the payer 22d gives time to. What 17.9b said when it first placed this, kept as history and no longer its position: the write-off's own sibling turned out not to need it — an instrument's end is the kernel's and books nothing — and the first thing that will ask for an agreement to be CURED is a payer given time on an arrear, which is the polity's levy (17.7, 17.9b).
+- [ ] 21.64 `mechanisms/banks/index.ts`, `world/actions.ts` (17.7's census of the 30-period rig): EVERY BANK IN THE SCALE MODEL IS INSOLVENT FROM PERIOD SIX AND NONE IS RESOLVED. Twenty-six `bank.insolvent` events; `bank.c` closes with a residual of −5.0 × 10⁹ against 61 × 10⁹ owed. An insolvent bank publishes no cost of funds (17.0, deliberately: there is nothing for its owners to require a return on), so it forms NO CREDIT VIEW — and with no view there is no quote, no reservation and no workout. `credit.written` is 3, 2, 0 in periods 3–5 and zero in every period after, so the whole credit side of the world stops at period six and what comes after it is a world of twenty-five loans nobody can add to. Not chased (Law 11): the missing mechanism is the resolution that should have taken these banks, and it is 23.2's (17.7). **Re-read: the position stands and 21.133's BK34 joins it.** `bank_capital` and `mortality` say when a bank is insolvent and how it dies, and **no phase resolves one** — both rows only count who is alive. 23.2 is still its item, and what 23.2 diagnoses waits on a resolution existing to fail (21j).
+- [ ] 21.62 `register/agreements.ts` (17.7): AN AGREEMENT HAS NO CURE. `breached` reaches only `discharged` (paid in full) or `terminated` (written off), so a commitment renegotiated after a missed payment has nowhere to land — the transition 17.7 built for a ROW in the register has no twin for the row beside it. Nothing in this world re-agrees one yet, which is why it was not built with the instrument's (Law 14); the first that will is an arrear a payer is given time on. **Re-read: simpler and worse than it was said.** `Agreements` has no states AT ALL — `live` or `end`ed — so this world records neither a breach nor a cure. **19 closed without it. Re-positioned at 22d**, whose payer given time on an arrear is the first thing that will ask for one.
 - [ ] 21.60 `corporate-bond/index.ts` (17.4, listed there and not built): THREE OF THE ITEM'S REASONS ARE STILL MISSING. (a) TENOR, SIZE AND DIVERSIFICATION as separate reasons: the tenor is a market convention read from one parameter and the size is what the firm is short of, so a management that wants a shorter line or a second maturity to spread what falls due has no way to say so. (b) COVENANTS AS A TERM OF THE HOLDER'S BID: what an issuer promises is still the arithmetic of its own accounts as this borrowing leaves them (the tightest covenant a lender could ask for), because no holder bids a covenant — B2's negotiation has one side. (c) 21.49's CROSS-BORDER C2: a firm issues in the money of its published need, which is its home money, so the lender base and the cost it would read in another money never enter the decision. Each is a mechanism and not a number. **(a) closed at 17b.8**: `CreditAsk.months` — a term is a decision about a NEED and the need is the borrower's, so every borrower says how long it wants the money for and the row is written for that. What it replaced was worse than this finding said: `lending.loanMonths` was the term of EVERY loan in the world, so a mortgage ran twelve months. Diversification (a second maturity so that less falls due at once) is NOT closed and is re-positioned at 18a.1 with the other funding-shape reads. **(b) was 17b.8a**, inserted after 17b.8: a covenant is a term of the commitment a lender bargains for, and a buyout is where it bites. **Item 17b closed without it, and 21.131's CB3 and CB4 fold into it here**: a coupon set to the keenest holder's required yield, and a covenant set to the issuer's own ratios at issue — which is the tightest promise anybody could ask for, so every issuer breaches on its next ordinary quarter. Both are the same absence as (b): **no holder bids a term.** `corporate_credit::Covenant` is data handed in and `bring` prices where the book fills, so neither defect can be written here and neither can the negotiation. It is 21j's, with the rest of what nothing exercises. (c) is NOT closed by 17b.7: what 17b.7 settled is that a DEAL is struck in the money the shares are in (Cross-Border C4), which is a unit and not a choice — a firm CHOOSING the money it issues in needs the covered comparison (a forward on the pair for the tenor, Currency B4) that 21.50 also waits on, so it is re-positioned at 18a.1 with the other cross-border reads (21.54, 21.55) (17.4, 17b.7). **18a closed without it. Re-positioned at 21j with 21.50**: choosing the money you issue in is a decision, and no firm in this world makes one — `bring` is never called (21.58).
-- [ ] 21.58 `corporate-bond/index.ts issueBonds`, `test/corporate-bond.test.ts` *brings paper at all* and *has something to test* (red at the close of item 16 and red now; not caused at 17.1 — the same two were red in a worktree at `319b7c2`): NO FIRM IN `ranWorld('bond-issue', 10)` BRINGS PAPER. The world publishes 116 funding needs, 539 credit quotes, 14 reservations and 3 benchmark fixings in ten periods, and zero `bond.offered` and zero `bond.refused` — so `place` is either not reached or returns before it offers. The gates between a published short and an offer are `shortOf` (the LONG-term half of the gap), `wouldHold` (somebody published what they require of the name), and `cheaper || !enough` (the market beats the bank, or the bank will not lend enough). Which of them holds every firm back is a read to make against a run, not a number to chase (Law 11). It is the same absence 10.3's covenant table is waiting on, and it is where 17.2's arranger will land (17.1). **Re-read: it survived, and which gate holds the firms back is no longer the question.** `corporate_credit::bring` builds a book from real indications, prices where it fills and lets the issuer walk — and the `corporate_credit` row in the wiring table is `Reads { CreditOutstanding }`, so `bring` is called by no period of any world. NO FIRM HAS EVER BROUGHT PAPER HERE, not because a gate held and because nothing asks. **Positioned at 21j**; the gate reading it wants is a measurement for 23.3 once something issues.
+- [ ] 21.58 `corporate-bond/index.ts issueBonds`, `test/corporate-bond.test.ts` *brings paper at all* and *has something to test* (red at the close of item 16 and red now; not caused at 17.1 — the same two were red in a worktree at `319b7c2`): NO FIRM IN `ranWorld('bond-issue', 10)` BRINGS PAPER. The world publishes 116 funding needs, 539 credit quotes, 14 reservations and 3 benchmark fixings in ten periods, and zero `bond.offered` and zero `bond.refused` — so `place` is either not reached or returns before it offers. The gates between a published short and an offer are `shortOf` (the LONG-term half of the gap), `wouldHold` (somebody published what they require of the name), and `cheaper || !enough` (the market beats the bank, or the bank will not lend enough). Which of them holds every firm back is a read to make against a run, not a number to chase (Law 11). It is the same absence 10.3's covenant table is waiting on, and it is where 17.2's arranger will land (17.1). **Re-read: which gate holds the firms back is no longer the question.** `corporate_credit::bring` is built and called by no period of any world. NO FIRM HAS EVER BROUGHT PAPER HERE — not because a gate held, because nothing asks. **Positioned at 21j**; the gate reading is 23.3's once something issues.
 - [ ] 21.55 `spot-fx`, `money-market swapDraw` (16.8's census of the four-country `opens` world, twelve periods): the six pairs clear 3–6 sessions a period through period 4 and NONE from period 8, while five banks a period draw on the swap line to settle what they owe abroad and no cargo sails in twelve periods (`cargo=0` every period). A pair with no seller of the foreign money is `noSupply`, and the swap line is the buyer of last resort a pair should not need (Spot FX C3); why the sellers leave — the central banks hold nothing abroad after 16.7, and a bank that has drawn on the line holds no foreign money to sell — is not chased (Law 11). Positioned at 18a.1 with 21.54, whose reserve reason is the missing side (16.8). **Re-read: 18a closed without either, and this half is a measurement.** **Re-positioned at 23.3**, with 21.54's reserve reason named as the missing side — a pair with no seller of the foreign money has no seller because nobody holds any, and the swap line standing in for one is the buyer of last resort a pair should not need (Spot FX C3), which is a rule that survives whatever builds it.
-- [ ] 21.52 `corporate-bond/index.ts place()`: a firm's published short came to 1.385 × 10²² pieces in `abroadWorld('fx-A')` — more units at its walk-away than a whole number can count — and the tick threw (Law 8). The issue is refused at the site and said (`bond.refused`); the number upstream is a firm's `firms.funding` short that no mechanism bounds and nothing yet explains; a measurement for Part XII, positioned with 17.0's credit view, which is what a lender would read before quoting it (16.6). **Re-read: the site half is closed and the upstream half cannot arise yet.** The tick that threw is now `clearing::whole_pieces`, which refuses a count no one could make with the citation 21.1 wrote for it; and a firm's published short is not computed by anything the loop reaches, because `firms` is a `Reporting` row and `corporate_credit` a counting one. **17.0 closed without it.** The rule survives and is right: what bounds a published short is not a bound (Law 6) but a lender refusing to quote it. **Re-positioned at 21j.**
+- [ ] 21.52 `corporate-bond/index.ts place()`: a firm's published short came to 1.385 × 10²² pieces in `abroadWorld('fx-A')` — more units at its walk-away than a whole number can count — and the tick threw (Law 8). The issue is refused at the site and said (`bond.refused`); the number upstream is a firm's `firms.funding` short that no mechanism bounds and nothing yet explains; a measurement for Part XII, positioned with 17.0's credit view, which is what a lender would read before quoting it (16.6). **Re-read: the site half is closed, the upstream half cannot arise yet.** The tick that threw is now `whole_pieces` with 21.1's citation, and no firm's published short is computed by anything the loop reaches. **17.0 closed without it.** The rule survives: what bounds a published short is not a bound (Law 6) but a lender refusing to quote it. **Re-positioned at 21j.**
 - [ ] 21.53 `derivative-layer`, `spot-fx` (16.6): once every kind is asked whether it owes a money it has not got, the USD clearing house squares its foreign margin balances in the pairs and CEASES by period 2–4 of the `fx-A` and `opens` worlds; a member defaulting into the dead house then tore up against the dead name (fixed where it was: margin is returned to a side's living successor). Why a house that holds members' margin in four moneys fails once it trades them is not chased (Law 11); positioned at 18.4 with the house's own book (16.6). **Re-read: 18.4 closed without it**, and the measurement is over a four-country world this engine does not assemble. The fix it records (margin returned to a side's LIVING successor) went with the file, and the rule behind it is the estate's, which 21c built. **Re-positioned at 23.3** with Part XII's measurements, where a house that holds members' margin in four moneys can be run and watched.
-- [ ] 21.50 `treasury/index.ts fundingCostIn`: the cost of borrowing abroad is the benchmark yield plus the treasury's ONE-PERIOD outlook of the pair extrapolated over a year; a covered comparison would read the forward on the pair (`fx-derivatives`) for the tenor and pay the basis (Currency B4), and none does yet. Both are honest reads a party has, but a treasury with a naive outlook borrows in the lowest nominal yield every auction (the first four-country run picked EUR at once); positioned at 16.5, where the swap line gives it the covered rate to read (16.4). **Re-read: the naive outlook died with the file and the REQUIREMENT stands** — a party comparing what borrowing costs in two moneys reads the forward on the pair for the tenor and pays the basis (Currency B4), and a one-period outlook extrapolated over a year is not that comparison. **16.5 closed without it**, which is the stale-position defect this block found. It cannot be exercised yet: the treasury of this world makes no decision at all, because it auctions nothing (21.41). **Re-positioned at 21j**, and it is what `Cross-Border A2.a` points at for the hedging reason it is still missing.
-- [ ] 21.112 `clearing/market.ts fxTrade` (0i.5): a money-only leg carrying `{ of: 'disposal' }` promises a basis that never comes. `disposal`'s contract is that *"settlement, which draws the lots, publishes the basis beside the proceeds in `Settled.realised`"* — and `realised` is produced by an ASSET debit, so an FX spot's quote leg says the seller disposed of something and nothing ever says what it cost. The gain on a foreign-money position is real (the lots carry the rate they were acquired at) and there is no path that taxes it. Either settlement publishes a `realised` for a money debit, or an FX trade needs its own receipt; which is a decision about the gain, not about the label. Positioned here, before 21b. **Re-read: the label is absent and the gain is still nowhere.** There is no `disposal` receipt in this engine — `Receipt` is wage, sale, interest, dividend, transfer, tax, principal — so a leg cannot promise a basis it will not deliver. What survives is the half the finding called the real one: **a lot carries the basis its units arrived at, settlement is HANDED that basis, and nothing publishes what was realised.** `Register::debit` returns `Vec<Drawn>` and its own comment calls it *settlement's own read for the gain* — and settlement uses it only to carry the cost forward onto the other side's lot. `grep realised` over the engine returns nothing. So a gain exists on the register and in no read — which is why nothing can tax one (21.85's cell cannot evaluate a gains platform for the same reason) and why a firm's result is a residual rather than a statement of what it sold things for. It is one decision at one site — whether settlement returns the realised amount or says it as an event — and that decision is a STEP and not a re-mark, so it stays in 21 as a local repair. Its readers are 21j's: a treasury that assesses nothing needs no base yet.
-- [ ] 21.116 `test/indices.test.ts` (four red, PRE-EXISTING: identical at `27312b8`, measured at 0g.4 because the step touched the fixing reads this suite covers): **NO EQUITY INDEX EXISTS PER REGION and no rated index ever gets a level.** *declares an index per region and per currency* has ten declared ids and `equity.eu.1` is not among them (Indices D1: four regions, four equity indices); *reads FROM its constituents* finds a basket whose constituent weight is 0, where B1 says a weight is a COUNT of the line; *reports Missing for a basket with nothing in it* finds six constituents where it expects an empty basket, so the empty-basket refusal is not being exercised at all (D5.a); and *reports, shows, grades and indexes, in that order and on the calendar* gets `firstLevel` 0 against a `firstRating` of 20 — the chain from a closed quarter to a rated index stops at the grade. The first is a DECLARATION absent for three of four regions and the others are consequences of an index with nothing in it, so it is one cause and probably one fix. Unpositioned: it wants the indices module open, and which item that is has not been decided — named here so it is not lost (Law 11: the missing declaration is the work item, not the four numbers). **Re-read: the finding's own conclusion is right and the scale of it is larger.** It is not that three of four regions lack a declaration — **there is no declaration of an index anywhere.** `benchmarks::Index` is a value type with a `level_at` read over its constituents' prints, honestly answering `None` when one did not print, and nothing in this engine ever constructs one. So it splits cleanly and both halves have a home: **the declaration is 21e's** — an index is a country's (21.6), and a country is `registry.places`, the homeless noun — and **the level is 21j's**, because the `benchmarks` row counts how many lines printed instead of fixing anything.
-- [ ] 21.117 `world/world.ts contractValue`, `mechanisms/cds/contract.ts creditState`, `mechanisms/irs/contract.ts floatingRate` (measured at 0g.10): **WHAT A CONTRACT IS WORTH DEPENDS ON AN EVENT, AND NOTHING CAN TELL WHEN THAT MOVED.** The kernel publishes three version counters a reader can watch — the register's writes, the prints, the lines (`view.versions`, 0g.5) — and a derivative's value is not a function of those three: a CDS is worth one thing before `credit.default` lands on its reference and another after, and reads `estate.opened` and `estate.closed` besides; an IRS's floating leg is the last `index.benchmark` fixing. So the one read in the engine that is asked the same question thousands of times a period (`valueTo`, via `requirement`, via `marginCalls` and `dueNext`) is the one read that CANNOT be memoised: keyed on prices and lines it goes stale the moment a reference defaults, and keyed on the journal it is invalidated by every settlement in a phase that settles. 0g.10's own second and third items ask for exactly those two caches and both would be wrong. **The fix is not a cache: it is for the facts these valuations read to be DECLARED (0i, 21.113) and for the journal to carry a version per declared kind**, so "has anything I read moved" is answerable for an event the way it already is for a print. Then `valueTo` is memoisable on (prices, lines, the kinds it reads) and says which kinds those are. **Re-read: the thing it was waiting for has arrived, and the reason to want it has not.** 21.113 closed — this journal has ONE door, `say(kind, subjects, [(key, Value)])`, with kinds and keys declared as rows in `Names` — so "has anything I read moved" is now askable per kind, which is the precondition. What is still missing is the version PER kind: `view.versions()` answers with two counters, the register's writes and the prints. But the pressure that made this worth building is gone with the TypeScript engine: the worst period of the assembled world is 194 ms against the 3,000 ms the migration was judged on, and Law 18 gates performance work on behaviour. **Re-positioned at 23.3**, with the measurements — if a run there says a valuation walk is what a period costs, the per-kind version is the answer and its precondition is already met. What 0g.10 said when it first placed this, kept as history and no longer its position — 21.113's per-module declaration is the thing it was waiting for; it is what makes 0g.10's remaining items possible rather than a hazard, and it is also the honest reason `margin.calls` is still 4% of a period after this step.
-- [ ] 21.120 `test/rig.ts rigSpec` (measured at 0g.18 and again at 0g.0): **THE LADDER'S RUNGS ARE NOT A SCALING SERIES, so no exponent in this item can be trusted.** `rigSpec(name, banks, firms)` DRAWS the world, and the draw is keyed on the name, so the rungs differ in more than their size: (6, 24) has 108 parties and 1,324 instruments, (12, 48) has 163 parties and **538** instruments — fewer instruments for twice the firms — and (24, 96) has 259 and 2,070. So the phase block's per-party cost reads 908, 794 and 1,537 µs and the apparent exponent between the last two rungs is 2.4 and between the first two 0.6. **Neither is a scaling law; both are the draw.** Every scaling claim in 0g rests on this, including "party count is linear in firms" (which was measured at assembly across five rungs and is the one that held). What is needed is a rung series that holds the world's SHAPE fixed and varies only its size — the same instruments per firm, the same books per instrument — or an x-axis that is the product the work is actually over (parties × books) rather than parties. Positioned at **0g.15**, because parallel order generation is the step whose gate is a scaling claim and it cannot be judged without this; until then a 0g step's exit is its COUNTS, which do not depend on the rung being a series. **Re-read: the ladder went with the engine and the RULE is the finding.** There is no `rigSpec` here and no rung series at all — the benches measure one world. What survives is what it says about any scaling measurement this project ever makes: **a rung that re-draws the world measures the draw, not the size.** A series must hold the world's SHAPE fixed (the same instruments per firm, the same books per instrument) or plot against the product the work is actually over (parties × books) rather than parties. 0g closed; **re-positioned at 23**, which is where anything is measured at all, and it is a precondition on that item's own readings rather than a defect anywhere.
-- [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone, the arithmetic now refuses itself by name, and the ROOT is the one thing the finding got right.** There is no `sizeOf` making a CDS order `12.5 × equity` in this engine — the participant sizing rule died with its file — and the overflow the chain ended in is now `clearing::whole_pieces`, which throws with 21.1's citation (*the grain of the piece is the defect, not the quantity*) instead of a bound anywhere. What survives is the sentence the finding ends on: **nothing sizes how much plant a firm ends up with**, and 81,800× the median firm is what that absence produced. That is not this engine's to fix — `world-runs` is ARBITRARY by declaration — it is the SEEDING's, and it is the same shape as 21.98: a quantity a seed states is a quantity somebody decided, where 5 E1 wants an outcome. **Re-positioned with the seeding**, beside 21.98 and 21.6.
-- [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3). **Re-read: the first is absent and the other two are the seeding's.** There is no freight session in this world to write an empty record for — `freight` is one of 21j's counting rows (`Reads { AgreementsLive }`) — so nothing can write the empty leg. The other two are a rule about the DRAW and not about the rig that made it: a good made in one place can have no location basis (Commodities Spot D1, Freight D3), so a seeding that draws a line into one region alone cannot exercise either clause. It stays open as 21.6 does, and it is the seeding's to honour.
+- [ ] 21.50 `treasury/index.ts fundingCostIn`: the cost of borrowing abroad is the benchmark yield plus the treasury's ONE-PERIOD outlook of the pair extrapolated over a year; a covered comparison would read the forward on the pair (`fx-derivatives`) for the tenor and pay the basis (Currency B4), and none does yet. Both are honest reads a party has, but a treasury with a naive outlook borrows in the lowest nominal yield every auction (the first four-country run picked EUR at once); positioned at 16.5, where the swap line gives it the covered rate to read (16.4). **Re-read: the outlook died with the file, the REQUIREMENT stands** — a covered comparison reads the forward for the tenor and pays the basis (Currency B4). **16.5 closed without it.** It cannot be exercised while the treasury decides nothing (21.41). **Re-positioned at 21j**; `Cross-Border A2.a` points here for its hedging reason.
+- [ ] 21.112 `clearing/market.ts fxTrade` (0i.5): a money-only leg carrying `{ of: 'disposal' }` promises a basis that never comes. `disposal`'s contract is that *"settlement, which draws the lots, publishes the basis beside the proceeds in `Settled.realised`"* — and `realised` is produced by an ASSET debit, so an FX spot's quote leg says the seller disposed of something and nothing ever says what it cost. The gain on a foreign-money position is real (the lots carry the rate they were acquired at) and there is no path that taxes it. Either settlement publishes a `realised` for a money debit, or an FX trade needs its own receipt; which is a decision about the gain, not about the label. Positioned here, before 21b. **Re-read: the label is absent, the gain is still nowhere.** No `disposal` receipt exists, so no leg can promise a basis. But `Register::debit` hands settlement the basis (`Drawn`) and settlement only carries it forward — `grep realised` returns nothing, so a realised gain exists on the register and in no read, which is why nothing can tax one. Whether settlement returns it or says it as an event is a STEP: stays in 21, readers are 21j's.
+- [ ] 21.116 `test/indices.test.ts` (four red, PRE-EXISTING: identical at `27312b8`, measured at 0g.4 because the step touched the fixing reads this suite covers): **NO EQUITY INDEX EXISTS PER REGION and no rated index ever gets a level.** *declares an index per region and per currency* has ten declared ids and `equity.eu.1` is not among them (Indices D1: four regions, four equity indices); *reads FROM its constituents* finds a basket whose constituent weight is 0, where B1 says a weight is a COUNT of the line; *reports Missing for a basket with nothing in it* finds six constituents where it expects an empty basket, so the empty-basket refusal is not being exercised at all (D5.a); and *reports, shows, grades and indexes, in that order and on the calendar* gets `firstLevel` 0 against a `firstRating` of 20 — the chain from a closed quarter to a rated index stops at the grade. The first is a DECLARATION absent for three of four regions and the others are consequences of an index with nothing in it, so it is one cause and probably one fix. Unpositioned: it wants the indices module open, and which item that is has not been decided — named here so it is not lost (Law 11: the missing declaration is the work item, not the four numbers). **Re-read: its conclusion is right and the scale is larger.** Not three of four regions — **no index is declared anywhere.** `benchmarks::Index` has a `level_at` read and nothing constructs one. The declaration is **21e's** (an index is a country's, 21.6); the level is **21j's**, since `benchmarks` counts lines that printed instead of fixing anything.
+- [ ] 21.117 `world/world.ts contractValue`, `mechanisms/cds/contract.ts creditState`, `mechanisms/irs/contract.ts floatingRate` (measured at 0g.10): **WHAT A CONTRACT IS WORTH DEPENDS ON AN EVENT, AND NOTHING CAN TELL WHEN THAT MOVED.** The kernel publishes three version counters a reader can watch — the register's writes, the prints, the lines (`view.versions`, 0g.5) — and a derivative's value is not a function of those three: a CDS is worth one thing before `credit.default` lands on its reference and another after, and reads `estate.opened` and `estate.closed` besides; an IRS's floating leg is the last `index.benchmark` fixing. So the one read in the engine that is asked the same question thousands of times a period (`valueTo`, via `requirement`, via `marginCalls` and `dueNext`) is the one read that CANNOT be memoised: keyed on prices and lines it goes stale the moment a reference defaults, and keyed on the journal it is invalidated by every settlement in a phase that settles. 0g.10's own second and third items ask for exactly those two caches and both would be wrong. **The fix is not a cache: it is for the facts these valuations read to be DECLARED (0i, 21.113) and for the journal to carry a version per declared kind**, so "has anything I read moved" is answerable for an event the way it already is for a print. Then `valueTo` is memoisable on (prices, lines, the kinds it reads) and says which kinds those are. **Re-read: the precondition has arrived, the reason to want it has not.** Kinds and keys are declared (21.113 closed), so "has anything I read moved" is askable per kind; what is missing is the version PER kind, `view.versions()` answering with two counters. Law 18 gates performance on behaviour and the worst period is 194 ms against 3,000. **Re-positioned at 23.3.**
+- [ ] 21.120 `test/rig.ts rigSpec` (measured at 0g.18 and again at 0g.0): **THE LADDER'S RUNGS ARE NOT A SCALING SERIES, so no exponent in this item can be trusted.** `rigSpec(name, banks, firms)` DRAWS the world, and the draw is keyed on the name, so the rungs differ in more than their size: (6, 24) has 108 parties and 1,324 instruments, (12, 48) has 163 parties and **538** instruments — fewer instruments for twice the firms — and (24, 96) has 259 and 2,070. So the phase block's per-party cost reads 908, 794 and 1,537 µs and the apparent exponent between the last two rungs is 2.4 and between the first two 0.6. **Neither is a scaling law; both are the draw.** Every scaling claim in 0g rests on this, including "party count is linear in firms" (which was measured at assembly across five rungs and is the one that held). What is needed is a rung series that holds the world's SHAPE fixed and varies only its size — the same instruments per firm, the same books per instrument — or an x-axis that is the product the work is actually over (parties × books) rather than parties. Positioned at **0g.15**, because parallel order generation is the step whose gate is a scaling claim and it cannot be judged without this; until then a 0g step's exit is its COUNTS, which do not depend on the rung being a series. **Re-read: the ladder went with the engine and the RULE is the finding.** No `rigSpec`, no rung series. What survives governs any scaling measurement: **a rung that re-draws the world measures the draw, not the size** — hold the shape fixed, or plot against parties × books. 0g closed; **re-positioned at 23** as a precondition on its readings.
+- [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone and the ROOT is what it got right.** No `sizeOf` makes a CDS order `12.5 × equity` here, and the overflow is now `whole_pieces` throwing with 21.1's citation rather than a bound. What survives: **nothing sizes how much plant a firm ends up with**, and 81,800× the median is what that absence produced. Same shape as 21.98 — a quantity a seed states is one somebody decided (5 E1). **Re-positioned with the seeding.**
+- [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3). **Re-read: the first is absent, the other two are the seeding's.** No freight session exists to write an empty record for (`freight` is one of 21j's counting rows). The other two are a rule about the DRAW: a good made in one place can have no location basis (Commodities Spot D1, Freight D3). Stays open as 21.6 does, for the seeding to honour.
 
 
 ### The 78 findings drained from `docs/FINDINGS.md` (20b)
@@ -584,24 +509,12 @@ is the walks over PARTIES and INSTRUMENTS, which DID survive** — `running.rs` 
 walks every instrument once per system per period — and those are a re-read against the engine that
 exists, not a verification.
 
-**The re-read is done and the group CLOSES.** Every one of the twenty-seven names a `.ts` file and a
-line in it, and what each proposes is a CACHE: compute `coveredLines` once per bank, memoise
-`stateOf`, keep `requirement` per (poster, holder, ccy, period), keep a per-period `placedBy` map.
-None of those call sites exists — a Rust mechanism is a pure function over what it is handed, and the
-participants that would have made the O(banks × markets²) shapes do not do that work. The four that
-name a KERNEL shape rather than a module's were checked against the kernel, and three are answered:
-
-- **WK6** (a schedule recomputing its calendar placement per read) — `Schedules::falling(from, to)`
-  is a `BTreeMap` range over the day, which is an index and not a walk;
-- **WK10** (*verify `inPeriod` is an index and not a filter over the whole ledger*) — `Journal::in_period`
-  returns a contiguous row RANGE from a per-period slice table, so it is O(periods) to find and O(1)
-  to read, never O(journal);
-- **EQ6** (`Math.round` in engine code outside `core/num`) — there is no `round` anywhere in this
-  engine, and the four `floor` calls are each a COUNT being counted: whole seats by largest remainder,
-  whole batches, a majority of shares. `CD11`'s type-erased division is every division here, since a
-  ratio is an `f64` and there is no `ratioOf` to bypass.
-
-What genuinely survived is ONE fact, and it is 21.138.
+**The re-read is done and the group CLOSES.** Each names a `.ts` line and proposes a CACHE, and none
+of those call sites exists — a Rust mechanism is a pure function over what it is handed. Four name a
+KERNEL shape and three are answered: `Schedules::falling` is a `BTreeMap` range (WK6); `in_period`
+returns a contiguous row RANGE from a per-period slice table, never O(journal) (WK10); there is no
+`round` anywhere and the four `floor` calls each count a count (EQ6). CD11's type-erased division is
+every division here. **What survived is one fact: 21.138.**
 
 - [ ] 21.138 **RAISED at 21.130: what a period costs is a walk over everything and a journal that
   grows by everything.** The twenty-seven walks were each a call site; this is the shape they were all
@@ -626,53 +539,36 @@ What genuinely survived is ONE fact, and it is 21.138.
 
 ### 21.131 The model defects — each re-read against the module that carries it now
 
-**The re-read is done, and most of this group closes because THE PORT BUILT THE ANSWER.** These were
-read off modules that no longer exist, and where a Rust module carries the same clause it carries the
-fix the finding asked for:
+**The re-read is done, and most of this group closes because THE PORT BUILT THE ANSWER** — where a
+Rust module carries the same clause, it carries the fix the finding asked for. `fx_forwards`' header
+IS Appendix B's no-parity-formula rule, with the forward CLEARED and `parity` a separate read it is
+checked against (FXD3, IR2). `cds::Recovery` is what the obligations FETCHED, with `workout_closed`
+carrying D2.b (CD10). No id is cast to a branded type (FXD6); no capacity is a literal (MM3); there is
+ONE bank-choice mechanism, `households::prefers`, not three (MM17, FD16, RP15); `dealing::quote`
+refuses rather than zeroing (BK22, BK23); and margin's √ is how a per-session move becomes a horizon's
+(OP5, DL7).
 
-| finding | what it said | what the module does now |
-| --- | --- | --- |
-| FXD3, IR2 | a covered-parity formula standing in for a forward (Appendix B forbids it) | `fx_forwards`' header is that prohibition: *no forward rate from a parity formula* (E1). `Forward` carries a rate that CLEARED and `parity` is a separate read the cleared rate is CHECKED against, with `basis` derived from the difference |
-| CD10 | recovery read off the defaulted bond's last MARK, which is 0 after an estate closes | `cds::Recovery` is *what the obligations FETCHED*, per unit of par, and carries `workout_closed` — D2.b's distinction, so an open workout marks at expected payoff and trues up when it closes |
-| FXD6 | an empty id cast to a branded type, bypassing *the underlying must exist* | there is no such cast; no `NONE` instrument is an underlying anywhere |
-| MM3 | `Number.MAX_SAFE_INTEGER` as a capacity — a literal standing for "unlimited" | no capacity in this engine is a literal. The only `INFINITY` is `clearing`'s sort sentinel for an order with no limit, which is what a market order IS |
-| MM17, FD16, RP15 | the same bank-choice mechanism copied into three modules (Law 4) | there is one, `households::prefers`, and no module has a `board` or a switching rule of its own |
-| BK22, BK23 | a desk quoting 0 risk with no outlook, and offering its whole inventory every session | `dealing::quote(desk, worth, risk, adverse)` is handed its inputs and returns `Option<Quote>` — it refuses rather than zeroing, and the sizing rules the findings name have no call site |
-| OP5, and DL7's shape | √T scaling in the margin | `derivative_layer` sizes margin from *the underlying's own MEASURED move, scaled by notional and remaining life* — the √ is how a per-session move becomes a horizon's, which is arithmetic and not a stated rate |
+**The modules the rest name do not exist**: no `land` (LD2, LD4 → **21i**), no `options` (OP2), no
+`bond-futures` (BF4), no `staff` (BK25), and no participant doing what FX2, FXD2, FXD4, IR3, IR4, DL9
+and FD10 describe (21j). FD20 and IR7 are *nothing exercises this* → **21j**. CB3 and CB4 fold into
+21.60(b): no holder bids a term.
 
-**The modules the rest name do not exist here at all**: there is no `land` (LD2, LD4 → **21i**, which is
-that absence), no `options` (OP2), no `bond-futures` (BF4), no `staff` (BK25), and no participant doing
-the work that FX2, FXD2, FXD4, IR3, IR4, DL9 and FD10 describe — `spot_fx`, `fx_forwards` and `irs`
-are pure functions whose posting participants were never written (21j).
-
-**Two survive as absences with a home**: FD20 (a saver's choice between deposit and fund, and shorting
-by a pool) and IR7 (a pension matching its liabilities with swaps) are both *nothing exercises this*,
-which is **21j**. CB3 and CB4 are the coupon and the covenant, and 21.60(b) already carries the live
-half of both — a covenant is a term the HOLDER bids for, and the issuer's own ratios at issue are the
-tightest promise anybody could ask.
-
-**And BF4 is the one that earned its re-read.** Its shape — *two rows with identical values are
-indistinguishable, so a pairing by value can pick the wrong one* — has now caught two defects in this
-engine. The first was `estate::waterfall` sorting its answer by rank so the caller could not pair it
-with the claim ids it passed in (fixed at 21.36). The second was found by re-reading BF4 against
-`Register::release`, **written by this session an hour earlier**: it finds a lien by matching the
-holder, and `pledge` pushed a new row on every call, so two pledges to one party made two liens and a
-release found whichever came first. The fix is Law 4 rather than a smarter match: **one lien per
-(holding, holder)**, pledging again adds to the claim that party already has, and a test says the two
-pledges are one claim of fifty that comes off in one release.
+**BF4 earned its re-read.** Its shape — *two rows with identical values are indistinguishable, so a
+pairing by value can pick the wrong one* — has caught two defects here: `estate::waterfall` sorting
+its answer out of the caller's order (21.36), and `Register::release` matching a lien by holder while
+`pledge` pushed a new row each call. Fixed by Law 4, not a smarter match: **one lien per (holding,
+holder)**.
 
 
 ### 21.132 The periodicity cluster — Law 8, four modules, one defect
 
-**CLOSED: the port answered the cluster and the kernel has the check.** Every one of the three is
-period-index arithmetic — `(at − opened) % every` — standing in for a date, and `grep` for that shape
-over this engine returns nothing. Periodicity here is what Law 8 asks for: `irs::Leg` carries
-`payments_per_year` and `year_basis` (*the periodicity is part of the number*, and the two legs need
-not match), a `Swap` matures on a `Day`, and `Calendar::year_fraction` counts days. And
-`calendar.rs` has the test the finding is a request for, by name: **a periodicity is placed by date
-and never by a count of periods.**
+**CLOSED: the port answered the cluster and the kernel has the check.** All three are period-index
+arithmetic (`(at − opened) % every`) standing in for a date, and `grep` for that shape returns
+nothing: `irs::Leg` carries `payments_per_year` and `year_basis`, a `Swap` matures on a `Day`, and
+`calendar.rs` holds the test by name — **a periodicity is placed by date and never by a count of
+periods.**
 
-**OP1's residue is real and it is one convention**, so it stays as a step of its own below: the
+**OP1's residue is one convention**, kept as a step below: the
 kernel's `Calendar::next_cycle(at, every)` is an exchange's expiry ladder anchored to the EPOCH —
 everything written between two dates settles into the same book, which is right — and a real
 exchange's ladder is anchored to the calendar month (the third Friday), which is Law 1's real
@@ -687,21 +583,12 @@ mechanism rather than an approximation of it.
 
 ### 21.133 The six that are ABSENCES, not defects
 
-**Re-read, and four of the six were asking a question `check:existence` now answers.** CB7, CO6 and
-OM6 each say *these clauses are not in this module — verify COVERAGE marks them*, which was the right
-instinct on an engine where nobody could tell. `npm run check:existence` is that verification and it
-reports **no absent sector at all**: Corporate Credit 49 MET of 62, Commodities Spot 16 of 24, and
-Central Bank — OM6's, and the one with no module of its own — **22 MET of 29**, its clauses carried by
-`money`, `money_market` and `currency` rather than by a file named for it. A clause's home is not a
-file, which is what the port settled. BK33 and BK34 are live absences and both have a home:
-
-- **BK33** — a depositor with no choice of bank, so the board is a display-only number. Half is built:
-  `bank_funding::Line::leaves(on_signals, limit)` is deposits LEAVING on what a depositor can see. The
-  other half — which bank they go to — is nothing's, because no bank in this world quotes a board
-  anybody reads. → **21j**.
-- **BK34** — no phase resolves a bank below its requirement. That is the sentence 21.66 ends on
-  (*a bank that cannot shed its way back is its RESOLVER's, and nothing resolves it*) → **23.2**,
-  where 21.66 already stands.
+**Re-read, and four of the six asked a question `check:existence` now answers.** CB7, CO6 and OM6 each
+say *verify COVERAGE marks these clauses*, and it reports **no absent sector at all** — Central Bank,
+the one with no module of its own, is 22 MET of 29, its clauses carried by `money`, `money_market` and
+`currency`. A clause's home is not a file. Two are live absences: **BK33** (a depositor's choice of
+bank — half built, `Line::leaves` being deposits leaving on what a depositor sees) → **21j**; **BK34**
+(nothing resolves a bank below requirement) → **23.2**, where 21.66 already stands.
 
 
 ### 21.134 The four stragglers of the drained file — the D, K and C sections' live remainder
@@ -713,16 +600,11 @@ closed or superseded, and their successors are in `docs/RECORD.md`. D7, D9, D10,
 the macro state, and 0.3 above carries that as a live table with items against each row. These four
 are what neither of those covers, and they are placed rather than assumed dead.
 
-**Re-read, and three of the five close.** **G10** — kind ids hard-coded as strings, a kind branch in
-data form — is gone and cannot come back: `grep kinds:: mechanisms/` returns **nothing**, so not one
-mechanism in this engine names a party kind at all, which is Law 15 held by the code rather than by a
-checker. **C14** — two readers of `bank.reservation`, each with its own scan, both depending on a phase
-order the assembly does not guarantee — has neither reader left, and the guarantee it wanted is built:
-a phase reading a not-yet-produced print throws. **C16** — the rig opened one country, so the FX layer
-was never exercised — is the rig's, and the rig is deleted; what it asks is the seeding's now, and the
-sentence worth carrying is its last: **a one-country opening cannot be the world the model is judged
-on.** It goes with the seeding beside 21.6, 21.98 and 21.121. C0 and D14/D15 stay as they are: not
-defects but the standing reasons for 22e, which is what they already say.
+**Re-read, and three of the five close.** **G10** (kind ids as strings, a kind branch in data form)
+cannot come back: `grep kinds:: mechanisms/` returns **nothing**, so Law 15 is held by the code rather
+than by a checker. **C14** has neither reader left, and the phase-order guarantee it wanted is built.
+**C16** is the rig's; its last sentence carries to the seeding — **a one-country opening cannot be the
+world the model is judged on.** C0 and D14/D15 stay: not defects, but the standing reasons for 22e.
 
 - [ ] 21.134.C0 *typecheck green, lint green, `check:spec`/`forbids`/`deaths` green — none of these
   loads a world.* It is not a defect; it is the sentence that explains why every one of these
@@ -737,65 +619,23 @@ defects but the standing reasons for 22e, which is what they already say.
 
 ### 21.135 The unbounded market table — two findings, one growth
 
-**CLOSED, and the reason is 21.139.** Both findings are a new instrument and a new market per firm per
-period, growing without bound. **Nothing in this engine can create either.** `MechanismContext` has
-`propose`, `say`, `form`, `settles`, `ceases`, `is_owed` and `pays`, and `Taken` carries exactly those
-— there is no `issue` and no way to declare a book, so the set of instruments and markets is whatever
-the assembly built and it does not change while the world runs. CB2's own fix is built besides:
-`corporate_credit::tap` is C8's *a tap does not create a second instrument — added face on paper that
-already exists and already prices.* That the growth is impossible is not a clean bill of health, and
-what it really means is the finding below.
+**CLOSED, and the reason is 21.139.** Both are a new instrument and market per firm per period.
+**Nothing here can create either**: `MechanismContext` has no `issue` and no way to declare a book, so
+the set of instruments and markets is whatever the assembly built. CB2's own fix is built besides —
+`corporate_credit::tap` is C8's *a tap does not create a second instrument*. That the growth is
+impossible is not a clean bill of health, and what it means is the finding below.
 
 
 ### 21.136 The futures that lose their own profit and loss — one defect in two modules
 
 **CLOSED: the port keeps the P&L where it is earned.** The defect is variation margin RETURNED on
-close, so a long that bought at 98 and took delivery at 100 gained nothing. Here
-`derivative_layer::variation` is a real payment **between the two counterparties** —
-`Variation::Paid { from, to, amount }`, sized by the mark's own move against its own dust — and there
-is no return path: `grep return` over the module finds none. The P&L is realised period by period and
-stays with whoever earned it. And there is no delivery leg to misprice, because `commodities::at_expiry`
-says WHAT happens (delivers, cash-settles against a cleared spot, or must have closed) and nothing books
-it — the module is one of 21j's counting rows. **The rule both findings end on is carried into 21j**:
-when delivery is written it invoices at the STRUCK price, because the invoice price IS the futures
-settlement price and the mark to that point was margin. Written here so the conversion cannot re-make
-the defect.
+close. Here `variation` is a real payment **between the two counterparties**, with no return path, so
+the P&L is realised as it accrues and stays with whoever earned it. There is no delivery leg to
+misprice either — `commodities::at_expiry` says what happens and nothing books it (21j). **The rule
+both findings end on is carried into 21j.1a**: a delivery leg invoices at the STRUCK price, because
+the invoice price IS the futures settlement price.
 
 
-
----
-
-## 21e. There is no registry
-
-**INSERTED here (Law 10), named by four homeless nouns.** ARCHITECTURE 4.10 is unambiguous — *all
-data lives in the registry: currencies (each naming its issuing central bank), countries (each naming
-its currency), regions (each naming its country), units, party kinds, instrument kinds, cell-key
-dimensions, platforms.* **The Rust kernel has none of it.** `CurrencyCode`, `UnitId` and `RegionId`
-are bare row ids with nothing behind them, and the party kinds are integer constants in
-`assembly::kinds` with no profile.
-
-Four clauses the specification states outright are therefore, in this engine, stated nowhere:
-
-| noun | what it should hold | the clause it is |
-|---|---|---|
-| `registry.currencies` | each money and the central bank whose liability it is | Money A2, Currency A2 — a `CurrencyCode` names nobody |
-| `registry.places` | countries and the regions in them; a country has the money, a region is a place | Seed B3 — *the region determines its money*, and a `RegionId` determines nothing |
-| `registry.units` | each unit and what it is divided into | Law 8 — the unit is part of the number, and a `UnitId` carries no unit |
-| `registry.kind_profiles` | what varies by party kind, behind a dispatch table | Law 15 — kind-varying behaviour lives in a PROFILE, and these are integers a mechanism could branch on |
-
-**The last one is the sharp one.** `phoenix-check` forbids `.kind ==` textually, which catches the
-shape and not the absence: a world whose kinds have no profiles has nowhere to put the behaviour that
-varies, so the pressure to branch never goes away. Law 15's dispatch table does not exist.
-
-- [ ] 21e.1 **Currencies, and each one's issuer.** Money A2: money is somebody's liability, and the
-  currency is the first place that has to be true.
-- [ ] 21e.2 **Countries and regions**, with `currency_of(region)` reading THROUGH the country, so one
-  fact has one writer (Law 4, 13c.1: *a country has the money; a region is a place*).
-- [ ] 21e.3 **Units and their subdivisions**, so a quantity can say what it is in.
-- [ ] 21e.4 **A profile per party kind**, and the kernel asks the profile. The integer constants stay
-  as ids; what goes behind them is the behaviour that varies.
-
-**Exit.** The four registry nouns have a home; `Nouns::homeless()` falls by four.
 
 ---
 
@@ -942,64 +782,42 @@ whose supply is genuinely fixed cannot bind.
 **INSERTED here (Law 10), named by 21.38–21.42, which are five findings about one absence.** A
 missing sector is an ITEM, not a finding (`CLAUDE.md`).
 
-The comment item 22 left on the recipe row of the wiring table says the whole of it:
+Item 22's comment on the recipe row says the whole of it: *it was a read of how many lines printed,
+which is a system reporting on a world it takes no part in.* **That is still true of twenty-five of
+the forty-seven rows in `systems.rs`**, wired as `Reads { Counts::… }`. Every count is honest, which
+is why `world:runs` can say *all 50 wired systems ran* and mean it — and none of them decides anything
+or writes. Four have been converted, each by the item that needed it: `recipe` at 22, `funds` at 21b,
+`estate` at 21c, `employment` at 12b.
 
-> §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines printed, which
-> is **a system reporting on a world it takes no part in.**
+**The `systems.rs` header answers half of this**: the reading systems are right to stay out of the
+books, since handing a rating agency a schedule would invent demand nobody has. What it does not say
+is that the read each performs **is not the read the system is for** — `ratings` counts parties alive
+where `grade_from` is what a rating agency does, `benchmarks` counts lines that printed where a fixing
+is what a benchmark is. A system may stay out of the books and still owe its own read.
 
-That is still true of twenty-five of the forty-seven rows in `systems.rs`. They are wired as
-`Reads { kind, what: Counts::… }` — a count of parties alive, lines that printed, agreements live or
-credit outstanding. Every one of those counts is an honest read of something real, which is why
-`world:runs` can say *all 50 wired systems ran every period* and mean it. **None of them decides
-anything, and none of them writes.** Four rows have been converted so far, each by the item that
-needed it: `recipe` at 22 (`Making`), `funds` at 21b (`Winding`), `estate` at 21c (`Ranked`),
-`employment` at 12b (`Wages`).
+**The seven `Closing` rows are the same absence wearing the other hat** (21.86): a closer ends a
+process of its kind, and **nothing opens four of the seven** — no foreclosure, no takeover, no
+securitisation and no election has ever been opened by any mechanism. A closer with nothing to close
+is a counter with an extra step.
 
-**The header of `systems.rs` answers half of this and not the other half**, and the distinction is the
-item. It says the reading systems *are READS over what the books produced, and handing them a schedule
-would be inventing demand nobody has* — which is right, and is why this item never asks a rating
-agency to post an order. What it does not say is that the read each of them performs **is not the read
-the system is for**: `ratings` counts how many parties are alive, where `grade_from` is what a rating
-agency does; `benchmarks` counts how many lines printed, where a fixing is what a benchmark is;
-`observer` counts parties alive. A system may rightly stay out of the books and still owe its own
-read, and none of the twenty-five produces one.
+Two instances are sharp enough to start from. **Housing** (21.38, 21.39, 21.42) is 413 lines citing 40
+clauses — a reservation, a funded bid, a per-location cross, a standard read off the lender's book —
+wired as a foreclosure closer, the one clause of the forty the world reaches; and **no rent is set in
+this world**, which is why the basket cannot hold rent and no tenant's budget can meet a mortgage
+payment. **The treasury** (21.41) posts `size: 0.0`, a literal beside `treasury::must_raise`, so the
+sovereign funding constraint binds on nothing.
 
-**The seven `Closing` rows are the same absence wearing the other hat** (found at 21.86). A closer ends
-a process of its kind when the calendar reaches it — foreclosure, flotation, takeover, securitisation,
-buy-back, workout, election — and **nothing in this engine opens four of those seven at all.**
-`world-runs` `begin`s a capital programme, a flotation, a buy-back and a workout out of its arbitrary
-draw, which is not a party deciding anything; no foreclosure, no takeover, no securitisation and **no
-election** has ever been opened by any mechanism. A closer with nothing to close is a counter with an
-extra step.
-
-The findings of the 21.32–21.46 and 21.47–21.85 blocks are its instances, and these are sharp enough
-to start from:
-
-- **Housing** (21.38, 21.39, 21.42) is wired as a foreclosure closer. `mechanisms/housing.rs` has a
-  reservation, a buyer's funded bid, a per-location cross, a standard read off the lender's book and
-  a foreclosure that returns the dwelling to the market — 413 lines, 40 spec clauses cited, and the
-  only one of them the world reaches is the last. **No rent is set in this world** (`rent_flows` says
-  who pays whom and nothing says how much), which is why the basket cannot have rent in it (21.42)
-  and why a tenant's budget cannot be compared with a mortgage payment (21.39).
-- **The treasury** (21.41) posts `size: 0.0` — a literal written at the assembly site beside
-  `treasury::must_raise`, which is the read that belongs there. The sovereign funding constraint is
-  sequencing step 3 and it binds on nothing, because the treasury never asks anybody for money.
-
-The blocker they share is a door. `must_raise` wants what falls due; a rent wants the lease it is
-owed under; neither is on `ParticipantView`, which can see the register, the prints, the params and
-this party's agreements, and not the schedules. That is one kernel change and it unblocks both.
+They share a door: `must_raise` wants what falls due, a rent wants its lease, and `ParticipantView`
+sees the register, the prints, the params and this party's agreements — not the schedules.
 
 - [ ] 21j.1 **A schedules door on `ParticipantView`**: what this party owes and is owed by date, as
   `MechanismContext::wire()` is for the history. A participant that cannot see what falls due cannot
   decide anything about money it has to find.
-- [ ] 21j.1a **A module can ask for an instrument to exist** (21.139), because today nothing can: the
-  instrument table is fixed at assembly, so no firm brings paper, no bank writes a loan as a row, no
-  treasury auctions a bill it has not already got, no pool cuts a note and no company floats. The
-  kernel is the one writer (Law 4), so this is `Taken.issued` applied by the assembly, as `claimed`
-  and `ceased` are. It is the larger of this item's two doors and most of the conversions below want
-  it. **And the rule 21.136 leaves here**: when a delivery leg is written, it invoices at the STRUCK
-  price, because the invoice price IS the futures settlement price and the mark to that point was
-  margin.
+- [ ] 21j.1a **A module can ask for an instrument to exist** (21.139): the instrument table is fixed
+  at assembly, so no firm brings paper, no bank writes a loan as a row, no treasury auctions a bill it
+  has not got, no pool cuts a note and no company floats. The kernel is the one writer (Law 4), so
+  this is `Taken.issued` applied by the assembly, as `claimed` and `ceased` are — the larger of this
+  item's two doors. **And the rule 21.136 leaves here**: a delivery leg invoices at the STRUCK price.
 - [ ] 21j.2 **The treasury issues what it must raise** (Treasury D3, XI-9): `size` is
   `must_raise(outlays, receipts, cash, buffer)` read through 21j.1, and the literal goes. It is the
   first system whose conversion makes a constraint bind rather than a number appear.
@@ -1008,14 +826,12 @@ this party's agreements, and not the schedules. That is one kernel change and it
   reservation and bid for at what a buyer can fund, and `housing::clearing` is what crosses them.
   21.38's tenant bids out of the budget `households::spends` already decides, and 21.42's basket reads
   the rent that results.
-- [ ] 21j.3a **A grade is published** (§21 A4, 21.69). `ratings::grade_from` and `reassess` are built
-  and the row counts parties alive. It is the cheapest conversion in the list — a read, not a decision
-  — and it is what makes 21.69's saturation question answerable at all. The same is true of
-  `benchmarks` (a fixing, XI-7) and `observer` (a statistic, §45).
-- [ ] 21j.4 **The census is the measure, and it must fall.** `world:runs` prints the seven homeless
-  nouns; it should print the count of systems whose only work is a count, beside them, for the same
-  reason: a register that can only report "nothing missing" is switched off (21d.1b). Twenty-five
-  today.
+- [ ] 21j.3a **A grade is published** (§21 A4, 21.69): `grade_from` and `reassess` are built and the
+  row counts parties alive. The cheapest conversion here — a read, not a decision — and what makes
+  21.69 answerable. Same for `benchmarks` (a fixing, XI-7) and `observer` (a statistic, §45).
+- [ ] 21j.4 **The census is the measure, and it must fall.** `world:runs` prints the homeless nouns;
+  it should print the count of systems whose only work is a count beside them, for the same reason
+  (21d.1b). Twenty-five today.
 
 The remaining twenty-one are not this item's to convert — each belongs to the item that needs it, the
 way the four converted so far did. What this item owes is the door, the two conversions its findings

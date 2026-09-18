@@ -87,11 +87,16 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
 - **Ontology register** (`src/nouns.rs`): every store declared as `noun | working | physics`, and a
   NOUN names the plan item that gives it a kernel home. An undeclared store throws at the read. It is
   to categories what `params` is to numbers, and its count of homeless nouns is the honest measure of
-  how much ontology is missing. **Seven homeless today** (21d.1b), and `npm run world:runs` prints
-  them: the four the absent REGISTRY holds — a currency naming its issuer, a country naming its
-  currency and a region its country, a unit and its subdivision, a profile per party kind (21e) — and
+  how much ontology is missing. **Three homeless today**, down from seven: the registry's four went
+  home at 21e (`src/registry.rs` — a currency naming its issuer, a country naming its currency and a
+  region its country, a unit and what it is divided into, a profile per party kind). What is left is
   three facts a module names that no store keeps: a posting an employer holds, the standard a lender
-  is lending at, and work in progress (21f). The count must fall and must never rise.
+  is lending at, and work in progress (21f). `npm run world:runs` prints them.
+- **Registry**: what the ids point at (ARCHITECTURE 4.10). A country has the money and a region is a
+  place, so `currency_of(region)` reads THROUGH the country — one fact, one writer. A unit says what
+  one of it is divided into, so there is no single grid for every good. A party kind has a PROFILE the
+  kernel asks (Law 15): `World::admit` asks it where a kind banks rather than allowing any party with
+  no bank at all. The count must fall and must never rise.
 - **Expectations** (§46, XI-16): every deciding party has its own outlook formed adaptively from its
   own history; one PREFERENCE (memory); surprise is a recorded event; confidence is a read; no global
   expectation; no peeking at the period's own result. Outlooks **disagree**, and the disagreement is

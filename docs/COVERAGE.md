@@ -165,7 +165,7 @@ measurement is taken there is nothing to name.
 | `Seed A5` | MET | packages/engine/src/rng/prng.ts, packages/engine/src/seeds/foundation.ts, packages/engine/src/world/assemble.ts, packages/engine/src/world/world.ts |
 | `Seed B1` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/mechanisms/firms/data.ts (three firms in each of the three lines, two banks, and populations as cells whose weights sum to what they stand for). The central bank and the treasury are one each because that is what they are, not a sample of one |
 | `Seed B2` | MET | packages/engine/src/parties/party.ts, packages/engine/src/seeds/foundation.ts |
-| `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
+| `Seed B3` | MET | packages/kernel-rs/src/registry.rs (21e: each party is placed in a region, and `currency_of(region)` reads THROUGH the country that holds the money — so a region determines its money uniquely and keeps no copy of the fact, Law 4) |
 | `Seed B4` | MET | packages/engine/src/seeds/foundation.ts (no two firms in a line open with the same stock or the same cash), packages/engine/src/mechanisms/firms/data.ts (and none of them takes the same hours to a tonne, so no two bid the same wage). The household cells open IDENTICAL on purpose and their dispersion is produced rather than stated — the memory each draws at entry, and who was hired at what wage (packages/engine/test/world.test.ts): stating a size distribution for them would be seeding an outcome (E1) |
 | `Seed B5` | MISSING |  |
 | `Seed C1` | MET | packages/engine/src/world/assemble.ts (the opening equity IS the balance sheet the audit checks it against, not a second copy of it) |
@@ -186,7 +186,7 @@ measurement is taken there is nothing to name.
 | requirement | status | where / why |
 |---|---|---|
 | `Currency A1` | MET | packages/engine/src/seeds/foundation.ts (four moneys, each a named central bank’s liability), packages/engine/src/registry/registry.ts |
-| `Currency A2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/registry/registry.ts |
+| `Currency A2` | MET | packages/kernel-rs/src/registry.rs (21e: `Registry::currency(issuer)` is the only way to make one and there is no constructor without an issuer, so a money nobody owes cannot be written — Money A2 one level up from 5 A4's free money) |
 | `Currency A3` | MET | packages/engine/src/core/measure.ts (16.0: the currency is a property of every amount — `Cash` is `{ pieces, ccy }` and no amount exists without one), packages/engine/src/journal/journal.ts (money on the record is pieces beside a named `ccy`), packages/engine/src/seeds/foundation.ts (each money is its own unit with its own smallest piece), packages/engine/src/registry/grid.ts |
 | `Currency A4` | MET | packages/engine/src/core/measure.ts (16.0: `asCash`, `heldAsMoney`, `valueAt`, `noCash` all take the currency; there is no constructor without one), packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
 | `Currency A5` | MET | packages/engine/src/seeds/foundation.ts (the closed named set: USD, EUR, GBP, JPY, each with its issuer, its region and its unit) |

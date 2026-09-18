@@ -19843,3 +19843,62 @@ evidently a strong one.
 
 **686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
 green.** Item 21 stands at 134 of 182, and every one of its findings has been re-read.
+
+---
+
+## 21e — There is no registry
+
+**What.** `packages/kernel-rs/src/registry.rs`: the data every other store's ids point at. Four of the
+ontology register's seven homeless nouns went home; the count is **three**.
+
+**Why.** ARCHITECTURE 4.10 says *all data lives in the registry*, and the Rust kernel had none of it.
+`CurrencyCode`, `RegionId` and `UnitId` were bare row numbers with nothing behind them, and the party
+kinds were integer constants with no profile — so four clauses the specification states outright were
+stated nowhere.
+
+- **A currency names the party whose liability it is** (Money A2). `Registry::currency(issuer)` is the
+  only constructor, so a money nobody owes cannot be written.
+- **`currency_of(region)` reads THROUGH the country** (Seed B3, 13c.1). A country has the money and a
+  region is a place, so a region keeps no copy of the fact and Seed B3 stays literally true with one
+  writer (Law 4).
+- **A unit says what one of it is divided into** (Law 8). A dwelling counted in whole dwellings and a
+  tonne milled a million ways are the same mechanism with different data, which is where 21.37's
+  defect — one grid for everything — gets its home. `indivisible()` is the read it asked for.
+- **A party kind has a profile the kernel asks** (Law 15).
+
+**The profile is where the pressure was.** `World::admit` could only say *a party banks at somebody who
+issues money, OR at nobody at all* — a blanket escape, because the rule it wanted (a central bank banks
+nowhere, a treasury at its central bank, everybody else at a commercial bank) is a fact about the KIND
+and had nowhere to live. So any party could be admitted with no bank, and Money D2 was enforced only
+for the ones that happened to name one. `admit` now asks `KindProfile.banks` and enforces each case. A
+kind with no profile falls back to the old permissive read: `Missing` is missing, and a world that has
+declared no profiles is not one the guard can speak for.
+
+**It is load-bearing, not declared.** Every party in the assembled world is now admitted through
+`World::admit` rather than `parties.add`, so the profile is read on every entry — and the guard made
+the ordering explicit: the central bank's reserves are issued before the treasury is admitted, because
+a treasury admitted with nothing to hold is refused at ENTRY. Without that, this would have been a
+fifth register nothing reads, which is the defect 21d, 21g and 21h are all about.
+
+**What it does not do.** The geography of ARCHITECTURE 4.10 — tiles, terrain, resources, sea areas —
+is not built. And two findings this item carries are given a home rather than closed: 21.37 (a
+dwelling's grain) now has `unit(pieces_per_whole)` to be declared with, and 21.44 (a size compared in
+one money) can name its money through its region — but nothing yet USES the registry to answer either,
+and saying otherwise is what the ontology register exists to catch.
+
+`docs/COVERAGE.md`: `Money A2`, `Seed B3` and `Currency A2` re-pointed from deleted TypeScript files to
+`registry.rs`. `CLAUDE.md` and `ARCHITECTURE.md` 4.10 updated in the same change.
+
+**694 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green; the world runs four periods at 159 ms worst against the 3,000 ms budget.**
+
+---
+
+## The plan file, trimmed
+
+`docs/IMPLEMENTATION.md` had grown 317 lines over the re-read pass, because each re-read wrote its
+reasoning into the plan as well as here. **The record is the ledger of outcomes and the plan is the
+ordered list** (Law 16); a finding's note there needs its verdict and its position, not its argument.
+Nine per-block summaries that restated this file became a ten-line list, three group headers and the
+two raised findings were cut to their operative content, and every re-read note over ~500 characters
+was compressed. 334 lines deleted against 150 added, with no finding, verdict or position lost.

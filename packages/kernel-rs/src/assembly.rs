@@ -27,6 +27,7 @@ use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
 use crate::stores::{Agreements, Claims, Outlooks, Processes, Schedules};
 use crate::register::Register;
+use crate::registry::{Banks, Registry};
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
 
@@ -103,6 +104,12 @@ fn declared() -> Nouns {
     at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
     at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
     at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
+    // 21e: the four the registry now holds. Each was a bare row id naming nothing, and the count of
+    // homeless nouns falls by four because they are here rather than because nobody asked.
+    at_home("registry.currencies", "each money and the party whose liability it is", "Money A2: money is somebody's liability, and a CurrencyCode named nobody");
+    at_home("registry.places", "countries and the regions in them", "Seed B3, 13c.1: a country has the money and a region is a place, so currency_of(region) reads through the country");
+    at_home("registry.units", "each unit and what one of it is divided into", "Law 8: the unit is part of the number, and one grid for everything made a dwelling divisible");
+    at_home("registry.kind_profiles", "what varies by party kind, behind a dispatch the kernel reads", "Law 15: a world whose kinds have no profiles has nowhere to put what varies, so the pressure to branch never goes away");
 
     // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
     // missing, and it must fall. Each names the plan item that gives it one; a noun whose item does
@@ -116,34 +123,8 @@ fn declared() -> Nouns {
         });
     };
 
-    // **THERE IS NO REGISTRY** (ARCHITECTURE 4.10: *all data lives in the registry*). `CurrencyCode`,
-    // `UnitId` and `RegionId` are bare row ids with nothing behind them, and the party kinds are
-    // integer constants with no profile — so four facts the specification states outright are, in
-    // this engine, not stated anywhere.
-    homeless(
-        "registry.currencies",
-        "21e",
-        "each money and the central bank whose liability it is",
-        "Money A2, Currency A2: money is issued by a named issuer, and a CurrencyCode names nobody",
-    );
-    homeless(
-        "registry.places",
-        "21e",
-        "countries and the regions in them: a country has the money, a region is a place",
-        "Seed B3: each party is placed in a region, and the region determines its money — and a RegionId determines nothing",
-    );
-    homeless(
-        "registry.units",
-        "21e",
-        "each unit of measure and what it is divided into",
-        "Law 8: the unit is part of the number, and a UnitId carries no unit",
-    );
-    homeless(
-        "registry.kind_profiles",
-        "21e",
-        "what varies by party kind, behind a dispatch table",
-        "Law 15: kind-varying behaviour lives in a profile, and the kinds here are integers a mechanism could branch on",
-    );
+    // **THE REGISTRY'S FOUR WENT HOME AT 21e** and are declared above with the rest. What is left
+    // homeless is what no store keeps at all.
 
     // Three facts a module names, which persist between periods, and which no store keeps.
     homeless(
@@ -187,6 +168,10 @@ pub struct World {
     pub processes: Processes,
     /// XI-8: who is owed what by a party whose life has ended, and at what rank.
     pub claims: Claims,
+    /// ARCHITECTURE 4.10, 21e: **what the ids point at** — each money's issuer, each country's money
+    /// and each region's country, each unit's subdivision, and a profile per party kind. They were
+    /// bare row numbers naming nothing, which is four of the ontology register's homeless nouns.
+    pub registry: Registry,
     /// **The ontology register.** Every store declares itself, and its count of HOMELESS nouns is
     /// the honest measure of how much ontology is missing. It was written and wired to nothing, so
     /// the count was zero by never having been asked (21d.1).
@@ -231,6 +216,7 @@ impl World {
             outlooks: Outlooks::new(),
             processes: Processes::new(),
             claims: Claims::new(),
+            registry: Registry::new(),
             nouns: declared(),
             phases: Phases::new(),
             books: Vec::new(),
@@ -436,11 +422,29 @@ impl World {
         weight: u32,
         key: u32,
     ) -> PartyId {
-        assert!(
-            !bank.some() || self.instruments.money_issued_by(bank).is_some(),
-            "Money D2: party of kind {kind} banks at {}, which issues no money — it would hold nothing it could pay with",
-            bank.0
-        );
+        // Law 15, 21e: **the kernel asks the kind's PROFILE.** This used to read *a party banks at
+        // somebody who issues money, OR at nobody at all* — a blanket escape, because the rule it
+        // wanted (a central bank banks nowhere, a treasury at its central bank, everybody else at a
+        // commercial bank) is a fact about the KIND and had nowhere to be written. So any party could
+        // be admitted with no bank, and Money D2 was enforced only for the ones that happened to name
+        // one. A kind with no profile is still admitted the old way: `Missing` is missing, and a world
+        // that has declared no profiles is not one this can speak for.
+        match self.registry.profile(kind).map(|p| p.banks) {
+            Some(Banks::Nowhere) => assert!(
+                !bank.some(),
+                "Money D2: a party of kind {kind} issues the money others settle in, so it banks nowhere"
+            ),
+            Some(_) => assert!(
+                bank.some() && self.instruments.money_issued_by(bank).is_some(),
+                "Money D2: party of kind {kind} banks at {}, which issues no money — it would hold nothing it could pay with",
+                bank.0
+            ),
+            None => assert!(
+                !bank.some() || self.instruments.money_issued_by(bank).is_some(),
+                "Money D2: party of kind {kind} banks at {}, which issues no money — it would hold nothing it could pay with",
+                bank.0
+            ),
+        }
         self.parties.add(kind, region, bank, representation, weight, key)
     }
 
@@ -665,14 +669,16 @@ mod tests {
         let homeless = w.nouns.homeless();
         assert!(!homeless.is_empty(), "a count of zero here is the measure switched off");
 
-        // **There is no registry** (ARCHITECTURE 4.10), and that is four of them: a CurrencyCode
-        // names no issuer, a RegionId determines no money, a UnitId carries no unit, and a party
-        // kind is an integer with no profile.
+        // **The registry's four went home at 21e**, and the measure's whole point is that the count
+        // FALLS — so this asserts they are gone, where it used to assert they were there. A
+        // CurrencyCode names its issuer, a RegionId reads its money through its country, a UnitId
+        // says what one of it is divided into, and a kind has a profile the kernel asks.
         let named: Vec<&str> = homeless.iter().map(|(n, _)| *n).collect();
-        assert!(named.contains(&"registry.currencies"));
-        assert!(named.contains(&"registry.places"));
-        assert!(named.contains(&"registry.units"));
-        assert!(named.contains(&"registry.kind_profiles"));
+        for gone in ["registry.currencies", "registry.places", "registry.units", "registry.kind_profiles"] {
+            assert!(!named.contains(&gone), "{gone} got a home at 21e");
+        }
+        // And what is left is what no store keeps at all, which is 21f's three.
+        assert!(named.contains(&"employment.postings"));
 
         // And every one names the item that gives it a home. A noun whose item nobody has written
         // is a noun nobody has agreed to build.

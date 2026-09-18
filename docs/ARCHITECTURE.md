@@ -961,6 +961,27 @@ All data lives in the **registry**: currencies (each naming its issuing central 
 (each naming its currency), **regions** (each naming its country), units, party kinds, instrument
 kinds, cell-key dimensions, platforms.
 
+**In the Rust kernel this is `src/registry.rs`, and it arrived at 21e** — until then `CurrencyCode`,
+`RegionId` and `UnitId` were bare row numbers with nothing behind them and the party kinds were
+integer constants with no profile, which the ontology register carried as four homeless nouns. What is
+built is the four clauses those ids exist to carry, and no more: **a currency names the party whose
+liability it is** (`Registry::currency(issuer)` is the only constructor, so a money nobody owes cannot
+be written); **`currency_of(region)` reads through the country**, so a region keeps no copy of its
+money and Seed B3 stays literally true with one writer; **a unit says what one of it is divided into**,
+so a dwelling counted in whole dwellings and a tonne milled a million ways are the same mechanism with
+different data, rather than one grid for everything; and **a party kind has a profile the kernel asks**.
+
+The profile is where the pressure was. `World::admit` could only say *a party banks at somebody who
+issues money, OR at nobody at all* — a blanket escape that let any party be admitted with no bank,
+because the rule it wanted (a central bank banks nowhere, a treasury at its central bank, everybody
+else at a commercial bank) is a fact about the KIND and had nowhere to live. `admit` now asks
+`KindProfile.banks` and enforces each case; a kind with no profile falls back to the old permissive
+read, because `Missing` is missing and a world that has declared no profiles is not one the guard can
+speak for. The profile holds what the kernel already asks and grows as items need it: one invented
+ahead of a reader would be a store nothing reads.
+
+The geography below — tiles, terrain, resources, sea areas — is not built in the Rust kernel yet.
+
 **A country has the money; a region is a place** (13c.1). The two were one declaration until the map
 landed, and a map needs many places per currency. A country is one currency, one central bank, one
 treasury, one sovereign line, one FX pair and one equity index — it is what §39 Cross-Border and
