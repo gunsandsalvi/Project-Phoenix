@@ -114,6 +114,18 @@ impl<'a> ParticipantView<'a> {
         Some(worth / shares)
     }
 
+    /// §33, 22i.10: how much money this firm has committed to a capital programme, and zero where
+    /// it has none afoot.
+    pub fn in_a_programme(&self) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|r| crate::stores::ProcessId(*r))
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::CAPITAL_PROGRAMME)
+            .map(|p| all.size(p))
+            .sum()
+    }
+
     pub fn in_a_workout(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)

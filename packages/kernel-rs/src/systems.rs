@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Closing, CostOfCapital, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -834,6 +834,15 @@ pub fn declare(p: &mut Params) {
         "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
     // XI-4: **the mix a company would raise at.** A PREFERENCE — the management's own, and theirs.
     // It is the weight in a read of two cleared prices, never a target anybody is held to.
+    // §33: **the management's own patience and its own risk aversion.** PREFERENCES, and theirs —
+    // a firm that wanted its money back sooner or wanted more above its cost of capital would invest
+    // less, and that is a decision rather than a rule.
+    say("invest.horizon", 20.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
+        "how many periods of return a management counts when it weighs a project");
+    say("invest.hurdle", 0.02, "per unit above the cost of capital", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "what a management wants above its cost of capital before it commits");
+    say("invest.takes", 3.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "the periods a capital programme runs before the plant is in service");
     say("capital.debt_share", 0.6, "debt per unit raised", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of debt in the money a company would raise at the margin");
     say("equity.shares", 1000.0, "shares", Dimension::Count, Kind::Technology, Owner::StandardSetter,
@@ -940,6 +949,8 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let kinds_row_short_of_capital = kinds.declare("bank.short_of_capital");
     // XI-7: the benchmark fixing, read by whatever a market rate reaches. Named once (Law 4).
     let kinds_row_fixing = kinds.declare("benchmarks.fixing");
+    // XI-4: what a company's capital costs it, read by whatever a hurdle reaches. Named once.
+    let kinds_row_costs = kinds.declare("capital.costs");
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
     let mut rows = vec![
@@ -1050,7 +1061,18 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             // instrument what kind it is: every line whose recipes make it with a plant, plus the
             // plant lines themselves.
             let capital = w.capital();
-            let mut cp = works("capital_programme", AT_MARKETS, Box::new(Closing { kind: afoot::CAPITAL_PROGRAMME, says: says("plant.built") }));
+            // **§33 A1, XI-4: and a firm DECIDES to invest.** It was a closer for a programme
+            // nothing opened, so no firm in this world had ever decided to build anything — and
+            // §33's whole content is that decision. It reads the cost of capital 22i.9 publishes.
+            let mut cp = works("capital_programme", AT_CORPORATE_ACTIONS_SLOT, Box::new(Building {
+                kind: says("plant.built"),
+                costs: kinds_row_costs,
+                horizon: "invest.horizon",
+                hurdle: "invest.hurdle",
+                crowds_at: "building.crowds_at",
+                takes: "invest.takes",
+            }));
+            cp.participant = Some(Box::new(Builder { of_kind: kinds::FIRM }));
             cp.audits.push(Box::new(move || {
                 Box::new(crate::mechanisms::capital_programme::PlantMoves::over(capital.clone()))
             }));
@@ -1061,7 +1083,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // no hurdle, and no financial price can reach a real decision. Both halves derive from
         // CLEARED prices that 22i.1 and 22i.7 are what made exist.
         works("cost_of_capital", AT_REVALUATION, Box::new(CostOfCapital {
-            kind: says("capital.costs"),
+            kind: kinds_row_costs,
             accounts: kinds_row_accounts,
             at_income,
             at_shares,

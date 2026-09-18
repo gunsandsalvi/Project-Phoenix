@@ -2333,6 +2333,159 @@ impl Mechanism for BankFunding {
     }
 }
 
+/// **§33 A1, A4, XI-4, 22i.10: A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.**
+///
+/// The `capital_programme` row was a CLOSER for a programme nothing opened, so no firm in this world
+/// had ever decided to build anything — and §33's whole content is that decision.
+///
+/// **It invests when it expects the return to exceed its cost of capital** (`worth_doing`). A rate
+/// applied to revenue, however many multipliers are attached, is this joint deleted, and then no
+/// financial price can reach a real decision. The cost of capital is the one 22i.9 publishes, off
+/// its own cleared prices; the return is its OWN outlook (§46 A1) and never a model forecast.
+///
+/// **What it commits is money, and the plant arrives by PURCHASE.** A programme that conjured plant
+/// would be a firm building with nothing — it bids for capital lines in their books like any other
+/// buyer (Law 3), and what it pays is what those books cross at.
+///
+/// **21i: and building where it is already built-up costs more.** The congestion is a read over the
+/// register, so a firm in a crowded place commits more money for the same plant, which is what makes
+/// location decide anything at all.
+pub struct Building {
+    pub kind: u32,
+    /// XI-4, 22i.9: what its capital costs it, published by the cost-of-capital row.
+    pub costs: u32,
+    /// §33: the management's own patience and its own risk aversion above the cost of capital.
+    /// PREFERENCES, and theirs.
+    pub horizon: &'static str,
+    pub hurdle: &'static str,
+    /// 21i, 33 A4: the standing area at which building draws twice what it does on empty ground.
+    pub crowds_at: &'static str,
+    /// How long a programme runs before the plant is in service.
+    pub takes: &'static str,
+}
+
+impl Mechanism for Building {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let horizon = ctx.params().periods(self.horizon);
+        let hurdle = ctx.params().ratio(self.hurdle);
+        let crowds_at = ctx.params().square_km(self.crowds_at);
+        let takes = ctx.params().periods(self.takes) as u32;
+
+        // XI-4: what each company's capital costs it, most recently published.
+        let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.costs) {
+            if let (Some(&who), Some(Value::Num(cost))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, 0))
+            {
+                costs.insert(who, cost);
+            }
+        }
+        if costs.is_empty() {
+            return;
+        }
+        // 21i: how built-up each place is. One read over the register for the whole world, not one
+        // per firm (Law 19).
+        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+
+        let mut opening: Vec<(PartyId, f64)> = Vec::new();
+        for (&who, &cost_of_capital) in &costs {
+            let firm = PartyId(who);
+            if !ctx.parties().alive(firm) {
+                continue;
+            }
+            if ctx.processes().running(afoot::CAPITAL_PROGRAMME).iter().any(|p| ctx.processes().owner(*p) == firm) {
+                continue;
+            }
+            // §46 A1: **its own outlook**, and a firm with none has nothing to expect. Missing is
+            // missing: a firm that has formed no view does not invest on a view somebody else has.
+            let Some(sells) = ctx.outlooks().of(firm, crate::running::about::HOW_MUCH_IT_SELLS) else {
+                continue;
+            };
+            let Some(price) = ctx.outlooks().of(firm, crate::running::about::WHAT_IT_SELLS_FOR) else {
+                continue;
+            };
+            // 21i: what the ground it stands on does to a build. A firm in a crowded place commits
+            // more money for the same plant.
+            let where_it_is = ctx.parties().region_of(firm);
+            let crowding = crate::places::crowding(
+                crate::places::standing_in(&built, where_it_is),
+                crowds_at,
+            );
+            let project = crate::mechanisms::cost_of_capital::Project {
+                returns_per_period: sells * price,
+                costs: sells * price * crowding,
+                horizon,
+                hurdle,
+            };
+            if !crate::mechanisms::cost_of_capital::worth_doing(&project, cost_of_capital) {
+                continue;
+            }
+            opening.push((firm, project.costs));
+        }
+
+        for (firm, commits) in opening {
+            ctx.opens(crate::module::Opens {
+                kind: afoot::CAPITAL_PROGRAMME,
+                owner: firm,
+                closes: Some(ctx.period() + takes),
+                size: commits,
+            });
+            ctx.say(self.kind, &[firm.0], &[(0, Value::Num(commits))], true);
+        }
+    }
+}
+
+/// **§33 A1, Law 3, 22i.10: AND IT BUYS THE PLANT.**
+///
+/// A firm with a programme afoot bids for capital lines in their own books, up to what it committed.
+/// Nothing is conjured: what the plant costs is what the book crosses at, and a programme whose bids
+/// do not fill is a programme that did not build — which is a real outcome and is why `closes` exists.
+pub struct Builder {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Builder {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        if view.in_a_programme() <= 0.0 {
+            return Vec::new();
+        }
+        // It bids in the books of what it already holds — the lines it knows how to use. A firm
+        // that bid in every book in the world would be a buyer of things it has no plant for.
+        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let commits = view.in_a_programme();
+        if commits <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::systems::line_of(m);
+        // 22c.3: it bids against what the book last PRINTED, because its limit is money and an
+        // order is pieces. A line with no print has nothing to bid against.
+        let Some(print) = view.print(line) else { return Vec::new() };
+        if print.price <= 0.0 {
+            return Vec::new();
+        }
+        // Law 6: it cannot commit more money than it has. Arithmetic about its own account.
+        let can_pay = view.own_cash();
+        let money = if commits < can_pay { commits } else { can_pay };
+        let units = crate::clearing::whole_pieces(money / print.price);
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Buy,
+            price: Some(print.price),
+            qty: units,
+        }]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
