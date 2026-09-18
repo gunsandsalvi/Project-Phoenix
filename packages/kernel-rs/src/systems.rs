@@ -27,7 +27,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Counts, Forming, Makes, Making, Owed, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -317,7 +317,12 @@ pub struct TreasuryIssues {
     pub paper: Option<InstrumentId>,
     /// §30 D2.a: the lowest price it will accept. Below that it pulls the auction (D5).
     pub will_accept: &'static str,
-    pub size: &'static str,
+    /// §30 D4.b, 21j.2: **its own buffer** — the reason it is not dependent on every single auction.
+    /// A PREFERENCE, and the only declared number the size has left in it.
+    pub buffer: &'static str,
+    /// One calendar (G3.a): how many days a period is, so *what falls due this period* is a read of
+    /// DATES. A RESOLUTION, handed in like `Servicing`'s.
+    pub days_per_period: i64,
 }
 
 impl Participant for TreasuryIssues {
@@ -329,8 +334,30 @@ impl Participant for TreasuryIssues {
         self.paper.map(book_of).into_iter().collect()
     }
 
+    /// **§30 D1, D3, XI-9, 21j.2: IT AUCTIONS WHAT IT IS SHORT OF.** The size was a literal `0.0`
+    /// written at the assembly site, so the treasury of this world auctioned nothing, ever, while
+    /// `treasury::must_raise` sat in the module unread — a declared number of no kind at all beside
+    /// a read that existed (Law 2, Law 19). It could not be fixed at the call site, because
+    /// `must_raise` wants what falls due and no participant could see that until 21j.1.
+    ///
+    /// Now it is a READ of its own position: what it must find this period, what it expects to
+    /// receive, what it has, and its own buffer. **The sovereign funding constraint binds on
+    /// something for the first time** — sequencing step 3, and until now it bound on nothing.
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
-        let size = view.params().amount(self.size, Denomination::Money);
+        // G3.a: this period, by DATE. The window is the same one `Servicing` pays out of, so what
+        // the treasury raises for and what it is asked for are the same obligations (Law 4).
+        let from = crate::calendar::Day(view.period() as i64 * self.days_per_period);
+        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let _ = from;
+        let outlays = view.owes_by(to);
+        // C2, C3: receipts are what named payers actually owe it — read off the lines it holds, not
+        // a rate applied to an aggregate. A treasury nobody owes receives nothing, which is an
+        // answer about this world rather than a number anybody set.
+        let receipts = view.owed_to_it_by(to);
+        let buffer = view.params().amount(self.buffer, Denomination::Money);
+        let size = crate::mechanisms::treasury::must_raise(outlays, receipts, view.own_cash(), buffer);
+        // D1: a treasury that is short of nothing does not auction. Law 6 — not a floor under the
+        // size, but the absence of a reason to be in the book at all.
         if size <= 0.0 {
             return Vec::new();
         }
@@ -534,12 +561,18 @@ pub fn declare(p: &mut Params) {
     // §30 D2.a: the lowest price a treasury will accept before it pulls the auction (D5).
     say("treasury.will_accept", 0.98, "price per unit of par", Dimension::Price, Kind::Policy, Owner::Parliament,
         "the lowest price the treasury will accept before it pulls the auction");
-    // 21.41: what it auctions is `must_raise`, and nothing can read that yet (21j.1). A SHAPE, and
-    // the count of shapes must fall — this one falls when the treasury reads what it is short of.
-    say("treasury.auctions", 0.0, "money", Dimension::Amount(Denomination::Money),
-        Kind::Placeholder { mechanism: "Treasury D3, XI-9: what it must raise".to_string(), item: "21j.2".to_string() },
-        Owner::Parliament,
-        "a literal standing in for the size the treasury is short of, which no participant can read yet");
+    // §30 D4.b, 21j.2: **the shape is dead.** What it auctions was a literal standing in for
+    // `must_raise`, and 21j.1's door let the treasury read what it is short of — so the size is an
+    // OUTCOME now and what is left declared is the BUFFER, which is a real preference: the reason a
+    // treasury is not dependent on every single auction. The count of shapes falls to zero.
+    say("treasury.buffer", 200.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Parliament,
+        "the balance the treasury keeps back, which is why one failed auction is not a default");
+    // 5 C3.a, 21j.1a: the tenor and the coupon paper is BROUGHT at. Both are market conventions —
+    // what the paper is WORTH is what the auction crosses at, and neither of these is that (Law 3).
+    say("funding.tenor", 26.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "how long the paper an issuer brings runs for, which is the convention its market has");
+    say("funding.coupon", 0.04, "per annum", Dimension::PerAnnum, Kind::Technology, Owner::StandardSetter,
+        "the coupon the paper carries as a TERM, fixed for its life — never what it is worth");
 }
 
 pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
@@ -583,8 +616,18 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
             mm
         },
         {
-            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", size: "treasury.auctions" }));
-            t.mechanism = Some(Box::new(Reads { kind: says("treasury.outstanding"), what: Counts::CreditOutstanding }));
+            // §30 D1, D3, XI-9, 21j: it BRINGS the paper at corporate actions and AUCTIONS it at the
+            // markets — two moments in order, because a bill has to exist before anybody bids for it.
+            // The `Reads` row that counted credit outstanding is replaced rather than kept: a system
+            // that funds itself is not also a system that counts (Law 4, 21j.4).
+            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
+            t.mechanism = Some(Box::new(Funding {
+                days_per_period: w.days_per_period,
+                tenor: "funding.tenor",
+                coupon: "funding.coupon",
+                buffer: "treasury.buffer",
+                says: says("funding.brought"),
+            }));
             t
         },
         // Money A1, 5 A4: every asset is somebody's liability, published party by party.
@@ -632,7 +675,9 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         works("currency", AT_MARKETS, Box::new(Owed { kind: says("currency.owed") })),
         works("cross_border", AT_REVALUATION, Box::new(Reads { kind: says("cross_border.lines"), what: Counts::LinesThatPrinted })),
         // ── The reads over what the books produced ──────────────────────────────────────────────
-        works("benchmarks", AT_REVALUATION, Box::new(Reads { kind: says("benchmarks.printed"), what: Counts::LinesThatPrinted })),
+        // XI-7, 21j.3a: it FIXES on what the overnight book cleared at, and publishes nothing where
+        // nothing crossed. A count of how many lines printed was never what a benchmark is for.
+        works("benchmarks", AT_REVALUATION, Box::new(Fixes { on: w.overnight.map(book_of), says: says("benchmarks.fixing") })),
         works("ratings", AT_REVALUATION, Box::new(Reads { kind: says("ratings.obligors"), what: Counts::PartiesAlive })),
         works("reporting", AT_REVALUATION, Box::new(Reporting { kind: says("reporting.result") })),
         works("second_opinion", AT_REVALUATION, Box::new(Reads { kind: says("second_opinion.lines"), what: Counts::LinesThatPrinted })),
@@ -642,7 +687,9 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         // ── The events that end things ──────────────────────────────────────────────────────────
         works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
         works("forced_sale", AT_MARKETS, Box::new(Closing { kind: afoot::WORKOUT, says: says("workout.closed") })),
-        works("mortality", AT_REVALUATION, Box::new(Reads { kind: says("mortality.alive"), what: Counts::PartiesAlive })),
+        // XI-3, 21j.3a: a party whose liabilities exceed its assets CEASES. Counting who was alive was
+        // the opposite of the read this system is for, and nothing in this world had ever died.
+        works("mortality", AT_REVALUATION, Box::new(Failing { says: says("mortality.failed") })),
         works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
         works("control", AT_MARKETS, Box::new(Closing { kind: afoot::BUY_BACK, says: says("buy_back.closed") })),
         works("polity", AT_REVALUATION, Box::new(Closing { kind: afoot::ELECTION, says: says("election.called") })),

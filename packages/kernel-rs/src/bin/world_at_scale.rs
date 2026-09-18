@@ -141,6 +141,7 @@ fn main() {
     // This bench predates the relations store and strikes none: a view built over it answers "no
     // relations", which is what a party with none says.
     let bench_agreements = phoenix_kernel::stores::Agreements::new();
+    let bench_schedules = phoenix_kernel::stores::Schedules::new();
     let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
     let ok = journal.kinds.declare("instruction.settled");
     let no = journal.kinds.declare("instruction.failed");
@@ -187,7 +188,7 @@ fn main() {
     let period = clock.period.0;
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements }, period);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules }, period);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -204,6 +205,7 @@ fn main() {
             wire: &mut wire,
             params: &params,
             agreements: &bench_agreements,
+            schedules: &bench_schedules,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {

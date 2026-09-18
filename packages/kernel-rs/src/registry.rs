@@ -85,6 +85,11 @@ pub struct KindProfile {
     /// central bank do; nobody else does, and `Instruments::issue` refuses a second money per issuer.
     pub issues_money: bool,
     pub banks: Banks,
+    /// **§30 D3, XI-9, 21j.1a: whether a party of this kind funds a shortfall by BRINGING PAPER.**
+    /// A treasury auctions a bill; a firm brings a bond; a household cannot and does not. That is a
+    /// fact about the kind and it belongs here rather than as a `match` inside a mechanism (Law 15) —
+    /// it is the dispatch the funding mechanism reads so that it never asks what a party IS.
+    pub issues_paper: bool,
 }
 
 /// ARCHITECTURE 4.10: all data lives here. Columnar like every kernel store, and the id IS the row.
@@ -393,8 +398,8 @@ mod tests {
     fn a_kind_answers_through_its_profile_and_a_kind_with_none_says_so() {
         // Law 15: the integer stays the id; what goes behind it is what varies.
         let mut r = Registry::new();
-        r.profile_for(7, KindProfile { issues_money: true, banks: Banks::Nowhere });
-        r.profile_for(6, KindProfile { issues_money: false, banks: Banks::AtTheCentralBank });
+        r.profile_for(7, KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false });
+        r.profile_for(6, KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true });
 
         assert_eq!(r.profile(7).map(|p| p.banks), Some(Banks::Nowhere));
         assert!(r.profile(7).unwrap().issues_money);
@@ -449,7 +454,7 @@ mod tests {
     #[should_panic(expected = "is given two profiles")]
     fn a_kind_has_one_profile() {
         let mut r = Registry::new();
-        let p = KindProfile { issues_money: false, banks: Banks::AtACommercialBank };
+        let p = KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false };
         r.profile_for(1, p);
         r.profile_for(1, p);
     }

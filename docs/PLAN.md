@@ -18,17 +18,17 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 10 closed** (0 of 84 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 10 closed** (0 of 81 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 21j — Twenty-five systems take no part | 27 | 0 | open |
 | 22e — The audit is not in the period loop | 6 | 0 | open |
 | 22c — The market as it is | 8 | 0 | open |
 | 22d — The payment queue | 5 | 0 | open |
 | 22f — The plant wears, and somebody is paid to keep it | 3 | 0 | open |
 | 22g — The seeding | 7 | 0 | open |
 | 22h — The other four cell events have no cause | 4 | 0 | open |
+| 22i — The systems that still only count | 24 | 0 | open |
 | 23 — Measure — Part XII | 21 | 0 | open |
 | 24 — The app and the APK | 2 | 0 | open |
 | 25 — A tracker's target moves with the running order of the sessions | 1 | 0 | open |

@@ -661,9 +661,40 @@ built from are in its `Pick<>`s and the rest of each store is not.
 
 | Context            | Who gets it                                                 | Can                                                                                                                                                                            | Cannot                                                                       |
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
+| `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; **what falls due on it and to it, by date** (21j.1); who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
+
+### 4.9c The two doors 21j built, and why they were the two
+
+**`ParticipantView::owes_by` / `owed_to_it_by` (21j.1).** A view could read what a party HELD and not
+what it OWED, so no participant anywhere could decide about money it had to go and find. The
+sovereign funding constraint is sequencing step 3 and it bound on nothing: the treasury's auction size
+was a literal written at the assembly site while `treasury::must_raise` sat in the module unread. What
+was missing was an index — `Schedules` could say what a LINE owed and what fell due on a DAY, and not
+what a PARTY was on the hook for (`of_payer`, Register A3's both-directions rule applied to the one
+direction it lacked). What it is owed is read off the lines it holds, because whoever holds a line is
+who is owed (Appendix B: never a second list of who is owed what).
+
+**`MechanismContext::brings` (21j.1a, 21.139).** The set of instruments was whatever the assembly
+built and it did not change while the world ran. `Leg::Create` makes UNITS of a line that already
+exists — which is what production is — so a firm could not bring paper, a bank could not write a loan
+as a row, a treasury could not auction a bill it had not got, a pool could not cut a note and a
+company could not float. Every `instruments.issue` call in the tree was in a test or a bench.
+
+**It is ONE act and not four.** Bringing paper is: the line exists, the issuer holds what it brought,
+a book opens for it, and what it owes is written down. `World::brought` does all four, because four
+writers of one event is how a claim nobody can fall behind on gets written (5 D2). The units arrive
+over the ordinary wire at NO COST — the issuer did not buy them; what it OWES is what others come to
+hold of it (5 A4), which starts the moment it sells one, so its own paper on its own book nets to
+nothing. That is exactly what *issued and outstanding* means.
+
+Cell events and issues are applied BEFORE the phase's legs, because both change who the parties are
+and what the lines are, and a leg that sells what was just brought names a line that has to be there
+first.
+
+**Which kinds fund themselves by issuing is a PROFILE** (`KindProfile::issues_paper`), so the funding
+mechanism walks the parties the registry says do it and never asks what a party IS (Law 15).
 
 **THREE TIERS OF INFORMATION, not two** (Observer A3, A4; Reporting A1.a; item 17.0a). The two the
 kernel had were PUBLIC (an event recorded `isPublic`) and OWN (what a party is a subject of, through

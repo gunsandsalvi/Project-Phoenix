@@ -93,10 +93,22 @@ fn main() {
     let _whole = w.registry.unit(1.0);
     for kind in kinds::ALL {
         let p = match kind {
-            kinds::CENTRAL_BANK => KindProfile { issues_money: true, banks: Banks::Nowhere },
-            kinds::BANK => KindProfile { issues_money: true, banks: Banks::AtTheCentralBank },
-            kinds::TREASURY => KindProfile { issues_money: false, banks: Banks::AtTheCentralBank },
-            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank },
+            // 21j.1a: and whether a kind funds a shortfall by BRINGING PAPER. A treasury auctions a
+            // bill and a firm brings a bond; a central bank issues the money instead, and a
+            // household does neither.
+            kinds::CENTRAL_BANK => {
+                KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false }
+            }
+            kinds::BANK => {
+                KindProfile { issues_money: true, banks: Banks::AtTheCentralBank, issues_paper: true }
+            }
+            kinds::TREASURY => {
+                KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true }
+            }
+            kinds::FIRM => {
+                KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: true }
+            }
+            _ => KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false },
         };
         w.registry.profile_for(kind, p);
     }
@@ -330,6 +342,17 @@ fn main() {
     // Law 2, 21g.2: of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a
     // primitive. This count must fall, and a run that does not print it is a run in which nobody is
     // looking at it — the same argument as the homeless nouns above.
+    // 21j.4: **the third register.** How many wired systems do nothing but publish a count — an
+    // honest count of something real, and never the read the system is FOR. It must fall, and a run
+    // that does not print it is a run in which nobody is looking at it (21d.1b's argument again).
+    let counting: Vec<&'static str> = wired
+        .iter()
+        .filter(|s| s.participant.is_none() && s.mechanism.as_ref().is_some_and(|m| m.only_counts()))
+        .map(|s| s.name)
+        .collect();
+    println!("         {} of {} wired systems only count:", counting.len(), wired.len());
+    println!("           {}", counting.join(" "));
+
     let shapes = w.params.shapes();
     println!("         {} of {} declared numbers are shapes:", shapes.len(), w.params.len());
     for (id, kind) in &shapes {
@@ -374,6 +397,10 @@ fn main() {
                 people += u64::from(w.parties.weight(who));
             }
         }
+        // 21j.1a: **how many obligations came into existence**, which was zero in every period of
+        // every world until the door existed — no firm brought paper, no treasury auctioned a bill it
+        // had not got, no pool cut a note. It is counted off the wire rather than assumed (Law 19).
+        let brought = w.instruments.len();
         // 21i: **how built-up the places are**, as a read over the register. The SPREAD is what
         // matters: a world where every place carries the same is a world where location decides
         // nothing, so the two ends are printed rather than a total nobody can act on.
@@ -381,7 +408,7 @@ fn main() {
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km²",
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
     }

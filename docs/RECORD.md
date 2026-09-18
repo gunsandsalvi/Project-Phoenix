@@ -20321,3 +20321,97 @@ moving a declared technology to suit a world that admits it is arbitrary (Law 11
 
 **712 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
 `npm run check` green; `world:runs` four periods, 50 systems, worst period 407 ms.**
+
+## 21j — twenty-five systems take no part
+
+Twenty-five of the forty-seven rows in `systems.rs` were wired as `Reads { Counts::… }`: an honest
+count of something real, no decision and no write. The reading systems are right to stay out of the
+books — handing a rating agency a schedule invents demand nobody has — and what was wrong is that
+**the read each performs is not the read the system is for.** The seven `Closing` rows are the same
+absence the other way up: a closer for a process nothing opens.
+
+### The two doors, and why they were the two
+
+**`ParticipantView::owes_by` / `owed_to_it_by` (21j.1).** A view could read what a party HELD and not
+what it OWED, so nothing in this world could decide about money it had to go and find. `Schedules`
+could say what a LINE owed and what fell due on a DAY, and not what a PARTY was on the hook for —
+`of_payer` is Register A3's both-directions rule applied to the one direction it lacked. What a party
+is OWED is read off the lines it holds, because whoever holds a line is who is owed (Appendix B: never
+a second list).
+
+**`MechanismContext::brings` (21j.1a, 21.139).** The instrument table was whatever the assembly built
+and did not change while the world ran. `Leg::Create` makes UNITS of a line that already exists —
+which is what production is — so no firm could bring paper, no bank write a loan as a row, no treasury
+auction a bill it had not got, no pool cut a note and no company float. Every `instruments.issue` call
+in the tree was in a test or a bench.
+
+**It is ONE act and not four.** Bringing paper is: the line exists, the issuer holds what it brought,
+a book opens for it, and what it owes is written down. `World::brought` does all four, because four
+writers of one event is how a claim nobody can fall behind on gets written. The units arrive over the
+ordinary wire at NO COST — the issuer did not buy them; what it OWES is what others come to hold of
+it (5 A4), which starts the moment it sells one, so its own paper on its own book nets to nothing.
+Both doors are applied BEFORE the phase's legs, like the cell events: a leg that sells what was just
+brought names a line that has to be there first.
+
+### The last shape in the register is dead
+
+`treasury.auctions` was a literal `0.0` written at the assembly site while `treasury::must_raise` sat
+in the module unread — a declared number of no kind at all beside a read that existed (Law 2, Law 19).
+The size is an OUTCOME now: what falls due on it this period, what falls due to it, what it has, and
+its own buffer. What stayed declared is the BUFFER, which is a real preference — the reason a treasury
+is not dependent on every single auction (D4.b). `world:runs` prints **0 of 17 declared numbers are
+shapes**. **The sovereign funding constraint — sequencing step 3 — binds on something for the first
+time.**
+
+`running::Funding` is the door's caller: a party short of money BRINGS a bill for what it is short of,
+and `TreasuryIssues` auctions what it then holds — two moments in order, because a bill has to exist
+before anybody bids for it. Which kinds fund themselves that way is a PROFILE
+(`KindProfile::issues_paper`), so the mechanism walks the parties the registry says do it and never
+asks what a party IS (Law 15). In `world:runs` the instrument table grows by **1,261 lines a period**,
+where it had never grown by one.
+
+### Two conversions, and nothing in this world had ever died
+
+**`benchmarks` fixes** (XI-7): it reads what the overnight book actually cleared at and publishes
+that, and where the book ran and nothing crossed it publishes **nothing** — a carried price is not a
+rate anybody transacted at. Appendix B's *no posted benchmark* is the mechanism here rather than a gap
+in it.
+
+**`mortality` kills** (XI-3): a party whose liabilities exceed its assets CEASES. The read is
+`instruments::equity` and `ceases` has been the door all along; what was missing was anybody reading
+the state and deciding. The row counted who was alive, which is the opposite of the read it is for.
+**§31 A1.a's exception is a consequence, not a rule relaxed for anybody**: a party that banks NOWHERE
+issues what everybody else settles in and cannot run out of it, read off the profile — the reason,
+never the name. In `world:runs` the population falls from 1,436,155 to 1,336,504 in the first period
+and holds: the insolvent died once.
+
+### The census, and a miscount in the item's own exit
+
+`world:runs` prints the third register beside the homeless nouns and the shapes: **how many wired
+systems only count.** The item said twenty-five; the true figure was **thirty-three**, because it
+counted the `Reads` rows and not the seven `Closing` rows — which are the same absence the other way
+up. It is **thirty-one** now. The exit's *below twenty-five* was written against the miscount and is
+carried to **22i.3** with the true baseline.
+
+### Where the twenty findings went
+
+**Item 22i — the systems that still only count**, inserted after 22h, holds all twenty. Each remaining
+row belongs to the item that needs it, and what they need is one of two things 21j could not give
+them: the MARKET as it is (22c) — a bank that quotes, a supply contract that crosses, a note somebody
+bids for — or a world whose quantities are an outcome rather than a draw (22g).
+
+**21j.3's rent went to 22c**, with 21.38, 21.39 and 21.42 behind it. A rent is a price for the USE of
+a thing for a period, which is the same shape as 21i's berth (22c.8) and belongs with the venues and
+their protocols rather than here. **21j.3a's grade is 22i.1**, and it is blocked on two absences
+rather than on effort: no party carries a birth period, and there is no earnings read for coverage.
+**The observer was left out deliberately** (22i.2): converting a count into a count-with-a-lag is a
+relabelling unless the lag and the revision are the mechanism.
+
+`plan:check` refused the first commit of this — thirteen findings still named the closed item — which
+is the rule from 21f working as built, one item after it was written.
+
+`docs/ARCHITECTURE.md` gained 4.9c for the two doors; the context table now says a view sees what
+falls due. `docs/COVERAGE.md`: `Treasury D1` and `Central Bank A1` re-pointed at the Rust kernel.
+
+**715 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
+`npm run check` green; `world:runs` four periods, 50 systems, worst period 382 ms.**

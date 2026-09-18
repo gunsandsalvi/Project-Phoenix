@@ -266,6 +266,9 @@ pub struct Schedules {
     by_instrument: HashMap<u32, Vec<u32>>,
     /// 5 C3.a: by DAY, so "what falls due this period" is a read and not a walk of everything.
     by_day: BTreeMap<i64, Vec<u32>>,
+    /// XI-9, 21j.1: by PAYER, so a party can be asked what IT must find — which is the question a
+    /// participant deciding about money has, and the one this store could not answer.
+    by_payer: HashMap<u32, Vec<u32>>,
 }
 
 impl Schedules {
@@ -302,6 +305,7 @@ impl Schedules {
         self.paid.push(false);
         self.by_instrument.entry(instrument.0).or_default().push(row);
         self.by_day.entry(due.0).or_default().push(row);
+        self.by_payer.entry(owed_by.0).or_default().push(row);
         DueId(row)
     }
 
@@ -348,6 +352,17 @@ impl Schedules {
             .flat_map(|(_, rows)| rows.iter().map(|r| DueId(*r)))
             .filter(|d| !self.paid(*d))
             .collect()
+    }
+
+    /// XI-9, 21j.1: **what THIS PARTY must find, and by when.** Register A3's both-directions rule
+    /// applied to the one index this store was missing: it could say what a LINE owed and what fell
+    /// due on a DAY, and not what a party was on the hook for — which is the question every party
+    /// deciding about money actually has.
+    pub fn of_payer(&self, p: PartyId) -> &[u32] {
+        match self.by_payer.get(&p.0) {
+            Some(rows) => rows,
+            None => &[],
+        }
     }
 
     /// Everything one instrument owes, in the order it was written.

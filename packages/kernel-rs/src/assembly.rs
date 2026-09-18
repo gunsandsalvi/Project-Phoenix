@@ -367,6 +367,64 @@ impl World {
         self.agreements.moves(carrying, parent, child);
     }
 
+    /// **21j.1a, 21.139: AN OBLIGATION COMES INTO EXISTENCE.** The line is issued, the issuer holds
+    /// what it brought, a book opens if the paper is traded, and what it owes is written down. One
+    /// act, four stores, one writer of each (Law 4) — and the whole of what *bringing paper* means.
+    ///
+    /// The units come onto the issuer's own book at NO COST. It did not buy them: a promise is not a
+    /// thing you pay for, and what the issuer OWES is what others come to hold of it (5 A4), which
+    /// starts the moment it sells one. Its own paper on its own book nets to nothing, which is
+    /// exactly what *issued and outstanding* means.
+    fn brought(&mut self, what: crate::module::Brings) {
+        let line = self.instruments.issue(
+            what.issuer,
+            what.ccy,
+            what.class,
+            what.unit,
+            what.coupon,
+            what.matures,
+        );
+        // Settlement is the one writer of the register, so the units arrive over the wire like
+        // everything else — one-sided, because nobody is on the other end of a promise being made,
+        // which is the same shape as a harvest (`Leg::Create`).
+        if what.units > 0.0 {
+            let legs = [crate::ledger::Leg::Create {
+                party: what.issuer,
+                instrument: line,
+                qty: what.units,
+                cost_per_unit: 0.0,
+            }];
+            let instruction = Instruction {
+                legs: &legs,
+                cause: crate::ledger::Cause::CorporateAction,
+                delivery: crate::ledger::Delivery::Nothing,
+            };
+            self.wire.settle(
+                &instruction,
+                self.period,
+                &mut Settling {
+                    register: &mut self.register,
+                    journal: &mut self.journal,
+                    parties: &self.parties,
+                    instruments: &self.instruments,
+                    realised: self.realised_kind,
+                },
+                self.settled_kind,
+                self.failed_kind,
+            );
+        }
+        // Clearing B1: a book for it, if it is paper anybody else may bid for. A loan row is the
+        // lender's and nobody bids for it, which is an answer rather than a missing book.
+        if let Some(rule) = what.book {
+            self.open_book(crate::systems::book_of(line), line, what.ccy, rule);
+        }
+        // 5 D2: and what it owes, by date. A claim with terms and no schedule is a claim nobody can
+        // fall behind on.
+        for (due, amount, of) in what.owing {
+            self.schedules.owes(line, what.issuer, due, amount, of);
+        }
+    }
+
     fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System]) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
@@ -405,6 +463,11 @@ impl World {
         // has named a party whose weight is no longer what the module read.
         for (parent, taking, carrying) in asked.split {
             self.split_cell(parent, taking, carrying);
+        }
+        // **21j.1a: and obligations that have come into existence.** Before the legs, because a leg
+        // that sells what was just brought names a line that has to be there first.
+        for what in asked.issued {
+            self.brought(what);
         }
 
         // **Settlement is the one writer of the register** (Law 4). What a phase asked for happens
@@ -497,6 +560,7 @@ impl World {
                 journal: &self.journal,
                 params: &self.params,
                 agreements: &self.agreements,
+                schedules: &self.schedules,
             },
             self.period,
         );
@@ -512,6 +576,7 @@ impl World {
                 wire: &mut self.wire,
                 params: &self.params,
                 agreements: &self.agreements,
+                schedules: &self.schedules,
             };
             let session = run_book(
                 book,
@@ -752,6 +817,181 @@ mod tests {
         assert_eq!(w.outlooks.of(part, crate::running::about::WHAT_IT_SELLS_FOR), Some(3.0));
         // Labour A4.c: and the relationship went with the people it is a relationship with.
         assert!(w.agreements.of_party(part).len() == 1 && w.agreements.of_party(cell).is_empty());
+    }
+
+    /// A system that does nothing but fund whoever is short, so the door reaches the kernel the way
+    /// any module's does.
+    struct Funds;
+    impl System for Funds {
+        fn name(&self) -> &'static str {
+            "treasury"
+        }
+        fn phases(&self) -> Vec<PhaseDecl> {
+            vec![phase(3, 3, Anchor::After(CORPORATE_ACTIONS))]
+        }
+        fn mechanism(&self) -> Option<&dyn Mechanism> {
+            Some(&FUNDING)
+        }
+    }
+    static FUNDING: crate::running::Funding = crate::running::Funding {
+        days_per_period: 7,
+        tenor: "test.funding.tenor",
+        coupon: "test.funding.coupon",
+        buffer: "test.funding.buffer",
+        says: 0,
+    };
+
+    #[test]
+    fn a_party_short_of_money_brings_paper_that_did_not_exist_before() {
+        // **21j.1a, 21.139: NOTHING IN THIS WORLD COULD ISSUE AN INSTRUMENT.** The instrument table
+        // was whatever the assembly built and it never changed while the world ran, so no treasury
+        // could auction a bill it had not got. Here one reads what falls due on it, finds it short,
+        // and the line, the units, the book and the schedule all come into existence together.
+        let mut w = World::empty();
+        let region = crate::ids::RegionId::at(0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        w.registry.profile_for(
+            kinds::CENTRAL_BANK,
+            crate::registry::KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false },
+        );
+        w.registry.profile_for(
+            kinds::TREASURY,
+            crate::registry::KindProfile {
+                issues_money: false,
+                banks: Banks::AtTheCentralBank,
+                issues_paper: true,
+            },
+        );
+        let reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        let treasury = w.admit(kinds::TREASURY, region, cb, Representation::Named, 1, 0);
+        // It has a little money and owes a lot this period, so it is short.
+        w.register.money_delta(treasury, reserves, 100.0);
+        let old = w.instruments.issue(treasury, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, Some(crate::calendar::Day(7)));
+        w.schedules.owes(old, treasury, crate::calendar::Day(3), 900.0, crate::stores::Owing::Principal);
+        for (id, value, dimension) in [
+            ("test.funding.tenor", 26.0, crate::params::Dimension::Periods),
+            ("test.funding.coupon", 0.04, crate::params::Dimension::PerAnnum),
+            ("test.funding.buffer", 2.0, crate::params::Dimension::Amount(crate::params::Denomination::Money)),
+        ] {
+            w.params.declare(crate::params::ParamDecl {
+                id: id.to_string(),
+                value,
+                unit: "stated".to_string(),
+                dimension,
+                kind: crate::params::Kind::Technology,
+                owner: crate::params::Owner::StandardSetter,
+                why: "what this test funds against".to_string(),
+            });
+        }
+
+        let lines_before = w.instruments.len();
+        let books_before = w.books.len();
+        let f = Funds;
+        let systems: Vec<&dyn System> = vec![&f];
+        w.wire_up(&systems);
+        w.step(&systems);
+
+        // A line that did not exist, a book for it, and what it owes — one act.
+        assert_eq!(w.instruments.len(), lines_before + 1, "it brought paper");
+        assert_eq!(w.books.len(), books_before + 1, "and a book opened for it");
+        let brought = InstrumentId::at(lines_before as u32);
+        assert_eq!(w.instruments.issuer_of(brought), treasury);
+        // 5 A4: its own paper on its own book. It holds what it brought and owes nothing yet —
+        // what it owes starts when somebody else comes to hold one.
+        assert!(w.register.quantity(w.register.row(treasury, brought)) > 0.0);
+        // 5 D2: and the coupon and the principal are written down at issue.
+        assert_eq!(w.schedules.of_instrument(brought).len(), 2);
+        assert!(w.schedules.outstanding(brought) > 0.0);
+    }
+
+    struct Fails;
+    impl System for Fails {
+        fn name(&self) -> &'static str {
+            "mortality"
+        }
+        fn phases(&self) -> Vec<PhaseDecl> {
+            vec![phase(3, 3, Anchor::After(REVALUATION))]
+        }
+        fn mechanism(&self) -> Option<&dyn Mechanism> {
+            Some(&FAILING)
+        }
+    }
+    static FAILING: crate::running::Failing = crate::running::Failing { says: 0 };
+
+    #[test]
+    fn a_party_whose_liabilities_exceed_its_assets_ceases_and_the_one_exception_is_a_consequence() {
+        // **XI-3, Appendix B: nothing is immortal — and nothing in this world had ever died.** The
+        // mortality row counted who was alive, which is the opposite of the read it is for.
+        let mut w = World::empty();
+        let region = crate::ids::RegionId::at(0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        w.registry.profile_for(
+            kinds::CENTRAL_BANK,
+            crate::registry::KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false },
+        );
+        w.registry.profile_for(
+            kinds::FIRM,
+            crate::registry::KindProfile {
+                issues_money: false,
+                banks: Banks::AtACommercialBank,
+                issues_paper: true,
+            },
+        );
+        let _reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        let broke = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
+        let sound = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
+        let holder = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
+
+        // 5 A4: what it owes is what OTHERS hold of what it issued. One firm's paper is out and it
+        // holds nothing; the other holds something and has issued nothing.
+        let paper = w.instruments.issue(broke, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, None);
+        w.register.credit(holder, paper, 500.0, 1.0, 0);
+        let good = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
+        w.register.credit(sound, good, 10.0, 3.0, 0);
+
+        let f = Fails;
+        let systems: Vec<&dyn System> = vec![&f];
+        w.wire_up(&systems);
+        w.step(&systems);
+
+        assert!(!w.parties.alive(broke), "what it owes is more than what it has");
+        assert!(w.parties.alive(sound), "and a firm that owes nothing does not die of it");
+        // §31 A1.a: the exception is a CONSEQUENCE of what it issues, not a rule relaxed for it —
+        // the central bank has issued money everybody holds and cannot run out of what it creates.
+        assert!(w.parties.alive(cb), "a central bank cannot fail in its own money");
+    }
+
+    #[test]
+    fn a_participant_can_see_what_falls_due_on_it() {
+        // **XI-9, 21j.1.** A view could read what a party held and not what it owed, so nothing in
+        // this world had a funding constraint that bound. Observer A4: its OWN obligations, and what
+        // falls due to it read off the lines it holds.
+        let mut w = World::empty();
+        let region = crate::ids::RegionId::at(0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        let borrower = w.parties.add(kinds::FIRM, region, cb, Representation::Named, 1, 0);
+        let lender = w.parties.add(kinds::BANK, region, cb, Representation::Named, 1, 0);
+        let loan = w.instruments.issue(borrower, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, None);
+        w.register.credit(lender, loan, 1.0, 1_000.0, 0);
+        w.schedules.owes(loan, borrower, crate::calendar::Day(5), 40.0, crate::stores::Owing::Interest);
+        w.schedules.owes(loan, borrower, crate::calendar::Day(99), 1_000.0, crate::stores::Owing::Principal);
+
+        let seen = |who: PartyId| {
+            ParticipantView::of(who, &w.register, &w.prints, &w.journal, &w.params, 1, None)
+                .owing(&w.schedules)
+        };
+        // The borrower owes the coupon by day 5 and everything by day 99.
+        assert_eq!(seen(borrower).owes_by(crate::calendar::Day(5)), 40.0);
+        assert_eq!(seen(borrower).owes_by(crate::calendar::Day(99)), 1_040.0);
+        // And the lender, which HOLDS the loan, is owed exactly the same — one fact, read from the
+        // two ends, and never a second list of who is owed what.
+        assert_eq!(seen(lender).owed_to_it_by(crate::calendar::Day(99)), 1_040.0);
+        // Neither is owed what it owes itself.
+        assert_eq!(seen(borrower).owed_to_it_by(crate::calendar::Day(99)), 0.0);
+        // A view built without the schedules answers nothing, which a caller must not read as a
+        // party owing nothing.
+        let blind = ParticipantView::of(borrower, &w.register, &w.prints, &w.journal, &w.params, 1, None);
+        assert_eq!(blind.owes_by(crate::calendar::Day(99)), 0.0);
     }
 
     #[test]

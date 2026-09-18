@@ -165,6 +165,187 @@ impl Mechanism for Servicing {
     }
 }
 
+/// **§30 D1, D3, XI-9, 21j.1a: A PARTY SHORT OF MONEY BRINGS PAPER.**
+///
+/// Nothing in this world could bring an obligation into existence (21.139), so the sovereign funding
+/// constraint — sequencing step 3 — bound on nothing: the treasury auctioned a line the assembly had
+/// made for it, in a size that was a literal. Now a party that is short reads what it is short of and
+/// ISSUES a bill for it, which the market then takes or does not (D5: an auction can fail).
+///
+/// **Law 15: it never asks what a party is.** Which kinds fund a shortfall this way is a PROFILE the
+/// registry holds (`KindProfile::issues_paper`) — a treasury auctions, a firm brings a bond, a
+/// household cannot — and this walks the parties whose profile says so.
+pub struct Funding {
+    /// One calendar (G3.a): how long a period is, so the window is read from DATES.
+    pub days_per_period: i64,
+    /// 5 C3.a: how long the paper runs. A market CONVENTION about the tenor it brings, declared as a
+    /// technology and read through `params` — not a choice this mechanism makes for anybody.
+    pub tenor: &'static str,
+    /// The coupon the paper carries, as a term (5 C4.b). It is a term and not a price: what the
+    /// paper is WORTH is what the auction crosses at (Law 3).
+    pub coupon: &'static str,
+    /// §30 D4.b: the buffer the issuer keeps back.
+    pub buffer: &'static str,
+    pub says: u32,
+}
+
+impl Mechanism for Funding {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::instruments::Class;
+        let now = ctx.period();
+        let from = crate::calendar::Day(now as i64 * self.days_per_period);
+        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        let periods = ctx.params().periods(self.tenor);
+        let coupon = ctx.params().per_annum(self.coupon);
+        let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
+
+        let mut bringing: Vec<(PartyId, crate::ids::CurrencyCode, f64)> = Vec::new();
+        for p in 0..ctx.parties().len() {
+            let who = PartyId::at(p as u32);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Law 15: the profile answers, and a kind with none is a kind nobody has said this of —
+            // which is missing rather than a no.
+            let kind = ctx.parties().kind_of(who);
+            match ctx.registry().profile(kind) {
+                Some(profile) if profile.issues_paper => {}
+                _ => continue,
+            }
+            // Law 19: its own position. What falls due on it, what falls due to it, what it has.
+            let owes: f64 = ctx
+                .schedules()
+                .of_payer(who)
+                .iter()
+                .map(|r| crate::stores::DueId(*r))
+                .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .map(|d| ctx.schedules().amount(d))
+                .sum();
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            let cash = ctx.register().quantity(ctx.register().row(who, money));
+            // D1: outlays against what it has, plus what it needs to get back to its own buffer.
+            // A party short of nothing brings nothing — not a floor under the size, the absence of a
+            // reason to issue at all.
+            let short = crate::mechanisms::treasury::must_raise(owes, 0.0, cash, buffer);
+            if short <= 0.0 {
+                continue;
+            }
+            bringing.push((who, ctx.instruments().ccy_of(money), short));
+        }
+
+        for (who, ccy, short) in bringing {
+            // 5 C3.a: it matures on a DATE, so the maturity wall is spread by the dates and not by a
+            // count of periods (G3.a).
+            let matures = crate::calendar::Day(from.0 + (periods as i64) * self.days_per_period);
+            // 5 D2: and it owes its coupon and its principal, written down at issue. The coupon is
+            // the annual rate over the years the paper runs, from the dates (Law 8).
+            let years = (matures.0 - from.0) as f64 / 365.0;
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: Class::Claim,
+                unit: crate::ids::UnitId::at(0),
+                coupon: Some(coupon),
+                matures: Some(matures),
+                units: short,
+                book: Some(crate::clearing::PriceRule::BuyersCompete),
+                owing: vec![
+                    (matures, short * coupon * years, crate::stores::Owing::Interest),
+                    (matures, short, crate::stores::Owing::Principal),
+                ],
+            });
+            ctx.say(self.says, &[who.0], &[(0, Value::Num(short))], true);
+        }
+    }
+}
+
+/// **XI-3, Appendix B: NOTHING IS IMMORTAL — and nothing in this world had ever died.**
+///
+/// The mortality row counted how many parties were alive, which is a true number and the opposite of
+/// the read the system is for (21j.3a). `mortality::Trigger` names how each kind fails and
+/// `MechanismContext::ceases` has been the door all along; what was missing was anybody reading the
+/// state and deciding.
+///
+/// **What it reads is what it owes against what it holds** (5 A4, `instruments::equity`): what others
+/// hold of what it issued, plus what its estate owes, against everything on its own rows. A party
+/// whose liabilities exceed its assets has failed, and that is an EVENT with a date rather than a
+/// number that quietly goes negative.
+///
+/// **The one exception is a consequence, not a rule** (§31 A1.a). A party that banks NOWHERE issues
+/// the money everybody else settles in, so it can never run out of what it alone creates. That is
+/// read off the kind's PROFILE — the reason, not the name (Law 15) — and it is bounded to that money:
+/// such a party can still make a loss, and the loss is real.
+pub struct Failing {
+    pub says: u32,
+}
+
+impl Mechanism for Failing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut gone: Vec<(PartyId, f64)> = Vec::new();
+        for p in 0..ctx.parties().len() {
+            let who = PartyId::at(p as u32);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // §31 A1.a: it cannot run out of what it alone issues. The profile says which party that
+            // is, and it says so by naming the REASON — it banks nowhere because everybody else
+            // settles in its money.
+            let kind = ctx.parties().kind_of(who);
+            if matches!(
+                ctx.registry().profile(kind),
+                Some(profile) if profile.banks == crate::registry::Banks::Nowhere
+            ) {
+                continue;
+            }
+            let worth = crate::instruments::equity(who, ctx.register(), ctx.instruments(), ctx.claims());
+            if worth >= 0.0 {
+                continue;
+            }
+            gone.push((who, worth));
+        }
+        for (who, worth) in gone {
+            // XI-8: what it HELD is the estate's, and this records only that its life ended — the
+            // estate machinery is what pays its claimants in rank order.
+            ctx.ceases(who);
+            ctx.say(self.says, &[who.0], &[(0, Value::Num(worth))], true);
+        }
+    }
+}
+
+/// **XI-7, §22: THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.**
+///
+/// The benchmarks row counted how many lines printed — an honest count, and not the read a benchmark
+/// is for (21j.3a). A benchmark FIXES: it reads what the overnight book actually cleared at and
+/// publishes that, and where the book ran and nothing crossed it publishes **nothing**, because a
+/// carried price is not a rate anybody transacted at this period.
+///
+/// Appendix B: *no posted benchmark.* Publishing a carried number would be exactly that — the
+/// corridor as decoration, with the money market's own price unused — so the absence is the mechanism
+/// rather than a gap in it.
+pub struct Fixes {
+    /// The overnight book. `Missing` where this world has no overnight line — and then there is
+    /// nothing to fix on, which is an answer.
+    pub on: Option<crate::ids::MarketId>,
+    pub says: u32,
+}
+
+impl Mechanism for Fixes {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let Some(book) = self.on else { return };
+        let line = crate::ids::InstrumentId::at(book.0);
+        let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
+        // XI-7: only a CLEARED print is a fixing. A carried or seeded one is refused here, which is
+        // the whole of what "a transacted rate" means.
+        let Some(fixing) = crate::mechanisms::benchmarks::fix(&print) else { return };
+        ctx.say(
+            self.says,
+            &[],
+            &[(0, Value::Num(fixing.rate)), (1, Value::Num(f64::from(fixing.period)))],
+            true,
+        );
+    }
+}
+
 /// **§39, XI-10: AN ENGAGEMENT IS A RELATION, AND A WAGE IS WHAT IT PAYS.**
 ///
 /// The employment module's `Engagement` had nowhere to live, so nobody was ever paid by one. It lives
@@ -872,6 +1053,14 @@ impl Mechanism for Closing {
             ctx.say(self.says, &[owner], &[(0, Value::Num(size))], true);
         }
     }
+
+    /// 21j.4: **the same absence the other way up.** A closer is a real mechanism and it closes
+    /// nothing, because nothing OPENS four of the seven processes it waits on — so what it publishes
+    /// every period is how many closed, which is a count. It leaves the census when something opens
+    /// one.
+    fn only_counts(&self) -> bool {
+        true
+    }
 }
 
 /// **A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.**
@@ -917,6 +1106,12 @@ impl Mechanism for Reads {
         };
         // Observer A3: a read over what the books produced is PUBLIC. That is what a benchmark is.
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
+    }
+
+    /// 21j.4: this is the census. A `Reads` row is exactly the shape the count is of — an honest
+    /// count of something real, no decision and no write.
+    fn only_counts(&self) -> bool {
+        true
     }
 }
 

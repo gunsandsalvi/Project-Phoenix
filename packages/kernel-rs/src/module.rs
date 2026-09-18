@@ -11,6 +11,7 @@
 //! not a holder. A module cannot read a rival's book by accident, and the test below is what says
 //! so — where TypeScript could only pass a context and hope.
 
+use crate::calendar::Day;
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
 use crate::instruments::Instruments;
 use crate::journal::{Journal, Value};
@@ -36,6 +37,10 @@ pub struct ParticipantView<'a> {
     /// true: there is no argument here that could make it somebody else's (Observer A4). A view
     /// built without it answers *no relations*, which is what a caller that has none can say.
     agreements: Option<&'a Agreements>,
+    /// XI-9, 21j.1: **what it owes and is owed, by date.** Given alongside the agreements for the
+    /// same reason — most callers have neither, and a view without them answers nothing rather than
+    /// answering that this party owes nothing.
+    schedules: Option<&'a Schedules>,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -48,7 +53,13 @@ impl<'a> ParticipantView<'a> {
         period: u32,
         cash: Option<InstrumentId>,
     ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, agreements: None }
+        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None }
+    }
+
+    /// XI-9, 21j.1: the same view, able to answer what falls due for it and to it.
+    pub fn owing(mut self, schedules: &'a Schedules) -> Self {
+        self.schedules = Some(schedules);
+        self
     }
 
     /// The same view, able to answer what this party has AGREED. It is a second constructor rather
@@ -141,6 +152,37 @@ impl<'a> ParticipantView<'a> {
             || self.journal.subjects_of(row).contains(&self.who.0)
     }
 
+    /// **XI-9, 5 D2, 21j.1: WHAT THIS PARTY MUST FIND BY A DATE.** A participant that cannot see what
+    /// falls due cannot decide anything about money it has to go and get — which is why the treasury
+    /// of this world auctioned a literal, and why nothing anywhere had a funding constraint that
+    /// bound. It is the schedules half of what `MechanismContext::wire()` is for the history.
+    ///
+    /// Observer A4: its OWN obligations. There is no argument here that could make it somebody
+    /// else's, and a view built without the schedules answers nothing — which a caller must not read
+    /// as a party owing nothing.
+    pub fn owes_by(&self, day: Day) -> f64 {
+        let Some(all) = self.schedules else { return 0.0 };
+        all.of_payer(self.who)
+            .iter()
+            .map(|r| crate::stores::DueId(*r))
+            .filter(|d| !all.paid(*d) && all.due(*d) <= day)
+            .map(|d| all.amount(d))
+            .sum()
+    }
+
+    /// And what it expects to RECEIVE by then — read off the lines it holds, because whoever holds a
+    /// line is who is owed (Appendix B: no liability without a beneficiary, and never a second list
+    /// of who is owed what). The two together are the funding gap a party can actually see.
+    pub fn owed_to_it_by(&self, day: Day) -> f64 {
+        let Some(all) = self.schedules else { return 0.0 };
+        self.holdings()
+            .map(|row| self.register.instrument_of(row))
+            .flat_map(|line| all.of_instrument(line).iter().map(|r| crate::stores::DueId(*r)))
+            .filter(|d| !all.paid(*d) && all.due(*d) <= day && all.owed_by(*d) != self.who)
+            .map(|d| all.amount(d))
+            .sum()
+    }
+
     /// Law 18: the versions of what this view reads, for a caller keeping an answer across a walk.
     /// They are not facts about the world and no decision may be taken from them.
     pub fn versions(&self) -> (u64, u64) {
@@ -223,6 +265,42 @@ pub struct MechanismContext<'a> {
     finished: Vec<crate::stores::BatchId>,
     stood: Vec<(u32, PartyId, Vec<f64>)>,
     split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
+    issued: Vec<Brings>,
+}
+
+/// **21j.1a, 21.139: A MODULE ASKS FOR AN OBLIGATION TO COME INTO EXISTENCE.**
+///
+/// The set of instruments was whatever the assembly built and it did not change while the world ran.
+/// `Leg::Create` makes UNITS of a line that already exists — which is what production is (§37) — so a
+/// firm could not bring paper, a bank could not write a loan as a row, a treasury could not auction a
+/// bill it had not got, a pool could not cut a note and a company could not float. Every
+/// `instruments.issue` call in the tree was in a test or a bench.
+///
+/// **It is one act and not four.** Bringing paper is: the line exists, the issuer holds what it
+/// brought, a book opens for it, and what it owes is written down. A door that issued a line and left
+/// the other three to the caller would be four writers of one event, and the first caller to forget
+/// the schedule would have written a claim nobody can fall behind on (5 D2).
+///
+/// Law 4 decides who WRITES: the kernel owns the instrument table, the register, the books and the
+/// schedules, so a module asks and the kernel does it — exactly as `ceases` and `is_owed` already do.
+pub struct Brings {
+    pub issuer: PartyId,
+    pub ccy: crate::ids::CurrencyCode,
+    pub class: crate::instruments::Class,
+    pub unit: crate::ids::UnitId,
+    /// 5 C4.b: a TERM, fixed for the life of the instrument. `None` where it pays no coupon.
+    pub coupon: Option<f64>,
+    pub matures: Option<crate::calendar::Day>,
+    /// How many units of it come into existence on the issuer's own book. It did not BUY them, so
+    /// they carry no cost: what it owes is what others come to hold of it (5 A4), and that starts
+    /// the moment it sells one.
+    pub units: f64,
+    /// Clearing B1: whether a book opens for it, and under which rule. `None` for a line that is not
+    /// traded — a loan row is held by the lender that wrote it and is nobody else's to bid for.
+    pub book: Option<crate::clearing::PriceRule>,
+    /// 5 D2: **what it owes and when.** A claim with terms and no schedule is a claim nobody can
+    /// fall behind on, which is why every maturity in the old world arrived at once.
+    pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -301,6 +379,7 @@ impl<'a> MechanismContext<'a> {
             finished: Vec::new(),
             stood: Vec::new(),
             split: Vec::new(),
+            issued: Vec::new(),
         }
     }
 
@@ -452,6 +531,13 @@ impl<'a> MechanismContext<'a> {
         self.stood.push((kind, who, terms));
     }
 
+    /// **21j.1a, 21.139: bring an obligation into existence.** The line, the units on the issuer's
+    /// own book, the book it trades in and what it owes — one act, because they are one event and
+    /// four writers of it is how a claim nobody can fall behind on gets written.
+    pub fn brings(&mut self, what: Brings) {
+        self.issued.push(what);
+    }
+
     /// **XI-15, Labour A4.c: an event that applies to SOME of a cell splits it**, and the relationship
     /// that applies to them goes with them. A module names the members and the relation; the kernel
     /// makes the cell, moves their exact share of what the parent holds, carries their outlook, and
@@ -479,6 +565,7 @@ impl<'a> MechanismContext<'a> {
             finished: self.finished,
             stood: self.stood,
             split: self.split,
+            issued: self.issued,
         }
     }
 }
@@ -509,6 +596,9 @@ pub struct Taken {
     /// XI-15, 21h: cells that an event applies to part of — the parent, how many members it takes,
     /// and the relationship those members carry with them. `Parties` is the one writer of a weight.
     pub split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
+    /// 21j.1a, 21.139: obligations a module asked to bring into existence. The kernel owns the
+    /// instrument table, the register, the books and the schedules, so a module asks (Law 4).
+    pub issued: Vec<Brings>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.
@@ -517,6 +607,18 @@ pub struct Taken {
 /// mechanism that has nothing to do this period proposes nothing, which is an answer and not a gap.
 pub trait Mechanism {
     fn run(&self, ctx: &mut MechanismContext<'_>);
+
+    /// **21j.4: whether all this system does is COUNT something.** The third register, beside the
+    /// homeless nouns and the shapes: a count that must fall and that somebody has to be able to see.
+    ///
+    /// Twenty-five of the forty-seven rows in `systems.rs` publish an honest count of something real
+    /// and take no decision and write nothing — which is not a lie, and is not the read the system is
+    /// FOR. A rating agency that counts who is alive has not graded anybody. Declaring it here, on
+    /// the mechanism itself, is what lets the census be a read rather than a list somebody maintains
+    /// beside the wiring (Law 19).
+    fn only_counts(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
