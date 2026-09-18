@@ -17257,3 +17257,44 @@ a float without its dust is the same defect as widening one, seen from the other
 
 **Six laws as tests. A hundred and twenty-three now hold; clippy clean; `phoenix-check` green over
 36 files.**
+
+# 0g.42 item 11 — bank capital, raisable and losable (§25)
+
+`packages/kernel-rs/src/mechanisms/bank_capital.rs`. Fourteenth module of forty-seven, and the one
+Part XIII puts here because a bank whose capital cannot be raised has only one way to end.
+
+**Capital is read, never stored.** `Position::capital()` subtracts liabilities from what the assets
+are carried at, at the read. There is no field a loss is taken out of (A1.a), and the test that says
+so books the loss against the ASSET and finds the residual moved by exactly that, on derived dust.
+
+**Which rule binds is an outcome (B1.c).** Two banks, the same two rules, different answers: the one
+holding claims on a party that cannot fail weighs almost nothing and is stopped by the leverage
+backstop; the one whose book is lending is stopped by the weighted rule. `Weight::on` asks the single
+question that decides a weight — can the counterparty fail? (B1.a, XI-3) — and branches on no kind
+(Law 15). A zero-weighted asset is not unlimited room: the weighted rule says nothing about it and
+the backstop is then the only thing that speaks, which is what a backstop is for.
+
+**Both failures exist and stay apart (C1.a).** `Trigger` has four states because solvent-and-illiquid
+and insolvent-and-liquid are different events with different remedies; collapsing them would leave a
+bank one way to fail.
+
+**A recapitalisation can fail (C2.b).** `recapitalise` answers `None` when the bids do not cover the
+hole. New money is priced by whoever provides it, so the same hole filled at a worse price leaves the
+incumbents holding less — that difference IS the dilution, and no formula sets it.
+
+**The ladder, and what a missing rung costs.** `absorb` walks equity, then subordinated, then senior,
+by subtraction and never by a clamp. The test runs the same hole against a stack with the
+subordinated layer and without it: with it, senior paper is untouched; without it, senior is bailed
+in — A2.b's "one layer short at the top and one over-punished in the middle", measured. A hole deeper
+than the whole stack leaves `unpaid`, carried out to the insurer (D4) and then the public purse (D5)
+rather than vanishing as a residual with no holder.
+
+**The insurance limit is per member (D4).** 100,000 across 10,000 members is covered in full; the
+same 100,000 across 100 members is covered to 5,000. A limit against the cell's total would have
+covered 50 in both and left the small depositors — the ones the insurance exists for — uninsured.
+
+`no_creditor_worse_off` (D2.a) and `Conservation::conserves` (E3) are VERIFYs: they measure and
+answer false. Neither has a path that tops anybody up, and both take Law 7 dust rather than a band.
+
+**Thirteen laws as tests. A hundred and thirty-eight now hold; clippy clean; `phoenix-check` green
+over 37 files.**

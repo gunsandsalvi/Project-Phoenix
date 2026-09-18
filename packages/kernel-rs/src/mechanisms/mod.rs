@@ -2,6 +2,7 @@
 //! units, params, phases, participants, audit contributions and seed contribution, and it reaches
 //! the kernel ONLY through `module.rs`'s doors — never by importing another module (Law 15).
 
+pub mod bank_capital;
 pub mod capital_programme;
 pub mod cost_of_capital;
 pub mod dealing;
