@@ -17425,3 +17425,51 @@ the same amount, against Law 7 dust, and repairs nothing.
 
 **Nineteen laws as tests. A hundred and eighty-four now hold; clippy clean; `phoenix-check` green over
 42 files. Eighteen of forty-seven modules ported.**
+
+# 0g.42 item 13 — employment (XI-10), securitisation (XI-11), housing (§40), corporate control (§35)
+
+Four modules in one item, because Part XIII puts them together and each is short once the kernel it
+leans on exists. Nineteen to twenty-two of forty-seven.
+
+**`employment.rs`.** `Engagement` is a ROW with both parties named on it, a wage and a start date, and
+every aggregate — the wage bill, the headcount, the unemployment rate — is a walk over those rows.
+There is no count to increment, which is what XI-10 says a headcount cannot do: with one there is no
+contract for stickiness to be a consequence of, nothing a severance payment could sever, no household
+that can be told its earner lost a job, and no owner for a quit or a vacancy withdrawal. `Ended` tells
+a quit from a dismissal from an employer that ceased, and `owed` prices each: firing costs, quitting
+does not, and a dead employer's severance is still owed and ranks in the estate. The matching clears
+ON THE WAGE — highest bids first, pro rata within a tie, and the bid that took the last match is the
+print — so an offer above the going rate fills more than one below it, which a single fill ratio
+applied identically to every employer would not. Supply moves by PEOPLE moving, entering at the
+bottom, limited by how many there are on each side rather than by a cap.
+
+**`securitisation.rs`.** The four objects XI-11 requires: a `Vehicle` that is a party, a `Transfer`
+that moves loan ROWS (a loan that is a field on a balance sheet cannot be here at all), `Tranche`
+with a stated attachment, and named `Holding`s. `allocate` takes REALISED losses on named loans —
+there is no rate in the module, because tranching a loss rate yields senior notes that can never be
+touched. The test the system exists for: 300 of realised loss wipes equity and mezzanine and reaches
+150 into the senior notes, and `onto_holders` hits four named parties at once. A loss past the top of
+the deal is returned as `beyond` rather than absorbed silently — a residual with no holder is a
+defect.
+
+**`housing.rs`.** Location is on the dwelling, so a bid here does not reach an offer there and there
+is no single housing market. The reservation is what the seller must fetch to discharge its own
+mortgage and never below build cost — a fact about that seller, not a floor on the price. A book where
+no bid reaches any reservation prints NOTHING, which is B4's falling market where volumes collapse
+before prices do, and `sample` publishes how much of the offered stock the print came from (B4.a).
+`standard` is read from the lender's own worst loan-to-value, headroom and hurdle: a tighter standard
+lowers what a buyer can bid, which is C5.b's loop and therefore the housing cycle. `foreclose` MOVES
+the dwelling to the lender and returns it to the book as an offer — the extra supply that makes a
+falling price fall further, and the loop a loss rate deletes.
+
+**`control.rs`.** Every deal starts as a funded `Bid` from a named acquirer and ends when dispersed
+owners individually accept: `Outcome` has `Refused` and `Unfunded` beside `Accepted`, because B2.a's
+refusal and B3's credit market are results. `worth_to` is the acquirer's own hurdle, so two bidders
+reach different numbers and B4's contest is possible. Management's resistance comes out of the price
+reaching the owners, which is the corporate-control problem stated as arithmetic: the same bid clears
+unopposed and fails defended. `Combined` carries the claimed synergy SEPARATELY from the summed flows,
+so whether it materialised is a subtraction (E3, D1). `Debt` has three answers and none is
+disappearance.
+
+**Forty-nine laws as tests. Two hundred and thirty-three now hold; clippy clean; `phoenix-check` green
+over 46 files. Twenty-two of forty-seven modules ported.**
