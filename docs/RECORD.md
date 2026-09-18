@@ -18006,3 +18006,55 @@ they are `Plain`, with the reason written where the declaration is made.
 
 **Twenty-two laws as tests. Six hundred and fourteen now hold; clippy clean; `phoenix-check` green over
 76 files.**
+
+# 0g.42e — the wiring: the world steps, and every ported module is a row in it
+
+`packages/kernel-rs/src/assembly.rs` and `src/systems.rs`. Until now the fifty modules were mechanism
+logic with their laws as tests and **nothing ran them**: the world bench stepped one synthetic
+participant. This is the door being hung.
+
+**`assembly.rs` is the contract.** A `System` declares its phases and its participants and nothing
+else — the kernel owns every store, and `World::step` asks the systems for participants, indexes the
+books once a cycle (`Books::index`, one question per party per declaration, never one per book), runs
+each book through the ordinary session and returns what happened. A book's cash leg is asserted to be
+MONEY somebody issued, so a book paid for in something else cannot be opened (Money A2.b).
+
+**`systems.rs` is the list, and adding a system is a row.** Fifty rows, one per ported module. Seven
+carry participants, because seven have a REASON to post:
+
+- `GoodsSellers` — a firm is in a line's book because it HOLDS that line, read off its own rows.
+- `HouseholdBuyers` — it bids for what it can actually fund; a household with no money is in no book,
+  which is not a rule about households but what having nothing to pay with means.
+- `MoneyMarketBanks` — the schedule comes from the bank's own reserves against its own buffer, so a
+  short bank bids and a flush one offers **and which is which is the book's answer, not the rule's**.
+- `Dealers` — the inventory SKEWS the quote (long bids lower and offers lower), and at its limit the
+  desk stops quoting rather than absorbing more. Both are tested.
+- `FundMandates` — a line outside the mandate cannot be bought whatever it is worth.
+- `InsurerMatching` — the structural one-way bid for long paper.
+- `TreasuryIssues` — it chooses the size and the tenor, never the price.
+
+**The other forty-three post nothing, and that is not a gap.** The benchmarks, the ratings, the
+observer surface, reporting, the second opinion, the audit families and the event systems are READS
+over what the books produced. Handing one of them a schedule would be inventing demand nobody has
+(Appendix B: no demand added to clear), and the test that says so asserts a read has no participants.
+
+**Three defects of mine, each caught by a test rather than by reading:**
+
+*I claimed 47 rows and wrote 50.* The spec has forty-seven systems and the port has fifty modules, and
+the difference is not slack: §37 is two modules (the recipe that makes a thing, the market that sells
+it), §20 and §21 share `commodities`, and XI-7 shares `benchmarks` with §22. The assertion now counts
+what is actually wired and says why the numbers differ.
+
+*Every system declared its phase under the same name*, so the second one threw `Law 4: a phase is
+declared twice`. Each declaration now has its own slot.
+
+*And the slots started at zero — which IS the corporate-actions moment.* The kernel's three moments own
+the first three declaration names, so slot 0 was not a new phase but that moment declared twice.
+`FIRST_SLOT` is 3, with the reason written where it is defined.
+
+**The test that matters**: a firm holding four hundred loaves, a household holding six hundred of
+money, one book, one step — `books_cleared 1`, trades settled, and **the household holds bread it did
+not hold before**. The wiring is real: parties, a book, and a period that actually trades.
+
+**Twelve laws as tests. Six hundred and twenty-seven now hold; clippy clean; `phoenix-check` green over
+78 files.**
