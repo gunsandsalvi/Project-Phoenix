@@ -17577,3 +17577,36 @@ carries the earliest acquisition, read from lots that exist because the stock is
 
 **Fourteen laws as tests. Two hundred and sixty-eight now hold; clippy clean; `phoenix-check` green
 over 49 files. Twenty-five of forty-seven modules ported.**
+
+# 0g.42 — households (§41)
+
+`packages/kernel-rs/src/mechanisms/households.rs`. Twenty-sixth module, and the largest holder class
+in the model.
+
+**A2.g is the test that matters, and it is in the file.** Two populations with the SAME weighted mean
+income, one tight and one spread, against the same debt service: the mean is identical and the
+weighted count of crossings goes from zero to five hundred. That is the measurement which proves the
+representation is a distribution and not an average wearing a distribution's clothes — and with one
+representative agent it cannot be run at all.
+
+**Every read evaluates per cell and weights afterwards.** `Σ f(xᵢ)·wᵢ`, never `f(Σ xᵢ·wᵢ)`: there is
+no door in the module that takes a sector total and returns a decision. The first draft of the
+"same aggregate income, different demand" test asserted the two worlds were EQUAL and then explained
+in a comment why that did not matter — which is a test proving nothing. It now gives the two cells
+their own propensities, as A2.a says they have, and the world that pays the same total to a
+different distribution of households demands less. A representative agent cannot tell those two
+worlds apart.
+
+**Net worth is a read**, and a house price moving changes it without anybody being paid anything (D4).
+`per_member` is computed from the total when asked and stored nowhere (XI-15). `Received` has fields
+only for cash that arrived from named payers, so B3.a's retained earnings have nowhere to be written.
+
+**`prefers` ranks and allots nothing** (D5.a): the deposit, the money fund and bills directly, chosen
+by this cell on what each pays and whether it needs the money liquid. Fund shares issued pro rata and
+never chosen would delete the substitution that is how a policy rate reaches a saver.
+
+**Ageing is an exact split** at the cohort boundary and the weight conserves; more members than the
+cell has cannot cross. Dissolution names an heir, because a residual with no holder is a defect.
+
+**Thirteen laws as tests. Two hundred and eighty-one now hold; clippy clean; `phoenix-check` green
+over 50 files. Twenty-six of forty-seven modules ported.**

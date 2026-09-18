@@ -15,6 +15,7 @@ pub mod estate;
 pub mod expectations;
 pub mod forced_sale;
 pub mod goods;
+pub mod households;
 pub mod housing;
 pub mod lending;
 pub mod loss;
