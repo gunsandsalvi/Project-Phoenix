@@ -18058,3 +18058,36 @@ not hold before**. The wiring is real: parties, a book, and a period that actual
 
 **Twelve laws as tests. Six hundred and twenty-seven now hold; clippy clean; `phoenix-check` green over
 78 files.**
+
+# 0g.45 — THE TYPESCRIPT ENGINE IS DELETED
+
+169,238 lines over 848 files, gone: `packages/engine` (the kernel, the forty-seven mechanism modules,
+the seeds and the suites), `packages/app` (the Vite and Capacitor shell, which imported the engine on
+every page), and the four tools that existed to check TypeScript source — `check-citations`,
+`check-forbids`, `check-deaths` and `tools/eslint-rules` — along with the eslint, vitest and
+playwright configs that had nothing left to run.
+
+**Why now, and on whose call.** I twice said the census could not be compared and that deleting early
+would leave a gap. The owner's answer settles it and is the right reading: **the old engine was full of
+defects this port fixed, the baselines diverged the moment they were fixed, and two engines answering
+differently is Law 4's defect at the largest possible scale.** Keeping a broken reference to compare
+against would have meant preserving the defects in order to reproduce them. Every change from here is
+new work against the Rust engine.
+
+**What the deletion took with it, named rather than mourned:** the TypeScript kernel's own laws (they
+are Rust tests now, 627 of them), the eslint rules (`phoenix-check` carries the bounds, defaults,
+clocks, kind branches, cross-module imports, `@spec` citations and the unfailable-VERIFY rule over 78
+files), and the app shell (0g.44 rebuilds it against WASM and the NDK, which was always the plan).
+
+**What survived, and why.** `tools/plan-progress`, `tools/coverage-existence`, `tools/spec-index` and
+`tools/plan-gaps` read `docs/`, not source, so they still answer. `tools/spec-coverage` was half
+engine-scanner and half doc-reader: the scanning half is deleted, the half that reads
+`docs/COVERAGE.md` is what the other two import, and the file now says so at the top rather than
+leaving a reader to wonder where the rest went.
+
+**`npm run check` is now the Rust gate**: `check:laws` (phoenix-check), `check:tests` (cargo test),
+`check:existence` and `plan:check`. `check:clippy` is there for the same reason it always was. The old
+pipeline's `world 1`, `check:opens`, `lint`, `typecheck` and `test` named things that no longer exist,
+and a script that names a deleted file is a stale doc (Law 16).
+
+**One engine. 627 laws hold; clippy clean; phoenix-check green over 78 files.**

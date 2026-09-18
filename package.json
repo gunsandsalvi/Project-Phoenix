@@ -2,53 +2,29 @@
   "name": "project-phoenix",
   "private": true,
   "version": "0.0.1",
-  "description": "Project Phoenix \u2014 a simulated closed-circuit economy",
+  "description": "Project Phoenix — a simulated closed-circuit economy. The engine is Rust (packages/kernel-rs); what remains here reads the docs.",
   "type": "module",
-  "workspaces": [
-    "packages/engine",
-    "packages/app"
-  ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run check:opens && npm run world 1 && npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run check:deaths && npm run check:existence && npm run plan:check",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "typecheck": "tsc -b packages/engine packages/app tools",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "check:spec": "tsx tools/check-citations.ts",
-    "spec:index": "tsx tools/spec-index.ts",
-    "coverage:spec": "tsx tools/spec-coverage.ts",
+    "check": "npm run check:laws && npm run check:tests && npm run check:existence && npm run plan:check",
+    "check:laws": "cargo run --release --quiet --manifest-path tools/phoenix-check/Cargo.toml",
+    "check:tests": "cargo test --release --manifest-path packages/kernel-rs/Cargo.toml",
+    "check:clippy": "cargo clippy --release --all-targets --manifest-path packages/kernel-rs/Cargo.toml -- -D warnings",
+    "check:existence": "tsx tools/coverage-existence.ts --verify",
     "plan:progress": "tsx tools/plan-progress.ts",
     "plan:check": "tsx tools/plan-progress.ts --check",
-    "build": "npm run build --workspace packages/engine && npm run build --workspace packages/app",
-    "dev": "npm run dev --workspace packages/app",
-    "e2e": "playwright test",
-    "check:forbids": "tsx tools/check-forbids.ts",
-    "check:deaths": "tsx tools/check-deaths.ts",
-    "check:existence": "tsx tools/coverage-existence.ts --verify",
-    "check:opens": "vitest run packages/engine/test/opens.test.ts",
-    "coverage:reached": "tsx packages/engine/test/reached.ts",
-    "ladder": "tsx packages/engine/test/ladder.ts",
-    "chronicle": "tsx packages/engine/test/chronicle.ts",
     "plan:gaps": "tsx tools/plan-gaps.ts",
-    "world": "tsx --max-old-space-size=12000 packages/engine/test/world.ts"
+    "spec:index": "tsx tools/spec-index.ts",
+    "bench": "cargo build --release --bins --manifest-path packages/kernel-rs/Cargo.toml && packages/kernel-rs/target/release/world-at-scale",
+    "format": "prettier --write docs",
+    "format:check": "prettier --check docs"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
     "@types/node": "^22.19.0",
-    "@vitest/coverage-v8": "^5.0.0",
-    "eslint": "^10.10.0",
-    "fast-check": "^4.9.0",
     "prettier": "^3.9.6",
     "tsx": "^4.20.0",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.70.0",
-    "vitest": "^5.0.0"
+    "typescript": "~5.9.3"
   }
 }
