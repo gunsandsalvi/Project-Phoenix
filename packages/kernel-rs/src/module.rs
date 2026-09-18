@@ -19,7 +19,7 @@ use crate::parties::Parties;
 use crate::params::Params;
 use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
-use crate::stores::{Agreements, DueId, Outlooks, Processes, Schedules};
+use crate::stores::{Agreements, Claims, DueId, Outlooks, Processes, Schedules};
 
 /// Observer A1–A4: ONE PARTY'S own state and the public state. Built for a party, and there is no
 /// door on it that takes another party's id.
@@ -207,12 +207,14 @@ pub struct MechanismContext<'a> {
     schedules: &'a Schedules,
     outlooks: &'a Outlooks,
     processes: &'a Processes,
+    claims: &'a Claims,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
     settled: Vec<DueId>,
     ceased: Vec<PartyId>,
+    claimed: Vec<(PartyId, PartyId, f64, u32)>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -246,6 +248,8 @@ pub struct Stores<'a> {
     pub schedules: &'a Schedules,
     pub outlooks: &'a Outlooks,
     pub processes: &'a Processes,
+    /// XI-8: who is owed what by a dead party, and at what rank.
+    pub claims: &'a Claims,
     /// Money D1: **the wire IS the history.** A mechanism may READ what happened — what it itself
     /// delivered last period, what anybody delivered — and it may not write it: settlement stays the
     /// one writer. Without this a module that needs its own past has to infer it by subtraction,
@@ -267,12 +271,14 @@ impl<'a> MechanismContext<'a> {
             schedules: s.schedules,
             outlooks: s.outlooks,
             processes: s.processes,
+            claims: s.claims,
             wire: s.wire,
             proposed: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
             settled: Vec::new(),
             ceased: Vec::new(),
+            claimed: Vec::new(),
         }
     }
 
@@ -324,6 +330,12 @@ impl<'a> MechanismContext<'a> {
         self.processes
     }
 
+    /// XI-8: who is owed what by an estate, to READ. A module asks for a claim through `claims()`;
+    /// this is the other direction.
+    pub fn claims(&self) -> &Claims {
+        self.claims
+    }
+
     /// Money D1: **what actually happened**, to read and never to write. A module that needs its own
     /// past reads it here rather than inferring it from a balance that moved (Law 19).
     pub fn wire(&self) -> &Settlement {
@@ -367,6 +379,16 @@ impl<'a> MechanismContext<'a> {
         self.ceased.push(who);
     }
 
+    /// **XI-8, Money E1: what somebody is OWED by a party whose life has ended.** A module asks; the
+    /// kernel writes, because `Claims` is the one writer of who is owed what by an estate.
+    ///
+    /// It is the door 21c exists for. An assessment on a dead party that reached the wire as a
+    /// PAYMENT was the state jumping the queue ahead of the creditors the estate exists to pay; a
+    /// claim queues, and the waterfall pays it where its rank puts it.
+    pub fn is_owed(&mut self, on: PartyId, holder: PartyId, owed: f64, ranks: u32) {
+        self.claimed.push((on, holder, owed, ranks));
+    }
+
     /// What the kernel applies once the phase returns.
     pub fn taken(self) -> Taken {
         Taken {
@@ -375,6 +397,7 @@ impl<'a> MechanismContext<'a> {
             formed: self.formed,
             settled: self.settled,
             ceased: self.ceased,
+            claimed: self.claimed,
         }
     }
 }
@@ -389,6 +412,9 @@ pub struct Taken {
     /// XI-3: the parties whose life ended in this phase. What HAPPENS to what they held is the
     /// estate's; this records only that they have ceased, and the kernel is the one writer of it.
     pub ceased: Vec<PartyId>,
+    /// XI-8: who is owed what by a dead party, and at what rank. A module asks; `Claims` is the
+    /// one writer, for the reason every other store has one.
+    pub claimed: Vec<(PartyId, PartyId, f64, u32)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

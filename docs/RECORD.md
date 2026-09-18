@@ -18908,3 +18908,60 @@ says so at the site.
 
 `Fund Shares F3` and `G1` re-marked. **660 tests hold; clippy clean; `phoenix-check` green over 80
 files; `npm run check` green.**
+
+---
+
+## 21c — a tax on an estate is a claim on it, and the fifth store
+
+**The finding, measured on the old engine (21.107).** `estate.spv.bank.a.1` paid the treasury 388
+pieces in period 5 and 388 again in period 6, with a `tax` receipt, and the `flows` family said
+*"paid 388 to treasury.us, who has no claim on it"* (Firm Birth D6). **The estate was right to owe it
+and the treasury was wrong to take it**: an estate pays its claimants IN RANK ORDER (XI-8), and money
+leaving it directly for the state is the state jumping the queue ahead of the creditors the estate
+exists to pay.
+
+**Where the law puts the state.** `Rank::Preferential`, between `Secured` and `Senior`. It is a
+POLICY primitive under Law 2 and the polity owns it (§47): which claims are preferential, and in what
+order, is a legal fact about a jurisdiction and not a modelling choice — so it sits in the enum to be
+MOVED by the mechanism that sets it, never argued about at a call site. **It is a rank and not an
+exemption**, which is the whole of the finding.
+
+**And then the thing that stopped it being buildable: a claim had nowhere to live.** `estate::Claim`
+was a value a function returned and no store kept — so **the only way for anybody to be paid by an
+estate was to be paid directly**, which is exactly what the treasury did. The defect was ontological
+before it was behavioural.
+
+**`Claims` is the fifth kernel store**, and it is a fifth KIND of thing rather than a fifth name for
+one of the four:
+
+- it is **not an agreement**: nobody entered into it, and a tax assessment is owed whether the payer
+  agreed to it or not;
+- it is **not a schedule**: there is no instrument, and it is not due on a date — it is due when the
+  estate pays its rank.
+
+*No liability without beneficiaries* (Appendix B) is what makes it the kernel's rather than a
+module's. A kind is DATA in it (Law 15): the store holds a rank as a number and never orders by it;
+`running::rank_of` is the one place that number becomes the law's ordering.
+
+**Two doors and a payout.** `MechanismContext::is_owed` writes a claim (the kernel is the one writer,
+as with every store); `ctx.claims()` reads them; `running::Ranked` reads the claims standing against
+every party whose life has ended, asks the waterfall what each gets **out of what the estate actually
+has**, and proposes those payments over the ordinary wire. Nothing in it decides a claim, and nothing
+in it asks what KIND of party died — a dead bank and a dead baker pay the same way (Law 15). Law 6: a
+rank is paid what there is, and what there is runs out.
+
+Measured in the test: an estate with 400, a secured creditor owed 100 and the state owed 388 pays the
+secured **100** and the state **300**. Before this, the state took 388 and the secured creditor took
+what was left.
+
+**What it did NOT close.** 21.110 — an estate whose equity account equals its assets exactly, with
+its liabilities not in it at all — is **half answered**: those liabilities now have a store. The
+other half is that `instruments::equity` counts what OTHERS hold of what a party ISSUED, and a claim
+is neither held nor issued, so the read still cannot see it. That half is written back into 21.110.
+
+**The ontology register moved for the first time since it was wired.** Eleven kernel stores, and the
+count of homeless nouns is still zero — but it is zero having been asked about twelve things rather
+than ten, which is what 21d.1b is about.
+
+`Money E1` and `Firm Birth D6` re-marked. **667 tests hold; clippy clean; `phoenix-check` green over
+80 files; `npm run check` green; the full-scale world unchanged at 172.8 ms worst.**

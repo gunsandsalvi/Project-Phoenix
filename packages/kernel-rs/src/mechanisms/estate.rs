@@ -28,6 +28,15 @@ use crate::ids::{InstrumentId, PartyId};
 pub enum Rank {
     /// Paid from what its own collateral fetched, before anything else sees it.
     Secured,
+    /// **Where the law puts the state** (Money E1, XI-8, 21c). It is a POLICY primitive under Law 2
+    /// and the polity owns it (§47): which claims are preferential, and in what order, is a legal
+    /// fact about a jurisdiction and not a modelling choice — so it sits here to be MOVED by the
+    /// mechanism that sets it, never to be argued about at a call site.
+    ///
+    /// It is a rank and not an exemption. The state is a claimant on an estate like any other, and
+    /// the whole of 21c is that it queues: money leaving an estate directly for the state is the
+    /// state jumping ahead of the creditors the estate exists to pay.
+    Preferential,
     Senior,
     /// Trade creditors rank. An estate that collected receivables while these ranked nowhere would
     /// bias every recovery upward by exactly that asymmetry.
@@ -115,6 +124,30 @@ pub fn waterfall(proceeds: f64, claims: &[Claim]) -> Vec<Paid> {
     out
 }
 
+/// **XI-8, Money E1, 21c: WHAT THE STATE IS OWED BY A DEAD PARTY IS A CLAIM ON ITS ESTATE.**
+///
+/// Measured on the old engine (21.107): an estate paid the treasury 388 pieces in period 5 and 388
+/// again in period 6, with a `tax` receipt, and the audit said *"paid 388 to treasury.us, who has no
+/// claim on it"*. The estate was right to OWE it — it held paper that paid interest, and interest
+/// received is taxed — and the treasury was wrong to TAKE it: an estate pays its claimants in rank
+/// order, and money leaving it directly for the state is the state jumping the queue ahead of the
+/// creditors the estate exists to pay.
+///
+/// **This is the door, and there is no other.** An assessment on a party whose life has ended
+/// produces a CLAIM, not a payment, and the waterfall pays it where `Rank::Preferential` puts it.
+/// What decides which it is, is whether the party is ALIVE — a state, not a kind (Law 15): a live
+/// firm pays its tax out of its account, and a dead one queues, and neither is a rule about what
+/// sort of thing it is.
+///
+/// `None` where nothing was assessed: a claim for nothing is not a claim, and a claimant with no
+/// claim would take a share of the rank it stands in.
+pub fn owed_to_the_state(state: PartyId, assessed: f64) -> Option<Claim> {
+    if assessed <= 0.0 {
+        return None;
+    }
+    Some(Claim { holder: state, owed: assessed, ranks: Rank::Preferential })
+}
+
 /// XI-8: what is left after every claim has been paid what there was — **the residual, and it has a
 /// holder.** Equity is last, so a positive residual reaches it; Appendix B forbids a residual with
 /// no holder, which is why this is returned rather than discarded.
@@ -199,5 +232,53 @@ mod tests {
         // Appendix B: what is left over is not discarded. Equity is last, which is what makes it
         // equity, and the residual is what reaches it.
         assert_eq!(residual(180.0, &out), 80.0);
+    }
+
+    #[test]
+    fn a_tax_on_an_estate_is_a_claim_on_it_and_it_queues_where_the_law_puts_it() {
+        // 21c, 21.107: the estate paid the treasury directly and the audit said the treasury had no
+        // claim on it. It has one now, and it stands behind the secured creditor and in front of
+        // everybody else — which is a rank, not an exemption.
+        let treasury = PartyId::at(9);
+        let owed = owed_to_the_state(treasury, 388.0).unwrap();
+        assert_eq!(owed.ranks, Rank::Preferential);
+        assert!(Rank::Secured < Rank::Preferential);
+        assert!(Rank::Preferential < Rank::Senior);
+
+        // 400 of proceeds against a secured 100, the state's 388 and a senior 500: the secured is
+        // paid whole, the state takes what is left of its rank, and the senior gets nothing.
+        let claims = [
+            Claim { holder: PartyId::at(1), owed: 100.0, ranks: Rank::Secured },
+            owed,
+            Claim { holder: PartyId::at(2), owed: 500.0, ranks: Rank::Senior },
+        ];
+        let paid = waterfall(400.0, &claims);
+        let got = |who: PartyId| paid.iter().find(|p| p.holder == who).unwrap().paid;
+        assert_eq!(got(PartyId::at(1)), 100.0);
+        assert_eq!(got(treasury), 300.0);
+        assert_eq!(got(PartyId::at(2)), 0.0);
+        // Appendix B: no residual with no holder — what went out is what there was.
+        assert_eq!(residual(400.0, &paid), 0.0);
+    }
+
+    #[test]
+    fn the_state_queues_behind_the_secured_creditor_rather_than_ahead_of_everybody() {
+        // The defect this exists to make unwriteable: money leaving an estate directly for the state
+        // is the state jumping ahead of the creditors the estate exists to pay. Here 388 of proceeds
+        // against a secured 100 pays the secured FIRST, and the state takes only what is left.
+        let claims = [
+            Claim { holder: PartyId::at(1), owed: 100.0, ranks: Rank::Secured },
+            owed_to_the_state(PartyId::at(9), 388.0).unwrap(),
+        ];
+        let paid = waterfall(388.0, &claims);
+        assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(1)).unwrap().paid, 100.0);
+        assert_eq!(paid.iter().find(|p| p.holder == PartyId::at(9)).unwrap().paid, 288.0);
+    }
+
+    #[test]
+    fn an_assessment_of_nothing_is_not_a_claimant() {
+        // Appendix A: a claim for nothing is not a claim, and a claimant with no claim would take a
+        // share of the rank it stands in.
+        assert!(owed_to_the_state(PartyId::at(9), 0.0).is_none());
     }
 }

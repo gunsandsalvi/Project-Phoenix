@@ -1,4 +1,4 @@
-//! THE FOUR STORES THE MODULES NEEDED AND THE KERNEL DID NOT HAVE.
+//! THE STORES THE MODULES NEEDED AND THE KERNEL DID NOT HAVE.
 //!
 //! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 //!
@@ -513,6 +513,102 @@ impl Processes {
     }
 }
 
+/// **XI-8, Appendix B: WHO IS OWED WHAT BY A PARTY WHOSE LIFE HAS ENDED, AND AT WHAT RANK.**
+///
+/// The fifth kind of thing, and it arrived at 21c. An estate pays its claimants IN RANK ORDER, and
+/// until now there was nowhere for a claimant to stand: `estate::Claim` was a value a function
+/// returned and no store kept, so **the only way for anybody to be paid by an estate was to be paid
+/// directly** — which is the whole of the finding (21.107: the treasury took 388 twice, and the
+/// audit said it had no claim on the estate it took it from).
+///
+/// It is not an agreement: nobody entered into it, and a tax assessment is owed whether the payer
+/// agreed to it or not. It is not a schedule: there is no instrument, and it is not due on a date —
+/// it is due when the estate pays its rank. **No liability without beneficiaries** (Appendix B) is
+/// what makes it the kernel's rather than a module's.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct ClaimId(pub u32);
+
+#[derive(Default)]
+pub struct Claims {
+    /// Whose estate it is a claim ON.
+    on: Vec<u32>,
+    /// And who holds it. Law 5: both sides are named, because a claim on nobody's behalf is not one.
+    holder: Vec<u32>,
+    owed: Vec<f64>,
+    /// XI-8: where it stands. A rank is DATA here — this store does not know what `Preferential`
+    /// means and never orders by it; the module that owns the waterfall does (Law 15).
+    ranks: Vec<u32>,
+    paid: Vec<f64>,
+    by_estate: HashMap<u32, Vec<u32>>,
+}
+
+impl Claims {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.on.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.on.is_empty()
+    }
+
+    /// The only way to make one. Both parties are named and the amount is positive: a claim for
+    /// nothing is not a claim, and a claimant with no claim would take a share of its rank.
+    pub fn against(&mut self, estate: PartyId, holder: PartyId, owed: f64, ranks: u32) -> ClaimId {
+        assert!(estate != holder, "XI-8: a party is not a claimant on its own estate");
+        assert!(owed > 0.0, "XI-8: a claim for {owed} is not a claim");
+        let row = self.on.len() as u32;
+        self.on.push(estate.0);
+        self.holder.push(holder.0);
+        self.owed.push(owed);
+        self.ranks.push(ranks);
+        self.paid.push(0.0);
+        self.by_estate.entry(estate.0).or_default().push(row);
+        ClaimId(row)
+    }
+
+    /// Register A3: every claim on one estate, which is what a waterfall needs and the only walk it
+    /// should have to do.
+    pub fn on_estate(&self, estate: PartyId) -> &[u32] {
+        match self.by_estate.get(&estate.0) {
+            Some(rows) => rows,
+            None => &[],
+        }
+    }
+
+    pub fn holder_of(&self, c: ClaimId) -> PartyId {
+        PartyId(self.holder[c.0 as usize])
+    }
+
+    pub fn owed(&self, c: ClaimId) -> f64 {
+        self.owed[c.0 as usize]
+    }
+
+    pub fn ranks(&self, c: ClaimId) -> u32 {
+        self.ranks[c.0 as usize]
+    }
+
+    pub fn paid(&self, c: ClaimId) -> f64 {
+        self.paid[c.0 as usize]
+    }
+
+    /// XI-1: **what a claimant did not get is a LOSS on a named holder**, and it is a read of the
+    /// two numbers rather than a third one somebody keeps.
+    pub fn outstanding(&self, c: ClaimId) -> f64 {
+        self.owed[c.0 as usize] - self.paid[c.0 as usize]
+    }
+
+    /// What the waterfall actually paid it. Law 6: nothing here refuses an overpayment by clamping
+    /// it — an estate paying a claimant more than it owed is a defect for the audit to report, and a
+    /// store that quietly absorbed it would be hiding the thing worth knowing.
+    pub fn pays(&mut self, c: ClaimId, amount: f64) {
+        self.paid[c.0 as usize] += amount;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -626,5 +722,47 @@ mod tests {
         assert_eq!(p.owner(building), party(1));
         assert_eq!(p.size(building), 500.0);
         assert_eq!(p.closes(other), None, "an end that is itself an outcome is Missing, not a guess");
+    }
+
+    #[test]
+    fn a_claim_on_an_estate_names_both_sides_and_what_it_did_not_get_is_a_read() {
+        // XI-8, XI-1: a claimant is a named holder and the loss is what was owed less what arrived.
+        let mut c = Claims::new();
+        let estate = PartyId::at(3);
+        let treasury = PartyId::at(9);
+        let one = c.against(estate, treasury, 388.0, 1);
+        assert_eq!(c.holder_of(one), treasury);
+        assert_eq!(c.outstanding(one), 388.0);
+        c.pays(one, 288.0);
+        assert_eq!(c.paid(one), 288.0);
+        assert_eq!(c.outstanding(one), 100.0);
+    }
+
+    #[test]
+    fn every_claim_on_one_estate_is_one_read_and_not_a_walk_over_all_of_them() {
+        // Register A3: a waterfall needs the claims on ITS estate, and that is the only walk.
+        let mut c = Claims::new();
+        let (a, b) = (PartyId::at(3), PartyId::at(4));
+        c.against(a, PartyId::at(9), 100.0, 1);
+        c.against(b, PartyId::at(9), 200.0, 1);
+        c.against(a, PartyId::at(8), 300.0, 2);
+        assert_eq!(c.on_estate(a).len(), 2);
+        assert_eq!(c.on_estate(b).len(), 1);
+        // A party nobody has a claim on has none, which is an answer and not a missing row.
+        assert!(c.on_estate(PartyId::at(5)).is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a claim")]
+    fn a_claim_for_nothing_is_not_a_claim() {
+        // A claimant with no claim would take a share of the rank it stands in.
+        Claims::new().against(PartyId::at(3), PartyId::at(9), 0.0, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "not a claimant on its own estate")]
+    fn a_party_is_not_a_claimant_on_its_own_estate() {
+        // Law 5: both sides, and they are two. An estate owing itself would pay itself first.
+        Claims::new().against(PartyId::at(3), PartyId::at(3), 100.0, 1);
     }
 }

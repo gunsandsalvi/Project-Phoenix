@@ -26,7 +26,7 @@ use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Counts, Forming, Makes, Making, Owed, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Counts, Forming, Makes, Making, Owed, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -553,7 +553,7 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
         works("forced_sale", AT_MARKETS, Box::new(Closing { kind: afoot::WORKOUT, says: says("workout.closed") })),
         works("mortality", AT_REVALUATION, Box::new(Reads { kind: says("mortality.alive"), what: Counts::PartiesAlive })),
-        works("estate", AT_REVALUATION, Box::new(Reads { kind: says("estate.open"), what: Counts::AgreementsLive })),
+        works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
         works("control", AT_MARKETS, Box::new(Closing { kind: afoot::BUY_BACK, says: says("buy_back.closed") })),
         works("polity", AT_REVALUATION, Box::new(Closing { kind: afoot::ELECTION, says: says("election.called") })),
     ];

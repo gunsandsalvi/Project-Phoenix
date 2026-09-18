@@ -25,7 +25,7 @@ use crate::params::Params;
 use crate::parties::Parties;
 use crate::nouns::{NounDecl, Nouns, Sort};
 use crate::prices::Prints;
-use crate::stores::{Agreements, Outlooks, Processes, Schedules};
+use crate::stores::{Agreements, Claims, Outlooks, Processes, Schedules};
 use crate::register::Register;
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
@@ -102,6 +102,7 @@ fn declared() -> Nouns {
     at_home("schedules", "what each instrument owes, and when", "5 D2: a claim with no schedule is one nobody can fall behind on");
     at_home("outlooks", "what each party expects, formed from its own history", "§46: no global expectation; they disagree and it is load-bearing");
     at_home("processes", "what is in flight across periods, with an owner", "XI-3: a process with no end is one nobody has to finish");
+    at_home("claims", "who is owed what by a dead party, and at what rank", "XI-8, Appendix B: no liability without beneficiaries, and an estate pays in rank order");
     n
 }
 
@@ -123,6 +124,8 @@ pub struct World {
     pub outlooks: Outlooks,
     /// Whatever is in flight across periods with an owner and an end.
     pub processes: Processes,
+    /// XI-8: who is owed what by a party whose life has ended, and at what rank.
+    pub claims: Claims,
     /// **The ontology register.** Every store declares itself, and its count of HOMELESS nouns is
     /// the honest measure of how much ontology is missing. It was written and wired to nothing, so
     /// the count was zero by never having been asked (21d.1).
@@ -166,6 +169,7 @@ impl World {
             schedules: Schedules::new(),
             outlooks: Outlooks::new(),
             processes: Processes::new(),
+            claims: Claims::new(),
             nouns: declared(),
             phases: Phases::new(),
             books: Vec::new(),
@@ -237,6 +241,7 @@ impl World {
         let mut ctx = MechanismContext::of(
             self.period,
             Reads {
+                claims: &self.claims,
                 parties: &self.parties,
                 instruments: &self.instruments,
                 register: &self.register,
@@ -287,6 +292,11 @@ impl World {
         // XI-3: and whose life ended. `Parties` is the one writer of who is alive; a module asks.
         for who in asked.ceased {
             self.parties.cease(who);
+        }
+        // XI-8: and who is owed what by an estate. A claim QUEUES where its rank puts it; a payment
+        // would be the claimant jumping ahead of the creditors the estate exists to pay (21c).
+        for (on, holder, owed, ranks) in asked.claimed {
+            self.claims.against(on, holder, owed, ranks);
         }
         1
     }

@@ -497,6 +497,106 @@ impl Mechanism for Winding {
     }
 }
 
+/// **XI-8: AN ESTATE PAYS ITS CLAIMANTS IN RANK ORDER, AND THE STATE IS ONE OF THEM.**
+///
+/// 21c, measured on the old engine (21.107): an estate paid the treasury 388 pieces in period 5 and
+/// 388 again in period 6, with a `tax` receipt, and the audit said *"paid 388 to treasury.us, who
+/// has no claim on it"*. The estate was right to OWE it and the treasury was wrong to TAKE it.
+///
+/// What this does is the payout, and only the payout: it reads the claims standing against every
+/// dead party, asks the waterfall what each gets out of what the estate actually has, and proposes
+/// those payments. **Nothing here decides a claim** — a claimant gets in by being written one
+/// through `ctx.claims()`, which is the door an assessment goes through, and the rank it stands at
+/// is the law's.
+///
+/// Law 6: a rank is not paid "up to" anything. It is paid what there is, and what there is runs out.
+pub struct Ranked {
+    pub says: u32,
+}
+
+impl Mechanism for Ranked {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::estate::{waterfall, Claim};
+
+        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut told: Vec<(PartyId, f64)> = Vec::new();
+
+        for p in 0..ctx.parties().len() {
+            let estate = PartyId::at(p as u32);
+            // XI-3: an estate is what is left of a party whose life has ended. Nothing here asks
+            // what KIND of party it was (Law 15) — a dead bank and a dead baker pay the same way.
+            if ctx.parties().alive(estate) {
+                continue;
+            }
+            let rows = ctx.claims().on_estate(estate);
+            if rows.is_empty() {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), estate) else { continue };
+            let has = ctx.register().quantity(ctx.register().row(estate, money));
+            if has <= 0.0 {
+                continue;
+            }
+            let claims: Vec<Claim> = rows
+                .iter()
+                .map(|r| crate::stores::ClaimId(*r))
+                .filter(|c| ctx.claims().outstanding(*c) > 0.0)
+                .map(|c| Claim {
+                    holder: ctx.claims().holder_of(c),
+                    owed: ctx.claims().outstanding(c),
+                    ranks: rank_of(ctx.claims().ranks(c)),
+                })
+                .collect();
+            if claims.is_empty() {
+                continue;
+            }
+            let mut out = 0.0;
+            for p in waterfall(has, &claims) {
+                if p.paid > 0.0 {
+                    paying.push((estate, p.holder, money, p.paid));
+                    out += p.paid;
+                }
+            }
+            told.push((estate, out));
+        }
+
+        for (estate, out) in told {
+            ctx.say(self.says, &[estate.0], &[(0, Value::Num(out))], true);
+        }
+        for (estate, holder, money, amount) in paying {
+            ctx.propose(
+                vec![Leg::Money {
+                    from: estate,
+                    to: holder,
+                    ccy: ctx.instruments().ccy_of(money),
+                    instrument: money,
+                    amount,
+                    receipt: Receipt::Principal,
+                }],
+                Cause::CorporateAction,
+                Delivery::Nothing,
+                "an estate paying a ranked claimant out of what it has",
+            );
+        }
+    }
+}
+
+/// XI-8: the rank a stored claim stands at. `Claims` holds a number and does not know what it means
+/// (Law 15); this is where the number becomes the law's ordering, in one place.
+fn rank_of(stored: u32) -> crate::mechanisms::estate::Rank {
+    use crate::mechanisms::estate::Rank;
+    match stored {
+        0 => Rank::Secured,
+        1 => Rank::Preferential,
+        2 => Rank::Senior,
+        3 => Rank::Trade,
+        4 => Rank::Subordinated,
+        // Equity is last, which is what makes it equity — and what an unrecognised rank is, is last
+        // too: a claimant nobody can place does not get in ahead of one somebody can.
+        _ => Rank::Equity,
+    }
+}
+
 /// **§46, XI-16: EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.**
 ///
 /// One PREFERENCE — how much weight it gives the surprise — and no global expectation anywhere. What
@@ -727,6 +827,7 @@ mod tests {
         let mut ctx = MechanismContext::of(
             w.period,
             crate::module::Stores {
+                claims: &w.claims,
                 parties: &w.parties,
                 instruments: &w.instruments,
                 register: &w.register,
@@ -768,6 +869,9 @@ mod tests {
         }
         for who in asked.ceased {
             w.parties.cease(who);
+        }
+        for (on, holder, owed, ranks) in asked.claimed {
+            w.claims.against(on, holder, owed, ranks);
         }
     }
 
@@ -1109,5 +1213,60 @@ mod tests {
         let says = w.journal.kinds.declare("fund.orphaned");
         ran(&mut w, &Winding { says });
         assert!(w.parties.alive(pool), "it still holds 240 of something nobody bought");
+    }
+
+    #[test]
+    fn an_estate_pays_its_claimants_in_rank_order_and_the_state_is_one_of_them() {
+        // 21c, 21.107: the estate paid the treasury 388 directly and the audit said the treasury had
+        // no claim on it. Now the state is a CLAIMANT, standing behind the secured creditor, and it
+        // gets what is left of its rank rather than what it asked for.
+        use crate::mechanisms::estate::Rank;
+        let (mut w, bank, secured, treasury, cash) = world();
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        w.register.money_delta(estate, cash, 400.0);
+        w.parties.cease(estate);
+        w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
+        w.claims.against(estate, treasury, 388.0, Rank::Preferential as u32);
+        w.period = 1;
+
+        let says = w.journal.kinds.declare("estate.paid");
+        ran(&mut w, &Ranked { says });
+
+        assert_eq!(w.register.quantity(w.register.row(secured, cash)), 100.0);
+        assert_eq!(w.register.quantity(w.register.row(treasury, cash)), 300.0);
+        // Law 6: the state is paid what there is, and what there is ran out. Nothing was clamped and
+        // nothing was topped up — the estate had 400 and 400 left it.
+        assert_eq!(w.register.quantity(w.register.row(estate, cash)), 0.0);
+    }
+
+    #[test]
+    fn a_live_party_is_not_an_estate_and_nothing_here_touches_it() {
+        // XI-3: an estate is what is left of a party whose life has ended. A claim against a party
+        // that is still alive is not paid by this mechanism — it is the party's own to pay.
+        use crate::mechanisms::estate::Rank;
+        let (mut w, bank, secured, _t, cash) = world();
+        let alive = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        w.register.money_delta(alive, cash, 400.0);
+        w.claims.against(alive, secured, 100.0, Rank::Secured as u32);
+        w.period = 1;
+        let says = w.journal.kinds.declare("estate.paid");
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.register.quantity(w.register.row(alive, cash)), 400.0);
+    }
+
+    #[test]
+    fn an_estate_with_nothing_pays_nobody_rather_than_paying_them_a_share_of_nothing() {
+        // Appendix A and Law 6 together: there is nothing to divide, and an estate that paid out of
+        // an empty account would be inventing the money it paid with.
+        use crate::mechanisms::estate::Rank;
+        let (mut w, bank, secured, treasury, cash) = world();
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        w.parties.cease(estate);
+        w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
+        w.period = 1;
+        let says = w.journal.kinds.declare("estate.paid");
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.register.quantity(w.register.row(secured, cash)), 0.0);
+        assert_eq!(w.register.quantity(w.register.row(treasury, cash)), 0.0);
     }
 }
