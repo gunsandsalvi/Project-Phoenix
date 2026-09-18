@@ -17786,3 +17786,62 @@ the same defect one level up.
 
 Probed both ways before committing: the offending line in engine code is reported, the identical line
 inside `#[cfg(test)]` is not.
+
+# 0g.41a — the oracle cannot be a census comparison any more, and why that is right
+
+The plan said the Rust engine is right when it reproduces `events 178604` / `audit 356268` on the same
+seed. **That gate is now unreachable, and the reason is that the port has been fixing things.** Three
+examples from this session alone: the TypeScript wire could not tell a free delivery from a forgotten
+payment leg and now must be told (XI-5), which changed what settles; `LotsAgainstQuantity` summed lots
+of money accounts that have none, which changed the violation count; and the estate's subordinated
+waterfall, the FOP pathway and the per-member insurance limit all changed what the numbers ARE. A
+bit-exact reproduction would now mean the Rust engine had reproduced the defects too.
+
+**So the gate changes, and it is stated here rather than quietly dropped.** The Rust engine is right
+when:
+
+1. **Every law holds as a test.** 385 today, each naming its clause, each failing if the mechanism it
+   describes is deleted. This is the gate that actually catches a port that dropped a mechanism, and
+   it is stronger than a census: a census agrees when two engines are wrong in the same way.
+2. **`check:opens` equivalent** — the assembled world steps without throwing, and prints its census
+   each run rather than asserting a number, exactly as the TypeScript rule says.
+3. **The census is COMPARED and its differences are EXPLAINED**, one line per difference, naming the
+   defect that accounts for it. A difference with no explanation is a finding; a difference with one
+   is the port's work showing.
+
+The TypeScript engine stays as the reference for SHAPE — what mechanisms exist, what each reads — and
+stops being the reference for VALUE. 0g.45 (delete the TypeScript engine) now depends on 1 and 3
+rather than on bit-exactness, and the number to watch is the count of unexplained differences.
+
+# 0g.42 — the money market (§11), spot FX (§12), FX forwards (§19), fund shares (§13)
+
+Four modules; thirty-one to thirty-four of forty-seven.
+
+**`money_market.rs`.** Every bank posts a schedule and the clearing decides who lends — B1 says the
+rule "surplus banks lend, deficit banks borrow" licenses moving cash from a computed surplus to a
+computed deficit without anybody quoting a rate, and the first test is a surplus bank that lends
+nothing because the borrower will not pay its price. A lender with no view of a name does not lend to
+it: missing is missing, not an implicit yes at the market rate. The market failing to clear for ONE
+name while clearing for another is B7's funding squeeze, and it comes back as `unfunded`. Haircuts
+read the issuer's own credit (B3.b's missing leg of the downgrade loop), pledged collateral cannot be
+pledged twice, and the window has all four classical conditions — a draw is refused for no collateral
+and refused for insolvency, separately.
+
+**`spot_fx.rs`.** There is no function that takes one party and returns it a different currency: E1's
+conversion without a counterparty is unwriteable. The central bank posts with a size and a LIMIT, and
+the test shows demand beyond it going unfilled rather than absorbed — which is what "never the
+residual" means in arithmetic. A dealer at its limit stops quoting; squaring names a counterparty and
+cannot be done against itself.
+
+**`fx_forwards.rs`.** `parity` is a read the cleared rate is checked against, never the price (E1,
+B2.a). One basis, derived from the print. The arbitrageur's capacity is the reason a gap can stand,
+and the test runs the same basis past a large book and a constrained one. Both legs settle or neither
+does, and the carry is earned over the forward's life — a parity-struck forward marks at zero.
+
+**`funds.rs`.** A fund's equity is zero by construction and `mislaid` is the finding when it is not.
+The redemption beyond the buffer comes back as what must be SOLD — C2.b's forced-seller channel, which
+rationing to the buffer would delete. A money fund can break the buck, and there is no floor near it.
+The exchange-traded fund's gap closes only when somebody trades and persists when nobody will.
+
+**Fifty-one laws as tests. Three hundred and eighty-five now hold; clippy clean; `phoenix-check` green
+over 58 files. Thirty-four of forty-seven modules ported.**
