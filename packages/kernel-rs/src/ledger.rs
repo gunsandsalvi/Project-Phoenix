@@ -26,6 +26,11 @@ pub enum Leg {
     /// Goods B: a physical thing coming into existence. ONE side, because nobody is on the other
     /// end of a harvest — and what keeps it honest is the units identity, checked by a family.
     Create { party: PartyId, instrument: InstrumentId, qty: f64, cost_per_unit: f64 },
+    /// **Money A1: an issuer creating its own money.** Not `Create`: a money account is a TOTAL and
+    /// carries no lots (Money D2), and money created is the issuer's own LIABILITY rather than an
+    /// asset it earned — a bank that booked the deposits it prints as income would be the closest
+    /// thing to free money this engine could write.
+    Mint { issuer: PartyId, ccy: CurrencyCode, money: InstrumentId, amount: f64 },
     /// Goods E4: and a thing leaving it. One side, for the same reason.
     Destroy { party: PartyId, instrument: InstrumentId, qty: f64, why: Gone },
     /// Register C3: a claim over units, which refuses their move rather than adjusting it.
@@ -289,7 +294,7 @@ impl Settlement {
                         return self.record(Outcome::ShortOfUnits, ins, period, journal, failed_kind);
                     }
                 }
-                Leg::Create { .. } | Leg::Pledge { .. } => {}
+                Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
             }
         }
         // Currency B1, C5, Law 18 (0g.26): WHICH MONEY A PARTY REPORTS IN and WHAT THE RATE IS,
@@ -353,6 +358,11 @@ impl Settlement {
                 Leg::Create { party, instrument, qty, cost_per_unit } => {
                     reg.credit(party, instrument, qty, cost_per_unit, period);
                     reg.bump_equity(party, qty * cost_per_unit);
+                }
+                // Money A1, D2: the issuer's own money, as a TOTAL, and NO equity — what it created
+                // is what it owes, and `Instruments::owed_by` reads that from issued against held.
+                Leg::Mint { issuer, money, amount, .. } => {
+                    reg.money_delta(issuer, money, amount);
                 }
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);

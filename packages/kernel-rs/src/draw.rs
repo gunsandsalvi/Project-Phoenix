@@ -138,7 +138,7 @@ pub fn money_and_the_sovereign(seed_value: u64, banks: usize, bills: usize, open
     let created = draw.spread(100_000.0, 0.1) * banks as f64;
     c.tell(Told {
         at: Day(opens_on.0 - 3_650),
-        draft: Draft::Created { issuer: central_bank, what: reserves, units: created },
+        draft: Draft::Minted { issuer: central_bank, money: reserves, units: created, ccy },
         why: "the central bank created the reserves that are its own liability",
     });
 
@@ -276,7 +276,7 @@ pub fn firms_plant_and_inventory(
         let vintage = Day(opens_on.0 - 3_100 + (n as i64 * 90));
         d.chronicle.tell(Told {
             at: Day(vintage.0 - 1),
-            draft: Draft::Created { issuer: bank, what: bank_money, units: borrowed },
+            draft: Draft::Minted { issuer: bank, money: bank_money, units: borrowed, ccy },
             why: "the bank created the deposits it was about to lend, which is what lending is",
         });
         d.chronicle.tell(Told {
@@ -303,16 +303,46 @@ pub fn firms_plant_and_inventory(
             },
             why: "the firm bought its plant from the maker that built it, on its vintage date",
         });
+        // **And it has been servicing the loan ever since.** A loan taken eight years ago that has
+        // never had a penny paid against it is not a past — it is an endowment with a due date, and
+        // a bank whose loans were never serviced has no credit history either (the opening census
+        // found this as `EveryBankHasLentAndBeenRepaid`, 4 of 4). The payment is the coupon the loan
+        // was written at, over the days since the last one: a READ of the loan's own terms (Law 19),
+        // not a schedule stated beside it.
+        let coupon = match d.world.instruments.coupon_of(loan) {
+            Some(c) => c,
+            None => unreachable!("the loan was issued with a coupon two lines above"),
+        };
+        let mut due = Day(vintage.0 + 90);
+        while due.0 <= opens_on.0 {
+            d.chronicle.tell(Told {
+                at: due,
+                draft: Draft::Paid {
+                    from: *f,
+                    to: bank,
+                    amount: borrowed * coupon * 90.0 / 365.0,
+                    ccy,
+                    money: bank_money,
+                },
+                why: "the firm paid the quarter's interest on the loan it is still carrying",
+            });
+            due = Day(due.0 + 90);
+        }
     }
 
     // **Inventory is bought up the chain from somebody who made it**, and the seller is the firm that
     // made it — so the quantity is bounded by what that firm could produce and pay for, which is what
     // makes 12c.3's eleven periods of world demand untellable.
-    for (n, f) in made.iter().enumerate().skip(1) {
-        let from = made[n - 1];
+    //
+    // **The chain is a RING, and it has to be**: a line has an end, and the firm at the end buys from
+    // somebody and never makes anything — which the opening census found on its first run (22b.2,
+    // `EveryFirmHasTraded`, 1 of 13). A closed circuit has no last firm. Making it a ring deletes the
+    // special case rather than adding one (Law 12).
+    for (n, from) in made.iter().copied().enumerate() {
+        let buyer = made[(n + 1) % made.len()];
         let stock = draw.spread(300.0, 0.4);
         // The buyer pays in the money its own bank issued (Money D2).
-        let buyers_money = d.deposits[n % d.banks.len()];
+        let buyers_money = d.deposits[((n + 1) % made.len()) % d.banks.len()];
         d.chronicle.tell(Told {
             at: Day(opens_on.0 - 400 + n as i64 * 20),
             draft: Draft::Created { issuer: from, what: good, units: stock },
@@ -322,7 +352,7 @@ pub fn firms_plant_and_inventory(
             at: Day(opens_on.0 - 390 + n as i64 * 20),
             draft: Draft::Bought {
                 from,
-                to: *f,
+                to: buyer,
                 what: good,
                 units: stock / 2.0,
                 paid: stock / 2.0 * 1.1,

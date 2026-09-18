@@ -41,12 +41,17 @@ use crate::register::Register;
 /// Each carries what it needs, so no told moment reads a live market.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Draft {
-    /// **An issuer creating units of its own instrument, which become its own liability.** The one
-    /// moment where units appear with no payment against them — and it is not free money (5 A4): the
-    /// other side is the issuer's own obligation, which `Instruments` records against its name (Money
-    /// A1). A central bank's reserves arrive this way and there is no other way for the first money
-    /// in a world to exist.
+    /// **An issuer making units of its own instrument: a thing produced.** The one moment where units
+    /// appear with no payment against them — and it is not free (5 A4): they arrive at what they cost
+    /// to make, and the units identity is what an audit family checks. Money does not arrive this way;
+    /// `Minted` is where money comes from.
     Created { issuer: PartyId, what: InstrumentId, units: f64 },
+    /// **An issuer creating its own MONEY** (Money A1): a central bank's reserves, a bank's deposits.
+    /// Its own variant rather than a `Created` of a money line, because a money account is a TOTAL
+    /// with no lots (Money D2) and the money an issuer creates is what it OWES rather than what it
+    /// earned. The opening census found the difference: five money accounts carrying lots, and four
+    /// banks whose equity rose every time they printed the deposits they were about to lend.
+    Minted { issuer: PartyId, money: InstrumentId, units: f64, ccy: CurrencyCode },
     /// An issuer creates units of its own instrument and somebody takes them, paying for them.
     Issued { issuer: PartyId, what: InstrumentId, units: f64, to: PartyId, paid: f64, ccy: CurrencyCode, money: InstrumentId },
     /// A holder sells to a buyer, against payment (XI-5: delivery versus payment, both legs).
@@ -69,6 +74,9 @@ impl Draft {
         match *self {
             Draft::Created { issuer, what, units } => vec![
                 Leg::Create { party: issuer, instrument: what, qty: units, cost_per_unit: 1.0 },
+            ],
+            Draft::Minted { issuer, money, units, ccy } => vec![
+                Leg::Mint { issuer, ccy, money, amount: units },
             ],
             Draft::Issued { issuer, what, units, to, paid, ccy, money } => vec![
                 Leg::Create { party: to, instrument: what, qty: units, cost_per_unit: paid / units },
@@ -105,7 +113,7 @@ impl Draft {
             // delivered out of somebody's book, so the wire sees money moving and units appearing —
             // which is not a delivery it could mistake for a forgotten payment. Declaring these
             // against payment would be telling the wire a leg is there that is not.
-            Draft::Issued { .. } | Draft::Lent { .. } | Draft::Created { .. } => Reaches::Plain,
+            Draft::Issued { .. } | Draft::Lent { .. } | Draft::Created { .. } | Draft::Minted { .. } => Reaches::Plain,
             Draft::Delivered { .. } => Reaches::Free,
             Draft::Paid { .. } => Reaches::Plain,
             Draft::Hired { .. } => Reaches::Nothing,
@@ -304,6 +312,10 @@ pub struct Census {
     pub distinct_issue_days: usize,
     pub distinct_ages: usize,
     pub audit_violations: usize,
+    /// Audit: **an unbuilt family reports "not built", never green.** A census of zero violations
+    /// from a world with no audit assembled is the most expensive lie this file could tell, so the
+    /// count is only readable beside the fact that somebody ran something.
+    pub audit_built: bool,
     /// Nothing in the register may predate the world: the count of rows that do.
     pub rows_younger_than_the_world: usize,
 }
@@ -370,6 +382,12 @@ pub fn accept(c: &Census) -> Verdict {
             why: "every party is the same age, so nothing is at a different point in its life".to_string(),
         };
     }
+    if !c.audit_built {
+        return Verdict::Rejected {
+            failed: Property::AuditGreen,
+            why: "no audit family ran over this opening, and an unbuilt family is not a green one".to_string(),
+        };
+    }
     if c.audit_violations > 0 {
         return Verdict::Rejected {
             failed: Property::AuditGreen,
@@ -430,8 +448,17 @@ mod tests {
             distinct_issue_days: 7,
             distinct_ages: 5,
             audit_violations: 0,
+            audit_built: true,
             rows_younger_than_the_world: 0,
         }
+    }
+
+    #[test]
+    fn a_world_no_audit_family_ever_looked_at_is_not_accepted_as_green() {
+        // Audit: an unbuilt family reports "not built", never green. A census whose violation count
+        // is zero because nothing ran is the one number in this file that could pass a broken world.
+        let c = Census { audit_built: false, ..full_census() };
+        assert!(matches!(accept(&c), Verdict::Rejected { failed: Property::AuditGreen, .. }));
     }
 
     #[test]

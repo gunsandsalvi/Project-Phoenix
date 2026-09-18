@@ -762,7 +762,7 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   a stock (issue, buy, hire, lend, deliver, pay) and may never write a price, a rate, a mark or a
   policy number; a version on a told moment; determinism from one seed value; and no told moment may
   read a live market (it carries what it needs).
-- [ ] 22b.2 `check:opening`: the nine properties — every market has traded; every living party has an
+- [x] 22b.2 `check:opening`: the nine properties — every market has traded; every living party has an
   outlook; every firm has produced, sold and been paid in different periods; every bank has lent and
   been repaid; every declared instrument kind is held by somebody who chose to hold it; the maturity
   profile spans more than one period and issue dates are dispersed; ages are dispersed; the audit is
@@ -770,6 +770,10 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   rejects the world, re-draws from the next seed value and logs the reason to `docs/rejections.log`.
   **A criterion that fails for every seed is a missing mechanism with a name.** Plus the regeneration
   check that keeps a snapshot an optimisation rather than a second way to state an opening.
+  DONE except the regeneration check, which needs a snapshot to regenerate and therefore belongs to
+  22b.7; it is named in that step below. Four defects the census found are closed with it and one is
+  open: a loan counted as a market line, a supply chain with a last firm that never produced, loans
+  nobody ever serviced, money minted with lots and as income (`Leg::Mint`) — and 22b.5a.
 - [x] 22b.3 Money and the sovereign through the chronicle: reserves issued, bills sold at auction on
   their own dates, the central bank's holding bought. **Deletes `endowMoney`** (5 sites).
 - [x] 22b.4 Firms, plant and inventory through the chronicle: plant bought from its maker on its
@@ -789,10 +793,16 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   another, so the money market has nothing to meet about (21.77 is the same silence one tier up) and
   a bank's liquidity is never tested by its customers' payments. The fix is one settlement rule, not
   a branch in the draw: the wire asks each side's bank and, when they differ, adds the reserve leg.
-- [ ] 22b.6 Delete the opening prints (22a.1): by now every market has traded in the chronicle.
+- [x] 22b.6 Delete the opening prints (22a.1): by now every market has traded in the chronicle.
   Deletes `seed.openingPrice.*`, `seed.openingWage`, `seed.openingYield`, `seed.openingRate`,
-  `prices.write` from `SeedContext`.
-- [ ] 22b.7 The snapshot format; `assemble()` opens from one; the rig's scale models become small
+  `prices.write` from `SeedContext`. CLOSED BY 0g.45, not by this step: those five sites were
+  TypeScript and went with the engine. The Rust draw never had a `prices.write` and has nowhere to
+  put one — `Draft` has no variant that states a price, which is the grammar guard of 22b.1 doing
+  the work this step was going to do by hand. `grep -rn "prices\.write\|opening_price" src/` is
+  empty, and that grep is the exit condition, so the step is met rather than skipped.
+- [ ] 22b.7 The snapshot format; `assemble()` opens from one; **plus the regeneration check deferred
+  from 22b.2**: drawing from the snapshot's seed value must reproduce it exactly, or a snapshot is a
+  second way to state an opening rather than an optimisation. The rig's scale models become small
   accepted worlds, so a test asks for *a mill that has traded for a year* instead of building one.
 - [ ] 22b.8 MSER-5 on a handful of named series (money per member, the going wage, living parties,
   sessions cleared, the credit stock): the chronicle's length becomes a truncation point a statistic

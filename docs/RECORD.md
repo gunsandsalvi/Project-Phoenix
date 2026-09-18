@@ -18195,3 +18195,58 @@ meet about (which is 21.77 one tier up) and a bank's liquidity is never tested b
 payments. Not chased (Law 11): the fix is one settlement rule in the wire, not a branch in the draw.
 
 **Six hundred and forty-four tests hold; clippy clean; `phoenix-check` green over 79 files.**
+
+---
+
+## 22b.2 — `check:opening`: nine properties, and a world that passes all nine
+
+**What.** `opening.rs` and the `check-opening` binary, wired into `npm run check`. It draws a world
+from a seed value, lives its past through ordinary settlement, takes a census of the nine properties
+— **every one of them READ** from the register, the instruments, the audit or the told moments, not
+one of them stated by the draw — and accepts the world or throws it away and draws the next. Every
+world thrown away goes to `docs/rejections.log` with the property and a sentence.
+
+**Why rejection is admissible where calibration is not.** It DISCARDS a world and never ADJUSTS one.
+Nothing in this file nudges a quantity to meet a property; the only thing a failure does is take the
+next seed value (5 A5, 5 C5, E1).
+
+**Five defects the census found, four of them closed here.** Each run named exactly one property and
+each one turned out to be a real thing wrong:
+
+1. *16 of 26 markets never traded* — **a loan is a row, not a market line.** Nobody ever bid for a
+   bilateral loan in a book, and asking whether it traded was the wrong question about the right
+   thing. Which lines those are is read from the past (the ones a `Lent` moment made), not guessed
+   from a class: a bill is a claim too and a bill certainly trades.
+2. *1 of 13 firms never produced, sold and was paid* — **the supply chain was a line, and a line has
+   an end.** The firm at the end bought from somebody and made nothing. A closed circuit has no last
+   firm; the chain is now a ring, which DELETED the `skip(1)` rather than adding a case (Law 12).
+3. *4 of 4 banks never lent and were repaid* — **nobody was servicing their loans.** A loan taken
+   eight years before the world opens that has never had a penny paid against it is not a past, it is
+   an endowment with a due date. The payment reads the loan's own coupon (Law 19).
+4. *the audit reports 5 violations* — and they were the real thing: **five money accounts carrying
+   lots.** Money created was reaching the wire as `Leg::Create`, which credits lots and books the
+   amount as equity. So a money account had lots (Money D2 says it is a TOTAL) and **a bank's equity
+   rose every time it printed the deposits it was about to lend** — the closest thing to free money
+   this engine could have written. The fix is a new leg and a new told moment: `Leg::Mint` /
+   `Draft::Minted`, which writes the total and books NO equity, because what an issuer creates is
+   what it owes. Creating money and building a machine are not the same act and the grammar now says
+   so.
+5. Open, positioned at 22b.5a: the missing interbank leg.
+
+**And one thing the census was lying about before it ran.** `Census.audit_violations: 0` from a world
+with no audit assembled reads as green. Audit E2 — an unbuilt family reports "not built", never green
+— so the census carries `audit_built` and `accept` rejects on it before it ever looks at the count.
+That is guarded by its own test.
+
+**Where it stands.** A world opens on the first seed value with all nine holding: 10 of 10 markets
+traded, 43 of 43 parties with a history to form an outlook from, 13 of 13 firms through the cycle,
+4 of 4 banks lent and repaid, 4 of 4 kinds held by somebody who chose to hold them, maturities on 10
+days, issues on 8, 20 distinct ages, the audit built and silent, nothing younger than the world, and
+2,597 moments of the past settled. `docs/rejections.log` is empty for the chosen seed, which is 22b's
+exit condition for this step.
+
+**22b.6 closed with it, and not by this step.** The five opening-print sites were TypeScript and went
+with the engine at 0g.45. The Rust draw has nowhere to put one: `Draft` has no variant that states a
+price, so the grammar guard does by construction what that step was going to do by hand.
+
+**Six hundred and fifty-one tests hold; clippy clean; `phoenix-check` green over 81 files.**

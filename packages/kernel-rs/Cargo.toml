@@ -41,3 +41,7 @@ path = "src/bin/session_at_scale.rs"
 [[bin]]
 name = "world-at-scale"
 path = "src/bin/world_at_scale.rs"
+
+[[bin]]
+name = "check-opening"
+path = "src/bin/check_opening.rs"

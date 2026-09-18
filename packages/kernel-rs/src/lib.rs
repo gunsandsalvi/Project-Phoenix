@@ -24,6 +24,7 @@ pub mod module;
 pub mod nouns;
 pub mod num;
 pub mod params;
+pub mod opening;
 pub mod parties;
 pub mod prices;
 pub mod register;

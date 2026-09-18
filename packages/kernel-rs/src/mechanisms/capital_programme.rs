@@ -118,7 +118,8 @@ impl Contribution for PlantMoves {
                         self.account(buyer, instrument, qty);
                         self.account(seller, instrument, -qty);
                     }
-                    Leg::Money { .. } | Leg::Pledge { .. } => {}
+                    // Minting is money, and money is not a thing this family counts the units of.
+                    Leg::Money { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
                 }
             }
         }
