@@ -41,6 +41,12 @@ use crate::register::Register;
 /// Each carries what it needs, so no told moment reads a live market.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Draft {
+    /// **An issuer creating units of its own instrument, which become its own liability.** The one
+    /// moment where units appear with no payment against them — and it is not free money (5 A4): the
+    /// other side is the issuer's own obligation, which `Instruments` records against its name (Money
+    /// A1). A central bank's reserves arrive this way and there is no other way for the first money
+    /// in a world to exist.
+    Created { issuer: PartyId, what: InstrumentId, units: f64 },
     /// An issuer creates units of its own instrument and somebody takes them, paying for them.
     Issued { issuer: PartyId, what: InstrumentId, units: f64, to: PartyId, paid: f64, ccy: CurrencyCode, money: InstrumentId },
     /// A holder sells to a buyer, against payment (XI-5: delivery versus payment, both legs).
@@ -61,6 +67,9 @@ impl Draft {
     /// assertions (22b, Law 5).
     pub fn legs(&self) -> Vec<Leg> {
         match *self {
+            Draft::Created { issuer, what, units } => vec![
+                Leg::Create { party: issuer, instrument: what, qty: units, cost_per_unit: 1.0 },
+            ],
             Draft::Issued { issuer, what, units, to, paid, ccy, money } => vec![
                 Leg::Create { party: to, instrument: what, qty: units, cost_per_unit: paid / units },
                 Leg::Money { from: to, to: issuer, ccy, instrument: money, amount: paid, receipt: Receipt::Sale },
@@ -96,7 +105,7 @@ impl Draft {
             // delivered out of somebody's book, so the wire sees money moving and units appearing —
             // which is not a delivery it could mistake for a forgotten payment. Declaring these
             // against payment would be telling the wire a leg is there that is not.
-            Draft::Issued { .. } | Draft::Lent { .. } => Reaches::Plain,
+            Draft::Issued { .. } | Draft::Lent { .. } | Draft::Created { .. } => Reaches::Plain,
             Draft::Delivered { .. } => Reaches::Free,
             Draft::Paid { .. } => Reaches::Plain,
             Draft::Hired { .. } => Reaches::Nothing,

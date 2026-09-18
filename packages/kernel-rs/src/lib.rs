@@ -14,6 +14,7 @@
 
 pub mod chronicle;
 pub mod clearing;
+pub mod draw;
 pub mod ids;
 pub mod instruments;
 pub mod journal;

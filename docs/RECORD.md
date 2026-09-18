@@ -18091,3 +18091,40 @@ pipeline's `world 1`, `check:opens`, `lint`, `typecheck` and `test` named things
 and a script that names a deleted file is a stale doc (Law 16).
 
 **One engine. 627 laws hold; clippy clean; phoenix-check green over 78 files.**
+
+# 22b.3 — money and the sovereign through the chronicle
+
+`packages/kernel-rs/src/draw.rs`. **There is no `endowMoney` in the Rust engine and nowhere to put
+one**, which is what this step was for.
+
+**How the first money in a world exists.** The central bank CREATES reserves — `Draft::Created`, the
+one told moment where units appear with no payment against them — and that is not free money (5 A4):
+the other side is the central bank's own liability, recorded against its name in `Instruments`. Then
+it LENDS them to each bank against the bank's own paper. Two settled moments, and a bank's reserves
+are what it was lent less what it spent.
+
+**Each bank issues its own deposit money** (Money D2). One shared "money" that everybody holds would be
+money with no issuer, so there are as many deposit lines as banks and the store knows whose each is.
+
+**The treasury sells bills at auction on their own dates** (30 D2), each to a bank that had the
+reserves — and a bank that had none simply did not buy (30 D5.a: nobody is obliged to bid). Issue days
+and maturities are both drawn, so the profile is spread rather than stacked: the test refuses a world
+where two bills share an issue day, because that is a smaller profile than the draw claimed.
+
+**The central bank's holding is BOUGHT in the market** (30 D3.a), from the bank that actually held it.
+A test walks every purchase reaching the central bank and asserts the seller is a bank and never the
+treasury — *that* would be the overdraft D3 forbids, with a receipt attached.
+
+**The replay caught a defect in my own draw on the first run.** The central bank bought a thousand
+units of the first bill from `banks[0]` — a bank that had not won that bill at auction — and the wire
+refused it as `ShortOfUnits` against its day and its reason. The fix is in the DRAW, not the wire: the
+auction now records who won what, and the central bank buys part of what that bank really holds. This
+is exactly what a past lived through ordinary settlement is for: the old opening could not have had
+this finding, because it settled nothing and so could refuse nothing.
+
+**Determinism holds**: the same seed value draws the same chronicle, the next value draws a different
+one (5 A5). Sizes are dispersed — what each bank was lent differs, because a sector of equals never
+produces a market (5 B4).
+
+**Seven laws as tests. Six hundred and thirty-five now hold; clippy clean; `phoenix-check` green over
+79 files.**
