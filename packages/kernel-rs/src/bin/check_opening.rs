@@ -12,6 +12,7 @@
 use phoenix_kernel::calendar::Day;
 use phoenix_kernel::chronicle::Census;
 use phoenix_kernel::opening::{open, Shape};
+use phoenix_kernel::snapshot::{from_text, regenerates, to_text, Regenerated, Snapshot};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
@@ -90,6 +91,44 @@ fn main() {
     if !run.accepted() {
         std::process::exit(1);
     }
+
+    // 22b.7: **the snapshot, and the regeneration check that keeps it an optimisation.** The
+    // committed snapshot is what an artifact opens from; if drawing from its own seed value no longer
+    // reproduces it, it is a SECOND STATEMENT of the opening (Law 4) and the check says so rather than
+    // quietly rewriting it. `--write` is how somebody who changed the draw on purpose replaces it.
+    let fresh = Snapshot::of(&run.outcome);
+    let at = snapshot_path();
+    if std::env::args().any(|a| a == "--write") {
+        if let Err(e) = fs::write(&at, to_text(&fresh)) {
+            eprintln!("check:opening could not write {}: {e}", at.display());
+            std::process::exit(1);
+        }
+        println!("  snapshot written to {}", at.display());
+        return;
+    }
+    match fs::read_to_string(&at) {
+        Err(_) => {
+            println!("  NO SNAPSHOT at {} — run `npm run check:opening:write`.", at.display());
+            std::process::exit(1);
+        }
+        Ok(text) => {
+            let held = from_text(&text);
+            match regenerates(&held) {
+                Regenerated::Same => println!("  snapshot regenerates from seed {}.", held.seed_value()),
+                Regenerated::Differs(why) => {
+                    println!("  SNAPSHOT DOES NOT REGENERATE: {why}");
+                    println!("  The draw changed. `npm run check:opening:write` replaces it.");
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+}
+
+/// `docs/opening.snapshot` — the world an artifact opens from, beside the log that says what was
+/// thrown away to get it.
+fn snapshot_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/opening.snapshot")
 }
 
 fn say(c: &Census) {
@@ -99,6 +138,7 @@ fn say(c: &Census) {
     println!("  banks lent and repaid   {} of {}", c.banks_that_lent_and_were_repaid, c.banks);
     println!("  kinds held by choice    {} of {}", c.kinds_held_by_choice, c.kinds_declared);
     println!("  maturity days {} · issue days {} · ages {}", c.distinct_maturity_days, c.distinct_issue_days, c.distinct_ages);
+    println!("  moments refused         {}", c.refused);
     println!("  audit built {} · violations {}", c.audit_built, c.audit_violations);
     println!("  holdings younger than the world {}", c.rows_younger_than_the_world);
 }

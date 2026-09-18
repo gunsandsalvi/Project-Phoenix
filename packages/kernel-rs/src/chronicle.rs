@@ -265,6 +265,8 @@ pub fn replay(
 /// and the next seed value is drawn.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Property {
+    /// Every moment of the past actually settled.
+    ThePastWasLived,
     /// Every market has traded.
     EveryMarketTraded,
     /// Every living party has an outlook (§46: formed from its own history, which the past gives it).
@@ -311,6 +313,10 @@ pub struct Census {
     pub distinct_maturity_days: usize,
     pub distinct_issue_days: usize,
     pub distinct_ages: usize,
+    /// 22b: **moments the world could not live.** A past that was told and REFUSED is not a past:
+    /// the register then holds the residue of the moments that happened to work, and every property
+    /// below is counted over a world that never ran. Its own field because it is its own failure.
+    pub refused: usize,
     pub audit_violations: usize,
     /// Audit: **an unbuilt family reports "not built", never green.** A census of zero violations
     /// from a world with no audit assembled is the most expensive lie this file could tell, so the
@@ -323,6 +329,15 @@ pub struct Census {
 /// 22b.2: the nine, in order, each answering for itself. **A criterion that fails for every seed is a
 /// missing mechanism with a name** — which is why the reason is a sentence and not a flag.
 pub fn accept(c: &Census) -> Verdict {
+    // FIRST, because everything after it is counted over the register this past left behind. A world
+    // that refused a hundred wage payments still has holdings, and they are the holdings of the
+    // moments that happened to work — which is a different world from the one that was told.
+    if c.refused > 0 {
+        return Verdict::Rejected {
+            failed: Property::ThePastWasLived,
+            why: format!("{} told moments the world could not live, so this past never happened", c.refused),
+        };
+    }
     if c.markets == 0 || c.markets_that_traded < c.markets {
         return Verdict::Rejected {
             failed: Property::EveryMarketTraded,
@@ -447,10 +462,22 @@ mod tests {
             distinct_maturity_days: 6,
             distinct_issue_days: 7,
             distinct_ages: 5,
+            refused: 0,
             audit_violations: 0,
             audit_built: true,
             rows_younger_than_the_world: 0,
         }
+    }
+
+    #[test]
+    fn a_past_the_world_could_not_live_is_not_a_past() {
+        // 22b: the register of such a world holds the residue of the moments that HAPPENED to work,
+        // so every property after this one would be counted over a world that never ran. It is the
+        // first thing `accept` looks at, and a census that could not fail here would pass a world in
+        // which a hundred wage payments silently did not happen — which is what it did until the rig
+        // asked for a year of history.
+        let c = Census { refused: 1, ..full_census() };
+        assert!(matches!(accept(&c), Verdict::Rejected { failed: Property::ThePastWasLived, .. }));
     }
 
     #[test]

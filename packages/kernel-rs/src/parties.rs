@@ -104,6 +104,21 @@ impl Parties {
         self.weight[p.row()]
     }
 
+    /// XI-15: whether this party is one party or a CELL standing for many. A reader rather than a
+    /// branch: the kernel asks so it can write a party down (22b.7), never so it can behave
+    /// differently towards one.
+    #[inline]
+    pub fn representation_of(&self, p: PartyId) -> Representation {
+        self.representation[p.row()]
+    }
+
+    /// XI-15: a cell's identity is a KEY on its kind's declared lattice, and the key is part of what
+    /// the party IS — so a snapshot that dropped it would open a world of different cells.
+    #[inline]
+    pub fn key_of(&self, p: PartyId) -> u32 {
+        self.key[p.row()]
+    }
+
     pub fn of_kind(&self, kind: u32) -> &[u32] {
         match self.of_kind.get(&kind) {
             Some(rows) => rows,

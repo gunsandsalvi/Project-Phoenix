@@ -800,10 +800,20 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   put one — `Draft` has no variant that states a price, which is the grammar guard of 22b.1 doing
   the work this step was going to do by hand. `grep -rn "prices\.write\|opening_price" src/` is
   empty, and that grep is the exit condition, so the step is met rather than skipped.
-- [ ] 22b.7 The snapshot format; `assemble()` opens from one; **plus the regeneration check deferred
+- [x] 22b.7 The snapshot format; `assemble()` opens from one; **plus the regeneration check deferred
   from 22b.2**: drawing from the snapshot's seed value must reproduce it exactly, or a snapshot is a
   second way to state an opening rather than an optimisation. The rig's scale models become small
   accepted worlds, so a test asks for *a mill that has traded for a year* instead of building one.
+- [ ] 22b.7a **Equity is a stored aggregate, and it counts assets only.** INSERTED here (Law 10: at
+  its dependency position — before the balance-sheet audit family, which cannot be written over a
+  number nothing derives). Found writing the snapshot, which had to carry it: `Register::equity` is a
+  running total settlement bumps, so nothing reads it from anywhere. An ISSUER'S LIABILITY never
+  reaches it — the treasury's equity rises when it sells a bill, a firm's when it borrows — because
+  the only thing that would net them off is `Instruments::owed_by`, which nobody consults. Two
+  prohibitions at once (no stored aggregate; capital is never a pot). The fix REMOVES code (Law 12):
+  `equity(party)` becomes a read over what the party holds against what it issued, `bump_equity` and
+  every call to it go, and `PartyRow::equity` goes with them. It is also the half of the census
+  property *the audit is green and every balance sheet closes* that no family checks today.
 - [ ] 22b.8 MSER-5 on a handful of named series (money per member, the going wage, living parties,
   sessions cleared, the credit stock): the chronicle's length becomes a truncation point a statistic
   chose rather than a number somebody picked — a RESOLUTION, tested by doubling it.

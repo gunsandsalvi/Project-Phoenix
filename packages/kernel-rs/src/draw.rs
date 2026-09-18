@@ -407,6 +407,25 @@ pub fn households_employment_and_savings(
         made.push(h);
     }
 
+    // One working-capital line per firm, issued once and drawn every week (see the loop below). A
+    // revolving facility is ONE row the firm owes on, not a new loan a week — which is also what
+    // keeps `EveryKindIsHeldByChoice` honest, since a thousand identical rows would be one fact
+    // written a thousand times (Law 4).
+    let working_capital: Vec<InstrumentId> = firms
+        .iter()
+        .map(|f| {
+            d.world.instruments.issue(
+                *f,
+                ccy,
+                Class::Claim,
+                UnitId::at(0),
+                // 5 C4.b: the facility's rate is a TERM the bank wrote, not a price.
+                Some(0.05),
+                Some(Day(opens_on.0 + 365)),
+            )
+        })
+        .collect();
+
     // §39, XI-10: **employment is a relationship**, recorded — a firm, a worker, a wage, a start date.
     // The wage that follows is its own told moment, week after week, which is the income history.
     for (n, h) in made.iter().enumerate() {
@@ -425,6 +444,36 @@ pub fn households_employment_and_savings(
         });
         for week in 0..weeks {
             let day = Day(started.0 + week * 7);
+            // §41 C2: what it does not spend is what it SAVES. The spending goes back to the employer
+            // (§32 F1: spending is somebody's income) — but the saving does not, and that is the whole
+            // problem this block exists to solve.
+            let spends = wage * (0.55 + (draw.below(400) as f64) / 1_000.0);
+
+            // **THE CIRCUIT DOES NOT CLOSE ON WAGES AND SPENDING ALONE, and the opening census is
+            // what proved it.** A firm pays W and gets back S; week after week the difference is a
+            // hole in its account and a deposit in the household's, and by the fortieth week the firm
+            // cannot make payroll: a hundred told moments came back `ShortOfMoney` at a year's
+            // history, and under eight weeks the leak was too small to see. That is not a number to
+            // adjust — it is a MECHANISM that was missing, and it has a name.
+            //
+            // The saving is a deposit, and the bank lends against it: the firm draws its
+            // working-capital line for exactly what its wage bill exceeds its takings, which is what
+            // a revolving facility is for. It is told as an ordinary loan, two-sided, on a line the
+            // firm issued — so the firm's debt and the household's savings grow together, which is
+            // what they do (Banks Lending; Money D2: a bank lends by creating deposits).
+            let short = wage - spends;
+            d.chronicle.tell(Told {
+                at: Day(day.0 - 1),
+                draft: Draft::Lent {
+                    lender: d.world.parties.bank_of(employer),
+                    borrower: employer,
+                    loan: working_capital[n % firms.len()],
+                    principal: short,
+                    ccy,
+                    money: employers_bank_money,
+                },
+                why: "the firm drew its working-capital line for the week's wage bill it had not taken in",
+            });
             // The wage is REAL MONEY leaving the employer's account and arriving in the household's
             // (Law 5). A household that was never paid has no money, and no outlook either.
             d.chronicle.tell(Told {
@@ -432,10 +481,6 @@ pub fn households_employment_and_savings(
                 draft: Draft::Paid { from: employer, to: *h, amount: wage, ccy, money: employers_bank_money },
                 why: "the firm paid the week's wages out of its own account",
             });
-            // §41 C2: what it did not spend is what it saved — and the spending goes back to a firm,
-            // which is where the firm got the money to pay the next week's wages (§32 F1: spending is
-            // somebody's income). The circuit closes because both legs are told.
-            let spends = wage * (0.55 + (draw.below(400) as f64) / 1_000.0);
             d.chronicle.tell(Told {
                 at: Day(day.0 + 1),
                 draft: Draft::Paid { from: *h, to: employer, amount: spends, ccy, money: employers_bank_money },

@@ -18250,3 +18250,50 @@ with the engine at 0g.45. The Rust draw has nowhere to put one: `Draft` has no v
 price, so the grammar guard does by construction what that step was going to do by hand.
 
 **Six hundred and fifty-one tests hold; clippy clean; `phoenix-check` green over 81 files.**
+
+---
+
+## 22b.7 — the snapshot, the regeneration check, and a circuit that did not close
+
+**What.** `snapshot.rs`: the parties, lines and holdings an accepted past left behind, written to
+`docs/opening.snapshot` in a text format, read back bit for bit, and opened from without living the
+past again. `rig.rs`: the scale model is no longer a fixture but a small accepted world, so a test
+asks for *a firm that has traded* or *a bank that has lent* and gets one that actually did.
+
+**A snapshot is an OPTIMISATION and never a second way to state an opening**, and three things keep
+it that way. Its only constructor is `Snapshot::of(&Opening)`, which refuses a rejected world — there
+is no field-by-field door, which is the `endowUnits` door 22b.4 deleted wearing a new name. It
+carries the seed value and shape that made it. And `regenerates` draws the world again and compares
+it row for row: **the regeneration check 22b.2 named and deferred to here.** The comparison is exact
+and needs no tolerance, because the two sides are not two computations of one answer — they are the
+same computation run twice, so a difference of any size is a defect (Law 7). `check:opening` runs it
+against the committed snapshot on every `npm run check`; `--write` is how somebody who changed the
+draw on purpose replaces it.
+
+**The rig asked for a year of history and the world could not live it.** Three defects, in order:
+
+1. **The census never looked at whether the past actually settled.** `Replayed.refused` was there and
+   `accept` ignored it, so a world in which a hundred told moments came back `ShortOfMoney` was
+   accepted — and every property after that was counted over the residue of the moments that happened
+   to work. That is a hole in 22b.2's own check and it is closed the way it should be: `ThePastWasLived`
+   is the FIRST property `accept` reads, with a test that makes it fail.
+2. **And then the world was rejected, correctly: the circuit does not close on wages and spending
+   alone.** A firm pays W and takes back S; the difference is a hole in its account and a deposit in
+   the household's, week after week, until by the fortieth it cannot make payroll. Under eight weeks
+   of history the leak was too small to see, which is why every earlier run passed. The comment at
+   that site said *the circuit closes because both legs are told* — it was wrong, and a stale comment
+   is a defect (Law 16).
+3. The missing mechanism has a name and is now told: **the saving is a deposit and the bank lends
+   against it.** Each firm has one working-capital line and draws it each week for exactly what its
+   wage bill exceeds its takings, which is what a revolving facility is for. The firm's debt and the
+   household's savings grow together, which is what they do. Not a number adjusted anywhere: a loan,
+   two-sided, on a line the firm issued.
+
+The accepted world now settles **4,161 moments** of a year's past with none refused.
+
+**And one finding written down rather than chased** (Law 11), inserted as 22b.7a: `Register::equity`
+is a stored aggregate that counts assets only. The snapshot had to carry it because nothing derives
+it, and an issuer's liability never reaches it — the treasury gets richer for selling a bill. It is
+also the half of *every balance sheet closes* that no audit family checks. The fix removes code.
+
+**Six hundred and sixty tests hold; clippy clean; `phoenix-check` green over 83 files.**

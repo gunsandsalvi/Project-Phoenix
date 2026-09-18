@@ -10,6 +10,7 @@
   "scripts": {
     "check": "npm run check:laws && npm run check:tests && npm run check:opening && npm run check:existence && npm run plan:check",
     "check:opening": "cargo run --release --quiet --manifest-path packages/kernel-rs/Cargo.toml --bin check-opening",
+    "check:opening:write": "cargo run --release --quiet --manifest-path packages/kernel-rs/Cargo.toml --bin check-opening -- --write",
     "check:laws": "cargo run --release --quiet --manifest-path tools/phoenix-check/Cargo.toml",
     "check:tests": "cargo test --release --manifest-path packages/kernel-rs/Cargo.toml",
     "check:clippy": "cargo clippy --release --all-targets --manifest-path packages/kernel-rs/Cargo.toml -- -D warnings",

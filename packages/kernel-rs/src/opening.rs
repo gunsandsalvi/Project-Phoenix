@@ -32,7 +32,7 @@ use std::collections::{BTreeMap, BTreeSet};
 /// this size has, whose count must fall as the mechanisms that would decide them get built — firm
 /// entry decides the firm count, household formation the cell count, the treasury's funding need the
 /// bill count. None of them is fitted to anything observed (5 B5).
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Shape {
     pub banks: usize,
     pub bills: usize,
@@ -46,6 +46,12 @@ pub struct Shape {
 
 /// One attempt: the world it drew, what the past did, what the census found and what that means.
 pub struct Opening {
+    /// 5 A5: what drew it. A world that cannot say which value made it cannot be re-run, and a
+    /// snapshot of it would be a statement rather than a derivation (22b.7).
+    pub seed_value: u64,
+    pub shape: Shape,
+    /// 22b: which period the END of the past falls in — the world's period zero.
+    pub opens_at: u32,
     pub drawn: Drawn,
     pub replayed: Replayed,
     pub census: Census,
@@ -93,9 +99,10 @@ pub fn draw_once(seed_value: u64, shape: Shape) -> Opening {
         d.world.settled_kind,
         d.world.failed_kind,
     );
-    let (census, violations) = census_of(&d, shape);
+    let (census, violations) = census_of(&d, shape, &replayed);
     let verdict = accept(&census);
-    Opening { drawn: d, replayed, census, violations, verdict }
+    let opens_at = period_of(d.chronicle.from, d.chronicle.opens_on(), shape.days_per_period);
+    Opening { seed_value, shape, opens_at, drawn: d, replayed, census, violations, verdict }
 }
 
 /// **Draw until one is accepted**, logging every world thrown away.
@@ -128,7 +135,7 @@ pub fn open(from_seed: u64, attempts: usize, shape: Shape) -> Opened {
 /// **The census: nine properties, every one of them READ** (Law 19). Not one number here is stated
 /// by the draw and repeated; each is derived from the register, the instruments, the audit or the
 /// told moments.
-pub fn census_of(d: &Drawn, shape: Shape) -> (Census, Vec<Violation>) {
+pub fn census_of(d: &Drawn, shape: Shape, replayed: &Replayed) -> (Census, Vec<Violation>) {
     let told = d.chronicle.in_order();
     let opens_at = period_of(d.chronicle.from, d.chronicle.opens_on(), shape.days_per_period);
 
@@ -311,6 +318,7 @@ pub fn census_of(d: &Drawn, shape: Shape) -> (Census, Vec<Violation>) {
         distinct_maturity_days: distinct_maturity_days.len(),
         distinct_issue_days: distinct_issue_days(d),
         distinct_ages: ages.len(),
+        refused: replayed.refused.len(),
         audit_violations: found.len(),
         audit_built,
         rows_younger_than_the_world,
