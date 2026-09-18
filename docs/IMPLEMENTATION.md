@@ -226,7 +226,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 20 | Periodicity — **done** (section removed; see `docs/RECORD.md`; a rating fee once a year on the anniversary of the first opinion, an impairment once per default, the spending tax remitted on the state's own fiscal quarter, and a buyback that is a programme with an authority and a closing period. One calendar read, `crossesAnniversary`, replaces the polity's copy of the walk. 20.2a inserted; finding 21.89) | after 19 |
 | 20a | The annual assessment against what was withheld — **done** (section removed; see `docs/RECORD.md`; the year's bases from the SAME walk the week's withholding runs, what was taken read off the ledger, and the difference settled both ways; finding 21.94) | after 20 |
 | 0i | Facts are declared — the third register — **done** (section removed; see `docs/RECORD.md`; 13 kernel facts declared, the ratchet at 219 kinds still bags and falling; findings 21.111–21.114). **Corrected:** its rename of the revaluation payload broke three readers, which is the failure it exists to prevent — see `docs/RECORD.md` “0i, corrected” | FIRST, before 21: most of 21's open findings are instances of it |
-| 20b | `docs/FINDINGS.md` is a second findings file — 78 findings never placed | BEFORE 21: most of what is in it is 21's, and one file is the rule |
+| 20b | `docs/FINDINGS.md` is a second findings file — **done** (section removed; see `docs/RECORD.md`; all 295 ids audited, the 78 that were nowhere placed under 21.115–21.120 and 22d.4 by what each IS, and the file deleted) | BEFORE 21: most of what is in it is 21's, and one file is the rule |
 | 21 | The local repairs | each when its file is open |
 | 21b | A pool whose manager died | after 21a |
 | 21c | A tax on an estate is a claim on it | after 21b |
@@ -244,40 +244,6 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 ---
 
 ## Part 2 — The items
-## 20b. `docs/FINDINGS.md` is a second findings file, and 78 of its findings were never placed
-
-**INSERTED here (Law 10), BEFORE 21, because most of what is in it is 21's.** Found cleaning this
-file. `CLAUDE.md` is explicit: *THERE IS ONE SUCH FILE AND IT STAYS* — it was three (`BUGS.md`,
-`SWEEP.md`, `VERIFY.md`), and what that bought was one defect written three times under three names,
-the newest contradicting the other two. **`docs/FINDINGS.md` is the fourth.** 502 lines, dated
-2026-09-15, headed *"the working file behind `docs/IMPLEMENTATION.md` Part 4; every id here is
-positioned there"* — and that header is false.
-
-**Measured.** 295 ids in the file; **78 appear nowhere in this one**:
-
-> BF1 BF3 BF4 · BK16 BK18 BK19 BK22 BK23 BK25 BK33 BK34 · CB2 CB3 CB4 CB5 CB7 · CD10 CD11 ·
-> CF2 CF3 CF4 · CO6 · DL2 DL9 · EQ6 · FD2 FD4 FD10 FD16 FD20 · FX2 · FXD2 FXD3 FXD4 FXD5 FXD6 ·
-> HO4 · IR1 IR2 IR3 IR4 IR5 IR7 · IX2 IX3 IX4 · LD2 LD4 · MM2 MM3 MM4 MM6 MM17 · MR4 · OB2 OB3 ·
-> OM4 OM6 · OP1 OP2 OP4 OP5 · RP2 RP4 RP15 · ST4 ST7 · SZ3 SZ4 ·
-> WK5 WK6 WK7 WK8 WK9 WK10 WK11 WK12 WK14
-
-They are not small: `IR1`–`IR7` are the rate-quoted contract classes marking at ×100 the
-subdivision, `MM2`–`MM17` the deposit-insurance unit bug whose consequence chain ends in *no loan is
-ever written after period 0*, `WK5`–`WK14` the kernel's own walks and cache keys.
-
-- [ ] 20b.1 **Every unplaced finding is POSITIONED** — moved under the item that should fix it, or
-  inserted as its own item at its dependency position, saying where. A finding leaves a file only by
-  being placed, never by being deleted to make the file shorter (Part II).
-- [ ] 20b.2 **`docs/FINDINGS.md` is deleted in the same change**, and the record says where each of
-  the 78 landed. One file, and this is how it becomes one again.
-- [ ] 20b.3 **Each carries the mark 21 carries**: measured on the TypeScript engine, so each is
-  either a fact about the MODEL, which survived the port, or a fact about the CODE, which died with
-  the file it named and closes by being verified absent. They are RE-READ, not carried over.
-
-**Exit.** `docs/FINDINGS.md` does not exist; every id it held is under an item in this file.
-
----
-
 ## 21. The local repairs
 
 Each when its file is open for another item; the change and the test.
@@ -474,6 +440,146 @@ and costs over an arbitrary world, which is what it is for.
 - [ ] 21.119 `tools/test/plan-progress.test.ts` *counts the PLAN items, which have no worklist row at all (item 0c)* (PRE-EXISTING: red at `e568cf7` before the completed steps were deleted, verified in a stash): it asserts `itemProgress()` has a PRESENT section for item **0a** with more than zero steps, and 0a closed long ago, so CLAUDE.md's own loop deleted its section — *delete the item file when it closes*. The test encodes the state of the plan on the day it was written, so it goes red every time an item it names closes, which is the opposite of what it is for: what it should assert is the RULE (an item with a section is counted from its section; one without is counted from the worklist's `done`), against a fixture, not against today's plan. It is the same shape as 21.111, a census of an older world. Fix it where `plan:progress` is next opened. **0g.17 has since closed WITHOUT it** — it added two fixture-based cases beside this one (a declared "Steps closed and deleted: N" count, and that the line is not read as the next item's step) which show the shape this should take, and left the stale assertion alone rather than widening that step (Law 14). It is the next thing that touches `tools/`.
 - [ ] 21.115 `securities-lending/index.ts returnLoans` → `register.release` (measured at 0g.4, PRE-EXISTING: identical at `27312b8` before any of this session's 0g work, so 0g did not cause it): **a (24, 96) world STOPS in period 9** with `Missing: [Register D5] lien 613 on bank.m/ust.bill.2027-03-15 does not exist` — a loan being returned releases a lien that is already gone, so either the lien was released twice or something else released it and the loan's row still names it. A lien has one writer and a return is a two-sided instruction, so this is a fact with two ways to end (Law 4), and the engine will not run past it. **It is invisible to every gate**: `check:opens` steps the rig 30 periods (142 parties) and the four-country world 12 (433 parties), and neither draw reaches it — the ladder's (24, 96) rung at 26 periods is the smallest run that does, which is why it surfaced under a performance step and not under a test. Two things, and they are one change each: the release in `returnLoans` reads the lien the register holds rather than the one the row remembers, and `check:opens` gains a third world deep enough to reach period 9 of a heavier draw (the check that "was missing" is missing this). Positioned here, before 21b, because it is the first thing that stops a world and everything measured beyond period 8 of a real draw is unmeasurable until it is fixed.
 - [ ] 21.48 `freight.test.ts`, three red before 16.3 and after it (found at 16.3, not caused there — the 15.7 tree runs the same three red): *runs every leg every period* finds a `freight.session` with no leg in it (a period in which no place had anything to ship writes an empty record), and *prints the same grade separately in every place that makes it* and *sources locally where the thing is made* find grain made in ONE place in the `basis-a`/`subs-a` draws — the rig's draw puts a line in one region, so a location basis cannot form in the scale model (Commodities Spot D1, Freight D3). The first is the freight module's (record the period as `noDemand` on every leg, or nothing); the other two are the draw's (`rig.ts drawFirms` per line per region) (16.3).
+
+
+### The 78 findings drained from `docs/FINDINGS.md` (20b)
+
+**They were in a fourth findings file and none of them was in this one.** Its header said *every id
+here is positioned there* and that was false for 78 of its 295 ids. They are here now, in their own
+words, grouped by what each IS rather than by which file it named — because the grouping is the thing
+the re-reading turns on (file header: a fact about the MODEL survived the port, a fact about the CODE
+died with the file it named).
+
+**None of them has been re-read yet.** Each is one of the two kinds and the re-reading says which; a
+step is not taken until it has been. `tools/phoenix-check` already forbids a good number of the
+second kind outright, which is the fastest way to close them.
+
+### 21.115 The walks — forty findings that name a file that no longer exists
+
+- [ ] 21.115.BF1 `bond-futures/index.ts:1731 bondCarryOf`: `journal.ofKind('index.benchmark').filter(...).at(-1)` full scan per (deliverable, read) — called in `netBasis` per book measure and in `futureOrders`? (no: futureOrders uses outlook). Fix: `lastOf`.
+- [ ] 21.115.BK16 `treasury.ts:652 classesSeen` reads the last `deposit.classes` event: O(events of kind) per call via `ofKind`; called once per period. Fine.
+- [ ] 21.115.BK18 `dealing.ts:1034 coveredLines`: walks ALL instruments per call; called by `covers()` per market per bank (`dealingOrders`) → O(banks × markets × instruments) per period. With CP4's dead plant markets this is the walk that grows without bound. Fix: compute `coveredLines` once per bank per period (cache in a working store keyed by period), and `covers` is a Set lookup.
+- [ ] 21.115.BK19 `dealing.ts:960 stateOf` is rebuilt PER MARKET per bank (`dealingOrders` → `stateOf`), each build calling `liquidityTargets` (walks markets twice), `bookValue` (walks targets), `linesQuoted` (walks markets), `capitalOf`, `liquidOf`, `carryRate` (journal reads). O(banks × markets²) per period. Fix: `stateOf` once per bank per period in a working store; the participant hook receives it.
+- [ ] 21.115.CB5 corporate-bond/index.ts:535 `testCovenants` walks ALL instruments per period and `alreadySaid` walks `forSubject('covenant.breached', bond)` per bond — O(bonds × breaches). Index live corporate bonds (register ofKind) and keep the last-tested quarter on the instrument's working state.
+- [ ] 21.115.CD11 `cds/series.ts:1200 weightShare`, `runningShare`: raw `/` divisions (not `ratioOf`) on `number` weights — type-erased.
+- [ ] 21.115.CF3 commodity-futures `carryFromWorld.lastPublic` uses `journal.ofKind(kind).at(-1)` — full scan of all events of the kind every read; must be `lastPublic` / indexed.
+- [ ] 21.115.DL2 `derivative-layer/index.ts:405 trueUpFunds`: `coverOne` computes `requirement` for every member (each a walk + marks) and `trueUpFund` computes it AGAIN for the same members, then `fundShareOf` again for the observer. Three derivations of one number per period. Fix: `requirement` cached per (poster, holder, ccy, period).
+- [ ] 21.115.EQ6 `equity/index.ts:820 seed`: `Math.round(...)` in engine seed code (outside core/num). `shares = book / OPENING_SHARE` — book at seed = firm's holdings value; OK.
+- [ ] 21.115.FD2 `index.ts:1845 holdingsWorth` per (fund, market) per session; same fix.
+- [ ] 21.115.FD4 `index.ts:1141 payQueue` runs in BOTH `funds.strike` (cycle 0) and `funds.settle` (cycle 2): two payment points per period for one queue; fine, but the `fund.gate` event fires twice per period per gated fund.
+- [ ] 21.115.HO4 housing/index.ts:1589 `charge` runs for every alive party every period: builds a ParticipantView per party (`ctx.participant`) and calls `mortgagesOf` (issuedBy walk) — O(parties) views per period for a path that (HO1) can never have a mortgage. Gate on `housing.funding` having been answered.
+- [ ] 21.115.IR1 `irs/index.ts:1623 openBooks`: `journal.ofKind('index.benchmark').some(...)` full scan per currency per period. Fix: `lastOf`.
+- [ ] 21.115.IX2 indices/baskets.ts `sizeSegmentOf`: sorts every listed line by capitalisation on every call, uncached; called per party per period; cache per period.
+- [ ] 21.115.IX3 indices/benchmark.ts `benchmark(ccy, secured)`: walks ALL `moneyMarket.print` events ever (ofKind) per (ccy, secured) read; must be `ofKindIn(kind, period)` on the last printing period or a journal lastOf index.
+- [ ] 21.115.IX4 indices `listed()`: walks all instruments per rule per period; one pass per period building all baskets.
+- [ ] 21.115.MM2 `index.ts:526 capacityOf` → `lentThisPeriod` walks ALL instruments per struck fill. O(fills × instruments). Fix: the session keeps a per-period `placedBy: Map<lender, Qty>` in its working store, incremented in `writeRow`.
+- [ ] 21.115.MM4 `session.ts:1079 fallsDueToIt` walks all instruments per bank per period (called from `publishFunding`). Fix: `instruments.heldRowsBy(lender)` or read `view.holdings()` filtered by `isRow`.
+- [ ] 21.115.MM6 `resolution.ts:159,369,643 valueBook/allocate/moveBook` walk ALL instruments three times per resolution — acceptable (rare event) but `issuedBy(bank)` index exists and should be used.
+- [ ] 21.115.OB2 observer.ts:1071 `indicesOf`: `ofKind('fund.launched')` full scan per snapshot; :1152 `statementsOf`: `ofKind('research.estimate')` and `ofKind('research.surprise')` full scans PER COMPANY (O(companies × events)). Index by subject (`forSubject`) or by (kind, period).
+- [ ] 21.115.OB3 observer.ts:983 `hedgesOf`: for every alive party × every pair calls `hedgedResidual(view, base, quote)` — with cells included that is O(parties × pairs) contract walks per snapshot; skip parties with no contracts and no foreign balance (a register read) before computing.
+- [ ] 21.115.OM4 central-bank-omo/index.ts:1171 `lastRemittance`: `ofKind('centralBank.remittance')` full scan + filter + sort EVERY period for each central bank. `lastOf(kind, cb)`.
+- [ ] 21.115.OP4 `options` `Math.sqrt` in three places; `intrinsic` returns `nothing` (0) for out-of-the-money (a decision, fine).
+- [ ] 21.115.RP2 `reporting/report.ts:375 incomeOf` walks `ledger.inPeriod(p)` for every period of the quarter (13 periods) per reporting firm — and `restate` re-walks the same span EVERY period for EVERY quarter ever reported (`already.includes(label)` → restate → `incomeOf` over 13 periods). O(firms × reported quarters × 13 × ledger). This grows without bound. Fix: `register.equityEntries(firm, from, to)` already gives the entries; the `cause` map is the only reason to walk the ledger — put `cause` on the equity entry at write time (one writer), delete the ledger walk. Restatement check: compare the entries' count/sum since last read (append-only), not a re-walk.
+- [ ] 21.115.RP4 `reporting/index.ts:66 publish`: `quarterClosedBy(anchorOf(seed, firm), today)` per firm per period — cheap. `guide` → `guidanceOf` → `ctx.participant(firm).outlook(income)` per public firm per period. OK.
+- [ ] 21.115.ST7 short-term-debt: `SENIOR = 1` and `'ACT/360'` are literals in a mechanism (allowed: 1), fine; `PAPER_DAY_COUNT` should be a term on the paper (terms.dayCount already is) — one writer.
+- [ ] 21.115.SZ3 securitisation `noteBids`: builds a ParticipantView per other bank per deal per period.
+- [ ] 21.115.SZ4 securitisation `windUp`: gating on `cease` event presence via ofKind scan; the deal state should carry its wind-up flag.
+- [ ] 21.115.MR4 merchants: a merchant SELLS in the far region at basis × (1+margin) as a limit ask; if the far market clears below it the cargo sits (carrying storage cost: commodities storage venue) — fine. But `basisPerUnit` returns on the FIRST holding matching (loop with `return` inside; fine) and includes freight in basis (freight A-68 fix) — good.
+- [ ] 21.115.WK5 world.ts:2150 `classifyAsset.gradesOn`: `journal.forSubject('rating.action', obligor)` walk per classification; `classify` is called per instrument per mandate check per fund per period. Keep the latest grade per (assessor, obligor) in a journal-side index (or the ratings module publishes it as a read).
+- [ ] 21.115.WK6 world.ts:2368 `owedIn`: walks every instrument the party issued and asks the kind's `due()` for two periods; memoised per view (per cycle) — fine; but `due()` for a loan/bond schedule computes the calendar placement each time. A per-(instrument, period) due-cache in the register (invalidated by restate) would serve corporate actions, owedIn, cashDue and the audit at once.
+- [ ] 21.115.WK7 world.ts:2079 `curveAt` → `readCurve(... instruments: () => this.instruments.all() ...)` walks ALL instruments to find a family's lines on EVERY curve read (see SC2). `instruments.issuedBy(family.issuer)` exists — use it.
+- [ ] 21.115.WK8 world.ts:2749 `reach()`: for every market walks `prices.history(m.instrument)` from the start looking for the first traded print — O(markets × history) EVERY PERIOD (called from `reads()` for the audit). Keep "first traded period" per market in the reach tally when the print is written.
+- [ ] 21.115.WK9 world.ts:2782 `reads()`: `journal.inPeriod(period)` and `ledger.inPeriod(period)` filtered twice; trivial. But `moneyStock()` walks all instruments — fine.
+- [ ] 21.115.WK10 world.ts:1085 `remit` OM3 aside, `ledger.inPeriod(p)` for 52 periods: the ledger must keep per-period slices (it does: `inPeriod`) — verify it is an index not a filter over the whole ledger (if a filter, every `inPeriod` call is O(ledger) and the reporting module's 13-period walk is O(13 × ledger) per company).
+- [ ] 21.115.WK11 world.ts:478 markets phase sorts the market list every period (O(M log M), trivial) and filters by instrument liveness; then `runOne` per market asks EVERY participant decl × its parties → with `decl.markets` undefined for most decls (banks, funds, households?) every party of the kind is asked about every market: O(parties × markets) `orders()` calls per period — this is THE dominant cost of the period loop by construction (the comment at :1413 says 3,000 firms × 260 markets). Every participant decl MUST name its markets (`markets:`), and the kernel should make `markets` mandatory (a decl without it is refused at assembly) so the ask is O(Σ parties' interest lists).
+- [ ] 21.115.WK12 world.ts:1265 `market.noView` is recorded for every market with orders and no speculative participant — one event per market per period → journal growth O(markets) per period for a measurement; record once per period as one event with the list.
+- [ ] 21.115.WK14 world.ts:1447 `blindView` spreads the memoised view into a NEW frozen object per call (`{...open}`) — called per assessor per subject per period (ratings): allocation of ~60 properties per call; memoise the blind view per party per cycle too.
+
+### 21.116 The model defects — each re-read against the module that carries it now
+
+- [ ] 21.116.BF4 `bond-futures/index.ts:2035 matching`: finds the house's other row by (deliverable, expiry, struckAt, notional) — two members with identical fills are indistinguishable → wrong pairing possible; fills at the same uniform price are COMMON (uniform-price sessions). Fix: the layer records the pair id at the strike (`c.pairedWith`).
+- [ ] 21.116.BK22 `dealing-quote.ts:200 riskOf` returns 0 confidence when no outlook: a desk with no history charges no risk — fine (edge still has carry). `adverseOf` reads `bought`/`sold` outlooks — outlooks on FLOW quantities, journaled per instrument per bank per period by expectations (H7 cost).
+- [ ] 21.116.BK23 `dealing-quote.ts:309`: `least(least(room, inBook), inMoney)` and `material(size, 2, limitPerInstrument)`; `offerSize = inventory` (whole free inventory offered every period regardless of target — a desk holding the treasury's liquidity portfolio OFFERS ALL OF IT every session at `offer`; only `skew` protects it. If a buyer lifts the offer the bank sells its liquidity buffer.) Fix: `offerSize = inventory − target` when positive (what it is carrying ABOVE target), plus the target part only at a higher offer (the treasury's reservation).
+- [ ] 21.116.BK25 `staff.ts:541 linesCovered` / `processesRun`: `Math.floor(ratioOf(...))` — floor outside core/num (also F6). `payrollSince(view.period)`: a bank that paid wages last period covers lines this period; a bank that has never paid a wage covers ZERO lines → no desk quotes anything until the labour market has cleared a `banking` venue once. In the census the labour venue for `banking`/`dealing` occupation: does the seed give banks staff? (`staff.ts` says a bank that never met a wage runs nothing — combined with the seed not endowing bank employment, NO bank quotes any line in period 0 and 1.) Check seed: `foundation.ts` employment for banks. → S-check.
+- [ ] 21.116.CB3 corporate-bond/index.ts:376 coupon = `keenest` (the holders' required yield) — a bank's reservation is a yield on its OWN book with its own funding; a coupon "roughly par where a book would start" is the sovereign curve at tenor + the keenest spread; here the coupon is the flat required yield (which after IR6/BK-class bugs may be 0 or absurd). Acceptable as SHAPE if the reservation were per-obligor (BK3).
+- [ ] 21.116.CB4 corporate-bond/index.ts:454 covenants = the firm's own ratios AT ISSUE ("no worse than today") — every bond has a different covenant and the tightest possible one; a firm that issues at its best quarter breaches on the next ordinary quarter → `covenant.breached` fires for most issuers within a year, and `SOURED` (ST) then shuts them out of paper and (banks) out of loans. Covenants need headroom which is a NEGOTIATION outcome — a PLACEHOLDER with a named mechanism (Corporate Credit B2 headroom as a holder's term in its bid) not a silent tightest-case.
+- [ ] 21.116.CD10 `cds/contract.ts:946 payoff`: recovery = `reads.mark(obligation)` at settlement: the defaulted bond's last MARK — which after the estate closes is the write-off price 0 (estate `close` moves claims at `pricePerUnit 0`) unless the estate SOLD the bond into a market; a bond nobody bought recovers 0 → protection pays par. D2.a "no fixed recovery" is honoured in form, but in substance recovery is 0 or last-print. OK given XI-8; note.
+- [ ] 21.116.DL9 `derivative-layer/index.ts:863 participants: tradesContracts.map(...)` default `[BANK, FIRM]` — funds/insurers must be passed by the assembling world; FD20's hedge-fund shorting depends on this list being extended in `world` assembly. Check foundation/rig: does it pass FUND? (grep `derivativeLayer(` in seeds/test.)
+- [ ] 21.116.FD10 `manager.ts:312 noticeToGive`: `earns < cost` → wind up. `cost = costOfAPool` = wage × hoursPerPool — a manager with 3 pools compares EACH pool's fee to the cost of ONE pool. OK. But `netAssetsOf` reads `fund.struck` perShare × shares — a pool of one member's 100 shares earns fee ≈ 0 → every seeded pool is wound up at `patience` periods unless households subscribe enough that fee ≥ wage × hours. With H1/H4 (households never subscribe because `willWork` gate / dwelling bids) every pool in the world is wound up at period `patience`. Check census: `fund.notice` count. → measure.
+- [ ] 21.116.FD16 `bank.ts fundChoosesBank` and `households/bank.ts` — DUPLICATED `board()` (MM17) and the whole switching logic (`stayed`, `foregone > cost`) is the same algorithm in two modules with different switching-cost params. Law 4 (one mechanism for "a depositor moves"): the mechanism belongs in the kernel (`world/deposits.ts` or `registry/switching.ts`) with the PREFERENCE (switching cost) per party kind in the registry; modules declare only the cost.
+- [ ] 21.116.MM17 Duplicate code: `households/bank.ts:146 board()` and `funds/bank.ts:92 board()` are the same 9 lines (modules cannot import each other, so the shared read belongs in `registry/` beside `wages.ts` — `registry/boards.ts`). Same pattern likely for `chooseBank` logic; check when reading funds/bank.ts and households/bank.ts.
+- [ ] 21.116.RP15 `ratings/bank.ts assessorChoosesBank`: a THIRD copy of the bank-choice mechanism (FD16). Same fix.
+- [ ] 21.116.FD20 Missing (Fund Shares): D3 (a saver's choice between deposit and fund) exists only through households' `decide` (H3) which ladders every share line — check households/consume for fund subscription reads of `fund.struck.offered`. Hedge Funds C–E: short selling by a pool (`mayWrite`, borrow via securities-lending) exists in the derivative layer's `tradingLimits`; verify in securities-lending whether a FUND ever posts a borrow need (`borrowNeeds` declared only by banks → a hedge fund can never short: Hedge Funds C1 MISSING though marked).
+- [ ] 21.116.FX2 `spot-fx/participants.ts dealerOrders`: `positionIn(view, ccy, home) = view.cash(ccy)` — "its position is what it holds of moneys not its own" — the desk's inventory in a pair is its whole foreign balance, which is also every foreign deposit its customers' payments left it holding; OK by the comment's argument. `skew = edge × held/room` unbounded either way — fine (Law 6).
+- [ ] 21.116.FXD2 `fx-derivatives/index.ts:151` xccy terms freeze `baseRate`/`quoteRate` from the overnight fixing AT BOOK OPENING for the life of the BOOK (not of a contract): every contract struck in that book for 3 years pays interest at the opening period's overnight rate. C1.a says each leg pays its own money's rate — floating. Fix: legs read the fixing at payment time (as IRS does).
+- [ ] 21.116.FXD3 `fx-derivatives/participants.ts:275 carryOf`: `Math.pow(1+r, years)` compounding — covered-interest-parity FORWARD as the party's reservation. Appendix B: "no parity-formula forward" — the module argues it is a reservation not a price; but EVERY bank's reservation is the same CIP number (monoculture) and the quotes are ±1 tick around it: the forward IS CIP by construction with a 2-tick spread. Since B2 says banks take the arbitrage while it pays, the honest form is: reservation = the bank's OWN funding cost in each money (`bank.costOfFunds.alsoIn` — `ownBasis` already reads it for xccy!) not the overnight benchmark. Law 4: `carryOf` and `ownBasis` are two derivations of "what one money costs me against the other"; use the second for both.
+- [ ] 21.116.FXD4 `fx-derivatives/participants.ts:336`: hedger posts at `mine` (its carry) for `positionIn(base) − covered` where `positionIn` = `owedIn(base)` = liabilities due in base less cash held — it hedges the WHOLE liability stock every period at every tenor book (1y, 3y): the same exposure is posted into both tenor books (one party, one position per BOOK but the same need twice across books). Fix: the need is allocated to the tenor matching the liability's maturity (`owedIn` by date bucket), not repeated.
+- [ ] 21.116.FXD6 `fx-derivatives/contract.ts:627,723` `market: '' as never` / `'' as InstrumentId` — an EMPTY id cast to a branded type for `underlying` — the kernel's "underlying must exist" check (G2) is bypassed by an empty string. Fix: `underlying` returns the spot pair's market id (it exists: `fxMarketOf`).
+- [ ] 21.116.IR2 `irs/index.ts:1682 forwardRate`: `Math.pow` compounding annually with `1+rate` — a MODEL formula (discrete annual compounding) in a module; it is a READ for the observer (C2) so acceptable, but it is the parity-formula forward that Appendix B forbids for PRICING; ensure no participant reads it (grep: `forwardRate(` callers).
+- [ ] 21.116.IR3 `irs/participants.ts:1766 fixedDebtOf`: walks ALL instruments per (party, book) per session → O(parties × irs books × instruments). Fix: `instruments.issuedBy(self)`. Also it counts EVERY liability as fixed ("A1.d: what makes a liability fixed is that its terms name a rate" — but the code does not check for a rate: a deposit (money) is `liabilityOfIssuer` and would count — for a BANK `fixedDebtOf` = its whole deposit base → every bank wants to RECEIVE fixed on its entire balance sheet. Bug. Fix: read the kind profile for `cashFlows` with a fixed coupon (a bill/bond/loan with `rate` in terms), exclude money.
+- [ ] 21.116.IR4 `irs/participants.ts:1820 mine`: level = the overnight FIXING (a per-annum rate) posted as the fixed rate for a 9y swap — the party's "own number" for every tenor is the overnight rate: a flat curve at overnight for all tenors, all parties (monoculture again, BK21/EQ5). §46: the outlook should be the party's expectation of the AVERAGE fixing over the tenor (its own outlook on `index.benchmark`), which the expectations module could form if it observed benchmark prints (H8: outlooks only form from own fills — a party never trades the overnight book directly unless it is a bank).
+- [ ] 21.116.IR7 IRS B2 (pension matching) declared PARTIAL, insurers exist (14.0) — check insurers/allocate for IRS use.
+- [ ] 21.116.LD2 land/index.ts:187 the treasury sells only in its own region (`m.instrument !== landId(view.self.region)`) → every region other than the capital has ground held by the state and NEVER SOLD; firms there cannot buy ground; if plant needs ground (capital-programme reads `landPerUnit`) they build anyway (LD3) — the land constraint binds nowhere.
+- [ ] 21.116.LD4 land/index.ts:319 `endowUnits(treasury, id, total×HECTARES_PER_KM2, 0)` with basis 0: the largest asset in the world carried at cost 0 — stated as deliberate (Seed C4); but then a sale at 1 cent (LD1) prints a price and `carry: 'cost'` means the state's remaining ground stays at 0 while the firm's is at 1 cent. Acceptable per Law 3 only once LD1 is fixed.
+- [ ] 21.116.MM3 `index.ts:529 capacityOf` central bank: `Number.MAX_SAFE_INTEGER` as a Qty — a numeric literal standing for "unlimited" (Appendix B: no unlimited exposure). It is bounded by collateral downstream, but the literal is a lie in the type. Fix: `capacityOf` returns `Option<Qty>`; none for the issuer of the money.
+- [ ] 21.116.OP2 `options/index.ts:1202 worthToIt`: `distance + width` where width = confidence × √years — the party's own dispersion; OK as a REASON. But `worth > 0 ? worth : nothing` and then `if (mine <= 0) return []` — a party whose expected level is far below the strike has NO view at all (not "worth zero"): fine per comment.
+- [ ] 21.116.OP5 `optionKind.initialMargin`: `Math.sqrt(left / horizon)` — √T scaling (DL7 shape).
+
+### 21.117 The periodicity cluster — Law 8, four modules, one defect
+
+- [ ] 21.117.FXD5 `fx-derivatives/contract.ts:765` `(at − started) % payEvery` — period-index periodicity (FD12/IR5); `accrual` from `at − payEvery + 1` reaches before `started` on the first payment.
+- [ ] 21.117.IR5 `irs/contract.ts:2055 legs`: `(at − c.opened) % fixedEvery === 0` — period-index periodicity (Law 8); `accrualFor` uses `startOf(at − every + 1)` which for the first payment reaches BEFORE `opened` (accrues on periods before the contract existed). Fix: calendar-placed payment dates from the trade date (`addMonths`), accrual from the later of last payment and trade date.
+- [ ] 21.117.OP1 `options/index.ts:1382 openBooks`: `atLeast(opened, 0)` floor; `nextCycle(period, life)` period-index ladder (Law 8 again: expiry should be the third Friday of a calendar month).
+
+### 21.118 The six that are ABSENCES, not defects
+
+- [ ] 21.118.BK33 Missing (Banks Funding): deposit CLASSES exist but there is no depositor choice of bank in banks — check `households`/`funds` for `bank.depositRate` readers; a board nobody moves for is a display-only number (Appendix B). Grep later.
+- [ ] 21.118.BK34 Missing (Banks Capital D): resolution — `capital.ts` cites D6 (acquirer) but no phase in this module resolves a bank below requirement; search `resolution` in credit-events/estate later.
+- [ ] 21.118.CB7 corporate-bond: Corporate Credit D (secondary trading, dealers with inventory in credit), E1–E4 (spread as derived, credit curve), F (ratings interplay), G3–G5 (restructuring, recovery) — not in this module; verify COVERAGE marks. G2 acceleration is a kind flag read by the kernel; G4 (workout) — nothing.
+- [ ] 21.118.CO6 Commodities Spot as a SYSTEM: this module builds STORAGE only. Spot A1/A2 (a spot market per commodity per place with named producers and consumers) is the goods module; B (supply shocks) is environment; C (inventory as state) is goods; D2/D3 here; E (the E4 chain: commodity shock → margins → inflation → policy) has no reader; F (verify) partially. COVERAGE should mark Commodities Spot as spread across goods/environment/commodities with named clauses, and E4 as MISSING (no policy reaction reads a commodity print).
+- [ ] 21.118.OM6 central-bank: Central Bank A (the policy rate as an ADMINISTERED rate with a real quantity response: deposit facility / lending facility both sides booked), B (the reaction function), D (LOLR with the four classical conditions: solvent, good collateral, penalty rate, open to all) — where are they? The money-market module has a standing facility? `CLAUDE.md` says LOLR has all four conditions; verify which module implements Central Bank A/B/D and whether the policy rate ever CHANGES in a run (if it is a constant param, §Central Bank B is MISSING and "no policy set directly or by path" is violated by a constant path).
+
+### 21.118a The four stragglers of the drained file — the D, K and C sections' live remainder
+
+Most of `docs/FINDINGS.md`'s doc-level entries (D1–D16) and kernel entries (K1–K5) were about
+documents and an engine that have since been rewritten: D1's unrun suite, D2's three numbering
+systems, D3's two completion figures, D4's hand-annotated table and D8's 25–60 s period are all
+closed or superseded, and their successors are in `docs/RECORD.md`. D7, D9, D10, D11, D12 and D13 are
+the macro state, and 0.3 above carries that as a live table with items against each row. These four
+are what neither of those covers, and they are placed rather than assumed dead.
+
+- [ ] 21.118a.C14 `requiredOf` (subordinated) and corporate-bond both read `bank.reservation` of the
+  current period — two readers of one fact each with its own scan, and both depend on a phase order
+  the assembly does not guarantee. Law 4 and Law 10 together; in Rust a phase reading a not-yet-
+  produced print throws, so the re-read is whether the two readers still exist.
+- [ ] 21.118a.C16 The rig opened ONE country and `abroadWorld` opened all, so the FX layer — spot-fx,
+  fx-derivatives, external, cross-border — was never exercised by the default rig, consistent with
+  *no FX pair ever traded*. The rig is deleted; the question it asks is now about whatever the
+  seeding draws, and it is the reason a one-country opening cannot be the one the world is judged on.
+- [ ] 21.118a.G10 `universe.ts:OBLIGORS` hard-codes kind ids `'treasury','centralBank','vehicle'` as
+  strings — **a kind branch in data form** (Law 15). It should read the party kind's profile. This is
+  the one of the four `tools/phoenix-check` can close by grep.
+- [ ] 21.118a.C0 *typecheck green, lint green, `check:spec`/`forbids`/`deaths` green — none of these
+  loads a world.* It is not a defect; it is the sentence that explains why every one of these
+  findings was possible, and it is why `world-runs` exists and why 22e (the audit in the period loop)
+- [ ] 21.118a.D14/D15 The two audit claims the file would not let stand: **D15**, that four of nine
+  families were tautologies until item 4 and were reported green for thirteen `done` rows, so an
+  "audit green" in `docs/RECORD.md` before item 4 is not evidence; and **D14**, that the fix claiming
+  to give all eight derivative classes a second side was never measured. Both are answered by the
+  same thing and it is item **22e**: an audit that runs in the period loop and reports by family,
+  with Audit E2's *an unbuilt family reports "not built", never green* holding at the same time.
+  is the next item after this one.
+
+### 21.119 The unbounded market table — two findings, one growth
+
+- [ ] 21.119.CF2 commodity-futures: the (series × good) market list grows every period; no series ever expires from the market table (CP4 class, unbounded growth of markets phase).
+- [ ] 21.119.CB2 corporate-bond/index.ts:254 `cheaper = !quoted.some || keenest < quoted.rate`: a firm NOBODY quoted issues in the market whenever any bank has published a reservation — and after MM16 no bank quotes anyone, so EVERY firm with a `shortTerm` gap goes to the bond market every period, opening a new line per maturity (one line per issuer per period since `maturity` = today + 60 months moves every period → a NEW instrument and a NEW market per firm per period: unbounded instrument/market growth, CP4 class). Fix: tap the standing line when one exists within the tenor band (nearest maturity within ±k months), not a new date each period.
+
+### 21.120 The futures that lose their own profit and loss — one defect in two modules
+
+- [ ] 21.120.BF3 `bond-futures/index.ts:1955 deliver`: the long pays `price × face` where price = deliverable's latest print — at delivery the future's struck price is NOT used: the contract is closed (`act: 'close'`) with its mark settled by the layer? No — `legs: []` and `expires: () => false` means the layer never pays the mark; delivery settles at the CASH price, so the futures P&L (struck vs cash at expiry) is realised only through variation margin flows (`requirement` netting) which are RETURNED on close (`returnMargin`). Net: a long that bought at 98 and takes delivery at 100 pays 100 and had margin moved… the margin is returned → the long GAINS NOTHING from the price move. The future's economic P&L is lost at delivery (D11.a violated: value at close-out = mark; here 0). Fix: delivery legs price the bond at the STRUCK future price (`moneyLevel(c.struckAt)`), which is what a delivery IS (invoice price = futures settlement price), and the mark to that point was margin.
+- [ ] 21.120.CF4 commodity-futures delivery at spot price and margin returned → futures P&L never realised (BF3 class; both bond and commodity futures share the defect and the fix: settle (spot − struck) × notional through the house, then deliver at struck).
+
 
 ---
 
@@ -675,6 +781,9 @@ growing, and is why this item sits after 22c rather than before it.
   but a DvP cycle, the thing a liquidity-saving mechanism does in a real large-value system.
 - [ ] 22d.3 Measured: how many of the period's failures were gridlock rather than insolvency, as a
   read, published, causing nothing.
+
+- [ ] 22d.4 **ST4, drained from `docs/FINDINGS.md` (20b) and positioned here** because it is a
+  phase-ordering failure that ends in a default the payer could have met: short-term-debt phases: `paper.backstop` is anchored `after: markets`, but maturities are collected in `corporateActions` which runs BEFORE markets. So the maturing paper has already been presented and FAILED (recorded as a missed payment → `defaultOn` → `accelerates: true` → the whole balance sheet is accelerated) before the backstop is drawn to meet it. B3.b is inverted: the run always ends in default first and the draw arrives after the default. Fix: draw in `corporateActions` BEFORE the kernel presents dues (anchor `{ before: 'corporateActions' }` or a pre-dues hook), and only against the shortfall at that moment.
 
 ---
 

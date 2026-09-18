@@ -18745,3 +18745,44 @@ first sale, and that difference is the whole of Appendix A.
   cites a deleted file.
 
 **650 tests hold; clippy clean; `phoenix-check` green over 80 files.**
+
+---
+
+## 20b — the fourth findings file, drained and deleted
+
+**What it was.** `docs/FINDINGS.md`, 502 lines, dated 2026-09-15, headed *"the working file behind
+`docs/IMPLEMENTATION.md` Part 4; every id here is positioned there"* — and that sentence was false
+for **78 of its 295 ids**. `CLAUDE.md` says there is one such file and it stays; it was three once
+(`BUGS.md`, `SWEEP.md`, `VERIFY.md`) and what that bought was one defect written three times under
+three names, the newest contradicting the other two. This was the fourth.
+
+**What was done.** Every id in the file was audited against the plan — the dashed module findings
+(295), the dotted doc, kernel and census entries (103) and the legacy `A-nn` references. The 78 that
+appeared nowhere are now in the plan **in their own words**, and they are grouped by WHAT EACH IS
+rather than by which file it named, because that grouping is the thing the re-reading turns on:
+
+| where | what is in it |
+|---|---|
+| 21.115 | **The walks** — 38 findings that name a file that no longer exists: `ofKind` full scans, views rebuilt per market, three derivations of one number, caches nobody kept. These close by being verified ABSENT in Rust, and `phoenix-check` already forbids several outright. |
+| 21.116 | **The model defects** — 27 that survived the port because the port changed the language and not the economics: a desk offering its whole liquidity buffer every session, covenants struck at their tightest possible level, a flat curve at the overnight rate for every tenor and every party, a hedger posting the same exposure into every tenor book, `MAX_SAFE_INTEGER` standing for "unlimited", three copies of one bank-choice mechanism. |
+| 21.117 | **The periodicity cluster** — Law 8, four modules, one defect: `(at − opened) % every === 0` is a period index where a calendar date belongs, and the first accrual reaches back before the contract existed. |
+| 21.118 | **The five that are ABSENCES, not defects** — no depositor choice of bank, no bank resolution, Corporate Credit D–G, Commodities Spot E4 with no reader, Central Bank A/B/D. `CLAUDE.md`: a missing sector is an ITEM, not a finding. |
+| 21.118a | **The stragglers of the D, K and C sections** — C14, C16, G10, C0 and the D14/D15 pair, which is 22e's. |
+| 21.119 | **The unbounded market table** — a new line and a new market per issuer per period, because the maturity is *today + 60 months* and today moves. |
+| 21.120 | **The futures that lose their own profit and loss** — one defect in two modules: delivery settles at the cash price and the margin is returned, so a long that bought at 98 and takes delivery at 100 gains nothing. Both fix the same way. |
+| 22d.4 | **ST4**, which is not a local repair: the backstop is anchored after the markets moment and the maturity it exists to meet is presented before it, so the run defaults first and the draw arrives afterwards. It belongs with the payment queue. |
+
+**What was NOT carried, and why that is not deletion.** Most of the doc-level entries (D1–D16) and
+the kernel entries (K1–K5) were about documents and an engine that have since been rewritten: the
+unrun suite, the three numbering systems, the two completion figures, the hand-annotated table, the
+25–60 s period. Their successors are in this file. The macro-state entries — D7, D9, D10, D11, D12,
+D13 — are the live table at `docs/IMPLEMENTATION.md` 0.3, which carries an item against each row.
+Every one of those was checked by name before the file went, and the four that neither covered are
+placed at 21.118a. **A finding left that file only by being placed.**
+
+**And the sentence worth keeping**, now 21.118a.C0: *typecheck green, lint green, `check:spec`,
+`check:forbids`, `check:deaths` green — none of these loads a world.* That is why every one of these
+findings was possible, why `world-runs` exists, and why 22e is the next item.
+
+`npm run check` green; `docs/FINDINGS.md` does not exist; item 21 carries 177 steps where it carried
+95, and the count is honest for the first time.
