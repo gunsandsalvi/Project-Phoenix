@@ -129,6 +129,12 @@ pub struct Settling<'a> {
     pub journal: &'a mut Journal,
     pub parties: &'a Parties,
     pub instruments: &'a Instruments,
+    /// 21.112: the kind **what a disposal realised** is said under. Settlement is the only place
+    /// that holds both halves of the answer at once — the price the leg moved at, and the basis the
+    /// lots carried — so it is the only place that can say it without re-deriving one of them
+    /// (Law 19). It is a kind rather than a store because a realised gain is an EVENT: it happens at
+    /// the moment the units leave, to a named party, for an amount.
+    pub realised: u32,
 }
 
 /// **Money D2: the account a party pays out of and is paid into.** Its bank's money — or the money
@@ -336,8 +342,12 @@ impl Settlement {
         settled_kind: u32,
         failed_kind: u32,
     ) -> Outcome {
-        let Settling { register: reg, journal, parties, instruments } = on;
-        let (parties, instruments) = (*parties, *instruments);
+        let Settling { register: reg, journal, parties, instruments, realised: realised_kind } = on;
+        let (parties, instruments, realised_kind) = (*parties, *instruments, *realised_kind);
+        // 21.112: what each disposal in this instruction realised, gathered as the legs apply and
+        // said once they all have — because an instruction that fails moved nothing, and a gain
+        // announced by a leg that was rolled back would be a gain nobody made.
+        let mut realised: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
         // The declaration, against the legs. A writer that says one thing and sends another has
         // made a mistake rather than met an outcome, so this THROWS where a short balance is
         // returned: it is a contract violation at the site (`docs/ARCHITECTURE.md` error
@@ -423,6 +433,13 @@ impl Settlement {
                     // the price is the basis where a market struck one (C2.a).
                     match price_per_unit {
                         Some(price) => {
+                            // 21.112: **and what the seller REALISED**, which is the one thing only
+                            // this line knows: the proceeds against what the lots that left cost.
+                            // Nothing else can say it without re-deriving a price a market printed
+                            // or a basis the register carried (Law 19), which is why a gain existed
+                            // on the register and in no read at all.
+                            let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
+                            realised.push((from, instrument, qty * price - cost));
                             reg.credit(to, instrument, qty, price, period);
                         }
                         None => {
@@ -443,9 +460,13 @@ impl Settlement {
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);
                     let drawn = reg.debit(row, qty);
-                    // Goods E4: what perished cost something, and the loss is an EVENT on the
-                    // account rather than a number that quietly stops existing (XI-1).
-                    let _ = drawn;
+                    // Goods E4, XI-1, 21.112: **what perished cost something, and the loss is an
+                    // EVENT** rather than a number that quietly stops existing. It is a disposal at
+                    // no proceeds, so it is the same read as a sale and is said under the same kind.
+                    let cost: f64 = drawn.iter().map(|d| d.qty * d.basis_per_unit).sum();
+                    if cost != 0.0 {
+                        realised.push((party, instrument, -cost));
+                    }
                 }
                 Leg::Pledge { holder, instrument, to, qty } => {
                     reg.pledge(holder, instrument, to, qty);
@@ -463,8 +484,20 @@ impl Settlement {
                 }
             }
         }
+        // 21.112: and what the disposals realised, now that every leg has applied. It reaches the
+        // party that disposed and nobody else (Observer A3): what one holder made on a sale is its
+        // own business, and it is what a gains tax and a firm's result are both a read of.
+        for (who, line, amount) in realised {
+            journal.say(
+                period,
+                0,
+                realised_kind,
+                &[who.0],
+                &[(0, crate::journal::Value::Num(amount)), (1, crate::journal::Value::Num(f64::from(line.0)))],
+                false,
+            );
+        }
         self.record(Outcome::Settled, PartyId::NONE, ins, period, journal, settled_kind)
-
     }
 
     fn record(
@@ -536,7 +569,7 @@ mod tests {
         parties: &'a Parties,
         instruments: &'a Instruments,
     ) -> Settling<'a> {
-        Settling { register, journal, parties, instruments }
+        Settling { register, journal, parties, instruments, realised: 0 }
     }
 
     #[test]
@@ -583,6 +616,34 @@ mod tests {
         assert_eq!(reg.quantity(reg.row(b, share)), 0.0);
         // C2.a: the buyer's lot carries what the market struck, not what the seller paid.
         assert_eq!(reg.lots(reg.row(a, share))[0].basis_per_unit, 5.0);
+
+        // 21.112: **and what the SELLER realised** — 50 of proceeds against 30 the lots cost. It
+        // existed on the register and in no read at all, which is why nothing could tax a gain.
+        let said: Vec<u32> = j.in_period(1).filter(|r| j.kind_of(*r) == 0).collect();
+        let gain = said
+            .iter()
+            .find(|r| j.subjects_of(**r) == [b.0])
+            .expect("the disposal reaches the party that made it, and nobody else");
+        assert_eq!(j.says(*gain, 0), Some(Value::Num(20.0)));
+        assert!(!j.is_public(*gain), "Observer A3: what one holder made on a sale is its own business");
+    }
+
+    #[test]
+    fn a_thing_that_perished_realises_what_it_cost_as_a_loss() {
+        // Goods E4, XI-1, 21.112: a loss is an EVENT rather than a number that quietly stops
+        // existing. A disposal at no proceeds is the same read as a sale.
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = world();
+        let a = PartyId::at(0);
+        let grain = InstrumentId::at(1);
+        reg.credit(a, grain, 10.0, 4.0, 1);
+        let legs = [Leg::Destroy { party: a, instrument: grain, qty: 10.0, why: Gone::Perished }];
+        let out = s.settle(&Instruction::plain(&legs, Cause::Production), 1, &mut on(&mut reg, &mut j, &ps, &ins), ok, no);
+        assert_eq!(out, Outcome::Settled);
+        let gain = j
+            .in_period(1)
+            .find(|r| j.kind_of(*r) == 0 && j.subjects_of(*r) == [a.0])
+            .expect("what perished cost somebody something");
+        assert_eq!(j.says(gain, 0), Some(Value::Num(-40.0)));
     }
 
     #[test]

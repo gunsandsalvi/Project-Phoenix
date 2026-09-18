@@ -20002,3 +20002,37 @@ leaving the reasoning behind in the plan is the duplication Law 16 is about.
 ordinary period loop and stops wherever the market or the queue is missing, and measuring an arbitrary
 world measures the draw. Six findings had been positioned at "the seeding" with no section to sit in,
 which is the silent drop 21.137 is about — they have one now.
+
+---
+
+## 21.112 — what a disposal realised
+
+**What.** Settlement says it. `Settling.realised` carries the kind; `Leg::Asset` at a price and
+`Leg::Destroy` both compute proceeds against what the lots that left cost, and the answer reaches the
+party that disposed and nobody else (Observer A3).
+
+**Why here and nowhere else.** `Register::debit` hands settlement the basis every lot carried, and the
+leg carries the price the market struck. **Settlement is the only place that holds both halves at
+once** — anywhere else would re-derive a price a market printed or a basis the register carried, which
+is Law 19. That is why the gain existed on the register and in no read at all, and why nothing in this
+world could tax one. It is said once every leg has applied, because an instruction that fails moved
+nothing and a gain announced by a rolled-back leg is a gain nobody made.
+
+It is an EVENT rather than a store: a realised gain happens at the moment the units leave, to a named
+party, for an amount. `settlement.realised` goes home to the journal, and the homeless count is two.
+
+**And a thing that perished realises what it cost**, as a loss. Goods E4 and XI-1 both say a loss is
+an event rather than a number that quietly stops existing, and the old code said so in a comment above
+`let _ = drawn;` — the basis was drawn and thrown away.
+
+### What it costs, measured and stated
+
+**The journal went from ~170,000 rows a period to ~320,000.** Almost all of the new half is perishing:
+`goods::Perishing` takes a share of every goods holding every period and this world has about 137,000
+of them, so 137,000 losses that used to vanish are now rows with an owner and an amount. That is the
+cost of the clause being true and it is the right cost; what it is not is free, and 21.138 now carries
+the new figure with its cause rather than the old one.
+
+`docs/COVERAGE.md`: `Goods E4` re-pointed to `ledger.rs`.
+
+**700 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green.**

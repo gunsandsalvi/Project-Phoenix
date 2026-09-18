@@ -114,6 +114,9 @@ fn declared() -> Nouns {
     // behind, one-sided, which is what an agreement is not (Law 5).
     at_home("standing", "terms a party stands behind: a posting, a lending standard", "XI-10, Housing C5: a posting is HELD by an employer, which is what lets it be withdrawn; a standard is a decision that persists and that a borrower meets or does not");
     at_home("making", "what is between input and output, owned, carrying what it cost", "37 B3: work in progress is a real thing with a holder, not a timing adjustment");
+    // 21.112: it is the JOURNAL's, because a realised gain is an event rather than a thing anybody
+    // holds — it happens at the moment the units leave, to a named party, for an amount.
+    at_home("settlement.realised", "what each disposal realised against the basis its lots carried", "Law 19: settlement is the only place that holds the price and the basis at once, so anywhere else would re-derive one of them");
 
     // **AND WHAT HAS NO HOME.** The count of these is the honest measure of how much ontology is
     // missing, and it must fall. Each names the plan item that gives it one; a noun whose item does
@@ -138,12 +141,6 @@ fn declared() -> Nouns {
         "21.116",
         "each index, the country whose it is, and the lines it is built from",
         "22 D5, Indices D1: an index is a country's and it is ONE system; `benchmarks::Index` has a level_at read and nothing in this engine declares or constructs one",
-    );
-    homeless(
-        "settlement.realised",
-        "21.112",
-        "what a disposal realised against the basis the lots carried",
-        "Law 19: `Register::debit` hands settlement the basis and settlement only carries it forward, so a gain exists on the register and in no read — which is why nothing can tax one",
     );
     homeless(
         "reporting.accounts",
@@ -193,6 +190,8 @@ pub struct World {
     pub period: u32,
     pub settled_kind: u32,
     pub failed_kind: u32,
+    /// 21.112: the kind a realised gain is said under. Declared here with the other two.
+    pub realised_kind: u32,
 }
 
 /// What one period did. Printed rather than asserted (`check:opens`): the census is a read, and a
@@ -215,6 +214,9 @@ impl World {
         let mut journal = Journal::new();
         let settled_kind = journal.kinds.declare("instruction.settled");
         let failed_kind = journal.kinds.declare("instruction.failed");
+        // 21.112: what a disposal realised against the basis its lots carried. Settlement is the
+        // only place that holds the price and the basis at once.
+        let realised_kind = journal.kinds.declare("disposal.realised");
         World {
             parties: Parties::new(),
             instruments: Instruments::new(),
@@ -236,6 +238,7 @@ impl World {
             books: Vec::new(),
             period: 0,
             settled_kind,
+            realised_kind,
             failed_kind,
         }
     }
@@ -334,6 +337,7 @@ impl World {
                     journal: &mut self.journal,
                     parties: &self.parties,
                     instruments: &self.instruments,
+                    realised: self.realised_kind,
                 },
                 self.settled_kind,
                 self.failed_kind,
@@ -434,6 +438,7 @@ impl World {
                 self.period,
                 self.settled_kind,
                 self.failed_kind,
+                self.realised_kind,
             );
             out.asks += session.asks;
             traded += session.settled;
@@ -731,7 +736,7 @@ mod tests {
         // And what is left is what the re-read of item 21 found and nothing yet holds. A count of
         // zero would be this measure switched off, not a world with nothing missing.
         assert!(named.contains(&"registry.indices"));
-        assert!(named.contains(&"settlement.realised"));
+        assert!(!named.contains(&"settlement.realised"), "it got a home at 21.112");
         assert!(named.contains(&"reporting.accounts"));
 
         // And every one names the item that gives it a home. A noun whose item nobody has written
@@ -751,7 +756,7 @@ mod tests {
         assert!(!named.contains(&"agreements"), "it got a home at 21d");
         assert!(!named.contains(&"claims"), "it got one at 21c");
         assert!(!named.contains(&"standing"), "it got one at 21f");
-        assert!(named.contains(&"settlement.realised"), "settlement is handed it and nothing keeps it");
+        assert!(named.contains(&"reporting.accounts"), "a covenant is tested against it and nothing keeps it");
     }
 
     #[test]

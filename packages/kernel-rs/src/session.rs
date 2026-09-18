@@ -145,6 +145,7 @@ pub fn run_book(
     period: u32,
     settled_kind: u32,
     failed_kind: u32,
+    realised_kind: u32,
 ) -> Session {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
@@ -215,6 +216,7 @@ pub fn run_book(
                     journal: stores.journal,
                     parties: stores.parties,
                     instruments: stores.instruments,
+                    realised: realised_kind,
                 },
                 settled_kind,
                 failed_kind,
@@ -366,7 +368,7 @@ mod tests {
             agreements: &no_relations(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
-        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
+        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
 
         assert_eq!(s.asks, 2);
         assert_eq!(s.orders, 2);
@@ -430,7 +432,7 @@ mod tests {
             agreements: &no_relations(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
-        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
+        let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
         assert!(matches!(s.outcome, Cleared::NoOverlap { .. }));
         assert_eq!(s.settled, 0);
         // Law 3: a bracket is not a price, so the book printed NOTHING.

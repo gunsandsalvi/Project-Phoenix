@@ -305,7 +305,7 @@ mod tests {
         wire.settle(
             &Instruction::free_of_payment(&legs, Cause::Trade),
             2,
-            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins },
+            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins, realised: 0 },
             ok,
             no,
         );

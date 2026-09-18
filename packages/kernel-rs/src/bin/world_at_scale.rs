@@ -212,7 +212,7 @@ fn main() {
                 ccy: CurrencyCode::at(0),
                 rule: PriceRule::SellersCompete,
             };
-            let s = run_book(&book, &participants, &books, &mut stores, period, ok, no);
+            let s = run_book(&book, &participants, &books, &mut stores, period, ok, no, 0);
             asks += s.asks;
             trades += s.settled;
             if matches!(s.outcome, phoenix_kernel::clearing::Outcome::Cleared { .. }) {
@@ -239,7 +239,7 @@ fn main() {
             });
             legs_left -= 1;
         }
-        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &instruments }, ok, no);
+        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 }, ok, no);
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 

@@ -168,7 +168,7 @@ fn main() {
             (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
             _ => Instruction::plain(legs, Cause::Trade),
         };
-        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments }, settled, failed)
+        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 }, settled, failed)
             == Outcome::Settled
         {
             ok += 1;

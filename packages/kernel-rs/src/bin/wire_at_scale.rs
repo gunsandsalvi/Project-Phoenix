@@ -141,7 +141,7 @@ fn main() {
         match wire.settle(
             &instruction,
             1,
-            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments },
+            &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments, realised: 0 },
             ok,
             no,
         ) {

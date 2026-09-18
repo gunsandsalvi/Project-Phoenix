@@ -261,7 +261,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 134** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 135** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -302,7 +302,6 @@ one that never existed.
   an option, and neither can be exercised while §19's CDS book has never traded (21j). The rule that
   raised this — *a finding leaves this file only by being placed* — is now `checkPositions` in
   `npm run check`.
-- [ ] 21.112 `clearing/market.ts fxTrade` (0i.5): a money-only leg carrying `{ of: 'disposal' }` promises a basis that never comes. `disposal`'s contract is that *"settlement, which draws the lots, publishes the basis beside the proceeds in `Settled.realised`"* — and `realised` is produced by an ASSET debit, so an FX spot's quote leg says the seller disposed of something and nothing ever says what it cost. The gain on a foreign-money position is real (the lots carry the rate they were acquired at) and there is no path that taxes it. Either settlement publishes a `realised` for a money debit, or an FX trade needs its own receipt; which is a decision about the gain, not about the label. Positioned here, before 21b. **Re-read: the label is absent, the gain is still nowhere.** No `disposal` receipt exists, so no leg can promise a basis. But `Register::debit` hands settlement the basis (`Drawn`) and settlement only carries it forward — `grep realised` returns nothing, so a realised gain exists on the register and in no read, which is why nothing can tax one. Whether settlement returns it or says it as an event is a STEP: stays in 21, readers are 21j's.
 - [ ] 21.116 `test/indices.test.ts` (four red, PRE-EXISTING: identical at `27312b8`, measured at 0g.4 because the step touched the fixing reads this suite covers): **NO EQUITY INDEX EXISTS PER REGION and no rated index ever gets a level.** *declares an index per region and per currency* has ten declared ids and `equity.eu.1` is not among them (Indices D1: four regions, four equity indices); *reads FROM its constituents* finds a basket whose constituent weight is 0, where B1 says a weight is a COUNT of the line; *reports Missing for a basket with nothing in it* finds six constituents where it expects an empty basket, so the empty-basket refusal is not being exercised at all (D5.a); and *reports, shows, grades and indexes, in that order and on the calendar* gets `firstLevel` 0 against a `firstRating` of 20 — the chain from a closed quarter to a rated index stops at the grade. The first is a DECLARATION absent for three of four regions and the others are consequences of an index with nothing in it, so it is one cause and probably one fix. Unpositioned: it wants the indices module open, and which item that is has not been decided — named here so it is not lost (Law 11: the missing declaration is the work item, not the four numbers). **Re-read: its conclusion is right and the scale is larger.** Not three of four regions — **no index is declared anywhere.** `benchmarks::Index` has a `level_at` read and nothing constructs one. The declaration is **21e's** (an index is a country's, 21.6); the level is **21j's**, since `benchmarks` counts lines that printed instead of fixing anything.
 - [ ] 21.132.OP1 `Calendar::next_cycle`: the expiry ladder is a whole number of periods from the
   epoch, where a real one is the third Friday of a calendar month (Law 1, Law 8). It is placed by
@@ -310,7 +309,7 @@ one that never existed.
   the calendar states differently from the market. One read, in the kernel, and the only caller is
   whatever opens a dated book — so it closes wherever a futures or options ladder is next opened.
 
-**Exit.** Nothing is left here but these four. Every other finding of item 21 has been re-read and
+**Exit.** Nothing is left here but these three. Every other finding of item 21 has been re-read and
 moved under the item that owes it, which is where a placed finding lives (`CLAUDE.md`).
 
 ---
@@ -888,8 +887,12 @@ above are answered by it rather than by anything in the engine.
   instrument and `PartiesAlive` by walking every party, once per system per period — and twenty-five
   systems do nothing else (21j), so a period walks the instrument list about fourteen times and the
   party list about six, roughly 300,000 reads to produce twenty numbers;
-  **(b)** the journal grows by **~170,000 rows a period** (172,999 in period 1, 169,911 in period 2,
-  and not falling), so a thousand-period run is a journal of a hundred and seventy million rows, and
+  **(b)** the journal grows by **~320,000 rows a period** — it was ~170,000 until 21.112 made a
+  realised gain an event, and **most of the new half is goods perishing**: `goods::Perishing` takes a
+  share of every goods holding every period, and this world has about 137,000 of them, so a loss that
+  used to stop existing quietly is now a row with an owner and an amount (XI-1). That is the cost of
+  the clause being true, and it is the right cost; what it is not is free. A thousand-period run is a
+  journal of three hundred million rows, and
   `Audit C1`'s *the events of one period without walking the world's whole history* is the reason the
   per-period slice table exists.
   **Neither is a work item yet** (Law 18: performance gates on BEHAVIOUR, and Law 11: do not measure

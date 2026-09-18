@@ -928,6 +928,7 @@ mod tests {
                     journal: &mut w.journal,
                     parties: &w.parties,
                     instruments: &w.instruments,
+                    realised: w.realised_kind,
                 },
                 w.settled_kind,
                 w.failed_kind,

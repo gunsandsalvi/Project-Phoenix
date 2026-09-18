@@ -171,7 +171,7 @@ fn main() {
                 ccy: CurrencyCode::at(0),
                 rule: PriceRule::SellersCompete,
             };
-            let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
+            let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
             asks += s.asks;
             orders += s.orders;
             settled += s.settled;

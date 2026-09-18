@@ -1319,7 +1319,7 @@ measurement is taken there is nothing to name.
 | `Goods E2` | MET | packages/engine/src/mechanisms/goods/inventory.ts, packages/engine/src/world/revalue.ts |
 | `Goods E2.c` | MET | packages/engine/src/world/revalue.ts (the kernel refuses an upward move for a kind that is not marked both ways) |
 | `Goods E3` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/mechanisms/goods/inventory.ts (the write-down and the spoilage are journalled events with a size) |
-| `Goods E4` | MET | packages/engine/src/mechanisms/goods/inventory.ts, packages/engine/src/ledger/instruction.ts |
+| `Goods E4` | MET | packages/kernel-rs/src/ledger.rs (21.112: a `Destroy` leg draws the lots and settlement says what it realised — the cost of what perished, as a loss on the party that held it, under `disposal.realised`. XI-1: a loss is an EVENT rather than a number that quietly stops existing, and until this it stopped existing quietly) |
 | `Goods E5` | MET | packages/engine/src/register/register.ts, packages/engine/src/registry/registry.ts (the one stated lot flow is FIFO; the type admits no LIFO) |
 | `Goods F1` | MET | packages/engine/src/clearing/market.ts (the buyer pays the seller by name, in the same instruction as the goods) |
 | `Goods F2` | PARTIAL | immediate: the goods and the money settle together; terms arrive with trade credit (worklist 13e) |
