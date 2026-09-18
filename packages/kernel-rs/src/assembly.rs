@@ -19,8 +19,8 @@ use crate::clearing::{Order, PriceRule, Side};
 use crate::ids::{CurrencyCode, InstrumentId, MarketId};
 use crate::instruments::{Class, Instruments};
 use crate::journal::Journal;
-use crate::ledger::Settlement;
-use crate::module::{Participant, ParticipantView};
+use crate::ledger::{Instruction, Settlement, Settling};
+use crate::module::{Mechanism, MechanismContext, Participant, ParticipantView};
 use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::Prints;
@@ -66,6 +66,15 @@ pub trait System {
     fn participants(&self) -> Vec<&dyn Participant> {
         Vec::new()
     }
+
+    /// **Its own work in the period** (ARCHITECTURE 4.9b, the second door): accruing, maturing,
+    /// deciding, publishing. It reads the stores and PROPOSES; the kernel settles what it proposed
+    /// once the phase returns, so settlement stays the one writer of the register (Law 4).
+    ///
+    /// A system with nothing to do in a period proposes nothing, which is an answer and not a gap.
+    fn mechanism(&self) -> Option<&dyn Mechanism> {
+        None
+    }
 }
 
 /// The stores, one of each, owned by the kernel. **Two engines is Law 4's defect at the largest
@@ -94,6 +103,8 @@ pub struct Stepped {
     pub books_cleared: usize,
     pub trades: usize,
     pub events: usize,
+    /// How many systems' phases actually ran. A world where this is zero is a world of declarations.
+    pub ran: usize,
 }
 
 impl World {
@@ -129,17 +140,89 @@ impl World {
         self.phases.seal();
     }
 
-    /// One period: the books run, the fills settle, and what happened is returned. Law 19: the count
-    /// is read off what the session did, never kept beside it.
+    /// One period: **the phases run in their declared order, the books run at the markets moment,
+    /// and what each proposed is settled.** Law 19: the count is read off what happened, never kept
+    /// beside it.
+    ///
+    /// **The phase pass is what makes a wired module a running one.** Before it, `wire_up` collected
+    /// every declaration, sealed the order and the loop then ran books only — so a system without a
+    /// participant did nothing at all, and the ordering Law 10 is about was validated and ignored.
     pub fn step(&mut self, systems: &[&dyn System]) -> Stepped {
         self.period += 1;
         let participants: Vec<&dyn Participant> =
             systems.iter().flat_map(|s| s.participants()).collect();
+        let mut out = Stepped::default();
+        let events_before = self.journal.len();
+
+        // Law 10: in order, and the markets moment is where the books run. A phase anchored before
+        // markets sees the world the last period left; one anchored after sees this period's prints.
+        let order: Vec<(u32, bool)> = self
+            .phases
+            .order()
+            .iter()
+            .map(|p| (p.owner, matches!(p.anchor, Anchor::After(MARKETS) | Anchor::Before(REVALUATION))))
+            .collect();
+        let by_slot = slots(systems);
+
+        for (owner, after_markets) in order.iter().filter(|(_, after)| !after) {
+            out.ran += self.run_phase(*owner, &by_slot, systems);
+            let _ = after_markets;
+        }
+        out.trades += self.run_books(&participants, &mut out);
+        for (owner, _) in order.iter().filter(|(_, after)| *after) {
+            out.ran += self.run_phase(*owner, &by_slot, systems);
+        }
+
+        out.events = self.journal.len() - events_before;
+        out
+    }
+
+    /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
+    fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System]) -> usize {
+        let at = match by_slot.get(owner as usize) {
+            Some(at) if *at < systems.len() => *at,
+            // The three kernel moments own slots nothing declares a mechanism for.
+            _ => return 0,
+        };
+        let m = match systems[at].mechanism() {
+            Some(m) => m,
+            None => return 0,
+        };
+        let mut ctx = MechanismContext::of(
+            self.period,
+            &self.parties,
+            &self.instruments,
+            &self.register,
+            &self.prints,
+            &self.journal,
+            &self.params,
+        );
+        m.run(&mut ctx);
+        for p in ctx.taken() {
+            let instruction = Instruction { legs: &p.legs, cause: p.cause, delivery: p.delivery };
+            self.wire.settle(
+                &instruction,
+                self.period,
+                &mut Settling {
+                    register: &mut self.register,
+                    journal: &mut self.journal,
+                    parties: &self.parties,
+                    instruments: &self.instruments,
+                },
+                self.settled_kind,
+                self.failed_kind,
+            );
+        }
+        1
+    }
+
+    /// The markets moment: every declared book, asked once.
+    fn run_books(&mut self, participants: &[&dyn Participant], out: &mut Stepped) -> usize {
         if participants.is_empty() || self.books.is_empty() {
-            return Stepped::default();
+            return 0;
         }
         let books = Books::index(
-            &participants,
+            participants,
             &Shown {
                 parties: &self.parties,
                 instruments: &self.instruments,
@@ -150,8 +233,8 @@ impl World {
             },
             self.period,
         );
-        let mut out = Stepped { narrows: books.narrows, ..Stepped::default() };
-        let events_before = self.journal.len();
+        out.narrows += books.narrows;
+        let mut traded = 0usize;
         for book in &self.books {
             let mut stores = Stores {
                 parties: &self.parties,
@@ -164,7 +247,7 @@ impl World {
             };
             let session = run_book(
                 book,
-                &participants,
+                participants,
                 &books,
                 &mut stores,
                 self.period,
@@ -172,15 +255,14 @@ impl World {
                 self.failed_kind,
             );
             out.asks += session.asks;
-            out.trades += session.settled;
+            traded += session.settled;
             // Clearing C4: a book that had something cross is one that cleared; one that did not
             // prints nothing, and counting it would be a session that never happened.
             if matches!(session.outcome, crate::clearing::Outcome::Cleared { .. }) {
                 out.books_cleared += 1;
             }
         }
-        out.events = self.journal.len() - events_before;
-        out
+        traded
     }
 
     /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side pays
@@ -195,6 +277,22 @@ impl World {
         );
         self.books.push(BookDecl { market, subject, ccy, rule });
     }
+}
+
+/// Law 10: which system owns each declaration slot, so a phase in the order can be traced back to
+/// the system that declared it. The slot IS the index plus the three kernel moments, and this reads
+/// it rather than keeping a second map beside it (Law 19).
+fn slots(systems: &[&dyn System]) -> Vec<usize> {
+    let mut by_slot = Vec::new();
+    for (at, s) in systems.iter().enumerate() {
+        for p in s.phases() {
+            while by_slot.len() <= p.owner as usize {
+                by_slot.push(usize::MAX);
+            }
+            by_slot[p.owner as usize] = at;
+        }
+    }
+    by_slot
 }
 
 /// A phase, declared without ceremony: most systems have one and it anchors to a moment.
@@ -246,6 +344,7 @@ pub fn bid(view: &ParticipantView<'_>, cash: InstrumentId, at_most: f64) -> Opti
 mod tests {
     use super::*;
     use crate::ids::{PartyId, UnitId};
+    use crate::ledger::{Cause, Leg};
     use crate::parties::Representation;
 
     struct Quiet;
@@ -296,5 +395,85 @@ mod tests {
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), PriceRule::SellersCompete);
+    }
+
+    /// A system whose phase mints a little of its own money and pays it away — the smallest thing a
+    /// mechanism can do that touches the register through the wire.
+    struct Pays {
+        who: PartyId,
+        to: PartyId,
+        money: InstrumentId,
+    }
+
+    impl Mechanism for Pays {
+        fn run(&self, ctx: &mut MechanismContext<'_>) {
+            ctx.propose(
+                vec![Leg::Mint { issuer: self.who, ccy: CurrencyCode::at(0), money: self.money, amount: 10.0 }],
+                Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "it created its own money",
+            );
+            ctx.propose(
+                vec![Leg::Money {
+                    from: self.who,
+                    to: self.to,
+                    ccy: CurrencyCode::at(0),
+                    instrument: self.money,
+                    amount: 4.0,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }],
+                Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "and paid some of it away",
+            );
+        }
+    }
+
+    struct Runs {
+        pays: Pays,
+    }
+
+    impl System for Runs {
+        fn name(&self) -> &'static str {
+            "runs"
+        }
+        fn phases(&self) -> Vec<PhaseDecl> {
+            vec![phase(3, 3, Anchor::Before(MARKETS))]
+        }
+        fn mechanism(&self) -> Option<&dyn Mechanism> {
+            Some(&self.pays)
+        }
+    }
+
+    #[test]
+    fn a_wired_system_actually_runs_and_what_it_proposes_is_settled() {
+        // ARCHITECTURE 4.9b: the second door. Before the phase pass, `wire_up` collected every
+        // declaration and sealed the order and `step` ran books only — so a system without a
+        // participant did NOTHING, and fifty of them were listed as wired. This is what makes a
+        // wired module a running one.
+        let mut w = World::empty();
+        let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
+        let them = w.parties.add(kinds::BANK, crate::ids::RegionId::at(0), cb, Representation::Named, 1, 0);
+        let money = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        let runs = Runs { pays: Pays { who: cb, to: them, money } };
+        let systems: Vec<&dyn System> = vec![&runs];
+        w.wire_up(&systems);
+
+        let did = w.step(&systems);
+        assert_eq!(did.ran, 1, "the phase ran");
+        // Law 4: the module wrote nothing — settlement did, and the register says so.
+        assert_eq!(w.register.quantity(w.register.row(them, money)), 4.0);
+        assert_eq!(w.register.quantity(w.register.row(cb, money)), 6.0);
+    }
+
+    #[test]
+    fn a_system_with_no_mechanism_runs_nothing_and_that_is_an_answer() {
+        // A read over what the books produced is not a phase that does nothing wrong — it is a
+        // system with nothing of its own to do, and the count says so rather than hiding it.
+        let mut w = World::empty();
+        let q = Quiet;
+        let systems: Vec<&dyn System> = vec![&q];
+        w.wire_up(&systems);
+        assert_eq!(w.step(&systems).ran, 0);
     }
 }

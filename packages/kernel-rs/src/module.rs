@@ -12,7 +12,10 @@
 //! so — where TypeScript could only pass a context and hope.
 
 use crate::ids::{HoldingId, InstrumentId, MarketId, PartyId, VenueId};
+use crate::instruments::Instruments;
 use crate::journal::Journal;
+use crate::ledger::{Cause, Delivery, Leg};
+use crate::parties::Parties;
 use crate::params::Params;
 use crate::prices::{Print, Prints};
 use crate::register::{Lot, Register};
@@ -150,6 +153,101 @@ pub trait VenueParticipant {
     /// Required, for the reason `Participant::markets` is.
     fn venues(&self, view: &ParticipantView<'_>) -> Vec<VenueId>;
     fn orders(&self, view: &ParticipantView<'_>, venue: VenueId) -> Vec<crate::clearing::Order>;
+}
+
+/// **THE SECOND DOOR** (ARCHITECTURE 4.9b): what a module is given when its phase runs.
+///
+/// @spec 4.9b · Law 4 · Law 10 · Law 19 · Appendix B
+///
+/// A participant is asked a question inside a book; a MECHANISM does the rest of what a system does
+/// in a period — accruing, maturing, deciding, publishing. It reads the kernel's stores and **it
+/// proposes**: it cannot write the register, a print or a weight, because settlement, the markets
+/// and the cell events are the one writer of each (Law 4).
+///
+/// **Proposing rather than writing is what makes that true by the type** rather than by discipline.
+/// A module hands back instructions and events; the kernel settles them after the phase returns, so
+/// a module that wanted to move units without a counterparty would have to write a leg that has
+/// one, and the wire refuses the rest.
+pub struct MechanismContext<'a> {
+    period: u32,
+    parties: &'a Parties,
+    instruments: &'a Instruments,
+    register: &'a Register,
+    prints: &'a Prints,
+    journal: &'a Journal,
+    params: &'a Params,
+    proposed: Vec<Proposed>,
+}
+
+/// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
+/// it carries WHY, because an instruction nobody can read back is a state change with a date on it.
+pub struct Proposed {
+    pub legs: Vec<Leg>,
+    pub cause: Cause,
+    pub delivery: Delivery,
+    pub why: &'static str,
+}
+
+impl<'a> MechanismContext<'a> {
+    #[allow(clippy::too_many_arguments)]
+    pub fn of(
+        period: u32,
+        parties: &'a Parties,
+        instruments: &'a Instruments,
+        register: &'a Register,
+        prints: &'a Prints,
+        journal: &'a Journal,
+        params: &'a Params,
+    ) -> Self {
+        Self { period, parties, instruments, register, prints, journal, params, proposed: Vec::new() }
+    }
+
+    pub fn period(&self) -> u32 {
+        self.period
+    }
+
+    pub fn parties(&self) -> &Parties {
+        self.parties
+    }
+
+    pub fn instruments(&self) -> &Instruments {
+        self.instruments
+    }
+
+    pub fn register(&self) -> &Register {
+        self.register
+    }
+
+    pub fn prints(&self) -> &Prints {
+        self.prints
+    }
+
+    pub fn journal(&self) -> &Journal {
+        self.journal
+    }
+
+    pub fn params(&self) -> &Params {
+        self.params
+    }
+
+    /// Law 5: what it asks the world to do. Both legs or it is not a flow.
+    pub fn propose(&mut self, legs: Vec<Leg>, cause: Cause, delivery: Delivery, why: &'static str) {
+        assert!(!why.is_empty(), "4.9b: an instruction with no reason is a state change with a date on it");
+        self.proposed.push(Proposed { legs, cause, delivery, why });
+    }
+
+    /// What the kernel settles once the phase returns.
+    pub fn taken(self) -> Vec<Proposed> {
+        self.proposed
+    }
+}
+
+/// A system's own work in a period, as opposed to the questions its participants are asked in books.
+///
+/// Every module has one; most do something every period and some do something only on a date. A
+/// mechanism that has nothing to do this period proposes nothing, which is an answer and not a gap.
+pub trait Mechanism {
+    fn run(&self, ctx: &mut MechanismContext<'_>);
 }
 
 #[cfg(test)]
