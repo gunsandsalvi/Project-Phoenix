@@ -81,6 +81,11 @@ pub mod standing {
     /// §9 B1.a, 22i.9: **the rate a bank pays on deposits.** Terms `[rate]`, about nobody — it is
     /// posted to everyone who banks there, which is what makes depositors able to respond to it.
     pub const DEPOSIT_RATE: u32 = 3;
+    /// **XI-13, 22i.11: a lender's OWN view of a borrower.** Terms `[probability, years]`, `about`
+    /// the borrower. It is per lender, so two lenders holding different paper of one name have seen
+    /// different things and disagree — which is what stops the market being a restatement of one
+    /// accounting model (§46 A3).
+    pub const OWN_VIEW: u32 = 4;
 }
 
 /// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
@@ -2483,6 +2488,152 @@ impl crate::module::Participant for Builder {
             price: Some(print.price),
             qty: units,
         }]
+    }
+}
+
+/// **XI-13, §46 A3, 22i.11: EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.**
+///
+/// The `second_opinion` row counted how many lines printed. So this world had ONE opinion of every
+/// borrower — whatever the ratings row said — and XI-13's whole point is that it must not: if the
+/// loss is an arithmetic function of the borrower's accounts and every participant's reservation is
+/// built from that function, the market cannot disagree with the accounting model and its price
+/// carries no information (§46 A3).
+///
+/// **The view is formed from what THIS lender has seen**, which is why two lenders disagree: a
+/// lender's experience of a borrower is the dues on ITS OWN paper that went past their day, and two
+/// lenders holding different paper of the same borrower have seen different things. There is no
+/// `rating_of(subject)` here — asking a borrower for its probability is asking for a fact nobody
+/// holds, and answering would make every participant agree by construction.
+///
+/// **Law 8: the horizon is part of the number.** A probability with no term is not a probability, so
+/// the term is stood behind beside it.
+pub struct SecondOpinion {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SecondOpinion {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
+        // of them went past their day. Both are reads of the schedules (Law 19).
+        let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> = std::collections::HashMap::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            let borrower = ctx.instruments().issuer_of(line);
+            let dues = ctx.schedules().of_instrument(line);
+            if dues.is_empty() {
+                continue;
+            }
+            let mut owed = 0.0;
+            let mut late = 0.0;
+            for &d in dues {
+                let d = crate::stores::DueId(d);
+                if ctx.schedules().due(d) > today {
+                    continue;
+                }
+                owed += 1.0;
+                if !ctx.schedules().paid(d) {
+                    late += 1.0;
+                }
+            }
+            if owed <= 0.0 {
+                continue;
+            }
+            // Observer A4: and it is seen by whoever HOLDS the paper, and by nobody else.
+            for &row in ctx.register().of_instrument(line) {
+                let holder = ctx.register().holder_of(crate::ids::HoldingId(row)).0;
+                if holder == borrower.0 || ctx.register().quantity(crate::ids::HoldingId(row)) <= 0.0 {
+                    continue;
+                }
+                let e = seen.entry((holder, borrower.0)).or_insert((0.0, 0.0));
+                e.0 += owed;
+                e.1 += late;
+            }
+        }
+
+        let mut formed: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (&(lender, borrower), &(owed, late)) in &seen {
+            let lender = PartyId(lender);
+            let borrower = PartyId(borrower);
+            if !ctx.parties().alive(lender) || !ctx.parties().alive(borrower) {
+                continue;
+            }
+            // Its own probability, over its own experience. Nothing is drawn and no model is
+            // consulted: this is what happened to THIS lender.
+            formed.push((lender, borrower, late / owed));
+        }
+
+        for (lender, borrower, probability) in formed {
+            // XI-13: a view a lender does not hold is one it cannot be shown to have been wrong
+            // about, so it stands behind it — and a revision REPLACES its own and nobody else's.
+            ctx.now_stands(standing::OWN_VIEW, lender, borrower, vec![probability, 1.0]);
+            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(probability))], false);
+        }
+    }
+}
+
+/// **§45 A5, 22i.11: THE OBSERVER PUBLISHES A STATISTIC — LATE, AND REVISED.**
+///
+/// The `observer` row counted how many parties were alive, published the moment it counted them. A
+/// statistic that is instant and never wrong is not a statistic: what §45 A5 is about is that what
+/// the world can SEE of itself lags what it is, and is corrected afterwards.
+///
+/// **Converting a count into a count-with-a-lag is a relabelling unless the lag and the revision are
+/// the mechanism** — which is why this was left out of 21j. They are the mechanism here: the figure
+/// published in a period is an EARLIER period's, computed from what is known now, and where a later
+/// reading of that same period differs it is published again as a revision, with the first still
+/// standing (§2 E2.a: a correction is a new entry, never an erasure).
+pub struct Observing {
+    pub kind: u32,
+    pub at_about: u32,
+    pub at_value: u32,
+    pub at_revised: u32,
+    /// §45 A5: how many periods behind the statistic runs. A TECHNOLOGY: how long it takes to
+    /// gather, and a lag of zero would delete the clause rather than satisfy it.
+    pub lag: &'static str,
+}
+
+impl Mechanism for Observing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let lag = ctx.params().periods(self.lag) as u32;
+        if ctx.period() < lag {
+            return;
+        }
+        let about = ctx.period() - lag;
+        // The figure: what was settled over the wire in that period. A real statistic about the
+        // world, read off the wire's own history and never a tally kept beside it (Law 19).
+        let moved: f64 = ctx
+            .wire()
+            .in_period(about)
+            .filter(|n| ctx.wire().outcome_of(*n) == crate::ledger::Outcome::Settled)
+            .count() as f64;
+
+        // A5: what was said about that period before, if anything. A statistic published twice is a
+        // REVISION, and the first reading stays where it was.
+        let mut was: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.kind) {
+            if let (Some(Value::Num(period)), Some(Value::Num(value))) =
+                (ctx.journal().says(row, self.at_about), ctx.journal().says(row, self.at_value))
+            {
+                if period as u32 == about {
+                    was = Some(value);
+                }
+            }
+        }
+        if matches!(was, Some(before) if before == moved) {
+            return;
+        }
+        let mut data = vec![
+            (self.at_about, Value::Num(f64::from(about))),
+            (self.at_value, Value::Num(moved)),
+        ];
+        if let Some(before) = was {
+            data.push((self.at_revised, Value::Num(before)));
+        }
+        // Observer A3: a statistic about the world is PUBLIC, and it is about nobody in particular.
+        ctx.say(self.kind, &[], &data, true);
     }
 }
 

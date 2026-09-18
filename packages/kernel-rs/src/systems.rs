@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Builder, Building, Closing, CostOfCapital, Elections, Observing, SecondOpinion, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -837,6 +837,10 @@ pub fn declare(p: &mut Params) {
     // §33: **the management's own patience and its own risk aversion.** PREFERENCES, and theirs —
     // a firm that wanted its money back sooner or wanted more above its cost of capital would invest
     // less, and that is a decision rather than a rule.
+    // §45 A5: **how many periods behind a statistic runs.** A TECHNOLOGY — how long it takes to
+    // gather — and a lag of zero would delete the clause rather than satisfy it.
+    say("observer.lag", 2.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "the periods between what a statistic is about and the period it is published in");
     say("invest.horizon", 20.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
         "how many periods of return a management counts when it weighs a project");
     say("invest.hurdle", 0.02, "per unit above the cost of capital", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -940,6 +944,9 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let at_shares = keys_of(journal, "accounts.shares");
     let at_standing = keys_of(journal, "claim.standing");
     let at_ratio = keys_of(journal, "bank.ratio");
+    let at_about = keys_of(journal, "statistic.about");
+    let at_value = keys_of(journal, "statistic.value");
+    let at_revised = keys_of(journal, "statistic.revised_from");
     let kinds = &mut journal.kinds;
     // 22i.2: the kind the accounts are published under, read back by whatever reads them — the
     // grades do. Named once, here, where the list is (Law 4).
@@ -1182,8 +1189,23 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             days_per_period: w.days_per_period,
             asymmetry: "reporting.asymmetry",
         })),
-        works("second_opinion", AT_REVALUATION, Box::new(Reads { kind: says("second_opinion.lines"), what: Counts::LinesThatPrinted })),
-        works("observer", AT_REVALUATION, Box::new(Reads { kind: says("observer.alive"), what: Counts::PartiesAlive })),
+        // **XI-13: and every lender forms its OWN view of every borrower it holds.** It counted how
+        // many lines printed, so this world had ONE opinion of every borrower — and then the market
+        // cannot disagree with the accounting model and its price carries no information.
+        works("second_opinion", AT_REVALUATION, Box::new(SecondOpinion {
+            kind: says("lender.view"),
+            days_per_period: w.days_per_period,
+        })),
+        // **§45 A5: and the observer publishes a statistic — LATE, and revised.** It counted how
+        // many parties were alive and published it the moment it counted them; a statistic that is
+        // instant and never wrong is not a statistic.
+        works("observer", AT_REVALUATION, Box::new(Observing {
+            kind: says("statistic.published"),
+            at_about,
+            at_value,
+            at_revised,
+            lag: "observer.lag",
+        })),
         // §46: every deciding party forms its own outlook from its own history. They disagree.
         works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
