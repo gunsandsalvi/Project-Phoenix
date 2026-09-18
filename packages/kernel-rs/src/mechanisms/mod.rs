@@ -14,6 +14,7 @@ pub mod equity;
 pub mod estate;
 pub mod expectations;
 pub mod forced_sale;
+pub mod goods;
 pub mod housing;
 pub mod lending;
 pub mod loss;

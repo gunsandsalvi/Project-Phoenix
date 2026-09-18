@@ -17541,3 +17541,39 @@ read over a smaller batch, which is what running a plant below its rate does.
 **Eleven laws as tests. Two hundred and fifty-four now hold; clippy clean; `phoenix-check` green over
 48 files. Twenty-four of forty-seven modules ported, and Part XIII's fifteen build steps all have
 their Rust module.**
+
+# 0g.42 — the goods market (§37 C–F)
+
+`packages/kernel-rs/src/mechanisms/goods.rs`. Twenty-fifth module, and the other half of the recipe:
+what the line made has to meet a buyer, and what nobody bought has to stay somewhere.
+
+**Unsold output stays with the seller**, and a book where no bid reaches a reservation prints nothing.
+Rationing within the marginal price is pro rata on what each buyer asked for — one rule, stated once,
+not a second device per market.
+
+**Inventory is lots with what each cost**, and cost flows FIFO or by weighted average. The test runs
+the same 120 units out under both and finds the cheaper charge leaves the dearer stock — which is why
+E5 calls it a real decision with a real consequence rather than a convention. Taking more units than
+are there takes what there was: arithmetic, because there is no such thing as negative inventory.
+
+**The asymmetry IS the mechanism.** `carry` writes down to net realisable value and books the charge
+to income as an event with a size; above cost it carries at cost and books nothing, because an
+unrealised holding gain on ordinary inventory is not recognised. Marking stock up invents profit the
+firm has not earned, and a warehouse revalued up when the market rises and down when it falls with
+neither move booked is that defect in both directions at once. The broker-dealer exception is a
+`CarriesAtFairValue` fact on the holder — not a branch on a kind — and for it both directions reach
+income, because for it the inventory IS the position.
+
+**A storage fee and a spoilage rate cannot be summed here**: they have different types, one returning
+units at the lot's own cost and the other cash owed to a named storer.
+
+**One cost in two places is unwriteable**: `charge` returns the cost of what was SOLD and, separately,
+what no batch absorbed. A firm that produces and does not sell carries the cost in its stock instead
+of charging it, which is what absorption means.
+
+`phoenix-check` caught two things in the first draft — a `.min()` and an `unwrap_or(0)` in the
+weighted-average pooling, both in the same line — and the fix names the read instead: the pooled lot
+carries the earliest acquisition, read from lots that exist because the stock is positive.
+
+**Fourteen laws as tests. Two hundred and sixty-eight now hold; clippy clean; `phoenix-check` green
+over 49 files. Twenty-five of forty-seven modules ported.**
