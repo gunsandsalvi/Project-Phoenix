@@ -17004,3 +17004,37 @@ never corrects the outlook it is about.
 
 **Six laws as tests. Seventy-four now hold; clippy is clean; `phoenix-check` is green over 27
 files.**
+
+# 0g.42 — a loss is an event, not a rate (XI-1)
+
+@spec XI-1 · XI-15 · Banks Lending D1, D2 · Law 1, Law 6, Law 7 · Appendix B
+
+A borrower crosses a threshold; **that crossing is an event with a date**; something is seized;
+**the recovery is what that something FETCHED**; the loss lands on named holders in proportion.
+
+XI-1 gives four reasons a rate cannot stand in, and each is a thing this module has that a rate does
+not. `PD × LGD × principal ÷ periods` subtracted from a book **extinguishes debt by arithmetic** —
+no event, no borrower, no cash, no recovery, nothing to observe and nothing to react to. A rate
+applied smoothly **never concentrates**, so tranched senior notes can never be touched and the whole
+purpose of tranching is unreachable. A loss rate that reduces a principal **leaves the house where
+it was**, so the foreclosed supply that makes a falling price fall further does not exist. And if
+the loss is an arithmetic function of the borrower's accounts, **the market cannot disagree with the
+accounting model** and its price carries no information the accounts did not already have.
+
+- **`Standing`** is written, not inferred, and it is written BOTH WAYS: a claim that was
+  non-performing and has paid is performing again. A status that could only worsen would be a
+  ratchet nobody declared.
+- **`crossed` takes ONE borrower.** XI-1's sharpest point is that the threshold matters more than
+  the mean, and the test proves it: two cells short 40 and holding 160 against 100 owed — one
+  crosses, one does not — while **the average of the two pays exactly and a test on the mean finds
+  no defaults at all.** Widening dispersion at constant mean is what a downturn IS, so a band's
+  average is exactly backwards. Population default is a read of cell-level crossings (XI-15).
+- **`Seized` is units that moved** to a named holder, and `loss_after_recovery` is arithmetic on two
+  things that happened. It **cannot be known before the sale**, which is the whole difference
+  between a recovery and a recovery rate — and it may be NEGATIVE, because a sale can fetch more
+  than was owed and clamping that away would be Law 6's defect.
+- **`onto_holders`** lands every piece on a named holder, so a loss can concentrate — which is what
+  makes tranching reachable at all.
+
+**Five laws as tests. Seventy-nine now hold; clippy is clean; `phoenix-check` is green over 28
+files.**
