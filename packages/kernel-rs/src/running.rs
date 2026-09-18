@@ -190,6 +190,22 @@ impl Mechanism for Servicing {
 /// registry holds (`KindProfile::issues_paper`) — a treasury auctions, a firm brings a bond, a
 /// household cannot — and this walks the parties whose profile says so.
 pub struct Funding {
+    /// **§7, §17, 22i.4: WHOSE paper this is, and over what horizon.**
+    ///
+    /// One `Funding` on the treasury row was bringing every kind's paper — a firm's bond issued by
+    /// the system that funds the state, while `corporate_credit` and `short_term_debt` counted. Two
+    /// writers of one fact (Law 4), and the wrong one.
+    ///
+    /// The kinds are registry data handed in, never a branch (Law 15); the HORIZON is what makes
+    /// them different instruments rather than the same one twice. A party short against what falls
+    /// due this week brings commercial paper; a party short against what falls due this year brings
+    /// a bond. The tenor is a decision about a NEED and the need is the borrower's (21.60a).
+    pub of_kinds: &'static [u32],
+    /// How far ahead this system's shortfall is read, in days — and from how far ahead. A firm
+    /// short over the year is short over the week too, so the windows do not overlap: two systems
+    /// reading the same due date would bring two instruments for one shortfall (Law 4).
+    pub after: &'static str,
+    pub horizon: &'static str,
     /// One calendar (G3.a): how long a period is, so the window is read from DATES.
     pub days_per_period: i64,
     /// 5 C3.a: how long the paper runs. A market CONVENTION about the tenor it brings, declared as a
@@ -208,7 +224,9 @@ impl Mechanism for Funding {
         use crate::instruments::Class;
         let now = ctx.period();
         let from = crate::calendar::Day(now as i64 * self.days_per_period);
-        let to = crate::calendar::Day(from.0 + self.days_per_period - 1);
+        // G3.a: the window is read from DATES. What falls due inside it is what this system funds.
+        let to = crate::calendar::Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
+        let opens = crate::calendar::Day(from.0 + ctx.params().days(self.after) as i64);
         let periods = ctx.params().periods(self.tenor);
         let coupon = ctx.params().per_annum(self.coupon);
         let buffer = ctx.params().amount(self.buffer, crate::params::Denomination::Money);
@@ -222,6 +240,11 @@ impl Mechanism for Funding {
             // Law 15: the profile answers, and a kind with none is a kind nobody has said this of —
             // which is missing rather than a no.
             let kind = ctx.parties().kind_of(who);
+            if !self.of_kinds.contains(&kind) {
+                continue;
+            }
+            // Law 15: and the profile still answers whether a kind issues paper at all — a kind with
+            // none is a kind nobody has said this of, which is missing rather than a no.
             match ctx.registry().profile(kind) {
                 Some(profile) if profile.issues_paper => {}
                 _ => continue,
@@ -233,6 +256,7 @@ impl Mechanism for Funding {
                 .iter()
                 .map(|r| crate::stores::DueId(*r))
                 .filter(|d| !ctx.schedules().paid(*d) && ctx.schedules().due(*d) <= to)
+                .filter(|d| ctx.schedules().due(*d) >= opens)
                 .map(|d| ctx.schedules().amount(d))
                 .sum();
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };

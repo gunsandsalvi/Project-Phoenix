@@ -1102,6 +1102,9 @@ mod tests {
         }
     }
     static FUNDING: crate::running::Funding = crate::running::Funding {
+        of_kinds: &[kinds::TREASURY],
+        after: "test.funding.now",
+        horizon: "test.funding.horizon",
         days_per_period: 7,
         tenor: "test.funding.tenor",
         coupon: "test.funding.coupon",
@@ -1137,6 +1140,8 @@ mod tests {
         let old = w.instruments.issue(treasury, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, Some(crate::calendar::Day(7)));
         w.schedules.owes(old, treasury, crate::calendar::Day(3), 900.0, crate::stores::Owing::Principal);
         for (id, value, dimension) in [
+            ("test.funding.now", 0.0, crate::params::Dimension::Days),
+            ("test.funding.horizon", 7.0, crate::params::Dimension::Days),
             ("test.funding.tenor", 26.0, crate::params::Dimension::Periods),
             ("test.funding.coupon", 0.04, crate::params::Dimension::PerAnnum),
             ("test.funding.buffer", 2.0, crate::params::Dimension::Amount(crate::params::Denomination::Money)),

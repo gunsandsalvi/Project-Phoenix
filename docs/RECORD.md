@@ -20912,3 +20912,18 @@ a rate — it opens the election and says it was called.
 party put in a workout that could not see it would be under a requirement only the kernel knew about.
 
 **736 tests; `npm run check` green; clippy clean.**
+
+## 22i.4 — a borrower's own paper is its own system's
+
+Census **27 → 25**. `short_term_debt` and `corporate_credit` counted the credit outstanding while
+the TREASURY's row brought every kind's paper — a firm's bond issued by the system that funds the
+state. Two writers of one fact, and the wrong one (Law 4).
+
+`Funding` now takes WHOSE paper it brings (registry data handed in, never a branch) and over what
+HORIZON, and the horizon is what makes them different instruments rather than the same one twice: a
+party short against what falls due this week brings commercial paper, a party short against what
+falls due this year brings a bond, and the windows do not overlap so one shortfall brings one
+instrument. The tenor is a decision about a NEED and the need is the borrower's (21.60a). The
+treasury keeps §30's own row and issues for nobody else.
+
+**736 tests; `npm run check` green; clippy clean.**

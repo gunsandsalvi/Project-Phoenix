@@ -794,6 +794,24 @@ pub fn declare(p: &mut Params) {
     // because a mandate breach is mechanical — the holder has no discretion about whether to sell.
     // XI-17, §47: **the constitution's three primitives.** A POLICY — what the polity decided about
     // itself — and the only numbers §47 has that are not outcomes.
+    // §7, §17, 22i.4: **the horizons the two credit systems read a shortfall over.** They are
+    // RESOLUTIONS of the calendar, not preferences anybody has: what falls due this week and what
+    // falls due this year are the two windows a borrower's need is shaped by, and they do not
+    // overlap so that one shortfall brings one instrument.
+    say("funding.now", 0.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+        "the near end of a funding window, which is today");
+    say("funding.this_period", 7.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+        "the days a working-capital shortfall is read over, which is one period");
+    say("funding.this_year", 365.0, "days ahead", Dimension::Days, Kind::Resolution, Owner::Model,
+        "the days a long-term shortfall is read over, which is a year");
+    // 5 C3.a, 5 C4.b: commercial paper's own convention, which is what makes it a different
+    // instrument from a bond rather than the same one with a different number in it.
+    say("paper.tenor", 13.0, "periods the paper runs", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "how long the commercial paper a borrower brings runs for");
+    say("paper.coupon", 0.03, "per annum", Dimension::PerAnnum, Kind::Technology, Owner::StandardSetter,
+        "the coupon commercial paper carries as a TERM, fixed for its life");
+    say("firm.buffer", 10.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the cash a borrower that is not the state keeps back beyond what falls due");
     say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
         "how many seats the parliament of a country has");
     say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
@@ -945,6 +963,11 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             // that funds itself is not also a system that counts (Law 4, 21j.4).
             let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", buffer: "treasury.buffer", days_per_period: w.days_per_period }));
             t.mechanism = Some(Box::new(Funding {
+                // §30: the SOVEREIGN's own paper, and nobody else's. This row was bringing every
+                // kind's — a firm's bond issued by the system that funds the state (Law 4).
+                of_kinds: &[kinds::TREASURY],
+                after: "funding.now",
+                horizon: "funding.this_period",
                 days_per_period: w.days_per_period,
                 tenor: "funding.tenor",
                 coupon: "funding.coupon",
@@ -975,8 +998,31 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             cp
         },
         works("cost_of_capital", AT_REVALUATION, Box::new(Reads { kind: says("cost_of_capital.lines"), what: Counts::LinesThatPrinted })),
-        works("short_term_debt", AT_MARKETS, Box::new(Reads { kind: says("short_term_debt.out"), what: Counts::CreditOutstanding })),
-        works("corporate_credit", AT_MARKETS, Box::new(Reads { kind: says("corporate_credit.out"), what: Counts::CreditOutstanding })),
+        // §7, 21.58: **a borrower short over the WEEK brings commercial paper.** It counted the
+        // credit outstanding while the treasury's row issued its paper for it.
+        works("short_term_debt", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
+            of_kinds: &[kinds::BANK, kinds::FIRM, kinds::SMALL_FIRM],
+            after: "funding.now",
+            horizon: "funding.this_period",
+            days_per_period: w.days_per_period,
+            tenor: "paper.tenor",
+            coupon: "paper.coupon",
+            buffer: "firm.buffer",
+            says: says("paper.brought"),
+        })),
+        // §17, 21.58, 21.60: **and a borrower short over the YEAR brings a bond.** The tenor is a
+        // decision about a NEED and the need is the borrower's: the two windows do not overlap, so
+        // one shortfall brings one instrument.
+        works("corporate_credit", AT_CORPORATE_ACTIONS_SLOT, Box::new(Funding {
+            of_kinds: &[kinds::FIRM, kinds::BANK],
+            after: "funding.this_period",
+            horizon: "funding.this_year",
+            days_per_period: w.days_per_period,
+            tenor: "funding.tenor",
+            coupon: "funding.coupon",
+            buffer: "firm.buffer",
+            says: says("bond.brought"),
+        })),
         // ── The holders ─────────────────────────────────────────────────────────────────────────
         {
             let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
