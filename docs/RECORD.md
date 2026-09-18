@@ -19204,3 +19204,84 @@ the owner earns nothing**, which is a price that is not cleared (Law 3).
 **679 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 39 of 177; 21.1 through 21.31 are done but for 21.6 and 21.20, each of which says what it is
 waiting on.
+
+---
+
+## 21.32–21.46 — the block that caught this session's own defect
+
+**What.** The fourth block of item 21, worked in number order. Seven closed, seven positioned, one new
+item (**21j**), and one live fix.
+
+### 21.36 — an estate paid every claimant in full, again, every period
+
+The finding says: *while an estate's programme runs, every claim on the dead firm is PRESENTED AGAIN
+each period*, each failure writing an arrear, each arrear maturing and failing and writing another,
+until the dead firm's debt stands twice on the register (Law 4) and a forty-firm rig runs 27,000
+ledger records a period.
+
+**It was live, and it was in code written three commits earlier at 21c.** `running::Ranked` read
+`ctx.claims().outstanding()` to decide what an estate owed and never marked anything paid, so an
+estate distributed its whole proceeds to its whole claimant list in every period it stayed open. This
+is the first time the re-read pass has found a defect that this session's own work created, and it is
+the argument for the pass: a finding measured on a deleted engine described the shape exactly, and the
+shape had been rebuilt.
+
+Two changes fixed it, and the second is the interesting one:
+
+- **A `pays` door.** `MechanismContext::pays(claim, amount)` → `Taken.repaid` → the assembly calls
+  `Claims::pays`. `outstanding` was already `owed − paid`, a read; nothing had ever written `paid`.
+- **`estate::waterfall` answers in INPUT ORDER.** It sorted its results by rank, so the caller could
+  not pair them with the claim ids it passed in — which is what made the first change impossible to
+  write correctly and is the same defect the finding describes. It now sorts an index vector, fills a
+  `paid` array positionally and zips it back over the input.
+
+`Ranked` keeps `live: Vec<ClaimId>` beside `marking: Vec<(ClaimId, f64)>` so every payment names the
+claim it discharged. Two tests: a claim an estate has paid does not come back next period, and a claim
+paid in part comes back for the rest and no more.
+
+### Verified absent (six)
+
+| finding | why it closes |
+| --- | --- |
+| 21.32, 21.33, 21.34 | a `property/` module — commercial lettings — that **the specification never asked for**: `grep -i "premises\|commercial property"` over 5,428 lines returns nothing, and there is no property module here. 21.33's surviving half (a per-member obligation whose counterparty changes when a cell merges) is 21h.3's, where 21.20 already sits; 21.34's builder half is housing's, at 21j |
+| 21.35 | a cell's equity account booked per member from a total leg. **There is no equity account**: `instruments::equity` is a read of holdings less what others hold of what this party issued, a cell's holdings are TOTALS, and `Parties::per_member` is a read (`parties.rs:149`) |
+| 21.45 | the observer reporting a sector in the first region's money. There is no sector aggregate and no `statedIn` — no aggregate reporting at all. The rule it names (a report's numéraire is a declared RESOLUTION with an invariance test, Law 2) goes to 21g |
+| 21.46 | a bank's capital, a desk's room and a concentration limit translated at the rate in force. Nothing in this engine translates any of the three; a carried exposure is a solvency event (`cross_border::Exposure::on_a_rate_move`), which is what Currency D2 asks for. `Cross-Border A2.a`'s hedging half re-points to 21.50, which carries the covered comparison a hedger would read |
+
+### Positioned (seven)
+
+| finding | where, and why |
+| --- | --- |
+| 21.37 | **21e** — the dwelling's grain is `registry.units`, *each unit of measure and what it is divided into*, one of the seven homeless nouns. There is no table of units at all; the only grain the engine knows is `clearing::whole_pieces`, one grid for everything |
+| 21.44 | **21e** — the per-money size boundary died and the number lost its money altogether: `small_business::Cell.size` is a bare `f64`, which is Law 8 rather than Currency C4. A number cannot name its money while `registry.currencies` has no home |
+| 21.40 | **21f** — `lending.standards`, *the standard a lender is currently lending at*, is the homeless noun. `housing::standard` reads one off the lender's own book and there is nowhere to keep it, so no lender can refuse |
+| 21.38, 21.39, 21.41, 21.42 | **21j**, the new item |
+
+### 21j — twenty-five systems take no part
+
+Item 22 left a comment on the recipe row of the wiring table: *it was a read of how many lines printed,
+which is a system reporting on a world it takes no part in.* **That is still true of twenty-five of
+the forty-seven rows in `systems.rs`**, wired as `Reads { Counts::… }` — parties alive, lines that
+printed, agreements live, credit outstanding. Every count is honest, which is why `world:runs` can say
+all fifty wired systems ran and mean it. None of them decides anything and none of them writes. Four
+have been converted, each by the item that needed it: `recipe` at 22, `funds` at 21b, `estate` at 21c,
+`employment` at 12b.
+
+Two of the block's findings are sharp instances. **Housing** (21.38, 21.39, 21.42) is 413 lines citing
+40 clauses — a reservation, a funded bid, a per-location cross, a standard read off the lender's book —
+wired as a foreclosure closer, the one clause of the forty the world reaches. **No rent is set in this
+world**: `Dwelling::rent_flows` says who pays whom and nothing says how much, which is why the basket
+cannot contain rent and why no tenant's budget can be weighed against a mortgage payment. **The
+treasury** (21.41) posts `size: 0.0` — a literal written at the assembly site beside
+`treasury::must_raise`, the read that belongs there (Law 19, and a declared number of no kind at all,
+Law 2). The sovereign funding constraint is sequencing step 3 and it binds on nothing, because the
+treasury never asks anybody for money.
+
+They share one blocker: `must_raise` wants what falls due, a rent wants the lease it is owed under,
+and `ParticipantView` sees the register, the prints, the params and this party's agreements — not the
+schedules. One kernel change unblocks both, and it is 21j.1. The item owes the door, those two
+conversions, and a census line in `world:runs` beside the homeless nouns, for the same reason: a
+register that can only report "nothing missing" is switched off.
+
+**681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green; the world
+runs four periods at 194 ms worst against the 3,000 ms budget.** Item 21 stands at 46 of 177.

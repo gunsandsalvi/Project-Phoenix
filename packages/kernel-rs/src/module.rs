@@ -215,6 +215,7 @@ pub struct MechanismContext<'a> {
     settled: Vec<DueId>,
     ceased: Vec<PartyId>,
     claimed: Vec<(PartyId, PartyId, f64, u32)>,
+    repaid: Vec<(crate::stores::ClaimId, f64)>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -279,6 +280,7 @@ impl<'a> MechanismContext<'a> {
             settled: Vec::new(),
             ceased: Vec::new(),
             claimed: Vec::new(),
+            repaid: Vec::new(),
         }
     }
 
@@ -389,6 +391,14 @@ impl<'a> MechanismContext<'a> {
         self.claimed.push((on, holder, owed, ranks));
     }
 
+    /// **XI-8, 21.36: and what an estate PAID one.** A claim that is paid and not marked comes back
+    /// whole next period and is paid again, for ever — which is the shape 21.36 measured on the old
+    /// engine, where a dead firm's debt stood twice on the register and grew by every claim every
+    /// period. `Claims::pays` is the one writer; a module says what it paid.
+    pub fn pays(&mut self, claim: crate::stores::ClaimId, amount: f64) {
+        self.repaid.push((claim, amount));
+    }
+
     /// What the kernel applies once the phase returns.
     pub fn taken(self) -> Taken {
         Taken {
@@ -398,6 +408,7 @@ impl<'a> MechanismContext<'a> {
             settled: self.settled,
             ceased: self.ceased,
             claimed: self.claimed,
+            repaid: self.repaid,
         }
     }
 }
@@ -415,6 +426,9 @@ pub struct Taken {
     /// XI-8: who is owed what by a dead party, and at what rank. A module asks; `Claims` is the
     /// one writer, for the reason every other store has one.
     pub claimed: Vec<(PartyId, PartyId, f64, u32)>,
+    /// XI-8, 21.36: and what an estate actually PAID one, so the claim comes down. A claim that is
+    /// paid and not marked is a claim that is paid again next period, for ever.
+    pub repaid: Vec<(crate::stores::ClaimId, f64)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

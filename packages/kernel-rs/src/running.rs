@@ -520,6 +520,7 @@ impl Mechanism for Ranked {
 
         let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
         let mut told: Vec<(PartyId, f64)> = Vec::new();
+        let mut marking: Vec<(crate::stores::ClaimId, f64)> = Vec::new();
 
         for p in 0..ctx.parties().len() {
             let estate = PartyId::at(p as u32);
@@ -537,23 +538,30 @@ impl Mechanism for Ranked {
             if has <= 0.0 {
                 continue;
             }
-            let claims: Vec<Claim> = rows
+            let live: Vec<crate::stores::ClaimId> = rows
                 .iter()
                 .map(|r| crate::stores::ClaimId(*r))
                 .filter(|c| ctx.claims().outstanding(*c) > 0.0)
+                .collect();
+            let claims: Vec<Claim> = live
+                .iter()
                 .map(|c| Claim {
-                    holder: ctx.claims().holder_of(c),
-                    owed: ctx.claims().outstanding(c),
-                    ranks: rank_of(ctx.claims().ranks(c)),
+                    holder: ctx.claims().holder_of(*c),
+                    owed: ctx.claims().outstanding(*c),
+                    ranks: rank_of(ctx.claims().ranks(*c)),
                 })
                 .collect();
             if claims.is_empty() {
                 continue;
             }
             let mut out = 0.0;
-            for p in waterfall(has, &claims) {
+            // The waterfall answers in the order it was asked, so each result is THIS claim's and
+            // `marking` carries the id. 21.36: a claim paid and not marked comes back whole next
+            // period and is paid again, which is how a dead firm's debt stood twice on the register.
+            for (c, p) in live.iter().zip(waterfall(has, &claims)) {
                 if p.paid > 0.0 {
                     paying.push((estate, p.holder, money, p.paid));
+                    marking.push((*c, p.paid));
                     out += p.paid;
                 }
             }
@@ -577,6 +585,9 @@ impl Mechanism for Ranked {
                 Delivery::Nothing,
                 "an estate paying a ranked claimant out of what it has",
             );
+        }
+        for (claim, amount) in marking {
+            ctx.pays(claim, amount);
         }
     }
 }
@@ -872,6 +883,9 @@ mod tests {
         }
         for (on, holder, owed, ranks) in asked.claimed {
             w.claims.against(on, holder, owed, ranks);
+        }
+        for (claim, amount) in asked.repaid {
+            w.claims.pays(claim, amount);
         }
     }
 
@@ -1268,5 +1282,55 @@ mod tests {
         ran(&mut w, &Ranked { says });
         assert_eq!(w.register.quantity(w.register.row(secured, cash)), 0.0);
         assert_eq!(w.register.quantity(w.register.row(treasury, cash)), 0.0);
+    }
+
+    #[test]
+    fn a_claim_an_estate_has_paid_does_not_come_back_next_period() {
+        // **21.36, and it was a defect this engine had for three commits.** `Ranked` read
+        // `outstanding` and marked nothing, so every claim was paid IN FULL AGAIN every period —
+        // the shape 21.36 measured on the old engine, where a dead firm's debt stood twice on the
+        // register and grew by every claim every period until a test timed out.
+        use crate::mechanisms::estate::Rank;
+        let (mut w, bank, secured, _t, cash) = world();
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        w.register.money_delta(estate, cash, 400.0);
+        w.parties.cease(estate);
+        w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
+        let says = w.journal.kinds.declare("estate.paid");
+
+        w.period = 1;
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.register.quantity(w.register.row(secured, cash)), 100.0);
+
+        // The estate still has 300 and the claimant has been paid. Next period it is owed NOTHING.
+        w.period = 2;
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.register.quantity(w.register.row(secured, cash)), 100.0, "it was paid once");
+        assert_eq!(w.register.quantity(w.register.row(estate, cash)), 300.0);
+    }
+
+    #[test]
+    fn a_claim_paid_in_part_comes_back_for_the_rest_and_no_more() {
+        // XI-1: what a claimant did not get is a LOSS on a named holder, and it stands until the
+        // estate has something to pay it with. The estate has 40 against a claim of 100.
+        use crate::mechanisms::estate::Rank;
+        let (mut w, bank, secured, _t, cash) = world();
+        let estate = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
+        w.register.money_delta(estate, cash, 40.0);
+        w.parties.cease(estate);
+        let c = w.claims.against(estate, secured, 100.0, Rank::Secured as u32);
+        let says = w.journal.kinds.declare("estate.paid");
+
+        w.period = 1;
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.claims.outstanding(c), 60.0);
+
+        // The estate realises something more, and the rest of the claim is paid — and only the rest.
+        w.register.money_delta(estate, cash, 100.0);
+        w.period = 2;
+        ran(&mut w, &Ranked { says });
+        assert_eq!(w.claims.outstanding(c), 0.0);
+        assert_eq!(w.register.quantity(w.register.row(secured, cash)), 100.0);
+        assert_eq!(w.register.quantity(w.register.row(estate, cash)), 40.0);
     }
 }

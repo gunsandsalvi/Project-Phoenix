@@ -359,6 +359,10 @@ impl World {
         for (on, holder, owed, ranks) in asked.claimed {
             self.claims.against(on, holder, owed, ranks);
         }
+        // XI-8, 21.36: and what came off one. A claim paid and not marked is paid again next period.
+        for (claim, amount) in asked.repaid {
+            self.claims.pays(claim, amount);
+        }
         1
     }
 

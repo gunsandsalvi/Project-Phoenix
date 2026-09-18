@@ -236,6 +236,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
 | 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
 | 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
+| 21j | Twenty-five systems take no part | named by 21.38–21.42; after 21i, and its door is what the later conversions all want |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
@@ -260,7 +261,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 39** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 46** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -285,6 +286,17 @@ are declared, guarded, and `reweigh` is called by nothing — not one weight in 
 changed, which is what 21.20 turns out to be a consequence of. **21i**: there is no ground anywhere,
 which is what 21.27–21.30 are four findings about.
 
+**And 21.32 through 21.46** (`docs/RECORD.md`, *21.32–21.46*): seven closed, seven positioned, and one
+new item. **21.36 is the first of these findings that caught a defect THIS SESSION wrote**: it names an
+estate presenting every claim again each period, and `running::Ranked` — written three commits earlier
+at 21c — read `claims.outstanding()` and never marked anything paid, so an estate paid every claimant
+in full again every period for as long as it stayed open. The fix is the `pays` door and a waterfall
+that answers **in input order** so its results can be paired with the claim ids that went in; sorting
+the answer by rank was the same defect the finding describes on the old engine. Three more are about a
+`property/` module that the specification never asked for — `grep -i "premises|commercial property"`
+over 5,428 lines returns nothing — and one (21.35) about an equity account that does not exist here at
+all, `instruments::equity` being a read of the register and a cell's holdings totals with `per_member`
+a read. The new item is **21j**: twenty-five of the forty-seven wired systems do nothing but count.
 
 - [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
   **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
@@ -407,20 +419,59 @@ and costs over an arbitrary world, which is what it is for.
   **nothing performs a merge**, because the five cell events never fire at all (21h). A `merged` read
   written for a caller that does not exist is `WorkInProgress` again — a type nothing constructs.
   It closes as 21h.3.
-- [ ] 21.32 `property/index.ts tenantOrders`, `firms/decide.ts`: no firm's plan binds on premises in thirty periods of the rig — every `firms.plan` says `bound: demand` or `bound: labour` — so the lettings books print `noDemand` every period and the only leases signed are a test's. The tenant's reason is built; what is missing is a firm short of ROOM: the service lines (13c.2) whose recipes take premises open holding their own, and nothing makes a firm outgrow them. When a line's demand outruns its room (22.3's shops with buyers), the bid is there (15.3).
-- [ ] 21.33 `property/index.ts collect`: a bank resolution merges the landlords of the failed bank into another bank's cell (`weight: merge`), and a lease signed with the smaller cell then comes to less than a piece of money a landlord — said as `property.rentPaid` unpaid, never fixed. A lease is with EVERY member of the cell alike (XI-15), and a merge changes who that is; the honest row is one per landlord member, which is a cell event the register does not yet have (a lease that splits with the cell, as 21.20 asks of outlooks) (15.3).
-- [ ] 21.34 `property/index.ts buildOf`: a landlord builds by buying buildings from whoever sells them in its place, and the rig has no builder selling buildings — the `building` good's market prints nothing — so its pace is a bid nobody fills and its ask for a loan is against a purchase that never happens. The builder is 13c.2's construction line; until it sells, no building is built to let after the opening (15.3).
-- [ ] 21.35 `ledger/settlement.ts` (the equity routing, ARCHITECTURE 4.9a): a CELL's equity account is per member and a money leg to a cell is a TOTAL — a wage of `perMember × members` lands as one amount — and the routing books the total per member, so a household cell's equity walk leaves its own balance sheet by the weight from the first payment it receives (`hh.working.bank.a`: 87.8m a member against 24.2m at mark in period 1 of the rig, after 15.4 made the marks right). The `accounts` family's cell rows are this. What a leg does to a cell's account is the amount over the weight, as the marks now are (15.4).
-- [ ] 21.36 `estate/index.ts`, `ledger/settlement.ts`, `runCorporateActions`: while an estate's programme runs, every claim on the dead firm is PRESENTED AGAIN each period — a paper line's maturity that failed last period matures again this one — and each failure writes the estate an arrear (`estate.firm.# owes … it could not pay on instruction #`), and each arrear matures, fails and writes another, so the dead firm's debt stands twice on the register (the paper AND its arrears, Law 4) and the count grows by every claim every period: the 40-firm control rig runs 1,200 ledger records a period to period 22 and 27,000 from period 26 (3,834 paper maturities failed, 3,834 estate arrears written, 3,753 arrears failed in period 24 alone), and `control.test.ts` *bids for nothing* times out at 180 s where it took eleven seconds at 15.3. `distribute` says what is not paid *stays outstanding until the estate closes* (D2.a, Banks Lending E5): a claim in an open estate is owed to the estate's rank order and not to the calendar, so its maturity is presented once and its failure is the estate's record, not a new row. Seen at 15.4 after the cells' marks changed the path; the estate is 21.3's.
-- [ ] 21.37 `goods/index.ts unitsOf`, `goods/data.ts`: the dwelling good is subdivided a million ways (`PIECES_PER_UNIT`, the tonne's grid) while the comment beside it says a good counted in whole things has no piece below one of itself — a cell of nineteen thousand holds 7,866 dwellings as 7.87 billion pieces and a member holds four tenths of a roof, which is the occupancy it lives under and not a thing anybody holds (Housing A1: indivisible). The register should count whole dwellings and the book the occupancy (15.5 moved the book to `DWELLING_WEEKS`; the register is still on the tonne's grid) (15.5).
-- [ ] 21.38 `housing/index.ts reservation`, `letIn`: the most a tenant will pay is what it expects to earn over the roof it lives under, and the session prices at the marginal bid — so a session whose only bidder left is a rich singleton clears at its whole income (period 3 of the rig: 3.117 a piece, 3.1 million a dwelling a period, 1.2 dwellings) and the same tenant then fails the rent it bid. The reservation is what the module's header says it is (B1.a from the other side); what is missing is the rest of the tenant's budget — it bids as if a roof were the only thing it buys, where `consume.ts` decides the rest of its spending per cell (Households C1). The roof's bid belongs in the same budget the basket and the home come out of (15.5).
-- [ ] 21.39 `housing/index.ts publishShortfall`, `households/index.ts homeBid`: a household that RENTS never buys — `short = needs − owned − rented` is zero once it is housed, `homeBid` never fires and no mortgage is asked for, so owner-occupation cannot arise from a renting household and the sector is renters for ever. Housing B1, B2: a buyer's reason is that owning is cheaper than renting at what it can borrow — rent against the mortgage payment, both reads — and nothing here compares them. `mortgage.test.ts` buys the roof its row stands on by hand until it does (15.5).
-- [ ] 21.40 `banks/index.ts overdraft`, `test/mortgage.test.ts`: a household cell that holds a roof is lent to on its request (`bank.c lends 4,178,362 to hh.working.bank.c.11`, period 4) and draws on its line when its account is emptied by hand, so the coupon on the row the test built is paid out of the bank's own advance and no default is ever recorded — *when it cannot pay, the default is recorded on the row* is red since 15.5 and cannot be staged from outside: whether a bank funds a borrower is the bank's decision, and the test's scenario needs a bank whose standard refuses (17.0's credit view). Seen at 15.5; the row was green while no bank quoted a household name (12a.4).
-- [ ] 21.41 `treasury/index.ts`, `test/treasury.test.ts` *funds itself over a year when the market is there*: eleven of the treasury's instructions fail in a year of the rig where none did at 15.4 — the test asserts no failed instruction and lists eleven. Seen at 15.5 after the landlords' dwellings and their rents changed where the money sits (the banks' funding and what they lend differ from period 2); which payments failed and why is a read of the eleven records to make against the funding programme (Treasury D3, XI-9) — measured, not diagnosed (Law 11).
-- [ ] 21.42 `indices/baskets.ts`: the consumer basket is physical goods a member buys and the rent a member pays is not in it, so the price level a household or the central bank reads leaves out what Housing D3 calls a large component of it; the rent is a row's terms (`rentOwedBy`) and the book's print (`housing.rent`), both readable, and the basket that includes them is one basket and not a second index (Law 4) (15.7).
-- [ ] 21.44 `small-business/index.ts` promotion, `control/index.ts`: a size is compared in ONE money, so the boundary a small firm crosses to be promoted is kept per money and a small firm in a money where no named firm has brought paper is never promoted, however large (Currency C4: comparing sizes across moneys is a REPORT at a rate, and the promotion is a decision — 16.0 chose to compare within a money rather than translate at the rate in force; whether a size boundary is a money's or the world's is a design question for 16.2's table) (16.0).
-- [ ] 21.45 `observer/observer.ts sectors`, `indices/index.ts`: the observer reports a sector's output and stock in the FIRST region's money, and the global equity line in `statedIn`; both are reporting choices translated at the rate in force (Currency C4) and both are declared in code rather than as a RESOLUTION on the parameter register with an invariance test (Law 2: a report's numéraire must move nothing) (16.0).
-- [ ] 21.46 `banks/index.ts costOfFunds`, `banks/dealing.ts bookValue`, `short-term-debt headroomFor`: a bank's capital behind a book in a foreign money, a desk's room and a paper buyer's concentration limit are its home-money residual TRANSLATED at the rate in force; the rate moving therefore moves the room without a trade (Currency D2 makes the move a revaluation, but nothing yet hedges it — the owner's correction says a corporate CAN hedge; no party has a reason to in this world) (16.0).
+- [ ] 21.37 `goods/index.ts unitsOf`, `goods/data.ts`: the dwelling good is subdivided a million ways
+  (`PIECES_PER_UNIT`, the tonne's grid) while a good counted in whole things has no piece below one of
+  itself (Housing A1: indivisible). **Re-read: the per-good grid died with its file and the QUESTION
+  is homeless.** There is no table of units anywhere in the Rust engine — the only grain it knows is
+  `clearing::whole_pieces`, which is one grid for everything — and `registry.units`, *each unit of
+  measure and what it is divided into*, is one of the seven nouns the ontology register reports with
+  no kernel home. A dwelling counted in whole dwellings is that noun's first job. **Positioned at
+  21e**, where the registry is built.
+- [ ] 21.38 `housing/index.ts reservation`, `letIn`: a tenant bids as if a roof were the only thing it
+  buys, so a session whose last bidder is a rich singleton clears at its whole income and the tenant
+  then fails the rent it bid. **Re-read: there is no letting session, because there is no rent.**
+  `mechanisms/housing.rs` has `Dwelling::rent_flows` — who pays whom, `None` between a party and
+  itself (Law 5) — and nothing anywhere SETS the rent it takes. What the finding asks for (the roof's
+  bid out of the same budget the basket comes out of, Households C1) is the shape the mechanism should
+  have when it is written. **Positioned at 21j**, with the rest of housing's absence from the loop.
+- [ ] 21.39 `housing/index.ts publishShortfall`, `households/index.ts homeBid`: a household that RENTS
+  never buys, so owner-occupation cannot arise and the sector is renters for ever; B1, B2 say a
+  buyer's reason is that owning is cheaper than renting at what it can borrow, and nothing compares
+  them. **Re-read: the comparison is still missing and now BOTH sides of it are.** `housing::can_bid`
+  is what a buyer can fund and `housing::clearing` crosses bids with reservations, both built and
+  neither reached: the housing row in the wiring table is a foreclosure closer, so no dwelling has
+  ever been offered for sale in this world. **Positioned at 21j.**
+- [ ] 21.40 `banks/index.ts overdraft`, `test/mortgage.test.ts`: a household cell is lent to on its
+  request and draws on its line when its account is emptied, so the coupon is paid out of the bank's
+  own advance and no default is ever recorded — whether a bank funds a borrower is the BANK'S
+  decision, and the scenario needs a bank whose standard refuses. **Re-read: the standard is the
+  homeless noun.** `housing::standard` reads one from the lender's own book (C5.a) and
+  `lending.standards` — *the standard a lender is currently lending at* — is declared with no kernel
+  home, so there is nowhere for a lender to keep the refusal. **Positioned at 21f**, which is the
+  store, and the refusal follows it.
+- [ ] 21.41 `treasury/index.ts`, `test/treasury.test.ts` *funds itself over a year when the market is
+  there*: eleven of the treasury's instructions fail in a year of the rig. **Re-read: the measurement
+  died with the rig and what it was measuring is worse than it said.** `TreasuryIssues.size` is a
+  literal `0.0` written at the assembly site (`systems.rs`), so the treasury of this world auctions
+  NOTHING, ever — while `treasury::must_raise(outlays, receipts, cash, buffer)` sits in the module
+  unread (Law 19: the read exists and the assembly invented a number beside it, and `0.0` is a
+  declared number of no kind at all, Law 2). It cannot be fixed at the call site: `must_raise` wants
+  what falls due, and `ParticipantView` has no door onto the schedules. The sovereign funding
+  constraint is sequencing step 3 and it does not bind on anything. **Positioned at 21j**, whose first
+  step is the door.
+- [ ] 21.42 `indices/baskets.ts`: the consumer basket is physical goods a member buys and the rent a
+  member pays is not in it, so the price level leaves out what Housing D3 calls a large component of
+  it — and the basket that includes them is one basket, not a second index (Law 4). **Re-read: it
+  survived, and it is blocked on 21.38.** Item 22 made the basket a read of what the recipes make;
+  rent cannot enter it because no rent is set. **Positioned at 21j**, behind the rent.
+- [ ] 21.44 `small-business/index.ts` promotion, `control/index.ts`: a size is compared in ONE money,
+  so a small firm in a money where no named firm has brought paper is never promoted, however large.
+  **Re-read: the per-money keeping died and the number lost its money altogether.**
+  `small_business::Cell.size` is a bare `f64` and `reaches_the_bond_market_at` is a bare threshold —
+  neither names a currency, which is Law 8 (the unit is part of the number) rather than Currency C4.
+  A number cannot name its money while `registry.currencies` has no kernel home, so the design
+  question (is a size boundary a money's or the world's?) cannot even be asked yet. **Positioned at
+  21e.**
 - [ ] 21.47 the four-country world at thirty periods (16.2's table): about one session in a hundred clears (78 of 6,825 in EUR, 48 of 11,965 in JPY), and a hundred to two hundred parties per money are dead — one bank per money in the scale model, and a treasury (`treasury.us`) refused an overdraft of 1.6 × 10¹¹ pieces at its central bank every period from 29. Not chased (Law 11): a measurement for Part XII, and the sovereign's failure is XI-9 doing what it is for; positioned here so 16.8's `check:opens` on `abroadWorld` reads it against this table (16.2).
 - [ ] 21.54 Central Bank F1, F2 (16.7): no central bank in this world has a reason to hold another money's paper — the stated share is gone and nothing buys reserves — so F1's reserves are zero, F2's intervention has nothing to intervene with, and the FX pairs open with less two-way flow than the seed used to plant. The reason is a policy decision (a reserve target, an intervention rule) and belongs with 18a's mandate; positioned at 18a.1 (16.7).
 - [ ] 21.69 `mechanisms/ratings/assess.ts` (17.10a's census, sixty periods of `rated-a`): EVERY GRADE THIS WORLD HAS EVER PUBLISHED IS THE WORST ONE. All 240 rating actions carry `c`, the bottom of the scale — no name is ever graded anything else by any of the three assessors. So the investment-grade index is permanently empty while the high-yield one carries every rated line, every claim takes the regulation's worst weight where a grade is read, and the assessors cannot disagree with each other about anything (Ratings A4: two houses looking at one issuer should not always agree). It may be a true reading of a world whose banks open in breach and whose firms fail (21.66), or the measure may be saturated; which it is, is a read to make against a run and not a number to chase (Law 11). Positioned at 23.3, with Part XII's measurements (17.10a).
@@ -761,6 +812,67 @@ whose supply is genuinely fixed cannot bind.
   a price (Law 3). Same for a room: rent is a cleared price, not a stated one.
 
 **Exit.** The four findings have a subsystem to be about, and each is re-read against it.
+
+---
+
+## 21j. Twenty-five systems take no part
+
+**INSERTED here (Law 10), named by 21.38–21.42, which are five findings about one absence.** A
+missing sector is an ITEM, not a finding (`CLAUDE.md`).
+
+The comment item 22 left on the recipe row of the wiring table says the whole of it:
+
+> §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines printed, which
+> is **a system reporting on a world it takes no part in.**
+
+That is still true of twenty-five of the forty-seven rows in `systems.rs`. They are wired as
+`Reads { kind, what: Counts::… }` — a count of parties alive, lines that printed, agreements live or
+credit outstanding. Every one of those counts is an honest read of something real, which is why
+`world:runs` can say *all 50 wired systems ran every period* and mean it. **None of them decides
+anything, and none of them writes.** Four rows have been converted so far, each by the item that
+needed it: `recipe` at 22 (`Making`), `funds` at 21b (`Winding`), `estate` at 21c (`Ranked`),
+`employment` at 12b (`Wages`).
+
+The five findings of the 21.32–21.46 block are five instances, and two of them are sharp enough to
+start from:
+
+- **Housing** (21.38, 21.39, 21.42) is wired as a foreclosure closer. `mechanisms/housing.rs` has a
+  reservation, a buyer's funded bid, a per-location cross, a standard read off the lender's book and
+  a foreclosure that returns the dwelling to the market — 413 lines, 40 spec clauses cited, and the
+  only one of them the world reaches is the last. **No rent is set in this world** (`rent_flows` says
+  who pays whom and nothing says how much), which is why the basket cannot have rent in it (21.42)
+  and why a tenant's budget cannot be compared with a mortgage payment (21.39).
+- **The treasury** (21.41) posts `size: 0.0` — a literal written at the assembly site beside
+  `treasury::must_raise`, which is the read that belongs there. The sovereign funding constraint is
+  sequencing step 3 and it binds on nothing, because the treasury never asks anybody for money.
+
+The blocker they share is a door. `must_raise` wants what falls due; a rent wants the lease it is
+owed under; neither is on `ParticipantView`, which can see the register, the prints, the params and
+this party's agreements, and not the schedules. That is one kernel change and it unblocks both.
+
+- [ ] 21j.1 **A schedules door on `ParticipantView`**: what this party owes and is owed by date, as
+  `MechanismContext::wire()` is for the history. A participant that cannot see what falls due cannot
+  decide anything about money it has to find.
+- [ ] 21j.2 **The treasury issues what it must raise** (Treasury D3, XI-9): `size` is
+  `must_raise(outlays, receipts, cash, buffer)` read through 21j.1, and the literal goes. It is the
+  first system whose conversion makes a constraint bind rather than a number appear.
+- [ ] 21j.3 **Housing joins the loop** (40 A2, A3, B1): a rent is a cleared price between an occupier
+  and an owner (21i.3 says the same of a berth and a room), a dwelling is offered at its owner's
+  reservation and bid for at what a buyer can fund, and `housing::clearing` is what crosses them.
+  21.38's tenant bids out of the budget `households::spends` already decides, and 21.42's basket reads
+  the rent that results.
+- [ ] 21j.4 **The census is the measure, and it must fall.** `world:runs` prints the seven homeless
+  nouns; it should print the count of systems whose only work is a count, beside them, for the same
+  reason: a register that can only report "nothing missing" is switched off (21d.1b). Twenty-five
+  today.
+
+The remaining twenty-one are not this item's to convert — each belongs to the item that needs it, the
+way the four converted so far did. What this item owes is the door, the two conversions its findings
+name, and the count that makes the rest visible.
+
+**Exit.** `ParticipantView` sees what falls due; the treasury auctions what it is short of and the
+literal is deleted; a rent in this world is a price that cleared; `world:runs` prints how many systems
+still only count, and the number is below twenty-five.
 
 ---
 
@@ -1430,13 +1542,13 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Housing B4.a` MISSING — a VERIFY on a transaction-based house price index, and no dwelling index is built; measured at Part XII, after the recipe (Part XIII: then, and only then, measure)
 - [ ] `Housing D3` MISSING — the consumer basket (`packages/engine/src/mechanisms/indices/baskets.ts`) is physical goods a member buys; the rent a member pays is not in it (21.42)
 - [ ] `Housing D5` MISSING — a VERIFY for Part XII: the service channel (D4) needs the floating rate 17.0 brings, the price channel (B2.a, D1) is built, and the two lags are measured then
-- [ ] `Housing A4` PARTIAL — packages/engine/src/mechanisms/housing/index.ts, packages/engine/src/mechanisms/goods/data.ts (15.5: the stock IS a register of units with owners — every dwelling has a live holder from the opening, moved only by what changes hands (a purchase, a foreclosure) and by what is built; a dwelling takes half a year (B2). PARTIAL: the opening stock is a placeholder the seed states (`housing.seed.dwellingsPerLandlord`, 22a), no builder sells a dwelling in the rig (21.34's shape), and nobody adds to the stock after the opening)
-- [ ] `Housing B1` PARTIAL — packages/engine/src/mechanisms/goods/index.ts, packages/engine/src/mechanisms/households/index.ts `homeBid` (15.7: a dwelling has a market per place — `mkt.good.dwelling.<region>`, Goods C6 — where a household's bid for the roofs it is short of, at what its spare reaches and with a mortgage asked for the rest (B1.b), meets whoever offers, and the solver clears the cross (B1.c). MEASURED as `noSupply` in every period of the rig: nobody offers — no builder sells (21.34) and no owner has a reason to sell (B1.a, 21.39))
-- [ ] `Housing B3` PARTIAL — packages/engine/src/mechanisms/housing/index.ts, packages/engine/src/mechanisms/goods/data.ts (15.7: supply answers a price slowly by construction — a dwelling takes half a year to make (B2, `leadTimePeriods`) and nothing else adds to the stock, so a demand shift meets a stock that cannot move for twenty-six periods; UNMEASURED because no builder has sold a dwelling in the rig (21.34))
+- [ ] `Housing A4` PARTIAL — packages/engine/src/mechanisms/housing/index.ts, packages/engine/src/mechanisms/goods/data.ts (15.5: the stock IS a register of units with owners — every dwelling has a live holder from the opening, moved only by what changes hands (a purchase, a foreclosure) and by what is built; a dwelling takes half a year (B2). PARTIAL: the opening stock is a placeholder the seed states (`housing.seed.dwellingsPerLandlord`, 22a), no builder sells a dwelling (21j), and nobody adds to the stock after the opening)
+- [ ] `Housing B1` PARTIAL — packages/engine/src/mechanisms/goods/index.ts, packages/engine/src/mechanisms/households/index.ts `homeBid` (15.7: a dwelling has a market per place — `mkt.good.dwelling.<region>`, Goods C6 — where a household's bid for the roofs it is short of, at what its spare reaches and with a mortgage asked for the rest (B1.b), meets whoever offers, and the solver clears the cross (B1.c). MEASURED as `noSupply` in every period of the rig: nobody offers — no builder sells (21j) and no owner has a reason to sell (B1.a, 21.39))
+- [ ] `Housing B3` PARTIAL — packages/engine/src/mechanisms/housing/index.ts, packages/engine/src/mechanisms/goods/data.ts (15.7: supply answers a price slowly by construction — a dwelling takes half a year to make (B2, `leadTimePeriods`) and nothing else adds to the stock, so a demand shift meets a stock that cannot move for twenty-six periods; UNMEASURED because no builder has sold a dwelling (21j))
 - [ ] `Housing B4` PARTIAL — packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/housing/index.ts (15.7: a seller can refuse by construction — an owner posts an ask at its own reservation or posts nothing, and an offer no bid reaches does not clear (Clearing C4.c); nothing forces a trade. The collapse of volumes before prices in a falling market is an outcome nobody has measured: no owner of a dwelling has yet had a reason to sell one (21.39))
 - [ ] `Housing C1` PARTIAL — packages/engine/src/mechanisms/housing/index.ts — a mortgage is a secured loan row with a REAL LIEN placed every period up to what is still owed, so the register itself refuses to let the roof be sold out from under the loan. It is a LANDLORD's for now: a household's waits on a borrower that misses going on accruing while nothing moves on its own book (13f); 12a.4: a mortgage is a row per (lender, cell) in totals and a cell short of roofs asks every period — the "one mortgage at a time" guard read at a cell as one roof for twenty thousand households is gone — measured in the scale model as asks every period that the bank declines on appetite (17.0's view of a household name)
 - [ ] `Housing C6` PARTIAL — packages/engine/src/mechanisms/securitisation/index.ts, packages/engine/src/mechanisms/housing/index.ts `mortgagesOf` (15.7: a mortgage is a LOAN row like any other and the pool machinery takes rows by what they are and never by the borrower's kind (the `isLoan` gate went at 10c, Law 15); whoever holds the row today forecloses (`creditorOf`, XI-11), which is what makes the transfer real. PARTIAL: no pool has taken a household row in the rig — **and 17g.1 measured why it is not the mortgage's fault**: twenty-four periods of the rig leave the banks holding 42 poolable rows, 7 of them secured on dwellings and 30 on premises, and NO deal is cut at all (0 cuts, 10 `securitisation.failed`, every one of them for want of a bidder for the notes). What is missing is demand for the paper, not a rule against houses — finding 21.81)
-- [ ] `Housing D2` PARTIAL — packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/firms/ (15.7: a dwelling is built by a named firm out of concrete, lumber, steel, glass, power, design, professional work, transport and logistics and so many hours a unit (`labourHoursPerUnit`), so construction is a firm's outlay and an employer's payroll by the goods and labour machinery. PARTIAL: no builder has run in the rig (21.34))
+- [ ] `Housing D2` PARTIAL — packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/firms/ (15.7: a dwelling is built by a named firm out of concrete, lumber, steel, glass, power, design, professional work, transport and logistics and so many hours a unit (`labourHoursPerUnit`), so construction is a firm's outlay and an employer's payroll by the goods and labour machinery. PARTIAL: no builder has run (21j))
 - [ ] `Housing D4` PARTIAL — packages/engine/src/mechanisms/banks/loan.ts, packages/engine/test/mortgage.test.ts (15.7: a mortgage is serviced interest and principal every period out of the cell's own account (C2), a fixed claim on its income ahead of what it spends (Households E3, `rentOwedBy`'s sibling for loans is `owedIn`). PARTIAL: whether it is the largest household liability is an outcome nobody can measure while no bank writes a household mortgage on its own standard (12a.4, 17.0))
 
 ### Households — 4 missing, 9 partial
@@ -1462,7 +1574,7 @@ in the same commit. Nothing here is ticked by hand.
 
 ### Cross-Border — 0 missing, 8 partial
 
-- [ ] `Cross-Border A2.a` PARTIAL — packages/engine/src/mechanisms/fx-derivatives (a forward and a cross-currency swap exist and a party with a reason may hedge in them); a firm or a treasury with a foreign obligation CARRIES it today — nothing yet reasons about hedging it (17.4, 21.46)
+- [ ] `Cross-Border A2.a` PARTIAL — packages/engine/src/mechanisms/fx-derivatives (a forward and a cross-currency swap exist and a party with a reason may hedge in them); a firm or a treasury with a foreign obligation CARRIES it today — nothing yet reasons about hedging it (17.4, 21.50)
 - [ ] `Cross-Border A4` PARTIAL — packages/engine/src/registry/banking.ts (a lender's view of a name is its own, wherever the name is); nothing yet makes a FOREIGN counterparty a different credit or legal fact from a domestic one — no jurisdiction on an estate, no withholding — 17.0's credit view is where a lender would read it
 - [ ] `Cross-Border B3.a` PARTIAL — packages/engine/src/mechanisms/merchants/index.ts (a rate move changes which destination is dearest and whether the gap pays for the voyage — a consequence of B1's decision, no elasticity anywhere); UNMEASURED until Part XII
 - [ ] `Cross-Border C2` PARTIAL — packages/engine/src/mechanisms/treasury/index.ts (16.4: a treasury borrows in the money it reads the cost lowest in — its own curve at home, another money's benchmark plus its own outlook of the pair abroad — and then owes a money it does not earn, failing in it as 12a.6 made it); a firm still issues in its home money only (17.4, 21.49)

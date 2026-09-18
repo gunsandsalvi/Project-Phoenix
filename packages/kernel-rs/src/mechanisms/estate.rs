@@ -93,35 +93,39 @@ impl Paid {
 /// Law 6: a rank is not paid "up to" anything — it is paid what there is, and what there is runs
 /// out. That is arithmetic, and the next rank gets nothing because nothing is left.
 pub fn waterfall(proceeds: f64, claims: &[Claim]) -> Vec<Paid> {
-    let mut ranked: Vec<&Claim> = claims.iter().collect();
-    ranked.sort_by_key(|c| c.ranks);
+    // **The answer comes back in the order it was asked**, which is what lets a caller keep whatever
+    // it knows about each claim beside it (21.36: the estate has to mark the CLAIM it paid, and two
+    // claims of one holder for one amount are otherwise indistinguishable — BF4's defect exactly).
+    // The ranking is this function's business and the order is the caller's.
+    let mut ranked: Vec<usize> = (0..claims.len()).collect();
+    ranked.sort_by_key(|i| claims[*i].ranks);
     let mut left = proceeds;
-    let mut out: Vec<Paid> = Vec::with_capacity(claims.len());
+    let mut paid = vec![0.0; claims.len()];
     let mut at = 0usize;
     while at < ranked.len() {
-        let rank = ranked[at].ranks;
-        let mut here: Vec<&Claim> = Vec::new();
-        while at < ranked.len() && ranked[at].ranks == rank {
+        let rank = claims[ranked[at]].ranks;
+        let mut here: Vec<usize> = Vec::new();
+        while at < ranked.len() && claims[ranked[at]].ranks == rank {
             here.push(ranked[at]);
             at += 1;
         }
-        let owed: f64 = here.iter().map(|c| c.owed).sum();
+        let owed: f64 = here.iter().map(|i| claims[*i].owed).sum();
         if owed <= 0.0 {
-            for c in here {
-                out.push(Paid { holder: c.holder, owed: c.owed, paid: 0.0 });
-            }
             continue;
         }
         // What there is, shared pro rata within the rank. If it covers the rank, the rank is paid
         // and the rest goes down; if it does not, the rank takes all of it and the next gets none.
         let covers = left >= owed;
-        for c in here {
-            let paid = if covers { c.owed } else { left * (c.owed / owed) };
-            out.push(Paid { holder: c.holder, owed: c.owed, paid });
+        for i in here {
+            paid[i] = if covers { claims[i].owed } else { left * (claims[i].owed / owed) };
         }
         left = if covers { left - owed } else { 0.0 };
     }
-    out
+    claims
+        .iter()
+        .zip(paid)
+        .map(|(c, paid)| Paid { holder: c.holder, owed: c.owed, paid })
+        .collect()
 }
 
 /// **XI-8, Money E1, 21c: WHAT THE STATE IS OWED BY A DEAD PARTY IS A CLAIM ON ITS ESTATE.**
