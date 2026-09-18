@@ -23,8 +23,31 @@ use crate::ids::{InstrumentId, PartyId};
 use crate::ledger::Leg;
 use std::collections::HashMap;
 
+/// Appendix A: MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an
+/// answer. A holding that was not on the register last period held none of the line; a holding no
+/// leg mentioned had nothing accounted for. Both are named here rather than written as a default
+/// at the site, because the difference between "nobody said" and "the answer is nothing" is the
+/// whole of the rule (`zeroIfNone` is the same read in the TypeScript engine).
+#[inline]
+fn held_nothing_then(before: &HashMap<u64, f64>, k: u64) -> f64 {
+    match before.get(&k) {
+        Some(&q) => q,
+        None => 0.0,
+    }
+}
+
+/// And what the legs accounted for where none of them named this holding: nothing, over no terms.
+#[inline]
+fn legs_said_nothing(moved: &HashMap<u64, (f64, f64, u32)>, k: u64) -> (f64, f64, u32) {
+    match moved.get(&k) {
+        Some(&seen) => seen,
+        None => (0.0, 0.0, 0),
+    }
+}
+
 #[inline]
 const fn key(party: PartyId, instrument: InstrumentId) -> u64 {
+
     ((party.0 as u64) << 32) | (instrument.0 as u64)
 }
 
@@ -115,10 +138,9 @@ impl Contribution for PlantMoves {
         if self.comparable {
             // What moved, against what the legs say moved.
             for (&k, &now) in &self.held {
-                let was = self.before.get(&k).copied().unwrap_or(0.0);
+                let was = held_nothing_then(&self.before, k);
                 let change = now - was;
-                let (accounted, magnitude, terms) =
-                    self.moved.get(&k).copied().unwrap_or((0.0, 0.0, 0));
+                let (accounted, magnitude, terms) = legs_said_nothing(&self.moved, k);
                 // Law 7: the dust of THIS comparison, from its own terms and magnitudes.
                 let dust = (terms as f64 + 2.0)
                     * f64::EPSILON
@@ -142,8 +164,7 @@ impl Contribution for PlantMoves {
                 if self.held.contains_key(&k) {
                     continue;
                 }
-                let (accounted, magnitude, terms) =
-                    self.moved.get(&k).copied().unwrap_or((0.0, 0.0, 0));
+                let (accounted, magnitude, terms) = legs_said_nothing(&self.moved, k);
                 let dust =
                     (terms as f64 + 2.0) * f64::EPSILON * (magnitude + was.abs());
                 if (-was - accounted).abs() > dust {

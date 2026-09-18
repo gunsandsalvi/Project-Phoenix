@@ -16698,3 +16698,51 @@ orchestration differs across them; 19.5× is one measurement and 10.9× is the f
 agree on. The projection is revised when more modules land, not before.
 
 **Fifty laws now hold as tests; clippy is clean.**
+
+# 0g.43 — the laws as a check, and it found three violations in code I had just written
+
+`tools/phoenix-check` is `tools/eslint-rules` for the Rust kernel. **A law that stops being
+checkable is a law that stops holding**, which is why it exists BEFORE the other forty-six modules
+are ported rather than after. Clippy cannot express any of these — they are this project's, not the
+language's: no bound of any kind (Law 6); no numeric default (Appendix A); no clock, no random, no
+printing in the engine; no kind branch in a mechanism and no module importing another (Law 15);
+every module citing its clauses (`@spec`).
+
+**It ran on my own port and found three things, one of them twice.** `plantMoves` had
+`unwrap_or(0.0)` and `unwrap_or((0.0, 0.0, 0))` — numeric defaults, in code written and reviewed an
+hour earlier. The fix is not to silence the rule: a holding that was not on the register last period
+held NOTHING of the line, and a holding no leg named had nothing accounted for, and both are
+ANSWERS rather than missing numbers. They are named reads now — `held_nothing_then`,
+`legs_said_nothing` — which is the same shape `zeroIfNone` has in the TypeScript engine, and the
+difference between *"nobody said"* and *"the answer is nothing"* is the whole of the rule.
+
+The third was `mechanisms/mod.rs` reported for having no `@spec`. That one was the CHECKER's defect,
+not the code's — a module index is not a module — and it was fixed there rather than by writing a
+citation that would have been a lie.
+
+# 0g.41–0g.42 CORRECTED — every Rust figure was a single run, and single runs are optimistic
+
+**This item established at 0g.19 that a comparison is only evidence if both arms are measured in the
+same session, and at 0g.22 that a median is not a run. I then reported five Rust benches off one run
+each.** The first run after a build is cold. Medians:
+
+| | reported | **median** | |
+|---|---|---|---|
+| a whole kernel period | 180.9 ms | **202.7 ms** (5 runs, 198.4–210.4) | |
+| the wire | 156.1 ms → 30.3× | **185.9 ms → 25.4×** (3 runs) | |
+| the first module | 104.8 ms → 19.5× | **98.2 ms → 20.9×** (5 runs) | this one improved |
+
+The single run that started this was **155.4 ms for the module — 13.2×** — taken straight after a
+rebuild, which looked like the named-read refactor had cost 40%. It had cost nothing. **A cold run
+is not a measurement in either direction**, and the two figures I published were the favourable
+side of the same coin.
+
+**The projection, on the corrected numbers:**
+
+| | at 10.9× (the floor two measurements agree on) | at 20.9× (measured in situ) |
+|---|---|---|
+| the ported kernel | 0.20 s | 0.20 s |
+| the modules, ~25.4 s of the period | 2.33 s | 1.22 s |
+| **a period** | **≈ 2.5 s** | **≈ 1.4 s** |
+
+**The headline is unchanged at ≈ 2.5 s**, which is the point of having used the conservative figure.

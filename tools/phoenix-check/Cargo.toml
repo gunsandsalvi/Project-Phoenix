@@ -1,0 +1,8 @@
+[package]
+name = "phoenix-check"
+version = "0.0.0"
+edition = "2021"
+
+[[bin]]
+name = "phoenix-check"
+path = "src/main.rs"
