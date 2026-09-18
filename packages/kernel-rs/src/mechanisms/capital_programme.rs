@@ -191,7 +191,9 @@ mod tests {
     use super::*;
     use crate::audit::Audit;
     use crate::journal::Journal;
-    use crate::ledger::{Cause, Instruction, Receipt, Settlement};
+    use crate::ledger::{Cause, Instruction, Receipt, Settlement, Settling};
+    use crate::instruments::Instruments;
+    use crate::parties::Parties;
     use crate::register::Register;
 
     fn capital(lines: usize) -> Vec<bool> {
@@ -217,7 +219,15 @@ mod tests {
 
         // Period 2: it sells 40, and the leg says so.
         let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty: 40.0, price_per_unit: Some(2.0) }];
-        wire.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 2, &mut reg, &mut j, ok, no);
+        // No money leg here, so the payment system is never consulted: empty stores are the truth.
+        let (ps, ins) = (Parties::new(), Instruments::new());
+        wire.settle(
+            &Instruction::free_of_payment(&legs, Cause::Trade),
+            2,
+            &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins },
+            ok,
+            no,
+        );
         let reports = audit.run(&reg, &wire, 2);
         assert!(
             reports[0].violations.is_empty(),

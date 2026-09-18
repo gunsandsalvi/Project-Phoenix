@@ -14,7 +14,8 @@
 use crate::clearing::{clear, Fill, Order, Outcome as Cleared, PriceRule, Side};
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
-use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement};
+use crate::instruments::Instruments;
+use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Params;
 use crate::parties::Parties;
@@ -84,6 +85,8 @@ pub struct Session {
 /// The kernel's stores, handed to a session together because a book touches all of them.
 pub struct Stores<'a> {
     pub parties: &'a Parties,
+    /// Money D2: the payment system reads it to settle a payment across two banks (`Settling`).
+    pub instruments: &'a Instruments,
     pub register: &'a mut Register,
     pub prints: &'a mut Prints,
     pub journal: &'a mut Journal,
@@ -169,8 +172,12 @@ pub fn run_book(
             match stores.wire.settle(
                 &Instruction::against_payment(&legs, Cause::Trade),
                 period,
-                stores.register,
-                stores.journal,
+                &mut Settling {
+                    register: stores.register,
+                    journal: stores.journal,
+                    parties: stores.parties,
+                    instruments: stores.instruments,
+                },
                 settled_kind,
                 failed_kind,
             ) {
@@ -215,6 +222,7 @@ fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::instruments::Class;
     use crate::parties::Representation;
     use crate::register::Register;
 
@@ -276,6 +284,11 @@ mod tests {
         let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
         let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
 
+        // Money D2: the cash line is the bank's money and both sides bank there, so this trade does
+        // not cross two banks.
+        let mut instruments = Instruments::new();
+        instruments.issue(bank, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
+
         let mut register = Register::new();
         let mut prints = Prints::new();
         let mut journal = Journal::new();
@@ -300,6 +313,7 @@ mod tests {
 
         let mut stores = Stores {
             parties: &parties,
+            instruments: &instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,
@@ -337,6 +351,11 @@ mod tests {
         let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
         let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
 
+        // Money D2: the cash line is the bank's money and both sides bank there, so this trade does
+        // not cross two banks.
+        let mut instruments = Instruments::new();
+        instruments.issue(bank, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
+
         let mut register = Register::new();
         let mut prints = Prints::new();
         let mut journal = Journal::new();
@@ -357,6 +376,7 @@ mod tests {
         let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, 1);
         let mut stores = Stores {
             parties: &parties,
+            instruments: &instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,

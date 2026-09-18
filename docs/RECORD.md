@@ -18297,3 +18297,43 @@ it, and an issuer's liability never reaches it — the treasury gets richer for 
 also the half of *every balance sheet closes* that no audit family checks. The fix removes code.
 
 **Six hundred and sixty tests hold; clippy clean; `phoenix-check` green over 83 files.**
+
+---
+
+## 22b.5a — the interbank leg
+
+**What.** A payment whose payee banks somewhere else no longer leaves the payee holding the payer's
+bank's money. The payer's bank's deposit is extinguished, the payee's bank's deposit is created, and
+**RESERVES move between the two at the central bank** (Money D2, worklist 1's "settlement with the
+interbank leg", which the TypeScript engine claimed and the Rust kernel had never had).
+
+**Where it lives and why there.** In settlement, as one rule, not a branch in the draw. A payment
+between two banks' customers is not something the wire may decline to understand, so the payment
+system's two reads — who banks where, and which money each bank issues — became part of what
+settlement is given (`Settling`), rather than an argument some callers remember to pass. Every
+`settle` call site now names them: the session, the replay, the assembled world and the five benches.
+
+**The reserve line is not a table.** A bank banks at its central bank, so the lattice already says
+which money the two banks settle in; `Instruments::money_issued_by` is an index over the source rather
+than a second register of deposit lines kept beside it (Law 4). Issuing two monies from one party now
+throws: two answers to "what do I owe my depositors" would leave nothing able to say which account a
+payment lands in.
+
+**What it makes possible, and what it now refuses.** A bank's liquidity is tested by its customers'
+payments: a bank without the reserves cannot settle its customer out, and the payment is REFUSED
+rather than overdrawn (Appendix B — the lender of last resort is a mechanism somebody builds, never a
+default the wire helps itself to). Three tests hold it: reserves move, a short bank refuses and
+nothing moves, and two customers of one bank settle on that bank's books with the central bank never
+hearing about it.
+
+**And it found a payment the draw had been telling wrongly.** A household paid by its employer holds
+its OWN bank's deposit money; the draw then told it to spend the EMPLOYER'S line. That settled only
+while the wire had no interbank leg to notice — a payer pays out of its own account, and now the
+chronicle says so.
+
+**Not changed, and stated: the benches.** Every party in the five scale benches banks at one bank, so
+no payment in them crosses two and the interbank path is not in those measurements. What they time is
+the wire and the session; the interbank path is timed where a world with four banks runs it.
+
+**Six hundred and sixty-three tests hold; clippy clean; `phoenix-check` green over 83 files;
+`check:opening` accepts on the first seed with 4,161 moments settled and none refused.**

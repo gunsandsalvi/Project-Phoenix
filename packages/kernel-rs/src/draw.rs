@@ -481,9 +481,15 @@ pub fn households_employment_and_savings(
                 draft: Draft::Paid { from: employer, to: *h, amount: wage, ccy, money: employers_bank_money },
                 why: "the firm paid the week's wages out of its own account",
             });
+            // **A payer pays out of ITS OWN account.** The household banks where it banks, and what
+            // it holds after payday is its own bank's deposit money — not its employer's, whatever
+            // line the wage arrived on. Naming the employer's line here was telling a cell to spend
+            // money it does not have, and it settled only while the wire had no interbank leg to
+            // notice (22b.5a).
+            let own_bank_money = d.deposits[n % d.banks.len()];
             d.chronicle.tell(Told {
                 at: Day(day.0 + 1),
-                draft: Draft::Paid { from: *h, to: employer, amount: spends, ccy, money: employers_bank_money },
+                draft: Draft::Paid { from: *h, to: employer, amount: spends, ccy, money: own_bank_money },
                 why: "the household spent most of its wage, which is the firm's income",
             });
         }
@@ -496,6 +502,7 @@ pub fn households_employment_and_savings(
 mod tests {
     use super::*;
     use crate::chronicle::replay;
+    use crate::ledger::Settling;
 
     fn drawn() -> Drawn {
         money_and_the_sovereign(1, 4, 9, Day(0))
@@ -521,8 +528,12 @@ mod tests {
         let done = replay(
             &d.chronicle,
             7,
-            &mut d.world.register,
-            &mut d.world.journal,
+            &mut Settling {
+                register: &mut d.world.register,
+                journal: &mut d.world.journal,
+                parties: &d.world.parties,
+                instruments: &d.world.instruments,
+            },
             &mut d.world.wire,
             d.world.settled_kind,
             d.world.failed_kind,
@@ -658,8 +669,12 @@ mod tests {
         let done = replay(
             &d.chronicle,
             7,
-            &mut d.world.register,
-            &mut d.world.journal,
+            &mut Settling {
+                register: &mut d.world.register,
+                journal: &mut d.world.journal,
+                parties: &d.world.parties,
+                instruments: &d.world.instruments,
+            },
             &mut d.world.wire,
             d.world.settled_kind,
             d.world.failed_kind,
@@ -693,8 +708,12 @@ mod tests {
         let done = replay(
             &d.chronicle,
             7,
-            &mut d.world.register,
-            &mut d.world.journal,
+            &mut Settling {
+                register: &mut d.world.register,
+                journal: &mut d.world.journal,
+                parties: &d.world.parties,
+                instruments: &d.world.instruments,
+            },
             &mut d.world.wire,
             d.world.settled_kind,
             d.world.failed_kind,

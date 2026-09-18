@@ -14,9 +14,11 @@
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, LotsAgainstQuantity, NoCollateralCountedTwice};
 use phoenix_kernel::calendar::{Calendar, Day};
-use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
+use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::{Journal, Value};
-use phoenix_kernel::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement};
+use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
+use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::prices::{Print, Prints, Provenance, QuotedAs};
 use phoenix_kernel::register::Register;
 use phoenix_kernel::world::Clock;
@@ -54,6 +56,17 @@ fn main() {
     let mut prints = Prints::new();
     let mut journal = Journal::new();
     let mut wire = Settlement::new();
+
+    // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
+    // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
+    // measurement — stated rather than implied. What this bench times is the wire; the interbank path
+    // is timed where a world with two banks runs it (`check:opening`).
+    let mut parties = Parties::new();
+    let mut instruments = Instruments::new();
+    for _ in 0..PARTIES {
+        parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, 0);
+    }
+    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
     let mut clock = Clock::new(Calendar::new(Day(0), 7, 3));
     let settled = journal.kinds.declare("instruction.settled");
     let failed = journal.kinds.declare("instruction.failed");
@@ -155,7 +168,7 @@ fn main() {
             (true, false) => Instruction::free_of_payment(legs, Cause::Trade),
             _ => Instruction::plain(legs, Cause::Trade),
         };
-        if wire.settle(&instruction, period, &mut reg, &mut journal, settled, failed)
+        if wire.settle(&instruction, period, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments }, settled, failed)
             == Outcome::Settled
         {
             ok += 1;

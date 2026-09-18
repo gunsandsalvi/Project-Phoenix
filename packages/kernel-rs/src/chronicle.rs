@@ -31,9 +31,7 @@
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
-use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement};
-use crate::journal::Journal;
-use crate::register::Register;
+use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 
 /// What a told moment may do: **create a stock.** There is no variant for a price, a rate, a mark or
 /// a policy number, and that absence is the grammar guard (5 C4.a, E1).
@@ -229,8 +227,7 @@ pub struct Replayed {
 pub fn replay(
     c: &Chronicle,
     days_per_period: u32,
-    register: &mut Register,
-    journal: &mut Journal,
+    on: &mut Settling<'_>,
     wire: &mut Settlement,
     settled_kind: u32,
     failed_kind: u32,
@@ -253,7 +250,7 @@ pub fn replay(
         // of that rather than a statement about it (5 D2). A hand-written zero here would have made
         // every moment of the past simultaneous, which is the defect this whole item replaces.
         let period = ((moment.at.0 - c.from.0) / days_per_period as i64) as u32;
-        match wire.settle(&instruction, period, register, journal, settled_kind, failed_kind) {
+        match wire.settle(&instruction, period, on, settled_kind, failed_kind) {
             Outcome::Settled => out.settled += 1,
             refused => out.refused.push((moment.at, moment.why, refused)),
         }
@@ -429,7 +426,11 @@ pub fn next_seed_value(after: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids::CurrencyCode;
+    use crate::ids::{CurrencyCode, RegionId, UnitId};
+    use crate::instruments::{Class, Instruments};
+    use crate::journal::Journal;
+    use crate::parties::{Parties, Representation};
+    use crate::register::Register;
 
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
@@ -593,11 +594,24 @@ mod tests {
         assert_eq!(c.seasoning_of(Day(-2_000)), 1_990);
     }
 
-    fn wire() -> (Register, Journal, Settlement, u32, u32) {
+    /// A small world for the replay to run in. `party(2)` is the bank and issues `money()`, and
+    /// everybody here banks at it — so no payment in these tests crosses two banks, which is a
+    /// different test (`an_interbank_payment_moves_reserves_between_the_two_banks`).
+    fn wire() -> (Register, Journal, Parties, Instruments, Settlement, u32, u32) {
         let mut j = Journal::new();
         let ok = j.kinds.declare("instruction.settled");
         let no = j.kinds.declare("instruction.failed");
-        (Register::new(), j, Settlement::new(), ok, no)
+        let mut p = Parties::new();
+        let bank = party(2);
+        for _ in 0..32 {
+            p.add(0, RegionId::at(0), bank, Representation::Named, 1, 0);
+        }
+        let mut i = Instruments::new();
+        i.issue(bank, ccy(), Class::Money, UnitId::at(0), None, None);
+        for _ in 1..32 {
+            i.issue(party(3), ccy(), Class::Good, UnitId::at(0), None, None);
+        }
+        (Register::new(), j, p, i, Settlement::new(), ok, no)
     }
 
     #[test]
@@ -605,7 +619,7 @@ mod tests {
         // 22b, 5 A4: the old opening endowed. This one LIVES: the bank's money exists because the
         // central bank issued it and the bank paid for it, and the firm holds its plant because it
         // bought it from the maker. Every holding at the opening has a counterparty and a date.
-        let (mut reg, mut j, mut s, ok, no) = wire();
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = wire();
         let bank = party(2);
         let maker = party(3);
         let firm = party(4);
@@ -634,7 +648,7 @@ mod tests {
             why: "the last interest the firm paid before the world opened",
         });
 
-        let done = replay(&c, 7, &mut reg, &mut j, &mut s, ok, no);
+        let done = replay(&c, 7, &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins }, &mut s, ok, no);
         assert_eq!(done.settled, 3);
         assert!(done.refused.is_empty());
 
@@ -652,14 +666,14 @@ mod tests {
     fn a_moment_the_world_could_not_live_is_refused_and_recorded() {
         // 22b: a refusal in the past is a real event and a finding about the DRAW — not something to
         // paper over. The old opening could not even have one, because it settled nothing.
-        let (mut reg, mut j, mut s, ok, no) = wire();
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = wire();
         let mut c = Chronicle::opening(Day(-3_650), 1);
         c.tell(Told {
             at: Day(-3_000),
             draft: Draft::Paid { from: party(9), to: party(20), amount: 500.0, ccy: ccy(), money: money() },
             why: "a payment from a party that has nothing",
         });
-        let done = replay(&c, 7, &mut reg, &mut j, &mut s, ok, no);
+        let done = replay(&c, 7, &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins }, &mut s, ok, no);
         assert_eq!(done.settled, 0);
         assert_eq!(done.refused.len(), 1);
         assert_eq!(done.refused[0].0, Day(-3_000));
@@ -670,12 +684,12 @@ mod tests {
     fn each_told_moment_settles_in_the_period_it_actually_fell_in() {
         // 5 D2, 22b: the epoch moves back and the past runs in its own periods. A hand-written zero
         // would have made every moment of the past simultaneous.
-        let (mut reg, mut j, mut s, ok, no) = wire();
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = wire();
         reg.money_delta(party(1), money(), 1_000.0);
         let mut c = Chronicle::opening(Day(-70), 1);
         c.tell(Told { at: Day(-70), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "the first week" });
         c.tell(Told { at: Day(-14), draft: Draft::Paid { from: party(1), to: party(2), amount: 10.0, ccy: ccy(), money: money() }, why: "eight weeks later" });
-        replay(&c, 7, &mut reg, &mut j, &mut s, ok, no);
+        replay(&c, 7, &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins }, &mut s, ok, no);
         // Two instructions, in two different periods of the past — read off the wire itself.
         assert_eq!(s.period_of(0), 0);
         assert_eq!(s.period_of(1), 8);
@@ -684,9 +698,9 @@ mod tests {
     #[test]
     #[should_panic(expected = "has no periods in it")]
     fn a_past_measured_in_periods_of_no_days_is_refused() {
-        let (mut reg, mut j, mut s, ok, no) = wire();
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = wire();
         let c = Chronicle::opening(Day(-70), 1);
-        replay(&c, 0, &mut reg, &mut j, &mut s, ok, no);
+        replay(&c, 0, &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &ins }, &mut s, ok, no);
     }
 
     #[test]

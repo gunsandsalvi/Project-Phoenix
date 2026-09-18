@@ -25,6 +25,7 @@ use crate::chronicle::{accept, next_seed_value, Census, Draft, Property, Replaye
 use crate::draw::{firms_plant_and_inventory, households_employment_and_savings, money_and_the_sovereign, Drawn};
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use crate::instruments::Class;
+use crate::ledger::Settling;
 use crate::assembly::kinds;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -93,8 +94,12 @@ pub fn draw_once(seed_value: u64, shape: Shape) -> Opening {
     let replayed = crate::chronicle::replay(
         &d.chronicle,
         shape.days_per_period,
-        &mut d.world.register,
-        &mut d.world.journal,
+        &mut Settling {
+            register: &mut d.world.register,
+            journal: &mut d.world.journal,
+            parties: &d.world.parties,
+            instruments: &d.world.instruments,
+        },
         &mut d.world.wire,
         d.world.settled_kind,
         d.world.failed_kind,

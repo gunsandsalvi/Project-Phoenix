@@ -62,6 +62,10 @@ pub struct Instruments {
     /// 5 C3: instruments outstanding at period zero have terms AND A REMAINING LIFE — a bond seeded
     /// at issue is a world with no maturity wall for its whole tenor.
     matures: Vec<Option<Day>>,
+    /// Money D2: **the money line each issuer issues**, by issuer row. A bank issues one deposit
+    /// money and a central bank one reserve money, and the payment system has to be able to ask
+    /// which — an index over this store rather than a second table somebody keeps beside it (Law 4).
+    money_of: Vec<u32>,
 }
 
 impl Instruments {
@@ -96,6 +100,17 @@ impl Instruments {
             );
         }
         let row = self.issuer.len() as u32;
+        if class == Class::Money {
+            while self.money_of.len() <= issuer.row() {
+                self.money_of.push(PartyId::NONE.0);
+            }
+            assert!(
+                self.money_of[issuer.row()] == PartyId::NONE.0,
+                "Money D2, Law 4: an issuer issues ONE money — two would be two answers to \"what do \
+                 I owe my depositors\", and nothing could say which account a payment lands in"
+            );
+            self.money_of[issuer.row()] = row;
+        }
         self.issuer.push(issuer.0);
         self.ccy.push(ccy.0);
         self.class.push(class);
@@ -103,6 +118,15 @@ impl Instruments {
         self.coupon.push(coupon);
         self.matures.push(matures);
         InstrumentId(row)
+    }
+
+    /// Money D2: **the money this party issues**, if it issues one. `Missing` is missing: a party
+    /// that issues no money has none, and that is not a zeroth instrument.
+    pub fn money_issued_by(&self, p: PartyId) -> Option<InstrumentId> {
+        match self.money_of.get(p.row()) {
+            Some(row) if *row != PartyId::NONE.0 => Some(InstrumentId::at(*row)),
+            _ => None,
+        }
     }
 
     #[inline]

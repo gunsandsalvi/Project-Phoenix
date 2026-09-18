@@ -10,9 +10,11 @@
 //! capital lines**.
 
 use phoenix_kernel::audit::Audit;
-use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId};
+use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::Journal;
-use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement};
+use phoenix_kernel::instruments::{Class, Instruments};
+use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement, Settling};
+use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::mechanisms::capital_programme::PlantMoves;
 use phoenix_kernel::register::Register;
 use std::time::Instant;
@@ -47,6 +49,17 @@ fn main() {
     let ok = journal.kinds.declare("instruction.settled");
     let no = journal.kinds.declare("instruction.failed");
     let mut wire = Settlement::new();
+
+    // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
+    // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
+    // measurement — stated rather than implied. What this bench times is the wire; the interbank path
+    // is timed where a world with two banks runs it (`check:opening`).
+    let mut parties = Parties::new();
+    let mut instruments = Instruments::new();
+    for _ in 0..PARTIES {
+        parties.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, 0);
+    }
+    instruments.issue(PartyId::at(0), CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
 
     // Which lines are capital: DATA, handed to the family, never a branch inside it.
     let mut capital = vec![false; INSTRUMENTS as usize];
@@ -119,7 +132,7 @@ fn main() {
         } else {
             Instruction::plain(&legs, Cause::Trade)
         };
-        wire.settle(&instruction, 2, &mut reg, &mut journal, ok, no);
+        wire.settle(&instruction, 2, &mut Settling { register: &mut reg, journal: &mut journal, parties: &parties, instruments: &instruments }, ok, no);
     }
 
     let t = Instant::now();

@@ -7,7 +7,8 @@
 //! Every figure here is a median of five, because a cold run is not a measurement (0g.43).
 
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
-use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId};
+use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
+use phoenix_kernel::instruments::{Class, Instruments};
 use phoenix_kernel::journal::Journal;
 use phoenix_kernel::ledger::Settlement;
 use phoenix_kernel::module::{Participant, ParticipantView};
@@ -107,6 +108,12 @@ fn main() {
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
 
+    // Money D2: the cash line is the BANK'S money, and every party above banks there — so no payment
+    // here crosses two banks and the interbank leg is not in this measurement. What this bench times
+    // is the session.
+    let mut instruments = Instruments::new();
+    instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+
     let mut register = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
@@ -147,6 +154,7 @@ fn main() {
     {
         let mut stores = Stores {
             parties: &parties,
+            instruments: &instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,

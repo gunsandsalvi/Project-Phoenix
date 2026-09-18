@@ -783,7 +783,7 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
 - [x] 22b.5 Households, employment and savings through the chronicle — the income history that
   outlooks and votes are made of. Deletes `seed.funding`'s inversion (deposits are currently a
   residual of the banks' asset endowment: the identity satisfied and the economics backwards).
-- [ ] 22b.5a **Interbank settlement: a payment across banks moves reserves.** INSERTED here (Law 10:
+- [x] 22b.5a **Interbank settlement: a payment across banks moves reserves.** INSERTED here (Law 10:
   at its dependency position, before the chronicle can tell a payment between parties banked
   differently). Found writing 22b.5: `Draft::Paid` moves the PAYER'S bank's deposit money, so a payee
   at another bank simply comes to hold a deposit at the payer's bank. That settles, and it is wrong:

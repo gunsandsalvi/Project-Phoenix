@@ -152,6 +152,7 @@ impl World {
         for book in &self.books {
             let mut stores = Stores {
                 parties: &self.parties,
+                instruments: &self.instruments,
                 register: &mut self.register,
                 prints: &mut self.prints,
                 journal: &mut self.journal,

@@ -17,9 +17,10 @@
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, LotsAgainstQuantity, NoCollateralCountedTwice};
 use phoenix_kernel::calendar::{Calendar, Day};
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
-use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId};
+use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::{Journal, Value};
-use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement};
+use phoenix_kernel::ledger::{Cause, Instruction, Leg, Receipt, Settlement, Settling};
+use phoenix_kernel::instruments::{Class, Instruments};
 use phoenix_kernel::mechanisms::capital_programme::PlantMoves;
 use phoenix_kernel::module::{Participant, ParticipantView};
 use phoenix_kernel::params::Params;
@@ -127,6 +128,11 @@ fn main() {
         let kind = if n.is_multiple_of(2) { SELLER } else { BUYER };
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
+    // Money D2: the cash line is the BANK'S money and every party banks there, so no payment here
+    // crosses two banks. The interbank leg is not in this measurement, and that is stated.
+    let mut instruments = Instruments::new();
+    instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+
     let mut register = Register::new();
     let mut prints = Prints::new();
     let mut journal = Journal::new();
@@ -188,6 +194,7 @@ fn main() {
     {
         let mut stores = Stores {
             parties: &parties,
+            instruments: &instruments,
             register: &mut register,
             prints: &mut prints,
             journal: &mut journal,
@@ -229,7 +236,7 @@ fn main() {
             });
             legs_left -= 1;
         }
-        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut register, &mut journal, ok, no);
+        wire.settle(&Instruction::plain(&legs, Cause::Payment), period, &mut Settling { register: &mut register, journal: &mut journal, parties: &parties, instruments: &instruments }, ok, no);
     }
     let wire_ms = t.elapsed().as_secs_f64() * 1000.0;
 
