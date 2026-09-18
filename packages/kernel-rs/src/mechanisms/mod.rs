@@ -20,6 +20,7 @@ pub mod loss;
 pub mod money;
 pub mod mortality;
 pub mod polity;
+pub mod recipe;
 pub mod redeemable;
 pub mod reporting;
 pub mod second_opinion;

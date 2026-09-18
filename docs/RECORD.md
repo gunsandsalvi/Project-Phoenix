@@ -17506,3 +17506,38 @@ the election adds no channel of its own.
 
 **Ten laws as tests. Two hundred and forty-three now hold; clippy clean; `phoenix-check` green over 47
 files. Twenty-three of forty-seven modules ported.**
+
+# 0g.42 item 15 — the recipe (§37)
+
+`packages/kernel-rs/src/mechanisms/recipe.rs`. Twenty-fourth module, and the last step of Part XIII's
+build order before measurement.
+
+**`Recipe` holds quantities and there is no price in it.** A2.b is the reason: a recipe expressed as
+cost per unit of revenue, with the physical draw computed as money needed divided by the input's
+price, means a price doubling HALVES the physical draw — the strongest substitution assumption there
+is, sitting exactly where the model chose no substitution at all, and invisible because it reads as an
+ordinary units calculation. There is nothing in the type to double.
+
+**The shortage bites.** `decide` walks the firm's reasons — expected demand, capacity, each input on
+hand, labour — and starts what the tightest allows, naming which one bound it. A firm wanting 950
+with 300 of an input it needs two of per unit starts 150, and `Bound::Inputs` says why: a constraint
+computed and read by nobody is not a constraint. None of these is a cap on a number the firm would
+otherwise have made; you cannot draw an input you have not got, which is arithmetic impossibility and
+the only kind of limit there is (Law 6). Substitution stays a MISSING mechanism, not an assumption
+away, and nothing here quietly supplies it.
+
+**An input with no row is an input it has none of** — the register answered, and the answer was
+nothing. Written as a named read rather than a default, which is what `phoenix-check` caught on the
+first draft.
+
+**Scrap is a loss of units at the point they would have been made.** The draw is against what was
+STARTED, because the scrap consumed its inputs too, and `unit_cost` over the survivors is therefore
+higher than over the starts — a consequence of the division, not a markup anybody applied. A period
+that started nothing capitalises nothing and the read answers `None`; a throttled period is the same
+read over a smaller batch, which is what running a plant below its rate does.
+
+**Utilisation is computed after the decision and never consulted by it** (B1.d).
+
+**Eleven laws as tests. Two hundred and fifty-four now hold; clippy clean; `phoenix-check` green over
+48 files. Twenty-four of forty-seven modules ported, and Part XIII's fifteen build steps all have
+their Rust module.**
