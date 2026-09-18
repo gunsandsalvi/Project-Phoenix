@@ -847,7 +847,7 @@ adjusts one** — nothing is fitted (Seed B5, C5) and no outcome is seeded (E1).
   engine runs itself. Each graduation is a measurement of whether that mechanism works. GOODS went
   first, because the past has already put both its sides in place — firms hold the stock and cells
   hold the wages. It CLEARS: four books in four periods, 58 trades off 72 asks.
-- [ ] 22b.9a **A book has one cash line, so a market is open to one bank's customers only.** INSERTED
+- [x] 22b.9a **A book has one cash line, so a market is open to one bank's customers only.** INSERTED
   here (Law 10: found by 22b.9's first warm-up, and it is the next thing between the goods market and
   a world where everybody can shop). `BookDecl.cash` names ONE instrument, and since 22b.5a there is
   one deposit line per bank — so three quarters of the cells in the warm-up hold money the book does

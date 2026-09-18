@@ -16,7 +16,7 @@ use phoenix_kernel::params::Params;
 use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::prices::Prints;
 use phoenix_kernel::register::Register;
-use phoenix_kernel::session::{BookDecl, Books, Stores, run_book};
+use phoenix_kernel::session::{run_book, BookDecl, Books, Shown, Stores};
 use std::time::Instant;
 
 const PARTIES: u32 = 10_318;
@@ -143,7 +143,7 @@ fn main() {
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
     let t = Instant::now();
-    let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, 1);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -166,7 +166,6 @@ fn main() {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
-                cash: CASH,
                 rule: PriceRule::SellersCompete,
             };
             let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);

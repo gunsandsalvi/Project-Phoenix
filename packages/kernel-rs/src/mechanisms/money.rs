@@ -186,7 +186,7 @@ mod tests {
         j: &'a Journal,
         m: &'a Params,
     ) -> ParticipantView<'a> {
-        ParticipantView::of(who, r, p, j, m, 1)
+        ParticipantView::of(who, r, p, j, m, 1, None)
     }
 
     #[test]

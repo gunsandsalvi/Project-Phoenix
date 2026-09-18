@@ -126,6 +126,20 @@ pub struct Settling<'a> {
     pub instruments: &'a Instruments,
 }
 
+/// **Money D2: the account a party pays out of and is paid into.** Its bank's money — or the money
+/// it issues itself when it banks nowhere, which is what a central bank does.
+///
+/// ONE WRITER of the question (Law 4). Settlement asks it to know where a payment lands; a book asks
+/// it to know what a buyer pays with; a participant asks it to know what it has. Three copies of
+/// "which money is mine" would drift the day one of them was corrected.
+///
+/// `Missing` is missing: a party whose bank issues no money has no account, and that is not
+/// instrument zero.
+pub fn account_of(parties: &Parties, instruments: &Instruments, p: PartyId) -> Option<InstrumentId> {
+    let bank = parties.bank_of(p);
+    instruments.money_issued_by(if bank.some() { bank } else { p })
+}
+
 /// What a payment across two banks needs, once it is known to be one.
 struct Across {
     payers_bank: PartyId,
@@ -153,7 +167,7 @@ fn across(
     if !payees_bank.some() || payees_bank == payers_bank || to == payers_bank {
         return None;
     }
-    let payees_money = match instruments.money_issued_by(payees_bank) {
+    let payees_money = match account_of(parties, instruments, to) {
         Some(m) => m,
         None => panic!(
             "Money D2: party {} banks at {}, which issues no money — a payment to it has nowhere to land",

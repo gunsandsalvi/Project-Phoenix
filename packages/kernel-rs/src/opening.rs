@@ -502,11 +502,16 @@ pub fn warm(o: &mut Opening, periods: usize) -> Warmed {
         Some(g) => g,
         None => panic!("22b.9: a world with no goods in it has no goods market to graduate"),
     };
-    // The cash a book names. Money D2: there is one deposit line per bank, so this names ONE of
-    // them — which is exactly the thing the measurement below is about.
-    let cash = o.drawn.deposits[0];
-    let wired = crate::systems::all(cash, vec![good], vec![good]);
-    o.drawn.world.open_book(book_of(good), good, o.drawn.ccy, cash, PriceRule::SellersCompete);
+    // 22b.9a: what each system TRADES, named. The money market has no overnight line in this world
+    // and the treasury's bills are not auctioned again in a warm-up, so both are Missing rather than
+    // pointed at whatever line was to hand.
+    let wired = crate::systems::all(&crate::systems::Wiring {
+        basket: vec![good],
+        lines: vec![good],
+        overnight: None,
+        paper: None,
+    });
+    o.drawn.world.open_book(book_of(good), good, o.drawn.ccy, PriceRule::SellersCompete);
     let systems: Vec<&dyn System> = wired.iter().map(|w| w as &dyn System).collect();
     o.drawn.world.wire_up(&systems);
 

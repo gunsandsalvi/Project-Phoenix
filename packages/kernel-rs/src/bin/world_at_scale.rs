@@ -27,7 +27,7 @@ use phoenix_kernel::params::Params;
 use phoenix_kernel::parties::{Parties, Representation};
 use phoenix_kernel::prices::Prints;
 use phoenix_kernel::register::Register;
-use phoenix_kernel::session::{run_book, BookDecl, Books, Stores};
+use phoenix_kernel::session::{run_book, BookDecl, Books, Shown, Stores};
 use phoenix_kernel::world::Clock;
 use std::time::Instant;
 
@@ -184,7 +184,7 @@ fn main() {
     let period = clock.period.0;
 
     let t = Instant::now();
-    let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, period);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, period);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -206,7 +206,6 @@ fn main() {
                 market: MarketId::at(n),
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
-                cash: CASH,
                 rule: PriceRule::SellersCompete,
             };
             let s = run_book(&book, &participants, &books, &mut stores, period, ok, no);

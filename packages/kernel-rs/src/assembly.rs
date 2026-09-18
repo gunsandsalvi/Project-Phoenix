@@ -25,7 +25,7 @@ use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::Prints;
 use crate::register::Register;
-use crate::session::{run_book, BookDecl, Books, Stores};
+use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
 
 /// The party kinds this world has. **Registry data, declared once** — a mechanism asks a kind's
@@ -140,11 +140,14 @@ impl World {
         }
         let books = Books::index(
             &participants,
-            &self.parties,
-            &self.register,
-            &self.prints,
-            &self.journal,
-            &self.params,
+            &Shown {
+                parties: &self.parties,
+                instruments: &self.instruments,
+                register: &self.register,
+                prints: &self.prints,
+                journal: &self.journal,
+                params: &self.params,
+            },
             self.period,
         );
         let mut out = Stepped { narrows: books.narrows, ..Stepped::default() };
@@ -180,14 +183,17 @@ impl World {
         out
     }
 
-    /// A book, declared. The subject is what it delivers and the cash is what buyers pay with — an
-    /// instrument like any other (Money A2.b).
-    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, cash: InstrumentId, rule: PriceRule) {
+    /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side pays
+    /// out of its own account (22b.9a).
+    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, rule: PriceRule) {
+        // 22b.9a: a book names a CURRENCY and each side pays out of its own account, so there is no
+        // cash line to check the class of. What it does have to be is a thing somebody can deliver:
+        // a book whose subject is money is a book for swapping a deposit for itself.
         assert!(
-            self.instruments.class_of(cash) == Class::Money,
-            "Money A2.b: a book's cash leg must be money somebody issued"
+            self.instruments.class_of(subject) != Class::Money,
+            "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
         );
-        self.books.push(BookDecl { market, subject, ccy, cash, rule });
+        self.books.push(BookDecl { market, subject, ccy, rule });
     }
 }
 
@@ -271,23 +277,24 @@ mod tests {
     }
 
     #[test]
-    fn a_books_cash_leg_must_be_money_somebody_issued() {
-        // Money A2.b, Appendix B: no money without an issuer, and a book paid for in something that
-        // is not money is a conversion at the ledger boundary.
+    fn a_book_delivers_something_that_is_not_money() {
+        // 22b.9a: a book names a CURRENCY and each side pays out of its own account, so there is no
+        // cash line to check. What it must have is something to DELIVER.
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), cash, PriceRule::SellersCompete);
+        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), PriceRule::SellersCompete);
         assert_eq!(w.books.len(), 1);
     }
 
     #[test]
-    #[should_panic(expected = "must be money somebody issued")]
-    fn a_book_paid_for_in_something_that_is_not_money_is_refused() {
+    #[should_panic(expected = "money is not delivered in a book")]
+    fn a_book_that_delivers_money_is_refused() {
+        // Swapping a deposit for a deposit at a cleared price is a book for swapping money for
+        // itself. The FX pair that looks like this is a pair, and it is declared as one.
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
-        let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), share, PriceRule::SellersCompete);
+        let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), PriceRule::SellersCompete);
     }
 }

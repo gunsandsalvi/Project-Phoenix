@@ -26,6 +26,7 @@ pub struct ParticipantView<'a> {
     journal: &'a Journal,
     params: &'a Params,
     period: u32,
+    cash: Option<InstrumentId>,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -36,8 +37,19 @@ impl<'a> ParticipantView<'a> {
         journal: &'a Journal,
         params: &'a Params,
         period: u32,
+        cash: Option<InstrumentId>,
     ) -> Self {
-        Self { who, register, prints, journal, params, period }
+        Self { who, register, prints, journal, params, period, cash }
+    }
+
+    /// Money D2: **the account this party pays out of** — resolved from the banking lattice when the
+    /// view was built (`ledger::account_of`), not handed to a participant as a declaration. A world
+    /// where every bank issues its own deposits has no single "the cash", and a participant told
+    /// which line to look at is a participant looking at somebody else's money.
+    ///
+    /// `Missing` is missing: a party that banks nowhere and issues nothing has no account.
+    pub fn cash(&self) -> Option<InstrumentId> {
+        self.cash
     }
 
     /// Whose view this is. It is a read, and the only party this view can be about.
@@ -61,6 +73,15 @@ impl<'a> ParticipantView<'a> {
     /// Law 8: what IT holds of a line, in whole pieces. The holder is not a parameter.
     pub fn quantity(&self, instrument: InstrumentId) -> f64 {
         self.register.quantity(self.register.row(self.who, instrument))
+    }
+
+    /// Money D2, 22b.9a: **what it holds of its OWN account**, free of liens. A party that banks
+    /// nowhere and issues nothing holds no money, which is nothing rather than zero of something.
+    pub fn own_cash(&self) -> f64 {
+        match self.cash {
+            Some(line) => self.free(line),
+            None => 0.0,
+        }
     }
 
     /// Register C3: and what of it is not encumbered.
@@ -151,7 +172,7 @@ mod tests {
         reg.credit(me, line, 10.0, 1.0, 1);
         reg.credit(rival, line, 999.0, 1.0, 1);
 
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1);
+        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
         assert_eq!(view.quantity(line), 10.0);
         assert_eq!(view.holdings().count(), 1);
         // Observer A4: the rival holds 999 of the same line and this view cannot say so. There is
@@ -180,7 +201,7 @@ mod tests {
         let theirs = journal.say(1, 0, kind, &[PartyId::at(1).0], &[], false);
         let open = journal.say(1, 0, kind, &[], &[], true);
 
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1);
+        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
         // A3: what a book printed is public — that is what a price is for.
         assert_eq!(view.print(line).unwrap().price, 12.5);
         // A private event reaches its subjects and the public record, and nobody else.
@@ -196,11 +217,11 @@ mod tests {
         let line = InstrumentId::at(3);
         reg.credit(me, line, 10.0, 1.0, 1);
         let before = {
-            let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1);
+            let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
             view.versions()
         };
         reg.credit(me, line, 5.0, 1.0, 1);
-        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1);
+        let view = ParticipantView::of(me, &reg, &prints, &journal, &params, 1, None);
         // Law 18: a kept answer is checked against these, and they have moved, so it is recomputed.
         assert_ne!(view.versions(), before);
         // And the view reads the register LIVE: a party that traded mid-cycle is seen to have.

@@ -15,7 +15,7 @@ use crate::clearing::{clear, Fill, Order, Outcome as Cleared, PriceRule, Side};
 use crate::ids::{CurrencyCode, InstrumentId, MarketId, PartyId};
 use crate::journal::Journal;
 use crate::instruments::Instruments;
-use crate::ledger::{Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
+use crate::ledger::{account_of, Cause, Instruction, Leg, Outcome, Receipt, Settlement, Settling};
 use crate::module::{Participant, ParticipantView};
 use crate::params::Params;
 use crate::parties::Parties;
@@ -37,25 +37,46 @@ const fn slot(decl: usize, market: MarketId) -> u64 {
     ((decl as u64) << 32) | (market.0 as u64)
 }
 
+/// **What a participant may be shown**: the stores a view is built from, together.
+///
+/// One struct because a view is built from all of them at once, and a caller made to name six is a
+/// caller that will one day name five and not notice. Every field is a READ — a participant never
+/// writes a store (ARCHITECTURE 4.9b).
+pub struct Shown<'a> {
+    pub parties: &'a Parties,
+    pub instruments: &'a Instruments,
+    pub register: &'a Register,
+    pub prints: &'a Prints,
+    pub journal: &'a Journal,
+    pub params: &'a Params,
+}
+
+impl<'a> Shown<'a> {
+    /// One party's view of it, with its own account resolved from the banking lattice (22b.9a).
+    pub fn view(&self, who: PartyId, period: u32) -> ParticipantView<'_> {
+        ParticipantView::of(
+            who,
+            self.register,
+            self.prints,
+            self.journal,
+            self.params,
+            period,
+            account_of(self.parties, self.instruments, who),
+        )
+    }
+}
+
 impl Books {
     /// Ask every party of each declaration's kind which books it could be in, and invert it.
-    pub fn index(
-        participants: &[&dyn Participant],
-        parties: &Parties,
-        register: &Register,
-        prints: &Prints,
-        journal: &Journal,
-        params: &Params,
-        period: u32,
-    ) -> Self {
+    pub fn index(participants: &[&dyn Participant], shown: &Shown<'_>, period: u32) -> Self {
         let mut books = Self::default();
         for (n, p) in participants.iter().enumerate() {
-            for &row in parties.of_kind(p.party_kind()) {
+            for &row in shown.parties.of_kind(p.party_kind()) {
                 let who = PartyId(row);
-                if !parties.alive(who) {
+                if !shown.parties.alive(who) {
                     continue;
                 }
-                let view = ParticipantView::of(who, register, prints, journal, params, period);
+                let view = shown.view(who, period);
                 books.narrows += 1;
                 for m in p.markets(&view) {
                     books.asked.entry(slot(n, m)).or_default().push(who);
@@ -98,9 +119,12 @@ pub struct BookDecl {
     pub market: MarketId,
     /// What the book delivers. A book with no subject delivers nothing anybody holds (a pair).
     pub subject: InstrumentId,
+    /// **The money of this book is a CURRENCY, not one bank's deposits** (22b.9a). A book used to
+    /// name one instrument, and with one deposit line per bank (Money D2) that shut every customer
+    /// of every other bank out of the market entirely — three quarters of the cells in the first
+    /// warm-up were in no book at all. Each side pays out of ITS OWN account, which settlement
+    /// resolves from the banking lattice exactly as it resolves the payee's (`ledger::account_of`).
     pub ccy: CurrencyCode,
-    /// The money the buyers pay with — an instrument like any other (Money A2.b).
-    pub cash: InstrumentId,
     pub rule: PriceRule,
 }
 
@@ -117,21 +141,21 @@ pub fn run_book(
 ) -> Session {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
+    let shown = Shown {
+        parties: stores.parties,
+        instruments: stores.instruments,
+        register: stores.register,
+        prints: stores.prints,
+        journal: stores.journal,
+        params: stores.params,
+    };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
             if !stores.parties.alive(who) {
                 continue;
             }
             asks += 1;
-            let view = ParticipantView::of(
-                who,
-                stores.register,
-                stores.prints,
-                stores.journal,
-                stores.params,
-                period,
-            );
-            posted.extend(p.orders(&view, book.market));
+            posted.extend(p.orders(&shown.view(who, period), book.market));
         }
     }
     let orders = posted.len();
@@ -164,7 +188,13 @@ pub fn run_book(
                     from: buyer,
                     to: seller,
                     ccy: book.ccy,
-                    instrument: book.cash,
+                    // 22b.9a: the buyer pays out of its own account. A buyer with no account cannot
+                    // be in a book at all, and `markets` is where that is decided — so this is
+                    // unreachable rather than a case to handle quietly.
+                    instrument: match account_of(stores.parties, stores.instruments, buyer) {
+                        Some(line) => line,
+                        None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
+                    },
                     amount: qty as f64 * price,
                     receipt: Receipt::Sale,
                 },
@@ -307,7 +337,7 @@ mod tests {
         let buys = Buys { market, cash, at: 5.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
-        let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
         // Two parties, each asked ONCE which books it could be in — not once per book.
         assert_eq!(books.narrows, 2);
 
@@ -320,7 +350,7 @@ mod tests {
             wire: &mut wire,
             params: &params,
         };
-        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), cash, rule: PriceRule::SellersCompete };
+        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
 
         assert_eq!(s.asks, 2);
@@ -373,7 +403,7 @@ mod tests {
         let sells = Sells { market, subject: grain, at: 9.0 };
         let buys = Buys { market, cash, at: 4.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
-        let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
         let mut stores = Stores {
             parties: &parties,
             instruments: &instruments,
@@ -383,7 +413,7 @@ mod tests {
             wire: &mut wire,
             params: &params,
         };
-        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), cash, rule: PriceRule::SellersCompete };
+        let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
         assert!(matches!(s.outcome, Cleared::NoOverlap { .. }));
         assert_eq!(s.settled, 0);
@@ -400,12 +430,13 @@ mod tests {
         // A seller holding nothing: its own door says it is in no book, so it is never asked.
         let _empty = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
         let register = Register::new();
+        let instruments = Instruments::new();
         let prints = Prints::new();
         let journal = Journal::new();
         let params = Params::new(100.0, 60.0);
         let sells = Sells { market: MarketId::at(1), subject: InstrumentId::at(1), at: 4.0 };
         let participants: Vec<&dyn Participant> = vec![&sells];
-        let books = Books::index(&participants, &parties, &register, &prints, &journal, &params, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
         assert_eq!(books.narrows, 1, "asked once about itself");
         assert!(books.who(0, MarketId::at(1)).is_empty(), "and named no book");
     }

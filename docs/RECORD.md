@@ -18439,3 +18439,42 @@ zero is not yet indistinguishable from period 100, and the two reasons are named
 dependency positions rather than hidden: 22b.8a and 22b.9a.
 
 **Six hundred and sixty-nine tests hold; clippy clean; `phoenix-check` green over 83 files.**
+
+---
+
+## 22b.9a — a book names a currency, and each side pays out of its own account
+
+**What went.** `BookDecl.cash`, and the `cash` field on five participants — `HouseholdBuyers`,
+`MoneyMarketBanks`, `FundMandates`, `InsurerMatching`, `Dealers`. A book named ONE instrument, and
+since 22b.5a there is one deposit line per bank, so three quarters of the cells in the first warm-up
+held money the book did not accept and were in no book at all. **A market's money is a CURRENCY.**
+
+**What replaces it.** `ledger::account_of(parties, instruments, party)` — the money its bank issues,
+or the money it issues itself when it banks nowhere, which is what a central bank does. ONE WRITER of
+the question (Law 4): settlement asks it to know where a payment lands, a book asks it to know what a
+buyer pays with, a participant asks it to know what it has. The view carries the answer
+(`ParticipantView::own_cash`), so a participant reads its own account instead of being told which
+line to look at — a participant told which money is "the cash" is a participant looking at somebody
+else's.
+
+**And `all()` stopped handing everybody one `cash`.** `Wiring` names what each system TRADES: the
+households' basket, the holders' lines, the money market's overnight line and the treasury's paper.
+The last two are `Missing` in this world rather than pointed at whatever line was to hand, and a
+system with nothing to trade posts nowhere.
+
+**Two more the warm-up found, both fixed here.** The first was a THROW — `Clearing C1: an order for 0
+pieces is not an order` — from a seller holding part of a loaf: a holding is a quantity in its own
+unit and an order is a count of pieces (Law 8), so a firm with 0.4 of something has something and has
+nothing to sell. Same latent defect in the dealer, half a piece from its limit. Both now read the
+whole pieces and post nothing when there are none, which is the shape the household already had.
+The second was clippy's, and it was right: `Books::index` had grown to eight arguments. `Shown` groups
+the stores a view is built from, because a caller made to name six will one day name five.
+
+**What the graduation now measures, and it is worse, which is the point.** With every household able
+to reach the book: 144 asks (double), and **one book cleared in four periods** against four before.
+The world sells its opening stock in the first period and has nothing left, because nothing produces
+— `recipe` and `goods` are `reads`, not producers. That is 22.2's *a line that never starts*, and it
+is a finding rather than a regression (Law 13): the earlier four came from three quarters of the
+demand being locked out, which is not a market working.
+
+**Six hundred and sixty-nine tests hold; clippy clean; `phoenix-check` green over 83 files.**
