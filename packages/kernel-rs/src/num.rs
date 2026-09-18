@@ -62,7 +62,7 @@ pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
 
 /// **MSER-5: where a series stops being about how it started** (22b.8).
 ///
-/// @spec 22b.8 · Law 2 · Law 6
+/// @spec XI-15 · Law 2 · Law 6
 ///
 /// A run opens carrying whatever the past put in it, and for a while every number is still a fact
 /// about that rather than about the world. The length of the past is therefore a number somebody has

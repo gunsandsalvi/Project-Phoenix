@@ -158,7 +158,7 @@ pub trait VenueParticipant {
 
 /// **THE SECOND DOOR** (ARCHITECTURE 4.9b): what a module is given when its phase runs.
 ///
-/// @spec 4.9b · Law 4 · Law 10 · Law 19 · Appendix B
+/// @spec ARCHITECTURE 4.9b · Law 4 · Law 10 · Law 19 · Appendix B
 ///
 /// A participant is asked a question inside a book; a MECHANISM does the rest of what a system does
 /// in a period — accruing, maturing, deciding, publishing. It reads the kernel's stores and **it

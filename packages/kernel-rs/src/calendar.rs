@@ -76,8 +76,7 @@ mod tests {
         // A day inside a period belongs to the period that has not started yet, by date.
         assert_eq!(cal.period_on(Day(28)), Period(4));
         assert_eq!(cal.period_on(Day(29)), Period(5));
-        // A year is the days between two dates, not fifty-two periods.
-        assert!((cal.year_fraction(Day(0), Day(365)) - 1.0).abs() < 1e-12);
+        assert!((cal.year_fraction(Day(0), Day(365)) - 1.0).abs() <= crate::num::dust(2, &[1.0]));
     }
 
     #[test]

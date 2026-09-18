@@ -191,7 +191,7 @@ mod tests {
         let total: f64 = shares.iter().map(|(_, l)| *l).sum();
         // Appendix B: every piece of it has a holder.
         assert!((total - 50.0).abs() <= 4.0 * f64::EPSILON * 50.0, "{total}");
-        assert!((shares[0].1 - 35.0).abs() < 1e-9);
+        assert!((shares[0].1 - 35.0).abs() <= crate::num::dust(3, &[shares[0].1, 35.0]));
         // Nobody holds it: there is nothing to land on, and inventing a holder would be worse.
         assert!(onto_holders(50.0, &[]).is_empty());
     }

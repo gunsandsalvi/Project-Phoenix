@@ -13,6 +13,8 @@
 //!   - `ids`, `params`, `calendar` — the kernel's own conventions live there, which is what
 //!     `core/` and `registry/` are exempt for in the TypeScript rules.
 
+mod spec;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -128,6 +130,26 @@ fn operand_after(chars: &[char], at: usize) -> Option<String> {
     if taken.is_empty() { None } else { Some(taken) }
 }
 
+/// **Law 7: a magnitude compared against a NUMBER.** `x.abs() < 1e-12` is a band, and a band is what
+/// `num::dust` exists to replace — `terms × ε × Σ|magnitudes|`, derived from the check's own terms.
+/// What is detectable is the literal: `.abs() <= dust(...)` names a derivation and `.abs() <= 1e-9`
+/// names a hope. Returns what was written, because the writer needs to see it to replace it.
+fn fixed_tolerance(line: &str) -> Option<String> {
+    for op in [".abs() < ", ".abs() <= "] {
+        let Some(at) = line.find(op) else { continue };
+        let rest = line[at + op.len()..].trim_start();
+        let first = rest.chars().next()?;
+        // A derived dust is a call or a name; only a number written out is a band. **`6.0 *
+        // f64::EPSILON * magnitude` is not one** — it is Law 7's own formula, `terms × ε × Σ|m|`,
+        // written where a reader can see the terms, and the leading number is the term COUNT.
+        if first.is_ascii_digit() && !rest.replace(' ', "").contains("*f64::EPSILON") {
+            let band: String = rest.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != ',').collect();
+            return Some(format!("{}{}", op.trim_end(), band));
+        }
+    }
+    None
+}
+
 /// A line with its string literals emptied. **Braces inside a format string are not code**, and
 /// counting them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
 /// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests. The
@@ -178,6 +200,12 @@ fn main() {
     let mut files = Vec::new();
     rust_files(&root, &mut files);
     files.sort();
+
+    // Law 16: the specification is what a citation is checked against, so it is READ rather than
+    // restated here. A check carrying its own copy of the clause list would be the second writer.
+    let spec_text = fs::read_to_string("docs/spec/PROJECT_PHOENIX.md")
+        .expect("Law 19: the specification is the source, and it is not where it is expected");
+    let spec = spec::Spec::read(&spec_text);
 
     let mut found: Vec<Finding> = Vec::new();
     let mut checked = 0usize;
@@ -273,6 +301,13 @@ fn main() {
             if is_mechanism && line.starts_with("use crate::mechanisms::") {
                 found.push(say("Law 15", "a module imports another module".to_string()));
             }
+            // **Law 7: tolerance is arithmetic dust, derived per check — never a band somebody
+            // picked.** A comparison of a magnitude against a literal is the shape a band takes, and
+            // a check that only passes with one is reporting a defect. It applies inside tests too,
+            // and that is where it was found: `1e-12` on a year fraction that is exactly one.
+            if let Some(band) = fixed_tolerance(line) {
+                found.push(say("Law 7", format!("a tolerance nobody derived: {band}")));
+            }
         }
 
         // Every module cites the clauses it implements.
@@ -283,6 +318,15 @@ fn main() {
                 law: "Law 16",
                 what: "a module with no @spec citation".to_string(),
             });
+        }
+
+        // **And every citation names a clause that is there** (21.8, 0c.3). A citation to a clause
+        // that does not exist reads as evidence and is not any: `check:existence` counts it, and
+        // nobody can tell it from the real thing without opening the document at that line.
+        for (n, citation) in spec::citations(&text) {
+            if let Some(why) = spec.resolve(&citation) {
+                found.push(Finding { file: name.clone(), line: n, law: "Law 16", what: why });
+            }
         }
     }
 

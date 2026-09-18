@@ -18786,3 +18786,71 @@ findings was possible, why `world-runs` exists, and why 22e is the next item.
 
 `npm run check` green; `docs/FINDINGS.md` does not exist; item 21 carries 177 steps where it carried
 95, and the count is honest for the first time.
+
+---
+
+## 21, the small self-contained points: a citation is checked, and a band is not a tolerance
+
+Fifteen steps of item 21 closed, and they closed in the two ways the file says a finding measured on
+the old engine can: **four were verified ABSENT**, and **four became a CHECK that then found real
+defects** — which is `CLAUDE.md`'s rule doing its job: *when a rule is broken twice, write the check*.
+
+### Every `@spec` citation now names a clause that exists (21.8)
+
+`CLAUDE.md` says *every module cites the clauses it implements with `@spec`; `npm run check:spec`
+must pass*. **There was no `check:spec`.** `phoenix-check` asserted that a module HAS a citation and
+never that the thing cited is there — and a citation to a clause that does not exist is worse than
+none: it reads as evidence, `check:existence` counts it, and nobody can tell it from the real thing
+without opening the document at that line. It had already been found by a person reading, twice,
+months apart: 98 COVERAGE rows citing `B-12` (0c.3) and a module citing `Clearing C1.b` (21.8).
+
+`tools/phoenix-check/src/spec.rs` reads the specification and resolves every citation: a law, a
+numbered system with a clause, a system by the short NAME a reader actually writes, a Part XI
+mechanism, a `§n`, an appendix, a clause range `A1–A4`, a whole lettered group `Banks Lending C`, and
+a bare clause that carries the section before it (`46 A1, A2, B1` is three citations of one section).
+
+**The short names are DERIVED, not declared.** `tools/spec-index.ts` carries a table of them and a
+second copy in Rust would be Law 4's defect in the checker itself. The spec says
+`## 1. MONEY AND SETTLEMENT` and a reader writes `Money A1`, so a name matches when its words run
+through the heading's in order, each citation word either being a heading word or standing for the
+INITIALS of the words it abbreviates — which makes `Spot FX`, `CDS` and `IRS` the same kind of
+citation as `Goods` rather than three exceptions somebody has to maintain.
+
+**It found four, all real, all fixed.**
+
+| where | what was cited | what it is |
+|---|---|---|
+| `mechanisms/sovereign.rs` | `Central Bank A3.b` | §31 has A3 and A4 and no A3.b. The module is about the funding constraint and the clause it is about is **E2, no automatic overdraft** — which its own first paragraph says at length. |
+| `module.rs`, `stores.rs` | `4.9b` | Names no document. It is `ARCHITECTURE 4.9b`, and the same files write it that way on other lines. |
+| `num.rs` | `22b.8` | **A plan item cited where a clause belongs.** `mser_5` serves XI-15's *resolution is measured, not asserted*; 22b.8 is where it was built, which is prose, not a citation. |
+
+### A tolerance nobody derived is not a tolerance (Law 7)
+
+Found while reading `calendar.rs` for something else: `(year_fraction(Day(0), Day(365)) - 1.0).abs()
+< 1e-12`. Law 7 is not ambiguous — tolerance is `terms × ε × Σ|magnitudes|`, derived per check, never
+a band, and **a check that only passes with a band is reporting a defect**. So the rule became a
+check: a magnitude compared against a written-out number is a band, and `6.0 * f64::EPSILON *
+magnitude` is not one, because that IS Law 7's formula with its term count in front of it.
+
+It found **five**, in `calendar`, `cost_of_capital`, `dealing` (twice) and `loss`. Every one of them
+was hiding nothing: replaced with `num::dust` derived from each check's own terms, all 650 tests
+pass, and the answer is exact in all five. **That is the good outcome and it is not the point** —
+the band was the defect whether or not it was covering one, and it could come back tomorrow without
+the check.
+
+### Verified absent (21.4, 21.5, 21.9, and eleven of 21.115)
+
+The findings whose shape was `journal.ofKind(...)` or `journal.forSubject(...)` **cannot exist here**:
+the Rust journal has neither read, so the walk they are about has no door to go through. Eleven of
+the drained walks close that way. `WK11` — *every participant decl MUST name its markets, and the
+kernel should refuse one without it* — is closed by the type: `Participant::markets` is required by
+the trait, so the `O(parties × markets)` default the finding is about cannot be written. `21.4`'s
+stale `standsInFor` and `21.5`'s four dead reads are gone with their files, and `21.9`'s string
+parsing has no instance: no fact in this engine is recovered from a string.
+
+**What was NOT closed, and is the honest remainder of that group**: the walks over PARTIES and
+INSTRUMENTS survived the port — `running.rs` has them, `Reads` walks every instrument once per system
+per period — and those are a re-read against the engine that exists rather than a verification.
+
+**650 tests hold; clippy clean; `phoenix-check` green over 80 files with two new laws checked; `npm
+run check` green.** Item 21 stands at 21 of 177 steps.

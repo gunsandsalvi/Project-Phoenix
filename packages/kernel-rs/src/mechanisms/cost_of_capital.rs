@@ -164,7 +164,7 @@ mod tests {
         let before = at_the_margin(0.04, 0.10, 0.6);
         let after = at_the_margin(0.07, 0.10, 0.6);
         assert!(after > before);
-        assert!((after - before - 0.018).abs() < 1e-12);
+        assert!((after - before - 0.018).abs() <= crate::num::dust(3, &[after, before, 0.018]));
     }
 
     #[test]

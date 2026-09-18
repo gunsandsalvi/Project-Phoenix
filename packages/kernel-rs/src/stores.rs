@@ -1,6 +1,6 @@
 //! THE FOUR STORES THE MODULES NEEDED AND THE KERNEL DID NOT HAVE.
 //!
-//! @spec 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
+//! @spec ARCHITECTURE 4.9b · XI-10 · XI-15 · §46 · Law 4, Law 8, Law 10, Law 19 · Appendix B
 //!
 //! The kernel owned seven stores — parties, instruments, register, prints, journal, wire, params —
 //! and every module carried its own state types with nowhere to live: an `Engagement`, a `Loan`'s

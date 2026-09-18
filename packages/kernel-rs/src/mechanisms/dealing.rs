@@ -125,7 +125,7 @@ mod tests {
         assert!(short.bid > flat.bid && short.offer > flat.offer);
         // C2.a: nothing told it to revert — the skew follows the position, and there is no target
         // inventory anywhere in this module.
-        assert!((long.spread() - flat.spread()).abs() < 1e-12, "the skew moves both sides together");
+        assert!((long.spread() - flat.spread()).abs() <= crate::num::dust(4, &[long.spread(), flat.spread()]), "the skew moves both sides together");
     }
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
         // C3, C4: wider, and around the same level — a desk facing somebody who knows more charges
         // for it; it does not change its mind about what the line is worth.
         assert!(hard.spread() > calm.spread());
-        assert!((hard.mid() - calm.mid()).abs() < 1e-12);
+        assert!((hard.mid() - calm.mid()).abs() <= crate::num::dust(4, &[hard.mid(), calm.mid()]));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 //! THE TREASURY RAISES MONEY BEFORE IT SPENDS IT, from a market that must clear.
 //!
-//! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank A3.b, Money B3.c, Appendix B, Law 6
+//! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank E2, Money B3.c, Appendix B, Law 6
 //!
 //! **The funding constraint is the whole of it.** With an automatic overdraft, causation reverses:
 //! the treasury spends into the negative and issues to CLEAR it, so the forward funding plan has
