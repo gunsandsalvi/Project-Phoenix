@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{afoot, agreed, BankCapital, BankFunding, Broking, Builder, Building, Closing, Control, CostOfCapital, Counts, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -854,6 +854,20 @@ pub fn declare(p: &mut Params) {
     // §40 A5, B2: what a dwelling costs its owner to keep, and what share of its money a household
     // puts towards a roof. The first is a TECHNOLOGY — a fact about buildings; the second is a
     // PREFERENCE, and it is the household's.
+    // §18 A2, B1: **where the junior detaches, and how much of a book a bank pools at once.** The
+    // first is a TERM of the deal — what stands in front of the senior note — and it is stated by
+    // whoever cuts it and is never a price. The second is the bank's own.
+    // §35 B1, C1: **what an acquirer wants on what it buys, and how much of the rest a bid must
+    // reach.** The first is its own hurdle and a PREFERENCE; the second is a TECHNOLOGY of the
+    // market — how much of a dispersed register a tender needs before it has control.
+    say("acquirer.hurdle", 0.1, "per unit paid", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the return an acquirer wants on what it pays for a company");
+    say("control.needs", 0.5, "per unit outstanding", Dimension::Ratio, Kind::Technology, Owner::StandardSetter,
+        "how much of the shares it does not already hold a tender must reach");
+    say("pool.junior", 0.1, "per unit of the pool", Dimension::Ratio, Kind::Technology, Owner::StandardSetter,
+        "the share of a pool that stands in front of its senior note");
+    say("pool.pools", 0.2, "per unit of its loan book", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "how much of its loan book a bank pools at once");
     say("dwelling.upkeep", 0.02, "money per dwelling per period", Dimension::PricePerUnit, Kind::Technology, Owner::StandardSetter,
         "what keeping one dwelling in repair costs its owner each period");
     say("household.will_spend", 0.5, "per unit of its money", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -1241,7 +1255,14 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             kind: says("stock.lent"),
             will_lend: "lending.will_lend",
         })),
-        works("securitisation", AT_MARKETS, Box::new(Closing { kind: afoot::SECURITISATION, says: says("pool.closed") })),
+        // **XI-11, §18 A1, A2: and a bank POOLS loans and cuts notes against them.** It was a closer
+        // for a pool nothing opened, and a pool's whole point is to issue notes — which is what
+        // 21.81 said it could not do. `ctx.brings` is the door now.
+        works("securitisation", AT_CORPORATE_ACTIONS_SLOT, Box::new(Securitising {
+            kind: says("pool.cut"),
+            junior: "pool.junior",
+            pools: "pool.pools",
+        })),
         // ── The instrument families that settle against what the books printed ──────────────────
         works("derivative_layer", AT_REVALUATION, Box::new(Reads { kind: says("derivative_layer.open"), what: Counts::AgreementsLive })),
         // **§19 B5, XI-13: and protection CLEARS between two parties who disagree.** It counted
@@ -1336,7 +1357,17 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         // the opposite of the read this system is for, and nothing in this world had ever died.
         works("mortality", AT_REVALUATION, Box::new(Failing { says: says("mortality.failed") })),
         works("estate", AT_CORPORATE_ACTIONS_SLOT, Box::new(Ranked { says: says("estate.paid") })),
-        works("control", AT_MARKETS, Box::new(Closing { kind: afoot::BUY_BACK, says: says("buy_back.closed") })),
+        // **§35, §29 B: and a company is BID FOR, and the owners decide.** It was a closer for a
+        // buy-back nothing opened, so §35 and §29 B were a thousand lines nothing had ever
+        // exercised (21.73). What it waited on was a company with SHARES (22i.7) and published
+        // accounts to value it from (22i.1).
+        works("control", AT_REVALUATION, Box::new(Control {
+            kind: says("control.tender"),
+            accounts: kinds_row_accounts,
+            at_income,
+            hurdle: "acquirer.hurdle",
+            needs: "control.needs",
+        })),
         // **XI-17, §47: and the term RUNS OUT.** It was a closer for a process nothing opened, so no
         // election had ever been called and a parliament that never faces one is immortal (XI-3).
         works("polity", AT_REVALUATION, Box::new(Elections {

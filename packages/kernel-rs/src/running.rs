@@ -3840,6 +3840,270 @@ impl Mechanism for Housing {
     }
 }
 
+/// **XI-11, §18 A1, A2, B1, 22i.18: A BANK POOLS LOANS AND CUTS NOTES AGAINST THEM.**
+///
+/// The `securitisation` row was a CLOSER for a pool nothing opened, and a pool's whole point is to
+/// ISSUE notes — which is what 21.81 said it could not do. `ctx.brings` is the door now (21j.1a) and
+/// this is what walks through it.
+///
+/// **The loan rows MOVE** (A1, Law 5): the originator delivers them and receives what the vehicle
+/// paid. A loan that is a field rather than a row cannot be transferred at all, which is XI-11's
+/// second prerequisite — and it is a row here, so it can.
+///
+/// **A tranche has a stated loss attachment and a price that clears** (A2, Law 3): the attachment is
+/// a TERM of the deal and the price is an outcome, never a function of the attachment. The losses
+/// that reach it are real losses on named borrowers (XI-1, 22i.5), which is what makes a senior note
+/// safe in a way a rate applied smoothly could never express.
+///
+/// **What frees capital is what was SOLD** (B1): a bank that retained everything has moved nothing,
+/// and the capital relief is a read of what left rather than a number the deal claims.
+pub struct Securitising {
+    pub kind: u32,
+    /// §18 A2: where the junior tranche detaches — the share of the pool that stands in front of the
+    /// senior note. A TERM of the deal, stated by whoever cuts it, never a price.
+    pub junior: &'static str,
+    /// §18 B1: how much of a book a bank will pool at once. Its own.
+    pub pools: &'static str,
+}
+
+impl Mechanism for Securitising {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let junior = ctx.params().ratio(self.junior);
+        let pools = ctx.params().ratio(self.pools);
+
+        let mut cutting: Vec<(PartyId, crate::ids::CurrencyCode, f64, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            if ctx.processes().running(afoot::SECURITISATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+                continue;
+            }
+            // XI-11: **the loan rows it holds.** `saleable` names no kind — a house and a shop are
+            // both poolable — so this is every claim on its book that somebody else issued, which is
+            // what a loan IS from the lender's side.
+            let mut pool = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                if ctx.instruments().class_of(line) != crate::instruments::Class::Claim {
+                    continue;
+                }
+                if ctx.instruments().issuer_of(line) == who {
+                    continue;
+                }
+                pool += ctx.register().quantity(row);
+            }
+            let size = pool * pools;
+            if size <= 0.0 {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            cutting.push((who, ctx.instruments().ccy_of(money), size, size * junior));
+        }
+
+        for (who, ccy, size, first_loss) in cutting {
+            // A2: **the SENIOR note**, which the junior stands in front of. It is brought like any
+            // other obligation and it trades in a book — what it is worth is what that book crosses
+            // at, and never a function of where it attaches (Law 3).
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: crate::instruments::Class::Claim,
+                unit: crate::ids::UnitId::at(0),
+                // A note's return is what the pool pays through. It carries no coupon of its own,
+                // which is the difference between a note and a bond (5 C4.b).
+                coupon: None,
+                matures: None,
+                units: size - first_loss,
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                }),
+                owing: Vec::new(),
+            });
+            ctx.opens(crate::module::Opens {
+                kind: afoot::SECURITISATION,
+                owner: who,
+                closes: Some(ctx.period() + 1),
+                size,
+            });
+            // B1: what it cut, and what stands in front of it. Both are said, because the capital
+            // relief is a read of what LEFT and a deal nobody can see the shape of is one nobody
+            // can check that against.
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(size)), (1, Value::Num(first_loss))],
+                true,
+            );
+        }
+    }
+}
+
+/// **§35 A1, B1, B2, C1, §29 B2.b, 22i.18: A COMPANY IS BID FOR, AND THE OWNERS DECIDE.**
+///
+/// The `control` row was a CLOSER for a buy-back nothing opened, so §35 and §29 B were a thousand
+/// lines nothing had ever exercised (21.73). What it waited on was two things that did not exist:
+/// a company with SHARES (22i.7) and a published set of accounts to value it from (22i.1).
+///
+/// **The acquirer's valuation is its OWN** (B1): the target's expected earnings discounted at its own
+/// hurdle, so the next acquirer's is different — which is what makes a contest possible at all.
+///
+/// **The owners decide, each on its own valuation** (C1): the price beats holding, on THEIR
+/// valuation, or they keep the shares. A tender that does not reach the units it needs is REFUSED,
+/// and that is a real outcome — a bid nobody accepts is not a bid that happened at a lower price.
+///
+/// **And the premium is an OUTCOME** (B2), not a stated percentage: what it must pay to get them to
+/// sell, measured against what the market last printed.
+pub struct Control {
+    pub kind: u32,
+    pub accounts: u32,
+    pub at_income: u32,
+    /// §35 B1: what an acquirer wants on what it buys. Its own hurdle, and a PREFERENCE.
+    pub hurdle: &'static str,
+    /// §35 C1: the share of a company somebody must hold to control it, read off the outstanding
+    /// count rather than declared — this is only how much of the rest a bid must reach.
+    pub needs: &'static str,
+}
+
+impl Mechanism for Control {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::control::{tender, Bid, Consideration, Outcome, Owner};
+        let hurdle = ctx.params().ratio(self.hurdle);
+        let needs = ctx.params().ratio(self.needs);
+
+        // §48, 22i.1: what each company last published. A company that publishes nothing cannot be
+        // valued, which is 21.76's finding and is why this row could not run before.
+        let mut earnings: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for &row in ctx.journal().of_kind(self.accounts) {
+            if let (Some(&who), Some(Value::Num(income))) =
+                (ctx.journal().subjects_of(row).first(), ctx.journal().says(row, self.at_income))
+            {
+                earnings.insert(who, income);
+            }
+        }
+        if earnings.is_empty() {
+            return;
+        }
+
+        let mut bidding: Vec<(PartyId, PartyId, f64, f64, f64)> = Vec::new();
+        for (&target, &income) in &earnings {
+            let company = PartyId(target);
+            if !ctx.parties().alive(company) {
+                continue;
+            }
+            // 22i.7: its shares, and who holds them. A company with none cannot be bid for.
+            let Some(share) = ctx
+                .instruments()
+                .of_issuer(company)
+                .iter()
+                .map(|l| InstrumentId::at(*l))
+                .find(|l| ctx.instruments().class_of(*l) == crate::instruments::Class::Share)
+            else {
+                continue;
+            };
+            let Some(print) = ctx.prints().latest(share, ctx.period()) else { continue };
+            // B1: **the acquirer's OWN valuation.** Whoever already holds the most of it is who has
+            // a reason to take the rest — and what it is worth to that holder is what its own
+            // hurdle says, never what the market says.
+            let mut owners: Vec<Owner> = Vec::new();
+            let mut outstanding = 0.0;
+            for &row in ctx.register().of_instrument(share) {
+                let row = crate::ids::HoldingId(row);
+                let who = ctx.register().holder_of(row);
+                let units = ctx.register().quantity(row);
+                if who == company || units <= 0.0 {
+                    continue;
+                }
+                outstanding += units;
+                // C1, C2: what holding is worth to THIS owner — what the market last printed, which
+                // is what it could get for it now. Its own, and it is why some accept and some do not.
+                owners.push(Owner { who, units, holding_is_worth: print.price });
+            }
+            if owners.len() < 2 || outstanding <= 0.0 {
+                continue;
+            }
+            owners.sort_by(|a, b| b.units.total_cmp(&a.units));
+            let acquirer = owners[0].who;
+            let Some(worth) = crate::mechanisms::control::worth_to(income, hurdle) else { continue };
+            let per_share = worth / outstanding;
+            if per_share <= print.price {
+                // B2: it will not pay a premium it does not think is there. A bid below the market
+                // is not a bid, and nothing is adjusted to make one.
+                continue;
+            }
+            bidding.push((acquirer, company, per_share, outstanding * needs, print.price));
+        }
+
+        let mut done: Vec<(PartyId, PartyId, f64, f64, bool)> = Vec::new();
+        for (acquirer, company, per_share, needed, market) in bidding {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), acquirer) else { continue };
+            let funded = ctx.register().quantity(ctx.register().row(acquirer, money));
+            let Some(share) = ctx
+                .instruments()
+                .of_issuer(company)
+                .iter()
+                .map(|l| InstrumentId::at(*l))
+                .find(|l| ctx.instruments().class_of(*l) == crate::instruments::Class::Share)
+            else {
+                continue;
+            };
+            let mut owners: Vec<Owner> = Vec::new();
+            for &row in ctx.register().of_instrument(share) {
+                let row = crate::ids::HoldingId(row);
+                let who = ctx.register().holder_of(row);
+                let units = ctx.register().quantity(row);
+                if who == company || who == acquirer || units <= 0.0 {
+                    continue;
+                }
+                owners.push(Owner { who, units, holding_is_worth: market });
+            }
+            let bid = Bid {
+                acquirer,
+                target: company,
+                // B3: **what its lenders committed.** A bid it cannot fund is not a bid, and here
+                // what it can fund is what it holds — the credit market's half is §29 B2.b's.
+                offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
+                funded,
+                on: Day(0),
+            };
+            // C3: management may resist, and its interests differ from the owners'. Nothing in this
+            // world resists yet, which is an absence and not a defence of nothing.
+            match tender(&bid, 0.0, &owners, needed, None) {
+                Outcome::Accepted { units, paid, .. } => done.push((acquirer, company, units, paid, true)),
+                Outcome::Refused { accepting_units, .. } => {
+                    done.push((acquirer, company, accepting_units, 0.0, false))
+                }
+                Outcome::Unfunded { short_by } => done.push((acquirer, company, 0.0, short_by, false)),
+            }
+        }
+
+        for (acquirer, company, units, paid, took) in done {
+            if took {
+                // §29 B: a takeover is a thing that runs and closes, so it is opened like one.
+                ctx.opens(crate::module::Opens {
+                    kind: afoot::TAKEOVER,
+                    owner: acquirer,
+                    closes: Some(ctx.period() + 1),
+                    size: units,
+                });
+            }
+            // B4: a bid that nobody beats is not a proof that it was the right price, only that
+            // nobody came — so what happened is said either way.
+            ctx.say(
+                self.kind,
+                &[acquirer.0, company.0],
+                &[(0, Value::Num(units)), (1, Value::Num(paid))],
+                true,
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
