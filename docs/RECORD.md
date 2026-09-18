@@ -16931,3 +16931,37 @@ a refusal, because a world assembled without an issuer has a hole and reading it
 hide it (Appendix A); and an account that is not short is not asked about at all.
 
 **Sixty-three laws now hold as tests; clippy is clean; `phoenix-check` is green over 25 files.**
+
+# 0g.42 — the sovereign's funding constraint (XI-9)
+
+@spec XI-9 · Sovereign C3 · Central Bank D3, A3.b · Money B3.c · Appendix B · Law 6, Law 7
+
+**The treasury raises money BEFORE it spends it, from a market that must clear.** `money`'s
+`NoOverdraftForTheTreasury` is the refusal; this is the other half — what a treasury actually does
+instead.
+
+XI-9 spells out what an automatic overdraft costs, and it is not a rounding: causation reverses, so
+the treasury spends into the negative and issues to CLEAR it and the forward plan has nothing to do;
+the buffer has no reason to exist; **a failed auction costs nothing, so it carries no information**;
+and **a sovereign cannot fail**, so its paper is risk-free by construction, nothing prices its
+credit, its rating has no consumer, and the assessment system above it is decoration. Everything
+priced over the sovereign curve assumes a borrower with a funding constraint.
+
+- **`Programme::to_raise`** sizes the need FORWARD from redemptions and outlays less the buffer.
+  Neither input is a forecast: both are commitments already made. A treasury whose buffer covers the
+  period raises nothing, which is an answer rather than a special case.
+- **`Auction::still_short`** is what the market did not take. Under an overdraft this number is
+  always zero, which is precisely why the auction would say nothing.
+- **`handle`** is the three real handlings in XI-9's own order — pay from the buffer, defer an
+  outlay, come back to the market — and **the three account for the WHOLE shortfall between them**,
+  which is its own test. Law 6 is the point: what the buffer does not cover is still short and goes
+  to the next handling, never clamped away. An outlay deferred is somebody not paid, which is an
+  event with a named counterparty and not a number quietly reduced.
+- **`Missed::is_default`** is two numbers — what fell due and what arrived — rather than a
+  judgement, with Law 7's dust as the only tolerance. There is no grace period, because a grace
+  period is a band somebody chose.
+
+**Five laws as tests**, including the one that matters most: a shortfall handled is never a number
+quietly reduced.
+
+**Sixty-eight laws now hold as tests; clippy is clean; `phoenix-check` is green over 26 files.**

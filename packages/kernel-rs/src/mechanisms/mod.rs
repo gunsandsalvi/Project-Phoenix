@@ -4,3 +4,4 @@
 
 pub mod capital_programme;
 pub mod money;
+pub mod sovereign;
