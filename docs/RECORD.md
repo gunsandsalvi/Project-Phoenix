@@ -17711,3 +17711,42 @@ quoted as one number.
 
 Against the owner's gate of three seconds a step: the kernel floor is 240 ms and the modules are what
 is left to find out.
+
+# 0g.42 — credit default swaps (§17) and interest-rate swaps (§18)
+
+`packages/kernel-rs/src/mechanisms/cds.rs` and `irs.rs`. Twenty-ninth and thirtieth modules, and the
+first two of the derivative block.
+
+**CDS.** The implied probability reads FROM the cleared spread and there is no function taking
+accounts — C2 calls the other direction Law 3 inverted in the one instrument whose entire purpose is
+to hold a second opinion about a credit. `Recovery` carries what the obligations actually fetched and
+which workout it came from, so no constant can be passed where a recovery is wanted (D2.a: a fixed
+recovery makes the payoff a constant and turns a credit derivative into an interest-rate instrument).
+`Curve::new` refuses a single tenor — one tenor means the model has no term structure of credit
+anywhere — and refuses a reference that cannot fail, since protection on one is protection on nothing.
+`pays_out` returns what the seller could find AND what it could not: E4's protection without a payer
+is E2's wrong-way risk, arriving exactly when the protection was most needed. `Series::settles` pays a
+name's weight once and the line runs on with the survivors.
+
+**IRS.** `Swap` has a notional and no leg that moves it (E1: if the notional moves it is a loan).
+`Curve::from_cleared` is the only constructor, so E2's forbidden direction — solving a par rate out of
+a discount curve — has nothing to call. The floating leg fixes on prints that happened, compounding
+them where the reference is overnight, and a reference nobody transacts is refused at the constructor
+(E3, XI-7). The margin test is D3.a whole: rates rise, the mark moves, and the payer of fixed
+RECEIVES cash this period while its hedged item shows an unrealised loss.
+
+**I wrote the unfailable check three times in a row and caught it three times.** `is_a_transfer` in
+`cds.rs` summed the same field twice; `unmatched` in `irs.rs` computed `p.amount - p.amount`. Both are
+now the part that can actually fail: `shortfall` reports protection the seller could not find, which
+is what breaks D5's transfer and leaves a second loss with a holder; `pairs_up` refuses a payment from
+a party to itself. The world-level sum belongs to the audit over the register, and saying so in the
+doc comment is the honest version of a check that cannot fail. This is the same defect the trade
+credit module hit — three times in one session is a pattern, and the rule is now written where it
+will be read: **before a VERIFY is written, name the input that makes it answer false.**
+
+`Swap::struck` takes the terms as a struct rather than nine positional arguments, after clippy said
+so: a swap whose payer and receiver can be transposed by miscounting a comma is a contract nobody can
+read.
+
+**Twenty-five laws as tests. Three hundred and thirty-two now hold; clippy clean; `phoenix-check`
+green over 54 files. Thirty of forty-seven modules ported.**

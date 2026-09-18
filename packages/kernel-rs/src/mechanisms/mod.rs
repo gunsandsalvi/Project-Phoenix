@@ -5,6 +5,7 @@
 pub mod bank_capital;
 pub mod benchmarks;
 pub mod capital_programme;
+pub mod cds;
 pub mod control;
 pub mod cost_of_capital;
 pub mod currency;
@@ -18,6 +19,7 @@ pub mod forced_sale;
 pub mod goods;
 pub mod households;
 pub mod housing;
+pub mod irs;
 pub mod lending;
 pub mod loss;
 pub mod money;
