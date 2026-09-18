@@ -16894,3 +16894,40 @@ named in the plan rather than switched over here.
 
 **Fifty-seven laws now hold as tests; clippy is clean; `phoenix-check` is green.** A period is
 unchanged at **130.3 ms**.
+
+# 0g.42 — money: an overdraft is a decision, and this world had none
+
+@spec Money B3.a, B3.b, B3.c · Central Bank D3, A3.b, E2 · Appendix B · Law 5, Law 15
+
+**B3.c: an overdraft is NEVER a silent negative.** A customer overdrawn is BORROWING and it is a
+credit decision by its bank (B3.a) — the bank lends to the room its own capital supports and
+refuses past it. Somebody lent it, at a rate, **or somebody refused it and the refusal is the
+record.**
+
+What the module replaces is not a wrong decision but the ABSENCE of one. A balance that simply goes
+negative is money created by nobody, owed to nobody, at no rate, and the world's accounts still add
+up because the hole is inside them. That is Central Bank E2's *"an advance that appears whenever the
+account is empty"*, and Part XII calls it the single most consequential thing to get wrong: the
+causation reverses, and a treasury spends into the overdraft and issues to clear it.
+
+**Three things are structural rather than enforced:**
+
+- **`Overdraft::{Lend { owes, per_annum }, Refuse }`** — there is no third answer, and `Lend`
+  cannot be written without naming the line the debt goes on and the rate it runs at. A loan with
+  no creditor and no rate is not expressible.
+- **`NoOverdraftForTheTreasury` has no `Lend` to give.** Central Bank D3 is a refusal in the TYPE,
+  so a world that wires it in cannot be made to lend by a parameter. The test asks it for 1 and for
+  10¹² and gets the same answer.
+- **`as_legs` returns TWO legs or none.** The money is issued to the borrower AND the bank holds
+  the claim, in the same pass — so the money that paid has a named creditor from the instant it
+  exists (Law 5). A refusal returns `None`: the bank does not lend a smaller amount nobody asked
+  for, which would be Law 6's bound wearing a loan's clothes.
+
+**And the issuer is asked BY KIND, behind a dispatch table** — a bank and a central bank answer
+differently because they are different kinds, and no mechanism branches on which (Law 15).
+
+**Six laws as tests**, including two about absence: a kind nobody answers for has **no answer**, not
+a refusal, because a world assembled without an issuer has a hole and reading it as "refused" would
+hide it (Appendix A); and an account that is not short is not asked about at all.
+
+**Sixty-three laws now hold as tests; clippy is clean; `phoenix-check` is green over 25 files.**
