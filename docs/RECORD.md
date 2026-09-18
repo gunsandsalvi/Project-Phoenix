@@ -18569,3 +18569,94 @@ interbank leg is not in that number. **A full-scale period time for the assemble
 measured yet, and 21d.5 is where it comes from.**
 
 **615 tests hold; clippy clean; `phoenix-check` green over 77 files.**
+
+---
+
+## 21d — the engine runs in full: four stores, fifty mechanisms, a world at judged scale
+
+*(Written after the fact: the change landed at `16977ad` without its record, which Law 14 requires in
+the same commit. It is here rather than absent.)*
+
+**THE STORES.** The kernel had seven and the modules needed more, so a mechanism for employment had
+no engagements to read and one for housing had no dwellings. **Four, not fifteen**, because the eight
+module state types are four KINDS of thing, and `CLAUDE.md` names two of them out loud:
+
+| store | what it holds | why it is one thing |
+|---|---|---|
+| `agreements` | two named parties, terms, a start and an end | an engagement, a mortgage, a policy, a supply contract, a subscription, a mandate — a relation is not an instrument and not an event (XI-10, 17f) |
+| `schedules` | what an instrument owes, and when | a claim with no schedule is one nobody can fall behind on, which is how the old world's maturities all arrived in the same period (5 D2) |
+| `outlooks` | what one party expects of one thing, formed from its own history | §46: no global expectation, one per `(party, about)`, and they DISAGREE — §46 A3 says that is load-bearing |
+| `processes` | what is in flight across periods, with an owner and an end | XI-3: a process with no end is one nobody has to finish |
+
+**THE ADAPTERS, AND WHERE THEY LIVE.** `src/running.rs` sits beside the assembly, not in
+`mechanisms/`, because it names every module and Law 15 forbids a module importing another. Fifty
+systems, fifty mechanisms, and `systems::all()` has no dead row — the test
+`every_wired_system_carries_a_mechanism_and_none_is_dead` is what keeps it that way. The universal
+shape is the READ pass first, then the proposals: a module reads and proposes, and it cannot do both
+at once, **which is the borrow checker saying what Law 4 already says**.
+
+**THE WORLD IT RUNS IN, AND IT IS DECLARED ARBITRARY.** `bin/world-runs` builds 10,318 parties,
+16,750 instruments, 548,268 holdings, 1,546 books, 1,286 agreements, 16,720 scheduled payments and
+1,286 processes in 160 ms, then steps it. Every number in it is drawn from a counter; nothing in it
+is cleared or decided; **it is not a seed and must never be read as one** (5 E1). What it proves is
+what could not be proved before: every ported module is REACHED by the period loop, the phase order
+holds at scale, and what a mechanism proposes goes over the ordinary wire.
+
+```
+period 1  135.5 ms — 50 phases ran · 47,319 asks · 8 books cleared · 10,320 trades · 151,850 events
+period 4  150.9 ms — 50 phases ran · 47,315 asks · 0 books cleared ·      0 trades · 141,840 events
+worst period 150.9 ms against the 3,000 ms the migration was judged on
+```
+
+**THE DEFECT ONLY FULL SCALE FOUND.** The interbank leg asked `money_issued_by(bank_of(payee's
+bank))`, which is right for a commercial bank and **wrong for the central bank** — a payment to the
+treasury asked what the central bank's own bank issues and there is no such party. It is
+`account_of` now, the one writer of that question. A 43-party world never had a payee banking at the
+central bank, so nothing smaller than this could have found it.
+
+**WHAT IS NOT CLOSED, AND IT IS THE HALF THE ITEM WAS NAMED FOR.** `Nouns::homeless()` returns zero
+**by omission**: `World` owns a `Nouns`, all eleven kernel stores declare themselves and an
+undeclared store throws at the read — but no module declares a noun it has no home for, so the
+measure is switched on and reading an empty room. `CLAUDE.md`'s *14 homeless today* is stale: at the
+TypeScript engine's deletion exactly one noun was declared homeless (`estate/index.ts estates`,
+standing in for `Process`, positioned at item 21), and `processes` is now a store. The item stays
+open at 21d.1b, and `CLAUDE.md` is re-marked in the same change.
+
+**A second finding, written down and not chased** (Law 11): eight books clear in period 1 and none
+after. The arbitrary world has one stock of goods and nothing that makes more. It is the same absence
+22.2 names, now seen on a second engine.
+
+**634 tests hold; clippy clean; `phoenix-check` green over 80 files.**
+
+---
+
+## The plan file, cleaned: what it claimed against what is there
+
+Four things it said that were no longer true, and one file it did not know about.
+
+**0.2 measured a world that had been superseded.** It said *fifty systems are LISTED; one of them
+runs*, 615 tests, 77 files, and quoted `world_at_scale`'s 160.6 ms for a kernel with one module in
+it. All of that was the state before 21d. It now quotes `world-runs`: fifty phases, 634 tests, 80
+files, 150.9 ms worst at the judged counts, with the world it runs in declared arbitrary where it is
+quoted, not only where it is built.
+
+**21d claimed five open steps and four of them had closed.** The section is rewritten to what is
+left — the modules' own noun declarations — and its exit is the homeless count being true rather than
+zero. Its row is in the order table, which never had one; nor did 21b or 21c.
+
+**Two instruments the file told the next session to run do not exist.** `npm run chronicle` and
+`npm run check:opening` went with the seeding. 21.0 said the chronicle *is* what a finding here is
+read off — it now says it was, that it went, and that re-reading 21's findings needs the seeding to
+bring it back over a world drawn at its real size. 22.2's *MEASURED NOW* is now measured twice, on
+both engines, and they say the same thing: the stock goes and nothing replaces it.
+
+**`docs/FINDINGS.md` is a fourth findings file.** 502 lines, headed *every id here is positioned
+there* — and 78 of its 295 ids appear nowhere in the plan, among them the rate-quoted contract
+classes marking at ×100 the subdivision and the unit bug whose chain ends in no loan ever being
+written after period 0. `CLAUDE.md` says there is one such file and it stays. **Positioned as item
+20b, before 21**, because most of what is in it is 21's; the file is deleted only when every finding
+in it has landed somewhere.
+
+**`npm run world:runs`** now exists, so the full-scale runner is reachable the way everything else is.
+
+`plan:check`, `check:existence` and `check:laws` green (80 files).

@@ -120,19 +120,42 @@ hand, and a seeding that cannot draw the world at its real size is not a seeding
 the way is kept in `docs/RECORD.md` and the two findings it left are placed: the constant saving rate
 at 22c.3a, the production absence at 22.2.
 
-**What the engine does today.** A period runs its phases in the order they were declared, the books
-at the markets moment, and settles what each proposed. `Stepped::ran` counts the phases that actually
-ran — **one**, because `goods::Perishing` is the only system yet carrying a mechanism. The kernel
-period at the counts the engine is judged on is **160.6 ms** (`world_at_scale`: 10,318 parties,
-668,597 holdings, 1,546 books), against the TypeScript engine's 42.1 s — with the caveat the bench
-prints itself, that one module of forty-seven is in it and every party banks at one bank, so the
-interbank leg is not in that number.
+**What the engine does today.** Fifty systems, fifty mechanisms, fifty-three phases, and every one of
+them runs. `packages/kernel-rs/src/bin/world-runs` builds a world at the counts the engine is judged
+on and steps it:
 
-**What is built**: 615 tests, clippy clean, `tools/phoenix-check` green over 77 files — the laws as
-checks, which is what replaced the TypeScript oracle (0g.41a). **Fifty systems are LISTED; one of
-them runs.** The seeding was deleted and the second door built in its place, and what that exposed is
-21d: the kernel has seven stores and the modules need the ones that hold an engagement, a loan's
-schedule, a policy, a dwelling, an outlook. Until those exist a mechanism has nothing to read.
+```
+built 160 ms — 10,318 parties, 16,750 instruments, 548,268 holdings, 1,546 books, 53 phases
+               1,286 agreements, 16,720 scheduled payments, 1,286 processes
+period 1  135.5 ms — 50 phases ran · 47,319 asks · 8 books cleared · 10,320 trades · 151,850 events
+period 4  150.9 ms — 50 phases ran · 47,315 asks · 0 books cleared ·      0 trades · 141,840 events
+worst period 150.9 ms against the 3,000 ms the migration was judged on
+```
+
+**That world is ARBITRARY and is declared arbitrary** — every number in it is drawn from a counter,
+nothing in it was cleared or decided, and it is not a seed (5 E1). What it proves is the thing that
+could not be proved before: every ported module is REACHED by the period loop, the phase order holds
+at scale, and what a mechanism proposes goes over the ordinary wire.
+
+**What is built**: 634 tests, clippy clean, `tools/phoenix-check` green over 80 files — the laws as
+checks, which is what replaced the TypeScript oracle (0g.41a). The kernel owns **eleven stores**: the
+seven it had, plus `agreements`, `schedules`, `outlooks` and `processes` (21d), which is what a
+mechanism for employment, for lending, for expectations and for anything in flight reads.
+
+**Two findings this run leaves, both written down and neither chased** (Law 11):
+
+- **Eight books clear in period 1 and none after.** The arbitrary world has one stock of goods and
+  nothing that makes more, so the books empty and stay empty. It is a fact about the scaffold, not
+  about the engine — the world has no production because nothing seeded it with any — and it is the
+  same absence 22.2 names.
+- **`Nouns::homeless()` returns zero, and it is zero by omission.** The register is wired and every
+  kernel store declares itself, so the read is live and an undeclared store throws; but no module
+  declares a noun it has no home for, so the count has nothing to count. `CLAUDE.md` says *14
+  homeless today* — that figure is stale: at the TypeScript engine's deletion exactly ONE noun was
+  declared homeless (`estate/index.ts estates`, standing in for `Process`, positioned at item 21),
+  and `processes` is now a kernel store. The measure is switched on and reading an empty room; what
+  is left of 21d is to walk the fifty modules and have each declare what it keeps.
+
 
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
 
@@ -197,7 +220,11 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 20 | Periodicity — **done** (section removed; see `docs/RECORD.md`; a rating fee once a year on the anniversary of the first opinion, an impairment once per default, the spending tax remitted on the state's own fiscal quarter, and a buyback that is a programme with an authority and a closing period. One calendar read, `crossesAnniversary`, replaces the polity's copy of the walk. 20.2a inserted; finding 21.89) | after 19 |
 | 20a | The annual assessment against what was withheld — **done** (section removed; see `docs/RECORD.md`; the year's bases from the SAME walk the week's withholding runs, what was taken read off the ledger, and the difference settled both ways; finding 21.94) | after 20 |
 | 0i | Facts are declared — the third register — **done** (section removed; see `docs/RECORD.md`; 13 kernel facts declared, the ratchet at 219 kinds still bags and falling; findings 21.111–21.114). **Corrected:** its rename of the revaluation payload broke three readers, which is the failure it exists to prevent — see `docs/RECORD.md` “0i, corrected” | FIRST, before 21: most of 21's open findings are instances of it |
+| 20b | `docs/FINDINGS.md` is a second findings file — 78 findings never placed | BEFORE 21: most of what is in it is 21's, and one file is the rule |
 | 21 | The local repairs | each when its file is open |
+| 21b | A pool whose manager died | after 21a |
+| 21c | A tax on an estate is a claim on it | after 21b |
+| 21d | Every store declares itself, and the homeless count is true | ahead of 22; four steps closed, the modules' own declarations left |
 | 22 | The recipe | recipes plural; batches; upkeep |
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
@@ -209,6 +236,40 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 ---
 
 ## Part 2 — The items
+## 20b. `docs/FINDINGS.md` is a second findings file, and 78 of its findings were never placed
+
+**INSERTED here (Law 10), BEFORE 21, because most of what is in it is 21's.** Found cleaning this
+file. `CLAUDE.md` is explicit: *THERE IS ONE SUCH FILE AND IT STAYS* — it was three (`BUGS.md`,
+`SWEEP.md`, `VERIFY.md`), and what that bought was one defect written three times under three names,
+the newest contradicting the other two. **`docs/FINDINGS.md` is the fourth.** 502 lines, dated
+2026-09-15, headed *"the working file behind `docs/IMPLEMENTATION.md` Part 4; every id here is
+positioned there"* — and that header is false.
+
+**Measured.** 295 ids in the file; **78 appear nowhere in this one**:
+
+> BF1 BF3 BF4 · BK16 BK18 BK19 BK22 BK23 BK25 BK33 BK34 · CB2 CB3 CB4 CB5 CB7 · CD10 CD11 ·
+> CF2 CF3 CF4 · CO6 · DL2 DL9 · EQ6 · FD2 FD4 FD10 FD16 FD20 · FX2 · FXD2 FXD3 FXD4 FXD5 FXD6 ·
+> HO4 · IR1 IR2 IR3 IR4 IR5 IR7 · IX2 IX3 IX4 · LD2 LD4 · MM2 MM3 MM4 MM6 MM17 · MR4 · OB2 OB3 ·
+> OM4 OM6 · OP1 OP2 OP4 OP5 · RP2 RP4 RP15 · ST4 ST7 · SZ3 SZ4 ·
+> WK5 WK6 WK7 WK8 WK9 WK10 WK11 WK12 WK14
+
+They are not small: `IR1`–`IR7` are the rate-quoted contract classes marking at ×100 the
+subdivision, `MM2`–`MM17` the deposit-insurance unit bug whose consequence chain ends in *no loan is
+ever written after period 0*, `WK5`–`WK14` the kernel's own walks and cache keys.
+
+- [ ] 20b.1 **Every unplaced finding is POSITIONED** — moved under the item that should fix it, or
+  inserted as its own item at its dependency position, saying where. A finding leaves a file only by
+  being placed, never by being deleted to make the file shorter (Part II).
+- [ ] 20b.2 **`docs/FINDINGS.md` is deleted in the same change**, and the record says where each of
+  the 78 landed. One file, and this is how it becomes one again.
+- [ ] 20b.3 **Each carries the mark 21 carries**: measured on the TypeScript engine, so each is
+  either a fact about the MODEL, which survived the port, or a fact about the CODE, which died with
+  the file it named and closes by being verified absent. They are RE-READ, not carried over.
+
+**Exit.** `docs/FINDINGS.md` does not exist; every id it held is under an item in this file.
+
+---
+
 ## 21. The local repairs
 
 Each when its file is open for another item; the change and the test.
@@ -237,12 +298,16 @@ close what it proves gone.
 
 
 
-**21.0 — the instrument this item is worked with.** `npm run chronicle -- <periods> [rig|abroad]`
-prints what the assembled world actually does, period by period, in words: who is in it, what
-cleared and what refused, every instruction by its CAUSE and every failure by its REASON, what money
-moved and under which receipt, what the world SAID, what every living party asked for and did not
-get (0h.4), the audit by family, and at the end what has never been reached at all and one party of
-each kind asked `why`. It asserts nothing (Law 11) and it is what a finding here is read off.
+**21.0 — the instrument this item is worked with, and it does not exist.** The chronicle
+(`npm run chronicle`) printed what the assembled world actually did, period by period, in words: who
+was in it, what cleared and what refused, every instruction by its CAUSE and every failure by its
+REASON, what money moved and under which receipt, what the world SAID, what every living party asked
+for and did not get (0h.4), the audit by family, and what had never been reached at all. **It was
+deleted with the seeding** (0.2). It asserted nothing (Law 11) and it is what a finding here was read
+off — so re-reading 21's findings needs it back, and the seeding is where it comes back, over a world
+drawn at its real size rather than a 43-party one. `world-runs` is not a substitute: it prints counts
+and costs over an arbitrary world, which is what it is for.
+
 
 - [ ] 21.94 `test/treasury.test.ts` (seven of ten) and `test/treasury-default.test.ts` (two of two)
   ARE RED, and were before 0h.5 and before 20a (the same ten on both sides of each). They are a
@@ -451,57 +516,44 @@ ahead of the creditors the estate exists to pay.
 
 ---
 
-## 21d. The kernel has seven stores and the modules need fifteen
+## 21d. Every store declares itself, and the homeless count is true
 
-**INSERTED here (Law 10), ahead of 22 and of every item that needs a module to RUN.** Found building
-the phase pass: the second door is now hung and the loop runs phases in order, and it turns out that
-is not what was stopping the modules.
+**INSERTED ahead of 22 (Law 10); four of its five steps are closed and this is what is left.** The
+item was raised because the kernel had seven stores and the modules carried their own state types
+with no home, so a mechanism for employment had no engagements to read.
 
-**The kernel's stores are `parties`, `instruments`, `register`, `prints`, `journal`, `wire`,
-`params`.** That is all of them. The modules carry their own state types and there is no home for
-any of them — a sample of eight, every one of which needs a store that does not exist:
+**What closed** (see `docs/RECORD.md`, *21d — the engine runs in full*):
 
-| system | what it is about | where that lives today |
-|---|---|---|
-| employment | `Engagement`, `Separation`, `Posting` | nowhere |
-| lending | `Loan` with its schedule, `Book` | a `Class::Claim` instrument with no schedule |
-| insurers | `Owed`, `Quote`, `Catastrophe` | nowhere |
-| redeemable | `Subscription`, `Meeting` | nowhere |
-| housing | `Dwelling`, `Mortgage`, `Standard` | nowhere |
-| expectations | `Outlook`, `Surprise` | nowhere |
-| polity | `Platform`, `Constitution`, `Elected` | nowhere |
-| equity | `Line` | nowhere |
+- [x] 21d.1a **`World` owns a `Nouns`** and every one of the eleven kernel stores declares itself
+  with what it holds and why. An undeclared store throws at the read, so the classification cannot be
+  avoided by not writing it down.
+- [x] 21d.2 **The stores**: `agreements`, `schedules`, `outlooks`, `processes` — four, not the
+  fifteen this item was named for, because the eight module state types are four KINDS of thing: a
+  relation between two named parties, what an instrument owes and when, what one party expects of one
+  thing, and what is in flight across periods with an owner.
+- [x] 21d.3 **A mechanism per system, through the second door.** Fifty of fifty carry one;
+  `systems::all()` has no dead row, and `Stepped::ran` counts what actually ran so a world of
+  declarations cannot report as a world that works.
+- [x] 21d.4 **A world at the counts the engine is judged on**, built from arbitrary numbers and
+  **declared arbitrary** — a scaffold for measuring that the machine runs in full, which the seeding
+  replaces and which must never be read as a seed (5 E1).
+- [x] 21d.5 **The runner**: `world-runs`, N periods timed, with what ran and what it cost. 150.9 ms
+  worst against the 3,000 ms the migration was judged on.
 
-So a mechanism for employment has no engagements to read, one for housing has no dwellings, one for
-expectations has no outlooks. **They would each read nothing and propose nothing** — and fifty
-adapters that read nothing is the appearance of a wired engine, which is the defect this item exists
-to avoid rather than to commit at a smaller scale.
+**What is left, and it is the half the item was named for:**
 
-**`registry/nouns.ts`'s successor already exists to measure exactly this and is wired to nothing.**
-`src/nouns.rs` declares a store as `noun | working | physics` and counts the HOMELESS — the ones with
-no kernel home — and `World` does not own a `Nouns`, nothing calls `declare`, and the count is
-therefore zero by never having been asked. CLAUDE.md: *its count of homeless nouns is the honest
-measure of how much ontology is missing.* Today that measure is switched off.
+- [ ] 21d.1b **Every MODULE declares what it keeps, and the homeless count stops being zero by
+  omission.** The register is live and reading an empty room: no module declares a noun, so
+  `homeless()` counts nothing. `CLAUDE.md`'s *14 homeless today* is a stale figure — at the
+  TypeScript engine's deletion exactly one noun was declared homeless (`estate/index.ts estates`,
+  standing in for `Process`, positioned at item 21), and `processes` is now a kernel store. Walk the
+  fifty modules; each declares its stores as `noun | working | physics`, and a noun with no kernel
+  home names the item that gives it one. **`CLAUDE.md` is re-marked in the same change** — a stale
+  count in the always-in-context digest is a defect (Law 16), and it is the figure everything else
+  reads this measure off.
 
-- [ ] 21d.1 **`World` owns a `Nouns`, and every store declares itself.** An undeclared store throws
-  at the read (CLAUDE.md), so the count becomes true the moment it is wired. It goes first because it
-  is what says whether the rest of this item is finished.
-- [ ] 21d.2 **The stores, one at a time, each with the item that needs it.** A store is a kernel
-  noun: columnar, one writer, both directions indexed where a reader needs it. The order is the
-  sequencing order of Part XIII, so employment and loans-as-rows come before policies and dwellings.
-- [ ] 21d.3 **A mechanism per system, through the second door**, reading the stores and proposing.
-  `goods::Perishing` is the pattern: the read pass first, then the proposals. `Stepped::ran` counts
-  how many phases actually ran, so a world of declarations cannot report as a world that works.
-- [ ] 21d.4 **A world at the counts the engine is judged on** — `world_at_scale`'s 10,318 parties,
-  16,750 instruments, 1,546 books — with all eleven party kinds present, built from arbitrary
-  numbers and **declared as arbitrary**. It is a scaffold for measuring that the machine runs in
-  full, and the seeding replaces it; it is not a seed and must never be read as one (5 E1).
-- [ ] 21d.5 **The runner**: N periods of that world, timed, with what ran and what it cost. This is
-  where a full-scale period time comes from, and it cannot come from anywhere else.
-
-**Exit.** `Nouns::homeless()` names what is still missing rather than reporting zero; every system in
-`systems::all()` carries a mechanism, a participant or an audit family and none is dead; a period of
-the full-scale world runs every phase and reports its time.
+**Exit.** `Nouns::homeless()` names what is still missing rather than reporting zero, and the count
+in `CLAUDE.md` is the count the register prints.
 
 ---
 
@@ -518,11 +570,13 @@ between.*
 - [ ] 22.2 **A recipe declares a BATCH; a vintage declares an UPKEEP per period; a line below batch
   stops.**
 
-  **MEASURED NOW** (`npm run check:opening`, four warm-up periods the engine runs itself): the world
-  sells its opening stock in the first period and has nothing left — **one book cleared of four**,
-  35 trades, and no firm makes anything in any period. `recipe` and `goods` are wired as READS, so
-  nothing in this world produces. That is the largest single thing between this and an economy, and
-  it is measured on the engine that exists rather than inferred.
+  **MEASURED TWICE, on two different worlds, and they say the same thing.** On the seeded world
+  `check:opening` last stepped (now deleted with it): the world sold its opening stock in the first
+  period and had nothing left — one book cleared of four, 35 trades, no firm making anything in any
+  period. On the arbitrary world `world-runs` steps today: **eight books clear in period 1 and none
+  in periods 2, 3 or 4** — the stock goes and nothing replaces it. `recipe` and `goods` are wired as
+  READS, so nothing in either world produces. That is the largest single thing between this and an
+  economy, and it is measured on the engines that existed rather than inferred.
 
   **Measured on the TypeScript engine (12c.3), to be re-read:** in a year of the scale model the
   twelve named firms produced ONCE — period 1, off the seed's work in progress — and never again:
@@ -601,8 +655,9 @@ each names is not.
   stock eventually spends out of it, and that is what makes the series stationary. **It cannot be
   fixed in the chronicle**: picking a drawdown that balances the saving is fitting an outcome (5 B5,
   C5, E1), which is exactly what rejection-instead-of-calibration refuses. A stationary series is an
-  OUTCOME of decisions, so it closes when the household decides. `check:opening` prints all four
-  series every run until it does.
+  OUTCOME of decisions, so it closes when the household decides. The four series were printed by
+  `check:opening`, which went with the seeding; whatever the new seeding prints, it prints them until
+  this closes, because an opening series nobody watches is a claim nobody checked.
 - [ ] 22c.4 **Somebody holds the stock.** No party's business is to hold goods and stand on both
   sides of one book; `merchants` moves goods between places and has never once run. A `stockist`
   buys from producers at what it expects to sell for less its own required return on the money tied

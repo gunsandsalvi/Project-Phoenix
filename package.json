@@ -18,6 +18,7 @@
     "plan:gaps": "tsx tools/plan-gaps.ts",
     "spec:index": "tsx tools/spec-index.ts",
     "bench": "cargo build --release --bins --manifest-path packages/kernel-rs/Cargo.toml && packages/kernel-rs/target/release/world-at-scale",
+    "world:runs": "cargo build --release --bins --manifest-path packages/kernel-rs/Cargo.toml && packages/kernel-rs/target/release/world-runs",
     "format": "prettier --write docs",
     "format:check": "prettier --check docs"
   },

@@ -18,14 +18,15 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 304 clauses this world does not meet** — 176 MISSING, 128 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.2% are met or out of scope.
-**The items broken out of that so far: 0 of 10 closed** (1 of 128 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 11 closed** (6 of 132 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
+| 20b — `docs/FINDINGS.md` is a second findings file, and 78 of its findings were never placed | 3 | 0 | open |
 | 21 — The local repairs | 95 | 1 | in progress |
 | 21b — A pool whose manager died (Fund Shares F3, inserted after 21a) | 3 | 0 | open |
 | 21c — A tax on an estate is a claim on it (XI-8, inserted after 21b) | 2 | 0 | open |
-| 21d — The kernel has seven stores and the modules need fifteen | 5 | 0 | open |
+| 21d — Every store declares itself, and the homeless count is true | 6 | 5 | in progress |
 | 22 — The recipe | 3 | 0 | open |
 | 22c — The market as it is | 5 | 0 | open |
 | 22d — The payment queue | 3 | 0 | open |
