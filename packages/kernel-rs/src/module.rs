@@ -72,6 +72,12 @@ impl<'a> ParticipantView<'a> {
         self.register.lots(self.register.row(self.who, instrument))
     }
 
+    /// Which line one of its own holdings is of. A view walks its rows and reads the line off
+    /// them; asking every line in the world whether it holds one is the walk this replaces.
+    pub fn line_of(&self, row: HoldingId) -> InstrumentId {
+        self.register.instrument_of(row)
+    }
+
     /// Audit B5: what its OWN equity account says.
     pub fn equity(&self) -> f64 {
         self.register.equity(self.who)

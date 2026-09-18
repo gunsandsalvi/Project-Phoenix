@@ -16746,3 +16746,45 @@ side of the same coin.
 | **a period** | **≈ 2.5 s** | **≈ 1.4 s** |
 
 **The headline is unchanged at ≈ 2.5 s**, which is the point of having used the conservative figure.
+
+# 0g.42 — the market session, and I built the quadratic into the bench that was meant to measure it
+
+The last untested seam is closed: a book is ASKED, CLEARED, PRINTED and SETTLED, and a trade is an
+instruction like any other, so delivery-versus-payment holds for a cleared book exactly as it does
+for a payment. Three laws as tests: a book asks, clears, prints and settles and every piece bought
+has a named piece sold against it; **a book that did not cross prints NOTHING**, because a bracket
+is not a price and nothing moved; and a party whose own door says it is in no book is never asked.
+
+Who is asked is settled ONCE A CYCLE by `Books`, the port of the kernel's `asked` index — one
+question per party per declaration, inverted, never one per party per book. **`narrows` is counted
+and printed**, because that is what `work.ts` had to be built to find out in TypeScript.
+
+## The first run said 0.8× — slower than TypeScript — and it was right to
+
+**It asked 8,509,599 questions against the world's 920,404.** My `Buys` participant named EVERY
+book for every buyer, which is the quadratic this whole item is about, written into the bench that
+was meant to measure it. And `Sells` walked all 1,546 lines asking the register whether it held
+each, instead of walking its own rows — the same defect 0g.24 found in the bank's `bookValue`, made
+again, by me, an hour after writing it up.
+
+Both are fixed at the source: a seller reads its books off its own holdings (`view.line_of`), a
+buyer names the books it has a reason to be in. **1,178,660 asks now — 1.28× the world's, not 9.2×.**
+
+| | |
+|---|---|
+| TypeScript `runOne`, measured | **5,453 ms** over 920,404 asks — **5,925 ns an ask** |
+| this session loop (median of 5) | **618 ms** over 1,178,660 asks — **525 ns an ask** |
+| **wall clock** | **8.8×** |
+| **per ask** | **11.3×** |
+
+**The wall-clock figure understates it and the per-ask figure overstates it**, so both are given. The
+bench asks 1.28× more questions than the world AND settles **755,965 trades** where a period settles
+about 48,828 instructions — fifteen times the settling — so 8.8× is achieved while doing
+substantially more work; but the trades are simpler than the world's, so 11.3× an ask is a ceiling.
+
+**The lesson is the one this item keeps relearning.** A door that is required makes the cost
+VISIBLE — `narrows` and `asks` are counted on every run — but it cannot make a bad door good. The
+architecture caught this in one run because the counts are printed; in TypeScript the same defect
+sat in `funds/fund` and `banks/bank` for months, and nothing said so until 0g.22 built the census.
+
+**Fifty-three laws now hold as tests; clippy is clean; `phoenix-check` is green.**

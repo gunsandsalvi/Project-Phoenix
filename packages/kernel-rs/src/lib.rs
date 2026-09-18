@@ -23,6 +23,7 @@ pub mod params;
 pub mod parties;
 pub mod prices;
 pub mod register;
+pub mod session;
 pub mod world;
 pub mod audit;
 pub mod calendar;
