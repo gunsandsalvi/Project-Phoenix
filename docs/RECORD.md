@@ -16283,3 +16283,22 @@ bystander, and nothing is stored: ask again next period and it is walked again.
 `flows`, `accounts`, `currency` and `units` each walk the register after the one before it did, and
 one traversal feeding every family is the same audit. A family's independence is about the SOURCE
 it reads, not how many times the register is visited.
+
+# 0g.29 (attempt, reverted) — unfreezing the journal event buys nothing, and the arithmetic said so
+
+Measured in one session, three runs each: **unfrozen 43.6 / 45.7 / 44.6, median 44.6 s; frozen
+44.9 / 41.9 / 43.5, median 43.5 s.** The change is not a gain and may be a loss; it is reverted.
+
+**The arithmetic should have been done before the run, and it takes one line.** 0g.19 measured the
+two freezes at **457 ns of a 1,754 ns journal write**, and the world writes **178,604 events a
+period** — so the whole of it is 178,604 × 457 ns = **0.08 s**, which is 0.2% of a 44 s period and
+inside the band. `asCash` unfrozen was worth 4.2% for exactly the reason this is worth nothing:
+**35,215,786 calls a period against 178,604, two hundred times as many.**
+
+**A per-call cost is not a lever until it is multiplied by its call count.** That is the same
+mistake as ranking 0g.8's doors by evaluations rather than by reads, and it is now twice in this
+item. The count is in `ops.ts` and `work.ts` and there is no excuse for guessing at it.
+
+The two freezes stay, then — not because they earn their keep, but because removing them earns
+nothing and a change that buys nothing is not made (Law 12). The 22.4% the collector costs is in
+the 35 M small measures and the arrays every indexed read allocates, which is where 0g.29 goes.
