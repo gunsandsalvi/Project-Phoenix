@@ -90,6 +90,38 @@ impl Recipe {
     pub fn finishes(&self, starts: f64) -> f64 {
         starts * self.yields
     }
+
+    /// **21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS.** Building a structure
+    /// somewhere already built-up draws more of everything — deeper foundations, longer haulage, more
+    /// hours on a constrained site — so the recipe's requirement is a function of the place rather
+    /// than a constant.
+    ///
+    /// **It is ONE writer of the scaling** (Law 4). Every read downstream — what the firm can afford
+    /// to start, what actually leaves its rows, what the batch cost — comes off this one object, so
+    /// the decision and the draw cannot disagree about where the line is standing.
+    ///
+    /// What it does NOT touch is the yield, the batch or the lead time: a crowded site does not spoil
+    /// more of what it makes, does not change the smallest run of the line, and is a claim about cost
+    /// rather than about time. And it sets no money number at all — what the extra draw COSTS is
+    /// whatever those inputs cleared at in their own books (Law 3).
+    ///
+    /// A factor of one is the same recipe, which is what a line that stands nowhere gets: flour is
+    /// milled alike everywhere.
+    pub fn where_it_stands(&self, crowding: f64) -> Recipe {
+        assert!(
+            crowding >= 1.0,
+            "21i: building on {crowding} of what it takes on empty ground is a place that pays you to build"
+        );
+        Recipe {
+            makes: self.makes,
+            per_unit: self.per_unit.iter().map(|(what, per)| (*what, per * crowding)).collect(),
+            labour_per_unit: self.labour_per_unit * crowding,
+            capital_services_per_unit: self.capital_services_per_unit * crowding,
+            yields: self.yields,
+            batch: self.batch,
+            periods_to_make: self.periods_to_make,
+        }
+    }
 }
 
 /// B1: the reasons a firm has. Each is a real state it can read; none of them is the quantity.

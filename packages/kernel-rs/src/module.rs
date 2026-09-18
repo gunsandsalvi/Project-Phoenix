@@ -210,6 +210,7 @@ pub struct MechanismContext<'a> {
     claims: &'a Claims,
     standing: &'a crate::stores::Standing,
     making: &'a crate::stores::InProgress,
+    registry: &'a crate::registry::Registry,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
     said: Vec<Saying>,
@@ -265,6 +266,9 @@ pub struct Stores<'a> {
     /// 21f: terms parties stand behind, and what is on the line.
     pub standing: &'a crate::stores::Standing,
     pub making: &'a crate::stores::InProgress,
+    /// 21i: what the ids point at — a line's footprint, a region's country, a kind's profile. Read-only
+    /// like every other store here: the registry is DATA (Law 15) and the assembly is its writer.
+    pub registry: &'a crate::registry::Registry,
 }
 
 impl<'a> MechanismContext<'a> {
@@ -285,6 +289,7 @@ impl<'a> MechanismContext<'a> {
             wire: s.wire,
             standing: s.standing,
             making: s.making,
+            registry: s.registry,
             proposed: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
@@ -302,6 +307,12 @@ impl<'a> MechanismContext<'a> {
     /// 21f: what parties stand behind — a posting, a lending standard — and what is on the line.
     pub fn standing(&self) -> &crate::stores::Standing {
         self.standing
+    }
+
+    /// 21i, Law 15: the DATA every id points at — a line's footprint, a region's country. A module
+    /// reads it and never writes it, which is what keeps a kind out of a mechanism.
+    pub fn registry(&self) -> &crate::registry::Registry {
+        self.registry
     }
 
     pub fn making(&self) -> &crate::stores::InProgress {

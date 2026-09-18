@@ -394,6 +394,7 @@ impl World {
                 wire: &self.wire,
                 standing: &self.standing,
                 making: &self.making,
+                registry: &self.registry,
             },
         );
         m.run(&mut ctx);

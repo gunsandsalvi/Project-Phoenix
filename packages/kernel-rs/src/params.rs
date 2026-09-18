@@ -35,6 +35,11 @@ pub enum Dimension {
     /// distance, and the register is where that is caught.
     Km,
     KmPerDay,
+    /// 21i: **ground covered.** A structure occupies a place, and a place fills up — so how built-up
+    /// somewhere is, is an AREA. It cannot be a count: adding units of dwellings to units of mills is
+    /// adding numbers in different units, which is Law 8's own defect, and the footprint is what
+    /// makes a warehouse and a flat comparable at all.
+    SquareKm,
     /// Money for one PIECE of something, at this world's resolution.
     Price,
     /// Money for one NAMED unit: a dollar a tonne, a wage an hour.
@@ -185,6 +190,9 @@ impl Params {
     }
     pub fn per_annum(&self, id: &str) -> f64 {
         self.read(id, Dimension::PerAnnum)
+    }
+    pub fn square_km(&self, id: &str) -> f64 {
+        self.read(id, Dimension::SquareKm)
     }
     pub fn price(&self, id: &str) -> f64 {
         self.read(id, Dimension::Price)

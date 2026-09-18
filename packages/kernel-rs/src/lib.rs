@@ -23,6 +23,7 @@ pub mod nouns;
 pub mod num;
 pub mod params;
 pub mod parties;
+pub mod places;
 pub mod prices;
 pub mod register;
 pub mod registry;

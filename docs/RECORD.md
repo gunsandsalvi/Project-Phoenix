@@ -20233,3 +20233,91 @@ flooring; `CLAUDE.md`'s digest corrected. `docs/COVERAGE.md`: `Small-Business Po
 
 **706 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green;
 `world:runs` four periods, 50 systems, worst period 426 ms.**
+
+## 21i — nowhere is more built-up than anywhere else
+
+**The item as written was wrong, and the owner said so.** 21i was planned as a FIXED stock of ground:
+ground held like anything else, a plant refused without it, a quay's owner earning what a berth cleared
+at. The owner rejected the premise — *I don't want a finite ground, that's a rule I put down* — and
+asked for **increasing building costs as a place becomes more built on**, for commercial and
+residential as well as industrial.
+
+The premise deserved rejecting. It was an interpolation: `grep land|ground|hectare|quay` over the
+specification's 5,428 lines returns **nothing**, and the one clause behind it — 33 A4's *a use that
+needs several kinds is limited by the scarcest* — is already MET by `recipe::decide`, which walks
+capacity, each input and labour and names the one that bound. No clause asked for a fixed stock of
+land. And congestion is the better answer on the laws: **a fixed supply REFUSES; congestion only
+prices.** Law 6 is satisfied the strong way — nothing is capped, nothing runs out, and what stops a
+firm building in a packed place is that it stops being worth it, which is 33 B1 doing real work.
+
+### The owner's amendment found a defect in the first sketch
+
+The first sketch made density a COUNT of standing plant units. Extending it to CRE and RRE is what
+showed that up: units of dwellings added to units of mills is adding numbers in different units, which
+is **Law 8's own defect**. How built-up a place is has to be an AREA.
+
+So a line declares a FOOTPRINT — `Registry::stands_on(line, km²)` — and a line with one is a
+STRUCTURE. That single number does three things at once: it makes the density a real quantity; it
+makes commercial, residential and industrial **one mechanism**, because an office block, a dwelling
+and a works differ by a registry row and by nothing else (Law 15, no class branch and no kind branch);
+and it gives `housing::Offer::reserving`'s `cost_to_build` — today a bare number handed in, and the
+floor under every house price in this world (40 B1.a) — a writer at last.
+
+### What was built
+
+`src/places.rs` is a READ and not a store. `built_up` walks the register once a period and buckets
+each holding's `units × footprint` by the region of its HOLDER, because a structure is where its owner
+is (40 A1.a); nothing stores the density (Appendix B). `crowding(standing, crowds_at)` is
+`1 + standing / crowds_at`, and **`building.crowds_at` is the standing area at which a build draws
+TWICE** — one TECHNOLOGY primitive with a unit a reader can check, rather than an elasticity nobody
+can derive. It is the only declared number the mechanism has; the density is an OUTCOME.
+
+`Recipe::where_it_stands(crowding)` is the ONE writer of the scaling (Law 4): what the firm can afford
+to start, what leaves its rows and what the batch cost all come off that one object, so the decision
+and the draw cannot disagree about where the line is standing. It is applied AFTER the way is picked,
+because crowding scales every way of making the line alike and cannot change which is cheapest. It
+leaves the yield, the batch and the lead time alone — a crowded site is a claim about cost, not about
+time or spoilage.
+
+**No money number is set anywhere in it.** What rises is the real draw of materials, haulage and
+hours; what that costs is whatever those inputs cleared at in their own books (Law 3). That is the
+whole reason this is a draw and not a price, and it is why the mechanism needed no market of its own.
+
+`Params` gained `Dimension::SquareKm` beside `Km`; `MechanismContext` gained the registry, read-only,
+so a module can ask what a line stands on without a kind reaching a mechanism. `world-runs` draws
+**seven places** instead of one and spreads its parties over them, because a world of one region has
+nowhere that can be more built-up than anywhere else.
+
+The proof is two identical firms building the same structure, one on empty ground and one where
+exactly the declared doubling area already stands: both build — congestion prices, it does not refuse
+— and the crowded one draws **twice** the input per unit of output. Beside it, a baker under 400 km²
+of standing structure draws exactly what a baker on open ground draws, because bread is not a
+building: a line with no footprint is built alike everywhere, and that is an ANSWER rather than a
+default.
+
+### And 21h's own loose end
+
+`Wages` was taught the headcount at 21h and `Making` was not, so one term had two readings (Law 4) and
+a firm employing two thousand people got one person's hours. Both read `wage × heads` and
+`hours × heads` now. It is 21h being incomplete on its own terms rather than a new finding.
+
+### The four findings, re-read against what replaced the premise
+
+21.27 (the opening plant's ground is not pledged) and 21.29 (a pool's rooms stand on nobody's ground)
+**dissolve with the premise** — there is no ground to pledge or to stand on. 21.28 (refused machines
+are bought twice) was never about ground: it is a retry-and-pay-twice defect, positioned at 22c/22d.
+**21.30 survives and is also not about land**: a quay is PLANT, it has a life and it wears, and what
+is missing is a cleared price for the USE of it for a period — positioned as **22c.8**. The
+`cost_to_build` writer is **22c.7**, waiting on housing having a market at all.
+
+**Raised here and positioned at 22g.7**: `world-runs` carries 115,816 km² standing in its fullest
+region against a declared doubling area of 60, so a build there draws 1,930× and no structure is ever
+started. The mechanism is right; the QUANTITIES are the arbitrary world's — the same absence as 21.98
+and 21.121, that nothing sizes how much plant a firm ends up with. It is named rather than answered by
+moving a declared technology to suit a world that admits it is arbitrary (Law 11).
+
+`docs/ARCHITECTURE.md` 4.10 gained the footprint and a new 4.10b for the congestion.
+`docs/COVERAGE.md`: `Capital Programme A4` re-pointed at the Rust kernel and at where a build happens.
+
+**712 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
+`npm run check` green; `world:runs` four periods, 50 systems, worst period 407 ms.**

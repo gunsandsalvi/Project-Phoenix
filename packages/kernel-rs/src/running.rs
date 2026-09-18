@@ -279,6 +279,8 @@ pub struct Making {
     /// E5: the flow, declared once and applied consistently — and it is the order settlement itself
     /// draws lots in, so the cost this books and the units that leave cannot disagree (Law 4).
     pub flow: crate::mechanisms::goods::CostFlow,
+    /// 21i: the id of the standing area at which a build draws twice, read through `params`.
+    pub crowds_at: &'static str,
 }
 
 impl Mechanism for Making {
@@ -291,6 +293,13 @@ impl Mechanism for Making {
         let now = ctx.period();
         // THE READ PASS. Nothing below writes, and nothing above proposes.
         let mut runs: Vec<Ran> = Vec::new();
+
+        // **21i, 33 A4: how built-up each place is** — one walk over the register a period, never a
+        // stored aggregate (Appendix B). A line that builds a STRUCTURE draws more where more already
+        // stands, and which lines those are is registry data, so an office block, a dwelling and a
+        // works go through this one mechanism (Law 15).
+        let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
+        let crowds_at = ctx.params().square_km(self.crowds_at);
 
         for m in &self.makes {
             for &plant_row in ctx.register().of_instrument(m.plant) {
@@ -333,12 +342,17 @@ impl Mechanism for Making {
                         continue;
                     }
                     let terms = ctx.agreements().terms(a);
-                    match (terms.first(), terms.get(1)) {
-                        (Some(w), Some(h)) => {
-                            wage_bill += w;
-                            hours += h;
+                    match (terms.first(), terms.get(1), terms.get(2)) {
+                        // **21h, Labour A4.b: a wage and an hour are PER PERSON, so the line gets
+                        // the headcount's worth of both.** `Wages` was told this and `Making` was
+                        // not, which left one term with two readings — Law 4 — and a firm employing
+                        // two thousand people getting one person's hours.
+                        (Some(w), Some(h), Some(heads)) => {
+                            wage_bill += w * heads;
+                            hours += h * heads;
                         }
-                        // An engagement that does not say how long it is for buys no hours.
+                        // An engagement that does not say how long it is for, or for how many, buys
+                        // no hours.
                         _ => continue,
                     }
                 }
@@ -376,6 +390,23 @@ impl Mechanism for Making {
                 let Some((way, _)) = picks(&m.line, &priced, an_hour, a_service) else {
                     continue;
                 };
+                // **21i: the same line, run where this much already stands.** Crowding scales every
+                // way of making the line alike, so it cannot change which way is cheapest — that is
+                // why it is applied AFTER the pick rather than to each way before it.
+                //
+                // A line that stands nowhere is built alike everywhere, and that is an ANSWER rather
+                // than a default: flour is milled the same in an empty valley and in a city.
+                let crowding = match ctx.registry().footprint_of(m.line.makes) {
+                    Some(_) => crate::places::crowding(
+                        crate::places::standing_in(&built, ctx.parties().region_of(maker)),
+                        crowds_at,
+                    ),
+                    None => 1.0,
+                };
+                // Law 4: ONE writer of the scaling. What the firm can afford to start, what leaves
+                // its rows and what the batch cost all come off this one object, so the decision and
+                // the draw cannot disagree about where the line is standing.
+                let way = &way.where_it_stands(crowding);
 
                 // B1.b: what it holds of each input, off its own rows. An input it has no row for is
                 // one it has none of, and `decide` is where that stops the line.
@@ -950,6 +981,22 @@ mod tests {
     }
 
     const MEMORY: &str = "test.outlook.memory";
+    /// 21i: the standing area at which a build draws twice, for the tests that run a line.
+    const CROWDS_AT: &str = "test.building.crowds_at";
+
+    /// XI-14: a mechanism holds the ID of the number it acts on, so a world that runs one declares
+    /// it. Ten square km, because a place carrying ten is then exactly twice as dear to build in.
+    fn declare_crowding(w: &mut World) {
+        w.params.declare(crate::params::ParamDecl {
+            id: CROWDS_AT.to_string(),
+            value: 10.0,
+            unit: "square km standing".to_string(),
+            dimension: crate::params::Dimension::SquareKm,
+            kind: crate::params::Kind::Technology,
+            owner: crate::params::Owner::Model,
+            why: "what this test builds against".to_string(),
+        });
+    }
 
     fn ran(w: &mut World, m: &dyn Mechanism) {
         let mut ctx = MechanismContext::of(
@@ -967,6 +1014,7 @@ mod tests {
                 outlooks: &w.outlooks,
                 standing: &w.standing,
                 making: &w.making,
+                registry: &w.registry,
                 processes: &w.processes,
                 wire: &w.wire,
             },
@@ -1183,8 +1231,12 @@ mod tests {
         let mill = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
         w.register.credit(firm, mill, 2.0, 1_000.0, 0);
         w.register.credit(firm, flour, 900.0, 0.5, 0);
-        // `[wage, hours]`, the convention `agreed::ENGAGEMENT` states.
-        w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[80.0, 40.0], Day(-7), None);
+        // `[wage per person, hours per person, headcount]`, the convention `agreed::ENGAGEMENT`
+        // states. The worker is a cell of a hundred, so the hours it gives the line are a hundred
+        // people's — which is the half of 21h `Making` had not been told (Law 8).
+        let of_them = f64::from(w.parties.weight(worker));
+        w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[80.0, 40.0, of_them], Day(-7), None);
+        declare_crowding(&mut w);
         (w, firm, flour, bread, mill)
     }
 
@@ -1200,6 +1252,7 @@ mod tests {
                 },
             }],
             flow: crate::mechanisms::goods::CostFlow::FirstInFirstOut,
+            crowds_at: CROWDS_AT,
         }
     }
 
@@ -1273,6 +1326,101 @@ mod tests {
     }
 
     #[test]
+    fn the_same_build_draws_more_where_more_already_stands() {
+        // **21i, 33 A4: congestion, not scarcity.** Two identical firms build the same structure,
+        // one on empty ground and one where the declared doubling area already stands. Nothing is
+        // refused and nothing is capped — the crowded one simply draws twice as much of everything
+        // for the same output, which is deeper foundations and more hours on a tight site.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, _firm, flour, _bread, mill) = a_mill();
+        let cb = PartyId::at(0);
+        let bank = PartyId::at(1);
+
+        // Two places. A structure line, so the registry says it stands on something at all.
+        let usd = w.registry.currency(cb);
+        let country = w.registry.country(usd);
+        let empty = w.registry.region(country);
+        let crowded = w.registry.region(country);
+        let shed = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
+        w.registry.stands_on(shed, 1.0);
+
+        // Two builders with the same plant, the same input, the same hours and the same outlook —
+        // alike in everything but where they are.
+        let mut builder = |at| {
+            let who = w.parties.add(kinds::FIRM, at, bank, Representation::Named, 1, 0);
+            w.register.credit(who, mill, 2.0, 1_000.0, 0);
+            w.register.credit(who, flour, 900.0, 0.5, 0);
+            w.agreements.strike(agreed::ENGAGEMENT, who, cb, &[80.0, 40.0, 1.0], Day(-7), None);
+            w.outlooks.form(who, about::HOW_MUCH_IT_SELLS, 100.0, 1);
+            who
+        };
+        let on_empty = builder(empty);
+        let on_crowded = builder(crowded);
+        // Ten square km already standing where the second one builds, which is exactly the declared
+        // doubling area — so its draw is twice, and a reader can check that by eye.
+        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        w.register.credit(squatter, shed, 10.0, 1.0, 0);
+
+        w.period = 1;
+        let line = Line::new(shed, vec![Recipe::new(shed, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
+        ran(&mut w, &making(&line, mill));
+
+        // Both built — congestion prices, it does not refuse (Law 6).
+        let drew = |w: &World, who: PartyId| 900.0 - w.register.quantity(w.register.row(who, flour));
+        let easy = drew(&w, on_empty);
+        let dear = drew(&w, on_crowded);
+        assert!(easy > 0.0 && dear > 0.0, "a crowded place is dearer to build in, not closed");
+        // Per unit of output, the crowded build drew twice the flour.
+        let made_easy = w.making.held_by(on_empty).len();
+        let made_dear = w.making.held_by(on_crowded).len();
+        assert_eq!((made_easy, made_dear), (1, 1), "both started a batch");
+        let units = |w: &World, who: PartyId| {
+            let b = w.making.held_by(who)[0];
+            w.making.units(b)
+        };
+        let per_unit_easy = easy / units(&w, on_empty);
+        let per_unit_dear = dear / units(&w, on_crowded);
+        let dust = crate::num::dust(4, &[per_unit_easy, per_unit_dear]);
+        assert!(
+            (per_unit_dear - 2.0 * per_unit_easy).abs() <= dust,
+            "{per_unit_dear} against twice {per_unit_easy}"
+        );
+    }
+
+    #[test]
+    fn flour_is_milled_alike_everywhere() {
+        // A line that stands nowhere is built the same wherever it is — and that is an ANSWER, not
+        // a default: being a structure is a footprint in the registry, and flour has none.
+        use crate::mechanisms::recipe::{Line, Recipe};
+        let (mut w, firm, flour, bread, mill) = a_mill();
+        let cb = PartyId::at(0);
+        let bank = PartyId::at(1);
+        let usd = w.registry.currency(cb);
+        let country = w.registry.country(usd);
+        let crowded = w.registry.region(country);
+        let shed = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
+        w.registry.stands_on(shed, 1.0);
+        let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        w.register.credit(squatter, shed, 400.0, 1.0, 0);
+
+        let baker = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 1, 0);
+        w.register.credit(baker, mill, 2.0, 1_000.0, 0);
+        w.register.credit(baker, flour, 900.0, 0.5, 0);
+        w.agreements.strike(agreed::ENGAGEMENT, baker, cb, &[80.0, 40.0, 1.0], Day(-7), None);
+        w.outlooks.form(baker, about::HOW_MUCH_IT_SELLS, 100.0, 1);
+        w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 100.0, 1);
+
+        w.period = 1;
+        let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
+        ran(&mut w, &making(&line, mill));
+
+        let drew = |w: &World, who: PartyId| 900.0 - w.register.quantity(w.register.row(who, flour));
+        // Four hundred square km standing over the baker, and it draws exactly what the one on open
+        // ground draws, because bread is not a building.
+        assert_eq!(drew(&w, baker), drew(&w, firm));
+    }
+
+    #[test]
     fn production_follows_the_plant_and_not_the_party_kind() {
         // Law 15, 33 A2: a maker is whoever holds the plant. A bank that bought a mill makes flour,
         // and nothing here asks a party what it is.
@@ -1283,7 +1431,9 @@ mod tests {
         w.period = 1;
         w.register.credit(bank, mill, 1.0, 1_000.0, 0);
         w.register.credit(bank, flour, 500.0, 0.5, 0);
-        w.agreements.strike(agreed::ENGAGEMENT, bank, cb, &[80.0, 40.0], Day(-7), None);
+        // `[wage per person, hours per person, headcount]` — the central bank is one named party,
+        // so the headcount is one.
+        w.agreements.strike(agreed::ENGAGEMENT, bank, cb, &[80.0, 40.0, 1.0], Day(-7), None);
         w.outlooks.form(bank, about::HOW_MUCH_IT_SELLS, 100.0, 1);
         let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
         ran(&mut w, &making(&line, mill));

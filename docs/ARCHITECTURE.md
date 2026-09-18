@@ -1012,6 +1012,39 @@ speak for. The profile holds what the kernel already asks and grows as items nee
 ahead of a reader would be a store nothing reads.
 
 The geography below — tiles, terrain, resources, sea areas — is not built in the Rust kernel yet.
+**What did arrive, at 21i, is what makes one place different from another: a line's FOOTPRINT.**
+`Registry::stands_on(line, km²)` declares what one unit of a line occupies, and a line with one is a
+STRUCTURE. That single number is what makes commercial, residential and industrial one mechanism —
+an office block, a dwelling and a works differ by a registry row and by nothing else (Law 15) — and
+it is what makes *how built-up a place is* a quantity at all. It cannot be a count of units: units of
+dwellings added to units of mills is adding numbers in different units, which is Law 8's own defect.
+
+### 4.10b Congestion: what standing on a place does to building there (21i, 33 A4)
+
+`src/places.rs` is a READ, not a store: `built_up` walks the register once a period and buckets each
+holding's `units × footprint` by the region of its HOLDER, because a structure is where its owner is
+(40 A1.a). Nothing stores the density (Appendix B: no stored aggregate).
+
+**It is congestion, not scarcity — and that is the owner's decision, taken against the item as
+written.** 21i was planned as a FIXED stock of ground: ground held like anything else, plant refused
+without it. That premise was an interpolation. The specification names no land, no ground and no
+hectare in its 5,428 lines, and 33 A4's *a use limited by the scarcest* is already met by
+`recipe::decide`, which walks capacity, each input and labour and names the one that bound. So nothing
+is fixed, nothing runs out and nothing is refused: a place fills up, and building there draws more.
+
+`Recipe::where_it_stands(crowding)` is the ONE writer of the scaling — what the firm can afford to
+start, what leaves its rows and what the batch cost all come off that one object, so the decision and
+the draw cannot disagree about where the line is standing. The factor is `1 + standing / crowds_at`,
+where `building.crowds_at` is the standing area at which a build draws twice: one TECHNOLOGY primitive
+with a unit a reader can check, rather than an elasticity nobody can derive. It is applied AFTER the
+way is picked, because crowding scales every way of making the line alike and so cannot change which
+is cheapest. It does not touch the yield, the batch or the lead time — a crowded site is a claim about
+cost, not about time or spoilage.
+
+**No money number is set anywhere in it**, which is the whole reason this is a DRAW and not a price:
+what the extra materials, haulage and hours cost is whatever they cleared at in their own books
+(Law 3). And Law 6 holds the strong way — the factor is unbounded, nothing is capped, and what stops a
+firm building in a packed place is that it stops being worth it, which is 33 B1 doing real work.
 
 **A country has the money; a region is a place** (13c.1). The two were one declaration until the map
 landed, and a map needs many places per currency. A country is one currency, one central bank, one

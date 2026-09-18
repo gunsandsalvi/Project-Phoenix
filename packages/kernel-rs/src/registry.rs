@@ -102,6 +102,9 @@ pub struct Registry {
     unit_pieces: Vec<f64>,
     /// By party-kind id. `Missing` where a kind has been given no profile yet, which is an answer.
     profiles: Vec<Option<KindProfile>>,
+    /// 21i: what one unit of each line STANDS ON, in square km. `NaN` is the absent mark — the line
+    /// is not a structure — because a footprint of zero would be a structure that occupies nowhere.
+    line_footprint: Vec<f64>,
     /// Indices D1, 21.116: which indices exist, whose country each is, what it is an index OF, and
     /// the lines it is built from with the COUNT of each (B1: a weight is a count of the line, never
     /// a share). Nothing declared one before, so no basket in this world had a level to read.
@@ -168,6 +171,39 @@ impl Registry {
     /// fact has one writer (Law 4). A region that kept its own would be the second copy.
     pub fn currency_of(&self, region: RegionId) -> CurrencyCode {
         CurrencyCode(self.country_ccy[self.country_of(region).row()])
+    }
+
+    /// **21i: WHAT ONE UNIT OF THIS LINE STANDS ON.** A mill, an office block and a dwelling are all
+    /// STRUCTURES — they occupy a place — and a tonne of flour is not. Which a line is, is registry
+    /// DATA rather than a class or a kind the mechanism branches on (Law 15): commercial, residential
+    /// and industrial go through one mechanism because the only thing that distinguishes them here is
+    /// a number in this table.
+    ///
+    /// It is what makes *how built-up a place is* a quantity at all. A count of units cannot be it:
+    /// units of dwellings added to units of mills is adding numbers in different units, which is
+    /// Law 8's own defect. The footprint is what makes a warehouse and a flat comparable, and what a
+    /// place fills up with is therefore an AREA.
+    pub fn stands_on(&mut self, line: InstrumentId, square_km: f64) {
+        assert!(square_km > 0.0, "21i: a structure that stands on nothing is not one");
+        let at = line.row();
+        while self.line_footprint.len() <= at {
+            self.line_footprint.push(f64::NAN);
+        }
+        assert!(
+            self.line_footprint[at].is_nan(),
+            "Law 4: this line's footprint is declared twice"
+        );
+        self.line_footprint[at] = square_km;
+    }
+
+    /// The footprint, or `Missing` where the line is not a structure. Appendix A: a line that stands
+    /// on nothing is not a structure with a footprint of zero — nobody declared one, because it is
+    /// flour.
+    pub fn footprint_of(&self, line: InstrumentId) -> Option<f64> {
+        match self.line_footprint.get(line.row()) {
+            Some(km2) if !km2.is_nan() => Some(*km2),
+            _ => None,
+        }
     }
 
     pub fn countries(&self) -> usize {

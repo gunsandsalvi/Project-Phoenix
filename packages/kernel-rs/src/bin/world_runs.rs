@@ -39,6 +39,9 @@ const HOLDINGS: usize = 544_104;
 const WEEK: i64 = 7;
 /// How many periods to run. A measurement, not a target.
 const PERIODS: u32 = 4;
+/// 21i: how many places besides the first. A world of one region has nowhere to be more built-up
+/// than anywhere else, so nothing a firm decides can turn on where it is.
+const PLACES: u32 = 6;
 
 /// The same counter-based draw the engine uses: no clock, no ambient source.
 struct Draw(u64);
@@ -77,8 +80,12 @@ fn main() {
     // what they MEAN, which is what nothing did before.
     let usd = w.registry.currency(cb);
     let us = w.registry.country(usd);
+    // 21i, 40 A1.a: **several places, because one place cannot be more built-up than another.** A
+    // world with a single region has nowhere for a firm to prefer, so building there costs what
+    // building anywhere costs and location does no work at all.
     let home = w.registry.region(us);
-    assert_eq!(home, RegionId::at(0), "this world's one region is row 0, as every party's is");
+    let places: Vec<RegionId> = (0..PLACES).map(|_| w.registry.region(us)).collect();
+    assert_eq!(home, RegionId::at(0), "this world's first region is row 0, as the central bank's is");
     assert_eq!(w.registry.currency_of(home), usd, "Seed B3: the region determines its money");
     // Law 8: two units, because one grid for everything is 21.37's defect. A tonne is milled; a thing
     // counted in whole things is not divided at all.
@@ -121,7 +128,9 @@ fn main() {
         let cell = kind == kinds::HOUSEHOLD;
         let who = w.admit(
             kind,
-            RegionId::at(0),
+            // 21i: somewhere in particular. Everybody in one region is a world where no place can be
+            // more built-up than another, so the congestion has nothing to be about.
+            places[w.parties.len() % places.len()],
             banks[at],
             if cell { Representation::Cell } else { Representation::Named },
             if cell { 200 + draw.below(1_800) as u32 } else { 1 },
@@ -227,6 +236,24 @@ fn main() {
         lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Good).take(8).copied().collect();
     let plants: Vec<InstrumentId> =
         lines.iter().filter(|l| w.instruments.class_of(**l) == Class::Plant).take(8).copied().collect();
+
+    // ── 21i: which of these lines are STRUCTURES, and what one of each stands on ─────────────────
+    // Commercial, residential and industrial go through one mechanism because the only thing that
+    // tells them apart here is a number in the registry (Law 15). A works covers a lot of ground; a
+    // dwelling covers a little; a tonne of flour covers none, and that is why it has no row.
+    for (n, plant) in plants.iter().enumerate() {
+        // Arbitrary like everything else in this world (5 E1): a range of footprints, so a place
+        // fills at a rate that depends on what was built there rather than on how many things.
+        w.registry.stands_on(*plant, 0.4 + draw.spread(1.6) * (1 + n % 3) as f64);
+    }
+    // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things. A dwelling is a
+    // GOOD in this kernel and a works is PLANT, and both are structures — which is exactly why being
+    // a structure is registry data and not a class (40 A1: durable, immovable, indivisible).
+    let buildings: Vec<InstrumentId> = goods.iter().rev().take(3).copied().collect();
+    for (n, b) in buildings.iter().enumerate() {
+        w.registry.stands_on(*b, 0.02 + 0.03 * n as f64);
+    }
+
     let makes: Vec<Makes> = goods
         .iter()
         .enumerate()
@@ -347,8 +374,14 @@ fn main() {
                 people += u64::from(w.parties.weight(who));
             }
         }
+        // 21i: **how built-up the places are**, as a read over the register. The SPREAD is what
+        // matters: a world where every place carries the same is a world where location decides
+        // nothing, so the two ends are printed rather than a total nobody can act on.
+        let built = phoenix_kernel::places::built_up(&w.parties, &w.register, &w.registry);
+        let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
+        let fullest = built.iter().copied().fold(0.0f64, f64::max);
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people}",
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km²",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
     }

@@ -489,6 +489,15 @@ pub fn declare(p: &mut Params) {
         });
     };
 
+    // **21i, 33 A4: the one declared number congestion has.** It is the standing area at which a
+    // build draws TWICE, which is what gives it a meaning a reader can check rather than an
+    // elasticity nobody can derive. A TECHNOLOGY: a fact about building, like a recipe's batch.
+    //
+    // Everything else in that mechanism is an OUTCOME — how built-up a place is, is a read over the
+    // register, and what the extra draw costs is whatever its inputs cleared at (Law 3). No money
+    // number is set anywhere in it, which is why this is a draw and not a price.
+    say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
+        "the ground already covered in a place at which building there draws twice what it does on empty ground");
     // §37 E4: a fact about the thing, not about who holds it.
     say("goods.perishes", 0.01, "share of a lot a period", Dimension::Ratio, Kind::Technology, Owner::Model,
         "the share of a lot that does not survive the period");
@@ -555,7 +564,7 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         },
         // §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines
         // printed, which is a system reporting on a world it takes no part in.
-        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut })),
+        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at" })),
         works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
         works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
         works("freight", AT_MARKETS, Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive })),

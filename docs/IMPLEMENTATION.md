@@ -154,7 +154,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 21f | Three facts the modules keep and the kernel does not — **done** (section removed; see `docs/RECORD.md`; a posting and a lending standard are one shape, `stores::Standing`; work in progress is `stores::InProgress`, real because the recipe has a lead time. Three nouns went home and three were declared in their place) | with 21e, and for the same reason |
 | 21g | The parameter register is switched off — **done** (section removed; see `docs/RECORD.md`; fourteen numbers declared with kind, unit, owner and reason, every participant and mechanism holding an id, `world-runs` printing the shape count, and a `phoenix-check` rule that fails on a literal handed to a mechanism) | with 21e and 21f: the same defect, one register over |
 | 21h | The five cell events never fire — **done** (section removed; see `docs/RECORD.md`; the fifth event is a SPLIT and was written down as a crossing, which is a read; an engagement carries a headcount, so one covering part of a cell splits it exactly; 1,286 cells are 2,571 and the population is unchanged. The other four have no cause yet and are item 22h) | with 21e–21g: the third register reporting nothing |
-| 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
+| 21i | Nowhere is more built-up than anywhere else — **done** (section removed; see `docs/RECORD.md`; the owner replaced the fixed-ground premise with CONGESTION: a structure declares its footprint, how built-up a place is, is an area read off the register, and building where more stands draws more. One TECHNOLOGY primitive, nothing refused, no money number set. 21.27 and 21.29 dissolved with the premise; 21.28 and 21.30 re-positioned) | named by 21.27–21.30 |
 | 21j | Twenty-five systems take no part | named by 21.38–21.42; after 21i, and its door is what the later conversions all want |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
 | 22e | The audit is not in the period loop | after 22, BEFORE 22c: everything built after it should be audited as it is built |
@@ -171,25 +171,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 2 — The items
 
-
-## 21i. There is no ground
-
-**INSERTED (Law 10), named by 21.27–21.30, which are four findings about one absence.** A missing
-sector is an ITEM, not a finding (`CLAUDE.md`). `grep land|ground|hectare|berth|quay` over the engine
-returns nothing but the word "lands" in prose. 33 A4 makes capital **specific in kind** and a use that
-needs several is limited by the scarcest — ground is the one that is scarce everywhere and priced
-nowhere, so a firm's plant stands on nothing, land rent does not exist, and the one asset whose supply
-is genuinely fixed cannot bind.
-
-- [ ] 21i.1 **Ground is held like anything else**: a named holder, a register row, a place.
-- [ ] 21i.2 **Plant stands on it**, and a vintage commissioned without it is refused rather than
-  quietly built (33 A4).
-- [ ] 21i.3 **A quay's owner earns what a berth clears at**, because a price is cleared or it is not
-  a price (Law 3). Same for a room: rent is a cleared price, not a stated one.
-
-**Exit.** The four findings have a subsystem to be about, and each is re-read against it.
-
----
 
 ## 21j. Twenty-five systems take no part
 
@@ -415,6 +396,16 @@ numbers**: 13 books of 1,546 clear in period 1 and 6 in every period after.
   wrong way — margin an OUTCOME of turnover and carrying cost, no spread table, exactly as
   `merchants` is written. It is the missing intermediary of Law 1 and what makes a consumer price
   index possible at all (21.84).
+- [ ] 22c.7 **What it costs to build is not a number handed in.** `housing::Offer::reserving` takes
+  `cost_to_build` as an argument and 40 B1.a rests a seller's reservation on it — *never below what it
+  costs to build* — so the floor under every house price in this world is a number nobody derived.
+  21i gave it a writer: what a dwelling costs to build is what its line actually DRAWS at that place,
+  which is congestion's whole point and is higher in a built-up region. It waits here because housing
+  has no market yet, and a reservation with nothing to reserve against is not a price.
+- [ ] 22c.8 **A quay's owner earns what a berth clears at** — 21.30, re-read and re-positioned from
+  21i. It was filed as a finding about ground and it is not: a quay is PLANT, it has a life and it
+  wears, and what is missing is a cleared price for the USE of it for a period (Law 3). It belongs
+  with the venues because a berth is a thing let by protocol, not a thing sold.
 
 **Exit.** The liveness family's *every declared book has cleared within N* is green for the goods and
 labour venues; a household has bought a physical good in a settled instruction; `consumer.us.1` reads
@@ -516,6 +507,13 @@ because measuring an arbitrary world measures the draw.
   is a PLACEHOLDER and 22h.2 is the item that kills it. **Re-positioned with the seeding**, carrying
   the owner's figure as what the outcome is checked AGAINST and never as what it is set to.
 - [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone and the ROOT is what it got right.** No `sizeOf` makes a CDS order `12.5 × equity` here, and the overflow is now `whole_pieces` throwing with 21.1's citation rather than a bound. What survives: **nothing sizes how much plant a firm ends up with**, and 81,800× the median is what that absence produced. Same shape as 21.98 — a quantity a seed states is one somebody decided (5 E1). **Re-positioned with the seeding.**
+- [ ] 22g.7 **The arbitrary world is built-up past anything a place could be.** Measured at 21i:
+  `world-runs` carries **115,816 km² standing in its fullest region** against a declared doubling area
+  of 60, so a build there draws **1,930×** what the same build draws on empty ground and no structure
+  is ever started. The mechanism is right and the QUANTITIES are the arbitrary world's — the same
+  absence as 21.98 and 21.121, that nothing sizes how much plant a firm ends up with (5 E1: a quantity
+  a seed states is one somebody decided). It is named here rather than answered by moving a declared
+  technology to suit a world that admits it is arbitrary (Law 11).
 
 **Exit.** The world opens from a seed whose every quantity is an outcome of something, and the six
 above are answered by it rather than by anything in the engine.
