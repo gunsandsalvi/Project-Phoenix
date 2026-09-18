@@ -261,7 +261,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 49** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 54** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -308,12 +308,28 @@ there is no `transact` group, so a book's print is the book's. **And the sweep t
 what became 21.137**: seventeen findings and five coverage rows positioned into items that then closed,
 which is the silent drop the plan's own rule forbids. Every one is re-placed.
 
+**And 21.86 through 21.94** (`docs/RECORD.md`, *21.86–21.94*): five closed, two re-marked, and the
+21.137 sweep corrected — it had missed two, because it read only the line a finding begins on and a
+position written on a continuation line was invisible to it. **21.90 is the one that closes by being
+UNTRUE of this engine**: it reported a cell paid once and then never again, and `running::Wages` pays
+the wage on every live engagement in every period, which is what the 2,890 outlooks a period from
+period 2 are made of. Three more (21.89, 21.91, 21.94) are deleted suites whose surviving halves are
+rules already held elsewhere, and 21.88's *the row is still performing after the grace expires* cannot
+happen here for 21.62's reason: `Agreements` has no states to be performing in. The two re-marks are
+both sharper than they were: **no election has ever been held in this world** (21.86 — nothing ever
+`begin`s one), and the central bank's remittance is already stated at `mortality::CentralBankLoss` and
+has no flow to travel down (21.93).
+
 - [ ] 21.137 **RAISED at 21.47–21.85: seventeen findings and five coverage rows were positioned into
   items that then closed.** *A finding leaves that file only by being placed* (`CLAUDE.md`), and a
   placement into an item that closes without it is the silent drop the rule exists to stop. A sweep of
   every *positioned at* in this file against the item table found them pointing at 18.0, 18.4, 18.5
-  (five), 18a, 18a.1 (four), 16.5, 17.0, 19 and 19.9 — all closed. Each has been re-placed by this
-  block and the reasoning is in `docs/RECORD.md`; what remains under this id is the pair item 18
+  (five), 18a, 18a.1 (four), 16.5, 17.0, 19 and 19.9 — all closed. Each has been re-placed and the
+  reasoning is in `docs/RECORD.md`. **And the first sweep missed two**, which is the argument for the
+  check rather than against it: it read only lines beginning a finding, so a position written on a
+  CONTINUATION line was invisible to it — 21.90 at `0h.3` and 21.93 at `18a`, both found at 21.86–21.94
+  by a second sweep that walks every line and carries the finding id down. A sweep by hand that can
+  miss is the defect; what remains under this id is the pair item 18
   closed without, because no live item holds them: **the early-termination regime** (Corporate Credit
   B1 — make-whole for investment grade, a non-call period for high yield, a soft call for floating
   paper, stamped at issuance from what the issue IS, which F4's prepayment and F5's refinancing both
@@ -348,18 +364,6 @@ drawn at its real size rather than a 43-party one. `world-runs` is not a substit
 and costs over an arbitrary world, which is what it is for.
 
 
-- [ ] 21.94 `test/treasury.test.ts` (seven of ten) and `test/treasury-default.test.ts` (two of two)
-  ARE RED, and were before 0h.5 and before 20a (the same ten on both sides of each). They are a
-  second shape of 21.67's problem and a first of their own: *announces on its own calendar*, *pays
-  every household cell by name*, *collects tax on the interest each payer was actually paid*,
-  *collects on what households were paid and on what they bought*, *has no overdraft at the central
-  bank*, *funds itself over a year* (which is 21.41 already), *raises more when more falls due*, and
-  both halves of the treasury's default. Not chased (Law 11); positioned at 23.1, where the scale
-  model and what a test asserts are resized together. **And the reason it was not written down
-  sooner is its own finding**: 0h.5's record claimed these suites green on a comparison that
-  extracted NO test lines at all and therefore compared two empty files. A check that cannot fail is
-  not a check — the pattern is `^\s+(×|✓) ` and it must be asserted to match something before its
-  answer is believed (20a).
 - [ ] 21.93 `mechanisms/treasury/index.ts` the corporate base (0h.5): **THE CENTRAL BANK IS TAXED ON
   ITS PROFIT.** The base walks every living party that is not a household and reads what it
   published; a central bank issues money everybody holds, so it keeps accounts (§48) and publishes
@@ -369,44 +373,15 @@ and costs over an arbitrary world, which is what it is for.
   difference shows the moment a rate moves, because a remittance does not follow a rate a
   parliament sets. It is a two-sided payment between two real parties, so nothing stops and nothing
   is inconsistent: it is the WRONG MECHANISM rather than a broken one. Positioned at 18a with the
-  central bank's own decisions, where the remittance rule belongs (0h.5).
-- [ ] 21.91 `test/reach.test.ts` *finds the sectors three reads of the source found* IS RED, and was
-  before 0h.3 (verified in a stash at `d4f5102`). It asserts `partyKind:insurance` is among the
-  never-reached and an insurer now EXISTS in the scale model — the assertion is a census of a world
-  that has since changed, which is what a test written as a list of names becomes. Not chased (Law
-  11); positioned at 23.1, where the scale model and what a test asserts are resized together
-  (0h.3).
-- [ ] 21.90 `test/expectations.test.ts` *is corrected towards what happened, at the party own speed,
-  and never faster* IS RED, and was before 0h.1 (verified in a stash at `5e49461`: the same one red,
-  the same figures). It asserts the first cell records more than four `income` surprises in ten
-  periods of `rigWorld('exp-c')` and it records ONE — in period 2, observing 1,023,531 against an
-  outlook of 1,239, and nothing in any period after. So a cell in the scale model is paid ONCE and
-  then never again, which is the same silence as `21.64`'s dead credit side and the old 0.7's 700,000 hours
-  offered against none wanted: a household with no employer has no income to be surprised by. The
-  test is not what is broken. Not chased (Law 11); positioned at 0h.3, whose liveness family is the
-  check that says "no cell has been paid" out loud rather than through one assertion about surprises
-  (0h.1).
-- [ ] 21.89 `test/credit-events.test.ts`, `test/ratings.test.ts` and `test/equity.test.ts` ARE RED IN FULL, and were before
-  item 20 (verified at `8294791`: 14 red, 7 green, the same fourteen). They are two of the eighteen
-  suites and the reds are of three shapes: a scale model whose payment no longer fails the way it
-  did (`is a named state, publicly`, `acceleration`, `a cell that could not pay`), two cases
-  comparing a whole period's audit violations against `[]` and getting 106 and 103 of them, and the
-  ratings measure reading an object where it expects a number. None was touched by 20.1, which
-  changed when the fee is charged and when an impairment is announced; whether the audit pair is one
-  fact or a hundred is a read to make with the suite triage. `equity.test.ts` is the third, 12 red
-  and 11 green both before and after 20.3 (verified at `5828b34`), so the buyback programme did not
-  cause them either. Positioned at 23.1 with the rest of it (20.1, 20.3).
-- [ ] 21.88 `test/breach.test.ts` (19.8): THE SCALE MODEL DOES NOT BREACH. Two firms the draw made,
-  a commitment between them, and a payment the payer cannot make: the fail is recorded and the arrear
-  written (`credit.default` fires, the second case is green — a parliament that allows a longer grace
-  breaks nothing), and the period the grace expires the row is still `performing`. So one of three
-  reads is wrong and which is not yet known: the period the default event is written in against the
-  period the phase looks back to (`ofKindIn(expires)` is one period and a default seen at a later
-  cycle lands in the next), whether the arrears of that instruction are still held by the payee at
-  that moment, or whether `owedBy(payer)` reaches the row the probe opened. It is a read to make
-  against a run and not a number to chase (Law 11). Positioned at 21 as its own repair, next to 21.87: it
-  is a read to make in three named places and not a measurement of a world (19.8, repositioned at
-  19.9 when item 19 closed).
+  central bank's own decisions, where the remittance rule belongs (0h.5). **Re-read: the wrong
+  mechanism died with the walk and the right one is half-written and unreachable.** There is no walk
+  over living parties here — `treasury::Collected { from, base, at_rate }` is a named payer handed in,
+  so nothing can sweep a central bank into a corporate base. And the remittance the finding asks for
+  is already STATED: `mortality::CentralBankLoss` carries `remitted` and §31 E4's rule that a bank in
+  loss remits nothing, with the deferred asset as a row. What is missing is the flow, and it is
+  missing for 21.54's reason — the `currency` row is `Owed { currency.owed }`, a publication, so no
+  central bank in this world decides or pays anything. **18a closed without it. Re-positioned at 21j**
+  beside 21.54, and this was one of the two the 21.137 sweep missed.
 - [ ] 21.86 `mechanisms/polity/election.ts` (19.4): NO ELECTION FALLS INSIDE A RUN AT THE REAL TERM.
   Four years over a weekly period puts the first one past period 200, so forty periods of the rig
   reach none. **Narrowed at 19.9a**: with the term set to the shortest the unit can state — a month,
@@ -418,7 +393,10 @@ and costs over an arbitrary world, which is what it is for.
   question any more. What is left is `Polity E3` — the DEFICIT moving through named outlays after a
   change of government — which needs a run long enough for the outlays to be paid twice under two
   parliaments, and that is a measurement of the world rather than of the polity. Positioned at 23.3
-  with Part XII's measurements (19.4, narrowed at 19.9a).
+  with Part XII's measurements (19.4, narrowed at 19.9a). **Re-read: the narrowing was true of the
+  rig and NO ELECTION HAS EVER BEEN HELD HERE.** The `polity` row is `Closing { afoot::ELECTION }`
+  and nothing in this engine ever `begin`s one — `world-runs` opens four of the eight process kinds
+  and an election is not among them. E3's measurement stands at 23.3 and waits on 21j.
 - [ ] 21.85 `mechanisms/polity/vote.ts positionUnder` (19.4): A CELL VOTES ON FOUR OF THE TWENTY NUMBERS. A position is its pay, the income tax, the pension share, the transfer and the consumption tax; the platforms also differ on the tax on INTEREST and on GAINS, on the SEVERANCE a firing pays, on the RETIREMENT AGE and on the PLANNING RELEASE, and none of those is in it. Each needs a read the cell does not have: its own interest and gains receipts (it has no outlook subject for either), its own age against a threshold (a cohort key is there, the comparison is not), and what a release would do to the rent it pays (which is a housing mechanism, not a read). A cell voting on what it cannot evaluate would be voting on a number somebody handed it, which is the thing B1.a forbids — so what is missing is written down rather than guessed. Each of the three is a MECHANISM somebody has to build (an outlook subject for receipts, a cohort read against a threshold, what a consent does to a rent), so it is not a repair: positioned at 23.3, where what the vote actually turns on is measured before any of them is built (19.4). **Re-read: it survived and the number is TWO of eight.** `polity::votes_for` reads `Owns::TaxOn` and `Owns::TransferTo` and nothing else, while `Owns` names eight things a parliament controls — the outlay's size and its composition, the treasury's buffer, a regulatory ratio, the central bank's target. 23.3 holds; the earlier note repositioning it at 19.9 pointed into item 19, which then closed, and is deleted.
 - [ ] 21.84 `mechanisms/indices/baskets.ts goodsBoughtIn` (18a.1): THIS WORLD HAS NO PRICE LEVEL. Twelve periods of the rig: `equity.us.1` reads 100 over four constituents and `credit.USD` 100 over fifteen, and `consumer.us.1` and `producer.us.1` both read NONE over a basket of ZERO. The rule is what was DELIVERED this period — asset legs of physical goods, to a household cell of the region for the consumer basket, from a producer of it for the producer one — so an empty basket says no physical good changed hands in a settled instruction in that period, which sits beside 12c.3 (the named firms produce once and never again) and 21.79 (nobody crosses a supply contract). The consequence for this item is exact: 18a.1's decision rule is built, its door is tested, and the bank meets, reads the basket, finds nothing and does not act — so no rate has ever moved in this world for a reason. NOT CHASED (Law 11): why nothing is delivered is the goods market's, not the central bank's. Positioned at 23.3 with Part XII's measurements, where what this world actually produces and sells is measured (18a.1).
 - [ ] 21.82 `mechanisms/derivative-layer/index.ts netOffsetting` (18.2): ONLY EQUAL NOTIONALS NET. A party long five lots and short three of the same thing with the same counterparty holds a position of two, and this closes neither pair — because reducing a contract is not something this world can do: a row is opened whole and closed whole (`Contracts.open`/`close`), so a partial net would need a SPLIT (one row becoming two, or a notional that falls) and that is a mechanism, not a line. Written down rather than half-built (Law 12). What it costs today is margin locked against a position that is mostly offset, which is real but bounded and visible: `derivatives.netted` says what did net. Positioned at 23.3 with Part XII's measurements, where what the layer locks up against what it is actually exposed to is measured — and if that reading says the offset positions are material, the row split becomes an item at its dependency position (18.2).
@@ -865,6 +843,14 @@ the system is for**: `ratings` counts how many parties are alive, where `grade_f
 agency does; `benchmarks` counts how many lines printed, where a fixing is what a benchmark is;
 `observer` counts parties alive. A system may rightly stay out of the books and still owe its own
 read, and none of the twenty-five produces one.
+
+**The seven `Closing` rows are the same absence wearing the other hat** (found at 21.86). A closer ends
+a process of its kind when the calendar reaches it — foreclosure, flotation, takeover, securitisation,
+buy-back, workout, election — and **nothing in this engine opens four of those seven at all.**
+`world-runs` `begin`s a capital programme, a flotation, a buy-back and a workout out of its arbitrary
+draw, which is not a party deciding anything; no foreclosure, no takeover, no securitisation and **no
+election** has ever been opened by any mechanism. A closer with nothing to close is a counter with an
+extra step.
 
 The findings of the 21.32–21.46 and 21.47–21.85 blocks are its instances, and these are sharp enough
 to start from:

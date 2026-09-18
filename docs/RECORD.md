@@ -19378,3 +19378,60 @@ stay out of the books and still owe its own read, and none of the twenty-five pr
 
 **681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
 stands at 49 of 178.
+
+---
+
+## 21.86–21.94 — a finding that is untrue of this engine, and the sweep corrected
+
+**What.** The sixth block of item 21. Five closed, two re-marked, and the previous block's sweep
+corrected for a miss it could not have avoided by hand.
+
+### 21.90 — the only one that closes by being untrue here
+
+It reported a cell recording ONE income surprise in ten periods and concluded *a cell in the scale
+model is paid ONCE and then never again*. That is not this engine. `running::Wages` walks every live
+`agreed::ENGAGEMENT`, reads the wage off the agreement's first term — the convention stated in the one
+place conventions are stated — and proposes the payment in every period. `world-runs` opens with 1,286
+engagements and prints 8 outlooks in period 1 and **2,890 in every period after**, which is what a
+world where parties are paid and surprised looks like. Its position (`0h.3`) was into a closed item;
+it does not need re-placing, because there is nothing left to place.
+
+### Verified absent (four)
+
+| finding | why it closes |
+| --- | --- |
+| 21.88 | *the row is still `performing` the period the grace expires*, with three reads to choose between. None of the three can be made: `stores::Agreements` has no states at all (21.62), so no row in this world is performing, breached or cured, and the TypeScript path the three reads name is gone |
+| 21.89 | three suites red in full. The suites are deleted; of the three shapes, the audit-violations-against-`[]` one is 21.67's and already placed, and the other two are assertions about a scale model that no longer exists |
+| 21.91 | a test asserting `partyKind:insurance` is among the never-reached, against a world that had changed. The rule — a test written as a list of names becomes a census of a world that has moved — is 21.111's and 21.119's, both open |
+| 21.94 | ten red treasury cases. Every clause they asserted is a COVERAGE row, and the treasury's real absence is 21.41's (`size: 0.0`). Its second half is a rule and it survives, at 21.119 with the rest of `tools/`: **a check that cannot fail is not a check** — 0h.5 claimed these suites green on a comparison that extracted no test lines and so compared two empty files, and a pattern must be asserted to match something before its answer is believed |
+
+### Re-marked (two), both sharper
+
+- **21.86** — the polity finding had been NARROWED to *the mechanism is not the question any more*,
+  because the assembled election ran end to end in the rig. **No election has ever been held here.**
+  The `polity` row is `Closing { afoot::ELECTION }` and nothing in this engine ever `begin`s one.
+  `Polity E3`'s measurement stands at 23.3 and waits on 21j.
+- **21.93** — the central bank taxed on its profit. The wrong mechanism died with the walk:
+  `treasury::Collected { from, base, at_rate }` is a named payer handed in, so nothing sweeps a
+  central bank into a corporate base. And the RIGHT mechanism is already stated —
+  `mortality::CentralBankLoss` carries `remitted` and §31 E4's rule that a bank in loss remits nothing,
+  with the deferred asset as a row. What is missing is the flow, for 21.54's reason. → 21j.
+
+### The sweep corrected, and why it matters
+
+21.137 said every mis-placed finding had been re-placed. **It had missed two.** The sweep read only
+the line a finding begins on, so a *positioned at* written on a continuation line was invisible to it —
+21.90 at `0h.3` and 21.93 at `18a`. A second sweep that walks every line and carries the finding id
+down found both. This is the argument for the check 21.137 asks for, not against it: a sweep by hand
+that can silently miss is the same defect one layer up.
+
+### 21j — the closers
+
+21.86 showed the item's other half. Seven rows are `Closing`, which ends a process of its kind when
+the calendar reaches it, and **nothing in this engine opens four of the seven**: `world-runs` begins a
+capital programme, a flotation, a buy-back and a workout out of its arbitrary draw — which is not a
+party deciding anything — and no foreclosure, no takeover, no securitisation and no election has ever
+been opened by any mechanism. A closer with nothing to close is a counter with an extra step.
+
+**681 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21
+stands at 54 of 178.
