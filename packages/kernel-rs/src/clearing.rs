@@ -19,6 +19,33 @@ pub enum Side {
     Sell,
 }
 
+/// **Clearing C1, Law 8: A QUANTITY BECOMES A COUNT OF PIECES IN ONE PLACE.**
+///
+/// Nine participants were each writing `quantity as i64` (21.1), which is the same read written nine
+/// times (Law 4) — and in Rust that cast **saturates silently at `i64::MAX`**, so a quantity too
+/// large to be a count became the largest count there is and nothing said so. That is a bound nobody
+/// declared (Law 6), arrived at by a language rule rather than by a decision.
+///
+/// 21.1 already had the right diagnosis of the overflow it found on the old engine: *the grain of the
+/// good's piece against the grain of its plant is a RESOLUTION, and the overflow is the grid, not the
+/// capacity.* So a quantity that will not fit in a count **throws with that citation** rather than
+/// being quietly rounded to something that does — the grid is wrong, and a silent maximum is the one
+/// outcome that stops anybody finding out.
+///
+/// Truncation toward zero is not a bound: it is what a PIECE is. A seller left with part of a loaf
+/// has something and has nothing to sell, and an order for none of it is not an order (22b.9a).
+pub fn whole_pieces(units: f64) -> i64 {
+    assert!(units.is_finite(), "Law 8: {units} is not a quantity of anything");
+    // 2^53 is where an f64 stops counting in ones, so it is where a COUNT stops being one. Beyond it
+    // the next representable value is two apart and a count of pieces has stopped meaning pieces.
+    const COUNTS_IN_ONES: f64 = 9_007_199_254_740_992.0;
+    assert!(
+        units.abs() < COUNTS_IN_ONES,
+        "21.1: {units} pieces is not a count anybody makes — the grain of the piece is the defect, not the quantity"
+    );
+    units as i64
+}
+
 /// What a participant posted. A buy names the most it will pay; a sell the least it will accept.
 /// An order with NO level takes whatever the book gives — a forced seller does not name a price
 /// (XI-2) — and there is no such thing on the buy side, because that is a buyer of last resort.
@@ -338,5 +365,29 @@ mod tests {
             clear(&posted, PriceRule::SellersCompete, true),
             Outcome::Cleared { .. }
         ));
+    }
+
+    #[test]
+    fn a_quantity_becomes_a_count_of_whole_pieces_and_the_remainder_is_not_an_order() {
+        // Clearing C1, Law 8: a holder left with part of a loaf has something and has nothing to
+        // sell. Truncation is what a PIECE is, not a bound on a number.
+        assert_eq!(whole_pieces(400.0), 400);
+        assert_eq!(whole_pieces(400.9), 400);
+        assert_eq!(whole_pieces(0.4), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a count anybody makes")]
+    fn a_quantity_too_large_to_be_a_count_is_the_grid_s_defect_and_says_so() {
+        // 21.1: `quantity as i64` SATURATES at i64::MAX in Rust, so a quantity too large became the
+        // largest count there is and nothing said so — a bound arrived at by a language rule rather
+        // than by a decision (Law 6). The overflow is the grain of the piece, and it throws.
+        whole_pieces(1.0e17);
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a quantity of anything")]
+    fn an_infinite_quantity_is_not_a_quantity() {
+        whole_pieces(f64::INFINITY);
     }
 }

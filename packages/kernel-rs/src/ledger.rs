@@ -75,6 +75,11 @@ pub enum Outcome {
     Settled,
     /// The payer had not got it and its bank would not lend (Money B3.a).
     ShortOfMoney,
+    /// **The payer had it and its BANK could not settle across** (Money E1, Banks Capital C1.a,
+    /// 21.2). It was `ShortOfMoney` too, which made two different failures one word: a customer
+    /// that could not pay and a bank that could not deliver its customer's money read the same on
+    /// the record, and the row that should have been the BANK's was nobody's.
+    BankCouldNotSettle,
     /// The units are there and somebody else has a claim over them (Register C3).
     Encumbered,
     /// The holder has not got the units, and a short needs a borrow (Register C4).
@@ -353,7 +358,7 @@ impl Settlement {
                 Leg::Money { from, to, instrument, amount, .. } => {
                     let row = reg.row(from, instrument);
                     if reg.quantity(row) < amount {
-                        return self.record(Outcome::ShortOfMoney, ins, period, journal, failed_kind);
+                        return self.record(Outcome::ShortOfMoney, from, ins, period, journal, failed_kind);
                     }
                     // Money D2: and the payer's BANK needs the reserves to settle it across. A bank
                     // that cannot is a bank whose customers' payments do not go through — which is
@@ -362,26 +367,26 @@ impl Settlement {
                     if let Some(a) = across(parties, instruments, to, instrument) {
                         let at = reg.row(a.payers_bank, a.reserves);
                         if reg.quantity(at) < amount {
-                            return self.record(Outcome::ShortOfMoney, ins, period, journal, failed_kind);
+                            return self.record(Outcome::BankCouldNotSettle, a.payers_bank, ins, period, journal, failed_kind);
                         }
                     }
                 }
                 Leg::Asset { from, instrument, qty, .. } => {
                     let row = reg.row(from, instrument);
                     if !row.some() {
-                        return self.record(Outcome::ShortOfUnits, ins, period, journal, failed_kind);
+                        return self.record(Outcome::ShortOfUnits, from, ins, period, journal, failed_kind);
                     }
                     if reg.quantity(row) < qty {
-                        return self.record(Outcome::ShortOfUnits, ins, period, journal, failed_kind);
+                        return self.record(Outcome::ShortOfUnits, from, ins, period, journal, failed_kind);
                     }
                     if reg.free(row) < qty {
-                        return self.record(Outcome::Encumbered, ins, period, journal, failed_kind);
+                        return self.record(Outcome::Encumbered, from, ins, period, journal, failed_kind);
                     }
                 }
                 Leg::Destroy { party, instrument, qty, .. } => {
                     let row = reg.row(party, instrument);
                     if reg.free(row) < qty {
-                        return self.record(Outcome::ShortOfUnits, ins, period, journal, failed_kind);
+                        return self.record(Outcome::ShortOfUnits, party, ins, period, journal, failed_kind);
                     }
                 }
                 Leg::Create { .. } | Leg::Mint { .. } | Leg::Pledge { .. } => {}
@@ -458,13 +463,16 @@ impl Settlement {
                 }
             }
         }
-        self.record(Outcome::Settled, ins, period, journal, settled_kind)
+        self.record(Outcome::Settled, PartyId::NONE, ins, period, journal, settled_kind)
 
     }
 
     fn record(
         &mut self,
         outcome: Outcome,
+        // A-20, Money E1: WHOSE failure it is. It was nobody's — `say` was called with no subjects
+        // at all — so a fail was a recorded state nobody could find by looking for their own.
+        on: PartyId,
         ins: &Instruction<'_>,
         period: u32,
         journal: &mut Journal,
@@ -481,7 +489,8 @@ impl Settlement {
             Some(last) if last.0 == period => last.2 = n + 1,
             _ => self.by_period.push((period, n, n + 1)),
         }
-        journal.say(period, 0, kind, &[], &[(0, Value::Num(ins.legs.len() as f64))], true);
+        let subjects: &[u32] = if on.some() { &[on.0] } else { &[] };
+        journal.say(period, 0, kind, subjects, &[(0, Value::Num(ins.legs.len() as f64))], true);
         outcome
     }
 }
@@ -813,7 +822,17 @@ mod tests {
         // Its bank has none: the deposit is there and the settlement asset is not.
         let legs = [Leg::Money { from: payer, to: payee, ccy: CurrencyCode::at(0), instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
         let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins), ok, no);
-        assert_eq!(out, Outcome::ShortOfMoney);
+        // **21.2, Money E1: it is the BANK's failure and the record says so.** It was `ShortOfMoney`
+        // — the same word as a customer that had not got it — so a bank that could not deliver its
+        // customer's money and a customer that could not pay read identically, and the row that
+        // should have been the bank's was nobody's.
+        assert_eq!(out, Outcome::BankCouldNotSettle);
+        assert_ne!(out, Outcome::ShortOfMoney, "the payer HAD it; its bank could not settle it out");
+        // A-20: a fail is a recorded state, and it is recorded ON somebody. The payer's bank is
+        // `one`, and a reader looking for its own failures finds this one.
+        let failed: Vec<u32> = j.in_period(1).filter(|r| j.kind_of(*r) == no).collect();
+        assert_eq!(failed.len(), 1);
+        assert_eq!(j.subjects_of(failed[0]), &[who[1].0]);
         // XI-5: and nothing moved.
         assert_eq!(reg.quantity(reg.row(payer, ones)), 500.0);
     }

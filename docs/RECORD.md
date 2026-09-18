@@ -19018,3 +19018,57 @@ and it is the figure everything else reads this measure off.
 
 **671 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green.** Item 21d
 is closed.
+
+---
+
+## 21.1–21.3 — item 21 in number order, and two of the three had survived
+
+Each of these was measured on the TypeScript engine, so each is re-read first as either a fact about
+the MODEL, which survived the port, or a fact about the CODE, which died with the file it named.
+
+### 21.1 — nine participants each turning a quantity into a count
+
+The finding named `wholeOrderOf(spend, price)` wanted **once** in `clearing/` and written twice. In
+Rust it is written **nine times**, as `quantity as i64`, in every participant that posts — and that
+cast does something the TypeScript one did not: **`f64 as i64` saturates silently at `i64::MAX`**. A
+quantity too large to be a count became the largest count there is, and nothing said so. That is a
+bound (Law 6) arrived at by a language rule rather than by a decision, and it is the same overflow
+21.1 found on the old engine in a quieter form — there it threw at 2^53 and here it does not throw at
+all.
+
+`clearing::whole_pieces` is the one read. Truncation toward zero stays, because that is what a PIECE
+is: a seller left with part of a loaf has something and has nothing to sell. What changes is the end
+of the range — a quantity at or beyond 2^53, where an f64 stops counting in ones, **throws with
+21.1's own diagnosis**: *the grain of the piece is the defect, not the quantity.* A silent maximum is
+the one outcome that stops anybody finding out.
+
+Its other four halves are verified absent: `PlannedOrder` declared three times, `productionCosts`
+reading the seed's rows, `capacityFrom`'s piece grid and the promotion tests all went with their
+files.
+
+### 21.2 — a bank that could not settle left a row on nobody
+
+The 12a.9 half, and it survived intact: *a customer's payment that fails because ITS BANK is refused
+leaves no row on anybody; a bank refused at the window has failed to deliver its customer's money
+(Money E1, Banks Capital C1.a), and the row is the bank's.*
+
+In Rust both failures returned **`Outcome::ShortOfMoney`** — one word for two different things, so a
+customer that could not pay and a bank that could not deliver its customer's money read identically
+on the record. And `record` wrote `say(..., &[], ...)`: **a failed instruction named no subjects at
+all**, so a fail was a recorded state nobody could find by looking for their own.
+
+Both fixed together, because they are one defect: `Outcome::BankCouldNotSettle` is its own failure,
+every `record` call names the party the failure is ON, and the test asserts the row lands on the bank
+rather than on the payer. The other halves — `resolution.ts`'s consideration leg, `Math.round` in
+`writeDownRow` — went with the file, and the Banks Capital E3 conservation family the finding asked
+for **is built**: `bank_capital::Conservation`.
+
+### 21.3 — verified absent
+
+*A `winding` estate is not a household to the `ofKind(HOUSEHOLD)` readers.* In this engine every
+reader checks it: `Books::index` skips a party that is not alive before it is asked for orders,
+`Reporting` skips one before it publishes, and `Winding` and `Ranked` each turn on it. A dead party
+posts nothing. The rent-on-an-estate's-space family and the capacity line went with their files.
+
+**675 tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check` green; the
+full-scale world unchanged.** Item 21 stands at 19 of 177.

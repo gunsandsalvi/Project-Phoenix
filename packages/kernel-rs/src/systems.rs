@@ -20,7 +20,7 @@
 //! schedule would be inventing demand nobody has (Appendix B: no demand added to clear).
 
 use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
-use crate::clearing::{Order, Side};
+use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
@@ -86,7 +86,7 @@ impl Participant for GoodsSellers {
         // its own unit and an order is a count of pieces, so a firm left with part of a loaf has
         // something and has nothing to sell — and an order for none of it is not an order. The first
         // warm-up in which every firm could reach the book is where this turned up (22b.9a).
-        let pieces = view.free(line_of(m)) as i64;
+        let pieces = whole_pieces(view.free(line_of(m)));
         if pieces <= 0 {
             return Vec::new();
         }
@@ -125,7 +125,7 @@ impl Participant for HouseholdBuyers {
             return Vec::new();
         }
         // §41 C1.d: it bids for what it can actually fund. A bid it cannot pay for is not a bid.
-        let affordable = (money / self.will_pay) as i64;
+        let affordable = whole_pieces(money / self.will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
@@ -163,7 +163,7 @@ impl Participant for MoneyMarketBanks {
         let need = self.buffer - reserves;
         if need > 0.0 {
             // Short: it bids for money, at what it will pay.
-            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.borrows_at), qty: need as i64 }];
+            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.borrows_at), qty: whole_pieces(need) }];
         }
         let spare = -need;
         if spare <= 0.0 {
@@ -171,7 +171,7 @@ impl Participant for MoneyMarketBanks {
         }
         // Long: it offers what it has over its own buffer, at its own rate. §11 B1: whether it ends
         // up lending is the book's answer, not this schedule's.
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.lends_at), qty: spare as i64 }]
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.lends_at), qty: whole_pieces(spare) }]
     }
 }
 
@@ -211,8 +211,8 @@ impl Participant for Dealers {
         let ask = self.around + self.width - skew;
         // Clearing C1: in whole pieces, and an order for none of them is not an order — a desk one
         // half-piece from its limit has room for nothing.
-        let room = (self.limit - held) as i64;
-        let long = held as i64;
+        let room = whole_pieces(self.limit - held);
+        let long = whole_pieces(held);
         let mut out = Vec::new();
         if view.own_cash() > 0.0 && bid > 0.0 && room > 0 {
             out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: room });
@@ -261,7 +261,7 @@ impl Participant for FundMandates {
             return Vec::new();
         }
         let money = view.own_cash();
-        let affordable = (money / self.will_pay) as i64;
+        let affordable = whole_pieces(money / self.will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
@@ -291,7 +291,7 @@ impl Participant for InsurerMatching {
 
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let affordable = (money / self.will_pay) as i64;
+        let affordable = whole_pieces(money / self.will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
@@ -322,7 +322,7 @@ impl Participant for TreasuryIssues {
         if self.size <= 0.0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.will_accept), qty: self.size as i64 }]
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.will_accept), qty: whole_pieces(self.size) }]
     }
 }
 
