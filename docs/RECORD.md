@@ -18854,3 +18854,57 @@ per period — and those are a re-read against the engine that exists rather tha
 
 **650 tests hold; clippy clean; `phoenix-check` green over 80 files with two new laws checked; `npm
 run check` green.** Item 21 stands at 21 of 177 steps.
+
+---
+
+## 21b — a pool whose manager died
+
+**The finding, measured on the old engine (21.106).** A manager died in period 5 of the rig. The
+succession rule ended every commitment it ran, and its money fund was left **ALIVE** — holding a
+book, with households holding its shares, and nobody deciding for it. The `names` family said so
+every period from then to the end of the run: *a live pool under no mandate: there is no fund without
+a manager*. Another mandate of the same manager was RESTATED onto the successor in the same period,
+so **which pools survived a manager's death was decided by which side of the row the dead party was
+on**, and by nothing about the pools.
+
+**No clause says what happens next.** Fund Shares F3 is about the FEE — *the manager is a separate
+party that earns it*. The family's sentence extends it, rightly, and the mechanism it asks for did
+not exist in either engine.
+
+**A pool under nobody's mandate posts nothing** (21b.1). Not a rule against acting: a schedule is
+somebody's (Clearing B2), and there is nobody here whose view the order would be. `FundMandates`
+reads `view.agreed(agreed::MANDATE)` and a pool with none is in no book — and the difference between
+that pool and the one beside it is a RELATION, which is what the finding said it should be and what
+it was not.
+
+**It winds up through the machinery it already has** (21b.2). The holders' claim is redeemable (G1),
+so `running::Winding` pays each holder its share of what the pool **actually raised** — not a promise
+of NAV, because if it sold badly the holders wear it, which is the whole of C2.b — and the pool ends
+when it holds nothing and owes nobody. **No forced buyer** (Appendix B): a book that will not take
+its stock leaves it unsold and the wind-up takes another period, which is the absence of a buyer
+showing up as a DURATION rather than as a discount. Law 6: nothing ends it on a schedule.
+
+**Three kernel doors, each of them small and each of them owed.**
+
+- `MechanismContext::ceases(party)` — ARCHITECTURE 4.9b said a mechanism may cease a party and there
+  was no way to. It asks; the kernel writes, because `Parties` is the one writer of who is alive.
+  What becomes of what a ceased party held is the ESTATE's and is not decided at this door.
+- `ParticipantView::agreed(kind)` — XI-10: a mandate, an engagement, a policy is a fact about THIS
+  party. `of_party` is what keeps it its own; there is no argument that could make it somebody
+  else's (Observer A4). A view built without relations answers *none*, which is a different answer
+  from a party having none, and the two are told apart by whoever built the view.
+- `Shown`/`Stores` carry the relations, so the session's views can answer.
+
+**What the full-scale world says.** Asks fell from 47,331 to **37,043** a period, because the
+arbitrary world strikes no mandate at all: **every one of its 1,286 pools is orphaned** and correctly
+posts nothing. That is not a regression, it is the first period in which a pool with no manager
+behaves like one — and it is a fact about the scaffold, which has no managers because nothing in it
+was seeded.
+
+**One walk accepted and named.** Finding the pool's own share line is a walk over the instruments
+filtered by issuer — the walk 21.130 is about — run only for a pool that has actually lost its
+manager, which is rare. It becomes a read the day `Instruments` is indexed by issuer, and the comment
+says so at the site.
+
+`Fund Shares F3` and `G1` re-marked. **660 tests hold; clippy clean; `phoenix-check` green over 80
+files; `npm run check` green.**

@@ -21,6 +21,7 @@ use crate::params::Params;
 use crate::parties::Parties;
 use crate::prices::{Print, Prints, Provenance, QuotedAs};
 use crate::register::Register;
+use crate::stores::Agreements;
 use std::collections::HashMap;
 
 /// Clearing B2: which parties could be in which books at all, this cycle. One question per party
@@ -49,6 +50,9 @@ pub struct Shown<'a> {
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
+    /// XI-10: its own relations. A mandate, an engagement, a policy is a fact about THIS party, so
+    /// a participant may read its own and no other's (Observer A4).
+    pub agreements: &'a Agreements,
 }
 
 impl<'a> Shown<'a> {
@@ -63,6 +67,7 @@ impl<'a> Shown<'a> {
             period,
             account_of(self.parties, self.instruments, who),
         )
+        .knowing(self.agreements)
     }
 }
 
@@ -113,6 +118,8 @@ pub struct Stores<'a> {
     pub journal: &'a mut Journal,
     pub wire: &'a mut Settlement,
     pub params: &'a Params,
+    /// XI-10: the relations a participant may read its OWN of.
+    pub agreements: &'a Agreements,
 }
 
 pub struct BookDecl {
@@ -148,6 +155,7 @@ pub fn run_book(
         prints: stores.prints,
         journal: stores.journal,
         params: stores.params,
+        agreements: stores.agreements,
     };
     for (n, p) in participants.iter().enumerate() {
         for &who in books.who(n, book.market) {
@@ -252,6 +260,12 @@ fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A fixture that strikes no relation. A view over it answers "no relations", which is what a
+    /// party with none says — and is a different answer from a view that cannot see them at all.
+    fn no_relations() -> Agreements {
+        Agreements::new()
+    }
     use crate::instruments::Class;
     use crate::parties::Representation;
     use crate::register::Register;
@@ -337,7 +351,7 @@ mod tests {
         let buys = Buys { market, cash, at: 5.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations() }, 1);
         // Two parties, each asked ONCE which books it could be in — not once per book.
         assert_eq!(books.narrows, 2);
 
@@ -349,6 +363,7 @@ mod tests {
             journal: &mut journal,
             wire: &mut wire,
             params: &params,
+            agreements: &no_relations(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
@@ -403,7 +418,7 @@ mod tests {
         let sells = Sells { market, subject: grain, at: 9.0 };
         let buys = Buys { market, cash, at: 4.0, want: 40 };
         let participants: Vec<&dyn Participant> = vec![&sells, &buys];
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations() }, 1);
         let mut stores = Stores {
             parties: &parties,
             instruments: &instruments,
@@ -412,6 +427,7 @@ mod tests {
             journal: &mut journal,
             wire: &mut wire,
             params: &params,
+            agreements: &no_relations(),
         };
         let book = BookDecl { market, subject: grain, ccy: CurrencyCode::at(0), rule: PriceRule::SellersCompete };
         let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no);
@@ -436,7 +452,7 @@ mod tests {
         let params = Params::new(100.0, 60.0);
         let sells = Sells { market: MarketId::at(1), subject: InstrumentId::at(1), at: 4.0 };
         let participants: Vec<&dyn Participant> = vec![&sells];
-        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params }, 1);
+        let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &no_relations() }, 1);
         assert_eq!(books.narrows, 1, "asked once about itself");
         assert!(books.who(0, MarketId::at(1)).is_empty(), "and named no book");
     }

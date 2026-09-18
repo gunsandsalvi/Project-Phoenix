@@ -228,7 +228,7 @@ partial event" contradicts Part XII "one cell per key" — resolved by 0f.
 | 0i | Facts are declared — the third register — **done** (section removed; see `docs/RECORD.md`; 13 kernel facts declared, the ratchet at 219 kinds still bags and falling; findings 21.111–21.114). **Corrected:** its rename of the revaluation payload broke three readers, which is the failure it exists to prevent — see `docs/RECORD.md` “0i, corrected” | FIRST, before 21: most of 21's open findings are instances of it |
 | 20b | `docs/FINDINGS.md` is a second findings file — **done** (section removed; see `docs/RECORD.md`; all 295 ids audited, the 78 that were nowhere placed under 21.130–21.136 and 22d.4 by what each IS, and the file deleted) | BEFORE 21: most of what is in it is 21's, and one file is the rule |
 | 21 | The local repairs | each when its file is open |
-| 21b | A pool whose manager died | after 21a |
+| 21b | A pool whose manager died — **done** (section removed; see `docs/RECORD.md`; a pool under nobody's mandate posts nothing and winds up through the machinery it already has, paying its holders pro rata on what it raised and ending when there is nothing left) | after 21a |
 | 21c | A tax on an estate is a claim on it | after 21b |
 | 21d | Every store declares itself, and the homeless count is true | ahead of 22; four steps closed, the modules' own declarations left |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
@@ -578,36 +578,6 @@ are what neither of those covers, and they are placed rather than assumed dead.
 - [ ] 21.136.BF3 `bond-futures/index.ts:1955 deliver`: the long pays `price × face` where price = deliverable's latest print — at delivery the future's struck price is NOT used: the contract is closed (`act: 'close'`) with its mark settled by the layer? No — `legs: []` and `expires: () => false` means the layer never pays the mark; delivery settles at the CASH price, so the futures P&L (struck vs cash at expiry) is realised only through variation margin flows (`requirement` netting) which are RETURNED on close (`returnMargin`). Net: a long that bought at 98 and takes delivery at 100 pays 100 and had margin moved… the margin is returned → the long GAINS NOTHING from the price move. The future's economic P&L is lost at delivery (D11.a violated: value at close-out = mark; here 0). Fix: delivery legs price the bond at the STRUCK future price (`moneyLevel(c.struckAt)`), which is what a delivery IS (invoice price = futures settlement price), and the mark to that point was margin.
 - [ ] 21.136.CF4 commodity-futures delivery at spot price and margin returned → futures P&L never realised (BF3 class; both bond and commodity futures share the defect and the fix: settle (spot − struck) × notional through the house, then deliver at struck).
 
-
----
-
-## 21b. A pool whose manager died (Fund Shares F3, inserted after 21a)
-
-**Measured (21.106).** `manager.bank.c` dies in period 5 of the rig. Its estate is terminal, so the
-succession rule ends every commitment it ran — *"the successor is winding it up and does not run
-what it ran"* — and `fund.money.bank.c` is left ALIVE, holding a book, with households holding its
-shares, and **nobody deciding for it**. The `names` family says so every period from then on: *"a
-live pool under no mandate: there is no fund without a manager"*. Another mandate of the same
-manager was RESTATED onto the successor in the same period, so which pools survive a manager's death
-is decided by which side of the row the dead party was on, and not by anything about the pools.
-
-**No clause says what happens next.** Fund Shares F3 is about the FEE (*"the manager is a separate
-party that earns the fee"*); the family's sentence extends it, rightly, and the mechanism it asks
-for does not exist. This is the category Part 0.5 names: missing as an economy, with no clause
-naming it.
-
-- [ ] 21b.1 A pool with no live mandate DECIDES NOTHING — it posts no order, subscribes nobody, and
-  its phases read the mandate before they read anything else. It is not a rule against acting; it is
-  that there is nobody whose view the order would be (Clearing B2: a schedule is somebody's).
-- [ ] 21b.2 It WINDS UP through the machinery it already has: the holders' claim is redeemable (G1),
-  so what it holds is sold in the books it bought it in and the proceeds pay redemptions pro rata,
-  period by period, until nothing is left — and then it ceases, with its successor named. No forced
-  buyer (a book that will not take it leaves it unsold and the wind-up takes another period), and
-  nothing is invented: it is the fund's own selling and its own redemption path.
-- [ ] 21b.3 Tests: a manager that dies leaves its pools deciding nothing in the same period; a
-  winding pool sells what a book will take and pays its holders in proportion; a pool that cannot
-  sell holds what it holds and says so; the `names` family reports nothing on the rig for thirty
-  periods.
 
 ---
 

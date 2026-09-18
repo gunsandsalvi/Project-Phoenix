@@ -31,6 +31,11 @@ pub struct ParticipantView<'a> {
     params: &'a Params,
     period: u32,
     cash: Option<InstrumentId>,
+    /// XI-10: **its own relations.** A mandate, an engagement, a policy is a fact about THIS party
+    /// and nobody else's business, so it belongs in the view — and `of_party` is what keeps that
+    /// true: there is no argument here that could make it somebody else's (Observer A4). A view
+    /// built without it answers *no relations*, which is what a caller that has none can say.
+    agreements: Option<&'a Agreements>,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -43,7 +48,28 @@ impl<'a> ParticipantView<'a> {
         period: u32,
         cash: Option<InstrumentId>,
     ) -> Self {
-        Self { who, register, prints, journal, params, period, cash }
+        Self { who, register, prints, journal, params, period, cash, agreements: None }
+    }
+
+    /// The same view, able to answer what this party has AGREED. It is a second constructor rather
+    /// than an eighth argument because most callers have no relations to hand and saying `None`
+    /// eight times is how a caller ends up passing the wrong one.
+    pub fn knowing(mut self, agreements: &'a Agreements) -> Self {
+        self.agreements = Some(agreements);
+        self
+    }
+
+    /// XI-10: **its own live relations of one kind** — the mandate a pool is run under, the
+    /// engagements an employer holds. A view with no agreements answers none, which is an answer: a
+    /// caller that cannot see relations must not read that as a party having none, and the two are
+    /// told apart by whoever built the view rather than here.
+    pub fn agreed(&self, kind: u32) -> Vec<crate::stores::AgreementId> {
+        let Some(all) = self.agreements else { return Vec::new() };
+        all.of_party(self.who)
+            .iter()
+            .map(|r| crate::stores::AgreementId(*r))
+            .filter(|a| all.live(*a) && all.kind_of(*a) == kind)
+            .collect()
     }
 
     /// Money D2: **the account this party pays out of** — resolved from the banking lattice when the
@@ -186,6 +212,7 @@ pub struct MechanismContext<'a> {
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
     settled: Vec<DueId>,
+    ceased: Vec<PartyId>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -245,6 +272,7 @@ impl<'a> MechanismContext<'a> {
             said: Vec::new(),
             formed: Vec::new(),
             settled: Vec::new(),
+            ceased: Vec::new(),
         }
     }
 
@@ -331,6 +359,14 @@ impl<'a> MechanismContext<'a> {
         self.settled.push(due);
     }
 
+    /// **XI-3: NOTHING IS IMMORTAL, and a thing that ends says when.** A module asks; the kernel
+    /// writes, because `Parties` is the one writer of who is alive (Law 4). What becomes of what it
+    /// held is not decided here — that is the estate's, and a party ceasing with holdings is a
+    /// finding for whoever is looking, never a quantity this door disposes of.
+    pub fn ceases(&mut self, who: PartyId) {
+        self.ceased.push(who);
+    }
+
     /// What the kernel applies once the phase returns.
     pub fn taken(self) -> Taken {
         Taken {
@@ -338,6 +374,7 @@ impl<'a> MechanismContext<'a> {
             said: self.said,
             formed: self.formed,
             settled: self.settled,
+            ceased: self.ceased,
         }
     }
 }
@@ -349,6 +386,9 @@ pub struct Taken {
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
     pub settled: Vec<DueId>,
+    /// XI-3: the parties whose life ended in this phase. What HAPPENS to what they held is the
+    /// estate's; this records only that they have ceased, and the kernel is the one writer of it.
+    pub ceased: Vec<PartyId>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

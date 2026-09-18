@@ -24,8 +24,9 @@ use crate::clearing::{Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
+use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, Closing, Counts, Forming, Makes, Making, Owed, Reads, Reporting, Servicing, Wages};
+use crate::running::{afoot, agreed, Closing, Counts, Forming, Makes, Making, Owed, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -237,6 +238,13 @@ impl Participant for FundMandates {
     }
 
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        // **§13 F3, 21b.1: a pool under nobody's mandate posts nothing**, because a schedule is
+        // somebody's (Clearing B2) and there is nobody here whose view the order would be. It is
+        // not a rule against acting; it is arithmetic about who is there. What it holds is sold by
+        // `running::Winding`, which is the pool's own selling and not a decision it took.
+        if run_as(view.agreed(agreed::MANDATE).len()) == Run::Orphaned {
+            return Vec::new();
+        }
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
@@ -244,6 +252,9 @@ impl Participant for FundMandates {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        if run_as(view.agreed(agreed::MANDATE).len()) == Run::Orphaned {
+            return Vec::new();
+        }
         // §13 A4: a line outside the mandate is one it cannot buy, whatever it is worth.
         let line = line_of(m);
         if !self.may_hold.contains(&line) {
@@ -500,7 +511,9 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         // ── The holders ─────────────────────────────────────────────────────────────────────────
         {
             let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: 1.1 }));
-            f.mechanism = Some(Box::new(Reads { kind: says("funds.mandates"), what: Counts::AgreementsLive }));
+            // §13 F3, 21b: a pool whose manager died posts nothing and winds up. It was a count of
+            // live mandates, which is a read that reports on a thing it does not do.
+            f.mechanism = Some(Box::new(Winding { says: says("fund.orphaned") }));
             f
         },
         {
@@ -608,6 +621,7 @@ mod tests {
             1,
             account_of(&s.w.parties, &s.w.instruments, who),
         )
+        .knowing(&s.w.agreements)
     }
 
     #[test]
@@ -724,12 +738,37 @@ mod tests {
         let (cash, bread) = (s.cash, s.bread);
         let fund = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.register.money_delta(fund, cash, 1_000.0);
+        // F3: and somebody runs it. A pool under nobody's mandate is not a pool with a narrow
+        // mandate — it has nobody whose view the order would be, which is the test below this one.
+        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        s.w.agreements.strike(agreed::MANDATE, manager, fund, &[], crate::calendar::Day(-7), None);
         let allowed = FundMandates { may_hold: vec![bread], will_pay: 1.1 };
         let forbidden = FundMandates { may_hold: Vec::new(), will_pay: 1.1 };
         let view = seen(&s, fund);
         assert!(!allowed.orders(&view, book_of(bread)).is_empty());
         assert!(forbidden.orders(&view, book_of(bread)).is_empty());
         assert!(forbidden.markets(&view).is_empty());
+    }
+
+    #[test]
+    fn a_pool_under_nobody_s_mandate_posts_nothing_at_all() {
+        // §13 F3, 21b.1: a schedule is somebody's (Clearing B2). This pool has money, a mandate list
+        // it could buy from, and nobody deciding for it — and the difference between it and the one
+        // above is a RELATION, not a flag on the fund.
+        let mut s = world();
+        let (cash, bread) = (s.cash, s.bread);
+        let orphan = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        s.w.register.money_delta(orphan, cash, 1_000.0);
+        let pool = FundMandates { may_hold: vec![bread], will_pay: 1.1 };
+        let view = seen(&s, orphan);
+        assert!(pool.markets(&view).is_empty());
+        assert!(pool.orders(&view, book_of(bread)).is_empty());
+
+        // And it is not a rule against acting: give it a manager and it is in the book again.
+        let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
+        s.w.agreements.strike(agreed::MANDATE, manager, orphan, &[], crate::calendar::Day(-7), None);
+        let view = seen(&s, orphan);
+        assert_eq!(pool.markets(&view), vec![book_of(bread)]);
     }
 
     /// A line that makes one good out of another, with a mill to make it in. The fixtures need one

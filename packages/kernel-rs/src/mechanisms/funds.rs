@@ -205,6 +205,72 @@ pub fn is_redeemable(shares_held: Option<f64>) -> bool {
     matches!(shares_held, Some(s) if s > 0.0)
 }
 
+/// **F3, XI-3: A POOL WHOSE MANAGER DIED.** There is no fund without somebody deciding for it.
+///
+/// Measured on the old engine (21.106): a manager died in period 5, the succession rule ended every
+/// commitment it ran, and its money fund was left ALIVE — holding a book, with households holding its
+/// shares, and nobody whose view an order would be. Another mandate of the same manager was restated
+/// onto the successor in the same period, so **which pools survived a manager's death was decided by
+/// which side of the row the dead party was on**, and by nothing about the pools.
+///
+/// F3 is about the FEE — *the manager is a separate party that earns it* — and says nothing about
+/// what happens when there is no manager. This is the mechanism that absence asks for.
+///
+/// **It is not a rule against acting.** A schedule is somebody's (Clearing B2); a pool under no
+/// mandate has nobody to be the buyer or the seller, so there is no order to post. What follows is
+/// not a penalty, it is arithmetic about who is there.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Run {
+    /// Somebody's mandate is live over it, and it decides as it always did.
+    Mandated,
+    /// Nobody's is. It posts nothing and it is winding up (G1).
+    Orphaned,
+}
+
+/// How many live mandates a pool is under, and therefore whether anybody decides for it. Law 4: the
+/// count comes from the relations, never from a flag on the fund that somebody has to clear.
+pub fn run_as(live_mandates: usize) -> Run {
+    if live_mandates > 0 {
+        Run::Mandated
+    } else {
+        Run::Orphaned
+    }
+}
+
+/// **G1: what an orphaned pool sells this period** — everything it holds that a book will take, at
+/// what a book will pay. It is the fund's OWN selling through the ordinary machinery: no forced
+/// buyer, so a book that will not take it leaves it unsold and the wind-up takes another period
+/// (XI-2, Appendix B).
+///
+/// What it does not do is decide a price. That is the book's, and this says only the quantity.
+pub fn winding_sale(held: f64) -> Option<f64> {
+    if held > 0.0 {
+        Some(held)
+    } else {
+        None
+    }
+}
+
+/// **G1: and what each holder gets** — pro rata on the shares they hold, out of what the pool has
+/// actually raised. Not a promise of NAV: what it raised is what there is, and if it sold badly the
+/// holders wear it, which is the whole of C2.b.
+///
+/// `None` where nothing is outstanding: there is nobody to pay, and dividing by no shares is not a
+/// payment of everything to nobody.
+pub fn pro_rata(cash: f64, shares_held: f64, shares_outstanding: f64) -> Option<f64> {
+    if shares_outstanding <= 0.0 {
+        return None;
+    }
+    Some(cash * shares_held / shares_outstanding)
+}
+
+/// **XI-3: and when it is over.** A pool that holds nothing and owes nobody has ended; a pool still
+/// holding something has not, whatever period it is. Law 6: nothing here ends it on a schedule —
+/// the wind-up takes as long as the selling takes.
+pub fn is_wound_up(holds: f64, shares_outstanding: f64) -> bool {
+    holds <= 0.0 && shares_outstanding <= 0.0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -362,5 +428,53 @@ mod tests {
         // C5: created minus redeemed equals outstanding.
         assert!(shares_reconcile(1_400.0, 400.0, 1_000.0, 3).is_none());
         assert_eq!(shares_reconcile(1_400.0, 400.0, 900.0, 3), Some(100.0));
+    }
+
+    #[test]
+    fn a_pool_is_run_by_whoever_holds_a_live_mandate_over_it_and_by_nothing_else() {
+        // F3, 21b: which pools survived a manager's death was decided by which side of the row the
+        // dead party was on. The count of live mandates is the whole of the question.
+        assert_eq!(run_as(1), Run::Mandated);
+        assert_eq!(run_as(3), Run::Mandated);
+        assert_eq!(run_as(0), Run::Orphaned);
+    }
+
+    #[test]
+    fn a_winding_pool_sells_what_it_holds_and_says_nothing_about_the_price() {
+        // G1, XI-2: the selling is the fund's own, into the books it bought in. Law 3: the price is
+        // the book's, and there is nothing here that could name one.
+        assert_eq!(winding_sale(240.0), Some(240.0));
+        // A pool holding nothing has nothing to sell, which is not a sale of nothing.
+        assert!(winding_sale(0.0).is_none());
+    }
+
+    #[test]
+    fn what_each_holder_gets_is_its_share_of_what_the_pool_actually_raised() {
+        // C2.b: not a promise of NAV. If it sold badly the holders wear it, and the arithmetic is
+        // the same arithmetic either way.
+        let raised = 900.0;
+        let a = pro_rata(raised, 300.0, 1_000.0).unwrap();
+        let b = pro_rata(raised, 700.0, 1_000.0).unwrap();
+        assert_eq!(a, 270.0);
+        assert_eq!(b, 630.0);
+        // Appendix B: every piece of it has a holder — what goes out is what came in.
+        assert!((a + b - raised).abs() <= crate::num::dust(3, &[a, b, raised]));
+    }
+
+    #[test]
+    fn a_pool_nobody_holds_pays_nobody_rather_than_paying_everything_to_nobody() {
+        // Appendix A: dividing by no shares is missing, not a payment.
+        assert!(pro_rata(900.0, 0.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn the_wind_up_takes_as_long_as_the_selling_takes_and_ends_when_there_is_nothing_left() {
+        // XI-3, Law 6: nothing ends it on a schedule. A book that will not take its stock leaves it
+        // unsold and the pool is still there next period — which is the absence of a forced buyer
+        // showing up as a duration rather than as a discount.
+        assert!(!is_wound_up(240.0, 1_000.0));
+        assert!(!is_wound_up(0.0, 1_000.0));
+        assert!(!is_wound_up(240.0, 0.0));
+        assert!(is_wound_up(0.0, 0.0));
     }
 }

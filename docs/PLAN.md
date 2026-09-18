@@ -18,12 +18,11 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 11 closed** (21 of 215 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 10 closed** (21 of 212 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
 | 21 — The local repairs | 177 | 16 | in progress |
-| 21b — A pool whose manager died (Fund Shares F3, inserted after 21a) | 3 | 0 | open |
 | 21c — A tax on an estate is a claim on it (XI-8, inserted after 21b) | 2 | 0 | open |
 | 21d — Every store declares itself, and the homeless count is true | 6 | 5 | in progress |
 | 22e — The audit is not in the period loop | 3 | 0 | open |

@@ -284,6 +284,10 @@ impl World {
         for due in asked.settled {
             self.schedules.settle(due);
         }
+        // XI-3: and whose life ended. `Parties` is the one writer of who is alive; a module asks.
+        for who in asked.ceased {
+            self.parties.cease(who);
+        }
         1
     }
 
@@ -301,6 +305,7 @@ impl World {
                 prints: &self.prints,
                 journal: &self.journal,
                 params: &self.params,
+                agreements: &self.agreements,
             },
             self.period,
         );
@@ -315,6 +320,7 @@ impl World {
                 journal: &mut self.journal,
                 wire: &mut self.wire,
                 params: &self.params,
+                agreements: &self.agreements,
             };
             let session = run_book(
                 book,

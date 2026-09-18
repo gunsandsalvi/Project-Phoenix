@@ -372,6 +372,131 @@ impl Mechanism for Making {
 }
 
 
+/// **§13 F3, G1, XI-3: A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.**
+///
+/// 21b, measured on the old engine (21.106): a manager died, the succession rule ended every
+/// commitment it ran, and its money fund was left ALIVE — holding a book, with households holding its
+/// shares, and nobody deciding for it. It stayed that way for the rest of the run and the audit said
+/// so every period. **Which pools survived a manager's death was decided by which side of the row the
+/// dead party was on**, and by nothing about the pools.
+///
+/// There is no clause for it: F3 is about the FEE. So this is the mechanism that absence asks for,
+/// and it invents nothing — the holders' claim is redeemable (G1), so what the pool holds is sold in
+/// the books it bought it in and the proceeds pay redemptions pro rata, period by period, until
+/// nothing is left. **No forced buyer** (Appendix B): a book that will not take it leaves it unsold
+/// and the wind-up takes another period. The selling is the pool's own, posted by the participant
+/// side; what this does is pay out what the selling raised, and end the pool when there is nothing
+/// left to pay with.
+pub struct Winding {
+    /// The kind it publishes under, so a reader can see a pool lose its manager.
+    pub says: u32,
+}
+
+impl Mechanism for Winding {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::mechanisms::funds::{pro_rata, run_as, Run};
+
+        let mut paying: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut ending: Vec<PartyId> = Vec::new();
+        let mut orphaned: Vec<PartyId> = Vec::new();
+
+        for p in ctx.parties().of_kind(kinds::FUND) {
+            let pool = PartyId::at(*p);
+            if !ctx.parties().alive(pool) {
+                continue;
+            }
+            // Law 4: whether anybody decides for it is a read of the RELATIONS, never a flag on the
+            // pool that somebody has to remember to clear.
+            let live = ctx
+                .agreements()
+                .of_party(pool)
+                .iter()
+                .map(|r| crate::stores::AgreementId(*r))
+                .filter(|a| ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::MANDATE)
+                .count();
+            if run_as(live) == Run::Mandated {
+                continue;
+            }
+            orphaned.push(pool);
+
+            // What it has raised is what there is to pay with — its own account, and nothing else.
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), pool) else { continue };
+            let cash = ctx.register().quantity(ctx.register().row(pool, money));
+
+            // G1.b: a holder of its shares has a redeemable claim, and a share count is what makes a
+            // claim redeemable. Which line that is, is a walk over the instruments filtered by
+            // issuer — the walk 21.130 names, run here only for a pool that has actually lost its
+            // manager, which is rare. It becomes a read the day `Instruments` is indexed by issuer.
+            let Some(shares) = (0..ctx.instruments().len())
+                .map(|r| InstrumentId::at(r as u32))
+                .find(|i| ctx.instruments().issuer_of(*i) == pool && ctx.instruments().class_of(*i) == Class::Share)
+            else {
+                continue;
+            };
+            let (outstanding, _) = ctx.register().held_total(shares);
+            let held_by_it = ctx.register().quantity(ctx.register().row(pool, shares));
+            let out = outstanding - held_by_it;
+
+            let still_holds: f64 = ctx
+                .register()
+                .of_holder(pool)
+                .iter()
+                .map(|r| crate::ids::HoldingId(*r))
+                .filter(|r| {
+                    let line = ctx.register().instrument_of(*r);
+                    line != money && line != shares
+                })
+                .map(|r| ctx.register().quantity(r))
+                .sum();
+
+            if out <= 0.0 {
+                // XI-3: nothing held and nobody owed is a pool that has ended. Law 6: nothing here
+                // ends it on a schedule — the wind-up takes as long as the selling takes.
+                if still_holds <= 0.0 {
+                    ending.push(pool);
+                }
+                continue;
+            }
+            if cash <= 0.0 {
+                continue;
+            }
+            for row in ctx.register().of_instrument(shares) {
+                let row = crate::ids::HoldingId(*row);
+                let holder = ctx.register().holder_of(row);
+                if holder == pool {
+                    continue;
+                }
+                let Some(share) = pro_rata(cash, ctx.register().quantity(row), out) else { continue };
+                if share > 0.0 {
+                    paying.push((pool, holder, money, share));
+                }
+            }
+        }
+
+        for pool in orphaned {
+            ctx.say(self.says, &[pool.0], &[], true);
+        }
+        for (pool, holder, money, amount) in paying {
+            ctx.propose(
+                vec![Leg::Money {
+                    from: pool,
+                    to: holder,
+                    ccy: ctx.instruments().ccy_of(money),
+                    instrument: money,
+                    amount,
+                    receipt: Receipt::Principal,
+                }],
+                Cause::CorporateAction,
+                Delivery::Nothing,
+                "a winding pool paying its holders pro rata on what it raised",
+            );
+        }
+        for pool in ending {
+            ctx.ceases(pool);
+        }
+    }
+}
+
 /// **§46, XI-16: EVERY DECIDING PARTY FORMS ITS OWN OUTLOOK FROM ITS OWN HISTORY.**
 ///
 /// One PREFERENCE — how much weight it gives the surprise — and no global expectation anywhere. What
@@ -641,6 +766,9 @@ mod tests {
         for due in asked.settled {
             w.schedules.settle(due);
         }
+        for who in asked.ceased {
+            w.parties.cease(who);
+        }
     }
 
     #[test]
@@ -893,5 +1021,93 @@ mod tests {
         let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0)]);
         ran(&mut w, &making(&line, mill));
         assert!(w.register.quantity(w.register.row(bank, bread)) > 0.0);
+    }
+
+    /// A pool with a manager, a book of shares two households hold, and money it raised.
+    fn a_pool() -> (World, PartyId, PartyId, InstrumentId, InstrumentId, PartyId, PartyId) {
+        let (mut w, bank, manager, saver, cash) = world();
+        let pool = w.parties.add(kinds::FUND, RegionId::at(0), bank, Representation::Named, 1, 0);
+        let other = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 100, 0);
+        let shares = w.instruments.issue(pool, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
+        w.register.credit(saver, shares, 300.0, 1.0, 0);
+        w.register.credit(other, shares, 700.0, 1.0, 0);
+        w.register.money_delta(pool, cash, 900.0);
+        let mandate = w.agreements.strike(agreed::MANDATE, manager, pool, &[], Day(-30), None);
+        let _ = mandate;
+        (w, pool, manager, cash, shares, saver, other)
+    }
+
+    fn mandate_of(w: &World, pool: PartyId) -> crate::stores::AgreementId {
+        let row = w
+            .agreements
+            .of_party(pool)
+            .iter()
+            .copied()
+            .find(|r| w.agreements.kind_of(crate::stores::AgreementId(*r)) == agreed::MANDATE)
+            .expect("the fixture struck one");
+        crate::stores::AgreementId(row)
+    }
+
+    #[test]
+    fn a_pool_under_a_live_mandate_is_left_alone() {
+        // F3: this mechanism is about the absence of a manager and does nothing while there is one.
+        let (mut w, pool, _m, cash, _s, saver, _o) = a_pool();
+        w.period = 1;
+        let says = w.journal.kinds.declare("fund.orphaned");
+        ran(&mut w, &Winding { says });
+        assert_eq!(w.register.quantity(w.register.row(pool, cash)), 900.0);
+        assert_eq!(w.register.quantity(w.register.row(saver, cash)), 0.0);
+        assert!(w.parties.alive(pool));
+    }
+
+    #[test]
+    fn a_manager_that_dies_leaves_its_pool_paying_its_holders_pro_rata_on_what_it_raised() {
+        // 21b.2, G1: the holders' claim is redeemable, so what the pool raised goes back to them in
+        // proportion — 300 shares of 1,000 is 270 of 900, and it is the fund's own money moving over
+        // the ordinary wire, not a transfer somebody arranged.
+        let (mut w, pool, _m, cash, _s, saver, other) = a_pool();
+        w.period = 1;
+        let ended = mandate_of(&w, pool);
+        w.agreements.end(ended);
+        let says = w.journal.kinds.declare("fund.orphaned");
+        ran(&mut w, &Winding { says });
+
+        assert_eq!(w.register.quantity(w.register.row(saver, cash)), 270.0);
+        assert_eq!(w.register.quantity(w.register.row(other, cash)), 630.0);
+        // Appendix B: every piece of it has a holder. The pool paid out what it had, and no more.
+        assert_eq!(w.register.quantity(w.register.row(pool, cash)), 0.0);
+    }
+
+    #[test]
+    fn a_pool_that_has_paid_everybody_and_holds_nothing_has_ended() {
+        // XI-3: nothing is immortal, and a thing that ends says when. Law 6: it is not a schedule —
+        // the pool ends because there is nothing left, which is arithmetic about what it holds.
+        let (mut w, pool, _m, _c, shares, saver, other) = a_pool();
+        w.period = 1;
+        let ended = mandate_of(&w, pool);
+        w.agreements.end(ended);
+        // The holders have been paid and handed their shares back.
+        w.register.debit(w.register.row(saver, shares), 300.0);
+        w.register.debit(w.register.row(other, shares), 700.0);
+        let says = w.journal.kinds.declare("fund.orphaned");
+        ran(&mut w, &Winding { says });
+        assert!(!w.parties.alive(pool));
+    }
+
+    #[test]
+    fn a_pool_still_holding_something_is_not_wound_up_however_long_it_takes() {
+        // XI-2, Appendix B: no forced buyer. A book that will not take its stock leaves it unsold,
+        // and the pool is still there next period — the absence of a buyer showing up as a duration.
+        let (mut w, pool, _m, _c, shares, saver, other) = a_pool();
+        let unsold = w.instruments.issue(PartyId::at(1), CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
+        w.register.credit(pool, unsold, 240.0, 1.0, 0);
+        w.period = 1;
+        let ended = mandate_of(&w, pool);
+        w.agreements.end(ended);
+        w.register.debit(w.register.row(saver, shares), 300.0);
+        w.register.debit(w.register.row(other, shares), 700.0);
+        let says = w.journal.kinds.declare("fund.orphaned");
+        ran(&mut w, &Winding { says });
+        assert!(w.parties.alive(pool), "it still holds 240 of something nobody bought");
     }
 }
