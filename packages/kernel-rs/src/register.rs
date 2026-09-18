@@ -427,3 +427,23 @@ mod tests {
         assert!((total - 150.0).abs() <= dust);
     }
 }
+
+/// Banks Lending D1, XI-1: **WHAT A CLAIM IS**, as a status that is WRITTEN rather than inferred.
+/// Each step is a crossing with a date, and a claim does not slide between them by arithmetic.
+///
+/// It lives in the KERNEL and not in a module, because more than one module reads it — the lender
+/// writes it, a pool reads it, a credit-default swap triggers on it, a resolution values a book by
+/// it — and a fact two modules share is the kernel's, never one module's for another to import
+/// (Law 15). `phoenix-check` is what said so: `lending` reached into `loss` for this, and the
+/// module that does that has made the other one part of its own contract.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Standing {
+    Performing,
+    /// A payment was missed. The claim is still whole; what changed is what is known about it.
+    NonPerforming { since: u32 },
+    /// The holder has written down what it believes it will not get. Banks Lending D2: a charge to
+    /// income that is VISIBLE, never a reserve absorbing things quietly.
+    Impaired { since: u32 },
+    /// It is gone from the book, on a date, and whatever was seized is a separate holding.
+    WrittenOff { on: u32 },
+}

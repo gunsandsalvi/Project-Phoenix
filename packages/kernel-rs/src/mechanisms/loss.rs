@@ -28,20 +28,7 @@
 //! cell-level crossings** (XI-15), which is why `crossed` takes one cell and never a band.
 
 use crate::ids::{InstrumentId, PartyId};
-
-/// Banks Lending D1: what a claim IS, as a status that is WRITTEN rather than inferred. Each step
-/// is a crossing with a date, and a claim does not slide between them by arithmetic.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Standing {
-    Performing,
-    /// A payment was missed. The claim is still whole; what changed is what is known about it.
-    NonPerforming { since: u32 },
-    /// The holder has written down what it believes it will not get. D2: a charge to income that is
-    /// VISIBLE, never a reserve absorbing things quietly.
-    Impaired { since: u32 },
-    /// It is gone from the book, on a date, and whatever was seized is a separate holding.
-    WrittenOff { on: u32 },
-}
+use crate::register::Standing;
 
 /// The crossing itself: a borrower, a claim, a date. **This is the event**, and everything
 /// downstream — a provision, a seizure, a CDS trigger, a pool that shrank — reads it rather than

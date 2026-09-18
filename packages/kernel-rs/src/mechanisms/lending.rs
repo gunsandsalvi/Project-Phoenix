@@ -16,7 +16,7 @@
 //! notes that can never be touched** (XI-1). A pool here IS its rows.
 
 use crate::ids::{InstrumentId, PartyId};
-use crate::mechanisms::loss::Standing;
+use crate::register::Standing;
 
 /// F1.a: a row, with a lender of record, a borrower and its own terms. Nothing about it is a
 /// share of anything: it is one loan to one name.

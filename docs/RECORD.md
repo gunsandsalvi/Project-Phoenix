@@ -17070,3 +17070,20 @@ payment.
 
 **Eight laws as tests. Eighty-seven now hold; clippy is clean; `phoenix-check` is green over 29
 files.**
+
+# 0g.43 — the checker caught a Law 15 violation, and I pushed before reading it
+
+`lending` imported `crate::mechanisms::loss::Standing`. **A module never imports another module**
+(Law 15, ARCHITECTURE 4.9b), and `phoenix-check` said so on the run that followed the commit — but
+the commit and the push had already gone, because the check was chained after them in one command
+instead of before. **The check is only a gate if it runs first**, and it did not.
+
+The fix is the one the law implies rather than an exemption. A claim's STANDING is read by more than
+one module — the lender writes it, a pool reads it, a credit-default swap triggers on it, a
+resolution values a book by it — and **a fact two modules share is the kernel's**, never one
+module's for another to import. `Standing` now lives in `register`, and both read it from there.
+
+That is the second time a law-as-a-check has found something in this port that reading did not, and
+the first time it found something in code that was already pushed. **The discipline this leaves:
+`phoenix-check` runs BEFORE `git commit`, not beside it** — the same rule `npm run check:opens` has
+in CLAUDE.md, and for the same reason.
