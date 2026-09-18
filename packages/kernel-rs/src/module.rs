@@ -82,6 +82,38 @@ impl<'a> ParticipantView<'a> {
     /// **XI-2, 22i.3: how much this party has been put in a workout for**, and zero where it is in
     /// none — which is not a party with a workout of nothing, because a workout of nothing is never
     /// opened. Observer A4: its OWN, and there is no argument here that could make it another's.
+    /// §10, 22i.7: how many shares this company is floating, and zero where it is floating none.
+    pub fn in_a_flotation(&self) -> f64 {
+        let Some(all) = self.processes else { return 0.0 };
+        all.of_owner(self.who)
+            .iter()
+            .map(|r| crate::stores::ProcessId(*r))
+            .filter(|p| !all.done(*p) && all.kind_of(*p) == crate::running::afoot::FLOTATION)
+            .map(|p| all.size(p))
+            .sum()
+    }
+
+    /// §10 A1, Law 3: **what the residual is worth to equity, per share** — its OWN book value, over
+    /// the shares it is selling. It is a reservation and not a price: what the shares fetch is
+    /// whatever the book crosses at. `Missing` over no shares, because a per-share figure over
+    /// nothing is not a number (§48 G5).
+    pub fn worth_per_share(&self, shares: f64) -> Option<f64> {
+        if shares <= 0.0 {
+            return None;
+        }
+        let worth: f64 = self
+            .holdings()
+            .map(|row| {
+                if self.register.is_total(row) {
+                    self.register.quantity(row)
+                } else {
+                    self.register.lots(row).iter().map(|l| l.qty * l.basis_per_unit).sum()
+                }
+            })
+            .sum();
+        Some(worth / shares)
+    }
+
     pub fn in_a_workout(&self) -> f64 {
         let Some(all) = self.processes else { return 0.0 };
         all.of_owner(self.who)

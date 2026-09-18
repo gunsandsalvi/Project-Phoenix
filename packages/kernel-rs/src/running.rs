@@ -1852,6 +1852,152 @@ impl Mechanism for TradeCredit {
     }
 }
 
+/// **§10 A2, A2.a, 22i.7: A COMPANY FLOATS — and no company in this world had ever had shares.**
+///
+/// The `equity` row was a CLOSER for a flotation nothing opened. So §10's line did not exist for any
+/// firm, which is why nothing could be valued (§35 `worthAt` reads a share price), nothing could be
+/// taken over (§29 B), and §48's accounts were published by nobody: being public is *shares listed
+/// and held by outsiders*, and there were no shares.
+///
+/// **A company floats when the credit market has not taken it.** That is a read and not a rule: it
+/// brought paper (§7, §17) and is still holding it, so nobody bought the paper — equity is what a
+/// borrower the lenders will not take has left. A firm whose paper sold has no reason to sell its
+/// ownership and does not.
+///
+/// **A2.a: a share count changes only by a NAMED EVENT**, and this is one — the line comes into
+/// existence with the shares it issues, through the same door every other instrument does.
+pub struct Floating {
+    pub kind: u32,
+    /// §10 A2: how many shares a line comes into existence with. A TECHNOLOGY of the market: the
+    /// count is a convention and what a share is WORTH is what the book crosses at (Law 3).
+    pub shares: &'static str,
+    /// How long the flotation runs before it is over, one way or the other.
+    pub takes: &'static str,
+}
+
+impl Mechanism for Floating {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::instruments::Class;
+        let shares = ctx.params().count(self.shares);
+        let takes = ctx.params().periods(self.takes) as u32;
+
+        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // Law 15: the profile answers whether this kind brings paper at all. A kind that does
+            // not is a kind with no credit market to be turned down by.
+            match ctx.registry().profile(ctx.parties().kind_of(who)) {
+                Some(profile) if profile.issues_paper => {}
+                _ => continue,
+            }
+            let mut listed = false;
+            let mut unsold = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                match ctx.instruments().class_of(what) {
+                    Class::Share => listed = true,
+                    // What it brought and is still holding: paper nobody bought.
+                    Class::Claim => {
+                        unsold += ctx.register().quantity(ctx.register().row(who, what));
+                    }
+                    _ => {}
+                }
+            }
+            // A company already listed does not float again; a company the lenders took has no
+            // reason to sell its ownership.
+            if listed || unsold <= 0.0 {
+                continue;
+            }
+            if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            floating.push((who, ctx.instruments().ccy_of(money)));
+        }
+
+        for (who, ccy) in floating {
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: Class::Share,
+                // §10 A2: counted in SHARES, a unit that is not money and is not divided.
+                unit: crate::ids::UnitId::at(0),
+                // A share is not a claim: it carries no coupon and never matures (5 C4.b).
+                coupon: None,
+                matures: None,
+                units: shares,
+                // **§10 A6, 22c.1: shares trade on an EXCHANGE** — orders rest and are matched as
+                // they arrive, priced at the level the resting side was standing at.
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Book,
+                    seen_by: 1,
+                    stands_for: Some(4),
+                }),
+                // A share owes nothing on a date. What it gets is the residual, and only if there
+                // is one (A1).
+                owing: Vec::new(),
+            });
+            ctx.opens(crate::module::Opens {
+                kind: afoot::FLOTATION,
+                owner: who,
+                closes: Some(ctx.period() + takes),
+                size: shares,
+            });
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(shares))], true);
+        }
+    }
+}
+
+/// **§10 A6, Law 3, 22i.7: AND IT OFFERS THEM, at what it will take.**
+///
+/// A company selling its own new shares posts an ask like any other seller. Its reservation is its
+/// own book value per share — what the company is worth to the people who already own it — because
+/// selling ownership below that makes them poorer. What the shares FETCH is whatever the book
+/// crosses at (Law 3), and the two can be far apart: a flotation that does not clear is a real
+/// outcome and is why `closes` exists.
+pub struct Flotation {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Flotation {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        if view.in_a_flotation() <= 0.0 {
+            return Vec::new();
+        }
+        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let shares = view.in_a_flotation();
+        if shares <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::systems::line_of(m);
+        let held = view.free(line);
+        if held <= 0.0 {
+            return Vec::new();
+        }
+        // A1: what the residual is worth to equity, per share — the company's own book value. A
+        // seller with nothing to sell it for is a seller with no reservation, which is missing and
+        // not free (Appendix A).
+        let Some(worth) = view.worth_per_share(held) else { return Vec::new() };
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Sell,
+            price: Some(worth),
+            qty: held as i64,
+        }]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

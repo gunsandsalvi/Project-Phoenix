@@ -26,7 +26,7 @@ use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
-use crate::running::{afoot, agreed, Closing, Elections, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
+use crate::running::{afoot, agreed, Closing, Elections, Floating, Flotation, Losses, TradeCredit, ForcedSeller, ForcedSelling, Grading, Counts, Failing, Fixes, Forming, Funding, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, Servicing, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -819,6 +819,13 @@ pub fn declare(p: &mut Params) {
         "how much a seller will have out to one buyer at once before it stops offering terms");
     say("trade_credit.will_wait", 30.0, "days", Dimension::Days, Kind::Preference, Owner::Model,
         "how long a seller will wait to be paid");
+    // §10 A2: **how many shares a line comes into existence with.** A TECHNOLOGY — the count is a
+    // market convention and what a share is WORTH is what the book crosses at (Law 3), so this
+    // number says nothing about value.
+    say("equity.shares", 1000.0, "shares", Dimension::Count, Kind::Technology, Owner::StandardSetter,
+        "how many shares a company's line comes into existence with when it floats");
+    say("equity.takes", 4.0, "periods", Dimension::Periods, Kind::Technology, Owner::StandardSetter,
+        "the periods a flotation stands before it is over, one way or the other");
     say("parliament.seats", 100.0, "seats", Dimension::Count, Kind::Policy, Owner::Constitution,
         "how many seats the parliament of a country has");
     say("parliament.term", 1460.0, "days", Dimension::Days, Kind::Policy, Owner::Constitution,
@@ -1060,7 +1067,18 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         works("private_equity", AT_MARKETS, Box::new(Closing { kind: afoot::TAKEOVER, says: says("takeover.closed") })),
         works("prime_brokerage", AT_REVALUATION, Box::new(Reads { kind: says("prime_brokerage.books"), what: Counts::AgreementsLive })),
         works("redeemable", AT_MARKETS, Box::new(Reads { kind: says("redeemable.subscriptions"), what: Counts::AgreementsLive })),
-        works("equity", AT_MARKETS, Box::new(Closing { kind: afoot::FLOTATION, says: says("equity.floated") })),
+        {
+            // **§10 A2, A2.a: and a company FLOATS.** It was a closer for a flotation nothing opened,
+            // so no company in this world had ever had shares — which is why nothing could be valued
+            // (§35), nothing taken over (§29 B), and §48's accounts published by nobody.
+            let mut e = works("equity", AT_CORPORATE_ACTIONS_SLOT, Box::new(Floating {
+                kind: says("equity.floated"),
+                shares: "equity.shares",
+                takes: "equity.takes",
+            }));
+            e.participant = Some(Box::new(Flotation { of_kind: kinds::FIRM }));
+            e
+        },
         works("securities_lending", AT_MARKETS, Box::new(Reads { kind: says("securities_lending.loans"), what: Counts::AgreementsLive })),
         works("securitisation", AT_MARKETS, Box::new(Closing { kind: afoot::SECURITISATION, says: says("pool.closed") })),
         // ── The instrument families that settle against what the books printed ──────────────────
