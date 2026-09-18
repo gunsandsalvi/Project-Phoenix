@@ -17897,3 +17897,60 @@ default is chosen anywhere. Law 12: the fix removed code.
 
 **Eighty-two laws as tests across the ten-module block. Four hundred and fifty-nine now hold; clippy
 clean; `phoenix-check` green over 63 files. Forty of forty-seven modules ported.**
+
+# 0g.42 CLOSES — the last eleven systems, and the port is complete
+
+`corporate_credit` (§7), `short_term_debt` (§9), `prime_brokerage` (§15), `bank_funding` (§24),
+`hedge_funds` (§28), `private_equity` (§29), `freight` (§38), `small_business` (§42), `cross_border`
+(§43), `observer` (§45), `treasury` (§30). **Forty-seven of forty-seven. 586 laws hold as tests;
+clippy clean; `phoenix-check` green over 74 files.**
+
+**What each refuses, in one line:**
+
+`corporate_credit` — the issuer's walk-away, so a pulled deal never existed; best effort and
+backstopped cannot wear each other's clothes; a syndicate larger than its members' limits FAILS rather
+than shrinking silently. `short_term_debt` — no automatic roll, so a decline is what a run is made of,
+and a committed line with no fee is refused as the free option it would be. `prime_brokerage` — the
+available line is never floored at zero, because the negative number is what forces the sale.
+`bank_funding` — three deposit classes with three stickinesses, because a model with one cannot have a
+run. `hedge_funds` — an unmarked position makes the whole fund unmarkable. `private_equity` — a call
+bounded by the investor's spare cash is not an obligation, so `Defaulted` exists. `freight` — capacity
+rations quantity, and no price conjures a ship. `small_business` — losses walk the loan rows, and the
+correlation is a shared region rather than a parameter. `cross_border` — the world closes, and a
+residual is a transaction that lost a leg. `observer` — no `&mut` anywhere in the file, which is "no
+surface that changes the model" as a type signature. `treasury` — `pay` refuses when the balance is
+short, and that refusal IS the funding constraint.
+
+**Three things the checks caught that I had wrong:**
+
+*A modelling error, not a fixture.* `prime_brokerage` claimed each broker underestimates a
+multi-brokered client's LEVERAGE. It cannot: the aggregate of two books always lands between the two
+brokers' own ratios, because each house's equity is its own assets less its own loan and the sums are
+the same arithmetic. Asserting it would have been a test that passes only by choosing the fixture. The
+blind spot §15 E3 actually describes is CONCENTRATION — each broker measures its own slice against the
+market and concludes the position is liquidatable, while the position that exists is the sum — so the
+module now measures that, and the module doc says plainly why the other claim is untrue.
+
+*Clippy against the law, again.* `small_business` matched on an `Option` for what a security fetched;
+clippy wanted `unwrap_or(0.0)`, which the law forbids. The fix removed the branch: a sum over the
+security there is — one piece, or none — which is a read, not a default. Second time this exact clash
+has appeared, and both times the resolution was to delete the branch rather than satisfy either tool.
+
+*A false positive worth fixing anyway.* `phoenix-check` flagged `f.kind == Entry::Claim` in
+`cross_border` as a Law 15 kind branch. It was not one — a flow's account category is §43 D1/D2's own
+distinction, not an entity type — but the field was named so that nobody reading the check could tell.
+Renamed to `entry`, which is what the spec calls it. The rule stays as strict as it was and the name
+now carries its own justification.
+
+**Two shocks were sized wrong** in first drafts (a small-business shock that did not cross the second
+cell's threshold, a securities-lending margin call asserted where none was due). Both were my
+expectations; the code was right both times.
+
+**Where this leaves the port.** Every one of the spec's forty-seven systems has a Rust module citing
+its clauses, with its laws as tests. What remains is 0g.43 (the discipline migration, largely done —
+`phoenix-check` now carries the bound, default, clock, kind, cross-import, `@spec` and unfailable-VERIFY
+rules), 0g.44 (the app: WASM for the browser, NDK for Android) and 0g.45 (deleting the TypeScript
+engine, gated as 0g.41a restated it: laws-as-tests plus a census whose every difference is explained).
+
+Measured again on this machine after the block: the assembled world period is **138.3 ms** against
+TypeScript's 42,100 ms, with one module in it and forty-six still to wire into the session loop.
