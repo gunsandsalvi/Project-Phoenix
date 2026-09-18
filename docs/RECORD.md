@@ -17176,3 +17176,49 @@ dust, and a real negative gap when 200 shares are unaccounted for.
 
 **Six laws as tests. A hundred and seven now hold; clippy is clean; `phoenix-check` is green over 33
 files, run before the commit.**
+
+# 0g.42 item 9 — equity (§10) and dealer desks (§26)
+
+## Equity, and the one place a floor is not Law 6's defect
+
+**A1.b: equity's value can be ZERO AND NOT NEGATIVE. Limited liability is a real property**, so the
+arithmetic of what a share is worth genuinely stops at nothing — this is not a clamp. The proof that
+it is not is what `residual` RETURNS: **the loss below zero does not vanish, it comes back as a
+second number, because it lands on the creditors** (XI-8). A function that gave back only the
+floored value would be hiding it, and *that* would be the defect. The test asserts both.
+
+**A2.a: a share count changes only by a NAMED event** — issued, bought back, split, cancelled — and
+a company cannot retire shares it never issued. A split RESTATES (multiplies) rather than adds,
+because what anybody owns a share of is unchanged.
+
+**A4: equity is perpetual**, so `Line` has no `matures` field to leave unset — which is how a
+perpetual quietly becomes a bond nobody dated (Appendix A).
+
+**A5: a vote per share, and a cell casts the votes of what it HOLDS**, because a weight is a count
+(XI-15): there is no per-member fraction of a vote anywhere. `control_needs` reads more than half
+off the outstanding count, and half of an odd count is not a share.
+
+## Dealer desks, and the refusal that keeps a price informative
+
+**B4 FORBID — a desk does not quote because the mechanism needs somebody to.** A schedule that
+exists so the book has a second side is Appendix B's synthetic counterparty wearing a dealer's name,
+and a price struck against it carries no information (XI-13). So **`quote` returns `None`** where the
+desk is out of room or has no view: a book with no dealer in it is a real state. Law 6: that is a
+REFUSAL, not a smaller size — *a dealer without a limit is a synthetic counterparty*, so `room` is
+not optional.
+
+**C2, C2.a: inventory skews the quote, and that is how a book mean-reverts without anyone telling it
+to.** Long already bids lower AND offers lower, because it wants less — the skew moves both sides
+together, which the test asserts by checking the spread is unchanged. **There is no target inventory
+in this module and no reversion rule**, only a skew that follows the position.
+
+**C3 and C4 widen it rather than moving it**: risk and adverse selection are the caller's reads
+about this line and this client, passed in — a desk that computed them from a kind would be
+branching on one (Law 15). The test checks the mid is unchanged and only the spread grows.
+
+**A4: the spread and the inventory are reported APART**, because a desk that netted them could not
+tell a good week of trading from a lucky position. And inventory is signed, because a desk can be
+short.
+
+**Eleven laws as tests. A hundred and seventeen now hold; clippy clean; `phoenix-check` green over
+35 files.**
