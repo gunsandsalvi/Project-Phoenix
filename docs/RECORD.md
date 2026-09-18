@@ -17750,3 +17750,39 @@ read.
 
 **Twenty-five laws as tests. Three hundred and thirty-two now hold; clippy clean; `phoenix-check`
 green over 54 files. Thirty of forty-seven modules ported.**
+
+# 0g.43 — the unfailable VERIFY becomes a check, and two bugs in the checker itself
+
+**The rule.** Part II says a VERIFY that fails is a finding about a mechanism. It does not say what a
+VERIFY that CANNOT fail is, so: it is worse than none, because it reports green about a thing it never
+measured. I wrote that defect three times in one session — `trade_credit` summing receivables against
+payables that were the same field, `cds` comparing protection paid with protection received when
+`Paid` carries one amount, `irs` computing `p.amount - p.amount` — and caught all three by reading
+them back. Three times is a pattern, and the standing rule says write the check.
+
+`compares_with_itself` in `tools/phoenix-check` walks each line's operands with parenthesis depth and
+reports an expression subtracted from, or compared with, itself. It cannot catch the subtler form —
+two sums equal by construction over different names — so the rule for the writer stands beside it:
+**before a VERIFY is written, name the input that makes it answer false.**
+
+**Then the checker turned out to have two bugs of its own, and the new rule found both.**
+
+*Braces inside strings and doc comments were counted as blocks.* A message like `declared {:?} and
+its legs are {shape:?}`, or a doc line naming `Leg::{Money, Asset}`, moved the depth counter, which
+is what the `#[cfg(test)]` tracker uses to know where the test block ends. Lines are now emptied of
+string contents before anything reads them, and the comment skip happens before the count rather than
+after it.
+
+*The `#[cfg(test)]` exemption had never once applied.* The block was left when the depth came back
+down to where the attribute stood — but the attribute stands at that depth on its own line, so the
+block ended on the line it began. Every module's tests have been checked as engine code since the
+checker was written. Nothing was wrongly green — tests were held to a STRICTER standard than they
+needed to be, not a looser one — but "the tests are exempt" was untrue in the file that said it, which
+is a stale doc and therefore a defect (Law 16). `inside` now distinguishes entering from leaving.
+
+Both bugs were invisible until a rule fired inside a test block and had to be explained. A check that
+had never been exercised in the place it claimed to exempt was itself an unfailable check, which is
+the same defect one level up.
+
+Probed both ways before committing: the offending line in engine code is reported, the identical line
+inside `#[cfg(test)]` is not.

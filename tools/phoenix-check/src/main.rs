@@ -36,6 +36,128 @@ const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "
 /// Law 15: no mechanism branches on industry, sector, entity type or product id.
 const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
 
+/// **Part II: a VERIFY that cannot fail is worse than none.** Written after the same defect was
+/// written three times in one session — in `trade_credit` (receivables summed against payables that
+/// were the same field), in `cds` (protection paid against protection received, one number), and in
+/// `irs` (`p.amount - p.amount`). Each looked like a conservation check and each compared a quantity
+/// with itself, so each reported green about a thing it had not measured.
+///
+/// What is detectable textually is an expression subtracted from, or compared with, ITSELF. That is
+/// the shape all three took once reduced. It cannot catch the subtler version — two sums that are
+/// equal by construction over different names — which is why the rule the record states is a rule
+/// for the writer: **before a VERIFY is written, name the input that makes it answer false.**
+fn compares_with_itself(line: &str) -> Option<String> {
+    let bytes: Vec<char> = line.chars().collect();
+    for op in [" - ", " == ", " != "] {
+        let mut from = 0usize;
+        while let Some(rel) = line[from..].find(op) {
+            let at = from + rel;
+            from = at + op.len();
+            let (Some(left), Some(right)) = (operand_before(&bytes, at), operand_after(&bytes, at + op.len()))
+            else {
+                continue;
+            };
+            // Only an expression that READS something — a field, a call, an index — can be a check
+            // pretending to measure. Two bare identifiers are ordinary arithmetic, and `50.0 - 50.0`
+            // is a literal spelling out what a test expects rather than a quantity being compared
+            // with itself, so a name has to appear in it.
+            let names_something = left.chars().any(|c| c.is_alphabetic());
+            let reads = names_something && (left.contains('.') || left.contains('(') || left.contains('['));
+            if reads && left == right {
+                return Some(format!("an expression compared with itself: {left}{op}{right}"));
+            }
+        }
+    }
+    None
+}
+
+/// The operand ending just before `at`, with balanced parentheses walked through so a call is taken
+/// whole. `None` where there is nothing readable there.
+fn operand_before(chars: &[char], at: usize) -> Option<String> {
+    let mut end = at;
+    while end > 0 && chars[end - 1] == ' ' {
+        end -= 1;
+    }
+    let mut start = end;
+    let mut depth = 0i32;
+    while start > 0 {
+        let c = chars[start - 1];
+        match c {
+            ')' | ']' => depth += 1,
+            '(' | '[' => {
+                if depth == 0 {
+                    break;
+                }
+                depth -= 1;
+            }
+            _ if depth > 0 => {}
+            c if c.is_alphanumeric() || c == '_' || c == '.' => {}
+            _ => break,
+        }
+        start -= 1;
+    }
+    let taken: String = chars[start..end].iter().collect();
+    if taken.is_empty() { None } else { Some(taken) }
+}
+
+/// And the operand beginning at `at`, the same way.
+fn operand_after(chars: &[char], at: usize) -> Option<String> {
+    let mut start = at;
+    while start < chars.len() && chars[start] == ' ' {
+        start += 1;
+    }
+    let mut end = start;
+    let mut depth = 0i32;
+    while end < chars.len() {
+        let c = chars[end];
+        match c {
+            '(' | '[' => depth += 1,
+            ')' | ']' => {
+                if depth == 0 {
+                    break;
+                }
+                depth -= 1;
+            }
+            _ if depth > 0 => {}
+            c if c.is_alphanumeric() || c == '_' || c == '.' => {}
+            _ => break,
+        }
+        end += 1;
+    }
+    let taken: String = chars[start..end].iter().collect();
+    if taken.is_empty() { None } else { Some(taken) }
+}
+
+/// A line with its string literals emptied. **Braces inside a format string are not code**, and
+/// counting them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
+/// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests. The
+/// same emptying stops a word inside a message being read as the code it names.
+fn without_strings(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut in_string = false;
+    let mut escaped = false;
+    for c in line.chars() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if c == '\\' {
+                escaped = true;
+            } else if c == '"' {
+                in_string = false;
+                out.push('"');
+            }
+            continue;
+        }
+        if c == '"' {
+            in_string = true;
+            out.push('"');
+            continue;
+        }
+        out.push(c);
+    }
+    out
+}
+
 fn rust_files(at: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(at) else { return };
     for e in entries.flatten() {
@@ -71,22 +193,37 @@ fn main() {
         checked += 1;
 
         let mut in_test = false;
+        let mut inside = false;
         let mut depth_at_test: i32 = -1;
         let mut depth: i32 = 0;
-        for (n, raw) in text.lines().enumerate() {
+        for (n, source) in text.lines().enumerate() {
+            // Everything below reads CODE, never the inside of a message.
+            let raw = without_strings(source);
             let line = raw.trim();
+            // A comment is prose, and prose may say the word "max" — and may write `Leg::{Money,
+            // Asset}`, whose brace is not a block. Counting those walked the tracker out of step and
+            // silently un-exempted the tests of every file with such a line, so the skip comes FIRST.
+            if line.starts_with("//") || line.starts_with("*") || line.starts_with("/*") {
+                continue;
+            }
             // Track `#[cfg(test)]` blocks so a test may state its own numbers.
+            //
+            // The block is left when the depth comes back DOWN to where the attribute stood — but it
+            // stands at that depth on its own line too, so leaving on `depth <= depth_at_test` ended
+            // the block the instant it began, and this exemption never once applied. `inside` is
+            // what tells the two apart: the block is only left after it has been entered.
             if line.starts_with("#[cfg(test)]") {
                 in_test = true;
+                inside = false;
                 depth_at_test = depth;
             }
             depth += raw.matches('{').count() as i32 - raw.matches('}').count() as i32;
-            if in_test && depth <= depth_at_test {
-                in_test = false;
-            }
-            // A comment is prose, and prose may say the word "max".
-            if line.starts_with("//") || line.starts_with("*") || line.starts_with("/*") {
-                continue;
+            if in_test {
+                if depth > depth_at_test {
+                    inside = true;
+                } else if inside {
+                    in_test = false;
+                }
             }
             let say = |law: &'static str, what: String| Finding {
                 file: name.clone(),
@@ -123,6 +260,13 @@ fn main() {
                     if line.contains(k) {
                         found.push(say("Law 15", format!("a kind branch: {k}")));
                     }
+                }
+            }
+            // Part II: a VERIFY that cannot fail is worse than none. A test may compare a thing
+            // with itself to show that it does not move; the engine has no such reason.
+            if !in_test {
+                if let Some(what) = compares_with_itself(line) {
+                    found.push(say("Part II", what));
                 }
             }
             // Law 15: a module never imports another module.
