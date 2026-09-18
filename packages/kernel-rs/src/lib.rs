@@ -19,6 +19,7 @@ pub mod ledger;
 pub mod mechanisms;
 pub mod module;
 pub mod nouns;
+pub mod num;
 pub mod params;
 pub mod parties;
 pub mod prices;

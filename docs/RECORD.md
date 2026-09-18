@@ -17390,3 +17390,38 @@ the test removes each in turn.
 
 **Nine laws as tests. A hundred and sixty-five now hold; clippy clean; `phoenix-check` green over 40
 files. Seventeen of forty-seven modules ported.**
+
+# 0g.42 item 12a — reporting and estimates (§48), and `num.rs`
+
+`packages/kernel-rs/src/mechanisms/reporting.rs`, and one kernel file with it.
+
+**`src/num.rs` first, because the module would otherwise have written a third copy.** A sample
+standard deviation existed in `second_opinion` and a covariance in `benchmarks`, and reporting wanted
+both again. Two modules measuring two populations are two facts but not two formulas, and a second
+copy of the arithmetic is the parallel formula Law 4 says to hunt — they drift the day one is
+corrected. `num.rs` is now the one writer of `dispersion`, `variance`, `covariance`, `mean` and Law
+7's `dust`; both existing copies were deleted into it, which is what Law 12 says a fix looks like.
+`mean` answers `None` over nothing, and the dispersions answer `None` below two observations.
+
+**Then §48.** Being public is `reports(listed, held_by_outsiders)` — two register facts, no label and
+no kind of firm (A1.a, G4). `income` is the equity account's movement with the financing that moved
+it taken back out, so there is no figure management can choose and nothing to smooth (G2), and
+`per_share` divides two reads (G5). `Fiscal` is placed by DAYS and refuses to publish before its
+books close; `asymmetry` is the lag, which A4.a calls the only real information asymmetry this world
+has. `Line::restate` appends and `as_first_published` still answers — a correction is a new entry,
+never an erasure (A5, §2 E2.a).
+
+**Two absences carry C5 and C6.** `Observed` has three variants — the report, the guidance, the
+company's own markets — and no variant for the model's forecast or for the share price. A caller
+cannot express either, so an estimate cannot be handed the answer and cannot restate the market.
+Likewise F2.a: there is no function in the module from a surprise to a price move, because a stated
+move per unit of surprise is a written price path.
+
+`consensus` and `disagreement` compute from the estimates at the read, with nowhere to store either
+(E1, E3); the test adds a fourth estimate and watches the answer move with nothing in between.
+`settle` settles the guidance alongside the estimates, because management holds a view like anybody
+else. `is_the_answer_with_an_offset` (G3) measures the analyst who is always right or always wrong by
+the same amount, against Law 7 dust, and repairs nothing.
+
+**Nineteen laws as tests. A hundred and eighty-four now hold; clippy clean; `phoenix-check` green over
+42 files. Eighteen of forty-seven modules ported.**

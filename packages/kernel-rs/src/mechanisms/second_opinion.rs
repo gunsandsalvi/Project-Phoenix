@@ -87,13 +87,8 @@ impl Assessments {
 /// `None` below two opinions: one assessor is not a disagreement, and answering zero would say the
 /// world agrees when in fact nobody has asked it (Appendix A).
 pub fn dispersion(on: &[Assessment]) -> Option<f64> {
-    if on.len() < 2 {
-        return None;
-    }
-    let n = on.len() as f64;
-    let mean: f64 = on.iter().map(|a| a.probability).sum::<f64>() / n;
-    let spread: f64 = on.iter().map(|a| (a.probability - mean) * (a.probability - mean)).sum();
-    Some((spread / (n - 1.0)).sqrt())
+    let held: Vec<f64> = on.iter().map(|a| a.probability).collect();
+    crate::num::dispersion(&held)
 }
 
 /// **What an estate actually realised**, carried with the dead party it came from — so a constant

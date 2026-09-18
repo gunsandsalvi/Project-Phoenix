@@ -95,18 +95,15 @@ pub fn history(index: &Index, periods: &[u32], prints: &[Print]) -> Vec<(u32, f6
 /// the index HAS, and answers `None` when there is not enough of it. A beta off one observation is
 /// not a beta, and answering zero would be a numeric default (Appendix A).
 pub fn covariance(a: &[(u32, f64)], b: &[(u32, f64)]) -> Option<f64> {
-    if a.len() != b.len() || a.len() < 2 {
+    if a.len() != b.len() {
         return None;
     }
-    let n = a.len() as f64;
-    let mean_a: f64 = a.iter().map(|x| x.1).sum::<f64>() / n;
-    let mean_b: f64 = b.iter().map(|x| x.1).sum::<f64>() / n;
-    let mut total = 0.0;
     for (x, y) in a.iter().zip(b.iter()) {
         assert!(x.0 == y.0, "XI-7: a covariance across different periods is not a covariance");
-        total += (x.1 - mean_a) * (y.1 - mean_b);
     }
-    Some(total / (n - 1.0))
+    let left: Vec<f64> = a.iter().map(|x| x.1).collect();
+    let right: Vec<f64> = b.iter().map(|y| y.1).collect();
+    crate::num::covariance(&left, &right)
 }
 
 /// XI-7: **the floating benchmark is a transacted rate.** What a floating coupon fixes on, and where
