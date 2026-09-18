@@ -22,4 +22,5 @@ pub mod parties;
 pub mod prices;
 pub mod register;
 pub mod world;
+pub mod audit;
 pub mod calendar;

@@ -16563,3 +16563,33 @@ give it one, and **the count of homeless nouns is the honest measure of how much
 missing.** Three laws as tests.
 
 **Forty laws now hold as tests; clippy is clean.**
+
+# 0g.41 (part) — the audit, with 0g.34's one traversal built in rather than retrofitted
+
+**One walk of the register feeds every family.** In TypeScript `flows`, `accounts`, `currency`,
+`units` and `ownership` each walked it after the one before did — 18,885,889 reads a period, and
+`AUDIT_READS` showed a family that walks the holdings once costs exactly 544,104, so the walks ARE
+the count. A family's independence is about the SOURCE it reads (Audit C3), not how many times the
+register is visited, and each contribution here still derives its own answer and may read no other's
+total nor a mechanism's running one.
+
+Three laws as tests: one walk feeds every family and each derives its own answer; **a violation is
+reported with its owner and size and the audit NEVER repairs** — the test pledges 18 against a
+holding of 10 and asserts afterwards that the register still says 10 and free is still −8; and **an
+unbuilt family says so and is never green**, which is `Contribution::built` returning false rather
+than an empty violation list, because an unbuilt check that reports "no violations" is the most
+dangerous line an audit can print.
+
+| | |
+|---|---|
+| TypeScript audit, measured | **9,829 ms** over 18,885,889 reads and 51 contributions |
+| this audit | **6.3 ms** over 2 contributions |
+| per holding per contribution | **5.7 ns** |
+| normalised per contribution | TS 192.7 ms · here 3.1 ms — **61.6×** |
+
+**The raw ratio is 1,571× and it is meaningless, so the bench prints it only to say it is not
+quoted.** TypeScript's 51 contributions include a balance sheet per party, an index recomputed from
+its constituents and a walk of the whole period's ledger; these two walk the lots. **61.6× per
+contribution is a bound**, and it will fall as the real families land.
+
+**Forty-three laws now hold as tests; clippy is clean.**
