@@ -261,7 +261,7 @@ the file it named and closes by being verified absent. **`tools/phoenix-check` a
 good number of the second kind outright**, so the fastest way through this section is to run it and
 close what it proves gone.
 
-**Steps closed and deleted: 117** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
+**Steps closed and deleted: 131** — 21.118 (the ladder's statistic) at 0g.17; and fifteen at *21, the
 small self-contained points* — 21.4 and 21.5 and 21.9 verified absent, 21.8 closed by the citation
 check it asked for, and eleven of 21.130's walks whose shape cannot exist here because the Rust
 journal has neither `of_kind` nor `for_subject`. All of them are in `docs/RECORD.md`, which is the
@@ -367,6 +367,22 @@ proves it: `tools/` had no test runner at all, and now has five fixture cases an
   them, then once more by the commit after it: **when a rule is broken twice, write the check.** It
   caught its own two on the first run, and it fails when the rule is broken, which is 21.94's rule
   about checks that cannot fail.
+
+- [ ] 21.139 **RAISED at 21.135: NOTHING IN THIS WORLD CAN ISSUE AN INSTRUMENT.** The set of
+  instruments and the set of books are whatever `assembly` built, and they do not change while the
+  world runs. `MechanismContext` offers `propose`, `say`, `form`, `settles`, `ceases`, `is_owed` and
+  `pays`; `Taken` carries exactly those and nothing else. `Leg::Create` makes UNITS of a line that
+  already exists — which is what production is (§37) — and every `instruments.issue` call in the tree
+  is in a test or a `bin`. So a firm cannot bring paper (21.58), a bank cannot write a loan as a new
+  row, a treasury cannot auction a bill it has not already got (21.41), a pool cannot cut a note
+  (21.81), a company cannot float and a borrower cannot be lent to on a line struck today. **This is
+  the deeper half of 21j.** That item found twenty-five systems whose mechanism only counts; this says
+  that for a good number of them, converting the row is not enough, because the thing the system would
+  DO is create an obligation and there is no door to create one through. It is the same shape as
+  21j.1's missing schedules read and it is the larger of the two. Law 4 decides who writes: settlement
+  is the one writer of the register, so the kernel is the one writer of the instrument table, and a
+  module ASKS — `Taken.issued`, applied by the assembly, exactly as `claimed` and `ceased` are.
+  **Positioned at 21j** as 21j.1a, before the conversions that need it.
 
 - [ ] 21.98 `mechanisms/small-business/data.ts SMALL_PER_NAMED = 12` (21, the owner's own figure):
   **THE TIER BELOW THE NAMED FIRMS IS FORTY TIMES TOO SMALL.** The full model draws 9,006 named
@@ -639,17 +655,45 @@ pledges are one claim of fifty that comes off in one release.
 
 ### 21.132 The periodicity cluster — Law 8, four modules, one defect
 
-- [ ] 21.132.FXD5 `fx-derivatives/contract.ts:765` `(at − started) % payEvery` — period-index periodicity (FD12/IR5); `accrual` from `at − payEvery + 1` reaches before `started` on the first payment.
-- [ ] 21.132.IR5 `irs/contract.ts:2055 legs`: `(at − c.opened) % fixedEvery === 0` — period-index periodicity (Law 8); `accrualFor` uses `startOf(at − every + 1)` which for the first payment reaches BEFORE `opened` (accrues on periods before the contract existed). Fix: calendar-placed payment dates from the trade date (`addMonths`), accrual from the later of last payment and trade date.
-- [ ] 21.132.OP1 `options/index.ts:1382 openBooks`: `atLeast(opened, 0)` floor; `nextCycle(period, life)` period-index ladder (Law 8 again: expiry should be the third Friday of a calendar month).
+**CLOSED: the port answered the cluster and the kernel has the check.** Every one of the three is
+period-index arithmetic — `(at − opened) % every` — standing in for a date, and `grep` for that shape
+over this engine returns nothing. Periodicity here is what Law 8 asks for: `irs::Leg` carries
+`payments_per_year` and `year_basis` (*the periodicity is part of the number*, and the two legs need
+not match), a `Swap` matures on a `Day`, and `Calendar::year_fraction` counts days. And
+`calendar.rs` has the test the finding is a request for, by name: **a periodicity is placed by date
+and never by a count of periods.**
+
+**OP1's residue is real and it is one convention**, so it stays as a step of its own below: the
+kernel's `Calendar::next_cycle(at, every)` is an exchange's expiry ladder anchored to the EPOCH —
+everything written between two dates settles into the same book, which is right — and a real
+exchange's ladder is anchored to the calendar month (the third Friday), which is Law 1's real
+mechanism rather than an approximation of it.
+
+- [ ] 21.132.OP1 `Calendar::next_cycle`: the expiry ladder is a whole number of periods from the
+  epoch, where a real one is the third Friday of a calendar month (Law 1, Law 8). It is placed by
+  date, so it is not the period-index defect the rest of this cluster was; it is a market convention
+  the calendar states differently from the market. One read, in the kernel, and the only caller is
+  whatever opens a dated book — so it closes wherever a futures or options ladder is next opened.
+
 
 ### 21.133 The six that are ABSENCES, not defects
 
-- [ ] 21.133.BK33 Missing (Banks Funding): deposit CLASSES exist but there is no depositor choice of bank in banks — check `households`/`funds` for `bank.depositRate` readers; a board nobody moves for is a display-only number (Appendix B). Grep later.
-- [ ] 21.133.BK34 Missing (Banks Capital D): resolution — `capital.ts` cites D6 (acquirer) but no phase in this module resolves a bank below requirement; search `resolution` in credit-events/estate later.
-- [ ] 21.133.CB7 corporate-bond: Corporate Credit D (secondary trading, dealers with inventory in credit), E1–E4 (spread as derived, credit curve), F (ratings interplay), G3–G5 (restructuring, recovery) — not in this module; verify COVERAGE marks. G2 acceleration is a kind flag read by the kernel; G4 (workout) — nothing.
-- [ ] 21.133.CO6 Commodities Spot as a SYSTEM: this module builds STORAGE only. Spot A1/A2 (a spot market per commodity per place with named producers and consumers) is the goods module; B (supply shocks) is environment; C (inventory as state) is goods; D2/D3 here; E (the E4 chain: commodity shock → margins → inflation → policy) has no reader; F (verify) partially. COVERAGE should mark Commodities Spot as spread across goods/environment/commodities with named clauses, and E4 as MISSING (no policy reaction reads a commodity print).
-- [ ] 21.133.OM6 central-bank: Central Bank A (the policy rate as an ADMINISTERED rate with a real quantity response: deposit facility / lending facility both sides booked), B (the reaction function), D (LOLR with the four classical conditions: solvent, good collateral, penalty rate, open to all) — where are they? The money-market module has a standing facility? `CLAUDE.md` says LOLR has all four conditions; verify which module implements Central Bank A/B/D and whether the policy rate ever CHANGES in a run (if it is a constant param, §Central Bank B is MISSING and "no policy set directly or by path" is violated by a constant path).
+**Re-read, and four of the six were asking a question `check:existence` now answers.** CB7, CO6 and
+OM6 each say *these clauses are not in this module — verify COVERAGE marks them*, which was the right
+instinct on an engine where nobody could tell. `npm run check:existence` is that verification and it
+reports **no absent sector at all**: Corporate Credit 49 MET of 62, Commodities Spot 16 of 24, and
+Central Bank — OM6's, and the one with no module of its own — **22 MET of 29**, its clauses carried by
+`money`, `money_market` and `currency` rather than by a file named for it. A clause's home is not a
+file, which is what the port settled. BK33 and BK34 are live absences and both have a home:
+
+- **BK33** — a depositor with no choice of bank, so the board is a display-only number. Half is built:
+  `bank_funding::Line::leaves(on_signals, limit)` is deposits LEAVING on what a depositor can see. The
+  other half — which bank they go to — is nothing's, because no bank in this world quotes a board
+  anybody reads. → **21j**.
+- **BK34** — no phase resolves a bank below its requirement. That is the sentence 21.66 ends on
+  (*a bank that cannot shed its way back is its RESOLVER's, and nothing resolves it*) → **23.2**,
+  where 21.66 already stands.
+
 
 ### 21.134 The four stragglers of the drained file — the D, K and C sections' live remainder
 
@@ -660,17 +704,17 @@ closed or superseded, and their successors are in `docs/RECORD.md`. D7, D9, D10,
 the macro state, and 0.3 above carries that as a live table with items against each row. These four
 are what neither of those covers, and they are placed rather than assumed dead.
 
-- [ ] 21.134.C14 `requiredOf` (subordinated) and corporate-bond both read `bank.reservation` of the
-  current period — two readers of one fact each with its own scan, and both depend on a phase order
-  the assembly does not guarantee. Law 4 and Law 10 together; in Rust a phase reading a not-yet-
-  produced print throws, so the re-read is whether the two readers still exist.
-- [ ] 21.134.C16 The rig opened ONE country and `abroadWorld` opened all, so the FX layer — spot-fx,
-  fx-derivatives, external, cross-border — was never exercised by the default rig, consistent with
-  *no FX pair ever traded*. The rig is deleted; the question it asks is now about whatever the
-  seeding draws, and it is the reason a one-country opening cannot be the one the world is judged on.
-- [ ] 21.134.G10 `universe.ts:OBLIGORS` hard-codes kind ids `'treasury','centralBank','vehicle'` as
-  strings — **a kind branch in data form** (Law 15). It should read the party kind's profile. This is
-  the one of the four `tools/phoenix-check` can close by grep.
+**Re-read, and three of the five close.** **G10** — kind ids hard-coded as strings, a kind branch in
+data form — is gone and cannot come back: `grep kinds:: mechanisms/` returns **nothing**, so not one
+mechanism in this engine names a party kind at all, which is Law 15 held by the code rather than by a
+checker. **C14** — two readers of `bank.reservation`, each with its own scan, both depending on a phase
+order the assembly does not guarantee — has neither reader left, and the guarantee it wanted is built:
+a phase reading a not-yet-produced print throws. **C16** — the rig opened one country, so the FX layer
+was never exercised — is the rig's, and the rig is deleted; what it asks is the seeding's now, and the
+sentence worth carrying is its last: **a one-country opening cannot be the world the model is judged
+on.** It goes with the seeding beside 21.6, 21.98 and 21.121. C0 and D14/D15 stay as they are: not
+defects but the standing reasons for 22e, which is what they already say.
+
 - [ ] 21.134.C0 *typecheck green, lint green, `check:spec`/`forbids`/`deaths` green — none of these
   loads a world.* It is not a defect; it is the sentence that explains why every one of these
   findings was possible, and it is why `world-runs` exists and why 22e (the audit in the period loop)
@@ -684,13 +728,30 @@ are what neither of those covers, and they are placed rather than assumed dead.
 
 ### 21.135 The unbounded market table — two findings, one growth
 
-- [ ] 21.135.CF2 commodity-futures: the (series × good) market list grows every period; no series ever expires from the market table (CP4 class, unbounded growth of markets phase).
-- [ ] 21.135.CB2 corporate-bond/index.ts:254 `cheaper = !quoted.some || keenest < quoted.rate`: a firm NOBODY quoted issues in the market whenever any bank has published a reservation — and after MM16 no bank quotes anyone, so EVERY firm with a `shortTerm` gap goes to the bond market every period, opening a new line per maturity (one line per issuer per period since `maturity` = today + 60 months moves every period → a NEW instrument and a NEW market per firm per period: unbounded instrument/market growth, CP4 class). Fix: tap the standing line when one exists within the tenor band (nearest maturity within ±k months), not a new date each period.
+**CLOSED, and the reason is 21.139.** Both findings are a new instrument and a new market per firm per
+period, growing without bound. **Nothing in this engine can create either.** `MechanismContext` has
+`propose`, `say`, `form`, `settles`, `ceases`, `is_owed` and `pays`, and `Taken` carries exactly those
+— there is no `issue` and no way to declare a book, so the set of instruments and markets is whatever
+the assembly built and it does not change while the world runs. CB2's own fix is built besides:
+`corporate_credit::tap` is C8's *a tap does not create a second instrument — added face on paper that
+already exists and already prices.* That the growth is impossible is not a clean bill of health, and
+what it really means is the finding below.
+
 
 ### 21.136 The futures that lose their own profit and loss — one defect in two modules
 
-- [ ] 21.136.BF3 `bond-futures/index.ts:1955 deliver`: the long pays `price × face` where price = deliverable's latest print — at delivery the future's struck price is NOT used: the contract is closed (`act: 'close'`) with its mark settled by the layer? No — `legs: []` and `expires: () => false` means the layer never pays the mark; delivery settles at the CASH price, so the futures P&L (struck vs cash at expiry) is realised only through variation margin flows (`requirement` netting) which are RETURNED on close (`returnMargin`). Net: a long that bought at 98 and takes delivery at 100 pays 100 and had margin moved… the margin is returned → the long GAINS NOTHING from the price move. The future's economic P&L is lost at delivery (D11.a violated: value at close-out = mark; here 0). Fix: delivery legs price the bond at the STRUCK future price (`moneyLevel(c.struckAt)`), which is what a delivery IS (invoice price = futures settlement price), and the mark to that point was margin.
-- [ ] 21.136.CF4 commodity-futures delivery at spot price and margin returned → futures P&L never realised (BF3 class; both bond and commodity futures share the defect and the fix: settle (spot − struck) × notional through the house, then deliver at struck).
+**CLOSED: the port keeps the P&L where it is earned.** The defect is variation margin RETURNED on
+close, so a long that bought at 98 and took delivery at 100 gained nothing. Here
+`derivative_layer::variation` is a real payment **between the two counterparties** —
+`Variation::Paid { from, to, amount }`, sized by the mark's own move against its own dust — and there
+is no return path: `grep return` over the module finds none. The P&L is realised period by period and
+stays with whoever earned it. And there is no delivery leg to misprice, because `commodities::at_expiry`
+says WHAT happens (delivers, cash-settles against a cleared spot, or must have closed) and nothing books
+it — the module is one of 21j's counting rows. **The rule both findings end on is carried into 21j**:
+when delivery is written it invoices at the STRUCK price, because the invoice price IS the futures
+settlement price and the mark to that point was margin. Written here so the conversion cannot re-make
+the defect.
+
 
 
 ---
@@ -922,6 +983,14 @@ this party's agreements, and not the schedules. That is one kernel change and it
 - [ ] 21j.1 **A schedules door on `ParticipantView`**: what this party owes and is owed by date, as
   `MechanismContext::wire()` is for the history. A participant that cannot see what falls due cannot
   decide anything about money it has to find.
+- [ ] 21j.1a **A module can ask for an instrument to exist** (21.139), because today nothing can: the
+  instrument table is fixed at assembly, so no firm brings paper, no bank writes a loan as a row, no
+  treasury auctions a bill it has not already got, no pool cuts a note and no company floats. The
+  kernel is the one writer (Law 4), so this is `Taken.issued` applied by the assembly, as `claimed`
+  and `ceased` are. It is the larger of this item's two doors and most of the conversions below want
+  it. **And the rule 21.136 leaves here**: when a delivery leg is written, it invoices at the STRUCK
+  price, because the invoice price IS the futures settlement price and the mark to that point was
+  margin.
 - [ ] 21j.2 **The treasury issues what it must raise** (Treasury D3, XI-9): `size` is
   `must_raise(outlays, receipts, cash, buffer)` read through 21j.1, and the literal goes. It is the
   first system whose conversion makes a constraint bind rather than a number appear.

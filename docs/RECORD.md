@@ -19705,3 +19705,67 @@ paying for itself.
 
 **686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
 green.** Item 21 stands at 117 of 181.
+
+---
+
+## 21.132–21.136 — nothing in this world can issue an instrument
+
+**What.** The last four groups of the drained file, fourteen steps deleted, one step kept, and one
+finding raised that is larger than any of them.
+
+### 21.139 — the instrument table is fixed at assembly
+
+Found closing 21.135, which is two findings about a market table growing without bound — a new
+instrument and a new market per firm per period. It cannot happen here, and the reason is not a
+safeguard: **`MechanismContext` has no way to issue anything.** Its doors are `propose`, `say`,
+`form`, `settles`, `ceases`, `is_owed` and `pays`; `Taken` carries exactly those. `Leg::Create` makes
+UNITS of a line that already exists, which is what production is. Every `instruments.issue` in the
+tree is in a test or a `bin`.
+
+So a firm cannot bring paper (21.58), a bank cannot write a loan as a new row, a treasury cannot
+auction a bill it has not already got (21.41), a pool cannot cut a note (21.81), a company cannot
+float, and nobody can be lent to on a line struck today.
+
+**This is the deeper half of 21j.** That item found twenty-five systems whose mechanism only counts;
+this says that converting the row is not enough for a good number of them, because the thing the
+system would DO is create an obligation and there is no door to create one through. Law 4 decides who
+writes: settlement is the one writer of the register, so the kernel is the one writer of the
+instrument table, and a module ASKS — `Taken.issued`, applied by the assembly, exactly as `claimed`
+and `ceased` already are. It is 21j.1a, before the conversions that want it.
+
+### The four groups
+
+**21.132, the periodicity cluster** — three findings, all period-index arithmetic (`(at − opened) %
+every`) standing in for a date. `grep` for that shape returns nothing: `irs::Leg` carries
+`payments_per_year` and `year_basis`, a `Swap` matures on a `Day`, `Calendar::year_fraction` counts
+days, and `calendar.rs` has the test by name — *a periodicity is placed by date and never by a count
+of periods.* **OP1's residue is kept as a step**: `Calendar::next_cycle` anchors an expiry ladder to
+the epoch where a real exchange anchors it to the calendar month (the third Friday). That is placed by
+date, so it is not the cluster's defect; it is a market convention stated differently from the market
+(Law 1), and it closes wherever a dated book is next opened.
+
+**21.133, the six absences** — four were asking a question `check:existence` now answers. CB7, CO6 and
+OM6 each say *these clauses are not in this module, verify COVERAGE marks them*, which was the right
+instinct on an engine where nobody could tell. There is now **no absent sector at all**: Corporate
+Credit 49 of 62, Commodities Spot 16 of 24, and Central Bank — OM6's, the one with no module named for
+it — 22 of 29, its clauses carried by `money`, `money_market` and `currency`. A clause's home is not a
+file. BK33 (a depositor with no choice of bank; half built, since `bank_funding::Line::leaves` is
+deposits leaving on what a depositor sees) → 21j. BK34 (nothing resolves a bank below requirement) →
+23.2, which is the sentence 21.66 already ends on.
+
+**21.134, the stragglers** — G10, a kind branch in data form, is gone and cannot return: `grep kinds::
+mechanisms/` returns nothing, so not one mechanism names a party kind, which is Law 15 held by the
+code rather than by a checker. C14's two readers of one fact have neither reader, and the phase-order
+guarantee it wanted is built (a phase reading a not-yet-produced print throws). C16 is the rig's, and
+what survives is its last sentence — **a one-country opening cannot be the world the model is judged
+on** — carried with the seeding. C0 and D14/D15 stay: not defects, but the standing reasons for 22e.
+
+**21.136, the futures that lose their P&L** — the defect is variation margin returned on close, so a
+long that bought at 98 and took delivery at 100 gained nothing. `derivative_layer::variation` is a
+real payment **between the two counterparties**, sized by the mark's own move against its own dust,
+and there is no return path. The P&L is realised as it accrues and stays with whoever earned it. The
+rule the finding ends on is carried into 21j.1a so the conversion cannot re-make it: a delivery leg
+invoices at the STRUCK price, because the invoice price IS the futures settlement price.
+
+**686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green.** Item 21 stands at 131 of 182, and the drained file's 78 findings are all re-read and placed.
