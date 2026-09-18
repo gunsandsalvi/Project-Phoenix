@@ -73,7 +73,7 @@ asset has a _cleared_ price and shows it; nothing is bounded, plugged or invente
 - **Register**: holdings with lots (basis) and liens; both directions indexed; holdings sum to issued.
 - **Parties** are named or **cells** (integer weight; holdings are TOTALS, `perMember` is a read;
   identity is a KEY on the kind's declared lattice; at most one live cell per key; weight changes
-  only by entry/death/promotion/merge and the crossings the kernel reads at revaluation; no mean).
+  only by entry, death, promotion, SPLIT and merge; a crossing is a READ and not one of them; no mean).
 - **Prices**: `(market, instrument, period)` prints with provenance; value = units × price at read;
   unpriced throws unless declared carried-at-cost; stale is visibly stale.
 - **Clearing**: one solver over posted schedules; outcomes `cleared | noDemand | noSupply |

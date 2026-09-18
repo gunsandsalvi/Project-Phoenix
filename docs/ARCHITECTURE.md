@@ -202,12 +202,32 @@ at the seal (`placeCellsOnLattice`) and a dimension it cannot read yet is `unrea
 **At most one live cell per key**, kept by the kernel: a move onto an occupied key merges
 (`reKeyOntoStanding`; a bank move goes the same way).
 
-Movement is the five weight events and nothing else — entry, death, promotion, merge, and the
-crossings the kernel reads at the close of `revaluation` (`crossings()`, the one writer of a cell's
-position on its bands). A weight event moving `n` members moves `floor(total × n / weight)` pieces
-of every holding (`Register.moveShare`) and the remainder stays; the event journals what moved per
-instrument and the `flows` family reads it as the explanation. A merge adds totals and weights and
-carries what the mover issued (`Instruments.reseat`) and owed (`succeedAgreements`). A cell is
+Movement is the five weight events and nothing else — **entry, death, promotion, split and merge**
+(XI-15, Small-Business Pools E5). The fifth was written down as a *crossing* and that was a
+misreading: a crossing is the READ XI-1 names — *population-level default must be a read of
+cell-level crossings* — and `loss::Crossing` is that read, a borrower passing a threshold on a date.
+It changes no weight, and written as one it read as kernel bookkeeping, which is why nothing ever
+called it (21h).
+
+**A split is EXACT and its arithmetic is the kernel's** (`World::split_cell`). The departing members
+take `taking / had` of every free holding, settled over the ordinary wire as legs from the parent to
+the child — `Leg::Money` for an account, `Leg::Asset` at no price for everything else, so the basis
+goes with the units and nothing is realised (Law 19). Their outlook goes with them: one group has one
+history, so a cell split off its parent does not start out expecting nothing (21.20). The
+relationship that applies to them moves too (`Agreements::moves`, Labour A4.c) — a split does not end
+an engagement and strike a new one, which would be a separation with a severance owed and a start
+date lost.
+
+**Nothing is floored.** The TypeScript engine moved `floor(total × n / weight)` pieces and left the
+remainder with the parent, which is a residual with no holder (Law 2) and the exact drift XI-15
+warns about: a cell that has stopped being one possible household, one indivisible payment at a time.
+Divisibility by the weight is an INVARIANT to be measured by Part XII's Units family, never a
+rounding to be chosen at the site.
+
+The other four events have no cause in this world yet and so have no code: a household does not form,
+nobody dies, no small firm is a cell, and no two cells have arrived at the same state. Each is named
+with what would call it in `docs/IMPLEMENTATION.md` rather than written as a door nothing opens. A
+cell is
 homogeneous by construction — it is what the lattice makes of one population — and nothing decides
 on a band INDEX: a decision reads the cell's own quantities, because a rule keyed to a band would
 make the band's edge a preference (0f.10).
@@ -1126,7 +1146,8 @@ kernel places every cell on the rest (`World.placeCellsOnLattice`): a categorica
 did not supply is READ off the opening record (no hire is unemployed, no default is a clean record),
 a band is read off the register, and a quantity that cannot be read yet — a band on expected income
 before any outlook exists — is `unread`, a real state and not a default. From the seal a key moves
-only by the five weight events and by the crossings the kernel reads at the close of revaluation
+only by the five weight events — entry, death, promotion, split and merge (XI-15; the fifth was
+written down as a crossing, and a crossing is a read, 21h)
 (0f.4).
 
 ### 4.10a What a module knows between periods, and within one

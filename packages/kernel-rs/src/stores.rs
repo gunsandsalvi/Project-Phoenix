@@ -148,6 +148,26 @@ impl Agreements {
         self.live[a.row()] = false;
     }
 
+    /// XI-15, Labour A4.c: **the same relationship, now naming the cell that actually holds those
+    /// people.** A split does not end an engagement and strike a new one — that would be a
+    /// separation, with a severance owed and a start date lost — so the row moves rather than being
+    /// replaced. The kernel calls this as part of the split; nothing else has business re-pointing
+    /// an agreement at a party that did not agree it.
+    pub fn moves(&mut self, a: AgreementId, from: PartyId, to: PartyId) {
+        assert!(self.live[a.row()], "17f: an agreement that has ended moves nowhere");
+        if self.one[a.row()] == from.0 {
+            self.one[a.row()] = to.0;
+        } else if self.other[a.row()] == from.0 {
+            self.other[a.row()] = to.0;
+        } else {
+            panic!("Law 5: {from:?} is not a party to this agreement");
+        }
+        self.by_party.entry(to.0).or_default().push(a.0);
+        if let Some(rows) = self.by_party.get_mut(&from.0) {
+            rows.retain(|r| *r != a.0);
+        }
+    }
+
     /// Register A3: both directions. What this party is party to.
     pub fn of_party(&self, p: PartyId) -> &[u32] {
         match self.by_party.get(&p.0) {

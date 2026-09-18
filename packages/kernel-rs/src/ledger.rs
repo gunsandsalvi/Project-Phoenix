@@ -225,20 +225,34 @@ impl<'a> Instruction<'a> {
     }
 
     /// What the LEGS say this is, so the declaration can be held to them.
+    ///
+    /// **A payment is money going the OTHER WAY, and that is what "versus" means** (XI-5, Money
+    /// C3.a). Any money leg at all used to count, so an instruction in which money and units moved
+    /// TOGETHER between the same two parties — a cell splitting its book in two (21h), a position
+    /// transferred whole — read as delivery-versus-payment, and the only way to get it past the wire
+    /// was to declare something false. Money flowing alongside a delivery is part of that delivery;
+    /// money flowing back against it is the payment.
     fn shape(&self) -> Delivery {
-        let mut delivers = false;
-        let mut pays = false;
+        let mut deliveries: Vec<(PartyId, PartyId)> = Vec::new();
+        let mut money: Vec<(PartyId, PartyId)> = Vec::new();
         for leg in self.legs {
-            match leg {
-                Leg::Asset { from, to, .. } if from != to => delivers = true,
-                Leg::Money { from, to, .. } if from != to => pays = true,
+            match *leg {
+                Leg::Asset { from, to, .. } if from != to => deliveries.push((from, to)),
+                Leg::Money { from, to, .. } if from != to => money.push((from, to)),
                 _ => {}
             }
         }
-        match (delivers, pays) {
-            (true, true) => Delivery::AgainstPayment,
-            (true, false) => Delivery::Free,
-            _ => Delivery::Nothing,
+        if deliveries.is_empty() {
+            return Delivery::Nothing;
+        }
+        // Against: the payer received units here, or the payee delivered them.
+        let against = money
+            .iter()
+            .any(|(mf, mt)| deliveries.iter().any(|(df, dt)| mf == dt || mt == df));
+        if against {
+            Delivery::AgainstPayment
+        } else {
+            Delivery::Free
         }
     }
 }
@@ -708,6 +722,39 @@ mod tests {
             Leg::Money { from: a, to: b, ccy: CurrencyCode::at(0), instrument: cash, amount: 50.0, receipt: Receipt::Sale },
         ];
         s.settle(&Instruction::free_of_payment(&legs, Cause::Trade), 1, &mut on(&mut reg, &mut j, &ps, &ins), ok, no);
+    }
+
+    #[test]
+    fn money_moving_with_a_delivery_is_not_a_payment_against_it() {
+        // **XI-15, 21h: a cell splitting its book in two moves money AND units, both from the parent
+        // to the part that left.** Nothing is versus anything — the money is not payment for the
+        // units, it is the same members' money going with them. Any money leg used to make the wire
+        // read this as delivery-versus-payment, so the only way past it was to declare something
+        // false; "versus" means the money goes the OTHER WAY, and now that is what is asked.
+        let (mut reg, mut j, ps, ins, mut s, ok, no) = world();
+        let parent = PartyId::at(0);
+        let part = PartyId::at(1);
+        let cash = InstrumentId::at(0);
+        let share = InstrumentId::at(1);
+        reg.money_delta(parent, cash, 900.0);
+        reg.credit(parent, share, 30.0, 2.0, 1);
+        let legs = [
+            Leg::Asset { from: parent, to: part, instrument: share, qty: 10.0, price_per_unit: None },
+            Leg::Money { from: parent, to: part, ccy: CurrencyCode::at(0), instrument: cash, amount: 300.0, receipt: Receipt::Transfer },
+        ];
+        let out = s.settle(
+            &Instruction::free_of_payment(&legs, Cause::CorporateAction),
+            1,
+            &mut on(&mut reg, &mut j, &ps, &ins),
+            ok,
+            no,
+        );
+        assert_eq!(out, Outcome::Settled);
+        // A third of the people took a third of each, and the basis went with the units (Law 19):
+        // nothing was sold, so nothing was realised.
+        assert_eq!(reg.quantity(reg.row(part, share)), 10.0);
+        assert_eq!(reg.quantity(reg.row(parent, share)), 20.0);
+        assert_eq!(reg.lots(reg.row(part, share))[0].basis_per_unit, 2.0);
     }
 
     #[test]

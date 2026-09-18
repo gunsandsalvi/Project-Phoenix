@@ -12,14 +12,21 @@ pub enum Representation {
     Cell,
 }
 
-/// XI-15: the five events that may change a weight, and nothing else may.
+/// XI-15, Small-Business Pools E5: the five events that may change a weight, and nothing else may.
+///
+/// **The fifth is SPLIT, and it was written down as `Crossing`.** A crossing is the READ XI-1 names
+/// — *population-level default must be a read of cell-level crossings* — and `loss::Crossing` is
+/// that read, a borrower passing a threshold on a date. It changes no weight. What XI-15 and E5 both
+/// name as the fifth event is the SPLIT: an event applying to SOME members makes them a new cell
+/// with the same state, exactly, because identical members divide without remainder. Written as a
+/// crossing it read as a kernel bookkeeping step, which is why nothing ever called it (21h.4).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum WeightEvent {
     Entry,
     Death,
     Promotion,
+    Split,
     Merge,
-    Crossing,
 }
 
 #[derive(Default)]
@@ -137,6 +144,37 @@ impl Parties {
         self.weight[p.row()] = to;
     }
 
+    /// XI-15: **an event that applies to SOME members splits the cell.** The affected members become
+    /// a new cell with the same kind, the same region, the same bank and the same key — the same
+    /// state, because a cell is homogeneous and identical members divide without remainder. What the
+    /// two cells HOLD is settled over the wire by the caller, exactly: the kernel divides the count
+    /// and settlement divides the holdings.
+    ///
+    /// Without this, a partial event has only two answers and both are wrong: move the whole cell,
+    /// which quantises the world to the weight, or carry a headcount inside the cell and let its
+    /// members differ, which is an average one level down.
+    pub fn split(&mut self, p: PartyId, taking: u32) -> PartyId {
+        assert!(
+            self.representation[p.row()] == Representation::Cell,
+            "XI-15: a named party is one party and has no part to split off"
+        );
+        let had = self.weight[p.row()];
+        assert!(
+            taking > 0 && taking < had,
+            "XI-15: {taking} of a cell of {had} is not a part of it"
+        );
+        let child = self.add(
+            self.kind[p.row()],
+            RegionId(self.region[p.row()]),
+            PartyId(self.bank[p.row()]),
+            Representation::Cell,
+            taking,
+            self.key[p.row()],
+        );
+        self.reweigh(p, had - taking, WeightEvent::Split);
+        child
+    }
+
     /// Money E4, XI-3: nothing is immortal, and a death has a destination. What it held is the
     /// estate's; this only records that the party has ceased.
     pub fn cease(&mut self, p: PartyId) {
@@ -172,6 +210,37 @@ mod tests {
         let mut ps = Parties::new();
         let p = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
         ps.reweigh(p, 9, WeightEvent::Entry);
+    }
+
+    #[test]
+    fn an_event_that_applies_to_some_members_splits_the_cell() {
+        // XI-15: the affected members become a new cell with the same kind, region, bank and key —
+        // the same state — and the two counts add back to the one they came from. A population is a
+        // read of the cells, so a split changes how many cells there are and not how many people.
+        let mut ps = Parties::new();
+        let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
+        let cell = ps.add(1, RegionId::at(2), cb, Representation::Cell, 1_800, 7);
+        let part = ps.split(cell, 500);
+        assert_eq!(ps.weight(cell), 1_300);
+        assert_eq!(ps.weight(part), 500);
+        assert_eq!(ps.weight(cell) + ps.weight(part), 1_800);
+        assert_eq!(ps.key_of(part), ps.key_of(cell));
+        assert_eq!(ps.kind_of(part), ps.kind_of(cell));
+        assert_eq!(ps.region_of(part), ps.region_of(cell));
+        assert_eq!(ps.bank_of(part), ps.bank_of(cell));
+        assert_eq!(ps.representation_of(part), Representation::Cell);
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a part of it")]
+    fn all_of_a_cell_is_not_a_part_of_it() {
+        // XI-15: taking everybody leaves a cell of nobody, which is a DEATH and not a split. The
+        // two are different events with different consequences, and a split that could mean either
+        // is a weight change nobody can read.
+        let mut ps = Parties::new();
+        let cb = ps.add(0, RegionId::at(0), PartyId::at(0), Representation::Named, 1, u32::MAX);
+        let cell = ps.add(1, RegionId::at(0), cb, Representation::Cell, 40, 7);
+        ps.split(cell, 40);
     }
 
     #[test]

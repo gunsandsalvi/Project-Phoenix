@@ -153,7 +153,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 21e | There is no registry — **done** (section removed; see `docs/RECORD.md`; `src/registry.rs`: a currency names its issuer, `currency_of(region)` reads through the country, a unit says what it is divided into, a kind has a profile `World::admit` asks. Seven homeless nouns are three) | after 21d: the ontology register is what found it |
 | 21f | Three facts the modules keep and the kernel does not — **done** (section removed; see `docs/RECORD.md`; a posting and a lending standard are one shape, `stores::Standing`; work in progress is `stores::InProgress`, real because the recipe has a lead time. Three nouns went home and three were declared in their place) | with 21e, and for the same reason |
 | 21g | The parameter register is switched off — **done** (section removed; see `docs/RECORD.md`; fourteen numbers declared with kind, unit, owner and reason, every participant and mechanism holding an id, `world-runs` printing the shape count, and a `phoenix-check` rule that fails on a literal handed to a mechanism) | with 21e and 21f: the same defect, one register over |
-| 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
+| 21h | The five cell events never fire — **done** (section removed; see `docs/RECORD.md`; the fifth event is a SPLIT and was written down as a crossing, which is a read; an engagement carries a headcount, so one covering part of a cell splits it exactly; 1,286 cells are 2,571 and the population is unchanged. The other four have no cause yet and are item 22h) | with 21e–21g: the third register reporting nothing |
 | 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
 | 21j | Twenty-five systems take no part | named by 21.38–21.42; after 21i, and its door is what the later conversions all want |
 | 22 | The recipe — **done** (section removed; see `docs/RECORD.md`; a line may be made more than one way and the firm picks by its own cost read, the line runs in whole batches, a vintage carries its own life and its own keep, and **the world makes things** — the basket is now a read of what the recipes make. Findings raised and positioned at 22e and 22f) | recipes plural; batches; upkeep |
@@ -163,6 +163,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
+| 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
 | 23 | Measure | after everything |
 | 24 | The app and the APK | last |
 
@@ -170,47 +171,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ## Part 2 — The items
 
-## 21h. The five cell events never fire
-
-**INSERTED (Law 10), beside 21e–21g, found re-reading 21.20.** XI-15: a cell is a named party with an
-integer WEIGHT, and a weight changes only by entry, death, promotion, merge and the crossings the
-kernel reads at revaluation. `Parties::reweigh` refuses a weight written outside the five — and
-`grep reweigh(` returns one hit, its own definition. **Not one weight in this world has ever changed**:
-`world-runs` opens with 1,286 household cells of a drawn weight and closes with the same 1,286 of the
-same weight, so XI-15's population dynamics is declared and unreached, and `Small-Business Pools E4`'s
-*no constant composition by construction* is violated in the one direction nothing checks.
-
-- [ ] 21h.1 **Entry and death move a weight**, each an event with a cause, and the population is a
-  read of the cells rather than a number anybody keeps.
-- [ ] 21h.2 **Promotion**: a cell that outgrows the represented tier becomes a named party, which is
-  what makes the boundary a size and not a decision (XI-15, Small-Business Pools A6.c).
-- [ ] 21h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
-  receiving cell's by their people, because one group has one history.
-- [ ] 21h.4 **The crossing the kernel reads at revaluation**, which is the one of the five the kernel
-  itself owns.
-
-**Exit.** A weight in this world changes, every change names its event, and the population is a read.
-
----
-
-**Placed here.**
-
-- [ ] 21.20 `expectations`: the book of outlooks is keyed by party id and follows no cell event.
-  **Re-read: it survived the port exactly, and it has NO SITE.** `Outlooks` is keyed by
-  `(party, about)` and nothing touches it at a weight event — so a cell split off its parent would
-  start with no outlook although its people carry the parent's history, and a merge would drop the
-  arriving cell's, where XI-15 says a cell is one group with one history. It cannot be fixed here:
-  **nothing performs a merge**, because the five cell events never fire at all (21h). A `merged` read
-  written for a caller that does not exist is `WorkInProgress` again — a type nothing constructs.
-  It closes as 21h.3.
-- [ ] 21.44 `small-business/index.ts` promotion, `control/index.ts`: a size is compared in ONE money,
-  so a small firm in a money where no named firm has brought paper is never promoted, however large.
-  **Re-read: the per-money keeping died and the number lost its money altogether.**
-  `small_business::Cell.size` is a bare `f64` and `reaches_the_bond_market_at` is a bare threshold —
-  neither names a currency, which is Law 8 (the unit is part of the number) rather than Currency C4.
-  A number cannot name its money while `registry.currencies` has no kernel home, so the design
-  question (is a size boundary a money's or the world's?) cannot even be asked yet. **Positioned at
-  21e.**
 
 ## 21i. There is no ground
 
@@ -552,13 +512,43 @@ because measuring an arbitrary world measures the draw.
   where this lands. **And the deeper answer is that the multiple must not be declared at all**: how
   many firms are small is an OUTCOME of the boundary, and XI-15 is explicit that the boundary between
   the named and the represented *is not a modelling decision but a SIZE, and it moves* — which is
-  21h.2. A seeding that states the ratio states an equilibrium (5 E1, Law 2), so if it states one it
-  is a PLACEHOLDER and 21h.2 is the item that kills it. **Re-positioned with the seeding**, carrying
+  22h.2. A seeding that states the ratio states an equilibrium (5 E1, Law 2), so if it states one it
+  is a PLACEHOLDER and 22h.2 is the item that kills it. **Re-positioned with the seeding**, carrying
   the owner's figure as what the outcome is checked AGAINST and never as what it is set to.
 - [ ] 21.121 **THE WORLD STOPS IN PERIOD 1.** `npm run world`: `Impossible: [Law 8] demand at a level is 30972442286108996, which is not a whole number of the unit's pieces`, from `asQty` via `clear` via `runMarket`, after 32.8 s. `asQty` refuses it through `Number.isSafeInteger` and is right to — 3.1×10¹⁶ is past 2⁵³, where integer arithmetic in a double stops being exact. **The chain, each link measured:** the book is `mkt.cds.treasury.us.3y`, 10,851 orders in the first period (5,516 buy, 5,335 sell), 1,898 buy orders over 10¹², median 2.89×10¹¹; the largest, 2.74×10¹⁵ units, is `firm.3310`'s, and `cds/participants.ts sizeOf` makes it `standsBehind / (riskWeightSold × capitalRatio)` = 12.5 × equity; that firm's equity is **2.189×10¹⁴**, against a **median firm equity of 2.675×10⁹** and total world money of 2.537×10¹⁴ — one firm's equity is 86% of all the money there is; and it is equity because the firm holds **2.269×10⁶ units of `plant.premises.us.1` in each of three vintages**, worth 7.0–7.4×10¹³ apiece, which is the whole of its balance sheet. **So the root is the plant holding, not the CDS module**: nothing sizes how much premises a firm ends up with, and 81,800× the median firm is what that absence produces. Law 6: the compensating mechanism is missing, and no cap belongs anywhere in this chain. Pre-existing — the pre-0g.9 solver throws the same value on the same world. Invisible until now because `check:opens` runs a 142-party rig and a 433-party four-country world; `npm run world` is in `npm run check` from this commit, so the simulation says it rather than nothing saying it. **Re-read: the chain is gone and the ROOT is what it got right.** No `sizeOf` makes a CDS order `12.5 × equity` here, and the overflow is now `whole_pieces` throwing with 21.1's citation rather than a bound. What survives: **nothing sizes how much plant a firm ends up with**, and 81,800× the median is what that absence produced. Same shape as 21.98 — a quantity a seed states is one somebody decided (5 E1). **Re-positioned with the seeding.**
 
 **Exit.** The world opens from a seed whose every quantity is an outcome of something, and the six
 above are answered by it rather than by anything in the engine.
+
+---
+
+## 22h. The other four cell events have no cause
+
+**INSERTED (Law 10) after 22g, by 21h.** The split was built there because it had a caller: an
+engagement carries a headcount, so one covering part of a cell splits it. Entry, death, promotion and
+merge were not, because nothing in this world causes one, and a door written for a caller that does
+not exist is a type nothing constructs. It is after the seeding because the seeding is what draws a
+small firm as a CELL and a household that can form — today every small firm is `Named` and every
+household cell is drawn whole.
+
+- [ ] 22h.1 **Entry and death move a weight**, each with its own cause — a household that forms, a
+  member who dies, with a destination for what they held (Appendix B: no death without one).
+- [ ] 22h.2 **Promotion**: a small-firm cell whose own size crosses the tier becomes a named party,
+  which is what makes the boundary a SIZE and not a decision (A6.c). With it, **21.44**: a size is
+  compared in ONE money. The registry has currencies since 21e and `params` has
+  `Dimension::Amount(Denomination::Money)` since 21g — *an amount of whatever money the party reading
+  it deals in* — so the answer to *is a size boundary a money's or the world's?* is now available: one
+  declaration, read in each firm's own money.
+- [ ] 22h.3 **Merge**, and with it **21.20**: the arriving cell's outlook book is weighed into the
+  receiving cell's BY THEIR PEOPLE, because one group has one history. Its cause is a SEPARATION —
+  an engagement ending returns those members to a state a sibling cell already has — so it waits on
+  employment being a relationship that ends.
+- [ ] 22h.4 **A cell per key.** XI-15 allows at most one live cell per key on its kind's lattice and
+  `Parties::add` does not ask: `world-runs` admits 1,286 household cells all on key 0. Measured while
+  building 21h; it is the seeding's to get right and the store's to refuse.
+
+**Exit.** All five events fire, each from a cause a participant has, and the population moves in both
+directions rather than only fragmenting.
 
 ---
 ## 23. Measure — Part XII

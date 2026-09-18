@@ -221,6 +221,7 @@ pub struct MechanismContext<'a> {
     started: Vec<(PartyId, InstrumentId, f64, f64, u32)>,
     finished: Vec<crate::stores::BatchId>,
     stood: Vec<(u32, PartyId, Vec<f64>)>,
+    split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
 }
 
 /// One thing a module asks the world to do. It is a two-sided instruction like any other (Law 5) and
@@ -294,6 +295,7 @@ impl<'a> MechanismContext<'a> {
             started: Vec::new(),
             finished: Vec::new(),
             stood: Vec::new(),
+            split: Vec::new(),
         }
     }
 
@@ -439,6 +441,19 @@ impl<'a> MechanismContext<'a> {
         self.stood.push((kind, who, terms));
     }
 
+    /// **XI-15, Labour A4.c: an event that applies to SOME of a cell splits it**, and the relationship
+    /// that applies to them goes with them. A module names the members and the relation; the kernel
+    /// makes the cell, moves their exact share of what the parent holds, carries their outlook, and
+    /// re-points the agreement.
+    ///
+    /// The share is the kernel's arithmetic and not the module's, because it must be EXACT: a cell is
+    /// homogeneous, so its holdings divide by its weight without remainder, and a module computing
+    /// that division is a second writer of the one thing that keeps a cell from becoming an average.
+    pub fn splits(&mut self, cell: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
+        self.split.push((cell, taking, carrying));
+    }
+
+
     /// What the kernel applies once the phase returns.
     pub fn taken(self) -> Taken {
         Taken {
@@ -452,6 +467,7 @@ impl<'a> MechanismContext<'a> {
             started: self.started,
             finished: self.finished,
             stood: self.stood,
+            split: self.split,
         }
     }
 }
@@ -479,6 +495,9 @@ pub struct Taken {
     pub finished: Vec<crate::stores::BatchId>,
     /// 21f.1, 21f.2: terms a party now stands behind. The kernel writes `Standing`.
     pub stood: Vec<(u32, PartyId, Vec<f64>)>,
+    /// XI-15, 21h: cells that an event applies to part of — the parent, how many members it takes,
+    /// and the relationship those members carry with them. `Parties` is the one writer of a weight.
+    pub split: Vec<(PartyId, u32, crate::stores::AgreementId)>,
 }
 
 /// A system's own work in a period, as opposed to the questions its participants are asked in books.

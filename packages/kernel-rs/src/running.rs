@@ -26,10 +26,16 @@ use crate::stores::Owing;
 /// The agreement kinds this world has. **Registry data** (Law 15): `Agreements` holds a kind id and
 /// never knows what an engagement is, and a mechanism asks for its own kind's rows.
 pub mod agreed {
-    /// XI-10, §39: an employer and a worker. **Its terms are `[wage per period, hours per period]`,
-    /// and this is the one place that convention is stated** (Law 4): `Wages` pays the first and
-    /// `Making` draws on the second, and a reader who wants to know what a term means comes here
-    /// rather than to whichever mechanism happened to be open.
+    /// XI-10, §39: an employer and a worker. **Its terms are `[wage per person per period, hours per
+    /// person per period, headcount]`, and this is the one place that convention is stated** (Law 4):
+    /// `Wages` pays the first and `Making` draws on the second, and a reader who wants to know what
+    /// a term means comes here rather than to whichever mechanism happened to be open.
+    ///
+    /// **Labour A4.b, 21h: the third term is the HEADCOUNT, and it was missing.** A worker may be a
+    /// cell of two thousand people (XI-15), and an engagement with no headcount paid one wage for all
+    /// of them — Law 8's defect, the periodicity and the unit being part of the number, one level up:
+    /// a wage is per person. With the headcount the relationship can also cover PART of a cell, which
+    /// is the one partial event this world has and the reason the split fires at all (A4.c).
     pub const ENGAGEMENT: u32 = 0;
     pub const MORTGAGE: u32 = 1;
     pub const POLICY: u32 = 2;
@@ -163,34 +169,58 @@ impl Mechanism for Servicing {
 ///
 /// The employment module's `Engagement` had nowhere to live, so nobody was ever paid by one. It lives
 /// in `Agreements` now: an employer, a worker, a wage as its first term, a start and an end.
+///
+/// **XI-15, Labour A4.b/A4.c: and the worker may be a CELL.** A wage is per person, so what the
+/// employer owes is `headcount × wage` — and where the headcount is less than the cell's weight the
+/// engagement applies to PART of the cell, which splits it. That is the one partial event this world
+/// has, and until it existed not one weight in this world had ever changed (21h).
 pub struct Wages;
 
 impl Mechanism for Wages {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let mut owed: Vec<(PartyId, PartyId, InstrumentId, f64)> = Vec::new();
+        let mut partial: Vec<(PartyId, u32, crate::stores::AgreementId)> = Vec::new();
         for row in ctx.agreements().of_kind(agreed::ENGAGEMENT) {
             let a = crate::stores::AgreementId(*row);
             if !ctx.agreements().live(a) {
                 continue;
             }
             let (employer, worker) = ctx.agreements().between(a);
-            let wage = match ctx.agreements().terms(a).first() {
-                Some(w) => *w,
-                // An engagement with no wage is a relationship nobody agreed the terms of.
-                None => continue,
-            };
+            let terms = ctx.agreements().terms(a);
+            // An engagement with no wage, or none of the people it is a relationship with, is a
+            // relationship nobody agreed the terms of.
+            let (Some(wage), Some(heads)) = (terms.first(), terms.get(2)) else { continue };
+            let (wage, heads) = (*wage, *heads);
+            let of_them = ctx.parties().weight(worker);
+            // XI-15: a headcount above the cell's weight is more people than the cell IS, which is a
+            // relationship with parties nobody has admitted.
+            assert!(
+                heads > 0.0 && heads <= f64::from(of_them),
+                "Labour A4.b: an engagement for {heads} of a cell of {of_them}"
+            );
+            let heads = heads as u32;
+            if heads < of_them {
+                // A4.c: it applies to some of them. They become a cell of their own, carrying this
+                // relationship and their exact share of what the parent holds — and next period the
+                // engagement covers the whole of that cell and nothing splits.
+                partial.push((worker, heads, a));
+                continue;
+            }
             if let Some(money) = account_of(ctx.parties(), ctx.instruments(), employer) {
-                owed.push((employer, worker, money, wage));
+                owed.push((employer, worker, money, wage * f64::from(of_them)));
             }
         }
-        for (employer, worker, money, wage) in owed {
+        for (cell, heads, a) in partial {
+            ctx.splits(cell, heads, a);
+        }
+        for (employer, worker, money, wages) in owed {
             ctx.propose(
                 vec![Leg::Money {
                     from: employer,
                     to: worker,
                     ccy: ctx.instruments().ccy_of(money),
                     instrument: money,
-                    amount: wage,
+                    amount: wages,
                     receipt: Receipt::Wage,
                 }],
                 Cause::Payment,
@@ -1027,16 +1057,24 @@ mod tests {
         // §39, XI-10: employment is a relation, and the wage is what it pays. An engagement that
         // ended is still readable and pays nothing, which is what ending means.
         let (mut w, _bank, firm, worker, cash) = world();
-        w.register.money_delta(firm, cash, 500.0);
-        let hired = w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[40.0], Day(-100), None);
+        w.register.money_delta(firm, cash, 9_000.0);
+        // XI-15, Labour A4.b: the worker is a CELL of a hundred, the engagement is for all hundred,
+        // and a wage is per person — so what the firm owes is a hundred wages. Paying one was the
+        // defect: a firm employing two thousand people paid forty.
+        let of_them = f64::from(w.parties.weight(worker));
+        let hired = w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[40.0, 35.0, of_them], Day(-100), None);
 
         w.period = 1;
         ran(&mut w, &Wages);
-        assert_eq!(w.register.quantity(w.register.row(worker, cash)), 40.0);
+        assert_eq!(w.register.quantity(w.register.row(worker, cash)), 40.0 * of_them);
 
         w.agreements.end(hired);
         ran(&mut w, &Wages);
-        assert_eq!(w.register.quantity(w.register.row(worker, cash)), 40.0, "an ended engagement pays nothing");
+        assert_eq!(
+            w.register.quantity(w.register.row(worker, cash)),
+            40.0 * of_them,
+            "an ended engagement pays nothing"
+        );
     }
 
     #[test]

@@ -190,7 +190,20 @@ fn main() {
     let cells: Vec<u32> = w.parties.of_kind(kinds::HOUSEHOLD).to_vec();
     for (n, c) in cells.iter().enumerate() {
         let employer = PartyId(firms[n % firms.len()]);
-        w.agreements.strike(agreed::ENGAGEMENT, employer, PartyId(*c), &[draw.spread(40.0), draw.spread(35.0)], Day(-365), None);
+        // Labour A4.b, XI-15: an engagement is for a HEADCOUNT, and a firm does not employ every
+        // member of a household cell. Where it employs some of them the cell splits (A4.c), which is
+        // this world's one partial event and the only thing that moves a weight. The count is drawn
+        // like everything else here — it is a world that is arbitrary and says so (5 E1).
+        let of_them = w.parties.weight(PartyId(*c));
+        let heads = 1 + draw.below(u64::from(of_them)) as u32;
+        w.agreements.strike(
+            agreed::ENGAGEMENT,
+            employer,
+            PartyId(*c),
+            &[draw.spread(40.0), draw.spread(35.0), f64::from(heads)],
+            Day(-365),
+            None,
+        );
     }
     for (n, f) in firms.iter().enumerate() {
         let kind = match n % 4 {
@@ -322,8 +335,20 @@ fn main() {
                     && w.wire.legs_of(*n).iter().any(|l| matches!(l, Leg::Create { .. }))
             })
             .count();
+        // XI-15, 21h: **the population, as a READ over the cells** — never a number anybody keeps
+        // (Small-Business Pools E4: a constant population is the defect). `cells` is how many rows
+        // stand for a group and `people` is what they stand for; both move only by the five events,
+        // and until item 21h neither had ever moved at all.
+        let (mut cells, mut people) = (0usize, 0u64);
+        for row in 0..w.parties.len() as u32 {
+            let who = PartyId::at(row);
+            if w.parties.alive(who) && w.parties.representation_of(who) == Representation::Cell {
+                cells += 1;
+                people += u64::from(w.parties.weight(who));
+            }
+        }
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks",
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people}",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
     }

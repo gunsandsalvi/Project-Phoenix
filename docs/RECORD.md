@@ -20158,3 +20158,78 @@ spec-system clause, and its evidence is the register and the check.
 
 **702 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `world:runs` runs four
 periods with all 50 systems, worst period 326 ms.**
+
+## 21h — the five cell events never fire
+
+`Parties::reweigh` refuses a weight written outside XI-15's five events, and `grep reweigh(` returned
+one hit: its own definition. Not one weight in this world had ever changed. `world-runs` opened with
+1,286 household cells of a drawn weight and closed with the same 1,286 of the same weight, so XI-15's
+population dynamics was declared and unreached and `Small-Business Pools E4`'s *no constant
+composition by construction* was violated in the one direction nothing checks.
+
+### The fifth event is a SPLIT, and it was written down as a crossing
+
+XI-15 and E5 both name the five: **entry, death, promotion, split, merge**. The kernel's enum had
+`Crossing` where `Split` belongs — and a crossing is the READ XI-1 names, *population-level default
+must be a read of cell-level crossings*. `loss::Crossing` is already that read: a borrower passing a
+threshold on a date, changing no weight. Written as a weight event it read as a kernel bookkeeping
+step, which is why nothing ever called it, and why the one event that makes the other four
+expressible was the one nobody built. Without split, a partial event has two answers and both are
+wrong: move the whole cell, which quantises the world to the weight, or carry a headcount inside the
+cell and let its members differ, which is an average one level down.
+
+### The caller: an engagement has a headcount
+
+An engagement's terms were `[wage, hours]`, so a firm employing a cell of two thousand people paid
+**one wage** — Law 8 one level up, a wage being per person. Labour A4.b says the relationship carries
+a HEADCOUNT; it is the third term now, `Wages` owes `headcount × wage`, and where the headcount is
+less than the cell's weight the engagement applies to PART of the cell and splits it (A4.c). That is
+the one partial event this world has, and it is what makes a weight move at all.
+
+### The split is exact, and the arithmetic is the kernel's
+
+`World::split_cell`: the departing members take `taking / had` of every free holding, settled over
+the ordinary wire — `Leg::Money` for an account, `Leg::Asset` at NO price for everything else, so the
+basis goes with the units and a group that sold nothing realises nothing (Law 19, 21.112). Their
+outlook goes with them (**21.20**): one group has one history, so a cell split off its parent does not
+start out expecting nothing. The relationship moves with the people (`Agreements::moves`) rather than
+being ended and re-struck, which would be a separation with a severance owed and a start date lost.
+
+**Nothing is floored.** The TypeScript engine moved `floor(total × n / weight)` pieces and left the
+remainder with the parent — a residual with no holder (Law 2) and exactly the drift XI-15 warns
+about. Divisibility by the weight is an INVARIANT for Part XII's Units family to measure, never a
+rounding chosen at the site.
+
+`world-runs`: **1,286 cells become 2,571 and the population is unchanged at 1,436,155.** A split
+divides a group; it does not create one. The census is printed every period beside the homeless nouns
+and the shape count, because a population is a READ over the cells and never a number anybody keeps.
+
+### What it uncovered: a payment is money going the OTHER WAY
+
+The first split threw. `Instruction::shape` called any money leg a payment, so an instruction moving
+money AND units from the parent to the part that left read as delivery-versus-payment, and the only
+way past the wire would have been to declare something false. But nothing there is *versus* anything:
+the money is not payment for the units, it is the same members' money going with them. `shape` now
+asks the direction — a payment is money flowing back against a delivery — and a position transferred
+whole settles as what it is. XI-5's check got stronger rather than weaker: it still catches a trade
+that lost its money leg, and it no longer catches a transfer that never had one.
+
+### What is NOT built, and why
+
+Entry, death, promotion and merge have no cause in this world: a household does not form, nobody
+dies, every small firm is `Named` rather than a cell, and no two cells have arrived at the same
+state. A door written for a caller that does not exist is the `WorkInProgress` defect again, so they
+are not written — they are **item 22h**, inserted after 22g because the seeding is what draws a small
+firm as a cell and a household that can form. 21.44 goes with 22h.2 and its question is now
+answerable: the registry has currencies (21e) and `params` has `Amount(Denomination::Money)`, *an
+amount of whatever money the party reading it deals in* (21g), so one declaration is read in each
+firm's own money. Measured while building this and recorded as **22h.4**: XI-15 allows at most one
+live cell per key and `Parties::add` does not ask — `world-runs` admits 1,286 household cells all on
+key 0.
+
+`docs/ARCHITECTURE.md` 4.10 rewritten for the five events, the exact division and the deleted
+flooring; `CLAUDE.md`'s digest corrected. `docs/COVERAGE.md`: `Small-Business Pools E5` and
+`Labour A4` re-pointed at the Rust kernel.
+
+**706 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green;
+`world:runs` four periods, 50 systems, worst period 426 ms.**

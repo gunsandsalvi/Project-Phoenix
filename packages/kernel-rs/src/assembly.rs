@@ -287,6 +287,86 @@ impl World {
     }
 
     /// One system's phase: its mechanism reads the stores, proposes, and the kernel settles.
+    /// **XI-15: an event applying to SOME members makes them a new cell with the same state, and the
+    /// division is EXACT.** A cell is homogeneous — every member holds the cell's holdings divided by
+    /// its weight — so the departing members' share is `taking / had` of every row, with no
+    /// remainder and no rounding to choose. That is why the arithmetic is here and not in a module:
+    /// the split is the one place a cell could quietly become an average, and it has one writer.
+    ///
+    /// What they hold moves over the ORDINARY WIRE, as legs, because a split is a movement of units
+    /// between two named parties like any other (Law 5). Their outlook goes with them: one group has
+    /// one history, so a cell split off its parent does not start out expecting nothing (21.20).
+    fn split_cell(&mut self, parent: PartyId, taking: u32, carrying: crate::stores::AgreementId) {
+        let had = self.parties.weight(parent);
+        let share = f64::from(taking) / f64::from(had);
+        let child = self.parties.split(parent, taking);
+
+        let mut legs: Vec<crate::ledger::Leg> = Vec::new();
+        for row in self.register.of_holder(parent) {
+            let row = crate::ids::HoldingId(*row);
+            let line = self.register.instrument_of(row);
+            // Register C3: what is pledged does not move, so the members take their share of what is
+            // free. A lien is a claim against the party that gave it, and it stays with that party.
+            let free = self.register.free(row);
+            if free <= 0.0 {
+                continue;
+            }
+            let theirs = free * share;
+            legs.push(if self.instruments.class_of(line) == Class::Money {
+                crate::ledger::Leg::Money {
+                    from: parent,
+                    to: child,
+                    ccy: self.instruments.ccy_of(line),
+                    instrument: line,
+                    amount: theirs,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }
+            } else {
+                crate::ledger::Leg::Asset {
+                    from: parent,
+                    to: child,
+                    instrument: line,
+                    qty: theirs,
+                    // Law 19: no price. The units did not change hands at one — they are the same
+                    // members' holdings, carried at what they cost, and a price here would print a
+                    // realised gain on a group that sold nothing (21.112).
+                    price_per_unit: None,
+                }
+            });
+        }
+        if !legs.is_empty() {
+            let instruction = Instruction {
+                legs: &legs,
+                cause: crate::ledger::Cause::CorporateAction,
+                delivery: crate::ledger::Delivery::Free,
+            };
+            self.wire.settle(
+                &instruction,
+                self.period,
+                &mut Settling {
+                    register: &mut self.register,
+                    journal: &mut self.journal,
+                    parties: &self.parties,
+                    instruments: &self.instruments,
+                    realised: self.realised_kind,
+                },
+                self.settled_kind,
+                self.failed_kind,
+            );
+        }
+
+        // 21.20: one group, one history. The child's outlook is the parent's, because its members
+        // lived the parent's history — an empty book would say these people have seen nothing.
+        for row in self.outlooks.of_party(parent).to_vec() {
+            let about = self.outlooks.about_at(row);
+            let level = self.outlooks.level_at(row);
+            self.outlooks.form(child, about, level, self.period);
+        }
+
+        // Labour A4.c: and the relationship that applies to them goes with them.
+        self.agreements.moves(carrying, parent, child);
+    }
+
     fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System]) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
@@ -318,6 +398,13 @@ impl World {
         );
         m.run(&mut ctx);
         let asked = ctx.taken();
+
+        // **XI-15: the cell events come first, because they change WHO the parties are.** Everything
+        // else in a phase is about parties, and a leg naming a cell that is about to be split in two
+        // has named a party whose weight is no longer what the module read.
+        for (parent, taking, carrying) in asked.split {
+            self.split_cell(parent, taking, carrying);
+        }
 
         // **Settlement is the one writer of the register** (Law 4). What a phase asked for happens
         // here or not at all, and a refusal leaves the world as it was — a module cannot move units
@@ -599,6 +686,71 @@ mod tests {
         let did = w.step(&systems);
         assert_eq!(w.period, 1);
         assert_eq!(did, Stepped::default());
+    }
+
+    /// A system that does nothing but run `Wages`, so the split reaches the kernel the way any
+    /// module's does. A test names no party (`docs/CLAUDE.md`): it asks the world for a cell.
+    struct Employs;
+    impl System for Employs {
+        fn name(&self) -> &'static str {
+            "employment"
+        }
+        fn phases(&self) -> Vec<PhaseDecl> {
+            vec![phase(3, 3, Anchor::After(CORPORATE_ACTIONS))]
+        }
+        fn mechanism(&self) -> Option<&dyn Mechanism> {
+            Some(&crate::running::Wages)
+        }
+    }
+
+    #[test]
+    fn an_engagement_for_part_of_a_cell_splits_it_and_the_two_halves_hold_what_the_one_held() {
+        // **XI-15, Labour A4.c, 21h.** A firm employs some of a household cell. Those members become
+        // a cell of their own carrying the engagement and EXACTLY their share of what the parent
+        // held — not a fraction anybody rounded, because identical members divide without remainder.
+        // The population does not change: a split divides a group, it does not create one.
+        let mut w = World::empty();
+        let region = crate::ids::RegionId::at(0);
+        let cb = w.parties.add(kinds::CENTRAL_BANK, region, PartyId::NONE, Representation::Named, 1, 0);
+        let bank = w.parties.add(kinds::BANK, region, cb, Representation::Named, 1, 0);
+        let _reserves = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
+        let bread = w.instruments.issue(cb, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
+        let firm = w.parties.add(kinds::FIRM, region, bank, Representation::Named, 1, 0);
+        let cell = w.parties.add(kinds::HOUSEHOLD, region, bank, Representation::Cell, 1_000, 7);
+        w.register.money_delta(firm, cash, 50_000.0);
+        w.register.money_delta(cell, cash, 4_000.0);
+        w.register.credit(cell, bread, 800.0, 0.5, 0);
+        // §46: and a view of its own, so the split can be asked whether the history went with it.
+        w.outlooks.form(cell, crate::running::about::WHAT_IT_SELLS_FOR, 3.0, 0);
+        w.agreements.strike(
+            crate::running::agreed::ENGAGEMENT,
+            firm,
+            cell,
+            &[2.0, 35.0, 250.0],
+            crate::calendar::Day(-100),
+            None,
+        );
+
+        let e = Employs;
+        let systems: Vec<&dyn System> = vec![&e];
+        w.wire_up(&systems);
+        w.step(&systems);
+
+        let part = PartyId::at(w.parties.len() as u32 - 1);
+        assert_eq!(w.parties.weight(cell), 750);
+        assert_eq!(w.parties.weight(part), 250);
+        // A quarter of the people took a quarter of each holding, exactly.
+        assert_eq!(w.register.quantity(w.register.row(part, cash)), 1_000.0);
+        assert_eq!(w.register.quantity(w.register.row(cell, cash)), 3_000.0);
+        assert_eq!(w.register.quantity(w.register.row(part, bread)), 200.0);
+        assert_eq!(w.register.quantity(w.register.row(cell, bread)), 600.0);
+        // Register D2: and at what the units cost, because nothing was sold.
+        assert_eq!(w.register.lots(w.register.row(part, bread))[0].basis_per_unit, 0.5);
+        // 21.20: one group, one history. A cell split off its parent has seen what its parent saw.
+        assert_eq!(w.outlooks.of(part, crate::running::about::WHAT_IT_SELLS_FOR), Some(3.0));
+        // Labour A4.c: and the relationship went with the people it is a relationship with.
+        assert!(w.agreements.of_party(part).len() == 1 && w.agreements.of_party(cell).is_empty());
     }
 
     #[test]
