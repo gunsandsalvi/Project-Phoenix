@@ -16616,3 +16616,39 @@ required here because it makes the ask count KNOWABLE, not because it is fast.
 **Forty-six laws now hold as tests; clippy is clean.** The kernel has `ids`, `register`, `journal`,
 `calendar`, `prices`, `parties`, `ledger`, `clearing`, `world`, `params`, `nouns`, `audit` and
 `module`.
+
+# 0g.41 — a whole kernel period, end to end: 180.9 ms
+
+| | |
+|---|---|
+| assembly | 141 ms — 794,743 holdings, 10,318 parties |
+| prints | 0.2 ms — 1,456 books |
+| the wire | **162.3 ms** — 48,828 instructions, 504,096 legs |
+| the journal | 7.0 ms — 178,604 events |
+| the audit | 11.4 ms — 794,743 holdings on one walk, **0 violations** |
+| **the period** | **180.9 ms** |
+
+TypeScript runs the whole period in **42.1 s**, of which the kernel's own share — collector 12.2 s,
+register 9.6 s, audit 9.8 s, ledger 2.7 s, prices 2.5 s, journal — is about **37 s of a profiled
+54.7 s**. So this is **~200× the kernel's share**, and it is a FLOOR and not a period: **the modules
+are not in it.** They are the other ~33 s, they are 0g.42's, and 0g.40 measured one of them at
+**10.9×** ported. A period is this floor plus the modules.
+
+## And the end-to-end run caught a defect none of the unit tests did
+
+**The first one reported 10,318 violations** — one per party. `LotsAgainstQuantity` was summing the
+lots of every MONEY account, and a money account has none: Money D2 says money is one of itself, so
+its account is a TOTAL with nothing to draw. The family was right about the arithmetic and wrong
+about what it was arithmetic on.
+
+The fix is not an exemption in the family. A row is now a total or a lotted holding and the
+register SAYS which — `money_delta` makes a row a total, `credit` gives it lots — and there are two
+families where there was one: the lots of a lotted holding sum to its quantity, and **a total
+carries no lots**. One of them alone would be a rule with an exemption; the two together are the
+rule.
+
+**That is the second time in this port that running the thing found what reading it did not**, after
+the phase-ordering bug at the period loop. Both were caught by a law written as a test rather than
+as a comment.
+
+**Forty-seven laws now hold as tests; clippy is clean.**

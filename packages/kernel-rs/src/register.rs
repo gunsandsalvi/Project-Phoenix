@@ -49,6 +49,11 @@ pub struct Register {
     /// units it is derived from across parties. This is the row's own quantity, written by the same
     /// instruction that writes the lots, and the audit still sums the lots to check it (Law 19).
     held: Vec<f64>,
+    /// Money D2: MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row
+    /// is one or the other and the register says which, because a family that summed the lots of a
+    /// money account would report every account in the world as a violation — which is exactly what
+    /// the first end-to-end period did, 10,318 times.
+    total_only: Vec<bool>,
 
     lots: Vec<Lot>,
     liens: Vec<Lien>,
@@ -158,8 +163,15 @@ impl Register {
     }
 
     /// The lots of one holding, in the order they were acquired (Register D1).
+    /// Money D2: whether this row is a TOTAL with no lots, or a holding that carries them.
+    #[inline]
+    pub fn is_total(&self, row: HoldingId) -> bool {
+        row.some() && self.total_only[row.row()]
+    }
+
     #[inline]
     pub fn lots(&self, row: HoldingId) -> &[Lot] {
+
         if !row.some() {
             return &[];
         }
@@ -231,6 +243,7 @@ impl Register {
         self.lien_at.push(self.liens.len() as u32);
         self.lien_len.push(0);
         self.held.push(0.0);
+        self.total_only.push(false);
         self.row_of.insert(k, row);
         self.by_holder.entry(holder.0).or_default().push(row);
         self.by_instrument.entry(instrument.0).or_default().push(row);
@@ -313,6 +326,7 @@ impl Register {
     /// Money D2: money is one of itself, so its account is a total and has no lots to draw.
     pub fn money_delta(&mut self, holder: PartyId, instrument: InstrumentId, delta: f64) -> f64 {
         let row = self.open(holder, instrument);
+        self.total_only[row.row()] = true;
         self.held[row.row()] += delta;
         self.writes += 1;
         self.held[row.row()]
@@ -342,6 +356,9 @@ impl Register {
 pub fn lots_against_quantity(reg: &Register) -> Vec<(HoldingId, f64)> {
     let mut out = Vec::new();
     for row in reg.all() {
+        if reg.is_total(row) {
+            continue;
+        }
         let mut summed = 0.0;
         let mut magnitude = 0.0;
         let lots = reg.lots(row);

@@ -136,7 +136,13 @@ impl Contribution for LotsAgainstQuantity {
         "kernel"
     }
     fn visit(&mut self, at: &Visit<'_>) {
+        // Money D2: a money account is a TOTAL and has no lots to sum. Summing them would report
+        // every account in the world, which is what the first end-to-end period did.
+        if at.register.is_total(at.row) {
+            return;
+        }
         let lots = at.register.lots(at.row);
+
         let mut summed = 0.0;
         let mut magnitude = 0.0;
         for l in lots {
@@ -155,6 +161,42 @@ impl Contribution for LotsAgainstQuantity {
                 unit: "pieces",
                 period: at.period,
                 message: format!("lots sum to {summed} and the row holds {held}"),
+            });
+        }
+    }
+    fn finish(&mut self, _period: u32) -> Vec<Violation> {
+        std::mem::take(&mut self.found)
+    }
+}
+
+/// Money D2: a TOTAL account carries no lots. It is the other half of the check above — one of them
+/// would be a rule with an exemption, and the two together are the rule.
+#[derive(Default)]
+pub struct ATotalCarriesNoLots {
+    found: Vec<Violation>,
+}
+
+impl Contribution for ATotalCarriesNoLots {
+    fn family(&self) -> Family {
+        Family::Money
+    }
+    fn contributor(&self) -> &'static str {
+        "kernel.totals"
+    }
+    fn visit(&mut self, at: &Visit<'_>) {
+        if !at.register.is_total(at.row) {
+            return;
+        }
+        let lots = at.register.lots(at.row);
+        if !lots.is_empty() {
+            self.found.push(Violation {
+                family: Family::Money,
+                spec: "Money D2",
+                owner: format!("holding {}", at.row.row()),
+                size: lots.len() as f64,
+                unit: "lots",
+                period: at.period,
+                message: format!("a money account carries {} lots", lots.len()),
             });
         }
     }
@@ -258,7 +300,26 @@ mod tests {
     }
 
     #[test]
+    fn a_money_account_is_a_total_and_is_not_a_violation() {
+        // Money D2: money is one of itself, so its account is a total with no lots. The family that
+        // sums lots must not report it, and the family that checks totals must find it clean.
+        let mut reg = Register::new();
+        let cash = InstrumentId::at(0);
+        for p in 0..100u32 {
+            reg.money_delta(PartyId::at(p), cash, 1_000.0);
+        }
+        reg.credit(PartyId::at(0), InstrumentId::at(1), 5.0, 2.0, 1);
+        let mut audit = Audit::new();
+        audit.add(Box::<LotsAgainstQuantity>::default());
+        audit.add(Box::<ATotalCarriesNoLots>::default());
+        let reports = audit.run(&reg, 1);
+        let found: usize = reports.iter().map(|r| r.violations.len()).sum();
+        assert_eq!(found, 0, "a money account is not a defect");
+    }
+
+    #[test]
     fn an_unbuilt_family_says_so_and_is_never_green() {
+
         let reg = Register::new();
         let mut audit = Audit::new();
         audit.add(Box::new(NotBuilt { family: Family::Liveness, contributor: "nobody" }));
