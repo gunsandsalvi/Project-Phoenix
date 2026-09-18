@@ -18,11 +18,10 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 306 clauses this world does not meet** — 176 MISSING, 130 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1397 clauses, 78.1% are met or out of scope.
-**The items broken out of that so far: 0 of 12 closed** (0 of 89 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 11 closed** (0 of 86 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 21g — The parameter register is switched off | 3 | 0 | open |
 | 21h — The five cell events never fire | 6 | 0 | open |
 | 21i — There is no ground | 3 | 0 | open |
 | 21j — Twenty-five systems take no part | 27 | 0 | open |

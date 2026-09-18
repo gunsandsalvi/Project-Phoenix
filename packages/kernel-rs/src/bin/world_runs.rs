@@ -18,13 +18,14 @@ use phoenix_kernel::clearing::PriceRule;
 use phoenix_kernel::ledger::{Cause, Leg};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 use phoenix_kernel::instruments::Class;
+use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
 use phoenix_kernel::registry::{Banks, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
 use phoenix_kernel::running::{about as running_about, afoot, agreed, tracks, Makes};
 use phoenix_kernel::stores::Owing;
-use phoenix_kernel::systems::{all, book_of, Wiring};
+use phoenix_kernel::systems::{all, book_of, declare, Wiring};
 use std::time::Instant;
 
 /// The counts the engine is judged on — `world_at_scale`'s, so the two are comparable.
@@ -256,6 +257,9 @@ fn main() {
         paper: None,
         days_per_period: WEEK,
     };
+    // XI-14, 21g: every behaviour-shaping number this world acts on, declared before anything
+    // reads one. A participant holds the ID; the value lives here and nowhere else.
+    declare(&mut w.params);
     let wired = all(&wiring, &mut w.journal.kinds);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);
@@ -282,6 +286,19 @@ fn main() {
     println!("         {} nouns with no kernel home:", homeless.len());
     for (name, item) in &homeless {
         println!("           {name} (item {item})");
+    }
+    // Law 2, 21g.2: of the declared numbers, how many are a CLAIM ABOUT THE ANSWER rather than a
+    // primitive. This count must fall, and a run that does not print it is a run in which nobody is
+    // looking at it — the same argument as the homeless nouns above.
+    let shapes = w.params.shapes();
+    println!("         {} of {} declared numbers are shapes:", shapes.len(), w.params.len());
+    for (id, kind) in &shapes {
+        match kind {
+            ParamKind::Placeholder { mechanism, item } => {
+                println!("           {id} — stands in for {mechanism} (item {item})")
+            }
+            _ => println!("           {id}"),
+        }
     }
 
     let mut worst = 0.0f64;

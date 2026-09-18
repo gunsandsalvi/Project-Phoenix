@@ -690,12 +690,13 @@ fn rank_of(stored: u32) -> crate::mechanisms::estate::Rank {
 /// sides. A world where everybody expected the same would trade once and stop (§46 A3).
 pub struct Forming {
     /// §46: the memory — how much of the new observation displaces the old. The one primitive here.
-    pub memory: f64,
+    pub memory: &'static str,
 }
 
 impl Mechanism for Forming {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        assert!(self.memory > 0.0 && self.memory <= 1.0, "§46: a memory outside its own range is not one");
+        let memory = ctx.params().ratio(self.memory);
+        assert!(memory > 0.0 && memory <= 1.0, "§46: a memory outside its own range is not one");
         let mut formed: Vec<(PartyId, u32, f64)> = Vec::new();
         for p in 0..ctx.parties().len() {
             let who = PartyId::at(p as u32);
@@ -722,7 +723,7 @@ impl Mechanism for Forming {
             // §46 B1: adaptive. The first observation IS the outlook; after that the surprise moves
             // it by the party's own memory.
             let level = match was {
-                Some(old) => old + self.memory * (now - old),
+                Some(old) => old + memory * (now - old),
                 None => now,
             };
             formed.push((who, about::WHAT_IT_SELLS_FOR, level));
@@ -749,7 +750,7 @@ impl Mechanism for Forming {
                 continue;
             }
             let level = match ctx.outlooks().of(who, about::HOW_MUCH_IT_SELLS) {
-                Some(old) => old + self.memory * (units - old),
+                Some(old) => old + memory * (units - old),
                 None => units,
             };
             formed.push((who, about::HOW_MUCH_IT_SELLS, level));
@@ -904,8 +905,21 @@ mod tests {
         let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
         let worker = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 100, 0);
+        // XI-14: a mechanism holds the ID of the number it acts on, so a test that runs one declares
+        // the number first — half, here, because half the way is easy to check by eye.
+        w.params.declare(crate::params::ParamDecl {
+            id: MEMORY.to_string(),
+            value: 0.5,
+            unit: "weight on what just happened".to_string(),
+            dimension: crate::params::Dimension::Ratio,
+            kind: crate::params::Kind::Preference,
+            owner: crate::params::Owner::Model,
+            why: "what this test forms outlooks with".to_string(),
+        });
         (w, bank, firm, worker, cash)
     }
+
+    const MEMORY: &str = "test.outlook.memory";
 
     fn ran(w: &mut World, m: &dyn Mechanism) {
         let mut ctx = MechanismContext::of(
@@ -1054,7 +1068,7 @@ mod tests {
         });
 
         w.period = 1;
-        ran(&mut w, &Forming { memory: 0.5 });
+        ran(&mut w, &Forming { memory: MEMORY });
         assert_eq!(w.outlooks.of(firm, about::WHAT_IT_SELLS_FOR), Some(3.0));
         assert_eq!(w.outlooks.of(worker, about::WHAT_IT_SELLS_FOR), Some(9.0));
         assert_eq!(w.outlooks.spread_on(about::WHAT_IT_SELLS_FOR).len(), 2);
@@ -1065,7 +1079,7 @@ mod tests {
         // Appendix A: missing is missing. An outlook of zero is an expectation.
         let (mut w, _bank, firm, _worker, _cash) = world();
         w.period = 1;
-        ran(&mut w, &Forming { memory: 0.5 });
+        ran(&mut w, &Forming { memory: MEMORY });
         assert_eq!(w.outlooks.of(firm, about::WHAT_IT_SELLS_FOR), None);
     }
 
@@ -1086,7 +1100,7 @@ mod tests {
                 provenance: crate::prices::Provenance::Cleared,
             });
             w.period = period;
-            ran(&mut w, &Forming { memory: 0.5 });
+            ran(&mut w, &Forming { memory: MEMORY });
         }
         // 4 first, then half the way from 4 to 8.
         assert_eq!(w.outlooks.of(firm, about::WHAT_IT_SELLS_FOR), Some(6.0));

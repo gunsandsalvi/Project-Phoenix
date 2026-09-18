@@ -313,13 +313,14 @@ pub fn charge(sold: &Consumed, line_cost: f64, absorbed_into_batches: f64) -> Ch
 pub struct Perishing {
     /// 37 E4: the share of a lot that does not survive the period. A TECHNOLOGY — a fact about the
     /// thing, not about who holds it.
-    pub share: f64,
+    pub share: &'static str,
 }
 
 impl Mechanism for Perishing {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         // The READ pass first, then the proposals. A module reads the stores and proposes; it cannot
         // do both at once, which is the borrow saying what Law 4 already says.
+        let share = ctx.params().ratio(self.share);
         let mut gone_from: Vec<(PartyId, InstrumentId, f64)> = Vec::new();
         for row in ctx.register().all() {
             let line = ctx.register().instrument_of(row);
@@ -336,7 +337,7 @@ impl Mechanism for Perishing {
                 .iter()
                 .map(|l| Lot { units: l.qty, cost_per_unit: l.basis_per_unit, acquired: l.acquired })
                 .collect();
-            let gone: f64 = mine.iter().map(|l| perish(l, self.share).units).sum();
+            let gone: f64 = mine.iter().map(|l| perish(l, share).units).sum();
             if gone <= 0.0 {
                 continue;
             }

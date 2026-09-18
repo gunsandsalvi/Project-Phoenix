@@ -24,6 +24,7 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::ids::Names;
 use crate::module::{Mechanism, Participant, ParticipantView};
+use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
 use crate::running::{afoot, agreed, Closing, Counts, Forming, Makes, Making, Owed, Ranked, Reads, Reporting, Servicing, Wages, Winding};
@@ -50,8 +51,9 @@ pub fn line_of(book: MarketId) -> InstrumentId {
 /// §37 C1: **sellers offer quantities.** A firm posts what it actually holds, at what it will take —
 /// its reservation, from its own cost. It does not post what it could make.
 pub struct GoodsSellers {
-    /// §37 B1: what a unit cost it. Its own, and two firms differ (§32 A3).
-    pub will_take: f64,
+    /// §37 B1, 21g: the id of what it will take, read through `params`. Its own, and two firms
+    /// differ (§32 A3).
+    pub will_take: &'static str,
     /// **33 A4.c: whether a good is an input is the HOLDER's question, not the good's.** What a
     /// party's own recipe consumes is an input to it and stock to everybody else — so a firm that can
     /// run a line does not offer the flour it is about to bake, and the same sacks in a merchant's
@@ -92,15 +94,16 @@ impl Participant for GoodsSellers {
         }
         // §37 B1: it produces — and sells — because the price covers its cost. Law 6: it is not made
         // to sell below that; a book that will not reach it simply does not clear for this seller.
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.will_take), qty: pieces }]
+        let will_take = view.params().ratio(self.will_take);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(will_take), qty: pieces }]
     }
 }
 
 /// §41 C1, §37 C3: **households buy because they need the thing**, and what they can spend is what
 /// they have (C1.d: a household that cannot borrow spends what it has, whatever it wants).
 pub struct HouseholdBuyers {
-    /// §41 C1: what it will pay, from its own outlook of what the thing is worth to it.
-    pub will_pay: f64,
+    /// §41 C1, 21g: the id of what it will pay, read through `params`.
+    pub will_pay: &'static str,
     /// The lines a household consumes. Registry data (Law 15): not a branch on a kind.
     pub basket: Vec<InstrumentId>,
 }
@@ -121,16 +124,17 @@ impl Participant for HouseholdBuyers {
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        if money <= 0.0 || self.will_pay <= 0.0 {
+        let will_pay = view.params().ratio(self.will_pay);
+        if money <= 0.0 || will_pay <= 0.0 {
             return Vec::new();
         }
         // §41 C1.d: it bids for what it can actually fund. A bid it cannot pay for is not a bid.
-        let affordable = whole_pieces(money / self.will_pay);
+        let affordable = whole_pieces(money / will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
         let _ = m;
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.will_pay), qty: affordable }]
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
     }
 }
 
@@ -138,10 +142,10 @@ impl Participant for HouseholdBuyers {
 /// up borrowing is the OUTCOME — never a rule that surplus banks lend.
 pub struct MoneyMarketBanks {
     /// §11 A2.a: its own buffer preference, derived from its own liabilities — not a stated ratio.
-    pub buffer: f64,
+    pub buffer: &'static str,
     /// §11 B2: what it will take to lend its own money out, and what it will pay to borrow.
-    pub lends_at: f64,
-    pub borrows_at: f64,
+    pub lends_at: &'static str,
+    pub borrows_at: &'static str,
     /// The overnight book. `Missing` where this world has no overnight line yet — a bank with
     /// nowhere to lend posts nowhere, which is an absence and not a market it sits out of.
     pub book: Option<MarketId>,
@@ -160,10 +164,11 @@ impl Participant for MoneyMarketBanks {
         let reserves = view.own_cash();
         // §11 A3: the need is knowable only AFTER the period's flows — this reads the position the
         // flows actually left, not an opening balance.
-        let need = self.buffer - reserves;
+        let need = view.params().amount(self.buffer, Denomination::Money) - reserves;
         if need > 0.0 {
             // Short: it bids for money, at what it will pay.
-            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.borrows_at), qty: whole_pieces(need) }];
+            let borrows_at = view.params().per_annum(self.borrows_at);
+            return vec![Order { party: view.self_id(), side: Side::Buy, price: Some(borrows_at), qty: whole_pieces(need) }];
         }
         let spare = -need;
         if spare <= 0.0 {
@@ -171,7 +176,8 @@ impl Participant for MoneyMarketBanks {
         }
         // Long: it offers what it has over its own buffer, at its own rate. §11 B1: whether it ends
         // up lending is the book's answer, not this schedule's.
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.lends_at), qty: whole_pieces(spare) }]
+        let lends_at = view.params().per_annum(self.lends_at);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(lends_at), qty: whole_pieces(spare) }]
     }
 }
 
@@ -180,11 +186,11 @@ impl Participant for MoneyMarketBanks {
 /// and offers lower, which is how a desk mean-reverts its book without anyone telling it to.
 pub struct Dealers {
     /// §26 C1: the quote comes from the desk's own state. This is its mid before the skew.
-    pub around: f64,
+    pub around: &'static str,
     /// §26 C3, C5: the width it needs, from what carrying the position costs it.
-    pub width: f64,
+    pub width: &'static str,
     /// §26 D1: what it will carry. When the limit binds it stops quoting rather than absorbing more.
-    pub limit: f64,
+    pub limit: &'static str,
     pub lines: Vec<InstrumentId>,
 }
 
@@ -200,18 +206,21 @@ impl Participant for Dealers {
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let line = line_of(m);
         let held = view.quantity(line);
+        let limit = view.params().amount(self.limit, Denomination::Money);
+        let width = view.params().ratio(self.width);
+        let around = view.params().ratio(self.around);
         // §26 D1: at its limit it stops quoting. A limit that never binds is not a limit.
-        if held.abs() >= self.limit {
+        if held.abs() >= limit {
             return Vec::new();
         }
         // §26 C2: long already means it bids lower AND offers lower. The skew is the inventory
         // against the limit — a fact about its own book, not a stated rule.
-        let skew = self.width * (held / self.limit);
-        let bid = self.around - self.width - skew;
-        let ask = self.around + self.width - skew;
+        let skew = width * (held / limit);
+        let bid = around - width - skew;
+        let ask = around + width - skew;
         // Clearing C1: in whole pieces, and an order for none of them is not an order — a desk one
         // half-piece from its limit has room for nothing.
-        let room = whole_pieces(self.limit - held);
+        let room = whole_pieces(limit - held);
         let long = whole_pieces(held);
         let mut out = Vec::new();
         if view.own_cash() > 0.0 && bid > 0.0 && room > 0 {
@@ -229,7 +238,7 @@ impl Participant for Dealers {
 pub struct FundMandates {
     /// §13 A4: **the mandate is a real constraint on what it buys**, not a label.
     pub may_hold: Vec<InstrumentId>,
-    pub will_pay: f64,
+    pub will_pay: &'static str,
 }
 
 impl Participant for FundMandates {
@@ -261,11 +270,12 @@ impl Participant for FundMandates {
             return Vec::new();
         }
         let money = view.own_cash();
-        let affordable = whole_pieces(money / self.will_pay);
+        let will_pay = view.params().ratio(self.will_pay);
+        let affordable = whole_pieces(money / will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.will_pay), qty: affordable }]
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
     }
 }
 
@@ -274,7 +284,7 @@ impl Participant for FundMandates {
 /// preference.
 pub struct InsurerMatching {
     pub long_lines: Vec<InstrumentId>,
-    pub will_pay: f64,
+    pub will_pay: &'static str,
 }
 
 impl Participant for InsurerMatching {
@@ -291,11 +301,12 @@ impl Participant for InsurerMatching {
 
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let affordable = whole_pieces(money / self.will_pay);
+        let will_pay = view.params().ratio(self.will_pay);
+        let affordable = whole_pieces(money / will_pay);
         if affordable <= 0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(self.will_pay), qty: affordable }]
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
     }
 }
 
@@ -305,8 +316,8 @@ pub struct TreasuryIssues {
     /// `Missing` where the treasury has no line to auction in this world.
     pub paper: Option<InstrumentId>,
     /// §30 D2.a: the lowest price it will accept. Below that it pulls the auction (D5).
-    pub will_accept: f64,
-    pub size: f64,
+    pub will_accept: &'static str,
+    pub size: &'static str,
 }
 
 impl Participant for TreasuryIssues {
@@ -319,10 +330,12 @@ impl Participant for TreasuryIssues {
     }
 
     fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
-        if self.size <= 0.0 {
+        let size = view.params().amount(self.size, Denomination::Money);
+        if size <= 0.0 {
             return Vec::new();
         }
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(self.will_accept), qty: whole_pieces(self.size) }]
+        let will_accept = view.params().price(self.will_accept);
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(will_accept), qty: whole_pieces(size) }]
     }
 }
 
@@ -452,6 +465,74 @@ impl Wiring {
 /// **A system whose state the world does not hold yet proposes nothing**, and that is an answer: the
 /// wiring is complete, so it becomes live the moment the world holds something. What it is NOT is a
 /// row that the loop never reaches, which is what 43 of these were.
+/// **XI-14, Law 2, 21g: every behaviour-shaping number this world acts on, declared.**
+///
+/// It is declared HERE, beside the wiring, for the reason the event kinds are: the assembly is what
+/// knows the whole list, and a number declared where it is read is a number nobody can count. Each
+/// participant and mechanism below holds the ID and reads the value through `params` — so Law 2's
+/// question is answerable of every one of them, and `params.shapes()` is a count that can fall.
+///
+/// **These were bare `f64` fields a caller passed in.** Nothing asked what kind of number each was,
+/// and two of them — the outlook's memory, declared at both `households` and `expectations` — were
+/// the same number written twice, which is the two-writers defect Law 4 is about and which this makes
+/// impossible: the register refuses a second declaration of one id.
+pub fn declare(p: &mut Params) {
+    let mut say = |id: &str, value: f64, unit: &str, dimension: Dimension, kind: Kind, owner: Owner, why: &str| {
+        p.declare(ParamDecl {
+            id: id.to_string(),
+            value,
+            unit: unit.to_string(),
+            dimension,
+            kind,
+            owner,
+            why: why.to_string(),
+        });
+    };
+
+    // §37 E4: a fact about the thing, not about who holds it.
+    say("goods.perishes", 0.01, "share of a lot a period", Dimension::Ratio, Kind::Technology, Owner::Model,
+        "the share of a lot that does not survive the period");
+    // Clearing C4.c: a seller's own reservation, and a buyer's own limit. Both are what the party
+    // will do rather than what the market is, so both are PREFERENCES.
+    say("goods.seller.will_take", 1.0, "multiple of what it cost", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the least a holder will take for what it holds, against what the units cost it");
+    say("household.will_pay", 1.2, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the most a cell will pay for what it buys, against what the book last printed");
+    say("fund.will_pay", 1.1, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "what a mandate will pay for a line it may hold");
+    say("insurer.will_pay", 1.05, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "what a long-dated matcher will pay for a line that matches its liabilities");
+    // §46: the ONE preference expectations are allowed (XI-16), and it was written twice.
+    say("outlook.memory", 0.3, "weight on what just happened", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "how fast a party corrects its outlook towards what happened — the one preference §46 has");
+    // §11: a bank's own liquidity buffer, and what it lends and borrows at overnight.
+    // Law 8: a declared AMOUNT is a NAMED amount of money and the read returns pieces, so the two
+    // amounts below are stated in units where the literals they replace were piece counts. The same
+    // quantity, said in the unit a person declares it in — and it now moves with `piece_shift`.
+    say("money_market.buffer", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the balance a bank keeps back before it lends overnight");
+    say("money_market.lends_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
+        "the rate a bank will lend overnight at");
+    say("money_market.borrows_at", 1.0, "per annum", Dimension::PerAnnum, Kind::Preference, Owner::Model,
+        "the rate a bank will borrow overnight at");
+    // §10: a desk's own quote. Its width is what it charges for standing there.
+    say("dealer.around", 1.0, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "where a desk centres its quote, against what the book last printed");
+    say("dealer.width", 0.02, "share of the mid", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "half the spread a desk quotes, which is what it charges for standing there");
+    say("dealer.limit", 10.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the most a desk will hold of one line");
+    // §30 D2.a: the lowest price a treasury will accept before it pulls the auction (D5).
+    say("treasury.will_accept", 0.98, "price per unit of par", Dimension::Price, Kind::Policy, Owner::Parliament,
+        "the lowest price the treasury will accept before it pulls the auction");
+    // 21.41: what it auctions is `must_raise`, and nothing can read that yet (21j.1). A SHAPE, and
+    // the count of shapes must fall — this one falls when the treasury reads what it is short of.
+    say("treasury.auctions", 0.0, "money", Dimension::Amount(Denomination::Money),
+        Kind::Placeholder { mechanism: "Treasury D3, XI-9: what it must raise".to_string(), item: "21j.2".to_string() },
+        Owner::Parliament,
+        "a literal standing in for the size the treasury is short of, which no participant can read yet");
+}
+
 pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
     // One event kind per system that publishes a read. Law 4: declared once, here, where the list is.
     let mut says = |name: &str| kinds.declare(name);
@@ -460,16 +541,16 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
             // survive the period leaves at what it cost (37 E4).
-            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0, keeps: w.keeps() }));
-            goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: 0.01 }));
+            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", keeps: w.keeps() }));
+            goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: "goods.perishes" }));
             goods
         },
         {
             // §41 both posts and works: a cell bids for what it can fund, and forms its outlook from
             // the prices its own lines printed at (§46).
             let mut households =
-                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: w.basket() }));
-            households.mechanism = Some(Box::new(Forming { memory: 0.3 }));
+                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", basket: w.basket() }));
+            households.mechanism = Some(Box::new(Forming { memory: "outlook.memory" }));
             households
         },
         // §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines
@@ -487,13 +568,13 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
             let mut mm = posts(
                 "money_market",
                 AT_MARKETS,
-                Box::new(MoneyMarketBanks { buffer: 100.0, lends_at: 1.0, borrows_at: 1.0, book: w.overnight.map(book_of) }),
+                Box::new(MoneyMarketBanks { buffer: "money_market.buffer", lends_at: "money_market.lends_at", borrows_at: "money_market.borrows_at", book: w.overnight.map(book_of) }),
             );
             mm.mechanism = Some(Box::new(Reads { kind: says("money_market.credit"), what: Counts::CreditOutstanding }));
             mm
         },
         {
-            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: 0.98, size: 0.0 }));
+            let mut t = posts("treasury", AT_MARKETS, Box::new(TreasuryIssues { paper: w.paper, will_accept: "treasury.will_accept", size: "treasury.auctions" }));
             t.mechanism = Some(Box::new(Reads { kind: says("treasury.outstanding"), what: Counts::CreditOutstanding }));
             t
         },
@@ -510,19 +591,19 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         works("corporate_credit", AT_MARKETS, Box::new(Reads { kind: says("corporate_credit.out"), what: Counts::CreditOutstanding })),
         // ── The holders ─────────────────────────────────────────────────────────────────────────
         {
-            let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: 1.1 }));
+            let mut f = posts("funds", AT_MARKETS, Box::new(FundMandates { may_hold: w.lines.clone(), will_pay: "fund.will_pay" }));
             // §13 F3, 21b: a pool whose manager died posts nothing and winds up. It was a count of
             // live mandates, which is a read that reports on a thing it does not do.
             f.mechanism = Some(Box::new(Winding { says: says("fund.orphaned") }));
             f
         },
         {
-            let mut i = posts("insurers", AT_MARKETS, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: 1.05 }));
+            let mut i = posts("insurers", AT_MARKETS, Box::new(InsurerMatching { long_lines: w.lines.clone(), will_pay: "insurer.will_pay" }));
             i.mechanism = Some(Box::new(Reads { kind: says("insurers.policies"), what: Counts::AgreementsLive }));
             i
         },
         {
-            let mut d = posts("dealing", AT_MARKETS, Box::new(Dealers { around: 1.0, width: 0.02, limit: 1_000.0, lines: w.lines.clone() }));
+            let mut d = posts("dealing", AT_MARKETS, Box::new(Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: w.lines.clone() }));
             d.mechanism = Some(Box::new(Reads { kind: says("dealing.lines"), what: Counts::LinesThatPrinted }));
             d
         },
@@ -548,7 +629,7 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         works("second_opinion", AT_REVALUATION, Box::new(Reads { kind: says("second_opinion.lines"), what: Counts::LinesThatPrinted })),
         works("observer", AT_REVALUATION, Box::new(Reads { kind: says("observer.alive"), what: Counts::PartiesAlive })),
         // §46: every deciding party forms its own outlook from its own history. They disagree.
-        works("expectations", AT_REVALUATION, Box::new(Forming { memory: 0.3 })),
+        works("expectations", AT_REVALUATION, Box::new(Forming { memory: "outlook.memory" })),
         // ── The events that end things ──────────────────────────────────────────────────────────
         works("loss", AT_REVALUATION, Box::new(Reads { kind: says("loss.alive"), what: Counts::PartiesAlive })),
         works("forced_sale", AT_MARKETS, Box::new(Closing { kind: afoot::WORKOUT, says: says("workout.closed") })),
@@ -607,6 +688,9 @@ mod tests {
         w.register.credit(firm, bread, 400.0, 0.9, 0);
         w.register.money_delta(household, cash, 600.0);
         w.open_book(book_of(bread), bread, CurrencyCode::at(0), PriceRule::SellersCompete);
+        // XI-14: the participants below hold IDs, so the world they are asked in has the numbers.
+        // A scale model of the world runs the same declarations, not a second set (Law 4).
+        declare(&mut w.params);
         Small { w, cash, reserves, bread, cb, bank, firm, household }
     }
 
@@ -628,8 +712,8 @@ mod tests {
     fn a_firm_posts_what_it_holds_and_a_household_bids_what_it_can_fund() {
         // §37 C1, §41 C1.d: the seller offers units it HAS; the buyer bids for what it can pay for.
         let s = world();
-        let sellers = GoodsSellers { will_take: 1.0, keeps: Vec::new() };
-        let buyers = HouseholdBuyers { will_pay: 1.2, basket: vec![s.bread] };
+        let sellers = GoodsSellers { will_take: "goods.seller.will_take", keeps: Vec::new() };
+        let buyers = HouseholdBuyers { will_pay: "household.will_pay", basket: vec![s.bread] };
         let bread = s.bread;
 
         let seller_view = seen(&s, s.firm);
@@ -650,7 +734,7 @@ mod tests {
     fn a_household_with_no_money_is_in_no_book() {
         // Law 6: not a rule about households — it is what having nothing to pay with means.
         let s = world();
-        let buyers = HouseholdBuyers { will_pay: 1.2, basket: vec![s.bread] };
+        let buyers = HouseholdBuyers { will_pay: "household.will_pay", basket: vec![s.bread] };
         // The firm holds bread and has an account with nothing in it.
         let view = seen(&s, s.firm);
         assert!(buyers.markets(&view).is_empty());
@@ -663,8 +747,8 @@ mod tests {
         let (bread, household) = (s.bread, s.household);
         let w = &mut s.w;
         let systems = [
-            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: 1.0, keeps: Vec::new() })).slotted(FIRST_SLOT),
-            posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: 1.2, basket: vec![bread] })).slotted(FIRST_SLOT + 1),
+            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", keeps: Vec::new() })).slotted(FIRST_SLOT),
+            posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", basket: vec![bread] })).slotted(FIRST_SLOT + 1),
         ];
         let as_systems: Vec<&dyn System> = systems.iter().map(|s| s as &dyn System).collect();
         w.wire_up(&as_systems);
@@ -684,7 +768,7 @@ mod tests {
         let (cash, bread) = (s.cash, s.bread);
         let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.register.money_delta(dealer, cash, 5_000.0);
-        let d = Dealers { around: 1.0, width: 0.02, limit: 1_000.0, lines: vec![bread] };
+        let d = Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: vec![bread] };
 
         let flat = seen(&s, dealer);
         let quoted_flat = d.orders(&flat, book_of(bread));
@@ -707,7 +791,7 @@ mod tests {
         let dealer = s.w.parties.add(kinds::DEALER, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.register.money_delta(dealer, cash, 5_000.0);
         s.w.register.credit(dealer, bread, 1_200.0, 1.0, 0);
-        let d = Dealers { around: 1.0, width: 0.02, limit: 1_000.0, lines: vec![bread] };
+        let d = Dealers { around: "dealer.around", width: "dealer.width", limit: "dealer.limit", lines: vec![bread] };
         let view = seen(&s, dealer);
         assert!(d.orders(&view, book_of(bread)).is_empty());
     }
@@ -725,7 +809,7 @@ mod tests {
         s.w.register.money_delta(short, reserves, 40.0);
         s.w.register.money_delta(flush, reserves, 900.0);
         let book = book_of(reserves);
-        let m = MoneyMarketBanks { buffer: 100.0, lends_at: 1.0, borrows_at: 1.0, book: Some(book) };
+        let m = MoneyMarketBanks { buffer: "money_market.buffer", lends_at: "money_market.lends_at", borrows_at: "money_market.borrows_at", book: Some(book) };
 
         assert_eq!(m.orders(&seen(&s, short), book)[0].side, Side::Buy);
         assert_eq!(m.orders(&seen(&s, flush), book)[0].side, Side::Sell);
@@ -742,8 +826,8 @@ mod tests {
         // mandate — it has nobody whose view the order would be, which is the test below this one.
         let manager = s.w.parties.add(kinds::FIRM, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.agreements.strike(agreed::MANDATE, manager, fund, &[], crate::calendar::Day(-7), None);
-        let allowed = FundMandates { may_hold: vec![bread], will_pay: 1.1 };
-        let forbidden = FundMandates { may_hold: Vec::new(), will_pay: 1.1 };
+        let allowed = FundMandates { may_hold: vec![bread], will_pay: "fund.will_pay" };
+        let forbidden = FundMandates { may_hold: Vec::new(), will_pay: "fund.will_pay" };
         let view = seen(&s, fund);
         assert!(!allowed.orders(&view, book_of(bread)).is_empty());
         assert!(forbidden.orders(&view, book_of(bread)).is_empty());
@@ -759,7 +843,7 @@ mod tests {
         let (cash, bread) = (s.cash, s.bread);
         let orphan = s.w.parties.add(kinds::FUND, RegionId::at(0), s.bank, Representation::Named, 1, 0);
         s.w.register.money_delta(orphan, cash, 1_000.0);
-        let pool = FundMandates { may_hold: vec![bread], will_pay: 1.1 };
+        let pool = FundMandates { may_hold: vec![bread], will_pay: "fund.will_pay" };
         let view = seen(&s, orphan);
         assert!(pool.markets(&view).is_empty());
         assert!(pool.orders(&view, book_of(bread)).is_empty());

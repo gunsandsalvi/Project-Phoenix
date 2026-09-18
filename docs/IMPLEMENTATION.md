@@ -152,7 +152,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 21d | Every store declares itself, and the homeless count is true — **done** (section removed; see `docs/RECORD.md`; the register names SEVEN homeless nouns where it reported zero, and `world-runs` prints them. They named items 21e and 21f, which are inserted) | ahead of 22 |
 | 21e | There is no registry — **done** (section removed; see `docs/RECORD.md`; `src/registry.rs`: a currency names its issuer, `currency_of(region)` reads through the country, a unit says what it is divided into, a kind has a profile `World::admit` asks. Seven homeless nouns are three) | after 21d: the ontology register is what found it |
 | 21f | Three facts the modules keep and the kernel does not — **done** (section removed; see `docs/RECORD.md`; a posting and a lending standard are one shape, `stores::Standing`; work in progress is `stores::InProgress`, real because the recipe has a lead time. Three nouns went home and three were declared in their place) | with 21e, and for the same reason |
-| 21g | The parameter register is switched off | with 21e and 21f: the same defect, one register over |
+| 21g | The parameter register is switched off — **done** (section removed; see `docs/RECORD.md`; fourteen numbers declared with kind, unit, owner and reason, every participant and mechanism holding an id, `world-runs` printing the shape count, and a `phoenix-check` rule that fails on a literal handed to a mechanism) | with 21e and 21f: the same defect, one register over |
 | 21h | The five cell events never fire | with 21e–21g: the third register reporting nothing |
 | 21i | There is no ground | named by 21.27–21.30, which are four findings about one absence |
 | 21j | Twenty-five systems take no part | named by 21.38–21.42; after 21i, and its door is what the later conversions all want |
@@ -169,28 +169,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-## 21g. The parameter register is switched off
-
-**INSERTED (Law 10), beside 21e and 21f.** `params` is built, tested and owned by the kernel, and
-`grep params.declare src/` over eighty files returns nothing: every behaviour-shaping number is a bare
-struct field a caller passes in (`Perishing { share: 0.01 }`, `HouseholdBuyers { will_pay: 1.2 }`,
-`Dealers { around, width, limit }`). So Law 2's question is asked of none of them — is `will_pay` a
-TECHNOLOGY, a PREFERENCE, a POLICY, a RESOLUTION or a SHAPE? — and `params.shapes()` returns empty,
-which reads as *this world has no shapes* and means *nobody declared one*. XI-14: the engine reads
-numbers only via `params`.
-
-- [ ] 21g.1 **Every declared number in the engine goes through `params`**, with its kind, its unit
-  and its owner. A module states the number it needs and reads it; the assembly declares it.
-- [ ] 21g.2 **`params.shapes()` is printed by `world-runs`**, beside the homeless nouns, because a
-  count that must fall is a count somebody has to see.
-- [ ] 21g.3 **A check that a behaviour-shaping number does not reach a mechanism except through
-  `params`** — `phoenix-check` can see a bare `f64` field on a `Mechanism` or a `Participant`, which
-  is the shape this takes. When a rule is broken eighty times it should be a check.
-
-**Exit.** Law 2's five kinds are answerable for every number the engine acts on, and the count of
-shapes is a number that can fall.
-
----
 
 ## 21h. The five cell events never fire
 

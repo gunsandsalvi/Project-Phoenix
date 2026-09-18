@@ -150,6 +150,51 @@ fn fixed_tolerance(line: &str) -> Option<String> {
     None
 }
 
+/// **XI-14, Law 2, 21g: a behaviour-shaping number reaches a mechanism only via `params`.** The
+/// route by which one reaches a mechanism is its CONSTRUCTION — `Perishing { share: 0.01 }` — so a
+/// numeric literal in a field position is a number somebody handed a mechanism without saying what
+/// kind of number it is, who owns it, or what unit it is in. Declared, the same number is a row in
+/// the register and the mechanism holds only its id.
+///
+/// 0, 1, -1 and 2 are exempt because they are arithmetic rather than declarations: an empty count,
+/// a single one, the other side, a halving. That is the same exemption the TypeScript rule carried.
+fn undeclared_number(line: &str) -> Option<String> {
+    let chars: Vec<char> = line.chars().collect();
+    let mut from = 0usize;
+    while let Some(rel) = line[from..].find(": ") {
+        let at = from + rel;
+        from = at + 2;
+        // A field position, not a type annotation or a match arm: what follows must be a number.
+        let value: String = chars[at + 2..]
+            .iter()
+            .take_while(|c| c.is_ascii_digit() || **c == '.' || **c == '_' || **c == '-')
+            .collect();
+        if value.is_empty() || !value.starts_with(|c: char| c.is_ascii_digit() || c == '-') {
+            continue;
+        }
+        // It ends where a field ends. `x: 1.0e9` and `x: 3u32` are numbers too, but what follows a
+        // number here must not be a letter, or `weight: 1u32` reads as the literal `1`.
+        let after = chars.get(at + 2 + value.chars().count());
+        if after.is_some_and(|c| c.is_alphabetic()) {
+            continue;
+        }
+        let bare = value.replace('_', "");
+        let Ok(n) = bare.parse::<f64>() else { continue };
+        if n == 0.0 || n == 1.0 || n == -1.0 || n == 2.0 {
+            continue;
+        }
+        let mut back: Vec<char> =
+            chars[..at].iter().rev().take_while(|c| c.is_alphanumeric() || **c == '_').copied().collect();
+        back.reverse();
+        let field: String = back.into_iter().collect();
+        if field.is_empty() {
+            continue;
+        }
+        return Some(format!("{field} is handed {value} rather than a declared id"));
+    }
+    None
+}
+
 /// A line with its string literals emptied. **Braces inside a format string are not code**, and
 /// counting them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
 /// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests. The
@@ -307,6 +352,12 @@ fn main() {
             // and that is where it was found: `1e-12` on a year fraction that is exactly one.
             if let Some(band) = fixed_tolerance(line) {
                 found.push(say("Law 7", format!("a tolerance nobody derived: {band}")));
+            }
+            // XI-14: and every behaviour-shaping number reaches a mechanism through `params`.
+            if (is_mechanism || stem == "systems" || stem == "running") && !in_test {
+                if let Some(what) = undeclared_number(line) {
+                    found.push(say("XI-14", what));
+                }
             }
         }
 

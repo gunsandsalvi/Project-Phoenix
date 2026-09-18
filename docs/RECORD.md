@@ -20113,3 +20113,48 @@ market is worse than no convention: a caller would have believed it.
 `docs/COVERAGE.md`: `Indices B1` and `Indices D1` re-pointed from the deleted TypeScript files.
 
 **702 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `npm run check` green.**
+
+## 21g — the parameter register is switched off
+
+`params` was built, tested and owned by the kernel, and `grep params.declare src/` over eighty-one
+files returned nothing. Every behaviour-shaping number was a bare `f64` a caller handed in
+(`Perishing { share: 0.01 }`, `HouseholdBuyers { will_pay: 1.2 }`, `Dealers { around, width,
+limit }`), so Law 2's question — is this a TECHNOLOGY, a PREFERENCE, a POLICY, a RESOLUTION or a
+SHAPE? — was asked of none of them, and `params.shapes()` returned empty, which reads as *this world
+has no shapes* and meant *nobody declared one*.
+
+**`systems::declare` is the one writer.** Fourteen numbers, each with its kind, its unit, its
+dimension, its owner and its reason, declared beside the wiring because the assembly is what knows
+the whole list — a number declared where it is read is a number nobody can count. Every participant
+and mechanism now holds the **id** and reads the value through `params`, so `will_pay` is a
+PREFERENCE owned by the model, `treasury.will_accept` is a POLICY owned by parliament, and
+`goods.perishes` is a TECHNOLOGY.
+
+**One number had two writers.** `Forming { memory: 0.3 }` was written at `households` and again at
+`expectations` — the same §46 preference, twice, which is exactly Law 4's defect. The register makes
+it impossible rather than caught: `declare` refuses a second declaration of an id, so the two sites
+now name one row.
+
+**One shape, and it carries its death.** `treasury.auctions` is a literal standing in for the size
+the treasury is short of, which no participant can read yet (21j.1). It is a `Placeholder` naming
+`Treasury D3, XI-9` and item 21j.2, and `world-runs` prints it beside the homeless nouns: *1 of 14
+declared numbers are shapes*. The count must fall, and now somebody can see it.
+
+**Law 8 changed two numbers' unit and not their quantity.** A declared `Amount` is a NAMED amount of
+money and the read returns pieces, so the bank's buffer and the dealer's limit — literals that were
+piece counts — are declared as 1 and 10 units of money against this world's hundred pieces to the
+unit. The same quantity, said in the unit a person declares it in, and it now moves with
+`piece_shift` instead of being restated against the grid.
+
+**And the rule became a check.** `phoenix-check` gained an XI-14 rule: in a mechanism, in `systems`
+or in `running`, a numeric literal in a FIELD POSITION is a number handed to a mechanism without
+saying what kind of number it is. 0, 1, -1 and 2 are exempt, because those are arithmetic rather
+than declarations. It was verified by putting `Perishing { share: 0.01 }` back — the check names the
+file, the line and the field — and green again on the fix. When a rule is broken eighty times it
+should be a check.
+
+`docs/COVERAGE.md` has no XI-14 row to re-mark: XI-14 is a mechanism requirement of Part XI, not a
+spec-system clause, and its evidence is the register and the check.
+
+**702 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green; `world:runs` runs four
+periods with all 50 systems, worst period 326 ms.**
