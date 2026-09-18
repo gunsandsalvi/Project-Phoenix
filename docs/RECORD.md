@@ -20532,3 +20532,117 @@ change. `docs/COVERAGE.md`: `Register B2` re-pointed at the read and at the fami
 
 **716 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 82 files;
 `npm run check` green; `world:runs` four periods, 50 systems, worst period 366 ms, every family clean.**
+
+## 22c — the market as it is
+
+*There was ONE microstructure — a weekly uniform-price call auction for bread, labour, loans, shares
+and freight alike — and nothing rested between sessions. A Walrasian auctioneer for bread is the one
+intermediary that never existed (Law 1).*
+
+### 22c.0 — a `Day` carries a civil date
+
+It was a day count from the epoch and nothing else, so no convention that NAMES a day could be
+written down: the third Friday of a delivery month, the last business day, a quarter end. The mapping
+is the proleptic Gregorian one as integer arithmetic, reaching for no clock — `Date` and `std::time`
+are forbidden in the engine for exactly this reason, and a world whose dates came from the machine it
+runs on is a world that runs differently tomorrow.
+
+### 22c.1 — a protocol per venue, as data
+
+`src/protocols.rs`, one module per protocol, `BookDecl.protocol` saying which a venue runs. The kernel
+dispatches on the declaration and never on what is being traded (Law 15). **`Call`** is the sealed
+cross that was already here. **`Posted`** is a seller standing behind an ask and a buyer taking the
+best it SAW — and what it can see is a TECHNOLOGY, because search is costly and a buyer that saw the
+whole market would be a buyer in a call auction wearing a shop's clothes. **`Book`** is resting orders
+matched as they arrive, priced at the level the resting side was standing at.
+
+All three clear from real supply meeting real demand, which is what they have in common and the whole
+of it. `world:runs` declares them per class now: a good is bought in a shop, a share trades on an
+exchange, everything else is a call.
+
+**It found a latent defect in settlement.** `pair_up` returned quantities and the caller settled every
+trade at the session's ONE price — true of a call auction and false of the other two, where each
+trade happened at what that seller was standing behind. The pairs carry their own price now.
+
+### 22c.2 — an order rests
+
+`stores::Resting`, a kernel noun beside agreements and processes: entered by a participant, cancelled
+by its owner, expired by the calendar, consumed by a match. Every session opens with the standing
+book, and what did not fill stays — except in a `Call`, where it is gone, because a sealed cross is an
+event and the event is over. That is the protocol's own answer and not an exception to the rule.
+
+The absence was measurable and the measurement was being read backwards: `noDemand` 7,903 against
+`noOverlap` 323 looked like thin demand and was **two sides failing to be in the room in the same
+week.** A participant reads its own standing orders (`ParticipantView::resting`) and nets them out —
+without that it re-enters its order every week and stands behind twice what it holds, which is a short
+with no borrow wearing an ordinary ask's clothes.
+
+### 22c.3 and 22c.3a — the cover, the shelf, and what a household spends
+
+**The desired buffer was exactly ZERO and nobody had chosen it.** `wanted = expected / yields` is a
+stock-adjustment rule whose target stock is nothing at all, so a firm holding anything above what it
+expected to sell started nothing for ever while 1,648 lots perished on its own shelf. `Reasons` now
+carries the firm's own COVER (a preference) and what is already on the shelf.
+
+**And the ask answers the shelf**: the reservation is the seller's own basis times its margin LESS
+what another period of holding costs it — the room, the spoilage and the money tied up. A seller with
+stock it cannot move takes less rather than waiting at a price it has no reason to lower. Nothing
+floors it: a reservation can fall below cost, which is what a firm with perishable stock and an empty
+book actually does.
+
+**Both sides exposed the same Law 8 defect.** `will_take` and `will_pay` are MULTIPLES — of what the
+units cost and of what the book last printed — and both were being posted as though they were the
+price itself. A ratio in a book, invisible for as long as the declared values happened to be near one.
+
+**22c.3a**: a household spends out of its wealth as well as its income, and keeps a buffer that is its
+own. Spending everything and saving a constant share are the same defect from two sides — what a
+household saves is what somebody OWES, so a rate that does not answer the stock is a debt that
+accumulates for ever and the trend is an accounting identity rather than a missing repayment. A
+stationary series is an OUTCOME of this decision and can never be fitted (5 E1).
+
+### 22c.4 — somebody holds the stock
+
+No party's business was, so a good went from the firm that made it straight to the household that ate
+it in the same week, or sat on the maker's shelf and perished. `Stockist` is the fifty-first system
+and the twelfth party kind: **its margin is an OUTCOME of turnover and carrying cost and there is no
+spread table.** What it asks is what the units cost it plus what it has ACTUALLY paid to hold them,
+and how long it has held them is a read off its own lots, which carry the period they were acquired
+in (Register D1). A stockist that turns its stock fast asks a thin margin; one sitting on old stock
+must ask more, and if the market will not pay it **it wears the loss** — the whole risk of the trade,
+hedged nowhere. It has a limit, because a buyer of unlimited stock is the buyer of last resort
+(Appendix B) and a market with one has no price that ever falls.
+
+### 22c.7 and 22c.8 — the two findings 21i and 21j positioned here
+
+**22c.7**: `cost_to_build` was an argument every caller supplied and nobody derived — the floor under
+every house price in this world (40 B1.a), handed in. `housing::cost_to_build_at` reads the recipe's
+own draw for one dwelling at the inputs' own prices, scaled by how built-up the place is. No money
+number is set: the congestion raises the DRAW and what that costs is whatever the inputs cleared at
+(21i, Law 3).
+
+**22c.8**: a quay had an owner and a berth and earned nothing. `LetsItsPlant` offers the PERIOD'S USE
+— its owner still owns the quay next week, which is why this belongs with the venues — at what
+standing there costs it: the upkeep it owes whether or not anybody books it (33 A4.b's fixed cost).
+Below that the berth stands empty, which is a real outcome and is what an unlet quay IS.
+
+### What it revealed, and what the law checker caught
+
+**`phoenix-check` refused the first build**: `posted` and `book` reached for `.min` and `.max`
+directly, and Law 6 forbids them outside `core/num.rs` — because a minimum written at a site is
+indistinguishable from a cap written at a site, which is the whole reason the law exists. They are
+`num::keener` and `num::at_most` now, each saying what it is: one of two levels somebody posted, and
+a window over a list.
+
+**The standing book only grows** — 16,869 orders after the first period and 33,069 after the fourth,
+with the books clearing less as it rises. That is not the resting book's defect; it is what a market
+with memory REVEALS. Before 22c an order that met nobody vanished and the world looked like a place
+with merely thin demand; now the unmet orders accumulate and say what they always were: **two sides
+that never overlap.** Inserted as **item 22c2**, with the two absences it depends on — no venue
+declares how long an order stands, and `Resting::cancels` has no caller, so the book is a ratchet.
+
+`docs/ARCHITECTURE.md` gained 4.9a′. `docs/COVERAGE.md`: `Clearing A1`, `Clearing C2`, `Goods C3` and
+`Households C2` re-pointed at the Rust kernel.
+
+**726 tests, 5 tool tests, a typecheck; clippy clean; `phoenix-check` green over 83 files;
+`npm run check` green; `world:runs` four periods, 51 systems, worst period 392 ms, every family clean
+or honestly not-built.**

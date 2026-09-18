@@ -20,6 +20,7 @@ use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId}
 use phoenix_kernel::instruments::Class;
 use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
+use phoenix_kernel::protocols::Protocol;
 use phoenix_kernel::registry::{Banks, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
@@ -130,7 +131,7 @@ fn main() {
     // Everybody else banks somewhere, because a party with no account holds no money (Money D2).
     let rest = [
         kinds::FIRM, kinds::HOUSEHOLD, kinds::FUND, kinds::INSURER, kinds::DEALER,
-        kinds::CARRIER, kinds::SMALL_FIRM, kinds::ASSESSOR,
+        kinds::CARRIER, kinds::SMALL_FIRM, kinds::ASSESSOR, kinds::STOCKIST,
     ];
     let mut everyone: Vec<PartyId> = vec![cb, treasury];
     everyone.extend(banks.iter().copied());
@@ -236,9 +237,23 @@ fn main() {
         w.processes.begin(kind, PartyId(*f), 0, Some(draw.below(PERIODS as u64) as u32), draw.spread(500.0));
     }
 
-    // ── The books ───────────────────────────────────────────────────────────────────────────────
+    // ── The venues (22c.1) ──────────────────────────────────────────────────────────────────────
+    // **A protocol per venue, and they differ.** There was one microstructure — a weekly
+    // uniform-price call auction — for bread, labour, loans, shares and freight alike, and a
+    // Walrasian auctioneer for bread is the one intermediary that never existed (Law 1).
+    //
+    // A GOOD is bought in a shop: a seller stands behind an ask and a buyer takes the best it saw.
+    // A SHARE trades on an exchange: orders rest and are matched as they arrive. Everything else is
+    // a call — an auction or a fixing, which is what a sealed cross at one level IS.
     for line in &lines {
-        w.open_book(book_of(*line), *line, CurrencyCode::at(0), PriceRule::SellersCompete);
+        let (protocol, rule) = match w.instruments.class_of(*line) {
+            Class::Good => (Protocol::Posted, PriceRule::SellersCompete),
+            Class::Share => (Protocol::Book, PriceRule::BuyersCompete),
+            _ => (Protocol::Call, PriceRule::SellersCompete),
+        };
+        // How much of a shop's market a buyer sees. A TECHNOLOGY: search is costly, and a buyer that
+        // saw every seller would be a buyer in a call auction wearing a shop's clothes.
+        w.open_book(book_of(*line), *line, CurrencyCode::at(0), rule, protocol, 5);
     }
 
     // §37 A2: how the goods of this world are made. Arbitrary like everything else here, and with
@@ -413,6 +428,13 @@ fn main() {
         }
         audited.sort();
 
+        // **3 C2, 22c.2: how many orders are STANDING.** Nothing rested between sessions at all, and
+        // a market with no memory reports thin demand that is an artefact of its protocol rather
+        // than a fact about anybody's willingness to buy.
+        let standing = (0..w.resting.len() as u32)
+            .map(phoenix_kernel::stores::RestingId)
+            .filter(|o| w.resting.live(*o))
+            .count();
         // 21j.1a: **how many obligations came into existence**, which was zero in every period of
         // every world until the door existed — no firm brought paper, no treasury auctioned a bill it
         // had not got, no pool cut a note. It is counted off the wire rather than assumed (Law 19).
@@ -424,7 +446,7 @@ fn main() {
         let emptiest = built.iter().copied().fold(f64::INFINITY, f64::min);
         let fullest = built.iter().copied().fold(0.0f64, f64::max);
         println!(
-            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines",
+            "period {period}  {ms:8.1} ms  — {} phases ran · {} asks · {} books cleared · {} trades · {} made · {} events · {} outlooks · {cells} cells of {people} · built {emptiest:.0}–{fullest:.0} km² · {brought} lines · {standing} resting",
             did.ran, did.asks, did.books_cleared, did.trades, made, did.events, w.outlooks.len(),
         );
         println!("           audit: {}", audited.join(" · "));

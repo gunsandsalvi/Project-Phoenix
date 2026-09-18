@@ -248,7 +248,9 @@ impl Mechanism for Funding {
                 coupon: Some(coupon),
                 matures: Some(matures),
                 units: short,
-                book: Some(crate::clearing::PriceRule::BuyersCompete),
+                // §30 D2: a treasury auction is a CALL — a sealed cross at one level, which is what
+                // an auction IS (22c.1). The `seen_by` is not read by a call and says so with one.
+                book: Some((crate::clearing::PriceRule::BuyersCompete, crate::protocols::Protocol::Call, 1)),
                 owing: vec![
                     (matures, short * coupon * years, crate::stores::Owing::Interest),
                     (matures, short, crate::stores::Owing::Principal),
@@ -462,6 +464,10 @@ pub struct Making {
     pub flow: crate::mechanisms::goods::CostFlow,
     /// 21i: the id of the standing area at which a build draws twice, read through `params`.
     pub crowds_at: &'static str,
+    /// **37 B1, 22c.3: how much COVER a firm wants on its shelf**, as a multiple of what it expects
+    /// to sell. A PREFERENCE read through `params` — the desired buffer used to be exactly zero and
+    /// nobody had chosen it.
+    pub cover: &'static str,
 }
 
 impl Mechanism for Making {
@@ -599,7 +605,16 @@ impl Mechanism for Making {
 
                 let d = decide(
                     way,
-                    &Reasons { firm: maker, expected_demand: expects, capacity: can_make, on_hand, labour: hours },
+                    &Reasons {
+                        firm: maker,
+                        expected_demand: expects,
+                        capacity: can_make,
+                        on_hand,
+                        labour: hours,
+                        // 22c.3: what it already has of what it makes, off its own rows (Law 19).
+                        on_shelf: ctx.register().quantity(ctx.register().row(maker, m.line.makes)),
+                        cover: ctx.params().ratio(self.cover),
+                    },
                 );
                 if d.starts <= 0.0 {
                     continue;
@@ -1178,6 +1193,8 @@ mod tests {
     const MEMORY: &str = "test.outlook.memory";
     /// 21i: the standing area at which a build draws twice, for the tests that run a line.
     const CROWDS_AT: &str = "test.building.crowds_at";
+    /// 22c.3: how much cover a firm wants on its shelf, for the tests that run a line.
+    const COVER: &str = "test.firm.cover";
 
     /// XI-14: a mechanism holds the ID of the number it acts on, so a world that runs one declares
     /// it. Ten square km, because a place carrying ten is then exactly twice as dear to build in.
@@ -1432,6 +1449,15 @@ mod tests {
         let of_them = f64::from(w.parties.weight(worker));
         w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[80.0, 40.0, of_them], Day(-7), None);
         declare_crowding(&mut w);
+        w.params.declare(crate::params::ParamDecl {
+            id: COVER.to_string(),
+            value: 0.0,
+            unit: "multiple of what it expects to sell".to_string(),
+            dimension: crate::params::Dimension::Ratio,
+            kind: crate::params::Kind::Preference,
+            owner: crate::params::Owner::Model,
+            why: "these cases are about the OTHER reasons binding, so the shelf it wants is none".to_string(),
+        });
         (w, firm, flour, bread, mill)
     }
 
@@ -1448,6 +1474,7 @@ mod tests {
             }],
             flow: crate::mechanisms::goods::CostFlow::FirstInFirstOut,
             crowds_at: CROWDS_AT,
+            cover: COVER,
         }
     }
 

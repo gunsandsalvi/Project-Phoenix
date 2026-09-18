@@ -54,6 +54,8 @@ pub struct GoodsSellers {
     /// §37 B1, 21g: the id of what it will take, read through `params`. Its own, and two firms
     /// differ (§32 A3).
     pub will_take: &'static str,
+    /// §37 C1, 22c.3: what another period on the shelf costs it, as a share of what the units cost.
+    pub holding_costs: &'static str,
     /// **33 A4.c: whether a good is an input is the HOLDER's question, not the good's.** What a
     /// party's own recipe consumes is an input to it and stock to everybody else — so a firm that can
     /// run a line does not offer the flour it is about to bake, and the same sacks in a merchant's
@@ -88,14 +90,44 @@ impl Participant for GoodsSellers {
         // its own unit and an order is a count of pieces, so a firm left with part of a loaf has
         // something and has nothing to sell — and an order for none of it is not an order. The first
         // warm-up in which every firm could reach the book is where this turned up (22b.9a).
-        let pieces = whole_pieces(view.free(line_of(m)));
+        // **3 C2, 22c.2: less what it is ALREADY standing behind here.** An order rests now, so a
+        // seller that posted ten last week and still holds ten has ten on the shelf and nothing new
+        // to offer. Posting it again would be standing behind twice what it has, which is a short
+        // without a borrow (Appendix B) dressed as an ordinary ask.
+        let (_, already) = view.resting(m);
+        let pieces = whole_pieces(view.free(line_of(m))) - already;
         if pieces <= 0 {
             return Vec::new();
         }
-        // §37 B1: it produces — and sells — because the price covers its cost. Law 6: it is not made
-        // to sell below that; a book that will not reach it simply does not clear for this seller.
+        // **§37 B1, 22c.3: THE ASK IS A PRICE AND IT ANSWERS THE SHELF.**
+        //
+        // `will_take` is a MULTIPLE of what the units cost this seller, and it was being posted as
+        // though it were the price itself — a ratio in a book, which is Law 8's defect (the unit is
+        // part of the number) hiding in plain sight because the declared value happened to be one.
+        // The reservation is that multiple ON ITS OWN BASIS, read off its own lots (Law 19).
+        let lots = view.lots(line_of(m));
+        let units: f64 = lots.iter().map(|l| l.qty).sum();
+        if units <= 0.0 {
+            return Vec::new();
+        }
+        let cost = lots.iter().map(|l| l.qty * l.basis_per_unit).sum::<f64>() / units;
+        // **And it carries the value of HOLDING** (22c.3): another period on the shelf costs this
+        // seller the room, the spoilage and the money tied up, so it will take less to move the
+        // stock now than to keep it. A firm with unsold stock had no feedback from it at all and
+        // waited for ever at a price it had no reason to lower.
+        //
+        // Law 6: nothing floors this. A reservation can fall below cost — which is what a firm with
+        // perishable stock and an empty book actually does, and it is a loss it chose over a bigger
+        // one (§37 F5).
+        let holding = view.params().ratio(self.holding_costs);
         let will_take = view.params().ratio(self.will_take);
-        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(will_take), qty: pieces }]
+        let reservation = cost * will_take - cost * holding;
+        // A price of nothing or less is not a price this seller can post (Clearing C1): below that
+        // it would rather let the stock perish than pay somebody to take it.
+        if reservation <= 0.0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(reservation), qty: pieces }]
     }
 }
 
@@ -104,6 +136,9 @@ impl Participant for GoodsSellers {
 pub struct HouseholdBuyers {
     /// §41 C1, 21g: the id of what it will pay, read through `params`.
     pub will_pay: &'static str,
+    /// **§41 C2, 22c.3a: the money it keeps back.** A PREFERENCE: a household spends out of its
+    /// wealth as well as its income, and what it holds on to is its own.
+    pub keeps: &'static str,
     /// The lines a household consumes. Registry data (Law 15): not a branch on a kind.
     pub basket: Vec<InstrumentId>,
 }
@@ -124,17 +159,169 @@ impl Participant for HouseholdBuyers {
 
     fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
-        let will_pay = view.params().ratio(self.will_pay);
-        if money <= 0.0 || will_pay <= 0.0 {
+        if money <= 0.0 {
             return Vec::new();
         }
-        // §41 C1.d: it bids for what it can actually fund. A bid it cannot pay for is not a bid.
-        let affordable = whole_pieces(money / will_pay);
+        // **§41 C1, 22c.3: WHAT IT WILL PAY IS A PRICE.** `will_pay` is a multiple of what the book
+        // last printed, and it was being posted as though it were the price itself — the same Law 8
+        // defect as the seller's ask, invisible while the declared value happened to be one. A
+        // household with no print to go on has nothing to bid against, which is missing rather than
+        // free (Appendix A): it does not bid, and the book says `noDemand`.
+        let Some(print) = view.print(line_of(m)) else { return Vec::new() };
+        let limit = print.price * view.params().ratio(self.will_pay);
+        if limit <= 0.0 {
+            return Vec::new();
+        }
+        // **§41 C2, 22c.3a: IT SPENDS OUT OF ITS WEALTH, NOT JUST ITS INCOME** — but it keeps a
+        // buffer, and what it keeps is its own (a PREFERENCE, dispersed like any other).
+        //
+        // Spending everything and saving a constant share are the same defect from two sides: what a
+        // household saves is what somebody OWES, so a saving rate that does not answer the stock is a
+        // debt that accumulates for ever, and the trend is an accounting identity rather than a
+        // missing repayment (22b.8). A stationary series is an OUTCOME of this decision and can never
+        // be fitted — picking a drawdown that balances the saving is fitting an answer (5 E1).
+        let keeps = view.params().amount(self.keeps, Denomination::Money);
+        let spendable = money - keeps;
+        if spendable <= 0.0 {
+            return Vec::new();
+        }
+        // §41 C1.d: it bids for what it can actually fund — and 22c.2: less what it is already
+        // bidding for here, because a resting bid is money it has committed once already.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(spendable / limit) - already;
         if affordable <= 0 {
             return Vec::new();
         }
-        let _ = m;
-        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(will_pay), qty: affordable }]
+        vec![Order { party: view.self_id(), side: Side::Buy, price: Some(limit), qty: affordable }]
+    }
+}
+
+/// **§37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.**
+///
+/// No party's business was. A good went from the firm that made it straight to the household that
+/// ate it, in the same week, or it sat on the maker's own shelf and perished — 1,648 lots did. The
+/// missing intermediary of Law 1, and what makes a consumer price index possible at all (21.84),
+/// because a price index is a price somebody was standing behind when nobody happened to be buying.
+///
+/// **Its margin is an OUTCOME of turnover and carrying cost, and there is no spread table.** What it
+/// asks is what the units cost it plus what it has actually paid to hold them — and how long it has
+/// held them is a READ off its own lots, which carry the period they were acquired in (Register D1).
+/// A stockist that turns its stock fast asks a thin margin because it has carried it briefly; one
+/// sitting on old stock must ask more to cover what holding it has cost, and **if the market will not
+/// pay that it wears the loss**, which is the whole risk of the trade and is not hedged anywhere.
+pub struct Stockist {
+    /// §37 C3: what it will carry. Registry data (Law 15) — not a branch on what a line is.
+    pub lines: Vec<InstrumentId>,
+    /// What a period of holding costs it, as a share of what the units cost: the room, the spoilage
+    /// and the money tied up. The same TECHNOLOGY the maker reads, because it is the same fact about
+    /// keeping a thing on a shelf (Law 4).
+    pub carrying: &'static str,
+    /// §26 D1: what it will hold of one line. A buyer of unlimited stock is a buyer of last resort
+    /// (Appendix B), which is exactly what a market with a stockist must not have.
+    pub limit: &'static str,
+}
+
+impl Participant for Stockist {
+    fn party_kind(&self) -> u32 {
+        kinds::STOCKIST
+    }
+
+    fn markets(&self, _view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let line = line_of(m);
+        let carrying = view.params().ratio(self.carrying);
+        let limit = view.params().amount(self.limit, Denomination::Money);
+        let (bidding, offering) = view.resting(m);
+        let mut out = Vec::new();
+
+        // **THE SELL SIDE: what it cost, plus what carrying it has actually cost.** The lots say
+        // when each parcel arrived, so this is its own history and not a markup anybody chose. Law 19:
+        // read off the lots rather than a margin kept beside them.
+        let lots = view.lots(line);
+        let held: f64 = lots.iter().map(|l| l.qty).sum();
+        if held > 0.0 {
+            let asking: f64 = lots
+                .iter()
+                .map(|l| {
+                    let periods = f64::from(view.period().saturating_sub(l.acquired));
+                    l.qty * l.basis_per_unit * (1.0 + carrying * periods)
+                })
+                .sum::<f64>()
+                / held;
+            let pieces = whole_pieces(view.free(line)) - offering;
+            if pieces > 0 && asking > 0.0 {
+                out.push(Order { party: view.self_id(), side: Side::Sell, price: Some(asking), qty: pieces });
+            }
+        }
+
+        // **THE BUY SIDE: it buys at what it expects to sell for, less what it will cost to carry.**
+        // What it expects is what the book last printed — never a forecast of its own making (§46,
+        // Law 3). A line that has never printed is one it has no view of, so it does not bid.
+        if let Some(print) = view.print(line) {
+            let bid = print.price * (1.0 - carrying);
+            // §26 D1, Appendix B: it will not carry more than its limit. That is what stops it being
+            // the buyer of last resort — a stockist with no limit absorbs every unsold good in the
+            // world and no price ever falls.
+            let room = whole_pieces(limit - held) - bidding;
+            let affordable = whole_pieces(view.own_cash() / bid);
+            let wants = if room < affordable { room } else { affordable };
+            if bid > 0.0 && wants > 0 {
+                out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: wants });
+            }
+        }
+        out
+    }
+}
+
+/// **§34 C1, 21.30, 22c.8: A QUAY'S OWNER EARNS WHAT A BERTH CLEARS AT.**
+///
+/// It had an owner and a berth and it earned nothing, which is a price that is not cleared (Law 3).
+/// The finding was filed as one about GROUND and it is not: a quay is PLANT, it has a life and it
+/// wears, and what was missing is a cleared price for the USE of it for a period.
+///
+/// **A use is let, not sold.** Its owner still owns the quay next week — so what it offers is the
+/// period's use and never the thing, which is why this belongs with the venues and their protocols
+/// rather than with the goods books. The same shape lets a room, and that is 21j.3's rent when
+/// housing has a market to be let in.
+///
+/// Its reservation is what standing there COSTS it: the upkeep it owes on the plant whether or not
+/// anybody books it (33 A4.b's fixed cost, which is the whole of operating leverage). Below that it
+/// would rather the berth stood empty, and above it every penny is the return on the asset.
+pub struct LetsItsPlant {
+    /// The lines whose USE it lets. Registry data (Law 15).
+    pub lines: Vec<InstrumentId>,
+    /// 33 A4.b: what keeping the plant costs its owner for a period, whether or not it is used.
+    pub upkeep: &'static str,
+}
+
+impl Participant for LetsItsPlant {
+    fn party_kind(&self) -> u32 {
+        kinds::CARRIER
+    }
+
+    fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
+        self.lines.iter().filter(|l| view.quantity(**l) > 0.0).map(|l| book_of(*l)).collect()
+    }
+
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
+        let line = line_of(m);
+        let held = view.free(line);
+        if held <= 0.0 {
+            return Vec::new();
+        }
+        // Law 6: it is not made to let below what standing there costs it. A book that will not
+        // reach that simply does not clear for this owner, and the berth stands empty — which is a
+        // real outcome and is what an unlet quay IS.
+        let upkeep = view.params().amount(self.upkeep, Denomination::Money);
+        let (_, offering) = view.resting(m);
+        let pieces = whole_pieces(held) - offering;
+        if pieces <= 0 || upkeep <= 0.0 {
+            return Vec::new();
+        }
+        vec![Order { party: view.self_id(), side: Side::Sell, price: Some(upkeep), qty: pieces }]
     }
 }
 
@@ -220,8 +407,12 @@ impl Participant for Dealers {
         let ask = around + width - skew;
         // Clearing C1: in whole pieces, and an order for none of them is not an order — a desk one
         // half-piece from its limit has room for nothing.
-        let room = whole_pieces(limit - held);
-        let long = whole_pieces(held);
+        // 22c.2: a desk's quote is what it is standing behind, and it is already standing behind
+        // what it has resting here. Re-quoting the whole of it every session would put a desk past
+        // its own limit (§26 D1) by the amount it had already quoted.
+        let (bidding, offering) = view.resting(m);
+        let room = whole_pieces(limit - held) - bidding;
+        let long = whole_pieces(held) - offering;
         let mut out = Vec::new();
         if view.own_cash() > 0.0 && bid > 0.0 && room > 0 {
             out.push(Order { party: view.self_id(), side: Side::Buy, price: Some(bid), qty: room });
@@ -271,7 +462,9 @@ impl Participant for FundMandates {
         }
         let money = view.own_cash();
         let will_pay = view.params().ratio(self.will_pay);
-        let affordable = whole_pieces(money / will_pay);
+        // 22c.2: less what it is already bidding for here, or it commits the same money twice.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(money / will_pay) - already;
         if affordable <= 0 {
             return Vec::new();
         }
@@ -299,10 +492,12 @@ impl Participant for InsurerMatching {
         self.long_lines.iter().map(|l| book_of(*l)).collect()
     }
 
-    fn orders(&self, view: &ParticipantView<'_>, _m: MarketId) -> Vec<Order> {
+    fn orders(&self, view: &ParticipantView<'_>, m: MarketId) -> Vec<Order> {
         let money = view.own_cash();
         let will_pay = view.params().ratio(self.will_pay);
-        let affordable = whole_pieces(money / will_pay);
+        // 22c.2: less what it is already bidding for here.
+        let (already, _) = view.resting(m);
+        let affordable = whole_pieces(money / will_pay) - already;
         if affordable <= 0 {
             return Vec::new();
         }
@@ -494,6 +689,18 @@ impl Wiring {
     /// handed to the check (Law 15), so the family never asks an instrument what kind it is — and it
     /// is read off the recipes rather than restated, because what a firm makes its goods WITH is
     /// already written there (Law 19).
+    /// §34 C1, 22c.8: the plant lines whose USE is let. Read off the recipes like everything else
+    /// here (Law 19) — what a firm makes its goods WITH is already written there.
+    pub fn plants(&self) -> Vec<InstrumentId> {
+        let mut out: Vec<InstrumentId> = Vec::new();
+        for m in &self.makes {
+            if !out.contains(&m.plant) {
+                out.push(m.plant);
+            }
+        }
+        out
+    }
+
     pub fn capital(&self) -> Vec<bool> {
         let mut is_capital: Vec<bool> = Vec::new();
         for m in &self.makes {
@@ -550,6 +757,22 @@ pub fn declare(p: &mut Params) {
     // number is set anywhere in it, which is why this is a draw and not a price.
     say("building.crowds_at", 60.0, "square km standing", Dimension::SquareKm, Kind::Technology, Owner::Model,
         "the ground already covered in a place at which building there draws twice what it does on empty ground");
+    // **37 B1, 22c.3: how much cover a firm wants on its shelf.** A PREFERENCE: it is what this firm
+    // wants, not what the world requires. The desired buffer was exactly ZERO and nobody had chosen
+    // it — `wanted = expected / yields` is a stock-adjustment rule whose target stock is nothing, so
+    // a firm holding anything above what it expected to sell started nothing for ever while its own
+    // stock perished on the shelf (12c.3).
+    say("firm.cover", 0.5, "multiple of what it expects to sell", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "how much stock a firm wants on the shelf beyond the week it expects to sell");
+    // **37 C1, 22c.3: what another period on the shelf costs the holder**, as a share of what the
+    // units cost it — the storage, the spoilage and the money tied up. It is why a seller with stock
+    // it cannot move accepts less rather than waiting at a price it has no reason to hold.
+    say("plant.upkeep", 0.5, "money", Dimension::Amount(Denomination::Money), Kind::Technology, Owner::Model,
+        "what keeping a plant costs its owner a period whether or not anybody books it — 33 A4.b's fixed cost");
+    say("stockist.limit", 50.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the most a stockist will carry of one line — without one it is the buyer of last resort");
+    say("goods.seller.holding_costs", 0.03, "share of what the units cost, a period", Dimension::Ratio, Kind::Technology, Owner::Model,
+        "what it costs to keep a unit another period: the room it takes, what spoils and the money in it");
     // §37 E4: a fact about the thing, not about who holds it.
     say("goods.perishes", 0.01, "share of a lot a period", Dimension::Ratio, Kind::Technology, Owner::Model,
         "the share of a lot that does not survive the period");
@@ -559,6 +782,11 @@ pub fn declare(p: &mut Params) {
         "the least a holder will take for what it holds, against what the units cost it");
     say("household.will_pay", 1.2, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the most a cell will pay for what it buys, against what the book last printed");
+    // **§41 C2, 22c.3a: the money a household keeps back.** Spending everything and saving a
+    // constant share are the same defect from two sides — what a household saves is what somebody
+    // OWES, so a rate that does not answer the stock is a debt that accumulates for ever (22b.8).
+    say("household.keeps", 1.0, "money", Dimension::Amount(Denomination::Money), Kind::Preference, Owner::Model,
+        "the balance a household holds on to rather than spends, which is why its money is not a trend");
     say("fund.will_pay", 1.1, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
         "what a mandate will pay for a line it may hold");
     say("insurer.will_pay", 1.05, "multiple of the last print", Dimension::Ratio, Kind::Preference, Owner::Model,
@@ -608,25 +836,37 @@ pub fn all(w: &Wiring, kinds: &mut Names) -> Vec<Wired> {
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
             // survive the period leaves at what it cost (37 E4).
-            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", keeps: w.keeps() }));
+            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: w.keeps() }));
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: "goods.perishes" }));
             goods
         },
         {
-            // §41 both posts and works: a cell bids for what it can fund, and forms its outlook from
+            // §41 C1, §46: a cell bids for what it can fund, and forms its outlook from
             // the prices its own lines printed at (§46).
             let mut households =
-                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", basket: w.basket() }));
+                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: w.basket() }));
             households.mechanism = Some(Box::new(Forming { memory: "outlook.memory" }));
             households
         },
         // §37 A2, B1–B5: THE ONE SYSTEM THAT MAKES ANYTHING. It was a read of how many lines
         // printed, which is a system reporting on a world it takes no part in.
-        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at" })),
+        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
         works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
         works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
-        works("freight", AT_MARKETS, Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive })),
+        // §34 C1, 21.30, 22c.8: **a quay's owner earns what a berth clears at.** It had an owner and
+        // a berth and it earned nothing, which is a price that is not cleared (Law 3).
+        {
+            // §34 C1, 21.30, 22c.8: **a quay's owner earns what a berth clears at.** It had an owner
+            // and a berth and it earned nothing, which is a price that is not cleared (Law 3).
+            let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: w.plants(), upkeep: "plant.upkeep" }));
+            f.mechanism = Some(Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive }));
+            f
+        },
         works("commodities", AT_MARKETS, Box::new(Reads { kind: says("commodities.lines"), what: Counts::LinesThatPrinted })),
+        // §37 C3, 22c.4: **somebody whose business is to hold the stock.** It stands on both sides of
+        // a goods book — buying what it expects to sell and asking what it has actually paid to hold
+        // — and it is the missing intermediary of Law 1.
+        posts("stockists", AT_MARKETS, Box::new(Stockist { lines: w.basket(), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
         works("housing", AT_MARKETS, Box::new(Closing { kind: afoot::FORECLOSURE, says: says("housing.foreclosed") })),
         works("trade_credit", AT_MARKETS, Box::new(Reads { kind: says("trade_credit.out"), what: Counts::AgreementsLive })),
         works("small_business", AT_MARKETS, Box::new(Reads { kind: says("small_business.credit"), what: Counts::CreditOutstanding })),
@@ -781,7 +1021,19 @@ mod tests {
         let household = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 500, 0);
         w.register.credit(firm, bread, 400.0, 0.9, 0);
         w.register.money_delta(household, cash, 600.0);
-        w.open_book(book_of(bread), bread, CurrencyCode::at(0), PriceRule::SellersCompete);
+        w.open_book(book_of(bread), bread, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
+        // **22c.3: a buyer bids against what the book last PRINTED**, because its limit is a multiple
+        // of a price and not a price. A household with no print has nothing to bid against, which is
+        // missing rather than free (Appendix A) — so a world it can bid in is one that has printed.
+        w.prints.write(crate::prices::Print {
+            instrument: bread,
+            market: book_of(bread),
+            period: 0,
+            price: 1.0,
+            ccy: CurrencyCode::at(0),
+            quoted_as: crate::prices::QuotedAs::Money,
+            provenance: crate::prices::Provenance::Cleared,
+        });
         // XI-14: the participants below hold IDs, so the world they are asked in has the numbers.
         // A scale model of the world runs the same declarations, not a second set (Law 4).
         declare(&mut w.params);
@@ -806,8 +1058,8 @@ mod tests {
     fn a_firm_posts_what_it_holds_and_a_household_bids_what_it_can_fund() {
         // §37 C1, §41 C1.d: the seller offers units it HAS; the buyer bids for what it can pay for.
         let s = world();
-        let sellers = GoodsSellers { will_take: "goods.seller.will_take", keeps: Vec::new() };
-        let buyers = HouseholdBuyers { will_pay: "household.will_pay", basket: vec![s.bread] };
+        let sellers = GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: Vec::new() };
+        let buyers = HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: vec![s.bread] };
         let bread = s.bread;
 
         let seller_view = seen(&s, s.firm);
@@ -820,15 +1072,19 @@ mod tests {
         assert_eq!(buyers.markets(&buyer_view), vec![book_of(bread)]);
         let bids = buyers.orders(&buyer_view, book_of(bread));
         assert_eq!(bids.len(), 1);
-        // 600 of money at 1.2 apiece is 500 units it can actually pay for.
-        assert_eq!(bids[0].qty, 500);
+        // **22c.3, 22c.3a: it bids against the PRINT and it keeps a buffer.** 600 of money less the
+        // hundred pieces it holds on to is 500 it will spend, and its limit is the print (1.0) times
+        // what it will pay (1.2) — so 416 whole pieces. It used to bid 500 at a level of 1.2, which
+        // was a RATIO posted as a price (Law 8) and a household that spent every penny it had.
+        assert_eq!(bids[0].price, Some(1.2));
+        assert_eq!(bids[0].qty, 416);
     }
 
     #[test]
     fn a_household_with_no_money_is_in_no_book() {
         // Law 6: not a rule about households — it is what having nothing to pay with means.
         let s = world();
-        let buyers = HouseholdBuyers { will_pay: "household.will_pay", basket: vec![s.bread] };
+        let buyers = HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: vec![s.bread] };
         // The firm holds bread and has an account with nothing in it.
         let view = seen(&s, s.firm);
         assert!(buyers.markets(&view).is_empty());
@@ -841,8 +1097,8 @@ mod tests {
         let (bread, household) = (s.bread, s.household);
         let w = &mut s.w;
         let systems = [
-            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", keeps: Vec::new() })).slotted(FIRST_SLOT),
-            posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", basket: vec![bread] })).slotted(FIRST_SLOT + 1),
+            posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: Vec::new() })).slotted(FIRST_SLOT),
+            posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: vec![bread] })).slotted(FIRST_SLOT + 1),
         ];
         let as_systems: Vec<&dyn System> = systems.iter().map(|s| s as &dyn System).collect();
         w.wire_up(&as_systems);
@@ -986,11 +1242,12 @@ mod tests {
         let before = names.len();
         names.dedup();
         assert_eq!(names.len(), before, "a system wired twice would run twice");
-        // Fifty rows for the spec's forty-seven systems, and the difference is not slack: §37 is two
-        // modules (the recipe that makes a thing and the market that sells it), §20 and §21 are one
-        // (`commodities`), and XI-7 shares `benchmarks` with §22. The count that matters is that
-        // every ported module is here — a module not in this list does not run.
-        assert_eq!(before, 50, "every ported module is wired, and nothing is wired twice");
+        // Fifty-one rows for the spec's forty-seven systems, and the difference is not slack: §37 is
+        // two modules (the recipe that makes a thing and the market that sells it), §20 and §21 are
+        // one (`commodities`), XI-7 shares `benchmarks` with §22, and 22c.4 added the STOCKIST —
+        // somebody whose business is to hold the stock, which no party's was. The count that matters
+        // is that every ported module is here: a module not in this list does not run.
+        assert_eq!(before, 51, "every ported module is wired, and nothing is wired twice");
         // And every declaration has its own slot, or two of them would be the same phase (Law 4).
         let mut slots: Vec<u32> = all.iter().map(|s| s.slot).collect();
         slots.sort_unstable();
@@ -1026,9 +1283,13 @@ mod tests {
             &mut kinds,
         );
         for row in &all {
+            // **A row with NEITHER is dead**, which is what this exists to catch. A row with a
+            // participant is not dead: standing in a book IS its work, and 22c.4's stockist is the
+            // first system whose whole job is to be on both sides of one — it holds the stock, and
+            // holding it is not something it does at a phase.
             assert!(
-                row.mechanism.is_some(),
-                "{} is wired and has no work to do in a period",
+                row.mechanism.is_some() || row.participant.is_some(),
+                "{} is wired and neither posts nor works — it is a declaration and nothing else",
                 row.name
             );
         }

@@ -123,6 +123,8 @@ fn main() {
     let bench_agreements = phoenix_kernel::stores::Agreements::new();
     // And owes nothing on a schedule: a view over it answers "nothing falls due".
     let bench_schedules = phoenix_kernel::stores::Schedules::new();
+    // And nothing rests in it: a bench measures one session, not a market with a memory.
+    let mut bench_resting = phoenix_kernel::stores::Resting::new();
     let ok = journal.kinds.declare("instruction.settled");
     let no = journal.kinds.declare("instruction.failed");
 
@@ -147,7 +149,7 @@ fn main() {
     let participants: Vec<&dyn Participant> = vec![&sells, &buys];
 
     let t = Instant::now();
-    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules }, 1);
+    let books = Books::index(&participants, &Shown { parties: &parties, instruments: &instruments, register: &register, prints: &prints, journal: &journal, params: &params, agreements: &bench_agreements, schedules: &bench_schedules, resting: &bench_resting }, 1);
     let index_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
@@ -166,6 +168,7 @@ fn main() {
             params: &params,
             agreements: &bench_agreements,
             schedules: &bench_schedules,
+            resting: &mut bench_resting,
         };
         for n in 1..=BOOKS as u32 {
             let book = BookDecl {
@@ -173,6 +176,9 @@ fn main() {
                 subject: InstrumentId::at(n),
                 ccy: CurrencyCode::at(0),
                 rule: PriceRule::SellersCompete,
+                // The bench measures the CALL solver, which is what it always measured.
+                protocol: phoenix_kernel::protocols::Protocol::Call,
+                seen_by: 1,
             };
             let s = run_book(&book, &participants, &books, &mut stores, 1, ok, no, 0);
             asks += s.asks;

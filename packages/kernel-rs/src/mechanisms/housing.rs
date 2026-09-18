@@ -104,10 +104,44 @@ pub struct Offer {
 impl Offer {
     /// The reservation, built from the seller's own position. Law 6: this is not a floor imposed on
     /// a price — it is the point below which THIS seller refuses, and a refusal is an outcome.
+    ///
+    /// **22c.7: WHAT IT COSTS TO BUILD IS NOT A NUMBER HANDED IN.** 40 B1.a rests every reservation
+    /// in this world on it — *never below what it costs to build* — so the floor under every house
+    /// price was a number nobody derived. It is `cost_to_build_at` now: what a dwelling's line
+    /// actually DRAWS at that place, which is higher in a built-up region because building where more
+    /// already stands draws more (21i). The seller does not choose it and nor does anybody else.
     pub fn reserving(seller: PartyId, at: RegionId, owed: f64, cost_to_build: f64) -> Offer {
         let reservation = if owed > cost_to_build { owed } else { cost_to_build };
         Offer { seller, at, reservation }
     }
+}
+
+/// **22c.7, 21i, 40 B1.a: WHAT IT COSTS TO BUILD A DWELLING HERE.**
+///
+/// It was an argument every caller supplied and nobody derived — the floor under every house price
+/// in this world, handed in. It is a read now: the recipe's own draw for one dwelling, at the inputs'
+/// own prices, scaled by how built-up the place is.
+///
+/// Law 3: no money number is set. What the draw COSTS is whatever those inputs cleared at in their
+/// own books, and the congestion raises the DRAW rather than the price (21i). Law 19: the recipe is
+/// the source and this reads it rather than restating a cost beside it.
+///
+/// `None` where an input has never printed: a builder that cannot price what it needs cannot say
+/// what a dwelling costs, and that is missing rather than free (Appendix A).
+pub fn cost_to_build_at(
+    recipe: &crate::mechanisms::recipe::Recipe,
+    crowding: f64,
+    priced: impl Fn(crate::ids::InstrumentId) -> Option<f64>,
+    an_hour: f64,
+) -> Option<f64> {
+    let here = recipe.where_it_stands(crowding);
+    let mut inputs = 0.0;
+    for (what, per) in &here.per_unit {
+        inputs += per * priced(*what)?;
+    }
+    // B4: what it costs per dwelling that SURVIVES, because normal waste is absorbed into the cost
+    // of the ones that do (37 B4) — the same division the maker's own unit cost makes.
+    Some((inputs + here.labour_per_unit * an_hour) / here.yields)
 }
 
 /// B1.b: **what a buyer can borrow at the keenest quote available to it** — which is why the mortgage

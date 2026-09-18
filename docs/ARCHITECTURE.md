@@ -665,6 +665,46 @@ built from are in its `Pick<>`s and the rest of each store is not.
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
 
+### 4.9a′ The market as it is: a protocol per venue (3 A1, C2, 22c)
+
+**There was ONE microstructure and it was the wrong one for almost everything.** A weekly
+uniform-price call auction ran for bread, labour, loans, shares and freight alike, and nothing rested
+between sessions. A Walrasian auctioneer for bread is the one intermediary that never existed
+(Law 1): nobody has bought a loaf by posting a demand schedule and waiting for a sealed cross.
+
+`src/protocols.rs` has one module per protocol and `BookDecl.protocol` says which a venue runs, so
+the kernel dispatches on the declaration and never on what is being traded (Law 15). Adding a
+protocol is a module and a variant, never a condition inside the solver.
+
+- **`Call`** — a sealed cross at one level: an auction, a fixing, a tender. The solver that was
+  already here, unchanged.
+- **`Posted`** — a seller stands behind an ask; a buyer sees `seen_by` sellers and takes the best it
+  saw. **What a buyer can see is a TECHNOLOGY**: search is costly, and a buyer that saw the whole
+  market would be a buyer in a call auction wearing a shop's clothes. Still cleared (Law 3) — the
+  seller was willing to sell at it and the buyer was willing to pay it, which is what a price in a
+  shop IS.
+- **`Book`** — resting orders matched as they arrive, priced at the level the RESTING side was
+  standing at, because that side was there first and the arriving side chose to hit it.
+
+**An order rests** (`stores::Resting`), as a kernel noun beside agreements and processes: entered by
+a participant, cancelled by its owner, expired by the calendar, consumed by a match. Every session
+opens with the standing book. In a `Call` an unfilled order is GONE — a sealed cross is an event and
+the event is over — and that is the protocol's own answer rather than an exception.
+
+Its absence was measurable: `noDemand` 7,903 against `noOverlap` 323. The two sides were not failing
+to agree on a price; **they were failing to be in the room in the same week.** A participant reads
+its own resting orders through `ParticipantView::resting` and nets them out, or it re-enters its
+order every week and stands behind twice what it has.
+
+**A `Day` carries a civil date** (22c.0): the proleptic Gregorian mapping as integer arithmetic over
+the day count, reaching for no clock — `Date` and `std::time` are forbidden in the engine for exactly
+this reason. Without it no convention that NAMES a day could be stated: the third Friday of a delivery
+month, the last business day, a quarter end.
+
+**Pairs carry their own price.** A call auction crosses everybody at one level; a posted market and a
+resting book do not have one level at all. Settling every trade at the session's last print would
+invent a price for the ones that did not happen at it.
+
 ### 4.9b′ The audit in the period loop (Audit C1, C3, E2, 22e)
 
 `World::step` runs the audit last, over what the period actually left behind, and `Stepped` carries

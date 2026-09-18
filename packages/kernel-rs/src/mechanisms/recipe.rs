@@ -137,6 +137,18 @@ pub struct Reasons {
     pub on_hand: Vec<(InstrumentId, f64)>,
     /// B1.c: labour available, from the engagement rows.
     pub labour: f64,
+    /// **37 B1, 22c.3: WHAT IT ALREADY HAS ON THE SHELF.** A firm that cannot see its own unsold
+    /// stock decides as if every period started empty.
+    pub on_shelf: f64,
+    /// **37 B1, 22c.3: how much cover it wants**, as a multiple of what it expects to sell. A
+    /// PREFERENCE (Law 2), its own and dispersed — a firm that wants two weeks' cover is not a firm
+    /// that wants none, and the difference is a real thing about how it runs.
+    ///
+    /// The desired buffer used to be exactly ZERO and nothing said so: `wanted = expected / yields`
+    /// is a stock-adjustment rule whose target stock is nothing at all. A firm holding anything above
+    /// what it expected to sell therefore started nothing, for ever — `batch 0, bound demand`, while
+    /// 1,648 lots perished on its own shelf (12c.3).
+    pub cover: f64,
 }
 
 /// What the decision came to, and **which reason bound** — so a reader can say why the line ran short
@@ -243,8 +255,17 @@ pub fn picks<'a>(
 /// quantity of a real thing, and you cannot draw an input you have not got. That is arithmetic
 /// impossibility, which is the only kind of limit there is.
 pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
-    // What it would need to start to meet what it expects to sell, given that some of it scraps.
-    let wanted = reasons.expected_demand / r.yields;
+    // **What it would need to start to reach the shelf it wants**, given that some of it scraps.
+    //
+    // 22c.3: the target is what it expects to sell PLUS the cover it wants, less what it already
+    // has. A firm whose shelf is already above that starts nothing — which is a real decision about
+    // a real stock, where before it was a firm with a desired buffer of zero that nobody had chosen.
+    //
+    // Law 6: `wanted` can come out negative and nothing floors it. It means the firm is over-stocked
+    // and there is no run of the line that would help; the batch arithmetic below turns it into
+    // starting nothing, which is what being over-stocked DOES.
+    let target = reasons.expected_demand * (1.0 + reasons.cover);
+    let wanted = (target - reasons.on_shelf) / r.yields;
 
     let mut allows = wanted;
     let mut bound = Bound::Demand;
@@ -360,6 +381,10 @@ mod tests {
             expected_demand: demand,
             capacity,
             on_hand: vec![(good(1), input_1), (good(2), input_2)],
+            // The existing cases are about the OTHER reasons binding, so this firm starts from an
+            // empty shelf and wants no cover — which is what they were written against.
+            on_shelf: 0.0,
+            cover: 0.0,
             labour,
         }
     }

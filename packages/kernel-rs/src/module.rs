@@ -41,6 +41,8 @@ pub struct ParticipantView<'a> {
     /// same reason — most callers have neither, and a view without them answers nothing rather than
     /// answering that this party owes nothing.
     schedules: Option<&'a Schedules>,
+    /// 3 C2, 22c.2: what it is already standing behind in a venue.
+    resting: Option<&'a crate::stores::Resting>,
 }
 
 impl<'a> ParticipantView<'a> {
@@ -53,13 +55,42 @@ impl<'a> ParticipantView<'a> {
         period: u32,
         cash: Option<InstrumentId>,
     ) -> Self {
-        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None }
+        Self { who, register, prints, journal, params, period, cash, agreements: None, schedules: None, resting: None }
     }
 
     /// XI-9, 21j.1: the same view, able to answer what falls due for it and to it.
     pub fn owing(mut self, schedules: &'a Schedules) -> Self {
         self.schedules = Some(schedules);
         self
+    }
+
+    /// 3 C2, 22c.2: and able to answer what it already has RESTING in a venue.
+    pub fn resting_in(mut self, resting: &'a crate::stores::Resting) -> Self {
+        self.resting = Some(resting);
+        self
+    }
+
+    /// **3 C2, 22c.2: WHAT THIS PARTY IS ALREADY STANDING BEHIND**, in one venue, as a count of
+    /// pieces on each side. A participant that could not see this would re-enter its order every
+    /// session and stand behind twice what it meant to — which is the defect an order that rests
+    /// creates if nobody can read it.
+    ///
+    /// Observer A4: its OWN. There is no argument here that could make it somebody else's.
+    pub fn resting(&self, venue: MarketId) -> (i64, i64) {
+        let Some(all) = self.resting else { return (0, 0) };
+        let mut buying = 0i64;
+        let mut selling = 0i64;
+        for o in all.of_party(self.who) {
+            if all.venue_of(o) != venue.0 {
+                continue;
+            }
+            if all.buying(o) {
+                buying += all.left(o);
+            } else {
+                selling += all.left(o);
+            }
+        }
+        (buying, selling)
     }
 
     /// The same view, able to answer what this party has AGREED. It is a second constructor rather
@@ -297,7 +328,7 @@ pub struct Brings {
     pub units: f64,
     /// Clearing B1: whether a book opens for it, and under which rule. `None` for a line that is not
     /// traded — a loan row is held by the lender that wrote it and is nobody else's to bid for.
-    pub book: Option<crate::clearing::PriceRule>,
+    pub book: Option<(crate::clearing::PriceRule, crate::protocols::Protocol, usize)>,
     /// 5 D2: **what it owes and when.** A claim with terms and no schedule is a claim nobody can
     /// fall behind on, which is why every maturity in the old world arrived at once.
     pub owing: Vec<(crate::calendar::Day, f64, crate::stores::Owing)>,

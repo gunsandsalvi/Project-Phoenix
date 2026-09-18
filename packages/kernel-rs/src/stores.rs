@@ -953,6 +953,190 @@ impl InProgress {
     }
 }
 
+
+/// 3 C2, 22c.2: where a resting order lives.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct RestingId(pub u32);
+
+impl RestingId {
+    #[inline]
+    pub const fn row(self) -> usize {
+        self.0 as usize
+    }
+}
+
+/// **3 C2, 22c.2: AN ORDER RESTS.** A party enters it, its owner cancels it, the calendar expires
+/// it, a match consumes it — and until one of those happens it is STILL THERE, which is what being
+/// in a market means.
+///
+/// **Nothing rested between sessions, and the world's own numbers said so.** `noDemand` was 7,903
+/// against `noOverlap`'s 323: the two sides were not failing to agree on a price, **they were failing
+/// to be in the room in the same week.** A market where everybody must arrive on the same day to
+/// trade at all is not a market with thin demand — it is a market with no memory, and the thinness
+/// is an artefact of the protocol rather than a fact about anybody's willingness to buy.
+///
+/// It is a kernel noun beside agreements and processes, for the same reason both of those are: it
+/// is a fact about the world that outlives the phase that wrote it.
+#[derive(Default)]
+pub struct Resting {
+    party: Vec<u32>,
+    venue: Vec<u32>,
+    /// `true` for a buy. A side is not a number and the column says which it is.
+    buying: Vec<bool>,
+    /// `None` is an order with no level: it takes what the venue gives it (Clearing C1).
+    level: Vec<Option<f64>>,
+    /// Law 8: TOTAL pieces, as a whole count. What is LEFT of it, because a partial fill leaves a
+    /// smaller order and not a filled one.
+    left: Vec<i64>,
+    from: Vec<u32>,
+    /// `Missing` where it rests until somebody cancels it — which is not the same as ending today.
+    until: Vec<Option<i64>>,
+    live: Vec<bool>,
+    /// Audit A2: WHY it was entered, so an order in a book can be traced to the decision that put it
+    /// there. An order nobody can account for is one nobody can be asked about.
+    why: Vec<u32>,
+    by_venue: HashMap<u32, Vec<u32>>,
+    by_party: HashMap<u32, Vec<u32>>,
+}
+
+impl Resting {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.party.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.party.is_empty()
+    }
+
+    /// The only way to enter one. Law 8: a count of pieces, and an order for none of them is not an
+    /// order.
+    #[allow(clippy::too_many_arguments)]
+    pub fn enters(
+        &mut self,
+        party: PartyId,
+        venue: u32,
+        buying: bool,
+        level: Option<f64>,
+        qty: i64,
+        from: u32,
+        until: Option<Day>,
+        why: u32,
+    ) -> RestingId {
+        assert!(party.some(), "Clearing B2: an order is somebody's");
+        assert!(qty > 0, "Clearing C1: an order for {qty} pieces is not an order");
+        if let Some(p) = level {
+            assert!(p.is_finite(), "Law 6: a level of {p} is not a level");
+        }
+        let row = self.party.len() as u32;
+        self.party.push(party.0);
+        self.venue.push(venue);
+        self.buying.push(buying);
+        self.level.push(level);
+        self.left.push(qty);
+        self.from.push(from);
+        self.until.push(until.map(|d| d.0));
+        self.live.push(true);
+        self.why.push(why);
+        self.by_venue.entry(venue).or_default().push(row);
+        self.by_party.entry(party.0).or_default().push(row);
+        RestingId(row)
+    }
+
+    /// **Its OWNER cancels it**, and nobody else. An order somebody else can pull is not that
+    /// party's order.
+    pub fn cancels(&mut self, o: RestingId, by: PartyId) {
+        assert!(
+            self.party[o.row()] == by.0,
+            "Clearing B2: {by:?} did not enter this order and cannot pull it"
+        );
+        self.live[o.row()] = false;
+    }
+
+    /// **A match consumes it**, and what is left of a partly filled order is a smaller order — not a
+    /// filled one, and not a new one somebody re-entered (Law 4: the row is the order).
+    pub fn took(&mut self, o: RestingId, qty: i64) {
+        assert!(qty > 0, "3 C2: a fill of nothing did not happen");
+        assert!(
+            qty <= self.left[o.row()],
+            "3 C2: {qty} taken of {} left — a fill cannot exceed the order",
+            self.left[o.row()]
+        );
+        self.left[o.row()] -= qty;
+        if self.left[o.row()] == 0 {
+            self.live[o.row()] = false;
+        }
+    }
+
+    /// **The CALENDAR expires it** (G3.a): an order rests until its own date, which is a date and
+    /// never a count of periods. An order with no date rests until somebody pulls it.
+    pub fn expire(&mut self, on: Day) {
+        for row in 0..self.party.len() {
+            if self.live[row] && matches!(self.until[row], Some(end) if end < on.0) {
+                self.live[row] = false;
+            }
+        }
+    }
+
+    #[inline]
+    pub fn live(&self, o: RestingId) -> bool {
+        self.live[o.row()]
+    }
+
+    #[inline]
+    pub fn left(&self, o: RestingId) -> i64 {
+        self.left[o.row()]
+    }
+
+    #[inline]
+    pub fn owner(&self, o: RestingId) -> PartyId {
+        PartyId(self.party[o.row()])
+    }
+
+    #[inline]
+    pub fn level(&self, o: RestingId) -> Option<f64> {
+        self.level[o.row()]
+    }
+
+    #[inline]
+    pub fn venue_of(&self, o: RestingId) -> u32 {
+        self.venue[o.row()]
+    }
+
+    #[inline]
+    pub fn buying(&self, o: RestingId) -> bool {
+        self.buying[o.row()]
+    }
+
+    #[inline]
+    pub fn why(&self, o: RestingId) -> u32 {
+        self.why[o.row()]
+    }
+
+    #[inline]
+    pub fn entered(&self, o: RestingId) -> u32 {
+        self.from[o.row()]
+    }
+
+    /// **Every session opens with the standing book.** Register A3's both-directions rule: the live
+    /// orders of one venue, and of one party.
+    pub fn at(&self, venue: u32) -> Vec<RestingId> {
+        match self.by_venue.get(&venue) {
+            Some(rows) => rows.iter().map(|r| RestingId(*r)).filter(|o| self.live(*o)).collect(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn of_party(&self, p: PartyId) -> Vec<RestingId> {
+        match self.by_party.get(&p.0) {
+            Some(rows) => rows.iter().map(|r| RestingId(*r)).filter(|o| self.live(*o)).collect(),
+            None => Vec::new(),
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1176,7 +1360,49 @@ mod tests {
     }
 
     #[test]
+    fn an_order_rests_until_its_owner_pulls_it_its_date_expires_it_or_a_match_takes_it() {
+        // **3 C2, 22c.2: the four ways an order stops standing, and nothing else.** Nothing rested
+        // between sessions at all before, which is why `noDemand` (7,903) dwarfed `noOverlap` (323):
+        // the two sides were not failing to agree on a price, they were failing to be in the room in
+        // the same week.
+        let mut book = Resting::new();
+        let seller = party(5);
+        let buyer = party(6);
+        let venue = 3u32;
+        let ask = book.enters(seller, venue, false, Some(2.0), 100, 1, None, 0);
+        let bid = book.enters(buyer, venue, true, Some(3.0), 40, 1, Some(Day(20)), 0);
+
+        // Every session opens with the standing book, and both directions are indexed.
+        assert_eq!(book.at(venue).len(), 2);
+        assert_eq!(book.of_party(seller), vec![ask]);
+
+        // A MATCH consumes it — and what is left of a partly filled order is a smaller order, not a
+        // filled one and not a new one somebody re-entered (Law 4: the row IS the order).
+        book.took(ask, 30);
+        assert_eq!(book.left(ask), 70);
+        assert!(book.live(ask));
+        book.took(ask, 70);
+        assert!(!book.live(ask), "an order with nothing left of it is not standing");
+
+        // The CALENDAR expires it, by DATE and never by a count of periods (G3.a).
+        book.expire(Day(20));
+        assert!(book.live(bid), "its own day has not passed");
+        book.expire(Day(21));
+        assert!(!book.live(bid));
+        assert!(book.at(venue).is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "did not enter this order")]
+    fn only_its_owner_pulls_it() {
+        // An order somebody else can pull is not that party's order.
+        let mut book = Resting::new();
+        let o = book.enters(party(5), 1, false, Some(2.0), 10, 1, None, 0);
+        book.cancels(o, party(6));
+    }
+
     #[should_panic(expected = "ready in the period it started")]
+    #[test]
     fn a_batch_that_finishes_where_it_started_was_never_in_progress() {
         // Which is exactly what production did before the recipe had a lead time.
         InProgress::new().starts(party(5), InstrumentId::at(9), 10.0, 100.0, 3, 3);

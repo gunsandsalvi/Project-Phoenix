@@ -25,6 +25,7 @@ pub mod params;
 pub mod parties;
 pub mod places;
 pub mod prices;
+pub mod protocols;
 pub mod register;
 pub mod registry;
 pub mod stores;

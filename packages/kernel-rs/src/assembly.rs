@@ -28,6 +28,7 @@ use crate::prices::Prints;
 use crate::stores::{Agreements, Claims, InProgress, Outlooks, Processes, Schedules, Standing};
 use crate::register::Register;
 use crate::registry::{Banks, Registry};
+use crate::protocols::Protocol;
 use crate::session::{run_book, BookDecl, Books, Shown, Stores};
 use crate::world::{Anchor, PhaseDecl, Phases, CORPORATE_ACTIONS, MARKETS, REVALUATION};
 
@@ -46,9 +47,14 @@ pub mod kinds {
     pub const CARRIER: u32 = 8;
     pub const SMALL_FIRM: u32 = 9;
     pub const ASSESSOR: u32 = 10;
-    pub const ALL: [u32; 11] = [
+    /// **37 C3, 22c.4: SOMEBODY WHOSE BUSINESS IS TO HOLD THE STOCK.** No party's business was, so a
+    /// good went from the firm that made it straight to the household that ate it, in one week, or it
+    /// sat on the maker's own shelf and perished. The missing intermediary of Law 1, and what makes a
+    /// consumer price index possible at all (21.84).
+    pub const STOCKIST: u32 = 11;
+    pub const ALL: [u32; 12] = [
         HOUSEHOLD, FIRM, BANK, FUND, INSURER, DEALER, TREASURY, CENTRAL_BANK, CARRIER, SMALL_FIRM,
-        ASSESSOR,
+        ASSESSOR, STOCKIST,
     ];
 }
 
@@ -194,6 +200,8 @@ pub struct World {
     /// Audit C1, 22e: **the families, assembled at `wire_up` and run every period.** It was built,
     /// tested and never reached by the loop.
     pub audit: crate::audit::Audit,
+    /// 3 C2, 22c.2: the standing book — orders that rest between sessions.
+    pub resting: crate::stores::Resting,
     pub books: Vec<BookDecl>,
     pub period: u32,
     pub settled_kind: u32,
@@ -252,6 +260,7 @@ impl World {
             making: InProgress::new(),
             nouns: declared(),
             audit: crate::audit::Audit::new(),
+            resting: crate::stores::Resting::new(),
             phases: Phases::new(),
             books: Vec::new(),
             period: 0,
@@ -459,8 +468,8 @@ impl World {
         }
         // Clearing B1: a book for it, if it is paper anybody else may bid for. A loan row is the
         // lender's and nobody bids for it, which is an answer rather than a missing book.
-        if let Some(rule) = what.book {
-            self.open_book(crate::systems::book_of(line), line, what.ccy, rule);
+        if let Some((rule, protocol, seen_by)) = what.book {
+            self.open_book(crate::systems::book_of(line), line, what.ccy, rule, protocol, seen_by);
         }
         // 5 D2: and what it owes, by date. A claim with terms and no schedule is a claim nobody can
         // fall behind on.
@@ -605,6 +614,7 @@ impl World {
                 params: &self.params,
                 agreements: &self.agreements,
                 schedules: &self.schedules,
+                resting: &self.resting,
             },
             self.period,
         );
@@ -621,6 +631,7 @@ impl World {
                 params: &self.params,
                 agreements: &self.agreements,
                 schedules: &self.schedules,
+                resting: &mut self.resting,
             };
             let session = run_book(
                 book,
@@ -690,7 +701,7 @@ impl World {
 
     /// A book, declared. The subject is what it delivers; its money is a CURRENCY, and each side pays
     /// out of its own account (22b.9a).
-    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, rule: PriceRule) {
+    pub fn open_book(&mut self, market: MarketId, subject: InstrumentId, ccy: CurrencyCode, rule: PriceRule, protocol: Protocol, seen_by: usize) {
         // 22b.9a: a book names a CURRENCY and each side pays out of its own account, so there is no
         // cash line to check the class of. What it does have to be is a thing somebody can deliver:
         // a book whose subject is money is a book for swapping a deposit for itself.
@@ -698,7 +709,7 @@ impl World {
             self.instruments.class_of(subject) != Class::Money,
             "Clearing B1: a book's subject is what it delivers, and money is not delivered in a book"
         );
-        self.books.push(BookDecl { market, subject, ccy, rule });
+        self.books.push(BookDecl { market, subject, ccy, rule, protocol, seen_by });
     }
 }
 
@@ -1057,7 +1068,7 @@ mod tests {
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let share = w.instruments.issue(cb, CurrencyCode::at(0), Class::Share, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), PriceRule::SellersCompete);
+        w.open_book(MarketId::at(0), share, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
         assert_eq!(w.books.len(), 1);
     }
 
@@ -1069,7 +1080,7 @@ mod tests {
         let mut w = World::empty();
         let cb = w.parties.add(kinds::CENTRAL_BANK, crate::ids::RegionId::at(0), PartyId::NONE, Representation::Named, 1, 0);
         let cash = w.instruments.issue(cb, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), PriceRule::SellersCompete);
+        w.open_book(MarketId::at(0), cash, CurrencyCode::at(0), PriceRule::SellersCompete, crate::protocols::Protocol::Call, 1);
     }
 
     /// A system whose phase mints a little of its own money and pays it away — the smallest thing a

@@ -161,7 +161,8 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 22e2 | The register keeps a running total beside the lots — **done** (section removed; see `docs/RECORD.md`; `held` is deleted and a holding's quantity is READ from its lots. Money keeps a total because it has no lots to sum. The ownership family reports 0 where it reported 2 every period, the world's behaviour is identical, and the traversal cost is measured and needs no cache) | immediately after 22e, which is what found it 
 | 22a | The opening is not an equilibrium — **done**, absorbed by 22b (section removed; see `docs/RECORD.md`) | superseded |
 | 22b | The chronicle — **done** (section removed; see `docs/RECORD.md`; nine steps, the world opens accepted on the first seed value with 4,161 moments of its past settled and none refused. Findings positioned: the constant saving rate at 22c.3a; the production absence at 22.2) | after 21's stops; a chronicle cannot run through a world that throws |
-| 22c | **The market as it is** — a protocol per venue, orders that rest, a desired cover, somebody who holds the stock | after 0h (M1) and with 22b; the goods chain cannot live without both |
+| 22c | **The market as it is** — **done** (section removed; see `docs/RECORD.md`; a protocol per venue behind a dispatch — call, posted, book — orders that rest as a kernel store, a `Day` that carries a civil date, a desired cover and an ask that answers the shelf, a household that spends out of its wealth, and a STOCKIST whose business is to hold the stock. 22c.7 and 22c.8 closed with it; what it revealed is item 22c2) | after 0h (M1) and with 22b; the goods chain cannot live without both 
+| 22c2 | The standing book only grows | immediately after 22c, which is what made it visible |
 | 22d | **The payment queue** — a gridlock is a timing failure, not a default | after 22c; it is what stops the world killing parties it has no reason to kill |
 | 22f | The plant wears, and somebody is paid to keep it | after 22d: paying the upkeep needs a payee and a queue that can refuse |
 | 22h | The other four cell events have no cause | after 22g: the seeding is what draws a small firm as a cell and a household that can form |
@@ -175,81 +176,30 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 
 
-## 22c. The market as it is
+## 22c2. The standing book only grows
 
-*There is ONE microstructure — a weekly uniform-price call auction for bread, labour, loans, shares
-and freight alike — and nothing rests between sessions. A Walrasian auctioneer for bread is the one
-intermediary that never existed (Law 1).*
+**INSERTED (Law 10) immediately after 22c, which is what MADE it visible.** Orders rest now, and
+`world:runs` prints how many are standing: **16,869 after the first period and 33,069 after the
+fourth.** It rises every period and the books clear less as it does — 5 books in period 1 and 1 by
+period 4.
 
-The measurements in the steps are the TypeScript engine's and are to be re-read, not carried; the file
-names are TypeScript and the mechanism each names is not. **The Rust engine says the same in its own
-numbers**: 13 books of 1,546 clear in period 1 and 6 in every period after.
+**That is not the resting book's defect; it is what a market with memory REVEALS about this world.**
+Before 22c nothing rested, so an order that met nobody vanished and the world looked like a place
+where demand was merely thin. Now the unmet orders accumulate and say what they always were: **two
+sides that never overlap.** A seller asking its cost plus a margin and a buyer bidding a multiple of
+a print that never moves are not going to meet, and no amount of waiting in the room fixes that.
 
-- [ ] 22c.0 **A `Day` carries no civil date** (21.132.OP1), so no market convention that names a
-  weekday or a month can be stated: a contract expiring on the third Friday of a delivery month, a
-  fixing on the last business day, a quarter end. It is enough for everything placed by elapsed time,
-  and a dated VENUE is the first thing that needs more. The ladder anchored to the epoch instead was
-  deleted at 21.132.OP1 rather than kept, because a convention stated differently from the market is
-  worse than none — a caller would have believed it.
-- [ ] 22c.1 **A protocol per venue, as data.** `VenueDecl.protocol: 'call' | 'posted' | 'book'`
-  behind a dispatch table (Law 15), each protocol its own matching module, the kernel dispatching on
-  the declaration and never branching on a kind. `call` is today's solver, unchanged, for auctions
-  and fixings. `posted` is a seller standing behind an ask and a buyer seeing `seenBy` sellers (a
-  TECHNOLOGY: how much of a market a buyer can see) and taking the best it saw — still cleared from
-  real supply meeting real demand (Law 3), because a trade happens when a buyer accepts a price a
-  seller was standing behind, which is what a price in a shop IS. `book` is resting orders with
-  continuous matching, for exchanges. (This is the dominant protocol in the macro-ABM literature:
-  decentralised bilateral matching with partial information over goods, labour, credit and deposits.)
-- [ ] 22c.2 **An order rests.** A standing-order register as a kernel noun beside agreements and
-  processes: `(party, venue, side, level, quantity, from, until, why)` — entered by a participant,
-  cancelled by its owner, expired by the calendar, consumed by a match; every session opens with the
-  standing book. This is why `noDemand` (7,903) dwarfs `noOverlap` (323): the two sides are not
-  failing to agree on a price, **they are failing to be in the room in the same week**.
-- [ ] 22c.3 **A desired cover, and an ask that answers the shelf.** `firms/decide.ts` computes
-  `wanted = (expectsToSell − stock)/yield` — a stock-adjustment rule whose desired buffer is exactly
-  ZERO — and prices at what it expects to fetch with **no feedback from unsold stock**. So a firm
-  with stock above expectation starts nothing and waits at a price it has no reason to lower (12c.3:
-  `batch 0, bound demand`, for ever; 1,648 lots perished). Add a cover drawn per firm as a
-  PREFERENCE, dispersed like `payoutPatience`; and make the ask carry the value of HOLDING — storage,
-  perishing and the money tied up — which the docstring already claims to compute and currently
-  computes as if the shelf were empty.
-- [ ] 22c.3a **A household consumes out of its WEALTH as well as its income.** INSERTED here (Law 10:
-  beside 22c.3, which gives the firm the other half of the same absence). It was 22b.8a, and it is
-  moved rather than closed. **Three of the four opening series never settle** — money per member, the
-  credit stock and holdings are all still rising the week the world opens, and doubling the past does
-  not settle them (22b.8). The cause is that the saving rate is a CONSTANT: `0.55 + a draw`, every
-  week, whatever the cell already has. What a household saves is what somebody owes, so a saving
-  that accumulates for ever is a debt that accumulates for ever — the trend is an accounting identity
-  and not a missing repayment. §41 C2 says consumption is a DECISION; a household with a large enough
-  stock eventually spends out of it, and that is what makes the series stationary. **It cannot be
-  fixed in the chronicle**: picking a drawdown that balances the saving is fitting an outcome (5 B5,
-  C5, E1), which is exactly what rejection-instead-of-calibration refuses. A stationary series is an
-  OUTCOME of decisions, so it closes when the household decides. The four series were printed by
-  `check:opening`, which went with the seeding; whatever the new seeding prints, it prints them until
-  this closes, because an opening series nobody watches is a claim nobody checked.
-- [ ] 22c.4 **Somebody holds the stock.** No party's business is to hold goods and stand on both
-  sides of one book; `merchants` moves goods between places and has never once run. A `stockist`
-  buys from producers at what it expects to sell for less its own required return on the money tied
-  up, posts an ask to households out of the lots it holds, and wears the loss when the gap closes the
-  wrong way — margin an OUTCOME of turnover and carrying cost, no spread table, exactly as
-  `merchants` is written. It is the missing intermediary of Law 1 and what makes a consumer price
-  index possible at all (21.84).
-- [ ] 22c.7 **What it costs to build is not a number handed in.** `housing::Offer::reserving` takes
-  `cost_to_build` as an argument and 40 B1.a rests a seller's reservation on it — *never below what it
-  costs to build* — so the floor under every house price in this world is a number nobody derived.
-  21i gave it a writer: what a dwelling costs to build is what its line actually DRAWS at that place,
-  which is congestion's whole point and is higher in a built-up region. It waits here because housing
-  has no market yet, and a reservation with nothing to reserve against is not a price.
-- [ ] 22c.8 **A quay's owner earns what a berth clears at** — 21.30, re-read and re-positioned from
-  21i. It was filed as a finding about ground and it is not: a quay is PLANT, it has a life and it
-  wears, and what is missing is a cleared price for the USE of it for a period (Law 3). It belongs
-  with the venues because a berth is a thing let by protocol, not a thing sold.
+- [ ] 22c2.1 **Read WHY they do not overlap**, against a run, once the world is seeded (Law 11: a
+  misbehaving number is not a work item). The bracket is printed per book by `NoOverlap` and nothing
+  reads it yet.
+- [ ] 22c2.2 **An order has a life.** Every order this world enters rests until somebody pulls it,
+  because no venue declares how long one stands (`until: None`). A real book has orders that expire,
+  and the calendar can now say when (22c.0) — what is missing is the venue's own convention.
+- [ ] 22c2.3 **Nobody cancels.** `Resting::cancels` is built and has no caller: a party that has
+  changed its mind has no way to act on it, so the standing book is a ratchet.
 
-**Exit.** The liveness family's *every declared book has cleared within N* is green for the goods and
-labour venues; a household has bought a physical good in a settled instruction; `consumer.us.1` reads
-a level.
-
----
+**Exit.** The standing book is a stock that falls as well as rises, and a book that does not clear
+says which of the two sides was missing.
 
 ## 22d. The payment queue
 
