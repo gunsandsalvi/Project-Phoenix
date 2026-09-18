@@ -394,7 +394,32 @@ Scaled to the 42.1 s median rather than the profiled total, that is **≈ 3.1 s 
 ≈ 2.4 s in the native shape — the item's exit, met.** It is **14–17× from today** and ~30× from the
 72.1 s this item started at. The 50× figure needs a baseline the world never had: before 0g.23 a
 period did not complete at all.
-- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** `core calendar registry parties register
+### The scope, and the one thing it rules out
+
+**107,298 lines of TypeScript**: kernel 32,514 (`core` 1,599 · `calendar` 555 · `registry` 10,951 ·
+`parties` 576 · `register` 3,644 · `ledger` 2,439 · `prices` 1,384 · `clearing` 1,770 · `journal`
+446 · `audit` 452 · `world` 8,698), mechanisms 67,571 over 47 modules, seeds 4,080.
+
+**THERE IS NO INCREMENTAL PATH THROUGH A BOUNDARY, and that decides the shape of the migration.**
+The obvious cheap route is to port one hot store — the register, say — to Rust and call it from the
+TypeScript engine over WASM or an FFI. It cannot work: the engine performs **105,524,506 counted
+kernel reads a period**, and even at an optimistic **20 ns a crossing** that is **2.1 s of pure
+boundary**, which is the entire budget before any work is done; at a realistic 100 ns it is 10.5 s.
+The conclusion holds for any plausible per-call cost, so the boundary must be crossed **once per
+period**, not once per read.
+
+That means the engine is ported whole, and the TypeScript engine stays only as the **ORACLE**: the
+Rust engine is correct when it reproduces `events 178604`, `audit 356268` and the op count on the
+same seed, and the TypeScript one is deleted the day it does (0g.45). Two engines answering the
+same question is Law 4's defect at the largest possible scale, and the only reason to hold one for a
+while is that it is the only thing that can say the other is right.
+
+- [ ] 0g.41 **THE KERNEL IN RUST, BEHIND THE SAME DOORS.** **Started: `packages/kernel-rs` holds
+  `ids.rs` and `register.rs`, and the real store at the world's shape reads in 2.92 ns against
+  TypeScript's measured 67.20 ns (23.0×) and traverses 544,104 holdings in 0.89 ms against 95.70 ms
+  (108×), with three Register laws as tests and the lots-against-quantity family reporting zero.**
+  Next: `journal`, `calendar`, `prices`, `parties`, then `ledger` and `clearing`.
+ `core calendar registry parties register
   ledger prices clearing journal audit world` — columns, `u32` ids that are row indices, no
   collector. The module-facing contracts (`ParticipantView`, `MechanismContext`, `SeedContext`) keep
   their exact shape, so a mechanism is ported without being redesigned. The kernel is where the

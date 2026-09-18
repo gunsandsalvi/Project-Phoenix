@@ -16359,3 +16359,37 @@ TypeScript (**every kernel door together is 15.8% of a period**). Each result sa
 a different way — **the cost is diffuse, spread evenly through ordinary code** — and that is the
 signature of a runtime rather than a design. The language was the one candidate never put on the
 table, and it took the owner to say so.
+
+# 0g.41 (part) — the register, columnar, measured at the world's scale
+
+`packages/kernel-rs` is started, with `ids.rs` and `register.rs` and a bin that runs the real store
+at the full world's shape: 10,318 parties, 16,750 instruments, **544,104 holdings in 653,866 lots**,
+23,304,012 reads, ten traversals.
+
+| | TypeScript, measured | this store | ratio |
+|---|---|---|---|
+| the hot read, row in hand | **67.20 ns** | **2.92 ns** | **23.0×** |
+| a full traversal | **95.70 ms** | **0.89 ms** | **108×** |
+| the audit summing lots against each row's quantity | — | 4.26 ms, 0 violations | — |
+
+**The 23× is two changes and they should be named apart.** The prototype in `tools/calibrate` got
+10.62 ns (6.3×) because it summed the lots on every read, exactly as the TypeScript store does. This
+store keeps the row's own total, written by the same instruction that writes the lots, so a read is
+one array access. **That is a design change and not only a layout one**, so it is checked rather
+than asserted: `lots_against_quantity` is an audit family that sums the lots and compares them with
+the maintained total, it runs over all 544,104 rows in **4.26 ms**, and it reported zero. Law 19 is
+kept by the audit reading the SOURCE — the lots — and never the total it is checking.
+
+Appendix B's "no stored aggregate" is not breached: what it forbids is a stored TOTAL beside the
+units it is derived from, across parties. This is one row's own quantity, one writer, and the walk
+that could disagree with it is a family.
+
+**Three laws are carried as tests rather than comments:** units arrive with the basis they cost and
+leave oldest first (Register C4, D2); encumbered units do not move, and the refusal is arithmetic
+impossibility rather than a clamp (Register C3, Law 6); both directions are indexed and holdings sum
+to issued with the dust of their own walk (Register A3, B2, Law 7).
+
+**Ids are rows.** `PartyId`, `InstrumentId` and the rest are newtypes over `u32` that ARE the index
+into their store's columns, so the type still refuses a party where an instrument is wanted and
+costs nothing at run time. `Names` is the one place a row is turned back into the string it is
+displayed as, which is where Law 9 is kept true rather than hoped for.

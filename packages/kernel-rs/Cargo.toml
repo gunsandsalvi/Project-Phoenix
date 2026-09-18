@@ -1,0 +1,19 @@
+[package]
+name = "phoenix-kernel"
+version = "0.0.0"
+edition = "2021"
+description = "Project Phoenix's kernel: the stores and the period loop, columnar."
+
+[lib]
+name = "phoenix_kernel"
+path = "src/lib.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[[bin]]
+name = "register-at-scale"
+path = "src/bin/register_at_scale.rs"
