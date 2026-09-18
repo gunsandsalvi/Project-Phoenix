@@ -17473,3 +17473,36 @@ disappearance.
 
 **Forty-nine laws as tests. Two hundred and thirty-three now hold; clippy clean; `phoenix-check` green
 over 46 files. Twenty-two of forty-seven modules ported.**
+
+# 0g.42 item 14 — the polity (XI-17)
+
+`packages/kernel-rs/src/mechanisms/polity.rs`. Twenty-third module. It gives the fiscal and
+regulatory primitives their SUBJECT: *chooses* is a verb, and this is who does the choosing.
+
+**`Owns` is the prohibition as a type.** It has variants for tax rates on named bases, transfer rates,
+the outlay programme's size and composition, the treasury's buffer, regulatory ratios and the central
+bank's TARGET — and none for a price, a quantity, an outcome or the central bank's rate (§31 A4, §47
+D3.a). A mandate naming an interest rate or a growth target would be a written path with a majority
+behind it, and here it cannot be written rather than being checked for.
+
+**The vote is each cell's own arithmetic on its own state.** A cell with many out of work and little
+owned prefers the taxing-and-transferring platform; a small, wealthy cell prefers the other. No bloc,
+no swing, no loyalty, and no vote from an aggregate. `votes_for` answers `None` when every platform
+leaves the cell identically placed — **abstention is a decision**, and `turnout` is the read that
+follows rather than a parameter that makes it vote.
+
+**The allotment rule is one stated rule.** Largest remainder, the same device the kernel's rationing
+uses — not a second copy written here. The seats sum to the house.
+
+**A house nobody voted for has no government.** That is the honest `None`: with every cell
+indifferent, no seats are allotted and there is nobody to govern. A first draft asserted a hung
+parliament at 20/20/20 of a hundred seats, which is 60 seats and therefore a majority — the fixture
+was wrong, not the rule, and the test now says what the rule actually does.
+
+**The mandate is the seat-weighted platform of the coalition**, and a primitive no coalition member
+has a position on has no mandate rather than a convenient default. The last test is the chain XI-17
+describes: the same house with a different winner hands the treasury a different buffer to read, and
+the election adds no channel of its own.
+
+**Ten laws as tests. Two hundred and forty-three now hold; clippy clean; `phoenix-check` green over 47
+files. Twenty-three of forty-seven modules ported.**

@@ -19,6 +19,7 @@ pub mod lending;
 pub mod loss;
 pub mod money;
 pub mod mortality;
+pub mod polity;
 pub mod redeemable;
 pub mod reporting;
 pub mod second_opinion;
