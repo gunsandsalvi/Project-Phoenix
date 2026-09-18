@@ -19652,3 +19652,56 @@ enough to matter is made, and where 21.120's rule governs how that reading is ta
 
 **685 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
 green.** Item 21 stands at 89 of 180.
+
+---
+
+## 21.131 — the port built the answer, and BF4 caught this session again
+
+**What.** Twenty-eight model defects re-read against the modules that carry their clauses now.
+Twenty-eight steps deleted, one defect fixed — one this session had written an hour before.
+
+### Most of them close because the answer is already built
+
+These were read off modules that no longer exist, and where a Rust module carries the same clause it
+carries the fix the finding asked for. That is what the port was for, and this is the first group
+where it shows up as a row of closures rather than a row of absences:
+
+| finding | what it said | what the module does now |
+| --- | --- | --- |
+| FXD3, IR2 | a covered-parity formula standing in for a forward (Appendix B forbids it) | `fx_forwards`' header IS that prohibition: `Forward` carries a rate that CLEARED, `parity` is a separate read the cleared rate is checked against, and `basis` is derived from the difference |
+| CD10 | recovery read off the defaulted bond's last MARK, which is 0 once an estate closes | `cds::Recovery` is what the obligations FETCHED per unit of par, and carries `workout_closed` — D2.b, so an open workout marks at expected payoff and trues up at the close |
+| FXD6 | an empty id cast to a branded type, bypassing *the underlying must exist* | no such cast; no `NONE` instrument is an underlying anywhere |
+| MM3 | `Number.MAX_SAFE_INTEGER` as a capacity, a literal meaning "unlimited" | no capacity here is a literal. The only `INFINITY` is `clearing`'s sort sentinel for an order with no limit, which is what a market order is |
+| MM17, FD16, RP15 | the same bank-choice mechanism copied into three modules (Law 4) | there is one, `households::prefers`, and no module keeps a `board` or a switching rule of its own |
+| BK22, BK23 | a desk quoting zero risk with no outlook, and offering its whole inventory every session | `dealing::quote` is handed its inputs and returns `Option<Quote>` — it refuses rather than zeroing — and the sizing rules named have no call site |
+| OP5, DL7's shape | √T scaling in the margin | margin is sized from the underlying's own MEASURED move scaled by notional and remaining life; the √ is how a per-session move becomes a horizon's, which is arithmetic, not a stated rate |
+
+The modules the rest name do not exist: no `land` (LD2, LD4 → **21i**), no `options` (OP2), no
+`bond-futures` (BF4), no `staff` (BK25), and no participant doing what FX2, FXD2, FXD4, IR3, IR4, DL9
+and FD10 describe. FD20 and IR7 are *nothing exercises this* → **21j**. CB3 and CB4 fold into
+21.60(b), whose own position at 17b.8a was dead — item 17b closed without it — and all three are one
+absence: **no holder bids a term.**
+
+### BF4 earned its re-read
+
+Its shape is *two rows with identical values are indistinguishable, so a pairing by value can pick the
+wrong one*. It has now caught two defects in this engine, neither in the module it was written about:
+
+1. `estate::waterfall` sorted its answer by rank, so a caller could not pair the results with the
+   claim ids it passed in (fixed at 21.36, where it had made every estate pay every claimant in full
+   again every period).
+2. **`Register::release`, written by this session an hour earlier.** It finds a lien by matching the
+   holder — and `pledge` pushed a new row on every call, so two pledges to one party made two liens
+   and a release found whichever came first.
+
+The fix is Law 4, not a smarter match: **one lien per (holding, holder).** Pledging again adds to the
+claim that party already has, because two rows with the same holder are two answers to *what does this
+party have a claim over*. A test says the two pledges are one claim of fifty and that the whole of it
+comes off in one release, which it could not if there were two rows.
+
+That is twice in one session that a finding written about a deleted file has found a live defect in
+code written days or hours earlier. The file header's rule — re-read before taking the step — is
+paying for itself.
+
+**686 tests and 5 tool tests hold; clippy clean; `phoenix-check` green over 80 files; `npm run check`
+green.** Item 21 stands at 117 of 181.

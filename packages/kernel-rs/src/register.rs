@@ -295,10 +295,23 @@ impl Register {
     }
 
     /// Register C3: a claim over units, which refuses their move rather than adjusting it.
+    ///
+    /// **One lien per (holding, holder)** (Law 4, 21.131.BF4): pledging again to the same party adds
+    /// to the claim that party already has rather than writing a second row beside it. Two rows with
+    /// the same holder would be two answers to *what does this party have a claim over*, and a
+    /// release that matched by holder would find whichever came first — which is BF4's defect exactly
+    /// (two identical rows are indistinguishable, so a pairing by value picks the wrong one). It was
+    /// found by re-reading BF4 against `release`, which this session had written an hour earlier.
     pub fn pledge(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
+        assert!(to.some(), "Register C3: a lien is held BY somebody");
         let row = self.open(holder, instrument);
         let at = self.lien_at[row.row()] as usize;
         let len = self.lien_len[row.row()] as usize;
+        if let Some(i) = self.liens[at..at + len].iter().position(|l| l.to == to) {
+            self.liens[at + i].qty += qty;
+            self.writes += 1;
+            return;
+        }
         if at + len == self.liens.len() {
             self.liens.push(Lien { to, qty });
         } else {
@@ -429,6 +442,24 @@ mod tests {
         reg.release(p, i, to, 50.0);
         assert_eq!(reg.free(row), 100.0);
         assert_eq!(reg.debit(row, 100.0).len(), 1);
+    }
+
+    #[test]
+    fn one_holder_has_one_lien_on_one_holding_however_often_it_is_pledged_to() {
+        // Law 4, 21.131.BF4: two rows with the same holder are two answers to "what does this party
+        // have a claim over", and a release that matched by holder would find whichever came first.
+        let mut reg = Register::new();
+        let p = PartyId::at(0);
+        let i = InstrumentId::at(0);
+        let to = PartyId::at(1);
+        reg.credit(p, i, 100.0, 1.0, 1);
+        reg.pledge(p, i, to, 30.0);
+        reg.pledge(p, i, to, 20.0);
+        let row = reg.row(p, i);
+        assert_eq!(reg.free(row), 50.0, "the two pledges are one claim of fifty");
+        // And the whole of it comes off in one release, which it could not if there were two rows.
+        reg.release(p, i, to, 50.0);
+        assert_eq!(reg.free(row), 100.0);
     }
 
     #[test]
