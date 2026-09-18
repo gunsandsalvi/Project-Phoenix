@@ -19972,3 +19972,33 @@ and watching it fail — and is now `npm run check:types`, in `npm run check`.
 check` green.** The world runs four periods; the box is noisy enough that period 1 — which does no
 batch work at all — moved between 139 and 348 ms across runs, while every count is identical, so the
 timing is not a reading this item can make.
+
+---
+
+## The plan file, regrouped — a placed finding lives under the item that owes it
+
+**What.** `docs/IMPLEMENTATION.md` from 1,588 lines to 1,478, and the shape changed rather than the
+content: **the set of open findings is identical before and after**, checked id by id.
+
+`CLAUDE.md`'s rule is that a finding is *moved into the section of the item that should fix it*. The
+re-read pass had only written the destination into each finding's text and left it where it lay, so
+item 21 held 48 findings of which 44 were other items' work, and seven `### 21.13x` group sections
+held 142 lines of closure prose around four live steps. Both are now what the rule says:
+
+| item | placed under it |
+| --- | --- |
+| 21j | twenty — every *no bank quotes, control never runs, nothing publishes accounts* instance |
+| 23 | twelve measurements, each waiting on a world worth measuring |
+| 22g | six the seeding owes |
+| 22e | three (the audit not in the loop, and the two claims that named it) |
+| 21h | two (a cell's outlook book, and the promotion boundary a size crosses) |
+| 22d | one (an agreement has no cure) |
+
+**Item 21 keeps four**, and they are its own: 21.137, 21.112, 21.116 and 21.132.OP1. The seven group
+sections are deleted — a section with no open step is a section whose outcome is in this file, and
+leaving the reasoning behind in the plan is the duplication Law 16 is about.
+
+**22g, the seeding, is INSERTED** (Law 10) after 22c and 22d and before 23: a seeded world runs the
+ordinary period loop and stops wherever the market or the queue is missing, and measuring an arbitrary
+world measures the draw. Six findings had been positioned at "the seeding" with no section to sit in,
+which is the silent drop 21.137 is about — they have one now.
