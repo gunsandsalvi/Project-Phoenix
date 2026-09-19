@@ -258,7 +258,7 @@ mechanism that pays on it.
   write a field that does not exist.
   **Output-identical, as a Law 4 deletion should be**: 743 tests, the same census, the same four
   periods.
-- [ ] 0k.3 **A payment whose payee banks in another money is converted at one, with no counterparty.**
+- [x] 0k.3 **A payment whose payee banks in another money was converted at one, with no counterparty.**
   `ledger.rs across()` compares banks and **never compares currencies** — a `grep ccy` over the whole
   function returns nothing — and the application carries `amount` across unchanged: `amount` euros
   leave and `amount` dollars arrive. The rate is 1, always, and `Prints` is never consulted. That is
@@ -271,6 +271,25 @@ mechanism that pays on it.
   central bank nothing established.
   *Latent today and not for long:* `world_runs.rs` issues every money as `CurrencyCode::at(0)`, so
   the assembled world has one currency and never hits it. 22g draws more than one.
+  **`across` answers three things now where it answered two.** `Same` (the payee banks at the
+  issuer, IS the issuer, or banks nowhere), `Banks` (two banks, one money, one reserve line they
+  BOTH settle in), and `Refused`, which did not exist — so both of its cases settled, and one of
+  them converted a currency. The currency refusal is a new outcome, `NoAccountInThatMoney`, named
+  on the payee; the reserve refusal reuses `BankCouldNotSettle`, named on the payer's bank, which
+  is what that word already says. **Neither queues**: waiting does not give a payee an account and
+  does not connect two banking systems, and the reserve case used to queue — a gridlock invented
+  out of two countries that are not connected at all.
+  **Where it lands is asked FIRST**, before any balance is read and whatever the presentation,
+  because a gridlock cycle skips every balance check; the `Together` pass moved below the leg loop
+  for the same reason, since a ring holding a leg that cannot land is not a party that is short.
+  **The reserve line is now a fact about both banks** — `settles_in(payers_bank) ==
+  settles_in(payees_bank)` — where it was read off the payee's alone. For two banks at one central
+  bank it is the same instrument it always was, which is why the world runs unchanged.
+  **Tested against a world this repository had never built**: `two_countries()` — two central
+  banks, a commercial bank in each, two currencies. The conversion at par went unseen for the whole
+  of the port because every fixture and the assembled world alike had exactly one money. The
+  remedy the refusal points at is real and unwired: `mechanisms::currency::short_of` returns a
+  `MustBuy` and has tests and no caller (0r).
 - [ ] 0k.4 **Settlement never asks whether a party is alive.** `grep alive ledger.rs` returns
   nothing. A ceased party pays and is paid like any other, which is Money E4 ("a party that ceases to
   exist mid-pass still has its legs settled or **refused by name** — never dropped"), and 0q leaves

@@ -94,6 +94,16 @@ pub enum Outcome {
     /// that could not pay and a bank that could not deliver its customer's money read the same on
     /// the record, and the row that should have been the BANK's was nobody's.
     BankCouldNotSettle,
+    /// **Currency B3, Spot FX E1: the payee has no account in the money this was sent in.**
+    ///
+    /// A payment in one money lands as that money or it does not land. This world used to land it
+    /// anyway: `amount` of one currency left and `amount` of another arrived, at a rate of one,
+    /// with nobody on the other side — the conversion at the ledger boundary B3 forbids by name,
+    /// and the one that makes the currency market invisible because the position never exists.
+    ///
+    /// It is a FAIL and not a queue: waiting does not give the payee an account. What the payer
+    /// does about it is buy the money first (§12 F1, XI-12), which is a trade with a counterparty.
+    NoAccountInThatMoney,
     /// The units are there and somebody else has a claim over them (Register C3).
     Encumbered,
     /// The holder has not got the units, and a short needs a borrow (Register C4).
@@ -198,19 +208,26 @@ pub fn account_of(parties: &Parties, instruments: &Instruments, p: PartyId) -> O
     instruments.money_issued_by(if bank.some() { bank } else { p })
 }
 
-/// What a payment across two banks needs, once it is known to be one.
-struct Across {
-    payers_bank: PartyId,
-    payees_bank: PartyId,
-    payees_money: InstrumentId,
-    reserves: InstrumentId,
+/// **Where a payment lands**, which is one of three answers and used to be one of two.
+#[derive(Clone, Copy)]
+enum Across {
+    /// Nothing crosses. Three cases: the payee banks at the issuer already, the payee IS the
+    /// issuer (money coming home extinguishes the deposit), or the payee banks nowhere — which is
+    /// what a central bank does, and is why no special case names it.
+    Same,
+    /// Two banks, one money, and the reserve line they both settle in.
+    Banks {
+        payers_bank: PartyId,
+        payees_bank: PartyId,
+        payees_money: InstrumentId,
+        reserves: InstrumentId,
+    },
+    /// **0k.3: it cannot land, and the outcome says whose failure it is.** This arm did not exist,
+    /// so both of its cases settled: one of them converted a currency at a rate of one.
+    Refused(Outcome, PartyId),
 }
 
 /// **Whether this payment crosses two banks**, and what it takes if it does.
-///
-/// `None` is the ordinary case and covers three of them: the payee banks at the issuer already, the
-/// payee IS the issuer (money coming home extinguishes the deposit), or the payee banks nowhere —
-/// which is what a central bank does, and is why no special case names it.
 ///
 /// It THROWS on the one thing that is a contract violation rather than an outcome: a bank that
 /// issues no money is not a bank, and a payment to its customer cannot be told where to land.
@@ -219,11 +236,11 @@ fn across(
     instruments: &Instruments,
     to: PartyId,
     money: InstrumentId,
-) -> Option<Across> {
+) -> Across {
     let payers_bank = instruments.issuer_of(money);
     let payees_bank = parties.bank_of(to);
     if !payees_bank.some() || payees_bank == payers_bank || to == payers_bank {
-        return None;
+        return Across::Same;
     }
     let payees_money = match account_of(parties, instruments, to) {
         Some(m) => m,
@@ -232,20 +249,39 @@ fn across(
             to.0, payees_bank.0
         ),
     };
-    // The reserve line is **what the payee's bank itself settles in** — the money its own bank
-    // issues, or the money it issues itself when it banks nowhere, which is exactly `account_of`.
-    // It was `money_issued_by(bank_of(payees_bank))`, which is the same thing for a commercial bank
-    // and WRONG for the central bank: a payment to the treasury, which banks AT the central bank,
-    // asked what the central bank's own bank issues and there is no such party. Found by running
-    // the assembled world at its real size, which is the first thing that ever paid one.
-    let reserves = match account_of(parties, instruments, payees_bank) {
+    // **Currency B3: A PAYMENT IN ONE MONEY LANDS AS THAT MONEY.** The payee's account is its own
+    // bank's, so where that bank issues a different currency there is nowhere for this payment to
+    // go — and this function used to send it there anyway: `amount` of one currency left the payer
+    // and `amount` of another arrived, at a rate of one, with nobody on the other side (Spot FX
+    // E1). `Prints` was never consulted, so the currency market could not have priced it if it had
+    // wanted to. Converting on arrival makes that market invisible and unmeasurable, because the
+    // position never exists and so can never be seen to be wrong.
+    //
+    // What the payer does about it is BUY the money first — a trade with a counterparty, in the
+    // seller's money (§12 F1, XI-12). `mechanisms::currency`'s `short_of` and `MustBuy` are that
+    // decision and nothing calls them yet (0r).
+    if instruments.ccy_of(money) != instruments.ccy_of(payees_money) {
+        return Across::Refused(Outcome::NoAccountInThatMoney, to);
+    }
+    // **Money C2.a: the reserve line is the one BOTH banks settle in**, and it was read off the
+    // PAYEE's bank alone. So across two banking systems the payer's bank was debited in reserves
+    // it need never have held — a claim on a central bank nothing established, going negative in
+    // silence where it had none (Appendix B #5).
+    //
+    // For the ordinary case — two banks at one central bank — this is the same instrument it
+    // always was, which is why the world runs unchanged.
+    let settles_in = |b: PartyId| match account_of(parties, instruments, b) {
         Some(r) => r,
         None => panic!(
             "Money D2, 31 A1: bank {} settles in no money, so two banks have no way to settle between them",
-            payees_bank.0
+            b.0
         ),
     };
-    Some(Across { payers_bank, payees_bank, payees_money, reserves })
+    let (mine, theirs) = (settles_in(payers_bank), settles_in(payees_bank));
+    if mine != theirs {
+        return Across::Refused(Outcome::BankCouldNotSettle, payers_bank);
+    }
+    Across::Banks { payers_bank, payees_bank, payees_money, reserves: mine }
 }
 
 pub struct Instruction<'a> {
@@ -339,14 +375,17 @@ fn short_together(
         if let Leg::Money { from, to, instrument, amount, .. } = *leg {
             moves(from, instrument, -amount);
             match across(parties, instruments, to, instrument) {
-                None => moves(to, instrument, amount),
-                Some(a) => {
-                    moves(to, a.payees_money, amount);
+                Across::Same => moves(to, instrument, amount),
+                Across::Banks { payers_bank, payees_bank, payees_money, reserves } => {
+                    moves(to, payees_money, amount);
                     // Money D2: and the reserves the banks move between them, which net over a
                     // cycle exactly as the customers' deposits do.
-                    moves(a.payers_bank, a.reserves, -amount);
-                    moves(a.payees_bank, a.reserves, amount);
+                    moves(payers_bank, reserves, -amount);
+                    moves(payees_bank, reserves, amount);
                 }
+                // 0k.3: a leg that cannot land at all is refused by the pass above this one,
+                // before any balance is read — so by here there is nothing left to be short of.
+                Across::Refused(..) => {}
             }
         }
     }
@@ -922,14 +961,17 @@ impl Settlement {
         // what a gridlock IS — and the legs all happen at one instant, so what has to be true is that
         // no holding goes negative AT that instant. Nothing is cancelled and every leg moves at full
         // value; this is the ordering that makes the cycle settle, not netting across counterparties.
-        if how == Presented::Together {
-            if let Some((who, _)) = short_together(ins.legs, reg, parties, instruments) {
-                return self.record(Outcome::ShortOfMoney, who, ins, period, journal, failed_kind);
-            }
-        }
         for leg in ins.legs {
             match *leg {
                 Leg::Money { from, to, instrument, amount, .. } => {
+                    // **0k.3: where it lands is asked FIRST**, before any balance is read and
+                    // whatever the presentation. A leg that cannot land at all is refused for
+                    // reasons that have nothing to do with what anybody holds, and a gridlock
+                    // cycle skips every balance check below it.
+                    let crossing = across(parties, instruments, to, instrument);
+                    if let Across::Refused(outcome, who) = crossing {
+                        return self.record(outcome, who, ins, period, journal, failed_kind);
+                    }
                     if how == Presented::Together {
                         continue;
                     }
@@ -941,10 +983,10 @@ impl Settlement {
                     // that cannot is a bank whose customers' payments do not go through — which is
                     // what a liquidity problem IS, and it is refused rather than overdrawn (Appendix
                     // B: no silent overdraft; the lender of last resort is a mechanism, not a default).
-                    if let Some(a) = across(parties, instruments, to, instrument) {
-                        let at = reg.row(a.payers_bank, a.reserves);
+                    if let Across::Banks { payers_bank, reserves, .. } = crossing {
+                        let at = reg.row(payers_bank, reserves);
                         if reg.quantity(at) < amount {
-                            return self.short(Outcome::BankCouldNotSettle, a.payers_bank, ins, period, journal, calendar, says, may_queue);
+                            return self.short(Outcome::BankCouldNotSettle, payers_bank, ins, period, journal, calendar, says, may_queue);
                         }
                     }
                 }
@@ -1030,6 +1072,19 @@ impl Settlement {
                 }
             }
         }
+        // **22d.2: a gridlock cycle is checked on what the whole of it does to each holding.** In a
+        // cycle nobody has the money on their own — that is what a gridlock IS — and the legs all
+        // happen at one instant, so what has to be true is that no holding goes negative AT that
+        // instant. Nothing is cancelled and every leg moves at full value; this is the ordering
+        // that makes the cycle settle, not netting across counterparties.
+        //
+        // 0k.3: it runs AFTER the loop above, which refuses the legs that cannot land whatever
+        // anybody holds. A ring containing one of those is not a party that is short.
+        if how == Presented::Together {
+            if let Some((who, _)) = short_together(ins.legs, reg, parties, instruments) {
+                return self.record(Outcome::ShortOfMoney, who, ins, period, journal, failed_kind);
+            }
+        }
         // The application. Nothing here can fail: the pre-check is what made that true.
 
         for leg in ins.legs {
@@ -1044,14 +1099,21 @@ impl Settlement {
                     // payments and the money market has nothing to meet about.
                     reg.money_delta(from, instrument, -amount);
                     match across(parties, instruments, to, instrument) {
-                        None => {
+                        Across::Same => {
                             reg.money_delta(to, instrument, amount);
                         }
-                        Some(Across { payers_bank, payees_bank, payees_money, reserves }) => {
+                        Across::Banks { payers_bank, payees_bank, payees_money, reserves } => {
                             reg.money_delta(to, payees_money, amount);
                             reg.money_delta(payers_bank, reserves, -amount);
                             reg.money_delta(payees_bank, reserves, amount);
                         }
+                        // Nothing here can fail, because the pre-check is what made that true —
+                        // and 0k.3's refusal is one of the things it made true.
+                        Across::Refused(outcome, who) => panic!(
+                            "XI-5: {outcome:?} on party {} reached the application, which the \
+                             pre-check exists to make impossible",
+                            who.0
+                        ),
                     }
                 }
                 Leg::Asset { from, to, instrument, qty, price_per_unit } => {
@@ -1740,6 +1802,120 @@ mod tests {
         assert_eq!(out, Outcome::Settled);
         assert_eq!(reg.quantity(reg.row(alongside, ones)), 300.0);
         assert_eq!(reg.quantity(reg.row(one, reserves)), 800.0, "nothing left the bank");
+    }
+
+    /// **0k.3: two countries.** Two central banks, one commercial bank in each, one customer each,
+    /// and the two currencies are different — which is the case this world has never once built and
+    /// the reason the conversion at par went unseen for the whole of the port. Returns
+    /// `[cb_here, cb_there, bank_here, bank_there, payer, payee]` and
+    /// `[reserves_here, reserves_there, money_here, money_there]`.
+    #[allow(clippy::type_complexity)]
+    fn two_countries(
+    ) -> (Register, Journal, Parties, Instruments, Settlement, Calendar, Outcomes, [PartyId; 6], [InstrumentId; 4]) {
+        let mut j = Journal::new();
+        let says = Outcomes::declared(&mut j);
+        let mut p = Parties::new();
+        let (here, there) = (RegionId::at(0), RegionId::at(1));
+        let cb_here = p.add(0, here, PartyId::NONE, Representation::Named, 1, 0);
+        let cb_there = p.add(0, there, PartyId::NONE, Representation::Named, 1, 0);
+        let bank_here = p.add(0, here, cb_here, Representation::Named, 1, 0);
+        let bank_there = p.add(0, there, cb_there, Representation::Named, 1, 0);
+        let payer = p.add(0, here, bank_here, Representation::Named, 1, 0);
+        let payee = p.add(0, there, bank_there, Representation::Named, 1, 0);
+        let mut i = Instruments::new();
+        let unit = UnitId::at(0);
+        let (a, b) = (CurrencyCode::at(0), CurrencyCode::at(1));
+        let reserves_here = i.issue(cb_here, a, Class::Money, unit, None, None);
+        let reserves_there = i.issue(cb_there, b, Class::Money, unit, None, None);
+        let money_here = i.issue(bank_here, a, Class::Money, unit, None, None);
+        let money_there = i.issue(bank_there, b, Class::Money, unit, None, None);
+        (
+            Register::new(),
+            j,
+            p,
+            i,
+            Settlement::new(6),
+            Calendar::new(Day(0), 7, 3),
+            says,
+            [cb_here, cb_there, bank_here, bank_there, payer, payee],
+            [reserves_here, reserves_there, money_here, money_there],
+        )
+    }
+
+    #[test]
+    fn a_payment_in_a_money_the_payee_cannot_hold_is_refused_and_never_converted() {
+        // **Currency B3, Spot FX E1.** `amount` of one currency left and `amount` of another
+        // arrived, at a rate of one, with nobody on the other side. `across` compared banks and
+        // never compared currencies, so the conversion happened at the ledger boundary — which is
+        // the one place B3 forbids by name, because the position never exists and so can never be
+        // seen to be wrong.
+        let (mut reg, mut j, ps, ins, mut s, cal, says, who, lines) = two_countries();
+        let (bank_here, payer, payee) = (who[2], who[4], who[5]);
+        let (reserves_here, money_here, money_there) = (lines[0], lines[2], lines[3]);
+        reg.money_delta(payer, money_here, 500.0);
+        reg.money_delta(bank_here, reserves_here, 900.0);
+
+        let legs = [Leg::Money { from: payer, to: payee, instrument: money_here, amount: 300.0, receipt: Receipt::Sale }];
+        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::NoAccountInThatMoney);
+
+        // XI-5: and nothing moved at all — not the payer's money, not the payee's, not a reserve.
+        assert_eq!(reg.quantity(reg.row(payer, money_here)), 500.0);
+        assert_eq!(reg.quantity(reg.row(payee, money_there)), 0.0);
+        assert_eq!(reg.quantity(reg.row(payee, money_here)), 0.0);
+        assert_eq!(reg.quantity(reg.row(bank_here, reserves_here)), 900.0);
+        // It is a FAIL and not a queue: waiting does not give the payee an account.
+        assert!(s.queue.is_empty(), "§12 F1: what the payer does is buy the money, not wait");
+    }
+
+    #[test]
+    fn two_banks_with_no_reserve_line_in_common_cannot_settle_between_them() {
+        // The reserve leg had the same hole: `reserves` was read off the PAYEE's bank alone, so
+        // the payer's bank was debited in a line it need never have held — a claim on a central
+        // bank nothing established, going negative in silence (Appendix B #5).
+        //
+        // Here the two banks are in one currency and at two different central banks, so the
+        // currency check above passes and only the reserve line refuses.
+        let (mut reg, mut j, mut ps, mut ins, mut s, cal, says, who, lines) = two_countries();
+        let (cb_there, bank_here) = (who[1], who[2]);
+        let (reserves_here, money_here) = (lines[0], lines[2]);
+        let a = CurrencyCode::at(0);
+        // A bank abroad that issues the SAME money as here, at its own central bank.
+        let bank_abroad = ps.add(0, RegionId::at(1), cb_there, Representation::Named, 1, 0);
+        let abroad = ps.add(0, RegionId::at(1), bank_abroad, Representation::Named, 1, 0);
+        let theirs = ins.issue(bank_abroad, a, Class::Money, UnitId::at(0), None, None);
+        let payer = who[4];
+        reg.money_delta(payer, money_here, 500.0);
+        reg.money_delta(bank_here, reserves_here, 900.0);
+
+        let legs = [Leg::Money { from: payer, to: abroad, instrument: money_here, amount: 300.0, receipt: Receipt::Sale }];
+        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::BankCouldNotSettle);
+        assert_eq!(reg.quantity(reg.row(payer, money_here)), 500.0, "XI-5: nothing moved");
+        assert_eq!(reg.quantity(reg.row(abroad, theirs)), 0.0);
+        assert_eq!(reg.quantity(reg.row(bank_here, reserves_here)), 900.0);
+        // And it does not WAIT. Before this change the payer's bank was asked for reserves at the
+        // other central bank, held none of them, and the payment joined the queue as though the
+        // money were on its way — a gridlock invented out of two banking systems that are not
+        // connected at all.
+        assert!(s.queue.is_empty(), "22d.1: a missing reserve line is not a timing failure");
+    }
+
+    #[test]
+    fn a_payment_home_to_its_own_currency_still_settles_across_two_banks() {
+        // The change must not refuse what it never should have: two banks at ONE central bank, in
+        // one money, is the ordinary interbank leg and the reserve line is the same instrument it
+        // always was. This is why the assembled world runs unchanged.
+        let (mut reg, mut j, ps, ins, mut s, cal, says, who, lines) = two_banks();
+        let (one, payer, payee) = (who[1], who[3], who[4]);
+        let (reserves, ones, twos) = (lines[0], lines[1], lines[2]);
+        reg.money_delta(payer, ones, 500.0);
+        reg.money_delta(one, reserves, 800.0);
+        let legs = [Leg::Money { from: payer, to: payee, instrument: ones, amount: 300.0, receipt: Receipt::Sale }];
+        let out = s.settle(&Instruction::plain(&legs, Cause::Payment), 1, &mut on(&mut reg, &mut j, &ps, &ins, &cal, says));
+        assert_eq!(out, Outcome::Settled);
+        assert_eq!(reg.quantity(reg.row(payee, twos)), 300.0, "it landed in its own bank's money");
+        assert_eq!(reg.quantity(reg.row(one, reserves)), 500.0, "and the reserves moved");
     }
 
     // 0k.1: the three leg kinds the pre-check skipped. In `world()` the bank is `party(9)` and it
