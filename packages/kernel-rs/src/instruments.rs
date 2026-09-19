@@ -29,6 +29,25 @@ impl Class {
     pub fn carries_lots(&self) -> bool {
         *self != Class::Money
     }
+
+    /// Price 1 for money is the only hard-coded price there is, and it is a fact about the class.
+    pub fn hard_coded_price(&self) -> Option<f64> {
+        match self {
+            Class::Money => Some(1.0),
+            _ => None,
+        }
+    }
+}
+
+/// Named as a market names it — issuer, coupon and maturity for a bond, the issuer alone for a
+/// share. An internal id is never a display name.
+pub fn named_as(class: Class, coupon: Option<f64>, matures: Option<Day>, issuer_name: &str) -> String {
+    match (class, coupon, matures) {
+        (Class::Claim, Some(c), Some(m)) => format!("{issuer_name} {c} {}", m.0),
+        (Class::Claim, None, Some(m)) => format!("{issuer_name} {}", m.0),
+        (Class::Money, _, _) => format!("{issuer_name} deposit"),
+        _ => issuer_name.to_string(),
+    }
 }
 
 /// The issued amount moves only by a NAMED event, and these are the ones this kernel has.
@@ -196,10 +215,7 @@ impl Instruments {
 
     /// Price 1 for money is the only hard-coded price there is, and it is a fact about the class.
     pub fn hard_coded_price(&self, i: InstrumentId) -> Option<f64> {
-        match self.class_of(i) {
-            Class::Money => Some(1.0),
-            _ => None,
-        }
+        self.class_of(i).hard_coded_price()
     }
 
     /// A maturity profile that is SPREAD, or every roll arrives in the same period.
@@ -214,12 +230,7 @@ impl Instruments {
     /// Named as a market names it — issuer, coupon and maturity for a bond; the issuer alone for a
     /// share.
     pub fn display(&self, i: InstrumentId, issuer_name: &str) -> String {
-        match (self.class_of(i), self.coupon_of(i), self.matures_on(i)) {
-            (Class::Claim, Some(c), Some(m)) => format!("{issuer_name} {c} {}", m.0),
-            (Class::Claim, None, Some(m)) => format!("{issuer_name} {}", m.0),
-            (Class::Money, _, _) => format!("{issuer_name} deposit"),
-            _ => issuer_name.to_string(),
-        }
+        named_as(self.class_of(i), self.coupon_of(i), self.matures_on(i), issuer_name)
     }
 }
 
@@ -312,185 +323,40 @@ pub fn owed_by(
         .sum()
 }
 
+// `issue` is the only door and it takes an issuer, so an instrument without one cannot be written
+// by any route the type allows; what it refuses at the site is the NONE sentinel being passed, and
+// a coupon on something that is not a claim. The rest of this store answers what `issue` was told.
+//
+// `equity` is a read over three stores, so what it answers is a question about a world: an issuer
+// that does not get richer by issuing, a share that is a residual and not a liability, an estate
+// worth what it holds less what is claimed on it. Those are positioned at 0n.5, where the Accounts
+// family asks them of every party every period.
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn party(n: u32) -> PartyId {
-        PartyId::at(n)
-    }
-
-    fn ccy() -> CurrencyCode {
-        CurrencyCode::at(0)
-    }
-
-    fn unit() -> UnitId {
-        UnitId::at(0)
-    }
-
     #[test]
-    fn every_instrument_has_an_issuer_and_there_is_no_door_that_omits_one() {
-        // No money without an issuer, and no holding without one.
-        let mut i = Instruments::new();
-        let deposit = i.issue(party(5), ccy(), Class::Money, unit(), None, None);
-        assert_eq!(i.issuer_of(deposit), party(5));
-    }
+    fn money_is_the_only_class_with_a_price_and_the_only_one_without_lots() {
+        assert_eq!(Class::Money.hard_coded_price(), Some(1.0));
+        assert_eq!(Class::Claim.hard_coded_price(), None);
+        assert_eq!(Class::Share.hard_coded_price(), None);
+        assert_eq!(Class::Good.hard_coded_price(), None);
+        assert_eq!(Class::Plant.hard_coded_price(), None);
 
-    #[test]
-    #[should_panic(expected = "no instrument without an issuer")]
-    fn an_instrument_issued_by_nobody_is_refused() {
-        let mut i = Instruments::new();
-        i.issue(PartyId::NONE, ccy(), Class::Money, unit(), None, None);
-    }
-
-    #[test]
-    fn price_one_for_money_is_the_only_hard_coded_price() {
-        // Everything else has to have printed.
-        let mut i = Instruments::new();
-        let deposit = i.issue(party(5), ccy(), Class::Money, unit(), None, None);
-        let bond = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.04), Some(Day(900)));
-        let share = i.issue(party(9), ccy(), Class::Share, unit(), None, None);
-        assert_eq!(i.hard_coded_price(deposit), Some(1.0));
-        assert!(i.hard_coded_price(bond).is_none());
-        assert!(i.hard_coded_price(share).is_none());
-    }
-
-    // `worth` HAS NO TEST, and the reason is the testing rule.
-
-    #[test]
-    fn a_money_account_carries_no_lots_because_every_unit_is_the_same_unit() {
         assert!(!Class::Money.carries_lots());
         assert!(Class::Claim.carries_lots());
         assert!(Class::Good.carries_lots());
     }
 
     #[test]
-    fn a_coupon_is_a_term_of_a_claim_and_not_a_price_on_something_else() {
-        // A seeded term is permanent structure and must be justified individually; an
-        // opening price is a guess the next period re-clears.
-        let mut i = Instruments::new();
-        let bond = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.04), Some(Day(900)));
-        assert_eq!(i.coupon_of(bond), Some(0.04));
-        assert_eq!(i.matures_on(bond), Some(Day(900)));
-    }
-
-    #[test]
-    #[should_panic(expected = "wearing a term's clothes")]
-    fn a_share_with_a_coupon_is_refused() {
-        let mut i = Instruments::new();
-        i.issue(party(9), ccy(), Class::Share, unit(), Some(0.04), None);
-    }
-
-    #[test]
-    fn a_bond_outstanding_at_period_zero_has_a_remaining_life() {
-        // A bond seeded at issue is a world with no maturity wall for its whole tenor, and 5
-        // C3.a wants the profile SPREAD rather than stacked on one day.
-        let mut i = Instruments::new();
-        let soon = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.04), Some(Day(100)));
-        let later = i.issue(party(9), ccy(), Class::Claim, unit(), Some(0.05), Some(Day(2_000)));
-        let held = |x: InstrumentId| if x == soon { 500.0 } else { 900.0 };
-        assert_eq!(i.maturing_by(Day(200), held), 500.0);
-        assert_eq!(i.maturing_by(Day(3_000), held), 1_400.0);
-        assert_eq!(i.maturing_by(Day(10), held), 0.0);
-        let _ = later;
-    }
-
-    #[test]
-    fn what_an_issuer_owes_is_read_from_what_was_issued_and_never_kept_beside_it() {
-        // 5 A4, C2, Law 19: every asset is somebody's liability, party by party.
-        let mut i = Instruments::new();
-        let a = i.issue(party(5), ccy(), Class::Money, unit(), None, None);
-        let b = i.issue(party(5), ccy(), Class::Claim, unit(), Some(0.03), Some(Day(900)));
-        let theirs = i.issue(party(6), ccy(), Class::Money, unit(), None, None);
-        let held = |x: InstrumentId| {
-            if x == a {
-                1_000.0
-            } else if x == b {
-                400.0
-            } else {
-                9_999.0
-            }
-        };
-        assert_eq!(owed_by(party(5), &i, held), 1_400.0);
-        assert_eq!(owed_by(party(6), &i, held), 9_999.0);
-        assert_eq!(owed_by(party(7), &i, held), 0.0);
-        let _ = theirs;
-    }
-
-    #[test]
-    fn an_instrument_is_displayed_as_a_market_would_name_it() {
-        // The id is never the name.
-        let mut i = Instruments::new();
-        let bond = i.issue(party(9), ccy(), Class::Claim, unit(), Some(4.5), Some(Day(2_031)));
-        let share = i.issue(party(9), ccy(), Class::Share, unit(), None, None);
-        let deposit = i.issue(party(5), ccy(), Class::Money, unit(), None, None);
-        assert_eq!(i.display(bond, "firm.4"), "firm.4 4.5 2031");
-        assert_eq!(i.display(share, "firm.4"), "firm.4");
-        assert_eq!(i.display(deposit, "bank.2"), "bank.2 deposit");
-    }
-
-    #[test]
-    fn an_issuer_does_not_get_richer_by_issuing() {
-        // 22b.7a, and the whole reason the pot had to go.
-        let mut i = Instruments::new();
-        let mut reg = Register::new();
-        let treasury = party(5);
-        let buyer = party(6);
-        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
-        let bill = i.issue(treasury, ccy(), Class::Claim, unit(), None, Some(Day(900)));
-
-        reg.money_delta(buyer, cash, 1_000.0);
-        let before = equity(treasury, &reg, &i, &Claims::new());
-
-        // It sold the bill: money in, and a promise out at the same instant.
-        reg.money_delta(buyer, cash, -900.0);
-        reg.money_delta(treasury, cash, 900.0);
-        reg.credit(buyer, bill, 900.0, 1.0, 0);
-
-        assert_eq!(equity(treasury, &reg, &i, &Claims::new()), before, "selling a promise is not income");
-        assert_eq!(equity(buyer, &reg, &i, &Claims::new()), 1_000.0, "and the buyer swapped money for a claim");
-    }
-
-    #[test]
-    fn a_share_is_the_residual_and_never_a_liability() {
-        // Units are part of the number, and shares are not a sum of money.
-        let mut i = Instruments::new();
-        let mut reg = Register::new();
-        let firm = party(1);
-        let holder = party(2);
-        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
-        let share = i.issue(firm, ccy(), Class::Share, unit(), None, None);
-        let plant = i.issue(firm, ccy(), Class::Plant, unit(), None, None);
-
-        reg.money_delta(firm, cash, 400.0);
-        reg.credit(firm, plant, 10.0, 60.0, 0);
-        reg.credit(holder, share, 100.0, 1.0, 0);
-
-        // 400 of money and 600 of plant, and the shares its owners hold are not a debt against it.
-        assert_eq!(equity(firm, &reg, &i, &Claims::new()), 1_000.0);
-    }
-
-    #[test]
-    fn an_estate_is_worth_what_it_holds_less_what_is_claimed_on_it() {
-        let mut i = Instruments::new();
-        let mut reg = Register::new();
-        let estate = party(3);
-        let claimant = party(4);
-        let cash = i.issue(party(7), ccy(), Class::Money, unit(), None, None);
-        reg.money_delta(estate, cash, 1_000.0);
-
-        let mut claims = Claims::new();
-        assert_eq!(equity(estate, &reg, &i, &claims), 1_000.0, "nothing claimed on it yet");
-
-        let c = claims.against(estate, claimant, 400.0, 0);
-        assert_eq!(equity(estate, &reg, &i, &claims), 600.0, "what is claimed on it is owed");
-        // The same row is an asset to whoever holds it, or the world's equity fell by 400.
-        assert_eq!(equity(claimant, &reg, &i, &claims), 400.0);
-
-        claims.pays(c, 400.0);
-        reg.money_delta(estate, cash, -400.0);
-        reg.money_delta(claimant, cash, 400.0);
-        assert_eq!(equity(estate, &reg, &i, &claims), 600.0);
-        assert_eq!(equity(claimant, &reg, &i, &claims), 400.0);
+    fn an_instrument_is_named_as_a_market_would_name_it() {
+        let bond = named_as(Class::Claim, Some(4.5), Some(Day(2_031)), "firm.4");
+        assert_eq!(bond, "firm.4 4.5 2031");
+        // A bill has no coupon, so it is the issuer and the date.
+        assert_eq!(named_as(Class::Claim, None, Some(Day(900)), "us"), "us 900");
+        // A share is the issuer, and nothing else.
+        assert_eq!(named_as(Class::Share, None, None, "firm.4"), "firm.4");
+        assert_eq!(named_as(Class::Money, None, None, "bank.2"), "bank.2 deposit");
     }
 }

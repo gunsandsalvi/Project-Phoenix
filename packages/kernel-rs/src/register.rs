@@ -19,6 +19,28 @@ pub struct Lien {
     pub qty: f64,
 }
 
+/// UNITS LEAVE OLDEST FIRST, and each parcel keeps the basis it arrived with — which is what gives
+/// a disposal a gain to book. Answers what was drawn, and how many lots at the head are now empty.
+pub fn draw(lots: &mut [Lot], qty: f64) -> (Vec<Drawn>, usize) {
+    let mut left = qty;
+    let mut drawn = Vec::new();
+    let mut first_live = 0usize;
+    for i in 0..lots.len() {
+        if left <= 0.0 {
+            break;
+        }
+        let lot = lots[i];
+        let take = if lot.qty <= left { lot.qty } else { left };
+        drawn.push(Drawn { qty: take, basis_per_unit: lot.basis_per_unit, acquired: lot.acquired });
+        lots[i].qty -= take;
+        left -= take;
+        if lots[i].qty <= 0.0 {
+            first_live = i + 1;
+        }
+    }
+    (drawn, first_live)
+}
+
 /// What a debit drew, with the basis each parcel carried — settlement's own read for the gain.
 #[derive(Clone, Copy)]
 pub struct Drawn {
@@ -236,26 +258,7 @@ impl Register {
         );
         let at = self.lot_at[row.row()] as usize;
         let len = self.lot_len[row.row()] as usize;
-        let mut left = qty;
-        let mut drawn = Vec::new();
-        let mut first_live = 0usize;
-        for i in 0..len {
-            if left <= 0.0 {
-                break;
-            }
-            let lot = self.lots[at + i];
-            let take = if lot.qty <= left { lot.qty } else { left };
-            drawn.push(Drawn {
-                qty: take,
-                basis_per_unit: lot.basis_per_unit,
-                acquired: lot.acquired,
-            });
-            self.lots[at + i].qty -= take;
-            left -= take;
-            if self.lots[at + i].qty <= 0.0 {
-                first_live = i + 1;
-            }
-        }
+        let (drawn, first_live) = draw(&mut self.lots[at..at + len], qty);
         // Emptied lots at the head are dropped by moving the row's start, not by shifting anything.
         if first_live > 0 {
             self.lot_at[row.row()] += first_live as u32;
@@ -324,150 +327,50 @@ impl Register {
 }
 
 
+// A holding's quantity IS its lots, so asserting that it equals their sum compares a function with
+// a copy of itself. The lien arithmetic, the index and the refusals — a short with no borrow, a
+// lien released that is not there, a release larger than the lien — all relate an argument to what
+// the store already holds, so each panics at its site and none of them has a test.
+//
+// What IS arithmetic is the draw, and it is a pure function now.
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids::{InstrumentId, PartyId};
 
-    #[test]
-    fn a_holdings_quantity_is_its_lots_and_cannot_drift_from_them() {
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        // Amounts that do not land on a power of two, credited and drawn many times over — the shape
-        // the arbitrary world produces and the shape that drifted.
-        for n in 1..200u32 {
-            reg.credit(p, i, 1.0 / 3.0 + f64::from(n) / 7.0, 0.5, n);
-            let row = reg.row(p, i);
-            if n % 3 == 0 {
-                reg.debit(row, reg.quantity(row) / 11.0);
-            }
-        }
-        let row = reg.row(p, i);
-        let summed: f64 = reg.lots(row).iter().map(|l| l.qty).sum();
-        assert_eq!(reg.quantity(row), summed, "the quantity IS the lots, not a tally beside them");
-
-        // The one row that answers from a total, and it is not an exception — a money account has no
-        // lots, so the total is a copy of nothing.
-        let cash = InstrumentId::at(1);
-        reg.money_delta(p, cash, 900.0);
-        reg.money_delta(p, cash, -250.0);
-        let account = reg.row(p, cash);
-        assert!(reg.is_total(account));
-        assert_eq!(reg.quantity(account), 650.0);
-        assert!(reg.lots(account).is_empty());
+    fn lot(qty: f64, basis: f64, at: u32) -> Lot {
+        Lot { qty, basis_per_unit: basis, acquired: at }
     }
 
     #[test]
-    fn units_arrive_with_their_basis_and_leave_oldest_first() {
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        reg.credit(p, i, 100.0, 1.5, 1);
-        reg.credit(p, i, 50.0, 2.5, 2);
-        let row = reg.row(p, i);
-        assert_eq!(reg.quantity(row), 150.0);
-        let drawn = reg.debit(row, 120.0);
-        // Oldest first: 100 at 1.5, then 20 at 2.5.
+    fn units_leave_oldest_first_and_each_parcel_keeps_the_basis_it_arrived_with() {
+        let mut lots = [lot(100.0, 1.5, 1), lot(50.0, 2.5, 2)];
+        let (drawn, empty) = draw(&mut lots, 120.0);
         assert_eq!(drawn.len(), 2);
-        assert_eq!(drawn[0].basis_per_unit, 1.5);
-        assert_eq!(drawn[0].qty, 100.0);
-        assert_eq!(drawn[1].basis_per_unit, 2.5);
-        assert_eq!(drawn[1].qty, 20.0);
-        assert_eq!(reg.quantity(row), 30.0);
-        // And the row answers 30 because the lots say 30.
-        assert_eq!(reg.lots(row).iter().map(|l| l.qty).sum::<f64>(), 30.0);
+        assert_eq!((drawn[0].qty, drawn[0].basis_per_unit), (100.0, 1.5));
+        assert_eq!((drawn[1].qty, drawn[1].basis_per_unit), (20.0, 2.5));
+        // The first lot is spent, so the row starts one later; 30 is left at 2.5.
+        assert_eq!(empty, 1);
+        assert_eq!(lots.iter().map(|l| l.qty).sum::<f64>(), 30.0);
     }
 
     #[test]
-    #[should_panic(expected = "a short needs a borrow")]
-    fn encumbered_units_do_not_move() {
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        let to = PartyId::at(1);
-        reg.credit(p, i, 100.0, 1.0, 1);
-        reg.pledge(p, i, to, 80.0);
-        let row = reg.row(p, i);
-        assert_eq!(reg.free(row), 20.0);
-        reg.debit(row, 50.0);
+    fn a_draw_that_one_lot_covers_leaves_that_lot_standing() {
+        let mut lots = [lot(100.0, 1.5, 1)];
+        let (drawn, empty) = draw(&mut lots, 40.0);
+        assert_eq!(drawn.len(), 1);
+        assert_eq!(drawn[0].qty, 40.0);
+        assert_eq!(empty, 0, "a lot with units left in it is not empty");
+        assert_eq!(lots[0].qty, 60.0);
     }
 
     #[test]
-    fn a_lien_comes_off_the_way_it_went_on() {
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        let to = PartyId::at(1);
-        reg.credit(p, i, 100.0, 1.0, 1);
-        reg.pledge(p, i, to, 80.0);
-        let row = reg.row(p, i);
-        assert_eq!(reg.free(row), 20.0);
-
-        // Part of it back: the rest of the claim stands.
-        reg.release(p, i, to, 30.0);
-        assert_eq!(reg.free(row), 50.0);
-        // And the whole of the rest: the units are the holder's again and they move.
-        reg.release(p, i, to, 50.0);
-        assert_eq!(reg.free(row), 100.0);
-        assert_eq!(reg.debit(row, 100.0).len(), 1);
-    }
-
-    #[test]
-    fn one_holder_has_one_lien_on_one_holding_however_often_it_is_pledged_to() {
-        // Law 4, 21.131.BF4: two rows with the same holder are two answers to "what does this party
-        // have a claim over", and a release that matched by holder would find whichever came first.
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        let to = PartyId::at(1);
-        reg.credit(p, i, 100.0, 1.0, 1);
-        reg.pledge(p, i, to, 30.0);
-        reg.pledge(p, i, to, 20.0);
-        let row = reg.row(p, i);
-        assert_eq!(reg.free(row), 50.0, "the two pledges are one claim of fifty");
-        // And the whole of it comes off in one release, which it could not if there were two rows.
-        reg.release(p, i, to, 50.0);
-        assert_eq!(reg.free(row), 100.0);
-    }
-
-    #[test]
-    #[should_panic(expected = "no lien to release")]
-    fn releasing_a_lien_that_is_not_there_is_a_read_of_the_wrong_row() {
-        // The (24, 96) world stopped on exactly this, and stopping is right — a return that releases
-        // a lien already gone means the row it thinks it is on is not the row it is on.
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        reg.credit(p, i, 100.0, 1.0, 1);
-        reg.pledge(p, i, PartyId::at(1), 80.0);
-        reg.release(p, i, PartyId::at(2), 10.0);
-    }
-
-    #[test]
-    #[should_panic(expected = "a read of the wrong row")]
-    fn releasing_more_than_was_pledged_is_not_a_smaller_release() {
-        // It is not clamped to what is there.
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(0);
-        let to = PartyId::at(1);
-        reg.credit(p, i, 100.0, 1.0, 1);
-        reg.pledge(p, i, to, 40.0);
-        reg.release(p, i, to, 60.0);
-    }
-
-    #[test]
-    fn both_directions_are_indexed_and_holdings_sum_to_issued() {
-        let mut reg = Register::new();
-        let i = InstrumentId::at(7);
-        for p in 0..5u32 {
-            reg.credit(PartyId::at(p), i, 10.0 * f64::from(p + 1), 1.0, 1);
-        }
-        assert_eq!(reg.of_instrument(i).len(), 5);
-        assert_eq!(reg.of_holder(PartyId::at(3)).len(), 1);
-        let (total, dust) = reg.held_total(i);
-        assert!((total - 150.0).abs() <= dust);
+    fn drawing_the_whole_of_a_holding_empties_every_lot() {
+        let mut lots = [lot(10.0, 1.0, 1), lot(20.0, 2.0, 2), lot(30.0, 3.0, 3)];
+        let (drawn, empty) = draw(&mut lots, 60.0);
+        assert_eq!(drawn.len(), 3);
+        assert_eq!(empty, 3);
+        assert_eq!(lots.iter().map(|l| l.qty).sum::<f64>(), 0.0);
     }
 }
 

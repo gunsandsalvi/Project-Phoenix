@@ -221,9 +221,6 @@ a count that cannot be zero, an id that cannot be fabricated, a measure whose co
 more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
 those stay as a panic at the site, with no test.
 
-- [ ] 0m3.2 **`register.rs` (8) and `instruments.rs` (14)** — holdings and lines. Harder: a lien that
-  blocks a move and a lot that carries its basis are real invariants, and each is either a contract
-  the type enforces or an audit family that measures it (Register B2 is already built, 0l).
 - [ ] 0m3.3 **`ledger.rs` (15 over 30)** — the wire, and the densest real mechanism in the list.
   DvP atomicity, the refusals, the queue. Expect the most extraction here: `short_together`,
   `across` and `Instruction::shape` are pure over their inputs or can be.
@@ -406,6 +403,15 @@ the joint, and it is why a forced sale can never start.
   of whatever 22g draws. A count that does not fall as books open is XI-6 not reaching balance
   sheets; a count that is zero before 22g would mean the declaration is being handed out to make
   the number look right, which is the accident XI-6 names.
+  **And `equity`'s three measurements**, positioned here from `instruments.rs`'s deleted fixtures,
+  because each is a question about a WORLD that a family can ask of every party every period:
+  *an issuer does not get richer by issuing* — the sum of every party's equity does not move when a
+  promise is sold, only when something is made or lost; *a share is a residual and never a
+  liability* — an issuer's own shares are not netted off its assets; *an estate is worth what it
+  holds less what is claimed on it* — a claim is an asset to its holder and a liability to the
+  estate, so the two sides cancel in the world's total. The fixtures asserted these of two parties
+  each; the family asserts them of 10,318. **0n.4a is the finding one of them would have caught**
+  and did not, because it netted a party's own issuance off one side and not the other.
 
 **It must not be output-identical, and that is the point.** XI-6: "The moment value becomes units
 times a cleared price, **every balance sheet moves** … Capital moves, ratios move, net asset values
