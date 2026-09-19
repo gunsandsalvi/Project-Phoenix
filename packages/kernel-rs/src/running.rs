@@ -3526,7 +3526,7 @@ mod tests {
         let empty = w.registry.region(country);
         let crowded = w.registry.region(country);
         let shed = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
-        w.registry.stands_on(shed, 1.0);
+        w.registry.stands_on(shed, crate::registry::Footprint::new(1.0).unwrap());
 
         // Two builders with the same plant, the same input, the same hours and the same outlook —
         // alike in everything but where they are.
@@ -3583,7 +3583,7 @@ mod tests {
         let country = w.registry.country(usd);
         let crowded = w.registry.region(country);
         let shed = w.instruments.issue(bank, CurrencyCode::at(0), Class::Plant, UnitId::at(0), None, None);
-        w.registry.stands_on(shed, 1.0);
+        w.registry.stands_on(shed, crate::registry::Footprint::new(1.0).unwrap());
         let squatter = w.parties.add(kinds::FIRM, crowded, bank, Representation::Named, 0);
         w.register.credit(squatter, shed, 400.0, 1.0, 0);
 

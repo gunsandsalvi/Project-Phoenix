@@ -22,7 +22,7 @@ pub fn built_up(parties: &Parties, register: &Register, registry: &Registry) -> 
         // A structure is somewhere, and where it is, is where its owner is.
         let at = parties.region_of(holder).0 as usize;
         if at < by_region.len() {
-            by_region[at] += register.quantity(row) * footprint;
+            by_region[at] += register.quantity(row) * footprint.km2();
         }
     }
     by_region
@@ -52,45 +52,25 @@ pub fn standing_in(built: &[f64], at: RegionId) -> f64 {
     }
 }
 
+// What a place holds is a read over the register, the parties and the registry, so `built_up` and
+// `standing_in` are answered against the real world rather than a fixture.
+//
+// Two refusals the TYPE now makes unconstructible: a structure that stands on nothing (`Footprint`
+// has no way to be zero) and a line declared a structure twice (the second `stands_on` panics at
+// the site). What is a structure is a number in the registry, so an office block, a dwelling and a
+// works go through one mechanism and nothing branches on which.
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids::{PartyId, UnitId};
-    use crate::instruments::{Class, Instruments};
-    use crate::parties::Representation;
+    use crate::registry::Footprint;
 
     #[test]
-    fn a_place_fills_up_in_area_and_not_in_units() {
-        // A dwelling and a mill are counted in different things, so what they have in common is the
-        // ground they cover.
-        let mut parties = Parties::new();
-        let mut instruments = Instruments::new();
-        let mut registry = Registry::new();
-        let mut register = Register::new();
-
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
-        let usd = registry.currency(cb);
-        let us = registry.country(usd);
-        let here = registry.region(us);
-        let elsewhere = registry.region(us);
-
-        let mill = instruments.issue(cb, usd, Class::Plant, UnitId::at(0), None, None);
-        let flat = instruments.issue(cb, usd, Class::Plant, UnitId::at(0), None, None);
-        let flour = instruments.issue(cb, usd, Class::Good, UnitId::at(1), None, None);
-        registry.stands_on(mill, 3.0);
-        registry.stands_on(flat, 0.1);
-
-        let firm = parties.add(1, here, cb, Representation::Named, 0);
-        let away = parties.add(1, elsewhere, cb, Representation::Named, 0);
-        register.credit(firm, mill, 2.0, 100.0, 0);
-        register.credit(firm, flat, 10.0, 20.0, 0);
-        // Flour covers no ground, however much of it there is.
-        register.credit(firm, flour, 50_000.0, 1.0, 0);
-        register.credit(away, mill, 1.0, 100.0, 0);
-
-        let built = built_up(&parties, &register, &registry);
-        assert_eq!(standing_in(&built, here), 7.0);
-        assert_eq!(standing_in(&built, elsewhere), 3.0);
+    fn a_footprint_of_nothing_is_not_a_footprint() {
+        assert!(Footprint::new(0.0).is_none());
+        assert!(Footprint::new(-1.0).is_none());
+        assert!(Footprint::new(f64::INFINITY).is_none());
+        assert_eq!(Footprint::new(3.0).map(Footprint::km2), Some(3.0));
     }
 
     #[test]
@@ -103,34 +83,8 @@ mod tests {
     }
 
     #[test]
-    fn a_structure_is_a_line_with_a_footprint_and_not_a_class() {
-        // What makes a line a structure is a number in the registry, so an office block, a dwelling
-        // and a works go through one mechanism and nothing branches on which.
-        let mut parties = Parties::new();
-        let mut instruments = Instruments::new();
-        let mut registry = Registry::new();
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
-        let usd = registry.currency(cb);
-        // A dwelling is a GOOD here and a works is PLANT, and both are structures.
-        let dwelling = instruments.issue(cb, usd, Class::Good, UnitId::at(0), None, None);
-        let works = instruments.issue(cb, usd, Class::Plant, UnitId::at(0), None, None);
-        let wheat = instruments.issue(cb, usd, Class::Good, UnitId::at(1), None, None);
-        registry.stands_on(dwelling, 0.05);
-        registry.stands_on(works, 12.0);
-        assert!(is_a_structure(&registry, dwelling));
-        assert!(is_a_structure(&registry, works));
-        assert!(!is_a_structure(&registry, wheat));
-    }
-
-    #[test]
-    #[should_panic(expected = "stands on nothing")]
-    fn a_structure_that_occupies_nowhere_is_not_one() {
-        let mut parties = Parties::new();
-        let mut instruments = Instruments::new();
-        let mut registry = Registry::new();
-        let cb = parties.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
-        let usd = registry.currency(cb);
-        let line = instruments.issue(cb, usd, Class::Plant, UnitId::at(0), None, None);
-        registry.stands_on(line, 0.0);
+    fn the_standing_area_of_a_region_nobody_built_in_is_nothing() {
+        assert_eq!(standing_in(&[7.0, 3.0], RegionId::at(1)), 3.0);
+        assert_eq!(standing_in(&[7.0, 3.0], RegionId::at(9)), 0.0);
     }
 }

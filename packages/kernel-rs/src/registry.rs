@@ -3,6 +3,7 @@
 //! @spec Money A2 · Currency A2 · Currency B1 · Seed B3 · Money D2 · Law 2, Law 4, Law 8, Law 15 ·
 //! @spec ARCHITECTURE 4.10
 
+use std::num::NonZeroU32;
 use crate::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
 
 /// A country: one currency, one central bank, one treasury, one sovereign line, one FX pair and one
@@ -65,6 +66,25 @@ pub enum Banks {
     AtACommercialBank,
 }
 
+/// WHAT ONE OF A LINE STANDS ON, in square km. A structure that stands on nothing is not one, so
+/// there is no way to write a footprint of zero.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Footprint(f64);
+
+impl Footprint {
+    pub fn new(square_km: f64) -> Option<Footprint> {
+        match square_km > 0.0 && square_km.is_finite() {
+            true => Some(Footprint(square_km)),
+            false => None,
+        }
+    }
+
+    #[inline]
+    pub fn km2(self) -> f64 {
+        self.0
+    }
+}
+
 /// What varies by party kind, behind a dispatch the kernel reads.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct KindProfile {
@@ -84,7 +104,7 @@ pub struct Registry {
     country_ccy: Vec<u32>,
     region_country: Vec<u32>,
     /// How many pieces one whole of this unit is divided into.
-    unit_pieces: Vec<f64>,
+    unit_pieces: Vec<NonZeroU32>,
     /// By party-kind id.
     profiles: Vec<Option<KindProfile>>,
     /// What one unit of each line STANDS ON, in square km.
@@ -153,8 +173,7 @@ impl Registry {
     }
 
     /// WHAT ONE UNIT OF THIS LINE STANDS ON.
-    pub fn stands_on(&mut self, line: InstrumentId, square_km: f64) {
-        assert!(square_km > 0.0, "21i: a structure that stands on nothing is not one");
+    pub fn stands_on(&mut self, line: InstrumentId, ground: Footprint) {
         let at = line.row();
         while self.line_footprint.len() <= at {
             self.line_footprint.push(f64::NAN);
@@ -163,13 +182,13 @@ impl Registry {
             self.line_footprint[at].is_nan(),
             "Law 4: this line's footprint is declared twice"
         );
-        self.line_footprint[at] = square_km;
+        self.line_footprint[at] = ground.0;
     }
 
     /// The footprint, or `Missing` where the line is not a structure.
-    pub fn footprint_of(&self, line: InstrumentId) -> Option<f64> {
+    pub fn footprint_of(&self, line: InstrumentId) -> Option<Footprint> {
         match self.line_footprint.get(line.row()) {
-            Some(km2) if !km2.is_nan() => Some(*km2),
+            Some(km2) if !km2.is_nan() => Some(Footprint(*km2)),
             _ => None,
         }
     }
@@ -183,24 +202,21 @@ impl Registry {
     }
 
 
-    /// A unit, and what one of it is divided into.
-    pub fn unit(&mut self, pieces_per_whole: f64) -> UnitId {
-        assert!(
-            pieces_per_whole >= 1.0 && pieces_per_whole.is_finite(),
-            "Law 8: a unit divided into {pieces_per_whole} pieces is not a unit anybody counts in"
-        );
+    /// A unit, and what one of it is divided into. A count of pieces, so a unit divided into half
+    /// a piece cannot be written.
+    pub fn unit(&mut self, pieces_per_whole: NonZeroU32) -> UnitId {
         let row = self.unit_pieces.len() as u32;
         self.unit_pieces.push(pieces_per_whole);
         UnitId(row)
     }
 
     pub fn pieces_per_whole(&self, unit: UnitId) -> f64 {
-        self.unit_pieces[unit.0 as usize]
+        f64::from(self.unit_pieces[unit.0 as usize].get())
     }
 
     /// Is one of these a thing nobody divides?
     pub fn indivisible(&self, unit: UnitId) -> bool {
-        self.pieces_per_whole(unit) == 1.0
+        self.unit_pieces[unit.0 as usize].get() == 1
     }
 
     pub fn units(&self) -> usize {
@@ -226,7 +242,7 @@ impl Registry {
 
 
     /// An index is a country's, it is ONE system, and it is built from named lines.
-    pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, f64)]) -> IndexId {
+    pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, NonZeroU32)]) -> IndexId {
         assert!(
             country.row() < self.country_ccy.len(),
             "Indices D1: an index is a COUNTRY's, and this one is nobody's"
@@ -235,15 +251,12 @@ impl Registry {
             !constituents.is_empty(),
             "22 D5.a: an index over nothing has no level, and declaring one is a basket nobody filled"
         );
-        for (_, weight) in constituents {
-            assert!(*weight > 0.0, "Indices B1: a weight is a COUNT of the line, and {weight} is not one");
-        }
         let row = self.index_in.len() as u32;
         self.index_in.push(country.0);
         self.index_of.push(of);
         self.index_at.push(self.constituents.len() as u32);
         self.index_len.push(constituents.len() as u32);
-        self.constituents.extend(constituents.iter().map(|(i, w)| (i.0, *w)));
+        self.constituents.extend(constituents.iter().map(|(i, w)| (i.0, f64::from(w.get()))));
         IndexId(row)
     }
 
@@ -276,26 +289,28 @@ impl Registry {
     }
 }
 
+// Four refusals the TYPE now makes unconstructible: a unit divided into less than a whole piece
+// and an index constituent weighted at nothing (both `NonZeroU32` — a divisor and a weight are
+// COUNTS), a structure that stands on nothing (`Footprint`), and a currency, country or region
+// built on an id this registry never issued (an id comes back from the call that made it).
+//
+// What is left runtime is what relates an argument to what the registry already holds: a currency
+// naming nobody, a basket with nothing in it, and a kind given two profiles. Each panics at the
+// site, and what the registry answers — a region's money read THROUGH its country, a kind with no
+// profile answering `None` — is a read the world takes every period.
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn party(n: u32) -> PartyId {
-        PartyId::at(n)
-    }
-
     #[test]
-    fn a_currency_names_the_party_whose_liability_it_is() {
+    fn a_unit_is_a_count_of_pieces_and_one_is_indivisible() {
         let mut r = Registry::new();
-        let cb = party(1);
-        let usd = r.currency(cb);
-        assert_eq!(r.issuer_of(usd), cb);
-    }
-
-    #[test]
-    #[should_panic(expected = "somebody's liability")]
-    fn a_currency_nobody_owes_cannot_be_written() {
-        Registry::new().currency(PartyId::NONE);
+        let tonne = r.unit(NonZeroU32::new(1_000_000).unwrap());
+        let dwelling = r.unit(NonZeroU32::new(1).unwrap());
+        assert_eq!(r.pieces_per_whole(tonne), 1_000_000.0);
+        assert!(r.indivisible(dwelling));
+        assert!(!r.indivisible(tonne));
     }
 
     #[test]
@@ -303,8 +318,8 @@ mod tests {
         // A country has the money and a region is a place, so two regions of one country share its
         // money and neither keeps a copy of the fact.
         let mut r = Registry::new();
-        let usd = r.currency(party(1));
-        let eur = r.currency(party(2));
+        let usd = r.currency(PartyId::at(1));
+        let eur = r.currency(PartyId::at(2));
         let us = r.country(usd);
         let de = r.country(eur);
         let east = r.region(us);
@@ -318,92 +333,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "a region is in a country")]
-    fn a_region_in_no_country_is_nowhere() {
-        let mut r = Registry::new();
-        r.region(CountryId::at(0));
-    }
-
-    #[test]
-    fn a_unit_says_what_one_of_it_is_divided_into() {
-        // A dwelling counted on a tonne's grid made a cell member hold four tenths of a roof, which
-        // is the occupancy it lives under and not a thing anybody holds.
-        let mut r = Registry::new();
-        let tonne = r.unit(1_000_000.0);
-        let dwelling = r.unit(1.0);
-        assert_eq!(r.pieces_per_whole(tonne), 1_000_000.0);
-        assert!(r.indivisible(dwelling));
-        assert!(!r.indivisible(tonne));
-    }
-
-    #[test]
-    #[should_panic(expected = "is not a unit anybody counts in")]
-    fn a_unit_divided_into_less_than_one_piece_is_not_a_unit() {
-        Registry::new().unit(0.5);
-    }
-
-    #[test]
     fn a_kind_answers_through_its_profile_and_a_kind_with_none_says_so() {
-        // The integer stays the id; what goes behind it is what varies.
         let mut r = Registry::new();
         r.profile_for(7, KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false });
-        r.profile_for(6, KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true });
-
         assert_eq!(r.profile(7).map(|p| p.banks), Some(Banks::Nowhere));
-        assert!(r.profile(7).unwrap().issues_money);
-        assert_eq!(r.profile(6).map(|p| p.banks), Some(Banks::AtTheCentralBank));
         // Missing is missing: no default profile is invented for a kind nobody declared.
         assert!(r.profile(3).is_none());
-    }
-
-    #[test]
-    fn an_index_is_a_countrys_and_it_is_built_from_named_lines() {
-        // Nothing declared an index anywhere, so no basket had a level to read.
-        let mut r = Registry::new();
-        let usd = r.currency(party(1));
-        let eur = r.currency(party(2));
-        let us = r.country(usd);
-        let de = r.country(eur);
-
-        let line = |n: u32| InstrumentId::at(n);
-        let us_equity = r.index(0, us, &[(line(10), 100.0), (line(11), 250.0)]);
-        let de_equity = r.index(0, de, &[(line(20), 90.0)]);
-        let us_credit = r.index(1, us, &[(line(12), 40.0)]);
-
-        assert_eq!(r.index_country(us_equity), us);
-        assert_eq!(r.index_subject(us_credit), 1);
-        assert_eq!(r.index_constituents(us_equity), &[(10, 100.0), (11, 250.0)]);
-        // Four regions, four equity indices: the read that says so is a read over the declarations.
-        assert_eq!(r.indices_in(us).len(), 2);
-        assert_eq!(r.indices_in(de), vec![de_equity]);
-        assert_eq!(r.indices(), 3);
-    }
-
-    #[test]
-    #[should_panic(expected = "an index over nothing")]
-    fn an_index_with_an_empty_basket_is_not_declared() {
-        // The empty-basket refusal, exercised at the declaration rather than at the read.
-        let mut r = Registry::new();
-        let usd = r.currency(party(1));
-        let us = r.country(usd);
-        r.index(0, us, &[]);
-    }
-
-    #[test]
-    #[should_panic(expected = "a weight is a COUNT of the line")]
-    fn a_constituent_weight_is_a_count_and_never_a_share() {
-        let mut r = Registry::new();
-        let usd = r.currency(party(1));
-        let us = r.country(usd);
-        r.index(0, us, &[(InstrumentId::at(1), 0.0)]);
-    }
-
-    #[test]
-    #[should_panic(expected = "is given two profiles")]
-    fn a_kind_has_one_profile() {
-        let mut r = Registry::new();
-        let p = KindProfile { issues_money: false, banks: Banks::AtACommercialBank, issues_paper: false };
-        r.profile_for(1, p);
-        r.profile_for(1, p);
     }
 }

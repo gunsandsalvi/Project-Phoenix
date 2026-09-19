@@ -9,7 +9,7 @@ use phoenix_kernel::instruments::Class;
 use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
 use phoenix_kernel::protocols::{Protocol, Venue};
-use phoenix_kernel::registry::{Banks, KindProfile};
+use phoenix_kernel::registry::{Banks, Footprint, KindProfile};
 use phoenix_kernel::mechanisms::capital_programme::Plant;
 use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
 use phoenix_kernel::registry::tracks;
@@ -69,8 +69,8 @@ fn main() {
     assert_eq!(home, RegionId::at(0), "this world's first region is row 0, as the central bank's is");
     assert_eq!(w.registry.currency_of(home), usd, "Seed B3: the region determines its money");
     // Two units, because one grid for everything is 21.37's defect.
-    let _fine = w.registry.unit(1_000_000.0);
-    let _whole = w.registry.unit(1.0);
+    let _fine = w.registry.unit(std::num::NonZeroU32::new(1_000_000).unwrap());
+    let _whole = w.registry.unit(std::num::NonZeroU32::new(1).unwrap());
     for kind in kinds::ALL {
         let p = match kind {
             // And whether a kind funds a shortfall by BRINGING PAPER.
@@ -150,7 +150,9 @@ fn main() {
 
     // ── Indices: a country's, built from named lines, with a COUNT of each ───────────── One equity
     // index per country, and this world has one country.
-    let in_it: Vec<(InstrumentId, f64)> = lines.iter().take(8).map(|l| (*l, 100.0)).collect();
+    let hundred = std::num::NonZeroU32::new(100).unwrap();
+    let in_it: Vec<(InstrumentId, std::num::NonZeroU32)> =
+        lines.iter().take(8).map(|l| (*l, hundred)).collect();
     let equity_index = w.registry.index(tracks::EQUITY, us, &in_it);
     assert_eq!(w.registry.indices_in(us), vec![equity_index]);
 
@@ -244,12 +246,14 @@ fn main() {
     for (n, plant) in plants.iter().enumerate() {
         // Arbitrary like everything else in this world: a range of footprints, so a place
         // fills at a rate that depends on what was built there rather than on how many things.
-        w.registry.stands_on(*plant, 0.4 + draw.spread(1.6) * (1 + n % 3) as f64);
+        let ground = 0.4 + draw.spread(1.6) * (1 + n % 3) as f64;
+        w.registry.stands_on(*plant, Footprint::new(ground).expect("a plant stands on ground"));
     }
     // RESIDENTIAL and COMMERCIAL: goods lines that are buildings rather than things.
     let buildings: Vec<InstrumentId> = goods.iter().rev().take(3).copied().collect();
     for (n, b) in buildings.iter().enumerate() {
-        w.registry.stands_on(*b, 0.02 + 0.03 * n as f64);
+        let ground = 0.02 + 0.03 * n as f64;
+        w.registry.stands_on(*b, Footprint::new(ground).expect("a dwelling stands on ground"));
     }
 
     let makes: Vec<Makes> = goods
