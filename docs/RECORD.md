@@ -21305,3 +21305,86 @@ and B2 will not be until 0m's family reads it.
 
 **751 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
 periods.**
+
+## Item 0m — Seven families are not built, and one of the three that are cannot fail: closed
+
+**What.** `Family::ALL` declares ten families. The repository contained **four** contributions and
+one of them was a tautology. The machinery around them was already right — an unbuilt family reports
+unbuilt and is never green, which is Audit E2 and 22e's own achievement — so what was wrong was what
+had been claimed on top of it. **Five families are built now, five say what they wait on, and none
+of the five can pass by reading itself.**
+
+**The check that could not fail** (0m.1). `LotsAgainstQuantity` summed a row's lots and compared the
+total with `register.quantity(row)` — and for any row that is not `total_only`, `quantity()` IS
+`self.lots[at..at+len].iter().map(|l| l.qty).sum()`. The same lots, the same slice, the same order,
+the same f64 addition. The difference was exactly `0.0`; the branch was unreachable. Audit A1.a names
+it: *a read of one thing against itself, which always passes.*
+
+It was a real check once. The quantity used to be a maintained total beside the lots, this family
+compared the two, and it caught a genuine drift — `27.143341836734685` against `27.143341836734628`.
+22e2 correctly deleted the total and left the family pointed at a `quantity()` that re-derives from
+the lots, **so the deletion did not name the read that replaced it** (Law 19). It does now:
+`quantity()` itself, one number where there were two. `register.rs`'s `lots_against_quantity` went
+with it — a byte-for-byte second copy (Law 4) whose only callers were its own test and a benchmark,
+so the bench was timing a check the world never ran.
+
+**Ownership, for real** (0m.2). `HoldersAgainstIssued` walks the holdings on the shared pass and
+compares each line's sum with `Instruments::issued_of`, which 0l made exist. Two independent things.
+B2.a decides the message — *a claim vanished* below, *a claim was invented* above — and B2.b the
+tolerance, which is the dust of its own terms and never a fraction of the issue.
+
+**It reports 16,750 violations a period, and the number is the finding.** Every line this world
+opened with, and **not one** of the lines brought during the run: the count sits at exactly 16,750
+while the census grows past 18,800. A line brought by `Brings` settles a `Leg::Create` and balances;
+a line placed by `world_runs` with a direct `register.credit` does not. That is 22g.1 measured
+rather than argued, and a family that went green on this world would be measuring nothing.
+
+**Money is conserved** (0m.3). The one Money contribution checked that a money account carries no
+lots. Nothing checked B1 — *the sum over all accounts changes only by an act of a money issuer* —
+and 0k.1 is why that matters. `MoneyIsConserved` reads the accounts per currency against last
+period, and the wire over its own `Mint` legs. A transfer's legs sum to zero over the currency,
+interbank routing included, so anything left over is money from somewhere other than an issuer.
+C4.c's issuance exception is the thing being measured rather than a hole in the check, because the
+mint legs are exactly what the other side counts.
+
+**Flows** (0m.4). `PlantMoves` was the template and `FlowsAreComplete` is it over every line. **It
+does not cover money, and the reason is Audit C3**: a money leg does not state where its units land
+— where the payee banks elsewhere the routing decides three holdings, and it lives in settlement and
+nowhere else — so a family that re-derived it would be reading settlement's answer instead of
+deriving its own.
+
+**Names** (0m.5). Every holding's holder is a party in this world, its line was issued, and that
+line's issuer is a party in this world. **Existing and being alive are different questions and only
+the first is B6's**: a dead party's estate holds and is held from, which is XI-8 working — the same
+reading that overturned 0k.4.
+
+Both leg-reading families count only instructions that SETTLED. A refused instruction moved nothing;
+its legs are on the wire because the wire is the history of what was tried (Money D1.a).
+
+**And the five that are not built say what they wait on, in the report** (0m.6). `Family::waits_on`
+fills the contributor slot, which for an unbuilt family said "nobody" and told a reader nothing.
+`world:runs` prints *prices not-built (waits on 0n — nothing is marked)*, *accounts not-built (waits
+on 0n.5 — equity is the residual and nothing else)*, and three more. Audit E1 is why these are
+absences and not violations: *it cannot find an absence… there is nothing to be inconsistent with.*
+
+**The law bit, which is what it is for.** `phoenix-check` refused the first draft of `Flows` over an
+`unwrap_or(0.0)` — Appendix A, missing is missing — and the fix is the named read `PlantMoves`
+already carries: *these two are not missing, they are NOTHING, which is an answer.*
+
+**The exit was wrong by one and is corrected with its reason.** It said *six families built, four
+naming what they wait on*; there are ten, five are built and five are not, and 0m.6's own text
+already named five while its title said four.
+
+**Finding positioned at 23.3a.** A plant holding that moves with no leg behind it now lights **Flows
+and Units**, and Audit B8 says that is itself a measurement. Neither family is mis-filed: A6.b is
+per firm and Part XII gives Units *the same identity for plant*, so the spec hands one key to two
+families. What should separate them is that Units is per good and per LOCATION while Flows is per
+holding — and `PlantMoves` uses the holding key, so the per-location identity is what is actually
+unbuilt while Units reads green. Part XII is where B8 says independence is a measurement, so that is
+where it goes.
+
+**Six clauses met**: Audit B1, B2, B6, Register B2, Bond N8.a — and Audit B7 PARTIAL, saying plainly
+that per-account money flows are not covered and why.
+
+**756 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
+periods, worst 1,467 ms.**

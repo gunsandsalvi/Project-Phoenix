@@ -38,12 +38,12 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
 | Money | 17 | 5 | 14 | 0 | 36 |
-| Register | 15 | 4 | 7 | 0 | 26 |
+| Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
-| Audit | 11 | 2 | 10 | 0 | 23 |
+| Audit | 14 | 3 | 6 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
-| Bond | 6 | 5 | 5 | 0 | 16 |
+| Bond | 7 | 4 | 5 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
@@ -122,7 +122,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 | 0j | Nothing checked the evidence — **done** (section removed; see `docs/RECORD.md`) | four registers were measuring nothing: a citation nothing opened, a census that was zero by construction, a PARTIAL that promised nobody, and eight FORBIDs whose guard was deleted. Findings positioned at 0r.4 and 0r.5 |
 | 0k | Money is invented, converted and misdirected — **done** (section removed; see `docs/RECORD.md`) | the door that creates money had no lock, a leg carried two currencies, a cross-border payment converted at par, and a coupon reached one holder. 0k.4 was WRONG and is recorded as wrong. Two more stopped the build and were fixed where they are. Findings positioned at 0n.4a, 0q.4 and 0r.6 |
 | 0l | An instrument has no issued amount — **done** (section removed; see `docs/RECORD.md`) | B2 was not unchecked but UNWRITABLE: one number cannot be summed against itself. `Instruments` carries `issued` now, moved by named events and written only by settlement. Findings positioned at 22g.1 and 0n.6 |
-| 0m | **Seven families are not built, and one of the three that are cannot fail** | after 0l, and for 22e's own stated reason: everything built after it should be audited as it is built. Part XII: these are gates, not experiments |
+| 0m | Seven families are not built, and one of the three that are cannot fail — **done** (section removed; see `docs/RECORD.md`) | the tautology is gone and five families are built: Money, Ownership, Flows, Names, and the module's Units. The five that are not each name what they wait on, in the report. Ownership reports 16,750 a period, which is 22g.1 measured. Finding positioned at 23.3a |
 | 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
@@ -191,102 +191,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-## 0m. Seven families are not built, and one of the three that are cannot fail
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §4 in full — all of A, B,
-> C, D and E — and Part XII's *The invariant families*.
-> The source: `audit.rs`, `capital_programme.rs` `PlantMoves` (the template), `assembly.rs`
-> `World::step`, `register.rs`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**INSERTED after 0l.** `Family::ALL` declares ten. The whole repository contains **four**
-`Contribution` implementations, and `Audit::over` fills **Prices, Cross-Market, Accounts, Names,
-Flows, Zero-Sum and Liveness** with `NotBuilt` — which `npm run world:runs` prints every period of
-every run. The machinery is right: an unbuilt family reports unbuilt and is never green, which is
-Audit E2 honoured and 22e's own achievement. What is wrong is what was claimed on top of it.
-
-22e is the precedent for the position: *everything built after it should be audited as it is built.*
-Part XII is explicit that these are **gates, not experiments** — Law 11 forbids measuring mid-build
-and does not forbid the checks that stop the build from lying.
-
-- [x] 0m.1 **Delete `LotsAgainstQuantity`; it cannot fail.** `audit.rs:211` sums a row's lots into
-  `summed`, reads `register.quantity(row)` into `held`, and reports a violation when they differ.
-  `register.rs:126` — `quantity()` for any row that is not `total_only` **is**
-  `self.lots[at..at+len].iter().map(|l| l.qty).sum()`. The same lots, the same slice, the same order,
-  the same f64 addition: `summed - held` is exactly `0.0` and the branch is unreachable. This is Audit
-  A1.a's named defect — "a read of one thing against itself, which always passes".
-  **It was a real check and 22e2 made it a tautology.** The register's own comment records it: the
-  quantity used to be a maintained total beside the lots, this family compared the two and found a
-  genuine drift (`27.143341836734685` against `27.143341836734628`), and the fix correctly deleted
-  the total — but left the family pointed at a `quantity()` that now re-derives from the lots. The
-  deletion did not name the read that replaced it (Law 19). Its docstring is now false: "It reads the
-  SOURCE — the lots — and never the total it is checking." There is no total.
-  Delete `register.rs:388 lots_against_quantity` with it: a byte-for-byte second copy of the same
-  loop (Law 4), whose comment still describes the deleted total, and whose only callers are its own
-  test and `bin/register_at_scale.rs` — so the benchmark asserts against a check the world never runs.
-  **Both gone, and the read that replaces them is `quantity()` itself** (Law 19): there is one
-  number where there were two, so the drift the family once caught cannot happen.
-- [x] 0m.2 **Ownership, for real: holders summed against issued** (Register B2, Bond N8.a, Corporate
-  Credit E2, Equity C1.a, Insurers E4 — one identity, five clauses, all of them marked MET before the
-  verification pass). `HoldersAgainstIssued` walks the holdings on the shared pass and compares each
-  line's sum with `Instruments::issued_of`, with the dust of its own terms and magnitudes (Law 7,
-  B2.b: never a fraction of the issue). B2.a decides the message — *a claim vanished* below, *a
-  claim was invented* above.
-  **The audit could not ask the question before**, so `Sources` and `Visit` carry `instruments` and
-  `parties` now: the issued amount is a fact about an instrument and whether a name resolves is a
-  fact about a party, and a family handed only the register can ask neither. `Audit::run` takes the
-  `Sources` struct rather than three loose arguments, which is the shape `Settling` already has.
-  **It reports 16,750 violations a period — every line the world opened with, and not one of the
-  lines brought during the run.** The count stays at exactly 16,750 while the census grows past
-  18,800 lines, which is the proof that the wire path is right and the seeding is not: a line
-  brought by `Brings` settles a `Leg::Create` and balances; a line placed by `world_runs` directly
-  does not (22g.1). A family that went green on this world would be measuring nothing.
-- [x] 0m.3 **Money is conserved** (Audit B1). The one Money contribution, `ATotalCarriesNoLots`,
-  checked that a money account carries no lots. Nothing checked that the sum over all accounts
-  changes only by an act of a money issuer, and 0k.1 is why that matters.
-  `MoneyIsConserved` reads two independent things: **the accounts**, walked per currency, against
-  what they held last period; and **the wire**, over its own `Leg::Mint` legs. A transfer's legs sum
-  to zero over the currency — including the interbank case, where the payer's bank's deposit is
-  extinguished, the payee's bank's is created and reserves move between them — so anything left over
-  is money that came from somewhere other than an issuer, which is Money A1.d. C4.c's issuance
-  exception is the thing being measured rather than a hole in the check, because the mint legs are
-  exactly what the other side counts.
-  **It counts only instructions that SETTLED.** A refused instruction moved nothing and its legs are
-  on the wire because the wire is the history of what was tried (Money D1.a).
-- [x] 0m.4 **Flows** (Audit B7, Money D3, Register F3): instructions in minus out equals the change in
-  holdings, per asset kind. `capital_programme.rs PlantMoves` was the template and
-  `FlowsAreComplete` is it over every line: the register's own walk against the legs that said why
-  anything moved.
-  **It does not cover money, and the reason is Audit C3.** A money leg does not state where its
-  units land — where the payee banks elsewhere the routing decides three holdings, and it lives in
-  settlement and nowhere else. A family that re-derived it would be reading settlement's answer
-  instead of deriving its own. Money's conservation is 0m.3's, per currency, where the routing nets
-  out and the question can be asked from outside.
-- [x] 0m.5 **Names** (Audit B6): every party referenced exists; every issuer of a held instrument
-  exists or has a successor. `NamesResolve` asks three things of every holding — the holder is a
-  party in this world, the line was issued, and its issuer is a party in this world.
-  **Existing and being alive are different questions, and only the first is B6's.** A dead party's
-  estate holds and is held from, which is XI-8 working rather than a name that failed to resolve —
-  the same reading that overturned 0k.4.
-- [x] 0m.6 **The five that stay `NotBuilt` each name what they wait on**, and the name is IN THE
-  REPORT rather than only here: `Family::waits_on` fills the contributor slot, which for an unbuilt
-  family said "nobody" and told a reader nothing. `npm run world:runs` prints
-  *prices not-built (waits on 0n — nothing is marked)* and four more like it.
-  **Audit E1 is why these are absences and not violations**: *it cannot find an absence. No
-  invariant fires because credit has no price or because a currency market does not exist; there is
-  nothing to be inconsistent with.*
-**Exit.** Five families built, five naming what they wait on, and none of the five able to pass by
-reading itself.
-
-*The exit said "six built, four naming what they wait on" and both halves are corrected: there are
-ten families, five of them are built (Money, Ownership, Flows, Names and the module's Units) and
-five are not (Prices, Cross-Market, Accounts, Zero-Sum, Liveness). 0m.6's own text already named
-five while its title said four.*
 
 ## 0n. Value is a function, and the balance sheets must move
 
