@@ -136,8 +136,11 @@ revaluation`), a `Mechanism` that reads the stores and PROPOSES, `Participant`s 
   `systems.rs` — so changing CDS today means three files and the middle one is shared with
   thirty-nine others. `mechanisms/goods.rs` already holds its own impl and proves the shape works.
   The justification `running.rs` carries — *a module may never import another module* — was
-  measured against its own contents and **holds for 7 of its 46**: 17 name no module at all and 22
+  measured against its own contents and **holds for 7 of its 46**: 18 name no module at all and 21
   name only their OWN, which is not a cross-module import but the impl being in the wrong file.
+  A third breakage an import check cannot see: **one impl serving two systems** (`Servicing` runs
+  `lending` and `irs`, `Funding` runs `short_term_debt` and `corporate_credit`, `Owed` runs `money`
+  and `currency`) — change one and you change the other.
   `phoenix-check` counts them and the count **must fall and must never rise** (54 today, item 0m2).
   This is also why 22 modules are imported by nothing (0r): `running.rs` reimplements what they
   export, so the economics is written, tested and never called.

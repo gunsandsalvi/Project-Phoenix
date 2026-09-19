@@ -18,11 +18,11 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 1166 clauses this world does not meet** — 1040 MISSING, 126 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.6% are met or out of scope.
-**The items broken out of that so far: 0 of 14 closed** (5 of 91 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 14 closed** (5 of 92 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0m2 — The module is not the system — `running.rs` is | 6 | 1 | in progress |
+| 0m2 — The module is not the system — `running.rs` is | 7 | 1 | in progress |
 | 0m3 — A hundred and eighty tests build a world, and a world is not where a test may run | 7 | 1 | in progress |
 | 0n — Value is a function, and the balance sheets must move | 8 | 3 | in progress |
 | 0p — Every reservation is the last print times a constant | 6 | 0 | open |

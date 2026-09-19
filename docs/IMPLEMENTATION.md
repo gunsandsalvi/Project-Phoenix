@@ -223,14 +223,26 @@ file, and that file is shared with thirty-nine other systems.**
 does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
 
 **`running.rs`'s stated reason for existing was measured against its own contents, and it holds for
-7 of 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for one
-reason: it names every module, and a module may never import another module (Law 15)."* Per impl:
+7 of its 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for
+one reason: it names every module, and a module may never import another module (Law 15)."* Per
+impl:
 
 | what the impl names | how many | what it means |
 |---|---|---|
-| no module at all | 17 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, … Nothing stops any of them moving today |
-| **only its own module** | 22 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
-| two or more | 7 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes`, `CostOfCapital`, `Building`, `Funding`. **These are the only real ones**, and each is one design question: which system owns the fact, or does the kernel |
+| no module at all | 18 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, `Reads`, `Owed`, `Observing`, `Reporting`, `Floating`, `Flotation`, `ForcedSelling`, `Builder`, `SecondOpinion`, `Securitising`. Nothing stops any of them moving today |
+| **only its OWN module** | 21 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
+| exactly one OTHER module | 2 | `Funding`→`treasury` (it is wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
+| two or more | 5 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes` (recipe, capital_programme), `CostOfCapital` (short_term_debt, cost_of_capital) |
+
+**39 of 46 move with nothing to decide. Seven are design questions** — the last two rows — and each
+asks one thing: *which system owns this fact, or does the kernel?*
+
+**And the rule is broken a third way, which is not an import at all: one impl serving two systems.**
+`Servicing` runs both `lending` and `irs`; `Funding` runs both `short_term_debt` and
+`corporate_credit`; `Owed` runs both `money` and `currency`. You cannot change how IRS works without
+changing lending — which is the owner's sentence failing in the other direction, and it is why 0r
+records that §18 has no fixed leg, no floating leg, no fixing and no netting: it is not implemented,
+it is *borrowing the pay-what-fell-due mechanism*. A shared impl is split at the move, not after.
 
 There is no architectural blocker. Modules already import `crate::{ids, calendar, prices, register,
 ledger, stores, module, journal, instruments, audit, parties, params, num}` — the kernel's doors —
@@ -255,18 +267,24 @@ step that did more than move.
   `src/bin/**` (which builds worlds to time them) and `module.rs` (which DEFINES the traits and
   implements neither). A test double implementing one is 0m3's, not this item's — each ratchet
   counts one thing or neither number means anything.
-- [ ] 0m2.1 **The seventeen that name no module.** The mechanical half: each impl moves into its
+- [ ] 0m2.1 **The eighteen that name no module.** The mechanical half: each impl moves into its
   system's `mechanisms/<name>.rs`, `systems.rs` imports it from there, `running.rs` shrinks. Where
   the system has no module file yet the file is created holding only its impl. Group them into
   commits of roughly five, each gated by `world:runs` printing an unchanged census.
-- [ ] 0m2.2 **The twenty-two that name only their own module.** The same move, and each one DELETES
+- [ ] 0m2.2 **The twenty-one that name only their own module.** The same move, and each one DELETES
   an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
   `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
   functions have a caller in their own file.
-- [ ] 0m2.3 **The seven that name two or more, one at a time.** Each is a design question, not a
-  move: *which system owns this fact?* `Calling` naming recipe, capital_programme, goods and estate
-  says either that private equity is reading four systems' internals (and the fact belongs in a
-  kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl, in the record.
+- [ ] 0m2.3 **The seven that read somebody else's module, one at a time.** Each is a design
+  question, not a move: *which system owns this fact?* `Calling` naming recipe, capital_programme,
+  goods and estate says either that private equity is reading four systems' internals (and the fact
+  belongs in a kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl,
+  in the record.
+- [ ] 0m2.3a **The three impls that serve two systems each** — `Servicing` (`lending`, `irs`),
+  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`). Split at the
+  move: a shared impl means changing one system changes the other, which is the rule broken in the
+  direction an import check cannot see. What §18 then needs — a fixed leg, a floating leg, a fixing,
+  netting — is 0r's, and this step only stops `irs` being a copy of `lending`'s schedule walk.
 - [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
   nothing else — one line per system, which is contact point (2).
 - [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):
