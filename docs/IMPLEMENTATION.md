@@ -270,10 +270,10 @@ audit, one register further out.
   a mechanism module citing nothing and a citation naming no clause, which is more than the script
   it replaced did. `npm run check`'s own description now lists its six parts in the order
   `package.json` runs them.
-- [ ] 0j.5a **Eleven more paths in `CLAUDE.md` are the deleted TypeScript engine, and two of them
-  are a RULE'S SCOPE.** *Found by 0j.5's own reading, and INSERTED here (Law 10) rather than
+- [x] 0j.5a **Eleven more paths in `CLAUDE.md` were the deleted TypeScript engine, and two of them
+  were a RULE'S SCOPE.** *Found by 0j.5's own reading, and INSERTED here (Law 10) rather than
   appended, because it is the rest of the same read: the rules file describing a repository that is
-  not this one.* Resolving every backticked path in the file leaves eleven that are gone —
+  not this one.* Resolving every backticked path in the file left eleven that were gone —
   `packages/engine`, `packages/app`, `packages/engine/test/rig.ts`, `src/mechanisms/<system>/`,
   `src/seeds/<name>.ts`, `core/`, `core/num.ts`, `registry/`, `world/world.ts`, `tools/eslint-rules`
   — beside a toolchain line naming Vitest, fast-check, ESLint and Vite, none of which is installed.
@@ -287,6 +287,13 @@ audit, one register further out.
   was talking about somewhere else. `assertNever` is the same shape (the Rust form is
   `unreachable!` on a matched enum). **Not folded into 0j.5's commit**: 0j.5 is two script names and
   this is a re-read of a section, and one bounded change per item is Law 14.
+  **Each is now a name that resolves, and the two rules name the scope that is actually enforced.**
+  The exemptions are `src/bin/**`, `#[cfg(test)]` blocks and `ids`, `params`, `calendar` — and the
+  rules file now says that `tools/phoenix-check`'s header is the WRITER of that list rather than
+  restating it, because a second copy of an exemption set is how this one went stale (Law 4). What
+  is left unresolved is deliberate: `BUGS.md`, `SWEEP.md`, `VERIFY.md` and `AUDIT.md` are named as
+  the history of the file that replaced them, and a `src/…` under the kernel section is anchored by
+  one line saying where `src` is.
 - [x] 0j.6 **`tools/check-forbids.ts` is gone and eight rows still cited it as what holds them.**
   Corporate Credit D8, CDS B5, Prime Brokerage C3.b, Private Equity E3, Reporting C6, E2, F2.a and
   Observer A4 each said, in their own words, that the absence holds because a static check refuses

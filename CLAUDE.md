@@ -84,7 +84,7 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
   unbuilt family reports "not built", never green.
 - **Registry + parameter register**: every behaviour-shaping number declared with kind, unit, owner;
   placeholders name their mechanism; engine reads numbers only via `params`.
-- **Ontology register** (`packages/kernel-rs/src/nouns.rs`, declared in `assembly.rs`): every store
+- **Ontology register** (`packages/kernel-rs/src/nouns.rs`, declared in `src/assembly.rs`): every store
   declared as `noun | working | physics`, and a NOUN names the plan item that gives it a kernel home.
   An undeclared store throws at the read. It is to categories what `params` is to numbers, and its
   count of homeless nouns is the honest measure of how much ontology is missing. **Three homeless
@@ -109,15 +109,18 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
 
 ## Kernel and modules (docs/ARCHITECTURE.md 4.9b, docs/PLAN.md)
 
-- The **kernel** (`core calendar registry parties register ledger prices clearing journal audit
-world`) owns every store and the period loop. It changes only by an inserted worklist item.
-- A **module** (`src/mechanisms/<system>/`, `src/seeds/<name>.ts`) is one spec system, instrument
-  family or seed: a `SystemModule` declaring kinds+profiles, units, params, phases (anchored to
-  `corporateActions | markets | revaluation`), participants (per party kind, evaluated with that
-  party's `ParticipantView`), audit contributions, and a seed contribution.
-- A module reaches the kernel **only** through `ParticipantView`, `MechanismContext`, `SeedContext`.
-  It never imports another module or `world/world.ts` (lint). It never writes the register, a print
-  or a weight: settlement, markets and the cell events are the one writer of each.
+*Every `src/…` below is under `packages/kernel-rs/`.*
+
+- The **kernel** (`calendar registry parties register instruments ledger prices clearing journal
+audit stores world`, assembled in `src/assembly.rs`) owns every store and the period loop. It
+  changes only by an inserted worklist item.
+- A **module** (`src/mechanisms/<system>.rs`) is one spec system or instrument family, wired in
+  `src/systems.rs` as a `System`: a name, phases (anchored to `corporateActions | markets |
+revaluation`), a `Mechanism` that reads the stores and PROPOSES, `Participant`s (per party kind,
+  evaluated with that party's `ParticipantView`), and audit contributions.
+- A module reaches the kernel **only** through `ParticipantView` and `MechanismContext`. It never
+  imports another module (`phoenix-check`, Law 15) or `src/world.rs`. It never writes the register, a
+  print or a weight: settlement, markets and the cell events are the one writer of each.
 - Adding a system = one module + one worklist item. Replacing a system = replacing its module.
 - Kinds are registered at assembly; the kernel asks a kind's profile, never branches on its id.
 
@@ -129,9 +132,11 @@ world`) owns every store and the period loop. It changes only by an inserted wor
 - **Invariant violations are audit findings**: reported with owner and size; never thrown, never
   repaired.
 - No `?? 0`, no `|| 0`, no numeric defaults, no optional-means-unset numbers. Missing is `Missing`.
-- No `Math.min/max/clamp` outside `core/num.ts`. No numeric literals outside `core/`, `registry/`,
-  tests (except 0, 1, -1, 2). No `Date`, `Math.random`, `console` in the engine. No kind branches
-  in mechanisms. Exhaustive switches with `assertNever`.
+- No `.min(`, `.max(`, `.clamp(` anywhere in the engine. No numeric literals in a field position
+  outside `ids`, `params`, `calendar` and tests (except 0, 1, -1, 2). No clock, no `rand`, no
+  `println!` in the engine. No kind branches in mechanisms. Exhaustive matches. `src/bin/**` and
+  `#[cfg(test)]` blocks are the exemptions and `tools/phoenix-check`'s header is where they are
+  stated — it is the writer of that list, not this file.
 - Every module cites the clauses it implements with `@spec`; `npm run check:laws` must pass. It
   refuses a mechanism module that cites nothing and a citation that names no clause in the spec.
 
@@ -179,8 +184,10 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
 
 ## Working here
 
-- Toolchain: TypeScript strict, npm workspaces (`packages/engine`, `packages/app`), Vitest,
-  fast-check, ESLint (custom rules in `tools/eslint-rules`), Vite, Capacitor for Android.
+- Toolchain: **the engine is Rust** (`packages/kernel-rs`, one crate, tests inline as
+  `#[cfg(test)] mod tests`). The laws are a check, `tools/phoenix-check`, and it has its own tests.
+  What is left in TypeScript is `tools/`, which reads the documents: strict `tsc`, node's own test
+  runner through `tsx`. The app and the APK are item 24 and are not built.
 - Run `npm run check` at the END OF A MODULE, not mid-item. It is `check:laws` (the static laws and
   the `@spec` citations) + `check:tests` (the Rust suite) + `check:types` + `check:tools` (the doc
   tools) + `check:existence` (COVERAGE's marks and the paths they cite) + `plan:check`. All green or
@@ -192,9 +199,10 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   passed for months while the assembled world stopped in period 2, twenty-one times over; this is
   the check that was missing, and it prints the census each run rather than asserting a number.
 - **A test never names a party.** This world's banks, firms, listings and funds are DRAWN (Seed
-  B1.a): `firm.4` is not "the big farm", it is whatever the draw made it. A test asks the draw for
-  a mill, a dealer, a listed line (`packages/engine/test/rig.ts`), and builds a SCALE MODEL of the
-  world rather than the world — same modules, same laws, fewer of each.
+  B1.a): `firm.4` is not "the big farm", it is whatever the draw made it. There is no rig any more —
+  a test is `#[cfg(test)] mod tests` in the file it tests and builds exactly the two or three
+  parties its case needs, which holds the rule harder: **a test that builds its own parties cannot
+  be broken by a draw.**
 - Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
   contract, the canonical period) and the item's own section in `docs/IMPLEMENTATION.md` (design, steps,
   tests, exit) before writing code. Tick the item's steps (`- [x]`) as they close;
