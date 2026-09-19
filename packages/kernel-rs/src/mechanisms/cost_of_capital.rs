@@ -3,24 +3,24 @@
 //!
 //! @spec XI-4 · Banks Lending C, D · 22 B · 46 A1 · Law 3, Law 4, Law 6, Law 19
 //!
-//! **This is the chain the whole model exists to have**, and XI-4 says it has three joints, each of
+//! This is the chain the whole model exists to have, and XI-4 says it has three joints, each of
 //! which can break it on its own. Two of them are here; the third — the lag from decision to output
 //! — belongs to the firm's own production.
 //!
-//! **Joint one: a bank's cost of funds.** A bank prices a loan from ITS OWN economics — its blended
+//! Joint one: a bank's cost of funds. A bank prices a loan from ITS OWN economics — its blended
 //! cost of funds across its own mix, the borrower's expected loss, the capital the loan consumes
-//! times the return it needs on that, and an operating cost. **A bank with no cost-of-funds term
-//! prices every loan as though it funded at the policy rate whatever its own position**, and then
+//! times the return it needs on that, and an operating cost. A bank with no cost-of-funds term
+//! prices every loan as though it funded at the policy rate whatever its own position, and then
 //! nothing about that bank's funding condition can ever reach a borrower.
 //!
-//! **One rate per liability** is the corollary and it is Law 4: a liability whose interest cost is
+//! One rate per liability is the corollary and it is Law 4: a liability whose interest cost is
 //! computed one way for a reported margin and another way for the cash that actually leaves is two
 //! prices for one thing, and the decision reads whichever it happens to reach. `Funding::blended`
 //! is the one writer of what this bank's money costs it, and there is no second formula.
 //!
-//! **Joint two: investment as a project with a return and a hurdle.** A firm invests when it
-//! expects the return to exceed its cost of capital. The cost comes from the markets — **what its
-//! debt costs AT THE MARGIN, NOW, not the average coupon on debt already outstanding** — and what
+//! Joint two: investment as a project with a return and a hurdle. A firm invests when it
+//! expects the return to exceed its cost of capital. The cost comes from the markets — what its
+//! debt costs AT THE MARGIN, NOW, not the average coupon on debt already outstanding — and what
 //! its equity costs. The hurdle and the horizon are the management's own.
 //!
 //! *Investment as a rate on revenue, however many multipliers are attached, is this joint deleted.*
@@ -37,11 +37,11 @@ pub struct Funding {
 }
 
 impl Funding {
-    /// **The one writer of what this bank's money costs it.** Blended across its OWN mix — not the
+    /// The one writer of what this bank's money costs it. Blended across its OWN mix — not the
     /// policy rate, and not an average of the market's.
     ///
     /// Missing where it funds with nothing: a bank with no liabilities has no cost of funds, and
-    /// answering zero would say it funds for free (Appendix A).
+    /// answering zero would say it funds for free.
     pub fn blended(&self) -> Option<f64> {
         let size = self.deposits.1 + self.wholesale.1 + self.capital.1;
         if size <= 0.0 {
@@ -79,7 +79,7 @@ impl Priced {
 /// price; the cost comes from the markets; the hurdle and the horizon are the management's own.
 #[derive(Clone, Copy, Debug)]
 pub struct Project {
-    /// What it expects to get, per period, from its own outlook (§46 A1) — never a model forecast.
+    /// What it expects to get, per period, from its own outlook — never a model forecast.
     pub returns_per_period: f64,
     pub costs: f64,
     /// The management's own patience, in periods. It is a PREFERENCE and it is theirs.
@@ -88,9 +88,9 @@ pub struct Project {
     pub hurdle: f64,
 }
 
-/// **What the firm's capital costs it, AT THE MARGIN, NOW.** Weighted by what it would raise, at
+/// What the firm's capital costs it, AT THE MARGIN, NOW. Weighted by what it would raise, at
 /// what the markets say today — not the average coupon on debt already outstanding, which is a
-/// price struck in the past and cannot transmit anything that has happened since (Law 19).
+/// price struck in the past and cannot transmit anything that has happened since.
 pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     assert!(
         (0.0..=1.0).contains(&debt_share),
@@ -99,11 +99,11 @@ pub fn at_the_margin(debt_now: f64, equity_now: f64, debt_share: f64) -> f64 {
     debt_now * debt_share + equity_now * (1.0 - debt_share)
 }
 
-/// Joint two: **it invests when it expects the return to exceed its cost of capital.** The
+/// Joint two: it invests when it expects the return to exceed its cost of capital. The
 /// comparison IS the mechanism — a rate applied to revenue, however many multipliers are attached,
 /// is this joint deleted, and then no financial price can reach a real decision.
 ///
-/// Law 6: nothing is clamped. A project that does not clear the hurdle is not done smaller — it is
+/// Nothing is clamped. A project that does not clear the hurdle is not done smaller — it is
 /// not done, and `false` is the answer.
 pub fn worth_doing(p: &Project, cost_of_capital: f64) -> bool {
     if p.costs <= 0.0 {
@@ -140,7 +140,7 @@ mod tests {
         assert!(b.rate() > a.rate());
         // And the terms are named, so a reader can say WHICH moved. A single number could not.
         //
-        // Law 7: the tolerance is the DUST of this arithmetic — terms × ε × Σ|magnitudes| — and
+        // The tolerance is the DUST of this arithmetic — terms × ε × Σ|magnitudes| — and
         // never a band somebody chose. Four terms go into each rate, and comparing two of them by
         // exact equality is what asserting a float without its dust looks like.
         let moved = (b.rate() - a.rate()) - (dear - cheap);
@@ -151,14 +151,14 @@ mod tests {
     #[test]
     fn a_bank_that_funds_with_nothing_has_no_cost_of_funds_rather_than_a_free_one() {
         let empty = Funding { deposits: (0.01, 0.0), wholesale: (0.05, 0.0), capital: (0.12, 0.0) };
-        // Appendix A: answering zero would say it funds for free, and somebody would price a loan
+        // Answering zero would say it funds for free, and somebody would price a loan
         // off that.
         assert!(empty.blended().is_none());
     }
 
     #[test]
     fn the_cost_of_capital_is_what_the_markets_say_now_and_not_the_old_coupon() {
-        // XI-4, Law 19: the average coupon on debt already outstanding is a price struck in the
+        // The average coupon on debt already outstanding is a price struck in the
         // past, and it cannot transmit anything that has happened since. These are the same firm
         // before and after a repricing, and only the marginal figure moves.
         let before = at_the_margin(0.04, 0.10, 0.6);
@@ -174,14 +174,14 @@ mod tests {
         assert!(worth_doing(&p, 0.06));
         // The same project does not clear a cost of capital of 25%.
         assert!(!worth_doing(&p, 0.25));
-        // Law 6: a project that does not clear is not done SMALLER. It is not done.
+        // A project that does not clear is not done SMALLER. It is not done.
         let marginal = Project { returns_per_period: 10.5, ..p };
         assert!(!worth_doing(&marginal, 0.06));
     }
 
     #[test]
     fn the_hurdle_and_the_horizon_are_the_managements_own() {
-        // XI-4: read off its risk aversion and its patience. Two managements facing identical
+        // Read off its risk aversion and its patience. Two managements facing identical
         // markets and an identical project decide differently, which is what makes them decisions.
         let patient = Project { returns_per_period: 12.0, costs: 100.0, horizon: 20.0, hurdle: 0.01 };
         let impatient = Project { horizon: 3.0, hurdle: 0.10, ..patient };

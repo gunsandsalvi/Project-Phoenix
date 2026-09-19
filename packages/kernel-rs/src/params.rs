@@ -1,10 +1,10 @@
-//! The parameter register (XI-14): every behaviour-shaping number in this world, declared with
+//! The parameter register: every behaviour-shaping number in this world, declared with
 //! its kind, its unit and its owner, and read only through here.
 //!
-//! **Law 2: a declared number is exactly one of TECHNOLOGY, PREFERENCE, POLICY (the only
+//! A declared number is exactly one of TECHNOLOGY, PREFERENCE, POLICY (the only
 //! primitives), RESOLUTION (tested by invariance) or SHAPE (a claim about the answer, whose count
 //! must fall). A shape with a scheduled death is a PLACEHOLDER naming the mechanism it stands in
-//! for.** Everything else — ownership, prices, quantities, shares, allocations — is an OUTCOME and
+//! for. Everything else — ownership, prices, quantities, shares, allocations — is an OUTCOME and
 //! has no business here.
 //!
 //! Two of the TypeScript register's run-time guards are STRUCTURAL here, which is the point of the
@@ -14,7 +14,7 @@
 
 use std::collections::HashMap;
 
-/// Law 8: WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check. The four
+/// WHAT KIND OF NUMBER THIS IS — the half of the unit a machine can check. The four
 /// durations are kept apart on purpose: periods, days, months and years are the same quantity in
 /// four units and mixing them is exactly the defect this exists to catch.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -31,11 +31,11 @@ pub enum Dimension {
     Ratio,
     /// A rate per year.
     PerAnnum,
-    /// 13c.1: a distance over the ground, and a speed over it. A distance times a speed is not a
+    /// A distance over the ground, and a speed over it. A distance times a speed is not a
     /// distance, and the register is where that is caught.
     Km,
     KmPerDay,
-    /// 21i: **ground covered.** A structure occupies a place, and a place fills up — so how built-up
+    /// Ground covered. A structure occupies a place, and a place fills up — so how built-up
     /// somewhere is, is an AREA. It cannot be a count: adding units of dwellings to units of mills is
     /// adding numbers in different units, which is Law 8's own defect, and the footprint is what
     /// makes a warehouse and a flat comparable at all.
@@ -48,7 +48,7 @@ pub enum Dimension {
     Amount(Denomination),
 }
 
-/// Law 8: which KIND of unit a reader may name for a declared amount, so a number meant as dollars
+/// Which KIND of unit a reader may name for a declared amount, so a number meant as dollars
 /// can be measured against this world's dollars.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Denomination {
@@ -58,7 +58,7 @@ pub enum Denomination {
     Time,
 }
 
-/// Polity D5: who sets a POLICY primitive. The register prints the owner beside the value.
+/// Who sets a POLICY primitive. The register prints the owner beside the value.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Owner {
     Parliament,
@@ -68,7 +68,7 @@ pub enum Owner {
     Model,
 }
 
-/// Law 2's closed list. **`Placeholder` carries its death**: the mechanism whose absence it stands
+/// Law 2's closed list. `Placeholder` carries its death: the mechanism whose absence it stands
 /// in for and the item that builds it and deletes this number in the same change. No other variant
 /// has a field for one, so "a technology with a scheduled death" cannot be written down.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -90,7 +90,7 @@ pub struct ParamDecl {
     pub value: f64,
     /// Prose, for a reader. What a reader cannot do with it is check anything — `dimension` is for
     /// that, and the TypeScript register's one free-text unit was the one place a unit could NOT be
-    /// checked (13b.1).
+    /// checked.
     pub unit: String,
     pub dimension: Dimension,
     pub kind: Kind,
@@ -120,7 +120,7 @@ impl Params {
         Self { pieces_per_unit, ..Default::default() }
     }
 
-    /// Law 4: one fact, one writer. A number declared twice has two writers.
+    /// One fact, one writer. A number declared twice has two writers.
     pub fn declare(&mut self, d: ParamDecl) {
         assert!(
             !self.by_id.contains_key(&d.id),
@@ -130,7 +130,7 @@ impl Params {
         assert!(d.value.is_finite(), "Law 6: {} is not a number", d.id);
         assert!(!d.unit.is_empty(), "Law 8: {} is declared with no unit", d.id);
         assert!(!d.why.is_empty(), "Law 16: {} is declared with no reason", d.id);
-        // Law 8: a count of things is a whole one.
+        // A count of things is a whole one.
         if matches!(
             d.dimension,
             Dimension::Periods | Dimension::Days | Dimension::Months | Dimension::Years | Dimension::Count
@@ -159,7 +159,7 @@ impl Params {
         }
     }
 
-    /// Law 8: every read NAMES what it expects, and a read that names the wrong one says both.
+    /// Every read NAMES what it expects, and a read that names the wrong one says both.
     fn read(&self, id: &str, want: Dimension) -> f64 {
         let at = self.at(id);
         let got = self.dimension[at];
@@ -201,7 +201,7 @@ impl Params {
         self.read(id, Dimension::PricePerUnit)
     }
 
-    /// Law 8: a declared AMOUNT is a named amount of a unit the reader names, and what comes back
+    /// A declared AMOUNT is a named amount of a unit the reader names, and what comes back
     /// is the count of PIECES the state holds. That is what lets one declaration move with the
     /// world's resolution instead of being restated against it at every site.
     pub fn amount(&self, id: &str, of: Denomination) -> f64 {
@@ -225,7 +225,7 @@ impl Params {
         self.value.is_empty()
     }
 
-    /// Law 2: the SHAPES, and the placeholders among them with what they stand in for. The count is
+    /// The SHAPES, and the placeholders among them with what they stand in for. The count is
     /// the honest measure of how much of this world is a claim about the answer rather than a
     /// mechanism, and it is what must fall.
     pub fn shapes(&self) -> Vec<(&str, &Kind)> {
@@ -295,7 +295,7 @@ mod tests {
             },
         ));
         p.declare(decl("bank.cushion", 0.05, Dimension::Ratio, Kind::Preference));
-        // Law 2: the count of claims about the answer is what must fall, and it is a read.
+        // The count of claims about the answer is what must fall, and it is a read.
         assert_eq!(p.shapes().len(), 1);
         match p.kind_of("recovery.rate") {
             Kind::Placeholder { mechanism, item } => {

@@ -3,13 +3,13 @@
 //! Every piece of this has been timed on its own; this is what they cost TOGETHER, which is a
 //! different number — the stores share a cache and a period touches all of them.
 //!
-//! What a period of the full world does, from `npm run world 1`: **48,828 instructions carrying
-//! 501,044 legs**, **1,456 prints**, **178,604 events**, and an audit over **544,104 holdings**.
-//! TypeScript runs it in **42.1 s** (median of three), of which the KERNEL's own share — the
+//! What a period of the full world does, from `npm run world 1`: 48,828 instructions carrying
+//! 501,044 legs, 1,456 prints, 178,604 events, and an audit over 544,104 holdings.
+//! TypeScript runs it in 42.1 s (median of three), of which the KERNEL's own share — the
 //! collector 12.2 s, the register 9.6 s, the audit 9.8 s, the ledger 2.7 s, the prices 2.5 s and
-//! the journal — is about **37 s of a profiled 54.7 s**.
+//! the journal — is about 37 s of a profiled 54.7 s.
 //!
-//! **What this does NOT do is the modules**, which are the other ~33 s and are 0g.42's. This is the
+//! What this does NOT do is the modules, which are the other ~33 s and are 0g.42's. This is the
 //! floor the ported kernel puts under a period, not a period.
 
 use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
@@ -57,7 +57,7 @@ fn main() {
     let mut journal = Journal::new();
     let mut wire = Settlement::new(6);
 
-    // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
+    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
     // measurement — stated rather than implied. What this bench times is the wire; the interbank path
     // is timed where a world with two banks runs it (`check:opening`).
@@ -149,7 +149,7 @@ fn main() {
     let t = Instant::now();
     let mut ok = 0usize;
     for legs in &work {
-        // XI-5: the writer says which this is, and the draw decides. A parcel of legs that came out
+        // The writer says which this is, and the draw decides. A parcel of legs that came out
         // with no money in it IS a free delivery, and declaring it against payment would be the
         // forgotten payment leg the wire refuses to guess at.
         // A leg whose two ends are the same party moves nothing and so declares nothing, which is

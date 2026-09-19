@@ -1,4 +1,4 @@
-//! Prices: `(market, instrument, period)` prints with provenance (Clearing D1, Law 3).
+//! Prices: `(market, instrument, period)` prints with provenance.
 //!
 //! Every price is CLEARED from real supply meeting real demand. Nothing here writes a price from a
 //! yield, a spread, a multiple or a target, and there is no price path: a print exists because a
@@ -6,12 +6,12 @@
 //!
 //! Columnar, and the history of one line is a counted slice so `latest` is a binary search over a
 //! contiguous run rather than a walk of a boxed list. Measured in TypeScript: `latest` is
-//! **60.30 ns** over 12,783,916 calls a period.
+//! 60.30 ns over 12,783,916 calls a period.
 
 use crate::ids::{CurrencyCode, InstrumentId, MarketId};
 use std::collections::HashMap;
 
-/// Law 8, Derivative D7: WHAT THE LEVEL IS — money per unit, or a rate. There is no third tag, and
+/// WHAT THE LEVEL IS — money per unit, or a rate. There is no third tag, and
 /// reading one as the other is refused at the READ rather than silently averaged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum QuotedAs {
@@ -19,14 +19,14 @@ pub enum QuotedAs {
     Rate,
 }
 
-/// Law 3: where a print came from. A print with no book behind it is not a price.
+/// Where a print came from. A print with no book behind it is not a price.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Provenance {
     /// Real supply met real demand in this book, this period.
     Cleared,
-    /// Clearing C4: the book ran and nothing crossed, so it carries its last level and says so.
+    /// The book ran and nothing crossed, so it carries its last level and says so.
     Carried,
-    /// Seed C4: the world opened at a stated level, which is a primitive and dies at the seed.
+    /// The world opened at a stated level, which is a primitive and dies at the seed.
     Seeded,
 }
 
@@ -86,7 +86,7 @@ impl Prints {
         self.written += 1;
     }
 
-    /// Clearing D1: the last print at or before `up_to`, or none. A price that does not exist is
+    /// The last print at or before `up_to`, or none. A price that does not exist is
     /// MISSING, never zero and never the last one pretending to be this one.
     pub fn latest(&self, instrument: InstrumentId, up_to: u32) -> Option<Print> {
         let slot = *self.at.get(&instrument.0)?;
@@ -109,7 +109,7 @@ impl Prints {
         }
     }
 
-    /// Law 8, D7: read a print the way its book quotes it, and refuse where it quotes the other.
+    /// Read a print the way its book quotes it, and refuse where it quotes the other.
     pub fn money(p: &Print, what: &str) -> f64 {
         assert!(p.quoted_as == QuotedAs::Money, "Derivative D7: {what} — this book prints a RATE");
         p.price

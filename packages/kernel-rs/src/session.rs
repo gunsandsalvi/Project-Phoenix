@@ -1,11 +1,11 @@
 //! A BOOK, RUN: the participants that named it are asked, one solver clears what they posted, and
-//! the fills settle as instructions (Clearing B2, C1, C4, XI-5).
+//! the fills settle as instructions.
 //!
-//! **Trades are instructions.** A fill is not a state change — it is a pair of legs that go over
+//! Trades are instructions. A fill is not a state change — it is a pair of legs that go over
 //! the wire like everything else, so delivery-versus-payment holds for a cleared book exactly as it
 //! does for a payment, and a book whose trades could not settle prints nothing.
 //!
-//! **Who is asked is settled ONCE A CYCLE, not once a book.** `Books` asks every party of a kind
+//! Who is asked is settled ONCE A CYCLE, not once a book. `Books` asks every party of a kind
 //! which books it could be in at all and inverts the answer — the port of the kernel's `asked`
 //! index. In TypeScript the door was optional and absent meant every book of the kind, so the
 //! quadratic was the default; here `Participant::markets` is required and `everyone` is the
@@ -25,7 +25,7 @@ use crate::register::Register;
 use crate::stores::{Agreements, Schedules};
 use std::collections::HashMap;
 
-/// Clearing B2: which parties could be in which books at all, this cycle. One question per party
+/// Which parties could be in which books at all, this cycle. One question per party
 /// per declaration, inverted — never one question per party per book.
 #[derive(Default)]
 pub struct Books {
@@ -39,7 +39,7 @@ const fn slot(decl: usize, market: MarketId) -> u64 {
     ((decl as u64) << 32) | (market.0 as u64)
 }
 
-/// **What a participant may be shown**: the stores a view is built from, together.
+/// What a participant may be shown: the stores a view is built from, together.
 ///
 /// One struct because a view is built from all of them at once, and a caller made to name six is a
 /// caller that will one day name five and not notice. Every field is a READ — a participant never
@@ -51,21 +51,21 @@ pub struct Shown<'a> {
     pub prints: &'a Prints,
     pub journal: &'a Journal,
     pub params: &'a Params,
-    /// XI-10: its own relations. A mandate, an engagement, a policy is a fact about THIS party, so
-    /// a participant may read its own and no other's (Observer A4).
+    /// Its own relations. A mandate, an engagement, a policy is a fact about THIS party, so
+    /// a participant may read its own and no other's.
     pub agreements: &'a Agreements,
-    /// XI-9, 21j.1: and what falls due for it and to it, so a party deciding about money it has to
+    /// And what falls due for it and to it, so a party deciding about money it has to
     /// find can see the money it has to find.
     pub schedules: &'a Schedules,
-    /// 3 C2, 22c.2: **its OWN resting orders.** A party that could not see what it already has in
-    /// a venue would re-enter it every session and stand behind twice what it meant to (Observer A4).
+    /// 3 C2, 22c.2: its OWN resting orders. A party that could not see what it already has in
+    /// a venue would re-enter it every session and stand behind twice what it meant to.
     pub resting: &'a crate::stores::Resting,
-    /// XI-2, 22i.3: what each party has in flight, so one put in a workout can see that it is.
+    /// What each party has in flight, so one put in a workout can see that it is.
     pub processes: &'a crate::stores::Processes,
 }
 
 impl<'a> Shown<'a> {
-    /// One party's view of it, with its own account resolved from the banking lattice (22b.9a).
+    /// One party's view of it, with its own account resolved from the banking lattice.
     pub fn view(&self, who: PartyId, period: u32) -> ParticipantView<'_> {
         ParticipantView::of(
             who,
@@ -123,26 +123,26 @@ pub struct Session {
 /// The kernel's stores, handed to a session together because a book touches all of them.
 pub struct Stores<'a> {
     pub parties: &'a Parties,
-    /// Money D2: the payment system reads it to settle a payment across two banks — and since 0l.2
-    /// it WRITES the issued amount there too, because a trade's legs reach `Settling` (Register B1).
+    /// The payment system reads it to settle a payment across two banks — and since 0l.2
+    /// it WRITES the issued amount there too, because a trade's legs reach `Settling`.
     pub instruments: &'a mut Instruments,
     pub register: &'a mut Register,
     pub prints: &'a mut Prints,
     pub journal: &'a mut Journal,
     pub wire: &'a mut Settlement,
     pub params: &'a Params,
-    /// XI-10: the relations a participant may read its OWN of.
+    /// The relations a participant may read its OWN of.
     pub agreements: &'a Agreements,
-    /// XI-9, 21j.1: and what falls due, so a participant can see the money it has to find.
+    /// And what falls due, so a participant can see the money it has to find.
     pub schedules: &'a Schedules,
-    /// **3 C2, 22c.2: the standing book.** Every session opens with what was already resting, and
+    /// 3 C2, 22c.2: the standing book. Every session opens with what was already resting, and
     /// what an arriving order did not fill stays. It is written here because a match CONSUMES a
     /// resting order and the session is what matched it — the same reason settlement writes the
-    /// register (Law 4).
+    /// register.
     pub resting: &'a mut crate::stores::Resting,
-    /// XI-2, 22i.3: what is in flight, read by a forced seller.
+    /// What is in flight, read by a forced seller.
     pub processes: &'a crate::stores::Processes,
-    /// **G3.a, 22c2.2: the one calendar**, so an order's life is a DATE and never a count of periods
+    /// The one calendar, so an order's life is a DATE and never a count of periods
     /// kept beside it. The assembled world had no calendar at all — it counted periods — which is
     /// why nothing in it could expire.
     pub calendar: &'a crate::calendar::Calendar,
@@ -152,17 +152,17 @@ pub struct BookDecl {
     pub market: MarketId,
     /// What the book delivers. A book with no subject delivers nothing anybody holds (a pair).
     pub subject: InstrumentId,
-    /// **The money of this book is a CURRENCY, not one bank's deposits** (22b.9a). A book used to
-    /// name one instrument, and with one deposit line per bank (Money D2) that shut every customer
+    /// The money of this book is a CURRENCY, not one bank's deposits. A book used to
+    /// name one instrument, and with one deposit line per bank that shut every customer
     /// of every other bank out of the market entirely — three quarters of the cells in the first
     /// warm-up were in no book at all. Each side pays out of ITS OWN account, which settlement
     /// resolves from the banking lattice exactly as it resolves the payee's (`ledger::account_of`).
     pub ccy: CurrencyCode,
-    /// **3 A1, 22c.1: WHAT KIND OF PLACE THIS IS**, declared by whoever opened it — its rule, its
+    /// 3 A1, 22c.1: WHAT KIND OF PLACE THIS IS, declared by whoever opened it — its rule, its
     /// protocol, what a buyer can see of it and how long an order stands in it. There was one
     /// microstructure — a weekly uniform-price call auction — for bread, labour, loans, shares and
     /// freight alike, and a Walrasian auctioneer for bread is the one intermediary that never
-    /// existed (Law 1). The kernel dispatches on this and never on what is being traded (Law 15).
+    /// existed. The kernel dispatches on this and never on what is being traded.
     pub venue: Venue,
 }
 
@@ -177,7 +177,7 @@ pub fn run_book(
 ) -> Session {
     let mut posted: Vec<Order> = Vec::new();
     let mut asks = 0usize;
-    // **3 C2, 22c2.3: WHAT THE PARTIES PULL, before anybody is asked for a new order.** An order
+    // 3 C2, 22c2.3: WHAT THE PARTIES PULL, before anybody is asked for a new order. An order
     // rested until somebody took it away and nothing ever did, so a seller whose stock had perished
     // went on standing behind units it had not got. The party decides and the kernel applies it —
     // `cancels` refuses anybody but the owner, and a book that pulled orders on a party's behalf
@@ -234,9 +234,9 @@ pub fn run_book(
         }
     }
     let orders = posted.len();
-    // **3 C2, 22c.2: every session opens with the standing book.** Nothing rested between sessions
+    // 3 C2, 22c.2: every session opens with the standing book. Nothing rested between sessions
     // before, which is the whole of why `noDemand` (7,903) dwarfed `noOverlap` (323): the two sides
-    // were not failing to agree on a price, **they were failing to be in the room in the same week.**
+    // were not failing to agree on a price, they were failing to be in the room in the same week.
     let standing: Vec<crate::stores::RestingId> = stores.resting.at(book.market.0);
     let resting: Vec<Order> = standing
         .iter()
@@ -253,7 +253,7 @@ pub fn run_book(
     let mut settled = 0usize;
     let mut failed = 0usize;
     if let Cleared::Cleared { price, ref fills, .. } = outcome {
-        // Law 3: the book printed, because real supply met real demand at this level.
+        // The book printed, because real supply met real demand at this level.
         stores.prints.write(Print {
             instrument: book.subject,
             market: book.market,
@@ -263,7 +263,7 @@ pub fn run_book(
             quoted_as: QuotedAs::Money,
             provenance: Provenance::Cleared,
         });
-        // XI-5: each trade is an instruction — the units one way, the money the other, together.
+        // Each trade is an instruction — the units one way, the money the other, together.
         for (buyer, seller, qty, at) in pair_up(fills) {
             let legs = [
                 Leg::Asset {
@@ -276,7 +276,7 @@ pub fn run_book(
                 Leg::Money {
                     from: buyer,
                     to: seller,
-                    // 22b.9a: the buyer pays out of its own account. A buyer with no account cannot
+                    // The buyer pays out of its own account. A buyer with no account cannot
                     // be in a book at all, and `markets` is where that is decided — so this is
                     // unreachable rather than a case to handle quietly.
                     instrument: match account_of(stores.parties, stores.instruments, buyer) {
@@ -300,13 +300,13 @@ pub fn run_book(
                 },
             ) {
                 Outcome::Settled => settled += 1,
-                // C4.b: a trade that did not settle is a recorded state, and the book still
+                // A trade that did not settle is a recorded state, and the book still
                 // printed — what cleared, cleared. Nothing is unwound and nothing is invented.
                 _ => failed += 1,
             }
         }
     }
-    // **3 C2, 22c.2: what a match consumed, and what did not fill RESTS.** A resting order that was
+    // 3 C2, 22c.2: what a match consumed, and what did not fill RESTS. A resting order that was
     // partly taken is a smaller order and not a filled one, and an arriving order nobody met stays
     // in the venue until its owner pulls it or its own date expires it — which is what stops a
     // market having no memory from one week to the next.
@@ -334,12 +334,12 @@ pub fn run_book(
             }
         }
     }
-    // **3 C2, 22c.2: AND WHAT ARRIVED AND DID NOT FILL RESTS.** In a shop the ask is still on the
+    // 3 C2, 22c.2: AND WHAT ARRIVED AND DID NOT FILL RESTS. In a shop the ask is still on the
     // shelf next week; on an exchange the bid is still in the book. In a CALL it is gone, because a
     // sealed cross is an event and the event is over — which is why a treasury whose auction failed
     // must come back rather than find its bid still standing.
     if book.venue.protocol.rests() {
-        // 22c2.2: the day it stands to, taken from the calendar at the moment it is entered.
+        // The day it stands to, taken from the calendar at the moment it is entered.
         let until = book.venue.until(stores.calendar, period);
         for o in &posted {
             let filled = took
@@ -365,14 +365,14 @@ pub fn run_book(
     Session { outcome, asks, orders, settled, failed }
 }
 
-/// C3: who trades with whom. The solver says how much each side got at the level; this walks the
-/// two sides together so every piece bought has a named piece sold against it. **Nobody is left
-/// holding a fill with no counterparty** — that is the residual with no holder (Appendix B).
-/// **22c.1: the pairs carry THEIR OWN price, not the session's.** A call auction crosses everybody
+/// Who trades with whom. The solver says how much each side got at the level; this walks the
+/// two sides together so every piece bought has a named piece sold against it. Nobody is left
+/// holding a fill with no counterparty — that is the residual with no holder.
+/// The pairs carry THEIR OWN price, not the session's. A call auction crosses everybody
 /// at one level, so its fills all carry it — but a posted market and a resting book do not have one
 /// level at all: each trade happened at what that seller was standing behind. Settling every trade
 /// at the session's last print would be inventing a price for the ones that did not happen at it
-/// (Law 3), which is what this returned before there was more than one protocol.
+/// , which is what this returned before there was more than one protocol.
 fn pair_up(fills: &[Fill]) -> Vec<(PartyId, PartyId, i64, f64)> {
     let mut buys: Vec<(PartyId, i64, f64)> =
         fills.iter().filter(|f| f.side == Side::Buy).map(|f| (f.party, f.qty, f.price)).collect();
@@ -426,7 +426,7 @@ mod tests {
         Schedules::new()
     }
 
-    /// G3: the one calendar these tests run against — a seven-day period from day zero.
+    /// The one calendar these tests run against — a seven-day period from day zero.
     fn weekly() -> crate::calendar::Calendar {
         crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3)
     }
@@ -457,7 +457,7 @@ mod tests {
             SELLER_KIND
         }
         fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-            // Law 19: it names the book of what it HOLDS — the same read `orders` answers out of.
+            // It names the book of what it HOLDS — the same read `orders` answers out of.
             if view.free(self.subject) > 0.0 {
                 vec![self.market]
             } else {
@@ -502,7 +502,7 @@ mod tests {
         let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
         let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
 
-        // Money D2: the cash line is the bank's money and both sides bank there, so this trade does
+        // The cash line is the bank's money and both sides bank there, so this trade does
         // not cross two banks.
         let mut instruments = Instruments::new();
         instruments.issue(bank, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
@@ -573,7 +573,7 @@ mod tests {
         let seller = parties.add(SELLER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
         let buyer = parties.add(BUYER_KIND, crate::ids::RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
 
-        // Money D2: the cash line is the bank's money and both sides bank there, so this trade does
+        // The cash line is the bank's money and both sides bank there, so this trade does
         // not cross two banks.
         let mut instruments = Instruments::new();
         instruments.issue(bank, CurrencyCode::at(0), Class::Money, crate::ids::UnitId::at(0), None, None);
@@ -613,7 +613,7 @@ mod tests {
         let s = run_book(&book, &participants, &books, &mut stores, 1, says);
         assert!(matches!(s.outcome, Cleared::NoOverlap { .. }));
         assert_eq!(s.settled, 0);
-        // Law 3: a bracket is not a price, so the book printed NOTHING.
+        // A bracket is not a price, so the book printed NOTHING.
         assert!(prints.latest(grain, 1).is_none());
         // And nothing moved.
         assert_eq!(register.quantity(register.row(seller, grain)), 60.0);

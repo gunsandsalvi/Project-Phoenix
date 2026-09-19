@@ -3,18 +3,18 @@
 //! @spec Money A2 · Currency A2 · Currency B1 · Seed B3 · Money D2 · Law 2, Law 4, Law 8, Law 15 ·
 //! @spec ARCHITECTURE 4.10
 //!
-//! **An id that names nothing is not a name** (Law 9 read the other way). `CurrencyCode`, `RegionId`
+//! An id that names nothing is not a name (Law 9 read the other way). `CurrencyCode`, `RegionId`
 //! and `UnitId` were bare row numbers with nothing behind them: a currency named no issuer although
 //! Money A2 says money is somebody's liability, a region determined no money although Seed B3 says it
 //! does, and a unit carried no unit although Law 8 says the unit is part of the number. The ontology
-//! register named all four as nouns with no kernel home (21d.1b, item 21e); this is the home.
+//! register named all four as nouns with no kernel home; this is the home.
 //!
-//! **A country has the money; a region is a place** (13c.1, ARCHITECTURE 4.10). They were one thing
+//! A country has the money; a region is a place. They were one thing
 //! until a map needed many places per currency. So `currency_of(region)` reads THROUGH the country
-//! and a region keeps no currency of its own — one fact, one writer (Law 4) — and Seed B3 stays
+//! and a region keeps no currency of its own — one fact, one writer — and Seed B3 stays
 //! literally true, because a region still determines its money uniquely.
 //!
-//! **A profile is where behaviour that varies by kind lives** (Law 15). The integer in
+//! A profile is where behaviour that varies by kind lives. The integer in
 //! `assembly::kinds` stays as the id; what goes behind it is the answer to a question the kernel
 //! asks. The pressure this relieves is real: `World::admit` could only say *a party banks at
 //! somebody who issues money, OR at nobody at all* — a blanket escape, because the rule it wanted
@@ -47,22 +47,22 @@ impl CountryId {
     }
 }
 
-/// Indices D1, 21.116: **what an index is an index OF.** Data, like every other kind here: a country
+/// What an index is an index OF. Data, like every other kind here: a country
 /// has one of each, and adding a kind of index is a row rather than a branch.
 ///
-/// It lived at the top of `running.rs` with the other four kind columns (0m2.1). This is where the
+/// It lived at the top of `running.rs` with the other four kind columns. This is where the
 /// indices are, so this is where what they track is declared — one writer between a store and its
-/// vocabulary (Law 4).
+/// vocabulary.
 pub mod tracks {
     pub const EQUITY: u32 = 0;
     pub const CREDIT: u32 = 1;
-    /// §33 D3: consumer prices and producer prices are TWO indices, not one wearing both names —
+    /// Consumer prices and producer prices are TWO indices, not one wearing both names —
     /// they are built from different constituents and a cost shock moves them differently.
     pub const CONSUMER_PRICES: u32 = 2;
     pub const PRODUCER_PRICES: u32 = 3;
 }
 
-/// Indices D1, §22 D5: **an index, and the country whose it is.** There are four equity indices
+/// An index, and the country whose it is. There are four equity indices
 /// because there are four countries, not because somebody declared four.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct IndexId(pub u32);
@@ -78,31 +78,31 @@ impl IndexId {
     }
 }
 
-/// Money D2, Law 15: **where a party of this kind keeps its money.** The kernel asks; it never
+/// Where a party of this kind keeps its money. The kernel asks; it never
 /// branches on the kind itself.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Banks {
     /// A central bank: it issues the money everybody else settles in, so it banks nowhere.
     Nowhere,
     /// A treasury banks at its central bank, which is why *no central-bank overdraft for the
-    /// treasury* (Appendix B) is a rule about a real account.
+    /// treasury* is a rule about a real account.
     AtTheCentralBank,
     /// Everybody else holds a deposit issued by a commercial bank.
     AtACommercialBank,
 }
 
-/// Law 15: **what varies by party kind, behind a dispatch the kernel reads.** It starts at what the
+/// What varies by party kind, behind a dispatch the kernel reads. It starts at what the
 /// kernel already asks and grows as items need it — a profile invented ahead of a reader would be a
 /// store nothing reads (`WorkInProgress` again).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct KindProfile {
-    /// Money A1, D2: whether a party of this kind ISSUES the money others hold of it. A bank and a
+    /// Whether a party of this kind ISSUES the money others hold of it. A bank and a
     /// central bank do; nobody else does, and `Instruments::issue` refuses a second money per issuer.
     pub issues_money: bool,
     pub banks: Banks,
-    /// **§30 D3, XI-9, 21j.1a: whether a party of this kind funds a shortfall by BRINGING PAPER.**
+    /// Whether a party of this kind funds a shortfall by BRINGING PAPER.
     /// A treasury auctions a bill; a firm brings a bond; a household cannot and does not. That is a
-    /// fact about the kind and it belongs here rather than as a `match` inside a mechanism (Law 15) —
+    /// fact about the kind and it belongs here rather than as a `match` inside a mechanism —
     /// it is the dispatch the funding mechanism reads so that it never asks what a party IS.
     pub issues_paper: bool,
 }
@@ -110,22 +110,22 @@ pub struct KindProfile {
 /// ARCHITECTURE 4.10: all data lives here. Columnar like every kernel store, and the id IS the row.
 #[derive(Default)]
 pub struct Registry {
-    /// Money A2: the party whose liability each money is. A currency with no issuer is 5 A4's free
+    /// The party whose liability each money is. A currency with no issuer is 5 A4's free
     /// money one level up — nobody owes it.
     ccy_issuer: Vec<u32>,
     /// One currency per country.
     country_ccy: Vec<u32>,
-    /// One country per region. A region holds no currency of its own (Law 4).
+    /// One country per region. A region holds no currency of its own.
     region_country: Vec<u32>,
-    /// Law 8: how many pieces one whole of this unit is divided into. A tonne is milled finely and a
+    /// How many pieces one whole of this unit is divided into. A tonne is milled finely and a
     /// dwelling is not divided at all, which is 21.37's defect and the reason this is per unit.
     unit_pieces: Vec<f64>,
     /// By party-kind id. `Missing` where a kind has been given no profile yet, which is an answer.
     profiles: Vec<Option<KindProfile>>,
-    /// 21i: what one unit of each line STANDS ON, in square km. `NaN` is the absent mark — the line
+    /// What one unit of each line STANDS ON, in square km. `NaN` is the absent mark — the line
     /// is not a structure — because a footprint of zero would be a structure that occupies nowhere.
     line_footprint: Vec<f64>,
-    /// Indices D1, 21.116: which indices exist, whose country each is, what it is an index OF, and
+    /// Which indices exist, whose country each is, what it is an index OF, and
     /// the lines it is built from with the COUNT of each (B1: a weight is a count of the line, never
     /// a share). Nothing declared one before, so no basket in this world had a level to read.
     index_in: Vec<u32>,
@@ -142,7 +142,7 @@ impl Registry {
 
     // ── Currencies ──────────────────────────────────────────────────────────────────────────────
 
-    /// Money A2: **a money and the party whose liability it is.** There is no constructor without an
+    /// A money and the party whose liability it is. There is no constructor without an
     /// issuer, so a currency that nobody owes cannot be written.
     pub fn currency(&mut self, issuer: PartyId) -> CurrencyCode {
         assert!(issuer.some(), "Money A2: a currency is somebody's liability, and this one names nobody");
@@ -161,7 +161,7 @@ impl Registry {
 
     // ── Places ──────────────────────────────────────────────────────────────────────────────────
 
-    /// 13c.1: **a country has the money.**
+    /// A country has the money.
     pub fn country(&mut self, ccy: CurrencyCode) -> CountryId {
         assert!(
             (ccy.0 as usize) < self.ccy_issuer.len(),
@@ -172,7 +172,7 @@ impl Registry {
         CountryId(row)
     }
 
-    /// 13c.1: **a region is a place**, and it is in exactly one country.
+    /// A region is a place, and it is in exactly one country.
     pub fn region(&mut self, country: CountryId) -> RegionId {
         assert!(
             country.row() < self.country_ccy.len(),
@@ -187,15 +187,15 @@ impl Registry {
         CountryId(self.region_country[region.0 as usize])
     }
 
-    /// Seed B3, Currency B1: **the region determines its money** — read THROUGH the country, so the
-    /// fact has one writer (Law 4). A region that kept its own would be the second copy.
+    /// The region determines its money — read THROUGH the country, so the
+    /// fact has one writer. A region that kept its own would be the second copy.
     pub fn currency_of(&self, region: RegionId) -> CurrencyCode {
         CurrencyCode(self.country_ccy[self.country_of(region).row()])
     }
 
-    /// **21i: WHAT ONE UNIT OF THIS LINE STANDS ON.** A mill, an office block and a dwelling are all
+    /// WHAT ONE UNIT OF THIS LINE STANDS ON. A mill, an office block and a dwelling are all
     /// STRUCTURES — they occupy a place — and a tonne of flour is not. Which a line is, is registry
-    /// DATA rather than a class or a kind the mechanism branches on (Law 15): commercial, residential
+    /// DATA rather than a class or a kind the mechanism branches on: commercial, residential
     /// and industrial go through one mechanism because the only thing that distinguishes them here is
     /// a number in this table.
     ///
@@ -236,8 +236,8 @@ impl Registry {
 
     // ── Units ───────────────────────────────────────────────────────────────────────────────────
 
-    /// Law 8: **a unit, and what one of it is divided into.** A good counted in whole things says so
-    /// with a subdivision of one — a dwelling is not four tenths of a roof (Housing A1, 21.37) — and
+    /// A unit, and what one of it is divided into. A good counted in whole things says so
+    /// with a subdivision of one — a dwelling is not four tenths of a roof — and
     /// a good milled finely says that instead. There is no grid for everything.
     pub fn unit(&mut self, pieces_per_whole: f64) -> UnitId {
         assert!(
@@ -253,7 +253,7 @@ impl Registry {
         self.unit_pieces[unit.0 as usize]
     }
 
-    /// Law 8: **is one of these a thing nobody divides?** The question 21.37 asks, answerable at last.
+    /// Is one of these a thing nobody divides? The question 21.37 asks, answerable at last.
     pub fn indivisible(&self, unit: UnitId) -> bool {
         self.pieces_per_whole(unit) == 1.0
     }
@@ -264,7 +264,7 @@ impl Registry {
 
     // ── Kind profiles ───────────────────────────────────────────────────────────────────────────
 
-    /// Law 15: the behaviour that varies by kind, declared once at assembly.
+    /// The behaviour that varies by kind, declared once at assembly.
     pub fn profile_for(&mut self, kind: u32, p: KindProfile) {
         let at = kind as usize;
         while self.profiles.len() <= at {
@@ -283,13 +283,13 @@ impl Registry {
 
     // ── Indices ─────────────────────────────────────────────────────────────────────────────────
 
-    /// Indices D1, §22 D5, 21.116: **an index is a country's, it is ONE system, and it is built from
-    /// named lines.** The level is not here and never will be: it is computed from the constituents'
+    /// An index is a country's, it is ONE system, and it is built from
+    /// named lines. The level is not here and never will be: it is computed from the constituents'
     /// own prints when asked (`benchmarks::Index::level_at`), because a stored level read by
     /// everything while the computed one is read by nobody is the two-system defect XI-7 names
     /// (Appendix B: no stored index level).
     ///
-    /// A weight is a **count of the line** (B1), not a share — so a level is what the basket is
+    /// A weight is a count of the line, not a share — so a level is what the basket is
     /// worth and a constituent's own price moves it by what the basket holds of it.
     pub fn index(&mut self, of: u32, country: CountryId, constituents: &[(InstrumentId, f64)]) -> IndexId {
         assert!(
@@ -321,14 +321,14 @@ impl Registry {
     }
 
     /// What it is built from. The one writer of the basket: `benchmarks::Index` is BUILT from this
-    /// rather than keeping its own copy (Law 4).
+    /// rather than keeping its own copy.
     pub fn index_constituents(&self, i: IndexId) -> &[(u32, f64)] {
         let at = self.index_at[i.row()] as usize;
         let len = self.index_len[i.row()] as usize;
         &self.constituents[at..at + len]
     }
 
-    /// Indices D1: **every index of one country** — four regions, four equity indices, and the read
+    /// Every index of one country — four regions, four equity indices, and the read
     /// that says whether that is true is a read over this rather than a count somebody keeps.
     pub fn indices_in(&self, country: CountryId) -> Vec<IndexId> {
         (0..self.index_in.len() as u32)
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn a_currency_names_the_party_whose_liability_it_is() {
-        // Money A2: it was a bare row id naming nobody.
+        // It was a bare row id naming nobody.
         let mut r = Registry::new();
         let cb = party(1);
         let usd = r.currency(cb);
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn a_region_determines_its_money_by_reading_through_its_country() {
-        // Seed B3, 13c.1, Law 4: a country has the money and a region is a place, so two regions of
+        // A country has the money and a region is a place, so two regions of
         // one country share its money and neither keeps a copy of the fact.
         let mut r = Registry::new();
         let usd = r.currency(party(1));
@@ -393,7 +393,7 @@ mod tests {
 
     #[test]
     fn a_unit_says_what_one_of_it_is_divided_into() {
-        // Law 8, 21.37: a dwelling counted on a tonne's grid made a cell member hold four tenths of
+        // A dwelling counted on a tonne's grid made a cell member hold four tenths of
         // a roof, which is the occupancy it lives under and not a thing anybody holds.
         let mut r = Registry::new();
         let tonne = r.unit(1_000_000.0);
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn a_kind_answers_through_its_profile_and_a_kind_with_none_says_so() {
-        // Law 15: the integer stays the id; what goes behind it is what varies.
+        // The integer stays the id; what goes behind it is what varies.
         let mut r = Registry::new();
         r.profile_for(7, KindProfile { issues_money: true, banks: Banks::Nowhere, issues_paper: false });
         r.profile_for(6, KindProfile { issues_money: false, banks: Banks::AtTheCentralBank, issues_paper: true });
@@ -425,7 +425,7 @@ mod tests {
 
     #[test]
     fn an_index_is_a_countrys_and_it_is_built_from_named_lines() {
-        // Indices D1, 21.116: nothing declared an index anywhere, so no basket had a level to read.
+        // Nothing declared an index anywhere, so no basket had a level to read.
         let mut r = Registry::new();
         let usd = r.currency(party(1));
         let eur = r.currency(party(2));

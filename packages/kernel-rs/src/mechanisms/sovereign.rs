@@ -2,18 +2,18 @@
 //!
 //! @spec XI-9, Sovereign C3, Central Bank D3, Central Bank E2, Money B3.c, Appendix B, Law 6
 //!
-//! **The funding constraint is the whole of it.** With an automatic overdraft, causation reverses:
+//! The funding constraint is the whole of it. With an automatic overdraft, causation reverses:
 //! the treasury spends into the negative and issues to CLEAR it, so the forward funding plan has
 //! nothing to do, the cash buffer has no reason to exist, a failed auction costs nothing and
-//! carries no information, **a sovereign cannot fail** — so its paper is risk-free by construction,
+//! carries no information, a sovereign cannot fail — so its paper is risk-free by construction,
 //! nothing prices its credit, its rating has no consumer, and the whole assessment system above it
 //! is decoration. Everything priced over the sovereign curve assumes a borrower with a funding
 //! constraint; a benchmark issued by a borrower that cannot fail is not a benchmark for credit.
 //!
 //! `money::NoOverdraftForTheTreasury` is the refusal. This is the other half: the programme is
-//! sized FORWARD against redemptions and outlays, the buffer is a real holding, **and a shortfall
-//! is a real event with real handling** — pay from the buffer, cut or defer an outlay, or come back
-//! at a different size. It is never a smaller number quietly substituted (Law 6).
+//! sized FORWARD against redemptions and outlays, the buffer is a real holding, and a shortfall
+//! is a real event with real handling — pay from the buffer, cut or defer an outlay, or come back
+//! at a different size. It is never a smaller number quietly substituted.
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 
@@ -37,8 +37,8 @@ impl Programme {
     }
 }
 
-/// XI-9: what a treasury does when the money is not there. **Each of these is a real act with a
-/// consequence**, which is what an overdraft removed by making the shortfall cost nothing.
+/// What a treasury does when the money is not there. Each of these is a real act with a
+/// consequence, which is what an overdraft removed by making the shortfall cost nothing.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Shortfall {
     /// It holds enough. There is nothing to handle.
@@ -49,11 +49,11 @@ pub enum Shortfall {
     /// named counterparty, never a number quietly reduced.
     DeferAnOutlay { deferred: f64 },
     /// Come back at a different size or maturity. The auction is re-run, and a failed one has
-    /// cost something — which is what makes its result carry information (Sovereign C3).
+    /// cost something — which is what makes its result carry information.
     ComeBackToTheMarket { still_short: f64 },
 }
 
-/// Sovereign C3, XI-9: what the auction RAISED, which is what cleared and never what was asked for.
+/// What the auction RAISED, which is what cleared and never what was asked for.
 /// A market that must clear is one where the answer can be less than the question.
 #[derive(Clone, Copy, Debug)]
 pub struct Auction {
@@ -63,7 +63,7 @@ pub struct Auction {
 }
 
 impl Auction {
-    /// XI-9: **A FAILED AUCTION COSTS SOMETHING.** What is still short after it is what the
+    /// A FAILED AUCTION COSTS SOMETHING. What is still short after it is what the
     /// treasury has to handle, and handling it is the consequence that makes the result
     /// informative rather than decorative.
     pub fn still_short(&self) -> f64 {
@@ -87,7 +87,7 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     if buffer >= short_by {
         return Shortfall::FromTheBuffer { drawn: short_by };
     }
-    // Law 6: the buffer is not "as much as it can" — what it does not cover is still short, and
+    // The buffer is not "as much as it can" — what it does not cover is still short, and
     // the rest of the shortfall is handled by something else rather than clamped away.
     let after_buffer = short_by - buffer;
     if deferrable >= after_buffer {
@@ -96,7 +96,7 @@ pub fn handle(short_by: f64, buffer: f64, deferrable: f64) -> Shortfall {
     Shortfall::ComeBackToTheMarket { still_short: after_buffer - deferrable }
 }
 
-/// XI-9: **AND A SOVEREIGN CAN FAIL.** A payment it owed and did not make, on a date, to a named
+/// AND A SOVEREIGN CAN FAIL. A payment it owed and did not make, on a date, to a named
 /// holder — which is what gives its rating its first real consumer.
 #[derive(Clone, Copy, Debug)]
 pub struct Missed {
@@ -167,7 +167,7 @@ mod tests {
             ccy: CurrencyCode::at(0),
             period: 12,
         };
-        // Law 7: dust is the arithmetic of the sum, never a grace period somebody chose.
+        // Dust is the arithmetic of the sum, never a grace period somebody chose.
         let dust = 3.0 * f64::EPSILON * (coupon.owed + coupon.paid);
         assert!(coupon.is_default(dust), "a pound short is short");
         let met = Missed { paid: 1_000.0, ..coupon };

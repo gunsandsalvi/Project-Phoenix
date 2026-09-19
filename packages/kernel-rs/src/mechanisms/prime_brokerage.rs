@@ -1,58 +1,58 @@
-//! PRIME BROKERAGE: the client's leverage is **a loan from a named lender**, the margin requirement is
-//! **a decision by the broker**, and **the available line is never floored at zero.**
+//! PRIME BROKERAGE: the client's leverage is a loan from a named lender, the margin requirement is
+//! a decision by the broker, and the available line is never floored at zero.
 //!
 //! @spec 15 A1 · 15 A2 · 15 A3 · 15 A4 · 15 B1 · 15 B1.a · 15 B2 · 15 B3 · 15 B4 · 15 B5 · 15 C1 ·
 //! @spec 15 C1.a · 15 C1.b · 15 C2 · 15 C3 · 15 C3.a · 15 C3.b · 15 C4 · 15 C4.a · 15 C5 · 15 D1 ·
 //! @spec 15 D2 · 15 D3 · 15 D4 · 15 E1 · 15 E2 · 15 E3 · 15 E4 · XI-2 · Law 5, Law 6, Law 19
 //!
-//! **The available line is never floored at zero** (C3.b). A client drawn past its line is OVER the
-//! line, and the shortfall is what forces the sale; **flooring it makes the whole path unreachable —
+//! The available line is never floored at zero. A client drawn past its line is OVER the
+//! line, and the shortfall is what forces the sale; flooring it makes the whole path unreachable —
 //! and lending the shortfall straight back at a penalty, from the same broker, makes it unreachable
-//! twice.** `headroom` returns a negative number and nothing anywhere repairs it (Law 6).
+//! twice. `headroom` returns a negative number and nothing anywhere repairs it.
 //!
-//! **No margin that is only a number** (C5): an unmet call must have a CONSEQUENCE and a met call must
-//! move cash, so `call` returns a cash leg with both parties named (Law 5) and an unmet one liquidates.
+//! No margin that is only a number: an unmet call must have a CONSEQUENCE and a met call must
+//! move cash, so `call` returns a cash leg with both parties named and an unmet one liquidates.
 //!
-//! **A margin rate that is a stated constant cannot rise when it matters, which deletes exactly the
-//! procyclicality** (C4.a) — **raising margin into a falling market amplifies the fall**, and that is
+//! A margin rate that is a stated constant cannot rise when it matters, which deletes exactly the
+//! procyclicality — raising margin into a falling market amplifies the fall, and that is
 //! the mechanism behind most of what looks like contagion. `requirement` is the broker's own view and
 //! it moves.
 //!
-//! **A hedged book requires less than the sum of its legs** (C1.a) — offsets are accounted for, which
+//! A hedged book requires less than the sum of its legs — offsets are accounted for, which
 //! is what makes the requirement a view of the portfolio rather than a sum of tickets.
 //!
-//! **No broker sees the whole position** where a client has more than one (A3, E3) — and the blind
+//! No broker sees the whole position where a client has more than one — and the blind
 //! spot is CONCENTRATION rather than the leverage ratio. Summed across brokers the leverage always
 //! lands between the highest and lowest of their views, so "each broker underestimates it" is simply
-//! untrue; what each underestimates is **what it would take to sell**, because it measures its own
+//! untrue; what each underestimates is what it would take to sell, because it measures its own
 //! slice of one name against the market and the position that exists is the sum of all of them.
 //!
-//! **No unlimited exposure** (E4): a broker with no limit per client is a synthetic counterparty.
+//! No unlimited exposure: a broker with no limit per client is a synthetic counterparty.
 
 use crate::ids::PartyId;
 
-/// A1, A2: **a named bank and a named client**, where the broker holds the client's assets and knows
-/// the whole position it holds — **that knowledge is what lets it lend against them.**
+/// A named bank and a named client, where the broker holds the client's assets and knows
+/// the whole position it holds — that knowledge is what lets it lend against them.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Account {
     pub broker: PartyId,
     pub client: PartyId,
     /// What this broker holds for the client, at market.
     pub assets: f64,
-    /// B1, B1.a: **the client's leverage is a loan from a NAMED lender, not a property of the
-    /// client.** This is that loan.
+    /// The client's leverage is a loan from a NAMED lender, not a property of the
+    /// client. This is that loan.
     pub lent: f64,
-    /// B4: **the short side is financed too** — proceeds of a short are held, and stock is borrowed.
+    /// The short side is financed too — proceeds of a short are held, and stock is borrowed.
     pub short_proceeds_held: f64,
     pub stock_borrowed: f64,
-    /// E1, E4: **the broker has an exposure per client, and it should know it** — and no unlimited
+    /// The broker has an exposure per client, and it should know it — and no unlimited
     /// exposure: a broker with no limit is a synthetic counterparty.
     pub limit: f64,
 }
 
 impl Account {
-    /// B5: **the client's leverage is a read of borrowed against equity, and it must equal what the
-    /// broker has lent.** `None` where the client has no equity left — which is not zero leverage, it
+    /// The client's leverage is a read of borrowed against equity, and it must equal what the
+    /// broker has lent. `None` where the client has no equity left — which is not zero leverage, it
     /// is a client that is gone.
     pub fn leverage(&self) -> Option<f64> {
         let equity = self.assets - self.lent;
@@ -62,32 +62,32 @@ impl Account {
         Some(self.lent / equity)
     }
 
-    /// E1: what this broker is exposed to. A read of its own rows.
+    /// What this broker is exposed to. A read of its own rows.
     pub fn exposure(&self) -> f64 {
         self.lent + self.stock_borrowed - self.short_proceeds_held
     }
 
-    /// E4: and whether that is within the limit it set. A limit that never binds is not a limit.
+    /// And whether that is within the limit it set. A limit that never binds is not a limit.
     pub fn within_limit(&self) -> bool {
         self.exposure() <= self.limit
     }
 }
 
-/// C1, C1.b: **the broker sets a margin requirement on the whole portfolio, from its own view of the
-/// risk** — **a DECISION by the broker, not a formula the client can rely on.**
+/// The broker sets a margin requirement on the whole portfolio, from its own view of the
+/// risk — a DECISION by the broker, not a formula the client can rely on.
 #[derive(Clone, Copy, Debug)]
 pub struct View {
     /// What the broker thinks the book could move, this period. Its own, and it changes.
     pub move_it_expects: f64,
-    /// C4: what it adds when it likes what it sees less — worse markets, worse client, worse own
+    /// What it adds when it likes what it sees less — worse markets, worse client, worse own
     /// position.
     pub add_for_the_client: f64,
 }
 
-/// C1, C1.a: the requirement, **accounting for offsetting positions — so a hedged book requires less
-/// than the sum of its legs.**
+/// The requirement, accounting for offsetting positions — so a hedged book requires less
+/// than the sum of its legs.
 ///
-/// C4.a: it RISES when the broker likes what it sees less, which is exactly when the client can least
+/// It RISES when the broker likes what it sees less, which is exactly when the client can least
 /// afford it. A stated constant could not, and that would delete the procyclicality that is the
 /// mechanism behind most of what looks like contagion.
 pub fn requirement(long: f64, short: f64, v: &View) -> f64 {
@@ -99,22 +99,22 @@ pub fn requirement(long: f64, short: f64, v: &View) -> f64 {
     unhedged * v.move_it_expects
 }
 
-/// C2, C3.b: **the requirement is remeasured as prices move, and a shortfall is a margin call.** The
-/// headroom is **never floored at zero** — a client drawn past its line is OVER the line, and that
+/// The requirement is remeasured as prices move, and a shortfall is a margin call. The
+/// headroom is never floored at zero — a client drawn past its line is OVER the line, and that
 /// negative number is what forces the sale.
 pub fn headroom(a: &Account, required: f64) -> f64 {
     (a.assets - a.lent) - required
 }
 
-/// C2, C3, C5: **real money, from the client's account, now** — or the client is liquidated. **No
-/// margin that is only a number**: an unmet call has a consequence and a met one moves cash.
+/// Real money, from the client's account, now — or the client is liquidated. No
+/// margin that is only a number: an unmet call has a consequence and a met one moves cash.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Call {
-    /// C5: a met call MOVES CASH, from the client to the broker (Law 5).
+    /// A met call MOVES CASH, from the client to the broker.
     Met { from: PartyId, to: PartyId, amount: f64 },
-    /// C3.a: **to meet it, the client may have to SELL, into a market that must clear** (XI-2).
+    /// To meet it, the client may have to SELL, into a market that must clear.
     MustSell { who: PartyId, raising: f64 },
-    /// C3, D1: it failed to meet the call, and the broker closes the positions.
+    /// It failed to meet the call, and the broker closes the positions.
     Liquidated { who: PartyId, short_by: f64 },
     None,
 }
@@ -133,11 +133,11 @@ pub fn call(a: &Account, required: f64, client_cash: f64, client_can_sell: f64) 
     Call::Liquidated { who: a.client, short_by: short - client_cash - client_can_sell }
 }
 
-/// D1, D2: **the broker closes the positions, selling collateral at MARKET prices, and the proceeds may
-/// be less than the loan — the shortfall is the broker's loss, hitting its capital.**
+/// The broker closes the positions, selling collateral at MARKET prices, and the proceeds may
+/// be less than the loan — the shortfall is the broker's loss, hitting its capital.
 ///
-/// E2: **the client's positions may be concentrated, so the collateral is worth less in liquidation
-/// than it is marked at** — which is why what it fetched is an argument here and not a calculation.
+/// The client's positions may be concentrated, so the collateral is worth less in liquidation
+/// than it is marked at — which is why what it fetched is an argument here and not a calculation.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Liquidation {
     pub broker: PartyId,
@@ -146,15 +146,15 @@ pub struct Liquidation {
 }
 
 impl Liquidation {
-    /// D2: the loss lands on the broker's capital. It does not vanish (D4).
+    /// The loss lands on the broker's capital. It does not vanish.
     pub fn loss(&self) -> f64 {
         self.loan_was - self.fetched
     }
 }
 
-/// D3: **the liquidation is a real sale into a real market, so it MOVES PRICES, which can margin-call
-/// other clients.** D4: the chain from one fund to one bank to other funds must be traceable party by
-/// party — **a loss that stops at the fund is a broker that was never really lending.**
+/// The liquidation is a real sale into a real market, so it MOVES PRICES, which can margin-call
+/// other clients. D4: the chain from one fund to one bank to other funds must be traceable party by
+/// party — a loss that stops at the fund is a broker that was never really lending.
 pub fn reaches(sold: f64, depth: f64, others: &[Account], v: &View) -> Vec<(PartyId, f64)> {
     assert!(depth > 0.0, "15 D3: a sale into a market with no depth has no price to move");
     // What the sale did to the price, and therefore to every other client's assets.
@@ -174,15 +174,15 @@ pub fn reaches(sold: f64, depth: f64, others: &[Account], v: &View) -> Vec<(Part
         .collect()
 }
 
-/// A3, E3: **the client can have more than one broker, and then no broker sees the whole position** —
+/// The client can have more than one broker, and then no broker sees the whole position —
 /// a real and material blind spot.
 ///
-/// **The blind spot is CONCENTRATION, not the leverage ratio**, and the difference matters. Summing the
+/// The blind spot is CONCENTRATION, not the leverage ratio, and the difference matters. Summing the
 /// brokers' books gives an aggregate leverage that always lies between the highest and lowest of them,
 /// because each house's equity is its own assets less its own loan and the two sums are the same
 /// arithmetic — so "each broker underestimates the leverage" is false, and asserting it would be a
-/// test that passes only by choosing the fixture. What each broker genuinely underestimates is **what
-/// it would take to sell**: it sees its own slice of one name against the market's depth and concludes
+/// test that passes only by choosing the fixture. What each broker genuinely underestimates is what
+/// it would take to sell: it sees its own slice of one name against the market's depth and concludes
 /// the position is liquidatable, while the position that actually exists is the SUM across brokers
 /// (E2: concentrated collateral is worth less in liquidation than it is marked at).
 pub fn concentration_seen_by(broker: PartyId, in_one_name: &[(PartyId, f64)], market_depth: f64) -> Option<f64> {
@@ -207,9 +207,9 @@ pub fn leverage_seen_by(broker: PartyId, accounts: &[Account]) -> Option<f64> {
     accounts.iter().find(|a| a.broker == broker)?.leverage()
 }
 
-/// A4, B2, B3: **the broker earns from financing spread, stock-borrow fees and commissions**, and that
-/// income is a reason for it to take the risk — and **its balance sheet GROWS by the loan, which
-/// consumes its capital and its liquidity.**
+/// The broker earns from financing spread, stock-borrow fees and commissions, and that
+/// income is a reason for it to take the risk — and its balance sheet GROWS by the loan, which
+/// consumes its capital and its liquidity.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Earns {
     pub financing: f64,
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn the_clients_leverage_is_a_loan_from_a_named_lender() {
-        // B1.a, B5: not a property of the client — a read of borrowed against equity, equal to what
+        // Not a property of the client — a read of borrowed against equity, equal to what
         // the broker has lent.
         let a = account(80, 50, 1_000.0, 600.0);
         assert_eq!(a.leverage(), Some(1.5));
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn a_hedged_book_requires_less_than_the_sum_of_its_legs() {
-        // C1.a: offsets are accounted for, which is what makes the requirement a view of the
+        // Offsets are accounted for, which is what makes the requirement a view of the
         // portfolio rather than a sum of tickets.
         let hedged = requirement(1_000.0, 900.0, &view());
         let directional = requirement(1_000.0, 0.0, &view());
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn the_requirement_rises_when_the_broker_likes_what_it_sees_less() {
-        // C1.b, C4, C4.a: a decision by the broker, not a formula the client can rely on — and a
+        // A decision by the broker, not a formula the client can rely on — and a
         // stated constant could not rise when it matters, which deletes the procyclicality.
         let calm = requirement(1_000.0, 900.0, &view());
         let worried = requirement(1_000.0, 900.0, &View { move_it_expects: 0.25, add_for_the_client: 0.6 });
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn the_available_line_is_never_floored_at_zero() {
-        // C3.b: a client drawn past its line is OVER the line, and the shortfall is what forces the
+        // A client drawn past its line is OVER the line, and the shortfall is what forces the
         // sale. Flooring it makes the whole path unreachable.
         let a = account(80, 50, 1_000.0, 900.0);
         let over = headroom(&a, 400.0);
@@ -293,13 +293,13 @@ mod tests {
 
     #[test]
     fn an_unmet_call_has_a_consequence_and_a_met_one_moves_cash() {
-        // C2, C3, C5: no margin that is only a number.
+        // No margin that is only a number.
         let a = account(80, 50, 1_000.0, 900.0);
         assert_eq!(
             call(&a, 400.0, 500.0, 0.0),
             Call::Met { from: party(50), to: party(80), amount: 300.0 }
         );
-        // C3.a: to meet it, the client may have to SELL into a market that must clear.
+        // To meet it, the client may have to SELL into a market that must clear.
         assert_eq!(call(&a, 400.0, 100.0, 500.0), Call::MustSell { who: party(50), raising: 200.0 });
         // And a client that can do neither is liquidated.
         assert_eq!(call(&a, 400.0, 0.0, 50.0), Call::Liquidated { who: party(50), short_by: 250.0 });
@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn the_shortfall_after_a_liquidation_hits_the_brokers_capital() {
-        // D1, D2, E2: the proceeds may be less than the loan — concentrated collateral is worth less
+        // The proceeds may be less than the loan — concentrated collateral is worth less
         // in liquidation than it is marked at, which is why what it fetched is not a calculation.
         let clean = Liquidation { broker: party(80), fetched: 950.0, loan_was: 900.0 };
         assert!(clean.loss() < 0.0);
@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn a_liquidation_moves_prices_and_margin_calls_other_clients() {
-        // D3, D4: the chain from one fund to one bank to other funds is traceable party by party — a
+        // The chain from one fund to one bank to other funds is traceable party by party — a
         // loss that stops at the fund is a broker that was never really lending.
         let others = [account(80, 51, 1_000.0, 880.0), account(80, 52, 1_000.0, 100.0)];
         let hit = reaches(500.0, 5_000.0, &others, &view());
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn no_broker_sees_the_whole_position_and_each_underestimates_what_it_would_take_to_sell() {
-        // A3, E3, E2: each broker sees its own slice of one name against the market's depth and
+        // Each broker sees its own slice of one name against the market's depth and
         // concludes the position is liquidatable; the position that actually exists is the sum, and
         // no single lender holds these rows together.
         let in_one_name = [(party(80), 400_000.0), (party(81), 500_000.0), (party(82), 600_000.0)];
@@ -358,7 +358,7 @@ mod tests {
 
     #[test]
     fn a_broker_has_a_limit_per_client_and_it_binds() {
-        // E1, E4: a broker with no limit per client is a synthetic counterparty.
+        // A broker with no limit per client is a synthetic counterparty.
         let inside = account(80, 50, 1_000.0, 600.0);
         assert!(inside.within_limit());
         let over = Account { lent: 40_000.0, ..inside };
@@ -367,11 +367,11 @@ mod tests {
 
     #[test]
     fn the_broker_earns_the_spread_the_borrow_fee_and_the_commission() {
-        // A4, B2, B3: the income is the reason it takes the risk, and its balance sheet grows by the
+        // The income is the reason it takes the risk, and its balance sheet grows by the
         // loan.
         let a = Account { stock_borrowed: 500.0, ..account(80, 50, 1_000.0, 600.0) };
         let e = earns(&a, 0.06, 0.04, 0.01, 12.0);
-        // Law 7: 600 × 0.02 is not 12 in binary, so this is asserted against its dust.
+        // 600 × 0.02 is not 12 in binary, so this is asserted against its dust.
         assert!((e.financing - 12.0).abs() <= crate::num::dust(2, &[600.0, 12.0]));
         assert_eq!(e.stock_borrow, 5.0);
         assert_eq!(e.commissions, 12.0);

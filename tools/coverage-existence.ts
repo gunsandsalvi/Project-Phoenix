@@ -266,7 +266,7 @@ function report(): number {
   console.log('');
   console.log(renderTable(rows));
 
-  // 0j.1: the citation is the evidence, so a citation that does not resolve is a row asserting
+  // The citation is the evidence, so a citation that does not resolve is a row asserting
   // nothing. It fails whatever the mode, because a report that printed it and returned 0 would be
   // the silence this check exists to end.
   const unresolved = deadCitations();
@@ -279,7 +279,7 @@ function report(): number {
     for (const d of unresolved) console.log(`  ${d.id.padEnd(28)} ${d.status.padEnd(12)} ${d.path}`);
   }
 
-  // 0j.7: PLAN §5 — **no PARTIAL row without a named item.** `unattributedPartials` was written,
+  // PLAN §5 — no PARTIAL row without a named item. `unattributedPartials` was written,
   // documented with the history that caused it, and never called by anything; the rule held for
   // exactly as long as somebody remembered it. A PARTIAL is a promise that the rest of a clause is
   // coming, and a promise with nobody to keep it is a MISSING row wearing a better word — which is

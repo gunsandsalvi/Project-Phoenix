@@ -5,52 +5,52 @@
 //! @spec 18 B3 · 18 B4 · 18 B5 · 18 C1 · 18 C1.a · 18 C2 · 18 C3 · 18 C3.a · 18 D1 · 18 D2 · 18 D3 ·
 //! @spec 18 D3.a · 18 D4 · 18 E1 · 18 E2 · 18 E3 · XI-7 · XI-13 · Law 3, Law 5, Law 8, Law 19
 //!
-//! **No notional exchange** (E1, A1.d): if the notional moves it is a LOAN and belongs on the balance
+//! No notional exchange: if the notional moves it is a LOAN and belongs on the balance
 //! sheet as one. `Swap` has a notional and no leg that transfers it; what moves is the NET of the two
-//! legs (A1.b), and `net` is the only payment this module can produce.
+//! legs, and `net` is the only payment this module can produce.
 //!
-//! **No fixed rate solved from the discount curve alone** (E2). The fixed rate is CLEARED; the curve
+//! No fixed rate solved from the discount curve alone. The fixed rate is CLEARED; the curve
 //! is read from the cleared rates. Doing it the other way makes the market a restatement of a formula,
 //! so `Curve::from_cleared` takes prints and there is no function here that solves a par rate.
 //!
-//! **No floating leg on a rate this world does not produce** (E3, XI-7). The floating leg fixes on a
-//! stated date against an OBSERVED reference — a real observation, not a forecast (A3) — and where
+//! No floating leg on a rate this world does not produce. The floating leg fixes on a
+//! stated date against an OBSERVED reference — a real observation, not a forecast — and where
 //! that reference is an overnight rate the leg is the COMPOUNDED overnight print, which is a walk over
-//! the prints that actually happened (Law 19).
+//! the prints that actually happened.
 //!
-//! **Variation margin turns the mark into cash** (D3), so a rate move is a **liquidity event long
-//! before it is a P&L event**. D3.a is the case that matters: a hedger whose hedge is winning receives
+//! Variation margin turns the mark into cash, so a rate move is a liquidity event long
+//! before it is a P&L event. D3.a is the case that matters: a hedger whose hedge is winning receives
 //! cash while its hedged item shows an unrealised loss, and that mismatch is a real funding problem —
-//! `margin_call` returns the cash leg with both parties named (Law 5).
+//! `margin_call` returns the cash leg with both parties named.
 //!
-//! **A speculator with a view is required, not optional** (B4, XI-13): without one the cleared par
+//! A speculator with a view is required, not optional: without one the cleared par
 //! rate is a function of two regulatory gaps and cannot move because somebody thinks rates are wrong.
 
 use crate::calendar::Day;
 use crate::ids::{CurrencyCode, PartyId};
 
-/// A1.a, A3, E3: **a named floating reference that is observable and transacted.** Not a posted policy
-/// rate (XI-7): a leg fixing on an administered number is a label nothing prices off.
+/// A named floating reference that is observable and transacted. Not a posted policy
+/// rate: a leg fixing on an administered number is a label nothing prices off.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Reference {
     pub name: u32,
-    /// XI-7: it cleared in a book somebody transacted in. A leg on anything else is E3's forbidden leg.
+    /// It cleared in a book somebody transacted in. A leg on anything else is E3's forbidden leg.
     pub transacted: bool,
-    /// A3: where it is an overnight rate the leg is the COMPOUNDED overnight print, not a single fix.
+    /// Where it is an overnight rate the leg is the COMPOUNDED overnight print, not a single fix.
     pub overnight: bool,
 }
 
-/// A2: **a leg with its own periodicity and accrual convention** — and the two legs need not match.
+/// A leg with its own periodicity and accrual convention — and the two legs need not match.
 /// That mismatch is real and it is part of the price.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Leg {
-    /// Law 8: the periodicity is part of the number.
+    /// The periodicity is part of the number.
     pub payments_per_year: f64,
     /// Days in the year this leg counts against. The two legs may count differently.
     pub year_basis: f64,
 }
 
-/// A1.d, E1: the notional is **never exchanged**, which is why a swap is not a loan. A4: both legs in
+/// The notional is never exchanged, which is why a swap is not a loan. A4: both legs in
 /// ONE currency; two currencies makes it a cross-currency swap and a different instrument.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Swap {
@@ -58,7 +58,7 @@ pub struct Swap {
     pub payer_of_floating: PartyId,
     pub notional: f64,
     pub ccy: CurrencyCode,
-    /// A1.c: **the fixed rate that made the swap worth zero at inception** — cleared, not solved.
+    /// The fixed rate that made the swap worth zero at inception — cleared, not solved.
     pub fixed: f64,
     pub fixed_leg: Leg,
     pub floating_leg: Leg,
@@ -77,8 +77,8 @@ impl Swap {
     }
 }
 
-/// A3: **the fixing is a real observation.** Where the reference is overnight the leg compounds the
-/// prints that actually happened — a walk, not a formula over an average (Law 19).
+/// The fixing is a real observation. Where the reference is overnight the leg compounds the
+/// prints that actually happened — a walk, not a formula over an average.
 pub fn fixes_at(r: &Reference, prints: &[f64]) -> Option<f64> {
     if prints.is_empty() {
         // No observation, no fixing. A leg cannot fix on a day the book did not print.
@@ -94,7 +94,7 @@ pub fn fixes_at(r: &Reference, prints: &[f64]) -> Option<f64> {
     Some(compounded - 1.0)
 }
 
-/// A1.b: **only the NET moves.** One payment, in one direction, between two named parties (Law 5) —
+/// Only the NET moves. One payment, in one direction, between two named parties —
 /// and the two legs' own periodicities and bases are in it, which is A2's mismatch being part of the
 /// price rather than an approximation.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -114,7 +114,7 @@ pub fn net(s: &Swap, floating_fixed_at: f64, days_accrued: f64) -> Net {
     }
 }
 
-/// C1: **swaps exist at many tenors, and the set of CLEARED fixed rates IS the curve.** C1.a: a read
+/// Swaps exist at many tenors, and the set of CLEARED fixed rates IS the curve. C1.a: a read
 /// of cleared prices, never a fitted object that then prices the swaps.
 #[derive(Clone, Debug)]
 pub struct Curve {
@@ -133,8 +133,8 @@ impl Curve {
         self.points.iter().find(|(t, _)| *t == tenor_years).map(|(_, r)| *r)
     }
 
-    /// C2: **a forward rate is DERIVED from the curve, and it is what the market thinks, not what will
-    /// happen.** `None` where either tenor did not clear — a forward between two points, one of which
+    /// A forward rate is DERIVED from the curve, and it is what the market thinks, not what will
+    /// happen. `None` where either tenor did not clear — a forward between two points, one of which
     /// nobody traded, is a number with no market behind it.
     pub fn forward(&self, from_years: f64, to_years: f64) -> Option<f64> {
         if to_years <= from_years {
@@ -148,22 +148,22 @@ impl Curve {
     }
 }
 
-/// C3, C3.a: **the swap curve and the sovereign curve are different curves, and the difference is the
-/// swap spread** — a consequence of bank credit, collateral, balance-sheet cost and who is forced to
+/// The swap curve and the sovereign curve are different curves, and the difference is the
+/// swap spread — a consequence of bank credit, collateral, balance-sheet cost and who is forced to
 /// be on which side. Measured, never set.
 pub fn swap_spread(swap_rate: f64, sovereign_rate: f64) -> f64 {
     swap_rate - sovereign_rate
 }
 
-/// D1, D2: after inception the swap has a **mark, positive to one side**, and it moves with the curve
-/// — **a real gain and a real loss**, not a bookkeeping entry.
+/// After inception the swap has a mark, positive to one side, and it moves with the curve
+/// — a real gain and a real loss, not a bookkeeping entry.
 pub fn mark(s: &Swap, curve_now: &Curve, tenor_left: f64) -> Option<f64> {
     let par_now = curve_now.at(tenor_left)?;
     // Positive to the payer of fixed when rates have risen: it is paying the old, lower rate.
     Some(s.notional * (par_now - s.fixed) * tenor_left)
 }
 
-/// D3: **variation margin turns that mark into cash**, which is why a rate move is a liquidity event
+/// Variation margin turns that mark into cash, which is why a rate move is a liquidity event
 /// long before it is a P&L event. D3.a: a hedger whose hedge is winning RECEIVES cash while its hedged
 /// item shows an unrealised loss, and that mismatch is a real funding problem.
 pub fn margin_call(s: &Swap, mark_now: f64, mark_before: f64) -> Net {
@@ -175,19 +175,19 @@ pub fn margin_call(s: &Swap, mark_now: f64, mark_before: f64) -> Net {
     }
 }
 
-/// Why a party is here. B4: **a speculator with a view is required, not optional.**
+/// Why a party is here. B4: a speculator with a view is required, not optional.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reason {
-    /// B1: it issued fixed and wants floating, or the reverse — debt it cannot economically reissue.
+    /// It issued fixed and wants floating, or the reverse — debt it cannot economically reissue.
     Reissuing,
-    /// B2, B2.a: a duration mismatch — a pension whose liabilities are long and whose assets are not.
+    /// A duration mismatch — a pension whose liabilities are long and whose assets are not.
     /// This is a STRUCTURAL, one-way demand, and it is why long swap rates behave as they do.
     Duration,
-    /// B3: a bank managing its own gap, assets repricing at a different speed from liabilities.
+    /// A bank managing its own gap, assets repricing at a different speed from liabilities.
     Gap,
-    /// B4: a view on rates.
+    /// A view on rates.
     AView,
-    /// B5: a dealer running a book and hedging its net position.
+    /// A dealer running a book and hedging its net position.
     Dealer,
 }
 
@@ -197,19 +197,19 @@ pub struct Participant {
     pub reason: Reason,
 }
 
-/// B4, XI-13: without a participant whose reason is a view, the cleared par rate is a function of two
+/// Without a participant whose reason is a view, the cleared par rate is a function of two
 /// regulatory gaps and cannot move because somebody thinks rates are wrong.
 pub fn can_clear(book: &[Participant]) -> bool {
     book.iter().any(|p| p.reason == Reason::AView)
 }
 
-/// D4: **marks across the two sides sum to zero, and net payments sum to zero, every period.**
+/// Marks across the two sides sum to zero, and net payments sum to zero, every period.
 ///
 /// The summing half holds by construction and is not checked here: a `Net` is ONE amount carrying its
 /// payer and its payee, so adding the outflow and subtracting the inflow would compare a number with
 /// itself — a VERIFY that cannot fail, which is worse than none. What CAN fail is the pairing, and
 /// that is what this refuses: a payment from a party to itself moves nothing and is a leg somebody
-/// wrote wrongly (Law 5). The world-level sum belongs to the audit over the register.
+/// wrote wrongly. The world-level sum belongs to the audit over the register.
 pub fn pairs_up(payments: &[Net]) {
     for p in payments {
         assert!(p.from != p.to, "18 D4: a payment from a party to itself moves nothing");
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn only_the_net_moves_and_the_notional_never_does() {
-        // A1.b, A1.d, E1: if the notional moved it would be a loan. The payment is one number in one
+        // If the notional moved it would be a loan. The payment is one number in one
         // direction between two named parties.
         let s = swap();
         let paying_more_fixed = net(&s, 0.01, 90.0);
@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn the_two_legs_accrue_on_their_own_bases_and_the_mismatch_is_in_the_price() {
-        // A2: they need not match, and that mismatch is real. Same rate on both legs, different
+        // They need not match, and that mismatch is real. Same rate on both legs, different
         // bases, and the net is not zero — which is the convention showing up as money.
         let s = swap();
         let same_rate = net(&s, 0.03, 90.0);
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn an_overnight_leg_compounds_the_prints_that_actually_happened() {
-        // A3, Law 19: a real observation, not a forecast, and not an average of the window.
+        // A real observation, not a forecast, and not an average of the window.
         let prints = [0.0001, 0.0001, 0.0002];
         let compounded = fixes_at(&overnight(), &prints).unwrap();
         let summed: f64 = prints.iter().sum();
@@ -297,7 +297,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "a rate this world does not produce")]
     fn there_is_no_floating_leg_on_a_rate_nobody_transacts() {
-        // E3, XI-7: a posted policy rate is not a benchmark, and a leg fixing on one is a label
+        // A posted policy rate is not a benchmark, and a leg fixing on one is a label
         // nothing prices off.
         let posted = Reference { name: 9, transacted: false, overnight: false };
         Swap::struck(Swap { on: posted, ..swap() });
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn the_curve_is_the_cleared_rates_and_a_forward_is_derived_from_it() {
-        // C1, C1.a, C2: a read of cleared prices, never a fitted object that then prices the swaps —
+        // A read of cleared prices, never a fitted object that then prices the swaps —
         // and the forward is what the market thinks, not what will happen.
         let c = Curve::from_cleared(vec![(1.0, 0.030), (2.0, 0.035), (5.0, 0.040)]);
         assert_eq!(c.at(2.0), Some(0.035));
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn a_rate_move_is_a_liquidity_event_before_it_is_a_p_and_l_event() {
-        // D1, D2, D3, D3.a: the mark moves with the curve and variation margin turns it into cash.
+        // The mark moves with the curve and variation margin turns it into cash.
         // The hedger whose hedge is winning RECEIVES money while its hedged item shows an unrealised
         // loss, and that mismatch is a real funding problem.
         let s = swap();
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn the_swap_spread_is_measured_against_the_sovereign_curve_and_never_set() {
-        // C3, C3.a: a consequence of bank credit, collateral, balance-sheet cost and who is forced
+        // A consequence of bank credit, collateral, balance-sheet cost and who is forced
         // to be on which side.
         assert!(swap_spread(0.035, 0.030) > 0.0);
         assert!(swap_spread(0.028, 0.030) < 0.0);
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn a_book_with_no_view_on_rates_cannot_clear() {
-        // B4, XI-13: without one the par rate is a function of two regulatory gaps and cannot move
+        // Without one the par rate is a function of two regulatory gaps and cannot move
         // because somebody thinks rates are wrong.
         let gaps = [
             Participant { who: party(1), reason: Reason::Gap },
@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn every_payment_leaves_one_party_and_arrives_at_another() {
-        // D4: what can fail is the pairing, not the arithmetic — a payment from a party to itself
+        // What can fail is the pairing, not the arithmetic — a payment from a party to itself
         // moves nothing and is refused at the site.
         let s = swap();
         let payments = [net(&s, 0.01, 90.0), net(&s, 0.09, 90.0)];

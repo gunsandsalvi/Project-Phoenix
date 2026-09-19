@@ -1,5 +1,5 @@
 //! The arithmetic that would otherwise be written twice: one writer per formula, in the kernel,
-//! where a mechanism can read it without importing another mechanism (Law 4, Law 15).
+//! where a mechanism can read it without importing another mechanism.
 //!
 //! @spec Law 4 · Law 7 · Law 15 · Appendix A
 //!
@@ -7,9 +7,9 @@
 //! two formulas: a second copy of a sample standard deviation is exactly the parallel formula Law 4
 //! says to hunt, and the two copies drift the day one of them is corrected.
 //!
-//! **Missing is missing.** A dispersion over one observation and a covariance over one pair are not
+//! Missing is missing. A dispersion over one observation and a covariance over one pair are not
 //! small numbers, they are absent — answering zero would say the population agrees when nothing has
-//! been measured (Appendix A).
+//! been measured.
 
 /// The sample standard deviation of a population. `None` below two observations.
 pub fn dispersion(of: &[f64]) -> Option<f64> {
@@ -45,7 +45,7 @@ pub fn covariance(a: &[f64], b: &[f64]) -> Option<f64> {
 }
 
 /// The mean. `None` over nothing: a mean of no observations is not zero, and a decision at a mean is
-/// a defect in its own right (Appendix B) — this exists for statistics that are READS, and the
+/// a defect in its own right — this exists for statistics that are READS, and the
 /// callers that take one say why.
 pub fn mean(of: &[f64]) -> Option<f64> {
     if of.is_empty() {
@@ -54,13 +54,13 @@ pub fn mean(of: &[f64]) -> Option<f64> {
     Some(of.iter().sum::<f64>() / of.len() as f64)
 }
 
-/// Law 7: the dust a comparison over these magnitudes is entitled to — terms × ε × Σ|magnitudes|,
+/// The dust a comparison over these magnitudes is entitled to — terms × ε × Σ|magnitudes|,
 /// derived per check. Never a percentage, and never widened.
 pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
     (terms as f64) * f64::EPSILON * magnitudes.iter().map(|m| m.abs()).sum::<f64>()
 }
 
-/// **MSER-5: where a series stops being about how it started** (22b.8).
+/// MSER-5: where a series stops being about how it started.
 ///
 /// @spec XI-15 · Law 2 · Law 6
 ///
@@ -76,7 +76,7 @@ pub fn dust(terms: usize, magnitudes: &[f64]) -> f64 {
 /// It returns the truncation in ORIGINAL observations (the batch times five), and `None` when there
 /// is not enough series for the answer to mean anything — which is missing, not zero.
 ///
-/// **It is not a bound** (Law 6): nothing is clamped by it and no number is adjusted to reach it. It
+/// It is not a bound: nothing is clamped by it and no number is adjusted to reach it. It
 /// is a read that says how much of a series to ignore.
 pub fn mser_5(series: &[f64]) -> Option<usize> {
     const BATCH: usize = 5;
@@ -107,7 +107,7 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
             }
         }
     }
-    // **A minimum at the far end of the search is not an answer** (Schruben's own caveat, and
+    // A minimum at the far end of the search is not an answer (Schruben's own caveat, and
     // Appendix A's): the statistic was still falling when it ran out of series, which means this
     // series has not settled inside what it was given. Reporting the boundary would report a number
     // that is a fact about how much was drawn — and it would move when the draw got longer, which is
@@ -115,7 +115,7 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
     if best_at + 1 >= last {
         return None;
     }
-    // **And a truncation is only an answer if what is LEFT has stopped moving.** On a series that
+    // And a truncation is only an answer if what is LEFT has stopped moving. On a series that
     // simply rises, the rule still returns its minimum — and that minimum is a fraction of the
     // series' length, so it doubles when the series doubles. The test is the series' own halves
     // against its own dispersion: if the back half sits further from the front half than the spread
@@ -134,8 +134,8 @@ pub fn mser_5(series: &[f64]) -> Option<usize> {
     }
 }
 
-/// **22c.1: WHICH OF TWO LEVELS IS THE KEENER**, on a side. It lives here for the reason every other
-/// comparison does — `Math.min/max` is forbidden outside this module (Law 6), because a minimum
+/// WHICH OF TWO LEVELS IS THE KEENER, on a side. It lives here for the reason every other
+/// comparison does — `Math.min/max` is forbidden outside this module, because a minimum
 /// written at a site is indistinguishable from a cap written at a site, and the law exists to make
 /// the difference visible.
 ///
@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn the_dust_is_derived_from_the_magnitudes_that_went_through_the_sum() {
-        // Law 7: it grows with the terms and with what passed through them, and it is never a
+        // It grows with the terms and with what passed through them, and it is never a
         // percentage of anything.
         let small = dust(2, &[1.0, 1.0]);
         let large = dust(2, &[1e9, 1e9]);

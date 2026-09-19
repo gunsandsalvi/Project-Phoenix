@@ -3,26 +3,26 @@
 //!
 //! @spec XI-11 · XI-1 · XI-8 · Law 2, Law 3, Law 5, Law 6, Law 19 · Appendix B
 //!
-//! It needs four things and each is a real object: a **vehicle** that is a party holding the loans; a
-//! **tranche** instrument with a stated loss attachment and a **cleared price**; a **waterfall** that
-//! allocates real losses to real tranches; and **named holders** of each tranche.
+//! It needs four things and each is a real object: a vehicle that is a party holding the loans; a
+//! tranche instrument with a stated loss attachment and a cleared price; a waterfall that
+//! allocates real losses to real tranches; and named holders of each tranche.
 //!
-//! **Why its absence is structural rather than cosmetic.** Without it, small-business and mortgage
+//! Why its absence is structural rather than cosmetic. Without it, small-business and mortgage
 //! credit risk sits on the originating bank for ever: origination capacity can never be expanded by
 //! selling risk, so the lending-capacity channel does not exist. And the event this system exists to
-//! produce — **correlation worse than the tranching assumed, so the senior tranche takes losses it
-//! was not supposed to and every holder is hit at once** — has no holders to hit.
+//! produce — correlation worse than the tranching assumed, so the senior tranche takes losses it
+//! was not supposed to and every holder is hit at once — has no holders to hit.
 //!
-//! **Its two prerequisites, in order.** XI-1 first, because tranching a loss RATE yields senior notes
+//! Its two prerequisites, in order. XI-1 first, because tranching a loss RATE yields senior notes
 //! that can never be touched: `allocate` takes realised losses on named loans, and there is no rate
-//! anywhere in this module. And loans must be **rows in a register** before they can be transferred
+//! anywhere in this module. And loans must be rows in a register before they can be transferred
 //! at all — a loan that exists as a field on a lender's balance sheet cannot be sold, pooled, pledged
 //! or matured, however true the field is. `Transfer` moves rows, and the vehicle is a party that
 //! holds them.
 //!
-//! **The attachment is a stated loss point, not a rating.** A tranche's attachment and detachment are
+//! The attachment is a stated loss point, not a rating. A tranche's attachment and detachment are
 //! terms of the instrument (Law 2: a POLICY of the deal). What it is worth is a cleared price and
-//! never a function of them (Law 3).
+//! never a function of them.
 
 use crate::assembly::kinds;
 use crate::journal::Value;
@@ -32,7 +32,7 @@ use crate::stores::afoot;
 use crate::ids::{InstrumentId, PartyId};
 
 /// A party that holds the loans. It is a party — it can be owed money, it can fail, it has an estate
-/// (XI-3, XI-8) — and not a bucket on the originator's balance sheet.
+///  — and not a bucket on the originator's balance sheet.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Vehicle {
     pub who: PartyId,
@@ -50,8 +50,8 @@ pub struct Transfer {
     pub paid: f64,
 }
 
-/// A tranche instrument: **a stated loss attachment**, and a price that clears. The attachment is a
-/// term of the deal; the price is an outcome and never a function of the attachment (Law 3).
+/// A tranche instrument: a stated loss attachment, and a price that clears. The attachment is a
+/// term of the deal; the price is an outcome and never a function of the attachment.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Tranche {
     pub what: InstrumentId,
@@ -77,7 +77,7 @@ impl Tranche {
     }
 }
 
-/// XI-1: a REALISED loss on a NAMED loan. Not a rate, and not an expectation — tranching a loss rate
+/// A REALISED loss on a NAMED loan. Not a rate, and not an expectation — tranching a loss rate
 /// yields senior notes that can never be touched, which is the whole reason XI-1 comes first.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Realised {
@@ -92,13 +92,13 @@ pub struct Took {
     pub loss: f64,
 }
 
-/// **The waterfall**: real losses to real tranches, from the bottom up. Law 6: a tranche is not
+/// The waterfall: real losses to real tranches, from the bottom up. Law 6: a tranche is not
 /// written down "up to" anything — it absorbs what falls in its band and the band runs out, which is
 /// arithmetic.
 ///
 /// A loss above the top tranche's detachment point has nowhere to go and is returned as `beyond`: it
-/// is the vehicle's own hole and it lands on whoever holds its residual. **A residual with no holder
-/// is a defect** (Appendix B), so it is carried out rather than absorbed silently.
+/// is the vehicle's own hole and it lands on whoever holds its residual. A residual with no holder
+/// is a defect, so it is carried out rather than absorbed silently.
 pub fn allocate(losses: &[Realised], tranches: &[Tranche]) -> (Vec<Took>, f64) {
     let total: f64 = losses.iter().map(|l| l.lost).sum();
     let mut ordered: Vec<&Tranche> = tranches.iter().collect();
@@ -123,7 +123,7 @@ pub fn allocate(losses: &[Realised], tranches: &[Tranche]) -> (Vec<Took>, f64) {
     (took, beyond)
 }
 
-/// **Named holders of each tranche.** Without them the event this system exists to produce has
+/// Named holders of each tranche. Without them the event this system exists to produce has
 /// nobody to hit.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Holding {
@@ -149,39 +149,39 @@ pub fn onto_holders(took: &[Took], holdings: &[Holding]) -> Vec<(PartyId, f64)> 
     out
 }
 
-/// XI-11: **what selling the risk does for the originator.** Its capacity to originate is expanded by
+/// What selling the risk does for the originator. Its capacity to originate is expanded by
 /// the risk it no longer carries — this is the lending-capacity channel, and without a transferee it
 /// does not exist at all. A read of what it transferred, never a bonus anybody grants.
 pub fn capacity_freed(transferred: f64, retained: f64) -> f64 {
     transferred - retained
 }
 
-// **§13 RUNS HERE** (0m2.1). `Securitising` was in `running.rs`, apart from `allocate` and the
+// §13 RUNS HERE. `Securitising` was in `running.rs`, apart from `allocate` and the
 // tranche arithmetic it is about. One system, one file.
 
-/// **XI-11, §18 A1, A2, B1, 22i.18: A BANK POOLS LOANS AND CUTS NOTES AGAINST THEM.**
+/// A BANK POOLS LOANS AND CUTS NOTES AGAINST THEM.
 ///
 /// The `securitisation` row was a CLOSER for a pool nothing opened, and a pool's whole point is to
-/// ISSUE notes — which is what 21.81 said it could not do. `ctx.brings` is the door now (21j.1a) and
+/// ISSUE notes — which is what 21.81 said it could not do. `ctx.brings` is the door now and
 /// this is what walks through it.
 ///
-/// **The loan rows MOVE** (A1, Law 5): the originator delivers them and receives what the vehicle
+/// The loan rows MOVE: the originator delivers them and receives what the vehicle
 /// paid. A loan that is a field rather than a row cannot be transferred at all, which is XI-11's
 /// second prerequisite — and it is a row here, so it can.
 ///
-/// **A tranche has a stated loss attachment and a price that clears** (A2, Law 3): the attachment is
+/// A tranche has a stated loss attachment and a price that clears: the attachment is
 /// a TERM of the deal and the price is an outcome, never a function of the attachment. The losses
-/// that reach it are real losses on named borrowers (XI-1, 22i.5), which is what makes a senior note
+/// that reach it are real losses on named borrowers, which is what makes a senior note
 /// safe in a way a rate applied smoothly could never express.
 ///
-/// **What frees capital is what was SOLD** (B1): a bank that retained everything has moved nothing,
+/// What frees capital is what was SOLD: a bank that retained everything has moved nothing,
 /// and the capital relief is a read of what left rather than a number the deal claims.
 pub struct Securitising {
     pub kind: u32,
-    /// §18 A2: where the junior tranche detaches — the share of the pool that stands in front of the
+    /// Where the junior tranche detaches — the share of the pool that stands in front of the
     /// senior note. A TERM of the deal, stated by whoever cuts it, never a price.
     pub junior: &'static str,
-    /// §18 B1: how much of a book a bank will pool at once. Its own.
+    /// How much of a book a bank will pool at once. Its own.
     pub pools: &'static str,
 }
 
@@ -199,7 +199,7 @@ impl Mechanism for Securitising {
             if ctx.processes().running(afoot::SECURITISATION).iter().any(|p| ctx.processes().owner(*p) == who) {
                 continue;
             }
-            // XI-11: **the loan rows it holds.** `saleable` names no kind — a house and a shop are
+            // The loan rows it holds. `saleable` names no kind — a house and a shop are
             // both poolable — so this is every claim on its book that somebody else issued, which is
             // what a loan IS from the lender's side.
             let mut pool = 0.0;
@@ -223,9 +223,9 @@ impl Mechanism for Securitising {
         }
 
         for (who, ccy, size, first_loss) in cutting {
-            // A2: **the SENIOR note**, which the junior stands in front of. It is brought like any
+            // The SENIOR note, which the junior stands in front of. It is brought like any
             // other obligation and it trades in a book — what it is worth is what that book crosses
-            // at, and never a function of where it attaches (Law 3).
+            // at, and never a function of where it attaches.
             ctx.brings(crate::module::Brings {
                 issuer: who,
                 ccy,
@@ -250,7 +250,7 @@ impl Mechanism for Securitising {
                 closes: Some(ctx.period() + 1),
                 size,
             });
-            // B1: what it cut, and what stands in front of it. Both are said, because the capital
+            // What it cut, and what stands in front of it. Both are said, because the capital
             // relief is a read of what LEFT and a deal nobody can see the shape of is one nobody
             // can check that against.
             ctx.say(
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn losses_are_realised_on_named_loans_and_reach_the_tranches_from_the_bottom() {
-        // XI-1: tranching a loss RATE yields senior notes that can never be touched. These are
+        // Tranching a loss RATE yields senior notes that can never be touched. These are
         // realised losses on named loans, and the equity tranche is gone before the mezzanine moves.
         let losses = [Realised { on: instrument(10), lost: 40.0 }];
         let (took, beyond) = allocate(&losses, &deal());
@@ -317,7 +317,7 @@ mod tests {
 
     #[test]
     fn a_correlation_worse_than_the_tranching_assumed_hits_the_senior_tranche_too() {
-        // XI-11: this is the event the system exists to produce, and without named tranches and
+        // This is the event the system exists to produce, and without named tranches and
         // named holders there is nobody to hit. 300 of realised loss wipes equity and mezzanine and
         // reaches 150 into the senior notes.
         let losses = [
@@ -333,7 +333,7 @@ mod tests {
 
     #[test]
     fn a_loss_past_the_top_of_the_deal_is_carried_out_and_not_absorbed_silently() {
-        // Appendix B: no residual with no holder. It is the vehicle's own hole, and it lands on
+        // No residual with no holder. It is the vehicle's own hole, and it lands on
         // whoever holds its residual.
         let losses = [Realised { on: instrument(10), lost: 1_200.0 }];
         let (took, beyond) = allocate(&losses, &deal());
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn every_holder_is_hit_at_once_and_each_of_them_is_named() {
-        // XI-11: named holders of each tranche. Pro rata within a tranche, because two holdings of
+        // Named holders of each tranche. Pro rata within a tranche, because two holdings of
         // the same instrument have no reason to be told apart.
         let losses = [Realised { on: instrument(10), lost: 300.0 }];
         let (took, _) = allocate(&losses, &deal());
@@ -377,7 +377,7 @@ mod tests {
 
     #[test]
     fn selling_the_risk_expands_what_the_originator_can_originate() {
-        // XI-11: without a transferee the lending-capacity channel does not exist at all. What it
+        // Without a transferee the lending-capacity channel does not exist at all. What it
         // retained does not count, which is why retaining the equity piece buys less capacity.
         assert_eq!(capacity_freed(1_000.0, 50.0), 950.0);
         assert_eq!(capacity_freed(1_000.0, 1_000.0), 0.0);

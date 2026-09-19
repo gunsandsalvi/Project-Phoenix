@@ -1,25 +1,25 @@
 //! The register: who holds what, with lots and liens; both directions indexed; holdings sum to
-//! issued (Register A1–B4).
+//! issued.
 //!
 //! A holding is a ROW and its lots are a counted slice of one flat column. That is the whole of the
 //! difference from the TypeScript store, and it is what the calibration measured: a traversal of
-//! 544,104 holdings is **95.70 ms** there and **2.75 ms** here, and the hot read with the row in
-//! hand is **67.20 ns** against **19.47 ns** (`register-at-scale`).
+//! 544,104 holdings is 95.70 ms there and 2.75 ms here, and the hot read with the row in
+//! hand is 67.20 ns against 19.47 ns (`register-at-scale`).
 //!
-//! **Those two numbers were 0.39 ms and 3.99 ns until 22e2**, when the running total beside the lots
-//! was deleted and a holding's quantity became a READ of them (Law 19). The read costs five times
+//! Those two numbers were 0.39 ms and 3.99 ns until 22e2, when the running total beside the lots
+//! was deleted and a holding's quantity became a READ of them. The read costs five times
 //! what a tally cost and the traversal seven times, and the assembled world's period is unchanged
 //! at ~350 ms — because the register read was never the period's bottleneck. Law 18 is satisfied
 //! the way it asks to be: behaviour identical, correctness better, the cost measured rather than
 //! assumed, and no cache added for a cost nothing pays.
 //!
-//! Law 4: settlement is the ONE writer. The reads are open to anybody; `debit`, `credit` and
+//! Settlement is the ONE writer. The reads are open to anybody; `debit`, `credit` and
 //! `move_money` are reached only through the wire.
 
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use std::collections::HashMap;
 
-/// Register D1: units carry the basis they were acquired at, so a disposal has a gain to book.
+/// Units carry the basis they were acquired at, so a disposal has a gain to book.
 #[derive(Clone, Copy)]
 pub struct Lot {
     pub qty: f64,
@@ -27,7 +27,7 @@ pub struct Lot {
     pub acquired: u32,
 }
 
-/// Register C3: units somebody else has a claim over. Moving them is refused, not adjusted (Law 6).
+/// Units somebody else has a claim over. Moving them is refused, not adjusted.
 #[derive(Clone, Copy)]
 pub struct Lien {
     pub to: PartyId,
@@ -51,12 +51,12 @@ pub struct Register {
     lot_len: Vec<u32>,
     lien_at: Vec<u32>,
     lien_len: Vec<u32>,
-    /// **Money D2: what a MONEY account holds, and nothing else's total.** A money account has no
+    /// What a MONEY account holds, and nothing else's total. A money account has no
     /// lots — one unit of it is every other unit — so there is nothing to sum and the total IS the
     /// holding. `money_delta` is its one writer, and for any row that carries lots this column is
     /// not read at all.
     ///
-    /// **It used to be every row's total, and that was two writers of one quantity** (Law 4, 22e2).
+    /// It used to be every row's total, and that was two writers of one quantity.
     /// The old comment argued it was not a stored aggregate in Appendix B's sense — and the defect
     /// was not that: it was Law 19. `quantity()` answered from a tally kept BESIDE the lots rather
     /// than from the lots, so float addition over many periods drifted the two apart, and the
@@ -65,7 +65,7 @@ pub struct Register {
     /// 27.143341836734628*. The fix is the deletion: there is one writer of a holding's quantity
     /// because there is only one place it is written down.
     total: Vec<f64>,
-    /// Money D2: MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row
+    /// MONEY IS ONE OF ITSELF, so its account is a TOTAL and has no lots to draw. A row
     /// is one or the other and the register says which, because a family that summed the lots of a
     /// money account would report every account in the world as a violation — which is exactly what
     /// the first end-to-end period did, 10,318 times.
@@ -77,11 +77,11 @@ pub struct Register {
     /// (holder, instrument) -> row. The one hash in the design, on a packed integer key, asked at
     /// a boundary. A caller in a loop holds the `HoldingId`.
     row_of: HashMap<u64, u32>,
-    /// Both directions indexed (Register A3): the rows of one holder, and the rows of one line.
+    /// Both directions indexed: the rows of one holder, and the rows of one line.
     by_holder: HashMap<u32, Vec<u32>>,
     by_instrument: HashMap<u32, Vec<u32>>,
 
-    /// 0g.5: the write count a reader keys a kept answer on.
+    /// The write count a reader keys a kept answer on.
     writes: u64,
 
 }
@@ -114,9 +114,9 @@ impl Register {
         }
     }
 
-    /// Law 8: what the register holds is whole pieces, so what it reads back is a count of them.
+    /// What the register holds is whole pieces, so what it reads back is a count of them.
     /// A pair nobody holds holds nothing — which is an answer, not a missing number.
-    /// **Law 19, 22e2: it is READ from the lots, which are the source.** A holding's quantity used
+    /// It is READ from the lots, which are the source. A holding's quantity used
     /// to be a running total `credit` added to and `debit` subtracted from while the lots carried
     /// the same number — two writers, and they drifted.
     ///
@@ -135,7 +135,7 @@ impl Register {
         self.lots[at..at + len].iter().map(|l| l.qty).sum()
     }
 
-    /// Register C3: what is not encumbered. The liens are a slice, summed where it is asked.
+    /// What is not encumbered. The liens are a slice, summed where it is asked.
     #[inline]
     pub fn free(&self, row: HoldingId) -> f64 {
         if !row.some() {
@@ -150,8 +150,8 @@ impl Register {
         self.quantity(row) - pledged
     }
 
-    /// The lots of one holding, in the order they were acquired (Register D1).
-    /// Money D2: whether this row is a TOTAL with no lots, or a holding that carries them.
+    /// The lots of one holding, in the order they were acquired.
+    /// Whether this row is a TOTAL with no lots, or a holding that carries them.
     #[inline]
     pub fn is_total(&self, row: HoldingId) -> bool {
         row.some() && self.total_only[row.row()]
@@ -177,13 +177,13 @@ impl Register {
     }
 
     /// Every holding, as rows. It is a RANGE and not a list: the TypeScript `allHoldings` built
-    /// 544,104 objects on every call and ten readers a period asked for it (0g.31).
+    /// 544,104 objects on every call and ten readers a period asked for it.
     #[inline]
     pub fn all(&self) -> impl Iterator<Item = HoldingId> + '_ {
         (0..self.holder.len() as u32).map(HoldingId)
     }
 
-    /// Register A3: the rows of one holder, and of one line. Both indexed, neither derived.
+    /// The rows of one holder, and of one line. Both indexed, neither derived.
     pub fn of_holder(&self, holder: PartyId) -> &[u32] {
         match self.by_holder.get(&holder.0) {
             Some(rows) => rows,
@@ -198,7 +198,7 @@ impl Register {
         }
     }
 
-    /// B2: the sum of what is held of a line, over its own index, with the dust of the walk (Law 7).
+    /// The sum of what is held of a line, over its own index, with the dust of the walk.
     pub fn held_total(&self, instrument: InstrumentId) -> (f64, f64) {
         let mut total = 0.0;
         let mut magnitude = 0.0;
@@ -212,7 +212,7 @@ impl Register {
         (total, (terms as f64 + 2.0) * f64::EPSILON * magnitude)
     }
 
-    // ---- the writes: settlement's, and nobody else's (Law 4) ------------------------------------
+    // ---- the writes: settlement's, and nobody else's ------------------------------------
 
     /// The row for this pair, opened if there is none. A holding without a holder or an issuer is
     /// what Appendix B forbids; both are named here and neither can be absent.
@@ -238,7 +238,7 @@ impl Register {
         HoldingId(row)
     }
 
-    /// Register C1: units arrive with the basis they cost. A credit moves a positive quantity.
+    /// Units arrive with the basis they cost. A credit moves a positive quantity.
     pub fn credit(
         &mut self,
         holder: PartyId,
@@ -268,8 +268,8 @@ impl Register {
         row
     }
 
-    /// Register C4, D2: units leave OLDEST FIRST, and what they cost goes with them. A debit of
-    /// more than is free is refused — arithmetic impossibility, never a clamp (Law 6).
+    /// Units leave OLDEST FIRST, and what they cost goes with them. A debit of
+    /// more than is free is refused — arithmetic impossibility, never a clamp.
     pub fn debit(&mut self, row: HoldingId, qty: f64) -> Vec<Drawn> {
         assert!(qty > 0.0, "Register C4: a debit moves a positive quantity");
         assert!(row.some(), "Register C4: nothing is held of this");
@@ -309,7 +309,7 @@ impl Register {
         drawn
     }
 
-    /// Money D2: money is one of itself, so its account is a total and has no lots to draw.
+    /// Money is one of itself, so its account is a total and has no lots to draw.
     pub fn money_delta(&mut self, holder: PartyId, instrument: InstrumentId, delta: f64) -> f64 {
         let row = self.open(holder, instrument);
         self.total_only[row.row()] = true;
@@ -318,9 +318,9 @@ impl Register {
         self.total[row.row()]
     }
 
-    /// Register C3: a claim over units, which refuses their move rather than adjusting it.
+    /// A claim over units, which refuses their move rather than adjusting it.
     ///
-    /// **One lien per (holding, holder)** (Law 4, 21.131.BF4): pledging again to the same party adds
+    /// One lien per (holding, holder): pledging again to the same party adds
     /// to the claim that party already has rather than writing a second row beside it. Two rows with
     /// the same holder would be two answers to *what does this party have a claim over*, and a
     /// release that matched by holder would find whichever came first — which is BF4's defect exactly
@@ -348,13 +348,13 @@ impl Register {
         self.writes += 1;
     }
 
-    /// Register C3, D5, 21.115: **a lien comes off the way it went on, and releasing one that is not
-    /// there throws.** There was no release at all until now, which meant that in this world units
+    /// A lien comes off the way it went on, and releasing one that is not
+    /// there throws. There was no release at all until now, which meant that in this world units
     /// pledged were pledged for ever: a securities loan could be returned, a repo could mature and a
     /// margin call could be reversed, and the claim over the units stayed on the row. `free` would
     /// answer for ever with the encumbrance of a relation that had ended.
     ///
-    /// Law 6: it does not clamp a release to what is there. Releasing more than was pledged, or
+    /// It does not clamp a release to what is there. Releasing more than was pledged, or
     /// releasing to a party that holds no lien on this row, is not a smaller release — it is somebody
     /// reading the wrong row, and the citation says which.
     pub fn release(&mut self, holder: PartyId, instrument: InstrumentId, to: PartyId, qty: f64) {
@@ -382,8 +382,8 @@ impl Register {
     }
 }
 
-// **`lots_against_quantity` stood here** — a byte-for-byte second copy of `audit.rs`'s
-// `LotsAgainstQuantity` loop (Law 4), whose comment still described the maintained total that 22e2
+// `lots_against_quantity` stood here — a byte-for-byte second copy of `audit.rs`'s
+// `LotsAgainstQuantity` loop, whose comment still described the maintained total that 22e2
 // deleted and whose only callers were its own test and a benchmark. Both are gone at 0m.1: the
 // check could not fail, because `quantity()` for a row that carries lots re-derives from those very
 // lots. The read that replaces it is `quantity()` itself.
@@ -395,12 +395,12 @@ mod tests {
 
     #[test]
     fn a_holdings_quantity_is_its_lots_and_cannot_drift_from_them() {
-        // **Law 4, Law 19, 22e2: ONE WRITER of a holding's quantity.** It was a running total that
+        // ONE WRITER of a holding's quantity. It was a running total that
         // `credit` added to and `debit` subtracted from while the lots carried the same number, and
         // over enough float arithmetic the two drifted apart — which is what the ownership family
         // found on the audit's first period in the loop.
         //
-        // The drift cannot be asserted away with a band (Law 7). It is unsayable now, because there
+        // The drift cannot be asserted away with a band. It is unsayable now, because there
         // is only one place the number is written down: whatever the lots say, the quantity IS.
         let mut reg = Register::new();
         let p = PartyId::at(0);
@@ -418,7 +418,7 @@ mod tests {
         let summed: f64 = reg.lots(row).iter().map(|l| l.qty).sum();
         assert_eq!(reg.quantity(row), summed, "the quantity IS the lots, not a tally beside them");
 
-        // Money D2: the one row that answers from a total, and it is not an exception — a money
+        // The one row that answers from a total, and it is not an exception — a money
         // account has no lots, so the total is a copy of nothing.
         let cash = InstrumentId::at(1);
         reg.money_delta(p, cash, 900.0);
@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(drawn[1].basis_per_unit, 2.5);
         assert_eq!(drawn[1].qty, 20.0);
         assert_eq!(reg.quantity(row), 30.0);
-        // 0m.1: and the row answers 30 because the lots say 30. There is no second number to check
+        // And the row answers 30 because the lots say 30. There is no second number to check
         // it against, which is why the family that used to is gone.
         assert_eq!(reg.lots(row).iter().map(|l| l.qty).sum::<f64>(), 30.0);
     }
@@ -508,7 +508,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "no lien to release")]
     fn releasing_a_lien_that_is_not_there_is_a_read_of_the_wrong_row() {
-        // 21.115: the (24, 96) world stopped on exactly this, and stopping is right — a return that
+        // The (24, 96) world stopped on exactly this, and stopping is right — a return that
         // releases a lien already gone means the row it thinks it is on is not the row it is on.
         let mut reg = Register::new();
         let p = PartyId::at(0);
@@ -521,7 +521,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "a read of the wrong row")]
     fn releasing_more_than_was_pledged_is_not_a_smaller_release() {
-        // Law 6: it is not clamped to what is there.
+        // It is not clamped to what is there.
         let mut reg = Register::new();
         let p = PartyId::at(0);
         let i = InstrumentId::at(0);
@@ -545,13 +545,13 @@ mod tests {
     }
 }
 
-/// Banks Lending D1, XI-1: **WHAT A CLAIM IS**, as a status that is WRITTEN rather than inferred.
+/// Banks Lending D1, XI-1: WHAT A CLAIM IS, as a status that is WRITTEN rather than inferred.
 /// Each step is a crossing with a date, and a claim does not slide between them by arithmetic.
 ///
 /// It lives in the KERNEL and not in a module, because more than one module reads it — the lender
 /// writes it, a pool reads it, a credit-default swap triggers on it, a resolution values a book by
 /// it — and a fact two modules share is the kernel's, never one module's for another to import
-/// (Law 15). `phoenix-check` is what said so: `lending` reached into `loss` for this, and the
+/// . `phoenix-check` is what said so: `lending` reached into `loss` for this, and the
 /// module that does that has made the other one part of its own contract.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Standing {

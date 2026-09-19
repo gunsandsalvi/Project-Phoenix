@@ -1,6 +1,6 @@
 //! The modules: one spec system, instrument family or seed each. A module declares its kinds,
 //! units, params, phases, participants, audit contributions and seed contribution, and it reaches
-//! the kernel ONLY through `module.rs`'s doors — never by importing another module (Law 15).
+//! the kernel ONLY through `module.rs`'s doors — never by importing another module.
 
 pub mod bank_capital;
 pub mod bank_funding;

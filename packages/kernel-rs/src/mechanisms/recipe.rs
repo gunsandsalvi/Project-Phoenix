@@ -7,50 +7,50 @@
 //! @spec 37 B1.c · 37 B1.d · 37 B2 · 37 B3 · 37 B4 · 37 B5 · 37 B5.a · 37 B5.b · Law 2, Law 6,
 //! @spec Law 8, Law 19 · Appendix B
 //!
-//! **A Leontief recipe, no substitution** (A2.a). Chosen deliberately, for one reason and with one
+//! A Leontief recipe, no substitution. Chosen deliberately, for one reason and with one
 //! cost stated: fixed coefficients make an input shortage bite as a REAL PRODUCTION CONSTRAINT rather
 //! than being smoothed away by a substitution elasticity nobody can observe — which is what makes a
 //! supply shock transmit at all. The cost is that a firm facing an expensive input cannot economise
-//! on it, so **substitution is a MISSING mechanism here, not an assumption away**: if a relative-price
+//! on it, so substitution is a MISSING mechanism here, not an assumption away: if a relative-price
 //! response is wanted later it is a new mechanism, not a parameter.
 //!
-//! **A recipe is not a value share** (A2.b). Expressed as cost per unit of revenue, with the physical
-//! draw computed as money needed divided by the input's price, **a price doubling halves the physical
-//! draw** — the strongest substitution assumption there is, sitting exactly where the model chose no
+//! A recipe is not a value share. Expressed as cost per unit of revenue, with the physical
+//! draw computed as money needed divided by the input's price, a price doubling halves the physical
+//! draw — the strongest substitution assumption there is, sitting exactly where the model chose no
 //! substitution at all, and invisible because it reads as an ordinary units calculation. So `Recipe`
 //! holds QUANTITIES per unit of output and there is no price anywhere in it.
 //!
-//! **The quantity is the OUTCOME** (B1). The firm decides from its reasons — expected demand, its
+//! The quantity is the OUTCOME. The firm decides from its reasons — expected demand, its
 //! margin, its capacity, its inputs on hand, its labour — and what it makes is what those allow.
-//! Utilisation is a read of the outcome against capacity and never an input to it (B1.d).
+//! Utilisation is a read of the outcome against capacity and never an input to it.
 //!
-//! **Not everything started is finished** (B4). Scrap is a loss of UNITS at the point they would have
+//! Not everything started is finished. Scrap is a loss of UNITS at the point they would have
 //! been made, and what survives is dearer per unit because normal waste is absorbed into the cost of
 //! the survivors. Law 6: yield is a fact about the line, and the survivors are what arithmetic leaves.
 
 use crate::ids::{InstrumentId, PartyId};
 
-/// A2: fixed input quantities **per unit of output**. A TECHNOLOGY primitive (Law 2) — a fact about
+/// Fixed input quantities per unit of output. A TECHNOLOGY primitive — a fact about
 /// how the thing is made, imported from the real world, and not an equilibrium.
 #[derive(Clone, Debug)]
 pub struct Recipe {
     pub makes: InstrumentId,
-    /// A2.a: quantities, in the input's own physical unit (Law 8). No prices, no shares, no money.
+    /// Quantities, in the input's own physical unit. No prices, no shares, no money.
     pub per_unit: Vec<(InstrumentId, f64)>,
-    /// A2.c: plus labour, plus capital services. Both are draws per unit like any other.
+    /// Plus labour, plus capital services. Both are draws per unit like any other.
     pub labour_per_unit: f64,
     pub capital_services_per_unit: f64,
-    /// B4: not everything started is finished. The share of starts that survive — a fact about the
+    /// Not everything started is finished. The share of starts that survive — a fact about the
     /// line, never a target.
     pub yields: f64,
-    /// B5.b: **the smallest run of the line** — a furnace charge, a print run, a shift. A TECHNOLOGY
+    /// The smallest run of the line — a furnace charge, a print run, a shift. A TECHNOLOGY
     /// primitive: a fact about how the thing is made, and the reason a small order is not simply a
     /// small run. A line whose batch is one unit is a line with no batch, which is a real kind of
     /// line and is said by declaring one rather than by leaving it out.
     pub batch: f64,
-    /// B3: **how long the line takes**, in periods. A TECHNOLOGY primitive like the batch, and the
+    /// How long the line takes, in periods. A TECHNOLOGY primitive like the batch, and the
     /// reason work in progress exists at all: between the input going in and the output coming out
-    /// there is a thing, owned by somebody, carrying what it cost (21f.3). A line that takes one
+    /// there is a thing, owned by somebody, carrying what it cost. A line that takes one
     /// period still has an in-between — it started last period and finishes this one — and a line
     /// that took none would be a line where nothing is ever being made.
     pub periods_to_make: u32,
@@ -78,7 +78,7 @@ impl Recipe {
         Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields, batch, periods_to_make }
     }
 
-    /// B2: **production consumes the inputs it consumes** — the physical consequence of the decision,
+    /// Production consumes the inputs it consumes — the physical consequence of the decision,
     /// and the recipe says how much. Never a separately chosen number.
     ///
     /// The draw is against what is STARTED, because scrap consumed its inputs too.
@@ -86,24 +86,24 @@ impl Recipe {
         self.per_unit.iter().map(|(what, per)| (*what, per * starts)).collect()
     }
 
-    /// B4: what arrives at the end of the line.
+    /// What arrives at the end of the line.
     pub fn finishes(&self, starts: f64) -> f64 {
         starts * self.yields
     }
 
-    /// **21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS.** Building a structure
+    /// 21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS. Building a structure
     /// somewhere already built-up draws more of everything — deeper foundations, longer haulage, more
     /// hours on a constrained site — so the recipe's requirement is a function of the place rather
     /// than a constant.
     ///
-    /// **It is ONE writer of the scaling** (Law 4). Every read downstream — what the firm can afford
+    /// It is ONE writer of the scaling. Every read downstream — what the firm can afford
     /// to start, what actually leaves its rows, what the batch cost — comes off this one object, so
     /// the decision and the draw cannot disagree about where the line is standing.
     ///
     /// What it does NOT touch is the yield, the batch or the lead time: a crowded site does not spoil
     /// more of what it makes, does not change the smallest run of the line, and is a claim about cost
     /// rather than about time. And it sets no money number at all — what the extra draw COSTS is
-    /// whatever those inputs cleared at in their own books (Law 3).
+    /// whatever those inputs cleared at in their own books.
     ///
     /// A factor of one is the same recipe, which is what a line that stands nowhere gets: flour is
     /// milled alike everywhere.
@@ -124,34 +124,34 @@ impl Recipe {
     }
 }
 
-/// B1: the reasons a firm has. Each is a real state it can read; none of them is the quantity.
+/// The reasons a firm has. Each is a real state it can read; none of them is the quantity.
 #[derive(Clone, Debug)]
 pub struct Reasons {
     pub firm: PartyId,
-    /// Its own outlook (§46), never a model forecast.
+    /// Its own outlook, never a model forecast.
     pub expected_demand: f64,
-    /// B1.a: capacity is one of the reasons, and **binding capacity is a real state**.
+    /// Capacity is one of the reasons, and binding capacity is a real state.
     pub capacity: f64,
-    /// B1.b: inputs on hand, in the same units the recipe draws in. **A shortage is a real state that
-    /// reaches the decision** — a constraint computed and read by nobody is not a constraint.
+    /// Inputs on hand, in the same units the recipe draws in. A shortage is a real state that
+    /// reaches the decision — a constraint computed and read by nobody is not a constraint.
     pub on_hand: Vec<(InstrumentId, f64)>,
-    /// B1.c: labour available, from the engagement rows.
+    /// Labour available, from the engagement rows.
     pub labour: f64,
-    /// **37 B1, 22c.3: WHAT IT ALREADY HAS ON THE SHELF.** A firm that cannot see its own unsold
+    /// 37 B1, 22c.3: WHAT IT ALREADY HAS ON THE SHELF. A firm that cannot see its own unsold
     /// stock decides as if every period started empty.
     pub on_shelf: f64,
-    /// **37 B1, 22c.3: how much cover it wants**, as a multiple of what it expects to sell. A
-    /// PREFERENCE (Law 2), its own and dispersed — a firm that wants two weeks' cover is not a firm
+    /// 37 B1, 22c.3: how much cover it wants, as a multiple of what it expects to sell. A
+    /// PREFERENCE, its own and dispersed — a firm that wants two weeks' cover is not a firm
     /// that wants none, and the difference is a real thing about how it runs.
     ///
     /// The desired buffer used to be exactly ZERO and nothing said so: `wanted = expected / yields`
     /// is a stock-adjustment rule whose target stock is nothing at all. A firm holding anything above
     /// what it expected to sell therefore started nothing, for ever — `batch 0, bound demand`, while
-    /// 1,648 lots perished on its own shelf (12c.3).
+    /// 1,648 lots perished on its own shelf.
     pub cover: f64,
 }
 
-/// What the decision came to, and **which reason bound** — so a reader can say why the line ran short
+/// What the decision came to, and which reason bound — so a reader can say why the line ran short
 /// rather than inferring it. B1.a and B1.b are states, and a state nobody can name is not one.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Bound {
@@ -159,7 +159,7 @@ pub enum Bound {
     Capacity,
     Inputs,
     Labour,
-    /// B5.b: what the firm could otherwise have run does not reach one batch of the line, so the
+    /// What the firm could otherwise have run does not reach one batch of the line, so the
     /// line does not run. It is not a small production decision; it is the absence of one.
     Batch,
 }
@@ -171,7 +171,7 @@ pub struct Decided {
     pub bound: Bound,
 }
 
-/// A2: **a line may be made more than one way.** Two ways of making the same good are two
+/// A line may be made more than one way. Two ways of making the same good are two
 /// TECHNOLOGIES, not a parameter — one may be labour-heavy and cheap on inputs, another the reverse,
 /// and which is better is not a fact about the line at all. It is a fact about the PRICES the firm
 /// is facing, and those differ between firms and between periods, which is why the choice belongs to
@@ -179,8 +179,8 @@ pub struct Decided {
 #[derive(Clone, Debug)]
 pub struct Line {
     pub makes: InstrumentId,
-    /// A2.a: each way is a full Leontief recipe in its own right. There is no blending of two ways
-    /// into one, because blending IS substitution, and the model chose none (A2.a).
+    /// Each way is a full Leontief recipe in its own right. There is no blending of two ways
+    /// into one, because blending IS substitution, and the model chose none.
     pub ways: Vec<Recipe>,
 }
 
@@ -197,13 +197,13 @@ impl Line {
     }
 }
 
-/// B5: **what one way costs THIS firm to make one unit that survives**, at the prices it can see.
+/// What one way costs THIS firm to make one unit that survives, at the prices it can see.
 ///
-/// Inputs consumed plus wages plus a capital charge (B5), divided by what finishes rather than by
-/// what starts — because normal waste is absorbed into the cost of the survivors (B4). The division
+/// Inputs consumed plus wages plus a capital charge, divided by what finishes rather than by
+/// what starts — because normal waste is absorbed into the cost of the survivors. The division
 /// is where that happens; nobody applies a markup for it.
 ///
-/// **`None` where an input has never printed.** A firm cannot cost a way it cannot price, and a way
+/// `None` where an input has never printed. A firm cannot cost a way it cannot price, and a way
 /// it cannot cost is one it cannot choose. Appendix A: that is missing, not zero — reading an
 /// unpriced input as free would make the way with the most unpriced inputs look cheapest, which is
 /// the defect exactly inverted.
@@ -219,9 +219,9 @@ pub fn costs(r: &Recipe, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f6
     Some(per_start / r.yields)
 }
 
-/// B1, A2: **the firm picks the way that costs IT least**, at the prices IT is facing.
+/// The firm picks the way that costs IT least, at the prices IT is facing.
 ///
-/// Law 2: this is not a rule about which way is better — there is no such fact. Two firms looking at
+/// This is not a rule about which way is better — there is no such fact. Two firms looking at
 /// different prices pick differently, and a firm picks differently when a price moves, which is the
 /// whole reason a line has more than one way of being made. What is declared is the ways; which one
 /// runs is an OUTCOME.
@@ -248,20 +248,20 @@ pub fn picks<'a>(
     best
 }
 
-/// B1: **the quantity is the OUTCOME.** It starts what its demand, capacity, inputs and labour all
+/// The quantity is the OUTCOME. It starts what its demand, capacity, inputs and labour all
 /// allow, and the tightest of them is what bound it.
 ///
-/// Law 6: none of these is a cap imposed on a number the firm would otherwise have made — each is a
+/// None of these is a cap imposed on a number the firm would otherwise have made — each is a
 /// quantity of a real thing, and you cannot draw an input you have not got. That is arithmetic
 /// impossibility, which is the only kind of limit there is.
 pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
-    // **What it would need to start to reach the shelf it wants**, given that some of it scraps.
+    // What it would need to start to reach the shelf it wants, given that some of it scraps.
     //
-    // 22c.3: the target is what it expects to sell PLUS the cover it wants, less what it already
+    // The target is what it expects to sell PLUS the cover it wants, less what it already
     // has. A firm whose shelf is already above that starts nothing — which is a real decision about
     // a real stock, where before it was a firm with a desired buffer of zero that nobody had chosen.
     //
-    // Law 6: `wanted` can come out negative and nothing floors it. It means the firm is over-stocked
+    // `wanted` can come out negative and nothing floors it. It means the firm is over-stocked
     // and there is no run of the line that would help; the batch arithmetic below turns it into
     // starting nothing, which is what being over-stocked DOES.
     let target = reasons.expected_demand * (1.0 + reasons.cover);
@@ -274,7 +274,7 @@ pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
         bound = Bound::Capacity;
     }
     for (what, per) in &r.per_unit {
-        // Appendix A: an input the firm has no row for is an input it HAS NONE OF. That is not a
+        // An input the firm has no row for is an input it HAS NONE OF. That is not a
         // missing number needing a default — the register answered, and the answer was nothing.
         let held_none_of_it = 0.0;
         let have = match reasons.on_hand.iter().find(|(input, _)| input == what) {
@@ -294,12 +294,12 @@ pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
             bound = Bound::Labour;
         }
     }
-    // B5.b: **the line runs in whole batches.** A batch is a fact about the line — a furnace charge,
+    // The line runs in whole batches. A batch is a fact about the line — a furnace charge,
     // a print run, a shift — and half of one is not a smaller run of it, it is nothing. So what the
     // reasons allow is turned into whole batches, and a firm whose reasons do not reach one batch
     // STARTS NOTHING and says so.
     //
-    // Law 6: this is not a floor under the quantity. A floor would raise a number to meet a
+    // This is not a floor under the quantity. A floor would raise a number to meet a
     // threshold; this lowers it to what the line can actually be run at, and the remainder is not
     // clipped away — it was never a producible quantity. It is also where operating leverage comes
     // from: the plant's upkeep is owed over whatever the batch made, so a line running one batch
@@ -313,7 +313,7 @@ pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
     Decided { starts: allows, finishes: r.finishes(allows), bound }
 }
 
-/// B1.d: **utilisation is a read of the outcome against capacity, never an input to it.** `None`
+/// Utilisation is a read of the outcome against capacity, never an input to it. `None`
 /// where there is no capacity to read against.
 pub fn utilisation(d: &Decided, capacity: f64) -> Option<f64> {
     if capacity <= 0.0 {
@@ -322,7 +322,7 @@ pub fn utilisation(d: &Decided, capacity: f64) -> Option<f64> {
     Some(d.starts / capacity)
 }
 
-/// B3: **work in progress exists between input and output**, owned by somebody, and it carries what
+/// Work in progress exists between input and output, owned by somebody, and it carries what
 /// it cost. It is a real thing with a holder, not a timing adjustment.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct WorkInProgress {
@@ -332,11 +332,11 @@ pub struct WorkInProgress {
     pub cost_carried: f64,
 }
 
-/// B5: **unit cost equals inputs consumed plus wages plus a capital charge** — and B4: what survives
+/// Unit cost equals inputs consumed plus wages plus a capital charge — and B4: what survives
 /// is dearer per unit than what was started, because normal waste is absorbed into the cost of the
 /// survivors. That is a consequence of the division, not a markup anybody applied.
 ///
-/// `None` where nothing finished: B5.a's **no units, no capitalised cost**. A period in which the
+/// `None` where nothing finished: B5.a's no units, no capitalised cost. A period in which the
 /// line started nothing capitalises nothing; the firm still incurs the cost and it is a period
 /// expense, which is the caller's to book — this read will not invent a unit to hang it on.
 pub fn unit_cost(inputs_consumed: f64, wages: f64, capital_charge: f64, finished: f64) -> Option<f64> {
@@ -346,7 +346,7 @@ pub fn unit_cost(inputs_consumed: f64, wages: f64, capital_charge: f64, finished
     Some((inputs_consumed + wages + capital_charge) / finished)
 }
 
-/// B5.b: **a throttled period is different.** A line's whole cost over a smaller batch IS a higher
+/// A throttled period is different. A line's whole cost over a smaller batch IS a higher
 /// unit cost, and that is what running a plant below its rate does. The read is the same read; what
 /// changes is the batch.
 pub fn throttled_cost(whole_line_cost: f64, batch: f64) -> Option<f64> {
@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn the_recipe_holds_quantities_and_no_price_so_a_price_doubling_draws_the_same_units() {
-        // A2.b: a recipe expressed as cost per unit of revenue means a price doubling HALVES the
+        // A recipe expressed as cost per unit of revenue means a price doubling HALVES the
         // physical draw — the strongest substitution assumption there is, sitting where the model
         // chose none, and invisible because it reads as an ordinary units calculation. There is no
         // price in `Recipe` to double.
@@ -401,7 +401,7 @@ mod tests {
 
     #[test]
     fn an_input_shortage_bites_as_a_real_production_constraint() {
-        // A2.a: fixed coefficients are what make a supply shock transmit at all. The firm wants
+        // Fixed coefficients are what make a supply shock transmit at all. The firm wants
         // 1,000, has capacity for 1,000 and labour for 1,000, and has 300 of an input it needs two
         // of per unit — so it starts 150, and the reason is nameable.
         let d = decide(&line(), &reasons(950.0, 1_000.0, 300.0, 10_000.0, 10_000.0));
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn the_quantity_is_the_outcome_and_which_reason_bound_is_nameable() {
-        // B1, B1.a, B1.b, B1.c: each reason is a real state that reaches the decision. A constraint
+        // Each reason is a real state that reaches the decision. A constraint
         // computed and read by nobody is not a constraint.
         let plenty = reasons(950.0, 10_000.0, 100_000.0, 100_000.0, 100_000.0);
         assert_eq!(decide(&line(), &plenty).bound, Bound::Demand);
@@ -439,7 +439,7 @@ mod tests {
 
     #[test]
     fn scrap_is_a_loss_of_units_at_the_point_they_would_have_been_made() {
-        // B4: what survives is dearer per unit than what was started, because normal waste is
+        // What survives is dearer per unit than what was started, because normal waste is
         // absorbed into the cost of the survivors — a consequence of the division, not a markup.
         let r = line();
         let starts = 1_000.0;
@@ -453,14 +453,14 @@ mod tests {
 
     #[test]
     fn a_period_that_started_nothing_capitalises_nothing() {
-        // B5.a: the firm still incurs the cost, and it is a period expense. This read will not
+        // The firm still incurs the cost, and it is a period expense. This read will not
         // invent a unit to hang it on.
         assert!(unit_cost(2_000.0, 400.0, 100.0, 0.0).is_none());
     }
 
     #[test]
     fn a_throttled_line_costs_more_per_unit_because_the_batch_is_smaller() {
-        // B5.b: a line's whole cost over a smaller batch IS a higher unit cost, and that is what
+        // A line's whole cost over a smaller batch IS a higher unit cost, and that is what
         // running a plant below its rate does.
         let at_rate = throttled_cost(10_000.0, 1_000.0).unwrap();
         let throttled = throttled_cost(10_000.0, 250.0).unwrap();
@@ -470,7 +470,7 @@ mod tests {
 
     #[test]
     fn utilisation_is_read_from_the_outcome_and_never_put_into_it() {
-        // B1.d. The decision above never consulted a utilisation figure; this is computed after it.
+        // The decision above never consulted a utilisation figure; this is computed after it.
         let d = decide(&line(), &reasons(950.0, 2_000.0, 100_000.0, 100_000.0, 100_000.0));
         let u = utilisation(&d, 2_000.0).unwrap();
         assert!(u > 0.0 && u < 1.0);
@@ -479,7 +479,7 @@ mod tests {
 
     #[test]
     fn work_in_progress_is_owned_by_somebody_and_carries_what_it_cost() {
-        // B3: a real thing with a holder, between input and output — not a timing adjustment.
+        // A real thing with a holder, between input and output — not a timing adjustment.
         let wip = WorkInProgress { owner: party(5), what: good(9), units: 120.0, cost_carried: 960.0 };
         assert_eq!(wip.owner, party(5));
         assert!(wip.cost_carried > 0.0);
@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn which_way_is_better_is_a_fact_about_prices_and_not_about_the_line() {
-        // A2, Law 2: two firms facing different prices pick differently, and the same firm picks
+        // Two firms facing different prices pick differently, and the same firm picks
         // differently when a price moves. That is why the ways are declared and the choice is not.
         let line = two_ways();
         let dear_input = |i: InstrumentId| if i == good(1) { Some(10.0) } else { Some(1.0) };
@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn a_way_the_firm_cannot_price_is_a_way_it_cannot_choose() {
-        // Appendix A: an unpriced input is MISSING, not free. Read as zero it would make the way
+        // An unpriced input is MISSING, not free. Read as zero it would make the way
         // with the most unpriced inputs look cheapest — the defect exactly inverted.
         let line = two_ways();
         let only_input_two = |i: InstrumentId| if i == good(2) { Some(1.0) } else { None };
@@ -541,7 +541,7 @@ mod tests {
 
     #[test]
     fn the_cost_a_firm_reads_is_the_cost_of_a_unit_that_survives() {
-        // B4, B5: normal waste is absorbed into the cost of the survivors, and the division is
+        // Normal waste is absorbed into the cost of the survivors, and the division is
         // where that happens. Four units of input 1 at 1, half of input 2 at 1, a tenth of an hour
         // at 1 and a tenth of capital at 1 is 4.7 a start — and 4.7/0.95 a survivor.
         let r = &two_ways().ways[0];
@@ -556,7 +556,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "not a way of making this line")]
     fn a_way_of_making_something_else_is_not_one_of_this_line_s_ways() {
-        // Law 4: one representation per real thing. A line's ways all make the line.
+        // One representation per real thing. A line's ways all make the line.
         Line::new(good(9), vec![Recipe::new(good(8), vec![(good(1), 1.0)], 0.1, 0.1, 1.0, 1.0, 1)]);
     }
 
@@ -567,19 +567,19 @@ mod tests {
 
     #[test]
     fn the_line_runs_in_whole_batches_and_the_remainder_was_never_producible() {
-        // B5.b: half a furnace charge is not a smaller run, it is nothing. The firm has inputs for
+        // Half a furnace charge is not a smaller run, it is nothing. The firm has inputs for
         // 150 and could sell more, so it runs three batches of fifty and the reasons still say
         // inputs — the batch shaped the quantity but the shortage is what bound it.
         let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 320.0, 10_000.0, 10_000.0));
         assert_eq!(d.starts, 150.0);
         assert_eq!(d.bound, Bound::Inputs);
-        // Law 6: the 10 units of input beyond the third batch are not clipped off a quantity the
+        // The 10 units of input beyond the third batch are not clipped off a quantity the
         // firm would have made — they were never a producible run, and they are still on its books.
     }
 
     #[test]
     fn a_firm_whose_reasons_do_not_reach_one_batch_does_not_run_the_line_at_all() {
-        // B5.b: it is not a small production decision, it is the absence of one — and the reader
+        // It is not a small production decision, it is the absence of one — and the reader
         // can name it, which is the whole point of `Bound`.
         let d = decide(&in_fifties(), &reasons(950.0, 1_000.0, 80.0, 10_000.0, 10_000.0));
         assert_eq!(d.starts, 0.0);

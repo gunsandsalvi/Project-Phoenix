@@ -1,38 +1,38 @@
-//! **HOW A VENUE MATCHES — one module per protocol, dispatched on the venue's own declaration.**
+//! HOW A VENUE MATCHES — one module per protocol, dispatched on the venue's own declaration.
 //!
 //! @spec 3 A1 · 3 C1 · 3 C4 · Law 1, Law 3, Law 4, Law 15 · Appendix B
 //!
-//! **There was ONE microstructure and it was the wrong one for almost everything.** A weekly
+//! There was ONE microstructure and it was the wrong one for almost everything. A weekly
 //! uniform-price call auction ran for bread, labour, loans, shares and freight alike, and nothing
 //! rested between sessions. A Walrasian auctioneer for bread is the one intermediary that never
-//! existed (Law 1): nobody has ever bought a loaf by posting a demand schedule and waiting for a
+//! existed: nobody has ever bought a loaf by posting a demand schedule and waiting for a
 //! sealed cross.
 //!
-//! **Which protocol a venue runs is DATA** (`VenueDecl.protocol`), so the kernel dispatches on the
-//! declaration and never branches on what is being traded (Law 15). Adding a protocol is a module and
+//! Which protocol a venue runs is DATA (`VenueDecl.protocol`), so the kernel dispatches on the
+//! declaration and never branches on what is being traded. Adding a protocol is a module and
 //! a variant, not a condition inside the solver.
 //!
-//! **Every one of them clears from real supply meeting real demand** (Law 3). That is what the three
+//! Every one of them clears from real supply meeting real demand. That is what the three
 //! have in common and it is the whole of what they have in common:
 //!
-//! - **`Call`** — a sealed cross at one level, which is what an auction and a fixing ARE. It is the
-//!   solver that was already here, unchanged.
-//! - **`Posted`** — a seller stands behind an ask; a buyer sees some of the market and takes the best
-//!   it saw. A trade happens when a buyer accepts a price a seller was standing behind, which is what
-//!   a price in a shop IS — and the price is still cleared, because the seller had to be willing to
-//!   sell at it and the buyer had to be willing to pay it. **What a buyer can SEE is a technology**
-//!   (`seen_by`): search is costly, and a buyer that saw the whole market would be a buyer in a call
-//!   auction wearing a shop's clothes.
-//! - **`Book`** — resting orders, matched continuously as they arrive, which is what an exchange is.
-//!   The price is the level the RESTING side was standing at, because that is the side that was there
-//!   first and the arriving side chose to hit it.
+//! - `Call` — a sealed cross at one level, which is what an auction and a fixing ARE. It is the
+//!  solver that was already here, unchanged.
+//! - `Posted` — a seller stands behind an ask; a buyer sees some of the market and takes the best
+//!  it saw. A trade happens when a buyer accepts a price a seller was standing behind, which is what
+//!  a price in a shop IS — and the price is still cleared, because the seller had to be willing to
+//!  sell at it and the buyer had to be willing to pay it. What a buyer can SEE is a technology
+//!  (`seen_by`): search is costly, and a buyer that saw the whole market would be a buyer in a call
+//!  auction wearing a shop's clothes.
+//! - `Book` — resting orders, matched continuously as they arrive, which is what an exchange is.
+//!  The price is the level the RESTING side was standing at, because that is the side that was there
+//!  first and the arriving side chose to hit it.
 //!
 //! Decentralised bilateral matching with partial information — over goods, labour, credit and
 //! deposits — is the dominant protocol in the macro-ABM literature, and `Posted` is it.
 
 use crate::clearing::{clear, Fill, Order, Outcome, PriceRule, Rationed, Side};
 
-/// 3 A1, 22c.1: **what kind of venue this is.** Registry data, declared by whoever opened the venue,
+/// 3 A1, 22c.1: what kind of venue this is. Registry data, declared by whoever opened the venue,
 /// and the one thing the kernel dispatches on.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Protocol {
@@ -46,7 +46,7 @@ pub enum Protocol {
 }
 
 impl Protocol {
-    /// **3 C2, 22c.2: whether an order that did not fill STAYS.**
+    /// 3 C2, 22c.2: whether an order that did not fill STAYS.
     ///
     /// A call auction is a sealed cross: an order that did not fill in it is gone, because the
     /// auction was the event and it is over. That is not a market with no memory — it is what an
@@ -54,8 +54,8 @@ impl Protocol {
     ///
     /// A shop and an exchange are the other way: the ask is still on the shelf next week and the bid
     /// is still in the book. Nothing rested anywhere before, which is why `noDemand` (7,903) dwarfed
-    /// `noOverlap` (323) — the two sides were not failing to agree on a price, **they were failing
-    /// to be in the room in the same week.**
+    /// `noOverlap` (323) — the two sides were not failing to agree on a price, they were failing
+    /// to be in the room in the same week.
     pub fn rests(self) -> bool {
         match self {
             Protocol::Call => false,
@@ -64,7 +64,7 @@ impl Protocol {
     }
 }
 
-/// **3 A1, 22c2.2: A VENUE, as whoever opened it declared it.** The four facts that are about the
+/// 3 A1, 22c2.2: A VENUE, as whoever opened it declared it. The four facts that are about the
 /// PLACE rather than about what is traded there, carried together because a caller made to name
 /// three is a caller that will one day name two (Law 15: registry data, never a branch).
 #[derive(Clone, Copy, Debug)]
@@ -73,11 +73,11 @@ pub struct Venue {
     pub protocol: Protocol,
     /// How many sellers one buyer can see. A TECHNOLOGY, read only by `Posted`.
     pub seen_by: usize,
-    /// **How long an order stands here, in periods.** A CONVENTION of this venue — as much a fact
+    /// How long an order stands here, in periods. A CONVENTION of this venue — as much a fact
     /// about the place as its protocol, and the reason a real book does not only grow.
     ///
     /// `Missing` is a venue whose orders stand until somebody pulls them, which is a real kind of
-    /// venue and is said by declaring it rather than by leaving it out (Appendix A). Every order in
+    /// venue and is said by declaring it rather than by leaving it out. Every order in
     /// this world rested for ever because no venue said otherwise: 16,869 resting after one period
     /// and 33,069 after four, with books cleared falling from 5 to 1.
     pub stands_for: Option<u32>,
@@ -86,17 +86,17 @@ pub struct Venue {
 impl Venue {
     /// 3 C2: the last day an order entered in `from` stands here. An order that stands for one
     /// period stands to the end of that period and is gone when the next one opens — a DATE, taken
-    /// from the calendar, never a count of periods carried on the row (G3.a).
+    /// from the calendar, never a count of periods carried on the row.
     pub fn until(&self, cal: &crate::calendar::Calendar, from: u32) -> Option<crate::calendar::Day> {
         self.stands_for
             .map(|periods| crate::calendar::Day(cal.start_of(crate::calendar::Period(from + periods)).0 - 1))
     }
 }
 
-/// How much of a market one buyer can see, as a count of sellers. **A TECHNOLOGY** (Law 2): search
+/// How much of a market one buyer can see, as a count of sellers. A TECHNOLOGY: search
 /// is costly and nobody sees everything, and it is the difference between a shop and an auction.
 ///
-/// Law 6: a buyer that can see more sellers than there are sees all of them, which is arithmetic
+/// A buyer that can see more sellers than there are sees all of them, which is arithmetic
 /// about a list and not a cap on a number.
 pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     assert!(seen_by > 0, "3 C1: a buyer that can see no seller is in no market");
@@ -122,7 +122,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     for (seen_from, bid) in bids.iter().enumerate() {
         let mut wanted = bid.qty;
         let limit = level_of(bid);
-        // **What this buyer saw**: a window of the sellers, not the whole market. Where it starts is
+        // What this buyer saw: a window of the sellers, not the whole market. Where it starts is
         // the buyer's own place in the queue, so two buyers do not see the same shelf — which is why
         // the cheapest seller is not exhausted by the first buyer in a list.
         let from = seen_from % asks.len();
@@ -135,7 +135,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
                 continue;
             }
             let ask = level_of(asks[at]);
-            // Law 3: it takes it because it is willing to pay what the seller was standing behind.
+            // It takes it because it is willing to pay what the seller was standing behind.
             // A buyer that will not pay the ask does not buy, and no price is invented between them.
             if ask > limit {
                 continue;
@@ -153,7 +153,7 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
         // 3 C4: the two sides were in the room and nothing crossed. The bracket is not a price.
         return Outcome::NoOverlap { best_ask: level_of(asks[0]), best_bid: level_of(bids[0]) };
     }
-    // **The print is the LAST price anybody actually paid.** A posted market has no single level —
+    // The print is the LAST price anybody actually paid. A posted market has no single level —
     // that is what makes it a posted market — so what it prints is a transaction and never an
     // average of them (Law 3: a price is a thing somebody paid, and a mean of two trades is neither).
     Outcome::Cleared {
@@ -166,8 +166,8 @@ pub fn posted(orders: &[Order], seen_by: usize) -> Outcome {
     }
 }
 
-/// **Resting orders, matched as they arrive.** An arriving order takes what is already standing
-/// there; what it cannot fill RESTS, and the caller is what keeps it between sessions (22c.2).
+/// Resting orders, matched as they arrive. An arriving order takes what is already standing
+/// there; what it cannot fill RESTS, and the caller is what keeps it between sessions.
 ///
 /// The price is the RESTING side's level, which is not a convention: the resting side was there
 /// first and the arriving side chose to hit it, so that is the price the trade happened at.
@@ -237,7 +237,7 @@ pub fn book(resting: &[Order], arriving: &[Order]) -> Outcome {
     }
 }
 
-/// 22c.1: **the venue's protocol decides how it matches**, and the kernel asks rather than deciding.
+/// The venue's protocol decides how it matches, and the kernel asks rather than deciding.
 pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: PriceRule, seen_by: usize) -> Outcome {
     match protocol {
         // A call auction takes everything in the room at once — what rested and what arrived are one
@@ -254,7 +254,7 @@ pub fn run(protocol: Protocol, resting: &[Order], arriving: &[Order], rule: Pric
     }
 }
 
-/// Clearing C1: an order with no level is willing to take what the book gives it. In a posted or a
+/// An order with no level is willing to take what the book gives it. In a posted or a
 /// resting market that means it will pay anything a seller stands behind and take anything a buyer
 /// offers, which is what a market order IS.
 #[inline]
@@ -272,8 +272,8 @@ fn best(standing: &[(Order, i64)], arriving: &[Order], side: Side) -> Option<f64
         .filter(|(o, left)| o.side == side && *left > 0)
         .map(|(o, _)| level_of(o))
         .chain(arriving.iter().filter(|o| o.side == side).map(level_of));
-    // 22c.1: the keenest level on that side — the best bid or the cheapest ask. `num::keener` is
-    // where a comparison lives (Law 6), because a minimum written at a site reads as a cap.
+    // The keenest level on that side — the best bid or the cheapest ask. `num::keener` is
+    // where a comparison lives, because a minimum written at a site reads as a cap.
     let buying = side == Side::Buy;
     levels.fold(None, |acc: Option<f64>, l| Some(acc.map_or(l, |a| crate::num::keener(a, l, buying))))
 }
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn how_long_an_order_stands_is_the_venues_convention_and_it_is_a_date() {
-        // 22c2.2, G3.a: a venue that declares a life gives its orders a DAY to stand to, taken from
+        // A venue that declares a life gives its orders a DAY to stand to, taken from
         // the one calendar. An order entered in period 1 that stands for one period stands to the
         // end of period 1 and is gone when period 2 opens.
         let cal = crate::calendar::Calendar::new(crate::calendar::Day(0), 7, 3);
@@ -299,7 +299,7 @@ mod tests {
         assert_eq!(cal.start_of(crate::calendar::Period(2)), crate::calendar::Day(14));
 
         // And a venue that declares none has orders that stand until somebody pulls them, which is
-        // an answer and not an omission (Appendix A).
+        // an answer and not an omission.
         let forever = Venue { stands_for: None, ..shop };
         assert_eq!(forever.until(&cal, 1), None);
     }
@@ -314,16 +314,16 @@ mod tests {
 
     #[test]
     fn a_shop_is_a_buyer_taking_a_price_a_seller_stood_behind() {
-        // **Law 3 in a posted market**: the trade happened because the buyer was willing to pay what
+        // Law 3 in a posted market: the trade happened because the buyer was willing to pay what
         // the seller was willing to take. Nobody computed a level and nobody was rationed — that is
-        // an auction, and a loaf is not bought that way (Law 1).
+        // an auction, and a loaf is not bought that way.
         let orders = [sell(1, 2.0, 10), sell(2, 3.0, 10), buy(3, 2.5, 6)];
         let out = posted(&orders, 4);
         match out {
             Outcome::Cleared { price, volume, ref fills, rationed, .. } => {
                 assert_eq!((price, volume), (2.0, 6));
                 assert_eq!(rationed, Rationed::None);
-                // Two legs, because a trade has two sides (Law 5).
+                // Two legs, because a trade has two sides.
                 assert_eq!(fills.len(), 2);
             }
             other => panic!("{other:?}"),
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn a_buyer_sees_only_some_of_the_market_and_that_is_the_technology() {
-        // **Search is costly.** A buyer that saw everything would be a buyer in a call auction, and
+        // Search is costly. A buyer that saw everything would be a buyer in a call auction, and
         // the difference between a shop and an auction is exactly this window. Here the buyer can
         // see one seller and the one it sees is dear, so it pays the dear price — which is what
         // happens to somebody who does not shop around, and is not a defect.
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn a_buyer_that_will_not_pay_the_ask_does_not_buy_and_no_price_is_invented() {
-        // Law 3, Law 6: there is no level between them and nothing is met in the middle. The bracket
+        // There is no level between them and nothing is met in the middle. The bracket
         // is reported and is NOT a price (3 C4).
         let out = posted(&[sell(1, 10.0, 5), buy(2, 4.0, 5)], 4);
         match out {
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn an_arriving_order_takes_what_is_resting_at_the_level_it_was_resting_at() {
-        // **The resting side was there first**, so the price is its level and not the arriving
+        // The resting side was there first, so the price is its level and not the arriving
         // side's. A buyer willing to pay 5 that hits an ask resting at 3 pays 3.
         let resting = [sell(1, 3.0, 10)];
         let arriving = [buy(2, 5.0, 4)];
@@ -384,7 +384,7 @@ mod tests {
 
     #[test]
     fn what_did_not_fill_is_not_a_trade_and_the_book_says_which_side_was_missing() {
-        // Appendix A: nothing crossed is three different answers, and they are told apart.
+        // Nothing crossed is three different answers, and they are told apart.
         assert!(matches!(book(&[sell(1, 3.0, 5)], &[]), Outcome::NoDemand));
         assert!(matches!(book(&[buy(1, 3.0, 5)], &[]), Outcome::NoSupply));
         assert!(matches!(
@@ -395,7 +395,7 @@ mod tests {
 
     #[test]
     fn the_kernel_dispatches_on_the_declaration_and_never_on_what_is_traded() {
-        // Law 15: the same orders, three protocols, three answers — and the code that chooses is a
+        // The same orders, three protocols, three answers — and the code that chooses is a
         // `match` on the VENUE's declaration, not on the instrument or the party kind.
         let resting = [sell(1, 2.0, 10)];
         let arriving = [buy(2, 4.0, 6)];

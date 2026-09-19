@@ -1,11 +1,11 @@
-//! The period loop: ordered phases held as DATA, run in order, one at a time (Law 10).
+//! The period loop: ordered phases held as DATA, run in order, one at a time.
 //!
 //! The kernel owns every store and the loop. A module reaches it only through a context, never by
 //! importing another module, and a phase that reads a print no phase has produced yet THROWS rather
 //! than reading a stale one — which is the ordering being load-bearing rather than hoped for.
 //!
-//! A period is: the phases in order, then the audit (Audit C1). Every phase runs every period
-//! (Audit C3); a phase that had nothing to do did nothing, which is an outcome and not an absence.
+//! A period is: the phases in order, then the audit. Every phase runs every period
+//! ; a phase that had nothing to do did nothing, which is an outcome and not an absence.
 
 use crate::calendar::{Calendar, Cycle, Period};
 
@@ -20,7 +20,7 @@ pub enum Produces {
     Event(u32),
 }
 
-/// Law 10: where a phase runs, against a kernel phase or another module's.
+/// Where a phase runs, against a kernel phase or another module's.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Anchor {
     Before(u32),
@@ -68,7 +68,7 @@ impl Phases {
         }
     }
 
-    /// Law 10: a module's phase is INSERTED at the position its anchor puts it. Anchoring BEFORE
+    /// A module's phase is INSERTED at the position its anchor puts it. Anchoring BEFORE
     /// puts it just ahead of the anchor, behind the ones already there; anchoring AFTER puts it
     /// behind the anchor's existing children, so a later module's phase never lands in front of an
     /// earlier module's — which is the reverse of what assembly promised.
@@ -106,7 +106,7 @@ impl Phases {
         self.order.insert(insert, decl);
     }
 
-    /// Law 10: once sealed, the order is what a period runs and no phase may be added. And the
+    /// Once sealed, the order is what a period runs and no phase may be added. And the
     /// order is CHECKED here rather than trusted: a phase that reads what a later phase writes
     /// would read a stale answer every period and nothing would say so.
     pub fn seal(&mut self) {

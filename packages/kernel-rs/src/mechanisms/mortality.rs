@@ -4,26 +4,26 @@
 //!
 //! Every kind of party in this world can cease to exist, each with its own trigger and its own
 //! consequence: a firm that cannot pay or whose liabilities exceed its assets; a bank that cannot
-//! fund itself **or** whose capital is gone; a fund whose equity is gone; an insurer whose assets
+//! fund itself or whose capital is gone; a fund whose equity is gone; an insurer whose assets
 //! fall below the present value of its liabilities; a clearing house that runs past the end of its
 //! waterfall; a sovereign that will not or cannot pay in a money it cannot create; a household cell
 //! that dissolves.
 //!
-//! **The one exception is stated rather than left as an omission.** A central bank cannot cease in
+//! The one exception is stated rather than left as an omission. A central bank cannot cease in
 //! its own money — §31 A1.a: it can never run out of what it alone issues, which is the whole
-//! reason a corridor works. **It can still make a loss**, and the loss is real: it reduces its
+//! reason a corridor works. It can still make a loss, and the loss is real: it reduces its
 //! equity, it is not remitted, and the deferred asset is a row the treasury may have to make good
-//! (§31 E4). So immortality here is a CONSEQUENCE of what it issues, and it is bounded to that
+//! . So immortality here is a CONSEQUENCE of what it issues, and it is bounded to that
 //! money — not a party the rules were relaxed for.
 //!
-//! **Appendix B: no death without a destination.** `cease` returns where what it held goes, and
+//! No death without a destination. `cease` returns where what it held goes, and
 //! there is no variant that means "nowhere".
 
 use crate::journal::Value;
 use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{CurrencyCode, PartyId};
 
-/// XI-3: why this party failed. Each kind fails its own way, and the trigger is named rather than
+/// Why this party failed. Each kind fails its own way, and the trigger is named rather than
 /// being a single "insolvent" flag that erases what actually happened.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
@@ -32,7 +32,7 @@ pub enum Trigger {
     /// A firm, a fund, an insurer: what it owes is more than what it has.
     LiabilitiesExceedAssets,
     /// A bank: it cannot fund itself — which is a different failure from having no capital, and a
-    /// bank can meet either one first (XI-3, Appendix B: liquidity AND solvency).
+    /// bank can meet either one first.
     CouldNotFundItself,
     /// A bank: its capital is gone.
     CapitalGone,
@@ -41,23 +41,23 @@ pub enum Trigger {
     PastTheWaterfall,
     /// A sovereign: it will not or cannot pay, in a money it cannot create.
     WillNotOrCannotPay,
-    /// A household cell: it dissolved (Households F1).
+    /// A household cell: it dissolved.
     Dissolved,
 }
 
-/// Appendix B, XI-8: **no death without a destination.** Where what it held goes — and every
+/// No death without a destination. Where what it held goes — and every
 /// variant names somebody, because there is no "nowhere" to put it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Destination {
-    /// XI-8: an estate opens, its assets are sold into real markets and its claims are ranked.
+    /// An estate opens, its assets are sold into real markets and its claims are ranked.
     Estate(PartyId),
-    /// Households F2: a household cell's wealth transfers to a NAMED heir cell, never to nobody.
+    /// A household cell's wealth transfers to a NAMED heir cell, never to nobody.
     Heir(PartyId),
     /// A bank: resolution — a valuation, a bail-in hierarchy, an acquirer or a public path.
     Resolution(PartyId),
 }
 
-/// XI-3: what happens when a party fails. It is a pair — the trigger and the destination — because
+/// What happens when a party fails. It is a pair — the trigger and the destination — because
 /// either alone loses half of what the event is.
 #[derive(Clone, Copy, Debug)]
 pub struct Ceased {
@@ -67,7 +67,7 @@ pub struct Ceased {
     pub period: u32,
 }
 
-/// §31 A1.a: **a central bank cannot cease in its own money.** It is asked here rather than assumed,
+/// A central bank cannot cease in its own money. It is asked here rather than assumed,
 /// so the exception is a read with a reason and not a gap in a match.
 ///
 /// It is bounded to THAT money: a central bank short of a money it does not issue is a party like
@@ -76,7 +76,7 @@ pub fn can_cease(is_central_bank: bool, owed_in: CurrencyCode, issues: CurrencyC
     !(is_central_bank && owed_in == issues)
 }
 
-/// §31 E4: **and it can still make a loss.** The loss is real — it reduces equity, it is NOT
+/// And it can still make a loss. The loss is real — it reduces equity, it is NOT
 /// remitted, and what is left is a deferred asset the treasury may have to make good. A central
 /// bank that booked no loss because it cannot fail would be immortality leaking out of its own
 /// money into its accounts.
@@ -90,31 +90,31 @@ pub struct CentralBankLoss {
 }
 
 impl CentralBankLoss {
-    /// E4: a bank in loss remits NOTHING. Remitting out of a loss would be the interest
+    /// A bank in loss remits NOTHING. Remitting out of a loss would be the interest
     /// round-trip XI-9 warns about, wearing a different hat.
     pub fn is_consistent(&self) -> bool {
         self.equity_after >= 0.0 || (self.remitted == 0.0 && self.deferred > 0.0)
     }
 }
 
-// **XI-3 RUNS HERE** (0m2.1). `Failing` was in `running.rs`, apart from `can_cease` and
+// XI-3 RUNS HERE. `Failing` was in `running.rs`, apart from `can_cease` and
 // `Destination`, which are in this file and which it did not call.
 
-/// **XI-3, Appendix B: NOTHING IS IMMORTAL — and nothing in this world had ever died.**
+/// NOTHING IS IMMORTAL — and nothing in this world had ever died.
 ///
 /// The mortality row counted how many parties were alive, which is a true number and the opposite of
-/// the read the system is for (21j.3a). `mortality::Trigger` names how each kind fails and
+/// the read the system is for. `mortality::Trigger` names how each kind fails and
 /// `MechanismContext::ceases` has been the door all along; what was missing was anybody reading the
 /// state and deciding.
 ///
-/// **What it reads is what it owes against what it holds** (5 A4, `instruments::equity`): what others
+/// What it reads is what it owes against what it holds (5 A4, `instruments::equity`): what others
 /// hold of what it issued, plus what its estate owes, against everything on its own rows. A party
 /// whose liabilities exceed its assets has failed, and that is an EVENT with a date rather than a
 /// number that quietly goes negative.
 ///
-/// **The one exception is a consequence, not a rule** (§31 A1.a). A party that banks NOWHERE issues
+/// The one exception is a consequence, not a rule. A party that banks NOWHERE issues
 /// the money everybody else settles in, so it can never run out of what it alone creates. That is
-/// read off the kind's PROFILE — the reason, not the name (Law 15) — and it is bounded to that money:
+/// read off the kind's PROFILE — the reason, not the name — and it is bounded to that money:
 /// such a party can still make a loss, and the loss is real.
 pub struct Failing {
     pub says: u32,
@@ -128,7 +128,7 @@ impl Mechanism for Failing {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // §31 A1.a: it cannot run out of what it alone issues. The profile says which party that
+            // It cannot run out of what it alone issues. The profile says which party that
             // is, and it says so by naming the REASON — it banks nowhere because everybody else
             // settles in its money.
             let kind = ctx.parties().kind_of(who);
@@ -145,7 +145,7 @@ impl Mechanism for Failing {
             gone.push((who, worth));
         }
         for (who, worth) in gone {
-            // XI-8: what it HELD is the estate's, and this records only that its life ended — the
+            // What it HELD is the estate's, and this records only that its life ended — the
             // estate machinery is what pays its claimants in rank order.
             ctx.ceases(who);
             ctx.say(self.says, &[who.0], &[(0, Value::Num(worth))], true);
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn every_kind_fails_its_own_way_and_a_bank_has_two_doors() {
-        // XI-3, Appendix B: a bank fails on liquidity OR on solvency, and they are different
+        // A bank fails on liquidity OR on solvency, and they are different
         // failures — a single "insolvent" flag would erase which one happened.
         let liquidity = Ceased {
             who: PartyId::at(3),
@@ -173,8 +173,8 @@ mod tests {
 
     #[test]
     fn there_is_no_death_without_a_destination() {
-        // Appendix B: every variant names somebody. A household's wealth goes to a NAMED heir cell
-        // (Households F2), never to nobody — and there is no variant that means "nowhere", so a
+        // Every variant names somebody. A household's wealth goes to a NAMED heir cell
+        // , never to nobody — and there is no variant that means "nowhere", so a
         // caller cannot write one.
         let c = Ceased {
             who: PartyId::at(9),
@@ -193,7 +193,7 @@ mod tests {
     fn a_central_bank_cannot_cease_in_its_own_money_and_can_in_any_other() {
         let usd = CurrencyCode::at(0);
         let eur = CurrencyCode::at(1);
-        // §31 A1.a: it can never run out of what it alone issues, which is why a corridor works.
+        // It can never run out of what it alone issues, which is why a corridor works.
         assert!(!can_cease(true, usd, usd));
         // And it is bounded to THAT money: short of one it does not issue, it is a party like any
         // other. Appendix B's "no sovereign in foreign money" is the same point.
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn a_central_bank_in_loss_remits_nothing_and_the_deferred_asset_is_a_row() {
-        // §31 E4: the loss is REAL. Immortality is a consequence of what it issues and must not
+        // The loss is REAL. Immortality is a consequence of what it issues and must not
         // leak into its accounts.
         let in_loss = CentralBankLoss { equity_after: -400.0, deferred: 400.0, remitted: 0.0 };
         assert!(in_loss.is_consistent());

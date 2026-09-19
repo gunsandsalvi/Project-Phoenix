@@ -1,19 +1,19 @@
 //! THE LAWS, AS A CHECK. `tools/eslint-rules` for the Rust kernel.
 //!
-//! **A law that stops being checkable is a law that stops holding**, and that is the whole reason
+//! A law that stops being checkable is a law that stops holding, and that is the whole reason
 //! this exists before the other forty-six modules are ported rather than after. Clippy cannot
 //! express any of these: they are this project's, not the language's.
 //!
 //! Run: `cargo run --release --manifest-path tools/phoenix-check/Cargo.toml`
 //!
 //! What is EXEMPT, and why:
-//!   - `src/bin/**` — the benches. They time things, so they hold a clock and print; and they
-//!     construct inputs, so a bound on a loop counter is arithmetic rather than a damper.
-//!   - `#[cfg(test)]` blocks — a test states the numbers it is a test of. **That exemption is about
-//!     NUMBERS and nothing else**: a test may write `2.5` without declaring it, and may not build a
-//!     world. `WORLD_BUILDING` is the rule that says so, and it fires only inside a test.
-//!   - `ids`, `params`, `calendar` — the kernel's own conventions live there, which is what
-//!     `core/` and `registry/` are exempt for in the TypeScript rules.
+//!  - `src/bin/` — the benches. They time things, so they hold a clock and print; and they
+//!  construct inputs, so a bound on a loop counter is arithmetic rather than a damper.
+//!  - `#[cfg(test)]` blocks — a test states the numbers it is a test of. That exemption is about
+//!  NUMBERS and nothing else: a test may write `2.5` without declaring it, and may not build a
+//!  world. `WORLD_BUILDING` is the rule that says so, and it fires only inside a test.
+//!  - `ids`, `params`, `calendar` — the kernel's own conventions live there, which is what
+//!  `core/` and `registry/` are exempt for in the TypeScript rules.
 
 mod spec;
 
@@ -27,25 +27,25 @@ struct Finding {
     what: String,
 }
 
-/// Law 6: NO BOUND OF ANY KIND. Only arithmetic impossibility. If a number explodes the
+/// NO BOUND OF ANY KIND. Only arithmetic impossibility. If a number explodes the
 /// compensating mechanism is missing — build it and delete the bound in the same change.
 const BOUNDS: &[&str] = &[".min(", ".max(", ".clamp(", "::max(", "::min("];
 
-/// Appendix A: MISSING IS MISSING. No `?? 0`, no `|| 0`, no numeric defaults.
+/// MISSING IS MISSING. No `?? 0`, no `|| 0`, no numeric defaults.
 const DEFAULTS: &[&str] = &["unwrap_or(0", "unwrap_or(0.0", "unwrap_or_default()"];
 
 /// No `Date`, no `Math.random`, no `console` in the engine.
 const CLOCKS: &[&str] = &["std::time", "SystemTime", "Instant::now", "rand::", "println!", "eprintln!"];
 
-/// Law 15: no mechanism branches on industry, sector, entity type or product id.
+/// No mechanism branches on industry, sector, entity type or product id.
 const KINDS: &[&str] = &[".industry", ".sector", ".entity_type", ".product_id", ".party_kind ==", ".kind =="];
 
-/// **THE TESTING RULE: no test is ever run against a test world.**
+/// THE TESTING RULE: no test is ever run against a test world.
 ///
 /// A test exists at COMPILE level — the type refuses the defect, so there is nothing to assert — or
 /// at LOGIC level — a pure function over values it is handed, values in and values out. A test that
 /// builds parties, holdings, instruments, prints or a wire and asserts on what happens in them is
-/// not a test. **It is a second world**, and Law 4's defect at the largest possible scale: an
+/// not a test. It is a second world, and Law 4's defect at the largest possible scale: an
 /// outcome nobody cleared (Appendix B: no imported equilibrium, no seeded outcome), arranged by the
 /// same hand that wrote the code it is checking, passing for exactly as long as the arrangement
 /// holds. This was measured, not feared — every mechanism test passed for months while the
@@ -72,7 +72,7 @@ const WORLD_BUILDING: &[&str] = &[
     "World::new(",
 ];
 
-/// **ONE SYSTEM, ONE FILE: a system's BEHAVIOUR lives in the system's own module.**
+/// ONE SYSTEM, ONE FILE: a system's BEHAVIOUR lives in the system's own module.
 ///
 /// The owner's rule, and the test of it is a sentence: *to change how CDS works I change
 /// `mechanisms/cds.rs`, and that is it.* Today changing CDS means `mechanisms/cds.rs` for the
@@ -81,15 +81,15 @@ const WORLD_BUILDING: &[&str] = &[
 /// thirty-nine others.
 ///
 /// `impl Mechanism for` and `impl Participant for` are where a system's behaviour is declared, so
-/// **the file that holds one is the system's module, or it is a contact point that should not
-/// exist**. `mechanisms/goods.rs` already holds its own and proves the shape works.
+/// the file that holds one is the system's module, or it is a contact point that should not
+/// exist. `mechanisms/goods.rs` already holds its own and proves the shape works.
 ///
-/// Exempt: `src/bin/**`, which constructs worlds to time them; and `module.rs`, which DEFINES the
+/// Exempt: `src/bin/`, which constructs worlds to time them; and `module.rs`, which DEFINES the
 /// traits and implements them for nothing.
 const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] =
     &["impl Mechanism for ", "impl Participant for ", "impl crate::module::Participant for "];
 
-/// **A RATCHET: the count must fall and must never rise.**
+/// A RATCHET: the count must fall and must never rise.
 ///
 /// Two rules here are about a defect spread over the whole tree rather than sitting at one site —
 /// a test that builds a world (180 of them) and a system whose behaviour lives outside its module
@@ -98,18 +98,18 @@ const BEHAVIOUR_OUTSIDE_ITS_MODULE: &[&str] =
 /// needed, and a switched-off check is the thing this file exists to prevent.
 ///
 /// So the number is recorded and the check refuses to let it RISE. It bites the day it lands —
-/// nothing new can be added — and the item drives it down. **It refuses a count that has FALLEN
-/// below the allowance too**: an allowance nobody lowered is a check gone slack, and the one-line
+/// nothing new can be added — and the item drives it down. It refuses a count that has FALLEN
+/// below the allowance too: an allowance nobody lowered is a check gone slack, and the one-line
 /// edit that lowers it is what keeps the number true. At zero the allowance is deleted and the rule
 /// is absolute.
 ///
 /// It is the pattern the registry count and the homeless-noun count already use, and it is not a
-/// bound (Law 6): Law 6 is about numbers the WORLD decides, not about a static check's worklist.
+/// bound: Law 6 is about numbers the WORLD decides, not about a static check's worklist.
 struct Ratchet {
     law: &'static str,
     /// The item that drives it to zero, so a reader knows where the work is.
     item: &'static str,
-    /// What it stands at today. **Edited DOWN, never up.**
+    /// What it stands at today. Edited DOWN, never up.
     allowed: usize,
 }
 
@@ -118,17 +118,17 @@ const RATCHETS: &[Ratchet] = &[
     Ratchet { law: "One system, one file", item: "0m2", allowed: 44 },
 ];
 
-/// **Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in
-/// perfect silence — guard it.**
+/// Part II: a FORBID that holds is as valuable as a mechanism that works, and it breaks in
+/// perfect silence — guard it.
 ///
 /// A world that broke one of these would run, settle, print, balance and look exactly like one that
 /// did not. That is the case for a GUARD rather than a test, and it is what `tools/check-forbids.ts`
 /// existed for before the port. It was deleted with the TypeScript and nothing replaced it, so eight
-/// COVERAGE rows went on naming it as the reason their absence held (0j.6). Three of the eight are
+/// COVERAGE rows went on naming it as the reason their absence held. Three of the eight are
 /// expressible here; the other five say in the row itself that nothing guards them and why.
 ///
-/// **The SCOPE is the rule, not the word.** `spread` is what a dealer earns on its flow (§7 D4) and
-/// what a price may never be set from (D8) — the same word, forbidden in one place and required in
+/// The SCOPE is the rule, not the word. `spread` is what a dealer earns on its flow and
+/// what a price may never be set from — the same word, forbidden in one place and required in
 /// another. So each entry names the files it is about and whether the word belongs ONLY there or
 /// NEVER there.
 struct Forbid {
@@ -150,7 +150,7 @@ enum Scope {
 }
 
 const FORBIDS: &[Forbid] = &[
-    // §7 D8. The two files that WRITE a price are the whole scope: a derived measure is forbidden
+    // The two files that WRITE a price are the whole scope: a derived measure is forbidden
     // where the price is set, not in the world, because a spread derived FROM a price is what §7 D2
     // and Law 3 require to exist.
     Forbid {
@@ -160,7 +160,7 @@ const FORBIDS: &[Forbid] = &[
         scope: Scope::Never,
         files: &["/prices.rs", "/clearing.rs"],
     },
-    // §48 E2, E3. The consensus is a READ, computed when somebody looks; nothing may take it AS its
+    // The consensus is a READ, computed when somebody looks; nothing may take it AS its
     // outlook, and there is no variable in this world called the market's expectation. The observer
     // is the one exception and it is the one §45 B2.a names: a surface decides nothing.
     Forbid {
@@ -170,8 +170,8 @@ const FORBIDS: &[Forbid] = &[
         scope: Scope::Only,
         files: &["/mechanisms/reporting.rs", "/mechanisms/observer.rs"],
     },
-    // §48 F2.a. A stated move per unit of surprise is a written price path (Law 3) and it deletes
-    // F2. What a surprise may reach is a party's own outlook — §46's, which is why `expectations` is
+    // A stated move per unit of surprise is a written price path and it deletes
+    // What a surprise may reach is a party's own outlook — §46's, which is why `expectations` is
     // named beside `reporting` — and from there a schedule, and from the schedules a price that
     // cleared. Anywhere else, a surprise is being wired to a number directly.
     Forbid {
@@ -214,7 +214,7 @@ fn names(line: &str, word: &str) -> bool {
     false
 }
 
-/// **Part II: a VERIFY that cannot fail is worse than none.** Written after the same defect was
+/// Part II: a VERIFY that cannot fail is worse than none. Written after the same defect was
 /// written three times in one session — in `trade_credit` (receivables summed against payables that
 /// were the same field), in `cds` (protection paid against protection received, one number), and in
 /// `irs` (`p.amount - p.amount`). Each looked like a conservation check and each compared a quantity
@@ -223,7 +223,7 @@ fn names(line: &str, word: &str) -> bool {
 /// What is detectable textually is an expression subtracted from, or compared with, ITSELF. That is
 /// the shape all three took once reduced. It cannot catch the subtler version — two sums that are
 /// equal by construction over different names — which is why the rule the record states is a rule
-/// for the writer: **before a VERIFY is written, name the input that makes it answer false.**
+/// for the writer: before a VERIFY is written, name the input that makes it answer false.
 fn compares_with_itself(line: &str) -> Option<String> {
     let bytes: Vec<char> = line.chars().collect();
     for op in [" - ", " == ", " != "] {
@@ -306,7 +306,7 @@ fn operand_after(chars: &[char], at: usize) -> Option<String> {
     if taken.is_empty() { None } else { Some(taken) }
 }
 
-/// **Law 7: a magnitude compared against a NUMBER.** `x.abs() < 1e-12` is a band, and a band is what
+/// A magnitude compared against a NUMBER. `x.abs() < 1e-12` is a band, and a band is what
 /// `num::dust` exists to replace — `terms × ε × Σ|magnitudes|`, derived from the check's own terms.
 /// What is detectable is the literal: `.abs() <= dust(...)` names a derivation and `.abs() <= 1e-9`
 /// names a hope. Returns what was written, because the writer needs to see it to replace it.
@@ -315,8 +315,8 @@ fn fixed_tolerance(line: &str) -> Option<String> {
         let Some(at) = line.find(op) else { continue };
         let rest = line[at + op.len()..].trim_start();
         let first = rest.chars().next()?;
-        // A derived dust is a call or a name; only a number written out is a band. **`6.0 *
-        // f64::EPSILON * magnitude` is not one** — it is Law 7's own formula, `terms × ε × Σ|m|`,
+        // A derived dust is a call or a name; only a number written out is a band. `6.0 *
+        // f64::EPSILON * magnitude` is not one — it is Law 7's own formula, `terms × ε × Σ|m|`,
         // written where a reader can see the terms, and the leading number is the term COUNT.
         if first.is_ascii_digit() && !rest.replace(' ', "").contains("*f64::EPSILON") {
             let band: String = rest.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != ',').collect();
@@ -326,7 +326,7 @@ fn fixed_tolerance(line: &str) -> Option<String> {
     None
 }
 
-/// **XI-14, Law 2, 21g: a behaviour-shaping number reaches a mechanism only via `params`.** The
+/// A behaviour-shaping number reaches a mechanism only via `params`. The
 /// route by which one reaches a mechanism is its CONSTRUCTION — `Perishing { share: 0.01 }` — so a
 /// numeric literal in a field position is a number somebody handed a mechanism without saying what
 /// kind of number it is, who owns it, or what unit it is in. Declared, the same number is a row in
@@ -373,10 +373,10 @@ fn undeclared_number(line: &str) -> Option<String> {
 
 /// Every construction this line makes, of `WORLD_BUILDING`'s.
 ///
-/// **All of them, not the first**, because the count is of CONSTRUCTIONS and a ratchet over lines
+/// All of them, not the first, because the count is of CONSTRUCTIONS and a ratchet over lines
 /// would rise when somebody broke `let (a, b) = (Register::new(), Prints::new());` across two lines
 /// — a reformat tripping a rule about where behaviour lives. What has to fall is the number of
-/// stores a test stands up, and that is invariant to layout (Law 18).
+/// stores a test stands up, and that is invariant to layout.
 fn builds_a_world(line: &str) -> Vec<&'static str> {
     WORLD_BUILDING.iter().filter(|w| line.contains(**w)).copied().collect()
 }
@@ -393,7 +393,7 @@ fn declares_behaviour(line: &str) -> Option<&str> {
     None
 }
 
-/// A line with its string literals emptied. **Braces inside a format string are not code**, and
+/// A line with its string literals emptied. Braces inside a format string are not code, and
 /// counting them walked the `#[cfg(test)]` tracker out of step in every file carrying a message like
 /// `"declared {:?} and its legs are {shape:?}"` — which silently un-exempted that file's tests. The
 /// same emptying stops a word inside a message being read as the code it names.
@@ -444,7 +444,7 @@ fn main() {
     rust_files(&root, &mut files);
     files.sort();
 
-    // Law 16: the specification is what a citation is checked against, so it is READ rather than
+    // The specification is what a citation is checked against, so it is READ rather than
     // restated here. A check carrying its own copy of the clause list would be the second writer.
     let spec_text = fs::read_to_string("docs/spec/PROJECT_PHOENIX.md")
         .expect("Law 19: the specification is the source, and it is not where it is expected");
@@ -540,7 +540,7 @@ fn main() {
                     found.push(say("Testing rule", format!("a test builds a world: `{w}`")));
                 }
             }
-            // **One system, one file.** A file that declares a system's behaviour IS that system's
+            // One system, one file. A file that declares a system's behaviour IS that system's
             // module, or the behaviour sits where no reader of that system would look. `module.rs`
             // DEFINES the two traits and implements neither, so it is named rather than matched;
             // a test double implementing one is a test world, which is the rule above's, not this
@@ -560,24 +560,24 @@ fn main() {
                     found.push(say("Part II", what));
                 }
             }
-            // Law 15: a module never imports another module.
+            // A module never imports another module.
             if is_mechanism && line.starts_with("use crate::mechanisms::") {
                 found.push(say("Law 15", "a module imports another module".to_string()));
             }
-            // **Law 7: tolerance is arithmetic dust, derived per check — never a band somebody
-            // picked.** A comparison of a magnitude against a literal is the shape a band takes, and
+            // Tolerance is arithmetic dust, derived per check — never a band somebody
+            // picked. A comparison of a magnitude against a literal is the shape a band takes, and
             // a check that only passes with one is reporting a defect. It applies inside tests too,
             // and that is where it was found: `1e-12` on a year fraction that is exactly one.
             if let Some(band) = fixed_tolerance(line) {
                 found.push(say("Law 7", format!("a tolerance nobody derived: {band}")));
             }
-            // XI-14: and every behaviour-shaping number reaches a mechanism through `params`.
+            // And every behaviour-shaping number reaches a mechanism through `params`.
             if (is_mechanism || stem == "systems" || stem == "running") && !in_test {
                 if let Some(what) = undeclared_number(line) {
                     found.push(say("XI-14", what));
                 }
             }
-            // Part II: the absences that break in perfect silence. **A test is not exempt** — a
+            // Part II: the absences that break in perfect silence. A test is not exempt — a
             // test in another module that calls `consensus` is a caller, which is the whole of what
             // E2 forbids, and exempting it would be the escape hatch the rule exists to close.
             for f in FORBIDS {
@@ -602,7 +602,7 @@ fn main() {
             });
         }
 
-        // **And every citation names a clause that is there** (21.8, 0c.3). A citation to a clause
+        // And every citation names a clause that is there. A citation to a clause
         // that does not exist reads as evidence and is not any: `check:existence` counts it, and
         // nobody can tell it from the real thing without opening the document at that line.
         for (n, citation) in spec::citations(&text) {
@@ -649,7 +649,7 @@ fn main() {
     std::process::exit(1);
 }
 
-/// **A guard is proved to BITE before it is trusted.** The discipline is the one the record set when
+/// A guard is proved to BITE before it is trusted. The discipline is the one the record set when
 /// the first silent FORBID was guarded: a probe was inserted, the check failed with the clause, and
 /// the probe was removed. These are that probe, kept — because a guard that has never refused
 /// anything is indistinguishable from one that cannot.
@@ -666,7 +666,7 @@ mod forbids {
         let d8 = rule("Corporate Credit D8");
         assert!(watches(d8, "packages/kernel-rs/src/prices.rs"));
         assert!(watches(d8, "packages/kernel-rs/src/clearing.rs"));
-        // §7 D4: the dealer earns the bid-offer, so the word is required in its own module.
+        // The dealer earns the bid-offer, so the word is required in its own module.
         assert!(!watches(d8, "packages/kernel-rs/src/mechanisms/dealing.rs"));
         assert!(names("let p = par / (1.0 + yield_to(m));", "yield"));
         assert!(names("        spread_of(b) + risk_free", "spread"));
@@ -678,7 +678,7 @@ mod forbids {
         assert!(watches(e2, "packages/kernel-rs/src/running.rs"));
         assert!(watches(e2, "packages/kernel-rs/src/mechanisms/equity.rs"));
         assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/reporting.rs"));
-        // §45 B2.a: a surface decides nothing, which is why it is the one exception.
+        // A surface decides nothing, which is why it is the one exception.
         assert!(!watches(e2, "packages/kernel-rs/src/mechanisms/observer.rs"));
         assert!(names("let want = consensus(of, &estimates);", "consensus"));
     }

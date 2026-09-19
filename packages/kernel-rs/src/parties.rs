@@ -1,4 +1,4 @@
-//! Parties: named individually, or a CELL standing for a population with a weight (XI-15).
+//! Parties: named individually, or a CELL standing for a population with a weight.
 //!
 //! A cell's holdings are TOTALS and `per_member` is a read. A weight is a COUNT and never a share,
 //! it changes only by the five events XI-15 allows, and there is at most one live cell per key on
@@ -14,12 +14,12 @@ pub enum Representation {
 
 /// XI-15, Small-Business Pools E5: the five events that may change a weight, and nothing else may.
 ///
-/// **The fifth is SPLIT, and it was written down as `Crossing`.** A crossing is the READ XI-1 names
+/// The fifth is SPLIT, and it was written down as `Crossing`. A crossing is the READ XI-1 names
 /// — *population-level default must be a read of cell-level crossings* — and `loss::Crossing` is
 /// that read, a borrower passing a threshold on a date. It changes no weight. What XI-15 and E5 both
 /// name as the fifth event is the SPLIT: an event applying to SOME members makes them a new cell
 /// with the same state, exactly, because identical members divide without remainder. Written as a
-/// crossing it read as a kernel bookkeeping step, which is why nothing ever called it (21h.4).
+/// crossing it read as a kernel bookkeeping step, which is why nothing ever called it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum WeightEvent {
     Entry,
@@ -40,13 +40,13 @@ pub struct Parties {
     alive: Vec<bool>,
     /// The cell's key on its kind's lattice, as a row in a names table. `NONE` for a named party.
     key: Vec<u32>,
-    /// **XI-3, 22i.1: THE PERIOD THIS PARTY ENTERED.** A party that cannot say how old it is cannot
+    /// THE PERIOD THIS PARTY ENTERED. A party that cannot say how old it is cannot
     /// be graded (§21 A4 reads age), cannot have a fiscal year (§48 A3 places one from when the
     /// company started) and cannot be told from one that has been trading for twenty years. It was
     /// missing entirely: `add` took a key and no `since`.
     since: Vec<u32>,
     /// The period the world is in, told to this store once by the kernel. A party does not choose
-    /// when it was born, so `add` stamps rather than asking (Law 4).
+    /// when it was born, so `add` stamps rather than asking.
     now: u32,
     of_kind: std::collections::HashMap<u32, Vec<u32>>,
 }
@@ -60,22 +60,22 @@ impl Parties {
         self.kind.len()
     }
 
-    /// 22i.1: the period the world has reached, so a party added in it is stamped with it. The
+    /// The period the world has reached, so a party added in it is stamped with it. The
     /// kernel says this once as a period opens; nothing else has business telling this store when
     /// it is.
     pub fn opened(&mut self, period: u32) {
         self.now = period;
     }
 
-    /// **XI-3, 22i.1: the period it entered.** The world opened at period 0, so a party the assembly
+    /// The period it entered. The world opened at period 0, so a party the assembly
     /// admitted before the first step entered at 0 — which is a fact about it and not a default.
     #[inline]
     pub fn since(&self, p: PartyId) -> u32 {
         self.since[p.0 as usize]
     }
 
-    /// §21 A4: how many periods it has been going, which is one of the things a grade reads. A party
-    /// cannot be older than the world, so this is arithmetic and never a bound (Law 6).
+    /// How many periods it has been going, which is one of the things a grade reads. A party
+    /// cannot be older than the world, so this is arithmetic and never a bound.
     #[inline]
     pub fn age(&self, p: PartyId, now: u32) -> u32 {
         now - self.since(p)
@@ -135,21 +135,21 @@ impl Parties {
         self.alive[p.row()]
     }
 
-    /// XI-15: a weight is a COUNT. A named party is one party; a cell is however many it stands for.
+    /// A weight is a COUNT. A named party is one party; a cell is however many it stands for.
     #[inline]
     pub fn weight(&self, p: PartyId) -> u32 {
         self.weight[p.row()]
     }
 
-    /// XI-15: whether this party is one party or a CELL standing for many. A reader rather than a
-    /// branch: the kernel asks so it can write a party down (22b.7), never so it can behave
+    /// Whether this party is one party or a CELL standing for many. A reader rather than a
+    /// branch: the kernel asks so it can write a party down, never so it can behave
     /// differently towards one.
     #[inline]
     pub fn representation_of(&self, p: PartyId) -> Representation {
         self.representation[p.row()]
     }
 
-    /// XI-15: a cell's identity is a KEY on its kind's declared lattice, and the key is part of what
+    /// A cell's identity is a KEY on its kind's declared lattice, and the key is part of what
     /// the party IS — so a snapshot that dropped it would open a world of different cells.
     #[inline]
     pub fn key_of(&self, p: PartyId) -> u32 {
@@ -163,7 +163,7 @@ impl Parties {
         }
     }
 
-    /// XI-15: a weight changes ONLY by one of the five events, and the event is named at the call.
+    /// A weight changes ONLY by one of the five events, and the event is named at the call.
     /// A caller with no event to name has no business changing a weight.
     pub fn reweigh(&mut self, p: PartyId, to: u32, by: WeightEvent) {
         assert!(
@@ -174,7 +174,7 @@ impl Parties {
         self.weight[p.row()] = to;
     }
 
-    /// XI-15: **an event that applies to SOME members splits the cell.** The affected members become
+    /// An event that applies to SOME members splits the cell. The affected members become
     /// a new cell with the same kind, the same region, the same bank and the same key — the same
     /// state, because a cell is homogeneous and identical members divide without remainder. What the
     /// two cells HOLD is settled over the wire by the caller, exactly: the kernel divides the count
@@ -201,20 +201,20 @@ impl Parties {
             taking,
             self.key[p.row()],
         );
-        // XI-15: **a split is not a birth.** The members were already here; the row they are counted
+        // A split is not a birth. The members were already here; the row they are counted
         // in is new and they are not, so the child is as old as the parent (§21 A4 reads age).
         self.since[child.row()] = self.since[p.row()];
         self.reweigh(p, had - taking, WeightEvent::Split);
         child
     }
 
-    /// Money E4, XI-3: nothing is immortal, and a death has a destination. What it held is the
+    /// Nothing is immortal, and a death has a destination. What it held is the
     /// estate's; this only records that the party has ceased.
     pub fn cease(&mut self, p: PartyId) {
         self.alive[p.row()] = false;
     }
 
-    /// XI-15: what ONE MEMBER of a cell holds, as a READ over the total. There is no stored
+    /// What ONE MEMBER of a cell holds, as a READ over the total. There is no stored
     /// per-member number anywhere, which is what stops a cell from having two books.
     #[inline]
     pub fn per_member(&self, p: PartyId, total: f64) -> f64 {
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn an_event_that_applies_to_some_members_splits_the_cell() {
-        // XI-15: the affected members become a new cell with the same kind, region, bank and key —
+        // The affected members become a new cell with the same kind, region, bank and key —
         // the same state — and the two counts add back to the one they came from. A population is a
         // read of the cells, so a split changes how many cells there are and not how many people.
         let mut ps = Parties::new();
@@ -267,7 +267,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a part of it")]
     fn all_of_a_cell_is_not_a_part_of_it() {
-        // XI-15: taking everybody leaves a cell of nobody, which is a DEATH and not a split. The
+        // Taking everybody leaves a cell of nobody, which is a DEATH and not a split. The
         // two are different events with different consequences, and a split that could mean either
         // is a weight change nobody can read.
         let mut ps = Parties::new();

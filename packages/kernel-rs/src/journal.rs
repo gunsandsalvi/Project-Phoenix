@@ -1,12 +1,12 @@
-//! The journal: what happened, in writing order, for ever (Audit A3, B3).
+//! The journal: what happened, in writing order, for ever.
 //!
 //! Columns, not records. The TypeScript journal keeps every event as a frozen object with a frozen
-//! `data` object and a copied `subjects` array behind six indexes, and it retains **~896 bytes per
-//! event** while the world writes **178,604 a period**. Here an event is a ROW: its scalars are
+//! `data` object and a copied `subjects` array behind six indexes, and it retains ~896 bytes per
+//! event while the world writes 178,604 a period. Here an event is a ROW: its scalars are
 //! columns, its subjects are a counted slice of one flat column, and its data is a counted slice of
 //! another. Nothing is allocated per event and nothing is copied to read one.
 //!
-//! Law 19: this is the history. Nothing else stores what happened, and a reader that wants a total
+//! This is the history. Nothing else stores what happened, and a reader that wants a total
 //! walks this rather than keeping a second tally of it.
 
 use crate::ids::Names;
@@ -18,7 +18,7 @@ use crate::ids::Names;
 pub enum Value {
     /// A count, a level, a ratio — with its unit named by the key, never by the number.
     Num(f64),
-    /// A name, as a row in `Names`. An id is never a display name (Law 9).
+    /// A name, as a row in `Names`. An id is never a display name.
     Text(u32),
     Flag(bool),
 }
@@ -42,10 +42,10 @@ pub struct Journal {
     pub kinds: Names,
     pub keys_named: Names,
 
-    /// Audit C1: the events of one period, so a reader does not walk the world's whole history to
+    /// The events of one period, so a reader does not walk the world's whole history to
     /// find this week's. Written where an event is written; there is no second history.
     by_period: Vec<(u32, u32)>,
-    /// **22i.1: and the events of one KIND.** A mechanism asking *when did this company last
+    /// And the events of one KIND. A mechanism asking *when did this company last
     /// publish* had to walk every event this world has ever recorded — 323,000 a period — so the
     /// read that would have answered it was one nobody could afford to take. Register A3's
     /// both-directions rule: the same rows, indexed the other way, written where they are written.
@@ -65,7 +65,7 @@ impl Journal {
         self.period.is_empty()
     }
 
-    /// B3: an event names its subjects, so it can be checked against the state.
+    /// An event names its subjects, so it can be checked against the state.
     pub fn say(
         &mut self,
         period: u32,
@@ -99,7 +99,7 @@ impl Journal {
         row
     }
 
-    /// 22i.1: every event of one kind, oldest first. A read over the rows, never a second history.
+    /// Every event of one kind, oldest first. A read over the rows, never a second history.
     pub fn of_kind(&self, kind: u32) -> &[u32] {
         match self.by_kind.get(&kind) {
             Some(rows) => rows,
@@ -137,7 +137,7 @@ impl Journal {
         None
     }
 
-    /// Audit C1: this period's events, as rows, without walking the history.
+    /// This period's events, as rows, without walking the history.
     pub fn in_period(&self, period: u32) -> std::ops::Range<u32> {
         for &(from, to) in &self.by_period {
             if self.period[from as usize] == period {

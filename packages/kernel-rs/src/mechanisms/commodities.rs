@@ -1,5 +1,5 @@
 //! COMMODITIES, SPOT AND FUTURES: a grade at a location, an inventory that carries across periods,
-//! and a curve whose two states are **not symmetric**.
+//! and a curve whose two states are not symmetric.
 //!
 //! @spec 21 A1 · 21 A1.a · 21 A2 · 21 A3 · 21 A4 · 21 B1 · 21 B1.a · 21 B2 · 21 B2.a · 21 B3 ·
 //! @spec 21 B4 · 21 C1 · 21 C2 · 21 C3 · 21 C4 · 21 D1 · 21 D2 · 21 D2.a · 21 D3 · 21 D4 · 21 D5 ·
@@ -8,31 +8,31 @@
 //! @spec 20 C4 · 20 C4.a · 20 D1 · 20 D2 · 20 D3 · 20 D4 · 20 E1 · 20 E2 · 20 E3 · Law 3, Law 6,
 //! @spec Law 8, Law 19 · Appendix B
 //!
-//! **Contango is bounded above by what it costs to buy, store and finance** (20 C1.a) — because past
-//! that the arbitrageur takes it — **and backwardation is unbounded below, because you cannot store a
-//! shortage** (20 C1.b). That asymmetry is real and it is why the two states are not symmetric: the
+//! Contango is bounded above by what it costs to buy, store and finance (20 C1.a) — because past
+//! that the arbitrageur takes it — and backwardation is unbounded below, because you cannot store a
+//! shortage (20 C1.b). That asymmetry is real and it is why the two states are not symmetric: the
 //! ceiling on contango is an ARBITRAGE somebody performs, not a bound, and there is no corresponding
 //! floor at all.
 //!
-//! **The arbitrageur can only act if it can actually store and finance** (20 B4). Without a storable
+//! The arbitrageur can only act if it can actually store and finance (20 B4). Without a storable
 //! stock there is no such participant and the curve has nothing tying it to the physical world, so
 //! `arbitrages` asks for storage and funding and answers `None` without them.
 //!
-//! **Inventory is a state variable that carries across periods**, moved by production and consumption,
-//! **and the price depends on it** (21 D2.a). A percentage on a random walk, untouched by production or
+//! Inventory is a state variable that carries across periods, moved by production and consumption,
+//! and the price depends on it (21 D2.a). A percentage on a random walk, untouched by production or
 //! consumption and not an input to the price, is not inventory.
 //!
-//! **No negative inventory, ever, anywhere** (21 F2) and **no consumption without production or
-//! inventory** (21 F1): units cannot be conjured. `draw` refuses rather than clamping — the refusal is
-//! arithmetic impossibility, which is the only limit there is (Law 6).
+//! No negative inventory, ever, anywhere (21 F2) and no consumption without production or
+//! inventory (21 F1): units cannot be conjured. `draw` refuses rather than clamping — the refusal is
+//! arithmetic impossibility, which is the only limit there is.
 //!
-//! **Convergence is a consequence of DELIVERABILITY, not an enforced boundary condition** (20 C4.a).
+//! Convergence is a consequence of DELIVERABILITY, not an enforced boundary condition (20 C4.a).
 //! Nothing here drives a futures price to spot; `deliverable` says whether the mechanism that does it
 //! exists, and a contract nobody can deliver against has no convergence mechanism behind it (20 D2).
 
 use crate::ids::{PartyId, RegionId};
 
-/// 21 A1, A1.a: **a standardised, fungible unit — a grade, at a location, in a quantity unit.**
+/// 21 A1, A1.a: a standardised, fungible unit — a grade, at a location, in a quantity unit.
 /// Location is part of the IDENTITY: the same grade in two places is two prices, and the difference is
 /// transport.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -41,8 +41,8 @@ pub struct Grade {
     pub at: RegionId,
 }
 
-/// 21 A4: **the stock is finite and observable — inventory is a real number held by real parties, at
-/// real locations.**
+/// 21 A4: the stock is finite and observable — inventory is a real number held by real parties, at
+/// real locations.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Inventory {
     pub held_by: PartyId,
@@ -51,7 +51,7 @@ pub struct Inventory {
 }
 
 impl Inventory {
-    /// 21 D2.a: it **carries across periods**, moved by production and consumption. 21 F1, F2: units
+    /// 21 D2.a: it carries across periods, moved by production and consumption. 21 F1, F2: units
     /// cannot be conjured and the stock never goes negative — `None` is the refusal, and it is
     /// arithmetic impossibility rather than a clamp.
     pub fn draw(&self, units: f64) -> Option<Inventory> {
@@ -67,20 +67,20 @@ impl Inventory {
     }
 }
 
-/// 21 B1, B1.a: **a producer produces at a cost, and it produces because the price covers it** — and
-/// **costs differ across producers, so the supply schedule is a CONSEQUENCE of the cost distribution,
-/// never a curve written down.**
+/// 21 B1, B1.a: a producer produces at a cost, and it produces because the price covers it — and
+/// costs differ across producers, so the supply schedule is a CONSEQUENCE of the cost distribution,
+/// never a curve written down.
 #[derive(Clone, Copy, Debug)]
 pub struct Producer {
     pub who: PartyId,
     pub cost_per_unit: f64,
-    /// 21 B2: **capacity is fixed in the short run** and changes only through investment, which takes
-    /// time — which is why supply is inelastic on the horizon that matters (B2.a).
+    /// 21 B2: capacity is fixed in the short run and changes only through investment, which takes
+    /// time — which is why supply is inelastic on the horizon that matters.
     pub capacity: f64,
 }
 
 /// The supply that shows up at a price: every producer whose cost it covers, at its own capacity. A
-/// walk over the cost distribution (Law 19) — there is no schedule to look up.
+/// walk over the cost distribution — there is no schedule to look up.
 pub fn supply_at(price: f64, producers: &[Producer]) -> f64 {
     producers
         .iter()
@@ -89,16 +89,16 @@ pub fn supply_at(price: f64, producers: &[Producer]) -> f64 {
         .sum()
 }
 
-/// 21 B3: **a disruption is a real loss of UNITS at the point they would have been made** — not a
+/// 21 B3: a disruption is a real loss of UNITS at the point they would have been made — not a
 /// multiplier on a price.
 pub fn disrupted(p: &Producer, units_lost: f64) -> Producer {
     assert!(units_lost <= p.capacity, "21 B3: a disruption cannot lose more units than the line could make");
     Producer { capacity: p.capacity - units_lost, ..*p }
 }
 
-/// 21 D1, D2: **the price clears, per grade and location, and inventory is the buffer**: when demand
-/// exceeds production stocks fall, and **when stocks approach zero the price has nothing left to
-/// ration with.**
+/// 21 D1, D2: the price clears, per grade and location, and inventory is the buffer: when demand
+/// exceeds production stocks fall, and when stocks approach zero the price has nothing left to
+/// ration with.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cleared {
     pub price: Option<f64>,
@@ -107,7 +107,7 @@ pub struct Cleared {
     pub unmet: f64,
 }
 
-/// 21 C4, D2: with both sides inelastic, **small imbalances produce large price moves** — a consequence
+/// 21 C4, D2: with both sides inelastic, small imbalances produce large price moves — a consequence
 /// to be measured, not a volatility parameter. The price here is the marginal producer's cost when
 /// production covers demand, and it is what the last unit of inventory fetched when it does not.
 pub fn clearing(demand: f64, producers: &[Producer], stock: f64, bids: &[f64]) -> Cleared {
@@ -127,12 +127,12 @@ pub fn clearing(demand: f64, producers: &[Producer], stock: f64, bids: &[f64]) -
         }
     }
     let produced = demand - left;
-    // D2: what production did not cover comes out of the stock, and when the stock runs out the
+    // What production did not cover comes out of the stock, and when the stock runs out the
     // remaining demand is simply unmet — there is nothing left to ration with.
     let from_inventory = if stock < left { stock } else { left };
     let unmet = left - from_inventory;
     if from_inventory > 0.0 {
-        // The bids that reached the last unit of stock are what it fetched (Law 3) — scarcity prices
+        // The bids that reached the last unit of stock are what it fetched — scarcity prices
         // it, not a formula.
         let mut sorted: Vec<f64> = bids.to_vec();
         sorted.sort_by(|a, b| b.total_cmp(a));
@@ -142,13 +142,13 @@ pub fn clearing(demand: f64, producers: &[Producer], stock: f64, bids: &[f64]) -
     Cleared { price, traded: produced + from_inventory, from_inventory, unmet }
 }
 
-/// 21 D3: **storage costs money and the cost is paid to somebody who owns the storage** (Law 5).
+/// 21 D3: storage costs money and the cost is paid to somebody who owns the storage.
 pub fn storage_fee(units: f64, per_unit: f64, to: PartyId) -> (PartyId, f64) {
     (to, units * per_unit)
 }
 
-/// 21 D5: **produced plus opening inventory equals consumed plus closing inventory, per commodity and
-/// location, exactly.** A VERIFY on Law 7's derived dust; `None` when it holds, and the discrepancy
+/// 21 D5: produced plus opening inventory equals consumed plus closing inventory, per commodity and
+/// location, exactly. A VERIFY on Law 7's derived dust; `None` when it holds, and the discrepancy
 /// when it does not — units that appeared or vanished.
 pub fn units_balance(produced: f64, opening: f64, consumed: f64, closing: f64, terms: usize) -> Option<f64> {
     let off = (produced + opening) - (consumed + closing);
@@ -158,7 +158,7 @@ pub fn units_balance(produced: f64, opening: f64, consumed: f64, closing: f64, t
     Some(off)
 }
 
-/// 20 A1.a, A1.d, A2: **a stated grade at a stated delivery location**, a fixed quantity per contract
+/// 20 A1.a, A1.d, A2: a stated grade at a stated delivery location, a fixed quantity per contract
 /// — so size is in CONTRACTS, not money — and standardisation means the delivery terms are part of the
 /// instrument.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -169,38 +169,38 @@ pub struct Future {
     /// 20 A1.c: the futures price, CLEARED.
     pub price: f64,
     pub expires_in_years: f64,
-    /// 20 D2: **physical delivery must be possible for at least some participants**, or convergence
+    /// 20 D2: physical delivery must be possible for at least some participants, or convergence
     /// has no mechanism behind it.
     pub deliverable: bool,
 }
 
-/// 20 E1: **no futures price without a physical market underneath it.** A futures curve on a commodity
+/// 20 E1: no futures price without a physical market underneath it. A futures curve on a commodity
 /// that is never actually traded prices itself.
 pub fn may_list(spot_traded: bool, deliverable: bool) -> bool {
     spot_traded && deliverable
 }
 
-/// 20 C1, C1.a: **contango is bounded above by what it costs to buy, store and finance** — past that
+/// 20 C1, C1.a: contango is bounded above by what it costs to buy, store and finance — past that
 /// the arbitrageur takes it. This is the level at which that trade opens, which is a consequence of
 /// real costs and not a ceiling anybody imposed.
 pub fn full_carry(spot: f64, storage_per_year: f64, financing: f64, years: f64) -> f64 {
     spot * (1.0 + financing * years) + storage_per_year * years
 }
 
-/// 20 C1.b: **backwardation is unbounded below, because you cannot store a shortage.** The asymmetry
+/// 20 C1.b: backwardation is unbounded below, because you cannot store a shortage. The asymmetry
 /// stated as a read: how far a curve sits above full carry (positive: the arbitrage is open) or below
 /// spot (negative: physical tightness, and nothing bounds it).
 pub fn against_carry(futures: f64, spot: f64, storage_per_year: f64, financing: f64, years: f64) -> f64 {
     futures - full_carry(spot, storage_per_year, financing, years)
 }
 
-/// 20 B4: **the arbitrageur between the future and the physical can only act if it can actually store
-/// and finance.** `None` without storage or funding — and then the curve has nothing tying it to the
+/// 20 B4: the arbitrageur between the future and the physical can only act if it can actually store
+/// and finance. `None` without storage or funding — and then the curve has nothing tying it to the
 /// physical world.
 pub fn arbitrages(over_carry: f64, storage_free: f64, can_finance: f64) -> Option<f64> {
     if over_carry <= 0.0 {
         // Below full carry there is nothing to take; below SPOT there is nothing to take either,
-        // because you cannot store a shortage (C1.b).
+        // because you cannot store a shortage.
         return None;
     }
     let room = if storage_free < can_finance { storage_free } else { can_finance };
@@ -210,8 +210,8 @@ pub fn arbitrages(over_carry: f64, storage_free: f64, can_finance: f64) -> Optio
     Some(room)
 }
 
-/// 20 C2, C3: **the curve carries information about physical tightness, and inventory is the state
-/// variable it reads.** Low inventories imply backwardation as a CONSEQUENCE of C1.b, never as a rule
+/// 20 C2, C3: the curve carries information about physical tightness, and inventory is the state
+/// variable it reads. Low inventories imply backwardation as a CONSEQUENCE of C1.b, never as a rule
 /// — so this is a read of the two, published together.
 pub fn tightness(stock: f64, consumed_per_period: f64) -> Option<f64> {
     if consumed_per_period <= 0.0 {
@@ -220,19 +220,19 @@ pub fn tightness(stock: f64, consumed_per_period: f64) -> Option<f64> {
     Some(stock / consumed_per_period)
 }
 
-/// 20 C4, C4.a: **convergence is a consequence of deliverability, not an enforced boundary
-/// condition.** Nothing drives the price; this says whether the mechanism exists at all.
+/// 20 C4, C4.a: convergence is a consequence of deliverability, not an enforced boundary
+/// condition. Nothing drives the price; this says whether the mechanism exists at all.
 pub fn can_converge(f: &Future) -> bool {
     f.deliverable
 }
 
-/// 20 B3.a, E3: **the roll has a cost or a gain determined by the curve — which is most of an
-/// investor's return and is not a fee — and no roll is free.** It lands in the roller's P&L.
+/// 20 B3.a, E3: the roll has a cost or a gain determined by the curve — which is most of an
+/// investor's return and is not a fee — and no roll is free. It lands in the roller's P&L.
 pub fn roll(out_of: f64, into: f64, contracts: f64, units_per_contract: f64) -> f64 {
     (out_of - into) * contracts * units_per_contract
 }
 
-/// 20 D3: **a party that cannot take delivery must close or roll before expiry** — a real forced trade
+/// 20 D3: a party that cannot take delivery must close or roll before expiry — a real forced trade
 /// at a known time.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AtExpiry {
@@ -250,14 +250,14 @@ pub fn at_expiry(f: &Future, can_take_delivery: bool, spot_cleared: Option<f64>)
     }
     match spot_cleared {
         Some(_) => AtExpiry::CashSettles,
-        // D4: cash settlement is against an OBSERVED price. With no print there is nothing to settle
+        // Cash settlement is against an OBSERVED price. With no print there is nothing to settle
         // against, and the position has to have been closed.
         None => AtExpiry::MustCloseOrRoll,
     }
 }
 
-/// 20 E2: **no unlimited open interest against finite deliverable supply without the squeeze that
-/// implies.** How many times the deliverable stock the open interest is — a read, and a large one is
+/// 20 E2: no unlimited open interest against finite deliverable supply without the squeeze that
+/// implies. How many times the deliverable stock the open interest is — a read, and a large one is
 /// the squeeze being visible rather than prevented.
 pub fn open_interest_against_supply(contracts: f64, units_per_contract: f64, deliverable_stock: f64) -> Option<f64> {
     if deliverable_stock <= 0.0 {

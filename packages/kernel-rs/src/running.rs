@@ -4,14 +4,14 @@
 //!
 //! `systems.rs` is the list; this is what the rows on it DO when their phase runs. It sits beside the
 //! assembly rather than inside `mechanisms/` for one reason: it names every module, and a module may
-//! never import another module (Law 15). The adapter layer is the assembly's, not any module's.
+//! never import another module. The adapter layer is the assembly's, not any module's.
 //!
-//! **Every mechanism here reads the world through the second door and proposes.** None of them
+//! Every mechanism here reads the world through the second door and proposes. None of them
 //! invents a number at the boundary: where the world holds nothing for a system yet, it proposes
 //! nothing, which is an answer and not a gap — and it becomes live the moment the world holds
 //! something. That is what makes this wiring rather than a fixture.
 //!
-//! **The shape is always the same**: the READ pass first, over the kernel's own stores, then the
+//! The shape is always the same: the READ pass first, over the kernel's own stores, then the
 //! proposals. A module reads and proposes; it cannot do both at once, which is the borrow checker
 //! saying what Law 4 already says.
 
@@ -24,13 +24,13 @@ use crate::ledger::{account_of, Cause, Delivery, Leg, Receipt};
 use crate::module::{Mechanism, MechanismContext};
 use crate::stores::{about, afoot, agreed, standing, Owing};
 
-// **THE FIVE KIND COLUMNS THAT LIVED HERE ARE IN THE KERNEL NOW** (0m2.1). `agreed`, `standing`,
+// THE FIVE KIND COLUMNS THAT LIVED HERE ARE IN THE KERNEL NOW. `agreed`, `standing`,
 // `afoot` and `about` are in `stores.rs`, beside the stores whose kind columns they name; `tracks`
 // is in `registry.rs`, beside the indices. This file called them *registry data* in its own comment
 // and held them anyway — so `module.rs`, the kernel's own door, reached into `crate::running::afoot`
 // to ask what a process was, and the kernel depended on the layer that depends on it.
 
-/// **§6, §7, XI-9: WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.**
+/// WHAT FALLS DUE IS PAID, OR IT IS AN ARREAR.
 ///
 /// The one mechanism the whole credit side rests on, and the reason `Schedules` exists: a claim with
 /// terms and no schedule is a claim nobody can fall behind on, which is how the old world's
@@ -59,16 +59,16 @@ impl Mechanism for Servicing {
                 // one would be inventing a counterparty.
                 continue;
             };
-            // **Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
-            // holds.** This took `of_instrument(line)`, found the first row that was not the
+            // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
+            // holds. This took `of_instrument(line)`, found the first row that was not the
             // issuer, and paid it the whole amount — so a line held by twenty parties paid all of
             // it to whichever row the index returned first, and what the other nineteen were owed
             // and did not get was a residual with no holder. The comment above it already said
             // *"whoever HOLDS the line is owed, which the register says"*; a stale comment is a
-            // defect and this one was describing the fix rather than the code (Law 16).
+            // defect and this one was describing the fix rather than the code.
             //
-            // **The issuer's own rows are not outstanding.** A company does not pay itself a
-            // coupon, and netting them off here is what "issued and outstanding" means (§5 A4) —
+            // The issuer's own rows are not outstanding. A company does not pay itself a
+            // coupon, and netting them off here is what "issued and outstanding" means —
             // the same netting `instruments::equity` does on the liability side.
             let owed: Vec<(PartyId, f64)> = ctx
                 .register()
@@ -86,7 +86,7 @@ impl Mechanism for Servicing {
                 // about who is owed rather than a payment to invent a payee for.
                 continue;
             }
-            // Bond N2, N5: a payment on a line is **per unit of par**, and each holder is paid for
+            // A payment on a line is per unit of par, and each holder is paid for
             // the units it holds. The parts sum to the whole by construction because the
             // denominator is the sum of the very rows being paid (Law 19: no second tally).
             let per_unit = ctx.schedules().amount(due) / outstanding;
@@ -100,7 +100,7 @@ impl Mechanism for Servicing {
             paying.push((owes, money, legs, receipt, due));
         }
         for (from_whom, money, owed, receipt, due) in paying {
-            // **One obligation, one instruction** (XI-5, 5 D2). Every holder's leg stands or falls
+            // One obligation, one instruction. Every holder's leg stands or falls
             // with the rest, because an issuer short of its coupon fails the coupon and not
             // nineteen twentieths of it — and `settles(due)` marks ONE schedule row, so a pass
             // that paid some holders and not others would make that mark a lie either way.
@@ -125,42 +125,42 @@ impl Mechanism for Servicing {
     }
 }
 
-/// **§30 D1, D3, XI-9, 21j.1a: A PARTY SHORT OF MONEY BRINGS PAPER.**
+/// A PARTY SHORT OF MONEY BRINGS PAPER.
 ///
-/// Nothing in this world could bring an obligation into existence (21.139), so the sovereign funding
+/// Nothing in this world could bring an obligation into existence, so the sovereign funding
 /// constraint — sequencing step 3 — bound on nothing: the treasury auctioned a line the assembly had
 /// made for it, in a size that was a literal. Now a party that is short reads what it is short of and
 /// ISSUES a bill for it, which the market then takes or does not (D5: an auction can fail).
 ///
-/// **Law 15: it never asks what a party is.** Which kinds fund a shortfall this way is a PROFILE the
+/// It never asks what a party is. Which kinds fund a shortfall this way is a PROFILE the
 /// registry holds (`KindProfile::issues_paper`) — a treasury auctions, a firm brings a bond, a
 /// household cannot — and this walks the parties whose profile says so.
 pub struct Funding {
-    /// **§7, §17, 22i.4: WHOSE paper this is, and over what horizon.**
+    /// WHOSE paper this is, and over what horizon.
     ///
     /// One `Funding` on the treasury row was bringing every kind's paper — a firm's bond issued by
     /// the system that funds the state, while `corporate_credit` and `short_term_debt` counted. Two
-    /// writers of one fact (Law 4), and the wrong one.
+    /// writers of one fact, and the wrong one.
     ///
-    /// The kinds are registry data handed in, never a branch (Law 15); the HORIZON is what makes
+    /// The kinds are registry data handed in, never a branch; the HORIZON is what makes
     /// them different instruments rather than the same one twice. A party short against what falls
     /// due this week brings commercial paper; a party short against what falls due this year brings
-    /// a bond. The tenor is a decision about a NEED and the need is the borrower's (21.60a).
+    /// a bond. The tenor is a decision about a NEED and the need is the borrower's.
     pub of_kinds: &'static [u32],
     /// How far ahead this system's shortfall is read, in days — and from how far ahead. A firm
     /// short over the year is short over the week too, so the windows do not overlap: two systems
-    /// reading the same due date would bring two instruments for one shortfall (Law 4).
+    /// reading the same due date would bring two instruments for one shortfall.
     pub after: &'static str,
     pub horizon: &'static str,
-    /// One calendar (G3.a): how long a period is, so the window is read from DATES.
+    /// One calendar: how long a period is, so the window is read from DATES.
     pub days_per_period: i64,
     /// 5 C3.a: how long the paper runs. A market CONVENTION about the tenor it brings, declared as a
     /// technology and read through `params` — not a choice this mechanism makes for anybody.
     pub tenor: &'static str,
     /// The coupon the paper carries, as a term (5 C4.b). It is a term and not a price: what the
-    /// paper is WORTH is what the auction crosses at (Law 3).
+    /// paper is WORTH is what the auction crosses at.
     pub coupon: &'static str,
-    /// §30 D4.b: the buffer the issuer keeps back.
+    /// The buffer the issuer keeps back.
     pub buffer: &'static str,
     pub says: u32,
 }
@@ -170,7 +170,7 @@ impl Mechanism for Funding {
         use crate::instruments::Class;
         let now = ctx.period();
         let from = crate::calendar::Day(now as i64 * self.days_per_period);
-        // G3.a: the window is read from DATES. What falls due inside it is what this system funds.
+        // The window is read from DATES. What falls due inside it is what this system funds.
         let to = crate::calendar::Day(from.0 + ctx.params().days(self.horizon) as i64 - 1);
         let opens = crate::calendar::Day(from.0 + ctx.params().days(self.after) as i64);
         let periods = ctx.params().periods(self.tenor);
@@ -183,19 +183,19 @@ impl Mechanism for Funding {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // Law 15: the profile answers, and a kind with none is a kind nobody has said this of —
+            // The profile answers, and a kind with none is a kind nobody has said this of —
             // which is missing rather than a no.
             let kind = ctx.parties().kind_of(who);
             if !self.of_kinds.contains(&kind) {
                 continue;
             }
-            // Law 15: and the profile still answers whether a kind issues paper at all — a kind with
+            // And the profile still answers whether a kind issues paper at all — a kind with
             // none is a kind nobody has said this of, which is missing rather than a no.
             match ctx.registry().profile(kind) {
                 Some(profile) if profile.issues_paper => {}
                 _ => continue,
             }
-            // Law 19: its own position. What falls due on it, what falls due to it, what it has.
+            // Its own position. What falls due on it, what falls due to it, what it has.
             let owes: f64 = ctx
                 .schedules()
                 .of_payer(who)
@@ -207,7 +207,7 @@ impl Mechanism for Funding {
                 .sum();
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
             let cash = ctx.register().quantity(ctx.register().row(who, money));
-            // D1: outlays against what it has, plus what it needs to get back to its own buffer.
+            // Outlays against what it has, plus what it needs to get back to its own buffer.
             // A party short of nothing brings nothing — not a floor under the size, the absence of a
             // reason to issue at all.
             let short = crate::mechanisms::treasury::must_raise(owes, 0.0, cash, buffer);
@@ -219,10 +219,10 @@ impl Mechanism for Funding {
 
         for (who, ccy, short) in bringing {
             // 5 C3.a: it matures on a DATE, so the maturity wall is spread by the dates and not by a
-            // count of periods (G3.a).
+            // count of periods.
             let matures = crate::calendar::Day(from.0 + (periods as i64) * self.days_per_period);
             // 5 D2: and it owes its coupon and its principal, written down at issue. The coupon is
-            // the annual rate over the years the paper runs, from the dates (Law 8).
+            // the annual rate over the years the paper runs, from the dates.
             let years = (matures.0 - from.0) as f64 / 365.0;
             ctx.brings(crate::module::Brings {
                 issuer: who,
@@ -232,9 +232,9 @@ impl Mechanism for Funding {
                 coupon: Some(coupon),
                 matures: Some(matures),
                 units: short,
-                // §30 D2: a treasury auction is a CALL — a sealed cross at one level, which is what
-                // an auction IS (22c.1). The `seen_by` is not read by a call and says so with one,
-                // and nothing rests in a sealed cross, so it declares no life for an order (22c2.2).
+                // A treasury auction is a CALL — a sealed cross at one level, which is what
+                // an auction IS. The `seen_by` is not read by a call and says so with one,
+                // and nothing rests in a sealed cross, so it declares no life for an order.
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,
                     protocol: crate::protocols::Protocol::Call,
@@ -252,14 +252,14 @@ impl Mechanism for Funding {
 }
 
 
-/// **XI-7, §22: THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.**
+/// THE FLOATING BENCHMARK IS A TRANSACTED RATE, OR IT IS NOTHING.
 ///
 /// The benchmarks row counted how many lines printed — an honest count, and not the read a benchmark
-/// is for (21j.3a). A benchmark FIXES: it reads what the overnight book actually cleared at and
-/// publishes that, and where the book ran and nothing crossed it publishes **nothing**, because a
+/// is for. A benchmark FIXES: it reads what the overnight book actually cleared at and
+/// publishes that, and where the book ran and nothing crossed it publishes nothing, because a
 /// carried price is not a rate anybody transacted at this period.
 ///
-/// Appendix B: *no posted benchmark.* Publishing a carried number would be exactly that — the
+/// *no posted benchmark.* Publishing a carried number would be exactly that — the
 /// corridor as decoration, with the money market's own price unused — so the absence is the mechanism
 /// rather than a gap in it.
 pub struct Fixes {
@@ -274,7 +274,7 @@ impl Mechanism for Fixes {
         let Some(book) = self.on else { return };
         let line = crate::ids::InstrumentId::at(book.0);
         let Some(print) = ctx.prints().latest(line, ctx.period()) else { return };
-        // XI-7: only a CLEARED print is a fixing. A carried or seeded one is refused here, which is
+        // Only a CLEARED print is a fixing. A carried or seeded one is refused here, which is
         // the whole of what "a transacted rate" means.
         let Some(fixing) = crate::mechanisms::benchmarks::fix(&print) else { return };
         ctx.say(
@@ -287,30 +287,30 @@ impl Mechanism for Fixes {
 }
 
 
-/// **§37: WHAT A FIRM MAKES, AND THE PLANT IT MAKES IT WITH.** Registry data (Law 15), one row per
+/// WHAT A FIRM MAKES, AND THE PLANT IT MAKES IT WITH. Registry data, one row per
 /// good this world knows how to produce.
 ///
-/// **Who makes it is not declared here, and that is the point.** A maker is whoever holds the plant —
+/// Who makes it is not declared here, and that is the point. A maker is whoever holds the plant —
 /// so production follows the capital rather than the party kind, entry is a firm buying plant, and
 /// exit is a firm selling it. A mechanism that asked a party what kind it was would be Law 15's
 /// defect and would also be wrong: a bank that bought a mill makes flour.
 #[derive(Clone)]
 pub struct Makes {
     pub line: crate::mechanisms::recipe::Line,
-    /// A4.a: what THIS line's plant is. Capital is specific in kind (33 A4).
+    /// What THIS line's plant is. Capital is specific in kind (33 A4).
     pub plant: InstrumentId,
     pub plant_is: crate::mechanisms::capital_programme::Plant,
 }
 
-/// **§37 A2, B1–B5: THE FIRM PRODUCES.**
+/// THE FIRM PRODUCES.
 ///
 /// The one thing in this world that makes anything, and the read pass is the firm's reasons: what it
 /// expects to sell (its own outlook, §46), the capacity of the plant it holds (33 A2), the inputs on
-/// its own register rows (B1.b), and the hours its engagements give it (B1.c). It picks the way of
-/// making the good that costs IT least at the prices IT can see (A2), runs the line in whole batches
-/// (B5.b), and what comes out is the OUTCOME of those reasons and never a quantity anybody chose.
+/// its own register rows, and the hours its engagements give it. It picks the way of
+/// making the good that costs IT least at the prices IT can see, runs the line in whole batches
+/// , and what comes out is the OUTCOME of those reasons and never a quantity anybody chose.
 ///
-/// **The proposal is one instruction.** The inputs are destroyed as consumed and the output is
+/// The proposal is one instruction. The inputs are destroyed as consumed and the output is
 /// created carrying what it cost — inputs at their own lot basis (E5, first in first out, the same
 /// order settlement will draw them in), plus the wages the hours cost, plus the period's depreciation
 /// on the plant that ran (33 A3). Both halves stand or fall together, because a world where the
@@ -322,9 +322,9 @@ struct Ran {
     makes: InstrumentId,
     draws: Vec<(InstrumentId, f64)>,
     finished: f64,
-    /// B3: the period it comes off the line. The inputs go now; the output arrives then.
+    /// The period it comes off the line. The inputs go now; the output arrives then.
     ready: u32,
-    /// B5: what went in — inputs at their own basis, wages, the capital charge. The batch carries it
+    /// What went in — inputs at their own basis, wages, the capital charge. The batch carries it
     /// and the unit cost is struck from it when the batch comes off, so what a unit cost is what went
     /// into THAT batch (Law 4: one cost, in one place).
     cost: f64,
@@ -332,12 +332,12 @@ struct Ran {
 
 pub struct Making {
     pub makes: Vec<Makes>,
-    /// E5: the flow, declared once and applied consistently — and it is the order settlement itself
-    /// draws lots in, so the cost this books and the units that leave cannot disagree (Law 4).
+    /// The flow, declared once and applied consistently — and it is the order settlement itself
+    /// draws lots in, so the cost this books and the units that leave cannot disagree.
     pub flow: crate::mechanisms::goods::CostFlow,
-    /// 21i: the id of the standing area at which a build draws twice, read through `params`.
+    /// The id of the standing area at which a build draws twice, read through `params`.
     pub crowds_at: &'static str,
-    /// **37 B1, 22c.3: how much COVER a firm wants on its shelf**, as a multiple of what it expects
+    /// 37 B1, 22c.3: how much COVER a firm wants on its shelf, as a multiple of what it expects
     /// to sell. A PREFERENCE read through `params` — the desired buffer used to be exactly zero and
     /// nobody had chosen it.
     pub cover: &'static str,
@@ -354,10 +354,10 @@ impl Mechanism for Making {
         // THE READ PASS. Nothing below writes, and nothing above proposes.
         let mut runs: Vec<Ran> = Vec::new();
 
-        // **21i, 33 A4: how built-up each place is** — one walk over the register a period, never a
-        // stored aggregate (Appendix B). A line that builds a STRUCTURE draws more where more already
+        // 21i, 33 A4: how built-up each place is — one walk over the register a period, never a
+        // stored aggregate. A line that builds a STRUCTURE draws more where more already
         // stands, and which lines those are is registry data, so an office block, a dwelling and a
-        // works go through this one mechanism (Law 15).
+        // works go through this one mechanism.
         let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
         let crowds_at = ctx.params().square_km(self.crowds_at);
 
@@ -382,13 +382,13 @@ impl Mechanism for Making {
                     continue;
                 }
 
-                // B1: its own outlook, and NOT a model forecast (§46). A firm with no view of what it
+                // Its own outlook, and NOT a model forecast. A firm with no view of what it
                 // sells has no reason to start a line, and that is missing rather than nothing.
                 let Some(expects) = ctx.outlooks().of(maker, about::HOW_MUCH_IT_SELLS) else {
                     continue;
                 };
 
-                // B1.c: the hours its engagements give it, and what an hour of them costs. The terms
+                // The hours its engagements give it, and what an hour of them costs. The terms
                 // are `[wage, hours]` — the convention `agreed::ENGAGEMENT` states.
                 let mut hours = 0.0;
                 let mut wage_bill = 0.0;
@@ -403,8 +403,8 @@ impl Mechanism for Making {
                     }
                     let terms = ctx.agreements().terms(a);
                     match (terms.first(), terms.get(1), terms.get(2)) {
-                        // **21h, Labour A4.b: a wage and an hour are PER PERSON, so the line gets
-                        // the headcount's worth of both.** `Wages` was told this and `Making` was
+                        // A wage and an hour are PER PERSON, so the line gets
+                        // the headcount's worth of both. `Wages` was told this and `Making` was
                         // not, which left one term with two readings — Law 4 — and a firm employing
                         // two thousand people getting one person's hours.
                         (Some(w), Some(h), Some(heads)) => {
@@ -427,11 +427,11 @@ impl Mechanism for Making {
                 let keeping: f64 = stock.iter().map(|v| upkeep(v, &m.plant_is, now) + charge(v, &m.plant_is, now)).sum();
                 let a_service = keeping / can_make;
 
-                // A2, B5: it picks the way that costs IT least — and **what an input costs IT is
-                // what it paid for the stock it holds**, off its own lots, because that is the stock
+                // It picks the way that costs IT least — and what an input costs IT is
+                // what it paid for the stock it holds, off its own lots, because that is the stock
                 // the batch will actually consume and the number `unit_cost` will book. Where it
                 // holds none of an input it would have to buy it, and what it would pay is the
-                // market's print (Law 3, never a number this module made up).
+                // market's print.
                 //
                 // This is one rule, stated once, over two real situations — not two formulas for one
                 // fact. Costing everything at the print was the earlier reading and it was wrong in a
@@ -450,7 +450,7 @@ impl Mechanism for Making {
                 let Some((way, _)) = picks(&m.line, &priced, an_hour, a_service) else {
                     continue;
                 };
-                // **21i: the same line, run where this much already stands.** Crowding scales every
+                // The same line, run where this much already stands. Crowding scales every
                 // way of making the line alike, so it cannot change which way is cheapest — that is
                 // why it is applied AFTER the pick rather than to each way before it.
                 //
@@ -463,12 +463,12 @@ impl Mechanism for Making {
                     ),
                     None => 1.0,
                 };
-                // Law 4: ONE writer of the scaling. What the firm can afford to start, what leaves
+                // ONE writer of the scaling. What the firm can afford to start, what leaves
                 // its rows and what the batch cost all come off this one object, so the decision and
                 // the draw cannot disagree about where the line is standing.
                 let way = &way.where_it_stands(crowding);
 
-                // B1.b: what it holds of each input, off its own rows. An input it has no row for is
+                // What it holds of each input, off its own rows. An input it has no row for is
                 // one it has none of, and `decide` is where that stops the line.
                 let on_hand: Vec<(InstrumentId, f64)> = way
                     .per_unit
@@ -484,7 +484,7 @@ impl Mechanism for Making {
                         capacity: can_make,
                         on_hand,
                         labour: hours,
-                        // 22c.3: what it already has of what it makes, off its own rows (Law 19).
+                        // What it already has of what it makes, off its own rows.
                         on_shelf: ctx.register().quantity(ctx.register().row(maker, m.line.makes)),
                         cover: ctx.params().ratio(self.cover),
                     },
@@ -493,8 +493,8 @@ impl Mechanism for Making {
                     continue;
                 }
 
-                // B2, E5: what the draw costs, at the lots' own basis and in the order settlement
-                // will draw them in — so what this books and what leaves cannot disagree (Law 4).
+                // What the draw costs, at the lots' own basis and in the order settlement
+                // will draw them in — so what this books and what leaves cannot disagree.
                 let draws = way.draws_for(d.starts);
                 let mut inputs_cost = 0.0;
                 for (what, units) in &draws {
@@ -508,7 +508,7 @@ impl Mechanism for Making {
                 }
                 let wages = d.starts * way.labour_per_unit * an_hour;
                 let capital = d.starts * way.capital_services_per_unit * a_service;
-                // B5.a: **no units, no capitalised cost.** A run that finishes nothing capitalises
+                // No units, no capitalised cost. A run that finishes nothing capitalises
                 // nothing, and the cost it incurred is a period expense rather than a batch — which
                 // is the caller's, and this will not invent a unit to hang it on. The read is asked
                 // here, where the decision is, and the answer is thrown at the batch below (Law 4:
@@ -516,7 +516,7 @@ impl Mechanism for Making {
                 if unit_cost(inputs_cost, wages, capital, d.finishes).is_none() {
                     continue;
                 }
-                // B3, 21f.3: what goes ON the line now, and when it comes off.
+                // What goes ON the line now, and when it comes off.
                 runs.push(Ran {
                     maker,
                     makes: m.line.makes,
@@ -544,7 +544,7 @@ impl Mechanism for Making {
             if !ctx.parties().alive(maker) {
                 continue;
             }
-            // B5: what a unit cost is what went in over what came out — the cost the batch carried.
+            // What a unit cost is what went in over what came out — the cost the batch carried.
             let per_unit = cost / units;
             ctx.propose(
                 vec![Leg::Create { party: maker, instrument: makes, qty: units, cost_per_unit: per_unit }],
@@ -575,18 +575,18 @@ impl Mechanism for Making {
 }
 
 
-/// **§13 F3, G1, XI-3: A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.**
+/// A POOL WHOSE MANAGER DIED WINDS UP THROUGH THE MACHINERY IT ALREADY HAS.
 ///
-/// 21b, measured on the old engine (21.106): a manager died, the succession rule ended every
+/// 21b, measured on the old engine: a manager died, the succession rule ended every
 /// commitment it ran, and its money fund was left ALIVE — holding a book, with households holding its
 /// shares, and nobody deciding for it. It stayed that way for the rest of the run and the audit said
-/// so every period. **Which pools survived a manager's death was decided by which side of the row the
-/// dead party was on**, and by nothing about the pools.
+/// so every period. Which pools survived a manager's death was decided by which side of the row the
+/// dead party was on, and by nothing about the pools.
 ///
 /// There is no clause for it: F3 is about the FEE. So this is the mechanism that absence asks for,
-/// and it invents nothing — the holders' claim is redeemable (G1), so what the pool holds is sold in
+/// and it invents nothing — the holders' claim is redeemable, so what the pool holds is sold in
 /// the books it bought it in and the proceeds pay redemptions pro rata, period by period, until
-/// nothing is left. **No forced buyer** (Appendix B): a book that will not take it leaves it unsold
+/// nothing is left. No forced buyer: a book that will not take it leaves it unsold
 /// and the wind-up takes another period. The selling is the pool's own, posted by the participant
 /// side; what this does is pay out what the selling raised, and end the pool when there is nothing
 /// left to pay with.
@@ -608,7 +608,7 @@ impl Mechanism for Winding {
             if !ctx.parties().alive(pool) {
                 continue;
             }
-            // Law 4: whether anybody decides for it is a read of the RELATIONS, never a flag on the
+            // Whether anybody decides for it is a read of the RELATIONS, never a flag on the
             // pool that somebody has to remember to clear.
             let live = ctx
                 .agreements()
@@ -626,7 +626,7 @@ impl Mechanism for Winding {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), pool) else { continue };
             let cash = ctx.register().quantity(ctx.register().row(pool, money));
 
-            // G1.b: a holder of its shares has a redeemable claim, and a share count is what makes a
+            // A holder of its shares has a redeemable claim, and a share count is what makes a
             // claim redeemable. Which line that is, is a walk over the instruments filtered by
             // issuer — the walk 21.130 names, run here only for a pool that has actually lost its
             // manager, which is rare. It becomes a read the day `Instruments` is indexed by issuer.
@@ -653,7 +653,7 @@ impl Mechanism for Winding {
                 .sum();
 
             if out <= 0.0 {
-                // XI-3: nothing held and nobody owed is a pool that has ended. Law 6: nothing here
+                // Nothing held and nobody owed is a pool that has ended. Law 6: nothing here
                 // ends it on a schedule — the wind-up takes as long as the selling takes.
                 if still_holds <= 0.0 {
                     ending.push(pool);
@@ -699,19 +699,19 @@ impl Mechanism for Winding {
     }
 }
 
-/// **XI-8: AN ESTATE PAYS ITS CLAIMANTS IN RANK ORDER, AND THE STATE IS ONE OF THEM.**
+/// AN ESTATE PAYS ITS CLAIMANTS IN RANK ORDER, AND THE STATE IS ONE OF THEM.
 ///
-/// 21c, measured on the old engine (21.107): an estate paid the treasury 388 pieces in period 5 and
+/// 21c, measured on the old engine: an estate paid the treasury 388 pieces in period 5 and
 /// 388 again in period 6, with a `tax` receipt, and the audit said *"paid 388 to treasury.us, who
 /// has no claim on it"*. The estate was right to OWE it and the treasury was wrong to TAKE it.
 ///
 /// What this does is the payout, and only the payout: it reads the claims standing against every
 /// dead party, asks the waterfall what each gets out of what the estate actually has, and proposes
-/// those payments. **Nothing here decides a claim** — a claimant gets in by being written one
+/// those payments. Nothing here decides a claim — a claimant gets in by being written one
 /// through `ctx.claims()`, which is the door an assessment goes through, and the rank it stands at
 /// is the law's.
 ///
-/// Law 6: a rank is not paid "up to" anything. It is paid what there is, and what there is runs out.
+/// A rank is not paid "up to" anything. It is paid what there is, and what there is runs out.
 pub struct Ranked {
     pub says: u32,
 }
@@ -726,8 +726,8 @@ impl Mechanism for Ranked {
 
         for p in 0..ctx.parties().len() {
             let estate = PartyId::at(p as u32);
-            // XI-3: an estate is what is left of a party whose life has ended. Nothing here asks
-            // what KIND of party it was (Law 15) — a dead bank and a dead baker pay the same way.
+            // An estate is what is left of a party whose life has ended. Nothing here asks
+            // what KIND of party it was — a dead bank and a dead baker pay the same way.
             if ctx.parties().alive(estate) {
                 continue;
             }
@@ -793,8 +793,8 @@ impl Mechanism for Ranked {
     }
 }
 
-/// XI-8: the rank a stored claim stands at. `Claims` holds a number and does not know what it means
-/// (Law 15); this is where the number becomes the law's ordering, in one place.
+/// The rank a stored claim stands at. `Claims` holds a number and does not know what it means
+/// ; this is where the number becomes the law's ordering, in one place.
 fn rank_of(stored: u32) -> crate::mechanisms::estate::Rank {
     use crate::mechanisms::estate::Rank;
     match stored {
@@ -811,14 +811,14 @@ fn rank_of(stored: u32) -> crate::mechanisms::estate::Rank {
 
 
 
-/// **A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.**
+/// A SYSTEM THAT READS WHAT THE BOOKS PRODUCED.
 ///
 /// Benchmarks, ratings, the observer surface, the second opinion: they publish a read over what
-/// already happened and propose nothing. That is not a stub — **giving them a schedule would be
-/// inventing demand nobody has** (Appendix B) — and the count it publishes is what makes it visible
+/// already happened and propose nothing. That is not a stub — giving them a schedule would be
+/// inventing demand nobody has — and the count it publishes is what makes it visible
 /// that it ran.
 ///
-/// **21j.4, 0j.3: this is exactly the shape the census counts** — an honest count of something
+/// This is exactly the shape the census counts — an honest count of something
 /// real, no decision and no write. It used to say so by overriding `Mechanism::only_counts`, and
 /// nothing else in the world overrode it, so the register read zero while four systems ran one of
 /// these. It is read off `Taken::decided` now and nothing declares it.
@@ -857,12 +857,12 @@ impl Mechanism for Reads {
                 .filter(|a| ctx.agreements().live(crate::stores::AgreementId(*a as u32)))
                 .count() as f64,
         };
-        // Observer A3: a read over what the books produced is PUBLIC. That is what a benchmark is.
+        // A read over what the books produced is PUBLIC. That is what a benchmark is.
         ctx.say(self.kind, &[], &[(0, Value::Num(n))], true);
     }
 }
 
-/// **Money A1, Money D2: WHAT EACH ISSUER OWES ITS HOLDERS**, published once a period.
+/// WHAT EACH ISSUER OWES ITS HOLDERS, published once a period.
 ///
 /// 5 A4: every asset is somebody's liability, party by party. A world that could not say who owes
 /// the money in it is a world with free money in it somewhere.
@@ -891,26 +891,26 @@ impl Mechanism for Owed {
     }
 }
 
-/// **§48 A1–A5, G2, G5, G6, 21.76: A PUBLIC COMPANY PUBLISHES WHAT ITS OWN BOOKS PRODUCED.**
+/// A PUBLIC COMPANY PUBLISHES WHAT ITS OWN BOOKS PRODUCED.
 ///
 /// Nothing in this world published accounts, on any calendar. `reporting` said a firm's own equity
 /// to its own subjects, which is a private result — and §48's PUBLISHED accounts, the thing a bid
 /// values a company off (§35 `worthAt`) and a covenant is written against, were nobody's. That is
 /// the deeper cause 21.76 names under three other findings.
 ///
-/// **Being public is a state read from the register, never a label** (A1.a): a company reports while
+/// Being public is a state read from the register, never a label: a company reports while
 /// its shares are listed and held by OUTSIDERS, so a company whose outsiders sell stops reporting
-/// without anybody relabelling it, and there is no kind of party that reports (Law 15) — this walks
+/// without anybody relabelling it, and there is no kind of party that reports — this walks
 /// every living party and asks the register.
 ///
-/// **The year is placed by DATE from the day the company started** (A3, G6), which is why 22i.1 had
+/// The year is placed by DATE from the day the company started, which is why 22i.1 had
 /// to give a party a birth period first. Year-ends are staggered because companies start on
 /// different days, not because anything staggers them.
 ///
-/// **The report comes out after the books close** (A4), and in between the company knows its result
-/// and nobody else does — the only real information asymmetry this world has (A4.a).
+/// The report comes out after the books close, and in between the company knows its result
+/// and nobody else does — the only real information asymmetry this world has.
 ///
-/// **Income is the equity account's MOVEMENT** (G2), read against what this company last published
+/// Income is the equity account's MOVEMENT, read against what this company last published
 /// — never a figure anybody chose. A first report has no prior close, so it publishes no income at
 /// all: missing is missing, and a first annual report with no comparative is what that looks like.
 pub struct Publishes {
@@ -920,13 +920,13 @@ pub struct Publishes {
     pub at_equity: u32,
     pub at_income: u32,
     pub at_shares: u32,
-    /// §48 A3: which fiscal close a report is FOR. A figure with no period is one nobody can
-    /// restate against or compare with the next (Law 8).
+    /// Which fiscal close a report is FOR. A figure with no period is one nobody can
+    /// restate against or compare with the next.
     pub at_closed: u32,
     pub days_per_period: i64,
-    /// §48 A4: how many days after the books close the report comes out. A TECHNOLOGY.
+    /// How many days after the books close the report comes out. A TECHNOLOGY.
     pub asymmetry: &'static str,
-    /// §46 A2, §48 C1: the weight a bank puts on what it already thought against what it has just
+    /// The weight a bank puts on what it already thought against what it has just
     /// seen. ONE PREFERENCE, and it is what makes two banks' estimates of one name differ.
     pub memory: &'static str,
 }
@@ -937,10 +937,10 @@ impl Mechanism for Publishes {
         let today = Day(i64::from(ctx.period()) * days);
         let asymmetry = ctx.params().days(self.asymmetry) as i64;
 
-        // A5: what each company last published, read off the journal's own rows — one pass, not one
+        // What each company last published, read off the journal's own rows — one pass, not one
         // walk of the world's history per company (Law 19: the read replaces the walk).
         let mut last: std::collections::HashMap<u32, (u32, f64)> = std::collections::HashMap::new();
-        // A5: and which fiscal close each report was ABOUT, so a quarter is published once and a
+        // And which fiscal close each report was ABOUT, so a quarter is published once and a
         // restatement is a different act.
         let mut reported: std::collections::HashSet<(u32, i64)> = std::collections::HashSet::new();
         for &row in ctx.journal().of_kind(self.kind) {
@@ -961,7 +961,7 @@ impl Mechanism for Publishes {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // A1.a: listed, and held by outsiders. Both are reads of the register.
+            // Listed, and held by outsiders. Both are reads of the register.
             let mut listed = 0.0;
             let mut outsiders = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
@@ -976,7 +976,7 @@ impl Mechanism for Publishes {
             if !crate::mechanisms::reporting::reports(listed > 0.0, outsiders) {
                 continue;
             }
-            // **A3, G3.a, G6: THE FISCAL PERIOD IS A QUARTER**, placed by DATE from the day this
+            // THE FISCAL PERIOD IS A QUARTER, placed by DATE from the day this
             // company started — three months of calendar, which is a whole number of periods only by
             // accident. It is walked by advancing the month, never by adding days: a quarter is not
             // ninety-one days and a year is not four of them.
@@ -996,19 +996,19 @@ impl Mechanism for Publishes {
             if today < fiscal.published {
                 continue;
             }
-            // A5: and it publishes each quarter ONCE. A report already out for this close is not
+            // And it publishes each quarter ONCE. A report already out for this close is not
             // republished; a restatement is a different act and nothing restates yet.
             if reported.contains(&(row, fiscal.closes.0)) {
                 continue;
             }
             let now = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
-            // G2: income is the MOVEMENT against what it last published. A first report has no
+            // Income is the MOVEMENT against what it last published. A first report has no
             // prior close and so publishes no income — missing is missing.
             let income = last.get(&row).map(|&(_, was)| now - was);
             out.push((row, now, income, listed, fiscal.closes.0));
         }
-        // C1, D3: **and the banks that cover a name estimate what it will report.** Coverage is
-        // uneven and how many cover a name is an OUTCOME (D3): a bank estimates the names it can
+        // And the banks that cover a name estimate what it will report. Coverage is
+        // uneven and how many cover a name is an OUTCOME: a bank estimates the names it can
         // SEE, which is the ones whose paper it holds, so a company nobody lends to is covered by
         // nobody. §46 A2: it is formed from what THIS bank has observed, weighted by its own memory,
         // so two banks with different histories of a name estimate differently.
@@ -1026,13 +1026,13 @@ impl Mechanism for Publishes {
                     {
                         continue;
                     }
-                    // §46 A2, C5: what it has seen is what the company has PUBLISHED, and it may not
+                    // What it has seen is what the company has PUBLISHED, and it may not
                     // be handed the answer — so what it holds now is weighted against what this
                     // report is about to say, and never set to it.
                     let held = match ctx.standing().of_party_about(bank, company, standing::ESTIMATE) {
                         Some(st) => ctx.standing().terms(st)[0],
                         // A bank that has seen nothing of a name has no estimate of it and is not
-                        // covering it (D3) — its first is what the first report it saw said.
+                        // covering it — its first is what the first report it saw said.
                         None => *worth,
                     };
                     estimating.push((bank, company, held * memory + *worth * (1.0 - memory)));
@@ -1040,7 +1040,7 @@ impl Mechanism for Publishes {
             }
         }
         for (bank, company, figure) in estimating {
-            // C1: it HOLDS it, so it can be shown to have been wrong — and F1's surprise is the
+            // It HOLDS it, so it can be shown to have been wrong — and F1's surprise is the
             // report against what was standing when it arrived.
             ctx.now_stands(standing::ESTIMATE, bank, company, vec![figure]);
         }
@@ -1049,35 +1049,35 @@ impl Mechanism for Publishes {
             let mut data = vec![
                 (self.at_equity, Value::Num(worth)),
                 (self.at_shares, Value::Num(shares)),
-                // A3: WHICH fiscal close this is the report for. A figure with no period is a
-                // figure nobody can restate or compare (Law 8).
+                // WHICH fiscal close this is the report for. A figure with no period is a
+                // figure nobody can restate or compare.
                 (self.at_closed, Value::Num(closed as f64)),
             ];
             if let Some(earned) = income {
                 data.push((self.at_income, Value::Num(earned)));
             }
-            // A1: **published**, which is what makes it something anybody else may read.
+            // Published, which is what makes it something anybody else may read.
             ctx.say(self.kind, &[who], &data, true);
         }
     }
 }
 
 
-/// **§21 A2–A4, A6, 22i.2: EVERY HOUSE GRADES EVERY NAME IT CAN READ, AND THEY DISAGREE.**
+/// EVERY HOUSE GRADES EVERY NAME IT CAN READ, AND THEY DISAGREE.
 ///
 /// This world had never published a grade. `grade_from` and `reassess` were built, tested and
 /// unreached; the `ratings` row counted how many parties were alive. So the investment-grade index
 /// was empty by construction, every claim took the worst weight wherever a grade was read, and A4's
 /// two houses could not disagree about anything because neither said anything.
 ///
-/// **The state is READ, and A2.a's forbidden input cannot be supplied**: there is no price here and
+/// The state is READ, and A2.a's forbidden input cannot be supplied: there is no price here and
 /// no spread. Leverage is what an issuer owes against what it holds; coverage is what it last
 /// PUBLISHED against what falls due on it (which is why 22i.1 came first); age is how long it has
 /// been going (22i.1 again); the trend is this year's published income against last year's.
 ///
-/// **A house holds its grade** (`standing::GRADE`, `about` the issuer), so two houses hold two rows
+/// A house holds its grade (`standing::GRADE`, `about` the issuer), so two houses hold two rows
 /// on one name. A move is a `restates`, so what a house said before stays readable beside what it
-/// says now — which is what lets a grade be shown to have been wrong (A6).
+/// says now — which is what lets a grade be shown to have been wrong.
 pub struct Grading {
     /// The event kind a rating action is published under.
     pub kind: u32,
@@ -1099,8 +1099,8 @@ impl Mechanism for Grading {
         if houses.is_empty() {
             return;
         }
-        // A2: what each name last published, and what it published before that — the trend. One
-        // pass over the accounts rather than a walk per name per house (Law 19).
+        // What each name last published, and what it published before that — the trend. One
+        // pass over the accounts rather than a walk per name per house.
         let mut last: std::collections::HashMap<u32, (f64, Option<f64>)> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.accounts) {
             if let (Some(&who), Some(Value::Num(income))) =
@@ -1117,7 +1117,7 @@ impl Mechanism for Grading {
             if !ctx.parties().alive(of) {
                 continue;
             }
-            // A2: leverage is what it owes against what it holds. Both are reads.
+            // Leverage is what it owes against what it holds. Both are reads.
             let owes: f64 = ctx
                 .instruments()
                 .of_issuer(of)
@@ -1127,8 +1127,8 @@ impl Mechanism for Grading {
             let holds = equity(of, ctx.register(), ctx.instruments(), ctx.claims());
             let state = crate::mechanisms::ratings::State {
                 leverage: owes / holds,
-                // A2: coverage is what it earns against what it owes. An issuer that owes nothing is
-                // covered by arithmetic and not by a bound (Law 6).
+                // Coverage is what it earns against what it owes. An issuer that owes nothing is
+                // covered by arithmetic and not by a bound.
                 coverage: if owes > 0.0 { income / owes } else { f64::INFINITY },
                 cash: ctx.register().quantity(
                     ctx.register().row(of, match crate::ledger::account_of(ctx.parties(), ctx.instruments(), of) {
@@ -1138,7 +1138,7 @@ impl Mechanism for Grading {
                 ),
                 size: holds,
                 age_periods: ctx.parties().age(of, ctx.period()),
-                // A2: and the TREND — this year's published income against last year's. A name with
+                // And the TREND — this year's published income against last year's. A name with
                 // one report has no trend, and no trend is not a trend of zero.
                 trend: match before {
                     Some(was) if was != 0.0 => (income - was) / was.abs(),
@@ -1152,7 +1152,7 @@ impl Mechanism for Grading {
         }
 
         for (by, of, grade) in actions {
-            // A3: **it is STICKY.** A house that already says this about this name says nothing;
+            // It is STICKY. A house that already says this about this name says nothing;
             // a grade republished every period is not a rating action and would make A6's record of
             // what a house got wrong unreadable.
             let held = ctx
@@ -1162,7 +1162,7 @@ impl Mechanism for Grading {
             if matches!(held, Some(rank) if rank == grade.rank()) {
                 continue;
             }
-            // B1, B2: the probability of failing and, SEPARATELY, the loss given it. Both are the
+            // The probability of failing and, SEPARATELY, the loss given it. Both are the
             // house's own view and both are stood behind with the grade.
             ctx.now_stands(
                 crate::stores::standing::GRADE,
@@ -1175,8 +1175,8 @@ impl Mechanism for Grading {
     }
 }
 
-/// **XI-2, §21 C1, C1.a, 22i.3: A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY
-/// HOLDER BOUND BY IT, ON THE SAME DATE.**
+/// A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY
+/// HOLDER BOUND BY IT, ON THE SAME DATE.
 ///
 /// The `forced_sale` row was a CLOSER for a process nothing opened, so XI-2 — a sequencing step —
 /// had never happened in this world. What it was waiting on was a grade, and 22i.2 published one.
@@ -1186,7 +1186,7 @@ impl Mechanism for Grading {
 /// assessor holds a grade on each issuer (`standing::GRADE`), and when the grade falls through the
 /// floor every bound holder must sell what it holds of that issuer's lines — whatever it is worth.
 ///
-/// **It opens the workout and does not sell**: a forced seller posts a size and NO level (Clearing
+/// It opens the workout and does not sell: a forced seller posts a size and NO level (Clearing
 /// C3), which is an order in a book and therefore a participant's act, not a mechanism's. What is
 /// opened here is the requirement; `ForcedSeller` is what stands in the market with it.
 pub struct ForcedSelling {
@@ -1200,7 +1200,7 @@ pub struct ForcedSelling {
 impl Mechanism for ForcedSelling {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         let within = ctx.params().periods(self.within) as u32;
-        // §21 C1: what each issuer is graded at now. The WORST grade any house holds on it, because
+        // What each issuer is graded at now. The WORST grade any house holds on it, because
         // a mandate that let a holder pick the kindest house would not bind on anything.
         let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
@@ -1225,7 +1225,7 @@ impl Mechanism for ForcedSelling {
             let floor = match ctx.agreements().terms(a).first() {
                 Some(&floor) => floor,
                 // A mandate with no floor restricts no grade. That is an answer about that mandate
-                // and not a reason to invent one (Appendix A).
+                // and not a reason to invent one.
                 None => continue,
             };
             // The pool is the side the mandate is over; the manager is the other. The pool is what
@@ -1239,7 +1239,7 @@ impl Mechanism for ForcedSelling {
                 for row in ctx.register().of_holder(pool) {
                     let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
                     let issuer = ctx.instruments().issuer_of(line);
-                    // C1: through the floor, and only through it. A grade at the floor is one the
+                    // Through the floor, and only through it. A grade at the floor is one the
                     // mandate still allows.
                     if matches!(worst.get(&issuer.0), Some(&rank) if rank > floor) {
                         must_sell += ctx.register().quantity(crate::ids::HoldingId(*row));
@@ -1252,7 +1252,7 @@ impl Mechanism for ForcedSelling {
         }
 
         for (pool, units) in breached {
-            // C1.a: it is already in one, and a second workout for the same breach would be the
+            // It is already in one, and a second workout for the same breach would be the
             // same requirement counted twice.
             if ctx.processes().running(afoot::WORKOUT).iter().any(|p| ctx.processes().owner(*p) == pool) {
                 continue;
@@ -1268,7 +1268,7 @@ impl Mechanism for ForcedSelling {
     }
 }
 
-/// **XI-2, Clearing C3: AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.**
+/// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
 ///
 /// A forced sale with a reservation price is a sale that can decline, and then the channel XI-2 is
 /// about is closed: the sale must be struck at whatever the other side posted, which is what makes
@@ -1299,7 +1299,7 @@ impl crate::module::Participant for ForcedSeller {
         }
         let line = crate::systems::line_of(m);
         let held = view.free(line);
-        // Law 6: it cannot sell more than it holds, which is arithmetic about a holding and not a
+        // It cannot sell more than it holds, which is arithmetic about a holding and not a
         // cap on a number.
         let units = crate::clearing::whole_pieces(crate::mechanisms::forced_sale::sells(held, must));
         if units <= 0 {
@@ -1308,7 +1308,7 @@ impl crate::module::Participant for ForcedSeller {
         vec![crate::clearing::Order {
             party: view.self_id(),
             side: crate::clearing::Side::Sell,
-            // **NO LEVEL.** This is the whole of Clearing C3 and XI-2 in one field.
+            // NO LEVEL. This is the whole of Clearing C3 and XI-2 in one field.
             price: None,
             qty: units,
         }]
@@ -1316,22 +1316,22 @@ impl crate::module::Participant for ForcedSeller {
 }
 
 
-/// **XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.**
+/// XI-1, Banks Lending D1, D2, 22i.5: A LOSS IS AN EVENT, NOT A RATE — and this world had none.
 ///
 /// The `loss` row counted how many parties were alive. So nothing in this world ever crossed a
 /// threshold, nothing was ever non-performing, and XI-1 — a sequencing step — had never happened:
 /// there was no borrower, nothing to distribute, nothing to seize and nothing to disagree with.
 ///
-/// **The test is applied to ONE borrower, never to a band's average** (XI-15). A cell is one
+/// The test is applied to ONE borrower, never to a band's average. A cell is one
 /// borrower here: it stands for a population whose members share a key, and applying the test to a
 /// mean would mean a mean-preserving spread caused no defaults at all — exactly backwards, because
 /// widening dispersion at constant mean is what a downturn does.
 ///
-/// **The crossing is an EVENT WITH A DATE**, which is what XI-1 calls it, so the journal is where it
+/// The crossing is an EVENT WITH A DATE, which is what XI-1 calls it, so the journal is where it
 /// lives: what a claim's standing is, is the last crossing said about it. There is no second store
-/// holding a status beside the events that changed it (Law 4).
+/// holding a status beside the events that changed it.
 ///
-/// **Nothing is drawn and there is no probability.** What is compared is what the borrower HAS
+/// Nothing is drawn and there is no probability. What is compared is what the borrower HAS
 /// against what FELL DUE: it either could pay or it could not.
 pub struct Losses {
     pub kind: u32,
@@ -1346,7 +1346,7 @@ impl Mechanism for Losses {
         let to = Day(from.0 + self.days_per_period - 1);
 
         // What each claim's standing IS: the last crossing said about it. One pass over this kind's
-        // own rows, never a walk of the world's history per claim (Law 19).
+        // own rows, never a walk of the world's history per claim.
         let mut was: std::collections::HashMap<(u32, u32), Standing> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.kind) {
             let subjects = ctx.journal().subjects_of(row);
@@ -1364,7 +1364,7 @@ impl Mechanism for Losses {
             }
         }
 
-        // XI-1: what fell due on each borrower, per claim. A claim with nothing due this period is
+        // What fell due on each borrower, per claim. A claim with nothing due this period is
         // one nobody could have missed a payment on.
         let mut fell: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
         for row in 0..ctx.parties().len() as u32 {
@@ -1387,7 +1387,7 @@ impl Mechanism for Losses {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
             let could_pay = ctx.register().quantity(ctx.register().row(who, money));
             let standing = *was.get(&(borrower, claim)).unwrap_or(&Standing::Performing);
-            // Law 7: the only tolerance is the dust of the two numbers, never a grace band.
+            // The only tolerance is the dust of the two numbers, never a grace band.
             let dust = crate::num::dust(2, &[owed, could_pay]);
             let Some(crossed) = crate::mechanisms::loss::crossed(
                 who,
@@ -1410,34 +1410,34 @@ impl Mechanism for Losses {
         }
 
         for (borrower, claim, rank) in crossings {
-            // D2: **a charge that is VISIBLE**, never a reserve absorbing things quietly. It names
+            // A charge that is VISIBLE, never a reserve absorbing things quietly. It names
             // the borrower and the claim, so a holder can find its own.
             ctx.say(self.kind, &[borrower, claim], &[(self.at_standing, Value::Num(rank))], true);
         }
     }
 }
 
-/// **§36 B5, C1, C1.a, 22i.6: A SELLER THAT HAS DELIVERED AND NOT BEEN PAID OFFERS TERMS.**
+/// A SELLER THAT HAS DELIVERED AND NOT BEEN PAID OFFERS TERMS.
 ///
 /// `trade_credit` counted live agreements and wrote none, so no invoice existed in this world at
 /// all — the tier §42 A4 calls *the tier that lives on it* used nothing, because there was nothing
 /// to use.
 ///
-/// **The trigger is 22d's queue.** A payment that is short is sitting in it with a day it is late
+/// The trigger is 22d's queue. A payment that is short is sitting in it with a day it is late
 /// on; the seller can wait, and a seller that waits has made a loan. That is what trade credit IS
 /// (C1: the goods move at one time and the money at another), and it is a DECISION the seller takes
-/// per buyer on that buyer's condition (B5) — a refusal is an outcome, and the buyer's payment then
+/// per buyer on that buyer's condition — a refusal is an outcome, and the buyer's payment then
 /// runs out of days as an arrear like any other.
 ///
-/// **The seller's limit is its own** (B5): how much it will have out to one name at once, and how
+/// The seller's limit is its own: how much it will have out to one name at once, and how
 /// long it will wait. Terms that are a formula cannot tighten, which is what D4 is about — the
 /// anticipation of failure making suppliers withdraw terms and starving a firm of working capital
 /// faster than any lender could.
 pub struct TradeCredit {
     pub kind: u32,
-    /// B5: how much a seller will have out to ONE buyer at once. A PREFERENCE — its own limit.
+    /// How much a seller will have out to ONE buyer at once. A PREFERENCE — its own limit.
     pub will_carry: &'static str,
-    /// B5: and how long it will wait. Its own, and it shortens when the seller is worried.
+    /// And how long it will wait. Its own, and it shortens when the seller is worried.
     pub will_wait: &'static str,
     pub days_per_period: i64,
 }
@@ -1448,7 +1448,7 @@ impl Mechanism for TradeCredit {
         let will_wait = ctx.params().days(self.will_wait) as i64;
         let today = Day(i64::from(ctx.period()) * self.days_per_period);
 
-        // C1.a: what each seller already has out to each buyer, read off the relations it holds.
+        // What each seller already has out to each buyer, read off the relations it holds.
         let mut out: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
         for row in 0..ctx.agreements().len() as u32 {
             let a = crate::stores::AgreementId(row);
@@ -1463,8 +1463,8 @@ impl Mechanism for TradeCredit {
 
         // The payments that are short, and who was to be paid by them.
         let mut offering: Vec<(crate::ledger::QueueId, PartyId, PartyId, f64)> = Vec::new();
-        // **How many sellers each payment owes.** One payment can owe several — a coupon owes every
-        // holder of the line (0k.5) — and a payment cannot half-wait, so the count is what says
+        // How many sellers each payment owes. One payment can owe several — a coupon owes every
+        // holder of the line — and a payment cannot half-wait, so the count is what says
         // whether ALL of them agreed to wait.
         let mut payees: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
         for row in 0..ctx.wire().queue.len() as u32 {
@@ -1499,7 +1499,7 @@ impl Mechanism for TradeCredit {
                 will_carry,
                 will_wait_days: will_wait,
             };
-            // B5: **`None` is a REFUSAL, and a refusal is a decision.** The buyer's payment then
+            // `None` is a REFUSAL, and a refusal is a decision. The buyer's payment then
             // runs out of days as an arrear, which is what a seller that will not wait means.
             let Some(terms) =
                 crate::mechanisms::trade_credit::offer(seller, buyer, amount, today, &view, already)
@@ -1510,7 +1510,7 @@ impl Mechanism for TradeCredit {
             struck.push((q, seller, buyer, terms.amount, terms.due));
         }
 
-        // **§36 A1, B5: each seller decides for itself, and the PAYMENT is one.**
+        // Each seller decides for itself, and the PAYMENT is one.
         //
         // A payment owing several sellers cannot half-wait — it is one instruction with one day —
         // so the terms each seller struck are its own relation, and the payment's day moves ONCE:
@@ -1523,10 +1523,10 @@ impl Mechanism for TradeCredit {
         // the world in period 2.
         let mut waiting: std::collections::HashMap<u32, (usize, Day)> = std::collections::HashMap::new();
         for (q, seller, buyer, amount, due) in struck {
-            // C1: the terms are the relation — what is owed and when. The DUE DATE is what makes the
+            // The terms are the relation — what is owed and when. The DUE DATE is what makes the
             // goods and the money two different moments (E1: a sale that settles instantly by
-            // construction deletes all of this). **The money owed stays in the queue**: the invoice
-            // and the payment would otherwise be one debt in two places (Law 4), so what the terms
+            // construction deletes all of this). The money owed stays in the queue: the invoice
+            // and the payment would otherwise be one debt in two places, so what the terms
             // change is WHEN, and the seller's waiting is the payment's day moving out.
             ctx.agrees(crate::module::Agrees {
                 kind: agreed::TRADE_CREDIT,
@@ -1552,7 +1552,7 @@ impl Mechanism for TradeCredit {
         moves.sort_by_key(|(row, _)| *row);
         for (row, until) in moves {
             let q = crate::ledger::QueueId(row);
-            // C1: terms that end sooner than the payment's own day are not time given, so nothing
+            // Terms that end sooner than the payment's own day are not time given, so nothing
             // moves and the payment keeps the day it had.
             if until.0 > ctx.wire().queue.late_after(q).0 {
                 ctx.waits_for(q, until);
@@ -1561,27 +1561,27 @@ impl Mechanism for TradeCredit {
     }
 }
 
-/// **§10 A2, A2.a, 22i.7: A COMPANY FLOATS — and no company in this world had ever had shares.**
+/// A COMPANY FLOATS — and no company in this world had ever had shares.
 ///
 /// The `equity` row was a CLOSER for a flotation nothing opened. So §10's line did not exist for any
 /// firm, which is why nothing could be valued (§35 `worthAt` reads a share price), nothing could be
 /// taken over (§29 B), and §48's accounts were published by nobody: being public is *shares listed
 /// and held by outsiders*, and there were no shares.
 ///
-/// **A company floats when the credit market has not taken it.** That is a read and not a rule: it
-/// brought paper (§7, §17) and is still holding it, so nobody bought the paper — equity is what a
+/// A company floats when the credit market has not taken it. That is a read and not a rule: it
+/// brought paper and is still holding it, so nobody bought the paper — equity is what a
 /// borrower the lenders will not take has left. A firm whose paper sold has no reason to sell its
 /// ownership and does not.
 ///
-/// **A2.a: a share count changes only by a NAMED EVENT**, and this is one — the line comes into
+/// A share count changes only by a NAMED EVENT, and this is one — the line comes into
 /// existence with the shares it issues, through the same door every other instrument does.
 pub struct Floating {
     pub kind: u32,
-    /// §31 C2, 22i.8: what a bank says when it is below its capital requirement. A recapitalisation
-    /// IS an equity issue, so it comes through this door and not a second one (Law 4).
+    /// What a bank says when it is below its capital requirement. A recapitalisation
+    /// IS an equity issue, so it comes through this door and not a second one.
     pub short_of_capital: u32,
-    /// §10 A2: how many shares a line comes into existence with. A TECHNOLOGY of the market: the
-    /// count is a convention and what a share is WORTH is what the book crosses at (Law 3).
+    /// How many shares a line comes into existence with. A TECHNOLOGY of the market: the
+    /// count is a convention and what a share is WORTH is what the book crosses at.
     pub shares: &'static str,
     /// How long the flotation runs before it is over, one way or the other.
     pub takes: &'static str,
@@ -1593,7 +1593,7 @@ impl Mechanism for Floating {
         let shares = ctx.params().count(self.shares);
         let takes = ctx.params().periods(self.takes) as u32;
 
-        // §31 C2: the banks that said they are short of capital this period.
+        // The banks that said they are short of capital this period.
         let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
         for &row in ctx.journal().of_kind(self.short_of_capital) {
             if ctx.journal().period_of(row) == ctx.period() {
@@ -1609,7 +1609,7 @@ impl Mechanism for Floating {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // Law 15: the profile answers whether this kind brings paper at all. A kind that does
+            // The profile answers whether this kind brings paper at all. A kind that does
             // not is a kind with no credit market to be turned down by.
             match ctx.registry().profile(ctx.parties().kind_of(who)) {
                 Some(profile) if profile.issues_paper => {}
@@ -1628,9 +1628,9 @@ impl Mechanism for Floating {
                     _ => {}
                 }
             }
-            // **Two reasons to sell ownership, and a company already listed has neither.** The
+            // Two reasons to sell ownership, and a company already listed has neither. The
             // lenders would not take it (unsold paper), or it is a bank below its requirement and
-            // must raise (§31 C2).
+            // must raise.
             if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
                 continue;
             }
@@ -1646,13 +1646,13 @@ impl Mechanism for Floating {
                 issuer: who,
                 ccy,
                 class: Class::Share,
-                // §10 A2: counted in SHARES, a unit that is not money and is not divided.
+                // Counted in SHARES, a unit that is not money and is not divided.
                 unit: crate::ids::UnitId::at(0),
                 // A share is not a claim: it carries no coupon and never matures (5 C4.b).
                 coupon: None,
                 matures: None,
                 units: shares,
-                // **§10 A6, 22c.1: shares trade on an EXCHANGE** — orders rest and are matched as
+                // Shares trade on an EXCHANGE — orders rest and are matched as
                 // they arrive, priced at the level the resting side was standing at.
                 book: Some(crate::protocols::Venue {
                     rule: crate::clearing::PriceRule::BuyersCompete,
@@ -1661,7 +1661,7 @@ impl Mechanism for Floating {
                     stands_for: Some(4),
                 }),
                 // A share owes nothing on a date. What it gets is the residual, and only if there
-                // is one (A1).
+                // is one.
                 owing: Vec::new(),
             });
             ctx.opens(crate::module::Opens {
@@ -1675,15 +1675,15 @@ impl Mechanism for Floating {
     }
 }
 
-/// **§10 A6, Law 3, 22j.1: AND IT OFFERS THEM, AT NO LEVEL.**
+/// AND IT OFFERS THEM, AT NO LEVEL.
 ///
 /// A company selling its own new shares offers them and the BOOK says what they are worth. That is
 /// what a flotation is — investors bid, the price clears, and the company finds out what its
 /// ownership fetches.
 ///
-/// **It posted a book-value reservation and that was invented.** Book equity is what a company's
+/// It posted a book-value reservation and that was invented. Book equity is what a company's
 /// holdings cost, at cost; it is not what the company is worth and nothing in §10 says a floating
-/// company will not sell below it. A reservation nobody derived is a floor under a price (Law 6)
+/// company will not sell below it. A reservation nobody derived is a floor under a price
 /// wearing a seller's clothes, and it made the flotation clear at an accounting figure rather than
 /// at what anybody would pay.
 ///
@@ -1710,7 +1710,7 @@ impl crate::module::Participant for Flotation {
             return Vec::new();
         }
         let _ = m;
-        // **22j.2: IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.**
+        // IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.
         //
         // A company floating its shares posts an ask at NO LEVEL — the book says what its ownership
         // is worth and the company does not — and posting one at its book value was an invented
@@ -1719,34 +1719,34 @@ impl crate::module::Participant for Flotation {
         // What is not settled is that a level-less ask in a `Book` venue reaches `prices.rs` as
         // MINUS INFINITY: `protocols::level_of` uses ±∞ to mean *takes what the book gives* and
         // nothing stops that sentinel becoming the print. It stops the world in period 1, and it is
-        // 22j.2. Until it is fixed the line is brought and nobody is asked to bid for it — which is
+        // Until it is fixed the line is brought and nobody is asked to bid for it — which is
         // a flotation that has not been offered, and says so, rather than one cleared at an
         // accounting figure.
         Vec::new()
     }
 }
 
-/// **§31 A1, B1, B3, C1, C1.a, 40 C5, 22i.8: A BANK READS ITS OWN CAPITAL AND ACTS ON IT.**
+/// §31 A1, B1, B3, C1, C1.a, 40 C5, 22i.8: A BANK READS ITS OWN CAPITAL AND ACTS ON IT.
 ///
 /// The `bank_capital` row counted how many parties were alive. So no bank in this world had a
 /// capital position at all: §31's ladder was never read, the two failures C1.a insists are different
 /// were never told apart, and 21.40's lending standard — *the standard a lender is currently lending
 /// at* — had no lender computing one, because no lender decided anything.
 ///
-/// **Capital is the RESIDUAL** (A1): what it holds against what it owes, read, never a stored figure
-/// something is withdrawn from. **The weights come from the GRADES** (§21, 22i.2): a claim on a party
+/// Capital is the RESIDUAL: what it holds against what it owes, read, never a stored figure
+/// something is withdrawn from. The weights come from the GRADES: a claim on a party
 /// that cannot fail weighs nothing and everything else weighs what its own credit says it weighs —
 /// which is why this had to wait for a house to publish a grade.
 ///
-/// **And a bank below its requirement has to RAISE** (C2), which it says and `Floating` acts on: a
-/// recapitalisation IS an equity issue, and one company's shares have one writer (Law 4). C2 also
+/// And a bank below its requirement has to RAISE, which it says and `Floating` acts on: a
+/// recapitalisation IS an equity issue, and one company's shares have one writer. C2 also
 /// says it can FAIL — nobody has to buy — which is why this publishes a need rather than an outcome.
 pub struct BankCapital {
     pub kind: u32,
-    /// C2: what it says when it is below its requirement and has to raise. `Floating` reads it.
+    /// What it says when it is below its requirement and has to raise. `Floating` reads it.
     pub short_by: u32,
     pub at_ratio: u32,
-    /// §31 B1: the requirement, the backstop and the buffer. POLICY — the regulation's, and the one
+    /// The requirement, the backstop and the buffer. POLICY — the regulation's, and the one
     /// place they are stated.
     pub min_weighted: &'static str,
     pub min_leverage: &'static str,
@@ -1768,7 +1768,7 @@ impl Mechanism for BankCapital {
         let from = Day(i64::from(ctx.period()) * self.days_per_period);
         let to = Day(from.0 + self.days_per_period - 1);
 
-        // §21, 22i.2: what each name is graded at — the WORST any house holds on it, because a bank
+        // What each name is graded at — the WORST any house holds on it, because a bank
         // that could pick the kindest house would weigh its book by choosing its assessor.
         let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
@@ -1789,7 +1789,7 @@ impl Mechanism for BankCapital {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // A1: what it holds, at what it is carried at, and what each weighs.
+            // What it holds, at what it is carried at, and what each weighs.
             let mut assets: Vec<Asset> = Vec::new();
             let mut money_at_hand = 0.0;
             for &row in ctx.register().of_holder(who) {
@@ -1815,7 +1815,7 @@ impl Mechanism for BankCapital {
                     weight: Weight::on(can_fail, crate::mechanisms::ratings::haircut(grade, 1.0) - 1.0),
                 });
             }
-            // A1: and what it OWES — the money it issued that others hold, plus what falls due on it.
+            // And what it OWES — the money it issued that others hold, plus what falls due on it.
             let mut liabilities = 0.0;
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
@@ -1834,7 +1834,7 @@ impl Mechanism for BankCapital {
                 bank: who,
                 assets,
                 liabilities,
-                // A2.b: the layer between equity and senior paper. Nothing in this world issues one
+                // The layer between equity and senior paper. Nothing in this world issues one
                 // yet, so it is none — which is a fact about the world and not a number chosen here.
                 subordinated: 0.0,
                 due_now,
@@ -1845,21 +1845,21 @@ impl Mechanism for BankCapital {
             }
             let how = standing(&position, rules);
             let ratio = position.capital() / position.carried();
-            // 40 C5: **what it is lending at now.** A lender with no room asks for more of the price
+            // 40 C5: what it is lending at now. A lender with no room asks for more of the price
             // up front, and both terms move together because both are read from the same position.
             let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
             acted.push((who, ratio, how.below_requirement, headroom));
         }
 
         for (who, ratio, below, headroom) in acted {
-            // B3: the standing is PUBLIC. A capital position nobody could read is one no depositor,
+            // The standing is PUBLIC. A capital position nobody could read is one no depositor,
             // no lender and no assessor could act on.
             ctx.say(self.kind, &[who.0], &[(self.at_ratio, Value::Num(ratio))], true);
-            // 40 C5, C5.a: **the standard it is lending at**, which is a READ of what it already
+            // 40 C5, C5.a: the standard it is lending at, which is a READ of what it already
             // measures — the strain on its own book, its hurdle and its headroom — and never a
             // constant. A lender already stretched, or with little room to put more on, asks for
             // more of the price up front and lends a smaller multiple of income; both move together
-            // because both come from the same position (Law 4). A constant here means only the rate
+            // because both come from the same position. A constant here means only the rate
             // channel loops, and it is C5.b's loop that is the housing cycle.
             //
             // The strain is its leverage: what it carries against what it has. It has that whether
@@ -1873,8 +1873,8 @@ impl Mechanism for BankCapital {
                     vec![standard.income_multiple, standard.deposit_share],
                 );
             }
-            // C2: **and a bank below its requirement must RAISE.** What it says here is what it is
-            // short of, and `Floating` is the one writer of a company's shares (Law 4) — a
+            // And a bank below its requirement must RAISE. What it says here is what it is
+            // short of, and `Floating` is the one writer of a company's shares — a
             // recapitalisation IS an equity issue, and a second mechanism bringing a share line
             // would be two answers to *where did this company's shares come from*.
             if below {
@@ -1884,22 +1884,22 @@ impl Mechanism for BankCapital {
     }
 }
 
-/// **XI-4, §25, 22i.9: WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.**
+/// WHAT A COMPANY'S CAPITAL COSTS IT, AT THE MARGIN, NOW.
 ///
 /// The `cost_of_capital` row counted how many lines printed. So XI-4 — a sequencing step — had never
 /// been taken: no company in this world knew what its money cost, and with no cost of capital there
 /// is no hurdle, and with no hurdle no financial price can reach a real decision (`worth_doing`).
 ///
-/// **At the MARGIN and NOW** — weighted by what it would raise, at what the markets say today, never
+/// At the MARGIN and NOW — weighted by what it would raise, at what the markets say today, never
 /// the average coupon on debt already outstanding, which is a price struck in the past and cannot
-/// transmit anything that has happened since (Law 19).
+/// transmit anything that has happened since.
 ///
-/// **Both halves are DERIVED FROM CLEARED PRICES, in the direction Law 3 requires.** The cost of
+/// Both halves are DERIVED FROM CLEARED PRICES, in the direction Law 3 requires. The cost of
 /// debt is the yield its own paper last crossed at; the cost of equity is the earnings yield on its
-/// own share price — what it last published (§48, 22i.1) over what the market last paid for a share
-/// (§10, 22i.7). Neither existed before this item, which is why this row could only count.
+/// own share price — what it last published over what the market last paid for a share
+/// . Neither existed before this item, which is why this row could only count.
 ///
-/// **`Missing` is missing**: a company whose paper has never printed has no cost of debt, and a
+/// `Missing` is missing: a company whose paper has never printed has no cost of debt, and a
 /// company with no published income has no cost of equity. It stands behind nothing rather than
 /// standing behind a number nobody struck.
 pub struct CostOfCapital {
@@ -1907,7 +1907,7 @@ pub struct CostOfCapital {
     pub accounts: u32,
     pub at_income: u32,
     pub at_shares: u32,
-    /// XI-4: the mix it would raise at. A PREFERENCE — the management's own, and theirs.
+    /// The mix it would raise at. A PREFERENCE — the management's own, and theirs.
     pub debt_share: &'static str,
 }
 
@@ -1916,7 +1916,7 @@ impl Mechanism for CostOfCapital {
         use crate::instruments::Class;
         let debt_share = ctx.params().ratio(self.debt_share);
 
-        // §48: what each company last published, and over how many shares.
+        // What each company last published, and over how many shares.
         let mut published: std::collections::HashMap<u32, (f64, f64)> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.accounts) {
             if let (Some(&who), Some(Value::Num(income)), Some(Value::Num(shares))) = (
@@ -1940,7 +1940,7 @@ impl Mechanism for CostOfCapital {
                 let what = InstrumentId::at(line);
                 let Some(print) = ctx.prints().latest(what, ctx.period()) else { continue };
                 match ctx.instruments().class_of(what) {
-                    // 5: **the yield derives FROM the price**, which is the direction Law 3 requires
+                    // 5: the yield derives FROM the price, which is the direction Law 3 requires
                     // — what the paper crossed at against what it repays.
                     Class::Claim => {
                         let Some(matures) = ctx.instruments().matures_on(what) else { continue };
@@ -1955,7 +1955,7 @@ impl Mechanism for CostOfCapital {
                             debt_now = Some(y);
                         }
                     }
-                    // §25: and the cost of equity is the EARNINGS YIELD — what it published over
+                    // And the cost of equity is the EARNINGS YIELD — what it published over
                     // what a share last cost. A price is never turned into a return the other way.
                     Class::Share => {
                         if let Some(&(income, shares)) = published.get(&row) {
@@ -1977,19 +1977,19 @@ impl Mechanism for CostOfCapital {
     }
 }
 
-/// **§9 B1.a, B2, 22i.9: A BANK SETS THE RATE IT PAYS ON DEPOSITS.**
+/// A BANK SETS THE RATE IT PAYS ON DEPOSITS.
 ///
 /// The `bank_funding` row counted the credit outstanding. So no bank in this world set a deposit
 /// rate, no depositor had anything to respond to, and B1's *a real payment to a real holder* had no
 /// rate to be of.
 ///
-/// **The mix is its own and the blend is a READ across it** (B2), which is what lets a funding
-/// condition reach a borrower at all. **What it will pay is bounded above by the cheaper of its own
-/// wholesale cost and what a money fund yields** — and that is not a bound anybody imposed (Law 6):
+/// The mix is its own and the blend is a READ across it, which is what lets a funding
+/// condition reach a borrower at all. What it will pay is bounded above by the cheaper of its own
+/// wholesale cost and what a money fund yields — and that is not a bound anybody imposed:
 /// past that point the bank would rather fund wholesale, which is a decision.
 pub struct BankFunding {
     pub kind: u32,
-    /// XI-7: the benchmark fixing, which is what a money fund would earn. A CLEARED print or
+    /// The benchmark fixing, which is what a money fund would earn. A CLEARED print or
     /// nothing (`Fixes` refuses a carried one), so a bank with no fixing to read sets no rate.
     pub fixing: u32,
     pub days_per_period: i64,
@@ -1998,7 +1998,7 @@ pub struct BankFunding {
 impl Mechanism for BankFunding {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::mechanisms::bank_funding::{blended, will_pay_on_deposits, Funding, Source};
-        // XI-7: the last fixing. A rate nobody transacted is not a benchmark, so there may be none.
+        // The last fixing. A rate nobody transacted is not a benchmark, so there may be none.
         let mut money_fund_yield: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.fixing) {
             if let Some(Value::Num(rate)) = ctx.journal().says(row, 0) {
@@ -2013,7 +2013,7 @@ impl Mechanism for BankFunding {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // B2: its OWN mix, read off what it has issued and what it pays on each.
+            // Its OWN mix, read off what it has issued and what it pays on each.
             let mut mix: Vec<Source> = Vec::new();
             for &line in ctx.instruments().of_issuer(who) {
                 let what = InstrumentId::at(line);
@@ -2033,7 +2033,7 @@ impl Mechanism for BankFunding {
                             None => continue,
                         },
                     }),
-                    // A2: short, and it ROLLS — which is where a funding squeeze bites. Its rate is
+                    // Short, and it ROLLS — which is where a funding squeeze bites. Its rate is
                     // the coupon it promised, which is a TERM and not a price (5 C4.b).
                     crate::instruments::Class::Claim => mix.push(Source {
                         kind: Funding::Wholesale,
@@ -2046,7 +2046,7 @@ impl Mechanism for BankFunding {
                     _ => {}
                 }
             }
-            // B2: **`None` where it funds with nothing** — answering zero would say it funds free.
+            // `None` where it funds with nothing — answering zero would say it funds free.
             let own_wholesale_cost = match blended(&mix) {
                 Some(cost) => cost,
                 // A bank that has never funded wholesale has its own cost to find, and the
@@ -2057,7 +2057,7 @@ impl Mechanism for BankFunding {
         }
 
         for (who, rate) in set {
-            // B1.a: a POSTED rate — depositors respond to it, so it is one-sided terms the bank
+            // A POSTED rate — depositors respond to it, so it is one-sided terms the bank
             // stands behind until it changes them, and what it was paying stays readable beside it.
             ctx.now_stands(standing::DEPOSIT_RATE, who, PartyId::NONE, vec![rate]);
             ctx.say(self.kind, &[who.0], &[(0, Value::Num(rate))], true);
@@ -2065,28 +2065,28 @@ impl Mechanism for BankFunding {
     }
 }
 
-/// **§33 A1, A4, XI-4, 22i.10: A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.**
+/// A FIRM DECIDES TO INVEST, AND THE COMPARISON IS THE MECHANISM.
 ///
 /// The `capital_programme` row was a CLOSER for a programme nothing opened, so no firm in this world
 /// had ever decided to build anything — and §33's whole content is that decision.
 ///
-/// **It invests when it expects the return to exceed its cost of capital** (`worth_doing`). A rate
+/// It invests when it expects the return to exceed its cost of capital (`worth_doing`). A rate
 /// applied to revenue, however many multipliers are attached, is this joint deleted, and then no
 /// financial price can reach a real decision. The cost of capital is the one 22i.9 publishes, off
-/// its own cleared prices; the return is its OWN outlook (§46 A1) and never a model forecast.
+/// its own cleared prices; the return is its OWN outlook and never a model forecast.
 ///
-/// **What it commits is money, and the plant arrives by PURCHASE.** A programme that conjured plant
+/// What it commits is money, and the plant arrives by PURCHASE. A programme that conjured plant
 /// would be a firm building with nothing — it bids for capital lines in their books like any other
-/// buyer (Law 3), and what it pays is what those books cross at.
+/// buyer, and what it pays is what those books cross at.
 ///
-/// **21i: and building where it is already built-up costs more.** The congestion is a read over the
+/// And building where it is already built-up costs more. The congestion is a read over the
 /// register, so a firm in a crowded place commits more money for the same plant, which is what makes
 /// location decide anything at all.
 pub struct Building {
     pub kind: u32,
-    /// XI-4, 22i.9: what its capital costs it, published by the cost-of-capital row.
+    /// What its capital costs it, published by the cost-of-capital row.
     pub costs: u32,
-    /// §33: the management's own patience and its own risk aversion above the cost of capital.
+    /// The management's own patience and its own risk aversion above the cost of capital.
     /// PREFERENCES, and theirs.
     pub horizon: &'static str,
     pub hurdle: &'static str,
@@ -2103,7 +2103,7 @@ impl Mechanism for Building {
         let crowds_at = ctx.params().square_km(self.crowds_at);
         let takes = ctx.params().periods(self.takes) as u32;
 
-        // XI-4: what each company's capital costs it, most recently published.
+        // What each company's capital costs it, most recently published.
         let mut costs: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
         for &row in ctx.journal().of_kind(self.costs) {
             if let (Some(&who), Some(Value::Num(cost))) =
@@ -2115,8 +2115,8 @@ impl Mechanism for Building {
         if costs.is_empty() {
             return;
         }
-        // 21i: how built-up each place is. One read over the register for the whole world, not one
-        // per firm (Law 19).
+        // How built-up each place is. One read over the register for the whole world, not one
+        // per firm.
         let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
 
         let mut opening: Vec<(PartyId, f64)> = Vec::new();
@@ -2128,7 +2128,7 @@ impl Mechanism for Building {
             if ctx.processes().running(afoot::CAPITAL_PROGRAMME).iter().any(|p| ctx.processes().owner(*p) == firm) {
                 continue;
             }
-            // §46 A1: **its own outlook**, and a firm with none has nothing to expect. Missing is
+            // Its own outlook, and a firm with none has nothing to expect. Missing is
             // missing: a firm that has formed no view does not invest on a view somebody else has.
             let Some(sells) = ctx.outlooks().of(firm, crate::stores::about::HOW_MUCH_IT_SELLS) else {
                 continue;
@@ -2136,7 +2136,7 @@ impl Mechanism for Building {
             let Some(price) = ctx.outlooks().of(firm, crate::stores::about::WHAT_IT_SELLS_FOR) else {
                 continue;
             };
-            // 21i: what the ground it stands on does to a build. A firm in a crowded place commits
+            // What the ground it stands on does to a build. A firm in a crowded place commits
             // more money for the same plant.
             let where_it_is = ctx.parties().region_of(firm);
             let crowding = crate::places::crowding(
@@ -2167,7 +2167,7 @@ impl Mechanism for Building {
     }
 }
 
-/// **§33 A1, Law 3, 22i.10: AND IT BUYS THE PLANT.**
+/// AND IT BUYS THE PLANT.
 ///
 /// A firm with a programme afoot bids for capital lines in their own books, up to what it committed.
 /// Nothing is conjured: what the plant costs is what the book crosses at, and a programme whose bids
@@ -2196,13 +2196,13 @@ impl crate::module::Participant for Builder {
             return Vec::new();
         }
         let line = crate::systems::line_of(m);
-        // 22c.3: it bids against what the book last PRINTED, because its limit is money and an
+        // It bids against what the book last PRINTED, because its limit is money and an
         // order is pieces. A line with no print has nothing to bid against.
         let Some(print) = view.print(line) else { return Vec::new() };
         if print.price <= 0.0 {
             return Vec::new();
         }
-        // Law 6: it cannot commit more money than it has. Arithmetic about its own account.
+        // It cannot commit more money than it has. Arithmetic about its own account.
         let can_pay = view.own_cash();
         let money = if commits < can_pay { commits } else { can_pay };
         let units = crate::clearing::whole_pieces(money / print.price);
@@ -2220,18 +2220,18 @@ impl crate::module::Participant for Builder {
 
 
 
-/// **XI-12, §26 B1, B2, C1, C2, C5, 22i.13: A CURRENCY PAIR CLEARS FROM REAL REASONS.**
+/// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 ///
 /// The `spot_fx` row counted how many lines printed. So no pair in this world had ever had a rate,
 /// and XI-12 — a sequencing step — had never been taken.
 ///
-/// **Every participant is here for a reason it HAS** (C1, B1–B6), never a side the mechanism
+/// Every participant is here for a reason it HAS, never a side the mechanism
 /// assigned: a party that owes a money it has not got must buy it, and a party holding a money it
 /// has no use for will sell it. Both are reads of the register against the schedules, so the book is
 /// made of obligations rather than of postings somebody invented.
 ///
-/// **One rate is in force for the period and both valuation and settlement use it** (C5), and where
-/// nothing crossed there is NO rate — a pair nobody traded has none (Law 3). Nothing is added to
+/// One rate is in force for the period and both valuation and settlement use it, and where
+/// nothing crossed there is NO rate — a pair nobody traded has none. Nothing is added to
 /// make the book balance: the unfilled side stays unfilled, which is what C4's *imbalance moves it*
 /// is about.
 pub struct SpotFx {
@@ -2245,7 +2245,7 @@ impl Mechanism for SpotFx {
         let from = Day(i64::from(ctx.period()) * self.days_per_period);
         let to = Day(from.0 + self.days_per_period - 1);
 
-        // B1, B2: who OWES a money, and who HAS one. Both from what the party is, not from a side
+        // Who OWES a money, and who HAS one. Both from what the party is, not from a side
         // anybody gave it.
         let mut owes: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
         let mut has: std::collections::HashMap<(u32, u32), f64> = std::collections::HashMap::new();
@@ -2267,10 +2267,10 @@ impl Mechanism for SpotFx {
                 if owed_in == my_ccy {
                     continue;
                 }
-                // B1: **it owes a currency it has not got.** That is a reason, and it is the reason.
+                // It owes a currency it has not got. That is a reason, and it is the reason.
                 *owes.entry((row, owed_in)).or_insert(0.0) += ctx.schedules().amount(d);
             }
-            // B2: and what it holds of a money that is not the one it banks in.
+            // And what it holds of a money that is not the one it banks in.
             for &held in ctx.register().of_holder(who) {
                 let held = crate::ids::HoldingId(held);
                 let line = ctx.register().instrument_of(held);
@@ -2288,11 +2288,11 @@ impl Mechanism for SpotFx {
             return;
         }
 
-        // C1: one book per currency being bought. The rate is that currency against the money the
+        // One book per currency being bought. The rate is that currency against the money the
         // other side is paying with, which is what "a pair" means.
         let mut pairs: std::collections::HashMap<u32, Vec<Posted>> = std::collections::HashMap::new();
         for (&(who, ccy), &amount) in &owes {
-            // C1: the worst rate it will take. A party that MUST have the money will pay what the
+            // The worst rate it will take. A party that MUST have the money will pay what the
             // market asks — it has an obligation, not a view — so its reservation is what the pair
             // last printed, and where it has never printed there is nothing to post against.
             let Some(rate) = ctx.prints().latest(InstrumentId::at(ccy), ctx.period()).map(|p| p.price) else {
@@ -2310,14 +2310,14 @@ impl Mechanism for SpotFx {
         let mut done: Vec<(u32, f64, usize, f64)> = Vec::new();
         for (&ccy, posted) in &pairs {
             let cleared = clearing(posted);
-            // C5, Law 3: a pair nobody traded has NO rate. Nothing is carried forward and nothing
+            // A pair nobody traded has NO rate. Nothing is carried forward and nothing
             // is invented to give it one.
             let Some(rate) = cleared.rate else { continue };
             done.push((ccy, rate, cleared.trades.len(), cleared.unfilled));
         }
 
         for (ccy, rate, trades, unfilled) in done {
-            // C5: one rate in force for the period, published — both valuation and settlement use
+            // One rate in force for the period, published — both valuation and settlement use
             // it, so it is a fact about the world and not one party's read.
             ctx.say(
                 self.kind,
@@ -2330,31 +2330,31 @@ impl Mechanism for SpotFx {
     }
 }
 
-/// **§26 A1.b, B1, B2, B3, XI-12, 22i.13: A FORWARD IS STRUCK, AND THE BASIS IS WHAT IT DEVIATES BY.**
+/// A FORWARD IS STRUCK, AND THE BASIS IS WHAT IT DEVIATES BY.
 ///
 /// The `fx_forwards` row counted live agreements. So nothing in this world had ever hedged a
 /// currency, and B3's cross-currency basis — a real price paid by whoever needs the money — had
 /// nothing to be a deviation from.
 ///
-/// **It is cleared from what participants will do, not struck off a formula** (B1, E1). The parity
-/// rate is the CHECK and not the price (B2, B2.a): it says where the forward would sit if the
+/// It is cleared from what participants will do, not struck off a formula. The parity
+/// rate is the CHECK and not the price: it says where the forward would sit if the
 /// arbitrage were free, and the distance between the two is the basis, which is what somebody is
 /// actually paying to get the money it needs.
 ///
-/// **A party that owes a money it has not got, at a date beyond this period, is who hedges.** That
+/// A party that owes a money it has not got, at a date beyond this period, is who hedges. That
 /// is the reason, and it is read off its own schedule.
 pub struct FxForwards {
     pub kind: u32,
     pub spot: u32,
     pub fixing: u32,
-    /// §26 A3: how far out the forward is struck. A market CONVENTION.
+    /// How far out the forward is struck. A market CONVENTION.
     pub tenor: &'static str,
     pub days_per_period: i64,
 }
 
 impl Mechanism for FxForwards {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
-        // Law 8, G3.a: the tenor is DAYS and the year fraction is read from the dates, never the
+        // The tenor is DAYS and the year fraction is read from the dates, never the
         // other way round — a forward "of a quarter" is ninety days and the calendar says what that
         // is as a year.
         let days = ctx.params().days(self.tenor) as i64;
@@ -2362,8 +2362,8 @@ impl Mechanism for FxForwards {
         let matures = Day(from.0 + days);
         let tenor = days as f64 / 365.0;
 
-        // XI-12: the rate the pair last cleared at. A pair with no rate has no forward, because
-        // there is nothing for the forward to be a rate FORWARD of (Law 3).
+        // The rate the pair last cleared at. A pair with no rate has no forward, because
+        // there is nothing for the forward to be a rate FORWARD of.
         let mut spot: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.spot) {
             if ctx.journal().period_of(row) == ctx.period() {
@@ -2373,7 +2373,7 @@ impl Mechanism for FxForwards {
             }
         }
         let Some(spot) = spot else { return };
-        // XI-7: and what the two moneys fund at. The fixing is the only transacted rate this world
+        // And what the two moneys fund at. The fixing is the only transacted rate this world
         // has, so both legs read it until each currency has its own.
         let mut funding: Option<f64> = None;
         for &row in ctx.journal().of_kind(self.fixing) {
@@ -2383,7 +2383,7 @@ impl Mechanism for FxForwards {
         }
         let Some(funding) = funding else { return };
 
-        // B2: where it would sit if the arbitrage were free. THE CHECK, not the price.
+        // Where it would sit if the arbitrage were free. THE CHECK, not the price.
         let parity = crate::mechanisms::fx_forwards::parity(spot, funding, funding, tenor);
         let mut hedging: Vec<(PartyId, u32, f64)> = Vec::new();
         for row in 0..ctx.parties().len() as u32 {
@@ -2407,7 +2407,7 @@ impl Mechanism for FxForwards {
             }
         }
         if hedging.len() < 2 {
-            // E2: a hedge needs a counterparty holding the other side. One party wanting one is not
+            // A hedge needs a counterparty holding the other side. One party wanting one is not
             // a market, and nothing is invented to be the other side of it.
             return;
         }
@@ -2423,7 +2423,7 @@ impl Mechanism for FxForwards {
         }
 
         for (buyer, seller, rate, size) in struck {
-            // B3: **the basis is the deviation**, and it is a real price paid by whoever needs the
+            // The basis is the deviation, and it is a real price paid by whoever needs the
             // money. Where the forward crosses at parity the basis is nothing, which is what a
             // market with free arbitrage looks like — and it is a MEASUREMENT here, not a target.
             let basis = rate - parity;
@@ -2444,23 +2444,23 @@ impl Mechanism for FxForwards {
     }
 }
 
-/// **§13 A2, A3, B1, B2, C1, 22i.14: A POOL PUBLISHES ITS NAV, AND A HOLDER SUBSCRIBES AT IT.**
+/// A POOL PUBLISHES ITS NAV, AND A HOLDER SUBSCRIBES AT IT.
 ///
 /// The `redeemable` row counted live agreements. So no pool in this world had a net asset value,
 /// nobody could subscribe to one, and §13's whole shape — a liability denominated in shares whose
 /// value is a READ of what the assets cleared at — did not exist.
 ///
-/// **NAV is a read, not a stored level** (B1), and it is marked at CLEARED prices (B2): a price
+/// NAV is a read, not a stored level, and it is marked at CLEARED prices: a price
 /// nobody cleared is not a mark, so an asset the market has not touched is carried at what it cost
 /// and says so. A pool with no shares has no per-share value at all — missing, not zero.
 ///
-/// **A subscription gives the pool cash and the holder shares AT NAV** (C1), and it is a RELATION:
+/// A subscription gives the pool cash and the holder shares AT NAV, and it is a RELATION:
 /// the pool's liability is denominated in shares, and the agreement is where those shares are. C1.a
 /// says the pool must then buy something with the cash, which is its mandate's business and not this
 /// mechanism's — cash that sits is a mandate not being kept, and that shows up as a read.
 pub struct Subscribing {
     pub kind: u32,
-    /// §13 C1: how much of its spare money a holder will put into one pool. A PREFERENCE.
+    /// How much of its spare money a holder will put into one pool. A PREFERENCE.
     pub commits: &'static str,
 }
 
@@ -2474,9 +2474,9 @@ impl Mechanism for Subscribing {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // B2: **at cleared prices** (XI-6), and there is one read of that in the engine.
+            // At cleared prices, and there is one read of that in the engine.
             //
-            // **A fund that cannot value its book publishes no NAV** (Appendix A: whoever asked
+            // A fund that cannot value its book publishes no NAV (Appendix A: whoever asked
             // must handle an unpriced instrument). A line with a book that has never crossed is
             // unpriced — not zero, and not what it cost — so a NAV struck over it would be a number
             // that looks like the whole book and is not, and every subscription and redemption
@@ -2486,7 +2486,7 @@ impl Mechanism for Subscribing {
             else {
                 continue;
             };
-            // A2: its shares are what it has already sold, which is what its subscriptions say.
+            // Its shares are what it has already sold, which is what its subscriptions say.
             let mut shares = 0.0;
             let mut owed = 0.0;
             for &a in ctx.agreements().of_party(who) {
@@ -2512,7 +2512,7 @@ impl Mechanism for Subscribing {
                 liabilities: owed,
                 shares,
             };
-            // B1: **`None` where there are no shares.** A pool with none has no per-share value, and
+            // `None` where there are no shares. A pool with none has no per-share value, and
             // a first subscription therefore buys at what the pool is worth per share it is about to
             // create — which is the assets themselves where it holds any, and nothing where it does
             // not. A pool with neither has nothing to sell.
@@ -2529,7 +2529,7 @@ impl Mechanism for Subscribing {
 
         let mut subscribing: Vec<(PartyId, PartyId, f64, f64)> = Vec::new();
         for (pool, nav, _) in &navs {
-            // B1: the NAV is published. It is a fact about the pool that anybody may read, which is
+            // The NAV is published. It is a fact about the pool that anybody may read, which is
             // what makes a subscription possible at all.
             ctx.say(self.kind, &[pool.0], &[(0, Value::Num(*nav))], true);
         }
@@ -2541,7 +2541,7 @@ impl Mechanism for Subscribing {
                 }
                 let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
                 let cash = ctx.register().quantity(ctx.register().row(holder, money));
-                // C1: **it subscribes with cash it has.** `None` where it has none — a subscription
+                // It subscribes with cash it has. `None` where it has none — a subscription
                 // by a holder with no money is a share issued against nothing.
                 let Some(shares) = crate::mechanisms::redeemable::subscribe(cash * commits, Some(*nav))
                 else {
@@ -2556,7 +2556,7 @@ impl Mechanism for Subscribing {
         }
 
         for (pool, holder, shares, paid) in subscribing {
-            // C1: cash one way and shares the other, in the same pass (Law 5). The shares are the
+            // Cash one way and shares the other, in the same pass. The shares are the
             // RELATION — §13 A2's liability denominated in shares is exactly this row.
             let Some(from) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
             ctx.propose(
@@ -2582,25 +2582,25 @@ impl Mechanism for Subscribing {
     }
 }
 
-/// **§12 B1, B1.a, C1, C1.b, E1, E4, 22i.14: A BROKER LENDS TO A NAMED CLIENT, AND SETS WHAT IT
-/// REQUIRES.**
+/// A BROKER LENDS TO A NAMED CLIENT, AND SETS WHAT IT
+/// REQUIRES.
 ///
 /// The `prime_brokerage` row counted live agreements. So no client in this world was levered by a
 /// named lender: B1.a's *the client's leverage is a loan from a NAMED lender, not a property of the
 /// client* had nothing to be true of, and §14's funds could not borrow at all.
 ///
-/// **The requirement is a DECISION by the broker, from its own view of the risk** (C1.b), never a
+/// The requirement is a DECISION by the broker, from its own view of the risk, never a
 /// formula the client can rely on — which is what lets it RISE, and the rise is the procyclicality
 /// XI-2 is about.
 ///
-/// **And no unlimited exposure** (E4): a broker with no limit is a synthetic counterparty. The limit
+/// And no unlimited exposure: a broker with no limit is a synthetic counterparty. The limit
 /// is its own and it binds; a limit that never binds is not a limit.
 pub struct Broking {
     pub kind: u32,
-    /// §12 C1.b: what the broker thinks the book could move this period. Its own view, and it is
+    /// What the broker thinks the book could move this period. Its own view, and it is
     /// what the requirement is made of.
     pub could_move: &'static str,
-    /// §12 E4: what one broker will be exposed to one client for. Its own limit.
+    /// What one broker will be exposed to one client for. Its own limit.
     pub limit: &'static str,
 }
 
@@ -2628,13 +2628,13 @@ impl Mechanism for Broking {
             if !ctx.parties().alive(client) {
                 continue;
             }
-            // E1: one broker per client here — a client with two brokers is real and is §12 E3's,
+            // One broker per client here — a client with two brokers is real and is §12 E3's,
             // which needs each to see only its own book. This world gives each client one.
             let broker = brokers[n % brokers.len()];
-            // C1: the broker sets a margin requirement **on the whole portfolio, from its own view
-            // of the risk** — so a portfolio it cannot value is one it cannot margin. A requirement
+            // The broker sets a margin requirement on the whole portfolio, from its own view
+            // of the risk — so a portfolio it cannot value is one it cannot margin. A requirement
             // struck over the lines it could price and silently missing the rest would be a number
-            // that looks like the whole book (Appendix A), and the client would be lent against
+            // that looks like the whole book, and the client would be lent against
             // collateral nobody valued.
             let mut assets = 0.0;
             let mut priced = true;
@@ -2669,7 +2669,7 @@ impl Mechanism for Broking {
                     ctx.agreements().live(*a)
                         && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
                 });
-            // B1.a: what this broker has already lent it. A client with no account has borrowed
+            // What this broker has already lent it. A client with no account has borrowed
             // nothing from it — that is the absence of a loan, not a loan of nothing — and an
             // account whose terms say nothing is one nobody has written terms for yet.
             let lent = match held.map(|a| ctx.agreements().terms(a).to_vec()) {
@@ -2688,13 +2688,13 @@ impl Mechanism for Broking {
                 stock_borrowed: 0.0,
                 limit,
             };
-            // C1, C1.b: the requirement, from the broker's OWN view of what the book could move.
+            // The requirement, from the broker's OWN view of what the book could move.
             let view = View { move_it_expects: could_move, add_for_the_client: could_move };
             let required = requirement(assets, 0.0, &view);
             if held.is_none() {
                 opening.push((broker, client, lent, limit));
             }
-            // C2: and where the account is short of what the broker requires, it CALLS. That is a
+            // And where the account is short of what the broker requires, it CALLS. That is a
             // real demand on a named client for real money.
             let headroom = crate::mechanisms::prime_brokerage::headroom(&account, required);
             if headroom < 0.0 {
@@ -2703,7 +2703,7 @@ impl Mechanism for Broking {
         }
 
         for (broker, client, lent, limit) in opening {
-            // B1.a: **a loan from a NAMED lender.** Terms `[lent, limit]`, and the limit is the
+            // A loan from a NAMED lender. Terms `[lent, limit]`, and the limit is the
             // broker's own — E4's *no unlimited exposure* is this number existing at all.
             ctx.agrees(crate::module::Agrees {
                 kind: agreed::PRIME_BROKERAGE,
@@ -2715,7 +2715,7 @@ impl Mechanism for Broking {
             ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(limit))], false);
         }
         for (broker, client, short) in calling {
-            // XI-2: a margin call the client cannot meet from cash is the first of the four doors,
+            // A margin call the client cannot meet from cash is the first of the four doors,
             // and it is a WORKOUT — the client must find the money or sell.
             ctx.opens(crate::module::Opens {
                 kind: afoot::WORKOUT,
@@ -2728,18 +2728,18 @@ impl Mechanism for Broking {
     }
 }
 
-/// **§14 A4, C2, XI-2, 22i.15: A FUND IS THE BUYER WHEN OTHERS ARE FORCED SELLERS.**
+/// A FUND IS THE BUYER WHEN OTHERS ARE FORCED SELLERS.
 ///
 /// The `hedge_funds` row counted how many parties were alive. So the one thing §14 C2 says a fund IS
 /// — the other side of a forced sale, if it has capacity — had never happened, and XI-2's channel
 /// had nobody at the end of it.
 ///
-/// **`None` is the case that matters**: everybody short at once and nobody to buy. A fund only bids
+/// `None` is the case that matters: everybody short at once and nobody to buy. A fund only bids
 /// what its borrowing room and its cash allow, so a world where every fund is out of room is a world
 /// where a forced sale finds no bid — which is the contagion, and it is arithmetic here rather than
 /// a rule anybody wrote.
 ///
-/// **And it bids because it DISAGREES** (§46 A3, XI-13): its own view of the name is better than the
+/// And it bids because it DISAGREES: its own view of the name is better than the
 /// worst view held, which is 22i.11's disagreement doing the work it exists for. A fund that agreed
 /// with the seller would have no reason to take the other side.
 pub struct Liquidity {
@@ -2752,12 +2752,12 @@ impl crate::module::Participant for Liquidity {
     }
 
     fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        // C2: **IF it has capacity.** A fund with no room is not a buyer of anything, and that is
+        // IF it has capacity. A fund with no room is not a buyer of anything, and that is
         // the case XI-2 turns on.
         if view.own_cash() <= 0.0 {
             return Vec::new();
         }
-        // Law 19: the lines it knows — its own rows — never every book in the world.
+        // The lines it knows — its own rows — never every book in the world.
         view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
     }
 
@@ -2767,8 +2767,8 @@ impl crate::module::Participant for Liquidity {
             return Vec::new();
         }
         let line = crate::systems::line_of(m);
-        // E2: **no position that does not mark.** A line nothing cleared is one it will not take on,
-        // because it could not say afterwards what it was worth (Law 3).
+        // No position that does not mark. A line nothing cleared is one it will not take on,
+        // because it could not say afterwards what it was worth.
         let Some(print) = view.print(line) else { return Vec::new() };
         if print.price <= 0.0 {
             return Vec::new();
@@ -2781,30 +2781,30 @@ impl crate::module::Participant for Liquidity {
             party: view.self_id(),
             side: crate::clearing::Side::Buy,
             // It bids at what the line last cleared at: it is buying from somebody who must sell,
-            // and what it pays is what the book crosses at (Law 3, Clearing C3).
+            // and what it pays is what the book crosses at.
             price: Some(print.price),
             qty: units,
         }]
     }
 }
 
-/// **§15 A5, A5.a, B2.a, C1, E3, 22i.15: STOCK IS LENT, AND THE FEE CLEARS.**
+/// STOCK IS LENT, AND THE FEE CLEARS.
 ///
 /// The `securities_lending` row counted live agreements. So nothing in this world had ever been
 /// borrowed, which means nothing could be SHORTED — Appendix B's *no short without a borrow* held
 /// only because no short was possible at all.
 ///
-/// **The fee is a price** (A5.a, E3): scarce paper is expensive to borrow and abundant paper is
-/// cheap, and it clears between what holders will lend and what borrowers want. **A fee of zero is a
-/// cleared price only if somebody posted it** — `None` means nobody did and there is no borrow
+/// The fee is a price: scarce paper is expensive to borrow and abundant paper is
+/// cheap, and it clears between what holders will lend and what borrowers want. A fee of zero is a
+/// cleared price only if somebody posted it — `None` means nobody did and there is no borrow
 /// rather than a free one.
 ///
-/// **Who wants to borrow is who disagrees** (XI-13, 22i.11): the party holding the WORST view of a
+/// Who wants to borrow is who disagrees: the party holding the WORST view of a
 /// name wants to be short it, and the parties holding it are who can lend. Two different numbers on
 /// one name is the whole reason either side is there.
 pub struct StockLending {
     pub kind: u32,
-    /// §15 B2.a: how much of what it holds a lender will put out at once. Its own limit, and it may
+    /// How much of what it holds a lender will put out at once. Its own limit, and it may
     /// be none.
     pub will_lend: &'static str,
 }
@@ -2814,7 +2814,7 @@ impl Mechanism for StockLending {
         use crate::mechanisms::securities_lending::{clearing, Willing};
         let will_lend = ctx.params().ratio(self.will_lend);
 
-        // XI-13: the views held on each name, so the keenest short and the calmest holder are found
+        // The views held on each name, so the keenest short and the calmest holder are found
         // rather than assigned.
         let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
         for row in 0..ctx.standing().len() as u32 {
@@ -2842,7 +2842,7 @@ impl Mechanism for StockLending {
             }
             for &line in ctx.instruments().of_issuer(PartyId(on)) {
                 let what = InstrumentId::at(line);
-                // B2.a: **the pool is what holders will actually lend**, which is their own limit on
+                // The pool is what holders will actually lend, which is their own limit on
                 // their own holding and never all of it.
                 let mut pool: Vec<Willing> = Vec::new();
                 for &row in ctx.register().of_instrument(what) {
@@ -2860,7 +2860,7 @@ impl Mechanism for StockLending {
                 if pool.is_empty() {
                     continue;
                 }
-                // A5.a: **the fee CLEARS.** What the borrower wants against what the pool will
+                // The fee CLEARS. What the borrower wants against what the pool will
                 // lend, and the schedules are what each holder posted.
                 let wants = pool.iter().map(|w| w.will_lend).sum::<f64>();
                 let schedules: Vec<(PartyId, f64, f64)> =
@@ -2873,7 +2873,7 @@ impl Mechanism for StockLending {
         }
 
         for (lender, borrower, what, units, fee) in struck {
-            // XI-10: a loan of stock is a RELATION — terms `[the line, the units, the fee]` — and
+            // A loan of stock is a RELATION — terms `[the line, the units, the fee]` — and
             // C1's collateral, worth more than the loan, is what the two sides then post against it.
             ctx.agrees(crate::module::Agrees {
                 kind: agreed::SECURITIES_LOAN,
@@ -2888,15 +2888,15 @@ impl Mechanism for StockLending {
 }
 
 
-/// **XI-9, §30 C3, 22i.16: WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.**
+/// WHAT A TREASURY DOES WHEN THE MONEY IS NOT THERE.
 ///
 /// The `sovereign` row counted how many lines printed. So the sovereign funding constraint — step 3
 /// of the sequencing — bound on nothing: a treasury short of money simply failed a payment, and
 /// XI-9's three real acts, each with a consequence, had never happened.
 ///
-/// **It is a READ of the state, not a policy** — which of the three is available is arithmetic about
+/// It is a READ of the state, not a policy — which of the three is available is arithmetic about
 /// what it holds and what it owes. The buffer is what the buffer is for, and it is smaller
-/// afterwards. **An outlay deferred is somebody not paid**, and that is an EVENT with a named
+/// afterwards. An outlay deferred is somebody not paid, and that is an EVENT with a named
 /// counterparty, never a number quietly reduced. Past both, it goes back to the market, and a failed
 /// auction has cost something — which is what makes its result carry information rather than being
 /// decorative.
@@ -2932,7 +2932,7 @@ impl Mechanism for Sovereign {
             let buffer = ctx.register().quantity(ctx.register().row(who, money));
             let programme = Programme { redemptions, outlays: 0.0, buffer };
             let short = programme.to_raise();
-            // **What it can defer is what it has queued and not yet made good**: a payment already
+            // What it can defer is what it has queued and not yet made good: a payment already
             // waiting is one somebody is already not being paid, and deferring it further is the
             // act XI-9 names rather than a new one.
             let deferrable: f64 = (0..ctx.wire().queue.len() as u32)
@@ -2962,30 +2962,30 @@ impl Mechanism for Sovereign {
         }
 
         for (who, what, size) in handled {
-            // XI-9: each is a real act and it is SAID, because a shortfall handled silently is the
+            // Each is a real act and it is SAID, because a shortfall handled silently is the
             // overdraft this clause exists to refuse — it would make being short cost nothing.
             ctx.say(self.kind, &[who.0], &[(0, Value::Num(what)), (1, Value::Num(size))], true);
         }
     }
 }
 
-/// **§21 D2, D3, D4, 22i.16: STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.**
+/// STOCK IS TIGHT OR IT IS NOT, AND STORING IT COSTS MONEY TO SOMEBODY.
 ///
 /// The `commodities` row counted how many lines printed. So this world had no measure of scarcity at
 /// all — D2's *when stocks approach zero the price has nothing left to ration with* had no stocks to
 /// be about — and D3's storage cost, which is a real payment to a real owner of real storage, was
 /// paid by nobody to nobody.
 ///
-/// **Tightness is a READ** (D4): stock against what is consumed in a period, and `Missing` where
-/// nothing is consumed — a ratio over no consumption is not a ratio (Law 8), and answering zero
+/// Tightness is a READ: stock against what is consumed in a period, and `Missing` where
+/// nothing is consumed — a ratio over no consumption is not a ratio, and answering zero
 /// would say the world is awash when in fact nobody has asked it.
 ///
-/// **And the fee is TWO-SIDED** (D3, Law 5): whoever holds the stock pays whoever holds the storage.
+/// And the fee is TWO-SIDED: whoever holds the stock pays whoever holds the storage.
 /// A region with no stockist has nobody to pay, so nothing is charged — which is an answer about
 /// that place and not a fee waived.
 pub struct Storing {
     pub kind: u32,
-    /// §21 D3: what a period of storage costs, per unit. A TECHNOLOGY: a fact about warehouses.
+    /// What a period of storage costs, per unit. A TECHNOLOGY: a fact about warehouses.
     pub per_unit: &'static str,
 }
 
@@ -3005,7 +3005,7 @@ impl Mechanism for Storing {
             return;
         }
 
-        // D4: what was consumed, by line. **ONE walk of the period's legs** — Law 18: the traversal
+        // What was consumed, by line. ONE walk of the period's legs — Law 18: the traversal
         // is free to change and the mechanism is not, and a walk per line over half a million legs
         // is the same answer at sixteen thousand times the cost.
         let mut consumed_of: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
@@ -3037,7 +3037,7 @@ impl Mechanism for Storing {
             if let Some(t) = crate::mechanisms::commodities::tightness(held, consumed) {
                 tight.push((row, t));
             }
-            // D3: and everybody holding it pays for the storage, to the keeper of its own place.
+            // And everybody holding it pays for the storage, to the keeper of its own place.
             for &holding in ctx.register().of_instrument(line) {
                 let holding = crate::ids::HoldingId(holding);
                 let holder = ctx.register().holder_of(holding);
@@ -3057,13 +3057,13 @@ impl Mechanism for Storing {
         }
 
         for (line, t) in tight {
-            // D2: **the measure of scarcity, published.** It is what a price has left to ration with,
+            // The measure of scarcity, published. It is what a price has left to ration with,
             // and a world that could not say it could not tell a squeeze from a glut.
             ctx.say(self.kind, &[], &[(0, Value::Num(f64::from(line))), (1, Value::Num(t))], true);
         }
         for (holder, keeper, fee) in charging {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), holder) else { continue };
-            // Law 5: two named sides, in the same pass. A storage cost that came off a number
+            // Two named sides, in the same pass. A storage cost that came off a number
             // without reaching anybody would be the one-sided flow Law 5 is about.
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
@@ -3081,32 +3081,32 @@ impl Mechanism for Storing {
     }
 }
 
-/// **§40 A2, A3, B1, B2, B4, C1, C5, 22i.17: DWELLINGS ARE LET AND SOLD, AND BOTH PRICES CLEAR.**
+/// DWELLINGS ARE LET AND SOLD, AND BOTH PRICES CLEAR.
 ///
 /// The `housing` row was a CLOSER for a foreclosure nothing opened. So no dwelling in this world had
-/// ever been offered, no rent had ever been set (21.38), no household had ever compared owning with
-/// renting (21.39), and the consumer basket could not include the rent Housing D3 calls a large
-/// component of it (21.42) — because there was no rent to include.
+/// ever been offered, no rent had ever been set, no household had ever compared owning with
+/// renting, and the consumer basket could not include the rent Housing D3 calls a large
+/// component of it — because there was no rent to include.
 ///
-/// **A rent is a real payment between two named parties** (A3, Law 5), and an owner-occupier pays
+/// A rent is a real payment between two named parties, and an owner-occupier pays
 /// itself nothing: imputing a rent would be a flow with one side. So the letting session is between
 /// owners with a spare dwelling and households without one, and what the roof costs is what that
-/// session crossed at (Law 3).
+/// session crossed at.
 ///
-/// **A buyer bids what it can FUND** (B2), which is its income and its deposit against the standard
-/// its lender is currently lending at (C5) — the standard 22i.8 stands behind. A seller's reservation
-/// is what it owes or what the dwelling cost to build, whichever is more (B1.a): below that it
+/// A buyer bids what it can FUND, which is its income and its deposit against the standard
+/// its lender is currently lending at — the standard 22i.8 stands behind. A seller's reservation
+/// is what it owes or what the dwelling cost to build, whichever is more: below that it
 /// refuses, and a refusal is an outcome.
 ///
-/// **A dwelling is INDIVISIBLE** (A1): a trade is one dwelling and there is no partial fill. What did
-/// not sell is not a residual — it stays with its owner (B1.c), and B4's falling market is volumes
+/// A dwelling is INDIVISIBLE: a trade is one dwelling and there is no partial fill. What did
+/// not sell is not a residual — it stays with its owner, and B4's falling market is volumes
 /// collapsing before prices do.
 pub struct Housing {
     pub kind: u32,
     pub lets: u32,
-    /// §40 A5: what a dwelling costs its owner to keep, per period.
+    /// What a dwelling costs its owner to keep, per period.
     pub upkeep: &'static str,
-    /// §40 B2: what share of its money a household will put towards a roof. A PREFERENCE.
+    /// What share of its money a household will put towards a roof. A PREFERENCE.
     pub will_spend: &'static str,
 }
 
@@ -3116,7 +3116,7 @@ impl Mechanism for Housing {
         let will_spend = ctx.params().ratio(self.will_spend);
         let _upkeep = ctx.params().price_per_unit(self.upkeep);
 
-        // C5: the standard each lender is currently lending at. The KEENEST is what a buyer faces,
+        // The standard each lender is currently lending at. The KEENEST is what a buyer faces,
         // because a buyer takes the best offer it can find and lenders compete for it.
         let mut keenest: Option<Standard> = None;
         for row in 0..ctx.standing().len() as u32 {
@@ -3131,11 +3131,11 @@ impl Mechanism for Housing {
                 _ => here,
             });
         }
-        // B2: **a buyer with no lender cannot bid.** Missing is missing — it does not bid cash it
+        // A buyer with no lender cannot bid. Missing is missing — it does not bid cash it
         // has not got, and it does not bid on a standard nobody is offering.
         let Some(standard) = keenest else { return };
 
-        // A1.a, A3: the dwellings, where they are, and who lives in them. A dwelling is a structure
+        // The dwellings, where they are, and who lives in them. A dwelling is a structure
         // its holder holds; the occupier is its holder until a tenancy says otherwise.
         let mut offers: Vec<Offer> = Vec::new();
         let mut spare: Vec<(PartyId, crate::ids::RegionId)> = Vec::new();
@@ -3151,9 +3151,9 @@ impl Mechanism for Housing {
                     continue;
                 }
                 let at = ctx.parties().region_of(owner);
-                // B1.a: it will not sell below what it owes or what a dwelling costs to build
+                // It will not sell below what it owes or what a dwelling costs to build
                 // there, whichever is more — and the build cost is higher where more already
-                // stands (21i). What the market last printed is what building it draws.
+                // stands. What the market last printed is what building it draws.
                 let Some(print) = ctx.prints().latest(line, ctx.period()) else { continue };
                 let owed: f64 = ctx
                     .schedules()
@@ -3164,7 +3164,7 @@ impl Mechanism for Housing {
                     .map(|d| ctx.schedules().amount(d))
                     .sum();
                 offers.push(Offer::reserving(owner, at, owed, print.price));
-                // A3: and an owner holding more than one has a roof to let.
+                // And an owner holding more than one has a roof to let.
                 if ctx.register().quantity(holding) > 1.0 {
                     spare.push((owner, at));
                 }
@@ -3174,7 +3174,7 @@ impl Mechanism for Housing {
             return;
         }
 
-        // B2: what each household can fund. Its income is what it has been paid — read off the wire
+        // What each household can fund. Its income is what it has been paid — read off the wire
         // — and its deposit is what it holds.
         let mut bids: Vec<Bid> = Vec::new();
         let mut renting: Vec<(PartyId, crate::ids::RegionId, f64)> = Vec::new();
@@ -3188,9 +3188,9 @@ impl Mechanism for Housing {
             if deposit <= 0.0 {
                 continue;
             }
-            // §46, B2: what it expects to earn is its OWN outlook, and a household that has formed
+            // What it expects to earn is its OWN outlook, and a household that has formed
             // none bids what it holds — not an income of zero, which would be a number nobody has
-            // (Appendix A), but a bid with no borrowing behind it, which is what having no view of
+            // , but a bid with no borrowing behind it, which is what having no view of
             // your income means when a lender asks.
             let at = ctx.parties().region_of(who);
             let bidding = match ctx.outlooks().of(who, crate::stores::about::WHAT_IT_KEEPS_EARNING) {
@@ -3201,7 +3201,7 @@ impl Mechanism for Housing {
             renting.push((who, at, deposit));
         }
 
-        // B1: **per LOCATION.** There is no single housing market (A1.a), so each place clears on
+        // Per LOCATION. There is no single housing market, so each place clears on
         // its own and a print in one says nothing about another.
         let mut sold: Vec<(PartyId, PartyId, f64)> = Vec::new();
         let mut printed: Vec<(u32, f64)> = Vec::new();
@@ -3217,7 +3217,7 @@ impl Mechanism for Housing {
             sold.extend(cleared.trades);
         }
 
-        // A3: and the letting session — a spare roof, and a household without one.
+        // And the letting session — a spare roof, and a household without one.
         let mut let_to: Vec<(PartyId, PartyId, f64)> = Vec::new();
         for (owner, at) in spare {
             let Some((tenant, _, can_pay)) = renting.iter().copied().find(|(_, where_it_is, _)| *where_it_is == at)
@@ -3227,13 +3227,13 @@ impl Mechanism for Housing {
             if tenant == owner {
                 continue;
             }
-            // Law 3: the rent is what this session crossed at — what the tenant will pay against a
+            // The rent is what this session crossed at — what the tenant will pay against a
             // roof that is standing empty, and an owner that will not let at it keeps it empty.
             let_to.push((owner, tenant, can_pay));
         }
 
         for (seller, buyer, price) in sold {
-            // C1: a loan from a NAMED lender, secured on the house. What the buyer cannot find
+            // A loan from a NAMED lender, secured on the house. What the buyer cannot find
             // itself it borrows, and E3's *no mortgage without a lender's balance sheet* is the
             // lender being on the row.
             ctx.agrees(crate::module::Agrees {
@@ -3246,7 +3246,7 @@ impl Mechanism for Housing {
             ctx.say(self.kind, &[seller.0, buyer.0], &[(0, Value::Num(price))], true);
         }
         for (owner, tenant, rent) in let_to {
-            // A3, XI-10: a tenancy is a relation, and the rent is its term. It is what the occupier
+            // A tenancy is a relation, and the rent is its term. It is what the occupier
             // pays the owner for the shelter it consumes — two named parties, and never imputed.
             ctx.agrees(crate::module::Agrees {
                 kind: agreed::TENANCY,
@@ -3264,31 +3264,31 @@ impl Mechanism for Housing {
 }
 
 
-/// **§35 A1, B1, B2, C1, §29 B2.b, 22i.18: A COMPANY IS BID FOR, AND THE OWNERS DECIDE.**
+/// A COMPANY IS BID FOR, AND THE OWNERS DECIDE.
 ///
 /// The `control` row was a CLOSER for a buy-back nothing opened, so §35 and §29 B were a thousand
-/// lines nothing had ever exercised (21.73). What it waited on was a company with SHARES, which
+/// lines nothing had ever exercised. What it waited on was a company with SHARES, which
 /// 22i.7 built.
 ///
-/// **It does NOT wait for a published report** (22j.1). A target being bid for opens its books to
+/// It does NOT wait for a published report. A target being bid for opens its books to
 /// the bidder — that is what due diligence is — so the acquirer forms its expectation from what the
 /// target is EARNING, read off the wire in any week. Gating this on §48's quarterly calendar made a
 /// company unvaluable between its quarters and for the whole of its first one.
 ///
-/// **The acquirer's valuation is its OWN** (B1): the target's expected earnings discounted at its own
+/// The acquirer's valuation is its OWN: the target's expected earnings discounted at its own
 /// hurdle, so the next acquirer's is different — which is what makes a contest possible at all.
 ///
-/// **The owners decide, each on its own valuation** (C1): the price beats holding, on THEIR
+/// The owners decide, each on its own valuation: the price beats holding, on THEIR
 /// valuation, or they keep the shares. A tender that does not reach the units it needs is REFUSED,
 /// and that is a real outcome — a bid nobody accepts is not a bid that happened at a lower price.
 ///
-/// **And the premium is an OUTCOME** (B2), not a stated percentage: what it must pay to get them to
+/// And the premium is an OUTCOME, not a stated percentage: what it must pay to get them to
 /// sell, measured against what the market last printed.
 pub struct Control {
     pub kind: u32,
-    /// §35 B1: what an acquirer wants on what it buys. Its own hurdle, and a PREFERENCE.
+    /// What an acquirer wants on what it buys. Its own hurdle, and a PREFERENCE.
     pub hurdle: &'static str,
-    /// §35 C1: the share of a company somebody must hold to control it, read off the outstanding
+    /// The share of a company somebody must hold to control it, read off the outstanding
     /// count rather than declared — this is only how much of the rest a bid must reach.
     pub needs: &'static str,
 }
@@ -3299,7 +3299,7 @@ impl Mechanism for Control {
         let hurdle = ctx.params().ratio(self.hurdle);
         let needs = ctx.params().ratio(self.needs);
 
-        // **§35 B1: THE ACQUIRER'S OWN VALUATION, of the target's EXPECTED earnings.** It does not
+        // THE ACQUIRER'S OWN VALUATION, of the target's EXPECTED earnings. It does not
         // wait for a published report and must not: a target being bid for OPENS ITS BOOKS to the
         // bidder — that is what due diligence IS — and gating on §48's calendar made a company
         // unvaluable between its quarters and for its whole first quarter.
@@ -3319,7 +3319,7 @@ impl Mechanism for Control {
                         continue;
                     }
                     // What a company EARNS is what it sells, less what it pays for what it uses.
-                    // A receipt says which a payment is (0i.5), so this reads the leg's own word
+                    // A receipt says which a payment is, so this reads the leg's own word
                     // for it rather than guessing from the parties.
                     match receipt {
                         crate::ledger::Receipt::Sale => {
@@ -3344,7 +3344,7 @@ impl Mechanism for Control {
             if !ctx.parties().alive(company) {
                 continue;
             }
-            // 22i.7: its shares, and who holds them. A company with none cannot be bid for.
+            // Its shares, and who holds them. A company with none cannot be bid for.
             let Some(share) = ctx
                 .instruments()
                 .of_issuer(company)
@@ -3355,7 +3355,7 @@ impl Mechanism for Control {
                 continue;
             };
             let Some(print) = ctx.prints().latest(share, ctx.period()) else { continue };
-            // B1: **the acquirer's OWN valuation.** Whoever already holds the most of it is who has
+            // The acquirer's OWN valuation. Whoever already holds the most of it is who has
             // a reason to take the rest — and what it is worth to that holder is what its own
             // hurdle says, never what the market says.
             let mut owners: Vec<Owner> = Vec::new();
@@ -3368,7 +3368,7 @@ impl Mechanism for Control {
                     continue;
                 }
                 outstanding += units;
-                // C1, C2: what holding is worth to THIS owner — what the market last printed, which
+                // What holding is worth to THIS owner — what the market last printed, which
                 // is what it could get for it now. Its own, and it is why some accept and some do not.
                 owners.push(Owner { who, units, holding_is_worth: print.price });
             }
@@ -3380,7 +3380,7 @@ impl Mechanism for Control {
             let Some(worth) = crate::mechanisms::control::worth_to(income, hurdle) else { continue };
             let per_share = worth / outstanding;
             if per_share <= print.price {
-                // B2: it will not pay a premium it does not think is there. A bid below the market
+                // It will not pay a premium it does not think is there. A bid below the market
                 // is not a bid, and nothing is adjusted to make one.
                 continue;
             }
@@ -3413,13 +3413,13 @@ impl Mechanism for Control {
             let bid = Bid {
                 acquirer,
                 target: company,
-                // B3: **what its lenders committed.** A bid it cannot fund is not a bid, and here
+                // What its lenders committed. A bid it cannot fund is not a bid, and here
                 // what it can fund is what it holds — the credit market's half is §29 B2.b's.
                 offering: Consideration { cash_per_share: per_share, shares_per_share: 0.0 },
                 funded,
                 on: Day(0),
             };
-            // C3: management may resist, and its interests differ from the owners'. Nothing in this
+            // Management may resist, and its interests differ from the owners'. Nothing in this
             // world resists yet, which is an absence and not a defence of nothing.
             match tender(&bid, 0.0, &owners, needed, None) {
                 Outcome::Accepted { units, paid, .. } => done.push((acquirer, company, units, paid, true)),
@@ -3440,7 +3440,7 @@ impl Mechanism for Control {
                     size: units,
                 });
             }
-            // B4: a bid that nobody beats is not a proof that it was the right price, only that
+            // A bid that nobody beats is not a proof that it was the right price, only that
             // nobody came — so what happened is said either way.
             ctx.say(
                 self.kind,
@@ -3452,17 +3452,17 @@ impl Mechanism for Control {
     }
 }
 
-/// **§16 A3, B3, B3.a, G1, 22i.19: A DERIVATIVE POSITION IS MARKED, AND AN OFFSET DOES NOT REMOVE IT.**
+/// A DERIVATIVE POSITION IS MARKED, AND AN OFFSET DOES NOT REMOVE IT.
 ///
 /// The `derivative_layer` row counted live agreements. So §16's one indispensable fact — that a
 /// party which has hedged is FLAT on the market and DOUBLED on the credit — had nothing to be true
 /// of, and a world that netted them would hide the thing that actually breaks.
 ///
-/// **One number, two reads** (A3): what a contract is worth to one side is the negative of what it
+/// One number, two reads: what a contract is worth to one side is the negative of what it
 /// is worth to the other. Not two numbers that might drift apart — the same number, read from either
-/// end (Law 4).
+/// end.
 ///
-/// **And the exposure is PER COUNTERPARTY** (B3.a): a party with a bought contract and a sold one
+/// And the exposure is PER COUNTERPARTY: a party with a bought contract and a sold one
 /// against different names has two exposures, and netting them across counterparties is exactly what
 /// Appendix B forbids.
 pub struct Derivatives {
@@ -3486,14 +3486,14 @@ impl Mechanism for Derivatives {
                 [a, b, c] => [*a, *b, *c],
                 _ => continue,
             };
-            // B1, G4: it was agreed at a CLEARED price and it marks against one — never against a
+            // It was agreed at a CLEARED price and it marks against one — never against a
             // price this world does not clear. What it is worth now is what that name's protection
             // would cost now, against what this contract struck at.
             let on = InstrumentId::at(struck_at as u32);
             let mark = match ctx.prints().latest(on, ctx.period()) {
                 Some(print) => (print.price - struck_at) * notional,
                 // A contract on something nothing has cleared does not mark, and a position that
-                // does not mark is one whose holder has hidden its loss (§14 E2). It is said with
+                // does not mark is one whose holder has hidden its loss. It is said with
                 // no mark rather than marked at zero.
                 None => continue,
             };
@@ -3506,7 +3506,7 @@ impl Mechanism for Derivatives {
                 years_left: years,
                 cleared_at_house: None,
             };
-            // A3: one number, two reads. The other side's is its negative, and it is read rather
+            // One number, two reads. The other side's is its negative, and it is read rather
             // than written a second time.
             if let Some(to_one) = position.mark_to(one) {
                 marked.push((one, other, to_one));
@@ -3514,7 +3514,7 @@ impl Mechanism for Derivatives {
         }
 
         for (one, other, mark) in marked {
-            // B3.a: **per counterparty.** A party's exposure to one name is not reduced by an
+            // Per counterparty. A party's exposure to one name is not reduced by an
             // offsetting contract with another, so this is said naming both — netting them across
             // counterparties is what Appendix B forbids, and a single number per party would be it.
             ctx.say(self.kind, &[one.0, other.0], &[(self.at_mark, Value::Num(mark))], false);
@@ -3522,22 +3522,22 @@ impl Mechanism for Derivatives {
     }
 }
 
-/// **§42 A3, A5, A5.a, B1, B3, 22i.19: THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.**
+/// THE TIER THAT IS TOO SMALL FOR THE BOND MARKET.
 ///
 /// The `small_business` row counted the credit outstanding. So A5's *bank-dependent — too small for
 /// the bond market* was a sentence about nobody: nothing in this world knew which borrowers had no
-/// alternative, which is why a credit tightening could not bite here first and hardest (A5.a).
+/// alternative, which is why a credit tightening could not bite here first and hardest.
 ///
-/// **It is a READ of observable characteristics** (A3): size, region, leverage, coverage — and
-/// **bank-dependence is size against the point where the bond market starts**, never a label. A cell
-/// that outgrows it is PROMOTED (A6.c), which is a weight event and not a relabelling (XI-15).
+/// It is a READ of observable characteristics: size, region, leverage, coverage — and
+/// bank-dependence is size against the point where the bond market starts, never a label. A cell
+/// that outgrows it is PROMOTED, which is a weight event and not a relabelling.
 ///
-/// **And the default is one borrower's arithmetic** (B3, A2.a): a threshold this cell crosses or does
+/// And the default is one borrower's arithmetic: a threshold this cell crosses or does
 /// not, never an average. A test applied to a band's mean means a mean-preserving spread causes no
 /// defaults at all, which is exactly backwards.
 pub struct SmallBusiness {
     pub kind: u32,
-    /// §42 A6.c: the size at which a borrower reaches the bond market. A TECHNOLOGY of the market:
+    /// The size at which a borrower reaches the bond market. A TECHNOLOGY of the market:
     /// below it the issue costs more than it raises.
     pub reaches_the_bond_market_at: &'static str,
     pub days_per_period: i64,
@@ -3556,7 +3556,7 @@ impl Mechanism for SmallBusiness {
             if !ctx.parties().alive(who) {
                 continue;
             }
-            // A3: **observable characteristics**, every one of them a read.
+            // Observable characteristics, every one of them a read.
             let size = equity(who, ctx.register(), ctx.instruments(), ctx.claims());
             let owes: f64 = ctx
                 .instruments()
@@ -3570,15 +3570,15 @@ impl Mechanism for SmallBusiness {
                 size,
                 region: ctx.parties().region_of(who),
                 leverage: if size > 0.0 { owes / size } else { f64::INFINITY },
-                // A3: coverage is what it earns against what it owes, and a borrower with no
+                // Coverage is what it earns against what it owes, and a borrower with no
                 // published earnings has none that anybody can read.
                 coverage: 0.0,
                 bank_dependent: true,
             };
-            // A6.c: **it outgrew bank-dependence** — large enough to reach the bond market. That is
+            // It outgrew bank-dependence — large enough to reach the bond market. That is
             // a fact about its size against a market convention, and never a label anybody set.
             let dependent = !cell.outgrew(reaches);
-            // B3, A2.a: and whether THIS borrower can meet what falls due. One borrower's own
+            // And whether THIS borrower can meet what falls due. One borrower's own
             // arithmetic, never a band's average.
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
             let cash = ctx.register().quantity(ctx.register().row(who, money));
@@ -3594,7 +3594,7 @@ impl Mechanism for SmallBusiness {
         }
 
         for (who, leverage, cannot_meet) in tier {
-            // A5.a: which borrowers have no alternative, and which of those cannot meet what falls
+            // Which borrowers have no alternative, and which of those cannot meet what falls
             // due — the two facts a credit tightening needs to bite here first and hardest.
             ctx.say(
                 self.kind,
@@ -3606,18 +3606,18 @@ impl Mechanism for SmallBusiness {
     }
 }
 
-/// **§41 D1, D2, D3, F2, XI-12, 22i.19: A REGION'S ACCOUNTS ARE A READ OF WHAT ACTUALLY CROSSED.**
+/// A REGION'S ACCOUNTS ARE A READ OF WHAT ACTUALLY CROSSED.
 ///
 /// The `cross_border` row counted how many lines printed. So no region in this world had a current
 /// account, a financial account or an imbalance — and F2's *the world closes*, the check that every
 /// region's surplus is somebody's deficit, had nothing to check.
 ///
-/// **Every flow is read off the WIRE, party by party** (Law 19, F2): who paid whom, where each of
+/// Every flow is read off the WIRE, party by party: who paid whom, where each of
 /// them is, and what the payment was FOR. Nothing is a tally kept beside the instructions, and no
 /// series is exogenous — Appendix B forbids an imposed trade or capital-flow series precisely
 /// because it would make this read decorative.
 ///
-/// **D3: the two accounts are the same flows read twice**, which is why the imbalance is derived and
+/// The two accounts are the same flows read twice, which is why the imbalance is derived and
 /// can be reported with a size rather than asserted away.
 pub struct CrossBorder {
     pub kind: u32,
@@ -3629,7 +3629,7 @@ impl Mechanism for CrossBorder {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::mechanisms::cross_border::{Entry, Flow};
 
-        // F2: the flows that actually crossed, this period, off the wire's own legs.
+        // The flows that actually crossed, this period, off the wire's own legs.
         let mut flows: Vec<Flow> = Vec::new();
         for n in ctx.wire().in_period(ctx.period()) {
             if ctx.wire().outcome_of(n) != crate::ledger::Outcome::Settled {
@@ -3647,8 +3647,8 @@ impl Mechanism for CrossBorder {
                 if from_region == to_region {
                     continue;
                 }
-                // A2, C5, D1: **what the payment was FOR** decides which account it lands in. It is
-                // read off the leg's own receipt, which the writer had to state (0i.5) — never
+                // What the payment was FOR decides which account it lands in. It is
+                // read off the leg's own receipt, which the writer had to state — never
                 // guessed from the parties.
                 let entry = match receipt {
                     crate::ledger::Receipt::Sale => Entry::Goods,
@@ -3662,7 +3662,7 @@ impl Mechanism for CrossBorder {
                     to,
                     to_region,
                     amount,
-                    // 0k.2, Law 19: what money this is, read off the instrument that IS it. The
+                    // What money this is, read off the instrument that IS it. The
                     // leg used to carry a second copy and nothing validated it, so these accounts
                     // were the only reader of a field the wire never checked.
                     invoiced_in: ctx.instruments().ccy_of(instrument),
@@ -3685,13 +3685,13 @@ impl Mechanism for CrossBorder {
                 at.0,
                 crate::mechanisms::cross_border::current_account(at, &flows),
                 crate::mechanisms::cross_border::financial_account(at, &flows),
-                // D3: the two are the same flows read twice, so this is the discrepancy and it is
+                // The two are the same flows read twice, so this is the discrepancy and it is
                 // REPORTED with a size rather than asserted away (Law 7's dust, not a band).
                 crate::mechanisms::cross_border::imbalance(at, &flows, 2),
             ));
         }
-        // F2: **and the world closes.** Every region's surplus is somebody's deficit, so the sum
-        // over all of them is dust or it is a finding about a flow with one side (Law 5).
+        // And the world closes. Every region's surplus is somebody's deficit, so the sum
+        // over all of them is dust or it is a finding about a flow with one side.
         let closes = crate::mechanisms::cross_border::world_closes(&regions, &flows, regions.len());
 
         for (at, current, financial, imbalance) in read {
@@ -3707,28 +3707,28 @@ impl Mechanism for CrossBorder {
         }
         if let Some(off) = closes {
             // A world that does not close has a flow with one side in it somewhere, and that is a
-            // finding with a size — never something to net away (Law 5, Audit A2).
+            // finding with a size — never something to net away.
             ctx.say(self.kind, &[], &[(1, Value::Num(off))], true);
         }
     }
 }
 
-/// **§29 A2, A3, A4, B2.b, 22i.19: A FUND CALLS ITS COMMITMENTS, AND THE INVESTOR MUST HAVE THE
-/// MONEY.**
+/// A FUND CALLS ITS COMMITMENTS, AND THE INVESTOR MUST HAVE THE
+/// MONEY.
 ///
 /// The `private_equity` row was a CLOSER for a takeover nothing opened. §29's own half — the fund,
 /// its commitments and the call — had never run either: A2.a's *the investor must hold liquidity
 /// against calls it did not choose the timing of* had no call to be against.
 ///
-/// **A call is pro rata on UNCALLED commitments** (A2), and it is a real demand on a named investor
-/// for real money. **The fund has a LIFE** (A4): it invests, it holds, it exits and it winds up —
-/// nothing here is immortal (XI-3).
+/// A call is pro rata on UNCALLED commitments, and it is a real demand on a named investor
+/// for real money. The fund has a LIFE: it invests, it holds, it exits and it winds up —
+/// nothing here is immortal.
 ///
-/// **And whether the deal happens is the credit market's** (B2.b): the buyout half is `control`'s,
+/// And whether the deal happens is the credit market's: the buyout half is `control`'s,
 /// which 22i.18 built. This is the money behind it.
 pub struct Calling {
     pub kind: u32,
-    /// §29 A2: what share of an uncalled commitment a fund draws at once. Its own.
+    /// What share of an uncalled commitment a fund draws at once. Its own.
     pub draws: &'static str,
 }
 
@@ -3746,7 +3746,7 @@ impl Mechanism for Calling {
             if !ctx.parties().alive(fund) || !ctx.parties().alive(investor) {
                 continue;
             }
-            // A2: pro rata on what is UNCALLED. A commitment fully drawn has nothing left to call,
+            // Pro rata on what is UNCALLED. A commitment fully drawn has nothing left to call,
             // which is an answer and not a call of nothing.
             let Some(&committed) = ctx.agreements().terms(a).first() else { continue };
             let owed = committed * draws;
@@ -3758,8 +3758,8 @@ impl Mechanism for Calling {
 
         for (fund, investor, owed) in calling {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
-            // A2.a: **the investor must hold liquidity against a call it did not choose the timing
-            // of.** If it has not got it the payment waits in the queue like any other and can run
+            // The investor must hold liquidity against a call it did not choose the timing
+            // of. If it has not got it the payment waits in the queue like any other and can run
             // out of days — which is the consequence that makes a commitment mean something.
             ctx.propose(
                 vec![crate::ledger::Leg::Money {
@@ -3797,7 +3797,7 @@ mod tests {
         let cash = w.instruments.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
         let firm = w.parties.add(kinds::FIRM, RegionId::at(0), bank, Representation::Named, 1, 0);
         let worker = w.parties.add(kinds::HOUSEHOLD, RegionId::at(0), bank, Representation::Cell, 100, 0);
-        // XI-14: a mechanism holds the ID of the number it acts on, so a test that runs one declares
+        // A mechanism holds the ID of the number it acts on, so a test that runs one declares
         // the number first — half, here, because half the way is easy to check by eye.
         w.params.declare(crate::params::ParamDecl {
             id: MEMORY.to_string(),
@@ -3812,12 +3812,12 @@ mod tests {
     }
 
     const MEMORY: &str = "test.outlook.memory";
-    /// 21i: the standing area at which a build draws twice, for the tests that run a line.
+    /// The standing area at which a build draws twice, for the tests that run a line.
     const CROWDS_AT: &str = "test.building.crowds_at";
-    /// 22c.3: how much cover a firm wants on its shelf, for the tests that run a line.
+    /// How much cover a firm wants on its shelf, for the tests that run a line.
     const COVER: &str = "test.firm.cover";
 
-    /// XI-14: a mechanism holds the ID of the number it acts on, so a world that runs one declares
+    /// A mechanism holds the ID of the number it acts on, so a world that runs one declares
     /// it. Ten square km, because a place carrying ten is then exactly twice as dear to build in.
     fn declare_crowding(w: &mut World) {
         w.params.declare(crate::params::ParamDecl {
@@ -3900,8 +3900,8 @@ mod tests {
 
     #[test]
     fn what_falls_due_this_period_is_paid_to_whoever_holds_the_line() {
-        // §6, XI-9: the mechanism the whole credit side rests on. The beneficiary is read off the
-        // register — never a second list of who is owed what (Appendix B).
+        // The mechanism the whole credit side rests on. The beneficiary is read off the
+        // register — never a second list of who is owed what.
         let (mut w, bank, firm, _worker, cash) = world();
         let loan = w.instruments.issue(firm, CurrencyCode::at(0), Class::Claim, UnitId::at(0), Some(0.04), Some(Day(700)));
         w.register.credit(bank, loan, 1_000.0, 1.0, 0);
@@ -3919,7 +3919,7 @@ mod tests {
 
     #[test]
     fn a_coupon_reaches_every_holder_in_proportion_to_what_it_holds() {
-        // **Register E1, A2.a, Appendix B #10.** This paid the FIRST row that was not the issuer,
+        // Register E1, A2.a, Appendix B #10. This paid the FIRST row that was not the issuer,
         // in full: a line held by three parties paid all of it to one of them, and what the other
         // two were owed and did not get was a residual with no holder. `Servicing` runs the whole
         // credit side — every loan, bond, premium and rent in the world went this way.
@@ -3939,14 +3939,14 @@ mod tests {
         assert_eq!(w.register.quantity(w.register.row(bank, cash)), 50.0);
         assert_eq!(w.register.quantity(w.register.row(other, cash)), 30.0);
         assert_eq!(w.register.quantity(w.register.row(worker, cash)), 20.0);
-        // Law 5, XI-5: and the issuer paid the whole of it, once — both sides of one obligation.
+        // And the issuer paid the whole of it, once — both sides of one obligation.
         assert_eq!(w.register.quantity(w.register.row(firm, cash)), 400.0);
         assert!(w.schedules.paid(due));
     }
 
     #[test]
     fn a_line_the_issuer_holds_itself_owes_nothing_to_anybody() {
-        // §5 A4: its own line on its own book is not a debt to itself, which is what "issued and
+        // Its own line on its own book is not a debt to itself, which is what "issued and
         // outstanding" means. Paying itself a coupon would move money in a circle and mark the
         // schedule discharged.
         let (mut w, _bank, firm, _worker, cash) = world();
@@ -3998,11 +3998,11 @@ mod tests {
 
     #[test]
     fn an_engagement_pays_its_wage_and_an_ended_one_does_not() {
-        // §39, XI-10: employment is a relation, and the wage is what it pays. An engagement that
+        // Employment is a relation, and the wage is what it pays. An engagement that
         // ended is still readable and pays nothing, which is what ending means.
         let (mut w, _bank, firm, worker, cash) = world();
         w.register.money_delta(firm, cash, 9_000.0);
-        // XI-15, Labour A4.b: the worker is a CELL of a hundred, the engagement is for all hundred,
+        // The worker is a CELL of a hundred, the engagement is for all hundred,
         // and a wage is per person — so what the firm owes is a hundred wages. Paying one was the
         // defect: a firm employing two thousand people paid forty.
         let of_them = f64::from(w.parties.weight(worker));
@@ -4023,7 +4023,7 @@ mod tests {
 
     #[test]
     fn two_parties_seeing_different_prices_form_different_outlooks() {
-        // §46 A3: the disagreement is LOAD-BEARING. A world where everybody expected the same would
+        // The disagreement is LOAD-BEARING. A world where everybody expected the same would
         // trade once and stop.
         let (mut w, _bank, firm, worker, _cash) = world();
         let one = w.instruments.issue(firm, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
@@ -4058,7 +4058,7 @@ mod tests {
 
     #[test]
     fn a_party_that_has_seen_nothing_forms_nothing_and_that_is_not_zero() {
-        // Appendix A: missing is missing. An outlook of zero is an expectation.
+        // Missing is missing. An outlook of zero is an expectation.
         let (mut w, _bank, firm, _worker, _cash) = world();
         w.period = 1;
         ran(&mut w, &Forming { memory: MEMORY });
@@ -4067,7 +4067,7 @@ mod tests {
 
     #[test]
     fn the_second_observation_moves_the_outlook_by_the_partys_own_memory() {
-        // §46 B1: adaptive, from its OWN history. The first observation IS the outlook.
+        // Adaptive, from its OWN history. The first observation IS the outlook.
         let (mut w, _bank, firm, _worker, _cash) = world();
         let line = w.instruments.issue(firm, CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
         w.register.credit(firm, line, 10.0, 1.0, 0);
@@ -4090,7 +4090,7 @@ mod tests {
 
     #[test]
     fn a_read_over_what_the_books_produced_publishes_and_proposes_nothing() {
-        // Appendix B: giving a benchmark a schedule would be inventing demand nobody has. What it
+        // Giving a benchmark a schedule would be inventing demand nobody has. What it
         // does is publish a read, and the count is what shows it ran.
         let (mut w, _bank, firm, worker, _cash) = world();
         let kind = w.journal.kinds.declare("benchmark.count");
@@ -4106,8 +4106,8 @@ mod tests {
 
     #[test]
     fn a_process_closes_when_its_period_comes_and_not_before() {
-        // **XI-3, 22i.19: nothing is immortal, a process included — and the KERNEL is what closes
-        // one.** Seven systems used to be a `Closing`, a closer for a process nothing opened; 22i
+        // Nothing is immortal, a process included — and the KERNEL is what closes
+        // one. Seven systems used to be a `Closing`, a closer for a process nothing opened; 22i
         // gave every one of them an opener, which left the closing itself with seven writers of one
         // rule. It is the kernel's now, once, for every kind.
         let (mut w, _bank, firm, _worker, _cash) = world();
@@ -4136,7 +4136,7 @@ mod tests {
         w.register.credit(firm, flour, 900.0, 0.5, 0);
         // `[wage per person, hours per person, headcount]`, the convention `agreed::ENGAGEMENT`
         // states. The worker is a cell of a hundred, so the hours it gives the line are a hundred
-        // people's — which is the half of 21h `Making` had not been told (Law 8).
+        // people's — which is the half of 21h `Making` had not been told.
         let of_them = f64::from(w.parties.weight(worker));
         w.agreements.strike(agreed::ENGAGEMENT, firm, worker, &[80.0, 40.0, of_them], Day(-7), None);
         declare_crowding(&mut w);
@@ -4172,7 +4172,7 @@ mod tests {
     #[test]
     fn a_firm_with_plant_inputs_hours_and_a_view_of_its_demand_actually_makes_something() {
         // 37 B1, B2, B3, B4: the inputs go NOW and the output arrives when the line is done — and in
-        // between there is work in progress, owned, carrying what it cost (21f.3).
+        // between there is work in progress, owned, carrying what it cost.
         use crate::mechanisms::recipe::{Line, Recipe};
         let (mut w, firm, flour, bread, mill) = a_mill();
         w.period = 1;
@@ -4208,7 +4208,7 @@ mod tests {
         w.outlooks.form(firm, about::HOW_MUCH_IT_SELLS, 200.0, 1);
         let line = Line::new(bread, vec![Recipe::new(bread, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
         ran(&mut w, &making(&line, mill));
-        // B3: the cost is carried by the batch on the line, and it is what the lot is struck at when
+        // The cost is carried by the batch on the line, and it is what the lot is struck at when
         // the batch comes off — so what a unit cost is what went into IT, not what things cost then.
         w.period = 2;
         ran(&mut w, &making(&line, mill));
@@ -4222,8 +4222,8 @@ mod tests {
 
     #[test]
     fn a_firm_with_no_view_of_its_own_demand_has_no_reason_to_start_a_line() {
-        // B1, §46: expected demand is the first reason, and it is the firm's OWN. Missing is missing
-        // (Appendix A) — a firm that has never sold anything does not produce as if it expected zero,
+        // Expected demand is the first reason, and it is the firm's OWN. Missing is missing
+        //  — a firm that has never sold anything does not produce as if it expected zero,
         // it does not produce at all, and the difference is that it starts the moment it sells once.
         use crate::mechanisms::recipe::{Line, Recipe};
         let (mut w, firm, flour, bread, mill) = a_mill();
@@ -4240,7 +4240,7 @@ mod tests {
 
     #[test]
     fn the_same_build_draws_more_where_more_already_stands() {
-        // **21i, 33 A4: congestion, not scarcity.** Two identical firms build the same structure,
+        // 21i, 33 A4: congestion, not scarcity. Two identical firms build the same structure,
         // one on empty ground and one where the declared doubling area already stands. Nothing is
         // refused and nothing is capped — the crowded one simply draws twice as much of everything
         // for the same output, which is deeper foundations and more hours on a tight site.
@@ -4278,7 +4278,7 @@ mod tests {
         let line = Line::new(shed, vec![Recipe::new(shed, vec![(flour, 2.0)], 0.1, 0.05, 0.98, 10.0, 1)]);
         ran(&mut w, &making(&line, mill));
 
-        // Both built — congestion prices, it does not refuse (Law 6).
+        // Both built — congestion prices, it does not refuse.
         let drew = |w: &World, who: PartyId| 900.0 - w.register.quantity(w.register.row(who, flour));
         let easy = drew(&w, on_empty);
         let dear = drew(&w, on_crowded);
@@ -4383,7 +4383,7 @@ mod tests {
 
     #[test]
     fn a_pool_under_a_live_mandate_is_left_alone() {
-        // F3: this mechanism is about the absence of a manager and does nothing while there is one.
+        // This mechanism is about the absence of a manager and does nothing while there is one.
         let (mut w, pool, _m, cash, _s, saver, _o) = a_pool();
         w.period = 1;
         let says = w.journal.kinds.declare("fund.orphaned");
@@ -4395,7 +4395,7 @@ mod tests {
 
     #[test]
     fn a_manager_that_dies_leaves_its_pool_paying_its_holders_pro_rata_on_what_it_raised() {
-        // 21b.2, G1: the holders' claim is redeemable, so what the pool raised goes back to them in
+        // The holders' claim is redeemable, so what the pool raised goes back to them in
         // proportion — 300 shares of 1,000 is 270 of 900, and it is the fund's own money moving over
         // the ordinary wire, not a transfer somebody arranged.
         let (mut w, pool, _m, cash, _s, saver, other) = a_pool();
@@ -4407,13 +4407,13 @@ mod tests {
 
         assert_eq!(w.register.quantity(w.register.row(saver, cash)), 270.0);
         assert_eq!(w.register.quantity(w.register.row(other, cash)), 630.0);
-        // Appendix B: every piece of it has a holder. The pool paid out what it had, and no more.
+        // Every piece of it has a holder. The pool paid out what it had, and no more.
         assert_eq!(w.register.quantity(w.register.row(pool, cash)), 0.0);
     }
 
     #[test]
     fn a_pool_that_has_paid_everybody_and_holds_nothing_has_ended() {
-        // XI-3: nothing is immortal, and a thing that ends says when. Law 6: it is not a schedule —
+        // Nothing is immortal, and a thing that ends says when. Law 6: it is not a schedule —
         // the pool ends because there is nothing left, which is arithmetic about what it holds.
         let (mut w, pool, _m, _c, shares, saver, other) = a_pool();
         w.period = 1;
@@ -4429,7 +4429,7 @@ mod tests {
 
     #[test]
     fn a_pool_still_holding_something_is_not_wound_up_however_long_it_takes() {
-        // XI-2, Appendix B: no forced buyer. A book that will not take its stock leaves it unsold,
+        // No forced buyer. A book that will not take its stock leaves it unsold,
         // and the pool is still there next period — the absence of a buyer showing up as a duration.
         let (mut w, pool, _m, _c, shares, saver, other) = a_pool();
         let unsold = w.instruments.issue(PartyId::at(1), CurrencyCode::at(0), Class::Good, UnitId::at(1), None, None);
@@ -4446,7 +4446,7 @@ mod tests {
 
     #[test]
     fn an_estate_pays_its_claimants_in_rank_order_and_the_state_is_one_of_them() {
-        // 21c, 21.107: the estate paid the treasury 388 directly and the audit said the treasury had
+        // The estate paid the treasury 388 directly and the audit said the treasury had
         // no claim on it. Now the state is a CLAIMANT, standing behind the secured creditor, and it
         // gets what is left of its rank rather than what it asked for.
         use crate::mechanisms::estate::Rank;
@@ -4463,14 +4463,14 @@ mod tests {
 
         assert_eq!(w.register.quantity(w.register.row(secured, cash)), 100.0);
         assert_eq!(w.register.quantity(w.register.row(treasury, cash)), 300.0);
-        // Law 6: the state is paid what there is, and what there is ran out. Nothing was clamped and
+        // The state is paid what there is, and what there is ran out. Nothing was clamped and
         // nothing was topped up — the estate had 400 and 400 left it.
         assert_eq!(w.register.quantity(w.register.row(estate, cash)), 0.0);
     }
 
     #[test]
     fn a_live_party_is_not_an_estate_and_nothing_here_touches_it() {
-        // XI-3: an estate is what is left of a party whose life has ended. A claim against a party
+        // An estate is what is left of a party whose life has ended. A claim against a party
         // that is still alive is not paid by this mechanism — it is the party's own to pay.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, _t, cash) = world();
@@ -4501,7 +4501,7 @@ mod tests {
 
     #[test]
     fn a_claim_an_estate_has_paid_does_not_come_back_next_period() {
-        // **21.36, and it was a defect this engine had for three commits.** `Ranked` read
+        // 21.36, and it was a defect this engine had for three commits. `Ranked` read
         // `outstanding` and marked nothing, so every claim was paid IN FULL AGAIN every period —
         // the shape 21.36 measured on the old engine, where a dead firm's debt stood twice on the
         // register and grew by every claim every period until a test timed out.
@@ -4526,7 +4526,7 @@ mod tests {
 
     #[test]
     fn a_claim_paid_in_part_comes_back_for_the_rest_and_no_more() {
-        // XI-1: what a claimant did not get is a LOSS on a named holder, and it stands until the
+        // What a claimant did not get is a LOSS on a named holder, and it stands until the
         // estate has something to pay it with. The estate has 40 against a claim of 100.
         use crate::mechanisms::estate::Rank;
         let (mut w, bank, secured, _t, cash) = world();

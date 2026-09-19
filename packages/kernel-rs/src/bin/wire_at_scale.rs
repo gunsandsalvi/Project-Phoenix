@@ -1,9 +1,9 @@
 //! THE WIRE, at the world's scale, against the TypeScript engine's measured self time.
 //!
-//! A period settles **48,828 instructions carrying 501,044 legs** over a register of **544,104
-//! holdings**, and TypeScript's `settle` costs **4,729 ms inclusive — 8.65% of a period** (of which
+//! A period settles 48,828 instructions carrying 501,044 legs over a register of 544,104
+//! holdings, and TypeScript's `settle` costs 4,729 ms inclusive — 8.65% of a period (of which
 //! `apply` is 2,658 ms and `precheck` 436 ms). It is the single biggest block after the collector
-//! and the audit, and 0g.26 measured it at **42 kernel reads per leg**.
+//! and the audit, and 0g.26 measured it at 42 kernel reads per leg.
 //!
 //! The instruction mix is the world's own: one `instruction.settled` in the journal per instruction,
 //! 10.3 legs each on average, and the tail that makes the average — an estate hand-over is ONE
@@ -22,7 +22,7 @@ const INSTRUMENTS: u32 = 16_750;
 const HOLDINGS: usize = 544_104;
 const INSTRUCTIONS: usize = 48_828;
 const LEGS: usize = 501_044;
-/// TypeScript, measured in the engine's own CPU profile (0g.30, 0g.41).
+/// TypeScript, measured in the engine's own CPU profile.
 const TS_MS: f64 = 4729.0;
 
 struct Draw(u64);
@@ -45,12 +45,12 @@ fn main() {
     let mut reg = Register::new();
     let mut journal = Journal::new();
     let says = phoenix_kernel::ledger::Outcomes::declared(&mut journal);
-    // G3: the one calendar, and how long a payment may wait here (22d.1). This bench runs one
+    // The one calendar, and how long a payment may wait here. This bench runs one
     // period, so nothing in it ever reaches the day it is late on.
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
+    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
     // measurement — stated rather than implied. What this bench times is the wire; the interbank path
     // is timed where a world with two banks runs it (`check:opening`).
@@ -98,7 +98,7 @@ fn main() {
             let a = PartyId::at(draw.below(PARTIES));
             let b = PartyId::at(draw.below(PARTIES));
             let _ = a;
-            // Law 5: two sides. A payment and its delivery are the two legs of one move.
+            // Two sides. A payment and its delivery are the two legs of one move.
             if draw.next().is_multiple_of(2) {
                 legs.push(Leg::Money {
                     from: a,
@@ -126,7 +126,7 @@ fn main() {
     let mut settled = 0usize;
     let mut refused = 0usize;
     for legs in &built {
-        // XI-5: the writer declares what these legs are, and a leg whose two ends are the same
+        // The writer declares what these legs are, and a leg whose two ends are the same
         // party moves nothing — which is why both tests read `from != to`, exactly as the wire does.
         let delivers = legs
             .iter()

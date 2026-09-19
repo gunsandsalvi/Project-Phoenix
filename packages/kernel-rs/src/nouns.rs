@@ -5,7 +5,7 @@
 //! kernel should own, and which are a module's own scratch. An undeclared store is refused at the
 //! read, so the answer cannot be avoided by not writing it down.
 //!
-//! **Its count of HOMELESS nouns is the honest measure of how much ontology is missing** — a noun
+//! Its count of HOMELESS nouns is the honest measure of how much ontology is missing — a noun
 //! is a fact about the world, so it belongs in a kernel store, and one that has not got there yet
 //! names the plan item that will give it a home. The count must fall; it is not a number to
 //! tolerate.
@@ -69,7 +69,7 @@ impl Nouns {
         }
     }
 
-    /// The nouns with no kernel home yet, in order. **This count is the measure, and it must fall.**
+    /// The nouns with no kernel home yet, in order. This count is the measure, and it must fall.
     pub fn homeless(&self) -> Vec<(&str, &str)> {
         let mut out: Vec<(&str, &str)> = Vec::new();
         for (name, &at) in &self.at {

@@ -1,10 +1,10 @@
 //! THE MARKET SESSIONS, at the world's scale, against the TypeScript engine's measured cost.
 //!
-//! A period runs **1,546 books**, asks **920,404 participant questions** and gets back the orders
+//! A period runs 1,546 books, asks 920,404 participant questions and gets back the orders
 //! that clear them. TypeScript's `runOne` — the ask, the clear and the settle for one book — is
-//! **5,453 ms inclusive, 9.97% of a period**, of which the SOLVER is 38 ms: the cost is the asking.
+//! 5,453 ms inclusive, 9.97% of a period, of which the SOLVER is 38 ms: the cost is the asking.
 //!
-//! Every figure here is a median of five, because a cold run is not a measurement (0g.43).
+//! Every figure here is a median of five, because a cold run is not a measurement.
 
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
@@ -47,7 +47,7 @@ impl Draw {
     }
 }
 
-/// Law 19: it names the books of what it HOLDS — the same read its orders answer out of, so a book
+/// It names the books of what it HOLDS — the same read its orders answer out of, so a book
 /// it names and a book it posts in cannot disagree.
 struct Sells;
 impl Participant for Sells {
@@ -55,7 +55,7 @@ impl Participant for Sells {
         SELLER
     }
     fn markets(&self, view: &ParticipantView<'_>) -> Vec<MarketId> {
-        // Law 19, Law 18: it names the books of what it HOLDS, off the register's by-holder index
+        // It names the books of what it HOLDS, off the register's by-holder index
         // — not by asking every book in the world whether it is in it.
         let mut out = Vec::new();
         for row in view.holdings() {
@@ -108,7 +108,7 @@ fn main() {
         parties.add(kind, RegionId::at(0), bank, Representation::Named, 1, u32::MAX);
     }
 
-    // Money D2: the cash line is the BANK'S money, and every party above banks there — so no payment
+    // The cash line is the BANK'S money, and every party above banks there — so no payment
     // here crosses two banks and the interbank leg is not in this measurement. What this bench times
     // is the session.
     let mut instruments = Instruments::new();

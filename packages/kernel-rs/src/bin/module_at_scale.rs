@@ -5,9 +5,9 @@
 //! contribution, sharing the kernel's one traversal and reading the wire's own history — which is
 //! the thing that will actually ship, so it is the number that counts.
 //!
-//! TypeScript, measured in the engine's own CPU profile: **2,049 ms of self time, 3.75% of a period
-//! and 95% of its module**, over **497,338 legs, 1,034,257 distinct keys and 21,490 holdings on 479
-//! capital lines**.
+//! TypeScript, measured in the engine's own CPU profile: 2,049 ms of self time, 3.75% of a period
+//! and 95% of its module, over 497,338 legs, 1,034,257 distinct keys and 21,490 holdings on 479
+//! capital lines.
 
 use phoenix_kernel::audit::Audit;
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, PartyId, RegionId, UnitId};
@@ -50,7 +50,7 @@ fn main() {
     let cal = phoenix_kernel::calendar::Calendar::new(phoenix_kernel::calendar::Day(0), 7, 3);
     let mut wire = Settlement::new(6);
 
-    // Money D2: the payment system needs the banking lattice, so settlement is given one. EVERY PARTY
+    // The payment system needs the banking lattice, so settlement is given one. EVERY PARTY
     // HERE BANKS AT ONE BANK, so no payment crosses two of them and the interbank leg is NOT in this
     // measurement — stated rather than implied. What this bench times is the wire; the interbank path
     // is timed where a world with two banks runs it (`check:opening`).
@@ -128,7 +128,7 @@ fn main() {
             }
             built += 1;
         }
-        // XI-5: a parcel that only destroys units delivers nothing to anybody, so it is not a free
+        // A parcel that only destroys units delivers nothing to anybody, so it is not a free
         // DELIVERY — the writer says which, and the wire refuses to guess.
         let delivers = legs
             .iter()

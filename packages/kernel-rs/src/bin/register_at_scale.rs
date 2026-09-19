@@ -4,7 +4,7 @@
 //! the ratio 0g.41 is gated on is the one the ported engine will actually have.
 //!
 //! The shape is the full world's, from `npm run world 1`: 10,318 parties, 16,750 instruments,
-//! **544,104 holdings in 657,785 lots**, 23,304,012 quantity reads a period, ~10 full traversals.
+//! 544,104 holdings in 657,785 lots, 23,304,012 quantity reads a period, ~10 full traversals.
 
 use phoenix_kernel::ids::{InstrumentId, PartyId};
 use phoenix_kernel::register::Register;
@@ -16,7 +16,7 @@ const HOLDINGS: usize = 544_104;
 const LOTS: usize = 657_785;
 const READS: usize = 23_304_012;
 
-/// TypeScript, measured in the engine's own CPU profile (0g.30).
+/// TypeScript, measured in the engine's own CPU profile.
 const TS_READ_NS: f64 = 67.20;
 const TS_WALK_MS: f64 = 95.70;
 
@@ -83,7 +83,7 @@ fn main() {
     }
     let walk_ms = t.elapsed().as_secs_f64() * 1000.0 / f64::from(passes);
 
-    // 0m.1: the third timing here was `lots_against_quantity`, and it timed a check that could not
+    // The third timing here was `lots_against_quantity`, and it timed a check that could not
     // fail — `quantity()` re-derives from the very lots it summed. Both are gone, and a benchmark
     // asserting against a check the world never ran went with them.
     println!("built {} holdings, {lots_placed} lots in {build_ms:.0} ms", reg.rows());

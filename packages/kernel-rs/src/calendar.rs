@@ -1,10 +1,10 @@
-//! One calendar (Money G1–G4): an epoch, a period length, one mapping from period to date, and
-//! every periodicity placed on that grid BY DATE and never by a count of periods (G3.a).
+//! One calendar: an epoch, a period length, one mapping from period to date, and
+//! every periodicity placed on that grid BY DATE and never by a count of periods.
 //!
-//! Time within a period is cycles (G1, G2); nothing finer exists. There is no default period
-//! (G4.a), which is why `Period` is a value a caller must have rather than a number it can omit.
+//! Time within a period is cycles; nothing finer exists. There is no default period
+//! , which is why `Period` is a value a caller must have rather than a number it can omit.
 //!
-//! **A `Day` CARRIES A CIVIL DATE** (22c.0). It was a day count from the epoch and nothing else — no
+//! A `Day` CARRIES A CIVIL DATE. It was a day count from the epoch and nothing else — no
 //! weekday, no month, no year — which is enough for everything placed by elapsed time (a maturity, an
 //! accrual, a year fraction) and not enough for any convention that NAMES one: a contract expiring on
 //! the third Friday of a delivery month, a fixing on the last business day, a quarter end. A ladder
@@ -28,7 +28,7 @@ pub struct Cycle(pub u16);
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Day(pub i64);
 
-/// 22c.0: the days of the week a market convention names. A venue that opens on a Wednesday, a
+/// The days of the week a market convention names. A venue that opens on a Wednesday, a
 /// fixing on the last business day, a contract expiring on the third Friday: none of them could be
 /// written down while a `Day` was only a count.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -50,7 +50,7 @@ impl Weekday {
     }
 }
 
-/// 22c.0: a date as a market names it.
+/// A date as a market names it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Civil {
     pub year: i64,
@@ -62,7 +62,7 @@ pub struct Civil {
 
 /// The day the epoch IS, in civil terms: 1 January 2000, a Saturday. It is a RESOLUTION — the world's
 /// path must not turn on which day zero is — and it is stated once here so that every civil read in
-/// the engine comes from one mapping (Law 4).
+/// the engine comes from one mapping.
 const EPOCH_YEAR: i64 = 2000;
 const EPOCH_MONTH: u32 = 1;
 const EPOCH_DAY: u32 = 1;
@@ -79,7 +79,7 @@ const fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
-/// And back. The inverse of `days_from_civil`, so the two cannot disagree about a date (Law 4).
+/// And back. The inverse of `days_from_civil`, so the two cannot disagree about a date.
 const fn civil_from_days(z: i64) -> Civil {
     let z = z + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
@@ -94,7 +94,7 @@ const fn civil_from_days(z: i64) -> Civil {
 }
 
 impl Day {
-    /// The civil date this day IS. One mapping (Money G3), and every convention reads through it.
+    /// The civil date this day IS. One mapping, and every convention reads through it.
     pub fn civil(self) -> Civil {
         civil_from_days(days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY) + self.0)
     }
@@ -120,7 +120,7 @@ impl Day {
         Day(days_from_civil(year, month, day) - days_from_civil(EPOCH_YEAR, EPOCH_MONTH, EPOCH_DAY))
     }
 
-    /// **22c.0: the nth such weekday of this day's month** — *the third Friday of the delivery
+    /// The nth such weekday of this day's month — *the third Friday of the delivery
     /// month*, which is how an exchange states an expiry and which could not be written at all
     /// before. `None` where the month has no nth one, which is an answer about that month.
     pub fn nth_weekday_of_its_month(self, nth: u32, want: Weekday) -> Option<Day> {
@@ -143,9 +143,9 @@ impl Day {
         None
     }
 
-    /// **22c.0: the last business day of this day's month** — how a fixing and a quarter end are
+    /// The last business day of this day's month — how a fixing and a quarter end are
     /// stated. A month always has one, so this is not an Option.
-    /// **G3.a, §48 A3: ADVANCE A DATE BY MONTHS.** A quarter is three months of calendar, which is
+    /// ADVANCE A DATE BY MONTHS. A quarter is three months of calendar, which is
     /// a whole number of periods only by accident — so a fiscal calendar is walked by advancing the
     /// month and never by adding days.
     ///
@@ -158,7 +158,7 @@ impl Day {
         let year = whole.div_euclid(12);
         let month = (whole.rem_euclid(12) + 1) as u32;
         // The last day of that month, found by stepping back from the first of the next — no table
-        // of month lengths, and the leap year falls out of the civil mapping (Law 4).
+        // of month lengths, and the leap year falls out of the civil mapping.
         let next = if month == 12 { Day::of(year + 1, 1, 1) } else { Day::of(year, month + 1, 1) };
         let last = Day(next.0 - 1).civil().day;
         Day::of(year, month, if c.day < last { c.day } else { last })
@@ -178,9 +178,9 @@ impl Day {
 pub struct Calendar {
     /// The day the world opened. Everything is placed against this and nothing against "now".
     epoch: Day,
-    /// G3: the period is 7 days. It is a RESOLUTION, tested by invariance, not a preference.
+    /// The period is 7 days. It is a RESOLUTION, tested by invariance, not a preference.
     days_per_period: u32,
-    /// G2: the settlement cycles within a period.
+    /// The settlement cycles within a period.
     cycles_per_period: u16,
 }
 
@@ -195,12 +195,12 @@ impl Calendar {
         self.cycles_per_period
     }
 
-    /// G3: the day a period starts on. One mapping, and every day count is taken from it.
+    /// The day a period starts on. One mapping, and every day count is taken from it.
     pub fn start_of(&self, at: Period) -> Day {
         Day(self.epoch.0 + i64::from(at.0) * i64::from(self.days_per_period))
     }
 
-    /// G3.a: the first period at or after this day — a periodicity is placed BY DATE.
+    /// The first period at or after this day — a periodicity is placed BY DATE.
     pub fn period_on(&self, day: Day) -> Period {
         let since = day.0 - self.epoch.0;
         assert!(since >= 0, "Money G4: a day before the world opened is not a period");
@@ -209,7 +209,7 @@ impl Calendar {
         Period(if exact { whole as u32 } else { (whole + 1) as u32 })
     }
 
-    /// Law 8, G3.a: how much of a year lies between two days, from the DATES and never from a
+    /// How much of a year lies between two days, from the DATES and never from a
     /// count of periods. ACT/365F, which is the convention this kernel states once.
     pub fn year_fraction(&self, from: Day, to: Day) -> f64 {
         (to.0 - from.0) as f64 / 365.0
@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn a_quarter_is_three_months_of_calendar_and_not_ninety_one_days() {
-        // **G3.a, §48 A3: a quarter is three MONTHS**, which is a whole number of days only by
+        // A quarter is three MONTHS, which is a whole number of days only by
         // accident — 90 in one and 92 in another — so a fiscal calendar advances the month.
         let opens = Day::of(2000, 1, 1);
         let closes = Day(opens.plus_months(3).0 - 1);
@@ -256,8 +256,8 @@ mod tests {
 
     #[test]
     fn a_day_carries_a_civil_date_and_the_two_mappings_are_inverses() {
-        // 22c.0: the epoch IS 1 January 2000, a Saturday, and every civil read goes through the one
-        // mapping — so a date turned into a day and back is the day it started as (Law 4).
+        // The epoch IS 1 January 2000, a Saturday, and every civil read goes through the one
+        // mapping — so a date turned into a day and back is the day it started as.
         assert_eq!(Day(0).civil(), Civil { year: 2000, month: 1, day: 1 });
         assert_eq!(Day(0).weekday(), Weekday::Saturday);
         assert!(!Day(0).weekday().is_a_business_day());
@@ -273,7 +273,7 @@ mod tests {
 
     #[test]
     fn a_convention_that_names_a_weekday_can_be_stated() {
-        // **22c.0: the third Friday of the delivery month, and the last business day.** Neither
+        // The third Friday of the delivery month, and the last business day. Neither
         // could be written down while a `Day` was only a count, so no dated venue could exist.
         // March 2024: the Fridays are the 1st, 8th, 15th, 22nd and 29th.
         let march = Day::of(2024, 3, 7);

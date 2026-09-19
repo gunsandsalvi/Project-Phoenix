@@ -76,7 +76,7 @@ test('it is not only MET that has to resolve — a PARTIAL cites the half that I
   assert.deepEqual(deadCitations(path, at).map((d) => d.status), ['PARTIAL']);
 });
 
-// 0j.7: PLAN §5, wired into the check at last. The rule was written, documented and never called,
+// PLAN §5, wired into the check at last. The rule was written, documented and never called,
 // so it held for exactly as long as somebody remembered it.
 
 test('a PARTIAL that names no item is reported, and one that names an item is not', () => {

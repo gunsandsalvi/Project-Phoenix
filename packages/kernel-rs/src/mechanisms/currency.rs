@@ -3,26 +3,26 @@
 //!
 //! @spec XI-12 · XI-7 · Law 3, Law 4, Law 5, Law 6, Law 19 · Appendix B
 //!
-//! **The half that is easy to leave undone.** Clearing every pair in the market and then, at the
+//! The half that is easy to leave undone. Clearing every pair in the market and then, at the
 //! ledger, promoting only the legs against one currency and triangulating every conversion through
 //! it restores the vehicle currency BY CONSTRUCTION. The market half is then decorative: the
 //! arbitrage has no consequence and cannot be measured. So `Rates::of` answers `None` for a pair
 //! nothing crossed. There is no triangulating fallback anywhere in this module, and a caller that
 //! wants a rate it has not got must go to a market for it.
 //!
-//! **Triangular consistency is measured, never imposed.** `gap` says how far the three prints are
+//! Triangular consistency is measured, never imposed. `gap` says how far the three prints are
 //! from consistent; nothing reads it and repairs a print. An `Arbitrageur` closes what its OWN
 //! capital lets it close and leaves the rest standing — Appendix B's "no free arbitrage, no
 //! unlimited arbitrageur", which is also what makes the gap information rather than noise.
 //!
-//! **The forward carries the interest differential.** A forward struck as spot moved by a basis,
+//! The forward carries the interest differential. A forward struck as spot moved by a basis,
 //! with no differential in it, is neither cleared nor at parity — nothing can be checked against
 //! parity and carry is absent from the instrument. `covered` is the parity point; `basis` is what
-//! the CLEARED forward says against it, and it is derived from a print (Law 19). **There is one
-//! basis**: a second one on a random walk, read and traded against, is Law 4's defect wearing the
+//! the CLEARED forward says against it, and it is derived from a print. There is one
+//! basis: a second one on a random walk, read and traded against, is Law 4's defect wearing the
 //! benchmark's clothes.
 //!
-//! **One convention for what a payment settles in.** A purchase settles in the SELLER's money; a
+//! One convention for what a payment settles in. A purchase settles in the SELLER's money; a
 //! buyer short of that money buys it, which is an order in a currency book with a counterparty on
 //! the other side. A conversion inside the trade has no counterparty: the buyer is never short, no
 //! order is placed, and the currency demand the trade should have created disappears. And a
@@ -32,7 +32,7 @@ use crate::calendar::Period;
 use crate::ids::{CurrencyCode, PartyId};
 
 /// A book. Ordered, because a rate is units of `quote` per one of `base` and the two directions are
-/// the same print read from either end — not two facts (Law 4).
+/// the same print read from either end — not two facts.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Pair {
     pub base: CurrencyCode,
@@ -56,11 +56,11 @@ pub struct Crossed {
     pub pair: Pair,
     pub at: f64,
     pub period: Period,
-    /// Law 3: the flow that actually crossed this pair. A print off no flow is not a price.
+    /// The flow that actually crossed this pair. A print off no flow is not a price.
     pub on_flow: f64,
 }
 
-/// The prints, one per pair that cleared. **There is no triangulating read.** A pair nothing
+/// The prints, one per pair that cleared. There is no triangulating read. A pair nothing
 /// crossed has no rate, and that is the answer.
 #[derive(Default)]
 pub struct Rates {
@@ -78,7 +78,7 @@ impl Rates {
     }
 
     /// The rate for a pair, or `None`. Reading it the other way round is the same print inverted —
-    /// one fact, one writer (Law 4) — and that is the ONLY derivation this store will do.
+    /// one fact, one writer — and that is the ONLY derivation this store will do.
     pub fn of(&self, pair: Pair) -> Option<f64> {
         for p in self.prints.iter().rev() {
             if p.pair == pair {
@@ -92,14 +92,14 @@ impl Rates {
     }
 }
 
-/// XI-12: triangular consistency is an **outcome**. This MEASURES it, in the quote currency, and
+/// Triangular consistency is an outcome. This MEASURES it, in the quote currency, and
 /// nothing repairs a print from it (Law 11: a misbehaving number is a finding).
 pub fn gap(a_to_b: f64, b_to_c: f64, a_to_c: f64) -> f64 {
     a_to_b * b_to_c - a_to_c
 }
 
 /// An arbitrageur with a balance sheet. It is what enforces consistency, and what it cannot fund it
-/// does not do — there is no free arbitrage and no unlimited arbitrageur (Appendix B).
+/// does not do — there is no free arbitrage and no unlimited arbitrageur.
 #[derive(Clone, Copy, Debug)]
 pub struct Arbitrageur {
     pub who: PartyId,
@@ -124,31 +124,31 @@ pub fn arbitrage(a: &Arbitrageur, gap_per_unit: f64, available: f64) -> Option<f
     Some(size)
 }
 
-/// **The parity point**: the forward that carries the interest differential over the tenor. A
+/// The parity point: the forward that carries the interest differential over the tenor. A
 /// forward with no differential in it cannot be checked against parity, and carry is absent from
 /// the instrument.
 pub fn covered(spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
     spot * (1.0 + quote_rate * year_fraction) / (1.0 + base_rate * year_fraction)
 }
 
-/// **THE basis** — what the cleared forward says against parity. One number, derived from a print
-/// (Law 19). A second basis on a random walk, and that one being what participants see, trade and
-/// book against, is the same defect as two index systems (Law 4).
+/// THE basis — what the cleared forward says against parity. One number, derived from a print
+/// . A second basis on a random walk, and that one being what participants see, trade and
+/// book against, is the same defect as two index systems.
 pub fn basis(forward_cleared: f64, spot: f64, base_rate: f64, quote_rate: f64, year_fraction: f64) -> f64 {
     assert!(year_fraction > 0.0, "XI-12: a basis over no time is not a rate (Law 8)");
     let parity = covered(spot, base_rate, quote_rate, year_fraction);
     (forward_cleared / parity - 1.0) / year_fraction
 }
 
-/// XI-12's one convention: **a purchase settles in the seller's money.** It depends on the SELLER
+/// XI-12's one convention: a purchase settles in the seller's money. It depends on the SELLER
 /// and never on who the buyer is — a convention that depended on the buyer would land the same
 /// purchase in two different places.
 pub fn settles_in(sellers_money: CurrencyCode) -> CurrencyCode {
     sellers_money
 }
 
-/// What a buyer short of the seller's money must do about it: **buy it**, in a currency book, with
-/// a counterparty on the other side (Law 5). This is the order that a conversion inside the trade
+/// What a buyer short of the seller's money must do about it: buy it, in a currency book, with
+/// a counterparty on the other side. This is the order that a conversion inside the trade
 /// would have deleted, along with the currency demand the purchase should have created.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct MustBuy {
@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn a_pair_nothing_crossed_has_no_rate_rather_than_a_triangulated_one() {
-        // XI-12: this is the whole item. Triangulating the missing pair through a vehicle currency
+        // This is the whole item. Triangulating the missing pair through a vehicle currency
         // would restore that currency BY CONSTRUCTION and make the market half decorative.
         let mut r = Rates::new();
         r.cleared(print(1, 2, 1.25));
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn the_two_directions_of_a_pair_are_one_print_read_from_either_end() {
-        // Law 4: one fact, one writer. Storing the reciprocal separately would be two prices for
+        // One fact, one writer. Storing the reciprocal separately would be two prices for
         // one thing, and they would drift.
         let mut r = Rates::new();
         r.cleared(print(1, 2, 1.25));
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn a_print_off_no_flow_is_not_a_price() {
-        // Law 3. The assertion is the refusal; there is no path that records one.
+        // The assertion is the refusal; there is no path that records one.
         let mut r = Rates::new();
         let silent = Crossed { on_flow: 0.0, ..print(1, 2, 1.25) };
         assert!(std::panic::catch_unwind(move || {
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn triangular_consistency_is_measured_and_a_gap_can_stand() {
-        // XI-12: an outcome that bounded arbitrageurs enforce — and may fail to enforce. A small
+        // An outcome that bounded arbitrageurs enforce — and may fail to enforce. A small
         // gap does not beat three legs of cost, so it survives the arbitrageur entirely.
         let wide = gap(1.25, 0.80, 0.95);
         assert!(wide.abs() > 0.0);
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn an_arbitrageur_does_only_what_its_own_capital_funds() {
-        // Appendix B: no unlimited arbitrageur. The same gap, the same market, a smaller book —
+        // No unlimited arbitrageur. The same gap, the same market, a smaller book —
         // and what it leaves undone is what keeps the inconsistency visible.
         let big = Arbitrageur { who: PartyId::at(3), capital: 1_000_000.0, cost_per_leg: 0.002 };
         let small = Arbitrageur { capital: 5_000.0, ..big };
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn the_forward_carries_the_interest_differential() {
-        // XI-12: a forward struck as spot moved by a basis, with no differential in it, is neither
+        // A forward struck as spot moved by a basis, with no differential in it, is neither
         // cleared nor at parity. The higher-rate money is forward-weaker, and that IS the carry.
         let spot = 1.25;
         let dear = covered(spot, 0.01, 0.05, 1.0);
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn there_is_one_basis_and_it_is_derived_from_the_cleared_forward() {
-        // Law 19: read the source. The basis is what the market PRINTED against parity, not a
+        // Read the source. The basis is what the market PRINTED against parity, not a
         // second series moved by its own process — which is what participants would then trade.
         let spot = 1.25;
         let parity = covered(spot, 0.01, 0.05, 0.5);
@@ -269,13 +269,13 @@ mod tests {
 
     #[test]
     fn a_basis_over_no_time_is_not_a_rate() {
-        // Law 8: the periodicity is part of the number.
+        // The periodicity is part of the number.
         assert!(std::panic::catch_unwind(|| basis(1.26, 1.25, 0.01, 0.05, 0.0)).is_err());
     }
 
     #[test]
     fn a_purchase_settles_in_the_sellers_money_whoever_the_buyer_is() {
-        // XI-12: a convention that depends on WHO the buyer is means the same purchase lands the
+        // A convention that depends on WHO the buyer is means the same purchase lands the
         // flow in two different places.
         let sellers = ccy(2);
         assert_eq!(settles_in(sellers), sellers);
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn a_buyer_short_of_the_sellers_money_places_an_order_for_it() {
-        // XI-12: this order is what a conversion inside the trade deletes, and with it the currency
+        // This order is what a conversion inside the trade deletes, and with it the currency
         // demand the purchase should have created. Law 5: it has a counterparty on the other side.
         let buyer = PartyId::at(4);
         let must = short_of(buyer, 500.0, ccy(2), 120.0, ccy(1)).unwrap();

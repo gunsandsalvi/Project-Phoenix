@@ -6,50 +6,50 @@
 //! @spec 40 C4.a · 40 C5 · 40 C5.a · 40 C5.b · 40 E1 · 40 E2 · 40 E3 · 40 E4 · XI-2 · Law 3, Law 5,
 //! @spec Law 6, Law 19 · Appendix B
 //!
-//! **Location is part of the identity** (A1.a), and it is why there is no single housing market:
+//! Location is part of the identity, and it is why there is no single housing market:
 //! `Dwelling` carries its region and a book clears per location. A dwelling is counted in DWELLINGS —
 //! indivisible, so a clearing that would move half of one is arithmetic that cannot happen.
 //!
-//! **The price is a cross** (B1.c). The offers are owners whose tenure ends, each with a reservation —
+//! The price is a cross. The offers are owners whose tenure ends, each with a reservation —
 //! what it must fetch to discharge its own mortgage, and never below what it costs to build — plus
-//! the builders' completions at that cost. The bids are **what buyers can borrow at the keenest quote
-//! available to them** (B1.b), which is why the mortgage rate and the lending standard are the
-//! dominant inputs to the price (B2.a). **An offer no bid reaches does not clear**, and a seller can
-//! refuse: in a falling market transaction volumes collapse before prices do (B4), so a price index
+//! the builders' completions at that cost. The bids are what buyers can borrow at the keenest quote
+//! available to them, which is why the mortgage rate and the lending standard are the
+//! dominant inputs to the price. An offer no bid reaches does not clear, and a seller can
+//! refuse: in a falling market transaction volumes collapse before prices do, so a price index
 //! built only from transactions is measuring a changing sample — a real property of housing data, not
-//! an error to correct away (B4.a).
+//! an error to correct away.
 //!
-//! **The standard is a read, not a constant** (C5.a). The lender already measures everything a
+//! The standard is a read, not a constant. The lender already measures everything a
 //! standard should respond to — the loan-to-value cross-section of its own book, its hurdle, its
 //! headroom — and `standard` is computed from those. A constant means only the rate channel loops,
 //! and C5.b's loop IS the housing cycle.
 //!
-//! **A foreclosure moves a dwelling** (C4.a). It goes from the household to the lender, and the
+//! A foreclosure moves a dwelling. It goes from the household to the lender, and the
 //! foreclosed supply RETURNS TO THE MARKET, which is what makes a falling price fall further. A loss
 //! rate that reduces a loan's principal and the bank's profit, with no house seized and nothing sold,
 //! removes the loop that makes a housing bust a housing bust — so there is no such rate here.
 
 use crate::ids::{PartyId, RegionId};
 
-/// A1: a durable, immovable, indivisible asset **owned by a named party**, in a named location.
-/// E1: no house without an owner, and the owner is on the row.
+/// A durable, immovable, indivisible asset owned by a named party, in a named location.
+/// No house without an owner, and the owner is on the row.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Dwelling {
     pub owner: PartyId,
-    /// A1.a: part of the identity, which is why there is no single housing market.
+    /// Part of the identity, which is why there is no single housing market.
     pub at: RegionId,
-    /// A3: who lives in it. The owner and the occupier can be different parties, and then there is
-    /// rent — a real payment between them (Law 5). A landlord is the owner of a dwelling somebody
+    /// Who lives in it. The owner and the occupier can be different parties, and then there is
+    /// rent — a real payment between them. A landlord is the owner of a dwelling somebody
     /// lives in, not a firm producing an abstract service.
     pub occupier: PartyId,
-    /// A5: it depreciates and needs maintenance, which is a real cost to the owner, per period.
+    /// It depreciates and needs maintenance, which is a real cost to the owner, per period.
     pub upkeep: f64,
 }
 
 impl Dwelling {
-    /// A2, A3: what the occupier pays the owner for the shelter it consumes. `None` where they are
+    /// What the occupier pays the owner for the shelter it consumes. `None` where they are
     /// the same party: an owner-occupier pays itself nothing, and imputing a rent would be a flow
-    /// with one side (Law 5).
+    /// with one side.
     pub fn rent_flows(&self, rent: f64) -> Option<(PartyId, PartyId, f64)> {
         if self.owner == self.occupier {
             return None;
@@ -58,22 +58,22 @@ impl Dwelling {
     }
 }
 
-/// C1: a loan from a **named lender** secured on the house, held as a row like any other loan. E3:
+/// A loan from a named lender secured on the house, held as a row like any other loan. E3:
 /// no mortgage without a lender's balance sheet on the other side, so the lender is on the row.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Mortgage {
     pub lender: PartyId,
     pub borrower: PartyId,
-    /// C2: what is still owed. The borrower pays interest AND principal, so this falls.
+    /// What is still owed. The borrower pays interest AND principal, so this falls.
     pub principal: f64,
     pub rate: f64,
-    /// C2: fixed or floating. A floating mortgage is how a rate rise reaches consumption (D5).
+    /// Fixed or floating. A floating mortgage is how a rate rise reaches consumption.
     pub floats: bool,
     pub periods_left: u32,
 }
 
 impl Mortgage {
-    /// C2: interest and principal, both. A payment that is only interest never amortises and the
+    /// Interest and principal, both. A payment that is only interest never amortises and the
     /// loan never ends.
     pub fn instalment(&self) -> f64 {
         assert!(self.periods_left > 0, "40 C2: a mortgage with no term left has no schedule");
@@ -81,7 +81,7 @@ impl Mortgage {
     }
 }
 
-/// C3: **the loan-to-value is a read** of the loan against the house's CURRENT price, and it moves
+/// The loan-to-value is a read of the loan against the house's CURRENT price, and it moves
 /// when the price moves without anybody doing anything. `None` where the house has no price — an
 /// unpriced read throws rather than answering (Value XI-6), and here it is honestly absent.
 pub fn loan_to_value(m: &Mortgage, price_now: Option<f64>) -> Option<f64> {
@@ -92,7 +92,7 @@ pub fn loan_to_value(m: &Mortgage, price_now: Option<f64>) -> Option<f64> {
     Some(m.principal / price)
 }
 
-/// B1.a: an owner whose tenure ends, with **a reservation**: what it must fetch to discharge its own
+/// An owner whose tenure ends, with a reservation: what it must fetch to discharge its own
 /// mortgage, and never below what it costs to build. Both are facts about this seller, not a rule.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Offer {
@@ -105,29 +105,29 @@ impl Offer {
     /// The reservation, built from the seller's own position. Law 6: this is not a floor imposed on
     /// a price — it is the point below which THIS seller refuses, and a refusal is an outcome.
     ///
-    /// **22c.7: WHAT IT COSTS TO BUILD IS NOT A NUMBER HANDED IN.** 40 B1.a rests every reservation
+    /// WHAT IT COSTS TO BUILD IS NOT A NUMBER HANDED IN. 40 B1.a rests every reservation
     /// in this world on it — *never below what it costs to build* — so the floor under every house
     /// price was a number nobody derived. It is `cost_to_build_at` now: what a dwelling's line
     /// actually DRAWS at that place, which is higher in a built-up region because building where more
-    /// already stands draws more (21i). The seller does not choose it and nor does anybody else.
+    /// already stands draws more. The seller does not choose it and nor does anybody else.
     pub fn reserving(seller: PartyId, at: RegionId, owed: f64, cost_to_build: f64) -> Offer {
         let reservation = if owed > cost_to_build { owed } else { cost_to_build };
         Offer { seller, at, reservation }
     }
 }
 
-/// **22c.7, 21i, 40 B1.a: WHAT IT COSTS TO BUILD A DWELLING HERE.**
+/// 22c.7, 21i, 40 B1.a: WHAT IT COSTS TO BUILD A DWELLING HERE.
 ///
 /// It was an argument every caller supplied and nobody derived — the floor under every house price
 /// in this world, handed in. It is a read now: the recipe's own draw for one dwelling, at the inputs'
 /// own prices, scaled by how built-up the place is.
 ///
-/// Law 3: no money number is set. What the draw COSTS is whatever those inputs cleared at in their
-/// own books, and the congestion raises the DRAW rather than the price (21i). Law 19: the recipe is
+/// No money number is set. What the draw COSTS is whatever those inputs cleared at in their
+/// own books, and the congestion raises the DRAW rather than the price. Law 19: the recipe is
 /// the source and this reads it rather than restating a cost beside it.
 ///
 /// `None` where an input has never printed: a builder that cannot price what it needs cannot say
-/// what a dwelling costs, and that is missing rather than free (Appendix A).
+/// what a dwelling costs, and that is missing rather than free.
 pub fn cost_to_build_at(
     recipe: &crate::mechanisms::recipe::Recipe,
     crowding: f64,
@@ -139,13 +139,13 @@ pub fn cost_to_build_at(
     for (what, per) in &here.per_unit {
         inputs += per * priced(*what)?;
     }
-    // B4: what it costs per dwelling that SURVIVES, because normal waste is absorbed into the cost
+    // What it costs per dwelling that SURVIVES, because normal waste is absorbed into the cost
     // of the ones that do (37 B4) — the same division the maker's own unit cost makes.
     Some((inputs + here.labour_per_unit * an_hour) / here.yields)
 }
 
-/// B1.b: **what a buyer can borrow at the keenest quote available to it** — which is why the mortgage
-/// rate and the lending standard are the dominant inputs to the price (B2.a). Its bid is not what it
+/// What a buyer can borrow at the keenest quote available to it — which is why the mortgage
+/// rate and the lending standard are the dominant inputs to the price. Its bid is not what it
 /// wants; it is what it can fund.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Bid {
@@ -154,7 +154,7 @@ pub struct Bid {
     pub bidding: f64,
 }
 
-/// B2: what this buyer can borrow, from the standard it faces and its own income and deposit — and
+/// What this buyer can borrow, from the standard it faces and its own income and deposit — and
 /// therefore what it can bid.
 pub fn can_bid(income: f64, deposit: f64, standard: &Standard) -> f64 {
     let borrowable = income * standard.income_multiple;
@@ -163,7 +163,7 @@ pub fn can_bid(income: f64, deposit: f64, standard: &Standard) -> f64 {
     funded + deposit
 }
 
-/// C5: the lender's standard is a **decision**, and it tightens when the lender is worried.
+/// The lender's standard is a decision, and it tightens when the lender is worried.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Standard {
     pub income_multiple: f64,
@@ -172,35 +172,35 @@ pub struct Standard {
     pub deposit_share: f64,
 }
 
-/// C5.a: **the standard is a READ of what the lender already measures** — the loan-to-value
+/// The standard is a READ of what the lender already measures — the loan-to-value
 /// cross-section of its own book, its hurdle, its headroom — never a constant. A constant means only
 /// the rate channel loops, and it is C5.b's loop that is the housing cycle.
 ///
-/// Law 19: each input is a measurement the lender has, not a re-derivation.
+/// Each input is a measurement the lender has, not a re-derivation.
 pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Standard {
     assert!(hurdle > 0.0, "40 C5: a lender with no hurdle has no standard to read");
     // A lender whose own book is already stretched, or which has little room to put more on, asks
     // for more of the price up front and lends a smaller multiple of income. Both move together
-    // because both are read from the same position (Law 4).
+    // because both are read from the same position.
     let strain = worst_ltv_on_its_book * hurdle / headroom;
     Standard { income_multiple: 1.0 / strain, deposit_share: strain }
 }
 
-/// What a location's book produced. **An offer no bid reaches does not clear** (B1.c), and the
+/// What a location's book produced. An offer no bid reaches does not clear, and the
 /// dwellings that did not trade are not a residual — they stay with their owners.
 #[derive(Clone, Debug)]
 pub struct Cleared {
     pub trades: Vec<(PartyId, PartyId, f64)>,
-    /// B1.c: the price is what the marginal pair crossed at. `None` where nothing crossed — B4's
+    /// The price is what the marginal pair crossed at. `None` where nothing crossed — B4's
     /// falling market, where volumes collapse before prices do.
     pub print: Option<f64>,
     pub unsold: usize,
 }
 
-/// B1: **it clears between buyers and sellers, per location.** Highest bid meets lowest reservation;
+/// It clears between buyers and sellers, per location. Highest bid meets lowest reservation;
 /// a pair that does not overlap does not trade, and neither does anything behind it.
 ///
-/// A dwelling is INDIVISIBLE (A1): a trade is one dwelling, and there is no partial fill to compute.
+/// A dwelling is INDIVISIBLE: a trade is one dwelling, and there is no partial fill to compute.
 pub fn clearing(bids: &[Bid], offers: &[Offer], at: RegionId) -> Cleared {
     let mut buying: Vec<&Bid> = bids.iter().filter(|b| b.at == at).collect();
     let mut selling: Vec<&Offer> = offers.iter().filter(|o| o.at == at).collect();
@@ -214,7 +214,7 @@ pub fn clearing(bids: &[Bid], offers: &[Offer], at: RegionId) -> Cleared {
         if bid.bidding < offer.reservation {
             break;
         }
-        // B1.c: the cross. The pair that traded last is the print (Law 3).
+        // The cross. The pair that traded last is the print.
         trades.push((offer.seller, bid.buyer, offer.reservation));
         print = Some(offer.reservation);
         sold += 1;
@@ -222,7 +222,7 @@ pub fn clearing(bids: &[Bid], offers: &[Offer], at: RegionId) -> Cleared {
     Cleared { trades, print, unsold: selling.len() - sold }
 }
 
-/// B4.a: a price index built only from transactions is **measuring a changing sample**, and that is a
+/// A price index built only from transactions is measuring a changing sample, and that is a
 /// real property of housing data rather than an error to correct away. This is the read that makes it
 /// visible: how much of the offered stock the print was taken from.
 pub fn sample(cleared: &Cleared, offered: usize) -> Option<f64> {
@@ -232,8 +232,8 @@ pub fn sample(cleared: &Cleared, offered: usize) -> Option<f64> {
     Some(cleared.trades.len() as f64 / offered as f64)
 }
 
-/// B5: **the rent and the price are linked but not equal** — the yield is a READ of the two, and it
-/// competes with other yields. It is never the mechanism that sets either (Law 3).
+/// The rent and the price are linked but not equal — the yield is a READ of the two, and it
+/// competes with other yields. It is never the mechanism that sets either.
 pub fn yield_on(rent_per_period: f64, price: f64) -> Option<f64> {
     if price <= 0.0 {
         return None;
@@ -241,13 +241,13 @@ pub fn yield_on(rent_per_period: f64, price: f64) -> Option<f64> {
     Some(rent_per_period / price)
 }
 
-/// C4, C4.a: **a foreclosure moves a dwelling** — from the household to the lender — and the
+/// A foreclosure moves a dwelling — from the household to the lender — and the
 /// foreclosed supply RETURNS TO THE MARKET. That extra supply is what makes a falling price fall
 /// further, and a loss rate with no house seized and nothing sold removes the loop entirely.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Foreclosed {
     /// The dwelling as the register now holds it: the same house, the lender on it as owner. It
-    /// MOVED — one dwelling, one owner, no copy of it left behind (E1).
+    /// MOVED — one dwelling, one owner, no copy of it left behind.
     pub now: Dwelling,
     pub to: PartyId,
     /// And the offer that now stands in the location's book, at what the lender must fetch.
@@ -266,8 +266,8 @@ pub fn foreclose(house: Dwelling, m: &Mortgage, cost_to_build: f64) -> Foreclose
     }
 }
 
-/// E4: **mortgage debt owed by households equals mortgage assets held by lenders and pools,
-/// exactly.** A VERIFY: it measures, on Law 7's derived dust, and repairs nothing.
+/// Mortgage debt owed by households equals mortgage assets held by lenders and pools,
+/// exactly. A VERIFY: it measures, on Law 7's derived dust, and repairs nothing.
 pub fn debts_match_assets(owed_by_households: f64, held_by_lenders: f64, terms: usize) -> bool {
     (owed_by_households - held_by_lenders).abs()
         <= crate::num::dust(terms, &[owed_by_households, held_by_lenders])
@@ -306,9 +306,9 @@ mod tests {
 
     #[test]
     fn a_landlord_is_the_owner_of_a_dwelling_somebody_lives_in() {
-        // A3: a rental stock must have dwellings behind it, not a firm producing an abstract
+        // A rental stock must have dwellings behind it, not a firm producing an abstract
         // service. And an owner-occupier pays itself nothing — an imputed rent would be a flow with
-        // one side (Law 5).
+        // one side.
         let let_out = dwelling(10, 20);
         assert_eq!(let_out.rent_flows(30.0), Some((party(20), party(10), 30.0)));
         assert!(dwelling(10, 10).rent_flows(30.0).is_none());
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn the_loan_to_value_moves_when_the_price_moves_without_anybody_doing_anything() {
-        // C3: it is a READ of the loan against the house's current price.
+        // It is a READ of the loan against the house's current price.
         let m = mortgage(1, 20, 800.0);
         assert_eq!(loan_to_value(&m, Some(1_000.0)), Some(0.8));
         assert_eq!(loan_to_value(&m, Some(800.0)), Some(1.0));
@@ -326,14 +326,14 @@ mod tests {
 
     #[test]
     fn a_mortgage_payment_is_interest_and_principal() {
-        // C2: a payment that is only interest never amortises and the loan never ends.
+        // A payment that is only interest never amortises and the loan never ends.
         let m = mortgage(1, 20, 1_000.0);
         assert!(m.instalment() > m.principal * m.rate);
     }
 
     #[test]
     fn the_standard_is_read_from_what_the_lender_already_measures_and_tightens_when_it_is_worried() {
-        // C5.a: a constant means only the rate channel loops, and C5.b's loop is the housing cycle.
+        // A constant means only the rate channel loops, and C5.b's loop is the housing cycle.
         let calm = standard(0.7, 500.0, 0.10);
         let worried = standard(0.95, 120.0, 0.10);
         assert!(worried.deposit_share > calm.deposit_share);
@@ -342,7 +342,7 @@ mod tests {
 
     #[test]
     fn a_tighter_standard_lowers_what_a_buyer_can_bid_which_is_the_dominant_input_to_the_price() {
-        // B2, B2.a: the buyer's demand is governed by what it can BORROW, not only what it wants.
+        // The buyer's demand is governed by what it can BORROW, not only what it wants.
         let calm = standard(0.7, 500.0, 0.10);
         let worried = standard(0.95, 120.0, 0.10);
         let rich_enough = can_bid(100.0, 200.0, &calm);
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn an_offer_no_bid_reaches_does_not_clear() {
-        // B1.c, B4: a seller can refuse, and in a falling market transaction volumes collapse before
+        // A seller can refuse, and in a falling market transaction volumes collapse before
         // prices do. Law 6: nothing is added to make the book clear.
         let offers = [
             Offer::reserving(party(10), here(), 900.0, 700.0),
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn a_book_where_no_bid_reaches_any_reservation_prints_nothing() {
-        // B4: volumes go first. There is no print, and carrying the last one would be the written
+        // Volumes go first. There is no print, and carrying the last one would be the written
         // price path E2 forbids.
         let offers = [Offer::reserving(party(10), here(), 1_200.0, 700.0)];
         let bids = [Bid { buyer: party(20), at: here(), bidding: 800.0 }];
@@ -378,7 +378,7 @@ mod tests {
 
     #[test]
     fn location_is_part_of_the_identity_so_there_is_no_single_housing_market() {
-        // A1.a: a bid here does not reach an offer there.
+        // A bid here does not reach an offer there.
         let offers = [Offer::reserving(party(10), there(), 900.0, 700.0)];
         let bids = [Bid { buyer: party(20), at: here(), bidding: 1_000.0 }];
         assert!(clearing(&bids, &offers, here()).trades.is_empty());
@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn a_reservation_is_never_below_what_it_costs_to_build() {
-        // B1.a: both terms are facts about this seller. A seller owing less than the build cost
+        // Both terms are facts about this seller. A seller owing less than the build cost
         // still will not sell below it, and one owing more will not sell below what discharges it.
         let cheap_debt = Offer::reserving(party(10), here(), 400.0, 700.0);
         let dear_debt = Offer::reserving(party(10), here(), 1_100.0, 700.0);
@@ -397,7 +397,7 @@ mod tests {
 
     #[test]
     fn a_price_index_from_transactions_is_measuring_a_changing_sample() {
-        // B4.a: a real property of housing data, not an error to correct away. The read makes the
+        // A real property of housing data, not an error to correct away. The read makes the
         // sample visible next to the print.
         let offers = [
             Offer::reserving(party(10), here(), 900.0, 700.0),
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn a_foreclosure_moves_a_dwelling_and_the_supply_returns_to_the_market() {
-        // C4.a: the extra supply is what makes a falling price fall further. A loss rate that
+        // The extra supply is what makes a falling price fall further. A loss rate that
         // reduces a principal with no house seized and nothing sold removes the loop that makes a
         // housing bust a housing bust.
         let house = dwelling(20, 20);
@@ -433,14 +433,14 @@ mod tests {
 
     #[test]
     fn the_yield_is_a_read_of_the_rent_and_the_price_and_sets_neither() {
-        // B5: linked but not equal, and it competes with other yields.
+        // Linked but not equal, and it competes with other yields.
         assert_eq!(yield_on(50.0, 1_000.0), Some(0.05));
         assert!(yield_on(50.0, 0.0).is_none());
     }
 
     #[test]
     fn mortgage_debt_owed_equals_mortgage_assets_held() {
-        // E4: a VERIFY on derived dust (Law 7). It answers false and repairs nothing.
+        // A VERIFY on derived dust. It answers false and repairs nothing.
         assert!(debts_match_assets(1_000_000.0, 1_000_000.0, 2));
         assert!(!debts_match_assets(1_000_000.0, 999_000.0, 2));
     }

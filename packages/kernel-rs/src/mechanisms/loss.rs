@@ -2,35 +2,35 @@
 //!
 //! @spec XI-1 · XI-15 · Banks Lending D1, D2 · Law 1, Law 3, Law 6, Law 7, Appendix B
 //!
-//! A borrower crosses a threshold. **That crossing is an event with a date.** A claim becomes
-//! non-performing, then impaired, then written off. Something is seized or realised, **and the
-//! recovery is what that something FETCHED**. The loss lands on named holders in proportion.
+//! A borrower crosses a threshold. That crossing is an event with a date. A claim becomes
+//! non-performing, then impaired, then written off. Something is seized or realised, and the
+//! recovery is what that something FETCHED. The loss lands on named holders in proportion.
 //!
 //! XI-1 gives four separate reasons a rate cannot stand in for it, and each one is a thing this
 //! module has that a rate does not:
 //!
-//! - **There is no borrower.** `PD × LGD × principal ÷ periods` subtracted from a book extinguishes
-//!   debt by arithmetic — no event, no borrower, no cash, no recovery, nothing to observe and
-//!   nothing to react to. Here every stage names the borrower and carries the period it happened in.
-//! - **There is nothing to distribute.** A rate applied smoothly never concentrates, so tranched
-//!   senior notes can never be touched and the entire purpose of tranching is unreachable. Here a
-//!   loss is a quantity that lands on named holders in proportion, so it CAN concentrate.
-//! - **There is nothing to seize.** A loss rate that reduces a principal leaves the house where it
-//!   was, and the foreclosed supply that makes a falling price fall further does not exist. Here
-//!   `Seized` is units that move to a named holder and are sold in a book like anything else.
-//! - **There is nothing to disagree with.** If the loss is an arithmetic function of the borrower's
-//!   accounts and every participant's reservation is built from that function, the market cannot
-//!   disagree with the accounting model and its price carries no information (§46 A3, XI-13).
+//! - There is no borrower. `PD × LGD × principal ÷ periods` subtracted from a book extinguishes
+//!  debt by arithmetic — no event, no borrower, no cash, no recovery, nothing to observe and
+//!  nothing to react to. Here every stage names the borrower and carries the period it happened in.
+//! - There is nothing to distribute. A rate applied smoothly never concentrates, so tranched
+//!  senior notes can never be touched and the entire purpose of tranching is unreachable. Here a
+//!  loss is a quantity that lands on named holders in proportion, so it CAN concentrate.
+//! - There is nothing to seize. A loss rate that reduces a principal leaves the house where it
+//!  was, and the foreclosed supply that makes a falling price fall further does not exist. Here
+//!  `Seized` is units that move to a named holder and are sold in a book like anything else.
+//! - There is nothing to disagree with. If the loss is an arithmetic function of the borrower's
+//!  accounts and every participant's reservation is built from that function, the market cannot
+//!  disagree with the accounting model and its price carries no information.
 //!
-//! **The threshold matters more than the mean.** A default test applied to a band's AVERAGE borrower
+//! The threshold matters more than the mean. A default test applied to a band's AVERAGE borrower
 //! means a mean-preserving spread causes no defaults at all — exactly backwards, because widening
-//! dispersion at constant mean is what a downturn does. **Population-level default is a read of
-//! cell-level crossings** (XI-15), which is why `crossed` takes one cell and never a band.
+//! dispersion at constant mean is what a downturn does. Population-level default is a read of
+//! cell-level crossings, which is why `crossed` takes one cell and never a band.
 
 use crate::ids::{InstrumentId, PartyId};
 use crate::register::Standing;
 
-/// The crossing itself: a borrower, a claim, a date. **This is the event**, and everything
+/// The crossing itself: a borrower, a claim, a date. This is the event, and everything
 /// downstream — a provision, a seizure, a CDS trigger, a pool that shrank — reads it rather than
 /// recomputing a rate from the same accounts.
 #[derive(Clone, Copy, Debug)]
@@ -42,9 +42,9 @@ pub struct Crossing {
     pub period: u32,
 }
 
-/// XI-1, XI-15: **a default test is applied to ONE borrower, never to a band's average.** A cell is
+/// A default test is applied to ONE borrower, never to a band's average. A cell is
 /// one borrower here — it stands for a population whose members share a key, and the test is the
-/// cell's own (XI-15). Applying it to a mean would mean a mean-preserving spread caused no defaults
+/// cell's own. Applying it to a mean would mean a mean-preserving spread caused no defaults
 /// at all, which is exactly backwards: widening dispersion at constant mean is what a downturn is.
 ///
 /// What is compared is what the borrower HAS against what it OWES this period. There is no
@@ -61,7 +61,7 @@ pub fn crossed(
     let short = fell_due - could_pay;
     let now = if short > dust {
         match was {
-            // Law 7: the only tolerance is the dust of the two numbers, never a grace band.
+            // The only tolerance is the dust of the two numbers, never a grace band.
             Standing::Performing => Standing::NonPerforming { since: period },
             other => other,
         }
@@ -77,7 +77,7 @@ pub fn crossed(
     Some(Crossing { borrower, claim, was, now, period })
 }
 
-/// XI-1: **the recovery is what the something FETCHED.** Not a fixed fraction, not an assumption:
+/// The recovery is what the something FETCHED. Not a fixed fraction, not an assumption:
 /// units were seized and they were sold in a book, and this is what that book gave.
 ///
 /// Appendix B forbids a fixed recovery rate, and this is why: a rate makes the seizure invisible,
@@ -92,10 +92,10 @@ pub struct Seized {
 }
 
 /// What the loss COMES TO, once the seizure has been sold: what was owed, less what the sale
-/// fetched. **It is arithmetic on two things that happened**, and it cannot be known before the
+/// fetched. It is arithmetic on two things that happened, and it cannot be known before the
 /// sale — which is the whole difference between a recovery and a recovery rate.
 ///
-/// **Law 7, 21.11: and the dust belongs HERE**, where the two terms are. A sale that fetched what was
+/// And the dust belongs HERE, where the two terms are. A sale that fetched what was
 /// owed, to the last bit of a float, is a claim that came back whole — and `owed - fetched` returning
 /// that last bit made it a LOSS, which `onto_holders` then hands to a named holder by largest
 /// remainder: the whole of the artefact, landing on one party, as a real charge.
@@ -111,7 +111,7 @@ pub fn loss_after_recovery(owed: f64, fetched: f64) -> Option<f64> {
     Some(short)
 }
 
-/// XI-1: **the loss lands on named holders in proportion.** Every piece of it has a holder, because
+/// The loss lands on named holders in proportion. Every piece of it has a holder, because
 /// a residual with no holder is Appendix B's defect — and because a loss that concentrates is the
 /// entire point of tranching, which a rate applied smoothly can never reach.
 ///
@@ -120,7 +120,7 @@ pub fn onto_holders(loss: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)
     let held: f64 = holders.iter().map(|(_, q)| *q).sum();
     // A loss of nothing is nothing to hand out. Whether the loss is REAL or is the dust of the
     // subtraction it came from is `loss_after_recovery`'s question, because that is where the two
-    // magnitudes are (Law 7, 21.11); by here they are gone and only the answer is left.
+    // magnitudes are; by here they are gone and only the answer is left.
     if held <= 0.0 || loss == 0.0 {
         return Vec::new();
     }
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn the_threshold_is_the_cells_own_and_never_a_bands_average() {
-        // XI-1: a mean-preserving spread is what a downturn does. Two cells, same MEAN capacity as
+        // A mean-preserving spread is what a downturn does. Two cells, same MEAN capacity as
         // one average borrower — and the test applied to the average sees nothing at all.
         let claim = InstrumentId::at(9);
         let owed = 100.0;
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn the_recovery_is_what_it_fetched_and_the_loss_is_not_known_before_the_sale() {
-        // Appendix B: no fixed recovery rate. The seizure is units that MOVED, and what they came
+        // No fixed recovery rate. The seizure is units that MOVED, and what they came
         // to is what a book gave for them.
         let s = Seized {
             from: PartyId::at(4),
@@ -195,7 +195,7 @@ mod tests {
         assert_eq!(loss_after_recovery(100.0, 90.0), Some(10.0));
         assert_eq!(loss_after_recovery(100.0, 30.0), Some(70.0));
         // And it can be negative — the sale fetched more than was owed, which is a real outcome and
-        // not something to clamp away (Law 6).
+        // not something to clamp away.
         assert_eq!(loss_after_recovery(100.0, 130.0), Some(-30.0));
     }
 
@@ -205,7 +205,7 @@ mod tests {
         let shares = onto_holders(50.0, &holders);
         assert_eq!(shares.len(), 3);
         let total: f64 = shares.iter().map(|(_, l)| *l).sum();
-        // Appendix B: every piece of it has a holder.
+        // Every piece of it has a holder.
         assert!((total - 50.0).abs() <= 4.0 * f64::EPSILON * 50.0, "{total}");
         assert!((shares[0].1 - 35.0).abs() <= crate::num::dust(3, &[shares[0].1, 35.0]));
         // Nobody holds it: there is nothing to land on, and inventing a holder would be worse.
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn a_sale_that_fetched_what_was_owed_is_a_claim_that_came_back_whole() {
-        // Law 7, 21.11: the last bit of a float came back as a LOSS, which `onto_holders` then
+        // The last bit of a float came back as a LOSS, which `onto_holders` then
         // hands to a named holder by largest remainder — the whole of the artefact, landing on one
         // party, as a real charge. The dust belongs where the two magnitudes are.
         assert!(loss_after_recovery(1_000_000.0, 1_000_000.0 - f64::EPSILON).is_none());

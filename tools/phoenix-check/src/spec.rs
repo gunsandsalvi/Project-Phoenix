@@ -1,19 +1,19 @@
-//! **EVERY `@spec` CITATION NAMES A CLAUSE THAT EXISTS.**
+//! EVERY `@spec` CITATION NAMES A CLAUSE THAT EXISTS.
 //!
 //! `CLAUDE.md`: *every module cites the clauses it implements with `@spec`*. What was never checked
 //! is whether the thing cited is THERE. A citation to a clause that does not exist is worse than no
 //! citation at all: it reads as evidence, `check:existence` counts it, and nobody can tell it from
 //! the real thing without opening the specification at that line.
 //!
-//! It is not hypothetical. 98 rows of `docs/COVERAGE.md` cited `B-12`, which never existed (0c.3),
-//! and a module cited `Clearing C1.b`, which does not either (21.8). Both were found by a person
+//! It is not hypothetical. 98 rows of `docs/COVERAGE.md` cited `B-12`, which never existed,
+//! and a module cited `Clearing C1.b`, which does not either. Both were found by a person
 //! reading, twice, months apart — which is the definition of a rule that should have been a check.
 //!
-//! **What it resolves, and what it lets past.** A citation is one of: a law (`Law 4`), a numbered
+//! What it resolves, and what it lets past. A citation is one of: a law (`Law 4`), a numbered
 //! system with a clause (`37 A2.a`), a system by NAME with a clause (`Treasury B3`), a Part XI
 //! mechanism (`XI-15`), a section by number (`§46`), an appendix (`Appendix B`), or a citation to
 //! another document (`ARCHITECTURE 4.9b`), which this cannot check and says so by name rather than
-//! by silence. Anything else is a finding: **a citation nobody can resolve is not a citation.**
+//! by silence. Anything else is a finding: a citation nobody can resolve is not a citation.
 
 use std::collections::{HashMap, HashSet};
 
@@ -88,7 +88,7 @@ impl Spec {
                 at = Some(head);
                 continue;
             }
-            // `- **A2.a** ...`, at any indent. The id is what is between the first `**` pair.
+            // `- A2.a...`, at any indent. The id is what is between the first `` pair.
             let Some(key) = at.as_ref() else { continue };
             let Some(rest) = t.strip_prefix("- **") else { continue };
             let Some((id, _)) = rest.split_once("**") else { continue };
@@ -158,7 +158,7 @@ impl Spec {
 
     /// The section a citation's head names, by number or by the SHORT NAME a reader writes.
     ///
-    /// **The short names are derived from the document, never declared here** (Law 4): the spec says
+    /// The short names are derived from the document, never declared here: the spec says
     /// `## 1. MONEY AND SETTLEMENT` and a reader writes `Money A1`, so a name matches when its words
     /// run through the heading's in order — each citation word either being a heading word or the
     /// INITIALS of the heading words it stands for, which is what makes `Spot FX`, `CDS` and `IRS`
@@ -257,7 +257,7 @@ fn looks_like_clause(s: &str) -> bool {
 /// Every citation in one file's `@spec` lines, with the line each is on. A citation list runs across
 /// several lines and the separators are `·` and `,`; a comma inside `Law 4, Law 8` separates two
 /// citations, which is why the split is on both.
-/// **A bare clause carries the section before it.** `@spec 46 A1, A2, B1` is three citations of one
+/// A bare clause carries the section before it. `@spec 46 A1, A2, B1` is three citations of one
 /// section, which is how these lists are written and how they read; expanding them here is what lets
 /// the resolver stay a function of one citation.
 pub fn citations(text: &str) -> Vec<(usize, String)> {

@@ -3,33 +3,33 @@
 //!
 //! @spec XI-8 · XI-3 · XI-1 · Appendix B · Law 3, Law 6, Law 7
 //!
-//! **Assets are sold, not valued.** Inventory is offered into the market its goods always sold in;
+//! Assets are sold, not valued. Inventory is offered into the market its goods always sold in;
 //! plant is offered to bidders who value it for what it can produce FOR THEM — capital of the wrong
 //! kind is worth less to a buyer that cannot use it, and a slice nobody can use draws no bid. What
-//! no bidder takes by the programme's last period is abandoned or perishes. **A formula discount
-//! off book is a stated price with no buyer** (Law 3), so there is no `book × haircut` anywhere in
+//! no bidder takes by the programme's last period is abandoned or perishes. A formula discount
+//! off book is a stated price with no buyer, so there is no `book × haircut` anywhere in
 //! this module: `Realised` carries what a bidder actually paid.
 //!
-//! **Every claim ranks, and the ranking is honoured by the payout.** XI-8 names two failures that
+//! Every claim ranks, and the ranking is honoured by the payout. XI-8 names two failures that
 //! are common and both bias recoveries upward, and this module refuses each:
 //!
-//! - **Ranking by instrument TYPE rather than by the instrument's own stated seniority**, which
-//!   makes subordination decorative and means a subordinated bond can never trade wider than a
-//!   senior one. `Claim.ranks` is the instrument's own, carried on the claim.
-//! - **Letting the estate COLLECT the dead firm's receivables as an asset while its own trade
-//!   creditors rank nowhere**, which biases every recovery upward by exactly that asymmetry. A
-//!   trade creditor is a `Claim` here like any other and it has a rank.
+//! - Ranking by instrument TYPE rather than by the instrument's own stated seniority, which
+//!  makes subordination decorative and means a subordinated bond can never trade wider than a
+//!  senior one. `Claim.ranks` is the instrument's own, carried on the claim.
+//! - Letting the estate COLLECT the dead firm's receivables as an asset while its own trade
+//!  creditors rank nowhere, which biases every recovery upward by exactly that asymmetry. A
+//!  trade creditor is a `Claim` here like any other and it has a rank.
 
 use crate::ids::{InstrumentId, PartyId};
 
-/// XI-8: where a claim stands. It is the INSTRUMENT'S own stated seniority, carried on the claim —
+/// Where a claim stands. It is the INSTRUMENT'S own stated seniority, carried on the claim —
 /// never read off what kind of thing it is, which would make subordination decorative.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Rank {
     /// Paid from what its own collateral fetched, before anything else sees it.
     Secured,
-    /// **Where the law puts the state** (Money E1, XI-8, 21c). It is a POLICY primitive under Law 2
-    /// and the polity owns it (§47): which claims are preferential, and in what order, is a legal
+    /// Where the law puts the state. It is a POLICY primitive under Law 2
+    /// and the polity owns it: which claims are preferential, and in what order, is a legal
     /// fact about a jurisdiction and not a modelling choice — so it sits here to be MOVED by the
     /// mechanism that sets it, never to be argued about at a call site.
     ///
@@ -53,7 +53,7 @@ pub struct Claim {
     pub ranks: Rank,
 }
 
-/// **What a bidder actually paid.** Not a valuation, not book less a discount: an amount somebody
+/// What a bidder actually paid. Not a valuation, not book less a discount: an amount somebody
 /// handed over for units that moved to them.
 #[derive(Clone, Copy, Debug)]
 pub struct Realised {
@@ -63,7 +63,7 @@ pub struct Realised {
     pub fetched: f64,
 }
 
-/// XI-8: what no bidder took by the programme's last period. It is **abandoned or perishes** — it
+/// What no bidder took by the programme's last period. It is abandoned or perishes — it
 /// does NOT become cash at a formula price, which is the thing that would make a recovery a number
 /// rather than an outcome.
 #[derive(Clone, Copy, Debug)]
@@ -81,19 +81,19 @@ pub struct Paid {
 }
 
 impl Paid {
-    /// XI-1: the loss is what was owed less what arrived, and it lands on a NAMED holder.
+    /// The loss is what was owed less what arrived, and it lands on a NAMED holder.
     pub fn loss(&self) -> f64 {
         self.owed - self.paid
     }
 }
 
-/// **The waterfall.** Proceeds go out in rank order; within a rank they go pro rata, because two
+/// The waterfall. Proceeds go out in rank order; within a rank they go pro rata, because two
 /// claims of the same standing have no reason to be told apart. What is left over is loss.
 ///
-/// Law 6: a rank is not paid "up to" anything — it is paid what there is, and what there is runs
+/// A rank is not paid "up to" anything — it is paid what there is, and what there is runs
 /// out. That is arithmetic, and the next rank gets nothing because nothing is left.
 pub fn waterfall(proceeds: f64, claims: &[Claim]) -> Vec<Paid> {
-    // **The answer comes back in the order it was asked**, which is what lets a caller keep whatever
+    // The answer comes back in the order it was asked, which is what lets a caller keep whatever
     // it knows about each claim beside it (21.36: the estate has to mark the CLAIM it paid, and two
     // claims of one holder for one amount are otherwise indistinguishable — BF4's defect exactly).
     // The ranking is this function's business and the order is the caller's.
@@ -128,18 +128,18 @@ pub fn waterfall(proceeds: f64, claims: &[Claim]) -> Vec<Paid> {
         .collect()
 }
 
-/// **XI-8, Money E1, 21c: WHAT THE STATE IS OWED BY A DEAD PARTY IS A CLAIM ON ITS ESTATE.**
+/// WHAT THE STATE IS OWED BY A DEAD PARTY IS A CLAIM ON ITS ESTATE.
 ///
-/// Measured on the old engine (21.107): an estate paid the treasury 388 pieces in period 5 and 388
+/// Measured on the old engine: an estate paid the treasury 388 pieces in period 5 and 388
 /// again in period 6, with a `tax` receipt, and the audit said *"paid 388 to treasury.us, who has no
 /// claim on it"*. The estate was right to OWE it — it held paper that paid interest, and interest
 /// received is taxed — and the treasury was wrong to TAKE it: an estate pays its claimants in rank
 /// order, and money leaving it directly for the state is the state jumping the queue ahead of the
 /// creditors the estate exists to pay.
 ///
-/// **This is the door, and there is no other.** An assessment on a party whose life has ended
+/// This is the door, and there is no other. An assessment on a party whose life has ended
 /// produces a CLAIM, not a payment, and the waterfall pays it where `Rank::Preferential` puts it.
-/// What decides which it is, is whether the party is ALIVE — a state, not a kind (Law 15): a live
+/// What decides which it is, is whether the party is ALIVE — a state, not a kind: a live
 /// firm pays its tax out of its account, and a dead one queues, and neither is a rule about what
 /// sort of thing it is.
 ///
@@ -152,8 +152,8 @@ pub fn owed_to_the_state(state: PartyId, assessed: f64) -> Option<Claim> {
     Some(Claim { holder: state, owed: assessed, ranks: Rank::Preferential })
 }
 
-/// XI-8: what is left after every claim has been paid what there was — **the residual, and it has a
-/// holder.** Equity is last, so a positive residual reaches it; Appendix B forbids a residual with
+/// What is left after every claim has been paid what there was — the residual, and it has a
+/// holder. Equity is last, so a positive residual reaches it; Appendix B forbids a residual with
 /// no holder, which is why this is returned rather than discarded.
 pub fn residual(proceeds: f64, paid: &[Paid]) -> f64 {
     proceeds - paid.iter().map(|p| p.paid).sum::<f64>()
@@ -183,7 +183,7 @@ mod tests {
         assert_eq!(got(2), 400.0, "then senior");
         assert_eq!(got(1), 50.0, "then the subordinated holder takes what is actually left");
         assert_eq!(got(4), 0.0, "equity last, and there is nothing by then");
-        // XI-8: subordination is NOT decorative — the loss lands on the subordinated holder and on
+        // Subordination is NOT decorative — the loss lands on the subordinated holder and on
         // equity, and the senior holder is whole. That is what makes a subordinated bond able to
         // trade wider than a senior one at all.
         let sub = out.iter().find(|p| p.holder == PartyId::at(1)).unwrap();
@@ -199,7 +199,7 @@ mod tests {
         let got = |who: u32| out.iter().find(|p| p.holder == PartyId::at(who)).unwrap().paid;
         assert_eq!(got(1), 150.0);
         assert_eq!(got(2), 50.0);
-        // Law 7: nothing is lost between them — what went out is what there was.
+        // Nothing is lost between them — what went out is what there was.
         assert!((residual(200.0, &out)).abs() <= 4.0 * f64::EPSILON * 200.0);
     }
 
@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn what_no_bidder_took_is_abandoned_and_never_cash_at_a_formula_price() {
-        // XI-8, Law 3: a formula discount off book is a stated price with no buyer. Unsold units
+        // A formula discount off book is a stated price with no buyer. Unsold units
         // are units — they do not become proceeds.
         let left = Unsold { what: InstrumentId::at(5), units: 40.0 };
         assert_eq!(left.units, 40.0);
@@ -233,14 +233,14 @@ mod tests {
     fn a_residual_has_a_holder_and_equity_is_where_it_lands() {
         let claims = [claim(1, 100.0, Rank::Senior), claim(2, 0.0, Rank::Equity)];
         let out = waterfall(180.0, &claims);
-        // Appendix B: what is left over is not discarded. Equity is last, which is what makes it
+        // What is left over is not discarded. Equity is last, which is what makes it
         // equity, and the residual is what reaches it.
         assert_eq!(residual(180.0, &out), 80.0);
     }
 
     #[test]
     fn a_tax_on_an_estate_is_a_claim_on_it_and_it_queues_where_the_law_puts_it() {
-        // 21c, 21.107: the estate paid the treasury directly and the audit said the treasury had no
+        // The estate paid the treasury directly and the audit said the treasury had no
         // claim on it. It has one now, and it stands behind the secured creditor and in front of
         // everybody else — which is a rank, not an exemption.
         let treasury = PartyId::at(9);
@@ -261,7 +261,7 @@ mod tests {
         assert_eq!(got(PartyId::at(1)), 100.0);
         assert_eq!(got(treasury), 300.0);
         assert_eq!(got(PartyId::at(2)), 0.0);
-        // Appendix B: no residual with no holder — what went out is what there was.
+        // No residual with no holder — what went out is what there was.
         assert_eq!(residual(400.0, &paid), 0.0);
     }
 
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn an_assessment_of_nothing_is_not_a_claimant() {
-        // Appendix A: a claim for nothing is not a claim, and a claimant with no claim would take a
+        // A claim for nothing is not a claim, and a claimant with no claim would take a
         // share of the rank it stands in.
         assert!(owed_to_the_state(PartyId::at(9), 0.0).is_none());
     }

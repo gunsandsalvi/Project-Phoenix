@@ -4,13 +4,13 @@
 //!
 //! Money is an INSTRUMENT issued by a bank or a central bank, and an account is a holding of it —
 //! so there is no money without an issuer, and price 1 for money is the only hard-coded price this
-//! world has (D2).
+//! world has.
 //!
-//! **B3.c: an overdraft is NEVER a silent negative.** A customer overdrawn is BORROWING, and it is
-//! a credit decision by its bank (B3.a) — the bank lends to the room its own capital supports and
+//! An overdraft is NEVER a silent negative. A customer overdrawn is BORROWING, and it is
+//! a credit decision by its bank — the bank lends to the room its own capital supports and
 //! refuses past it. A bank overdrawn at the central bank is borrowing from the central bank and the
-//! corridor prices it (B3.b). Either way **somebody lent it, at a rate, or somebody refused it and
-//! the refusal is recorded.**
+//! corridor prices it. Either way somebody lent it, at a rate, or somebody refused it and
+//! the refusal is recorded.
 //!
 //! What this replaces is not a wrong decision — it is the ABSENCE of one. A balance that simply
 //! goes negative is money created by nobody, owed to nobody, at no rate, and the world's accounts
@@ -18,35 +18,35 @@
 //! the account is empty"* and it is the single most consequential thing to get wrong (Part XII):
 //! causation reverses, and the treasury spends into the overdraft and issues to clear it.
 //!
-//! **This module makes the decision a DECISION.** It is asked of the issuer, per party kind,
-//! behind a dispatch table — never a branch on who the payer is (Law 15).
+//! This module makes the decision a DECISION. It is asked of the issuer, per party kind,
+//! behind a dispatch table — never a branch on who the payer is.
 
 use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::module::ParticipantView;
 
-/// B3.a, B3.b: what an issuer answers when the account it issues into is short.
+/// What an issuer answers when the account it issues into is short.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Overdraft {
     /// It lends. The money is ISSUED and the borrower owes it back on `owes`, at `per_annum` —
-    /// two sides in the same pass (Law 5), so nothing is created that nobody holds.
+    /// two sides in the same pass, so nothing is created that nobody holds.
     Lend {
         /// The line the borrower's debt is written on. The issuer's module owns it; the kernel is
         /// told which, never asked to invent one.
         owes: InstrumentId,
         per_annum: f64,
     },
-    /// It refuses, and **the refusal is the record** (B3.c). The payment does not settle, which is
+    /// It refuses, and the refusal is the record. The payment does not settle, which is
     /// an outcome the payer reads and does something about — not a crash and not a hole.
     Refuse,
 }
 
 /// The door the kernel asks. One per party KIND, so a bank and a central bank answer differently
-/// because they are different kinds, and no mechanism branches on which (Law 15).
+/// because they are different kinds, and no mechanism branches on which.
 pub trait Issuer {
     /// Whose accounts this issuer answers for.
     fn party_kind(&self) -> u32;
 
-    /// B3.a: the bank lends only to the room its own capital supports, and refuses past it. The
+    /// The bank lends only to the room its own capital supports, and refuses past it. The
     /// view is the BORROWER's, because what is being judged is the borrower — and the issuer's own
     /// room is a fact about the issuer that its module holds.
     fn overdraft(
@@ -57,7 +57,7 @@ pub trait Issuer {
     ) -> Overdraft;
 }
 
-/// Central Bank D3, A3.b, Appendix B: **THERE IS NO CENTRAL-BANK OVERDRAFT FOR THE TREASURY.** A
+/// THERE IS NO CENTRAL-BANK OVERDRAFT FOR THE TREASURY. A
 /// treasury that has not funded itself cannot spend, and an issuer that answered otherwise would
 /// reverse the causation the whole of Part XII turns on. It is a refusal in the TYPE: this issuer
 /// has no `Lend` to give, so a world that wires it in cannot be made to lend by a parameter.
@@ -96,7 +96,7 @@ impl Issuers {
         self.by_kind.push((kind, issuer));
     }
 
-    /// B3.a: ask the issuer of this borrower's bank. Missing is missing — a kind nobody answers
+    /// Ask the issuer of this borrower's bank. Missing is missing — a kind nobody answers
     /// for has no answer, and the caller may not read that as a refusal.
     pub fn ask(
         &self,
@@ -113,11 +113,11 @@ impl Issuers {
     }
 }
 
-/// B3.c: what an overdraft BECOMES on the wire. The money is issued to the borrower and the
-/// borrower's debt is written on the issuer's book — **two legs, same pass, same period**, so the
-/// money that paid has a named creditor from the instant it exists (Law 5).
+/// What an overdraft BECOMES on the wire. The money is issued to the borrower and the
+/// borrower's debt is written on the issuer's book — two legs, same pass, same period, so the
+/// money that paid has a named creditor from the instant it exists.
 ///
-/// It is returned rather than applied: settlement is the one writer of the register (Law 4), and
+/// It is returned rather than applied: settlement is the one writer of the register, and
 /// this says what it should write.
 pub fn as_legs(
     borrower: PartyId,
@@ -159,7 +159,7 @@ mod tests {
     const BANK: u32 = 3;
     const TREASURY: u32 = 4;
 
-    /// B3.a: a bank that lends to the room its capital supports and refuses past it.
+    /// A bank that lends to the room its capital supports and refuses past it.
     struct ABankWithRoom {
         room: f64,
         owes: InstrumentId,
@@ -170,7 +170,7 @@ mod tests {
         }
         fn overdraft(&self, _b: &ParticipantView<'_>, short_by: f64, _c: CurrencyCode) -> Overdraft {
             if short_by > self.room {
-                // Law 6: this is not a cap on the loan. It is a refusal of it — the bank does not
+                // This is not a cap on the loan. It is a refusal of it — the bank does not
                 // lend a smaller amount nobody asked for, it says no and the payment fails.
                 return Overdraft::Refuse;
             }
@@ -200,7 +200,7 @@ mod tests {
         let answer = issuers.ask(BANK, &view, 400.0, CurrencyCode::at(0)).expect("a bank answers");
         let legs = as_legs(borrower, bank, InstrumentId::at(0), 400.0, answer)
             .expect("it lent, so there are legs");
-        // Law 5: the money came from the bank AND the bank holds the claim, in the same pass.
+        // The money came from the bank AND the bank holds the claim, in the same pass.
         match legs[0] {
             crate::ledger::Leg::Money { from, to, amount, .. } => {
                 assert_eq!(from, bank);
@@ -226,7 +226,7 @@ mod tests {
         let view = view_of(PartyId::at(1), &r, &p, &j, &m);
         let answer = issuers.ask(BANK, &view, 5_000.0, CurrencyCode::at(0)).unwrap();
         assert_eq!(answer, Overdraft::Refuse);
-        // B3.c: refused means nothing is written — not a smaller loan nobody asked for (Law 6).
+        // Refused means nothing is written — not a smaller loan nobody asked for.
         assert!(as_legs(PartyId::at(1), PartyId::at(0), InstrumentId::at(0), 5_000.0, answer).is_none());
     }
 
@@ -236,7 +236,7 @@ mod tests {
         let mut issuers = Issuers::new();
         issuers.declare(Box::new(NoOverdraftForTheTreasury { treasury_kind: TREASURY }));
         let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        // Central Bank D3: however small the shortfall, there is no advance.
+        // However small the shortfall, there is no advance.
         assert_eq!(issuers.ask(TREASURY, &view, 1.0, CurrencyCode::at(0)).unwrap(), Overdraft::Refuse);
         assert_eq!(
             issuers.ask(TREASURY, &view, 1e12, CurrencyCode::at(0)).unwrap(),
@@ -249,7 +249,7 @@ mod tests {
         let (r, p, j, m) = (Register::new(), Prints::new(), Journal::new(), Params::new(100.0, 60.0));
         let issuers = Issuers::new();
         let view = view_of(PartyId::at(1), &r, &p, &j, &m);
-        // Appendix A: missing is missing. A world assembled without an issuer for a kind has a
+        // Missing is missing. A world assembled without an issuer for a kind has a
         // hole in it, and reading that as "refused" would hide the hole.
         assert!(issuers.ask(BANK, &view, 10.0, CurrencyCode::at(0)).is_none());
     }

@@ -4,26 +4,26 @@
 //!
 //! @spec XI-13 · XI-1 · 46 A3 · Law 2, Law 3, Law 4, Law 19 · Appendix B
 //!
-//! **The general form of the failure**: any mechanism in which the INPUT to the participants'
+//! The general form of the failure: any mechanism in which the INPUT to the participants'
 //! schedules is derived from the same quantity the clearing is supposed to DISCOVER produces a price
 //! that is a fixed point of its own formula. It will look like a market and it will carry no
 //! information. Three shapes delete the disagreement quietly, and this module refuses each.
 //!
-//! **A probability computed from the accounts and fed to every seller.** Then the credit
+//! A probability computed from the accounts and fed to every seller. Then the credit
 //! derivative's spread is a restatement of the accounting model, in the one instrument whose entire
 //! purpose is to hold a different view. So there is no function here that turns accounts into a
 //! probability anybody trades on: `implied` runs the OTHER way, from the cleared spread, and it is a
-//! READ (Law 19).
+//! READ.
 //!
-//! **A book with two participants and both of them hedgers.** If every buyer of protection is above
+//! A book with two participants and both of them hedgers. If every buyer of protection is above
 //! an exposure limit and every seller is closing a regulatory gap, the cleared spread is a function
 //! of regulatory gaps and never of a view; a period in which neither gap binds does not open the
 //! book at all; and the price cannot move because somebody thinks the credit is mispriced.
 //! `can_disagree` is the standing question a book must answer yes to.
 //!
-//! **One rating held by nobody.** An assessment that is a property of the firm rather than an
+//! One rating held by nobody. An assessment that is a property of the firm rather than an
 //! opinion held by a NAMED assessor means every participant agrees about credit by construction,
-//! which removes the dispersion the auction needs to have two sides at all (§46 A3). `Assessments`
+//! which removes the dispersion the auction needs to have two sides at all. `Assessments`
 //! is keyed by (assessor, subject) and there is no read that takes a subject alone.
 
 use crate::calendar::Day;
@@ -33,19 +33,19 @@ use crate::module::{Mechanism, MechanismContext};
 use crate::stores::standing;
 use crate::ids::PartyId;
 
-/// **An opinion, held by somebody.** Not a property of the firm: the assessor is part of the fact,
-/// and two assessors looking at the same borrower are two facts, not one fact written twice (Law 4).
+/// An opinion, held by somebody. Not a property of the firm: the assessor is part of the fact,
+/// and two assessors looking at the same borrower are two facts, not one fact written twice.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Assessment {
     pub by: PartyId,
     pub of: PartyId,
     /// This assessor's own probability of default for this borrower, over its own horizon.
     pub probability: f64,
-    /// Law 8: the horizon is part of the number. A probability with no term is not a probability.
+    /// The horizon is part of the number. A probability with no term is not a probability.
     pub year_fraction: f64,
 }
 
-/// The opinions in the world. **There is no `rating_of(subject)`** — asking a borrower for its
+/// The opinions in the world. There is no `rating_of(subject)` — asking a borrower for its
 /// rating is asking for a fact nobody holds, and answering would make every participant agree by
 /// construction.
 #[derive(Default)]
@@ -85,18 +85,18 @@ impl Assessments {
     }
 }
 
-/// §46 A3: **the disagreement is load-bearing.** It is what gives a market two sides, and a world
+/// The disagreement is load-bearing. It is what gives a market two sides, and a world
 /// where every party expected the same thing would trade once and stop. This MEASURES it; nothing
 /// reads it and adjusts anybody's view.
 ///
 /// `None` below two opinions: one assessor is not a disagreement, and answering zero would say the
-/// world agrees when in fact nobody has asked it (Appendix A).
+/// world agrees when in fact nobody has asked it.
 pub fn dispersion(on: &[Assessment]) -> Option<f64> {
     let held: Vec<f64> = on.iter().map(|a| a.probability).collect();
     crate::num::dispersion(&held)
 }
 
-/// **What an estate actually realised**, carried with the dead party it came from — so a constant
+/// What an estate actually realised, carried with the dead party it came from — so a constant
 /// cannot be passed where a recovery is wanted without naming a party that died (Appendix B: no
 /// fixed recovery rate). The credit content of a credit derivative is exactly this number being an
 /// outcome.
@@ -106,7 +106,7 @@ pub struct Recovery {
     pub realised: f64,
 }
 
-/// XI-13: **the implied probability is a READ from the cleared spread, never an input to it.** This
+/// The implied probability is a READ from the cleared spread, never an input to it. This
 /// is the only direction the arithmetic runs in this module — there is no companion that takes
 /// accounts and hands a probability to sellers, which is the shape that makes the derivative's
 /// spread a restatement of the accounting model.
@@ -143,8 +143,8 @@ pub struct Participant {
     pub two_sided: bool,
 }
 
-/// **Every derivative book needs a participant whose reason is a view, and a two-sided dealer
-/// posting into it** (XI-13). A book that answers false clears at a price that cannot move because
+/// Every derivative book needs a participant whose reason is a view, and a two-sided dealer
+/// posting into it. A book that answers false clears at a price that cannot move because
 /// somebody thinks the credit is mispriced — which is what the instrument is for.
 pub fn can_disagree(book: &[Participant]) -> bool {
     let a_view = book.iter().any(|p| p.reason == Reason::View);
@@ -152,24 +152,24 @@ pub fn can_disagree(book: &[Participant]) -> bool {
     a_view && a_dealer
 }
 
-// **XI-13 RUNS HERE** (0m2.1). `SecondOpinion` was in `running.rs`, apart from `dispersion` and
+// XI-13 RUNS HERE. `SecondOpinion` was in `running.rs`, apart from `dispersion` and
 // `can_disagree`, which are in this file and which it did not call.
 
-/// **XI-13, §46 A3, 22i.11: EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.**
+/// EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.
 ///
 /// The `second_opinion` row counted how many lines printed. So this world had ONE opinion of every
 /// borrower — whatever the ratings row said — and XI-13's whole point is that it must not: if the
 /// loss is an arithmetic function of the borrower's accounts and every participant's reservation is
 /// built from that function, the market cannot disagree with the accounting model and its price
-/// carries no information (§46 A3).
+/// carries no information.
 ///
-/// **The view is formed from what THIS lender has seen**, which is why two lenders disagree: a
+/// The view is formed from what THIS lender has seen, which is why two lenders disagree: a
 /// lender's experience of a borrower is the dues on ITS OWN paper that went past their day, and two
 /// lenders holding different paper of the same borrower have seen different things. There is no
 /// `rating_of(subject)` here — asking a borrower for its probability is asking for a fact nobody
 /// holds, and answering would make every participant agree by construction.
 ///
-/// **Law 8: the horizon is part of the number.** A probability with no term is not a probability, so
+/// The horizon is part of the number. A probability with no term is not a probability, so
 /// the term is stood behind beside it.
 pub struct SecondOpinion {
     pub kind: u32,
@@ -181,7 +181,7 @@ impl Mechanism for SecondOpinion {
         let today = Day(i64::from(ctx.period()) * self.days_per_period);
 
         // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
-        // of them went past their day. Both are reads of the schedules (Law 19).
+        // of them went past their day. Both are reads of the schedules.
         let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> = std::collections::HashMap::new();
         for row in 0..ctx.instruments().len() as u32 {
             let line = InstrumentId::at(row);
@@ -205,7 +205,7 @@ impl Mechanism for SecondOpinion {
             if owed <= 0.0 {
                 continue;
             }
-            // Observer A4: and it is seen by whoever HOLDS the paper, and by nobody else.
+            // And it is seen by whoever HOLDS the paper, and by nobody else.
             for &row in ctx.register().of_instrument(line) {
                 let holder = ctx.register().holder_of(crate::ids::HoldingId(row)).0;
                 if holder == borrower.0 || ctx.register().quantity(crate::ids::HoldingId(row)) <= 0.0 {
@@ -230,7 +230,7 @@ impl Mechanism for SecondOpinion {
         }
 
         for (lender, borrower, probability) in formed {
-            // XI-13: a view a lender does not hold is one it cannot be shown to have been wrong
+            // A view a lender does not hold is one it cannot be shown to have been wrong
             // about, so it stands behind it — and a revision REPLACES its own and nobody else's.
             ctx.now_stands(standing::OWN_VIEW, lender, borrower, vec![probability, 1.0]);
             ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(probability))], false);
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn a_rating_is_an_opinion_held_by_a_named_assessor_and_not_a_property_of_the_firm() {
-        // XI-13: one rating held by nobody means every participant agrees about credit by
+        // One rating held by nobody means every participant agrees about credit by
         // construction, which removes the dispersion the auction needs to have two sides at all.
         // Two assessors, one borrower, two different numbers — and both are facts.
         let mut a = Assessments::new();
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn an_assessor_revising_its_view_replaces_its_own_and_nobody_elses() {
-        // Law 4: one writer per fact, and the fact is (assessor, subject).
+        // One writer per fact, and the fact is (assessor, subject).
         let mut a = Assessments::new();
         a.formed(view(1, 9, 0.02));
         a.formed(view(2, 9, 0.07));
@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn the_disagreement_is_measured_and_one_opinion_is_not_a_disagreement() {
-        // §46 A3: a world where every party expected the same thing would trade once and stop.
+        // A world where every party expected the same thing would trade once and stop.
         let alone = [view(1, 9, 0.02)];
         assert!(dispersion(&alone).is_none());
         let apart = [view(1, 9, 0.02), view(2, 9, 0.10), view(3, 9, 0.06)];
@@ -295,7 +295,7 @@ mod tests {
 
     #[test]
     fn the_implied_probability_is_read_from_the_spread_and_never_fed_to_the_sellers() {
-        // XI-13: the arithmetic runs one way. A wider cleared spread implies a higher probability,
+        // The arithmetic runs one way. A wider cleared spread implies a higher probability,
         // and nothing in this module runs the other direction.
         let r = Recovery { of: party(9), realised: 0.4 };
         let tight = implied(0.012, r, 1.0).unwrap();
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn the_recovery_is_what_an_estate_realised_and_carries_the_party_it_came_from() {
-        // Appendix B: no fixed recovery rate. A constant cannot be passed here without naming a
+        // No fixed recovery rate. A constant cannot be passed here without naming a
         // party that died, and the credit content of a credit derivative IS this number being an
         // outcome. An estate that paid in full implies nothing about default rather than zero.
         let paid_in_full = Recovery { of: party(9), realised: 1.0 };
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn a_book_of_two_hedgers_cannot_disagree_with_the_model() {
-        // XI-13: if every buyer of protection is above an exposure limit and every seller is
+        // If every buyer of protection is above an exposure limit and every seller is
         // closing a regulatory gap, the cleared spread is a function of regulatory gaps and never
         // of a view — and a period in which neither gap binds does not open the book at all.
         let hedgers = [
@@ -352,7 +352,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not one")]
     fn a_probability_over_no_term_is_not_a_probability() {
-        // Law 8: the horizon is part of the number.
+        // The horizon is part of the number.
         let mut a = Assessments::new();
         a.formed(Assessment { year_fraction: 0.0, ..view(1, 9, 0.02) });
     }
