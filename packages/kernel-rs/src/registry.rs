@@ -85,6 +85,42 @@ impl Footprint {
     }
 }
 
+/// ONE WAY OF MAKING A LINE: fixed input quantities per unit of output, plus labour, plus capital
+/// services, what it yields, its smallest run and how long it takes. It is TECHNOLOGY about the
+/// good and true for every maker of it, which is why it is declared once here rather than handed to
+/// a mechanism. What it MAKES is the row it is declared under, so a way of making something else
+/// cannot be written down.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Way {
+    /// Quantities, in the input's own physical unit.
+    pub per_unit: Vec<(InstrumentId, f64)>,
+    pub labour_per_unit: f64,
+    pub capital_services_per_unit: f64,
+    /// Not everything started is finished.
+    pub yields: f64,
+    /// The smallest run of the line — a furnace charge, a print run, a shift.
+    pub batch: f64,
+    pub periods_to_make: u32,
+}
+
+impl Way {
+    /// Whether this is a way of making anything at all: it must yield some of what it starts and no
+    /// more, run in a batch of something, and take time. The writer refuses one that is not.
+    pub fn runnable(&self) -> bool {
+        self.yields > 0.0 && self.yields <= 1.0 && self.batch > 0.0 && self.periods_to_make > 0
+    }
+}
+
+/// What a kind of plant IS, and the presence of a useful life is what makes a good a capital good.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Plant {
+    pub life: u32,
+    /// What it costs to keep, every period, whether or not it runs.
+    pub upkeep_per_period: f64,
+    /// Capacity is a function of the stock.
+    pub capacity_per_period: f64,
+}
+
 /// What varies by party kind, behind a dispatch the kernel reads.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct KindProfile {
@@ -109,6 +145,12 @@ pub struct Registry {
     profiles: Vec<Option<KindProfile>>,
     /// What one unit of each line STANDS ON, in square km.
     line_footprint: Vec<f64>,
+    /// How each line is made and with what plant, by the line's own row; what each plant IS, by
+    /// its own row; and the lines that are made at all, so a reader does not walk every instrument.
+    line_ways: Vec<Vec<Way>>,
+    line_plant: Vec<Option<InstrumentId>>,
+    plant_is: Vec<Option<Plant>>,
+    made: Vec<InstrumentId>,
     /// Which indices exist, whose country each is, what it is an index OF, and the lines it is built
     /// from with the COUNT of each (B1: a weight is a count of the line, never a share).
     index_in: Vec<u32>,
@@ -191,6 +233,64 @@ impl Registry {
             Some(km2) if !km2.is_nan() => Some(Footprint(*km2)),
             _ => None,
         }
+    }
+
+    /// HOW A LINE IS MADE, and with what. The ways and the plant are declared together because a
+    /// way that draws capital services with no plant to draw them from is not a way.
+    pub fn made_by(&mut self, line: InstrumentId, ways: Vec<Way>, with: InstrumentId) {
+        assert!(!ways.is_empty(), "37 A2: a line with no way of making it is not a line");
+        for w in &ways {
+            assert!(
+                w.runnable(),
+                "37 B3, B4, B5.b: a way that yields {} of what it starts, in runs of {}, over {} periods is not a way of making it",
+                w.yields,
+                w.batch,
+                w.periods_to_make
+            );
+        }
+        let at = line.row();
+        while self.line_ways.len() <= at {
+            self.line_ways.push(Vec::new());
+            self.line_plant.push(None);
+        }
+        assert!(self.line_ways[at].is_empty(), "Law 4: this line's ways are declared twice");
+        self.line_ways[at] = ways;
+        self.line_plant[at] = Some(with);
+        self.made.push(line);
+    }
+
+    /// WHAT A PLANT IS, declared once for the line and true for every holder of it.
+    pub fn is_plant(&mut self, plant: InstrumentId, what: Plant) {
+        assert!(what.life > 0, "33 A3: a good with no useful life is not a capital good");
+        let at = plant.row();
+        while self.plant_is.len() <= at {
+            self.plant_is.push(None);
+        }
+        assert!(self.plant_is[at].is_none(), "Law 4: this plant's technology is declared twice");
+        self.plant_is[at] = Some(what);
+    }
+
+    /// Every line this world knows how to make.
+    pub fn made(&self) -> &[InstrumentId] {
+        &self.made
+    }
+
+    /// The ways of making one, which is empty for a line nobody makes.
+    pub fn ways_of(&self, line: InstrumentId) -> &[Way] {
+        match self.line_ways.get(line.row()) {
+            Some(ways) => ways,
+            None => &[],
+        }
+    }
+
+    /// The plant it is made with, or `Missing` where nothing says.
+    pub fn made_with(&self, line: InstrumentId) -> Option<InstrumentId> {
+        self.line_plant.get(line.row()).copied().flatten()
+    }
+
+    /// What a plant is, or `Missing` where the line is not one.
+    pub fn plant_of(&self, plant: InstrumentId) -> Option<Plant> {
+        self.plant_is.get(plant.row()).copied().flatten()
     }
 
     pub fn countries(&self) -> usize {

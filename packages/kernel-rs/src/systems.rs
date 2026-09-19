@@ -49,7 +49,8 @@ use crate::mechanisms::sovereign::Sovereign;
 use crate::mechanisms::spot_fx::SpotFx;
 use crate::mechanisms::trade_credit::TradeCredit;
 use crate::stores::agreed;
-use crate::running::{Building, CostOfCapital, Counts, Funding, Makes, Making, Owed, Reads, Servicing};
+use crate::registry::Registry;
+use crate::running::{Building, CostOfCapital, Counts, Funding, Making, Owed, Reads, Servicing};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.
@@ -557,11 +558,9 @@ pub fn posts(name: &'static str, at: u32, participant: Box<dyn Participant>) -> 
     Wired { name, slot: 0, at, anchor_after: false, participant: Some(participant), mechanism: None, audits: Vec::new() }
 }
 
-/// The lines each system needs, NAMED.
+/// The lines each system needs, NAMED. How a good is MADE is not here: that is data, and it lives
+/// in the registry with everything else the ids point at.
 pub struct Wiring {
-    /// How every good in this world is made, one row per line, with the plant it is made
-    /// with.
-    pub makes: Vec<Makes>,
     /// What funds, insurers and dealers may hold.
     pub lines: Vec<InstrumentId>,
     /// The overnight book's subject.
@@ -572,53 +571,52 @@ pub struct Wiring {
     pub days_per_period: i64,
 }
 
-impl Wiring {
-    /// 37 A2, Law 4, Law 19: the basket is a READ of what the recipes make.
-    pub fn basket(&self) -> Vec<InstrumentId> {
-        self.makes.iter().map(|m| m.line.makes).collect()
-    }
+/// 37 A2, Law 4, Law 19: the basket is a READ of what the registry says is made.
+fn basket(r: &Registry) -> Vec<InstrumentId> {
+    r.made().to_vec()
+}
 
-    /// Each plant with everything the ways of running it draw on — what a holder of that
-    /// plant is keeping rather than selling.
-    pub fn keeps(&self) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
-        self.makes
-            .iter()
-            .map(|m| {
-                let mut inputs: Vec<InstrumentId> = Vec::new();
-                for way in &m.line.ways {
-                    for (what, _) in &way.per_unit {
-                        if !inputs.contains(what) {
-                            inputs.push(*what);
-                        }
+/// Each plant with everything the ways of running it draw on — what a holder of that plant is
+/// keeping rather than selling.
+fn keeps(r: &Registry) -> Vec<(InstrumentId, Vec<InstrumentId>)> {
+    r.made()
+        .iter()
+        .filter_map(|line| {
+            let mut inputs: Vec<InstrumentId> = Vec::new();
+            for way in r.ways_of(*line) {
+                for (what, _) in &way.per_unit {
+                    if !inputs.contains(what) {
+                        inputs.push(*what);
                     }
                 }
-                (m.plant, inputs)
-            })
-            .collect()
-    }
-
-    /// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row.
-    pub fn plants(&self) -> Vec<InstrumentId> {
-        let mut out: Vec<InstrumentId> = Vec::new();
-        for m in &self.makes {
-            if !out.contains(&m.plant) {
-                out.push(m.plant);
             }
-        }
-        out
-    }
+            Some((r.made_with(*line)?, inputs))
+        })
+        .collect()
+}
 
-    pub fn capital(&self) -> Vec<bool> {
-        let mut is_capital: Vec<bool> = Vec::new();
-        for m in &self.makes {
-            let row = m.plant.row();
-            while is_capital.len() <= row {
-                is_capital.push(false);
-            }
-            is_capital[row] = true;
+/// Audit C3, 33 A6.b, 22e: which lines the plant-moves family is about, by row.
+fn plants(r: &Registry) -> Vec<InstrumentId> {
+    let mut out: Vec<InstrumentId> = Vec::new();
+    for line in r.made() {
+        match r.made_with(*line) {
+            Some(plant) if !out.contains(&plant) => out.push(plant),
+            _ => {}
         }
-        is_capital
     }
+    out
+}
+
+fn capital(r: &Registry) -> Vec<bool> {
+    let mut is_capital: Vec<bool> = Vec::new();
+    for plant in plants(r) {
+        let row = plant.row();
+        while is_capital.len() <= row {
+            is_capital.push(false);
+        }
+        is_capital[row] = true;
+    }
+    is_capital
 }
 
 /// Every system this world has, and every one of them RUNS.
@@ -795,7 +793,7 @@ pub fn declare(p: &mut Params) {
         "the coupon the paper carries as a TERM, fixed for its life — never what it is worth");
 }
 
-pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
+pub fn all(w: &Wiring, r: &Registry, journal: &mut crate::journal::Journal) -> Vec<Wired> {
     let keys_of = |j: &mut crate::journal::Journal, name: &str| j.keys_named.declare(name);
     let at_equity = keys_of(journal, "accounts.equity");
     let at_income = keys_of(journal, "accounts.income");
@@ -827,7 +825,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         {
             // §37 both posts and works: a firm offers what it holds, and the stock that does not
             // Survive the period leaves at what it cost.
-            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: w.keeps() }));
+            let mut goods = posts("goods", AT_MARKETS, Box::new(GoodsSellers { will_take: "goods.seller.will_take", holding_costs: "goods.seller.holding_costs", keeps: keeps(r) }));
             goods.mechanism = Some(Box::new(crate::mechanisms::goods::Perishing { share: "goods.perishes" }));
             goods
         },
@@ -835,18 +833,18 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             // A cell bids for what it can fund, and forms its outlook from the prices its own lines
             // printed at.
             let mut households =
-                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: w.basket() }));
+                posts("households", AT_MARKETS, Box::new(HouseholdBuyers { will_pay: "household.will_pay", keeps: "household.keeps", basket: basket(r) }));
             households.mechanism = Some(Box::new(Forming { memory: "outlook.memory" }));
             households
         },
         // THE ONE SYSTEM THAT MAKES ANYTHING.
-        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { makes: w.makes.clone(), flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
+        works("recipe", AT_CORPORATE_ACTIONS_SLOT, Box::new(Making { flow: CostFlow::FirstInFirstOut, crowds_at: "building.crowds_at", cover: "firm.cover" })),
         works("firms", AT_REVALUATION, Box::new(Reporting { kind: says("firm.result") })),
         works("employment", AT_CORPORATE_ACTIONS_SLOT, Box::new(Wages)),
         // A quay's owner earns what a berth clears at.
         {
             // A quay's owner earns what a berth clears at.
-            let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: w.plants(), upkeep: "plant.upkeep" }));
+            let mut f = posts("freight", AT_MARKETS, Box::new(LetsItsPlant { lines: plants(r), upkeep: "plant.upkeep" }));
             f.mechanism = Some(Box::new(Reads { kind: says("freight.carriage"), what: Counts::AgreementsLive }));
             f
         },
@@ -856,7 +854,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             per_unit: "storage.per_unit",
         })),
         // Somebody whose business is to hold the stock.
-        posts("stockists", AT_MARKETS, Box::new(Stockist { lines: w.basket(), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
+        posts("stockists", AT_MARKETS, Box::new(Stockist { lines: basket(r), carrying: "goods.seller.holding_costs", limit: "stockist.limit" })),
         // And dwellings are LET and SOLD, and both prices clear.
         works("housing", AT_REVALUATION, Box::new(Housing {
             kind: says("dwelling.sold"),
@@ -935,7 +933,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         {
             // Audit C3, 33 A6.b, 22e: PLANT MOVES ONLY FOR A REASON, and this is the one module
             // family this world has.
-            let capital = w.capital();
+            let capital = capital(r);
             // And a firm DECIDES to invest.
             let mut cp = works("capital_programme", AT_CORPORATE_ACTIONS_SLOT, Box::new(Building {
                 kind: says("plant.built"),

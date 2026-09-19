@@ -8,72 +8,32 @@
 //! @spec Law 8, Law 19 · Appendix B
 
 use crate::ids::{InstrumentId, PartyId};
+use crate::registry::Way;
 
-/// Fixed input quantities per unit of output.
-#[derive(Clone, Debug)]
-pub struct Recipe {
-    pub makes: InstrumentId,
-    /// Quantities, in the input's own physical unit.
-    pub per_unit: Vec<(InstrumentId, f64)>,
-    /// Plus labour, plus capital services.
-    pub labour_per_unit: f64,
-    pub capital_services_per_unit: f64,
-    /// Not everything started is finished.
-    pub yields: f64,
-    /// The smallest run of the line — a furnace charge, a print run, a shift.
-    pub batch: f64,
-    /// How long the line takes, in periods.
-    pub periods_to_make: u32,
+/// Production consumes the inputs it consumes — the physical consequence of the decision, and the
+/// way says how much.
+pub fn draws_for(r: &Way, starts: f64) -> Vec<(InstrumentId, f64)> {
+    r.per_unit.iter().map(|(what, per)| (*what, per * starts)).collect()
 }
 
-impl Recipe {
-    pub fn new(
-        makes: InstrumentId,
-        per_unit: Vec<(InstrumentId, f64)>,
-        labour_per_unit: f64,
-        capital_services_per_unit: f64,
-        yields: f64,
-        batch: f64,
-        periods_to_make: u32,
-    ) -> Recipe {
-        assert!(
-            yields > 0.0 && yields <= 1.0,
-            "37 B4: a line that yields {yields} of what it starts is not a line"
-        );
-        assert!(batch > 0.0, "37 B5.b: a line whose smallest run is {batch} cannot be run at all");
-        assert!(
-            periods_to_make > 0,
-            "37 B3: a line that takes no time has nothing between its input and its output"
-        );
-        Recipe { makes, per_unit, labour_per_unit, capital_services_per_unit, yields, batch, periods_to_make }
-    }
+/// What arrives at the end of the line.
+pub fn finishes(r: &Way, starts: f64) -> f64 {
+    starts * r.yields
+}
 
-    /// Production consumes the inputs it consumes — the physical consequence of the decision, and
-    /// the recipe says how much.
-    pub fn draws_for(&self, starts: f64) -> Vec<(InstrumentId, f64)> {
-        self.per_unit.iter().map(|(what, per)| (*what, per * starts)).collect()
-    }
-
-    /// What arrives at the end of the line.
-    pub fn finishes(&self, starts: f64) -> f64 {
-        starts * self.yields
-    }
-
-    /// 21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS.
-    pub fn where_it_stands(&self, crowding: f64) -> Recipe {
-        assert!(
-            crowding >= 1.0,
-            "21i: building on {crowding} of what it takes on empty ground is a place that pays you to build"
-        );
-        Recipe {
-            makes: self.makes,
-            per_unit: self.per_unit.iter().map(|(what, per)| (*what, per * crowding)).collect(),
-            labour_per_unit: self.labour_per_unit * crowding,
-            capital_services_per_unit: self.capital_services_per_unit * crowding,
-            yields: self.yields,
-            batch: self.batch,
-            periods_to_make: self.periods_to_make,
-        }
+/// 21i, 33 A4: THE SAME LINE, RUN WHERE THIS MUCH ALREADY STANDS.
+pub fn where_it_stands(r: &Way, crowding: f64) -> Way {
+    assert!(
+        crowding >= 1.0,
+        "21i: building on {crowding} of what it takes on empty ground is a place that pays you to build"
+    );
+    Way {
+        per_unit: r.per_unit.iter().map(|(what, per)| (*what, per * crowding)).collect(),
+        labour_per_unit: r.labour_per_unit * crowding,
+        capital_services_per_unit: r.capital_services_per_unit * crowding,
+        yields: r.yields,
+        batch: r.batch,
+        periods_to_make: r.periods_to_make,
     }
 }
 
@@ -115,29 +75,8 @@ pub struct Decided {
     pub bound: Bound,
 }
 
-/// A line may be made more than one way.
-#[derive(Clone, Debug)]
-pub struct Line {
-    pub makes: InstrumentId,
-    /// Each way is a full Leontief recipe in its own right.
-    pub ways: Vec<Recipe>,
-}
-
-impl Line {
-    pub fn new(makes: InstrumentId, ways: Vec<Recipe>) -> Line {
-        assert!(!ways.is_empty(), "37 A2: a line with no way of making it is not a line");
-        for w in &ways {
-            assert!(
-                w.makes == makes,
-                "Law 4: a way of making something else is not a way of making this line"
-            );
-        }
-        Line { makes, ways }
-    }
-}
-
 /// What one way costs THIS firm to make one unit that survives, at the prices it can see.
-pub fn costs(r: &Recipe, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
+pub fn costs(r: &Way, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f64, capital_service: f64) -> Option<f64> {
     let mut inputs = 0.0;
     for (what, per) in &r.per_unit {
         match priced(*what) {
@@ -151,13 +90,13 @@ pub fn costs(r: &Recipe, priced: &impl Fn(InstrumentId) -> Option<f64>, wage: f6
 
 /// The firm picks the way that costs IT least, at the prices IT is facing.
 pub fn picks<'a>(
-    line: &'a Line,
+    ways: &'a [Way],
     priced: &impl Fn(InstrumentId) -> Option<f64>,
     wage: f64,
     capital_service: f64,
-) -> Option<(&'a Recipe, f64)> {
-    let mut best: Option<(&Recipe, f64)> = None;
-    for w in &line.ways {
+) -> Option<(&'a Way, f64)> {
+    let mut best: Option<(&Way, f64)> = None;
+    for w in ways {
         let Some(c) = costs(w, priced, wage, capital_service) else {
             continue;
         };
@@ -170,7 +109,7 @@ pub fn picks<'a>(
 }
 
 /// The quantity is the OUTCOME.
-pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
+pub fn decide(r: &Way, reasons: &Reasons) -> Decided {
     // What it would need to start to reach the shelf it wants, given that some of it scraps.
     let target = reasons.expected_demand * (1.0 + reasons.cover);
     let wanted = (target - reasons.on_shelf) / r.yields;
@@ -208,7 +147,7 @@ pub fn decide(r: &Recipe, reasons: &Reasons) -> Decided {
         bound = if batches <= 0.0 { Bound::Batch } else { bound };
         allows = in_batches;
     }
-    Decided { starts: allows, finishes: r.finishes(allows), bound }
+    Decided { starts: allows, finishes: finishes(r, allows), bound }
 }
 
 /// Utilisation is a read of the outcome against capacity, never an input to it.
@@ -261,8 +200,19 @@ mod tests {
 
     /// Two units of input 1 and half a unit of input 2 make one unit of good 9, with 0.4 of labour
     /// and 0.1 of capital services, and nineteen starts in twenty survive.
-    fn line() -> Recipe {
-        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 1.0, 1)
+    fn way(per_unit: Vec<(InstrumentId, f64)>, labour: f64, yields: f64, batch: f64) -> Way {
+        Way {
+            per_unit,
+            labour_per_unit: labour,
+            capital_services_per_unit: 0.1,
+            yields,
+            batch,
+            periods_to_make: 1,
+        }
+    }
+
+    fn line() -> Way {
+        way(vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.95, 1.0)
     }
 
     fn reasons(demand: f64, capacity: f64, input_1: f64, input_2: f64, labour: f64) -> Reasons {
@@ -281,7 +231,7 @@ mod tests {
 
     #[test]
     fn the_recipe_holds_quantities_and_no_price_so_a_price_doubling_draws_the_same_units() {
-        let drawn = line().draws_for(100.0);
+        let drawn = draws_for(&line(), 100.0);
         assert_eq!(drawn, vec![(good(1), 200.0), (good(2), 50.0)]);
     }
 
@@ -326,10 +276,10 @@ mod tests {
         // into the cost of the survivors — a consequence of the division, not a markup.
         let r = line();
         let starts = 1_000.0;
-        assert_eq!(r.finishes(starts), 950.0);
+        assert_eq!(finishes(&r, starts), 950.0);
         // The draw is against what was STARTED, because the scrap consumed its inputs too.
-        assert_eq!(r.draws_for(starts)[0].1, 2_000.0);
-        let dearer = unit_cost(2_000.0, 400.0, 100.0, r.finishes(starts)).unwrap();
+        assert_eq!(draws_for(&r, starts)[0].1, 2_000.0);
+        let dearer = unit_cost(2_000.0, 400.0, 100.0, finishes(&r, starts)).unwrap();
         let if_nothing_scrapped = unit_cost(2_000.0, 400.0, 100.0, starts).unwrap();
         assert!(dearer > if_nothing_scrapped);
     }
@@ -368,26 +318,20 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "is not a line")]
-    fn a_line_that_yields_nothing_is_not_a_line() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.0, 1.0, 1);
-    }
-
-    #[test]
-    #[should_panic(expected = "is not a line")]
-    fn a_line_that_yields_more_than_it_starts_is_not_a_line_either() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 1.2, 1.0, 1);
+    fn a_line_that_yields_nothing_or_more_than_it_starts_is_not_a_line() {
+        // What the registry refuses to write down, so no such way reaches a decision.
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 0.0, 1.0).runnable());
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 1.2, 1.0).runnable());
+        assert!(!way(vec![(good(1), 2.0)], 0.4, 0.95, 0.0).runnable());
+        assert!(line().runnable());
     }
 
     /// The same good, two ways: one that draws a lot of input 1 and little labour, one the reverse.
-    fn two_ways() -> Line {
-        Line::new(
-            good(9),
-            vec![
-                Recipe::new(good(9), vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.1, 0.95, 1.0, 1),
-                Recipe::new(good(9), vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.1, 0.95, 1.0, 1),
-            ],
-        )
+    fn two_ways() -> Vec<Way> {
+        vec![
+            way(vec![(good(1), 4.0), (good(2), 0.5)], 0.1, 0.95, 1.0),
+            way(vec![(good(1), 1.0), (good(2), 0.5)], 2.0, 0.95, 1.0),
+        ]
     }
 
     #[test]
@@ -400,15 +344,15 @@ mod tests {
 
         // Input 1 at 10 and an hour at 1: the input-heavy way costs 40.6 a unit, the labour-heavy
         // one 12.2.
-        let (way, _) = picks(&line, &dear_input, 1.0, 1.0).unwrap();
-        assert_eq!(way.labour_per_unit, 2.0);
+        let (picked, _) = picks(&line, &dear_input, 1.0, 1.0).unwrap();
+        assert_eq!(picked.labour_per_unit, 2.0);
 
         // The same line, the same firm, input 1 now at 0.5: the first way wins on the same read.
-        let (way, _) = picks(&line, &cheap_input, 1.0, 1.0).unwrap();
-        assert_eq!(way.labour_per_unit, 0.1);
+        let (picked, _) = picks(&line, &cheap_input, 1.0, 1.0).unwrap();
+        assert_eq!(picked.labour_per_unit, 0.1);
 
         // And nothing about the LINE changed between those two reads.
-        assert_eq!(line.ways.len(), 2);
+        assert_eq!(line.len(), 2);
     }
 
     #[test]
@@ -416,7 +360,7 @@ mod tests {
         // An unpriced input is MISSING, not free.
         let line = two_ways();
         let only_input_two = |i: InstrumentId| if i == good(2) { Some(1.0) } else { None };
-        assert!(costs(&line.ways[0], &only_input_two, 1.0, 1.0).is_none());
+        assert!(costs(&line[0], &only_input_two, 1.0, 1.0).is_none());
         assert!(picks(&line, &only_input_two, 1.0, 1.0).is_none());
     }
 
@@ -424,25 +368,19 @@ mod tests {
     fn the_cost_a_firm_reads_is_the_cost_of_a_unit_that_survives() {
         // Normal waste is absorbed into the cost of the survivors, and the division is where that
         // happens.
-        let r = &two_ways().ways[0];
+        let ways = two_ways();
+        let r = &ways[0];
         let all_at_one = |_: InstrumentId| Some(1.0);
         let c = costs(r, &all_at_one, 1.0, 1.0).unwrap();
         assert!((c - 4.7 / 0.95).abs() < dust(4, &[4.7, 0.95]));
         // Scrapping less makes the same physical draw cheaper per unit sold, with no markup moved.
-        let kinder = Recipe::new(good(9), r.per_unit.clone(), 0.1, 0.1, 1.0, 1.0, 1);
+        let kinder = way(r.per_unit.clone(), 0.1, 1.0, 1.0);
         assert!(costs(&kinder, &all_at_one, 1.0, 1.0).unwrap() < c);
     }
 
-    #[test]
-    #[should_panic(expected = "not a way of making this line")]
-    fn a_way_of_making_something_else_is_not_one_of_this_line_s_ways() {
-        // One representation per real thing.
-        Line::new(good(9), vec![Recipe::new(good(8), vec![(good(1), 1.0)], 0.1, 0.1, 1.0, 1.0, 1)]);
-    }
-
     /// The same line, but it can only be run fifty units at a time.
-    fn in_fifties() -> Recipe {
-        Recipe::new(good(9), vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.1, 0.95, 50.0, 1)
+    fn in_fifties() -> Way {
+        way(vec![(good(1), 2.0), (good(2), 0.5)], 0.4, 0.95, 50.0)
     }
 
     #[test]
@@ -471,11 +409,5 @@ mod tests {
         let at_ten = throttled_cost(10_000.0, 500.0).unwrap();
         let at_one = throttled_cost(10_000.0, 50.0).unwrap();
         assert_eq!(at_one / at_ten, 10.0);
-    }
-
-    #[test]
-    #[should_panic(expected = "cannot be run at all")]
-    fn a_line_with_no_smallest_run_is_not_a_line() {
-        Recipe::new(good(9), vec![(good(1), 2.0)], 0.4, 0.1, 0.95, 0.0, 1);
     }
 }

@@ -186,15 +186,6 @@ impl Mechanism for Funding {
     }
 }
 
-/// WHAT A FIRM MAKES, AND THE PLANT IT MAKES IT WITH.
-#[derive(Clone)]
-pub struct Makes {
-    pub line: crate::mechanisms::recipe::Line,
-    /// What THIS line's plant is.
-    pub plant: InstrumentId,
-    pub plant_is: crate::mechanisms::capital_programme::Plant,
-}
-
 /// THE FIRM PRODUCES.
 struct Ran {
     maker: PartyId,
@@ -208,7 +199,6 @@ struct Ran {
 }
 
 pub struct Making {
-    pub makes: Vec<Makes>,
     /// The flow, declared once and applied consistently — and it is the order settlement itself
     /// draws lots in, so the cost this books and the units that leave cannot disagree.
     pub flow: crate::mechanisms::goods::CostFlow,
@@ -221,9 +211,9 @@ pub struct Making {
 impl Mechanism for Making {
     fn run(&self, ctx: &mut MechanismContext<'_>) {
         use crate::ids::HoldingId;
-        use crate::mechanisms::capital_programme::{capacity, charge, upkeep, Vintage};
-        use crate::mechanisms::goods::{take, Lot};
-        use crate::mechanisms::recipe::{decide, picks, unit_cost, Reasons};
+        use crate::mechanisms::capital_programme::{capacity, charge, upkeep};
+        use crate::mechanisms::goods::take;
+        use crate::mechanisms::recipe::{decide, draws_for, picks, unit_cost, where_it_stands, Reasons};
 
         let now = ctx.period();
         // THE READ PASS.
@@ -234,8 +224,20 @@ impl Mechanism for Making {
         let built = crate::places::built_up(ctx.parties(), ctx.register(), ctx.registry());
         let crowds_at = ctx.params().square_km(self.crowds_at);
 
-        for m in &self.makes {
-            for &plant_row in ctx.register().of_instrument(m.plant) {
+        // How this world makes what it makes, off the registry — the one place that data lives.
+        let makes: Vec<(InstrumentId, Vec<crate::registry::Way>, InstrumentId, crate::registry::Plant)> =
+            ctx.registry()
+                .made()
+                .iter()
+                .filter_map(|line| {
+                    let plant = ctx.registry().made_with(*line)?;
+                    let plant_is = ctx.registry().plant_of(plant)?;
+                    Some((*line, ctx.registry().ways_of(*line).to_vec(), plant, plant_is))
+                })
+                .collect();
+
+        for (makes_line, ways, plant, plant_is) in &makes {
+            for &plant_row in ctx.register().of_instrument(*plant) {
                 let plant_row = HoldingId(plant_row);
                 let maker = ctx.register().holder_of(plant_row);
                 if !ctx.parties().alive(maker) {
@@ -244,13 +246,8 @@ impl Mechanism for Making {
 
                 // A vintage IS a lot on the register, so capacity and the period's charge are
                 // reads over the lots and nothing stores either.
-                let stock: Vec<Vintage> = ctx
-                    .register()
-                    .lots(plant_row)
-                    .iter()
-                    .map(|l| Vintage { units: l.qty, cost_per_unit: l.basis_per_unit, in_service: l.acquired })
-                    .collect();
-                let can_make = capacity(&stock, &m.plant_is, now);
+                let stock = ctx.register().lots(plant_row).to_vec();
+                let can_make = capacity(&stock, plant_is, now);
                 if can_make <= 0.0 {
                     continue;
                 }
@@ -292,7 +289,7 @@ impl Mechanism for Making {
 
                 // B5, 33 A3: what a unit of capital service costs — the plant's own upkeep and its
                 // own depreciation, over what the plant can make.
-                let keeping: f64 = stock.iter().map(|v| upkeep(v, &m.plant_is, now) + charge(v, &m.plant_is, now)).sum();
+                let keeping: f64 = stock.iter().map(|v| upkeep(v, plant_is, now) + charge(v, plant_is, now)).sum();
                 let a_service = keeping / can_make;
 
                 let priced = |i: InstrumentId| {
@@ -305,11 +302,11 @@ impl Mechanism for Making {
                     }
                     ctx.prints().latest(i, now).map(|p| p.price)
                 };
-                let Some((way, _)) = picks(&m.line, &priced, an_hour, a_service) else {
+                let Some((way, _)) = picks(ways, &priced, an_hour, a_service) else {
                     continue;
                 };
                 // The same line, run where this much already stands.
-                let crowding = match ctx.registry().footprint_of(m.line.makes) {
+                let crowding = match ctx.registry().footprint_of(*makes_line) {
                     Some(_) => crate::places::crowding(
                         crate::places::standing_in(&built, ctx.parties().region_of(maker)),
                         crowds_at,
@@ -317,7 +314,7 @@ impl Mechanism for Making {
                     None => 1.0,
                 };
                 // ONE writer of the scaling.
-                let way = &way.where_it_stands(crowding);
+                let way = &where_it_stands(way, crowding);
 
                 // What it holds of each input, off its own rows.
                 let on_hand: Vec<(InstrumentId, f64)> = way
@@ -335,7 +332,7 @@ impl Mechanism for Making {
                         on_hand,
                         labour: hours,
                         // What it already has of what it makes, off its own rows.
-                        on_shelf: ctx.register().quantity(ctx.register().row(maker, m.line.makes)),
+                        on_shelf: ctx.register().quantity(ctx.register().row(maker, *makes_line)),
                         cover: ctx.params().ratio(self.cover),
                     },
                 );
@@ -345,16 +342,11 @@ impl Mechanism for Making {
 
                 // What the draw costs, at the lots' own basis and in the order settlement will draw
                 // them in — so what this books and what leaves cannot disagree.
-                let draws = way.draws_for(d.starts);
+                let draws = draws_for(way, d.starts);
                 let mut inputs_cost = 0.0;
                 for (what, units) in &draws {
-                    let held: Vec<Lot> = ctx
-                        .register()
-                        .lots(ctx.register().row(maker, *what))
-                        .iter()
-                        .map(|l| Lot { units: l.qty, cost_per_unit: l.basis_per_unit, acquired: l.acquired })
-                        .collect();
-                    inputs_cost += take(&held, *units, self.flow).cost;
+                    let held = ctx.register().lots(ctx.register().row(maker, *what));
+                    inputs_cost += take(held, *units, self.flow).cost;
                 }
                 let wages = d.starts * way.labour_per_unit * an_hour;
                 let capital = d.starts * way.capital_services_per_unit * a_service;
@@ -365,7 +357,7 @@ impl Mechanism for Making {
                 // What goes ON the line now, and when it comes off.
                 runs.push(Ran {
                     maker,
-                    makes: m.line.makes,
+                    makes: *makes_line,
                     draws,
                     finished: d.finishes,
                     ready: now + way.periods_to_make,

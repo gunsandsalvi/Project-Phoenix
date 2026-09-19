@@ -4,8 +4,10 @@
 use crate::ids::{HoldingId, InstrumentId, PartyId};
 use std::collections::HashMap;
 
-/// Units carry the basis they were acquired at, so a disposal has a gain to book.
-#[derive(Clone, Copy)]
+/// Units carry the basis they were acquired at, so a disposal has a gain to book. A parcel of units
+/// held at what it cost, on the date it arrived, is ONE thing: inventory, plant and everything else
+/// held in lots is this row and not a second book beside it.
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Lot {
     pub qty: f64,
     pub basis_per_unit: f64,

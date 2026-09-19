@@ -1115,6 +1115,15 @@ an office block, a dwelling and a works differ by a registry row and by nothing 
 it is what makes *how built-up a place is* a quantity at all. It cannot be a count of units: units of
 dwellings added to units of mills is adding numbers in different units, which is Law 8's own defect.
 
+**HOW A LINE IS MADE is registry data too.** `Registry::made_by(line, ways, plant)` holds the ways of
+making it — input quantities per unit of output, labour, capital services, what it yields, its
+smallest run, how long it takes — and `is_plant(plant, …)` what a plant is. It was a `Vec<Makes>`
+carrying two modules' types, built at assembly and handed to the mechanism, so a mechanism could not
+be reached without the wiring that fed it. The mechanism now reads the registry like everything else.
+Two things fall out. What a way MAKES is the row it is declared under, so a way of making something
+else cannot be written down and the assertion that used to say so is gone. And the arithmetic stays
+in `mechanisms/recipe.rs` — the registry holds the numbers, never what is done with them.
+
 ### 4.10b Congestion: what standing on a place does to building there (21i, 33 A4)
 
 `src/places.rs` is a READ, not a store: `built_up` walks the register once a period and buckets each

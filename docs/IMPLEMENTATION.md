@@ -172,7 +172,7 @@ engine-only picture of what remains is:
 | no module at all | 3 | `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a; the other six moved |
 | **only its OWN module** | 0 | twenty-two moved home at 0m2.2, and every one of them deleted an import |
 | exactly one OTHER module | 2 | `Funding`→`treasury` (wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 2 | `Making` (capital_programme, goods, recipe), `CostOfCapital` (cost_of_capital, short_term_debt) |
+| two or more | 2 | `Making` (capital_programme, goods, recipe) — its DATA is settled and in the registry, so what is left is where the impl LIVES; `CostOfCapital` (cost_of_capital, short_term_debt) |
 
 **Four are design questions** — the last two rows — and each asks one thing: *which system owns this
 fact, or does the kernel?* `Makes` is one of the nine in `systems.rs`, and `BankCapital` was in this
@@ -223,33 +223,21 @@ step that did more than move.
      having no funding decision of its own, which is 0r's. Until then it is a PLACEHOLDER with a
      scheduled death naming 0r.
 
-- [ ] 0m2.3d **A Law 2 finding, and the blind spot that let it through.**
-  `capital_programme::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep`
-  are TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
+- [ ] 0m2.3d **A Law 2 finding, and the blind spots that let it through.**
+  `registry::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep` are
+  TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
   list, and *a stated value for one is a defect with a scheduled death*. The field's own comment says
   *"Capacity is a function of the stock"* while the field states it. It is a SHAPE and it needs a
   scheduled death naming the mechanism that produces it.
   **`phoenix-check`'s `undeclared_number` rule reads a field position (`x: 1.05`) and misses a match
-  arm**, which is how `bank_capital::haircut` carried seven policy numbers uncaught. Closing that
-  blind spot is part of this step.
+  arm**, which is how `bank_capital::haircut` carried seven policy numbers uncaught.
   **And its *One system, one file* rule reads `use crate::mechanisms::` and misses a fully-qualified
-  path**, which is how `housing::cost_to_build_at(recipe: &crate::mechanisms::recipe::Recipe, …)`
-  sits in a module naming another module. Nothing calls it — not the engine, not a test — so it is
-  0r's unwired `recipe` wearing a signature in `housing`. Same step: the rule reads the path, not
-  the `use`.
+  path**, which is how `housing` named `recipe` in a signature with nothing in the check to see it.
+  Both blind spots are this step: the rules read the path, not the `use`, and the arm, not the field.
   **And `bank_capital` has a `pub fn standing` beside `crate::stores::standing`**, a function and a
   store vocabulary with one name in one file, legible today only because Rust keeps types and values
   in separate namespaces. Law 9: one name, one thing.
 
-- [ ] 0m2.3b **`Making` and `Makes`, decided by Law 15 and Law 4.** `Makes { line: recipe::Line,
-  plant_is: capital_programme::Plant }` is a wiring declaration, so it is DATA and goes to the
-  registry. `Making` then reads the registry rather than two modules.
-  **And `capital_programme::Vintage { units, cost_per_unit, in_service }` is `register::Lot { qty,
-  basis_per_unit, acquired }` under other names** — Law 4's anti-pattern stated exactly: *two
-  disconnected representations of one real thing*. A vintage IS a register lot: units held, at the
-  basis they were acquired at, on the date they were acquired. Delete `Vintage`, and the deletion
-  names the read that replaces it (Law 19): the plant's lots on the register.
-  `goods::Lot` is the same defect a third time.
 - [ ] 0m2.3c **`CostOfCapital` reads `short_term_debt::{Paper, Convention}` for a yield.** Law 15: a
   day count is a market CONVENTION, which is data, and this world has one calendar that day counts
   come from. Law 3 and Law 19: a yield is derived FROM a price that printed, and the print is where

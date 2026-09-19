@@ -83,23 +83,6 @@ impl Offer {
     }
 }
 
-/// 22c.7, 21i, 40 B1.a: WHAT IT COSTS TO BUILD A DWELLING HERE.
-pub fn cost_to_build_at(
-    recipe: &crate::mechanisms::recipe::Recipe,
-    crowding: f64,
-    priced: impl Fn(crate::ids::InstrumentId) -> Option<f64>,
-    an_hour: f64,
-) -> Option<f64> {
-    let here = recipe.where_it_stands(crowding);
-    let mut inputs = 0.0;
-    for (what, per) in &here.per_unit {
-        inputs += per * priced(*what)?;
-    }
-    // What it costs per dwelling that SURVIVES, because normal waste is absorbed into the cost of
-    // The ones that do — the same division the maker's own unit cost makes.
-    Some((inputs + here.labour_per_unit * an_hour) / here.yields)
-}
-
 /// What a buyer can borrow at the keenest quote available to it — which is why the mortgage rate and
 /// the lending standard are the dominant inputs to the price.
 #[derive(Clone, Copy, PartialEq, Debug)]

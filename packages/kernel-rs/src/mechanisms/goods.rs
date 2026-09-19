@@ -9,6 +9,7 @@ use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 use crate::instruments::Class;
 use crate::ledger::{Cause, Delivery, Gone, Leg};
 use crate::module::{Mechanism, MechanismContext};
+use crate::register::Lot;
 
 /// A seller offering a quantity, and a buyer posting the most it will pay.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -109,15 +110,6 @@ impl Consignment {
     }
 }
 
-/// Stock is a quantity of units held as lots, each with what it cost.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Lot {
-    pub units: f64,
-    pub cost_per_unit: f64,
-    /// The period it came in, which is what makes first-in-first-out a real ordering.
-    pub acquired: u32,
-}
-
 /// Cost flows first-in-first-out or by weighted average; last-in-first-out is not permitted.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CostFlow {
@@ -140,14 +132,14 @@ pub struct Consumed {
 /// You cannot take out more units than are there, and the answer is what there was — arithmetic, not
 /// a clamp.
 pub fn take(lots: &[Lot], units: f64, flow: CostFlow) -> Consumed {
-    let held: f64 = lots.iter().map(|l| l.units).sum();
+    let held: f64 = lots.iter().map(|l| l.qty).sum();
     let taking = if units < held { units } else { held };
     match flow {
         CostFlow::WeightedAverage => {
             if held <= 0.0 {
                 return Consumed { units: 0.0, cost: 0.0, left: lots.to_vec() };
             }
-            let value: f64 = lots.iter().map(|l| l.units * l.cost_per_unit).sum();
+            let value: f64 = lots.iter().map(|l| l.qty * l.basis_per_unit).sum();
             let per_unit = value / held;
             // The pooled lot carries the earliest acquisition, because that is when the stock the
             // pool is made of started being held.
@@ -157,7 +149,7 @@ pub fn take(lots: &[Lot], units: f64, flow: CostFlow) -> Consumed {
                     earliest = l.acquired;
                 }
             }
-            let left = vec![Lot { units: held - taking, cost_per_unit: per_unit, acquired: earliest }];
+            let left = vec![Lot { qty: held - taking, basis_per_unit: per_unit, acquired: earliest }];
             Consumed { units: taking, cost: taking * per_unit, left }
         }
         CostFlow::FirstInFirstOut => {
@@ -171,12 +163,12 @@ pub fn take(lots: &[Lot], units: f64, flow: CostFlow) -> Consumed {
                     left.push(lot);
                     continue;
                 }
-                if lot.units <= want {
-                    cost += lot.units * lot.cost_per_unit;
-                    want -= lot.units;
+                if lot.qty <= want {
+                    cost += lot.qty * lot.basis_per_unit;
+                    want -= lot.qty;
                 } else {
-                    cost += want * lot.cost_per_unit;
-                    left.push(Lot { units: lot.units - want, ..lot });
+                    cost += want * lot.basis_per_unit;
+                    left.push(Lot { qty: lot.qty - want, ..lot });
                     want = 0.0;
                 }
             }
@@ -199,17 +191,17 @@ pub fn carry(lot: &Lot, net_realisable: f64, holder: CarriesAtFairValue) -> Carr
     if at_fair_value {
         return Carried {
             per_unit: net_realisable,
-            to_income: (net_realisable - lot.cost_per_unit) * lot.units,
+            to_income: (net_realisable - lot.basis_per_unit) * lot.qty,
         };
     }
-    if net_realisable < lot.cost_per_unit {
+    if net_realisable < lot.basis_per_unit {
         return Carried {
             per_unit: net_realisable,
-            to_income: (net_realisable - lot.cost_per_unit) * lot.units,
+            to_income: (net_realisable - lot.basis_per_unit) * lot.qty,
         };
     }
     // At or above cost: carried at cost, and nothing reaches income.
-    Carried { per_unit: lot.cost_per_unit, to_income: 0.0 }
+    Carried { per_unit: lot.basis_per_unit, to_income: 0.0 }
 }
 
 /// Spoilage, obsolescence and shrinkage remove units without a sale, at the lot's own cost per unit,
@@ -225,8 +217,8 @@ pub fn perish(lot: &Lot, share_that_perishes: f64) -> Perished {
         (0.0..=1.0).contains(&share_that_perishes),
         "37 E4: {share_that_perishes} of a lot perishing is not a share of it"
     );
-    let units = lot.units * share_that_perishes;
-    Perished { units, at_cost: units * lot.cost_per_unit }
+    let units = lot.qty * share_that_perishes;
+    Perished { units, at_cost: units * lot.basis_per_unit }
 }
 
 /// The OTHER thing — cash, paid to a named storer (Law 5: two sides).
@@ -270,13 +262,7 @@ impl Mechanism for Perishing {
             if held.is_empty() {
                 continue;
             }
-            // The module's own arithmetic over the register's own lots, converted at the boundary
-            // and nowhere else.
-            let mine: Vec<Lot> = held
-                .iter()
-                .map(|l| Lot { units: l.qty, cost_per_unit: l.basis_per_unit, acquired: l.acquired })
-                .collect();
-            let gone: f64 = mine.iter().map(|l| perish(l, share).units).sum();
+            let gone: f64 = held.iter().map(|l| perish(l, share).units).sum();
             if gone <= 0.0 {
                 continue;
             }
@@ -304,8 +290,8 @@ mod tests {
 
     fn lots() -> Vec<Lot> {
         vec![
-            Lot { units: 100.0, cost_per_unit: 4.0, acquired: 1 },
-            Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 },
+            Lot { qty: 100.0, basis_per_unit: 4.0, acquired: 1 },
+            Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 },
         ]
     }
 
@@ -369,8 +355,8 @@ mod tests {
         let average = take(&lots(), 120.0, CostFlow::WeightedAverage);
         assert_eq!(average.cost, 120.0 * 5.5);
         // Profit and carrying value move opposite ways: the cheaper charge leaves dearer stock.
-        let fifo_left: f64 = fifo.left.iter().map(|l| l.units * l.cost_per_unit).sum();
-        let average_left: f64 = average.left.iter().map(|l| l.units * l.cost_per_unit).sum();
+        let fifo_left: f64 = fifo.left.iter().map(|l| l.qty * l.basis_per_unit).sum();
+        let average_left: f64 = average.left.iter().map(|l| l.qty * l.basis_per_unit).sum();
         assert!(fifo.cost < average.cost);
         assert!(fifo_left > average_left);
     }
@@ -387,7 +373,7 @@ mod tests {
     #[test]
     fn inventory_is_written_down_when_the_market_falls_below_cost_and_the_charge_is_an_event() {
         // The write-down is a charge to income in the period it happens, with a size.
-        let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
+        let lot = Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 };
         let down = carry(&lot, 5.0, CarriesAtFairValue(false));
         assert_eq!(down.per_unit, 5.0);
         assert_eq!(down.to_income, -200.0);
@@ -396,7 +382,7 @@ mod tests {
     #[test]
     fn inventory_is_never_marked_up_above_cost_for_a_holder_that_is_not_a_broker_dealer() {
         // Marking it up invents profit the firm has not earned.
-        let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
+        let lot = Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 };
         let up = carry(&lot, 11.0, CarriesAtFairValue(false));
         assert_eq!(up.per_unit, 7.0);
         assert_eq!(up.to_income, 0.0);
@@ -405,7 +391,7 @@ mod tests {
     #[test]
     fn a_commodity_broker_dealer_carries_at_fair_value_through_income_in_both_directions() {
         // The exception is real and narrow — for it the inventory IS the position.
-        let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
+        let lot = Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 };
         let up = carry(&lot, 11.0, CarriesAtFairValue(true));
         assert_eq!(up.per_unit, 11.0);
         assert_eq!(up.to_income, 400.0);
@@ -416,11 +402,11 @@ mod tests {
     #[test]
     fn a_storage_fee_and_a_spoilage_rate_are_two_different_things() {
         // One is cash paid to whoever stores the goods, the other is units that perish.
-        let lot = Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 };
+        let lot = Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 };
         let gone = perish(&lot, 0.05);
         assert_eq!(gone.units, 5.0);
         assert_eq!(gone.at_cost, 35.0);
-        let (storer, fee) = storage_fee(lot.units, 0.2, party(70));
+        let (storer, fee) = storage_fee(lot.qty, 0.2, party(70));
         assert_eq!(storer, party(70));
         assert_eq!(fee, 20.0);
     }
@@ -466,6 +452,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "is not a share of it")]
     fn more_than_a_lot_cannot_perish() {
-        perish(&Lot { units: 100.0, cost_per_unit: 7.0, acquired: 2 }, 1.4);
+        perish(&Lot { qty: 100.0, basis_per_unit: 7.0, acquired: 2 }, 1.4);
     }
 }

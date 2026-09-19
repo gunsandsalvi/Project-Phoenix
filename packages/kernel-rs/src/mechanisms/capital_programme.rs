@@ -5,6 +5,8 @@
 use crate::audit::{Contribution, Family, Sources, Violation, Visit};
 use crate::ids::{InstrumentId, PartyId};
 use crate::ledger::Leg;
+use crate::register::Lot;
+use crate::registry::Plant;
 use std::collections::HashMap;
 
 /// MISSING IS MISSING — and these two are not missing, they are NOTHING, which is an answer.
@@ -163,69 +165,48 @@ impl Contribution for PlantMoves {
     }
 }
 
-/// The stock is a set of dated vintages, each with its own cost and its own service date — and a
-/// vintage is a LOT ON THE REGISTER, not a second book kept beside it.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Vintage {
-    pub units: f64,
-    pub cost_per_unit: f64,
-    /// Its own service date.
-    pub in_service: u32,
-}
-
-/// What a kind of plant IS — a TECHNOLOGY primitive about the capital good, declared once per line
-/// and true for every holder of it.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Plant {
-    /// A useful life of its own, and the presence of a life is what makes a good a capital good.
-    pub life: u32,
-    /// What it costs to keep, every period, whether or not it runs.
-    pub upkeep_per_period: f64,
-    /// Capacity is a function of the stock.
-    pub capacity_per_period: f64,
-}
-
 /// One depreciation schedule, charged in both places — against profit and against the stock.
-pub fn charge(v: &Vintage, p: &Plant, now: u32) -> f64 {
+pub fn charge(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
     }
-    v.units * v.cost_per_unit / (p.life as f64)
+    v.qty * v.basis_per_unit / (p.life as f64)
 }
 
-/// A vintage leaves the register when fully worn, so the charge stops when the plant is gone.
-pub fn in_service(v: &Vintage, p: &Plant, now: u32) -> bool {
-    now >= v.in_service && now - v.in_service < p.life
+/// Plant enters service on the date it lands on the register, and a vintage leaves the register when
+/// fully worn — so the charge stops when the plant is gone.
+pub fn in_service(v: &Lot, p: &Plant, now: u32) -> bool {
+    now >= v.acquired && now - v.acquired < p.life
 }
 
 /// Accumulated depreciation is a READ over the vintages, never a stored balance.
-pub fn worn(v: &Vintage, p: &Plant, now: u32) -> f64 {
-    let periods = if now <= v.in_service {
+pub fn worn(v: &Lot, p: &Plant, now: u32) -> f64 {
+    let periods = if now <= v.acquired {
         0
-    } else if now - v.in_service > p.life {
+    } else if now - v.acquired > p.life {
         p.life
     } else {
-        now - v.in_service
+        now - v.acquired
     };
-    v.units * v.cost_per_unit * (periods as f64) / (p.life as f64)
+    v.qty * v.basis_per_unit * (periods as f64) / (p.life as f64)
 }
 
 /// And so is net book value.
-pub fn net(v: &Vintage, p: &Plant, now: u32) -> f64 {
-    v.units * v.cost_per_unit - worn(v, p, now)
+pub fn net(v: &Lot, p: &Plant, now: u32) -> f64 {
+    v.qty * v.basis_per_unit - worn(v, p, now)
 }
 
 /// What the firm pays this period to keep this vintage, whether or not the line runs.
-pub fn upkeep(v: &Vintage, p: &Plant, now: u32) -> f64 {
+pub fn upkeep(v: &Lot, p: &Plant, now: u32) -> f64 {
     if !in_service(v, p, now) {
         return 0.0;
     }
-    v.units * p.upkeep_per_period
+    v.qty * p.upkeep_per_period
 }
 
 /// Capacity is a function of the stock, summed over the vintages still in service.
-pub fn capacity(vintages: &[Vintage], p: &Plant, now: u32) -> f64 {
-    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.units * p.capacity_per_period).sum()
+pub fn capacity(vintages: &[Lot], p: &Plant, now: u32) -> f64 {
+    vintages.iter().filter(|v| in_service(v, p, now)).map(|v| v.qty * p.capacity_per_period).sum()
 }
 
 // The three family fixtures are gone for the reason the rest of the audit's are: arranging plant
@@ -316,8 +297,8 @@ mod tests {
         Plant { life: 5, upkeep_per_period: 3.0, capacity_per_period: 100.0 }
     }
 
-    fn bought(units: f64, cost: f64, when: u32) -> Vintage {
-        Vintage { units, cost_per_unit: cost, in_service: when }
+    fn bought(units: f64, cost: f64, when: u32) -> Lot {
+        Lot { qty: units, basis_per_unit: cost, acquired: when }
     }
 
     #[test]

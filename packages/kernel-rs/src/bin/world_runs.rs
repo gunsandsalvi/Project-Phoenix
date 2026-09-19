@@ -10,10 +10,8 @@ use phoenix_kernel::params::Kind as ParamKind;
 use phoenix_kernel::parties::Representation;
 use phoenix_kernel::protocols::{Protocol, Venue};
 use phoenix_kernel::registry::{Banks, Footprint, KindProfile};
-use phoenix_kernel::mechanisms::capital_programme::Plant;
-use phoenix_kernel::mechanisms::recipe::{Line, Recipe};
+use phoenix_kernel::registry::{Plant, Way};
 use phoenix_kernel::registry::tracks;
-use phoenix_kernel::running::Makes;
 use phoenix_kernel::stores::{about as running_about, afoot, agreed};
 use phoenix_kernel::stores::Owing;
 use phoenix_kernel::ids::book_of;
@@ -257,40 +255,40 @@ fn main() {
         w.registry.stands_on(*b, Footprint::new(ground).expect("a dwelling stands on ground"));
     }
 
-    let makes: Vec<Makes> = goods
-        .iter()
-        .enumerate()
-        .filter_map(|(n, made)| {
-            let from = *goods.get((n + 1) % goods.len())?;
-            let plant = *plants.get(n % plants.len().max(1))?;
-            Some(Makes {
-                line: Line::new(
-                    *made,
-                    vec![
-                        Recipe::new(*made, vec![(from, 2.0)], 0.2, 0.1, 0.98, 10.0, 1),
-                        Recipe::new(*made, vec![(from, 0.5)], 1.5, 0.1, 0.98, 10.0, 2),
-                    ],
-                ),
-                plant,
-                plant_is: Plant { life: 200, upkeep_per_period: 0.5, capacity_per_period: 40.0 },
-            })
-        })
-        .collect();
+    // How each good is made, and with what — declared into the registry, which is where the ids
+    // point at everything else this world knows.
+    for (n, made) in goods.iter().enumerate() {
+        let Some(from) = goods.get((n + 1) % goods.len()).copied() else { continue };
+        let Some(plant) = plants.get(n % plants.len().max(1)).copied() else { continue };
+        w.registry.made_by(
+            *made,
+            vec![
+                Way { per_unit: vec![(from, 2.0)], labour_per_unit: 0.2, capital_services_per_unit: 0.1, yields: 0.98, batch: 10.0, periods_to_make: 1 },
+                Way { per_unit: vec![(from, 0.5)], labour_per_unit: 1.5, capital_services_per_unit: 0.1, yields: 0.98, batch: 10.0, periods_to_make: 2 },
+            ],
+            plant,
+        );
+    }
+    for plant in &plants {
+        w.registry.is_plant(*plant, Plant { life: 200, upkeep_per_period: 0.5, capacity_per_period: 40.0 });
+    }
 
     // A maker is whoever holds the plant, so a world where the plant landed on parties
     // that employ nobody is a world that makes nothing.
-    for (n, m) in makes.iter().enumerate() {
+    for (n, made) in w.registry.made().to_vec().iter().enumerate() {
         let maker = PartyId(firms[n % firms.len()]);
-        w.register.credit(maker, m.plant, 3.0, 1_000.0, 0);
-        for (input, _) in &m.line.ways[0].per_unit {
-            w.register.credit(maker, *input, draw.spread(4_000.0), 0.5, 0);
+        let Some(plant) = w.registry.made_with(*made) else { continue };
+        w.register.credit(maker, plant, 3.0, 1_000.0, 0);
+        let inputs: Vec<InstrumentId> =
+            w.registry.ways_of(*made)[0].per_unit.iter().map(|(what, _)| *what).collect();
+        for input in inputs {
+            w.register.credit(maker, input, draw.spread(4_000.0), 0.5, 0);
         }
         // And a view of its own demand, which in a seeded world is what its own past sales gave it.
         w.outlooks.form(maker, running_about::HOW_MUCH_IT_SELLS, draw.spread(300.0), 0);
     }
 
     let wiring = Wiring {
-        makes,
         lines: lines.iter().take(8).copied().collect(),
         overnight: None,
         paper: None,
@@ -298,7 +296,7 @@ fn main() {
     };
     // Every behaviour-shaping number this world acts on, declared before anything reads one.
     declare(&mut w.params);
-    let wired = all(&wiring, &mut w.journal);
+    let wired = all(&wiring, &w.registry, &mut w.journal);
     let systems: Vec<&dyn System> = wired.iter().map(|s| s as &dyn System).collect();
     w.wire_up(&systems);
     let assembly = built.elapsed();

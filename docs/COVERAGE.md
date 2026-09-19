@@ -1303,7 +1303,7 @@ header described are gone with the TypeScript, and there is no such script in `p
 | requirement | status | where / why |
 |---|---|---|
 | `Goods A1` | MET | packages/kernel-rs/src/instruments.rs `Class::Good` with its own `UnitId`, and packages/kernel-rs/src/registry.rs says what one of a unit is divided into |
-| `Goods A2` | MET | packages/kernel-rs/src/mechanisms/recipe.rs `Recipe`/`Line` — fixed input quantities per unit of output, plus labour and capital services |
+| `Goods A2` | MET | packages/kernel-rs/src/registry.rs `Way`, one row per way of making a line — fixed input quantities per unit of output, plus labour and capital services; packages/kernel-rs/src/mechanisms/recipe.rs is the arithmetic over it |
 | `Goods A2.b` | MET | packages/kernel-rs/src/mechanisms/recipe.rs draws `per x units`, never money divided by a price, so a price doubling does not halve the draw |
 | `Goods A3` | MISSING | VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index |
 | `Goods A4` | MISSING | VERIFICATION 12.1: `goods` is wired as a participant (`GoodsSellers`) and the making is `running.rs Making` over `mechanisms::recipe`. What is missing is everything downstream of the line: no delivery, no carrier, no landed cost, no write-down to net realisable value, no income statement and no price index |
