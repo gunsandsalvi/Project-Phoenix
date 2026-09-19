@@ -221,9 +221,6 @@ a count that cannot be zero, an id that cannot be fabricated, a measure whose co
 more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
 those stay as a panic at the site, with no test.
 
-- [ ] 0m3.4 **`assembly.rs` (15), `session.rs` (17), `systems.rs` (6)** — the world and the loop.
-  These build a world because that is what they ARE, and `world:runs` already steps the assembled
-  one every run. Expect the most deletion here and the least extraction.
 - [ ] 0m3.5 **`audit.rs` (41)** — the densest file. A fixture arranged so a family fires proves the
   fixture, not the family; 0m.1 removed exactly that shape one register over. The families run over
   the real world every period and `world:runs` prints them by name with their counts.
