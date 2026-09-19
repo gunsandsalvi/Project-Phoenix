@@ -12,7 +12,7 @@
 //! **What this does NOT do is the modules**, which are the other ~33 s and are 0g.42's. This is the
 //! floor the ported kernel puts under a period, not a period.
 
-use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, LotsAgainstQuantity, NoCollateralCountedTwice};
+use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
 use phoenix_kernel::calendar::{Calendar, Day};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
 use phoenix_kernel::journal::{Journal, Value};
@@ -122,7 +122,6 @@ fn main() {
     }
 
     let mut audit = Audit::new();
-    audit.add(Box::<LotsAgainstQuantity>::default());
     audit.add(Box::<NoCollateralCountedTwice>::default());
     audit.add(Box::<ATotalCarriesNoLots>::default());
 
@@ -183,7 +182,13 @@ fn main() {
 
     // The audit, on one walk.
     let t = Instant::now();
-    let reports = audit.run(&reg, &wire, period);
+    let reports = audit.run(&phoenix_kernel::audit::Sources {
+        wire: &wire,
+        register: &reg,
+        instruments: &instruments,
+        parties: &parties,
+        period,
+    });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
 

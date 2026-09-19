@@ -94,7 +94,13 @@ fn main() {
     let mut audit = Audit::new();
     audit.add(Box::new(PlantMoves::over(capital)));
     // Period 1 establishes what is held; there is nothing to compare it against yet.
-    audit.run(&reg, &wire, 1);
+    audit.run(&phoenix_kernel::audit::Sources {
+        wire: &wire,
+        register: &reg,
+        instruments: &instruments,
+        parties: &parties,
+        period: 1,
+    });
 
     // The period's legs. Every one of them has a reason behind it, so the family should find
     // nothing — which is the state a working world is in, and the one worth timing.
@@ -136,7 +142,13 @@ fn main() {
     }
 
     let t = Instant::now();
-    let reports = audit.run(&reg, &wire, 2);
+    let reports = audit.run(&phoenix_kernel::audit::Sources {
+        wire: &wire,
+        register: &reg,
+        instruments: &instruments,
+        parties: &parties,
+        period: 2,
+    });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();

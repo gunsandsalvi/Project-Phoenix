@@ -382,30 +382,11 @@ impl Register {
     }
 }
 
-/// Law 19, Audit B2: the audit's own walk — it SUMS THE LOTS and compares them with the row's
-/// quantity, which is the one place the maintained total is checked against what it is a total of.
-/// A family reading `quantity` and calling that a check would be reading the answer (Audit C3).
-pub fn lots_against_quantity(reg: &Register) -> Vec<(HoldingId, f64)> {
-    let mut out = Vec::new();
-    for row in reg.all() {
-        if reg.is_total(row) {
-            continue;
-        }
-        let mut summed = 0.0;
-        let mut magnitude = 0.0;
-        let lots = reg.lots(row);
-        for l in lots {
-            summed += l.qty;
-            magnitude += l.qty.abs();
-        }
-        let held = reg.quantity(row);
-        let dust = (lots.len() as f64 + 2.0) * f64::EPSILON * (magnitude + held.abs());
-        if (summed - held).abs() > dust {
-            out.push((row, summed - held));
-        }
-    }
-    out
-}
+// **`lots_against_quantity` stood here** — a byte-for-byte second copy of `audit.rs`'s
+// `LotsAgainstQuantity` loop (Law 4), whose comment still described the maintained total that 22e2
+// deleted and whose only callers were its own test and a benchmark. Both are gone at 0m.1: the
+// check could not fail, because `quantity()` for a row that carries lots re-derives from those very
+// lots. The read that replaces it is `quantity()` itself.
 
 #[cfg(test)]
 mod tests {
@@ -465,7 +446,9 @@ mod tests {
         assert_eq!(drawn[1].basis_per_unit, 2.5);
         assert_eq!(drawn[1].qty, 20.0);
         assert_eq!(reg.quantity(row), 30.0);
-        assert!(lots_against_quantity(&reg).is_empty());
+        // 0m.1: and the row answers 30 because the lots say 30. There is no second number to check
+        // it against, which is why the family that used to is gone.
+        assert_eq!(reg.lots(row).iter().map(|l| l.qty).sum::<f64>(), 30.0);
     }
 
     #[test]

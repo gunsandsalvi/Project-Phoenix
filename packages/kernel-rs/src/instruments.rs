@@ -392,8 +392,9 @@ mod tests {
 
     #[test]
     fn a_money_account_carries_no_lots_because_every_unit_is_the_same_unit() {
-        // Money D2, and the reason `LotsAgainstQuantity` found ten thousand violations before the
-        // register had a `total_only` column.
+        // Money D2, and the reason the audit reported ten thousand violations in its first
+        // end-to-end period, before the register had a `total_only` column: every money account in
+        // the world looked like a holding whose lots had gone missing.
         assert!(!Class::Money.carries_lots());
         assert!(Class::Claim.carries_lots());
         assert!(Class::Good.carries_lots());

@@ -214,7 +214,7 @@ Audit E2 honoured and 22e's own achievement. What is wrong is what was claimed o
 Part XII is explicit that these are **gates, not experiments** — Law 11 forbids measuring mid-build
 and does not forbid the checks that stop the build from lying.
 
-- [ ] 0m.1 **Delete `LotsAgainstQuantity`; it cannot fail.** `audit.rs:211` sums a row's lots into
+- [x] 0m.1 **Delete `LotsAgainstQuantity`; it cannot fail.** `audit.rs:211` sums a row's lots into
   `summed`, reads `register.quantity(row)` into `held`, and reports a violation when they differ.
   `register.rs:126` — `quantity()` for any row that is not `total_only` **is**
   `self.lots[at..at+len].iter().map(|l| l.qty).sum()`. The same lots, the same slice, the same order,
@@ -229,10 +229,23 @@ and does not forbid the checks that stop the build from lying.
   Delete `register.rs:388 lots_against_quantity` with it: a byte-for-byte second copy of the same
   loop (Law 4), whose comment still describes the deleted total, and whose only callers are its own
   test and `bin/register_at_scale.rs` — so the benchmark asserts against a check the world never runs.
-- [ ] 0m.2 **Ownership, for real: holders summed against issued** (Register B2, Bond N8.a, Corporate
+  **Both gone, and the read that replaces them is `quantity()` itself** (Law 19): there is one
+  number where there were two, so the drift the family once caught cannot happen.
+- [x] 0m.2 **Ownership, for real: holders summed against issued** (Register B2, Bond N8.a, Corporate
   Credit E2, Equity C1.a, Insurers E4 — one identity, five clauses, all of them marked MET before the
-  verification pass). It needs 0l, and `register.rs:198 held_total` already returns the sum and its
-  dust.
+  verification pass). `HoldersAgainstIssued` walks the holdings on the shared pass and compares each
+  line's sum with `Instruments::issued_of`, with the dust of its own terms and magnitudes (Law 7,
+  B2.b: never a fraction of the issue). B2.a decides the message — *a claim vanished* below, *a
+  claim was invented* above.
+  **The audit could not ask the question before**, so `Sources` and `Visit` carry `instruments` and
+  `parties` now: the issued amount is a fact about an instrument and whether a name resolves is a
+  fact about a party, and a family handed only the register can ask neither. `Audit::run` takes the
+  `Sources` struct rather than three loose arguments, which is the shape `Settling` already has.
+  **It reports 16,750 violations a period — every line the world opened with, and not one of the
+  lines brought during the run.** The count stays at exactly 16,750 while the census grows past
+  18,800 lines, which is the proof that the wire path is right and the seeding is not: a line
+  brought by `Brings` settles a `Leg::Create` and balances; a line placed by `world_runs` directly
+  does not (22g.1). A family that went green on this world would be measuring nothing.
 - [ ] 0m.3 **Money is conserved** (Audit B1). The one Money contribution, `ATotalCarriesNoLots`,
   checks that a money account carries no lots. Nothing checks that the sum over all accounts changes
   only by an act of a money issuer, and 0k.1 is why that matters. Money C2.c and C4.c go with it:

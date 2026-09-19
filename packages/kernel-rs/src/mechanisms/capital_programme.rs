@@ -281,6 +281,15 @@ mod tests {
         vec![true; lines]
     }
 
+    /// The stores the audit derives its answers from, gathered for a call. This family reads only
+    /// the wire and the register; the other two are here because `Sources` is one shape for every
+    /// family (0m.2).
+    fn over<'a>(register: &'a Register, wire: &'a Settlement, period: u32) -> Sources<'a> {
+        static NOBODY: std::sync::OnceLock<(Instruments, Parties)> = std::sync::OnceLock::new();
+        let (instruments, parties) = NOBODY.get_or_init(|| (Instruments::new(), Parties::new()));
+        Sources { wire, register, instruments, parties, period }
+    }
+
     #[test]
     fn plant_that_moved_with_a_leg_behind_it_is_not_a_violation() {
         let mut reg = Register::new();
@@ -296,7 +305,7 @@ mod tests {
         let mut audit = Audit::new();
         audit.add(Box::new(PlantMoves::over(capital(4))));
         // Period 1 establishes what is held; nothing is comparable yet.
-        audit.run(&reg, &wire, 1);
+        audit.run(&over(&reg, &wire, 1));
 
         // Period 2: it sells 40, and the leg says so.
         let legs = [Leg::Asset { from: a, to: b, instrument: plant, qty: 40.0, price_per_unit: Some(2.0) }];
@@ -307,7 +316,7 @@ mod tests {
             2,
             &mut Settling { register: &mut reg, journal: &mut j, parties: &ps, instruments: &mut ins, calendar: &cal, says },
         );
-        let reports = audit.run(&reg, &wire, 2);
+        let reports = audit.run(&over(&reg, &wire, 2));
         assert!(
             reports[0].violations.is_empty(),
             "{:?}",
@@ -326,11 +335,11 @@ mod tests {
 
         let mut audit = Audit::new();
         audit.add(Box::new(PlantMoves::over(capital(4))));
-        audit.run(&reg, &wire, 1);
+        audit.run(&over(&reg, &wire, 1));
 
         // Units appear with no instruction behind them — which is what this family exists to find.
         reg.credit(a, plant, 25.0, 1.0, 2);
-        let reports = audit.run(&reg, &wire, 2);
+        let reports = audit.run(&over(&reg, &wire, 2));
         assert_eq!(reports[0].violations.len(), 1);
         assert_eq!(reports[0].violations[0].size, 25.0);
         assert_eq!(reports[0].violations[0].spec, "Capital Programme A6.b");
@@ -350,9 +359,9 @@ mod tests {
         reg.credit(a, share, 100.0, 1.0, 0);
         let mut audit = Audit::new();
         audit.add(Box::new(PlantMoves::over(which)));
-        audit.run(&reg, &wire, 1);
+        audit.run(&over(&reg, &wire, 1));
         reg.credit(a, share, 50.0, 1.0, 2);
-        let reports = audit.run(&reg, &wire, 2);
+        let reports = audit.run(&over(&reg, &wire, 2));
         assert!(reports[0].violations.is_empty());
     }
 

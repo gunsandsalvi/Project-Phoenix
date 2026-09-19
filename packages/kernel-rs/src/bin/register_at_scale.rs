@@ -7,7 +7,7 @@
 //! **544,104 holdings in 657,785 lots**, 23,304,012 quantity reads a period, ~10 full traversals.
 
 use phoenix_kernel::ids::{InstrumentId, PartyId};
-use phoenix_kernel::register::{lots_against_quantity, Register};
+use phoenix_kernel::register::Register;
 use std::time::Instant;
 
 const PARTIES: u32 = 10_318;
@@ -83,11 +83,9 @@ fn main() {
     }
     let walk_ms = t.elapsed().as_secs_f64() * 1000.0 / f64::from(passes);
 
-    // Audit B2, Law 19: and the family that sums the lots and checks the row against them.
-    let t = Instant::now();
-    let violations = lots_against_quantity(&reg);
-    let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
-
+    // 0m.1: the third timing here was `lots_against_quantity`, and it timed a check that could not
+    // fail — `quantity()` re-derives from the very lots it summed. Both are gone, and a benchmark
+    // asserting against a check the world never ran went with them.
     println!("built {} holdings, {lots_placed} lots in {build_ms:.0} ms", reg.rows());
     println!(
         "hot read       {read_ns:6.2} ns/op   over {READS} ops    TS {TS_READ_NS:.2}   {:5.1}x",
@@ -98,6 +96,5 @@ fn main() {
         reg.rows(),
         TS_WALK_MS / walk_ms
     );
-    println!("lots vs quantity {audit_ms:6.2} ms, {} violations", violations.len());
     println!("checksum {sink:.0} {walk:.0}");
 }

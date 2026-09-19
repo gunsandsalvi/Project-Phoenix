@@ -13,8 +13,10 @@
 //! visited: each one still derives its own answer from the register and the ledger, and none of
 //! them may read another's total or a mechanism's running one.
 
-use crate::ids::HoldingId;
+use crate::ids::{HoldingId, InstrumentId};
+use crate::instruments::Instruments;
 use crate::ledger::Settlement;
+use crate::parties::Parties;
 use crate::register::Register;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -96,15 +98,20 @@ pub struct Report {
 pub struct Visit<'a> {
     pub row: HoldingId,
     pub register: &'a Register,
+    pub instruments: &'a Instruments,
+    pub parties: &'a Parties,
     pub period: u32,
 }
 
-/// What a family is given BEFORE the shared walk, for the sources that are not the register: the
-/// wire's own history, and the period. A family that needs to know WHY something moved reads the
-/// legs here — which is its own pass over its own source, and the independence Audit C3 is about.
+/// What a family is given BEFORE the shared walk, for the sources that are not one holding: the
+/// wire's own history, the instruments, the parties. A family that needs to know WHY something
+/// moved reads the legs here — which is its own pass over its own source, and the independence
+/// Audit C3 is about.
 pub struct Sources<'a> {
     pub wire: &'a Settlement,
     pub register: &'a Register,
+    pub instruments: &'a Instruments,
+    pub parties: &'a Parties,
     pub period: u32,
 }
 
@@ -162,16 +169,21 @@ impl Audit {
     }
 
     /// Audit C1: every family, every period, off ONE walk of the register.
-    pub fn run(&mut self, register: &Register, wire: &Settlement, period: u32) -> Vec<Report> {
-        let from = Sources { wire, register, period };
+    pub fn run(&mut self, from: &Sources<'_>) -> Vec<Report> {
+        let (register, period) = (from.register, from.period);
         for f in self.families.iter_mut() {
             if f.built() {
-                f.before(&from);
+                f.before(from);
             }
         }
         for row in register.all() {
-
-            let at = Visit { row, register, period };
+            let at = Visit {
+                row,
+                register,
+                instruments: from.instruments,
+                parties: from.parties,
+                period,
+            };
             for f in self.families.iter_mut() {
                 if f.built() {
                     f.visit(&at);
@@ -200,57 +212,103 @@ impl Audit {
     }
 }
 
-/// Audit B2, Law 19: the lots are summed and compared with the row's own quantity. It reads the
-/// SOURCE — the lots — and never the total it is checking, which is what makes it a check and not
-/// a restatement.
+// **`LotsAgainstQuantity` stood here and it could not fail** (0m.1, Audit A1.a: *a read of one thing
+// against itself, which always passes*). It summed a row's lots and compared the total with
+// `register.quantity(row)` — and for any row that is not `total_only`, `quantity()` IS
+// `self.lots[at..at+len].iter().map(|l| l.qty).sum()`. The same lots, the same slice, the same
+// order, the same f64 addition, so the difference was exactly `0.0` and the branch was unreachable.
+//
+// **It was a real check once, and 22e2 made it a tautology.** The quantity used to be a maintained
+// total beside the lots, this family compared the two, and it found a genuine drift —
+// `27.143341836734685` against `27.143341836734628`. The fix correctly deleted the total and left
+// the family pointed at a `quantity()` that now re-derives from the lots, so the deletion did not
+// name the read that replaced it (Law 19). **The read that replaces it is `quantity()` itself**:
+// there is one number where there were two, and a drift between two copies cannot happen because
+// there is no second copy. What Ownership needs instead is B2's own identity — the holders of a line
+// against what the line says is issued — and that is what stands here now.
+
+/// **Register B2, Bond N8.a: HOLDINGS SUM TO THE ISSUED AMOUNT, per instrument, always.**
+///
+/// The identity the family it replaces could not express, because until 0l there was no issued
+/// amount to sum against — and `held_total` IS the sum of the holdings, so a check written against
+/// it compares the answer with itself (Audit A1.a). **Two independent things that must agree**: the
+/// holdings, walked here; and `Instruments::issued`, moved only by a named event on the wire.
+///
+/// B2.a says what each direction means, and the message says which: *a shortfall means somebody's
+/// claim vanished; a surplus means somebody's was invented.*
+///
+/// **It will fire, in volume, and that is the point** (22g.1). Every unit this world opens with was
+/// placed on the register directly rather than issued over the wire, so every seeded line is short
+/// by exactly what was placed. A family that went green on a world like this one would be measuring
+/// nothing.
 #[derive(Default)]
-pub struct LotsAgainstQuantity {
+pub struct HoldersAgainstIssued {
+    /// B1's side, read from its own source once per period.
+    issued: Vec<f64>,
+    /// And the holdings' side, accumulated on the shared walk — with the terms and the magnitudes
+    /// the dust is derived from, because Law 7 wants the error of THIS arithmetic and B2.b forbids
+    /// a fraction of the issue.
+    held: Vec<(f64, f64, usize)>,
     found: Vec<Violation>,
 }
 
-impl Contribution for LotsAgainstQuantity {
+impl Contribution for HoldersAgainstIssued {
     fn family(&self) -> Family {
         Family::Ownership
     }
     fn contributor(&self) -> &'static str {
-        "kernel"
+        "kernel.issued"
     }
-    fn visit(&mut self, at: &Visit<'_>) {
-        // Money D2: a money account is a TOTAL and has no lots to sum. Summing them would report
-        // every account in the world, which is what the first end-to-end period did.
-        if at.register.is_total(at.row) {
-            return;
-        }
-        let lots = at.register.lots(at.row);
 
-        let mut summed = 0.0;
-        let mut magnitude = 0.0;
-        for l in lots {
-            summed += l.qty;
-            magnitude += l.qty.abs();
-        }
-        let held = at.register.quantity(at.row);
-        // Law 7: the dust of THIS walk, from its own terms and magnitudes. Never a percentage.
-        let dust = (lots.len() as f64 + 2.0) * f64::EPSILON * (magnitude + held.abs());
-        if (summed - held).abs() > dust {
+    fn before(&mut self, from: &Sources<'_>) {
+        let lines = from.instruments.len();
+        self.issued.clear();
+        self.issued.extend((0..lines).map(|row| from.instruments.issued_of(InstrumentId(row as u32))));
+        self.held.clear();
+        self.held.resize(lines, (0.0, 0.0, 0));
+    }
+
+    fn visit(&mut self, at: &Visit<'_>) {
+        let line = at.register.instrument_of(at.row).row();
+        let Some(side) = self.held.get_mut(line) else {
+            // A holding of a line this store never issued is Register A4's, and the Names family is
+            // what says so (0m.5). It is not this identity's to report as a shortfall.
+            return;
+        };
+        let q = at.register.quantity(at.row);
+        side.0 += q;
+        side.1 += q.abs();
+        side.2 += 1;
+    }
+
+    fn finish(&mut self, period: u32) -> Vec<Violation> {
+        for (row, &(sum, magnitude, terms)) in self.held.iter().enumerate() {
+            let issued = self.issued[row];
+            let dust = (terms as f64 + 2.0) * f64::EPSILON * (magnitude + issued.abs());
+            let off = sum - issued;
+            if off.abs() <= dust {
+                continue;
+            }
             self.found.push(Violation {
                 family: Family::Ownership,
                 spec: "Register B2",
-                owner: format!("holding {}", at.row.row()),
-                size: summed - held,
-                unit: "pieces",
-                period: at.period,
-                message: format!("lots sum to {summed} and the row holds {held}"),
+                owner: format!("instrument {row}"),
+                size: off,
+                unit: "units",
+                period,
+                message: if off < 0.0 {
+                    format!("{sum} held against {issued} issued — a claim vanished")
+                } else {
+                    format!("{sum} held against {issued} issued — a claim was invented")
+                },
             });
         }
-    }
-    fn finish(&mut self, _period: u32) -> Vec<Violation> {
         std::mem::take(&mut self.found)
     }
 }
 
-/// Money D2: a TOTAL account carries no lots. It is the other half of the check above — one of them
-/// would be a rule with an exemption, and the two together are the rule.
+/// Money D2: a TOTAL account carries no lots. The other half of a rule whose first half is that a
+/// row carrying lots answers from them — one of them alone would be a rule with an exemption.
 #[derive(Default)]
 pub struct ATotalCarriesNoLots {
     found: Vec<Violation>,
@@ -339,7 +397,19 @@ impl Contribution for NotBuilt {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids::{InstrumentId, PartyId};
+    use crate::ids::PartyId;
+
+    /// The stores an audit derives its answers from, gathered for a call — the same shape
+    /// `Settling` has, and for the same reason.
+    fn over<'a>(
+        register: &'a Register,
+        instruments: &'a Instruments,
+        parties: &'a Parties,
+        wire: &'a Settlement,
+        period: u32,
+    ) -> Sources<'a> {
+        Sources { wire, register, instruments, parties, period }
+    }
 
     #[test]
     fn one_walk_feeds_every_family_and_each_derives_its_own_answer() {
@@ -348,13 +418,54 @@ mod tests {
             reg.credit(PartyId::at(p), InstrumentId::at(1), 10.0, 1.0, 1);
         }
         let mut audit = Audit::new();
-        audit.add(Box::<LotsAgainstQuantity>::default());
+        audit.add(Box::<ATotalCarriesNoLots>::default());
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, &Settlement::new(6), 1);
-        assert_eq!(reports.len(), 1, "both contribute to ownership");
-        assert_eq!(reports[0].contributors.len(), 2);
+        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
+        assert_eq!(reports.len(), 2, "two families, each deriving its own answer");
+        assert_eq!(reports[0].contributors.len(), 1);
         assert!(reports[0].built);
         assert!(reports[0].violations.is_empty());
+    }
+
+    #[test]
+    fn holdings_that_do_not_sum_to_the_issued_amount_name_the_line_and_the_size() {
+        use crate::calendar::Day;
+        use crate::ids::{CurrencyCode, UnitId};
+        use crate::instruments::{Class, Issuance};
+        // **Register B2, and it needed 0l to be writable at all.** Two independent things: the
+        // holdings, walked; and what the line says is issued, moved only by a named event.
+        let mut ins = Instruments::new();
+        let issuer = PartyId::at(0);
+        let line = ins.issue(issuer, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, Some(Day(700)));
+        ins.moves(line, Issuance::Made, 1_000.0);
+
+        let mut reg = Register::new();
+        reg.credit(PartyId::at(1), line, 600.0, 1.0, 1);
+        reg.credit(PartyId::at(2), line, 400.0, 1.0, 1);
+        let mut audit = Audit::new();
+        audit.add(Box::<HoldersAgainstIssued>::default());
+        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 3));
+        assert!(reports[0].violations.is_empty(), "1,000 held against 1,000 issued");
+
+        // B2.a: a shortfall means somebody's claim vanished. Take a holder away and the line says
+        // so, by name and by size.
+        let row = reg.row(PartyId::at(2), line);
+        reg.debit(row, 400.0);
+        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 4));
+        assert_eq!(reports[0].violations.len(), 1);
+        let v = &reports[0].violations[0];
+        assert_eq!(v.size, -400.0);
+        assert_eq!(v.owner, format!("instrument {}", line.row()));
+        assert_eq!(v.spec, "Register B2");
+        assert_eq!(v.period, 4);
+        assert!(v.message.contains("a claim vanished"), "{}", v.message);
+
+        // And a surplus means somebody's was invented — which is what a register credited outside
+        // the wire looks like (22g.1).
+        reg.credit(PartyId::at(3), line, 700.0, 1.0, 4);
+        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 5));
+        assert_eq!(reports[0].violations[0].size, 300.0);
+        assert!(reports[0].violations[0].message.contains("was invented"));
     }
 
     #[test]
@@ -368,7 +479,7 @@ mod tests {
         let before = reg.quantity(reg.row(p, i));
         let mut audit = Audit::new();
         audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&reg, &Settlement::new(6), 4);
+        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 4));
         assert_eq!(reports[0].violations.len(), 1);
         let v = &reports[0].violations[0];
         assert_eq!(v.size, -8.0);
@@ -390,9 +501,9 @@ mod tests {
         }
         reg.credit(PartyId::at(0), InstrumentId::at(1), 5.0, 2.0, 1);
         let mut audit = Audit::new();
-        audit.add(Box::<LotsAgainstQuantity>::default());
         audit.add(Box::<ATotalCarriesNoLots>::default());
-        let reports = audit.run(&reg, &Settlement::new(6), 1);
+        audit.add(Box::<NoCollateralCountedTwice>::default());
+        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
         let found: usize = reports.iter().map(|r| r.violations.len()).sum();
         assert_eq!(found, 0, "a money account is not a defect");
     }
@@ -403,7 +514,7 @@ mod tests {
         let reg = Register::new();
         let mut audit = Audit::new();
         audit.add(Box::new(NotBuilt { family: Family::Liveness, contributor: "nobody" }));
-        let reports = audit.run(&reg, &Settlement::new(6), 1);
+        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
         assert_eq!(reports[0].family, Family::Liveness);
         assert!(!reports[0].built, "an unbuilt family is not green");
         assert!(reports[0].violations.is_empty());

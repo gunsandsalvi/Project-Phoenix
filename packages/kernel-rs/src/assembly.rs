@@ -343,9 +343,9 @@ impl World {
         // checks, plus whatever each module contributes, plus NOT BUILT for every family nobody
         // contributed to — because a family that is missing has to SAY it is missing.
         let mut contributions: Vec<Box<dyn crate::audit::Contribution>> = vec![
-            Box::<crate::audit::LotsAgainstQuantity>::default(),
             Box::<crate::audit::ATotalCarriesNoLots>::default(),
             Box::<crate::audit::NoCollateralCountedTwice>::default(),
+            Box::<crate::audit::HoldersAgainstIssued>::default(),
         ];
         for s in systems {
             contributions.extend(s.audits());
@@ -472,7 +472,13 @@ impl World {
         // It runs LAST, over what the period actually left behind. It never repairs: what it finds is
         // carried out for whoever is reading, and a violation is a finding about a mechanism rather
         // than a licence to adjust the number.
-        out.audit = self.audit.run(&self.register, &self.wire, self.period);
+        out.audit = self.audit.run(&crate::audit::Sources {
+            wire: &self.wire,
+            register: &self.register,
+            instruments: &self.instruments,
+            parties: &self.parties,
+            period: self.period,
+        });
         out
     }
 
@@ -1069,8 +1075,8 @@ mod tests {
         // saying nothing is wrong, and the seven nobody has built saying they are NOT BUILT.
         assert_eq!(did.audit.len(), crate::audit::Family::ALL.len());
         assert!(did.audit.iter().all(|r| r.violations.is_empty()));
-        // TWO built families, not three contributions: `LotsAgainstQuantity` and
-        // `NoCollateralCountedTwice` both contribute to OWNERSHIP and are one report between them.
+        // TWO built families: `ATotalCarriesNoLots` is MONEY's and `NoCollateralCountedTwice` is
+        // OWNERSHIP's, and a family is one report however many contribute to it.
         assert_eq!(did.audit.iter().filter(|r| r.built).count(), 2);
         assert!(
             did.audit.iter().any(|r| !r.built && r.family == crate::audit::Family::Flows),

@@ -14,7 +14,7 @@
 //! is one module deep. That is stated rather than buried: the honest reading is the floor plus what
 //! 0g.40 measured the module block at, not this number on its own.
 
-use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, LotsAgainstQuantity, NoCollateralCountedTwice};
+use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
 use phoenix_kernel::calendar::{Calendar, Day};
 use phoenix_kernel::clearing::{Order, PriceRule, Side};
 use phoenix_kernel::ids::{CurrencyCode, InstrumentId, MarketId, PartyId, RegionId, UnitId};
@@ -175,11 +175,16 @@ fn main() {
         *line = true;
     }
     let mut audit = Audit::new();
-    audit.add(Box::<LotsAgainstQuantity>::default());
     audit.add(Box::<NoCollateralCountedTwice>::default());
     audit.add(Box::<ATotalCarriesNoLots>::default());
     audit.add(Box::new(PlantMoves::over(capital)));
-    audit.run(&register, &wire, 0);
+    audit.run(&phoenix_kernel::audit::Sources {
+        wire: &wire,
+        register: &register,
+        instruments: &instruments,
+        parties: &parties,
+        period: 0,
+    });
     let assembly_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let sells = Sells;
@@ -266,7 +271,13 @@ fn main() {
     let journal_ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let t = Instant::now();
-    let reports = audit.run(&register, &wire, period);
+    let reports = audit.run(&phoenix_kernel::audit::Sources {
+        wire: &wire,
+        register: &register,
+        instruments: &instruments,
+        parties: &parties,
+        period,
+    });
     let audit_ms = t.elapsed().as_secs_f64() * 1000.0;
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
 

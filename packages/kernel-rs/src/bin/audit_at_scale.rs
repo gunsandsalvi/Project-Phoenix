@@ -7,7 +7,7 @@
 //!
 //! Here ONE traversal feeds every family, which is what 0g.34 asked for and what this measures.
 
-use phoenix_kernel::audit::{Audit, LotsAgainstQuantity, NoCollateralCountedTwice};
+use phoenix_kernel::audit::{ATotalCarriesNoLots, Audit, NoCollateralCountedTwice};
 use phoenix_kernel::ids::{InstrumentId, PartyId};
 use phoenix_kernel::register::Register;
 use std::time::Instant;
@@ -52,11 +52,17 @@ fn main() {
     }
 
     let mut audit = Audit::new();
-    audit.add(Box::<LotsAgainstQuantity>::default());
+    audit.add(Box::<ATotalCarriesNoLots>::default());
     audit.add(Box::<NoCollateralCountedTwice>::default());
 
     let t = Instant::now();
-    let reports = audit.run(&reg, &phoenix_kernel::ledger::Settlement::new(6), 1);
+    let reports = audit.run(&phoenix_kernel::audit::Sources {
+        wire: &phoenix_kernel::ledger::Settlement::new(6),
+        register: &reg,
+        instruments: &phoenix_kernel::instruments::Instruments::new(),
+        parties: &phoenix_kernel::parties::Parties::new(),
+        period: 1,
+    });
     let ms = t.elapsed().as_secs_f64() * 1000.0;
 
     let found: usize = reports.iter().map(|r| r.violations.len()).sum();
