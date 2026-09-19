@@ -112,12 +112,12 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 | # | item | why here |
 |---|---|---|
-| 0m2 | **The module is not the system — `running.rs` is** | the owner's second rule, and the larger of the two: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* **First, because every item below it edits `running.rs`** — 5,352 lines holding forty systems' behaviour — and every such edit is an edit to be moved again. It is also 0r's cause, so 0r shrinks to the wiring that follows. Ratcheted at 54 |
-| 0m3 | **A hundred and eighty tests build a world, and a world is not where a test may run** | the owner's rule, arriving while 0n.1 was open: a test exists at COMPILE level or LOGIC level and never against a test world. **After 0m2**, because the judgement each test needs — *can this be a logic-level test of a pure function?* — is one reading once the function and its caller are in the same file, and two readings today. 0n.1's own test is already deleted under it. Ratcheted at 180 |
-| 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2 and 0m3**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` and all write tests |
+| 0m3 | **A hundred and eighty tests build a world, and a world is not where a test may run** | a test exists at COMPILE level or LOGIC level and never against a test world. **FIRST, and this was the other way round until the work showed why.** The test is which item's output the other one destroys: 0m3's outputs are deleted tests, logic-level tests over pure functions, and measurements written down — and moving an impl into its module invalidates none of them. 0m2's output is 45 impls moved, and `running.rs`'s 26 tests all build a world, so they would follow their subjects into forty files and be deleted there. Ratcheted at 180 |
+| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs` — and after 0m3, because a move that drags doomed tests behind it does the deleting twice. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is 10 of 18 done and resumes here.** Ratcheted at 54 |
+| 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2 and 0m3**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` and all write tests |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
-| 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing and start now, in parallel with 0k–0q**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
+| 0r | **Twenty-two modules nothing imports** | the largest item here: one commit per system. **Six of them are blocked by nothing**; the rest name the item they wait on. 539 of 625 public items in `src/mechanisms/` are reached only by their own tests, and none of it is a stub |
 | 22j | What the systems still do not decide | where 22i closed: what it LEFT — decisions missing inside systems that now run |
 | 22f | The plant wears, and somebody is paid to keep it | after 22i: an upkeep needs a payee that decides, and a landlord, a servicer and a carrier are all counting rows today |
 | 22h | The other four cell events have no cause | after 22f: entry, death, promotion and merge are each caused by a MECHANISM — a firm that fails, a household that can afford to form — and every one of those mechanisms is 22i's or 22f's |
@@ -129,107 +129,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-## 0m2. The module is not the system — `running.rs` is
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s *ONE SYSTEM, ONE FILE* and the
-> kernel/module contract above it; ARCHITECTURE 4.9b; Law 15 (the targeted-change test), Law 12 (a
-> fix removes code), Law 4, Law 18 (layout is free — gate on behaviour).
-> The source: `running.rs`'s header and the impl being moved, **in full**, then that system's
-> `mechanisms/<name>.rs` **in full**, then its `works`/`posts` row in `systems.rs`. Three readings
-> per system, and after the move there is one.
->
-> **In full, not the cited lines.** What the reading turns up that this item does not name is a
-> finding, and it goes in this file under the item that should fix it (Law 10, Law 14).
-
-**INSERTED at the top of the open order, by the owner.** The rule:
-
-> *This codebase needs to be modular to the max with minimal contact points. I need to change how
-> CDS works? I need to just change the CDS module. I need to change how settlement works? I just
-> change the settlement module.*
-
-**What changing CDS costs today: three files.** `mechanisms/cds.rs` (451 lines) has the arithmetic —
-`owed_on_event`, `pays_out`, `can_clear`, `net_notional`, `basis`. `running.rs:2780` has
-`Protection`, the `Mechanism` that actually runs in a period, reads the claims and proposes. And
-`systems.rs:1302` has the `works("cds", …)` row that constructs it. **The behaviour is in the middle
-file, and that file is shared with thirty-nine other systems.**
-
-**The measurement.** `running.rs` is **5,352 lines** — nine times the largest module — holding **45**
-`Mechanism`/`Participant` impls; `systems.rs` holds 9 more. Fifty-four declarations of what a system
-does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
-
-**`running.rs`'s stated reason for existing was measured against its own contents, and it holds for
-7 of its 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for
-one reason: it names every module, and a module may never import another module (Law 15)."* Per
-impl:
-
-| what the impl names | how many | what it means |
-|---|---|---|
-| no module at all | 18 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, `Reads`, `Owed`, `Observing`, `Reporting`, `Floating`, `Flotation`, `ForcedSelling`, `Builder`, `SecondOpinion`, `Securitising`. Nothing stops any of them moving today |
-| **only its OWN module** | 21 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
-| exactly one OTHER module | 2 | `Funding`→`treasury` (it is wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 5 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes` (recipe, capital_programme), `CostOfCapital` (short_term_debt, cost_of_capital) |
-
-**39 of 46 move with nothing to decide. Seven are design questions** — the last two rows — and each
-asks one thing: *which system owns this fact, or does the kernel?*
-
-**And the rule is broken a third way, which is not an import at all: one impl serving two systems.**
-`Servicing` runs both `lending` and `irs`; `Funding` runs both `short_term_debt` and
-`corporate_credit`; `Owed` runs both `money` and `currency`. You cannot change how IRS works without
-changing lending — which is the owner's sentence failing in the other direction, and it is why 0r
-records that §18 has no fixed leg, no floating leg, no fixing and no netting: it is not implemented,
-it is *borrowing the pay-what-fell-due mechanism*. A shared impl is split at the move, not after.
-
-There is no architectural blocker. Modules already import `crate::{ids, calendar, prices, register,
-ledger, stores, module, journal, instruments, audit, parties, params, num}` — the kernel's doors —
-and `phoenix-check` forbids exactly one import, `use crate::mechanisms::`, which is the one Law 15
-names. A `Mechanism` impl in its own module breaks nothing.
-
-**This is 0r's cause, and 0r prescribes the opposite.** 0r reads *"what is missing is the `Mechanism`
-impl in `running.rs` that reads the stores, calls them and proposes"* and budgets **1,400 more lines
-of `running.rs`** for the twenty-two unwired systems — which would make it 6,750 lines and the
-contact-point problem worse. The diagnosis is right and the destination is wrong. 539 of 625 public
-items in `mechanisms/` are reached only by their own tests **because `running.rs` reimplements what
-they export**; move the impl home and the module's own functions are what it calls. Law 12: a cause
-has one fix and it removes code. **0r shrinks to the wiring that follows this**, one file per system.
-
-**It is a MOVE, and Law 18 is how it is gated**: mechanisms, economics and boundaries never change;
-layout is free; gate on behaviour. `world:runs` must print the same census after each step as
-before it — same systems running, same phases, same counts — and a step that changes a number is a
-step that did more than move.
-
-- [x] 0m2.0 **The rule is a check, ratcheted at 54.** `BEHAVIOUR_OUTSIDE_ITS_MODULE` in
-  `phoenix-check`: `impl Mechanism for` / `impl Participant for` outside `mechanisms/`, exempting
-  `src/bin/**` (which builds worlds to time them) and `module.rs` (which DEFINES the traits and
-  implements neither). A test double implementing one is 0m3's, not this item's — each ratchet
-  counts one thing or neither number means anything.
-- [ ] 0m2.1 **The eighteen that name no module.** The mechanical half: each impl moves into its
-  system's `mechanisms/<name>.rs`, `systems.rs` imports it from there, `running.rs` shrinks. Where
-  the system has no module file yet the file is created holding only its impl. Group them into
-  commits of roughly five, each gated by `world:runs` printing an unchanged census.
-- [ ] 0m2.2 **The twenty-one that name only their own module.** The same move, and each one DELETES
-  an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
-  `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
-  functions have a caller in their own file.
-- [ ] 0m2.3 **The seven that read somebody else's module, one at a time.** Each is a design
-  question, not a move: *which system owns this fact?* `Calling` naming recipe, capital_programme,
-  goods and estate says either that private equity is reading four systems' internals (and the fact
-  belongs in a kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl,
-  in the record.
-- [ ] 0m2.3a **The three impls that serve two systems each** — `Servicing` (`lending`, `irs`),
-  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`). Split at the
-  move: a shared impl means changing one system changes the other, which is the rule broken in the
-  direction an import check cannot see. What §18 then needs — a fixed leg, a floating leg, a fixing,
-  netting — is 0r's, and this step only stops `irs` being a copy of `lending`'s schedule walk.
-- [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
-  nothing else — one line per system, which is contact point (2).
-- [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):
-  every system's behaviour, in that system's file. The ratchet row goes with it.
-
-**Exit:** `phoenix-check` reports zero for *One system, one file* and the ratchet row is deleted;
-`running.rs` no longer exists; `npm run check` green; `world:runs` prints the same census as it does
-today; `docs/ARCHITECTURE.md` 4.9b updated in the same change (a structural decision), and the
-record says, per impl that named two or more modules, which system was given the fact.
 
 ## 0m3. A hundred and eighty tests build a world, and a world is not where a test may run
 
@@ -338,6 +237,107 @@ audit families, and the measurements this item positions.
 **Exit:** `phoenix-check` reports zero testing-rule findings with the rule in it; `npm run check`
 green; the new suite count recorded beside the old one in the commit; every deleted test
 accounted for in this file as a type, an extraction or a positioned measurement.
+
+## 0m2. The module is not the system — `running.rs` is
+
+> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** `CLAUDE.md`'s *ONE SYSTEM, ONE FILE* and the
+> kernel/module contract above it; ARCHITECTURE 4.9b; Law 15 (the targeted-change test), Law 12 (a
+> fix removes code), Law 4, Law 18 (layout is free — gate on behaviour).
+> The source: `running.rs`'s header and the impl being moved, **in full**, then that system's
+> `mechanisms/<name>.rs` **in full**, then its `works`/`posts` row in `systems.rs`. Three readings
+> per system, and after the move there is one.
+>
+> **In full, not the cited lines.** What the reading turns up that this item does not name is a
+> finding, and it goes in this file under the item that should fix it (Law 10, Law 14).
+
+**INSERTED at the top of the open order, by the owner.** The rule:
+
+> *This codebase needs to be modular to the max with minimal contact points. I need to change how
+> CDS works? I need to just change the CDS module. I need to change how settlement works? I just
+> change the settlement module.*
+
+**What changing CDS costs today: three files.** `mechanisms/cds.rs` (451 lines) has the arithmetic —
+`owed_on_event`, `pays_out`, `can_clear`, `net_notional`, `basis`. `running.rs:2780` has
+`Protection`, the `Mechanism` that actually runs in a period, reads the claims and proposes. And
+`systems.rs:1302` has the `works("cds", …)` row that constructs it. **The behaviour is in the middle
+file, and that file is shared with thirty-nine other systems.**
+
+**The measurement.** `running.rs` is **5,352 lines** — nine times the largest module — holding **45**
+`Mechanism`/`Participant` impls; `systems.rs` holds 9 more. Fifty-four declarations of what a system
+does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
+
+**`running.rs`'s stated reason for existing was measured against its own contents, and it holds for
+7 of its 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for
+one reason: it names every module, and a module may never import another module (Law 15)."* Per
+impl:
+
+| what the impl names | how many | what it means |
+|---|---|---|
+| no module at all | 18 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, `Reads`, `Owed`, `Observing`, `Reporting`, `Floating`, `Flotation`, `ForcedSelling`, `Builder`, `SecondOpinion`, `Securitising`. Nothing stops any of them moving today |
+| **only its OWN module** | 21 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
+| exactly one OTHER module | 2 | `Funding`→`treasury` (it is wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
+| two or more | 5 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes` (recipe, capital_programme), `CostOfCapital` (short_term_debt, cost_of_capital) |
+
+**39 of 46 move with nothing to decide. Seven are design questions** — the last two rows — and each
+asks one thing: *which system owns this fact, or does the kernel?*
+
+**And the rule is broken a third way, which is not an import at all: one impl serving two systems.**
+`Servicing` runs both `lending` and `irs`; `Funding` runs both `short_term_debt` and
+`corporate_credit`; `Owed` runs both `money` and `currency`. You cannot change how IRS works without
+changing lending — which is the owner's sentence failing in the other direction, and it is why 0r
+records that §18 has no fixed leg, no floating leg, no fixing and no netting: it is not implemented,
+it is *borrowing the pay-what-fell-due mechanism*. A shared impl is split at the move, not after.
+
+There is no architectural blocker. Modules already import `crate::{ids, calendar, prices, register,
+ledger, stores, module, journal, instruments, audit, parties, params, num}` — the kernel's doors —
+and `phoenix-check` forbids exactly one import, `use crate::mechanisms::`, which is the one Law 15
+names. A `Mechanism` impl in its own module breaks nothing.
+
+**This is 0r's cause, and 0r prescribes the opposite.** 0r reads *"what is missing is the `Mechanism`
+impl in `running.rs` that reads the stores, calls them and proposes"* and budgets **1,400 more lines
+of `running.rs`** for the twenty-two unwired systems — which would make it 6,750 lines and the
+contact-point problem worse. The diagnosis is right and the destination is wrong. 539 of 625 public
+items in `mechanisms/` are reached only by their own tests **because `running.rs` reimplements what
+they export**; move the impl home and the module's own functions are what it calls. Law 12: a cause
+has one fix and it removes code. **0r shrinks to the wiring that follows this**, one file per system.
+
+**It is a MOVE, and Law 18 is how it is gated**: mechanisms, economics and boundaries never change;
+layout is free; gate on behaviour. `world:runs` must print the same census after each step as
+before it — same systems running, same phases, same counts — and a step that changes a number is a
+step that did more than move.
+
+- [x] 0m2.0 **The rule is a check, ratcheted at 54.** `BEHAVIOUR_OUTSIDE_ITS_MODULE` in
+  `phoenix-check`: `impl Mechanism for` / `impl Participant for` outside `mechanisms/`, exempting
+  `src/bin/**` (which builds worlds to time them) and `module.rs` (which DEFINES the traits and
+  implements neither). A test double implementing one is 0m3's, not this item's — each ratchet
+  counts one thing or neither number means anything.
+- [ ] 0m2.1 **The eighteen that name no module.** The mechanical half: each impl moves into its
+  system's `mechanisms/<name>.rs`, `systems.rs` imports it from there, `running.rs` shrinks. Where
+  the system has no module file yet the file is created holding only its impl. Group them into
+  commits of roughly five, each gated by `world:runs` printing an unchanged census.
+- [ ] 0m2.2 **The twenty-one that name only their own module.** The same move, and each one DELETES
+  an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
+  `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
+  functions have a caller in their own file.
+- [ ] 0m2.3 **The seven that read somebody else's module, one at a time.** Each is a design
+  question, not a move: *which system owns this fact?* `Calling` naming recipe, capital_programme,
+  goods and estate says either that private equity is reading four systems' internals (and the fact
+  belongs in a kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl,
+  in the record.
+- [ ] 0m2.3a **The three impls that serve two systems each** — `Servicing` (`lending`, `irs`),
+  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`). Split at the
+  move: a shared impl means changing one system changes the other, which is the rule broken in the
+  direction an import check cannot see. What §18 then needs — a fixed leg, a floating leg, a fixing,
+  netting — is 0r's, and this step only stops `irs` being a copy of `lending`'s schedule walk.
+- [ ] 0m2.4 **The nine in `systems.rs`**, and what `systems.rs` is left as: the registration list and
+  nothing else — one line per system, which is contact point (2).
+- [ ] 0m2.5 **`running.rs` is deleted**, and the deletion names the read that replaces it (Law 19):
+  every system's behaviour, in that system's file. The ratchet row goes with it.
+
+**Exit:** `phoenix-check` reports zero for *One system, one file* and the ratchet row is deleted;
+`running.rs` no longer exists; `npm run check` green; `world:runs` prints the same census as it does
+today; `docs/ARCHITECTURE.md` 4.9b updated in the same change (a structural decision), and the
+record says, per impl that named two or more modules, which system was given the fact.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -656,7 +656,7 @@ lines of economics already written and tested. The scaffolding is all there: eig
 
 **But a third of them are blocked, and the blocker is an item above.** The `needs` column is what
 each module's own functions take as an argument and nothing in this world produces. **Work the
-unblocked ones first and in parallel with 0k–0q; they do not wait on anything.**
+unblocked ones first; they do not wait on anything.**
 
 | module | wired as | what runs instead | needs |
 |---|---|---|---|
