@@ -1529,33 +1529,18 @@ Rules that follow:
 ## 6. Package layout
 
 ```
-packages/engine/src/
-  core/        num.ts errors.ts ids.ts money.ts rate.ts option.ts assert.ts format.ts
-  calendar/    calendar.ts periodicity.ts daycount.ts
-  registry/    registry.ts params.ts profiles.ts naming.ts
-  parties/     party.ts cells.ts
-  ledger/      instruction.ts settlement.ts ledger.ts
-  register/    instruments.ts holdings.ts lots.ts liens.ts register.ts
-  prices/      price-store.ts value.ts
-  clearing/    schedule.ts solver.ts outcome.ts
-  contracts/   (arrives with the derivative layer: the zero-sum store, Derivative X1)
-  audit/       audit.ts families/{money,ownership,prices,accounts,names,flows,units,...}.ts
-  journal/     journal.ts events.ts
-  world/       world.ts (kernel) module.ts context.ts assemble.ts actions.ts revalue.ts cells.ts
-  mechanisms/  <system>/index.ts       one module per spec system or instrument family
-  seeds/       <name>.ts               seed modules (foundation.ts)
-  observer/    observer.ts
-  rng/         prng.ts
-  index.ts
-packages/engine/test/      mirrors src; property tests under test/property
-packages/app/src/          worker.ts (engine host), main.ts, ui/
-tools/                     spec-index.ts (parses the spec), check-citations.ts
-docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md IMPLEMENTATION.md
+packages/kernel-rs/src/
+  calendar.rs registry.rs parties.rs register.rs instruments.rs ledger.rs prices.rs
+  clearing.rs journal.rs audit.rs stores.rs world.rs assembly.rs module.rs systems.rs
+  ids.rs params.rs num.rs nouns.rs protocols.rs session.rs places.rs running.rs
+  mechanisms/<system>.rs   one module per spec system or instrument family
+  bin/                     world-runs, the benches
+tools/                     phoenix-check (the laws), the doc readers
+docs/                      spec/PROJECT_PHOENIX.md ARCHITECTURE.md IMPLEMENTATION.md COVERAGE.md
 ```
 
-Mechanisms (Parts V–X) live in `packages/engine/src/mechanisms/<system>/`, one directory per spec
-system, each a `SystemModule`. They are added in worklist order only. `docs/PLAN.md` is the plan
-for building them.
+One module per spec system, holding that system's arithmetic, its `Mechanism`, its `Participant`s
+and its audit contributions. `systems.rs` is the registration list and nothing else.
 
 ---
 
@@ -1684,17 +1669,12 @@ that is the audit's job, not the citation checker's.
 
 ## 8. Work discipline (Laws 10–17, Part XIII)
 
-- **`docs/IMPLEMENTATION.md` is the one ordered list.** Twenty-eight items, each carrying the
-  findings it closes; the first open one is the work. `docs/WORKLIST.md` is HISTORY: every row it
-  had open is carried by a plan item and says which, and it is the one writer of one thing only —
-  which items it worked and closed, so `plan:progress` counts a closed item's steps after its
-  section was deleted. The two files used one id for two items (`14` was the polity there and is
-  the insurers here), which is why the plan's ids win and the superseded rows point at them.
-  `tools/plan-progress.ts` counts the PLAN's sections (item 0c): counting the worklist's rows made
-  every step of items 0a to 24 invisible, because none of them has a row there.
+- **`docs/IMPLEMENTATION.md` is the one ordered list**, each item carrying the findings it closes;
+  the first open one is the work.
 - One bounded change per item; a commit per item; the commit message says what and why.
-- `docs/RECORD.md` is a ledger of outcomes, not a diary. A finding leaves the plan only when its
-  item closes.
+- A closed item's section is deleted. Done is done: what it produced is the code, and a reader who
+  wants to know what the world does reads the world.
+- A finding leaves the plan only by being placed under the item that closes it.
 - No measurement, tuning or diagnosis of numbers until Part XII is reached. Deterministic checks
   (lint, types, tests, audit at period zero) are gates, not experiments.
 - Never roll back a number. Only a change wrong on its own terms is undone.
@@ -1727,7 +1707,7 @@ every violation size the audit reports, and a guard nobody can leave on is not a
 catches the shape a bound is usually WRITTEN in, and whether a comparison is arithmetic or a
 decision is read at the site. That reading is not a formality: the bound that got furthest into
 this tree was a floor under a dealer's offer and a cap over its bid, argued from a lender's
-reservation, and what gave it away was the length of the comment justifying it (`RECORD.md`, 11.3).
+reservation, and what gave it away was the length of the comment justifying it.
 A minimum is arithmetic when the smaller number is a thing that does not exist — units nobody
 holds, a lender's money already lent — and a bound when it is a number the model chose not to go
 past.

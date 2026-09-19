@@ -126,25 +126,11 @@ export function unanswered(
 }
 
 /**
- * **0j.1: EVERY PATH A ROW CITES IS OPENED.**
+ * Every path a row cites is opened. MET means the cited module implements the clause, so the
+ * citation is the whole of the evidence.
  *
- * `MET` is defined in COVERAGE's own header as *the cited module implements the clause*, so the
- * citation is the whole of the evidence. This check read two files and never touched the tree, so a
- * row could cite anything — and after the Rust port deleted `packages/engine`, **1,121 of the 1,151
- * rows citing a path cited only paths inside it** and nothing anywhere went red. The count of MET
- * fell from 1,090 to 223 when they were re-read by hand (`docs/VERIFICATION.md`).
- *
- * *A rule that can be a check should be one.*
- *
- * **What it cannot do, and Appendix C says so first:** *"A structural check can prove a citation
- * resolves; it can say nothing about whether an assessment is still true."* A row may cite a file
- * that exists and describe something the file does not do. That is what a reading is for; this is
- * only the floor under it.
- *
- * **There is no exemption.** A row that wants to say a guard is GONE says it in prose and does not
- * carry the dead path, because a path in a `where` cell is a citation by construction and an
- * escape hatch here is the bound Law 6 forbids — the rule would stop being checkable the first
- * time somebody wanted it to.
+ * It proves a citation resolves, not that the assessment is still true. There is no exemption: a
+ * path in a `where` cell is a citation by construction.
  */
 export function citedPaths(where: string): string[] {
   const out: string[] = [];

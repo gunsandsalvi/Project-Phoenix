@@ -12,7 +12,7 @@ repository** — the engine is Rust (`packages/kernel-rs`) and the TypeScript wo
 `MET` whose only evidence is a citation that does not resolve asserts nothing, so every row was
 opened against the Rust and re-marked from what is there.
 
-What the pass found, in one line each, with the detail in `docs/VERIFICATION.md`:
+What the pass found, in one line each:
 
 - 539 of the 625 public items in `src/mechanisms/` are reached only by their own tests; 22 modules
   have not one item reached.

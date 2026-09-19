@@ -1,12 +1,6 @@
 /**
- * READ docs/COVERAGE.md (Appendix C: recount rather than adjust any tally).
- *
- * It never edits the file: re-marking is done by hand in the same change that meets a requirement.
- *
- * **The half of this that scanned the engine is gone with the engine** (0g.45). Counting `@spec`
- * citations in the source is now `tools/phoenix-check`'s, which does it for Rust and refuses a module
- * that cites nothing. What is left here is the half that reads the DOC, which is what
- * `coverage-existence` and `plan-progress` ask for.
+ * Read docs/COVERAGE.md. It never edits the file: re-marking is done by hand in the same change
+ * that meets a requirement.
  */
 import { readFileSync } from 'node:fs';
 

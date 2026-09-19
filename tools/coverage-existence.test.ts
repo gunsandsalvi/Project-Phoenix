@@ -26,7 +26,7 @@ test('a path is read out of the prose around it, without the sentence punctuatio
 });
 
 test('docs/ is not a citation: a row cites the SOURCE that implements the clause', () => {
-  assert.deepEqual(citedPaths('see docs/VERIFICATION.md 6.1 and docs/spec/PROJECT_PHOENIX.md'), []);
+  assert.deepEqual(citedPaths('see docs/ARCHITECTURE.md 6.1 and docs/spec/PROJECT_PHOENIX.md'), []);
 });
 
 test('a row with no path at all cites nothing, which is not a dead citation', () => {
