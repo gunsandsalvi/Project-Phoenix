@@ -198,11 +198,32 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   world does not THROW — not a measurement, and Law 11 does not hold it back. Every mechanism test
   passed for months while the assembled world stopped in period 2, twenty-one times over; this is
   the check that was missing, and it prints the census each run rather than asserting a number.
-- **A test never names a party.** This world's banks, firms, listings and funds are DRAWN (Seed
-  B1.a): `firm.4` is not "the big farm", it is whatever the draw made it. There is no rig any more —
-  a test is `#[cfg(test)] mod tests` in the file it tests and builds exactly the two or three
-  parties its case needs, which holds the rule harder: **a test that builds its own parties cannot
-  be broken by a draw.**
+- **NO TEST IS EVER RUN AGAINST A TEST WORLD.** A test exists at exactly one of two levels:
+  - **COMPILE LEVEL** — the type system refuses the defect, so there is nothing to assert. A field
+    that does not exist cannot be written; a `match` with no arm for a case does not build; an
+    enum destructured with no `..` fails when an eighteenth variant arrives. This is the strongest
+    kind and it costs nothing to run.
+  - **LOGIC LEVEL** — a pure function over values it is handed. `waterfall(has, &claims)`,
+    `residual(assets, debt)`, `control_needs(outstanding)`, `offer(seller, buyer, amount, …)`. No
+    store, no party, no holding, no print: values in, values out, and the assertion is arithmetic
+    or a stated refusal.
+
+  **A test that BUILDS a world — parties, instruments, holdings, prints, a wire — and asserts on
+  what happens in it is not a test. It is a second world**, and Law 4's defect at the largest
+  possible scale. It encodes an outcome nobody cleared (Appendix B: no imported equilibrium, no
+  seeded outcome), it is arranged by the same hand that wrote the code it is checking, and it
+  passes for exactly as long as the arrangement holds. **This was measured, not feared**: every
+  mechanism test passed for months while the assembled world stopped in period 2, twenty-one times
+  over.
+
+  **A question about a world is answered against the REAL one, once it exists.** Not a scale model,
+  not a rig, not three parties standing in for a banking system — the seeded world (22g), measured
+  at 23. Until then the question is written down as a measurement to take, never as a fixture that
+  makes it look answered. *A green suite over fabricated worlds is not evidence, for the same
+  reason a `MET` citing a path that is not there is not evidence (0j).*
+
+  What runs meanwhile is `npm run world:runs`, which asserts nothing and steps the assembled world:
+  it is not a test, which is precisely why it caught what the tests did not.
 - Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
   contract, the canonical period) and the item's own section in `docs/IMPLEMENTATION.md` (design, steps,
   tests, exit) before writing code. Tick the item's steps (`- [x]`) as they close;
