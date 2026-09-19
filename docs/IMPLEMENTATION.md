@@ -226,17 +226,15 @@ step that did more than move.
      having no funding decision of its own, which is 0r's. Until then it is a PLACEHOLDER with a
      scheduled death naming 0r.
 
-- [ ] 0m2.3d **Two Law 2 findings the reading turned up.**
+- [ ] 0m2.3d **A Law 2 finding, and the blind spot that let it through.**
   `capital_programme::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep`
   are TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
   list, and *a stated value for one is a defect with a scheduled death*. The field's own comment says
   *"Capacity is a function of the stock"* while the field states it. It is a SHAPE and it needs a
   scheduled death naming the mechanism that produces it.
-  `bank_capital::haircut` carries seven numbers in a match arm — 1.01, 1.02, 1.05, 1.10, 1.25, 1.60,
-  4.0. Law 2 names **a haircut** as a POLICY primitive, and XI-14 says a behaviour-shaping number
-  reaches a mechanism through `params`. **`phoenix-check`'s `undeclared_number` rule did not catch
-  them**, because it reads a field position (`x: 1.05`) and these are match arms — a blind spot in
-  the check, and closing it is part of this step.
+  **`phoenix-check`'s `undeclared_number` rule reads a field position (`x: 1.05`) and misses a match
+  arm**, which is how `bank_capital::haircut` carried seven policy numbers uncaught. Closing that
+  blind spot is part of this step.
 
 - [ ] 0m2.3b **`Making` and `Makes`, decided by Law 15 and Law 4.** `Makes { line: recipe::Line,
   plant_is: capital_programme::Plant }` is a wiring declaration, so it is DATA and goes to the

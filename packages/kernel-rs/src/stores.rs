@@ -45,47 +45,114 @@ pub mod standing {
     pub const ESTIMATE: u32 = 5;
 }
 
-/// THE SCALE `standing::GRADE`'s FIRST TERM IS ON, so a rank read out of the store means something
-/// without asking the house that wrote it. A grade is DATA — an ordered set of labels — and the
-/// judgement that puts a name on it is the assessor's.
+/// THE SCALE `standing::GRADE`'s FIRST TERM IS ON, named as a market names it.
+///
+/// AAA down to D, with the notches, because a notch is what a downgrade moves by and the boundary
+/// between BBB- and BB+ is what a mandate is written against — a fall past it is a forced sale by
+/// every holder bound by it, at the same time. A seven-label scale cannot express that boundary,
+/// and a grade is DATA: the judgement that puts a name on it is the assessor's.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Grade {
-    Highest,
-    High,
-    Upper,
-    Lower,
-    Speculative,
-    Substantial,
-    Defaulted,
+    AAA,
+    AAplus,
+    AA,
+    AAminus,
+    Aplus,
+    A,
+    Aminus,
+    BBBplus,
+    BBB,
+    BBBminus,
+    BBplus,
+    BB,
+    BBminus,
+    Bplus,
+    B,
+    Bminus,
+    CCCplus,
+    CCC,
+    CCCminus,
+    CC,
+    C,
+    D,
 }
+
 impl Grade {
+    /// The best grade there is, and the worst. A scale with no ends is not a scale.
+    pub const BEST: Grade = Grade::AAA;
+    pub const WORST: Grade = Grade::D;
+
+    /// THE INVESTMENT-GRADE BOUNDARY: the lowest grade that is still investment grade. It is a fact
+    /// about the market's own scale, not a number anybody here chose.
+    pub const LOWEST_INVESTMENT_GRADE: Grade = Grade::BBBminus;
+
+    /// Whether this grade is one a mandate written for investment grade may hold.
+    pub fn investment_grade(self) -> bool {
+        self <= Grade::LOWEST_INVESTMENT_GRADE
+    }
+
+    /// The scale itself, best first. The POSITION is the rank and the string is how a market writes
+    /// it, so there is one table rather than three that can disagree.
+    const SCALE: &'static [(Grade, &'static str)] = &[
+        (Grade::AAA, "AAA"),
+        (Grade::AAplus, "AA+"),
+        (Grade::AA, "AA"),
+        (Grade::AAminus, "AA-"),
+        (Grade::Aplus, "A+"),
+        (Grade::A, "A"),
+        (Grade::Aminus, "A-"),
+        (Grade::BBBplus, "BBB+"),
+        (Grade::BBB, "BBB"),
+        (Grade::BBBminus, "BBB-"),
+        (Grade::BBplus, "BB+"),
+        (Grade::BB, "BB"),
+        (Grade::BBminus, "BB-"),
+        (Grade::Bplus, "B+"),
+        (Grade::B, "B"),
+        (Grade::Bminus, "B-"),
+        (Grade::CCCplus, "CCC+"),
+        (Grade::CCC, "CCC"),
+        (Grade::CCCminus, "CCC-"),
+        (Grade::CC, "CC"),
+        (Grade::C, "C"),
+        (Grade::D, "D"),
+    ];
+
+    /// How many notches there are, which is what a move is measured in.
+    pub const NOTCHES: usize = Grade::SCALE.len();
+
     /// The grade as a term, so a house can STAND behind it (`standing::GRADE`).
     pub fn rank(self) -> f64 {
-        match self {
-            Grade::Highest => 0.0,
-            Grade::High => 1.0,
-            Grade::Upper => 2.0,
-            Grade::Lower => 3.0,
-            Grade::Speculative => 4.0,
-            Grade::Substantial => 5.0,
-            Grade::Defaulted => 6.0,
-        }
+        self as u8 as f64
     }
 
     /// And back, reading a term a house is standing behind.
     pub fn at_rank(rank: f64) -> Option<Grade> {
-        Some(match rank as i64 {
-            0 => Grade::Highest,
-            1 => Grade::High,
-            2 => Grade::Upper,
-            3 => Grade::Lower,
-            4 => Grade::Speculative,
-            5 => Grade::Substantial,
-            6 => Grade::Defaulted,
-            _ => return None,
-        })
+        match rank as i64 {
+            at if at >= 0 => Grade::SCALE.get(at as usize).map(|(g, _)| *g),
+            _ => None,
+        }
+    }
+
+    /// The rung a rank falls on. There are 22 rungs and no more, so a credit better than the best
+    /// grade is still the best grade — a fact about the scale, not a limit on the credit.
+    pub fn nearest(rank: f64) -> Grade {
+        assert!(!rank.is_nan(), "44 A2: a grade read off a rank that is not a number");
+        match Grade::at_rank(rank) {
+            Some(g) => g,
+            None => match rank < 0.0 {
+                true => Grade::BEST,
+                false => Grade::WORST,
+            },
+        }
+    }
+
+    /// As a market writes it. An internal id is never a display name.
+    pub fn shown(self) -> &'static str {
+        Grade::SCALE[self as usize].1
     }
 }
+
 
 /// WHAT A LENDER IS CURRENTLY LENDING AT — the shape of `standing::LENDING_STANDARD`'s terms.
 ///

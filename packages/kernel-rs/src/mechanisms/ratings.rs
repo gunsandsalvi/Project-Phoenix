@@ -38,28 +38,42 @@ pub struct Rating {
     pub since_period: u32,
 }
 
-/// The grade this state implies, and no rating changes for no reason — every move traces to a change
-/// in state.
-pub fn grade_from(s: &State) -> Grade {
-    // The bands are the ordinal judgement itself: a POLICY of the assessor, stated here rather than
-    // fitted to a target distribution.
-    let strain = s.leverage / s.coverage - s.trend;
-    let young = s.age_periods < 8;
-    match strain {
-        x if x < 0.5 && !young => Grade::Highest,
-        x if x < 1.0 => Grade::High,
-        x if x < 2.0 => Grade::Upper,
-        x if x < 3.5 => Grade::Lower,
-        x if x < 5.0 => Grade::Speculative,
-        x if x.is_finite() => Grade::Substantial,
-        _ => Grade::Defaulted,
-    }
+/// AN ASSESSOR'S OWN SCALE: where the top of it sits, what one notch of it is worth, and how far it
+/// marks down a name it has no record for. The twenty-two band edges fall out of these, so they are
+/// not anybody's to declare.
+#[derive(Clone, Copy, Debug)]
+pub struct Scale {
+    /// The strain a name at the top of the scale already carries.
+    pub best_carries: f64,
+    /// The strain one notch of the scale is worth.
+    pub per_notch: f64,
+    /// The notches a name with no record is marked down.
+    pub without_a_record: f64,
+    /// And how long a record has to be before it is one.
+    pub record_after: u32,
 }
 
-/// It is sticky — a move happens only when the state has moved far enough to cross a band, and that
+/// The grade this state implies, and no rating changes for no reason — every move traces to a change
+/// in state.
+pub fn grade_from(s: &State, by: &Scale) -> Grade {
+    assert!(by.per_notch > 0.0, "44 A2: a scale whose notches are worth nothing orders nothing");
+    // What it owes against what it earns, less the direction it is moving in. The judgement is
+    // where the assessor puts the top of its scale and how coarse its notches are, not a table of
+    // edges fitted to a target distribution.
+    let strain = s.leverage / s.coverage - s.trend;
+    // A short record is not strain: the assessor marks the name down notches for it, which is a
+    // different thing from pretending its numbers are worse than they are.
+    let unproven = match s.age_periods < by.record_after {
+        true => by.without_a_record,
+        false => 0.0,
+    };
+    Grade::nearest((strain - by.best_carries) / by.per_notch + unproven)
+}
+
+/// It is sticky — a move happens only when the state has moved far enough to cross a notch, and that
 /// is what makes a move meaningful and what makes it LATE.
-pub fn reassess(held: &Rating, now: &State, period: u32) -> Option<Rating> {
-    let grade = grade_from(now);
+pub fn reassess(held: &Rating, now: &State, by: &Scale, period: u32) -> Option<Rating> {
+    let grade = grade_from(now, by);
     if grade == held.grade {
         return None;
     }
@@ -132,24 +146,15 @@ pub fn buyer_base(g: Grade, mandates: &[Mandate]) -> usize {
 /// No assessment that is always right.
 
 pub fn was_wrong(r: &Rating, actually_failed: bool) -> bool {
-    actually_failed && r.grade <= Grade::Upper
+    actually_failed && r.grade.investment_grade()
 }
 
 /// The distribution of ratings across issuers is a READ of their states, never a target distribution
 /// the issuers were fitted to.
-pub fn distribution(states: &[State]) -> Vec<(Grade, usize)> {
-    let grades = [
-        Grade::Highest,
-        Grade::High,
-        Grade::Upper,
-        Grade::Lower,
-        Grade::Speculative,
-        Grade::Substantial,
-        Grade::Defaulted,
-    ];
-    grades
-        .iter()
-        .map(|g| (*g, states.iter().filter(|s| grade_from(s) == *g).count()))
+pub fn distribution(states: &[State], by: &Scale) -> Vec<(Grade, usize)> {
+    (0..Grade::NOTCHES)
+        .filter_map(|notch| Grade::at_rank(notch as f64))
+        .map(|g| (g, states.iter().filter(|s| grade_from(s, by) == g).count()))
         .collect()
 }
 
@@ -163,6 +168,10 @@ mod tests {
 
     fn state(leverage: f64, coverage: f64, trend: f64) -> State {
         State { leverage, coverage, cash: 500.0, size: 10_000.0, age_periods: 40, trend }
+    }
+
+    fn scale() -> Scale {
+        Scale { best_carries: 0.25, per_notch: 0.25, without_a_record: 3.0, record_after: 8 }
     }
 
     fn rated(grade: Grade) -> Rating {
@@ -183,7 +192,26 @@ mod tests {
         // it.
         let strong = state(1.0, 4.0, 0.1);
         let weak = state(6.0, 1.5, -0.2);
-        assert!(grade_from(&strong) < grade_from(&weak));
+        assert!(grade_from(&strong, &scale()) < grade_from(&weak, &scale()));
+    }
+
+    #[test]
+    fn the_scale_is_the_markets_own_and_a_name_off_the_end_of_it_is_still_on_the_scale() {
+        // Twenty-two rungs, named as a market names them, and the position IS the rank both ways.
+        for notch in 0..Grade::NOTCHES {
+            let g = Grade::at_rank(notch as f64).unwrap();
+            assert_eq!(g.rank(), notch as f64);
+        }
+        assert_eq!(Grade::BEST.shown(), "AAA");
+        assert_eq!(Grade::WORST.shown(), "D");
+        assert_eq!(Grade::LOWEST_INVESTMENT_GRADE.shown(), "BBB-");
+        assert!(Grade::BBBminus.investment_grade());
+        assert!(!Grade::BBplus.investment_grade());
+        // A credit better than the best grade is still the best grade, and one worse than the worst
+        // is still the worst: there are no further rungs to name it with.
+        assert_eq!(Grade::nearest(-4.0), Grade::BEST);
+        assert_eq!(Grade::nearest(1_000.0), Grade::WORST);
+        assert_eq!(Grade::nearest(f64::INFINITY), Grade::WORST);
     }
 
     #[test]
@@ -191,33 +219,34 @@ mod tests {
         // Age is state, and the TREND in the observables is too.
         let established = state(1.0, 4.0, 0.1);
         let young = State { age_periods: 2, ..established };
-        assert!(grade_from(&young) > grade_from(&established));
+        assert!(grade_from(&young, &scale()) > grade_from(&established, &scale()));
         let deteriorating = state(1.0, 4.0, -1.5);
-        assert!(grade_from(&deteriorating) > grade_from(&established));
+        assert!(grade_from(&deteriorating, &scale()) > grade_from(&established, &scale()));
     }
 
     #[test]
     fn it_is_sticky_so_a_small_change_does_not_move_it_and_a_move_is_late() {
         // No rating changes for no reason, and the stickiness is what makes a move meaningful.
-        let held = rated(Grade::Upper);
+        let held = rated(Grade::Aplus);
         let barely = state(3.0, 2.0, 0.1);
-        assert_eq!(grade_from(&barely), Grade::Upper);
-        assert!(reassess(&held, &barely, 10).is_none());
+        assert_eq!(grade_from(&barely, &scale()), Grade::Aplus);
+        assert!(reassess(&held, &barely, &scale(), 10).is_none());
         let much_worse = state(9.0, 2.0, -0.5);
-        let moved = reassess(&held, &much_worse, 10).unwrap();
-        assert!(moved.grade > Grade::Upper);
+        let moved = reassess(&held, &much_worse, &scale(), 10).unwrap();
+        assert!(moved.grade > Grade::Aplus);
         assert_eq!(moved.since_period, 10);
     }
 
     #[test]
     fn a_downgrade_forces_every_bound_holder_to_sell_on_the_same_date() {
         // A real, dated, mechanical flow — and a rating no rule refers to is decoration.
+        // The boundary a mandate is written against is BBB-, which a seven-label scale cannot say.
         let mandates = [
-            Mandate { holder: party(30), lowest_allowed: Grade::Upper, holds: 5_000.0 },
-            Mandate { holder: party(31), lowest_allowed: Grade::Lower, holds: 2_000.0 },
-            Mandate { holder: party(32), lowest_allowed: Grade::Substantial, holds: 800.0 },
+            Mandate { holder: party(30), lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE, holds: 5_000.0 },
+            Mandate { holder: party(31), lowest_allowed: Grade::BBminus, holds: 2_000.0 },
+            Mandate { holder: party(32), lowest_allowed: Grade::CCC, holds: 800.0 },
         ];
-        let d = downgrade(Grade::Speculative, &mandates, 10_000.0, 0.04, 0.15, 6_000.0, &[Grade::Lower]);
+        let d = downgrade(Grade::Bminus, &mandates, 10_000.0, 0.04, 0.15, 6_000.0, &[Grade::BBminus]);
         assert_eq!(d.forced_sales.len(), 2);
         assert_eq!(d.forced_sales[0], (party(30), 5_000.0));
         assert_eq!(d.forced_sales[1], (party(31), 2_000.0));
@@ -234,12 +263,12 @@ mod tests {
         // The downgrade raises the cost of funds, which worsens the observable state, which can
         // cause a further downgrade.
         let before = state(3.0, 4.0, 0.0);
-        let first = grade_from(&before);
+        let first = grade_from(&before, &scale());
         let after = worsened_by(&before, 2.0);
-        let second = grade_from(&after);
+        let second = grade_from(&after, &scale());
         assert!(second > first);
         // And a second round is worse again: the loop runs.
-        let third = grade_from(&worsened_by(&after, 1.0));
+        let third = grade_from(&worsened_by(&after, 1.0), &scale());
         assert!(third >= second);
     }
 
@@ -247,30 +276,32 @@ mod tests {
     fn improvement_widens_the_buyer_base() {
         // It works the other way too.
         let mandates = [
-            Mandate { holder: party(30), lowest_allowed: Grade::Upper, holds: 5_000.0 },
-            Mandate { holder: party(31), lowest_allowed: Grade::Lower, holds: 2_000.0 },
-            Mandate { holder: party(32), lowest_allowed: Grade::Substantial, holds: 800.0 },
+            Mandate { holder: party(30), lowest_allowed: Grade::LOWEST_INVESTMENT_GRADE, holds: 5_000.0 },
+            Mandate { holder: party(31), lowest_allowed: Grade::BBminus, holds: 2_000.0 },
+            Mandate { holder: party(32), lowest_allowed: Grade::CCC, holds: 800.0 },
         ];
-        assert_eq!(buyer_base(Grade::Speculative, &mandates), 1);
-        assert_eq!(buyer_base(Grade::High, &mandates), 3);
+        assert_eq!(buyer_base(Grade::Bminus, &mandates), 1);
+        assert_eq!(buyer_base(Grade::AA, &mandates), 3);
     }
 
     #[test]
     fn a_rated_safe_issuer_can_fail() {
-        // No assessment that is always right.
-        assert!(was_wrong(&rated(Grade::Highest), true));
-        assert!(!was_wrong(&rated(Grade::Highest), false));
-        assert!(!was_wrong(&rated(Grade::Substantial), true));
+        // No assessment that is always right. Being wrong is failing while rated somewhere a
+        // mandate would have let its holder buy.
+        assert!(was_wrong(&rated(Grade::BEST), true));
+        assert!(!was_wrong(&rated(Grade::BEST), false));
+        assert!(was_wrong(&rated(Grade::LOWEST_INVESTMENT_GRADE), true));
+        assert!(!was_wrong(&rated(Grade::CCC), true));
     }
 
     #[test]
     fn an_instruments_rating_differs_from_its_issuers_and_both_exist() {
         // The probability of failing to perform, and SEPARATELY the loss given that failure, which
         // depends on seniority and security.
-        let issuer = rated(Grade::Upper);
+        let issuer = rated(Grade::A);
         let subordinated = Rating {
             instrument: Some(InstrumentId::at(5)),
-            grade: Grade::Lower,
+            grade: Grade::BBB,
             loss_given_failure: 0.9,
             ..issuer
         };
@@ -283,18 +314,19 @@ mod tests {
     fn the_distribution_is_a_read_of_the_issuers_states() {
         // Never a target distribution the issuers were fitted to.
         let states = [state(1.0, 4.0, 0.1), state(3.0, 2.0, 0.0), state(9.0, 1.0, -1.0)];
-        let d = distribution(&states);
+        let d = distribution(&states, &scale());
         let counted: usize = d.iter().map(|(_, n)| n).sum();
         assert_eq!(counted, 3);
-        assert!(d.iter().any(|(g, n)| *g == Grade::Highest && *n == 1));
+        assert_eq!(d.len(), Grade::NOTCHES);
+        assert!(d.iter().any(|(g, n)| *g == Grade::BEST && *n == 1));
     }
 
     #[test]
     fn a_rating_is_an_opinion_held_by_a_named_assessor_and_is_not_the_only_one() {
         // One universal rating held by nobody means every participant agrees about credit by
         // construction.
-        let one = rated(Grade::Upper);
-        let another = Rating { by: party(81), grade: Grade::Lower, ..one };
+        let one = rated(Grade::A);
+        let another = Rating { by: party(81), grade: Grade::BBB, ..one };
         assert_ne!(one.by, another.by);
         assert_ne!(one.grade, another.grade);
     }

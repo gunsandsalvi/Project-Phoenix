@@ -646,6 +646,22 @@ pub fn declare(p: &mut Params) {
         "the backstop: capital against total assets, whatever they weigh");
     say("bank.buffer", 0.025, "capital per unit above the requirement", Dimension::Ratio, Kind::Policy, Owner::Parliament,
         "the buffer a bank is expected to keep above its requirement, inside which there are consequences short of a breach");
+    // The weight schedule is the regulator's, and it is two numbers rather than one per rung.
+    say("bank.on_the_best", 1.01, "per unit carried", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "what a bank must hold against a claim on the best credit there is, per unit it carries");
+    say("bank.per_notch", 1.07, "per unit carried, per notch", Dimension::Ratio, Kind::Policy, Owner::Parliament,
+        "how much more a bank must hold for each notch further down the scale a name is graded");
+    say("bank.ungraded_at", 7.0, "notches below the best", Dimension::Count, Kind::Policy, Owner::Parliament,
+        "where on the scale a bank must weight a name nobody has graded");
+    // And a house's own scale, from which its twenty-two band edges fall out.
+    say("ratings.best_carries", 0.25, "strain", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the strain a name at the top of a house's scale already carries");
+    say("ratings.per_notch", 0.25, "strain per notch", Dimension::Ratio, Kind::Preference, Owner::Model,
+        "the strain one notch of a house's scale is worth");
+    say("ratings.without_a_record", 3.0, "notches", Dimension::Count, Kind::Preference, Owner::Model,
+        "the notches a house marks down a name it has no history for");
+    say("ratings.record_after", 8.0, "periods", Dimension::Periods, Kind::Preference, Owner::Model,
+        "how long a name must have existed before a house reads its numbers as a record");
     // The mix a company would raise at.
     say("fund.draws", 0.05, "per unit uncalled", Dimension::Ratio, Kind::Preference, Owner::Model,
         "the share of an uncalled commitment a fund draws in one period");
@@ -882,6 +898,9 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             min_leverage: "bank.min_leverage",
             buffer: "bank.buffer",
             hurdle: "lender.hurdle",
+            on_the_best: "bank.on_the_best",
+            per_notch: "bank.per_notch",
+            ungraded_at: "bank.ungraded_at",
             days_per_period: w.days_per_period,
         })),
         // And a bank SETS the rate it pays on deposits.
@@ -1042,6 +1061,10 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
             kind: says("ratings.action"),
             accounts: kinds_row_accounts,
             at_income,
+            best_carries: "ratings.best_carries",
+            per_notch: "ratings.per_notch",
+            without_a_record: "ratings.without_a_record",
+            record_after: "ratings.record_after",
             days_per_period: w.days_per_period,
         })),
         // And the accounts are PUBLISHED.

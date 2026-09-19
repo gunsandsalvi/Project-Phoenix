@@ -303,18 +303,12 @@ pub fn standard(worst_ltv_on_its_book: f64, headroom: f64, hurdle: f64) -> Stand
 // a weight. The schedule is the regulator's, so it is the bank's business rather than the
 // assessor's — the assessor says what the credit IS and stops there.
 
-/// A per-ISSUER risk measure closes the loop, with or without a rating table.
-pub fn haircut(g: Grade, by_tenor: f64) -> f64 {
-    let by_credit = match g {
-        Grade::Highest => 1.01,
-        Grade::High => 1.02,
-        Grade::Upper => 1.05,
-        Grade::Lower => 1.10,
-        Grade::Speculative => 1.25,
-        Grade::Substantial => 1.60,
-        Grade::Defaulted => 4.0,
-    };
-    by_tenor * by_credit
+/// A per-ISSUER risk measure closes the loop, with or without a rating table. The schedule is what
+/// the best credit is asked for and what each further notch costs, so a twenty-two rung scale needs
+/// two numbers rather than twenty-two.
+pub fn haircut(g: Grade, by_tenor: f64, on_the_best: f64, per_notch: f64) -> f64 {
+    assert!(per_notch > 1.0, "XI-14: a schedule that does not rise with the credit is one per type");
+    by_tenor * on_the_best * per_notch.powf(g.rank())
 }
 
 #[cfg(test)]
@@ -526,6 +520,8 @@ mod tests {
     fn the_haircut_reads_the_issuers_own_grade_and_not_the_instrument_type() {
         // A haircut that is one number per type — the same for the best and worst credit — is the
         // one leg of the downgrade loop that is wholly absent.
-        assert!(haircut(Grade::Speculative, 1.0) > haircut(Grade::Highest, 1.0));
+        assert!(haircut(Grade::Bminus, 1.0, 1.01, 1.07) > haircut(Grade::BEST, 1.0, 1.01, 1.07));
+        // And every notch costs, so a one-notch downgrade is a capital call on its own.
+        assert!(haircut(Grade::BBB, 1.0, 1.01, 1.07) > haircut(Grade::BBBplus, 1.0, 1.01, 1.07));
     }
 }

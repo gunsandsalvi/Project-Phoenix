@@ -3992,7 +3992,10 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 
 ### A. What a rating is
 - **A1** REASON — an **ordinal judgement about a named issuer or instrument**, published, and visible to
-  everyone.
+  everyone, on **the market's own scale — AAA down to D, with the notches**. The notch is what a
+  downgrade moves by, and the boundary between BBB- and BB+ is what the mandates in C1 are written
+  against. Where an assessor puts the top of that scale and how coarse its notches are is its own
+  judgement; the twenty-two edges fall out of those and are nobody's to declare.
 - **A2** REASON — it is derived from **observable state**: leverage, coverage, cash, size, sector, **age**,
   and the trend in them.
   - **A2.a** FORBID — **a rating is never derived from the price.** If it reads the spread, it is a

@@ -864,6 +864,12 @@ pub struct Grading {
     /// §48's published accounts, which is what the coverage and the trend are read from.
     pub accounts: u32,
     pub at_income: u32,
+    /// The house's own scale: where its top sits, what a notch of it is worth, and what it makes of
+    /// a name it has no record for.
+    pub best_carries: &'static str,
+    pub per_notch: &'static str,
+    pub without_a_record: &'static str,
+    pub record_after: &'static str,
     pub days_per_period: i64,
 }
 
@@ -890,6 +896,12 @@ impl Mechanism for Grading {
             }
         }
 
+        let scale = crate::mechanisms::ratings::Scale {
+            best_carries: ctx.params().ratio(self.best_carries),
+            per_notch: ctx.params().ratio(self.per_notch),
+            without_a_record: ctx.params().count(self.without_a_record),
+            record_after: ctx.params().periods(self.record_after) as u32,
+        };
         let mut actions: Vec<(PartyId, PartyId, crate::stores::Grade)> = Vec::new();
         for (&who, &(income, before)) in &last {
             let of = PartyId(who);
@@ -922,7 +934,7 @@ impl Mechanism for Grading {
                     _ => 0.0,
                 },
             };
-            let grade = crate::mechanisms::ratings::grade_from(&state);
+            let grade = crate::mechanisms::ratings::grade_from(&state, &scale);
             for &by in &houses {
                 actions.push((by, of, grade));
             }
@@ -1199,6 +1211,11 @@ pub struct BankCapital {
     pub buffer: &'static str,
     /// The return a lender wants on what it puts out.
     pub hurdle: &'static str,
+    /// The weight schedule: what the best credit is asked for, what each further notch costs, and
+    /// where on the scale a name nobody has graded is weighted.
+    pub on_the_best: &'static str,
+    pub per_notch: &'static str,
+    pub ungraded_at: &'static str,
     pub days_per_period: i64,
 }
 
@@ -1211,6 +1228,9 @@ impl Mechanism for BankCapital {
             buffer: ctx.params().ratio(self.buffer),
         };
         let hurdle = ctx.params().ratio(self.hurdle);
+        let on_the_best = ctx.params().ratio(self.on_the_best);
+        let per_notch = ctx.params().ratio(self.per_notch);
+        let ungraded_at = ctx.params().count(self.ungraded_at);
         let from = Day(i64::from(ctx.period()) * self.days_per_period);
         let to = Day(from.0 + self.days_per_period - 1);
 
@@ -1250,16 +1270,11 @@ impl Mechanism for BankCapital {
                 // claim on one of them is the zero-weighted asset the standard means.
                 let kind = ctx.parties().kind_of(issuer);
                 let can_fail = kind != kinds::CENTRAL_BANK && kind != kinds::TREASURY;
-                // A name nobody has graded weighs what an ungraded name weighs, which is what the
-                // scale's bottom is for — not nothing, and not a number invented here.
-                let grade = crate::stores::Grade::at_rank(
-                    *worst.get(&issuer.0).unwrap_or(&crate::stores::Grade::Substantial.rank()),
-                )
-                .unwrap_or(crate::stores::Grade::Substantial);
-                assets.push(Asset {
-                    carried,
-                    weight: Weight::on(can_fail, crate::mechanisms::bank_capital::haircut(grade, 1.0) - 1.0),
-                });
+                // A name nobody has graded is weighted where the standard says an ungraded name
+                // sits — a notch on the scale, not nothing and not a number invented here.
+                let grade = crate::stores::Grade::nearest(*worst.get(&issuer.0).unwrap_or(&ungraded_at));
+                let weighs = crate::mechanisms::bank_capital::haircut(grade, 1.0, on_the_best, per_notch);
+                assets.push(Asset { carried, weight: Weight::on(can_fail, weighs - 1.0) });
             }
             // And what it OWES — the money it issued that others hold, plus what falls due on it.
             let mut liabilities = 0.0;
