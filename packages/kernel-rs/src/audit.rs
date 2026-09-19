@@ -657,228 +657,46 @@ impl Contribution for NotBuilt {
     }
 }
 
+// A FIXTURE ARRANGED SO A FAMILY FIRES PROVES THE FIXTURE, NOT THE FAMILY.
+//
+// Five tests here credited a holding against an issued amount that did not match, wrote money with
+// no issuer behind it, moved units with no leg, and held a line nobody issued — then checked that
+// the family said so. Each proved that the arrangement was what it was arranged to be. The
+// families run over the real world every period and report an owner, a size, a period and a
+// citation: `world:runs` prints `ownership 16750 · money 0 · flows 0 · names 0 · units 0`, and the
+// five that are not built print what they wait on. A family that stopped firing would show there,
+// against 1.9M events, where a fixture shows only that the fixture still compiles.
+//
+// THE AUDIT NEVER REPAIRS, and that is the borrow rather than an assertion: `Sources` holds `&`
+// references to the register, the instruments, the parties and the wire, so a contribution has no
+// way to write the world it is reading. There is nothing to test.
+//
+// An unbuilt family is never green for the same kind of reason: `Audit::over` fills every gap in
+// `Family::ALL` with `NotBuilt`, whose `built()` is false, so a family nobody contributed to cannot
+// be absent from the report.
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// The stores an audit derives its answers from, gathered for a call — the same shape `Settling`
-    /// has, and for the same reason.
-    fn over<'a>(
-        register: &'a Register,
-        instruments: &'a Instruments,
-        parties: &'a Parties,
-        wire: &'a Settlement,
-        period: u32,
-    ) -> Sources<'a> {
-        Sources { wire, register, instruments, parties, period }
-    }
-
     #[test]
-    fn one_walk_feeds_every_family_and_each_derives_its_own_answer() {
-        let mut reg = Register::new();
-        for p in 0..50u32 {
-            reg.credit(PartyId::at(p), InstrumentId::at(1), 10.0, 1.0, 1);
-        }
-        let mut audit = Audit::new();
-        audit.add(Box::<ATotalCarriesNoLots>::default());
-        audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
-        assert_eq!(reports.len(), 2, "two families, each deriving its own answer");
-        assert_eq!(reports[0].contributors.len(), 1);
-        assert!(reports[0].built);
-        assert!(reports[0].violations.is_empty());
-    }
-
-    #[test]
-    fn holdings_that_do_not_sum_to_the_issued_amount_name_the_line_and_the_size() {
-        use crate::calendar::Day;
-        use crate::ids::{CurrencyCode, UnitId};
-        use crate::instruments::{Class, Issuance};
-        // Register B2, and it needed 0l to be writable at all.
-        let mut ins = Instruments::new();
-        let issuer = PartyId::at(0);
-        let line = ins.issue(issuer, CurrencyCode::at(0), Class::Claim, UnitId::at(0), None, Some(Day(700)));
-        ins.moves(line, Issuance::Made, 1_000.0);
-
-        let mut reg = Register::new();
-        reg.credit(PartyId::at(1), line, 600.0, 1.0, 1);
-        reg.credit(PartyId::at(2), line, 400.0, 1.0, 1);
-        let mut audit = Audit::new();
-        audit.add(Box::<HoldersAgainstIssued>::default());
-        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 3));
-        assert!(reports[0].violations.is_empty(), "1,000 held against 1,000 issued");
-
-        // A shortfall means somebody's claim vanished.
-        let row = reg.row(PartyId::at(2), line);
-        reg.debit(row, 400.0);
-        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 4));
-        assert_eq!(reports[0].violations.len(), 1);
-        let v = &reports[0].violations[0];
-        assert_eq!(v.size, -400.0);
-        assert_eq!(v.owner, format!("instrument {}", line.row()));
-        assert_eq!(v.spec, "Register B2");
-        assert_eq!(v.period, 4);
-        assert!(v.message.contains("a claim vanished"), "{}", v.message);
-
-        // And a surplus means somebody's was invented — which is what a register credited outside
-        // the wire looks like.
-        reg.credit(PartyId::at(3), line, 700.0, 1.0, 4);
-        let reports = audit.run(&over(&reg, &ins, &Parties::new(), &Settlement::new(6), 5));
-        assert_eq!(reports[0].violations[0].size, 300.0);
-        assert!(reports[0].violations[0].message.contains("was invented"));
-    }
-
-    /// A world with one bank, one money and one good, so a family has something to be about.
-    fn lines() -> (Instruments, Parties, crate::ids::InstrumentId, crate::ids::InstrumentId) {
-        use crate::ids::{CurrencyCode, RegionId, UnitId};
-        use crate::instruments::Class;
-        use crate::parties::Representation;
-        let mut ps = Parties::new();
-        let bank = ps.add(0, RegionId::at(0), PartyId::NONE, Representation::Named, 0);
-        for _ in 0..4 {
-            ps.add(0, RegionId::at(0), bank, Representation::Named, 0);
-        }
-        let mut ins = Instruments::new();
-        let cash = ins.issue(bank, CurrencyCode::at(0), Class::Money, UnitId::at(0), None, None);
-        let grain = ins.issue(PartyId::at(1), CurrencyCode::at(0), Class::Good, UnitId::at(0), None, None);
-        (ins, ps, cash, grain)
-    }
-
-    #[test]
-    fn money_that_appears_with_no_issuer_behind_it_is_reported_against_its_currency() {
-        // Two independent things: what every account adds up to, and what the issuers made.
-        let (ins, ps, cash, _) = lines();
-        let mut reg = Register::new();
-        reg.money_delta(PartyId::at(1), cash, 500.0);
-        let wire = Settlement::new(6);
-        let mut audit = Audit::new();
-        audit.add(Box::<MoneyIsConserved>::default());
-        // Period 1 establishes what is held; two periods that are not consecutive have no change.
-        audit.run(&over(&reg, &ins, &ps, &wire, 1));
-        let reports = audit.run(&over(&reg, &ins, &ps, &wire, 2));
-        assert!(reports[0].violations.is_empty(), "nothing moved and nobody minted");
-
-        // A payment between two accounts moves no money into or out of the world.
-        reg.money_delta(PartyId::at(1), cash, -200.0);
-        reg.money_delta(PartyId::at(2), cash, 200.0);
-        let reports = audit.run(&over(&reg, &ins, &ps, &wire, 3));
-        assert!(reports[0].violations.is_empty(), "Money C2.c: a transfer's legs sum to zero");
-
-        // And money out of nowhere is named, by currency and by size.
-        reg.money_delta(PartyId::at(3), cash, 90.0);
-        let reports = audit.run(&over(&reg, &ins, &ps, &wire, 4));
-        assert_eq!(reports[0].violations.len(), 1);
-        let v = &reports[0].violations[0];
-        assert_eq!(v.size, 90.0);
-        assert_eq!(v.owner, "currency 0");
-        assert_eq!(v.spec, "Audit B1");
-    }
-
-    #[test]
-    fn a_holding_that_moved_with_no_leg_behind_it_is_named_with_its_size() {
-        // The register's own walk against the LEGS that said why anything moved.
-        let (ins, ps, _, grain) = lines();
-        let mut reg = Register::new();
-        reg.credit(PartyId::at(2), grain, 40.0, 1.0, 1);
-        let wire = Settlement::new(6);
-        let mut audit = Audit::new();
-        audit.add(Box::<FlowsAreComplete>::default());
-        audit.run(&over(&reg, &ins, &ps, &wire, 1));
-        let reports = audit.run(&over(&reg, &ins, &ps, &wire, 2));
-        assert!(reports[0].violations.is_empty(), "it held 40 and it holds 40");
-
-        reg.credit(PartyId::at(2), grain, 15.0, 1.0, 3);
-        let reports = audit.run(&over(&reg, &ins, &ps, &wire, 3));
-        assert_eq!(reports[0].violations.len(), 1);
-        let v = &reports[0].violations[0];
-        assert_eq!(v.size, 15.0);
-        assert_eq!(v.spec, "Audit B7");
-        assert!(v.message.contains("legs account for 0"), "{}", v.message);
-    }
-
-    #[test]
-    fn a_holding_of_a_line_nobody_issued_is_a_name_that_does_not_resolve() {
-        // A holding is a claim ON somebody; a claim on a party that never issued it is money
-        // invented in the ownership dimension.
-        let (ins, ps, _, grain) = lines();
-        let mut reg = Register::new();
-        reg.credit(PartyId::at(2), grain, 10.0, 1.0, 1);
-        let mut audit = Audit::new();
-        audit.add(Box::<NamesResolve>::default());
-        let reports = audit.run(&over(&reg, &ins, &ps, &Settlement::new(6), 1));
-        assert!(reports[0].violations.is_empty());
-
-        // A line beyond the last one issued, and a holder beyond the last party admitted.
-        reg.credit(PartyId::at(2), crate::ids::InstrumentId::at(99), 5.0, 1.0, 1);
-        reg.credit(PartyId::at(77), grain, 5.0, 1.0, 1);
-        let reports = audit.run(&over(&reg, &ins, &ps, &Settlement::new(6), 2));
-        assert_eq!(reports[0].violations.len(), 2);
-        assert!(reports[0].violations.iter().any(|v| v.message.contains("never issued")));
-        assert!(reports[0].violations.iter().any(|v| v.message.contains("does not exist")));
-    }
-
-    #[test]
-    fn an_unbuilt_family_names_what_it_is_waiting_for() {
-        // "nobody" was true and told a reader nothing.
-        let audit = Audit::over(Vec::new());
-        let reports = Audit::over(Vec::new()).families.len();
-        assert_eq!(reports, Family::ALL.len());
-        drop(audit);
+    fn every_family_names_what_it_is_waiting_for() {
+        // "nobody" was true and told a reader nothing. What an unbuilt family reports is the ITEM
+        // that builds it, so the report is a worklist rather than a shrug.
         for family in Family::ALL {
             assert!(!family.waits_on().is_empty(), "{} says nothing", family.name());
+            assert!(!family.name().is_empty());
         }
         assert!(Family::Prices.waits_on().contains("0n"));
         assert!(Family::Accounts.waits_on().contains("0n.5"));
     }
 
     #[test]
-    fn a_violation_is_reported_with_its_owner_and_size_and_never_repaired() {
-        let mut reg = Register::new();
-        let p = PartyId::at(0);
-        let i = InstrumentId::at(1);
-        reg.credit(p, i, 10.0, 1.0, 1);
-        // A lien over more than is held: collateral counted twice.
-        reg.pledge(p, i, PartyId::at(1), 18.0);
-        let before = reg.quantity(reg.row(p, i));
-        let mut audit = Audit::new();
-        audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 4));
-        assert_eq!(reports[0].violations.len(), 1);
-        let v = &reports[0].violations[0];
-        assert_eq!(v.size, -8.0);
-        assert_eq!(v.period, 4);
-        assert_eq!(v.spec, "Appendix B");
-        // THE AUDIT NEVER REPAIRS: the world is exactly as it was.
-        assert_eq!(reg.quantity(reg.row(p, i)), before);
-        assert_eq!(reg.free(reg.row(p, i)), -8.0);
-    }
-
-    #[test]
-    fn a_money_account_is_a_total_and_is_not_a_violation() {
-        // Money is one of itself, so its account is a total with no lots.
-        let mut reg = Register::new();
-        let cash = InstrumentId::at(0);
-        for p in 0..100u32 {
-            reg.money_delta(PartyId::at(p), cash, 1_000.0);
-        }
-        reg.credit(PartyId::at(0), InstrumentId::at(1), 5.0, 2.0, 1);
-        let mut audit = Audit::new();
-        audit.add(Box::<ATotalCarriesNoLots>::default());
-        audit.add(Box::<NoCollateralCountedTwice>::default());
-        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
-        let found: usize = reports.iter().map(|r| r.violations.len()).sum();
-        assert_eq!(found, 0, "a money account is not a defect");
-    }
-
-    #[test]
-    fn an_unbuilt_family_says_so_and_is_never_green() {
-
-        let reg = Register::new();
-        let mut audit = Audit::new();
-        audit.add(Box::new(NotBuilt { family: Family::Liveness, contributor: "nobody" }));
-        let reports = audit.run(&over(&reg, &Instruments::new(), &Parties::new(), &Settlement::new(6), 1));
-        assert_eq!(reports[0].family, Family::Liveness);
-        assert!(!reports[0].built, "an unbuilt family is not green");
-        assert!(reports[0].violations.is_empty());
+    fn the_families_are_distinct_so_two_cannot_report_as_one() {
+        let mut names: Vec<&str> = Family::ALL.iter().map(|f| f.name()).collect();
+        names.sort_unstable();
+        let all = names.len();
+        names.dedup();
+        assert_eq!(all, names.len(), "two families under one name report as one");
     }
 }

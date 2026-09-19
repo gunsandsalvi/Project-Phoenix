@@ -221,9 +221,6 @@ a count that cannot be zero, an id that cannot be fabricated, a measure whose co
 more of a cell than it has, a kind given two profiles, a line printed twice in one period — and
 those stay as a panic at the site, with no test.
 
-- [ ] 0m3.5 **`audit.rs` (41)** — the densest file. A fixture arranged so a family fires proves the
-  fixture, not the family; 0m.1 removed exactly that shape one register over. The families run over
-  the real world every period and `world:runs` prints them by name with their counts.
 - [ ] 0m3.6 **The three mechanisms** — `mechanisms/money.rs` (15), `mechanisms/capital_programme.rs`
   (14), `running.rs` (1 helper, ~18 tests). `running.rs` is the one to read most carefully: a coupon
   split pro rata, a wage, an outlook formed from two prices are all pure functions wearing a world.
