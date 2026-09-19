@@ -180,7 +180,7 @@ fn main() {
             // A coupon covers the week it falls at the end of, because a coupon IS a period.
             let due = Day(k * WEEK + draw.below(WEEK as u64) as i64);
             w.schedules.owes(
-                *line,
+                phoenix_kernel::stores::Owed::On(*line),
                 *issuer,
                 w.instruments.ccy_of(*line),
                 phoenix_kernel::stores::Payment {

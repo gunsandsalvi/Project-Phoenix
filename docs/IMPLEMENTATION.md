@@ -30,7 +30,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
-| Money | 18 | 5 | 14 | 0 | 37 |
+| Money | 19 | 5 | 13 | 0 | 37 |
 | Register | 16 | 3 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 14 | 3 | 6 | 0 | 23 |
@@ -153,56 +153,24 @@ is built**: nine stages, one pass, every row in one of them.
 
 ## Part 2 — The items
 
-## 0t. Nothing accrues, and every instrument is a zero-coupon bullet
+## 0t. A coupon is a windfall to whoever holds it on the date
 
 > **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **THE BOND in full** (Part
-> IV, all fourteen characteristics — N6 and N9 are the subject, and the other twelve say what they
-> sit in), then Money G1.a, G1.b, G3.a and G3.c, §7 C, §9 C, §8 D.
-> The source: `stores.rs` `Schedules` in full, `assembly.rs`'s `bring` (the one writer of a schedule
-> row), `module.rs` `Brought.owing`, `mechanisms/lending.rs` `Servicing`, and the three producers —
-> `mechanisms/treasury.rs`, `mechanisms/short_term_debt.rs`, `mechanisms/corporate_credit.rs`.
+> IV, all fourteen characteristics — N9 is the subject and the other thirteen say what it sits in),
+> then Money G1.b and G1.c, §2 A2.a, §3 D and XI-5.
+> The source: `stores.rs` `Schedules` (its `from`/`accrued`/`accruing` reads), `session.rs`
+> `run_book` and `clearing.rs` — where a trade becomes two legs — `ledger.rs` `Leg::Asset`, and
+> `mechanisms/private_equity.rs` `Calling`.
 >
 > **In full, not the cited lines.** Every finding under this item was found by reading around one
 > that was already known, and the ones still unfound are next to these. What the reading turns up
 > that this item does not name is a finding, and it goes in this file under the item that should
 > fix it — never into the commit that happens to be open (Law 10, Law 14).
 
-**INSERTED after 0s (Law 10), and before everything else, because it is the content of stage b.**
-`Schedules` is written in one place — `assembly.rs:489`, from `Brought.owing` — and **three systems
-supply one**. All three supply the same two rows, and the three blocks are identical to the
-character:
+**What is left of 0t once the schedule exists.** A bond pays coupons on its own dates and what has
+accrued on one is a read. Nothing uses that read: paper changes hands at a clean price and the
+holder on the coupon date takes the whole coupon, which is the windfall N9.b exists to forbid.
 
-```
-owing: vec![
-    (matures, short * coupon * years, Owing::Interest),
-    (matures, short, Owing::Principal),
-],
-```
-
-So **every bond, bill and loan in this world is a zero-coupon bullet**: one interest payment, for the
-whole life of the paper, on the day the principal comes back. Nothing accrues between. Bond N6 — *a
-PERIODICITY and an accrual convention* — has no representation at all, and Bond N9.b — *accrued
-interest travels with the paper, because otherwise a buyer the day before a coupon receives a
-windfall* — cannot even be violated, because there is nothing to accrue.
-
-**It is also Law 4 three times over.** One fact — what a piece of paper owes and when — with three
-writers, each a copy of the others. A fourth issuer added anywhere copies it again.
-
-**And it is why the world looks quiet.** Nothing falls due until a maturity, so stage b has nothing
-to do in almost every period; `Servicing` walks `falling(from, to)` and finds nothing; no payment
-fails, so no claim crosses, so no loss is an event, so nobody ceases, so no estate opens. **The
-whole of XI-1 → XI-2 → XI-3 → XI-8 is downstream of a schedule that is empty**, and every item that
-waits on a default is waiting on this.
-
-- [x] 0t.1 **A coupon schedule is generated from the instrument's own terms** — issue date, maturity,
-  periodicity and day-count convention — by ONE writer, read by all three issuers and by whatever
-  issues later. The periodicity is placed by advancing a date (G3.a), the year fraction is the
-  calendar's day count (G3.c), and a periodicity finer than a period is refused (G3.b).
-  *`instruments::schedule_of`; `Brings.owing` deleted and with it the three copies.*
-- [x] 0t.2 **Accrual is a read, not a stored balance.** *`instruments::accrued` over the interval a
-  row carries, and `Schedules::accrued`/`accruing` over the rows. A principal answers `None` rather
-  than zero, and a day outside a coupon's interval is refused rather than answered with the end of
-  it.*
 - [ ] 0t.3 **Accrued interest travels with the paper, and the holder of record is the one at the
   period's open** (N9.b, G1.b). *0s.8 folded in here, where it turned out to belong: 0s built the
   stage that can take a record date and there was nothing dated to take one of.* A settled purchase
@@ -214,40 +182,8 @@ waits on a default is waiting on this.
   it**. A coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and
   Seed C4.b names it: *"a seeded spread table that strikes every coupon in the world is a permanent
   cash flow"* — here it is not even a table. *This is 0p.6's finding, which stays there whole; it is
-  named here because 0t.1 is the code that reads it and neither item can close while it stands.*
-- [x] 0t.5 **A schedule row has no currency** (Bond N3). *0r.6 in full stays at 0r, which builds the
-  buying mechanism; what belonged here was the ROW, and it carries one. `Servicing` now compares it
-  with the money the payer banks in and proposes nothing where they differ — §12 F1's buy is 0r.6's
-  and a conversion nobody cleared is not a stand-in for it.*
-
-- [x] 0t.7 **A TENOR WAS A COUNT OF PERIODS, IN ALL THREE ISSUERS, UNDER A COMMENT DENYING IT, AND
-  THE SAME DEFECT WAS IN SEVENTEEN MECHANISMS.** *Found at 0t.1 and fixed with it.* Each issuer
-  wrote `let matures = Day(from.0 + (periods as i64) * self.days_per_period)` beneath the words
-  *"It matures on a DATE, so the maturity wall is spread by the dates and not by a count of
-  periods"* — G3.a's exact prohibition, three times, with a stale comment over it (Law 16).
-  Above them sat the shape they were instances of: **`days_per_period` threaded into 17 mechanism
-  files**, and `Day(period × days_per_period)` at 14 sites plus `from + days_per_period - 1` at 8
-  more, a second calendar (G3.c, Law 4) that agrees with the first only while nobody moves the
-  epoch.
-  *The fix removed code and a parameter: `ctx.today()` and `ctx.last_day()` on both doors (and on
-  `ParticipantView`, which had the same need), `funding.tenor`/`paper.tenor` as
-  `Dimension::Months` with the maturity `plus_months`, and then `days_per_period` deleted from all
-  seventeen mechanisms, from `Wiring`, and from every line that wired it. A five-year line is five
-  years of calendar rather than 260 weeks, and no mechanism can build a calendar of its own because
-  none of them is handed the piece it would need.*
-
-- [ ] 0t.6 **Nothing is called and paid in the same period, as a CHECK** (G1.c). *0s.7 re-positioned
-  here, because 0s found it blocked rather than unbuilt: the stage exists and the four that belong
-  in it — `private_equity`, `forced_sale`, `control`, `polity` — are in it, and the refusal cannot
-  be installed until there is somewhere for a call to be written.* A mechanism running at
-  `AT_SCHEDULED` schedules for `period + 1`; an instruction it issues against the current period is
-  refused at the site with its citation. `private_equity`'s `Calling` is the one that would throw
-  today — it proposes the capital call it just decided on — and what it needs instead is a schedule
-  row dated next period, which is 0t.1's. Every feedback loop added later gets its period from this.
-
-**Exit.** A bond pays its coupons on its own dates, generated once from its own terms. Accrual is a
-read. Stage b has work to do in every period, something in this world can fail to pay before it
-matures, and a call cannot be paid in the week it was made.
+  named here because `schedule_of` is what reads it and neither item can close while it stands.*
+**Exit.** A buyer pays clean plus accrued and a coupon is nobody's windfall.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -740,6 +676,16 @@ longer true of any of them, and what is left is the specific clause each was rea
 here waits on a door any more — the doors are built — so each waits on a thing somebody has to
 write.
 
+- [ ] 22j.7 **A MISSED BILATERAL PAYMENT IS NOBODY'S EVENT.** *Found at 0t.6, which made a capital
+  call a real obligation falling due on a named party.* `mechanisms/loss.rs` `Losses` walks what
+  fell due and crosses a borrower's STANDING on a LINE, so a payment owed `Owed::To(a party)` has
+  nothing to attach a standing to and is skipped. For a coupon that is right — a standing is a view
+  of a borrower's paper. For a call it leaves 29 A2.b unmet: *"the investor funds it from its own
+  liquidity ladder — selling if it must — or it DEFAULTS ON THE CALL, which is itself an event with
+  consequences."* Today the payment simply queues and then runs out of periods, and no fund learns
+  that its investor did not fund. The consequence belongs to the system that struck the obligation —
+  §29 for a call, §16 for a margin call, §36 for an invoice — so what is missing is each of them
+  reading its own unpaid rows at stage **b**, not a second standing model in `loss`.
 - [ ] 22j.2 **A LEVEL-LESS ASK REACHES THE PRICES AS MINUS INFINITY, AND IT STOPS THE WORLD.**
   `protocols::level_of` uses `+∞` for a bid with no level and `-∞` for an ask with one — a sentinel
   meaning *takes what the book gives* (Clearing C1, XI-2) — and nothing stops that sentinel becoming
@@ -1207,7 +1153,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1171 clauses: 1041 MISSING, 130 PARTIAL.** Generated from
+**1169 clauses: 1040 MISSING, 129 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, in the specification's own order of systems, which is
 the order Part XIII builds them in. A MISSING clause is a mechanism nobody has written; a PARTIAL
 one is a mechanism that exists and does not yet do all the clause says, and its row says what is
@@ -1218,7 +1164,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 18 missing, 8 partial
+### Money — 17 missing, 7 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -1236,7 +1182,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
 - [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it. Positioned at item 0t.3, which is where there is a coupon to be windfalled
-- [ ] `Money G1.c` MISSING — packages/kernel-rs/src/world.rs `SCHEDULED` is the stage and `private_equity`, `forced_sale`, `control` and `polity` run in it, but nothing refuses an instruction issued there against the current period. The guard needs a schedule row to write the call into, so it is at item 0t.6
 - [ ] `Money G2.c` MISSING — the stage exists and no row is in it: four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
 - [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 0r.2)
 - [ ] `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 0r)
@@ -1245,7 +1190,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money E1` PARTIAL — packages/kernel-rs/src/ledger.rs (a payer that cannot pay does not pay, nothing half-settles, and the outcome is recorded by name), packages/kernel-rs/src/ledger.rs `Queue::gave_up` (the arrear). What is missing is the downstream: no claim is ever filed against an estate (VERIFICATION 4.1), so `owed_to_the_state` has no caller
 - [ ] `Money G2.b` PARTIAL — packages/kernel-rs/src/systems.rs puts `lending`, `cds`, `loss`, `mortality` and `estate` in `AT_OWED` in that order, so a loss lands and a party ceases before it can trade and the estate sees the deaths it is for. What is missing is the first word of the stage: nothing accrues (item 0t)
 - [ ] `Money G2.e` PARTIAL — packages/kernel-rs/src/systems.rs `AT_VIEWS` holds `expectations` and the posting rows, and `Forming` is constructed ONCE, so an outlook is formed once a period and before the market it is posted into. What is missing is that no participant reads an outlook (item 0p.1)
-- [ ] `Money G2.h` PARTIAL — packages/kernel-rs/src/systems.rs `AT_SCHEDULED` holds `private_equity`, `forced_sale`, `control` and `polity` — the four that are called in one period and acted on in the next. What is missing is the refusal that makes it true rather than conventional (item 0t.6)
 
 ### Register — 7 missing, 3 partial
 
@@ -2030,7 +1974,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Private Equity D5` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
 - [ ] `Private Equity E1` MISSING — VERIFICATION 12.1: `private_equity` runs `mechanisms/private_equity.rs Calling`, which proposes capital calls; `mechanisms::private_equity` is imported by nothing, so `Buyout`, `Called`, `Exit`, `Failure`, `Mark`, `exit`, `mark_against_exit`, `sources_and_uses` and `transformed` are unreachable (11.1). No buyout happens, nothing is held, nothing exits
 - [ ] `Private Equity E3` MISSING — VERIFICATION 12.1: packages/kernel-rs/src/mechanisms/private_equity.rs is imported by nothing, so `Exit` and `exit` are unreachable and nothing exits at any price. NOT GUARDED: an exit at a price nobody paid is a thing the code would DO rather than a word it would write, so what holds it is the item that wires the module against a market that clears (0r), not a check (item 0j.6)
-- [ ] `Private Equity A2.b` PARTIAL — `Calling` proposes the call and the wire refuses or queues it where the investor is short, so the call is not bounded by spare cash. What is missing is the other half: an investor that does not pay does not default on it, which is where every loss chain terminates (item 0q)
+- [ ] `Private Equity A2.b` PARTIAL — the call falls due like any other payment and the wire refuses or queues it where the investor is short, so it is not bounded by spare cash. What is missing is the other half: an investor that does not pay does not DEFAULT on it — `mechanisms/loss.rs` crosses a standing on a LINE and a bilateral obligation has none, so the row runs out of periods and no fund learns of it (item 22j.7)
 
 ### Treasury — 17 missing, 3 partial
 

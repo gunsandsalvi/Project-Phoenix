@@ -219,8 +219,7 @@ impl Mechanism for SpotFx {
                 if ctx.schedules().paid(d) || ctx.schedules().due(d) > to {
                     continue;
                 }
-                let line = ctx.schedules().instrument_of(d);
-                let owed_in = ctx.instruments().ccy_of(line).0;
+                let owed_in = ctx.schedules().ccy(d).0;
                 if owed_in == my_ccy {
                     continue;
                 }

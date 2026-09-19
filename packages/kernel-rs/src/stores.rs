@@ -383,6 +383,18 @@ pub enum Owing {
     Principal,
     Premium,
     Rent,
+    /// 29 A2: capital committed and not paid, called on a date the investor cannot refuse.
+    Call,
+}
+
+/// WHAT A PAYMENT IS ON. An instrument's payment goes to whoever the register says holds it, THEN
+/// (Register A2.a); a bilateral one goes to the party it was struck with. They are two different
+/// facts rather than one with a special case, and a payment that cannot say which it is has no
+/// payee.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Owed {
+    On(InstrumentId),
+    To(PartyId),
 }
 
 /// ONE PAYMENT A CLAIM OWES: the interval it covers, the day it falls, how much and of what. The
@@ -409,7 +421,8 @@ impl DueId {
 /// 5 D2, XI-9: what an instrument owes and when.
 #[derive(Default)]
 pub struct Schedules {
-    instrument: Vec<u32>,
+    /// What each payment is ON — a line, or a named party it was struck with.
+    on: Vec<Owed>,
     owed_by: Vec<u32>,
     /// Bond N6: the day this payment STARTED covering, so a coupon says which period it is for and
     /// what has accrued on it is a read rather than a stored balance. A principal covers no days
@@ -436,17 +449,17 @@ impl Schedules {
     }
 
     pub fn len(&self) -> usize {
-        self.instrument.len()
+        self.on.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.instrument.is_empty()
+        self.on.is_empty()
     }
 
     /// One payment, over one interval, in one money, owed by one party.
     pub fn owes(
         &mut self,
-        instrument: InstrumentId,
+        on: Owed,
         owed_by: PartyId,
         ccy: crate::ids::CurrencyCode,
         p: Payment,
@@ -454,8 +467,12 @@ impl Schedules {
         assert!(owed_by.some(), "Appendix B: no liability without somebody who owes it");
         assert!(p.amount > 0.0, "5 D2: a payment of nothing is not a payment that falls due");
         assert!(p.from <= p.due, "Money G3.a: a payment cannot cover days after it falls due");
-        let row = self.instrument.len() as u32;
-        self.instrument.push(instrument.0);
+        if let Owed::To(payee) = on {
+            assert!(payee.some(), "Appendix B: no liability without beneficiaries");
+            assert!(payee != owed_by, "5 D2: a party owing itself is not an obligation");
+        }
+        let row = self.on.len() as u32;
+        self.on.push(on);
         self.owed_by.push(owed_by.0);
         self.from.push(p.from.0);
         self.due.push(p.due.0);
@@ -463,15 +480,18 @@ impl Schedules {
         self.ccy.push(ccy.0);
         self.of.push(p.of);
         self.paid.push(false);
-        self.by_instrument.entry(instrument.0).or_default().push(row);
+        if let Owed::On(line) = on {
+            self.by_instrument.entry(line.0).or_default().push(row);
+        }
         self.by_day.entry(p.due.0).or_default().push(row);
         self.by_payer.entry(owed_by.0).or_default().push(row);
         DueId(row)
     }
 
+    /// What this payment is on, which is what says who is paid.
     #[inline]
-    pub fn instrument_of(&self, d: DueId) -> InstrumentId {
-        InstrumentId(self.instrument[d.row()])
+    pub fn on(&self, d: DueId) -> Owed {
+        self.on[d.row()]
     }
 
     #[inline]
@@ -503,7 +523,7 @@ impl Schedules {
             Owing::Interest => {
                 Some(crate::instruments::accrued(self.from(d), self.due(d), self.amount(d), on))
             }
-            Owing::Principal | Owing::Premium | Owing::Rent => None,
+            Owing::Principal | Owing::Premium | Owing::Rent | Owing::Call => None,
         }
     }
 
@@ -1334,13 +1354,18 @@ mod tests {
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
         let pays = |from, due, amount, of| Payment { from: Day(from), due: Day(due), amount, of };
-        let coupon = s.owes(line, party(1), usd, pays(0, 10, 5.0, Owing::Interest));
-        s.owes(line, party(1), usd, pays(100, 100, 100.0, Owing::Principal));
-        s.owes(InstrumentId::at(4), party(2), usd, pays(0, 12, 9.0, Owing::Premium));
+        let coupon = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0, Owing::Interest));
+        s.owes(Owed::On(line), party(1), usd, pays(100, 100, 100.0, Owing::Principal));
+        s.owes(Owed::On(InstrumentId::at(4)), party(2), usd, pays(0, 12, 9.0, Owing::Premium));
+        // And one owed to a NAMED party rather than on a line, which falls due the same way and is
+        // not on the line's books.
+        let call = s.owes(Owed::To(party(9)), party(2), usd, pays(8, 8, 40.0, Owing::Call));
 
         let this_week = s.falling(Day(7), Day(14));
-        assert_eq!(this_week.len(), 2, "two payments fall in the window and the third does not");
-        assert_eq!(s.outstanding(line), 105.0);
+        assert_eq!(this_week.len(), 3, "three payments fall in the window and the fourth does not");
+        assert_eq!(s.outstanding(line), 105.0, "the bilateral one is nobody's line");
+        assert_eq!(s.on(call), Owed::To(party(9)));
+        assert_eq!(s.accrued(call, Day(8)), None, "a call covers no days");
 
         // Bond N9.b: what has accrued on the coupon is a READ over its own interval, and half way
         // through it is half the coupon. A principal covers no days and accrues nothing.
@@ -1358,8 +1383,8 @@ mod tests {
         let line = InstrumentId::at(3);
         let usd = crate::ids::CurrencyCode::at(0);
         let pays = |from, due, amount| Payment { from: Day(from), due: Day(due), amount, of: Owing::Interest };
-        let first = s.owes(line, party(1), usd, pays(0, 10, 5.0));
-        s.owes(line, party(1), usd, pays(10, 11, 6.0));
+        let first = s.owes(Owed::On(line), party(1), usd, pays(0, 10, 5.0));
+        s.owes(Owed::On(line), party(1), usd, pays(10, 11, 6.0));
         s.settle(first);
         assert_eq!(s.falling(Day(0), Day(20)).len(), 1);
         assert_eq!(s.outstanding(line), 6.0);

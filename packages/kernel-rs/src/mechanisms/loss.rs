@@ -122,7 +122,11 @@ impl Mechanism for Losses {
                 if ctx.schedules().paid(d) || ctx.schedules().due(d) > to || ctx.schedules().due(d) < from {
                     continue;
                 }
-                *fell.entry((row, ctx.schedules().instrument_of(d).0)).or_insert(0.0) += ctx.schedules().amount(d);
+                // A standing is a view of a borrower ON A LINE, so an obligation that is not on one
+                // has nothing for it to attach to. What a missed bilateral payment is instead is
+                // the counterparty's event, and it is not this system's.
+                let crate::stores::Owed::On(line) = ctx.schedules().on(d) else { continue };
+                *fell.entry((row, line.0)).or_insert(0.0) += ctx.schedules().amount(d);
             }
         }
 

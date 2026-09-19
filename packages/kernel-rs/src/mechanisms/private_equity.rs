@@ -243,23 +243,27 @@ impl Mechanism for Calling {
             calling.push((fund, investor, owed));
         }
 
+        // 29 A2: a call is a NOTICE — real money from the investor's account, on a date it cannot
+        // refuse — and Money G1.c says that date is not the week the call was made. So it falls due
+        // at the next period's open, where an investor that cannot find the money defaults on the
+        // call like any other payer (A2.b).
+        let due = ctx.calendar().start_of(crate::calendar::Period(ctx.period() + 1));
+        let today = ctx.today();
         for (fund, investor, owed) in calling {
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
-            let Some(owed) = crate::ledger::Units::new(owed) else { continue };
-            // The investor must hold liquidity against a call it did not choose the timing of.
-            ctx.propose(
-                vec![crate::ledger::Leg::Money {
-                    from: investor,
-                    to: fund,
-                    instrument: money,
+            let ccy = ctx.instruments().ccy_of(money);
+            ctx.owes(
+                crate::stores::Owed::To(fund),
+                investor,
+                ccy,
+                crate::stores::Payment {
+                    from: today,
+                    due,
                     amount: owed,
-                    receipt: crate::ledger::Receipt::Transfer,
-                }],
-                crate::ledger::Cause::Payment,
-                crate::ledger::Delivery::Nothing,
-                "29 A2: a call is pro rata on uncalled commitments, and it is real money",
+                    of: crate::stores::Owing::Call,
+                },
             );
-            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed.get()))], false);
+            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed))], false);
         }
     }
 }

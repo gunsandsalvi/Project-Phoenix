@@ -132,7 +132,6 @@ impl Mechanism for Servicing {
         let mut paying: Vec<(PartyId, InstrumentId, Vec<(PartyId, f64)>, Receipt, crate::stores::DueId)> =
             Vec::new();
         for due in ctx.schedules().falling(from, to) {
-            let line = ctx.schedules().instrument_of(due);
             let owes = ctx.schedules().owed_by(due);
             let Some(money) = account_of(ctx.parties(), ctx.instruments(), owes) else {
                 // The payer has no account to pay from: there is nothing to propose, and inventing
@@ -146,33 +145,41 @@ impl Mechanism for Servicing {
             if ctx.instruments().ccy_of(money) != ctx.schedules().ccy(due) {
                 continue;
             }
-            // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to what it
-            // holds.
-            let owed: Vec<(PartyId, f64)> = ctx
-                .register()
-                .of_instrument(line)
-                .iter()
-                .map(|r| {
-                    let row = crate::ids::HoldingId(*r);
-                    (ctx.register().holder_of(row), ctx.register().quantity(row))
-                })
-                .filter(|(who, units)| *who != owes && *units > 0.0)
-                .collect();
-            let outstanding: f64 = owed.iter().map(|(_, units)| units).sum();
-            if outstanding <= 0.0 {
-                // Nobody but the issuer holds it.
-                continue;
-            }
-            // A payment on a line is per unit of par, and each holder is paid for the units it
-            // holds.
-            let per_unit = ctx.schedules().amount(due) / outstanding;
+            // WHO IS PAID is what the obligation is ON. Paper pays whoever the register says holds
+            // it, then; a bilateral obligation pays the party it was struck with.
+            let legs: Vec<(PartyId, f64)> = match ctx.schedules().on(due) {
+                crate::stores::Owed::To(payee) => {
+                    vec![(payee, ctx.schedules().amount(due))]
+                }
+                crate::stores::Owed::On(line) => {
+                    // Register E1, A2.a, Appendix B #10: EVERY holder is owed, in proportion to
+                    // what it holds.
+                    let owed: Vec<(PartyId, f64)> = ctx
+                        .register()
+                        .of_instrument(line)
+                        .iter()
+                        .map(|r| {
+                            let row = crate::ids::HoldingId(*r);
+                            (ctx.register().holder_of(row), ctx.register().quantity(row))
+                        })
+                        .filter(|(who, units)| *who != owes && *units > 0.0)
+                        .collect();
+                    let outstanding: f64 = owed.iter().map(|(_, units)| units).sum();
+                    if outstanding <= 0.0 {
+                        // Nobody but the issuer holds it.
+                        continue;
+                    }
+                    // A payment on a line is per unit of par, and each holder is paid for the units
+                    // it holds.
+                    let per_unit = ctx.schedules().amount(due) / outstanding;
+                    owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect()
+                }
+            };
             let receipt = match ctx.schedules().of(due) {
                 Owing::Interest => Receipt::Interest,
                 Owing::Principal => Receipt::Principal,
-                Owing::Premium | Owing::Rent => Receipt::Transfer,
+                Owing::Premium | Owing::Rent | Owing::Call => Receipt::Transfer,
             };
-            let legs: Vec<(PartyId, f64)> =
-                owed.into_iter().map(|(who, units)| (who, per_unit * units)).collect();
             paying.push((owes, money, legs, receipt, due));
         }
         for (from_whom, money, owed, receipt, due) in paying {

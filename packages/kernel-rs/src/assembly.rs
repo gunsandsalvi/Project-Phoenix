@@ -290,17 +290,17 @@ impl World {
         let mut out = Stepped::default();
         let events_before = self.journal.len();
         let today = self.calendar.start_of(crate::calendar::Period(self.period));
-        let order: Vec<(u32, u32)> =
-            self.phases.order().iter().map(|p| (p.owner, p.name)).collect();
+        let order: Vec<(u32, u32, u32)> =
+            self.phases.order().iter().map(|p| (p.owner, p.name, p.at)).collect();
         let by_slot = slots(systems);
 
-        for (owner, name) in &order {
+        for (owner, name, at) in &order {
             match (*owner, *name) {
                 (KERNEL, OPENS) => self.opens(today, &mut out),
                 (KERNEL, BOOKS) => out.trades += self.run_books(&participants, &mut out),
                 (KERNEL, CLOSES) => self.closes(&mut out),
                 (KERNEL, _) => {}
-                _ => out.ran += self.run_phase(*owner, &by_slot, systems, &mut out),
+                _ => out.ran += self.run_phase(*owner, *at, &by_slot, systems, &mut out),
             }
         }
 
@@ -493,12 +493,17 @@ impl World {
                 what.convention,
                 self.calendar.days_per_period(),
             ) {
-                self.schedules.owes(line, what.issuer, what.ccy, payment);
+                self.schedules.owes(
+                    crate::stores::Owed::On(line),
+                    what.issuer,
+                    what.ccy,
+                    payment,
+                );
             }
         }
     }
 
-    fn run_phase(&mut self, owner: u32, by_slot: &[usize], systems: &[&dyn System], out: &mut Stepped) -> usize {
+    fn run_phase(&mut self, owner: u32, at_stage: u32, by_slot: &[usize], systems: &[&dyn System], out: &mut Stepped) -> usize {
         let at = match by_slot.get(owner as usize) {
             Some(at) if *at < systems.len() => *at,
             // The three kernel moments own slots nothing declares a mechanism for.
@@ -510,6 +515,7 @@ impl World {
         };
         let mut ctx = MechanismContext::of(
             self.period,
+            at_stage,
             Reads {
                 claims: &self.claims,
                 parties: &self.parties,
@@ -543,6 +549,10 @@ impl World {
         // And obligations that have come into existence.
         for what in asked.issued {
             self.brought(what);
+        }
+        // And the bilateral ones it struck, which fall due like any other.
+        for (on, owed_by, ccy, payment) in asked.owing {
+            self.schedules.owes(on, owed_by, ccy, payment);
         }
         // And relations struck and processes opened.
         let today = self.calendar.start_of(crate::calendar::Period(self.period));

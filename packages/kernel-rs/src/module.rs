@@ -307,8 +307,11 @@ pub struct MechanismContext<'a> {
     making: &'a crate::stores::InProgress,
     registry: &'a crate::registry::Registry,
     calendar: &'a crate::calendar::Calendar,
+    /// Which stage it is running in, so the rules of that stage are rules rather than placement.
+    at: u32,
     wire: &'a Settlement,
     proposed: Vec<Proposed>,
+    owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     said: Vec<Saying>,
     formed: Vec<(PartyId, u32, f64)>,
     settled: Vec<DueId>,
@@ -410,9 +413,10 @@ pub struct Stores<'a> {
 }
 
 impl<'a> MechanismContext<'a> {
-    pub fn of(period: u32, s: Stores<'a>) -> Self {
+    pub fn of(period: u32, at: u32, s: Stores<'a>) -> Self {
         Self {
             period,
+            at,
             calendar: s.calendar,
             parties: s.parties,
             instruments: s.instruments,
@@ -430,6 +434,7 @@ impl<'a> MechanismContext<'a> {
             making: s.making,
             registry: s.registry,
             proposed: Vec::new(),
+            owing: Vec::new(),
             said: Vec::new(),
             formed: Vec::new(),
             settled: Vec::new(),
@@ -541,7 +546,29 @@ impl<'a> MechanismContext<'a> {
     /// What it asks the world to do.
     pub fn propose(&mut self, legs: Vec<Leg>, cause: Cause, delivery: Delivery, why: &'static str) {
         assert!(!why.is_empty(), "4.9b: an instruction with no reason is a state change with a date on it");
+        // Money G1.c: NOTHING IS CALLED AND PAID IN THE SAME PERIOD. A stage that decides what the
+        // period's judgement implies decides it for the period AFTER, so what it has is an
+        // obligation to write and not an instruction to settle.
+        assert!(
+            self.at != crate::world::SCHEDULED,
+            "Money G1.c: a call settled in the week it was made — {why}. What a scheduling stage \
+             produces is a payment that FALLS DUE, through `owes`"
+        );
         self.proposed.push(Proposed { legs, cause, delivery, why });
+    }
+
+    /// AN OBLIGATION IT STRIKES: who owes what, to whom or on what line, and when it falls. The
+    /// kernel's own `brought` writes an instrument's schedule from its terms; this is the door for a
+    /// bilateral one, which is owed to the party it was struck with rather than to whoever holds
+    /// paper.
+    pub fn owes(
+        &mut self,
+        on: crate::stores::Owed,
+        owed_by: PartyId,
+        ccy: crate::ids::CurrencyCode,
+        payment: crate::stores::Payment,
+    ) {
+        self.owing.push((on, owed_by, ccy, payment));
     }
 
     /// Something it states happened, for whoever it happened to.
@@ -635,6 +662,7 @@ impl<'a> MechanismContext<'a> {
     pub fn taken(self) -> Taken {
         Taken {
             proposed: self.proposed,
+            owing: self.owing,
             said: self.said,
             formed: self.formed,
             settled: self.settled,
@@ -664,6 +692,7 @@ impl Taken {
             // Saying is the one that does NOT count: it is the count.
             said: _,
             proposed,
+            owing,
             formed,
             settled,
             ceased,
@@ -681,6 +710,7 @@ impl Taken {
             issued,
         } = self;
         !proposed.is_empty()
+            || !owing.is_empty()
             || !formed.is_empty()
             || !settled.is_empty()
             || !ceased.is_empty()
@@ -702,6 +732,8 @@ impl Taken {
 /// Everything one phase asked for, handed back for the kernel to apply.
 pub struct Taken {
     pub proposed: Vec<Proposed>,
+    /// Obligations struck: what falls due, on what or to whom, in what money.
+    pub owing: Vec<(crate::stores::Owed, PartyId, crate::ids::CurrencyCode, crate::stores::Payment)>,
     pub said: Vec<Saying>,
     pub formed: Vec<(PartyId, u32, f64)>,
     pub settled: Vec<DueId>,

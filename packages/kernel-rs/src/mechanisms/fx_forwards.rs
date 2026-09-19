@@ -237,7 +237,7 @@ impl Mechanism for FxForwards {
                 if ctx.schedules().paid(d) || ctx.schedules().due(d) <= ctx.last_day() {
                     continue;
                 }
-                let owed_in = ctx.instruments().ccy_of(ctx.schedules().instrument_of(d)).0;
+                let owed_in = ctx.schedules().ccy(d).0;
                 if owed_in == my_ccy {
                     continue;
                 }
