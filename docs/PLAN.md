@@ -18,11 +18,11 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 1175 clauses this world does not meet** — 1049 MISSING, 126 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.0% are met or out of scope.
-**The items broken out of that so far: 0 of 16 closed** (3 of 90 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 0 of 16 closed** (5 of 91 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0j — Nothing checked the evidence | 7 | 3 | in progress |
+| 0j — Nothing checked the evidence | 8 | 5 | in progress |
 | 0k — Money is invented, converted and misdirected | 5 | 0 | open |
 | 0l — An instrument has no issued amount | 3 | 0 | open |
 | 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 0 | open |

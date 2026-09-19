@@ -252,17 +252,41 @@ audit, one register further out.
   report, which cannot answer it, to after the run, which can.
   **It reports what 22i's exit claimed it had driven to zero: 30.** Those thirty asked for nothing
   but a journal line in any of four periods.
-- [ ] 0j.4 **`CLAUDE.md` names three homeless nouns and the world prints three others.** The rules
-  file says `registry.indices` (21.116), `settlement.realised` (21.112), `reporting.accounts`
+- [x] 0j.4 **`CLAUDE.md` named three homeless nouns and the world prints three others.** The rules
+  file said `registry.indices` (21.116), `settlement.realised` (21.112), `reporting.accounts`
   (21.76). `npm run world:runs` prints `agreements.states` (21.62), `control.resistance` (23.1),
-  `derivatives.collateral` (23.1). The count matches and the list does not overlap at all. The rules
-  file is the one document always in context; a stale line in it is a defect that is read every
-  session (Law 16).
-- [ ] 0j.5 **`npm run check` names two scripts that do not exist.** `CLAUDE.md` tells the reader to
+  `derivatives.collateral` (23.1). The count matched and the list did not overlap at all — because
+  all three the rules file named had gone home (`assembly.rs`'s `at_home` list holds each), and the
+  three declared homeless now were found later. **The paragraph was right about the measure and
+  wrong about the reading**, which is the worse of the two: it is the one document always in
+  context, so a stale line in it is read every session (Law 16). Rewritten to name what the register
+  declares, and to say the three it used to name went home rather than dropping them silently.
+- [x] 0j.5 **`npm run check` named two scripts that do not exist.** `CLAUDE.md` told the reader to
   run `npm run check:opens` before any commit and `npm run check:spec` for citations. `package.json`
-  has neither. Its `check` is `check:laws && check:tests && check:types && check:tools &&
-  check:existence && plan:check`. Two documents disagree about what the gate is, and the gate the
-  rules file names is not there. **One of them is wrong and it is not the one that runs.**
+  has neither. Two documents disagreed about what the gate is, and **the one that was wrong was not
+  the one that runs.** Both were re-pointed at what actually does the work: the world stepping
+  without throwing is `npm run world:runs` (which is also what prints 0j.3's census), and the
+  `@spec` rule moved into `tools/phoenix-check` with the engine (`npm run check:laws`) — it refuses
+  a mechanism module citing nothing and a citation naming no clause, which is more than the script
+  it replaced did. `npm run check`'s own description now lists its six parts in the order
+  `package.json` runs them.
+- [ ] 0j.5a **Eleven more paths in `CLAUDE.md` are the deleted TypeScript engine, and two of them
+  are a RULE'S SCOPE.** *Found by 0j.5's own reading, and INSERTED here (Law 10) rather than
+  appended, because it is the rest of the same read: the rules file describing a repository that is
+  not this one.* Resolving every backticked path in the file leaves eleven that are gone —
+  `packages/engine`, `packages/app`, `packages/engine/test/rig.ts`, `src/mechanisms/<system>/`,
+  `src/seeds/<name>.ts`, `core/`, `core/num.ts`, `registry/`, `world/world.ts`, `tools/eslint-rules`
+  — beside a toolchain line naming Vitest, fast-check, ESLint and Vite, none of which is installed.
+  Most are a wrong name for a thing that exists and moved. **Two are worse than that.** Error
+  discipline says *no `Math.min/max/clamp` outside `core/num.ts`* and *no numeric literals outside
+  `core/`, `registry/`, tests* — the exemption is the whole content of each rule, and both name a
+  directory that is not there, so as written each rule exempts nothing and applies to nothing.
+  `tools/phoenix-check` enforces the real ones and its own header says what it exempts instead:
+  `src/bin/**`, `#[cfg(test)]` blocks, and `ids`, `params`, `calendar` — *"which is what `core/` and
+  `registry/` are exempt for in the TypeScript rules"*, a sentence that already knew the rules file
+  was talking about somewhere else. `assertNever` is the same shape (the Rust form is
+  `unreachable!` on a matched enum). **Not folded into 0j.5's commit**: 0j.5 is two script names and
+  this is a re-read of a section, and one bounded change per item is Law 14.
 - [ ] 0j.6 **`tools/check-forbids.ts` is gone and eight rows still cite it as what holds them.**
   Corporate Credit D8, CDS B5, Prime Brokerage C3.b, Private Equity E3, Reporting C6, E2, F2.a and
   Observer A4 each say, in their own words, that the absence holds because a static check refuses
@@ -283,9 +307,10 @@ audit, one register further out.
   left undone rather than a rule anybody should relax.
 
 **Exit.** A row citing a path that is not there fails `npm run check`. A PARTIAL that names no item
-fails it too. Part 0.1 is regenerated and `--verify` is green. The census counts the four systems
-whose mechanism only counts. `CLAUDE.md` and `package.json` say the same thing about the gate, and
-name the nouns the world prints.
+fails it too. Part 0.1 is regenerated and `--verify` is green. The census is read off what each
+mechanism DID rather than off what it declared, and reads 30 of 50. `CLAUDE.md` and `package.json`
+say the same thing about the gate, `CLAUDE.md` names the nouns the world prints, and every path it
+names resolves to something in this repository.
 
 ## 0k. Money is invented, converted and misdirected
 
