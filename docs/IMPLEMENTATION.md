@@ -246,26 +246,47 @@ and does not forbid the checks that stop the build from lying.
   18,800 lines, which is the proof that the wire path is right and the seeding is not: a line
   brought by `Brings` settles a `Leg::Create` and balances; a line placed by `world_runs` directly
   does not (22g.1). A family that went green on this world would be measuring nothing.
-- [ ] 0m.3 **Money is conserved** (Audit B1). The one Money contribution, `ATotalCarriesNoLots`,
-  checks that a money account carries no lots. Nothing checks that the sum over all accounts changes
-  only by an act of a money issuer, and 0k.1 is why that matters. Money C2.c and C4.c go with it:
-  the legs of a pass sum to zero per currency **per leg kind**, and issuance is the one exception
-  *because C4.c counts exactly those legs* — nothing counts them, so the exception is open at both
-  ends.
-- [ ] 0m.4 **Flows** (Audit B7, Money D3, Register F3): instructions in minus out equals the change in
-  holdings, per asset kind. `capital_programme.rs PlantMoves` already does exactly this for capital
-  lines and is the one family in the world that reads two independent things — **it is the template.**
-- [ ] 0m.5 **Names** (Audit B6): every party referenced exists; every issuer of a held instrument
-  exists or has a successor. It is cheap and it is what catches 0q.
-- [ ] 0m.6 **Prices, Zero-Sum, Cross-Market and Liveness stay `NotBuilt`, and this item says what each
-  waits on** rather than leaving four silent rows: Prices needs 0n (nothing is marked, so there is
-  nothing to check a mark against); Zero-Sum needs a derivative that marks (0r, `derivative_layer`);
-  Cross-Market needs one economic thing reachable two ways, which is the index (0r, `benchmarks`);
-  Accounts needs 0n.5. A family whose blocker is named is a different thing from one nobody has
-  looked at.
-
-**Exit.** Six families built, four naming what they wait on, and none of the six able to pass by
+- [x] 0m.3 **Money is conserved** (Audit B1). The one Money contribution, `ATotalCarriesNoLots`,
+  checked that a money account carries no lots. Nothing checked that the sum over all accounts
+  changes only by an act of a money issuer, and 0k.1 is why that matters.
+  `MoneyIsConserved` reads two independent things: **the accounts**, walked per currency, against
+  what they held last period; and **the wire**, over its own `Leg::Mint` legs. A transfer's legs sum
+  to zero over the currency — including the interbank case, where the payer's bank's deposit is
+  extinguished, the payee's bank's is created and reserves move between them — so anything left over
+  is money that came from somewhere other than an issuer, which is Money A1.d. C4.c's issuance
+  exception is the thing being measured rather than a hole in the check, because the mint legs are
+  exactly what the other side counts.
+  **It counts only instructions that SETTLED.** A refused instruction moved nothing and its legs are
+  on the wire because the wire is the history of what was tried (Money D1.a).
+- [x] 0m.4 **Flows** (Audit B7, Money D3, Register F3): instructions in minus out equals the change in
+  holdings, per asset kind. `capital_programme.rs PlantMoves` was the template and
+  `FlowsAreComplete` is it over every line: the register's own walk against the legs that said why
+  anything moved.
+  **It does not cover money, and the reason is Audit C3.** A money leg does not state where its
+  units land — where the payee banks elsewhere the routing decides three holdings, and it lives in
+  settlement and nowhere else. A family that re-derived it would be reading settlement's answer
+  instead of deriving its own. Money's conservation is 0m.3's, per currency, where the routing nets
+  out and the question can be asked from outside.
+- [x] 0m.5 **Names** (Audit B6): every party referenced exists; every issuer of a held instrument
+  exists or has a successor. `NamesResolve` asks three things of every holding — the holder is a
+  party in this world, the line was issued, and its issuer is a party in this world.
+  **Existing and being alive are different questions, and only the first is B6's.** A dead party's
+  estate holds and is held from, which is XI-8 working rather than a name that failed to resolve —
+  the same reading that overturned 0k.4.
+- [x] 0m.6 **The five that stay `NotBuilt` each name what they wait on**, and the name is IN THE
+  REPORT rather than only here: `Family::waits_on` fills the contributor slot, which for an unbuilt
+  family said "nobody" and told a reader nothing. `npm run world:runs` prints
+  *prices not-built (waits on 0n — nothing is marked)* and four more like it.
+  **Audit E1 is why these are absences and not violations**: *it cannot find an absence. No
+  invariant fires because credit has no price or because a currency market does not exist; there is
+  nothing to be inconsistent with.*
+**Exit.** Five families built, five naming what they wait on, and none of the five able to pass by
 reading itself.
+
+*The exit said "six built, four naming what they wait on" and both halves are corrected: there are
+ten families, five of them are built (Money, Ownership, Flows, Names and the module's Units) and
+five are not (Prices, Cross-Market, Accounts, Zero-Sum, Liveness). 0m.6's own text already named
+five while its title said four.*
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -860,6 +881,22 @@ above are answered by it rather than by anything in the engine.
   does not quietly lose it.
 - [ ] 23.2 "A bank that is insolvent is never resolved" diagnosed.
 - [ ] 23.3 Part XII's measurements with the level carried, at the smallest scale the ladder shows invariant.
+- [ ] 23.3a **A plant defect lights TWO families, and B8 says that is itself a measurement.**
+  *Found by 0m.4 and positioned here because Part XII is where it says so:* **"Independence is itself
+  a measurement. One defect should light ONE family. A defect that lights five means the families
+  overlap and none of them is telling you where to look."** `FlowsAreComplete` is per (holder, line)
+  over every non-money line; `PlantMoves` is per (firm, line) over the capital ones. Same
+  arithmetic, so a plant holding that moved with no leg behind it now reports under **Flows** and
+  under **Units**.
+  **Neither is mis-filed, which is what makes it worth measuring rather than fixing.** `PlantMoves`
+  cites Capital Programme A6.b — per FIRM — and Part XII gives Units *"the same identity for
+  dwellings, for plant, and for anything else counted in physical units"*; `FlowsAreComplete` cites
+  B7, which Part XII gives *"for every asset kind, instructions in minus out equals the change in
+  holdings"*. The spec hands one key to two families. What is meant to separate them is that Units
+  is **per good and per LOCATION** while Flows is per holding — and `PlantMoves` uses the holding
+  key, so **the per-location identity is what is actually unbuilt while Units reads green**. That is
+  0m's own defect one level down, and it is this item's to settle because settling it is a decision
+  about what the families measure, not a bug in either of them.
 - [ ] 23.4 The accredited line: whether any household clears it.
 - [ ] 23.5 Which blueprints the world grew and wound down.
 - [ ] 23.6 **Ensembles.** `npm run ensemble -- <k>`: k seeds, the Part 0.2 census as a DISTRIBUTION,

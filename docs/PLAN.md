@@ -18,11 +18,11 @@ The plan has two parts:
 
 <!-- progress:start -->
 **What is left: 1171 clauses this world does not meet** — 1044 MISSING, 127 PARTIAL (`docs/IMPLEMENTATION.md` Part 4, one line each). Of 1398 clauses, 16.2% are met or out of scope.
-**The items broken out of that so far: 0 of 13 closed** (2 of 82 steps). What has closed is in `docs/RECORD.md`, not here.
+**The items broken out of that so far: 1 of 13 closed** (6 of 83 steps). What has closed is in `docs/RECORD.md`, not here.
 
 | item | steps | done | state |
 |---|---|---|---|
-| 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 2 | in progress |
+| 0m — Seven families are not built, and one of the three that are cannot fail | 6 | 6 | closed |
 | 0n — Value is a function, and the balance sheets must move | 7 | 0 | open |
 | 0p — Every reservation is the last print times a constant | 6 | 0 | open |
 | 0q — A party that ceases keeps everything it held, for ever | 4 | 0 | open |
@@ -32,7 +32,7 @@ The plan has two parts:
 | 22h — The other four cell events have no cause | 4 | 0 | open |
 | 22d2 — The queue is one day wide, and it holds no deliveries | 2 | 0 | open |
 | 22g — The seeding | 10 | 0 | open |
-| 23 — Measure — Part XII | 21 | 0 | open |
+| 23 — Measure — Part XII | 22 | 0 | open |
 | 24 — The app and the APK | 2 | 0 | open |
 | 25 — A tracker's target moves with the running order of the sessions | 1 | 0 | open |
 | 0 | — | — | closed |

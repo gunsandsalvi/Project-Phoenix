@@ -424,7 +424,9 @@ fn main() {
             audited.push(if r.built {
                 format!("{} {}", r.family.name(), r.violations.len())
             } else {
-                format!("{} not-built", r.family.name())
+                // 0m.6: and what it is waiting for, which the contributor slot carries for an
+                // unbuilt family. A blocker that is named has been looked at.
+                format!("{} not-built ({})", r.family.name(), r.contributors.join(", "))
             });
         }
         audited.sort();

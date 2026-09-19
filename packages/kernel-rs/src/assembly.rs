@@ -346,6 +346,9 @@ impl World {
             Box::<crate::audit::ATotalCarriesNoLots>::default(),
             Box::<crate::audit::NoCollateralCountedTwice>::default(),
             Box::<crate::audit::HoldersAgainstIssued>::default(),
+            Box::<crate::audit::MoneyIsConserved>::default(),
+            Box::<crate::audit::FlowsAreComplete>::default(),
+            Box::<crate::audit::NamesResolve>::default(),
         ];
         for s in systems {
             contributions.extend(s.audits());
@@ -1071,15 +1074,17 @@ mod tests {
         assert_eq!(w.period, 1);
         assert_eq!((did.asks, did.books_cleared, did.trades, did.events, did.ran), (0, 0, 0, 0, 0));
         // **Audit E2, 22e.2: and it was AUDITED.** A world that assembled no family must not read as
-        // a world with no violations, so every family is in the report — the three the kernel builds
-        // saying nothing is wrong, and the seven nobody has built saying they are NOT BUILT.
+        // a world with no violations, so every family is in the report — the ones the kernel builds
+        // saying nothing is wrong, and the rest saying they are NOT BUILT.
         assert_eq!(did.audit.len(), crate::audit::Family::ALL.len());
         assert!(did.audit.iter().all(|r| r.violations.is_empty()));
-        // TWO built families: `ATotalCarriesNoLots` is MONEY's and `NoCollateralCountedTwice` is
-        // OWNERSHIP's, and a family is one report however many contribute to it.
-        assert_eq!(did.audit.iter().filter(|r| r.built).count(), 2);
+        // FOUR built families, six contributions: Money has two (`ATotalCarriesNoLots` and
+        // `MoneyIsConserved`), Ownership has two (`NoCollateralCountedTwice` and
+        // `HoldersAgainstIssued`), and Flows and Names have one each. A family is one report
+        // however many contribute to it.
+        assert_eq!(did.audit.iter().filter(|r| r.built).count(), 4);
         assert!(
-            did.audit.iter().any(|r| !r.built && r.family == crate::audit::Family::Flows),
+            did.audit.iter().any(|r| !r.built && r.family == crate::audit::Family::Prices),
             "a family nobody built says so, and is never absent from the report"
         );
     }
