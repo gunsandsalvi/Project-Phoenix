@@ -106,3 +106,16 @@ impl Names {
         self.of.is_empty()
     }
 }
+
+/// A BOOK'S SUBJECT IS ITS LINE, and the two ids are the same row read two ways. It lives here
+/// rather than with the wiring so a module can name the book its own line trades in without
+/// importing the list of systems.
+#[inline]
+pub fn book_of(line: InstrumentId) -> MarketId {
+    MarketId::at(line.0)
+}
+
+#[inline]
+pub fn line_of(book: MarketId) -> InstrumentId {
+    InstrumentId::at(book.0)
+}

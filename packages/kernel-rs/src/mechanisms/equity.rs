@@ -2,7 +2,11 @@
 //!
 //! @spec 10 A1, A1.a, A1.b, A2, A2.a, A3, A4, A5, A5.a, A5.b, A6, B1 · XI-8 · Law 6, Law 8, Law 9
 
-use crate::ids::{CurrencyCode, PartyId};
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::afoot;
+use crate::ids::{CurrencyCode, InstrumentId, PartyId};
 
 /// A share count changes only by a NAMED EVENT.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -70,6 +74,133 @@ pub fn votes(held: f64) -> f64 {
 /// Control is MORE THAN HALF of what exists, read off the outstanding count rather than declared.
 pub fn control_needs(outstanding: f64) -> f64 {
     (outstanding / 2.0).floor() + 1.0
+}
+
+// §22 RUNS HERE.
+
+/// A COMPANY FLOATS — and no company in this world had ever had shares.
+pub struct Floating {
+    pub kind: u32,
+    /// What a bank says when it is below its capital requirement.
+    pub short_of_capital: u32,
+    /// How many shares a line comes into existence with.
+    pub shares: &'static str,
+    /// How long the flotation runs before it is over, one way or the other.
+    pub takes: &'static str,
+}
+
+impl Mechanism for Floating {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        use crate::instruments::Class;
+        let shares = ctx.params().count(self.shares);
+        let takes = ctx.params().periods(self.takes) as u32;
+
+        // The banks that said they are short of capital this period.
+        let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        for &row in ctx.journal().of_kind(self.short_of_capital) {
+            if ctx.journal().period_of(row) == ctx.period() {
+                if let Some(&who) = ctx.journal().subjects_of(row).first() {
+                    must_raise.insert(who);
+                }
+            }
+        }
+
+        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
+        for row in 0..ctx.parties().len() as u32 {
+            let who = PartyId(row);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // The profile answers whether this kind brings paper at all.
+            match ctx.registry().profile(ctx.parties().kind_of(who)) {
+                Some(profile) if profile.issues_paper => {}
+                _ => continue,
+            }
+            let mut listed = false;
+            let mut unsold = 0.0;
+            for &line in ctx.instruments().of_issuer(who) {
+                let what = InstrumentId::at(line);
+                match ctx.instruments().class_of(what) {
+                    Class::Share => listed = true,
+                    // What it brought and is still holding: paper nobody bought.
+                    Class::Claim => {
+                        unsold += ctx.register().quantity(ctx.register().row(who, what));
+                    }
+                    _ => {}
+                }
+            }
+            // Two reasons to sell ownership, and a company already listed has neither.
+            if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
+                continue;
+            }
+            if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            floating.push((who, ctx.instruments().ccy_of(money)));
+        }
+
+        for (who, ccy) in floating {
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: Class::Share,
+                // Counted in SHARES, a unit that is not money and is not divided.
+                unit: crate::ids::UnitId::at(0),
+                // A share is not a claim: it carries no coupon and never matures.
+                coupon: None,
+                matures: None,
+                units: shares,
+                // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
+                // at the level the resting side was standing at.
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Book,
+                    seen_by: 1,
+                    stands_for: Some(4),
+                }),
+                // A share owes nothing on a date.
+                owing: Vec::new(),
+            });
+            ctx.opens(crate::module::Opens {
+                kind: afoot::FLOTATION,
+                owner: who,
+                closes: Some(ctx.period() + takes),
+                size: shares,
+            });
+            ctx.say(self.kind, &[who.0], &[(0, Value::Num(shares))], true);
+        }
+    }
+}
+
+// And the party that posts for it.
+
+/// AND IT OFFERS THEM, AT NO LEVEL.
+pub struct Flotation {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Flotation {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        if view.in_a_flotation() <= 0.0 {
+            return Vec::new();
+        }
+        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let shares = view.in_a_flotation();
+        if shares <= 0.0 {
+            return Vec::new();
+        }
+        let _ = m;
+        // IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.
+        Vec::new()
+    }
 }
 
 #[cfg(test)]

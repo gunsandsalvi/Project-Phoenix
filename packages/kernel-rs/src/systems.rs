@@ -5,11 +5,17 @@
 //! @spec Law 6, Law 15, Law 19 · Appendix B
 
 use crate::assembly::{kinds, phase, System, AT_MARKETS, AT_REVALUATION};
+use crate::ids::{book_of, line_of};
 use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
+use crate::mechanisms::capital_programme::Builder;
 use crate::mechanisms::cds::Protection;
+use crate::mechanisms::equity::{Floating, Flotation};
+use crate::mechanisms::forced_sale::ForcedSelling;
+use crate::mechanisms::hedge_funds::Liquidity;
+use crate::mechanisms::private_equity::Calling;
 use crate::mechanisms::employment::Wages;
 use crate::mechanisms::expectations::Forming;
 use crate::mechanisms::firms::Reporting;
@@ -22,21 +28,11 @@ use crate::mechanisms::securitisation::Securitising;
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
 use crate::stores::agreed;
-use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Funding, FxForwards, Grading, Housing, Liquidity, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Winding};
+use crate::running::{BankCapital, BankFunding, Broking, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Fixes, ForcedSeller, Funding, FxForwards, Grading, Housing, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject.
 pub const FIRST_SLOT: u32 = 3;
-
-#[inline]
-pub fn book_of(line: InstrumentId) -> MarketId {
-    MarketId::at(line.0)
-}
-
-#[inline]
-pub fn line_of(book: MarketId) -> InstrumentId {
-    InstrumentId::at(book.0)
-}
 
 /// Sellers offer quantities.
 pub struct GoodsSellers {

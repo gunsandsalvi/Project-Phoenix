@@ -112,7 +112,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 | # | item | why here |
 |---|---|---|
-| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs`. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is 10 of 18 done and resumes here.** Ratcheted at 54 |
+| 0m2 | **The module is not the system — `running.rs` is** | the owner's rule: *to change how CDS works I change `mechanisms/cds.rs`, and that is it.* Before everything after it, because every later item edits `running.rs`. It is also 0r's cause, so 0r shrinks to the wiring that follows. **0m2.1 is done.** Ratcheted at 54 |
 | 0n | **Value is a function, and the balance sheets must move** | after the audit families, which are what catch what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint. **0n.1, 0n.1a and 0n.3 are done; the rest waits on 0m2**, because 0n.2, 0n.4 and 0n.5 all edit `running.rs` |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
 | 0q | A party that ceases keeps everything it held, for ever | after 0p: it is the termination condition of every loss chain (XI-3), and XI-2 and XI-1 both run into it |
@@ -157,20 +157,25 @@ file, and that file is shared with thirty-nine other systems.**
 `Mechanism`/`Participant` impls; `systems.rs` holds 9 more. Fifty-four declarations of what a system
 does, outside the system. `mechanisms/goods.rs` holds its own and is the one that already works.
 
-**`running.rs`'s stated reason for existing was measured against its own contents, and it holds for
-7 of its 46.** The header says: *"It sits beside the assembly rather than inside `mechanisms/` for
-one reason: it names every module, and a module may never import another module (Law 15)."* Per
-impl:
+**`running.rs`'s stated reason for existing was measured against its own contents.** The header
+says: *"It sits beside the assembly rather than inside `mechanisms/` for one reason: it names every
+module, and a module may never import another module (Law 15)."*
 
-| what the impl names | how many | what it means |
+**The first measurement of that was wrong and is corrected here.** It read each impl's whole block,
+which then included its tests — and a test calling `estate::waterfall` counts as the module being
+named while `Ranked`'s own `run()` never calls it. `Calling` was recorded as naming four modules on
+the strength of sixteen references, every one of them in its test. With 0m3's fixtures gone, the
+engine-only picture of what remains is:
+
+| what the impl's `run()` names | how many | what it means |
 |---|---|---|
-| no module at all | 18 | pure kernel readers — `Servicing`, `Failing`, `Wages`, `Forming`, `Protection`, `Levered`, `Liquidity`, `Elections`, `Reads`, `Owed`, `Observing`, `Reporting`, `Floating`, `Flotation`, `ForcedSelling`, `Builder`, `SecondOpinion`, `Securitising`. Nothing stops any of them moving today |
-| **only its OWN module** | 21 | `Losses`→`loss`, `TradeCredit`→`trade_credit`, `SpotFx`→`spot_fx`, `Sovereign`→`sovereign`, `Control`→`control`, `CrossBorder`→`cross_border`, … **Not a cross-module import — the impl is simply in the wrong file, and moving it makes the import vanish** |
-| exactly one OTHER module | 2 | `Funding`→`treasury` (it is wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
-| two or more | 5 | `Making` (goods, capital_programme, recipe), `Calling` (recipe, capital_programme, goods, estate), `BankCapital` (bank_capital, ratings, housing), `Makes` (recipe, capital_programme), `CostOfCapital` (short_term_debt, cost_of_capital) |
+| no module at all | 9 | pure kernel readers. **Six are moved**; `Servicing`, `Owed` and `Reads` are shared impls and go at 0m2.3a |
+| **only its OWN module** | 21 | `Losses`→`loss`, `SpotFx`→`spot_fx`, `Control`→`control`, … **Not a cross-module import — the impl is in the wrong file, and moving it makes the import vanish** |
+| exactly one OTHER module | 2 | `Funding`→`treasury` (wired as `short_term_debt` and `corporate_credit`), `Building`→`cost_of_capital` (wired as `capital_programme`) |
+| two or more | 4 | `Making` (capital_programme, goods, recipe), `Makes` (capital_programme, recipe), `BankCapital` (bank_capital, housing, ratings), `CostOfCapital` (cost_of_capital, short_term_debt) |
 
-**39 of 46 move with nothing to decide. Seven are design questions** — the last two rows — and each
-asks one thing: *which system owns this fact, or does the kernel?*
+**Six are design questions** — the last two rows — and each asks one thing: *which system owns this
+fact, or does the kernel?*
 
 **And the rule is broken a third way, which is not an import at all: one impl serving two systems.**
 `Servicing` runs both `lending` and `irs`; `Funding` runs both `short_term_debt` and
@@ -197,10 +202,6 @@ layout is free; gate on behaviour. `world:runs` must print the same census after
 before it — same systems running, same phases, same counts — and a step that changes a number is a
 step that did more than move.
 
-- [ ] 0m2.1 **The eighteen that name no module.** The mechanical half: each impl moves into its
-  system's `mechanisms/<name>.rs`, `systems.rs` imports it from there, `running.rs` shrinks. Where
-  the system has no module file yet the file is created holding only its impl. Group them into
-  commits of roughly five, each gated by `world:runs` printing an unchanged census.
 - [ ] 0m2.2 **The twenty-one that name only their own module.** The same move, and each one DELETES
   an import: `use crate::mechanisms::loss::…` in `running.rs` becomes a local call in
   `mechanisms/loss.rs`. This is the half that answers 0r directly — after it, a module's own
@@ -210,8 +211,8 @@ step that did more than move.
   goods and estate says either that private equity is reading four systems' internals (and the fact
   belongs in a kernel store, Law 4) or that it is four systems' work in one impl. Answer per impl,
   in the record.
-- [ ] 0m2.3a **The three impls that serve two systems each** — `Servicing` (`lending`, `irs`),
-  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`). Split at the
+- [ ] 0m2.3a **The four impls that serve more than one system** — `Servicing` (`lending`, `irs`),
+  `Funding` (`short_term_debt`, `corporate_credit`), `Owed` (`money`, `currency`), and `Reads`, a generic counter four systems share. Split at the
   move: a shared impl means changing one system changes the other, which is the rule broken in the
   direction an import check cannot see. What §18 then needs — a fixed leg, a floating leg, a fixing,
   netting — is 0r's, and this step only stops `irs` being a copy of `lending`'s schedule walk.

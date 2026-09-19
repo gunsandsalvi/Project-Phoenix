@@ -949,82 +949,6 @@ impl Mechanism for Grading {
     }
 }
 
-/// A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY HOLDER BOUND BY IT, ON THE SAME
-/// DATE.
-pub struct ForcedSelling {
-    /// What it says when a holder is put in a workout.
-    pub kind: u32,
-    /// How many periods a holder has to sell what its mandate no longer lets it hold.
-    pub within: &'static str,
-}
-
-impl Mechanism for ForcedSelling {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let within = ctx.params().periods(self.within) as u32;
-        // What each issuer is graded at now.
-        let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
-        for row in 0..ctx.standing().len() as u32 {
-            let s = crate::stores::StandingId(row);
-            if !ctx.standing().live(s) || ctx.standing().kind_of(s) != standing::GRADE {
-                continue;
-            }
-            let about = ctx.standing().about(s).0;
-            let rank = ctx.standing().terms(s)[0];
-            worst.entry(about).and_modify(|r| if rank > *r { *r = rank }).or_insert(rank);
-        }
-        if worst.is_empty() {
-            return;
-        }
-
-        let mut breached: Vec<(PartyId, f64)> = Vec::new();
-        for row in 0..ctx.agreements().len() as u32 {
-            let a = crate::stores::AgreementId(row);
-            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::MANDATE {
-                continue;
-            }
-            let floor = match ctx.agreements().terms(a).first() {
-                Some(&floor) => floor,
-                // A mandate with no floor restricts no grade.
-                None => continue,
-            };
-            // The pool is the side the mandate is over; the manager is the other.
-            let (one, other) = ctx.agreements().between(a);
-            for pool in [one, other] {
-                if !ctx.parties().alive(pool) {
-                    continue;
-                }
-                let mut must_sell = 0.0;
-                for row in ctx.register().of_holder(pool) {
-                    let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
-                    let issuer = ctx.instruments().issuer_of(line);
-                    // Through the floor, and only through it.
-                    if matches!(worst.get(&issuer.0), Some(&rank) if rank > floor) {
-                        must_sell += ctx.register().quantity(crate::ids::HoldingId(*row));
-                    }
-                }
-                if must_sell > 0.0 {
-                    breached.push((pool, must_sell));
-                }
-            }
-        }
-
-        for (pool, units) in breached {
-            // It is already in one, and a second workout for the same breach would be the same
-            // requirement counted twice.
-            if ctx.processes().running(afoot::WORKOUT).iter().any(|p| ctx.processes().owner(*p) == pool) {
-                continue;
-            }
-            ctx.opens(crate::module::Opens {
-                kind: afoot::WORKOUT,
-                owner: pool,
-                closes: Some(ctx.period() + within),
-                size: units,
-            });
-            ctx.say(self.kind, &[pool.0], &[(0, Value::Num(units))], true);
-        }
-    }
-}
-
 /// AND IT STANDS IN THE MARKET WITH A SIZE AND NO LEVEL.
 pub struct ForcedSeller {
     pub kind: u32,
@@ -1042,7 +966,7 @@ impl crate::module::Participant for ForcedSeller {
         if view.in_a_workout() == 0.0 {
             return Vec::new();
         }
-        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
+        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
     }
 
     fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
@@ -1050,7 +974,7 @@ impl crate::module::Participant for ForcedSeller {
         if must <= 0.0 {
             return Vec::new();
         }
-        let line = crate::systems::line_of(m);
+        let line = crate::ids::line_of(m);
         let held = view.free(line);
         // It cannot sell more than it holds, which is arithmetic about a holding and not a cap on a
         // number.
@@ -1260,129 +1184,6 @@ impl Mechanism for TradeCredit {
                 ctx.waits_for(q, until);
             }
         }
-    }
-}
-
-/// A COMPANY FLOATS — and no company in this world had ever had shares.
-pub struct Floating {
-    pub kind: u32,
-    /// What a bank says when it is below its capital requirement.
-    pub short_of_capital: u32,
-    /// How many shares a line comes into existence with.
-    pub shares: &'static str,
-    /// How long the flotation runs before it is over, one way or the other.
-    pub takes: &'static str,
-}
-
-impl Mechanism for Floating {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        use crate::instruments::Class;
-        let shares = ctx.params().count(self.shares);
-        let takes = ctx.params().periods(self.takes) as u32;
-
-        // The banks that said they are short of capital this period.
-        let mut must_raise: std::collections::HashSet<u32> = std::collections::HashSet::new();
-        for &row in ctx.journal().of_kind(self.short_of_capital) {
-            if ctx.journal().period_of(row) == ctx.period() {
-                if let Some(&who) = ctx.journal().subjects_of(row).first() {
-                    must_raise.insert(who);
-                }
-            }
-        }
-
-        let mut floating: Vec<(PartyId, crate::ids::CurrencyCode)> = Vec::new();
-        for row in 0..ctx.parties().len() as u32 {
-            let who = PartyId(row);
-            if !ctx.parties().alive(who) {
-                continue;
-            }
-            // The profile answers whether this kind brings paper at all.
-            match ctx.registry().profile(ctx.parties().kind_of(who)) {
-                Some(profile) if profile.issues_paper => {}
-                _ => continue,
-            }
-            let mut listed = false;
-            let mut unsold = 0.0;
-            for &line in ctx.instruments().of_issuer(who) {
-                let what = InstrumentId::at(line);
-                match ctx.instruments().class_of(what) {
-                    Class::Share => listed = true,
-                    // What it brought and is still holding: paper nobody bought.
-                    Class::Claim => {
-                        unsold += ctx.register().quantity(ctx.register().row(who, what));
-                    }
-                    _ => {}
-                }
-            }
-            // Two reasons to sell ownership, and a company already listed has neither.
-            if listed || (unsold <= 0.0 && !must_raise.contains(&row)) {
-                continue;
-            }
-            if ctx.processes().running(afoot::FLOTATION).iter().any(|p| ctx.processes().owner(*p) == who) {
-                continue;
-            }
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
-            floating.push((who, ctx.instruments().ccy_of(money)));
-        }
-
-        for (who, ccy) in floating {
-            ctx.brings(crate::module::Brings {
-                issuer: who,
-                ccy,
-                class: Class::Share,
-                // Counted in SHARES, a unit that is not money and is not divided.
-                unit: crate::ids::UnitId::at(0),
-                // A share is not a claim: it carries no coupon and never matures.
-                coupon: None,
-                matures: None,
-                units: shares,
-                // Shares trade on an EXCHANGE — orders rest and are matched as they arrive, priced
-                // at the level the resting side was standing at.
-                book: Some(crate::protocols::Venue {
-                    rule: crate::clearing::PriceRule::BuyersCompete,
-                    protocol: crate::protocols::Protocol::Book,
-                    seen_by: 1,
-                    stands_for: Some(4),
-                }),
-                // A share owes nothing on a date.
-                owing: Vec::new(),
-            });
-            ctx.opens(crate::module::Opens {
-                kind: afoot::FLOTATION,
-                owner: who,
-                closes: Some(ctx.period() + takes),
-                size: shares,
-            });
-            ctx.say(self.kind, &[who.0], &[(0, Value::Num(shares))], true);
-        }
-    }
-}
-
-/// AND IT OFFERS THEM, AT NO LEVEL.
-pub struct Flotation {
-    pub of_kind: u32,
-}
-
-impl crate::module::Participant for Flotation {
-    fn party_kind(&self) -> u32 {
-        self.of_kind
-    }
-
-    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        if view.in_a_flotation() <= 0.0 {
-            return Vec::new();
-        }
-        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
-    }
-
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let shares = view.in_a_flotation();
-        if shares <= 0.0 {
-            return Vec::new();
-        }
-        let _ = m;
-        // IT OFFERS NOTHING, AND THAT IS A STOPPED MECHANISM RATHER THAN A DECISION.
-        Vec::new()
     }
 }
 
@@ -1748,54 +1549,6 @@ impl Mechanism for Building {
         }
     }
 }
-
-/// AND IT BUYS THE PLANT.
-pub struct Builder {
-    pub of_kind: u32,
-}
-
-impl crate::module::Participant for Builder {
-    fn party_kind(&self) -> u32 {
-        self.of_kind
-    }
-
-    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        if view.in_a_programme() <= 0.0 {
-            return Vec::new();
-        }
-        // It bids in the books of what it already holds — the lines it knows how to use.
-        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
-    }
-
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let commits = view.in_a_programme();
-        if commits <= 0.0 {
-            return Vec::new();
-        }
-        let line = crate::systems::line_of(m);
-        // It bids against what the book last PRINTED, because its limit is money and an order is
-        // pieces.
-        let Some(print) = view.print(line) else { return Vec::new() };
-        if print.price <= 0.0 {
-            return Vec::new();
-        }
-        // It cannot commit more money than it has.
-        let can_pay = view.own_cash();
-        let money = if commits < can_pay { commits } else { can_pay };
-        let units = crate::clearing::whole_pieces(money / print.price);
-        if units <= 0 {
-            return Vec::new();
-        }
-        vec![crate::clearing::Order {
-            party: view.self_id(),
-            side: crate::clearing::Side::Buy,
-            price: Some(print.price),
-            qty: units,
-        }]
-    }
-}
-
-
 
 /// A CURRENCY PAIR CLEARS FROM REAL REASONS.
 pub struct SpotFx {
@@ -2222,51 +1975,6 @@ impl Mechanism for Broking {
             });
             ctx.say(self.kind, &[broker.0, client.0], &[(0, Value::Num(-short))], false);
         }
-    }
-}
-
-/// A FUND IS THE BUYER WHEN OTHERS ARE FORCED SELLERS.
-pub struct Liquidity {
-    pub of_kind: u32,
-}
-
-impl crate::module::Participant for Liquidity {
-    fn party_kind(&self) -> u32 {
-        self.of_kind
-    }
-
-    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
-        // IF it has capacity.
-        if view.own_cash() <= 0.0 {
-            return Vec::new();
-        }
-        // The lines it knows — its own rows — never every book in the world.
-        view.holdings().map(|row| crate::systems::book_of(view.line_of(row))).collect()
-    }
-
-    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
-        let room = view.own_cash();
-        if room <= 0.0 {
-            return Vec::new();
-        }
-        let line = crate::systems::line_of(m);
-        // No position that does not mark.
-        let Some(print) = view.print(line) else { return Vec::new() };
-        if print.price <= 0.0 {
-            return Vec::new();
-        }
-        let units = crate::clearing::whole_pieces(room / print.price);
-        if units <= 0 {
-            return Vec::new();
-        }
-        vec![crate::clearing::Order {
-            party: view.self_id(),
-            side: crate::clearing::Side::Buy,
-            // It bids at what the line last cleared at: it is buying from somebody who must sell,
-            // and what it pays is what the book crosses at.
-            price: Some(print.price),
-            qty: units,
-        }]
     }
 }
 
@@ -3031,57 +2739,6 @@ impl Mechanism for CrossBorder {
             // A world that does not close has a flow with one side in it somewhere, and that is a
             // finding with a size — never something to net away.
             ctx.say(self.kind, &[], &[(1, Value::Num(off))], true);
-        }
-    }
-}
-
-/// A FUND CALLS ITS COMMITMENTS, AND THE INVESTOR MUST HAVE THE MONEY.
-pub struct Calling {
-    pub kind: u32,
-    /// What share of an uncalled commitment a fund draws at once.
-    pub draws: &'static str,
-}
-
-impl Mechanism for Calling {
-    fn run(&self, ctx: &mut MechanismContext<'_>) {
-        let draws = ctx.params().ratio(self.draws);
-
-        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
-        for row in 0..ctx.agreements().len() as u32 {
-            let a = crate::stores::AgreementId(row);
-            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
-                continue;
-            }
-            let (fund, investor) = ctx.agreements().between(a);
-            if !ctx.parties().alive(fund) || !ctx.parties().alive(investor) {
-                continue;
-            }
-            // Pro rata on what is UNCALLED.
-            let Some(&committed) = ctx.agreements().terms(a).first() else { continue };
-            let owed = committed * draws;
-            if owed <= 0.0 {
-                continue;
-            }
-            calling.push((fund, investor, owed));
-        }
-
-        for (fund, investor, owed) in calling {
-            let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
-            let Some(owed) = crate::ledger::Units::new(owed) else { continue };
-            // The investor must hold liquidity against a call it did not choose the timing of.
-            ctx.propose(
-                vec![crate::ledger::Leg::Money {
-                    from: investor,
-                    to: fund,
-                    instrument: money,
-                    amount: owed,
-                    receipt: crate::ledger::Receipt::Transfer,
-                }],
-                crate::ledger::Cause::Payment,
-                crate::ledger::Delivery::Nothing,
-                "29 A2: a call is pro rata on uncalled commitments, and it is real money",
-            );
-            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed.get()))], false);
         }
     }
 }

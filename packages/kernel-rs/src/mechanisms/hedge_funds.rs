@@ -252,6 +252,53 @@ impl Mechanism for Levering {
     }
 }
 
+// And the party that posts for it.
+
+/// A FUND IS THE BUYER WHEN OTHERS ARE FORCED SELLERS.
+pub struct Liquidity {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Liquidity {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        // IF it has capacity.
+        if view.own_cash() <= 0.0 {
+            return Vec::new();
+        }
+        // The lines it knows — its own rows — never every book in the world.
+        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let room = view.own_cash();
+        if room <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::ids::line_of(m);
+        // No position that does not mark.
+        let Some(print) = view.print(line) else { return Vec::new() };
+        if print.price <= 0.0 {
+            return Vec::new();
+        }
+        let units = crate::clearing::whole_pieces(room / print.price);
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Buy,
+            // It bids at what the line last cleared at: it is buying from somebody who must sell,
+            // and what it pays is what the book crosses at.
+            price: Some(print.price),
+            qty: units,
+        }]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

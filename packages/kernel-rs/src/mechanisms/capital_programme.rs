@@ -234,6 +234,54 @@ pub fn capacity(vintages: &[Vintage], p: &Plant, now: u32) -> f64 {
 //
 // What is left is the arithmetic, and it always was values in and values out.
 
+// And the party that posts for it.
+
+/// AND IT BUYS THE PLANT.
+pub struct Builder {
+    pub of_kind: u32,
+}
+
+impl crate::module::Participant for Builder {
+    fn party_kind(&self) -> u32 {
+        self.of_kind
+    }
+
+    fn markets(&self, view: &crate::module::ParticipantView<'_>) -> Vec<crate::ids::MarketId> {
+        if view.in_a_programme() <= 0.0 {
+            return Vec::new();
+        }
+        // It bids in the books of what it already holds — the lines it knows how to use.
+        view.holdings().map(|row| crate::ids::book_of(view.line_of(row))).collect()
+    }
+
+    fn orders(&self, view: &crate::module::ParticipantView<'_>, m: crate::ids::MarketId) -> Vec<crate::clearing::Order> {
+        let commits = view.in_a_programme();
+        if commits <= 0.0 {
+            return Vec::new();
+        }
+        let line = crate::ids::line_of(m);
+        // It bids against what the book last PRINTED, because its limit is money and an order is
+        // pieces.
+        let Some(print) = view.print(line) else { return Vec::new() };
+        if print.price <= 0.0 {
+            return Vec::new();
+        }
+        // It cannot commit more money than it has.
+        let can_pay = view.own_cash();
+        let money = if commits < can_pay { commits } else { can_pay };
+        let units = crate::clearing::whole_pieces(money / print.price);
+        if units <= 0 {
+            return Vec::new();
+        }
+        vec![crate::clearing::Order {
+            party: view.self_id(),
+            side: crate::clearing::Side::Buy,
+            price: Some(print.price),
+            qty: units,
+        }]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

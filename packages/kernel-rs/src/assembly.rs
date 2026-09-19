@@ -481,7 +481,7 @@ impl World {
         }
         // A book for it, if it is paper anybody else may bid for.
         match what.book {
-            Some(venue) => self.open_book(crate::systems::book_of(line), line, what.ccy, venue),
+            Some(venue) => self.open_book(crate::ids::book_of(line), line, what.ccy, venue),
             None => self.instruments.carried_at_cost(line),
         }
         // And what it owes, by date.

@@ -2,6 +2,9 @@
 //!
 //! @spec XI-2 · Clearing C3 · Prime Brokerage B · Fund Shares C · Law 3, Law 6, Appendix B
 
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{afoot, agreed, standing};
 use crate::ids::{InstrumentId, PartyId};
 
 /// How a holder came to be selling something it did not want to sell.
@@ -51,6 +54,84 @@ pub fn sells(holding: f64, needs_units: f64) -> f64 {
 pub fn reaches(printed: f64, was: f64, holders: &[(PartyId, f64)]) -> Vec<(PartyId, f64)> {
     let moved = printed - was;
     holders.iter().map(|&(who, units)| (who, units * moved)).collect()
+}
+
+// XI-2 RUNS HERE.
+
+/// A DOWNGRADE PAST A MANDATE'S BOUNDARY IS A FORCED SALE BY EVERY HOLDER BOUND BY IT, ON THE SAME
+/// DATE.
+pub struct ForcedSelling {
+    /// What it says when a holder is put in a workout.
+    pub kind: u32,
+    /// How many periods a holder has to sell what its mandate no longer lets it hold.
+    pub within: &'static str,
+}
+
+impl Mechanism for ForcedSelling {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let within = ctx.params().periods(self.within) as u32;
+        // What each issuer is graded at now.
+        let mut worst: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let s = crate::stores::StandingId(row);
+            if !ctx.standing().live(s) || ctx.standing().kind_of(s) != standing::GRADE {
+                continue;
+            }
+            let about = ctx.standing().about(s).0;
+            let rank = ctx.standing().terms(s)[0];
+            worst.entry(about).and_modify(|r| if rank > *r { *r = rank }).or_insert(rank);
+        }
+        if worst.is_empty() {
+            return;
+        }
+
+        let mut breached: Vec<(PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::MANDATE {
+                continue;
+            }
+            let floor = match ctx.agreements().terms(a).first() {
+                Some(&floor) => floor,
+                // A mandate with no floor restricts no grade.
+                None => continue,
+            };
+            // The pool is the side the mandate is over; the manager is the other.
+            let (one, other) = ctx.agreements().between(a);
+            for pool in [one, other] {
+                if !ctx.parties().alive(pool) {
+                    continue;
+                }
+                let mut must_sell = 0.0;
+                for row in ctx.register().of_holder(pool) {
+                    let line = ctx.register().instrument_of(crate::ids::HoldingId(*row));
+                    let issuer = ctx.instruments().issuer_of(line);
+                    // Through the floor, and only through it.
+                    if matches!(worst.get(&issuer.0), Some(&rank) if rank > floor) {
+                        must_sell += ctx.register().quantity(crate::ids::HoldingId(*row));
+                    }
+                }
+                if must_sell > 0.0 {
+                    breached.push((pool, must_sell));
+                }
+            }
+        }
+
+        for (pool, units) in breached {
+            // It is already in one, and a second workout for the same breach would be the same
+            // requirement counted twice.
+            if ctx.processes().running(afoot::WORKOUT).iter().any(|p| ctx.processes().owner(*p) == pool) {
+                continue;
+            }
+            ctx.opens(crate::module::Opens {
+                kind: afoot::WORKOUT,
+                owner: pool,
+                closes: Some(ctx.period() + within),
+                size: units,
+            });
+            ctx.say(self.kind, &[pool.0], &[(0, Value::Num(units))], true);
+        }
+    }
 }
 
 #[cfg(test)]

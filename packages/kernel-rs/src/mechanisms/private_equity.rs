@@ -5,6 +5,10 @@
 //! @spec 29 B2.b · 29 B3 · 29 B4 · 29 B5 · 29 C1 · 29 C2 · 29 C3 · 29 C4 · 29 C5 · 29 C5.a · 29 D1 ·
 //! @spec 29 D2 · 29 D3 · XI-3 · Law 3, Law 5, Law 6, Law 19 · Appendix B
 
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 use crate::ids::PartyId;
 
 /// A fund with committed capital from named investors — committed, not paid: it is CALLED when a
@@ -205,6 +209,59 @@ pub fn exit(f: &Fund, cleared_at: f64, held_by_fund: f64) -> Exit {
 /// What the mark said against what the exit cleared at.
 pub fn mark_against_exit(m: &Mark, e: &Exit, held: f64) -> f64 {
     e.cleared_at * held - m.value
+}
+
+// §29 RUNS HERE.
+
+/// A FUND CALLS ITS COMMITMENTS, AND THE INVESTOR MUST HAVE THE MONEY.
+pub struct Calling {
+    pub kind: u32,
+    /// What share of an uncalled commitment a fund draws at once.
+    pub draws: &'static str,
+}
+
+impl Mechanism for Calling {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let draws = ctx.params().ratio(self.draws);
+
+        let mut calling: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for row in 0..ctx.agreements().len() as u32 {
+            let a = crate::stores::AgreementId(row);
+            if !ctx.agreements().live(a) || ctx.agreements().kind_of(a) != agreed::SUBSCRIPTION {
+                continue;
+            }
+            let (fund, investor) = ctx.agreements().between(a);
+            if !ctx.parties().alive(fund) || !ctx.parties().alive(investor) {
+                continue;
+            }
+            // Pro rata on what is UNCALLED.
+            let Some(&committed) = ctx.agreements().terms(a).first() else { continue };
+            let owed = committed * draws;
+            if owed <= 0.0 {
+                continue;
+            }
+            calling.push((fund, investor, owed));
+        }
+
+        for (fund, investor, owed) in calling {
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), investor) else { continue };
+            let Some(owed) = crate::ledger::Units::new(owed) else { continue };
+            // The investor must hold liquidity against a call it did not choose the timing of.
+            ctx.propose(
+                vec![crate::ledger::Leg::Money {
+                    from: investor,
+                    to: fund,
+                    instrument: money,
+                    amount: owed,
+                    receipt: crate::ledger::Receipt::Transfer,
+                }],
+                crate::ledger::Cause::Payment,
+                crate::ledger::Delivery::Nothing,
+                "29 A2: a call is pro rata on uncalled commitments, and it is real money",
+            );
+            ctx.say(self.kind, &[fund.0, investor.0], &[(0, Value::Num(owed.get()))], false);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -16,7 +16,8 @@ use phoenix_kernel::registry::tracks;
 use phoenix_kernel::running::Makes;
 use phoenix_kernel::stores::{about as running_about, afoot, agreed};
 use phoenix_kernel::stores::Owing;
-use phoenix_kernel::systems::{all, book_of, declare, Wiring};
+use phoenix_kernel::ids::book_of;
+use phoenix_kernel::systems::{all, declare, Wiring};
 use std::time::Instant;
 
 /// The counts the engine is judged on — `world_at_scale`'s, so the two are comparable.
