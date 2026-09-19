@@ -233,21 +233,6 @@ things:
   5. **THE SAME SYSTEM IN TWO FILES** — a read that crosses no system boundary because there is none
      to cross. `Making` named `goods` and `recipe`, and both are §37.
 
-- [ ] 0m2.3d **A Law 2 finding, and the blind spots that let it through.**
-  `registry::Plant { life, upkeep_per_period, capacity_per_period }` — `life` and `upkeep` are
-  TECHNOLOGY primitives and legitimate, but **a CAPACITY is an OUTCOME**: Law 2 names it in the
-  list, and *a stated value for one is a defect with a scheduled death*. The field's own comment says
-  *"Capacity is a function of the stock"* while the field states it. It is a SHAPE and it needs a
-  scheduled death naming the mechanism that produces it.
-  **`phoenix-check`'s `undeclared_number` rule reads a field position (`x: 1.05`) and misses a match
-  arm**, which is how `bank_capital::haircut` carried seven policy numbers uncaught.
-  **And its *One system, one file* rule reads `use crate::mechanisms::` and misses a fully-qualified
-  path**, which is how `housing` named `recipe` in a signature with nothing in the check to see it.
-  Both blind spots are this step: the rules read the path, not the `use`, and the arm, not the field.
-  **And `bank_capital` has a `pub fn standing` beside `crate::stores::standing`**, a function and a
-  store vocabulary with one name in one file, legible today only because Rust keeps types and values
-  in separate namespaces. Law 9: one name, one thing.
-
 - [ ] 0m2.3e **`treasury::must_raise` raises the gap twice**, found by reading it to split `Funding`.
   `gap = outlays - receipts`; `restock = buffer - (cash - gap)`; it returns `gap + restock`, which is
   `2·gap + buffer - cash`. A borrower that raises its gap does not then pay it out of cash, so what
@@ -714,6 +699,18 @@ and Law 5's check cannot see an instruction nobody wrote.
   which is what makes a firm that cannot keep its plant a firm whose plant stops.
 - [ ] 22f.3 **Until 22f.2, upkeep is out of the unit cost**, because a cost nobody paid is not a cost
   the stock should carry. Whichever way round these land, they land together: the two are one fact.
+- [ ] 22f.4 **How much plant a unit of output takes is written down twice, in two units, and nothing
+  makes them agree.** `registry::Plant.capacity_per_period` says what ONE unit of plant makes in a
+  period — output units per plant unit — and `registry::Way.capital_services_per_unit` says what one
+  unit of output takes — service units per output unit. Neither names the other's unit, so a firm at
+  capacity demands `starts × capital_services_per_unit` of a thing the plant never says it supplies.
+  It shows in the product `starts × capital_services_per_unit × a_service`, where `a_service` is
+  money per unit of CAPACITY: the units do not compose, which is Law 8, and the two statements are
+  Law 4's two disconnected representations of one real thing.
+  *0m2.3d recorded this as a Law 2 finding — `capacity_per_period` as a stated OUTCOME — and that
+  reading was wrong. A per-machine throughput is a property of the machine, exactly as `life` and
+  `upkeep_per_period` are, and the FIRM's capacity is already derived: `capacity()` sums it over the
+  lots. What is stated twice is the relation between plant and output, not the capacity.*
 
 **Exit.** Plant wears on the register as well as in the cost, and every number in a batch's cost is a
 number that left somebody's account or reduced somebody's stock.

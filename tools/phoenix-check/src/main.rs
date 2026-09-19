@@ -230,21 +230,28 @@ fn fixed_tolerance(line: &str) -> Option<String> {
 
 /// A behaviour-shaping number reaches a mechanism only via `params`.
 fn undeclared_number(line: &str) -> Option<String> {
+    // A field takes one, and so does a match arm: `Grade::D => 4.0` hands a mechanism a number as
+    // surely as `hurdle: 4.0` does, and reading only the one let seven of them through.
+    handed_over(line, ": ").or_else(|| handed_over(line, " => "))
+}
+
+fn handed_over(line: &str, sep: &str) -> Option<String> {
     let chars: Vec<char> = line.chars().collect();
+    let width = sep.chars().count();
     let mut from = 0usize;
-    while let Some(rel) = line[from..].find(": ") {
+    while let Some(rel) = line[from..].find(sep) {
         let at = from + rel;
-        from = at + 2;
-        // A field position, not a type annotation or a match arm: what follows must be a number.
-        let value: String = chars[at + 2..]
+        from = at + sep.len();
+        // What follows must be a number, not a type annotation or a further expression.
+        let value: String = chars[at + width..]
             .iter()
             .take_while(|c| c.is_ascii_digit() || **c == '.' || **c == '_' || **c == '-')
             .collect();
         if value.is_empty() || !value.starts_with(|c: char| c.is_ascii_digit() || c == '-') {
             continue;
         }
-        // It ends where a field ends.
-        let after = chars.get(at + 2 + value.chars().count());
+        // It ends where the value ends.
+        let after = chars.get(at + width + value.chars().count());
         if after.is_some_and(|c| c.is_alphabetic()) {
             continue;
         }
@@ -253,14 +260,18 @@ fn undeclared_number(line: &str) -> Option<String> {
         if n == 0.0 || n == 1.0 || n == -1.0 || n == 2.0 {
             continue;
         }
-        let mut back: Vec<char> =
-            chars[..at].iter().rev().take_while(|c| c.is_alphanumeric() || **c == '_').copied().collect();
+        let mut back: Vec<char> = chars[..at]
+            .iter()
+            .rev()
+            .take_while(|c| c.is_alphanumeric() || **c == '_' || **c == ':')
+            .copied()
+            .collect();
         back.reverse();
-        let field: String = back.into_iter().collect();
-        if field.is_empty() {
+        let taker: String = back.into_iter().collect();
+        if taker.is_empty() {
             continue;
         }
-        return Some(format!("{field} is handed {value} rather than a declared id"));
+        return Some(format!("{taker} is handed {value} rather than a declared id"));
     }
     None
 }
@@ -268,6 +279,25 @@ fn undeclared_number(line: &str) -> Option<String> {
 /// Every construction this line makes, of `WORLD_BUILDING`'s.
 fn builds_a_world(line: &str) -> Vec<&'static str> {
     WORLD_BUILDING.iter().filter(|w| line.contains(**w)).copied().collect()
+}
+
+/// Every OTHER module this line names, whichever way it names it. A module naming itself is
+/// redundant rather than forbidden, so it is not one.
+fn names_another_module(line: &str, own: &str) -> Vec<String> {
+    let mark = "crate::mechanisms::";
+    let mut out: Vec<String> = Vec::new();
+    let mut from = 0usize;
+    while let Some(rel) = line[from..].find(mark) {
+        let at = from + rel + mark.len();
+        from = at;
+        let named: String =
+            line[at..].chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+        if named.is_empty() || named == own || out.contains(&named) {
+            continue;
+        }
+        out.push(named);
+    }
+    out
 }
 
 /// The type whose behaviour this line declares, where it declares one.
@@ -430,9 +460,12 @@ fn main() {
                     found.push(say("Part II", what));
                 }
             }
-            // A module never imports another module.
-            if is_mechanism && line.starts_with("use crate::mechanisms::") {
-                found.push(say("Law 15", "a module imports another module".to_string()));
+            // A module never NAMES another module — by a `use`, or anywhere else in a line, because
+            // a fully-qualified path reaches just as far and reads the same at the call site.
+            if is_mechanism {
+                for other in names_another_module(line, &stem) {
+                    found.push(say("Law 15", format!("a module names another module: {other}")));
+                }
             }
             // Tolerance is arithmetic dust, derived per check — never a band somebody picked.
             if let Some(band) = fixed_tolerance(line) {
@@ -519,6 +552,35 @@ mod forbids {
 
     fn rule(clause: &str) -> &'static Forbid {
         FORBIDS.iter().find(|f| f.clause == clause).expect("the rule is in the table")
+    }
+
+    #[test]
+    fn a_number_handed_over_is_caught_in_a_match_arm_and_not_only_in_a_field() {
+        // Reading only the field position let seven policy numbers through a haircut and three
+        // preferences through a deposit line, in arms that hand them over just as plainly.
+        assert!(undeclared_number("            Grade::D => 4.0,").is_some());
+        assert!(undeclared_number("    hurdle: 0.05,").is_some());
+        // 0, 1, -1 and 2 are arithmetic rather than a declared number, either way round.
+        assert!(undeclared_number("            Class::Wholesale => 1.0,").is_none());
+        // And a type annotation is not a number being handed to anybody.
+        assert!(undeclared_number("        let periods: u32 = ctx.params().periods(id);").is_none());
+    }
+
+    #[test]
+    fn a_module_naming_another_is_caught_by_the_path_and_not_only_by_the_use() {
+        // A fully-qualified path reaches exactly as far as an import and reads the same at the call
+        // site, which is how `housing` named `recipe` in a signature with nothing to see it.
+        assert_eq!(
+            names_another_module("    recipe: &crate::mechanisms::recipe::Recipe,", "housing"),
+            vec!["recipe".to_string()]
+        );
+        assert_eq!(
+            names_another_module("use crate::mechanisms::goods::take;", "running"),
+            vec!["goods".to_string()]
+        );
+        // A module naming ITSELF is redundant, not forbidden.
+        assert!(names_another_module("        let g = crate::mechanisms::goods::take(l);", "goods").is_empty());
+        assert!(names_another_module("    let x = crate::stores::agreed::ENGAGEMENT;", "goods").is_empty());
     }
 
     #[test]

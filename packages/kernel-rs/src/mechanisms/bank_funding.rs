@@ -49,19 +49,34 @@ impl Line {
     }
 
     /// How much of this line leaves when the depositors see something.
-    pub fn leaves(&self, on_signals: f64, limit_per_member: f64) -> f64 {
+    pub fn leaves(&self, on_signals: f64, limit_per_member: f64, runs: Eagerness) -> f64 {
         let exposed = self.balance - self.insured(limit_per_member);
-        let eagerness = match self.class {
-            Class::Wholesale => 1.0,
-            Class::Corporate => 0.4,
-            Class::Retail => 0.15,
-        };
-        let going = exposed * eagerness * on_signals;
+        let going = exposed * runs.of(self.class) * on_signals;
         // They cannot take more than they have.
         if going < self.balance {
             going
         } else {
             self.balance
+        }
+    }
+}
+
+/// HOW FAST EACH KIND OF DEPOSITOR RUNS. Wholesale money is watching and goes first, corporate
+/// money is slower, and insured retail is slowest of all — three PREFERENCES of the depositor, and
+/// whoever wires this supplies them rather than the branch that reads them carrying them.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Eagerness {
+    pub wholesale: f64,
+    pub corporate: f64,
+    pub retail: f64,
+}
+
+impl Eagerness {
+    fn of(self, class: Class) -> f64 {
+        match class {
+            Class::Wholesale => self.wholesale,
+            Class::Corporate => self.corporate,
+            Class::Retail => self.retail,
         }
     }
 }
@@ -133,8 +148,8 @@ impl Liquid {
 /// A buffer preference derived from its OWN liabilities, not a stated ratio — a bank funded by
 /// wholesale money needs more than one funded by insured retail, and that is the whole of A1.d
 /// showing up as a number.
-pub fn buffer_wanted(lines: &[Line], limit_per_member: f64, on_signals: f64) -> f64 {
-    lines.iter().map(|l| l.leaves(on_signals, limit_per_member)).sum()
+pub fn buffer_wanted(lines: &[Line], limit_per_member: f64, on_signals: f64, runs: Eagerness) -> f64 {
+    lines.iter().map(|l| l.leaves(on_signals, limit_per_member, runs)).sum()
 }
 
 /// Maturity transformation is the business — it funds long assets with short liabilities, and that
@@ -316,6 +331,11 @@ impl Mechanism for BankFunding {
 mod tests {
     use super::*;
 
+    /// The tests' own depositors, and this is the one place these three are written.
+    fn runs() -> Eagerness {
+        Eagerness { wholesale: 1.0, corporate: 0.4, retail: 0.15 }
+    }
+
     fn party(n: u32) -> PartyId {
         PartyId::at(n)
     }
@@ -336,9 +356,9 @@ mod tests {
     fn a_model_with_one_deposit_type_cannot_have_a_run() {
         // Stickiness differs by class and it is the whole of liquidity risk.
         let signals = 1.0;
-        let retail = line(50, Class::Retail, 80_000.0, 10_000.0).leaves(signals, 50.0);
-        let corporate = line(51, Class::Corporate, 80_000.0, 40.0).leaves(signals, 50.0);
-        let wholesale = line(52, Class::Wholesale, 80_000.0, 4.0).leaves(signals, 50.0);
+        let retail = line(50, Class::Retail, 80_000.0, 10_000.0).leaves(signals, 50.0, runs());
+        let corporate = line(51, Class::Corporate, 80_000.0, 40.0).leaves(signals, 50.0, runs());
+        let wholesale = line(52, Class::Wholesale, 80_000.0, 4.0).leaves(signals, 50.0, runs());
         assert!(wholesale > corporate);
         assert!(corporate > retail);
     }
@@ -357,7 +377,7 @@ mod tests {
     #[test]
     fn a_run_is_a_wholesale_phenomenon_first() {
         // Deposit insurance breaks the loop for retail and not for wholesale.
-        let leaving: Vec<f64> = book().iter().map(|l| l.leaves(1.0, 50.0)).collect();
+        let leaving: Vec<f64> = book().iter().map(|l| l.leaves(1.0, 50.0, runs())).collect();
         // The fully insured retail line barely moves; the wholesale line goes entirely.
         assert_eq!(leaving[0], 0.0);
         assert_eq!(leaving[2], 80_000.0);
@@ -368,7 +388,7 @@ mod tests {
         // A bank funded by wholesale money needs more than one funded by insured retail.
         let wholesale_funded = [line(52, Class::Wholesale, 200_000.0, 4.0)];
         let retail_funded = [line(50, Class::Retail, 200_000.0, 20_000.0)];
-        assert!(buffer_wanted(&wholesale_funded, 50.0, 1.0) > buffer_wanted(&retail_funded, 50.0, 1.0));
+        assert!(buffer_wanted(&wholesale_funded, 50.0, 1.0, runs()) > buffer_wanted(&retail_funded, 50.0, 1.0, runs()));
     }
 
     #[test]
@@ -427,8 +447,8 @@ mod tests {
         let visible = Observed { capital_ratio_published: 0.06, drew_the_window: true, paid_up_for_deposits: true, downgraded: true, periods_ending_short: 2 };
         assert_eq!(quiet.signals(0.10), 0.0);
         assert_eq!(visible.signals(0.10), 6.0);
-        let leaving = buffer_wanted(&book(), 50.0, visible.signals(0.10));
-        assert!(leaving > buffer_wanted(&book(), 50.0, quiet.signals(0.10)));
+        let leaving = buffer_wanted(&book(), 50.0, visible.signals(0.10), runs());
+        assert!(leaving > buffer_wanted(&book(), 50.0, quiet.signals(0.10), runs()));
         // And the reserves go with them.
         assert!(after_outflow(200_000.0, leaving) < 200_000.0);
     }

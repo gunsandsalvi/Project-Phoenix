@@ -120,7 +120,7 @@ pub struct Standing {
     pub below_requirement: bool,
 }
 
-pub fn standing(p: &Position, r: Rules) -> Standing {
+pub fn how_it_stands(p: &Position, r: Rules) -> Standing {
     let weighted = p.weighted();
     if weighted <= 0.0 {
         // A book that weighs nothing has no weighted ratio; the backstop is what speaks.
@@ -419,7 +419,7 @@ impl Mechanism for BankCapital {
             if position.carried() <= 0.0 {
                 continue;
             }
-            let how = standing(&position, rules);
+            let how = how_it_stands(&position, rules);
             let ratio = position.capital() / position.carried();
             // What it is lending at now.
             let headroom = position.capital() / (rules.min_leverage + rules.buffer) - position.carried();
@@ -514,15 +514,15 @@ mod tests {
         let r = Rules { min_weighted: 0.08, min_leverage: 0.03, buffer: 0.02 };
         let comfortable = lending_book();
         assert_eq!(
-            standing(&comfortable, r),
+            how_it_stands(&comfortable, r),
             Standing { in_buffer: false, below_requirement: false }
         );
         let mut thin = lending_book();
         thin.liabilities = 9_100.0; // 900 of capital on 10,000 weighted: 9%.
-        assert_eq!(standing(&thin, r), Standing { in_buffer: true, below_requirement: false });
+        assert_eq!(how_it_stands(&thin, r), Standing { in_buffer: true, below_requirement: false });
         let mut breached = lending_book();
         breached.liabilities = 9_300.0; // 7%.
-        assert_eq!(standing(&breached, r), Standing { in_buffer: true, below_requirement: true });
+        assert_eq!(how_it_stands(&breached, r), Standing { in_buffer: true, below_requirement: true });
     }
 
     #[test]
