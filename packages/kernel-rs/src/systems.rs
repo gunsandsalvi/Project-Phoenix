@@ -24,10 +24,15 @@ use crate::clearing::{whole_pieces, Order, Side};
 use crate::ids::{InstrumentId, MarketId};
 use crate::module::{Mechanism, Participant, ParticipantView};
 use crate::params::{Denomination, Dimension, Kind, Owner, ParamDecl, Params};
+use crate::mechanisms::cds::Protection;
+use crate::mechanisms::hedge_funds::Levering;
+use crate::mechanisms::observer::Observing;
+use crate::mechanisms::second_opinion::SecondOpinion;
+use crate::mechanisms::securitisation::Securitising;
 use crate::mechanisms::funds::{run_as, Run};
 use crate::mechanisms::goods::CostFlow;
 use crate::stores::agreed;
-use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Levered, Liquidity, Losses, Makes, Making, Observing, Owed, Protection, Publishes, Ranked, Reads, Reporting, SecondOpinion, Securitising, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
+use crate::running::{BankCapital, BankFunding, Broking, Calling, Builder, Building, Control, CostOfCapital, Counts, CrossBorder, Derivatives, Elections, Failing, Fixes, Floating, Flotation, ForcedSeller, ForcedSelling, Forming, Funding, FxForwards, Grading, Housing, Liquidity, Losses, Makes, Making, Owed, Publishes, Ranked, Reads, Reporting, SmallBusiness, Servicing, Sovereign, SpotFx, Storing, StockLending, Subscribing, TradeCredit, Wages, Winding};
 use crate::world::{Anchor, PhaseDecl};
 
 /// The books this world opens, by subject. A participant names a book off its OWN rows (Law 19), so
@@ -1233,7 +1238,7 @@ pub fn all(w: &Wiring, journal: &mut crate::journal::Journal) -> Vec<Wired> {
         {
             // **§14 C2, XI-2: and a fund is the BUYER when others are forced sellers.** It counted
             // how many parties were alive, so XI-2's channel had nobody at the end of it.
-            let mut h = works("hedge_funds", AT_REVALUATION, Box::new(Levered {
+            let mut h = works("hedge_funds", AT_REVALUATION, Box::new(Levering {
                 kind: says("fund.marked"),
                 at_equity,
             }));

@@ -26,6 +26,11 @@
 //! which removes the dispersion the auction needs to have two sides at all (§46 A3). `Assessments`
 //! is keyed by (assessor, subject) and there is no read that takes a subject alone.
 
+use crate::calendar::Day;
+use crate::ids::InstrumentId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::standing;
 use crate::ids::PartyId;
 
 /// **An opinion, held by somebody.** Not a property of the firm: the assessor is part of the fact,
@@ -145,6 +150,92 @@ pub fn can_disagree(book: &[Participant]) -> bool {
     let a_view = book.iter().any(|p| p.reason == Reason::View);
     let a_dealer = book.iter().any(|p| p.reason == Reason::Dealer && p.two_sided);
     a_view && a_dealer
+}
+
+// **XI-13 RUNS HERE** (0m2.1). `SecondOpinion` was in `running.rs`, apart from `dispersion` and
+// `can_disagree`, which are in this file and which it did not call.
+
+/// **XI-13, §46 A3, 22i.11: EVERY LENDER FORMS ITS OWN VIEW OF EVERY BORROWER IT HOLDS.**
+///
+/// The `second_opinion` row counted how many lines printed. So this world had ONE opinion of every
+/// borrower — whatever the ratings row said — and XI-13's whole point is that it must not: if the
+/// loss is an arithmetic function of the borrower's accounts and every participant's reservation is
+/// built from that function, the market cannot disagree with the accounting model and its price
+/// carries no information (§46 A3).
+///
+/// **The view is formed from what THIS lender has seen**, which is why two lenders disagree: a
+/// lender's experience of a borrower is the dues on ITS OWN paper that went past their day, and two
+/// lenders holding different paper of the same borrower have seen different things. There is no
+/// `rating_of(subject)` here — asking a borrower for its probability is asking for a fact nobody
+/// holds, and answering would make every participant agree by construction.
+///
+/// **Law 8: the horizon is part of the number.** A probability with no term is not a probability, so
+/// the term is stood behind beside it.
+pub struct SecondOpinion {
+    pub kind: u32,
+    pub days_per_period: i64,
+}
+
+impl Mechanism for SecondOpinion {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let today = Day(i64::from(ctx.period()) * self.days_per_period);
+
+        // What this lender has SEEN of this borrower: the dues on the paper it holds, and how many
+        // of them went past their day. Both are reads of the schedules (Law 19).
+        let mut seen: std::collections::HashMap<(u32, u32), (f64, f64)> = std::collections::HashMap::new();
+        for row in 0..ctx.instruments().len() as u32 {
+            let line = InstrumentId::at(row);
+            let borrower = ctx.instruments().issuer_of(line);
+            let dues = ctx.schedules().of_instrument(line);
+            if dues.is_empty() {
+                continue;
+            }
+            let mut owed = 0.0;
+            let mut late = 0.0;
+            for &d in dues {
+                let d = crate::stores::DueId(d);
+                if ctx.schedules().due(d) > today {
+                    continue;
+                }
+                owed += 1.0;
+                if !ctx.schedules().paid(d) {
+                    late += 1.0;
+                }
+            }
+            if owed <= 0.0 {
+                continue;
+            }
+            // Observer A4: and it is seen by whoever HOLDS the paper, and by nobody else.
+            for &row in ctx.register().of_instrument(line) {
+                let holder = ctx.register().holder_of(crate::ids::HoldingId(row)).0;
+                if holder == borrower.0 || ctx.register().quantity(crate::ids::HoldingId(row)) <= 0.0 {
+                    continue;
+                }
+                let e = seen.entry((holder, borrower.0)).or_insert((0.0, 0.0));
+                e.0 += owed;
+                e.1 += late;
+            }
+        }
+
+        let mut formed: Vec<(PartyId, PartyId, f64)> = Vec::new();
+        for (&(lender, borrower), &(owed, late)) in &seen {
+            let lender = PartyId(lender);
+            let borrower = PartyId(borrower);
+            if !ctx.parties().alive(lender) || !ctx.parties().alive(borrower) {
+                continue;
+            }
+            // Its own probability, over its own experience. Nothing is drawn and no model is
+            // consulted: this is what happened to THIS lender.
+            formed.push((lender, borrower, late / owed));
+        }
+
+        for (lender, borrower, probability) in formed {
+            // XI-13: a view a lender does not hold is one it cannot be shown to have been wrong
+            // about, so it stands behind it — and a revision REPLACES its own and nobody else's.
+            ctx.now_stands(standing::OWN_VIEW, lender, borrower, vec![probability, 1.0]);
+            ctx.say(self.kind, &[lender.0, borrower.0], &[(0, Value::Num(probability))], false);
+        }
+    }
 }
 
 #[cfg(test)]

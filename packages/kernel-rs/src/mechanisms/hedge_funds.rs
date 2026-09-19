@@ -26,6 +26,10 @@
 //! **Gross exposure, net exposure and equity are three different reads, and all three are needed**
 //! (B5): one of them alone hides either the hedging or the size.
 
+use crate::assembly::kinds;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::agreed;
 use crate::ids::{InstrumentId, PartyId};
 
 /// A1, A2: **a named party whose investor capital is EQUITY** — the investors bear the result, and they
@@ -226,6 +230,73 @@ pub fn fails(f: &Fund, collateral_fetched: f64) -> Failed {
             // Equity already gone, or unmarkable: there was nothing left for them either way.
             _ => 0.0,
         },
+    }
+}
+
+// **§14 RUNS HERE** (0m2.1). `Levered` was in `running.rs`; every function in this file takes a
+// marked-down value and none of them had a caller in it.
+
+/// **§14 A5, B5, E2, 22i.15: A FUND MARKS, AND ITS LEVERAGE IS A READ AGAINST WHAT IT BORROWED.**
+///
+/// A5: everything is marked at cleared prices, so its equity moves continuously. E2: **no position
+/// that does not mark** — a fund carrying an unmarked position has hidden its loss, and a line
+/// nothing cleared is carried at what it cost and says so.
+///
+/// B5: **leverage is a read of borrowed against equity, and it must equal what the broker has lent**
+/// (§12 B1.a). It is not a property of the fund: the loan is a named lender's, and this reads it off
+/// the relation that lender holds rather than off a figure the fund keeps.
+///
+/// *Named `Levering` because moving it here (0m2.1) put it beside `Levered`, which is HOW a position
+/// is levered — margin, derivative or repo. Two different things under one name, and neither file
+/// could see the other while they were apart* (Law 9: a name is what the thing is called).
+pub struct Levering {
+    pub kind: u32,
+    pub at_equity: u32,
+}
+
+impl Mechanism for Levering {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let mut marked: Vec<(PartyId, f64, Option<f64>)> = Vec::new();
+        for &fund in ctx.parties().of_kind(kinds::FUND) {
+            let who = PartyId(fund);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            // **A fund whose book cannot be valued does not lever against it.** Leverage is
+            // borrowed against equity, and equity it cannot state is not a smaller number — it is
+            // no number (Appendix A). A margin call struck on a part-valued book would be a call
+            // for an amount nobody could name.
+            let Some(at_market) =
+                crate::instruments::book_value(who, ctx.register(), ctx.instruments(), ctx.prints(), ctx.period())
+            else {
+                continue;
+            };
+            // B1.a: what it borrowed, from the named lender that lent it.
+            let lent: f64 = ctx
+                .agreements()
+                .of_party(who)
+                .iter()
+                .map(|a| crate::stores::AgreementId(*a))
+                .filter(|a| {
+                    ctx.agreements().live(*a) && ctx.agreements().kind_of(*a) == agreed::PRIME_BROKERAGE
+                })
+                .filter_map(|a| ctx.agreements().terms(a).first().copied())
+                .sum();
+            let equity = at_market - lent;
+            // B5: `None` where the client has no equity left — which is not zero leverage, it is a
+            // client that is gone.
+            let leverage = if equity > 0.0 { Some(lent / equity) } else { None };
+            marked.push((who, equity, leverage));
+        }
+
+        for (who, equity, leverage) in marked {
+            let mut data = vec![(self.at_equity, Value::Num(equity))];
+            if let Some(l) = leverage {
+                data.push((0, Value::Num(l)));
+            }
+            // A5: what a fund is worth is its holders' business and its lender's, not the world's.
+            ctx.say(self.kind, &[who.0], &data, false);
+        }
     }
 }
 

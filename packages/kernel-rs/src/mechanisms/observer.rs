@@ -27,6 +27,8 @@
 //! **No display-only number** (E1): if it is worth showing it is worth deriving, and everything here
 //! derives from prints, holdings and events.
 
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
 use crate::ids::{InstrumentId, PartyId};
 use crate::prices::{Print, Provenance};
 
@@ -204,6 +206,72 @@ pub fn display_name(issuer: &str, coupon: Option<f64>, maturity: Option<u32>) ->
 /// showing a different world from the one that ran, so a shown period is the kernel's own.
 pub fn dated_by(period: u32) -> u32 {
     period
+}
+
+// **§45 RUNS HERE** (0m2.1). `Observing` was in `running.rs`, which is not where a reader of the
+// observer surface would look for what the surface does.
+
+/// **§45 A5, 22i.11: THE OBSERVER PUBLISHES A STATISTIC — LATE, AND REVISED.**
+///
+/// The `observer` row counted how many parties were alive, published the moment it counted them. A
+/// statistic that is instant and never wrong is not a statistic: what §45 A5 is about is that what
+/// the world can SEE of itself lags what it is, and is corrected afterwards.
+///
+/// **Converting a count into a count-with-a-lag is a relabelling unless the lag and the revision are
+/// the mechanism** — which is why this was left out of 21j. They are the mechanism here: the figure
+/// published in a period is an EARLIER period's, computed from what is known now, and where a later
+/// reading of that same period differs it is published again as a revision, with the first still
+/// standing (§2 E2.a: a correction is a new entry, never an erasure).
+pub struct Observing {
+    pub kind: u32,
+    pub at_about: u32,
+    pub at_value: u32,
+    pub at_revised: u32,
+    /// §45 A5: how many periods behind the statistic runs. A TECHNOLOGY: how long it takes to
+    /// gather, and a lag of zero would delete the clause rather than satisfy it.
+    pub lag: &'static str,
+}
+
+impl Mechanism for Observing {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let lag = ctx.params().periods(self.lag) as u32;
+        if ctx.period() < lag {
+            return;
+        }
+        let about = ctx.period() - lag;
+        // The figure: what was settled over the wire in that period. A real statistic about the
+        // world, read off the wire's own history and never a tally kept beside it (Law 19).
+        let moved: f64 = ctx
+            .wire()
+            .in_period(about)
+            .filter(|n| ctx.wire().outcome_of(*n) == crate::ledger::Outcome::Settled)
+            .count() as f64;
+
+        // A5: what was said about that period before, if anything. A statistic published twice is a
+        // REVISION, and the first reading stays where it was.
+        let mut was: Option<f64> = None;
+        for &row in ctx.journal().of_kind(self.kind) {
+            if let (Some(Value::Num(period)), Some(Value::Num(value))) =
+                (ctx.journal().says(row, self.at_about), ctx.journal().says(row, self.at_value))
+            {
+                if period as u32 == about {
+                    was = Some(value);
+                }
+            }
+        }
+        if matches!(was, Some(before) if before == moved) {
+            return;
+        }
+        let mut data = vec![
+            (self.at_about, Value::Num(f64::from(about))),
+            (self.at_value, Value::Num(moved)),
+        ];
+        if let Some(before) = was {
+            data.push((self.at_revised, Value::Num(before)));
+        }
+        // Observer A3: a statistic about the world is PUBLIC, and it is about nobody in particular.
+        ctx.say(self.kind, &[], &data, true);
+    }
 }
 
 #[cfg(test)]

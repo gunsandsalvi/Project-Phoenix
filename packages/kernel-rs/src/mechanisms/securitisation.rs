@@ -24,6 +24,11 @@
 //! terms of the instrument (Law 2: a POLICY of the deal). What it is worth is a cleared price and
 //! never a function of them (Law 3).
 
+use crate::assembly::kinds;
+use crate::journal::Value;
+use crate::ledger::account_of;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::afoot;
 use crate::ids::{InstrumentId, PartyId};
 
 /// A party that holds the loans. It is a party — it can be owed money, it can fail, it has an estate
@@ -149,6 +154,113 @@ pub fn onto_holders(took: &[Took], holdings: &[Holding]) -> Vec<(PartyId, f64)> 
 /// does not exist at all. A read of what it transferred, never a bonus anybody grants.
 pub fn capacity_freed(transferred: f64, retained: f64) -> f64 {
     transferred - retained
+}
+
+// **§13 RUNS HERE** (0m2.1). `Securitising` was in `running.rs`, apart from `allocate` and the
+// tranche arithmetic it is about. One system, one file.
+
+/// **XI-11, §18 A1, A2, B1, 22i.18: A BANK POOLS LOANS AND CUTS NOTES AGAINST THEM.**
+///
+/// The `securitisation` row was a CLOSER for a pool nothing opened, and a pool's whole point is to
+/// ISSUE notes — which is what 21.81 said it could not do. `ctx.brings` is the door now (21j.1a) and
+/// this is what walks through it.
+///
+/// **The loan rows MOVE** (A1, Law 5): the originator delivers them and receives what the vehicle
+/// paid. A loan that is a field rather than a row cannot be transferred at all, which is XI-11's
+/// second prerequisite — and it is a row here, so it can.
+///
+/// **A tranche has a stated loss attachment and a price that clears** (A2, Law 3): the attachment is
+/// a TERM of the deal and the price is an outcome, never a function of the attachment. The losses
+/// that reach it are real losses on named borrowers (XI-1, 22i.5), which is what makes a senior note
+/// safe in a way a rate applied smoothly could never express.
+///
+/// **What frees capital is what was SOLD** (B1): a bank that retained everything has moved nothing,
+/// and the capital relief is a read of what left rather than a number the deal claims.
+pub struct Securitising {
+    pub kind: u32,
+    /// §18 A2: where the junior tranche detaches — the share of the pool that stands in front of the
+    /// senior note. A TERM of the deal, stated by whoever cuts it, never a price.
+    pub junior: &'static str,
+    /// §18 B1: how much of a book a bank will pool at once. Its own.
+    pub pools: &'static str,
+}
+
+impl Mechanism for Securitising {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let junior = ctx.params().ratio(self.junior);
+        let pools = ctx.params().ratio(self.pools);
+
+        let mut cutting: Vec<(PartyId, crate::ids::CurrencyCode, f64, f64)> = Vec::new();
+        for &bank in ctx.parties().of_kind(kinds::BANK) {
+            let who = PartyId(bank);
+            if !ctx.parties().alive(who) {
+                continue;
+            }
+            if ctx.processes().running(afoot::SECURITISATION).iter().any(|p| ctx.processes().owner(*p) == who) {
+                continue;
+            }
+            // XI-11: **the loan rows it holds.** `saleable` names no kind — a house and a shop are
+            // both poolable — so this is every claim on its book that somebody else issued, which is
+            // what a loan IS from the lender's side.
+            let mut pool = 0.0;
+            for &row in ctx.register().of_holder(who) {
+                let row = crate::ids::HoldingId(row);
+                let line = ctx.register().instrument_of(row);
+                if ctx.instruments().class_of(line) != crate::instruments::Class::Claim {
+                    continue;
+                }
+                if ctx.instruments().issuer_of(line) == who {
+                    continue;
+                }
+                pool += ctx.register().quantity(row);
+            }
+            let size = pool * pools;
+            if size <= 0.0 {
+                continue;
+            }
+            let Some(money) = account_of(ctx.parties(), ctx.instruments(), who) else { continue };
+            cutting.push((who, ctx.instruments().ccy_of(money), size, size * junior));
+        }
+
+        for (who, ccy, size, first_loss) in cutting {
+            // A2: **the SENIOR note**, which the junior stands in front of. It is brought like any
+            // other obligation and it trades in a book — what it is worth is what that book crosses
+            // at, and never a function of where it attaches (Law 3).
+            ctx.brings(crate::module::Brings {
+                issuer: who,
+                ccy,
+                class: crate::instruments::Class::Claim,
+                unit: crate::ids::UnitId::at(0),
+                // A note's return is what the pool pays through. It carries no coupon of its own,
+                // which is the difference between a note and a bond (5 C4.b).
+                coupon: None,
+                matures: None,
+                units: size - first_loss,
+                book: Some(crate::protocols::Venue {
+                    rule: crate::clearing::PriceRule::BuyersCompete,
+                    protocol: crate::protocols::Protocol::Call,
+                    seen_by: 1,
+                    stands_for: None,
+                }),
+                owing: Vec::new(),
+            });
+            ctx.opens(crate::module::Opens {
+                kind: afoot::SECURITISATION,
+                owner: who,
+                closes: Some(ctx.period() + 1),
+                size,
+            });
+            // B1: what it cut, and what stands in front of it. Both are said, because the capital
+            // relief is a read of what LEFT and a deal nobody can see the shape of is one nobody
+            // can check that against.
+            ctx.say(
+                self.kind,
+                &[who.0],
+                &[(0, Value::Num(size)), (1, Value::Num(first_loss))],
+                true,
+            );
+        }
+    }
 }
 
 #[cfg(test)]

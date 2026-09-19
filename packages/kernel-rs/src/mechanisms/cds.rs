@@ -29,6 +29,9 @@
 //! gap binds, and its price cannot move because somebody thinks the credit is mispriced.
 
 use crate::ids::PartyId;
+use crate::journal::Value;
+use crate::module::{Mechanism, MechanismContext};
+use crate::stores::{agreed, standing};
 
 /// A1.a: the underlying is **a named reference entity and its default event** — not a price. A4: it
 /// must exist in this world and be capable of defaulting, and A4.a forbids protection on an entity
@@ -256,6 +259,112 @@ pub fn shortfall(paid: &[Paid], terms: usize) -> Option<f64> {
         return None;
     }
     Some(short)
+}
+
+// **§19 RUNS HERE** (0m2.1). `Protection` was `running.rs:2663`, a hundred lines away from
+// the arithmetic it is about: `owed_on_event`, `pays_out`, `can_clear` and `basis` are in this
+// file and it called none of them. To change how CDS works took three files; it takes this one.
+
+/// **§19 A1, A2, B1, B2, B5, C2, XI-13, 22i.12: PROTECTION CLEARS BETWEEN TWO PARTIES WHO DISAGREE.**
+///
+/// The `cds` row counted live agreements. So §19 had never traded, which is 21.137's blocker: the
+/// early-termination regime and the cash-synthetic basis both wait on a CDS book that has crossed.
+///
+/// **What makes the market possible is the disagreement 22i.11 built.** B5: a book of hedgers on
+/// both sides clears at a function of regulatory gaps and never of a view — a speculative
+/// participant with a view is required on both sides. Here every lender holds its own probability
+/// of every borrower it lends to (`standing::OWN_VIEW`), formed from what IT has seen, so the most
+/// worried holder of a name and the least worried are two different parties with two different
+/// numbers. That is the trade.
+///
+/// **The spread CLEARS** (Law 3): the buyer posts what it would pay, the seller what it would take,
+/// and the one solver crosses them. Neither is a mid and neither is a table. **The recovery is a
+/// real one** (D2) — what an estate actually fetched — so a world in which nobody has died has no
+/// recovery, no loss given default, and no protection to price. That is an answer about the world,
+/// not a number to assume (Appendix B: no fixed recovery rate).
+pub struct Protection {
+    pub kind: u32,
+    /// §19 A2: the premium runs for a tenor. A market CONVENTION.
+    pub tenor: &'static str,
+}
+
+impl Mechanism for Protection {
+    fn run(&self, ctx: &mut MechanismContext<'_>) {
+        let tenor = ctx.params().years(self.tenor);
+
+        // D2: **what the estates of this world actually fetched, per unit of par.** One read over
+        // the claims, and a world where nothing has died has none.
+        let mut fetched = 0.0;
+        let mut owed = 0.0;
+        for row in 0..ctx.claims().len() as u32 {
+            let c = crate::stores::ClaimId(row);
+            owed += ctx.claims().owed(c);
+            fetched += ctx.claims().paid(c);
+        }
+        if owed <= 0.0 {
+            return;
+        }
+        let recovery = fetched / owed;
+        if recovery >= 1.0 {
+            // C2: the obligations paid in full. There is no loss to divide by, and inventing one is
+            // the numeric default Appendix A refuses.
+            return;
+        }
+
+        // XI-13: every view held on every name, by whom.
+        let mut views: std::collections::HashMap<u32, Vec<(PartyId, f64)>> = std::collections::HashMap::new();
+        for row in 0..ctx.standing().len() as u32 {
+            let st = crate::stores::StandingId(row);
+            if !ctx.standing().live(st) || ctx.standing().kind_of(st) != standing::OWN_VIEW {
+                continue;
+            }
+            views
+                .entry(ctx.standing().about(st).0)
+                .or_default()
+                .push((ctx.standing().held_by(st), ctx.standing().terms(st)[0]));
+        }
+
+        let mut struck: Vec<(PartyId, PartyId, PartyId, f64, f64)> = Vec::new();
+        for (&on, holders) in &views {
+            if holders.len() < 2 {
+                // B5: one opinion is not a market. A book that cleared on one view would be a
+                // restatement of that view rather than a price.
+                continue;
+            }
+            // A2, C2: what each party's own view says protection is worth to it — the probability
+            // it holds times the loss given default it can actually observe. A buyer will pay up to
+            // its own number and a seller will take down to its own.
+            let loss_given_default = 1.0 - recovery;
+            let mut posted: Vec<(PartyId, f64)> = holders
+                .iter()
+                .map(|&(who, p)| (who, p * loss_given_default))
+                .collect();
+            posted.sort_by(|a, b| a.1.total_cmp(&b.1));
+            let (seller, takes) = posted[0];
+            let (buyer, pays) = posted[posted.len() - 1];
+            if seller == buyer || pays <= takes {
+                // No overlap: the most worried holder will not pay what the least worried will take.
+                // That is a real outcome and nothing is invented to close it (Law 6).
+                continue;
+            }
+            // Clearing: the seller's level, because the sellers compete for the buyer's premium.
+            struck.push((buyer, seller, PartyId(on), takes, tenor));
+        }
+
+        for (buyer, seller, on, spread, tenor) in struck {
+            // XI-10: it is a RELATION between two named parties — terms `[the name it is on, the
+            // spread, the tenor]` — and neither side holds an instrument for it (§19 A1: a contract,
+            // not a security).
+            ctx.agrees(crate::module::Agrees {
+                kind: agreed::DERIVATIVE,
+                one: buyer,
+                other: seller,
+                terms: vec![f64::from(on.0), spread, tenor],
+                until: None,
+            });
+            ctx.say(self.kind, &[buyer.0, seller.0, on.0], &[(0, Value::Num(spread))], true);
+        }
+    }
 }
 
 #[cfg(test)]
