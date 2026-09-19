@@ -38,12 +38,12 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | system | MET | PARTIAL | MISSING | UNMEASURED | total |
 |---|---|---|---|---|---|
 | Money | 17 | 5 | 14 | 0 | 36 |
-| Register | 15 | 2 | 9 | 0 | 26 |
+| Register | 15 | 4 | 7 | 0 | 26 |
 | Clearing | 16 | 5 | 6 | 0 | 27 |
 | Audit | 11 | 2 | 10 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
-| Bond | 6 | 4 | 6 | 0 | 16 |
+| Bond | 6 | 5 | 5 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
@@ -121,7 +121,7 @@ goes over the ordinary wire. Item **22g** replaces it.
 |---|---|---|
 | 0j | Nothing checked the evidence — **done** (section removed; see `docs/RECORD.md`) | four registers were measuring nothing: a citation nothing opened, a census that was zero by construction, a PARTIAL that promised nobody, and eight FORBIDs whose guard was deleted. Findings positioned at 0r.4 and 0r.5 |
 | 0k | Money is invented, converted and misdirected — **done** (section removed; see `docs/RECORD.md`) | the door that creates money had no lock, a leg carried two currencies, a cross-border payment converted at par, and a coupon reached one holder. 0k.4 was WRONG and is recorded as wrong. Two more stopped the build and were fixed where they are. Findings positioned at 0n.4a, 0q.4 and 0r.6 |
-| 0l | An instrument has no issued amount | after 0k, the smallest kernel change in this file; 0m.2 cannot be written without it |
+| 0l | An instrument has no issued amount — **done** (section removed; see `docs/RECORD.md`) | B2 was not unchecked but UNWRITABLE: one number cannot be summed against itself. `Instruments` carries `issued` now, moved by named events and written only by settlement. Findings positioned at 22g.1 and 0n.6 |
 | 0m | **Seven families are not built, and one of the three that are cannot fail** | after 0l, and for 22e's own stated reason: everything built after it should be audited as it is built. Part XII: these are gates, not experiments |
 | 0n | **Value is a function, and the balance sheets must move** | after 0m, which is what catches what moves. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint |
 | 0p | **Every reservation is the last print times a constant** | after 0n: it is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information |
@@ -191,66 +191,6 @@ goes over the ordinary wire. Item **22g** replaces it.
 ---
 
 ## Part 2 — The items
-
-## 0l. An instrument has no issued amount
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: §2 B (the issuer side) in
-> full, and Bond N2, N8, N8.a, N10.
-> The source: `instruments.rs`, `register.rs`, `module.rs` `Brings`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**INSERTED after 0k, and it is the smallest kernel change in this file.** `Instruments` has columns
-for issuer, currency, class, unit, coupon, maturity — and **no issued amount**. Register B1 says an
-instrument has one, "set when it was issued and changed only by an issuance, a re-opening, a buyback,
-an amortisation or a maturity". Units come into existence by `Brings.units` crediting the issuer's
-own row or by `Leg::Create`, and after that the only fact in the world is who holds what.
-
-That is why Register B2 is not merely unchecked but **unwritable**: there is no second, independent
-number for the holdings to be summed against, and written against `held_total(i)` it would be Audit
-A1.a's tautology, since `held_total` **is** the sum of the holdings.
-
-- [x] 0l.1 `Instruments` carries `issued`, written only by named events. B1 names five; **two of them
-  exist in this kernel** and the enum says so rather than pretending to a vocabulary the world has
-  not got: `Issuance::Made` and `Issuance::Gone`. A buyback, an amortisation and a maturity are the
-  other three and nothing does any of them (0l.3).
-  **It does not refuse a line that goes below zero, and that is the rule rather than a lapse.**
-  Units ceasing beyond what was issued means the register holds units this store never saw issued,
-  which is Register B2's *finding* — *a shortfall means somebody's claim vanished; a surplus means
-  somebody's was invented* — and CLAUDE.md puts the line exactly there: a contract violation throws
-  at the site, an invariant violation is reported with an owner and a size and is never thrown and
-  never repaired. The first draft asserted it and eight tests went red; every one of them was
-  telling the truth about the seeding, not about the leg.
-- [x] 0l.2 **`Brings` and `Leg::Create` are one door, not two.** `Brings.units` does not credit the
-  register — `assembly.rs` settles a `Leg::Create` for it, *"one-sided, because nobody is on the
-  other end of a promise being made, which is the same shape as a harvest"*. So units come into
-  existence in exactly two places on the wire and leave in one: `Create`, `Mint`, `Destroy`.
-  Settlement writes the issued amount in all three, which is why `Settling::instruments` is `&mut`
-  now — settlement is where units come into and go out of existence, and a second writer anywhere
-  else would be a second answer to how much of a line there is (Law 4). Fourteen construction sites,
-  all named by the compiler.
-- [ ] 0l.3 **Redemption does not exist, and it is BLOCKED ON 0n.4a rather than merely unbuilt.**
-  Bond N10: *"the principal is repaid and the instrument ceases to exist. The register empties."*
-  Nothing in `instruments.rs` or `register.rs` ceases a line, and a maturity that passes with
-  nothing happening is Short-Term Debt E3.
-  **The mechanism is smaller than it looks and it needs no new leg kind.** A redemption is the
-  issuer buying its own paper back at par: an `Asset` leg per holder beside the money leg
-  `Servicing` already proposes, which `Instruction::shape` reads as delivery-versus-payment without
-  being told, and which books each holder's realised gain correctly (`qty × 1.0 − cost`) where a
-  `Leg::Destroy` would book the whole basis as a LOSS and ignore the par it was paid. B1 calls that
-  a buyback and it is one of its five.
-  **What stops it is the asset side of `equity`.** Trace an issuer with cash `C` and 1,000 units
-  outstanding: before, `owes = held_total(1000) − own(0) = 1000` and equity is `C − 1000`; after
-  buying the lot back at par it has paid 1,000 and holds 1,000 units at cost 1.0, so `holds = C` and
-  `owes = 1000 − 1000 = 0` — **equity `C`, a gain of exactly par for retiring its own debt.** That
-  is 0n.4a's asymmetry (a party's own issuance netted off one side and not the other) reached from
-  the other direction, and building redemption on top of it would bury the defect inside a
-  mechanism. **Positioned at 0n.6**, where the one fix unblocks both.
-
-**Exit.** Every line's issued amount is a read, moved by named events, and 0m can check it.
 
 ## 0m. Seven families are not built, and one of the three that are cannot fail
 

@@ -21245,3 +21245,63 @@ is recorded and the LENDING that would price an overdraft is still not reached.
 
 **750 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
 periods, worst 1,304 ms, census 30 of 50.**
+
+## Item 0l — An instrument has no issued amount: closed
+
+**What.** `Instruments` had columns for issuer, currency, class, unit, coupon and maturity, and no
+issued amount. Register B1 says an instrument has one, *"set when it was issued and changed only by
+an issuance, a re-opening, a buyback, an amortisation or a maturity"*. Units came into existence and
+after that the only fact in the world was who holds what.
+
+**B2 was not merely unchecked, it was UNWRITABLE**, and that is the reason this item is worth its
+own commit. *Holdings sum to the issued amount, per instrument, always* needs two independent
+numbers, and the world had one: `Register::held_total` IS the sum of the holdings, so a check
+against it compares the answer with itself — Audit A1.a's tautology. Two sides is the whole of what
+makes B2.a readable: *a shortfall means somebody's claim vanished; a surplus means somebody's was
+invented.*
+
+**Two of B1's five events exist, and the enum says so.** `Issuance::Made` and `Issuance::Gone`,
+each citing the clause it comes from — a line brought with its first units, a batch off a
+production line, an issuer minting its own money; and units consumed, perished or scrapped
+(Goods B, Goods E4). A buyback, an amortisation and a maturity are the other three and nothing does
+any of them. Naming a harvest a *re-opening* to make the vocabulary match would have been a stale
+name, which Law 16 calls a defect.
+
+**`Brings` and `Leg::Create` are one door, not two** — a fact the item did not know and the reading
+found. `Brings.units` does not credit the register: `assembly.rs` settles a `Leg::Create` for it,
+*"one-sided, because nobody is on the other end of a promise being made, which is the same shape as
+a harvest."* So units come into existence in exactly two places on the wire and leave in one, and
+settlement writes the issued amount in all three. `Settling::instruments` is `&mut` for it —
+settlement is where units come into and go out of existence, and a second writer anywhere else
+would be a second answer to how much of a line there is (Law 4). Fourteen construction sites, every
+one named by the compiler.
+
+**The measure does not refuse a line that goes below zero, and the first draft did.** Eight tests
+went red against that assert, and every one of them was telling the truth about the seeding rather
+than about the leg it was destroying. Units ceasing beyond what was issued means the register holds
+units this store never saw issued — which is B2's *finding*, and CLAUDE.md puts the line exactly
+there: a contract violation throws at the site, an invariant violation is reported with an owner and
+a size and is never thrown and never repaired. The assert came out; the number is allowed to be
+wrong, visibly, because that is what a measure is for.
+
+**Findings positioned.** `22g.1` — every unit this world opens with exists and was never issued. The
+seeding credits `Register::credit` and `money_delta` directly at sixteen call sites rather than
+settling a leg, so `issued_of` runs negative for every seeded line the moment anything is consumed,
+by exactly what was placed. Money D4 and Register B1 at once, and the size of it is now readable.
+
+`0n.6` — **redemption, which turned out to be blocked rather than merely unbuilt.** 0l.3 said Bond
+N10 does not exist; the reading found the mechanism is a dozen lines and needs no new leg kind. A
+redemption is the issuer buying its own paper back at par: an `Asset` leg per holder beside the
+money leg `Servicing` already proposes, which `Instruction::shape` reads as delivery-versus-payment
+without being told, and which books each holder's gain as `qty × 1.0 − cost` — where a
+`Leg::Destroy` would book the whole basis as a LOSS and ignore the par it was paid. What stops it is
+the asset side of `equity`: trace an issuer with cash `C` and 1,000 units out, and after buying the
+lot back at par it stands at equity `C` where it stood at `C − 1,000` — **richer by exactly par for
+retiring its own debt.** That is 0n.4a's asymmetry reached from the other direction, and building
+redemption on top of it would bury the defect inside a mechanism.
+
+**Three clauses re-marked PARTIAL from MISSING**: Register B1, Register B2, Bond N8.a. None is MET,
+and B2 will not be until 0m's family reads it.
+
+**751 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
+periods.**
