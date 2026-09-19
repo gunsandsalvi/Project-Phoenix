@@ -268,13 +268,6 @@ pub fn spread_from(price: f64, risk_free_price: f64, years: f64) -> Option<f64> 
     Some((risk_free_price / price).powf(1.0 / years) - 1.0)
 }
 
-/// Interest accrues to the holder of record, continuously, and accrued interest transfers with the
-/// paper.
-pub fn accrued(coupon: f64, face: f64, days_since_payment: i64, days_in_period: i64) -> f64 {
-    assert!(days_in_period > 0, "7 F1: a coupon period of no days accrues nothing to anybody");
-    face * coupon * days_since_payment as f64 / days_in_period as f64
-}
-
 /// The holder marks at the cleared price, its value is units times price, and the change in the mark
 /// is P&L that reaches its income — realised on sale, unrealised while held, and the two are
 /// distinguishable.
@@ -567,13 +560,6 @@ mod tests {
         assert!(wide > tight);
         assert!(spread_from(0.0, 100.0, 5.0).is_none());
         assert!(spread_from(90.0, 100.0, 0.0).is_none());
-    }
-
-    #[test]
-    fn accrued_interest_transfers_with_the_paper() {
-        // It accrues to the holder of record, and the buyer pays it to the seller.
-        assert_eq!(accrued(0.05, 1_000.0, 90, 360), 12.5);
-        assert_eq!(accrued(0.05, 1_000.0, 0, 360), 0.0);
     }
 
     #[test]

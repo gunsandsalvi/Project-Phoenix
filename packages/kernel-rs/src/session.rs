@@ -233,6 +233,31 @@ pub fn run_book(
             quoted_as: QuotedAs::Money,
             provenance: Provenance::Cleared,
         });
+        // BOND N9.b: THE PRICE IS QUOTED CLEAN AND WHAT SETTLES IS CLEAN PLUS ACCRUED. What the
+        // seller earned on the coupon running now is the seller's; without it the coupon is a
+        // windfall to whoever happens to hold the paper on the date. Read once for the book,
+        // because every fill in it is on the same line.
+        let today = stores.calendar.start_of(crate::calendar::Period(period));
+        let accrued_per_unit = match stores.schedules.accruing(book.subject, today) {
+            None => 0.0,
+            Some(d) => {
+                let issuer = stores.instruments.issuer_of(book.subject);
+                // The same denominator the payment itself uses, so what the buyer pre-pays and what
+                // it is paid on the date are the same number.
+                let outstanding: f64 = stores
+                    .register
+                    .of_instrument(book.subject)
+                    .iter()
+                    .map(|r| crate::ids::HoldingId(*r))
+                    .filter(|row| stores.register.holder_of(*row) != issuer)
+                    .map(|row| stores.register.quantity(row))
+                    .sum();
+                match (stores.schedules.accrued(d, today), outstanding > 0.0) {
+                    (Some(accrued), true) => accrued / outstanding,
+                    _ => 0.0,
+                }
+            }
+        };
         // Each trade is an instruction — the units one way, the money the other, together.
         for (buyer, seller, qty, at) in pair_up(fills) {
             // A fill of nothing, or one struck at nothing, is not a trade to settle.
@@ -241,26 +266,39 @@ pub fn run_book(
             else {
                 continue;
             };
-            let legs = [
+            // The buyer pays out of its own account.
+            let account = match account_of(stores.parties, stores.instruments, buyer) {
+                Some(line) => line,
+                None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
+            };
+            let mut legs = vec![
                 Leg::Asset {
                     from: seller,
                     to: buyer,
                     instrument: book.subject,
+                    // The basis is what it paid for the PAPER: accrued is interest pre-paid, not
+                    // part of what the position cost.
                     qty: moving,
                     price_per_unit: Some(at),
                 },
                 Leg::Money {
                     from: buyer,
                     to: seller,
-                    // The buyer pays out of its own account.
-                    instrument: match account_of(stores.parties, stores.instruments, buyer) {
-                        Some(line) => line,
-                        None => panic!("Money D2: {} won a fill in a book and has no account to pay from", buyer.0),
-                    },
+                    instrument: account,
                     amount: paid,
                     receipt: Receipt::Sale,
                 },
             ];
+            // A separate leg, because it is interest and not the price — and it says so.
+            if let Some(accrued) = Units::new(qty as f64 * accrued_per_unit) {
+                legs.push(Leg::Money {
+                    from: buyer,
+                    to: seller,
+                    instrument: account,
+                    amount: accrued,
+                    receipt: Receipt::Interest,
+                });
+            }
             match stores.wire.settle(
                 &Instruction::against_payment(&legs, Cause::Trade),
                 period,

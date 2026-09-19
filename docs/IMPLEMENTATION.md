@@ -36,7 +36,7 @@ with `--verify`. A MET mark means a module cites the clause; it does not mean a 
 | Audit | 14 | 3 | 6 | 0 | 23 |
 | **Seed** | **1** | 1 | **20** | 0 | 22 |
 | Currency | 3 | 5 | 17 | 0 | 25 |
-| Bond | 7 | 5 | 4 | 0 | 16 |
+| Bond | 8 | 4 | 4 | 0 | 16 |
 | **Derivative** | **3** | 5 | **10** | 0 | 18 |
 | **Corporate Credit** | **3** | 5 | **54** | 0 | 62 |
 | **Sovereign** | **7** | 6 | **38** | 0 | 51 |
@@ -93,14 +93,13 @@ goes over the ordinary wire. Item **22g** replaces it.
 
 ### 0.2a What the world does not CONNECT
 
-Read off the source rather than off a run, so it does not go stale with the draw. **These three are
-what Part 1's order is an argument about**, and nothing else in this file restates them.
+Read off the source rather than off a run, so it does not go stale with the draw. **This is what
+Part 1's order is an argument about**, and nothing else in this file restates it.
 
 | measured | what it is | item |
 |---|---|---|
 | **5 of 46** journal kinds are both said and read | forty-one facts are written every period into a journal with no reader | 0u |
-| **29 of 49** wired systems produce nothing observable over four periods | all 49 run; two-thirds are not heard | 0u |
-| **3 systems** write a schedule row and **each writes two** — interest and principal, both dated at maturity, in three byte-identical blocks | every piece of paper in this world is a zero-coupon bullet, and nothing accrues | 0t |
+| **30 of 48** wired systems produce nothing observable over four periods | all of them run; two-thirds are not heard | 0u |
 
 ### 0.3 What is missing as an economy (no clause names it; the item builds it)
 
@@ -121,20 +120,18 @@ what Part 1's order is an argument about**, and nothing else in this file restat
 
 ## Part 1 — The order
 
-**What the remaining work is, in one paragraph.** Every system in this world is wired and forty-nine
-of them run. What is not built is the WEEK: an order the stages of a period stand in, an accrual that
-carries the past into it, and the arcs by which what one system decides reaches the party that would
-act on it. **0.2a is the measurement** — four counts, and each of them is about a joint rather than
-about a sector. A world whose systems all run and whose systems cannot hear each other is not a
-half-built world. It is a set of forty-nine correct mechanisms that have never been a model.
+**What the remaining work is, in one paragraph.** Every system in this world is wired and every one
+of them runs. What is not built is the ARCS: what one system decides does not reach the party that
+would act on it. **0.2a is the measurement**, and both counts are about a joint rather than about a
+sector. A world whose systems all run and whose systems cannot hear each other is not a half-built
+world. It is a set of correct mechanisms that have never been a model.
 
-So the order below is the past, then the parties, then the arcs, then the seed. It is not a list of
-sectors, because no sector is missing; it is the list of the joints between them. **The week itself
-is built**: nine stages, one pass, every row in one of them.
+So the order below is the parties, then the arcs, then the seed. It is not a list of sectors,
+because no sector is missing; it is the list of the joints between them. **The week is built**: nine
+stages, one pass, every row in one of them, and a bond that pays its coupons on its own dates.
 
 | # | item | why here |
 |---|---|---|
-| 0t | **Nothing accrues, and every instrument is a zero-coupon bullet** | FIRST, because stage b — *what the past owes* — is the stage the whole week hangs from, and it is empty. `treasury`, `short_term_debt` and `corporate_credit` write **the same two schedule rows**, byte for byte, both dated at maturity. Bond N6 and N9.b are violated by every piece of paper that exists, and no later item can be judged against obligations that are malformed. It also carries the two steps 0s could not install without it: the record date (0t.3) and G1.c's refusal (0t.6) |
 | 0n | **Value is a function, and the balance sheets must move** | stage g. Until it closes no price reaches a balance sheet, so XI-2, XI-3 and XI-4 are cut at the joint, and stage b's *a party that cannot go on ceases* has nothing to read |
 | 0p | **Every reservation is the last print times a constant** | stage e. It is the cause of one book of 1,546 clearing, and XI-13 says a price built this way carries no information. After 0n because a party's view of a line is a view of what it is worth |
 | 0q | A party that ceases keeps everything it held, for ever | stage b's last three words — *its estate distributes* — and the termination condition of every loss chain (XI-3). XI-2 and XI-1 both run into it |
@@ -152,38 +149,6 @@ is built**: nine stages, one pass, every row in one of them.
 ---
 
 ## Part 2 — The items
-
-## 0t. A coupon is a windfall to whoever holds it on the date
-
-> **READ FIRST, IN FULL, BEFORE TOUCHING ANYTHING.** The specification: **THE BOND in full** (Part
-> IV, all fourteen characteristics — N9 is the subject and the other thirteen say what it sits in),
-> then Money G1.b and G1.c, §2 A2.a, §3 D and XI-5.
-> The source: `stores.rs` `Schedules` (its `from`/`accrued`/`accruing` reads), `session.rs`
-> `run_book` and `clearing.rs` — where a trade becomes two legs — `ledger.rs` `Leg::Asset`, and
-> `mechanisms/private_equity.rs` `Calling`.
->
-> **In full, not the cited lines.** Every finding under this item was found by reading around one
-> that was already known, and the ones still unfound are next to these. What the reading turns up
-> that this item does not name is a finding, and it goes in this file under the item that should
-> fix it — never into the commit that happens to be open (Law 10, Law 14).
-
-**What is left of 0t once the schedule exists.** A bond pays coupons on its own dates and what has
-accrued on one is a read. Nothing uses that read: paper changes hands at a clean price and the
-holder on the coupon date takes the whole coupon, which is the windfall N9.b exists to forbid.
-
-- [ ] 0t.3 **Accrued interest travels with the paper, and the holder of record is the one at the
-  period's open** (N9.b, G1.b). *0s.8 folded in here, where it turned out to belong: 0s built the
-  stage that can take a record date and there was nothing dated to take one of.* A settled purchase
-  pays clean price plus accrued, so the holder of record keeps what it earned and the buyer is not
-  handed a windfall. The record is taken at stage **a**, which is the only moment before anybody has
-  traded.
-- [ ] 0t.4 **`coupon` is not a parameter.** `funding.coupon` = 0.04 and `paper.coupon` = 0.03 are
-  declared `Kind::Technology` and **every bond in the world carries the same coupon whoever issues
-  it**. A coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and
-  Seed C4.b names it: *"a seeded spread table that strikes every coupon in the world is a permanent
-  cash flow"* — here it is not even a table. *This is 0p.6's finding, which stays there whole; it is
-  named here because `schedule_of` is what reads it and neither item can close while it stands.*
-**Exit.** A buyer pays clean plus accrued and a coupon is nobody's windfall.
 
 ## 0n. Value is a function, and the balance sheets must move
 
@@ -349,7 +314,9 @@ one of the two sites, so it belongs to the item that places every row.
   parliament.** `treasury.will_accept` = 0.98, `Dimension::Ratio`, **`Kind::Policy`,
   `Owner::Parliament`**, unit "price per unit of par" — §47 D3.a: "**the parliament never sets a
   price, a quantity or an outcome.**" `funding.coupon` = 0.04 and `paper.coupon` = 0.03 are
-  `Kind::Technology`, and **every bond in the world carries the same coupon whoever issues it**: a
+  `Kind::Technology`, and **every bond in the world carries the same coupon whoever issues it** —
+  which is now the number `instruments::schedule_of` strikes ten coupons from, so one declared
+  constant is the whole of what every issuer's paper pays: a
   coupon is the price of credit for one issuer at one time, which is an OUTCOME (Law 2), and Seed
   C4.b names it — "a seeded spread table that strikes every coupon in the world is a permanent cash
   flow". Here it is not even a table. `equity.shares` = 1000 (a share count, §10 A2.a),
@@ -856,6 +823,15 @@ parties can form a view of (0n, 0p).*
   restock formula, which was raising the gap twice, moved not one number in four periods. The
   mechanism is right and unreachable, and only the draw can make it reachable.
 
+- [ ] 22g.1a **A COUPON IS PAID OVER WHAT IS OUTSTANDING, SO BUYING BACK YOUR OWN PAPER RAISES
+  EVERY REMAINING HOLDER'S COUPON.** *Found at 0t.3, not chased (Law 11), and placed here because
+  22g.1 is what unblocks it.* `schedule_of` strikes a coupon for the whole issue and
+  `mechanisms/lending.rs` `Servicing` divides it by what is held OUTSIDE the issuer — so an issuer
+  holding back half its paper pays the other half double. A coupon is per unit of par (Bond N2), so
+  the denominator is the ISSUED amount and the issuer simply is not paid for its own. The fix is one
+  read, `instruments::issued_of`, and it cannot be made today: `issued_of` is zero for every line
+  this world opens with, because the opening credits the register instead of settling a `Create`.
+  Fix 22g.1 and this is a one-word change; make it first and every seeded line divides by nothing.
 - [ ] 22g.1 **Every unit this world opens with exists and was never issued**, and as of 0l.2 the
   register says so out loud. The seeding credits `Register::credit` and `Register::money_delta`
   directly — sixteen call sites across `world_runs`, the benches and the fixtures — rather than
@@ -1153,7 +1129,7 @@ actually seen, which is what re-reading it needs. It is a map into a closed file
 
 ## Part 4 — What this world does not meet
 
-**1169 clauses: 1040 MISSING, 129 PARTIAL.** Generated from
+**1167 clauses: 1039 MISSING, 128 PARTIAL.** Generated from
 `docs/COVERAGE.md` by `npm run plan:gaps`, in the specification's own order of systems, which is
 the order Part XIII builds them in. A MISSING clause is a mechanism nobody has written; a PARTIAL
 one is a mechanism that exists and does not yet do all the clause says, and its row says what is
@@ -1164,7 +1140,7 @@ in the list rather than in a table somebody reads later.
 Re-mark the row in `docs/COVERAGE.md` in the change that meets it, and re-run `npm run plan:gaps`
 in the same commit. Nothing here is ticked by hand.
 
-### Money — 17 missing, 7 partial
+### Money — 16 missing, 7 partial
 
 - [ ] `Money A2.b` MISSING — VERIFICATION 5.3: there is no currency-carrying amount type in packages/kernel-rs. Money is a bare f64 in every leg, store and mechanism, and nothing can refuse an addition across two currencies
 - [ ] `Money A4` MISSING — no read of the money stock exists, and the Money audit family that would check it is one contribution deep (VERIFICATION 1.4)
@@ -1181,7 +1157,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Money F2` MISSING
 - [ ] `Money F3` MISSING — no clearing house residual is read; the ZeroSum family is NOT BUILT (VERIFICATION 1.4)
 - [ ] `Money F4` MISSING — nothing counts money landing on a holder with no account; the Money family is one contribution deep (VERIFICATION 1.4)
-- [ ] `Money G1.b` MISSING — there is no record date anywhere in packages/kernel-rs. Nothing marks who held a line at a period's open, so an entitlement dated in a period is paid to whoever holds it when the walk reaches it. Positioned at item 0t.3, which is where there is a coupon to be windfalled
 - [ ] `Money G2.c` MISSING — the stage exists and no row is in it: four of the five cell events have no cause, so the population changes only by SPLIT (item 22h)
 - [ ] `Money B3` PARTIAL — packages/kernel-rs/src/register.rs `money_delta` can carry a negative total, but settlement refuses a payment the payer cannot make, so nothing reaches it through the wire. B3.a`s credit decision by the bank is in packages/kernel-rs/src/mechanisms/bank_funding.rs; what is missing is B3.b, a bank overdrawn at the central bank, and there is no central bank at all (item 0r.2)
 - [ ] `Money B3.c` PARTIAL — packages/kernel-rs/src/ledger.rs refuses rather than overdrawing (`ShortOfMoney`, `BankCouldNotSettle`), and since item 0k.5a it weighs every leg of an instruction TOGETHER — two legs out of one account used to pass one at a time and take the balance negative in silence. The refusal is recorded on the wire; the LENDING that would make an overdraft priced is still not reached (item 0r)
@@ -1279,7 +1254,7 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Currency C3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs `gap` measures the triangle and `arbitrage` bounds who closes it — the right shape, and C3.b`s no-triangulating-read is honoured by `Rates::of` answering None. All of it is dead code (VERIFICATION 10.1)
 - [ ] `Currency E3` PARTIAL — packages/kernel-rs/src/mechanisms/currency.rs has no written path and `Rates::of` refuses to invent one, which is the FORBID holding by absence. It holds in dead code (VERIFICATION 10.1)
 
-### Bond — 5 missing, 5 partial
+### Bond — 5 missing, 4 partial
 
 - [ ] `Bond N5.b` MISSING — there is no floating coupon. `instruments.rs` has one `coupon: Option<f64>` and no reference rate; packages/kernel-rs/src/mechanisms/equity.rs `Floating` brings a line and journals, and never fixes a coupon on one
 - [ ] `Bond N10` MISSING — nothing redeems an instrument. `instruments.rs` and `register.rs` have no door that ceases a line or empties its holdings
@@ -1289,7 +1264,6 @@ in the same commit. Nothing here is ticked by hand.
 - [ ] `Bond N2` PARTIAL — packages/kernel-rs/src/instruments.rs carries a `unit`, and the register counts units of it. VERIFICATION 7.1: there is no issued PRINCIPAL — no column records the amount owed
 - [ ] `Bond N3` PARTIAL — packages/kernel-rs/src/instruments.rs `ccy_of` (one currency per line), and since 0t.5 a schedule row carries the money its amount is in, which `mechanisms/lending.rs` `Servicing` compares with the payer's account rather than inferring from it. What is still not true is that EVERY figure about a line is in that money — there is no currency-carrying amount type (Money A2.b), and the payer that owes a money it does not bank in has no way to buy it (item 0r.6)
 - [ ] `Bond N5` PARTIAL — packages/kernel-rs/src/instruments.rs `coupon_of` is a fixed rate or `None` (N5.a and N5.c). N5.b has no representation: there is no margin, no reference-rate field, and nothing fixes a floating coupon — the `benchmarks` module that would print the fixing is imported by nothing (item 0r)
-- [ ] `Bond N9` PARTIAL — packages/kernel-rs/src/ledger.rs `Leg::Asset` with `Delivery::AgainstPayment` gives N9.a — the paper one way and the cash the other, in one atomic instruction. N9.b is not met: packages/kernel-rs/src/mechanisms/corporate_credit.rs `accrued` computes accrued interest and has no caller (VERIFICATION 11.1), so nothing is added to what a trade settles and a coupon is a windfall to whoever holds it on the date
 - [ ] `Bond N14` PARTIAL — packages/kernel-rs/src/instruments.rs `display` builds issuer + coupon + maturity and the id is never the name. It is called by packages/kernel-rs/src/mechanisms/observer.rs `display_name`, which is itself dead code (VERIFICATION 11.1)
 
 ### Derivative — 10 missing, 5 partial
