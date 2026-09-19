@@ -21057,3 +21057,88 @@ leave a company's cost of equity missing for a quarter. The opening figure for a
 is what the company held when it entered; nothing keeps it.
 
 **736 tests; `npm run check` green; clippy clean; `world:runs` four periods, worst 547 ms.**
+
+## Item 0j — Nothing checked the evidence: closed
+
+**What.** Every claim this plan is judged by is a mark in `docs/COVERAGE.md`, and nothing opened
+what a mark cited. A verification pass re-read all 1,398 rows against the source and **1,090 MET
+became 223** — not because the standard moved, but because **1,121 of the 1,151 rows citing a path
+cited only paths inside `packages/engine`, which the Rust port deleted at 0g**. COVERAGE's own
+header defines MET as *the cited module implements the clause*; where the citation does not resolve,
+the row asserts nothing. This item is the checks that would have caught it, and it went first
+because closing any other item proves nothing until a citation is checked.
+
+**Four registers were measuring nothing, and each is read now rather than declared.**
+
+**The citation** (0j.1). `check:existence` read two files and never touched the tree. Every
+`packages/…` and `tools/…` path in a `where` cell is resolved against the working tree now, and a
+row citing one that is gone fails the gate, in both modes — a run that printed it and returned 0
+would be the silence the check exists to end. Twelve lines, six fixture tests, **and no exemption**:
+an escape hatch would be the bound Law 6 forbids. Three rows citing `tools/check-forbids.ts` to say
+it was gone had to be rewritten to name the absence without carrying the dead path.
+
+**The census** (0j.3). `0 of 51 wired systems only count` was zero BY CONSTRUCTION. The filter was
+`s.participant.is_none() && m.only_counts()`, asked of the wiring *before the world ran*:
+`only_counts()` defaulted to `false`, so fifty of the fifty-one declared nothing and were counted as
+deciding; and the one shape that did declare, `Reads`, was wired on four systems that had all been
+given a participant, so `participant.is_none()` dropped every one of them. **The fix removes the
+declaration rather than inverting it** (Law 12): `Mechanism::only_counts` is deleted, `Taken` already
+holds everything a mechanism asked for, and `Taken::decided` READS it (Law 19). `Stepped::decided`
+carries the slots PER PERIOD, because a system that decides only on a date decides in none of the
+others and a register calling that "only counts" would be measuring the calendar. **It reads 30 of
+50** — the number item 22i's exit claimed it had driven to zero.
+
+**The promise** (0j.7). PLAN §5 is *no PARTIAL row without a named item*. `unattributedPartials`
+implements it, carries the history that caused it, and **had no caller** — a rule written,
+documented, and never wired, which is 0j.1's defect one file over. It runs in `check:existence` now
+and **62 rows failed it**. Naming them was the work: 31 are the same sentence (`0r` — the module
+that would do it is imported by nothing), 13 are decisions missing inside a system that runs
+(`22j`), and the rest fall to `0k` the wire, `0n` value, `0p` reservations, `0q` the loss chain,
+`22g` and `24`. One row was not PARTIAL at all: `Reporting A1` claimed A1.a's register read was not
+done and `Publishes` does exactly it, so it is MET from the source.
+
+**The guard** (0j.6). `tools/check-forbids.ts` held eight silent FORBIDs and went with the
+TypeScript. A world that broke one would run, settle, print, balance and look exactly like one that
+did not, which is the case for a guard rather than a test. **Three are checks again**, as a table in
+`phoenix-check` where **the scope is the rule and not the word**: `spread` is what a dealer earns on
+its flow (§7 D4) and what a price may never be set from (D8). D8 — no `yield`, `spread`, `oas`,
+`multiple` or `discount` in `prices.rs` or `clearing.rs`, the only two writers of a print. E2/E3 —
+`consensus` in `reporting` and `observer` and nowhere else, the observer being the one exception
+§45 B2.a names. F2.a — `surprise` in `reporting` and `expectations` and nowhere else. A test is not
+exempt, because a test elsewhere calling `consensus` is a caller. **The guard was proved to bite
+before it was trusted**: a probe went into `mechanisms/equity.rs`, the check failed on both rules
+with the clause and the line, the probe came out, and five tests keep it.
+
+**And `check:laws` runs `phoenix-check`'s own tests now.** It had six and the gate ran none —
+`check:tests` is the kernel's manifest, `check:tools` is `tools/*.test.ts`. Adding three more tests
+nobody executes would have been worse than adding none.
+
+**The rules file said four things that were not true** (0j.4, 0j.5, 0j.5a), and it is the one
+document always in context. It named three homeless nouns and the world prints three others — the
+count matched and the lists did not overlap at all, because all three it named had gone home and the
+three declared now were found later. It told the reader to run `npm run check:opens` and `npm run
+check:spec`, neither of which exists; the world stepping without throwing is `world:runs` and the
+`@spec` rule moved into `phoenix-check` with the engine. Eleven more paths in it are the deleted
+TypeScript engine, and **two of them were a RULE'S SCOPE** — *no clamp outside `core/num.ts`*, *no
+numeric literals outside `core/`, `registry/`* — where the exemption is the whole content of the
+rule, so as written each applied to nothing. `phoenix-check`'s header is now named as the WRITER of
+that exemption list rather than a second copy of it (Law 4), which is how this one went stale.
+
+**Five of the eight FORBIDs are not checks, and the rows say so rather than implying a guard.** CDS
+B5 and Private Equity E3 are things the code would DO rather than words it would write. Reporting C6
+and Observer A4 are formed in `running.rs`, outside their own module, so a module-scoped rule would
+hold and guard nothing. Prime Brokerage C3.b is held by Law 6's general bound rule, which cannot see
+a floor written as an `if`.
+
+**Findings positioned.** `0r.4` — `Publishes` re-implements `reporting::estimate` inline, the same
+recursion one term deep, so one estimate has two writers (Law 4); it is why C6 cannot be guarded,
+because a rule scoped to the module would be true of the copy nothing runs. `0r.5` —
+`control.resistance` and `derivatives.collateral` both declare item `23.1` as what gives them a
+home, and 23.1 is Part XII's "resize the scale model", whose own text says its premise is gone; the
+register asserts a noun's item is non-empty and never that it is right or that it exists.
+
+**What this item did not do.** It did not re-mark a single row to look better and it did not relax a
+rule to make one pass. The 223 stands.
+
+**737 kernel tests, 11 checker tests, 9 tool tests; `npm run check` green; `world:runs` four
+periods, worst 539 ms, census 30 of 50.**
